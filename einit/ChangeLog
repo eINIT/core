@@ -1,0 +1,14 @@
+2006/02/10: mdeininger
+ * initial CVS import
+
+2006/02/08: mdeininger
+ * decided not to use autoconf, automake, libtool & gettext
+
+2006/02/07: mdeininger
+ * well, i was gonna do something today, but I was distracted a lot by work,
+   so progress has only been marginal
+
+2006/02/06: mdeininger
+ * started working on this
+ * main.c, module.c, config-xml-expat.c, module.h, config.h
+ * started by creating a default configuration
