@@ -1,3 +1,5 @@
+include ../config.mk
+
 einit-xml: main.o module.o config-xml-expat.o
 	$(CC) main.o module.o config-xml-expat.o -o einit-xml -lexpat
 

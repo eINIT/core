@@ -1,4 +1,4 @@
-CC = gcc
+include config.mk
 
 einit: src/einit-xml
 	cp -a src/einit-xml einit
