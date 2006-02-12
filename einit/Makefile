@@ -1,10 +1,10 @@
 include config.mk
 
-einit: src/einit-xml
+einit: einit-xml
 	cp -a src/einit-xml einit
 
-src/einit-xml:
-	cd src; make einit-xml
+einit-xml:
+	cd src && ${MAKE} einit-xml
 
 clean:
 	rm einit src/einit-xml src/*.o
