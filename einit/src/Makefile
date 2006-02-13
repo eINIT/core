@@ -3,6 +3,9 @@ include ../config.mk
 einit-xml: main.o module.o config-xml-expat.o default-modules
 	$(CCC) main.o module.o config-xml-expat.o -o einit-xml -lexpat
 
+install: default-modules
+	cd modules && ${MAKE} install
+
 default-modules:
 	cd modules && ${MAKE} all
 
