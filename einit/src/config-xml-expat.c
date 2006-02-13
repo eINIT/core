@@ -20,54 +20,80 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdio.h>
 #include <expat.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 #include "config.h"
-#include "string.h"
+
+#define PATH_MODULES 1
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
+ int i;
+ if (!strcmp (name, "path")) {
+  int tar = 0;
+  char *val = NULL;
+  for (i = 0; atts[i] != NULL; i+=2) {
+   if (!strcmp (atts[i], "id")) {
+    if (!strcmp (atts[i+1], "modules"))
+     tar = PATH_MODULES;
+   } else if (!strcmp (atts[i], "path"))
+	val = (char *)atts[i+1];
+  }
+  if (tar && val) switch (tar) {
+   case PATH_MODULES:
+    sconfiguration->modulepath = malloc (strlen (val)+1);
+    strcpy (sconfiguration->modulepath, val);
+    break;
+  }
+ }
 }
 
 void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
 }
 
-struct sconfiguration *cfg_load () {
+int cfg_load () {
  int cfgfd, e, blen;
  char * buf, * data;
  ssize_t rn;
- struct stat *cfgst;
+ sconfiguration = calloc (1, sizeof(struct sconfiguration));
+ if (!sconfiguration) return -1;
  XML_Parser par;
  if (configfile == NULL) configfile = "/etc/einit/default.xml";
- cfgst = malloc (sizeof (struct stat));
- if (cfgst == NULL) return NULL;
- if (stat (configfile, cfgst) == -1) return NULL;
  cfgfd = open (configfile, O_RDONLY);
-// if (cfgfd != -1) {
-//  rn = read (cfgfd, cfgst->st_size)
-// }
  if (cfgfd != -1) {
   buf = malloc (BUFFERSIZE);
   blen = 0;
   do {
    buf = realloc (buf, blen + BUFFERSIZE);
-   if (buf == NULL) return NULL;
-   e = read (cfgfd, (char *)(buf + blen), BUFFERSIZE);
-   blen = blen + e;
-  } while (e > 0);
+   if (buf == NULL) return -1;
+   rn = read (cfgfd, (char *)(buf + blen), BUFFERSIZE);
+   blen = blen + rn;
+  } while (rn > 0);
   close (cfgfd);
- }
- data = realloc (buf, blen);
-// *(char *)(data + blen) = 0;
-// puts (data);
- par = XML_ParserCreate (NULL);
- if (par != NULL) {
-  XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
-  if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
-   puts ("cfg_load(): XML_Parse() failed:");
-   puts (XML_ErrorString (XML_GetErrorCode (par)));
+  data = realloc (buf, blen);
+  par = XML_ParserCreate (NULL);
+  if (par != NULL) {
+   XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
+   if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
+    puts ("cfg_load(): XML_Parse() failed:");
+    puts (XML_ErrorString (XML_GetErrorCode (par)));
+   }
+   XML_ParserFree (par);
   }
-  XML_ParserFree (par);
+  free (data);
+  return 1;
+ } else {
+  free (sconfiguration);
+  sconfiguration = NULL;
+  return -1;
  }
- return (void *)1;
+}
+
+int cfg_free () {
+ if (sconfiguration == NULL)
+  return 1;
+ if (sconfiguration->modulepath != NULL)
+  free (sconfiguration->modulepath);
+ free (sconfiguration);
+ return 1;
 }
