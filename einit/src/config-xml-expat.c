@@ -26,6 +26,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "config.h"
 #include "string.h"
 
+void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
+}
+
+void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
+}
+
 struct sconfiguration *cfg_load () {
  int cfgfd, e, blen;
  char * buf, * data;
@@ -51,10 +57,17 @@ struct sconfiguration *cfg_load () {
   } while (e > 0);
   close (cfgfd);
  }
- data = realloc (buf, blen +1);
- *(char *)(data + blen + 1) = 0;
- puts (data);
+ data = realloc (buf, blen);
+// *(char *)(data + blen) = 0;
+// puts (data);
  par = XML_ParserCreate (NULL);
- XML_ParserFree (par);
+ if (par) {
+  XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
+  if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
+   puts ("cfg_load(): XML_Parse() failed:");
+   puts (XML_ErrorString (XML_GetErrorCode (par)));
+  }
+  XML_ParserFree (par);
+ }
  return (void *)1;
 }
