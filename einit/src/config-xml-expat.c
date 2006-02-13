@@ -17,25 +17,44 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-// #include <stdio.h>
+#include <stdio.h>
 #include <expat.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "config.h"
+#include "string.h"
 
 struct sconfiguration *cfg_load () {
- int cfgfd;
+ int cfgfd, e, blen;
+ char * buf, * data;
  ssize_t rn;
- struct stat cfgst;
+ struct stat *cfgst;
  XML_Parser par;
  if (configfile == NULL) configfile = "/etc/einit/default.xml";
+ cfgst = malloc (sizeof (struct stat));
+ if (cfgst == NULL) return NULL;
+ if (stat (configfile, cfgst) == -1) return NULL;
  cfgfd = open (configfile, O_RDONLY);
+// if (cfgfd != -1) {
+//  rn = read (cfgfd, cfgst->st_size)
+// }
  if (cfgfd != -1) {
-//  rn = read (cfgfd)
+  buf = malloc (BUFFERSIZE);
+  blen = 0;
+  do {
+   buf = realloc (buf, blen + BUFFERSIZE);
+   if (buf == NULL) return NULL;
+   e = read (cfgfd, (char *)(buf + blen), BUFFERSIZE);
+   blen = blen + e;
+  } while (e > 0);
+  close (cfgfd);
  }
+ data = realloc (buf, blen +1);
+ *(char *)(data + blen + 1) = 0;
+ puts (data);
  par = XML_ParserCreate (NULL);
  XML_ParserFree (par);
- return NULL;
+ return (void *)1;
 }
