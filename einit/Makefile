@@ -1,7 +1,7 @@
 include config.mk
 
 einit: einit-xml
-	cp -a src/einit-xml einit
+	cp -p src/einit-xml einit
 
 einit-xml:
 	cd src && ${MAKE} einit-xml
