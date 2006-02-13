@@ -1,10 +1,10 @@
 include ../config.mk
 
-einit-xml: main.o module.o config-xml-expat.o modules
+einit-xml: main.o module.o config-xml-expat.o default-modules
 	$(CCC) main.o module.o config-xml-expat.o -o einit-xml -lexpat
 
-modules:
-	cd modules && ${MAKE}
+default-modules:
+	cd modules && ${MAKE} all
 
 main.o: main.c
 	$(CCC) -c main.c
