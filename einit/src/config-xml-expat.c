@@ -61,7 +61,7 @@ struct sconfiguration *cfg_load () {
 // *(char *)(data + blen) = 0;
 // puts (data);
  par = XML_ParserCreate (NULL);
- if (par) {
+ if (par != NULL) {
   XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
   if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
    puts ("cfg_load(): XML_Parse() failed:");
