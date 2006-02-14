@@ -41,17 +41,34 @@ int mod_scanmodules () {
  struct dirent *entry;
  char *tmp;
  int mplen;
+ void *sohandle;
  if (sconfiguration == NULL) return -1;
  if (sconfiguration->modulepath == NULL) return -1;
- mplen = strlen (sconfiguration->modulepath);
+ mplen = strlen (sconfiguration->modulepath) +1;
  dir = opendir (sconfiguration->modulepath);
  if (dir != NULL) {
   while (entry = readdir (dir)) {
-   tmp = (char *)malloc (mplen + strlen (entry->d_name) +1);
+   if (entry->d_name[0] == '.') continue;
+   tmp = (char *)malloc (mplen + strlen (entry->d_name));
+   puts (entry->d_name);
    if (tmp != NULL) {
+	struct smodule *modinfo;
+	struct smodule *(*sym)();
     *tmp = 0;
     strcat (tmp, sconfiguration->modulepath);
     strcat (tmp, entry->d_name);
+	dlerror ();
+    sohandle = dlopen (tmp, RTLD_NOW);
+	if (sohandle == NULL) {
+	 puts (dlerror ());
+	 continue;
+	}
+	*(void **)sym = dlsym (sohandle, "whoami");
+	modinfo = (*sym)();
+	if (modinfo->name = NULL) puts ("unknown");
+	else puts (modinfo->name);
+    dlclose (sohandle);
+	free (modinfo);
 	free (tmp);
    } else {
 	closedir (dir);
