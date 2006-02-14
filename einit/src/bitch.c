@@ -1,7 +1,7 @@
 /***************************************************************************
- *            module.c
+ *            bitch.c
  *
- *  Mon Feb  6 15:27:39 2006
+ *  Tue Feb 14 15:56:59 2006
  *  Copyright  2006  Magnus Deininger
  *  dma05@web.de
  ****************************************************************************/
@@ -17,50 +17,3 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-#include <unistd.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <dlfcn.h>
-#include <string.h>
-#include "config.h"
-#include "module.h"
-/*
- dynamic linker functions (POSIX)
-
- void *dlopen(const char *filename, int flag);
- char *dlerror(void);
- void *dlsym(void *handle, const char *symbol);
- int dlclose(void *handle);
-*/
-
-int mod_scanmodules () {
- DIR *dir;
- struct dirent *entry;
- char *tmp;
- int mplen;
- if (sconfiguration == NULL) return -1;
- if (sconfiguration->modulepath == NULL) return -1;
- mplen = strlen (sconfiguration->modulepath);
- dir = opendir (sconfiguration->modulepath);
- if (dir != NULL) {
-  while (entry = readdir (dir)) {
-   tmp = (char *)malloc (mplen + strlen (entry->d_name) +1);
-   if (tmp != NULL) {
-    *tmp = 0;
-    strcat (tmp, sconfiguration->modulepath);
-    strcat (tmp, entry->d_name);
-	free (tmp);
-   } else {
-	closedir (dir);
-	return -1;
-   }
-  }
-  closedir (dir);
- } else {
-  fputs ("couldn't open module directory\n", stderr);
-  return -1;
- }
-}
