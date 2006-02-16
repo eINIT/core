@@ -68,6 +68,7 @@ int mod_scanmodules () {
 	else {
      if (modinfo->name == NULL) puts ("unknown");
      else puts (modinfo->name);
+//	 puts (modinfo->provides[1]);
     }
     dlclose (sohandle);
 	free (tmp);
