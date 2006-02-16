@@ -1,3 +1,7 @@
+2006/02/16: mdeininger
+ * more work on the module loader
+  (particularly on the way modules identify themselves)
+
 2006/02/14: mdeininger
  * been working on the module-loader
  * added a file that'll contain functions for error-reporting (bitch.c, along

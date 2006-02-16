@@ -53,9 +53,7 @@ int mod_scanmodules () {
    tmp = (char *)malloc (mplen + strlen (entry->d_name));
    puts (entry->d_name);
    if (tmp != NULL) {
-//	struct smodule *modinfo;
-//	struct smodule *(*sym)();
-	int (*sym)(void);
+	struct smodule *modinfo;
     *tmp = 0;
     strcat (tmp, sconfiguration->modulepath);
     strcat (tmp, entry->d_name);
@@ -65,15 +63,13 @@ int mod_scanmodules () {
 	 puts (dlerror ());
 	 continue;
 	}
-//	*(void **)sym = dlsym (sohandle, "whoami");
-//	modinfo = (*sym)();
-	sym = (int (*)(void))dlsym (sohandle, "hello");
-	if (sym == NULL) puts ("unknown");
-	else (*sym)();
-//	if (modinfo->name == NULL) puts ("unknown");
-//	else puts (modinfo->name);
+	modinfo = (struct smodule *)dlsym (sohandle, "self");
+	if (modinfo == NULL) puts ("unknown");
+	else {
+     if (modinfo->name == NULL) puts ("unknown");
+     else puts (modinfo->name);
+    }
     dlclose (sohandle);
-//	free (modinfo);
 	free (tmp);
    } else {
 	closedir (dir);
