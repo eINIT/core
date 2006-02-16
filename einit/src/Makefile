@@ -13,7 +13,7 @@ main.o: main.c
 	$(CCC) -c main.c
 
 module.o: module.c
-	$(CCC) -rdynamic -c module.c
+	$(CCC) -c module.c
 
 bitch.o: bitch.c
 	$(CCC) -c bitch.c

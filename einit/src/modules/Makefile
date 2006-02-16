@@ -7,4 +7,4 @@ install: dummy.so
 	${INSTALL} ${SOIPARAM} dummy.so ${MODDIR}
 
 dummy.so: dummy.c
-	${CCL} -rdynamic dummy.c -o dummy.so
+	${CCL} dummy.c -o dummy.so

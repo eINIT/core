@@ -21,6 +21,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <unistd.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <dlfcn.h>
@@ -52,8 +53,9 @@ int mod_scanmodules () {
    tmp = (char *)malloc (mplen + strlen (entry->d_name));
    puts (entry->d_name);
    if (tmp != NULL) {
-	struct smodule *modinfo;
-	struct smodule *(*sym)();
+//	struct smodule *modinfo;
+//	struct smodule *(*sym)();
+	int (*sym)(void);
     *tmp = 0;
     strcat (tmp, sconfiguration->modulepath);
     strcat (tmp, entry->d_name);
@@ -63,12 +65,15 @@ int mod_scanmodules () {
 	 puts (dlerror ());
 	 continue;
 	}
-	*(void **)sym = dlsym (sohandle, "whoami");
-	modinfo = (*sym)();
-	if (modinfo->name = NULL) puts ("unknown");
-	else puts (modinfo->name);
+//	*(void **)sym = dlsym (sohandle, "whoami");
+//	modinfo = (*sym)();
+	sym = (int (*)(void))dlsym (sohandle, "hello");
+	if (sym == NULL) puts ("unknown");
+	else (*sym)();
+//	if (modinfo->name == NULL) puts ("unknown");
+//	else puts (modinfo->name);
     dlclose (sohandle);
-	free (modinfo);
+//	free (modinfo);
 	free (tmp);
    } else {
 	closedir (dir);
