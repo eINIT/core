@@ -1,0 +1,4 @@
+#/bin/sh
+
+touch src/depend.mk
+touch src/modules/depend.mk
