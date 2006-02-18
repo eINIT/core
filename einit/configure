@@ -30,5 +30,7 @@
 #   doesn't it suck when a source-file contains less code than there is text in the copyright notice?
 # -----------------
 
+echo creating dependency information...
 touch src/depend.mk
 touch src/modules/depend.mk
+make depend
