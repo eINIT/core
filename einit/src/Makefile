@@ -7,7 +7,8 @@ depend:
 	cd modules && ${MAKE} depend
 
 clean:
-	rm depend.mk *.o einit-*
+	echo > depend.mk
+	rm *.o einit-*
 	cd modules && ${MAKE} clean	
 
 einit-xml: main.o module.o bitch.o config-xml-expat.o default-modules

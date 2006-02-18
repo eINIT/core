@@ -7,7 +7,8 @@ depend:
 	${CC} -M *.c > depend.mk
 
 clean:
-	rm *.so depend.mk
+	echo > depend.mk
+	rm *.so
 
 install: dummy.so
 	${INSTALL} ${SOIPARAM} -d ${MODDIR}
