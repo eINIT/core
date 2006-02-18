@@ -1,3 +1,8 @@
+2006/02/18: mdeininger
+ * more makefile magic *g*
+ * figured out how to make this thing work on macs... well, I'm still being a heretic by naming the modules
+   .so even on macs but hey... who cares about filenames, really? :D
+
 2006/02/16: mdeininger
  * more work on the module loader
   (particularly on the way modules identify themselves)

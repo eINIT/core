@@ -9,7 +9,12 @@ install: einit
 einit-xml:
 	cd src && ${MAKE} einit-xml
 
+depend:
+	touch src/depend.mk
+	cd src && ${MAKE} depend
+
 clean:
-	rm einit src/einit-xml src/*.o
+	rm einit
+	cd src && ${MAKE} clean
 
 all: einit

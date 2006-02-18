@@ -1,4 +1,14 @@
 include ../config.mk
+include depend.mk
+
+depend:
+	${CC} -M *.c > depend.mk
+	touch modules/depend.mk
+	cd modules && ${MAKE} depend
+
+clean:
+	rm depend.mk *.o einit-*
+	cd modules && ${MAKE} clean	
 
 einit-xml: main.o module.o bitch.o config-xml-expat.o default-modules
 	$(CCC) main.o module.o bitch.o config-xml-expat.o -o einit-xml -ldl -lexpat
