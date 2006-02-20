@@ -43,17 +43,22 @@ int mod_scanmodules () {
  char *tmp;
  int mplen;
  void *sohandle;
+ struct lmodule *cmod = NULL, *nmod;
+
  if (sconfiguration == NULL) return -1;
  if (sconfiguration->modulepath == NULL) return -1;
+
  mplen = strlen (sconfiguration->modulepath) +1;
  dir = opendir (sconfiguration->modulepath);
  if (dir != NULL) {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
    tmp = (char *)malloc (mplen + strlen (entry->d_name));
-   puts (entry->d_name);
+   fputs (entry->d_name, stdout);
+   fputs (" [", stdout);
    if (tmp != NULL) {
 	struct smodule *modinfo;
+    int (*func)(void *);
     *tmp = 0;
     strcat (tmp, sconfiguration->modulepath);
     strcat (tmp, entry->d_name);
@@ -64,22 +69,61 @@ int mod_scanmodules () {
 	 continue;
 	}
 	modinfo = (struct smodule *)dlsym (sohandle, "self");
-	if (modinfo == NULL) puts ("unknown");
+	if (modinfo == NULL) fputs ("unknown", stdout);
 	else {
-     if (modinfo->name == NULL) puts ("unknown");
-     else puts (modinfo->name);
-//	 puts (modinfo->provides[1]);
+     nmod = calloc (1, sizeof (struct lmodule));
+     if (!nmod) {
+      dlclose (sohandle);
+      free (tmp);
+      closedir (dir);
+      return -1;
+     }
+	 if (cmod == NULL)
+      mlist = nmod;
+	 else
+      cmod->next = nmod;
+	 cmod = nmod;
+     cmod->sohandle = sohandle;
+     cmod->module = modinfo;
+     if (modinfo->name == NULL) fputs ("unknown", stdout);
+     else fputs (modinfo->name, stdout);
+	 if (modinfo->mode & EINIT_MOD_LOADER) {
+      func = (int (*)(void *)) dlsym (sohandle, "scanmodules");
+      if (func == NULL) {
+       fputs (" -MOD", stdout);
+      } else {
+       fputs (" +MOD", stdout);
+       cmod->func = func;
+//       func ();
+      }
+	 }
     }
-    dlclose (sohandle);
+	
 	free (tmp);
    } else {
 	closedir (dir);
 	return -1;
    }
+   fputs ("]\n", stdout);
   }
   closedir (dir);
  } else {
   fputs ("couldn't open module directory\n", stderr);
   return -1;
  }
+ return 1;
+}
+
+void mod_freedesc (struct lmodule *m) {
+ if (m->next != NULL)
+  mod_freedesc (m->next);
+ dlclose (m->sohandle);
+ free (m);
+}
+
+int mod_freemodules () {
+ if (mlist != NULL)
+  mod_freedesc (mlist);
+ mlist = NULL;
+ return 1;
 }

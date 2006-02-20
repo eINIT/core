@@ -39,6 +39,8 @@ echo "creating config.mk..."
 echo "PREFIX = 
 LIBDIR = \${PREFIX}/lib
 MODDIR = \${LIBDIR}/einit
+BINDIR = \${PREFIX}/bin
+SBINDIR = \${PREFIX}/sbin
 
 INSTALL = install
 IPARAM = -g 0 -o 0 -m 0755

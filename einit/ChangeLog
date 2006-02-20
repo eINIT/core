@@ -1,3 +1,7 @@
+2006/02/20: mdeininger
+ * started on mod-sysv.c (sysv compatibility)
+ * working on that module-loader...
+
 2006/02/18: mdeininger
  * more makefile magic *g*
  * figured out how to make this thing work on macs... well, I'm still being a heretic by naming the modules

@@ -14,7 +14,7 @@ clean:
 einit-xml: main.o module.o bitch.o config-xml-expat.o default-modules
 	$(CCC) main.o module.o bitch.o config-xml-expat.o -o einit-xml -ldl -lexpat
 
-install: default-modules
+install:
 	cd modules && ${MAKE} install
 
 default-modules:

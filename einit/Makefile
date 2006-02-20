@@ -4,6 +4,8 @@ einit: einit-xml
 	cp -p src/einit-xml einit
 
 install: einit
+	${INSTALL} ${BINIPARAM} -d ${SBINDIR}
+	${INSTALL} ${BINIPARAM} einit ${SBINDIR}
 	cd src && ${MAKE} install
 
 einit-xml:
