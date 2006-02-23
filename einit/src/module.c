@@ -28,6 +28,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <string.h>
 #include "config.h"
 #include "module.h"
+#include "bitch.h"
 /*
  dynamic linker functions (POSIX)
 
@@ -45,8 +46,8 @@ int mod_scanmodules () {
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
 
- if (sconfiguration == NULL) return -1;
- if (sconfiguration->modulepath == NULL) return -1;
+ if (sconfiguration == NULL) return bitch(BTCH_ERRNO);
+ if (sconfiguration->modulepath == NULL) return bitch(BTCH_ERRNO);
 
  mplen = strlen (sconfiguration->modulepath) +1;
  dir = opendir (sconfiguration->modulepath);
@@ -54,8 +55,10 @@ int mod_scanmodules () {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
    tmp = (char *)malloc (mplen + strlen (entry->d_name));
+#ifdef DEBUG
    fputs (entry->d_name, stdout);
    fputs (" [", stdout);
+#endif
    if (tmp != NULL) {
 	struct smodule *modinfo;
     int (*func)(void *);
@@ -69,14 +72,18 @@ int mod_scanmodules () {
 	 continue;
 	}
 	modinfo = (struct smodule *)dlsym (sohandle, "self");
+#ifdef DEBUG
 	if (modinfo == NULL) fputs ("unknown", stdout);
 	else {
+#else
+	if (modinfo != NULL) {
+#endif
      nmod = calloc (1, sizeof (struct lmodule));
      if (!nmod) {
       dlclose (sohandle);
       free (tmp);
       closedir (dir);
-      return -1;
+      return bitch(BTCH_ERRNO);
      }
 	 if (cmod == NULL)
       mlist = nmod;
@@ -85,31 +92,39 @@ int mod_scanmodules () {
 	 cmod = nmod;
      cmod->sohandle = sohandle;
      cmod->module = modinfo;
+#ifdef DEBUG
      if (modinfo->name == NULL) fputs ("unknown", stdout);
      else fputs (modinfo->name, stdout);
+#endif
 	 if (modinfo->mode & EINIT_MOD_LOADER) {
       func = (int (*)(void *)) dlsym (sohandle, "scanmodules");
+#ifdef DEBUG
       if (func == NULL) {
        fputs (" -MOD", stdout);
       } else {
        fputs (" +MOD", stdout);
+#endif
        cmod->func = func;
-//       func ();
+       func ((void *)mlist);
+#ifdef DEBUG
       }
+#endif
 	 }
     }
 	
 	free (tmp);
    } else {
 	closedir (dir);
-	return -1;
+	return bitch(BTCH_ERRNO);
    }
+#ifdef DEBUG
    fputs ("]\n", stdout);
+#endif
   }
   closedir (dir);
  } else {
   fputs ("couldn't open module directory\n", stderr);
-  return -1;
+  return bitch(BTCH_ERRNO);
  }
  return 1;
 }

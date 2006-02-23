@@ -1,3 +1,7 @@
+2006/02/23: mdeininger
+ * [module.c] made some output conditional
+ * [bitch.c] yes, finally some bitchin'
+
 2006/02/20: mdeininger
  * started on mod-sysv.c (sysv compatibility)
  * working on that module-loader...

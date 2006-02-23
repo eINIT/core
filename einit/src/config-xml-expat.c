@@ -23,6 +23,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include "bitch.h"
 #include "config.h"
 
 #define PATH_MODULES 1
@@ -56,7 +57,7 @@ int cfg_load () {
  char * buf, * data;
  ssize_t rn;
  sconfiguration = calloc (1, sizeof(struct sconfiguration));
- if (!sconfiguration) return -1;
+ if (!sconfiguration) return bitch(BTCH_ERRNO);
  XML_Parser par;
  if (configfile == NULL) configfile = "/etc/einit/default.xml";
  cfgfd = open (configfile, O_RDONLY);
@@ -65,7 +66,7 @@ int cfg_load () {
   blen = 0;
   do {
    buf = realloc (buf, blen + BUFFERSIZE);
-   if (buf == NULL) return -1;
+   if (buf == NULL) return bitch(BTCH_ERRNO);
    rn = read (cfgfd, (char *)(buf + blen), BUFFERSIZE);
    blen = blen + rn;
   } while (rn > 0);
@@ -85,7 +86,7 @@ int cfg_load () {
  } else {
   free (sconfiguration);
   sconfiguration = NULL;
-  return -1;
+  return bitch(BTCH_ERRNO);
  }
 }
 

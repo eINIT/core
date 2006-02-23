@@ -27,6 +27,36 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------
 
+echo -n "checking options [";
+for param in $@; do
+	if test "$param" = "--debug"; then
+		echo -n " DEBUG";
+		XCFLAGS="$XCFLAGS -DDEBUG";
+	elif test "$param" = "--help"; then
+		echo -n " HELP";
+		HELP="1";
+	fi;
+done;
+echo " ]";
+
+if test "$HELP" = "1"; then
+	echo "Usage:
+ ./configure [--debug] [--help]
+
+Options:
+ --debug          will set the DEBUG flag.
+ --help           display this text and exit.";
+ exit;
+fi;
+
+echo -n "testing for a make.conf file... "
+if test -f /etc/make.conf; then
+	echo "found one, sourcing";
+	source /etc/make.conf;
+else
+	echo "none";
+fi
+
 echo -n "checking for a default compiler... "
 if test -n "$CC"; then
 	echo "got one! ($CC)";
@@ -36,7 +66,7 @@ else
 fi
 
 echo "creating config.mk..."
-echo "PREFIX = 
+echo "PREFIX = $PREFIX
 LIBDIR = \${PREFIX}/lib
 MODDIR = \${LIBDIR}/einit
 BINDIR = \${PREFIX}/bin
@@ -48,8 +78,8 @@ SOIPARAM = \${IPARAM}
 BINIPARAM = \${IPARAM}
 
 CC = $CC
-CFLAGS = -Os
-LDFLAGS =
+CFLAGS = $CFLAGS$XCFLAGS
+LDFLAGS = $LDFLAGS
 CCC = \${CC} \${CFLAGS} \${LDFLAGS}" > config.mk
 
 echo -n "checking system type... "
@@ -65,8 +95,17 @@ echo -n "creating dependency information... "
 touch src/depend.mk
 touch src/modules/depend.mk
 
-if make depend > /dev/null; then
+if make depend > /dev/null 2>&1; then
 	echo "done";
 else
 	echo "failed!";
+fi
+
+if test -e einit; then
+	echo -n "cleaning the environment... "
+	if make clean >/dev/null 2>&1; then
+		echo "done";
+	else
+		echo "failed!";
+	fi
 fi
