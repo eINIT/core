@@ -6,6 +6,8 @@ einit: einit-xml
 install: einit
 	${INSTALL} ${BINIPARAM} -d ${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit ${SBINDIR}
+	${INSTALL} ${IPARAM} -d ${ETCDIR}
+	${INSTALL} ${IPARAM} data/default.xml ${ETCDIR}
 	cd src && ${MAKE} install
 
 einit-xml:

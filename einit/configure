@@ -29,7 +29,11 @@
 
 echo -n "checking options [";
 for param in $@; do
-	if test "$param" = "--debug"; then
+	short=${param//=*/};
+	if test "$short" = "--prefix"; then
+		echo -n " PREFIX";
+		PREFIX=${param#--prefix=};
+	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG";
 	elif test "$param" = "--help"; then
@@ -41,10 +45,11 @@ echo " ]";
 
 if test "$HELP" = "1"; then
 	echo "Usage:
- ./configure [--debug] [--help]
+ ./configure [--prefix=path] [--debug] [--help]
 
 Options:
- --debug          will set the DEBUG flag.
+ --prefix=path    use this to set a path to install to (absolute!)
+ --debug          will #define DEBUG.
  --help           display this text and exit.";
  exit;
 fi;
@@ -67,10 +72,11 @@ fi
 
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
-LIBDIR = \${PREFIX}/lib
-MODDIR = \${LIBDIR}/einit
-BINDIR = \${PREFIX}/bin
-SBINDIR = \${PREFIX}/sbin
+ETCDIR = ${PREFIX}/etc/einit
+LIBDIR = ${PREFIX}/lib
+MODDIR = ${PREFIX}/lib/einit
+BINDIR = ${PREFIX}/bin
+SBINDIR = ${PREFIX}/sbin
 
 INSTALL = install
 IPARAM = -g 0 -o 0 -m 0755

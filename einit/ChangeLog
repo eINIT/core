@@ -1,6 +1,8 @@
 2006/02/23: mdeininger
  * [module.c] made some output conditional
  * [bitch.c] yes, finally some bitchin'
+ * [Makefile]s make install now works properly
+ * [configure] the script accepts some parameters now: --debug, --prefix and --help
 
 2006/02/20: mdeininger
  * started on mod-sysv.c (sysv compatibility)
