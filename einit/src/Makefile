@@ -2,13 +2,12 @@ include ../config.mk
 include depend.mk
 
 depend:
-	${CC} -M *.c > depend.mk
+	${CC} ${INCLUDE} -M *.c > depend.mk
 	touch modules/depend.mk
 	cd modules && ${MAKE} depend
 
 clean:
-	echo > depend.mk
-	rm *.o einit-*
+	rm -f *.o einit-* depend.mk
 	cd modules && ${MAKE} clean	
 
 einit-xml: main.o module.o bitch.o config-xml-expat.o default-modules

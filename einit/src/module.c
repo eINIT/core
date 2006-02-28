@@ -26,9 +26,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <dirent.h>
 #include <dlfcn.h>
 #include <string.h>
-#include "config.h"
-#include "module.h"
-#include "bitch.h"
+#include <einit/bitch.h>
+#include <einit/config.h>
+#include <einit/module.h>
 /*
  dynamic linker functions (POSIX)
 

@@ -18,7 +18,7 @@ depend:
 	cd src && ${MAKE} depend
 
 clean:
-	rm einit
+	rm -f einit
 	cd src && ${MAKE} clean
 
 all: einit

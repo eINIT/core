@@ -1,3 +1,9 @@
+2006/02/28: mdeininger
+ * [configure] some more magic: will define POSIX/DARWIN depending on what sys you try to run it on
+   * new option --enable-sysv: it's not activated by default now...
+ * [sysv.c] moved to its own directory
+ * general structural changes
+
 2006/02/23: mdeininger
  * [module.c] made some output conditional
  * [bitch.c] yes, finally some bitchin'

@@ -1,22 +1,21 @@
 include ../../config.mk
 include depend.mk
 
-all: dummy.so mod-sysv.so
+all: dummy.so
+	if test -n "${PMODULES}"; then for module in "${PMODULES}"; do cd "$$module" && ${MAKE} all; done; fi;
 
 depend:
-	${CC} -M *.c > depend.mk
+	${CC} ${INCLUDE} -M *.c > depend.mk
+	if test -n "${PMODULES}"; then for module in "${PMODULES}"; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} depend; done; fi;
 
 clean:
-	echo > depend.mk
-	rm *.so
+	rm -f *.so depend.mk
+	if test -n "${PMODULES}"; then for module in "${PMODULES}"; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} clean; done; fi;
 
-install: dummy.so mod-sysv.so
+install: dummy.so
 	${INSTALL} ${SOIPARAM} -d ${MODDIR}
 	${INSTALL} ${SOIPARAM} dummy.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} mod-sysv.so ${MODDIR}
+	if test -n "${PMODULES}"; then for module in "${PMODULES}"; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install; done; fi;
 
 dummy.so: dummy.c
 	${CCL} dummy.c -o dummy.so
-
-mod-sysv.so: mod-sysv.c
-	${CCL} mod-sysv.c -o mod-sysv.so

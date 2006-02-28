@@ -1,7 +1,7 @@
 /***************************************************************************
- *            bitch.c
+ *            config.h
  *
- *  Tue Feb 14 15:56:59 2006
+ *  Mon Feb  6 15:41:57 2006
  *  Copyright  2006  Magnus Deininger
  *  dma05@web.de
  ****************************************************************************/
@@ -17,24 +17,51 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifndef _CONFIG_H
+#define _CONFIG_H
 
-#include <einit/bitch.h>
-#include <errno.h>
-#include <stdio.h>
-#include <dlfcn.h>
-#include <string.h>
+#include "module.h"
 
-int bitch (unsigned int opt) {
- if (opt & BTCH_ERRNO) {
-  if (errno) {
-   fputs (strerror (errno), stderr);
-   errno = 0;
-  }
- }
- if (opt & BTCH_DL) {
-  char *dlerr = dlerror();
-  if (dlerr)
-   puts (dlerr);
- }
- return -1;
+#define BUFFERSIZE 1024
+#define NODE_MODE 1
+
+#define EINIT_VERSION 1
+#define EINIT_VERSION_LITERAL "0.01"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+struct cfgnode {
+ int nodetype;
+ char *id;
+ struct smodule *mod;
+ struct cfgnode *basenode;
+ char **modules;
+ char **arbattrs;
+ struct cfgnode *next;
+};
+
+struct sconfiguration {
+ int eiversion;
+ int version;
+ unsigned int options;
+ char *modulepath;
+ char **arbattrs;
+ struct cfgnode *node;
+};
+
+#ifndef _MODULE
+char *configfile;
+struct sconfiguration *sconfiguration;
+#endif
+
+int cfg_load ();
+int cfg_free ();
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* _CONFIG_H */

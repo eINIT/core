@@ -1,7 +1,7 @@
 /***************************************************************************
- *            bitch.c
+ *            module.h
  *
- *  Tue Feb 14 15:56:59 2006
+ *  Mon Feb  6 15:27:11 2006
  *  Copyright  2006  Magnus Deininger
  *  dma05@web.de
  ****************************************************************************/
@@ -17,24 +17,50 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifndef _MODULE_H
+#define _MODULE_H
 
-#include <einit/bitch.h>
-#include <errno.h>
-#include <stdio.h>
-#include <dlfcn.h>
-#include <string.h>
+#define EINIT_OPT_WAIT 8
+#define EINIT_OPT_ONCE 16
+#define EINIT_OPT_KEEPALIVE 32
 
-int bitch (unsigned int opt) {
- if (opt & BTCH_ERRNO) {
-  if (errno) {
-   fputs (strerror (errno), stderr);
-   errno = 0;
-  }
- }
- if (opt & BTCH_DL) {
-  char *dlerr = dlerror();
-  if (dlerr)
-   puts (dlerr);
- }
- return -1;
+#define EINIT_MOD_LOADER 1
+#define EINIT_MOD_FEEDBACK 2
+#define EINIT_MOD_COMMAND 4
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+struct smodule {
+ int eiversion;
+ int version;
+ int mode;
+ unsigned int options;
+ char *name;
+ char *rid;
+ char **provides;
+ char **requires;
+};
+
+struct lmodule {
+ void *sohandle;
+ int (*func)(void *);
+ void *param;
+ struct smodule *module;
+ struct lmodule *next;
+};
+
+#ifndef _MODULE
+struct lmodule *mlist;
+#endif
+
+int mod_scanmodules ();
+int mod_freemodules ();
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* _MODULE_H */

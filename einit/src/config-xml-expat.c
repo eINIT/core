@@ -23,8 +23,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include "bitch.h"
-#include "config.h"
+#include <einit/bitch.h>
+#include <einit/config.h>
 
 #define PATH_MODULES 1
 
