@@ -113,6 +113,15 @@ LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}
 CCL = $CCL" > config.mk
 
+if test -e einit; then
+	echo -n "cleaning the environment... "
+	if make clean >/dev/null 2>&1; then
+		echo "done";
+	else
+		echo "failed!";
+	fi
+fi
+
 echo -n "creating dependency information... "
 touch src/depend.mk
 touch src/modules/depend.mk
@@ -121,13 +130,4 @@ if make depend > /dev/null 2>&1; then
 	echo "done";
 else
 	echo "failed!";
-fi
-
-if test -e einit; then
-	echo -n "cleaning the environment... "
-	if make clean >/dev/null 2>&1; then
-		echo "done";
-	else
-		echo "failed!";
-	fi
 fi

@@ -1,3 +1,7 @@
+2006/03/07: mdeininger
+ * [default.xml] adjusted the default path for modules
+ * [configure] fixed a logics-flaw (make depend, then make clean)
+
 2006/02/28: mdeininger
  * [configure] some more magic: will define POSIX/DARWIN depending on what sys you try to run it on
    * new option --enable-sysv: it's not activated by default now...
