@@ -58,6 +58,7 @@ struct lmodule *mlist;
 
 int mod_scanmodules ();
 int mod_freemodules ();
+void mod_lsmod ();
 
 #ifdef __cplusplus
 }

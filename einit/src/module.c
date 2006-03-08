@@ -142,3 +142,18 @@ int mod_freemodules () {
  mlist = NULL;
  return 1;
 }
+
+void mod_lsmod () {
+ struct lmodule *cur = mlist;
+ do {
+  if (cur->module != NULL) {
+   if (cur->module->rid)
+	fputs (cur->module->rid, stdout);
+   if (cur->module->name)
+	printf (" (%s)", cur->module->name, stdout);
+   puts ("");
+  } else
+   puts ("(NULL)");
+  cur = cur->next;
+ } while (cur != NULL);
+}

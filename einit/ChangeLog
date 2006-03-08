@@ -1,5 +1,7 @@
 2006/03/08: mdeininger
  * [main.c] removed the erroneous fsync() calls.
+ * [module.[ch]] has a new function: mod_lsmod()
+ * [mod-sysv.c] now adheres the DEBUG-flag
 
 2006/03/07: mdeininger
  * [default.xml] adjusted the default path for modules
