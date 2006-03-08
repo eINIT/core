@@ -157,3 +157,28 @@ void mod_lsmod () {
   cur = cur->next;
  } while (cur != NULL);
 }
+
+int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
+ struct lmodule *cur = mlist, *nmod;
+ do
+  cur = cur->next;
+ while (cur->next != NULL);
+ nmod = calloc (1, sizeof (struct lmodule));
+ if (!nmod) {
+  dlclose (sohandle);
+  free (tmp);
+  closedir (dir);
+  return bitch(BTCH_ERRNO);
+ }
+ if (cmod == NULL)
+  mlist = nmod;
+ else
+  cmod->next = nmod;
+ cmod = nmod;
+ cmod->sohandle = sohandle;
+ cmod->module = modinfo;
+#ifdef DEBUG
+ if (modinfo->name == NULL) fputs ("unknown", stdout);
+ else fputs (modinfo->name, stdout);
+#endif
+}

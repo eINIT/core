@@ -60,6 +60,8 @@ int mod_scanmodules ();
 int mod_freemodules ();
 void mod_lsmod ();
 
+int mod_addmod (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
+
 #ifdef __cplusplus
 }
 #endif
