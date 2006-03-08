@@ -1,3 +1,6 @@
+2006/03/08: mdeininger
+ * [main.c] removed the erroneous fsync() calls.
+
 2006/03/07: mdeininger
  * [default.xml] adjusted the default path for modules
  * [configure] fixed a logics-flaw (make depend, then make clean)
