@@ -46,7 +46,8 @@ struct smodule {
 
 struct lmodule {
  void *sohandle;
- int (*func)(void *);
+ int (*load)(void *);
+ int (*unload)(void *);
  void *param;
  struct smodule *module;
  struct lmodule *next;
@@ -56,10 +57,16 @@ struct lmodule {
 struct lmodule *mlist;
 #endif
 
+// scans for modules (i.e. load their .so and add it to the list)
 int mod_scanmodules ();
+
+// frees the chain of loaded modules and unloads the .so-files
 int mod_freemodules ();
+
+// lists all known modules to stdout
 void mod_lsmod ();
 
+// adds a module to the main chain of modules
 int mod_addmod (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 
 #ifdef __cplusplus

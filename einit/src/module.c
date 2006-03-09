@@ -55,10 +55,6 @@ int mod_scanmodules () {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
    tmp = (char *)malloc (mplen + strlen (entry->d_name));
-#ifdef DEBUG
-   fputs (entry->d_name, stdout);
-   fputs (" [", stdout);
-#endif
    if (tmp != NULL) {
 	struct smodule *modinfo;
     int (*func)(void *);
@@ -72,43 +68,10 @@ int mod_scanmodules () {
 	 continue;
 	}
 	modinfo = (struct smodule *)dlsym (sohandle, "self");
-#ifdef DEBUG
-	if (modinfo == NULL) fputs ("unknown", stdout);
-	else {
-#else
 	if (modinfo != NULL) {
-#endif
-     nmod = calloc (1, sizeof (struct lmodule));
-     if (!nmod) {
-      dlclose (sohandle);
-      free (tmp);
-      closedir (dir);
-      return bitch(BTCH_ERRNO);
-     }
-	 if (cmod == NULL)
-      mlist = nmod;
-	 else
-      cmod->next = nmod;
-	 cmod = nmod;
-     cmod->sohandle = sohandle;
-     cmod->module = modinfo;
-#ifdef DEBUG
-     if (modinfo->name == NULL) fputs ("unknown", stdout);
-     else fputs (modinfo->name, stdout);
-#endif
+     mod_addmod (sohandle, NULL, NULL, NULL, modinfo);
 	 if (modinfo->mode & EINIT_MOD_LOADER) {
       func = (int (*)(void *)) dlsym (sohandle, "scanmodules");
-#ifdef DEBUG
-      if (func == NULL) {
-       fputs (" -MOD", stdout);
-      } else {
-       fputs (" +MOD", stdout);
-#endif
-       cmod->func = func;
-       func ((void *)mlist);
-#ifdef DEBUG
-      }
-#endif
 	 }
     }
 	
@@ -117,9 +80,6 @@ int mod_scanmodules () {
 	closedir (dir);
 	return bitch(BTCH_ERRNO);
    }
-#ifdef DEBUG
-   fputs ("]\n", stdout);
-#endif
   }
   closedir (dir);
  } else {
@@ -160,25 +120,23 @@ void mod_lsmod () {
 
 int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
  struct lmodule *cur = mlist, *nmod;
- do
-  cur = cur->next;
- while (cur->next != NULL);
+
  nmod = calloc (1, sizeof (struct lmodule));
- if (!nmod) {
-  dlclose (sohandle);
-  free (tmp);
-  closedir (dir);
-  return bitch(BTCH_ERRNO);
- }
- if (cmod == NULL)
+ if (!nmod) return bitch(BTCH_ERRNO);
+
+ if (mlist == NULL)
   mlist = nmod;
- else
-  cmod->next = nmod;
- cmod = nmod;
- cmod->sohandle = sohandle;
- cmod->module = modinfo;
-#ifdef DEBUG
- if (modinfo->name == NULL) fputs ("unknown", stdout);
- else fputs (modinfo->name, stdout);
-#endif
+ else {
+// find the last module
+// TODO: MAKE THIS MORE EFFICIENT
+  while (cur->next != NULL)
+   cur = cur->next;
+  cur->next = nmod;
+ }
+
+ nmod->sohandle = sohandle;
+ nmod->module = module;
+ nmod->param = param;
+ nmod->load = load;
+ nmod->unload = unload;
 }
