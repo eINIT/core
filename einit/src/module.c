@@ -92,7 +92,8 @@ int mod_scanmodules () {
 void mod_freedesc (struct lmodule *m) {
  if (m->next != NULL)
   mod_freedesc (m->next);
- dlclose (m->sohandle);
+ if (m->sohandle)
+  dlclose (m->sohandle);
  free (m);
 }
 
@@ -120,6 +121,7 @@ void mod_lsmod () {
 
 int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
  struct lmodule *cur = mlist, *nmod;
+ int (*scanfunc)(struct lmodule *, addmodfunc);
 
  nmod = calloc (1, sizeof (struct lmodule));
  if (!nmod) return bitch(BTCH_ERRNO);
@@ -139,4 +141,16 @@ int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void
  nmod->param = param;
  nmod->load = load;
  nmod->unload = unload;
+
+// this will do additional initialisation functions for certain module-types
+ if (module && sohandle) {
+// EINIT_MOD_LOADER modules will usually want to provide a function to scan
+//  for modules so they can be included in the dependency chain
+  if (module->mode & EINIT_MOD_LOADER) {
+   scanfunc = (int (*)(struct lmodule *, addmodfunc)) dlsym (sohandle, "scanmodules");
+   if (scanfunc != NULL)
+    scanfunc (mlist, mod_addmod);
+   else bitch(BTCH_ERRNO + BTCH_DL);
+  }
+ }
 }

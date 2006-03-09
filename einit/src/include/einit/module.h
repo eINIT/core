@@ -69,6 +69,8 @@ void mod_lsmod ();
 // adds a module to the main chain of modules
 int mod_addmod (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 
+typedef int (*addmodfunc) (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,8 @@
 2006/03/08: mdeininger
  * [module.[ch]] mod_addmod (): changed some parameters;
+ * new interface for module:scanmod() functions now includes a *mod_addmod()
+ * [module.c] fixes in mod_freemodules();
+ * [mod-sysv.c] loads init-scripts as pseudo-modules
 
 2006/03/08: mdeininger
  * [main.c] removed the erroneous fsync() calls.
