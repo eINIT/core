@@ -55,8 +55,6 @@ struct lmodule {
 
 #ifndef _MODULE
 struct lmodule *mlist;
-#else
-typedef int (*addmodfunc) (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 #endif
 
 // scans for modules (i.e. load their .so and add it to the list)
@@ -70,6 +68,7 @@ void mod_lsmod ();
 
 // adds a module to the main chain of modules
 int mod_addmod (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
+typedef int (*addmodfunc) (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 
 #ifdef __cplusplus
 }
