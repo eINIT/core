@@ -3,6 +3,7 @@
  * new interface for module:scanmod() functions now includes a *mod_addmod()
  * [module.c] fixes in mod_freemodules();
  * [mod-sysv.c] loads init-scripts as pseudo-modules
+ * [module.h] moved the typedef *addmod to the conditional _MODULE section
 
 2006/03/08: mdeininger
  * [main.c] removed the erroneous fsync() calls.
