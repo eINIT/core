@@ -38,6 +38,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  int dlclose(void *handle);
 */
 
+struct lmodule *mlist = NULL, *lmod = NULL;
+
 int mod_scanmodules () {
  DIR *dir;
  struct dirent *entry;
@@ -120,20 +122,19 @@ void mod_lsmod () {
 }
 
 int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
- struct lmodule *cur = mlist, *nmod;
+ struct lmodule *nmod;
  int (*scanfunc)(struct lmodule *, addmodfunc);
 
  nmod = calloc (1, sizeof (struct lmodule));
  if (!nmod) return bitch(BTCH_ERRNO);
 
- if (mlist == NULL)
+ if (mlist == NULL) {
   mlist = nmod;
- else {
-// find the last module
-// TODO: MAKE THIS MORE EFFICIENT
-  while (cur->next != NULL)
-   cur = cur->next;
-  cur->next = nmod;
+ } else {
+  lmod = mlist;
+  while (lmod->next)
+   lmod = lmod->next;
+  lmod->next = nmod;
  }
 
  nmod->sohandle = sohandle;
@@ -153,4 +154,6 @@ int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
  }
+
+ lmod = nmod;
 }

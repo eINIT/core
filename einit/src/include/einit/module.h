@@ -53,10 +53,6 @@ struct lmodule {
  struct lmodule *next;
 };
 
-#ifndef _MODULE
-struct lmodule *mlist;
-#endif
-
 // scans for modules (i.e. load their .so and add it to the list)
 int mod_scanmodules ();
 
