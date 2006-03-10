@@ -28,6 +28,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define EINIT_MOD_FEEDBACK 2
 #define EINIT_MOD_COMMAND 4
 
+#define EINIT_
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -60,11 +62,17 @@ int mod_scanmodules ();
 int mod_freemodules ();
 
 // lists all known modules to stdout
-void mod_lsmod ();
+void mod_ls ();
 
 // adds a module to the main chain of modules
-int mod_addmod (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
+int mod_add (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 typedef int (*addmodfunc) (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
+
+// load a module
+int mod_load (char *);
+
+// unload a module
+int mod_unload (char *);
 
 #ifdef __cplusplus
 }

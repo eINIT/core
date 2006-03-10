@@ -38,7 +38,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  int dlclose(void *handle);
 */
 
-struct lmodule *mlist = NULL, *lmod = NULL;
+struct lmodule *mlist = NULL;
 
 int mod_scanmodules () {
  DIR *dir;
@@ -71,7 +71,7 @@ int mod_scanmodules () {
 	}
 	modinfo = (struct smodule *)dlsym (sohandle, "self");
 	if (modinfo != NULL) {
-     mod_addmod (sohandle, NULL, NULL, NULL, modinfo);
+     mod_add (sohandle, NULL, NULL, NULL, modinfo);
 	 if (modinfo->mode & EINIT_MOD_LOADER) {
       func = (int (*)(void *)) dlsym (sohandle, "scanmodules");
 	 }
@@ -106,7 +106,7 @@ int mod_freemodules () {
  return 1;
 }
 
-void mod_lsmod () {
+void mod_ls () {
  struct lmodule *cur = mlist;
  do {
   if (cur->module != NULL) {
@@ -121,8 +121,8 @@ void mod_lsmod () {
  } while (cur != NULL);
 }
 
-int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
- struct lmodule *nmod;
+int mod_add (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
+ struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *, addmodfunc);
 
  nmod = calloc (1, sizeof (struct lmodule));
@@ -131,10 +131,10 @@ int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void
  if (mlist == NULL) {
   mlist = nmod;
  } else {
-  lmod = mlist;
-  while (lmod->next)
-   lmod = lmod->next;
-  lmod->next = nmod;
+  cur = mlist;
+  while (cur->next)
+   cur = cur->next;
+  cur->next = nmod;
  }
 
  nmod->sohandle = sohandle;
@@ -149,11 +149,30 @@ int mod_addmod (void *sohandle, int (*load)(void *), int (*unload)(void *), void
 //  for modules so they can be included in the dependency chain
   if (module->mode & EINIT_MOD_LOADER) {
    scanfunc = (int (*)(struct lmodule *, addmodfunc)) dlsym (sohandle, "scanmodules");
-   if (scanfunc != NULL)
-    scanfunc (mlist, mod_addmod);
+   if (scanfunc != NULL) {
+    scanfunc (mlist, mod_add);
+   }
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
  }
 
- lmod = nmod;
+ return 0;
+}
+
+int mod_load (char *rid) {
+ struct lmodule *cur;
+ if (mlist == NULL)
+  return -1;
+
+ cur = mlist;
+ while (!cur->module || !cur->module->rid || strcmp(rid, cur->module->rid)) {
+  if (!cur->next) return -1;
+  cur = cur->next;
+ }
+ if (cur->load)
+  cur->load (cur->param);
+ return 0;
+}
+
+int mod_unload (char *rid) {
 }

@@ -1,3 +1,8 @@
+2006/03/10: mdeininger
+ * [mod-sysv.c] added load() and unload() prototypes
+ * renamed mod_lsmod() and mod_addmod() to mod_ls() and mod_add()
+ * [module.[ch]] added the mod_load() and mod_unload() functions
+
 2006/03/08: mdeininger
  * [module.[ch]] mod_addmod (): changed some parameters;
  * new interface for module:scanmod() functions now includes a *mod_addmod()
