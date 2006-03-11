@@ -2,6 +2,7 @@
  * changed some things about variable initialisation (guess I was being stupid earlier...)
  * [config.h] some restructuring...
  * [vis-text.c] textual feedback module
+ * fixed module typing
 
 2006/03/10: mdeininger
  * [mod-sysv.c] added load() and unload() prototypes
