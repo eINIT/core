@@ -1,3 +1,6 @@
+2006/03/11: mdeininger
+ * changed some things about variable initialisation (guess I was being stupid earlier...)
+
 2006/03/10: mdeininger
  * [mod-sysv.c] added load() and unload() prototypes
  * renamed mod_lsmod() and mod_addmod() to mod_ls() and mod_add()

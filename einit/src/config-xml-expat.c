@@ -28,6 +28,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #define PATH_MODULES 1
 
+char *configfile = "/etc/einit/default.xml";
+struct sconfiguration *sconfiguration = NULL;
+
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int i;
  if (!strcmp (name, "path")) {
@@ -59,7 +62,6 @@ int cfg_load () {
  sconfiguration = calloc (1, sizeof(struct sconfiguration));
  if (!sconfiguration) return bitch(BTCH_ERRNO);
  XML_Parser par;
- if (configfile == NULL) configfile = "/etc/einit/default.xml";
  cfgfd = open (configfile, O_RDONLY);
  if (cfgfd != -1) {
   buf = malloc (BUFFERSIZE);
