@@ -3,7 +3,8 @@
  * [config.h] some restructuring...
  * [vis-text.c] textual feedback module
  * fixed module typing
- * [config.[ch]] new interface-functions
+ * [config.h, config-xml-expat.c] new interface-functions
+ * [config-xml-expat.c] unknown nodes will now be saved in memory
 
 2006/03/10: mdeininger
  * [mod-sysv.c] added load() and unload() prototypes

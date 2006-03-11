@@ -33,11 +33,11 @@ char *configfile = "/etc/einit/default.xml";
 struct sconfiguration *sconfiguration = NULL;
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
- int i;
+ int i = 0;
  if (!strcmp (name, "path")) {
   int tar = 0;
   char *val = NULL;
-  for (i = 0; atts[i] != NULL; i+=2) {
+  for (; atts[i] != NULL; i+=2) {
    if (!strcmp (atts[i], "id")) {
     if (!strcmp (atts[i+1], "modules"))
      tar = PATH_MODULES;
@@ -46,19 +46,40 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   }
   if (tar && val) switch (tar) {
    case PATH_MODULES:
-    sconfiguration->modulepath = malloc (strlen (val)+1);
-    strcpy (sconfiguration->modulepath, val);
+    sconfiguration->modulepath = strdup (val);
     break;
   }
  } else if (!strcmp (name, "feedback")) {
-  for (i = 0; atts[i] != NULL; i+=2) {
+  for (; atts[i] != NULL; i+=2) {
    if (!strcmp (atts[i], "module")) {
-    sconfiguration->feedbackmodule = malloc (strlen (atts[i+1])+1);
-    strcpy (sconfiguration->feedbackmodule, atts[i+1]);
+    int j = i+1;
+    sconfiguration->feedbackmodule = strdup (atts[j]);
    }
   }
  } else {
-  
+  struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
+  if (!newnode) {
+   bitch (BTCH_ERRNO);
+   return;
+  }
+  newnode->id = strdup (name);
+  if (!newnode->id) {
+   bitch (BTCH_ERRNO);
+   free (newnode);
+   return;
+  }
+  newnode->nodetype = EI_NODETYPE_CONFIG;
+  cfg_addnode (newnode);
+  for (; atts[i] != NULL; i++);
+  newnode->arbattrs = calloc (1,sizeof (char *) * (i+1));
+  if (!newnode->arbattrs) {
+   bitch (BTCH_ERRNO);
+   free (newnode->id);
+   free (newnode);
+   return;
+  }
+  for (i=0; atts[i] != NULL; i++)
+   newnode->arbattrs [i] = strdup (atts[i]);
  }
 }
 
@@ -107,11 +128,48 @@ int cfg_free () {
   return 1;
  if (sconfiguration->modulepath != NULL)
   free (sconfiguration->modulepath);
+ if (sconfiguration->feedbackmodule != NULL)
+  free (sconfiguration->feedbackmodule);
+ if (sconfiguration->node != NULL)
+  cfg_freenode (sconfiguration->node);
+
  free (sconfiguration);
  return 1;
 }
 
+int cfg_freenode (struct cfgnode *node) {
+ if (node->next)
+  cfg_freenode (node->next);
+
+ if (node->cleanup)
+  node->cleanup (node);
+
+ if (node->nodetype & EI_NODETYPE_CONFIG) {
+  if (node->arbattrs) {
+   int i = 0;
+   for (; node->arbattrs[i] != NULL; i++)
+    free (node->arbattrs[i]);
+   free (node->arbattrs);
+  }
+ }
+
+ if (node->id)
+  free (node->id);
+
+ free (node);
+ return;
+}
+
 int cfg_addnode (struct cfgnode *node) {
+ if (!sconfiguration->node)
+  sconfiguration->node = node;
+ else {
+  struct cfgnode *cur = sconfiguration->node;
+
+  while (cur->next)
+   cur = cur->next;
+  cur->next = node;
+ }
 }
 
 int cfg_delnode (struct cfgnode *node) {
