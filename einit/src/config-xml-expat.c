@@ -161,11 +161,10 @@ int cfg_freenode (struct cfgnode *node) {
 }
 
 int cfg_addnode (struct cfgnode *node) {
- if (!sconfiguration->node)
+ struct cfgnode *cur = sconfiguration->node;
+ if (!cur)
   sconfiguration->node = node;
  else {
-  struct cfgnode *cur = sconfiguration->node;
-
   while (cur->next)
    cur = cur->next;
   cur->next = node;
@@ -173,9 +172,37 @@ int cfg_addnode (struct cfgnode *node) {
 }
 
 int cfg_delnode (struct cfgnode *node) {
+ struct cfgnode *cur = sconfiguration->node;
+ if (!node || !cur) return -1;
+ if (cur == node) {
+  sconfiguration->node = node->next;
+  node->next = NULL;
+  cfg_freenode (node);
+  return 0;
+ }
+ while (cur->next) {
+  if (cur->next == node) {
+   cur->next = node->next;
+   node->next = NULL;
+   cfg_freenode (node);
+   return 0;
+  }
+  cur = cur->next;
+ }
+ return -1;
 }
 
 struct cfgnode *cfg_findnode (char *id) {
+ struct cfgnode *cur = sconfiguration->node;
+ if (!cur || !id) return NULL;
+ if (cur->id == id) return cur;
+
+ while (cur->next) {
+  if (cur->id == id)
+   return cur;
+  cur = cur->next;
+ }
+ return NULL;
 }
 
 int cfg_replacenode (struct cfgnode *old, struct cfgnode *new) {
