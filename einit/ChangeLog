@@ -1,5 +1,6 @@
 2006/03/11: mdeininger
  * changed some things about variable initialisation (guess I was being stupid earlier...)
+ * [config.h] some restructuring...
 
 2006/03/10: mdeininger
  * [mod-sysv.c] added load() and unload() prototypes

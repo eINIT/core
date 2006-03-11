@@ -20,13 +20,17 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#include "module.h"
+#include <einit/module.h>
 
 #define BUFFERSIZE 1024
 #define NODE_MODE 1
 
 #define EINIT_VERSION 1
 #define EINIT_VERSION_LITERAL "0.01"
+
+#define EI_NODETYPE_BASENODE 1
+#define EI_NODETYPE_CONFIG 2
+#define EI_NODETYPE_CONFIG_CUSTOM 4
 
 #ifdef __cplusplus
 extern "C"
@@ -35,12 +39,11 @@ extern "C"
 
 struct cfgnode {
  int nodetype;
+ struct cfgnode *next;
  char *id;
- struct smodule *mod;
  struct cfgnode *basenode;
  char **modules;
  char **arbattrs;
- struct cfgnode *next;
 };
 
 struct sconfiguration {
