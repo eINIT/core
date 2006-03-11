@@ -68,12 +68,25 @@ char *configfile;
 struct sconfiguration *sconfiguration;
 #endif
 
+// load configuration
 int cfg_load ();
+
+// free configuration
 int cfg_free ();
+
+// free a node and all its descendants
 int cfg_freenode (struct cfgnode *);
+
+// add a node to the main configuration
 int cfg_addnode (struct cfgnode *);
+
+// remove a node from the main configuration (by pointer)
 int cfg_delnode (struct cfgnode *);
+
+// find a node (by id)
 struct cfgnode *cfg_findnode (char *);
+
+// replace a node with a new one
 int cfg_replacenode (struct cfgnode *, struct cfgnode *);
 
 #ifdef __cplusplus

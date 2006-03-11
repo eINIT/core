@@ -59,24 +59,23 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
  } else {
   struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
   if (!newnode) {
+   fs_cleanup_p1:
    bitch (BTCH_ERRNO);
    return;
   }
   newnode->id = strdup (name);
   if (!newnode->id) {
-   bitch (BTCH_ERRNO);
+   fs_cleanup_p2:
    free (newnode);
-   return;
+   goto fs_cleanup_p1;
   }
   newnode->nodetype = EI_NODETYPE_CONFIG;
   cfg_addnode (newnode);
   for (; atts[i] != NULL; i++);
   newnode->arbattrs = calloc (1,sizeof (char *) * (i+1));
   if (!newnode->arbattrs) {
-   bitch (BTCH_ERRNO);
    free (newnode->id);
-   free (newnode);
-   return;
+   goto fs_cleanup_p2;
   }
   for (i=0; atts[i] != NULL; i++)
    newnode->arbattrs [i] = strdup (atts[i]);
@@ -176,13 +175,15 @@ int cfg_delnode (struct cfgnode *node) {
  if (!node || !cur) return -1;
  if (cur == node) {
   sconfiguration->node = node->next;
-  node->next = NULL;
+  goto cleanup;
+/*  node->next = NULL;
   cfg_freenode (node);
-  return 0;
+  return 0;*/
  }
  while (cur->next) {
   if (cur->next == node) {
    cur->next = node->next;
+   cleanup:
    node->next = NULL;
    cfg_freenode (node);
    return 0;
@@ -206,4 +207,27 @@ struct cfgnode *cfg_findnode (char *id) {
 }
 
 int cfg_replacenode (struct cfgnode *old, struct cfgnode *new) {
+ struct cfgnode *cur = sconfiguration->node;
+ if (!old || !new || !cur) return -1;
+ new->next = old->next;
+
+ if (cur == old) {
+  sconfiguration->node = new;
+/*  old->next = NULL
+  cfg_freenode (old);
+  return 0;*/
+  goto cleanup;
+ }
+
+ while (cur->next) {
+  if (cur->next == old) {
+   cur->next = new;
+   cleanup:
+   old->next = NULL;
+   cfg_freenode (old);
+   return 0;
+  }
+  cur = cur->next;
+ }
+ return -1;
 }
