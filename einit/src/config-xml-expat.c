@@ -27,6 +27,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <einit/config.h>
 
 #define PATH_MODULES 1
+#define FEEDBACK_MODULE 1
 
 char *configfile = "/etc/einit/default.xml";
 struct sconfiguration *sconfiguration = NULL;
@@ -49,6 +50,15 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     strcpy (sconfiguration->modulepath, val);
     break;
   }
+ } else if (!strcmp (name, "feedback")) {
+  for (i = 0; atts[i] != NULL; i+=2) {
+   if (!strcmp (atts[i], "module")) {
+    sconfiguration->feedbackmodule = malloc (strlen (atts[i+1])+1);
+    strcpy (sconfiguration->feedbackmodule, atts[i+1]);
+   }
+  }
+ } else {
+  
  }
 }
 
@@ -99,4 +109,16 @@ int cfg_free () {
   free (sconfiguration->modulepath);
  free (sconfiguration);
  return 1;
+}
+
+int cfg_addnode (struct cfgnode *node) {
+}
+
+int cfg_delnode (struct cfgnode *node) {
+}
+
+struct cfgnode *cfg_findnode (char *id) {
+}
+
+int cfg_replacenode (struct cfgnode *old, struct cfgnode *new) {
 }

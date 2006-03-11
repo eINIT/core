@@ -51,6 +51,7 @@ struct sconfiguration {
  int version;
  unsigned int options;
  char *modulepath;
+ char *feedbackmodule;
  char **arbattrs;
  struct cfgnode *node;
 };
@@ -62,6 +63,10 @@ struct sconfiguration *sconfiguration;
 
 int cfg_load ();
 int cfg_free ();
+int cfg_addnode (struct cfgnode *);
+int cfg_delnode (struct cfgnode *);
+struct cfgnode *cfg_findnode (char *);
+int cfg_replacenode (struct cfgnode *, struct cfgnode *);
 
 #ifdef __cplusplus
 }

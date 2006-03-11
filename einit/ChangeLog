@@ -3,6 +3,7 @@
  * [config.h] some restructuring...
  * [vis-text.c] textual feedback module
  * fixed module typing
+ * [config.[ch]] new interface-functions
 
 2006/03/10: mdeininger
  * [mod-sysv.c] added load() and unload() prototypes
