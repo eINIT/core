@@ -1,6 +1,7 @@
 2006/03/12: mdeininger
  * [vis-text.c] been working a little on the comment()-function
  * fixed some typos
+ * fixed a bug in mod-sysv.c that caused free()'d memory to be used
 
 2006/03/11: mdeininger
  * changed some things about variable initialisation (guess I was being stupid earlier...)
