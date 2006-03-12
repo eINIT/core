@@ -1,3 +1,6 @@
+2006/03/12: mdeininger
+ * [vis-text.c] been working a little on the comment()-function
+
 2006/03/11: mdeininger
  * changed some things about variable initialisation (guess I was being stupid earlier...)
  * [config.h] some restructuring...
