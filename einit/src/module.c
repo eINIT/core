@@ -159,18 +159,22 @@ int mod_add (void *sohandle, int (*load)(void *), int (*unload)(void *), void *p
  return 0;
 }
 
-int mod_load (char *rid) {
- struct lmodule *cur;
+struct lmodule *mod_find (char *rid) {
+ struct lmodule *cur = mlist;
  if (mlist == NULL)
-  return -1;
+  return NULL;
 
- cur = mlist;
  while (!cur->module || !cur->module->rid || strcmp(rid, cur->module->rid)) {
-  if (!cur->next) return -1;
+  if (!cur->next) return NULL;
   cur = cur->next;
  }
- if (cur->load)
-  cur->load (cur->param);
+
+ return cur;
+}
+
+int mod_load (struct lmodule *module) {
+ if (module->load)
+  return module->load (module->param);
  return 0;
 }
 

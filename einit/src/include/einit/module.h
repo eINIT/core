@@ -77,8 +77,11 @@ void mod_ls ();
 int mod_add (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 typedef int (*addmodfunc) (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
 
+// find a module
+struct lmodule *mod_find (char *rid);
+
 // load a module
-int mod_load (char *);
+int mod_load (struct lmodule *);
 
 // unload a module
 int mod_unload (char *);
