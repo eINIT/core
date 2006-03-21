@@ -39,6 +39,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 */
 
 struct lmodule *mlist = NULL;
+struct lmodule mdefault = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
 
 int mod_scanmodules () {
  DIR *dir;
@@ -121,9 +124,10 @@ void mod_ls () {
  } while (cur != NULL);
 }
 
-int mod_add (void *sohandle, int (*load)(void *), int (*unload)(void *), void *param, struct smodule *module) {
+int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unload)(void *, struct mfeedback *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *, addmodfunc);
+ int (*comment) (struct lmodule *, unsigned int, struct mfeedback *);
 
  nmod = calloc (1, sizeof (struct lmodule));
  if (!nmod) return bitch(BTCH_ERRNO);
@@ -154,6 +158,16 @@ int mod_add (void *sohandle, int (*load)(void *), int (*unload)(void *), void *p
    }
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
+// EINIT_MOD_FEEDBACK-type modules will usually want to provide a comment()-
+//  function in order to provide feedback about how a module is loading...
+  if (module->mode & EINIT_MOD_FEEDBACK) {
+   comment = (int (*)(struct lmodule *, unsigned int, struct mfeedback *))
+              dlsym (sohandle, "comment");
+   if (comment != NULL) {
+    nmod->comment = comment;
+   }
+   else bitch(BTCH_ERRNO + BTCH_DL);
+  }
  }
 
  return 0;
@@ -173,8 +187,9 @@ struct lmodule *mod_find (char *rid) {
 }
 
 int mod_load (struct lmodule *module) {
+ struct mfeedback fb;
  if (module->load)
-  return module->load (module->param);
+  return module->load (module->param, &fb);
  return 0;
 }
 

@@ -39,10 +39,21 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #define EINIT_
 
+#define STATUS_IDLE 1
+#define STATUS_ABORTED 2
+#define STATUS_LOADING 4
+#define STATUS_UNLOADING 8
+#define STATUS_RELOADING 12
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+struct mfeedback {
+ unsigned volatile int status;
+ unsigned volatile int progress;
+};
 
 struct smodule {
  int eiversion;
@@ -57,8 +68,9 @@ struct smodule {
 
 struct lmodule {
  void *sohandle;
- int (*load)(void *);
- int (*unload)(void *);
+ int (*load)    (void *, struct mfeedback *);
+ int (*unload)  (void *, struct mfeedback *);
+ int (*comment) (struct lmodule *, unsigned int, struct mfeedback *);
  void *param;
  struct smodule *module;
  struct lmodule *next;
@@ -74,8 +86,8 @@ int mod_freemodules ();
 void mod_ls ();
 
 // adds a module to the main chain of modules
-int mod_add (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
-typedef int (*addmodfunc) (void *, int (*)(void *), int (*)(void *), void *, struct smodule *);
+int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
+typedef int (*addmodfunc) (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
 
 // find a module
 struct lmodule *mod_find (char *rid);
@@ -89,5 +101,25 @@ int mod_unload (char *);
 #ifdef __cplusplus
 }
 #endif
+
+/* what your module would usually have to define:
+//
+// _ALL_ modules:
+// struct smodule self;
+//
+// modules that want to configure themselves:
+// int configure (struct sconfiguration *sconfiguration);
+//
+// feedback-modules:
+// int comment (struct lmodule *module, unsigned int task, struct mfeedback *status);
+//
+// modules that load something:
+// int load (void *pa, struct mfeedback *status);
+// int unload (void *pa, struct mfeedback *status);
+//
+// modules for loading different types of modules:
+// int scanmodules (struct lmodule *, addmodfunc);
+//
+// ------------------------------------------------ */
 
 #endif /* _MODULE_H */
