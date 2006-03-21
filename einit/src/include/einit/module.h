@@ -90,13 +90,16 @@ int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct
 typedef int (*addmodfunc) (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
 
 // find a module
-struct lmodule *mod_find (char *rid);
+struct lmodule *mod_find (char *rid, unsigned int options);
 
 // load a module
 int mod_load (struct lmodule *);
 
 // unload a module
-int mod_unload (char *);
+int mod_unload (struct lmodule *);
+
+// make things ready to be run
+int mod_configure ();
 
 #ifdef __cplusplus
 }

@@ -173,14 +173,24 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
  return 0;
 }
 
-struct lmodule *mod_find (char *rid) {
+struct lmodule *mod_find (char *rid, unsigned int modeflags) {
  struct lmodule *cur = mlist;
  if (mlist == NULL)
   return NULL;
 
- while (!cur->module || !cur->module->rid || strcmp(rid, cur->module->rid)) {
-  if (!cur->next) return NULL;
-  cur = cur->next;
+ if (rid) {
+  while (!cur->module || !cur->module->rid ||
+    (modeflags && (cur->module->mode ^ modeflags)) ||
+    strcmp(rid, cur->module->rid)) {
+   if (!cur->next) return NULL;
+   cur = cur->next;
+  }
+ } else {
+  while (!cur->module ||
+    (modeflags && (cur->module->mode ^ modeflags))) {
+   if (!cur->next) return NULL;
+   cur = cur->next;
+  }
  }
 
  return cur;
@@ -188,10 +198,18 @@ struct lmodule *mod_find (char *rid) {
 
 int mod_load (struct lmodule *module) {
  struct mfeedback fb;
+ if (mdefault.comment) mdefault.comment (module, EI_VIS_TASK_LOAD, &fb);
  if (module->load)
   return module->load (module->param, &fb);
  return 0;
 }
 
-int mod_unload (char *rid) {
+int mod_unload (struct lmodule *module) {
+}
+
+int mod_configure () {
+ if (sconfiguration->feedbackmodule) {
+  struct lmodule *feedback = mod_find(sconfiguration->feedbackmodule, EINIT_MOD_FEEDBACK);
+  if (feedback && feedback->comment) mdefault.comment = feedback->comment;
+ }
 }
