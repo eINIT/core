@@ -38,6 +38,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  int dlclose(void *handle);
 */
 
+#ifdef POSIX
+#include <pthread.h>
+/* we'll be using posix-threads for now for threading */
+#endif
+
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL
@@ -196,13 +201,36 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
  return cur;
 }
 
-int mod_load (struct lmodule *module) {
- struct mfeedback fb;
- if (mdefault.comment) mdefault.comment (module, EI_VIS_TASK_LOAD, &fb);
- if (module->load)
-  return module->load (module->param, &fb);
- return 0;
-}
+#ifdef POSIX
+ void *mod_comment_thread (void *);
+
+ int mod_load (struct lmodule *module) {
+  struct mfeedback fb;
+  pthread_t *th = calloc (1, sizeof (pthread_t));
+  if (!th) bitch (BTCH_ERRNO);
+
+  if (mdefault.comment) {
+   pthread_create (th, NULL, mod_comment_thread, NULL);
+   mdefault.comment (module, EI_VIS_TASK_LOAD, &fb);
+  }
+  if (module->load)
+   return module->load (module->param, &fb);
+  return 0;
+ }
+
+ void *mod_comment_thread (void *p) {
+  pthread_exit (NULL);
+ }
+#else
+/* feedback will only work with threads, so this is the version to be used
+   if the system is not posix-compliant (and thus has no pthreads) */
+ int mod_load (struct lmodule *module) {
+  struct mfeedback fb;
+  if (module->load)
+   return module->load (module->param, &fb);
+  return 0;
+ }
+#endif
 
 int mod_unload (struct lmodule *module) {
 }

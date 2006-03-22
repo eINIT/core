@@ -84,11 +84,12 @@ CCL="\${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
-	CCL="$CCL -dynamiclib" >> config.mk;
+	CCL="$CCL -dynamiclib";
 else
 	echo "(guess) generic posix-ish unix";
 	XCFLAGS="$XCFLAGS -DPOSIX";
-	CCL="$CCL -shared" >> config.mk;
+	CCL="$CCL -shared";
+	LPA="-lpthread";
 fi
 
 echo "creating config.mk..."
@@ -111,7 +112,8 @@ CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}
-CCL = $CCL" > config.mk
+CCL = $CCL
+LPA = $LPA" > config.mk
 
 if test -e einit; then
 	echo -n "cleaning the environment... "
