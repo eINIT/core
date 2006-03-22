@@ -1,6 +1,7 @@
 2006/03/22: mdeininger
  * I was about to work on that threading for the comment-function, but -- of
    course -- I seem to be unable to complete this today due to... interruptions..
+ * first successes with a watcher-type comment-thread!
 
 2006/03/21: mdeininger
  * [dummy.c] dummy functions

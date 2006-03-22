@@ -39,7 +39,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #define EINIT_
 
-#define STATUS_IDLE 1
+#define STATUS_IDLE 0
+#define STATUS_OK 1
 #define STATUS_ABORTED 2
 #define STATUS_LOADING 4
 #define STATUS_UNLOADING 8
@@ -53,6 +54,8 @@ extern "C"
 struct mfeedback {
  unsigned volatile int status;
  unsigned volatile int progress;
+ unsigned volatile int task;
+ struct lmodule * module;
 };
 
 struct smodule {
@@ -70,7 +73,7 @@ struct lmodule {
  void *sohandle;
  int (*load)    (void *, struct mfeedback *);
  int (*unload)  (void *, struct mfeedback *);
- int (*comment) (struct lmodule *, unsigned int, struct mfeedback *);
+ int (*comment) (struct mfeedback *);
  void *param;
  struct smodule *module;
  struct lmodule *next;
@@ -114,7 +117,7 @@ int mod_configure ();
 // int configure (struct sconfiguration *sconfiguration);
 //
 // feedback-modules:
-// int comment (struct lmodule *module, unsigned int task, struct mfeedback *status);
+// int comment (struct mfeedback *status);
 //
 // modules that load something:
 // int load (void *pa, struct mfeedback *status);

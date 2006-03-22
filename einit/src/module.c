@@ -132,7 +132,8 @@ void mod_ls () {
 int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unload)(void *, struct mfeedback *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *, addmodfunc);
- int (*comment) (struct lmodule *, unsigned int, struct mfeedback *);
+ int (*comment) (struct mfeedback *);
+ int (*ftload)  (void *, struct mfeedback *);
 
  nmod = calloc (1, sizeof (struct lmodule));
  if (!nmod) return bitch(BTCH_ERRNO);
@@ -166,12 +167,24 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
 // EINIT_MOD_FEEDBACK-type modules will usually want to provide a comment()-
 //  function in order to provide feedback about how a module is loading...
   if (module->mode & EINIT_MOD_FEEDBACK) {
-   comment = (int (*)(struct lmodule *, unsigned int, struct mfeedback *))
-              dlsym (sohandle, "comment");
+   comment = (int (*)(struct mfeedback *)) dlsym (sohandle, "comment");
    if (comment != NULL) {
     nmod->comment = comment;
    }
    else bitch(BTCH_ERRNO + BTCH_DL);
+  }
+// we need to scan for load and unload functions if NULL was supplied to this functions
+  if (load == NULL) {
+   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "load");
+   if (ftload != NULL) {
+    nmod->load = ftload;
+   }
+  }
+  if (unload == NULL) {
+   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "unload");
+   if (ftload != NULL) {
+    nmod->unload = ftload;
+   }
   }
  }
 
@@ -202,24 +215,33 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 }
 
 #ifdef POSIX
- void *mod_comment_thread (void *);
+ void *mod_comment_thread (struct mfeedback *);
 
  int mod_load (struct lmodule *module) {
   struct mfeedback fb;
   pthread_t *th = calloc (1, sizeof (pthread_t));
-  if (!th) bitch (BTCH_ERRNO);
+  int r = 0;
+  if (!module) return 0;
+  if (!th) return bitch (BTCH_ERRNO);
+  if (!module->load) return 0;
 
   if (mdefault.comment) {
-   pthread_create (th, NULL, mod_comment_thread, NULL);
-   mdefault.comment (module, EI_VIS_TASK_LOAD, &fb);
+   pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)&fb);
+   fb.module = module;
+   fb.task = EI_VIS_TASK_LOAD;
+   fb.status = STATUS_IDLE;
   }
-  if (module->load)
-   return module->load (module->param, &fb);
-  return 0;
+
+  r = module->load (module->param, &fb);
+  
+
+  return r;
  }
 
- void *mod_comment_thread (void *p) {
-  pthread_exit (NULL);
+ void *mod_comment_thread (struct mfeedback *p) {
+  mdefault.comment (p);
+  free (p);
+  return NULL;
  }
 #else
 /* feedback will only work with threads, so this is the version to be used
