@@ -218,22 +218,23 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
  void *mod_comment_thread (struct mfeedback *);
 
  int mod_load (struct lmodule *module) {
-  struct mfeedback fb;
+  struct mfeedback *fb = (struct mfeedback *)malloc (sizeof (struct mfeedback));
   pthread_t *th = calloc (1, sizeof (pthread_t));
   int r = 0;
   if (!module) return 0;
+  if (!fb) return bitch (BTCH_ERRNO);
   if (!th) return bitch (BTCH_ERRNO);
   if (!module->load) return 0;
 
   if (mdefault.comment) {
-   pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)&fb);
-   fb.module = module;
-   fb.task = EI_VIS_TASK_LOAD;
-   fb.status = STATUS_IDLE;
+   pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)fb);
+   fb->module = module;
+   fb->task = EI_VIS_TASK_LOAD;
+   fb->status = STATUS_WORKING;
+   fb->progress = 0;
   }
 
-  r = module->load (module->param, &fb);
-  
+  r = module->load (module->param, fb);
 
   return r;
  }
