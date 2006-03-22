@@ -235,6 +235,7 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
   }
 
   r = module->load (module->param, fb);
+  pthread_join (*th, NULL);
 
   return r;
  }
