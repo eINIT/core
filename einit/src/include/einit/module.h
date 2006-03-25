@@ -93,7 +93,6 @@ void mod_ls ();
 
 // adds a module to the main chain of modules
 int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
-typedef int (*addmodfunc) (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
 
 // find a module
 struct lmodule *mod_find (char *rid, unsigned int options);
@@ -127,7 +126,7 @@ int mod_configure ();
 // int unload (void *pa, struct mfeedback *status);
 //
 // modules for loading different types of modules:
-// int scanmodules (struct lmodule *, addmodfunc);
+// int scanmodules (struct lmodule *);
 //
 // ------------------------------------------------ */
 

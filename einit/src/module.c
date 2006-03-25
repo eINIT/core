@@ -130,7 +130,7 @@ void mod_ls () {
 
 int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unload)(void *, struct mfeedback *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
- int (*scanfunc)(struct lmodule *, addmodfunc);
+ int (*scanfunc)(struct lmodule *);
  int (*comment) (struct mfeedback *);
  int (*ftload)  (void *, struct mfeedback *);
 
@@ -157,9 +157,9 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
 // EINIT_MOD_LOADER modules will usually want to provide a function to scan
 //  for modules so they can be included in the dependency chain
   if (module->mode & EINIT_MOD_LOADER) {
-   scanfunc = (int (*)(struct lmodule *, addmodfunc)) dlsym (sohandle, "scanmodules");
+   scanfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "scanmodules");
    if (scanfunc != NULL) {
-    scanfunc (mlist, mod_add);
+    scanfunc (mlist);
    }
    else bitch(BTCH_ERRNO + BTCH_DL);
   }

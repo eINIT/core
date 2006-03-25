@@ -7,11 +7,13 @@ depend:
 	cd modules && ${MAKE} depend
 
 clean:
-	rm -f *.o einit-* depend.mk
+	rm -f *.o einit-* einit depend.mk
 	cd modules && ${MAKE} clean	
 
-einit-xml: main.o module.o bitch.o config-xml-expat.o default-modules
-	$(CCC) main.o module.o bitch.o config-xml-expat.o $(RDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
+einit-xml: main.o module.o bitch.o config-xml-expat.o
+	$(CCC) main.o module.o bitch.o config-xml-expat.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
+	ln -sf einit-xml einit
+	$(MAKE) default-modules
 
 install:
 	cd modules && ${MAKE} install
