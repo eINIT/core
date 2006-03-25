@@ -38,10 +38,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  int dlclose(void *handle);
 */
 
-#ifdef POSIX
 #include <pthread.h>
-/* we'll be using posix-threads for now for threading */
-#endif
+
+void *mod_comment_thread (struct mfeedback *);
 
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
@@ -173,7 +172,7 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
    }
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
-// we need to scan for load and unload functions if NULL was supplied to this functions
+// we need to scan for load and unload functions if NULL was supplied for these
   if (load == NULL) {
    ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "load");
    if (ftload != NULL) {
@@ -214,47 +213,35 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
  return cur;
 }
 
-#ifdef POSIX
- void *mod_comment_thread (struct mfeedback *);
+int mod_load (struct lmodule *module) {
+ struct mfeedback *fb = (struct mfeedback *)malloc (sizeof (struct mfeedback));
+ pthread_t *th = calloc (1, sizeof (pthread_t));
+ int r = 0;
+ if (!module) return 0;
+ if (!fb) return bitch (BTCH_ERRNO);
+ if (!th) return bitch (BTCH_ERRNO);
+ if (!module->load) return 0;
 
- int mod_load (struct lmodule *module) {
-  struct mfeedback *fb = (struct mfeedback *)malloc (sizeof (struct mfeedback));
-  pthread_t *th = calloc (1, sizeof (pthread_t));
-  int r = 0;
-  if (!module) return 0;
-  if (!fb) return bitch (BTCH_ERRNO);
-  if (!th) return bitch (BTCH_ERRNO);
-  if (!module->load) return 0;
-
-  if (mdefault.comment) {
-   pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)fb);
-   fb->module = module;
-   fb->task = EI_VIS_TASK_LOAD;
-   fb->status = STATUS_WORKING;
-   fb->progress = 0;
-  }
-
-  r = module->load (module->param, fb);
-  pthread_join (*th, NULL);
-
-  return r;
+ if (mdefault.comment) {
+  pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)fb);
+  fb->module = module;
+  fb->task = EI_VIS_TASK_LOAD;
+  fb->status = STATUS_WORKING;
+  fb->progress = 0;
  }
 
- void *mod_comment_thread (struct mfeedback *p) {
-  mdefault.comment (p);
-  free (p);
-  return NULL;
- }
-#else
-/* feedback will only work with threads, so this is the version to be used
-   if the system is not posix-compliant (and thus has no pthreads) */
- int mod_load (struct lmodule *module) {
-  struct mfeedback fb;
-  if (module->load)
-   return module->load (module->param, &fb);
-  return 0;
- }
-#endif
+ r = module->load (module->param, fb);
+ pthread_join (*th, NULL);
+ if (r == LOAD_OK) module->status = STATUS_LOADED;
+
+ return r;
+}
+
+void *mod_comment_thread (struct mfeedback *p) {
+ mdefault.comment (p);
+ free (p);
+ return NULL;
+}
 
 int mod_unload (struct lmodule *module) {
 }

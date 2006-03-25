@@ -1,3 +1,6 @@
+2006/03/25: mdeininger
+ * [module.c] fixed some typos
+
 2006/03/22: mdeininger
  * I was about to work on that threading for the comment-function, but -- of
    course -- I seem to be unable to complete this today due to... interruptions..

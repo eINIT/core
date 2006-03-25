@@ -46,6 +46,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define STATUS_LOADING 12
 #define STATUS_UNLOADING 20
 #define STATUS_RELOADING 28
+#define STATUS_LOADED 33
 
 #ifdef __cplusplus
 extern "C"
@@ -75,6 +76,7 @@ struct lmodule {
  int (*load)    (void *, struct mfeedback *);
  int (*unload)  (void *, struct mfeedback *);
  int (*comment) (struct mfeedback *);
+ unsigned int status;
  void *param;
  struct smodule *module;
  struct lmodule *next;
