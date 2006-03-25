@@ -253,9 +253,7 @@ int mod_configure () {
  }
 }
 
-struct mdeptree *mod_create_deptree (char **) {
+struct mdeptree *mod_create_deptree (char **modules) {
  struct mdeptree *root;
  struct mdeptree *cur;
-
- mod_load (module);
 }
