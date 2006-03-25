@@ -44,8 +44,9 @@ void *mod_comment_thread (struct mfeedback *);
 
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL
+	NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL
 };
+int mcount = 0;
 
 int mod_scanmodules () {
  DIR *dir;
@@ -145,6 +146,7 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
    cur = cur->next;
   cur->next = nmod;
  }
+ mcount++;
 
  nmod->sohandle = sohandle;
  nmod->module = module;
@@ -254,18 +256,28 @@ int mod_configure () {
 }
 
 struct mdeptree *mod_create_deptree (char **modules) {
- struct mdeptree *root = calloc (1, sizeof(struct mdeptree));
+ struct mdeptree *root = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
  struct mdeptree *cur = root;
+ struct lmodule *curmod = NULL;
+ int si = 0;
 
- if ( !cur ) {
-  bitch (BTCH_ERRNO);
-  mod_free_deptree (root);
-  return NULL;
+ for (; modules[si] != NULL; si++) {
+  struct lmodule **candidates = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
+  curmod = mlist;
+
+  if ( !cur ) {
+   bitch (BTCH_ERRNO);
+   mod_free_deptree (root);
+   return NULL;
+  }
  }
+
+ return root;
 }
 
 void mod_free_deptree (struct mdeptree *node) {
  if (node->alternative) mod_free_deptree(node->alternative);
  if (node->next) mod_free_deptree(node->next);
+ if (node->down) mod_free_deptree(node->down);
  free (node);
 }

@@ -87,6 +87,7 @@ struct mdeptree {
  struct lmodule *mod;
  struct mdeptree *alternative;
  struct mdeptree *next;
+ struct mdeptree *down;
 };
 
 // scans for modules (i.e. load their .so and add it to the list)
