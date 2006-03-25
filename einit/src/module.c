@@ -252,3 +252,10 @@ int mod_configure () {
   if (feedback && feedback->comment) mdefault.comment = feedback->comment;
  }
 }
+
+struct mdeptree *mod_create_deptree (char **) {
+ struct mdeptree *root;
+ struct mdeptree *cur;
+
+ mod_load (module);
+}

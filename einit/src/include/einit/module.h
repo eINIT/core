@@ -69,6 +69,7 @@ struct smodule {
  char *rid;
  char **provides;
  char **requires;
+ char **notwith;
 };
 
 struct lmodule {
@@ -80,6 +81,12 @@ struct lmodule {
  void *param;
  struct smodule *module;
  struct lmodule *next;
+};
+
+struct mdeptree {
+ struct lmodule *mod;
+ struct mdeptree *alternative;
+ struct mdeptree *next;
 };
 
 // scans for modules (i.e. load their .so and add it to the list)
@@ -102,6 +109,9 @@ int mod_load (struct lmodule *);
 
 // unload a module
 int mod_unload (struct lmodule *);
+
+// create the dependency tree for a module or a series of them
+struct mdeptree *mod_create_deptree (char **);
 
 // make things ready to be run
 int mod_configure ();

@@ -3,6 +3,7 @@
  * pthreads is now a real dependency
  * $RDYNAMIC in config.mk and configure
  * dynamic linking with back-references is a friggen bitch...!
+ * [module.[ch]] new function: mod_create_deptree()
 
 2006/03/22: mdeininger
  * I was about to work on that threading for the comment-function, but -- of
