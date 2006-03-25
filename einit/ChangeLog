@@ -1,5 +1,6 @@
 2006/03/25: mdeininger
  * [module.c] fixed some typos
+ * pthreads is now a real dependency
 
 2006/03/22: mdeininger
  * I was about to work on that threading for the comment-function, but -- of
