@@ -5,6 +5,7 @@
  * dynamic linking with back-references is a friggen bitch...!
  * [module.[ch]] new function: mod_create_deptree()
  * [utility.[ch]] new source files for utility-functions
+ * [module.[ch]] new function: mod_free_deptree()
 
 2006/03/22: mdeininger
  * I was about to work on that threading for the comment-function, but -- of

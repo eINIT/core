@@ -254,6 +254,18 @@ int mod_configure () {
 }
 
 struct mdeptree *mod_create_deptree (char **modules) {
- struct mdeptree *root;
- struct mdeptree *cur;
+ struct mdeptree *root = calloc (1, sizeof(struct mdeptree));
+ struct mdeptree *cur = root;
+
+ if ( !cur ) {
+  bitch (BTCH_ERRNO);
+  mod_free_deptree (root);
+  return NULL;
+ }
+}
+
+void mod_free_deptree (struct mdeptree *node) {
+ if (node->alternative) mod_free_deptree(node->alternative);
+ if (node->next) mod_free_deptree(node->next);
+ free (node);
 }

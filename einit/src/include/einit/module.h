@@ -113,6 +113,9 @@ int mod_unload (struct lmodule *);
 // create the dependency tree for a module or a series of them
 struct mdeptree *mod_create_deptree (char **);
 
+// free a dependency tree
+void mod_free_deptree (struct mdeptree *);
+
 // make things ready to be run
 int mod_configure ();
 
