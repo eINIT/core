@@ -84,11 +84,13 @@ CCL="\${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
+	RDYNAMIC="";
 	CCL="$CCL -dynamiclib";
 else
 	echo "(guess) generic posix-ish unix";
 	XCFLAGS="$XCFLAGS -DPOSIX";
 	CCL="$CCL -shared";
+	RDYNAMIC="-rdynamic";
 	LPA="-lpthread";
 fi
 
@@ -107,6 +109,8 @@ BINIPARAM = \${IPARAM}
 
 PMODULES = $PMODULES
 INCLUDE = $INCLUDE
+
+RDYNAMIC = $RDYNAMIC
 
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS
