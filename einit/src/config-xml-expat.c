@@ -140,9 +140,6 @@ int cfg_freenode (struct cfgnode *node) {
  if (node->next)
   cfg_freenode (node->next);
 
- if (node->cleanup)
-  node->cleanup (node);
-
  if (node->nodetype & EI_NODETYPE_CONFIG) {
   if (node->arbattrs) {
    int i = 0;

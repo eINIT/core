@@ -37,20 +37,14 @@ extern "C"
 {
 #endif
 
-#define CFGNODE_COMMON unsigned int nodetype; char *id; int (*cleanup)(struct cfgnode *); struct cfgnode *next;
-
 struct cfgnode {
  unsigned int nodetype;
  char *id;
- int (*cleanup)(struct cfgnode *);
  struct cfgnode *next;
-
-/* always include CFGNODE_COMMON in your "struct custom_cfgnode"-definition ! */
-
-/* hopes GNU CC-optimisations won't mess this up... well, we'll have to test to find out... :D */
  struct cfgnode *basenode;
  char **modules;
  char **arbattrs;
+ void *custom;
 };
 
 struct sconfiguration {
@@ -65,8 +59,9 @@ struct sconfiguration {
 
 #ifndef _MODULE
 char *configfile;
-struct sconfiguration *sconfiguration;
 #endif
+
+struct sconfiguration *sconfiguration;
 
 // load configuration
 int cfg_load ();

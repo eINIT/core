@@ -102,6 +102,8 @@ int mod_scanmodules () {
 void mod_freedesc (struct lmodule *m) {
  if (m->next != NULL)
   mod_freedesc (m->next);
+ if (m->cleanup)
+  m->cleanup (m);
  if (m->sohandle)
   dlclose (m->sohandle);
  free (m);
@@ -134,6 +136,7 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
  int (*scanfunc)(struct lmodule *);
  int (*comment) (struct mfeedback *);
  int (*ftload)  (void *, struct mfeedback *);
+ int (*configfunc)(struct lmodule *);
 
  nmod = calloc (1, sizeof (struct lmodule));
  if (!nmod) return bitch(BTCH_ERRNO);
@@ -186,6 +189,16 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
    if (ftload != NULL) {
     nmod->unload = ftload;
    }
+  }
+// look for and execute any configure() functions in modules
+  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "configure");
+  if (configfunc != NULL) {
+   configfunc (nmod);
+  }
+// look for any cleanup() functions
+  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
+  if (configfunc != NULL) {
+   nmod->cleanup = configfunc;
   }
  }
 

@@ -1,3 +1,7 @@
+2006/03/26: mdeininger
+ * [module.h, vis-text.c] new member to struct mfeedback
+ * changes to the configure()-function's definition, it's now being check for and there is also a cleanup() function
+
 2006/03/25: mdeininger
  * [module.c] fixed some typos
  * pthreads is now a real dependency

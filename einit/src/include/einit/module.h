@@ -57,6 +57,7 @@ struct mfeedback {
  unsigned volatile int status;
  unsigned volatile int progress;
  unsigned volatile int task;
+ unsigned volatile char changed;
  struct lmodule * module;
 };
 
@@ -77,6 +78,7 @@ struct lmodule {
  int (*load)    (void *, struct mfeedback *);
  int (*unload)  (void *, struct mfeedback *);
  int (*comment) (struct mfeedback *);
+ int (*cleanup) (struct lmodule *);
  unsigned int status;
  void *param;
  struct smodule *module;
@@ -130,7 +132,7 @@ int mod_configure ();
 // struct smodule self;
 //
 // modules that want to configure themselves:
-// int configure (struct sconfiguration *sconfiguration);
+// int configure (struct lmodule *);
 //
 // feedback-modules:
 // int comment (struct mfeedback *status);
