@@ -75,8 +75,8 @@ struct smodule {
 
 struct lmodule {
  void *sohandle;
- int (*load)    (void *, struct mfeedback *);
- int (*unload)  (void *, struct mfeedback *);
+ int (*enable)  (void *, struct mfeedback *);
+ int (*disable) (void *, struct mfeedback *);
  int (*comment) (struct mfeedback *);
  int (*cleanup) (struct lmodule *);
  unsigned int status;
@@ -107,11 +107,11 @@ int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct
 // find a module
 struct lmodule *mod_find (char *rid, unsigned int options);
 
-// load a module
-int mod_load (struct lmodule *);
+// enable a module
+int mod_enable (struct lmodule *);
 
-// unload a module
-int mod_unload (struct lmodule *);
+// disable a module
+int mod_disable (struct lmodule *);
 
 // create the dependency tree for a module or a series of them
 struct mdeptree *mod_create_deptree (char **);

@@ -1,6 +1,11 @@
+2006/03/27: mdeininger
+ * aight, let's clean up some of the more confusing things about modules...
+   specifically, load()/unload() should really be enable()/disable()
+
 2006/03/26: mdeininger
  * [module.h, vis-text.c] new member to struct mfeedback
- * changes to the configure()-function's definition, it's now being check for and there is also a cleanup() function
+ * changes to the configure()-function's definition, it's now being checked for
+   and there is also a cleanup() function
 
 2006/03/25: mdeininger
  * [module.c] fixed some typos

@@ -131,7 +131,7 @@ void mod_ls () {
  } while (cur != NULL);
 }
 
-int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unload)(void *, struct mfeedback *), void *param, struct smodule *module) {
+int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*disable)(void *, struct mfeedback *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
  int (*comment) (struct mfeedback *);
@@ -154,8 +154,8 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
  nmod->sohandle = sohandle;
  nmod->module = module;
  nmod->param = param;
- nmod->load = load;
- nmod->unload = unload;
+ nmod->enable = enable;
+ nmod->disable = disable;
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
@@ -178,16 +178,16 @@ int mod_add (void *sohandle, int (*load)(void *, struct mfeedback *), int (*unlo
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
 // we need to scan for load and unload functions if NULL was supplied for these
-  if (load == NULL) {
-   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "load");
+  if (enable == NULL) {
+   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "enable");
    if (ftload != NULL) {
-    nmod->load = ftload;
+    nmod->enable = ftload;
    }
   }
-  if (unload == NULL) {
-   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "unload");
+  if (disable == NULL) {
+   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "disable");
    if (ftload != NULL) {
-    nmod->unload = ftload;
+    nmod->disable = ftload;
    }
   }
 // look for and execute any configure() functions in modules
@@ -228,14 +228,14 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
  return cur;
 }
 
-int mod_load (struct lmodule *module) {
+int mod_enable (struct lmodule *module) {
  struct mfeedback *fb = (struct mfeedback *)malloc (sizeof (struct mfeedback));
  pthread_t *th = calloc (1, sizeof (pthread_t));
  int r = 0;
  if (!module) return 0;
  if (!fb) return bitch (BTCH_ERRNO);
  if (!th) return bitch (BTCH_ERRNO);
- if (!module->load) return 0;
+ if (!module->enable) return 0;
 
  if (mdefault.comment) {
   pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)fb);
@@ -245,7 +245,7 @@ int mod_load (struct lmodule *module) {
   fb->progress = 0;
  }
 
- r = module->load (module->param, fb);
+ r = module->enable (module->param, fb);
  pthread_join (*th, NULL);
  if (r == LOAD_OK) module->status = STATUS_LOADED;
 
@@ -258,7 +258,7 @@ void *mod_comment_thread (struct mfeedback *p) {
  return NULL;
 }
 
-int mod_unload (struct lmodule *module) {
+int mod_disable (struct lmodule *module) {
 }
 
 int mod_configure () {
