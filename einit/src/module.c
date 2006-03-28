@@ -329,7 +329,7 @@ struct mdeptree *mod_create_deptree (char **requirements) {
     if (!curn) goto nocur_action;
     curn->mod = candidates[cci];
 	cura->alternative = curn;
-	cura = curn;
+	cura = curn; 
    }
   }
 
