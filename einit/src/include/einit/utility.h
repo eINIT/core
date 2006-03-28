@@ -22,5 +22,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define _UTILITY_H
 
 char **str2dpl (const char, char *);
+int strindpl (char **, const char *);
 
 #endif /* _UTILITY_H */

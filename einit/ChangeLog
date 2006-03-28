@@ -1,6 +1,8 @@
 2006/03/28: mdeininger
  * whoops, the license-statement in some files was fecked up
  * [utility.[ch]] str2dpl(): converts a string to a double-pointer-array
+ * [utility.[ch]] strindpl(): check if a string is in a double-pointer-array
+ * [module.c] mod_create_deptree(): finding candidates now works
 
 2006/03/27: mdeininger
  * aight, let's clean up some of the more confusing things about modules...

@@ -65,3 +65,11 @@ char **str2dpl (const char sep, char *input) {
  }
  return ret;
 }
+
+int strindpl (char **haystack, const char *needle) {
+ int c = 0;
+ for (; haystack[c] != NULL; c++) {
+  if (!strcmp (haystack[c], needle)) return 1;
+ }
+ return 0;
+}

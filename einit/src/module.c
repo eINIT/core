@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/module.h>
+#include <einit/utility.h>
 /*
  dynamic linker functions (POSIX)
 
@@ -59,7 +60,7 @@ void *mod_comment_thread (struct mfeedback *);
 
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
-	NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL
+	NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL
 };
 int mcount = 0;
 
@@ -291,9 +292,20 @@ struct mdeptree *mod_create_deptree (char **requirements) {
 
  for (; requirements[si] != NULL; si++) {
   struct lmodule **candidates = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
+  int cc = 0;
   curmod = mlist;
 
-  printf ("%s\n", requirements[si]);
+  while (curmod) {
+   struct smodule *tmp = curmod->module;
+   if (tmp &&
+	   (tmp->rid && !strcmp (tmp->rid, requirements[si])) ||
+	   (tmp->provides && strindpl (tmp->provides, requirements[si]))) {
+	candidates[cc] = curmod;
+    cc++;
+   }
+   curmod = curmod->next;
+  }
+  printf ("looking for \"%s\": %i candidate(s)\n", requirements[si], cc);
 
   if ( !cur ) {
    bitch (BTCH_ERRNO);
