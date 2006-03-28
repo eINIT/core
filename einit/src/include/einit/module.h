@@ -59,10 +59,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STATUS_OK 1
 #define STATUS_ABORTED 2
 #define STATUS_WORKING 4
-#define STATUS_LOADING 12
-#define STATUS_UNLOADING 20
+#define STATUS_ENABLING 12
+#define STATUS_DISABLING 20
 #define STATUS_RELOADING 28
-#define STATUS_LOADED 33
+#define STATUS_ENABLED 33
 
 #ifdef __cplusplus
 extern "C"
@@ -134,6 +134,9 @@ struct mdeptree *mod_create_deptree (char **);
 
 // free a dependency tree
 void mod_free_deptree (struct mdeptree *);
+
+// enable the modules in a dependency tree
+int mod_enable_deptree (struct mdeptree *);
 
 // make things ready to be run
 int mod_configure ();

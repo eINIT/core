@@ -263,7 +263,7 @@ int mod_enable (struct lmodule *module) {
 
  r = module->enable (module->param, fb);
  pthread_join (*th, NULL);
- if (r == LOAD_OK) module->status = STATUS_LOADED;
+ if (r == LOAD_OK) module->status = STATUS_ENABLED;
 
  return r;
 }
@@ -285,14 +285,15 @@ int mod_configure () {
 }
 
 struct mdeptree *mod_create_deptree (char **requirements) {
- struct mdeptree *root = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
- struct mdeptree *cur = root;
+ struct mdeptree *root = NULL;
+ struct mdeptree *cur = NULL;
+ struct mdeptree *prev = NULL;
  struct lmodule *curmod = NULL;
  int si = 0;
 
  for (; requirements[si] != NULL; si++) {
   struct lmodule **candidates = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
-  int cc = 0;
+  unsigned int cc = 0;
   curmod = mlist;
 
   while (curmod) {
@@ -306,12 +307,37 @@ struct mdeptree *mod_create_deptree (char **requirements) {
    curmod = curmod->next;
   }
   printf ("looking for \"%s\": %i candidate(s)\n", requirements[si], cc);
-
+ 
+  cur = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
   if ( !cur ) {
+   nocur_action:
    bitch (BTCH_ERRNO);
-   mod_free_deptree (root);
+   if (root) mod_free_deptree (root);
    return NULL;
   }
+  if (cc == 0) {
+   printf ("unsatisfied dependency: %s\n", requirements[si]);
+  } else if (cc == 1) {
+   cur->mod = candidates[0];
+  } else {
+   unsigned int cci = 1;
+   struct mdeptree *cura = cur;
+   struct mdeptree *curn;
+   cur->mod = candidates[0];
+   for (; cci <= cc; cci++) {
+    curn = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
+    if (!curn) goto nocur_action;
+    curn->mod = candidates[cci];
+	cura->alternative = curn;
+	cura = curn;
+   }
+  }
+
+  free (candidates);
+
+  if (prev == NULL) prev = cur;
+  else prev->next = cur;
+  if (root == NULL) root = cur;
  }
 
  return root;
@@ -322,4 +348,13 @@ void mod_free_deptree (struct mdeptree *node) {
  if (node->next) mod_free_deptree(node->next);
  if (node->down) mod_free_deptree(node->down);
  free (node);
+}
+
+int mod_enable_deptree (struct mdeptree *root) {
+ struct mdeptree *cur = root;
+ while (cur) {
+  if (!cur->mod || (cur->mod->status == STATUS_ENABLED)) continue;
+  mod_enable (cur->mod);
+  cur = cur->next;
+ }
 }
