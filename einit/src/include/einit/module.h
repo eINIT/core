@@ -74,6 +74,7 @@ struct mfeedback {
  unsigned volatile int progress;
  unsigned volatile int task;
  unsigned volatile char changed;
+ char volatile *verbose;
  struct lmodule * module;
 };
 

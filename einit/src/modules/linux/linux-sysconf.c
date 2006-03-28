@@ -35,9 +35,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define _MODULE
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <einit/module.h>
 #include <einit/config.h>
+#include <einit/bitch.h>
+#include <linux/reboot.h>
+#include <errno.h>
+#include <string.h>
 
 #define EXPECTED_EIV 1
 
@@ -53,6 +58,20 @@ struct smodule self = {
 };
 
 int enable (void *pa, struct mfeedback *status) {
+ status->status = STATUS_ENABLING;
+ status->changed++;
+
+ {
+  struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del");
+  if (cfg && !cfg->flag) {
+   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
+    status->verbose = strerror(errno);
+	errno = 0;
+	status->changed++;
+   }
+  }
+ }
+
  status->status = STATUS_OK;
  status->changed++;
  return LOAD_OK;

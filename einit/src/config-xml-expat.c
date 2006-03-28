@@ -237,10 +237,10 @@ int cfg_delnode (struct cfgnode *node) {
 struct cfgnode *cfg_findnode (char *id) {
  struct cfgnode *cur = sconfiguration->node;
  if (!cur || !id) return NULL;
- if (cur->id == id) return cur;
+ if (!strcmp(cur->id, id)) return cur;
 
  while (cur->next) {
-  if (cur->id == id)
+  if (!strcmp(cur->id, id))
    return cur;
   cur = cur->next;
  }
