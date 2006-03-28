@@ -87,6 +87,7 @@ struct smodule {
  char **provides;
  char **requires;
  char **notwith;
+ char **os;
 };
 
 struct lmodule {

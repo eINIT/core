@@ -3,6 +3,11 @@
  * [utility.[ch]] str2dpl(): converts a string to a double-pointer-array
  * [utility.[ch]] strindpl(): check if a string is in a double-pointer-array
  * [module.c] mod_create_deptree(): finding candidates now works
+ * in order to work on the module-dependency-tree things, we need some example-
+   modules. let's see if we can make some up...
+ * new directory: src/modules/linux: linux-specific modules
+ * new source-file: src/modules/linux/linux-sysconf.c: linux-specific
+   system-configuration should all be put in here.
 
 2006/03/27: mdeininger
  * aight, let's clean up some of the more confusing things about modules...

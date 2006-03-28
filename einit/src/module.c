@@ -317,6 +317,8 @@ struct mdeptree *mod_create_deptree (char **requirements) {
   }
   if (cc == 0) {
    printf ("unsatisfied dependency: %s\n", requirements[si]);
+   if (root) mod_free_deptree (root);
+   return NULL;
   } else if (cc == 1) {
    cur->mod = candidates[0];
   } else {

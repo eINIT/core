@@ -40,6 +40,9 @@ for param in $@; do
 		echo -n " SYSV";
 		XCFLAGS="$XCFLAGS -DSYSV";
 		PMODULES="$PMODULES sysv";
+	elif test "$param" = "--enable-linux"; then
+		echo -n " LINUX";
+		PMODULES="$PMODULES linux";
 	elif test "$param" = "--help"; then
 		echo -n " HELP";
 		HELP="1";
@@ -86,6 +89,12 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
 	CCL="$CCL -bundle -Wl,-bundle_loader,`pwd`/src/einit";
+elif test -n "`uname -a|grep -i 'Linux'`"; then
+	echo "Linux";
+	XCFLAGS="$XCFLAGS -DPOSIX -DLINUX";
+	CCL="$CCL -shared";
+	XDYNAMIC="-Wl,-export-dynamic";
+	LPA="-lpthread";
 else
 	echo "(guess) generic posix-ish unix";
 	XCFLAGS="$XCFLAGS -DPOSIX";
