@@ -283,15 +283,17 @@ int mod_configure () {
  }
 }
 
-struct mdeptree *mod_create_deptree (char **modules) {
+struct mdeptree *mod_create_deptree (char **requirements) {
  struct mdeptree *root = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
  struct mdeptree *cur = root;
  struct lmodule *curmod = NULL;
  int si = 0;
 
- for (; modules[si] != NULL; si++) {
+ for (; requirements[si] != NULL; si++) {
   struct lmodule **candidates = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
   curmod = mlist;
+
+  printf ("%s\n", requirements[si]);
 
   if ( !cur ) {
    bitch (BTCH_ERRNO);

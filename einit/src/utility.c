@@ -32,3 +32,36 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <string.h>
+#include <einit/bitch.h>
+
+char **str2dpl (const char sep, char *input) {
+ int l = strlen (input), i = 0, sc = 1, cr = 1;
+ char **ret;
+ l--;
+
+ for (; i < l; i++) {
+  if (input[i] == sep) {
+   sc++;
+   input[i] = 0;
+  }
+ }
+ ret = calloc (sc, sizeof(char *));
+ if (!ret) {
+  bitch (BTCH_ERRNO);
+  for (i = 0; i < l; i++) {
+   if (input[i] == 0) {
+    input[i] = sep;
+   }
+  }
+  return NULL;
+ }
+ ret[0] = input;
+ for (i = 0; i < l; i++) {
+  if (input[i] == 0) {
+   ret[cr] = input+i+1;
+   cr++;
+  }
+ }
+ return ret;
+}

@@ -21,5 +21,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef _UTILITY_H
 #define _UTILITY_H
 
+char **str2dpl (const char, char *);
 
 #endif /* _UTILITY_H */

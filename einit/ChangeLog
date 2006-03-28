@@ -1,5 +1,6 @@
 2006/03/28: mdeininger
  * whoops, the license-statement in some files was fecked up
+ * [utility.[ch]] str2dpl(): converts a string to a double-pointer-array
 
 2006/03/27: mdeininger
  * aight, let's clean up some of the more confusing things about modules...

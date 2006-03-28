@@ -10,8 +10,8 @@ clean:
 	rm -f *.o einit-* einit depend.mk
 	cd modules && ${MAKE} clean	
 
-einit-xml: main.o module.o bitch.o config-xml-expat.o
-	$(CCC) main.o module.o bitch.o config-xml-expat.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
+einit-xml: main.o module.o bitch.o config-xml-expat.o utility.o
+	$(CCC) main.o module.o bitch.o config-xml-expat.o utility.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
 	ln -sf einit-xml einit
 	$(MAKE) default-modules
 
@@ -32,3 +32,6 @@ bitch.o: bitch.c
 
 config-xml-expat.o: config-xml-expat.c
 	$(CCC) -c config-xml-expat.c
+
+utility.o: utility.c
+	$(CCC) -c utility.c
