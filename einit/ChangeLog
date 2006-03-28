@@ -1,3 +1,6 @@
+2006/03/28: mdeininger
+ * whoops, the license-statement in some files was fecked up
+
 2006/03/27: mdeininger
  * aight, let's clean up some of the more confusing things about modules...
    specifically, load()/unload() should really be enable()/disable()
