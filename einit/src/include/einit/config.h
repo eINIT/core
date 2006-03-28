@@ -46,6 +46,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EI_NODETYPE_BASENODE 1
 #define EI_NODETYPE_CONFIG 2
 #define EI_NODETYPE_CONFIG_CUSTOM 4
+#define EI_NODETYPE_VAR_BOOLEAN 8
+#define EI_NODETYPE_VAR_INTEGER 16
+#define EI_NODETYPE_VAR_STRING 32
 
 #ifdef __cplusplus
 extern "C"
@@ -57,6 +60,9 @@ struct cfgnode {
  char *id;
  struct cfgnode *next;
  struct cfgnode *basenode;
+ unsigned char flag;
+ long int value;
+ char *svalue;
  char **modules;
  char **arbattrs;
  void *custom;

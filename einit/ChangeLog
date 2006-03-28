@@ -8,6 +8,10 @@
  * new directory: src/modules/linux: linux-specific modules
  * new source-file: src/modules/linux/linux-sysconf.c: linux-specific
    system-configuration should all be put in here.
+ * [config-xml-expat.c] parsing is a little... "deeper" now with the possibility
+   to specify "variables" in the configuration file using the syntax <var id= />
+   and any of the attributes b= s= or i= (for a boolean, string or an integer-
+   value respectively)
 
 2006/03/27: mdeininger
  * aight, let's clean up some of the more confusing things about modules...
