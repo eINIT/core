@@ -105,7 +105,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     return;
    }
   }
-  newnode->arbattrs = calloc (1,sizeof (char *) * (i+1));
+  newnode->arbattrs = calloc (i+1,sizeof (char *));
   for (i=0; atts[i] != NULL; i++)
    newnode->arbattrs [i] = strdup (atts[i]);
   cfg_addnode (newnode);
