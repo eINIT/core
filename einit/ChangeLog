@@ -1,3 +1,8 @@
+2006/03/29: mdeininger
+ * changed a little about how the variables get defined in the config file:
+   it's now <variable-name stuff= />
+   seems cleaner to me
+
 2006/03/28: mdeininger
  * whoops, the license-statement in some files was fecked up
  * [utility.[ch]] str2dpl(): converts a string to a double-pointer-array

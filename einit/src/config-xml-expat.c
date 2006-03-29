@@ -73,17 +73,22 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     sconfiguration->feedbackmodule = strdup (atts[j]);
    }
   }
- } else if (!strcmp (name, "var")) {
+ } else {
   struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
   if (!newnode) {
    bitch (BTCH_ERRNO);
    return;
   }
+  newnode->id = strdup (name);
+  newnode->nodetype = EI_NODETYPE_CONFIG;
+  if (!newnode->id) {
+   free (newnode);
+   bitch (BTCH_ERRNO);
+   return;
+  }
   for (; atts[i] != NULL; i+=2) {
    errno = 0;
-   if (!strcmp (atts[i], "id"))
-    newnode->id = strdup (atts[i+1]);
-   else if (!strcmp (atts[i], "s"))
+   if (!strcmp (atts[i], "s"))
     newnode->svalue = strdup (atts[i+1]);
    else if (!strcmp (atts[i], "i"))
     newnode->value = atoi (atts[i+1]);
@@ -94,32 +99,13 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 	                 !strcmp (atts[j], "yes"));
    }
    if (errno) {
+    free (newnode->id);
+    free (newnode);
     bitch (BTCH_ERRNO);
     return;
    }
   }
-  cfg_addnode (newnode);
- } else {
-  struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
-  if (!newnode) {
-   bitch (BTCH_ERRNO);
-   return;
-  }
-  newnode->id = strdup (name);
-  if (!newnode->id) {
-   free (newnode);
-   bitch (BTCH_ERRNO);
-   return;
-  }
-  newnode->nodetype = EI_NODETYPE_CONFIG;
-  for (; atts[i] != NULL; i++);
   newnode->arbattrs = calloc (1,sizeof (char *) * (i+1));
-  if (!newnode->arbattrs) {
-   free (newnode->id);
-   free (newnode);
-   bitch (BTCH_ERRNO);
-   return;
-  }
   for (i=0; atts[i] != NULL; i++)
    newnode->arbattrs [i] = strdup (atts[i]);
   cfg_addnode (newnode);
