@@ -46,9 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EI_NODETYPE_BASENODE 1
 #define EI_NODETYPE_CONFIG 2
 #define EI_NODETYPE_CONFIG_CUSTOM 4
-#define EI_NODETYPE_VAR_BOOLEAN 8
-#define EI_NODETYPE_VAR_INTEGER 16
-#define EI_NODETYPE_VAR_STRING 32
+#define EI_NODETYPE_MODE 8
 
 #ifdef __cplusplus
 extern "C"
@@ -59,11 +57,12 @@ struct cfgnode {
  unsigned int nodetype;
  char *id;
  struct cfgnode *next;
- struct cfgnode *basenode;
  unsigned char flag;
  long int value;
  char *svalue;
- char **modules;
+ char **enable;
+ char **disable;
+ char **base;
  char **arbattrs;
  void *custom;
 };
@@ -100,7 +99,7 @@ int cfg_addnode (struct cfgnode *);
 int cfg_delnode (struct cfgnode *);
 
 // find a node (by id)
-struct cfgnode *cfg_findnode (char *);
+struct cfgnode *cfg_findnode (char *, unsigned int);
 
 // replace a node with a new one
 int cfg_replacenode (struct cfgnode *, struct cfgnode *);

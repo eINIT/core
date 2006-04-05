@@ -80,7 +80,7 @@ int mod_scanmodules () {
  if (dir != NULL) {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
-   tmp = (char *)malloc (mplen + strlen (entry->d_name));
+   tmp = (char *)malloc ((mplen + strlen (entry->d_name))*sizeof (char));
    if (tmp != NULL) {
 	struct smodule *modinfo;
     int (*func)(void *);
@@ -245,7 +245,7 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 }
 
 int mod_enable (struct lmodule *module) {
- struct mfeedback *fb = (struct mfeedback *)malloc (sizeof (struct mfeedback));
+ struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
  pthread_t *th = calloc (1, sizeof (pthread_t));
  int r = 0;
  if (!module) return 0;
@@ -258,7 +258,6 @@ int mod_enable (struct lmodule *module) {
   fb->module = module;
   fb->task = EI_VIS_TASK_LOAD;
   fb->status = STATUS_WORKING;
-  fb->progress = 0;
  }
 
  r = module->enable (module->param, fb);
@@ -300,7 +299,7 @@ struct mdeptree *mod_create_deptree (char **requirements) {
    struct smodule *tmp = curmod->module;
    if (tmp &&
 	   (tmp->rid && !strcmp (tmp->rid, requirements[si])) ||
-	   (tmp->provides && strindpl (tmp->provides, requirements[si]))) {
+	   (tmp->provides && strinslist (tmp->provides, requirements[si]))) {
 	candidates[cc] = curmod;
     cc++;
    }
@@ -338,7 +337,7 @@ struct mdeptree *mod_create_deptree (char **requirements) {
   free (candidates);
 
   if (prev == NULL) prev = cur;
-  else prev->next = cur;
+  else prev->left = cur;
   if (root == NULL) root = cur;
  }
 
@@ -347,8 +346,8 @@ struct mdeptree *mod_create_deptree (char **requirements) {
 
 void mod_free_deptree (struct mdeptree *node) {
  if (node->alternative) mod_free_deptree(node->alternative);
- if (node->next) mod_free_deptree(node->next);
- if (node->down) mod_free_deptree(node->down);
+ if (node->left) mod_free_deptree(node->left);
+ if (node->right) mod_free_deptree(node->right);
  free (node);
 }
 
@@ -357,6 +356,6 @@ int mod_enable_deptree (struct mdeptree *root) {
  while (cur) {
   if (!cur->mod || (cur->mod->status == STATUS_ENABLED)) continue;
   mod_enable (cur->mod);
-  cur = cur->next;
+  cur = cur->left;
  }
 }

@@ -1,3 +1,17 @@
+2006/04/04: mdeininger
+ * the sf.net guys claimed CVS was going to be back online soon, so let's resume
+   hacking...
+ * [utility.[ch]] refinded some functions to work with string-lists.
+ * changed all references to "dpl" to "slist" as this makes more sense.
+ * added another parameter to cfg_findnode(): an int that you can use to specify
+   node-flags that have to be set.
+
+2006/03/30: mdeininger
+ * [module.[ch]] I renamed the next/down members of mdeptree to left/right
+ * [config.h, config-xml-expat.c] been working a little on getting the
+   configuration read properly.
+ * [main.c] new function: switchmode(): will switch mode (~runlevel)
+
 2006/03/29: mdeininger
  * changed a little about how the variables get defined in the config file:
    it's now <variable-name stuff= />

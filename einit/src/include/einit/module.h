@@ -74,6 +74,7 @@ struct mfeedback {
  unsigned volatile int progress;
  unsigned volatile int task;
  unsigned volatile char changed;
+ unsigned volatile int errorc;
  char volatile *verbose;
  struct lmodule * module;
 };
@@ -106,8 +107,8 @@ struct lmodule {
 struct mdeptree {
  struct lmodule *mod;
  struct mdeptree *alternative;
- struct mdeptree *next;
- struct mdeptree *down;
+ struct mdeptree *left;
+ struct mdeptree *right;
 };
 
 // scans for modules (i.e. load their .so and add it to the list)

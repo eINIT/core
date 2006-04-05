@@ -42,16 +42,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <einit/bitch.h>
 #include <einit/config.h>
+#include <einit/utility.h>
 
 #define PATH_MODULES 1
 #define FEEDBACK_MODULE 1
 
 char *configfile = "/etc/einit/default.xml";
 struct sconfiguration *sconfiguration = NULL;
+struct cfgnode *curmode = NULL;
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int i = 0;
- if (!strcmp (name, "path")) {
+ if (curmode) {
+  if (!strcmp (name, "enable")) {
+   for (; atts[i] != NULL; i+=2) {
+    if (!strcmp (atts[i], "mod")) {
+     char *modlist = strdup (atts[i+1]);
+     if (!modlist) {
+      bitch (BTCH_ERRNO);
+      return;
+	 }
+	 curmode->enable = str2slist (':', modlist);
+    }
+   }
+  }
+ } if (!strcmp (name, "path")) {
   int tar = 0;
   char *val = NULL;
   for (; atts[i] != NULL; i+=2) {
@@ -68,9 +83,38 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   }
  } else if (!strcmp (name, "feedback")) {
   for (; atts[i] != NULL; i+=2) {
-   if (!strcmp (atts[i], "module")) {
-    int j = i+1;
-    sconfiguration->feedbackmodule = strdup (atts[j]);
+   if (!strcmp (atts[i], "module"))
+    sconfiguration->feedbackmodule = strdup (atts[i+1]);
+  }
+ } else if (!strcmp (name, "mode")) {
+  struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
+  if (!newnode) {
+   bitch (BTCH_ERRNO);
+   return;
+  }
+  newnode->nodetype = EI_NODETYPE_MODE;
+  cfg_addnode (newnode);
+  curmode = newnode;
+  for (; atts[i] != NULL; i+=2) {
+   if (!strcmp (atts[i], "id")) {
+    newnode->id = strdup (atts[i+1]);
+    if (!newnode->id) {
+     free (newnode);
+     bitch (BTCH_ERRNO);
+     return;
+	}
+   } else if (!strcmp (atts[i], "base")) {
+	char *tmp = strdup (atts[i+1]);
+    if (!tmp) {
+     free (tmp);
+     bitch (BTCH_ERRNO);
+     return;
+	}
+	newnode->base = str2slist (':', tmp);
+	if (!newnode->base) {
+     free (tmp);
+	 return;
+    }
    }
   }
  } else {
@@ -113,6 +157,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 }
 
 void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
+ if (!strcmp (name, "mode"))
+  curmode = NULL;
 }
 
 int cfg_load () {
@@ -124,7 +170,7 @@ int cfg_load () {
  XML_Parser par;
  cfgfd = open (configfile, O_RDONLY);
  if (cfgfd != -1) {
-  buf = malloc (BUFFERSIZE);
+  buf = malloc (BUFFERSIZE*sizeof(char));
   blen = 0;
   do {
    buf = realloc (buf, blen + BUFFERSIZE);
@@ -220,13 +266,13 @@ int cfg_delnode (struct cfgnode *node) {
  return -1;
 }
 
-struct cfgnode *cfg_findnode (char *id) {
+struct cfgnode *cfg_findnode (char *id, unsigned int type) {
  struct cfgnode *cur = sconfiguration->node;
  if (!cur || !id) return NULL;
  if (!strcmp(cur->id, id)) return cur;
 
  while (cur->next) {
-  if (!strcmp(cur->id, id))
+  if (!strcmp(cur->id, id) && (!type || !(cur->nodetype ^ type)))
    return cur;
   cur = cur->next;
  }

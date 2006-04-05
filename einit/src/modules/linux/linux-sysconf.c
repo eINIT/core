@@ -68,6 +68,7 @@ int enable (void *pa, struct mfeedback *status) {
     status->verbose = strerror(errno);
 	errno = 0;
 	status->changed++;
+	status->errorc++;
    }
   }
  }
