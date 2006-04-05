@@ -48,10 +48,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LOAD_FAIL -1
 #define LOAD_FAIL_REQ -2
 
-#define EI_VIS_TASK_LOAD 1
-#define EI_VIS_TASK_UNLOAD 2
-#define EI_VIS_TASK_RELOAD 4
-#define EI_VIS_TASK_RESET 8
+#define MOD_ENABLE 1
+#define MOD_DISABLE 2
+#define MOD_RELOAD 4
+#define MOD_RESET 8
 
 #define EINIT_
 
@@ -126,11 +126,8 @@ int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct
 // find a module
 struct lmodule *mod_find (char *rid, unsigned int options);
 
-// enable a module
-int mod_enable (struct lmodule *);
-
-// disable a module
-int mod_disable (struct lmodule *);
+// do something to a module
+int mod (unsigned int, struct lmodule *);
 
 // create the dependency tree for a module or a series of them
 struct mdeptree *mod_create_deptree (char **);

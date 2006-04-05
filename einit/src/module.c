@@ -245,49 +245,31 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
  return cur;
 }
 
-int mod_enable (struct lmodule *module) {
+int mod (unsigned int task, struct lmodule *module) {
  struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
  pthread_t *th = calloc (1, sizeof (pthread_t));
  int r = 0;
  if (!module) return 0;
  if (!fb) return bitch (BTCH_ERRNO);
  if (!th) return bitch (BTCH_ERRNO);
- if (!module->enable) return 0;
+ if ((task == MOD_ENABLE) && !module->enable) return 0;
+ if ((task == MOD_DISABLE) && !module->disable) return 0;
 
  if (mdefault.comment) {
   pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
   fb->module = module;
-  fb->task = EI_VIS_TASK_LOAD;
+  fb->task = task;
   fb->status = STATUS_WORKING;
  }
 
- r = module->enable (module->param, fb);
- if (mdefault.comment) {
-  pthread_join (*th, NULL);
-  free(fb);
+ switch (task) {
+  case MOD_ENABLE:
+   r = module->enable (module->param, fb);
+   break;
+  case MOD_DISABLE:
+   r = module->disable (module->param, fb);
+   break;
  }
- if (r == LOAD_OK) module->status = STATUS_ENABLED;
-
- return r;
-}
-
-int mod_disable (struct lmodule *module) {
- struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
- pthread_t *th = calloc (1, sizeof (pthread_t));
- int r = 0;
- if (!module) return 0;
- if (!fb) return bitch (BTCH_ERRNO);
- if (!th) return bitch (BTCH_ERRNO);
- if (!module->disable) return 0;
-
- if (mdefault.comment) {
-  pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
-  fb->module = module;
-  fb->task = EI_VIS_TASK_UNLOAD;
-  fb->status = STATUS_WORKING;
- }
-
- r = module->disable (module->param, fb);
  if (mdefault.comment) {
   pthread_join (*th, NULL);
   free(fb);
@@ -302,7 +284,7 @@ int mod_configure () {
  if (cfg && cfg->svalue) {
   feedback = mod_find(cfg->svalue, EINIT_MOD_FEEDBACK);
   if (feedback && feedback->comment) {
-   if (mod_enable (feedback) == LOAD_OK)
+   if (mod (MOD_ENABLE, feedback) == LOAD_OK)
     mdefault.comment = feedback->comment;
    else
     mdefault.comment = NULL;
@@ -312,7 +294,7 @@ int mod_configure () {
 
 int mod_cleanup () {
  if (feedback) {
-  mod_disable (feedback);
+  mod (MOD_DISABLE, feedback);
   mdefault.comment = NULL;
  }
 }
@@ -389,7 +371,7 @@ int mod_enable_deptree (struct mdeptree *root) {
  struct mdeptree *cur = root;
  while (cur) {
   if (!cur->mod || (cur->mod->status == STATUS_ENABLED)) continue;
-  mod_enable (cur->mod);
+  mod (MOD_ENABLE, cur->mod);
   cur = cur->left;
  }
 }

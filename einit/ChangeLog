@@ -2,6 +2,8 @@
  * new feedback module: vis-curses.c: uses curses
  * feedback modules now need enable()/disable() functions
  * some minor enhancements to vis-text.c
+ * [module.[ch]] mod_enable() and mod_disable() has been put together into one
+   function: mod();
 
 2006/04/04: mdeininger
  * the sf.net guys claimed CVS was going to be back online soon, so let's resume
