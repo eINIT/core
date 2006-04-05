@@ -144,6 +144,9 @@ int mod_enable_deptree (struct mdeptree *);
 // make things ready to be run
 int mod_configure ();
 
+// clean up
+int mod_cleanup ();
+
 #ifdef __cplusplus
 }
 #endif

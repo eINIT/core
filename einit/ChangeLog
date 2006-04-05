@@ -1,3 +1,7 @@
+2006/04/05: mdeininger
+ * new feedback module: vis-curses.c: uses curses
+ * feedback modules now need enable()/disable() functions
+
 2006/04/04: mdeininger
  * the sf.net guys claimed CVS was going to be back online soon, so let's resume
    hacking...

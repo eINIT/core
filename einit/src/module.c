@@ -58,6 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void *mod_comment_thread (struct mfeedback *);
 
+struct lmodule *feedback;
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
 	NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL
@@ -254,32 +255,65 @@ int mod_enable (struct lmodule *module) {
  if (!module->enable) return 0;
 
  if (mdefault.comment) {
-  pthread_create (th, NULL, (void * (*)(void *))mod_comment_thread, (void*)fb);
+  pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
   fb->module = module;
   fb->task = EI_VIS_TASK_LOAD;
   fb->status = STATUS_WORKING;
  }
 
  r = module->enable (module->param, fb);
- pthread_join (*th, NULL);
+ if (mdefault.comment) {
+  pthread_join (*th, NULL);
+  free(fb);
+ }
  if (r == LOAD_OK) module->status = STATUS_ENABLED;
 
  return r;
 }
 
-void *mod_comment_thread (struct mfeedback *p) {
- mdefault.comment (p);
- free (p);
- return NULL;
-}
-
 int mod_disable (struct lmodule *module) {
+ struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
+ pthread_t *th = calloc (1, sizeof (pthread_t));
+ int r = 0;
+ if (!module) return 0;
+ if (!fb) return bitch (BTCH_ERRNO);
+ if (!th) return bitch (BTCH_ERRNO);
+ if (!module->disable) return 0;
+
+ if (mdefault.comment) {
+  pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
+  fb->module = module;
+  fb->task = EI_VIS_TASK_UNLOAD;
+  fb->status = STATUS_WORKING;
+ }
+
+ r = module->disable (module->param, fb);
+ if (mdefault.comment) {
+  pthread_join (*th, NULL);
+  free(fb);
+ }
+ if (r == LOAD_OK) module->status = STATUS_ENABLED;
+
+ return r;
 }
 
 int mod_configure () {
- if (sconfiguration->feedbackmodule) {
-  struct lmodule *feedback = mod_find(sconfiguration->feedbackmodule, EINIT_MOD_FEEDBACK);
-  if (feedback && feedback->comment) mdefault.comment = feedback->comment;
+ struct cfgnode *cfg = cfg_findnode ("feedback", 0);
+ if (cfg && cfg->svalue) {
+  feedback = mod_find(cfg->svalue, EINIT_MOD_FEEDBACK);
+  if (feedback && feedback->comment) {
+   if (mod_enable (feedback) == LOAD_OK)
+    mdefault.comment = feedback->comment;
+   else
+    mdefault.comment = NULL;
+  }
+ }
+}
+
+int mod_cleanup () {
+ if (feedback) {
+  mod_disable (feedback);
+  mdefault.comment = NULL;
  }
 }
 

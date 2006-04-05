@@ -81,11 +81,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     sconfiguration->modulepath = strdup (val);
     break;
   }
- } else if (!strcmp (name, "feedback")) {
-  for (; atts[i] != NULL; i+=2) {
-   if (!strcmp (atts[i], "module"))
-    sconfiguration->feedbackmodule = strdup (atts[i+1]);
-  }
  } else if (!strcmp (name, "mode")) {
   struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
   if (!newnode) {
