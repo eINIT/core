@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <dlfcn.h>
 #include <string.h>
@@ -82,15 +83,22 @@ int mod_scanmodules () {
    if (entry->d_name[0] == '.') continue;
    tmp = (char *)malloc ((mplen + strlen (entry->d_name))*sizeof (char));
    if (tmp != NULL) {
+	struct stat sbuf;
 	struct smodule *modinfo;
     int (*func)(void *);
     *tmp = 0;
     strcat (tmp, modulepath);
     strcat (tmp, entry->d_name);
 	dlerror ();
-    sohandle = dlopen (tmp, RTLD_NOW);
+    if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
+	 free (tmp);
+	 continue;
+	}
+
+	sohandle = dlopen (tmp, RTLD_NOW);
 	if (sohandle == NULL) {
 	 puts (dlerror ());
+	 free (tmp);
 	 continue;
 	}
 	modinfo = (struct smodule *)dlsym (sohandle, "self");

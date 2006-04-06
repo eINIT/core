@@ -4,6 +4,7 @@
    configuration-variables and returns it adding a slash at the end if necessary
  * re-implemented mod_enable() and mod_disable() as macros.
  * new debugging-function: mod_ls_deptree()
+ * better check for the filetype in mod-sysv.c and module.c
 
 2006/04/05: mdeininger
  * new feedback module: vis-curses.c: uses curses

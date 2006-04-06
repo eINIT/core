@@ -66,22 +66,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     }
    }
   }
- } if (!strcmp (name, "path")) {
-  int tar = 0;
-  char *val = NULL;
-  for (; atts[i] != NULL; i+=2) {
-   if (!strcmp (atts[i], "id")) {
-    if (!strcmp (atts[i+1], "modules"))
-     tar = PATH_MODULES;
-   } else if (!strcmp (atts[i], "path"))
-	val = (char *)atts[i+1];
-  }
-  if (tar && val) switch (tar) {
-   case PATH_MODULES:
-    sconfiguration->modulepath = strdup (val);
-    break;
-  }
- } else if (!strcmp (name, "mode")) {
+ }
+ if (!strcmp (name, "mode")) {
   struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
   if (!newnode) {
    bitch (BTCH_ERRNO);
@@ -196,10 +182,6 @@ int cfg_load () {
 int cfg_free () {
  if (sconfiguration == NULL)
   return 1;
- if (sconfiguration->modulepath != NULL)
-  free (sconfiguration->modulepath);
- if (sconfiguration->feedbackmodule != NULL)
-  free (sconfiguration->feedbackmodule);
  if (sconfiguration->node != NULL)
   cfg_freenode (sconfiguration->node);
 

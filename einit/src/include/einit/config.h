@@ -71,8 +71,6 @@ struct sconfiguration {
  int eiversion;
  int version;
  unsigned int options;
- char *modulepath;
- char *feedbackmodule;
  char **arbattrs;
  struct cfgnode *node;
 };
