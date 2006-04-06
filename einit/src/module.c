@@ -132,21 +132,6 @@ int mod_freemodules () {
  return 1;
 }
 
-void mod_ls () {
- struct lmodule *cur = mlist;
- do {
-  if (cur->module != NULL) {
-   if (cur->module->rid)
-	fputs (cur->module->rid, stdout);
-   if (cur->module->name)
-	printf (" (%s)", cur->module->name, stdout);
-   puts ("");
-  } else
-   puts ("(NULL)");
-  cur = cur->next;
- } while (cur != NULL);
-}
-
 int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*disable)(void *, struct mfeedback *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
@@ -372,3 +357,48 @@ int mod_enable_deptree (struct mdeptree *root) {
   cur = cur->left;
  }
 }
+
+#ifdef DEBUG
+void mod_ls () {
+ struct lmodule *cur = mlist;
+ do {
+  if (cur->module != NULL) {
+   if (cur->module->rid)
+	fputs (cur->module->rid, stdout);
+   if (cur->module->name)
+	printf (" (%s)", cur->module->name, stdout);
+   puts ("");
+  } else
+   puts ("(NULL)");
+  cur = cur->next;
+ } while (cur != NULL);
+}
+
+void mod_ls_deptree (struct mdeptree *mdp) {
+ static int recursion;
+ int i = 0;
+ char * rid = "unknown";
+ char * lid = "unknown";
+ if (mdp->mod && mdp->mod->module) {
+  if (mdp->mod->module->rid)
+   rid = mdp->mod->module->rid;
+  if (mdp->mod->module->name)
+   lid = mdp->mod->module->name;
+ }
+
+ for (; i < recursion; i++)
+  putc (' ', stdout);
+ printf ("%s [%s]\n", lid, rid);
+
+ if (mdp->alternative) {
+  fputs ("alternative: {", stdout);
+  mod_ls_deptree (mdp->alternative);
+  fputs ("}", stdout);
+ }
+
+ recursion ++;
+  if (mdp->left) mod_ls_deptree (mdp->left);
+  if (mdp->right) mod_ls_deptree (mdp->right);
+ recursion --;
+}
+#endif

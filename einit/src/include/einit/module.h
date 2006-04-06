@@ -113,9 +113,6 @@ int mod_scanmodules ();
 // frees the chain of loaded modules and unloads the .so-files
 int mod_freemodules ();
 
-// lists all known modules to stdout
-void mod_ls ();
-
 // adds a module to the main chain of modules
 int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
 
@@ -142,6 +139,14 @@ int mod_configure ();
 
 // clean up
 int mod_cleanup ();
+
+#ifdef DEBUG
+// lists all known modules to stdout
+void mod_ls ();
+
+// write the layout of a dependency-tree to stdout
+void mod_deptree_ls (struct mdeptree *);
+#endif
 
 #ifdef __cplusplus
 }
