@@ -2,6 +2,7 @@
  * some changes to the STATUS-constants
  * new utility-function: cfg_getpath(): looks for a string-type variable in the
    configuration-variables and returns it adding a slash at the end if necessary
+ * re-implemented mod_enable() and mod_disable() as macros.
 
 2006/04/05: mdeininger
  * new feedback module: vis-curses.c: uses curses

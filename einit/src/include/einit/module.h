@@ -125,6 +125,9 @@ struct lmodule *mod_find (char *rid, unsigned int options);
 // do something to a module
 int mod (unsigned int, struct lmodule *);
 
+#define mod_enable(lname) mod (MOD_ENABLE, lname)
+#define mod_disable(lname) mod (MOD_DISABLE, lname)
+
 // create the dependency tree for a module or a series of them
 struct mdeptree *mod_create_deptree (char **);
 
