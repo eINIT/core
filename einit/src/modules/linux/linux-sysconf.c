@@ -75,11 +75,11 @@ int enable (void *pa, struct mfeedback *status) {
 
  status->status = STATUS_OK;
  status->changed++;
- return LOAD_OK;
+ return STATUS_OK;
 }
 
 int disable (void *pa, struct mfeedback *status) {
  status->status = STATUS_OK;
  status->changed++;
- return LOAD_OK;
+ return STATUS_OK;
 }

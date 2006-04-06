@@ -248,7 +248,6 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 int mod (unsigned int task, struct lmodule *module) {
  struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
  pthread_t *th = calloc (1, sizeof (pthread_t));
- int r = 0;
  if (!module) return 0;
  if (!fb) return bitch (BTCH_ERRNO);
  if (!th) return bitch (BTCH_ERRNO);
@@ -264,19 +263,18 @@ int mod (unsigned int task, struct lmodule *module) {
 
  switch (task) {
   case MOD_ENABLE:
-   r = module->enable (module->param, fb);
+   module->status = module->enable (module->param, fb);
    break;
   case MOD_DISABLE:
-   r = module->disable (module->param, fb);
+   module->status = module->disable (module->param, fb);
    break;
  }
  if (mdefault.comment) {
   pthread_join (*th, NULL);
   free(fb);
  }
- if (r == LOAD_OK) module->status = STATUS_ENABLED;
 
- return r;
+ return module->status;
 }
 
 int mod_configure () {
@@ -284,7 +282,7 @@ int mod_configure () {
  if (cfg && cfg->svalue) {
   feedback = mod_find(cfg->svalue, EINIT_MOD_FEEDBACK);
   if (feedback && feedback->comment) {
-   if (mod (MOD_ENABLE, feedback) == LOAD_OK)
+   if (mod (MOD_ENABLE, feedback) & STATUS_OK)
     mdefault.comment = feedback->comment;
    else
     mdefault.comment = NULL;

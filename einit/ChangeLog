@@ -1,3 +1,6 @@
+2006/04/06: mdeininger
+ * some changes to the STATUS-constants
+
 2006/04/05: mdeininger
  * new feedback module: vis-curses.c: uses curses
  * feedback modules now need enable()/disable() functions
