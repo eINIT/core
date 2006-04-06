@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <string.h>
 #include <einit/bitch.h>
+#include <einit/config.h>
 
 char **str2slist (const char sep, char *input) {
  int l = strlen (input), i = 0, sc = 1, cr = 1;
@@ -148,4 +149,23 @@ char **slistdup (char **slist) {
  }
 
  return newlist;
+}
+
+char *cfg_getpath (char *id) {
+ int mplen;
+ struct cfgnode *svpath = cfg_findnode (id, 0);
+ if (!svpath || !svpath->svalue) return NULL;
+ mplen = strlen (svpath->svalue) +1;
+ if (svpath->svalue[mplen-2] != '/') {
+  char *tmpsvpath = (char *)realloc (svpath->svalue, mplen+1);
+  if (!tmpsvpath) {
+   bitch (BTCH_ERRNO);
+   return NULL;
+  }
+
+  tmpsvpath[mplen-1] = '/';
+  tmpsvpath[mplen] = 0;
+  svpath->svalue = tmpsvpath;
+ }
+ return svpath->svalue;
 }

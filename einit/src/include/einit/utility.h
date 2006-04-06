@@ -45,4 +45,8 @@ int slistcount (char **);
 int slistrebuild (char **);
 char **slistdup (char **);
 
+/* those i-could've-sworn-there-were-library-functions-for-that functions */
+
+char *cfg_getpath (char *);
+
 #endif /* _UTILITY_H */

@@ -72,12 +72,11 @@ int mod_scanmodules () {
  int mplen;
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
+ char *modulepath = cfg_getpath ("module-path");
+ if (!modulepath) return -1;
 
- if (sconfiguration == NULL) return bitch(BTCH_ERRNO);
- if (sconfiguration->modulepath == NULL) return bitch(BTCH_ERRNO);
-
- mplen = strlen (sconfiguration->modulepath) +1;
- dir = opendir (sconfiguration->modulepath);
+ mplen = strlen (modulepath) +1;
+ dir = opendir (modulepath);
  if (dir != NULL) {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
@@ -86,7 +85,7 @@ int mod_scanmodules () {
 	struct smodule *modinfo;
     int (*func)(void *);
     *tmp = 0;
-    strcat (tmp, sconfiguration->modulepath);
+    strcat (tmp, modulepath);
     strcat (tmp, entry->d_name);
 	dlerror ();
     sohandle = dlopen (tmp, RTLD_NOW);
