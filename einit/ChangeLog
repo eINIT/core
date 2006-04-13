@@ -1,3 +1,6 @@
+2006/04/13: mdeininger
+ * did some cleanups
+
 2006/04/06: mdeininger
  * some changes to the STATUS-constants
  * new utility-function: cfg_getpath(): looks for a string-type variable in the
