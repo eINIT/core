@@ -36,12 +36,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _UTILITY_H
 #define _UTILITY_H
 
+/* some common functions to work with null-terminated arrays */
+
+void **plcombine (void **, void **);
+int plcount (void **);
+
 /* some functions to work with string-lists */
 
 char **str2slist (const char, char *);
 int strinslist (char **, const char *);
-char **slistcombine (char **, char **);
-int slistcount (char **);
 int slistrebuild (char **);
 char **slistdup (char **);
 

@@ -36,6 +36,48 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 
+/* some common functions to work with null-terminated arrays */
+
+void **plcombine (void **list1, void **list2) {
+ void **newlist;
+ int x = 0, y = 0, s = 1, p = 0;
+ char *strbuffer = NULL;
+ if (!list1) return list2;
+ if (!list1[0]) {
+  free (list1);
+  return list2;
+ }
+ if (!list2) return list1;
+ if (!list2[0]) {
+  free (list2);
+  return list1;
+ }
+
+ newlist = calloc (plcount(list1) + plcount(list2) +1, sizeof (void *));
+ if (!newlist) {
+  bitch (BTCH_ERRNO);
+  return NULL;
+ }
+
+ while (list1[x])
+  { newlist [x] = list1[x]; x++; }
+ y = x; x = 0;
+ while (list2[x])
+  { newlist [y] = list2[x]; x++; y++; }
+
+ return newlist;
+}
+
+int plcount (void **slist) {
+ int i = 0;
+ while (slist[i])
+  i++;
+
+ return i;
+}
+
+/* some functions to work with string-lists */
+
 char **str2slist (const char sep, char *input) {
  int l = strlen (input), i = 0, sc = 1, cr = 1;
  char **ret;
@@ -75,44 +117,6 @@ int strinslist (char **haystack, const char *needle) {
  return 0;
 }
 
-char **slistcombine (char **slist1, char **slist2) {
- char **newlist;
- int x = 0, y = 0, s = 1, p = 0;
- char *strbuffer = NULL;
- if (!slist1) return slist2;
- if (!slist1[0]) {
-  free (slist1);
-  return slist2;
- }
- if (!slist2) return slist1;
- if (!slist2[0]) {
-  free (slist2);
-  return slist1;
- }
-
- newlist = calloc (slistcount(slist1) + slistcount(slist2) +1, sizeof (char *));
- if (!newlist) {
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
-
- while (slist1[x])
-  { newlist [x] = slist1[x]; x++; }
- y = x; x = 0;
- while (slist2[x])
-  { newlist [y] = slist2[x]; x++; y++; }
-
- return newlist;
-}
-
-int slistcount (char **slist) {
- int i = 0;
- while (slist[i])
-  i++;
-
- return i;
-}
-
 int slistrebuild (char **slist) {
  int y = 0, p = 0, s = 1;
  char *strbuffer;
@@ -131,7 +135,7 @@ char **slistdup (char **slist) {
  if (!slist) return NULL;
  if (!slist[0]) return NULL;
 
- newlist = calloc (slistcount(slist) +1, sizeof (char *));
+ newlist = calloc (plcount(slist) +1, sizeof (char *));
  if (!newlist) {
   bitch (BTCH_ERRNO);
   return NULL;
@@ -150,6 +154,8 @@ char **slistdup (char **slist) {
 
  return newlist;
 }
+
+/* those i-could've-sworn-there-were-library-functions-for-that functions */
 
 char *cfg_getpath (char *id) {
  int mplen;
