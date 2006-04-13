@@ -145,6 +145,7 @@ int strinslist (char **haystack, const char *needle) {
 char **slistrebuild (char **slist) {
  int y = 0, p = 0, s = 1;
  char *strbuffer;
+ char **slistbuffer;
  if (!slist) return NULL;
  if (!slist[0]) return NULL;
 
@@ -156,7 +157,16 @@ char **slistrebuild (char **slist) {
   bitch (BTCH_ERRNO);
   return NULL;
  }
+ slistbuffer = (char **)calloc (plcount ((void **)slist)+1, sizeof(char *));
+ if (!slistbuffer) {
+  free (strbuffer);
+  bitch (BTCH_ERRNO);
+  return NULL;
+ }
  strbuffer[s-1] = 0;
+ while (slist[y])
+  { y++; s += strlen (slist[y]); }
+ return slistbuffer;
 }
 
 char **slistdup (char **slist) {
