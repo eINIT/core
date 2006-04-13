@@ -87,9 +87,11 @@ void **pldup (void **list) {
  return newlist;
 }
 
-int plcount (void **slist) {
+int plcount (void **list) {
  int i = 0;
- while (slist[i])
+ if (!list) return 0;
+ if (!list[0]) return 0;
+ while (list[i])
   i++;
 
  return i;
@@ -98,9 +100,10 @@ int plcount (void **slist) {
 /* some functions to work with string-lists */
 
 char **str2slist (const char sep, char *input) {
- int l = strlen (input), i = 0, sc = 1, cr = 1;
+ int l, i = 0, sc = 1, cr = 1;
  char **ret;
- l--;
+ if (!input) return NULL;
+ l = strlen (input)-1;
 
  for (; i < l; i++) {
   if (input[i] == sep) {
@@ -130,21 +133,29 @@ char **str2slist (const char sep, char *input) {
 
 int strinslist (char **haystack, const char *needle) {
  int c = 0;
+ if (!haystack) return 0;
+ if (!haystack[0]) return 0;
+ if (!needle) return 0;
  for (; haystack[c] != NULL; c++) {
   if (!strcmp (haystack[c], needle)) return 1;
  }
  return 0;
 }
 
-int slistrebuild (char **slist) {
+char **slistrebuild (char **slist) {
  int y = 0, p = 0, s = 1;
  char *strbuffer;
+ if (!slist) return NULL;
+ if (!slist[0]) return NULL;
 
  while (slist[y])
   { y++; s += strlen (slist[y]); }
 
  strbuffer = malloc (s*sizeof(char));
- if (!strbuffer) return bitch (BTCH_ERRNO);
+ if (!strbuffer) {
+  bitch (BTCH_ERRNO);
+  return NULL;
+ }
  strbuffer[s-1] = 0;
 }
 

@@ -46,7 +46,7 @@ int plcount (void **);
 
 char **str2slist (const char, char *);
 int strinslist (char **, const char *);
-int slistrebuild (char **);
+char **slistrebuild (char **);
 char **slistdup (char **);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
