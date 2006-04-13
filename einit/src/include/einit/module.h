@@ -107,6 +107,13 @@ struct mdeptree {
  struct mdeptree *right;
 };
 
+struct mloadplan {
+ unsigned int task;
+ struct lmodule *mod;
+ struct mloadplan **left;  /* elements of the tree to load on failure */
+ struct mloadplan **right; /* elements of the tree to load on success */
+};
+
 // scans for modules (i.e. load their .so and add it to the list)
 int mod_scanmodules ();
 
@@ -139,6 +146,15 @@ int mod_configure ();
 
 // clean up
 int mod_cleanup ();
+
+// create a plan for loading a handful of requirements
+struct mloadplan *mod_plan (char **);
+
+// actually do what the plan says
+int mod_plan_commit (struct mloadplan *);
+
+// free all of the resources of the plan
+int mod_plan_free (struct mloadplan *);
 
 #ifdef DEBUG
 // lists all known modules to stdout

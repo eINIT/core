@@ -366,6 +366,29 @@ int mod_enable_deptree (struct mdeptree *root) {
  }
 }
 
+struct mloadplan *mod_plan (char **atoms) {
+}
+
+int mod_plan_commit (struct mloadplan *plan) {
+}
+
+int mod_plan_free (struct mloadplan *plan) {
+ struct mloadplan **c;
+ int i;
+ if (!plan) return -1;
+ if (plan->left) {
+  c = plan->left;
+  for (i = 0; c[i]; c++)
+   mod_plan_free(c[i]);
+ }
+ if (plan->right) {
+  c = plan->right;
+  for (i = 0; c[i]; c++)
+   mod_plan_free(c[i]);
+ }
+ free (plan);
+}
+
 #ifdef DEBUG
 void mod_ls () {
  struct lmodule *cur = mlist;
