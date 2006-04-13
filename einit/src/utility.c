@@ -68,13 +68,13 @@ void **plcombine (void **list1, void **list2) {
  return newlist;
 }
 
-char **pldup (char **list) {
- char **newlist;
+void **pldup (void **list) {
+ void **newlist;
  int y = 0;
  if (!list) return NULL;
  if (!list[0]) return NULL;
 
- newlist = calloc (plcount(slist) +1, sizeof (char *));
+ newlist = calloc (plcount(list) +1, sizeof (char *));
  if (!newlist) {
   bitch (BTCH_ERRNO);
   return NULL;
@@ -154,7 +154,7 @@ char **slistdup (char **slist) {
  if (!slist) return NULL;
  if (!slist[0]) return NULL;
 
- newlist = calloc (plcount(slist) +1, sizeof (char *));
+ newlist = calloc (plcount((void **)slist) +1, sizeof (char *));
  if (!newlist) {
   bitch (BTCH_ERRNO);
   return NULL;
