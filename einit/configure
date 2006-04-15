@@ -32,7 +32,7 @@ for param in $@; do
 	short=${param//=*/};
 	if test "$short" = "--prefix"; then
 		echo -n " PREFIX";
-		PREFIX=${param#--prefix=};
+		PREFIX=${param##--prefix=};
 	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG -g";
@@ -43,9 +43,6 @@ for param in $@; do
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		PMODULES="$PMODULES linux";
-	elif test "$param" = "--enable-curses"; then
-		echo -n " CURSES";
-		PMODULES="$PMODULES curses";
 	elif test "$param" = "--help"; then
 		echo -n " HELP";
 		HELP="1";
@@ -61,7 +58,6 @@ Options:
  --prefix=path    use this to set a path to install to (absolute!)
  --enable-sysv    enable compilation of sysv-compatibility functions
  --enable-linux   enable compilation of linux-specific modules
- --enable-curses  enable compilation of a feedback-module that uses (n)curses
  --debug          will #define DEBUG.
  --help           display this text and exit.";
  exit;
