@@ -291,6 +291,7 @@ int mod_cleanup () {
 
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task) {
  struct lmodule *curmod;
+ struct mloadplan **nplancand = NULL;
  int si = 0;
 
  for (; atoms[si] != NULL; si++) {
@@ -298,7 +299,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   struct mloadplan *cplan = NULL;
   struct mloadplan *tcplan = NULL;
   struct mloadplan **planl = NULL;
-  struct mloadplan **nplancand = NULL;
   unsigned int cc = 0, npcc;
   if (!cand) {
    panic:
@@ -318,7 +318,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
    curmod = curmod->next;
   }
-  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
+/*  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc); */
 
   if (cc) {
    cplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
@@ -338,19 +338,19 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      if (!tcplan) goto panic;
      tcplan->task = task;
      tcplan->mod = cand[icc];
-     cplan->left[icc] = tcplan;
+     cplan->left[icc-1] = tcplan;
     }
    }
   }
 
-  if (!plan) {
-   plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
-   if (!plan) goto panic;
-   plan->task = task;
-   plan->right = nplancand;
-  }
-
   free (cand);
+ }
+
+ if (!plan) {
+  plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
+  if (!plan) goto panic;
+  plan->task = task;
+  plan->right = nplancand;
  }
 
  return plan;
@@ -391,6 +391,7 @@ int mod_plan_free (struct mloadplan *plan) {
 }
 
 #ifdef DEBUG
+/* debugging functions: only available if DEBUG is set (obviously...) */
 void mod_ls () {
  struct lmodule *cur = mlist;
  do {
@@ -407,9 +408,10 @@ void mod_ls () {
 }
 
 void mod_plan_ls (struct mloadplan *plan) {
- char *rid = "n/a", *name = "unknown";
+ char *rid = "n/a", *name = "unknown", *action;
  static int recursion;
  int i;
+ if (!recursion) puts ("committing this plan will...");
  if (!plan) return;
  if (plan->mod) {
   if (plan->mod->module) {
@@ -421,8 +423,40 @@ void mod_plan_ls (struct mloadplan *plan) {
  }
  for (i = 0; i < recursion; i++)
   fputs (" ", stdout);
- printf ("%i, %s (%s)\n", plan->task, rid, name);
+ switch (plan->task) {
+  case MOD_ENABLE:
+   action = "enable"; break;
+  case MOD_DISABLE:
+   action = "enable"; break;
+  default:
+   action = "do something with..."; break;
+ }
+ printf ("%s %s (%s)\n", action, rid, name);
  recursion++;
+ if (plan->left && plan->left[0]) {
+  for (i = 0; i < recursion; i++)
+   fputs (" ", stdout);
+  puts ("on failure {");
+  recursion++;
+  for (i = 0; plan->left[i]; i++)
+   mod_plan_ls (plan->left[i]);
+  recursion--;
+  for (i = 0; i < recursion; i++)
+   fputs (" ", stdout);
+  puts ("}");
+ }
+ if (plan->right && plan->right[0]) {
+  for (i = 0; i < recursion; i++)
+   fputs (" ", stdout);
+  puts ("on success {");
+  recursion++;
+  for (i = 0; plan->right[i]; i++)
+   mod_plan_ls (plan->right[i]);
+  recursion--;
+  for (i = 0; i < recursion; i++)
+   fputs (" ", stdout);
+  puts ("}");
+ }
  recursion--;
 }
 #endif
