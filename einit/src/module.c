@@ -407,5 +407,22 @@ void mod_ls () {
 }
 
 void mod_plan_ls (struct mloadplan *plan) {
+ char *rid = "n/a", *name = "unknown";
+ static int recursion;
+ int i;
+ if (!plan) return;
+ if (plan->mod) {
+  if (plan->mod->module) {
+   if (plan->mod->module->rid)
+	rid = plan->mod->module->rid;
+   if (plan->mod->module->name)
+    name = plan->mod->module->name;
+  }
+ }
+ for (i = 0, i < recursion; i++)
+  fputs (" ", stdout);
+ printf ("%i, %s (%s)", plan->task, rid, name);
+ recursion++;
+ recursion--;
 }
 #endif
