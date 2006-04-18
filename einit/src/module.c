@@ -419,9 +419,9 @@ void mod_plan_ls (struct mloadplan *plan) {
     name = plan->mod->module->name;
   }
  }
- for (i = 0, i < recursion; i++)
+ for (i = 0; i < recursion; i++)
   fputs (" ", stdout);
- printf ("%i, %s (%s)", plan->task, rid, name);
+ printf ("%i, %s (%s)\n", plan->task, rid, name);
  recursion++;
  recursion--;
 }
