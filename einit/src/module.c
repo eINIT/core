@@ -240,16 +240,18 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 int mod (unsigned int task, struct lmodule *module) {
  struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
  pthread_t *th = calloc (1, sizeof (pthread_t));
+ char providefeedback = (mdefault.comment != NULL);
  if (!module) return 0;
  if (!fb) return bitch (BTCH_ERRNO);
  if (!th) return bitch (BTCH_ERRNO);
  if ((task == MOD_ENABLE) && !module->enable) return 0;
  if ((task == MOD_DISABLE) && !module->disable) return 0;
 
- if (mdefault.comment) {
+ fb->module = module;
+ fb->task = task;
+
+ if (providefeedback) {
   pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
-  fb->module = module;
-  fb->task = task;
   fb->status = STATUS_WORKING;
  }
 
@@ -261,7 +263,7 @@ int mod (unsigned int task, struct lmodule *module) {
    module->status = module->disable (module->param, fb);
    break;
  }
- if (mdefault.comment) {
+ if (providefeedback) {
   pthread_join (*th, NULL);
   free(fb);
  }
@@ -270,15 +272,11 @@ int mod (unsigned int task, struct lmodule *module) {
 }
 
 int mod_configure () {
- struct cfgnode *cfg = cfg_findnode ("feedback", 0);
- if (cfg && cfg->svalue) {
-  feedback = mod_find(cfg->svalue, EINIT_MOD_FEEDBACK);
-  if (feedback && feedback->comment) {
-   if (mod (MOD_ENABLE, feedback) & STATUS_OK)
-    mdefault.comment = feedback->comment;
-   else
-    mdefault.comment = NULL;
-  }
+ char *fbl[] = {"feedback", NULL};
+ struct mloadplan *fblp = mod_plan (NULL, fbl, MOD_ENABLE);
+ if (fblp) {
+  mod_plan_commit (fblp);
+  mod_plan_free (fblp);
  }
 }
 
@@ -291,7 +289,7 @@ int mod_cleanup () {
 
 /* helper functions for mod_plan should go right here (and they should not get global) */
 
-int mod_plan_sort_by_preference (struct lmodule **cand, char * atom) {
+int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  char *pstring = malloc ((8 + strlen (atom)) * sizeof (char));
  char **preftab;
  struct cfgnode *node;

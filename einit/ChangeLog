@@ -4,6 +4,9 @@
  * fixed some logics flaw
  * introduced <prefer-* /> variables: use these to express user-preferences for
    certain modules (s="rid1:rid2:...")
+ * removed the <feedback /> variable; it's redundant with the freshly-introduced
+   <prefer- /> concept: <prefer-feedback s="" /> will do exactly the same, and
+   a little more :D
 
 2006/04/15: mdeininger
  * forgot some header-files

@@ -107,6 +107,8 @@ struct mloadplan {
  struct mloadplan **right; /* elements of the tree to load on success */
 };
 
+extern struct lmodule mdefault;
+
 // scans for modules (i.e. load their .so and add it to the list)
 int mod_scanmodules ();
 
