@@ -69,6 +69,28 @@ void **plcombine (void **list1, void **list2) {
  return newlist;
 }
 
+void **pladd (void **list, void *item) {
+ void **newlist;
+ int x = 0, y = 0, s = 1, p = 0;
+ char *strbuffer = NULL;
+ if (!item) return NULL;
+ if (!list) list = calloc (1, sizeof (void *));
+
+ newlist = calloc (plcount(list) + 2, sizeof (void *));
+ if (!newlist) {
+  bitch (BTCH_ERRNO);
+  return NULL;
+ }
+
+ while (list[x])
+  { newlist [x] = list[x]; x++; }
+
+ newlist[x] = item;
+ free (list);
+
+ return newlist;
+}
+
 void **pldup (void **list) {
  void **newlist;
  int y = 0;

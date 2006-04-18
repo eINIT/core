@@ -100,13 +100,6 @@ struct lmodule {
  struct lmodule *next;
 };
 
-struct mdeptree {
- struct lmodule *mod;
- struct mdeptree *alternative;
- struct mdeptree *left;
- struct mdeptree *right;
-};
-
 struct mloadplan {
  unsigned int task;
  struct lmodule *mod;
@@ -132,15 +125,6 @@ int mod (unsigned int, struct lmodule *);
 #define mod_enable(lname) mod (MOD_ENABLE, lname)
 #define mod_disable(lname) mod (MOD_DISABLE, lname)
 
-// create the dependency tree for a module or a series of them
-struct mdeptree *mod_create_deptree (char **);
-
-// free a dependency tree
-void mod_free_deptree (struct mdeptree *);
-
-// enable the modules in a dependency tree
-int mod_enable_deptree (struct mdeptree *);
-
 // make things ready to be run
 int mod_configure ();
 
@@ -148,10 +132,10 @@ int mod_configure ();
 int mod_cleanup ();
 
 // create a plan for loading a handful of requirements
-struct mloadplan *mod_plan (char **);
+struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int);
 
 // actually do what the plan says
-int mod_plan_commit (struct mloadplan *);
+unsigned int mod_plan_commit (struct mloadplan *);
 
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *);
@@ -160,8 +144,8 @@ int mod_plan_free (struct mloadplan *);
 // lists all known modules to stdout
 void mod_ls ();
 
-// write the layout of a dependency-tree to stdout
-void mod_deptree_ls (struct mdeptree *);
+// write out a plan-struct to stdout
+void mod_plan_ls (struct mloadplan *);
 #endif
 
 #ifdef __cplusplus

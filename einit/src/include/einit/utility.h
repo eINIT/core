@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* some common functions to work with null-terminated arrays */
 
 void **plcombine (void **, void **);
+void **pladd (void **, void *);
 void **pldup (void **);
 int plcount (void **);
 

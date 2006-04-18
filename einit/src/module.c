@@ -289,87 +289,88 @@ int mod_cleanup () {
  }
 }
 
-struct mdeptree *mod_create_deptree (char **requirements) {
- struct mdeptree *root = NULL;
- struct mdeptree *cur = NULL;
- struct mdeptree *prev = NULL;
- struct lmodule *curmod = NULL;
+struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task) {
+ struct lmodule *curmod;
  int si = 0;
 
- for (; requirements[si] != NULL; si++) {
-  struct lmodule **candidates = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
-  unsigned int cc = 0;
+ for (; atoms[si] != NULL; si++) {
+  struct lmodule **cand = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
+  struct mloadplan *cplan = NULL;
+  struct mloadplan *tcplan = NULL;
+  struct mloadplan **planl = NULL;
+  struct mloadplan **nplancand = NULL;
+  unsigned int cc = 0, npcc;
+  if (!cand) {
+   panic:
+   mod_plan_free (plan);
+   bitch (BTCH_ERRNO);
+   return NULL;
+  }
   curmod = mlist;
 
   while (curmod) {
    struct smodule *tmp = curmod->module;
    if (tmp &&
-	   (tmp->rid && !strcmp (tmp->rid, requirements[si])) ||
-	   (tmp->provides && strinslist (tmp->provides, requirements[si]))) {
-	candidates[cc] = curmod;
+	   (tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
+	   (tmp->provides && strinslist (tmp->provides, atoms[si]))) {
+	cand[cc] = curmod;
     cc++;
    }
    curmod = curmod->next;
   }
-  printf ("looking for \"%s\": %i candidate(s)\n", requirements[si], cc);
- 
-  cur = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
-  if ( !cur ) {
-   nocur_action:
-   bitch (BTCH_ERRNO);
-   if (root) mod_free_deptree (root);
-   return NULL;
-  }
-  if (cc == 0) {
-   printf ("unsatisfied dependency: %s\n", requirements[si]);
-   if (root) mod_free_deptree (root);
-   return NULL;
-  } else if (cc == 1) {
-   cur->mod = candidates[0];
-  } else {
-   unsigned int cci = 1;
-   struct mdeptree *cura = cur;
-   struct mdeptree *curn;
-   cur->mod = candidates[0];
-   for (; cci <= cc; cci++) {
-    curn = (struct mdeptree *)calloc (1, sizeof(struct mdeptree));
-    if (!curn) goto nocur_action;
-    curn->mod = candidates[cci];
-	cura->alternative = curn;
-	cura = curn; 
+  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
+
+  if (cc) {
+   cplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
+   if (!cplan) goto panic;
+   cplan->task = task;
+   cplan->mod = cand[0];
+
+   nplancand = (struct mloadplan **)pladd ((void **)nplancand, (void *)cplan);
+
+   if (cc > 1) {
+	unsigned int icc = 1;
+    planl = (struct mloadplan **)calloc (cc, sizeof (struct mloadplan *));
+    if (!planl) goto panic;
+	cplan->left = planl;
+	for (; icc < cc; icc++) {
+     tcplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
+     if (!tcplan) goto panic;
+     tcplan->task = task;
+     tcplan->mod = cand[icc];
+     cplan->left[icc] = tcplan;
+    }
    }
   }
 
-  free (candidates);
+  if (!plan) {
+   plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
+   if (!plan) goto panic;
+   plan->task = task;
+   plan->right = nplancand;
+  }
 
-  if (prev == NULL) prev = cur;
-  else prev->left = cur;
-  if (root == NULL) root = cur;
+  free (cand);
  }
 
- return root;
+ return plan;
 }
 
-void mod_free_deptree (struct mdeptree *node) {
- if (node->alternative) mod_free_deptree(node->alternative);
- if (node->left) mod_free_deptree(node->left);
- if (node->right) mod_free_deptree(node->right);
- free (node);
-}
-
-int mod_enable_deptree (struct mdeptree *root) {
- struct mdeptree *cur = root;
- while (cur) {
-  if (!cur->mod || (cur->mod->status == STATUS_ENABLED)) continue;
-  mod (MOD_ENABLE, cur->mod);
-  cur = cur->left;
+unsigned int mod_plan_commit (struct mloadplan *plan) {
+ unsigned int i, ec = 0;
+ if (!plan) return 1;
+ if (!plan->mod) i = STATUS_OK;
+ else i = mod(plan->task, plan->mod);
+ if ((i & STATUS_OK) && plan->right)
+  for (i = 0; plan->right[i]; i++)
+   ec += mod_plan_commit (plan->right[i]);
+ else if (plan->left) {
+  ec = 1;
+  for (i = 0; plan->left[i]; i++)
+   ec += mod_plan_commit (plan->left[i]);
  }
-}
-
-struct mloadplan *mod_plan (char **atoms) {
-}
-
-int mod_plan_commit (struct mloadplan *plan) {
+  
+ return ec;
 }
 
 int mod_plan_free (struct mloadplan *plan) {
@@ -405,31 +406,6 @@ void mod_ls () {
  } while (cur != NULL);
 }
 
-void mod_ls_deptree (struct mdeptree *mdp) {
- static int recursion;
- int i = 0;
- char * rid = "unknown";
- char * lid = "unknown";
- if (mdp->mod && mdp->mod->module) {
-  if (mdp->mod->module->rid)
-   rid = mdp->mod->module->rid;
-  if (mdp->mod->module->name)
-   lid = mdp->mod->module->name;
- }
-
- for (; i < recursion; i++)
-  putc (' ', stdout);
- printf ("%s [%s]\n", lid, rid);
-
- if (mdp->alternative) {
-  fputs ("alternative: {", stdout);
-  mod_ls_deptree (mdp->alternative);
-  fputs ("}", stdout);
- }
-
- recursion ++;
-  if (mdp->left) mod_ls_deptree (mdp->left);
-  if (mdp->right) mod_ls_deptree (mdp->right);
- recursion --;
+void mod_plan_ls (struct mloadplan *plan) {
 }
 #endif
