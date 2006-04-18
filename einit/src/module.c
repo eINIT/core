@@ -289,6 +289,48 @@ int mod_cleanup () {
  }
 }
 
+/* helper functions for mod_plan should go right here (and they should not get global) */
+
+int mod_plan_sort_by_preference (struct lmodule **cand, char * atom) {
+ char *pstring = malloc ((8 + strlen (atom)) * sizeof (char));
+ char **preftab;
+ struct cfgnode *node;
+ unsigned int tn = 0, cn = 0, ci;
+ if (!pstring) return bitch (BTCH_ERRNO);
+ pstring[0] = 0;
+ strcat (pstring, "prefer-");
+ strcat (pstring, atom);
+ node = cfg_findnode (pstring, 0);
+ if (!node || !node->svalue) return 0;
+ free (pstring);
+ pstring = strdup (node->svalue);
+ if (!pstring) return bitch (BTCH_ERRNO);
+ preftab = str2slist (':', pstring);
+ if (!preftab) {
+  free (pstring);
+  return bitch (BTCH_ERRNO);
+ }
+
+ for (; preftab[tn]; tn++) {
+  for (ci = 0; cand[ci]; ci++) {
+   if (cand[ci]->module && cand[ci]->module->rid &&
+       !strcmp (cand[ci]->module->rid, preftab[tn])) {
+    struct lmodule *tmp = cand[cn];
+    cand[cn] = cand[ci];
+	cand[ci] = tmp;
+	cn++;
+	break;
+   }
+  }
+ }
+
+ free (pstring);
+ free (preftab);
+ return 0;
+}
+
+/* end helper functions */
+
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task) {
  struct lmodule *curmod;
  struct mloadplan **nplancand = NULL;
@@ -321,6 +363,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 /*  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc); */
 
   if (cc) {
+   if (mod_plan_sort_by_preference (cand, atoms[si])) goto panic;
    cplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
    if (!cplan) goto panic;
    cplan->task = task;
@@ -361,10 +404,11 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return 1;
  if (!plan->mod) i = STATUS_OK;
  else i = mod(plan->task, plan->mod);
- if ((i & STATUS_OK) && plan->right)
-  for (i = 0; plan->right[i]; i++)
-   ec += mod_plan_commit (plan->right[i]);
- else if (plan->left) {
+ if (i & STATUS_OK) {
+  if (plan->right)
+   for (i = 0; plan->right[i]; i++)
+    ec += mod_plan_commit (plan->right[i]);
+ } else if (plan->left) {
   ec = 1;
   for (i = 0; plan->left[i]; i++)
    ec += mod_plan_commit (plan->left[i]);

@@ -1,6 +1,9 @@
 2006/04/18: mdeininger
  * changes to mod_plan*
  * removed everything deptree-related
+ * fixed some logics flaw
+ * introduced <prefer-* /> variables: use these to express user-preferences for
+   certain modules (s="rid1:rid2:...")
 
 2006/04/15: mdeininger
  * forgot some header-files
