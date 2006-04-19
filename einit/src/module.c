@@ -281,7 +281,7 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  pstring[0] = 0;
  strcat (pstring, "prefer-");
  strcat (pstring, atom);
- node = cfg_findnode (pstring, 0);
+ node = cfg_findnode (pstring, 0, NULL);
  if (!node || !node->svalue) return 0;
  free (pstring);
  pstring = strdup (node->svalue);
@@ -316,6 +316,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  struct lmodule *curmod;
  struct mloadplan **nplancand = NULL;
  int si = 0;
+ if (!atoms) return NULL;
 
  for (; atoms[si] != NULL; si++) {
   struct lmodule **cand = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));

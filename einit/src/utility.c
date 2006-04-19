@@ -222,7 +222,7 @@ char **slistdup (char **slist) {
 
 char *cfg_getpath (char *id) {
  int mplen;
- struct cfgnode *svpath = cfg_findnode (id, 0);
+ struct cfgnode *svpath = cfg_findnode (id, 0, NULL);
  if (!svpath || !svpath->svalue) return NULL;
  mplen = strlen (svpath->svalue) +1;
  if (svpath->svalue[mplen-2] != '/') {

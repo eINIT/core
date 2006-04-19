@@ -62,7 +62,7 @@ int enable (void *pa, struct mfeedback *status) {
  status->changed++;
 
  {
-  struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0);
+  struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0, NULL);
   if (cfg && !cfg->flag) {
    if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
     status->verbose = strerror(errno);

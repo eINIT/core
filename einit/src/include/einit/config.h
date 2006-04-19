@@ -97,7 +97,7 @@ int cfg_addnode (struct cfgnode *);
 int cfg_delnode (struct cfgnode *);
 
 // find a node (by id)
-struct cfgnode *cfg_findnode (char *, unsigned int);
+struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
 
 // replace a node with a new one
 int cfg_replacenode (struct cfgnode *, struct cfgnode *);

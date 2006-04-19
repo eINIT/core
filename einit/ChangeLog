@@ -1,6 +1,13 @@
 2006/04/19: mdeininger
  * agh, typos
  * there's no need for the mod_configure()/mod_cleanup() functions anymore
+ * mod-sysv.c can now actually *do* something :D (wait, that means I can
+   actually start using this app soon... yays)
+ * added mod-exec.c: for "pseudo-modules" that can be done in a handful of
+   lines of script.
+ * added a new parameter to cfg_findnode(): the thir parameter (base) tells
+   cfg_findnode what node to start from (use NULL to start from the first one)
+ * hey... things are finally working out :D
 
 2006/04/18: mdeininger
  * changes to mod_plan*

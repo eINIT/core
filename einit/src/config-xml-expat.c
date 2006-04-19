@@ -204,6 +204,8 @@ int cfg_freenode (struct cfgnode *node) {
 
  if (node->id)
   free (node->id);
+ if (node->custom)
+  free (node->custom);
 
  free (node);
  return;
@@ -243,8 +245,8 @@ int cfg_delnode (struct cfgnode *node) {
  return -1;
 }
 
-struct cfgnode *cfg_findnode (char *id, unsigned int type) {
- struct cfgnode *cur = sconfiguration->node;
+struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
+ struct cfgnode *cur = base ? base->next : sconfiguration->node;
  if (!cur || !id) return NULL;
  if (!strcmp(cur->id, id)) return cur;
 
