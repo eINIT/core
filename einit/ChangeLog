@@ -1,3 +1,7 @@
+2006/04/19: mdeininger
+ * agh, typos
+ * there's no need for the mod_configure()/mod_cleanup() functions anymore
+
 2006/04/18: mdeininger
  * changes to mod_plan*
  * removed everything deptree-related

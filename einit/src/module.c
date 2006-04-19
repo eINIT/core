@@ -59,7 +59,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void *mod_comment_thread (struct mfeedback *);
 
-struct lmodule *feedback;
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
 	NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL
@@ -271,23 +270,7 @@ int mod (unsigned int task, struct lmodule *module) {
  return module->status;
 }
 
-int mod_configure () {
- char *fbl[] = {"feedback", NULL};
- struct mloadplan *fblp = mod_plan (NULL, fbl, MOD_ENABLE);
- if (fblp) {
-  mod_plan_commit (fblp);
-  mod_plan_free (fblp);
- }
-}
-
-int mod_cleanup () {
- if (feedback) {
-  mod (MOD_DISABLE, feedback);
-  mdefault.comment = NULL;
- }
-}
-
-/* helper functions for mod_plan should go right here (and they should not get global) */
+/* helper functions for mod_plan should go right here */
 
 int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  char *pstring = malloc ((8 + strlen (atom)) * sizeof (char));

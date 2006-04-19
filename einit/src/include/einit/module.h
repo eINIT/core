@@ -127,12 +127,6 @@ int mod (unsigned int, struct lmodule *);
 #define mod_enable(lname) mod (MOD_ENABLE, lname)
 #define mod_disable(lname) mod (MOD_DISABLE, lname)
 
-// make things ready to be run
-int mod_configure ();
-
-// clean up
-int mod_cleanup ();
-
 // create a plan for loading a handful of requirements
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int);
 

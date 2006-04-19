@@ -134,7 +134,7 @@ char **str2slist (const char sep, char *input) {
    input[i] = 0;
   }
  }
- ret = calloc (sc, sizeof(char *));
+ ret = calloc (sc+1, sizeof(char *));
  if (!ret) {
   bitch (BTCH_ERRNO);
   for (i = 0; i < l; i++) {
