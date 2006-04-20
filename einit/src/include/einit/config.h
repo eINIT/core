@@ -57,6 +57,7 @@ struct cfgnode {
  unsigned int nodetype;
  char *id;
  struct cfgnode *next;
+ struct cfgnode *mode;
  unsigned char flag;
  long int value;
  char *svalue;
@@ -78,6 +79,9 @@ struct sconfiguration {
 #ifndef _MODULE
 char *configfile;
 #endif
+
+char *currentmode;
+char *newmode;
 
 struct sconfiguration *sconfiguration;
 

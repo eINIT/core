@@ -3,6 +3,8 @@
  * mod() is now a little more verbose when no feedback-module has been enabled
    (in DEBUG-mode, that is)
  * added tty.c -- will be responsible for getting the tty lines up and running.
+ * some changes to config-file parsing
+ * ttys should work now.
 
 2006/04/19: mdeininger
  * agh, typos

@@ -106,6 +106,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   }
   newnode->id = strdup (name);
   newnode->nodetype = EI_NODETYPE_CONFIG;
+  newnode->mode = curmode;
   if (!newnode->id) {
    free (newnode);
    bitch (BTCH_ERRNO);
