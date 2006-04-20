@@ -256,10 +256,30 @@ int mod (unsigned int task, struct lmodule *module) {
 
  switch (task) {
   case MOD_ENABLE:
+#ifdef DEBUG
+   if (!providefeedback && module->module && module->module->rid)
+    printf ("enabling module %s:", module->module->rid);
+#endif
    module->status = module->enable (module->param, fb);
+#ifdef DEBUG
+   if (!providefeedback) {
+    if (module->status & STATUS_OK) puts (" OK");
+    else puts (" ERROR");
+   }
+#endif
    break;
   case MOD_DISABLE:
+#ifdef DEBUG
+   if (!providefeedback && module->module && module->module->rid)
+    printf ("disabling module %s:", module->module->rid);
+#endif
    module->status = module->disable (module->param, fb);
+#ifdef DEBUG
+   if (!providefeedback) {
+    if (module->status & STATUS_OK) puts (" OK");
+    else puts (" ERROR");
+   }
+#endif
    break;
  }
  if (providefeedback) {
