@@ -82,6 +82,16 @@ fi
 
 echo "finding absolute include directory..."
 INCLUDE="-I`pwd`/src/include";
+echo -n "searching for expat.h... "
+EXPAT=`find / -iname expat.h 2>/dev/null`
+EXPAT=${EXPAT%/*}
+if test -n {EXPAT}; then
+	echo ${EXPAT};
+	INCLUDE="${INCLUDE} -I${EXPAT}"
+else
+	echo "not found";
+	echo "expat currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or http://expat.sf.net/.";
+fi
 
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}"
@@ -142,7 +152,7 @@ echo -n "creating dependency information... "
 touch src/depend.mk
 touch src/modules/depend.mk
 
-if make depend > /dev/null 2>&1; then
+if make depend > /dev/null; then
 	echo "done";
 else
 	echo "failed!";
