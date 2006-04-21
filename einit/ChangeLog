@@ -1,3 +1,6 @@
+2006/04/21: mdeininger
+ * renamed pl* and slist* functions to set_* ones. seems more logical...
+
 2006/04/20: mdeininger
  * sample configuration for ttys
  * mod() is now a little more verbose when no feedback-module has been enabled

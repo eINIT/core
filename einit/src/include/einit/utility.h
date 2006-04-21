@@ -38,17 +38,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
-void **plcombine (void **, void **);
-void **pladd (void **, void *);
-void **pldup (void **);
-int plcount (void **);
+void **setcombine (void **, void **);
+void **setadd (void **, void *);
+void **setdup (void **);
+int setcount (void **);
 
-/* some functions to work with string-lists */
+/* some functions to work with string-sets */
 
-char **str2slist (const char, char *);
-int strinslist (char **, const char *);
-char **slistrebuild (char **);
-char **slistdup (char **);
+char **str2set (const char, char *);
+int strinset (char **, const char *);
+char **strsetrebuild (char **);
+char **strsetdup (char **);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 

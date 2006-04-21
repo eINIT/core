@@ -39,90 +39,90 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
-void **plcombine (void **list1, void **list2) {
- void **newlist;
+void **setcombine (void **set1, void **set2) {
+ void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  char *strbuffer = NULL;
- if (!list1) return list2;
- if (!list1[0]) {
-  free (list1);
-  return list2;
+ if (!set1) return set2;
+ if (!set1[0]) {
+  free (set1);
+  return set2;
  }
- if (!list2) return list1;
- if (!list2[0]) {
-  free (list2);
-  return list1;
+ if (!set2) return set1;
+ if (!set2[0]) {
+  free (set2);
+  return set1;
  }
 
- newlist = calloc (plcount(list1) + plcount(list2) +1, sizeof (void *));
- if (!newlist) {
+ newset = calloc (setcount(set1) + setcount(set2) +1, sizeof (void *));
+ if (!newset) {
   bitch (BTCH_ERRNO);
   return NULL;
  }
 
- while (list1[x])
-  { newlist [x] = list1[x]; x++; }
+ while (set1[x])
+  { newset [x] = set1[x]; x++; }
  y = x; x = 0;
- while (list2[x])
-  { newlist [y] = list2[x]; x++; y++; }
+ while (set2[x])
+  { newset [y] = set2[x]; x++; y++; }
 
- return newlist;
+ return newset;
 }
 
-void **pladd (void **list, void *item) {
- void **newlist;
+void **setadd (void **set, void *item) {
+ void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  char *strbuffer = NULL;
  if (!item) return NULL;
- if (!list) list = calloc (1, sizeof (void *));
+ if (!set) set = calloc (1, sizeof (void *));
 
- newlist = calloc (plcount(list) + 2, sizeof (void *));
- if (!newlist) {
+ newset = calloc (setcount(set) + 2, sizeof (void *));
+ if (!newset) {
   bitch (BTCH_ERRNO);
   return NULL;
  }
 
- while (list[x])
-  { newlist [x] = list[x]; x++; }
+ while (set[x])
+  { newset [x] = set[x]; x++; }
 
- newlist[x] = item;
- free (list);
+ newset[x] = item;
+ free (set);
 
- return newlist;
+ return newset;
 }
 
-void **pldup (void **list) {
- void **newlist;
+void **setdup (void **set) {
+ void **newset;
  int y = 0;
- if (!list) return NULL;
- if (!list[0]) return NULL;
+ if (!set) return NULL;
+ if (!set[0]) return NULL;
 
- newlist = calloc (plcount(list) +1, sizeof (char *));
- if (!newlist) {
+ newset = calloc (setcount(set) +1, sizeof (char *));
+ if (!newset) {
   bitch (BTCH_ERRNO);
   return NULL;
  }
- while (list[y]) {
-  newlist[y] = list[y];
+ while (set[y]) {
+  newset[y] = set[y];
   y++;
  }
 
- return newlist;
+ return newset;
 }
 
-int plcount (void **list) {
+int setcount (void **set) {
  int i = 0;
- if (!list) return 0;
- if (!list[0]) return 0;
- while (list[i])
+ if (!set) return 0;
+ if (!set[0]) return 0;
+ while (set[i])
   i++;
 
  return i;
 }
 
-/* some functions to work with string-lists */
+/* some functions to work with string-sets */
 
-char **str2slist (const char sep, char *input) {
+char **str2set (const char sep, char *input) {
  int l, i = 0, sc = 1, cr = 1;
  char **ret;
  if (!input) return NULL;
@@ -154,7 +154,7 @@ char **str2slist (const char sep, char *input) {
  return ret;
 }
 
-int strinslist (char **haystack, const char *needle) {
+int strinset (char **haystack, const char *needle) {
  int c = 0;
  if (!haystack) return 0;
  if (!haystack[0]) return 0;
@@ -165,57 +165,57 @@ int strinslist (char **haystack, const char *needle) {
  return 0;
 }
 
-char **slistrebuild (char **slist) {
+char **strsetrebuild (char **sset) {
  int y = 0, p = 0, s = 1;
  char *strbuffer;
- char **slistbuffer;
- if (!slist) return NULL;
- if (!slist[0]) return NULL;
+ char **ssetbuffer;
+ if (!sset) return NULL;
+ if (!sset[0]) return NULL;
 
- while (slist[y])
-  { y++; s += strlen (slist[y]); }
+ while (sset[y])
+  { y++; s += strlen (sset[y]); }
 
  strbuffer = malloc (s*sizeof(char));
  if (!strbuffer) {
   bitch (BTCH_ERRNO);
   return NULL;
  }
- slistbuffer = (char **)calloc (plcount ((void **)slist)+1, sizeof(char *));
- if (!slistbuffer) {
+ ssetbuffer = (char **)calloc (setcount ((void **)sset)+1, sizeof(char *));
+ if (!ssetbuffer) {
   free (strbuffer);
   bitch (BTCH_ERRNO);
   return NULL;
  }
  strbuffer[s-1] = 0;
- while (slist[y])
-  { y++; s += strlen (slist[y]); }
- return slistbuffer;
+ while (sset[y])
+  { y++; s += strlen (sset[y]); }
+ return ssetbuffer;
 }
 
-char **slistdup (char **slist) {
- char **newlist;
+char **strsetdup (char **sset) {
+ char **newset;
  int y = 0;
- if (!slist) return NULL;
- if (!slist[0]) return NULL;
+ if (!sset) return NULL;
+ if (!sset[0]) return NULL;
 
- newlist = calloc (plcount((void **)slist) +1, sizeof (char *));
- if (!newlist) {
+ newset = calloc (setcount((void **)sset) +1, sizeof (char *));
+ if (!newset) {
   bitch (BTCH_ERRNO);
   return NULL;
  }
- while (slist[y]) {
-  newlist[y] = strdup (slist[y]);
-  if (!newlist [y]) {
+ while (sset[y]) {
+  newset[y] = strdup (sset[y]);
+  if (!newset [y]) {
    bitch (BTCH_ERRNO);
-   for (y = 0; newlist[y] != NULL; y++)
-    free (newlist[y]);
-   free (newlist);
+   for (y = 0; newset[y] != NULL; y++)
+    free (newset[y]);
+   free (newset);
    return NULL;
   }
   y++;
  }
 
- return newlist;
+ return newset;
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */

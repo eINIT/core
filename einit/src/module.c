@@ -306,7 +306,7 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  free (pstring);
  pstring = strdup (node->svalue);
  if (!pstring) return bitch (BTCH_ERRNO);
- preftab = str2slist (':', pstring);
+ preftab = str2set (':', pstring);
  if (!preftab) {
   free (pstring);
   return bitch (BTCH_ERRNO);
@@ -356,7 +356,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    struct smodule *tmp = curmod->module;
    if (tmp &&
 	   (tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
-	   (tmp->provides && strinslist (tmp->provides, atoms[si]))) {
+	   (tmp->provides && strinset (tmp->provides, atoms[si]))) {
 	cand[cc] = curmod;
     cc++;
    }
@@ -371,7 +371,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    cplan->task = task;
    cplan->mod = cand[0];
 
-   nplancand = (struct mloadplan **)pladd ((void **)nplancand, (void *)cplan);
+   nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan);
 
    if (cc > 1) {
 	unsigned int icc = 1;

@@ -62,7 +62,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
       bitch (BTCH_ERRNO);
       return;
 	 }
-	 curmode->enable = str2slist (':', modlist);
+	 curmode->enable = str2set (':', modlist);
     }
    }
   }
@@ -91,7 +91,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
      bitch (BTCH_ERRNO);
      return;
 	}
-	newnode->base = str2slist (':', tmp);
+	newnode->base = str2set (':', tmp);
 	if (!newnode->base) {
      free (tmp);
 	 return;
