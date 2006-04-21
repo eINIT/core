@@ -29,10 +29,10 @@
 
 echo -n "checking options [";
 for param in $@; do
-	short=${param//=*/};
+	short=${param%%=*};
 	if test "$short" = "--prefix"; then
 		echo -n " PREFIX";
-		PREFIX=${param##--prefix=};
+		PREFIX=${param#*=};
 	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG -g";
