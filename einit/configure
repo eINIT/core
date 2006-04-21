@@ -27,6 +27,8 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------
 
+INCLUDEPATH="/usr/include /usr/local/include /opt"
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
@@ -83,7 +85,7 @@ fi
 echo "finding absolute include directory..."
 INCLUDE="-I`pwd`/src/include";
 echo -n "searching for expat.h... "
-EXPAT=`find / -iname expat.h 2>/dev/null`
+EXPAT=`find ${INCLUDEPATH} -iname expat.h 2>/dev/null`
 EXPAT=${EXPAT%/*}
 if test -n {EXPAT}; then
 	echo ${EXPAT};
