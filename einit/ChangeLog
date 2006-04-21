@@ -2,8 +2,8 @@
  * renamed pl* and slist* functions to set_* ones. seems more logical...
  * introduced the macro status_update(): use this in your module whenever you
    want to tell einit that your status has changed.
-   I think using threading just do do visual updates wasn't a good idea to begin
-   with, I'll have to revise that... this macro allows me to do so easily.
+   I think using threading just to do feedback-updates wasn't a good idea to
+   begin with, I'll have to revise that... this macro allows me to do so easily.
 
 2006/04/20: mdeininger
  * sample configuration for ttys

@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <einit/bitch.h>
 #include <einit/config.h>
+#include <einit/utility.h>
 
 /* some common functions to work with null-terminated arrays */
 
@@ -216,6 +217,43 @@ char **strsetdup (char **sset) {
  }
 
  return newset;
+}
+
+/* hashes */
+
+struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
+ struct uhash *n = calloc (1, sizeof (struct uhash));
+ struct uhash *c = hash;
+ if (!n) {
+  bitch (BTCH_ERRNO);
+  hashfree (hash);
+  return NULL;
+ }
+
+ n->key = key;
+ n->value = value;
+
+ if (!hash)
+  hash = n;
+ else {
+  while (c->next) c = c->next;
+  c->next = n;
+ }
+
+ return hash;
+}
+
+struct uhash *hashfind (struct uhash *hash, char *key) {
+ struct uhash *c = hash;
+ if (!hash || !key) return NULL;
+ while ((!c->key || strcmp (key, c->key)) && c->next) c = c->next;
+ return c;
+}
+
+void hashfree (struct uhash *hash) {
+ if (!hash) return;
+ hashfree (hash->next);
+ free (hash);
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */

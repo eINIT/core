@@ -36,6 +36,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _UTILITY_H
 #define _UTILITY_H
 
+struct uhash {
+ char *key;
+ void *value;
+ struct uhash *next;
+};
+
 /* some common functions to work with null-terminated arrays */
 
 void **setcombine (void **, void **);
@@ -49,6 +55,12 @@ char **str2set (const char, char *);
 int strinset (char **, const char *);
 char **strsetrebuild (char **);
 char **strsetdup (char **);
+
+/* same as above, this time with hashes */
+
+struct uhash *hashadd (struct uhash *, char *, void *);
+struct uhash *hashfind (struct uhash *, char *);
+void hashfree (struct uhash *);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 

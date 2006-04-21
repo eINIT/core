@@ -330,6 +330,51 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  return 0;
 }
 
+struct uhash *mod_plan_wpw (struct mloadplan *plan, struct uhash *hash) {
+ struct uhash *ihash = hash;
+ int i;
+
+ if (!plan) return NULL;
+ if (plan->left && plan->left[0]) {
+  for (i = 0; plan->left[i]; i++)
+   ihash = mod_plan_wpw(plan->left[i], ihash);
+ }
+ if (plan->right && plan->right[0]) {
+  for (i = 0; plan->right[i]; i++)
+   ihash = mod_plan_wpw(plan->right[i], ihash);
+ }
+ if (plan->mod) {
+  if (plan->mod->module) {
+   struct smodule *mod = plan->mod->module;
+   if (mod->rid)
+    ihash = hashadd (ihash, mod->rid, plan);
+   if (mod->provides && mod->provides[0]) {
+    for (i = 0; mod->provides[i]; i++)
+     ihash = hashadd (ihash, mod->provides[i], (void *)plan);
+   }
+  }
+ }
+
+ return ihash;
+}
+
+struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
+ struct uhash *hash_prov;
+ struct uhash *c;
+ if (!plan) return NULL;
+ else if (!plan->mod && !plan->right && !plan->left) {
+  free (plan);
+  return NULL;
+ }
+
+ hash_prov = mod_plan_wpw (plan, NULL);
+ if (c = hashfind (hash_prov, "localmount"))
+  puts (((struct mloadplan *)(c->value))->mod->module->rid);
+ hashfree (hash_prov);
+
+ return plan;
+}
+
 /* end helper functions */
 
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task) {
@@ -395,10 +440,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
   if (!plan) goto panic;
   plan->task = task;
-  plan->right = nplancand;
  }
+ plan->right = (struct mloadplan **)setcombine ((void*)plan->right, (void*)nplancand);
 
- return plan;
+ return mod_plan_restructure(plan);
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
@@ -420,18 +465,15 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 }
 
 int mod_plan_free (struct mloadplan *plan) {
- struct mloadplan **c;
  int i;
  if (!plan) return -1;
  if (plan->left) {
-  c = plan->left;
-  for (i = 0; c[i]; c++)
-   mod_plan_free(c[i]);
+  for (i = 0; plan->left[i]; i++)
+   mod_plan_free(plan->left[i]);
  }
  if (plan->right) {
-  c = plan->right;
-  for (i = 0; c[i]; c++)
-   mod_plan_free(c[i]);
+  for (i = 0; plan->right[i]; i++)
+   mod_plan_free(plan->right[i]);
  }
  free (plan);
 }
