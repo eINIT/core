@@ -111,6 +111,28 @@ void **setdup (void **set) {
  return newset;
 }
 
+void **setdel (void **set, void *item) {
+ void **newset = set;
+ int x = 0, y = 0, s = 1, p = 0;
+ char *strbuffer = NULL;
+ if (!item) return NULL;
+ if (!set) set = calloc (1, sizeof (void *));
+
+ while (set[x]) {
+  if (set[x] != item) {
+   newset [x] = set[x];
+   x++;
+  }
+  else {
+   set++;
+  }
+ }
+
+ newset[x] = NULL;
+
+ return newset;
+}
+
 int setcount (void **set) {
  int i = 0;
  if (!set) return 0;

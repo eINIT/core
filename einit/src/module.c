@@ -361,6 +361,10 @@ struct uhash *mod_plan_wpw (struct mloadplan *plan, struct uhash *hash) {
 struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  struct uhash *hash_prov;
  struct uhash *c;
+ struct mloadplan **orphans = NULL;
+ struct mloadplan **curpl = NULL;
+ unsigned int i, j;
+ unsigned char pass = 0, ds;
  if (!plan) return NULL;
  else if (!plan->mod && !plan->right && !plan->left) {
   free (plan);
@@ -368,8 +372,39 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  }
 
  hash_prov = mod_plan_wpw (plan, NULL);
- if (c = hashfind (hash_prov, "localmount"))
-  puts (((struct mloadplan *)(c->value))->mod->module->rid);
+/* if (c = hashfind (hash_prov, "localmount"))
+  puts (((struct mloadplan *)(c->value))->mod->module->rid);*/
+
+ while (pass < 2) {
+  switch (pass) {
+   case 0: curpl = plan->right; break;
+   case 1: curpl = plan->left; break;
+  }
+  if (curpl && curpl[0]) {
+   for (i = 0; curpl[i]; i++) {
+    if (curpl[i]->mod && curpl[i]->mod->module && curpl[i]->mod->module->requires) {
+     char **req = curpl[i]->mod->module->requires;
+     ds = 0;
+     for (j = 0; req[j]; j++) {
+      c = hash_prov;
+      while (c && (c = hashfind (c, req[j]))) {
+       struct mloadplan *d = c->value;
+	   d->right = (struct mloadplan **)setadd ((void **)d->right, (void *)curpl[i]);
+       ds = 1;
+	   c = c->next;
+      }
+	 }
+     if (ds) {
+      curpl = (struct mloadplan **)setdel ((void *)curpl, (void *)curpl[i]);
+      i--;
+      ds = 0;
+     }
+    }
+   }
+  }
+  pass++;
+ }
+
  hashfree (hash_prov);
 
  return plan;

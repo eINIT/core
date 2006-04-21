@@ -47,6 +47,7 @@ struct uhash {
 void **setcombine (void **, void **);
 void **setadd (void **, void *);
 void **setdup (void **);
+void **setdel (void **, void *);
 int setcount (void **);
 
 /* some functions to work with string-sets */
