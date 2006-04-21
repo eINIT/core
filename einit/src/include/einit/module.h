@@ -144,6 +144,10 @@ void mod_ls ();
 void mod_plan_ls (struct mloadplan *);
 #endif
 
+// use this to tell einit that there is new feedback-information
+// don't rely on this to be a macro!
+#define status_update(a) a->changed++
+
 #ifdef __cplusplus
 }
 #endif

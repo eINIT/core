@@ -59,7 +59,7 @@ struct smodule self = {
 
 int enable (void *pa, struct mfeedback *status) {
  status->status = STATUS_ENABLING;
- status->changed++;
+ status_update (status);
 
  {
   struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0, NULL);
@@ -67,19 +67,19 @@ int enable (void *pa, struct mfeedback *status) {
    if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
     status->verbose = strerror(errno);
 	errno = 0;
-	status->changed++;
 	status->errorc++;
+    status_update (status);
    }
   }
  }
 
  status->status = STATUS_OK;
- status->changed++;
+ status_update (status);
  return STATUS_OK;
 }
 
 int disable (void *pa, struct mfeedback *status) {
  status->status = STATUS_OK;
- status->changed++;
+ status_update (status);
  return STATUS_OK;
 }
