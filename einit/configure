@@ -27,7 +27,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------
 
-INCLUDEPATH="/usr/include /usr/local/include /opt"
+INCLUDEPATH="/usr/local/include"
 
 echo -n "checking options [";
 for param in $@; do
@@ -62,7 +62,7 @@ Options:
  --enable-linux   enable compilation of linux-specific modules
  --debug          will #define DEBUG.
  --help           display this text and exit.";
- exit;
+exit;
 fi;
 
 echo -n "/etc/make.conf ["
@@ -84,12 +84,15 @@ fi
 
 echo "finding absolute include directory..."
 INCLUDE="-I`pwd`/src/include";
-echo -n "searching for expat.h... "
-EXPAT=`find ${INCLUDEPATH} -iname expat.h 2>/dev/null`
-EXPAT=${EXPAT%/*}
+echo -n "searching for expat.h..."
+EXPAT=`find -d ${INCLUDEPATH} -iname expat.h 2>/dev/null`
 if test -n {EXPAT}; then
-	echo ${EXPAT};
-	INCLUDE="${INCLUDE} -I${EXPAT}"
+	for x in ${EXPAT}; do
+		x=${x%/*};
+		echo -n " ${x}";
+		INCLUDE="${INCLUDE} -I${x}";
+	done;
+	echo "";
 else
 	echo "not found";
 	echo "expat currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or http://expat.sf.net/.";
