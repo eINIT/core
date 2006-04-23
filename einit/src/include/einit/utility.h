@@ -63,6 +63,7 @@ char **strsetdel (char **, char *);
 struct uhash *hashadd (struct uhash *, char *, void *);
 struct uhash *hashfind (struct uhash *, char *);
 void hashfree (struct uhash *);
+#define hashnext(h) h->next
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 

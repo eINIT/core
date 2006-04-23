@@ -361,6 +361,7 @@ struct uhash *mod_plan_wpw (struct mloadplan *plan, struct uhash *hash) {
 struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  struct uhash *hash_prov;
  struct uhash *c;
+ struct uhash *d;
  struct mloadplan **orphans = NULL;
  struct mloadplan **curpl = NULL;
  unsigned int i, j;
@@ -372,10 +373,51 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  }
 
  hash_prov = mod_plan_wpw (plan, NULL);
+
+ d = hash_prov;
+ while (d) {
+  if (d->value) {
+   struct mloadplan *v = (struct mloadplan *)d->value;
+   if (v->right) free (v->right);
+   if (v->left) free (v->left);
+   v->left = NULL;
+   v->right = NULL;
+  }
+  d = hashnext (d);
+ }
+
+ d = hash_prov;
+ while (d) {
+  if (d->value) {
+   struct mloadplan *v = (struct mloadplan *)d->value;
+
+    if (v->mod && v->mod->module && v->mod->module->requires) {
+     char **req = v->mod->module->requires;
+     ds = 0;
+     for (j = 0; req[j]; j++) {
+	  adds = 0;
+      c = hash_prov;
+      while (c && (c = hashfind (c, req[j]))) {
+       struct mloadplan *e = c->value;
+       adds++;
+	   e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v);
+       ds = 1;
+	   c = c->next;
+      }
+      if (!adds) {
+	   if (!strinset (plan->unavailable, req[j]))
+        plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
+      }
+	 }
+    }
+
+  }
+  d = hashnext (d);
+ }
 /* if (c = hashfind (hash_prov, "localmount"))
   puts (((struct mloadplan *)(c->value))->mod->module->rid);*/
 
- while (pass < 2) {
+/* while (pass < 2) {
   switch (pass) {
    case 0: curpl = plan->right; break;
    case 1: curpl = plan->left; break;
@@ -409,7 +451,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
    }
   }
   pass++;
- }
+ }*/
 
  hashfree (hash_prov);
 
@@ -479,6 +521,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     puts ("can't satisfy atom");
     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
+    return plan;
    }
   }
 
@@ -517,18 +560,46 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  return ec;
 }
 
-int mod_plan_free (struct mloadplan *plan) {
+
+/* collect all elements in the plan */
+struct uhash *mod_plan_ga (struct mloadplan *plan, struct uhash *hash) {
+ struct uhash *ihash = hash;
  int i;
- if (!plan) return -1;
- if (plan->left) {
+
+ if (!plan) return NULL;
+ if (plan->left && plan->left[0]) {
   for (i = 0; plan->left[i]; i++)
-   mod_plan_free(plan->left[i]);
+   ihash = mod_plan_ga(plan->left[i], ihash);
  }
- if (plan->right) {
+ if (plan->right && plan->right[0]) {
   for (i = 0; plan->right[i]; i++)
-   mod_plan_free(plan->right[i]);
+   ihash = mod_plan_ga(plan->right[i], ihash);
  }
- free (plan);
+ ihash = hashadd (ihash, "tmp", plan);
+
+ return ihash;
+}
+
+/* free all elements in the plan */
+int mod_plan_free (struct mloadplan *plan) {
+ struct uhash *hash_prov;
+ struct uhash *d;
+
+ hash_prov = mod_plan_ga (plan, NULL);
+
+ d = hash_prov;
+ while (d) {
+  if (d->value) {
+   struct mloadplan *v = (struct mloadplan *)d->value;
+   if (v->right) free (v->right);
+   if (v->left) free (v->left);
+   free (d->value);
+   d->value = NULL;
+  }
+  d = hashnext (d);
+ }
+
+ hashfree (hash_prov);
 }
 
 #ifdef DEBUG

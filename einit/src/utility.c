@@ -117,14 +117,15 @@ void **setdel (void **set, void *item) {
  if (!item) return NULL;
  if (!set) set = calloc (1, sizeof (void *));
 
- while (set[x]) {
-  if (set[x] != item) {
-   newset [x] = set[x];
+ while (set[y]) {
+  if (set[y] != item) {
+   newset [x] = set[y];
    x++;
   }
-  else {
-   set++;
-  }
+  y++;
+/*  else {
+   set = set+1;
+  }*/
  }
 
  newset[x] = NULL;
@@ -246,14 +247,15 @@ char **strsetdel (char **set, char *item) {
  if (!item) return NULL;
  if (!set) set = calloc (1, sizeof (char *));
 
- while (set[x]) {
-  if (strcmp(set[x], item)) {
-   newset [x] = set[x];
+ while (set[y]) {
+  if (strcmp(set[y], item)) {
+   newset [x] = set[y];
    x++;
   }
-  else {
-   set++;
-  }
+  y++;
+/*  else {
+   set = set+1;
+  }*/
  }
 
  newset[x] = NULL;
@@ -278,7 +280,13 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
  if (!hash)
   hash = n;
  else {
-  while (c->next) c = c->next;
+  while (c->next) {
+   if (c->key && !strcmp (key, c->key) && c->value == value) {
+    free (n);
+    return hash;
+   }
+   c = c->next;
+  }
   c->next = n;
  }
 
