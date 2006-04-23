@@ -533,6 +533,8 @@ void mod_ls () {
 void mod_plan_ls (struct mloadplan *plan) {
  char *rid = "n/a", *name = "unknown", *action;
  static int recursion;
+ unsigned char pass = 0;
+ struct mloadplan **cur;
  int i;
  if (!recursion) puts ("committing this plan will...");
  if (!plan) return;
@@ -555,31 +557,47 @@ void mod_plan_ls (struct mloadplan *plan) {
    action = "do something with..."; break;
  }
  printf ("%s %s (%s)\n", action, rid, name);
- recursion++;
- if (plan->left && plan->left[0]) {
-  for (i = 0; i < recursion; i++)
-   fputs (" ", stdout);
-  puts ("on failure {");
+ while (pass < 2) {
   recursion++;
-  for (i = 0; plan->left[i]; i++)
-   mod_plan_ls (plan->left[i]);
+  switch (pass) {
+   case 0:
+    if (plan->left && plan->left[0]) {
+     for (i = 0; i < recursion; i++)
+      fputs (" ", stdout);
+	 cur = plan->left;
+     puts ("on failure {");
+	 break;
+	}
+	pass++;
+   case 1:
+    if (plan->right && plan->right[0]) {
+     for (i = 0; i < recursion; i++)
+      fputs (" ", stdout);
+	 cur = plan->right;
+     puts ("on success {");
+	 break;
+    }
+   default:
+    recursion--;
+    return;
+  }
+
+  recursion++;
+  for (i = 0; cur[i]; i++) {
+   if (cur[i] != plan)
+    mod_plan_ls (cur[i]);
+   else {
+    puts ("Circular dependency detected, aborting.");
+	recursion-=2;
+    return;
+   }
+  }
   recursion--;
   for (i = 0; i < recursion; i++)
    fputs (" ", stdout);
   puts ("}");
- }
- if (plan->right && plan->right[0]) {
-  for (i = 0; i < recursion; i++)
-   fputs (" ", stdout);
-  puts ("on success {");
-  recursion++;
-  for (i = 0; plan->right[i]; i++)
-   mod_plan_ls (plan->right[i]);
+  pass++;
   recursion--;
-  for (i = 0; i < recursion; i++)
-   fputs (" ", stdout);
-  puts ("}");
  }
- recursion--;
 }
 #endif

@@ -1,3 +1,6 @@
+2006/04/23: mdeininger
+ * fixes/changes for freebsd/darwin and mod_plan_ls()
+
 2006/04/21: mdeininger
  * renamed pl* and slist* functions to set_* ones. seems more logical...
  * introduced the macro status_update(): use this in your module whenever you
