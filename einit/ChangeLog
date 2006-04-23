@@ -1,5 +1,6 @@
 2006/04/23: mdeininger
  * fixes/changes for freebsd/darwin and mod_plan_ls()
+ * one step closer to recursive dependencies
 
 2006/04/21: mdeininger
  * renamed pl* and slist* functions to set_* ones. seems more logical...
