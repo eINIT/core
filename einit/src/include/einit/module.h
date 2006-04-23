@@ -105,6 +105,7 @@ struct mloadplan {
  struct lmodule *mod;
  struct mloadplan **left;  /* elements of the tree to load on failure */
  struct mloadplan **right; /* elements of the tree to load on success */
+ struct mloadplan **orphaned; /* orphaned elements */
  char **unsatisfied;
  char **unavailable;
 };

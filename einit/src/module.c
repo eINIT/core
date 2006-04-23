@@ -343,6 +343,10 @@ struct uhash *mod_plan_wpw (struct mloadplan *plan, struct uhash *hash) {
   for (i = 0; plan->right[i]; i++)
    ihash = mod_plan_wpw(plan->right[i], ihash);
  }
+ if (plan->orphaned && plan->orphaned[0]) {
+  for (i = 0; plan->orphaned[i]; i++)
+   ihash = mod_plan_wpw(plan->orphaned[i], ihash);
+ }
  if (plan->mod) {
   if (plan->mod->module) {
    struct smodule *mod = plan->mod->module;
@@ -375,12 +379,13 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  hash_prov = mod_plan_wpw (plan, NULL);
 
  d = hash_prov;
+ 
  while (d) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
    if (v->right) free (v->right);
-   if (v->left) free (v->left);
-   v->left = NULL;
+//   if (v->left) free (v->left);
+//   v->left = NULL;
    v->right = NULL;
   }
   d = hashnext (d);
@@ -575,6 +580,10 @@ struct uhash *mod_plan_ga (struct mloadplan *plan, struct uhash *hash) {
   for (i = 0; plan->right[i]; i++)
    ihash = mod_plan_ga(plan->right[i], ihash);
  }
+ if (plan->orphaned && plan->orphaned[0]) {
+  for (i = 0; plan->orphaned[i]; i++)
+   ihash = mod_plan_ga(plan->orphaned[i], ihash);
+ }
  ihash = hashadd (ihash, "tmp", plan);
 
  return ihash;
@@ -593,6 +602,7 @@ int mod_plan_free (struct mloadplan *plan) {
    struct mloadplan *v = (struct mloadplan *)d->value;
    if (v->right) free (v->right);
    if (v->left) free (v->left);
+   if (v->orphaned) free (v->orphaned);
    free (d->value);
    d->value = NULL;
   }
@@ -646,7 +656,7 @@ void mod_plan_ls (struct mloadplan *plan) {
    action = "do something with..."; break;
  }
  printf ("%s %s (%s)\n", action, rid, name);
- while (pass < 2) {
+ while (pass < 3) {
   recursion++;
   switch (pass) {
    case 0:
@@ -664,6 +674,15 @@ void mod_plan_ls (struct mloadplan *plan) {
       fputs (" ", stdout);
 	 cur = plan->right;
      puts ("on success {");
+	 break;
+    }
+	pass++;
+   case 2:
+    if (plan->orphaned && plan->orphaned[0]) {
+     for (i = 0; i < recursion; i++)
+      fputs (" ", stdout);
+	 cur = plan->orphaned;
+     puts ("orphans {");
 	 break;
     }
 	pass++;
