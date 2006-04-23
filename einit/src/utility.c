@@ -114,7 +114,6 @@ void **setdup (void **set) {
 void **setdel (void **set, void *item) {
  void **newset = set;
  int x = 0, y = 0, s = 1, p = 0;
- char *strbuffer = NULL;
  if (!item) return NULL;
  if (!set) set = calloc (1, sizeof (void *));
 
@@ -241,6 +240,27 @@ char **strsetdup (char **sset) {
  return newset;
 }
 
+char **strsetdel (char **set, char *item) {
+ char **newset = set;
+ int x = 0, y = 0, s = 1, p = 0;
+ if (!item) return NULL;
+ if (!set) set = calloc (1, sizeof (char *));
+
+ while (set[x]) {
+  if (strcmp(set[x], item)) {
+   newset [x] = set[x];
+   x++;
+  }
+  else {
+   set++;
+  }
+ }
+
+ newset[x] = NULL;
+
+ return newset;
+}
+
 /* hashes */
 
 struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
@@ -269,6 +289,7 @@ struct uhash *hashfind (struct uhash *hash, char *key) {
  struct uhash *c = hash;
  if (!hash || !key) return NULL;
  while ((!c->key || strcmp (key, c->key)) && c->next) c = c->next;
+ if (!c->next && strcmp (key, c->key)) return NULL;
  return c;
 }
 

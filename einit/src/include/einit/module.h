@@ -105,6 +105,8 @@ struct mloadplan {
  struct lmodule *mod;
  struct mloadplan **left;  /* elements of the tree to load on failure */
  struct mloadplan **right; /* elements of the tree to load on success */
+ char **unsatisfied;
+ char **unavailable;
 };
 
 extern struct lmodule mdefault;

@@ -56,6 +56,7 @@ char **str2set (const char, char *);
 int strinset (char **, const char *);
 char **strsetrebuild (char **);
 char **strsetdup (char **);
+char **strsetdel (char **, char *);
 
 /* same as above, this time with hashes */
 

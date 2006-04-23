@@ -364,7 +364,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  struct mloadplan **orphans = NULL;
  struct mloadplan **curpl = NULL;
  unsigned int i, j;
- unsigned char pass = 0, ds;
+ unsigned char pass = 0, ds, adds;
  if (!plan) return NULL;
  else if (!plan->mod && !plan->right && !plan->left) {
   free (plan);
@@ -386,12 +386,18 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
      char **req = curpl[i]->mod->module->requires;
      ds = 0;
      for (j = 0; req[j]; j++) {
+	  adds = 0;
       c = hash_prov;
       while (c && (c = hashfind (c, req[j]))) {
+       adds++;
        struct mloadplan *d = c->value;
 	   d->right = (struct mloadplan **)setadd ((void **)d->right, (void *)curpl[i]);
        ds = 1;
 	   c = c->next;
+      }
+      if (!adds) {
+	   if (!strinset (plan->unavailable, req[j]))
+        plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
       }
 	 }
      if (ds) {
@@ -466,6 +472,14 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      cplan->left[icc-1] = tcplan;
     }
    }
+  } else {
+   if (plan && plan->unsatisfied && strinset (plan->unsatisfied, atoms [si])) {
+    char *tmpa = strdup (atoms[si]);
+	if (!tmpa) goto panic;
+    puts ("can't satisfy atom");
+    plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
+    plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
+   }
   }
 
   free (cand);
@@ -478,7 +492,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }
  plan->right = (struct mloadplan **)setcombine ((void*)plan->right, (void*)nplancand);
 
- return mod_plan_restructure(plan);
+ plan = mod_plan_restructure(plan);
+ if (plan->unsatisfied && plan->unsatisfied[0])
+  mod_plan (plan, plan->unsatisfied, task);
+
+ return plan;
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
@@ -577,9 +595,10 @@ void mod_plan_ls (struct mloadplan *plan) {
      puts ("on success {");
 	 break;
     }
+	pass++;
    default:
     recursion--;
-    return;
+    goto unsat;
   }
 
   recursion++;
@@ -596,8 +615,25 @@ void mod_plan_ls (struct mloadplan *plan) {
   for (i = 0; i < recursion; i++)
    fputs (" ", stdout);
   puts ("}");
+
   pass++;
   recursion--;
+ }
+
+ unsat:
+
+ if (plan->unsatisfied && plan->unsatisfied[0]) {
+  for (i = -1; i < recursion; i++)
+   fputs (" ", stdout);
+  for (i = 0; plan->unsatisfied[i]; i++)
+   printf ("unsatisfied dependency: %s\n", plan->unsatisfied[i]);
+ }
+
+ if (plan->unavailable && plan->unavailable[0]) {
+  for (i = -1; i < recursion; i++)
+   fputs (" ", stdout);
+  for (i = 0; plan->unavailable[i]; i++)
+   printf ("unavailable dependency: %s\n", plan->unavailable[i]);
  }
 }
 #endif
