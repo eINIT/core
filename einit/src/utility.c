@@ -344,9 +344,13 @@ struct uhash *hashfind (struct uhash *hash, char *key) {
 }
 
 void hashfree (struct uhash *hash) {
+ struct uhash *c = hash;
  if (!hash) return;
- hashfree (hash->next);
- free (hash);
+ while (c) {
+  struct uhash *d = c;
+  c = c->next;
+  free (d);
+ }
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */

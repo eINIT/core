@@ -410,7 +410,9 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
        ds = 1;
        c = c->next;
       }
-      if (!adds) {
+      if (adds) {
+       plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
+      } else {
        if (!strinset (plan->unavailable, req[j]))
         plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
       }
