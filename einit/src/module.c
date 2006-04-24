@@ -485,11 +485,17 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      cplan->left[icc-1] = tcplan;
     }
    }
+
+   if (plan && plan->unsatisfied) {
+//    puts ("recursive atom now satisfied");
+    puts (atoms[si]);
+    plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
+   }
   } else {
    if (plan && plan->unsatisfied && strinset (plan->unsatisfied, atoms [si])) {
     char *tmpa = strdup (atoms[si]);
 	if (!tmpa) goto panic;
-    puts ("can't satisfy atom");
+    printf ("can't satisfy atom: %s\n", atoms[si]);
     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
     return plan;

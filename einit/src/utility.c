@@ -250,8 +250,7 @@ char **strsetdup (char **sset) {
 char **strsetdel (char **set, char *item) {
  char **newset = set;
  int x = 0, y = 0, s = 1, p = 0;
- if (!item) return NULL;
- if (!set) set = calloc (1, sizeof (char *));
+ if (!item || !set) return NULL;
 
  while (set[y]) {
   if (strcmp(set[y], item)) {
@@ -264,6 +263,11 @@ char **strsetdel (char **set, char *item) {
   }*/
  }
 
+ if (!x) {
+  free (set);
+  return NULL;
+ }
+ 
  newset[x] = NULL;
 
  return newset;
