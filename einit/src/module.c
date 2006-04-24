@@ -551,21 +551,44 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- unsigned int i, ec = 0;
+ unsigned int i;
+ pthread_t **childthreads = NULL;
  if (!plan) return 1;
  if (!plan->mod) i = STATUS_OK;
  else i = mod(plan->task, plan->mod);
  if (i & STATUS_OK) {
   if (plan->right)
-   for (i = 0; plan->right[i]; i++)
-    ec += mod_plan_commit (plan->right[i]);
+   for (i = 0; plan->right[i]; i++) {
+    pthread_t *th = calloc (1, sizeof (pthread_t));
+    if (!th) goto panic;
+    if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->right[i])) {
+     childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
+//     pthread_join (*th, NULL);
+    }
+//    mod_plan_commit (plan->right[i]);
+   }
  } else if (plan->left) {
-  ec = 1;
-  for (i = 0; plan->left[i]; i++)
-   ec += mod_plan_commit (plan->left[i]);
+  for (i = 0; plan->left[i]; i++) {
+   pthread_t *th = calloc (1, sizeof (pthread_t));
+   if (!th) goto panic;
+   if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->left[i])) {
+    childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
+//    pthread_join (*th, NULL);
+   }
+//   mod_plan_commit (plan->left[i]);
+  }
  }
-  
- return ec;
+
+ if (childthreads) {
+  for (i = 0; childthreads[i]; i++)
+   pthread_join (*(childthreads[i]), NULL);
+  free (childthreads);
+ }
+
+ return STATUS_OK;
+ panic:
+  bitch (BTCH_ERRNO);
+  return STATUS_FAIL;
 }
 
 

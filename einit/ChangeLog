@@ -2,6 +2,7 @@
  * almost there...
  * new function to delete dupes in string-sets (strsetdeldupes())
  * I think recursive dependencies work OK now (for task=MOD_ENABLE)
+ * mod_plan_commit() works in parallel now (where applicable)
 
 2006/04/23: mdeininger
  * fixes/changes for freebsd/darwin and mod_plan_ls()

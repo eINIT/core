@@ -76,6 +76,7 @@ void **setadd (void **set, void *item) {
  char *strbuffer = NULL;
  if (!item) return NULL;
  if (!set) set = calloc (1, sizeof (void *));
+ if (!set) return NULL;
 
  newset = calloc (setcount(set) + 2, sizeof (void *));
  if (!newset) {
