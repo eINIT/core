@@ -371,7 +371,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  unsigned int i, j;
  unsigned char pass = 0, ds, adds;
  if (!plan) return NULL;
- else if (!plan->mod && !plan->right && !plan->left) {
+ else if (!plan->mod && !plan->right && !plan->left && !plan->orphaned) {
   free (plan);
   return NULL;
  }
@@ -384,9 +384,9 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
    if (v->right) free (v->right);
+   v->right = NULL;
 //   if (v->left) free (v->left);
 //   v->left = NULL;
-   v->right = NULL;
   }
   d = hashnext (d);
  }
@@ -396,67 +396,33 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
 
-    if (v->mod && v->mod->module && v->mod->module->requires) {
+   if (v->mod && v->mod->module) {
+    if (v->mod->module->requires) {
      char **req = v->mod->module->requires;
      ds = 0;
      for (j = 0; req[j]; j++) {
-	  adds = 0;
+      adds = 0;
       c = hash_prov;
       while (c && (c = hashfind (c, req[j]))) {
        struct mloadplan *e = c->value;
        adds++;
-	   e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v);
+       e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v);
        ds = 1;
-	   c = c->next;
+       c = c->next;
       }
       if (!adds) {
-	   if (!strinset (plan->unavailable, req[j]))
+       if (!strinset (plan->unavailable, req[j]))
         plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
       }
-	 }
-    }
-
-  }
-  d = hashnext (d);
- }
-/* if (c = hashfind (hash_prov, "localmount"))
-  puts (((struct mloadplan *)(c->value))->mod->module->rid);*/
-
-/* while (pass < 2) {
-  switch (pass) {
-   case 0: curpl = plan->right; break;
-   case 1: curpl = plan->left; break;
-  }
-  if (curpl && curpl[0]) {
-   for (i = 0; curpl[i]; i++) {
-    if (curpl[i]->mod && curpl[i]->mod->module && curpl[i]->mod->module->requires) {
-     char **req = curpl[i]->mod->module->requires;
-     ds = 0;
-     for (j = 0; req[j]; j++) {
-	  adds = 0;
-      c = hash_prov;
-      while (c && (c = hashfind (c, req[j]))) {
-       adds++;
-       struct mloadplan *d = c->value;
-	   d->right = (struct mloadplan **)setadd ((void **)d->right, (void *)curpl[i]);
-       ds = 1;
-	   c = c->next;
-      }
-      if (!adds) {
-	   if (!strinset (plan->unavailable, req[j]))
-        plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
-      }
-	 }
-     if (ds) {
-      curpl = (struct mloadplan **)setdel ((void *)curpl, (void *)curpl[i]);
-      i--;
-      ds = 0;
      }
+    } else {
+     plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v);
+     plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
     }
    }
   }
-  pass++;
- }*/
+  d = hashnext (d);
+ }
 
  hashfree (hash_prov);
 
@@ -538,7 +504,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   if (!plan) goto panic;
   plan->task = task;
  }
- plan->right = (struct mloadplan **)setcombine ((void*)plan->right, (void*)nplancand);
+ plan->orphaned = (struct mloadplan **)setcombine ((void **)plan->orphaned, (void*)nplancand);
 
  plan = mod_plan_restructure(plan);
  if (plan->unsatisfied && plan->unsatisfied[0])

@@ -83,8 +83,14 @@ void **setadd (void **set, void *item) {
   return NULL;
  }
 
- while (set[x])
-  { newset [x] = set[x]; x++; }
+ while (set[x]) {
+  if (set[x] == item) {
+   free (newset);
+   return set;
+  }
+  newset [x] = set[x];
+  x++;
+ }
 
  newset[x] = item;
  free (set);
