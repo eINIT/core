@@ -120,8 +120,7 @@ void **setdup (void **set) {
 void **setdel (void **set, void *item) {
  void **newset = set;
  int x = 0, y = 0, s = 1, p = 0;
- if (!item) return NULL;
- if (!set) set = calloc (1, sizeof (void *));
+ if (!item || !set) return NULL;
 
  while (set[y]) {
   if (set[y] != item) {
@@ -132,6 +131,11 @@ void **setdel (void **set, void *item) {
 /*  else {
    set = set+1;
   }*/
+ }
+
+ if (!x) {
+  free (set);
+  return NULL;
  }
 
  newset[x] = NULL;
@@ -255,6 +259,34 @@ char **strsetdel (char **set, char *item) {
  while (set[y]) {
   if (strcmp(set[y], item)) {
    newset [x] = set[y];
+   x++;
+  }
+  y++;
+/*  else {
+   set = set+1;
+  }*/
+ }
+
+ if (!x) {
+  free (set);
+  return NULL;
+ }
+ 
+ newset[x] = NULL;
+
+ return newset;
+}
+
+char **strsetdeldupes (char **set) {
+ char **newset = set;
+ int x = 0, y = 0, s = 1, p = 0;
+ if (!set) return NULL;
+
+ while (set[y]) {
+  char *tmp = set[y];
+  set[y] = NULL;
+  if (!strinset (set, tmp)) {
+   newset [x] = tmp;
    x++;
   }
   y++;

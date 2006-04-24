@@ -1,5 +1,7 @@
 2006/04/24: mdeininger
  * almost there...
+ * new function to delete dupes in string-sets (strsetdeldupes())
+ * I think recursive dependencies work OK now (for task=MOD_ENABLE)
 
 2006/04/23: mdeininger
  * fixes/changes for freebsd/darwin and mod_plan_ls()
@@ -70,7 +72,7 @@
 2006/04/04: mdeininger
  * the sf.net guys claimed CVS was going to be back online soon, so let's resume
    hacking...
- * [utility.[ch]] refinded some functions to work with string-lists.
+ * [utility.[ch]] refinded some functions to work with string-sets.
  * changed all references to "dpl" to "slist" as this makes more sense.
  * added another parameter to cfg_findnode(): an int that you can use to specify
    node-flags that have to be set.

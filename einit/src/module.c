@@ -488,7 +488,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
    if (plan && plan->unsatisfied) {
 //    puts ("recursive atom now satisfied");
-    puts (atoms[si]);
+//    puts (atoms[si]);
     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
    }
   } else {
