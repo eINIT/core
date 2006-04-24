@@ -53,12 +53,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STATUS_OK 0x8001
 #define STATUS_ABORTED 0x8002
 #define STATUS_FAIL 0x8100
+#define STATUS_FAIL_REQ 0x8300
 #define STATUS_DONE 0x8000
 #define STATUS_WORKING 0x0010
 #define STATUS_ENABLING 0x0011
 #define STATUS_DISABLING 0x0012
 #define STATUS_RELOADING 0x0013
 #define STATUS_ENABLED 0x8401
+#define STATUS_DISABLED STATUS_IDLE
 
 #ifdef __cplusplus
 extern "C"
@@ -85,7 +87,6 @@ struct smodule {
  char **provides;
  char **requires;
  char **notwith;
- char **os;
 };
 
 struct lmodule {

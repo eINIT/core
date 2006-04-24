@@ -65,6 +65,9 @@ struct lmodule mdefault = {
 };
 int mcount = 0;
 
+char **provided = NULL;
+char **required = NULL;
+
 int mod_scanmodules () {
  DIR *dir;
  struct dirent *entry;
@@ -240,14 +243,41 @@ int mod (unsigned int task, struct lmodule *module) {
  struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
  pthread_t *th = calloc (1, sizeof (pthread_t));
  char providefeedback = (mdefault.comment != NULL);
+ struct smodule *t;
+ int ti;
  if (!module) return 0;
  if (!fb) return bitch (BTCH_ERRNO);
  if (!th) return bitch (BTCH_ERRNO);
- if ((task == MOD_ENABLE) && !module->enable) return 0;
+ if ((task == MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) return 0;
  if ((task == MOD_DISABLE) && !module->disable) return 0;
 
  fb->module = module;
  fb->task = task;
+
+ switch (task) {
+  case MOD_ENABLE:
+   if (t = module->module) {
+    if (t->requires) for (ti = 0; t->requires[ti]; ti++)
+     if (!strinset (provided, t->requires[ti])) {
+      fb->status = STATUS_FAIL_REQ;
+      return fb->status;
+     }
+   }
+   break;
+  case MOD_DISABLE:
+   if (t = module->module) {
+    if (t->rid && strinset (required, t->rid)) {
+     fb->status = STATUS_FAIL_REQ;
+     return fb->status;
+    }
+    if (t->provides) for (ti = 0; t->provides[ti]; ti++)
+     if (strinset (required, t->provides[ti])) {
+      fb->status = STATUS_FAIL_REQ;
+      return fb->status;
+     }
+   }
+   break;
+ }
 
  if (providefeedback) {
   pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
@@ -256,32 +286,31 @@ int mod (unsigned int task, struct lmodule *module) {
 
  switch (task) {
   case MOD_ENABLE:
-#ifdef DEBUG
-   if (!providefeedback && module->module && module->module->rid)
-    printf ("enabling module %s:", module->module->rid);
-#endif
    module->status = module->enable (module->param, fb);
-#ifdef DEBUG
-   if (!providefeedback) {
-    if (module->status & STATUS_OK) puts (" OK");
-    else puts (" ERROR");
+   if (module->status & STATUS_OK) {
+    if (t = module->module) {
+     if (t->rid) provided = (char **)setadd ((void **)provided, (void *)t->rid);
+     if (t->provides)
+      provided = (char **)setcombine ((void **)provided, (void **)t->provides);
+     if (t->requires)
+      required = (char **)setcombine ((void **)required, (void **)t->requires);
+    }
    }
-#endif
    break;
   case MOD_DISABLE:
-#ifdef DEBUG
-   if (!providefeedback && module->module && module->module->rid)
-    printf ("disabling module %s:", module->module->rid);
-#endif
    module->status = module->disable (module->param, fb);
-#ifdef DEBUG
-   if (!providefeedback) {
-    if (module->status & STATUS_OK) puts (" OK");
-    else puts (" ERROR");
+   if (module->status & STATUS_OK) {
+    if (t = module->module) {
+     if (t->rid) provided = strsetdel (provided, t->rid);
+     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
+      provided = strsetdel (provided, t->provides[ti]);
+     if (t->requires) for (ti = 0; t->requires[ti]; ti++)
+      required = strsetdel (required, t->requires[ti]);
+    }
    }
-#endif
    break;
  }
+
  if (providefeedback) {
   pthread_join (*th, NULL);
   free(fb);
@@ -413,7 +442,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
       if (adds) {
        plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
       } else {
-       if (!strinset (plan->unavailable, req[j]))
+       if (!strinset (plan->unavailable, req[j]) && !strinset (plan->unsatisfied, req[j]))
         plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
       }
      }
@@ -463,7 +492,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
    curmod = curmod->next;
   }
-/*  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc); */
+//  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
 
   if (cc) {
    if (mod_plan_sort_by_preference (cand, atoms[si])) goto panic;
