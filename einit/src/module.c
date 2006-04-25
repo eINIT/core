@@ -254,12 +254,14 @@ int mod (unsigned int task, struct lmodule *module) {
  module->status = module->status | STATUS_WORKING;
 
 /* check if the task requested has already been done (or if it can be done at all) */
- if ((task == MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
+ if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
-  module->status &= !STATUS_WORKING;
+  module->status ^= STATUS_WORKING;
+//  module->status = STATUS_ENABLED;
   return STATUS_IDLE;
  }
- if ((task == MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED))) goto wontload;
+ if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
+  goto wontload;
 
  fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
  if (!fb) goto wontload;
@@ -273,32 +275,24 @@ int mod (unsigned int task, struct lmodule *module) {
  fb->module = module;
  fb->task = task;
 
- switch (task) {
-  case MOD_ENABLE:
+ if (task & MOD_ENABLE) {
    if (t = module->module) {
     if (t->requires) for (ti = 0; t->requires[ti]; ti++)
      if (!strinset (provided, t->requires[ti])) {
-      module->status = STATUS_FAIL_REQ;
+      module->status ^= STATUS_WORKING;
       free (fb);
       return STATUS_FAIL_REQ;
      }
    }
-   break;
-  case MOD_DISABLE:
+ } else if (task & MOD_DISABLE) {
    if (t = module->module) {
-    if (t->rid && strinset (required, t->rid)) {
-     module->status = STATUS_FAIL_REQ;
-     free (fb);
-     return STATUS_FAIL_REQ;
-    }
     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
      if (strinset (required, t->provides[ti])) {
-      module->status = STATUS_FAIL_REQ;
+      module->status ^= STATUS_WORKING;
 	  free (fb);
       return STATUS_FAIL_REQ;
      }
    }
-   break;
  }
 
  if (providefeedback) {
@@ -306,12 +300,10 @@ int mod (unsigned int task, struct lmodule *module) {
   fb->status = STATUS_WORKING;
  }
 
- switch (task) {
-  case MOD_ENABLE:
+ if (task & MOD_ENABLE) {
    ret = module->enable (module->param, fb);
    if (ret & STATUS_OK) {
     if (t = module->module) {
-     if (t->rid) provided = (char **)setadd ((void **)provided, (void *)t->rid);
      if (t->provides)
       provided = (char **)setcombine ((void **)provided, (void **)t->provides);
      if (t->requires)
@@ -319,12 +311,10 @@ int mod (unsigned int task, struct lmodule *module) {
     }
 	module->status = STATUS_ENABLED;
    }
-   break;
-  case MOD_DISABLE:
+ } else if (task & MOD_DISABLE) {
    ret = module->disable (module->param, fb);
    if (ret & STATUS_OK) {
     if (t = module->module) {
-     if (t->rid) provided = strsetdel (provided, t->rid);
      if (t->provides) for (ti = 0; t->provides[ti]; ti++)
       provided = strsetdel (provided, t->provides[ti]);
      if (t->requires) for (ti = 0; t->requires[ti]; ti++)
@@ -332,7 +322,6 @@ int mod (unsigned int task, struct lmodule *module) {
     }
 	module->status = STATUS_DISABLED;
    }
-   break;
  }
 
  if (providefeedback) {
@@ -485,7 +474,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
 
    if (v->mod && v->mod->module) {
     if (((v->task & MOD_ENABLE) && (v->mod->module->requires)) ||
-        ((v->task & MOD_DISABLE) && (v->mod->module->provides))) {
+        ((v->task & MOD_DISABLE) && ((v->mod->module->provides)))) {
      char **req = NULL;
      if (v->task & MOD_ENABLE) req = v->mod->module->requires;
      if (v->task & MOD_DISABLE) req = v->mod->module->provides;
@@ -653,9 +642,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
     if (!th) goto panic;
     if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->right[i])) {
      childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
-//     pthread_join (*th, NULL);
     }
-//    mod_plan_commit (plan->right[i]);
    }
  } else if (plan->left) {
   for (i = 0; plan->left[i]; i++) {
@@ -663,9 +650,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    if (!th) goto panic;
    if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->left[i])) {
     childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
-//    pthread_join (*th, NULL);
    }
-//   mod_plan_commit (plan->left[i]);
   }
  }
 

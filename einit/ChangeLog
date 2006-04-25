@@ -1,6 +1,7 @@
 2006/04/25: mdeininger
  * I think I fixed the race-condition problems in mod() with threading.
  * I was working a bit on that dependency-hell for disabling
+ * yay, seems to work so far!
 
 2006/04/24: mdeininger
  * almost there...
