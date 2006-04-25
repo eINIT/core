@@ -256,7 +256,7 @@ int mod (unsigned int task, struct lmodule *module) {
 /* check if the task requested has already been done (or if it can be done at all) */
  if ((task == MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
-  module->status = STATUS_FAIL;
+  module->status &= !STATUS_WORKING;
   return STATUS_IDLE;
  }
  if ((task == MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED))) goto wontload;
@@ -415,14 +415,45 @@ struct uhash *mod_plan_wpw (struct mloadplan *plan, struct uhash *hash) {
  return ihash;
 }
 
+struct uhash *mod_plan_wrw (struct mloadplan *plan, struct uhash *hash) {
+ struct uhash *ihash = hash;
+ int i;
+
+ if (!plan) return NULL;
+ if (plan->left && plan->left[0]) {
+  for (i = 0; plan->left[i]; i++)
+   ihash = mod_plan_wrw(plan->left[i], ihash);
+ }
+ if (plan->right && plan->right[0]) {
+  for (i = 0; plan->right[i]; i++)
+   ihash = mod_plan_wrw(plan->right[i], ihash);
+ }
+ if (plan->orphaned && plan->orphaned[0]) {
+  for (i = 0; plan->orphaned[i]; i++)
+   ihash = mod_plan_wrw(plan->orphaned[i], ihash);
+ }
+ if (plan->mod) {
+  if (plan->mod->module) {
+   struct smodule *mod = plan->mod->module;
+   if (mod->requires && mod->requires[0]) {
+    for (i = 0; mod->requires[i]; i++)
+     ihash = hashadd (ihash, mod->requires[i], (void *)plan);
+   }
+  }
+ }
+
+ return ihash;
+}
+
 struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  struct uhash *hash_prov;
+ struct uhash *hash_req;
  struct uhash *c;
  struct uhash *d;
  struct mloadplan **orphans = NULL;
  struct mloadplan **curpl = NULL;
  unsigned int i, j;
- unsigned char pass = 0, ds, adds;
+ unsigned char pass = 0, adds;
  if (!plan) return NULL;
  else if (!plan->mod && !plan->right && !plan->left && !plan->orphaned) {
   free (plan);
@@ -430,6 +461,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  }
 
  hash_prov = mod_plan_wpw (plan, NULL);
+ hash_req = mod_plan_wrw (plan, NULL);
 
  d = hash_prov;
  
@@ -449,25 +481,33 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
 
+//   printf ("%s: %i\n", v->mod->module->rid, v->task);
+
    if (v->mod && v->mod->module) {
-    if (v->mod->module->requires) {
-     char **req = v->mod->module->requires;
-     ds = 0;
+    if (((v->task & MOD_ENABLE) && (v->mod->module->requires)) ||
+        ((v->task & MOD_DISABLE) && (v->mod->module->provides))) {
+     char **req = NULL;
+     if (v->task & MOD_ENABLE) req = v->mod->module->requires;
+     if (v->task & MOD_DISABLE) req = v->mod->module->provides;
+
      for (j = 0; req[j]; j++) {
       adds = 0;
-      c = hash_prov;
+      if (v->task & MOD_ENABLE) c = hash_prov;
+      if (v->task & MOD_DISABLE) c = hash_req;
       while (c && (c = hashfind (c, req[j]))) {
        struct mloadplan *e = c->value;
        adds++;
        e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v);
-       ds = 1;
        c = c->next;
       }
       if (adds) {
        plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
-      } else {
+      } else if (v->task & MOD_ENABLE) {
        if (!strinset (plan->unavailable, req[j]) && !strinset (plan->unsatisfied, req[j]))
         plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
+      } else if (v->task & MOD_DISABLE) {
+       plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v);
+       plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
       }
      }
     } else {
@@ -480,6 +520,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  }
 
  hashfree (hash_prov);
+ hashfree (hash_req);
 
  return plan;
 }
@@ -490,9 +531,41 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  struct lmodule *curmod;
  struct mloadplan **nplancand = NULL;
  int si = 0;
- if (!atoms) return NULL;
+ if (!atoms && !(task & MOD_DISABLE_UNSPEC)) return NULL;
 
- for (; atoms[si] != NULL; si++) {
+ if (!plan) {
+  plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
+  if (!plan) goto panic;
+  plan->task = task;
+ }
+
+ if (task & MOD_DISABLE_UNSPEC) {
+  curmod = mlist;
+  while (curmod) {
+   struct smodule *tmp = curmod->module;
+   if (curmod->status & STATUS_ENABLED) {
+    if (tmp) {
+	 if ((tmp->mode & EINIT_MOD_FEEDBACK) && !(task & MOD_DISABLE_UNSPEC_FEEDBACK) ||
+         (tmp->rid && strinset (atoms, tmp->rid)))
+      goto skipcurmod;
+     if (tmp->provides && atoms) {
+      for (si = 0; atoms[si]; si++)
+	   if (strinset (tmp->provides, atoms[si]))
+        goto skipcurmod;
+     }
+    }
+    struct mloadplan *cplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
+    if (!cplan) goto panic;
+    cplan->task = MOD_DISABLE;
+    cplan->mod = curmod;
+    plan->orphaned = (struct mloadplan **)setadd ((void **)plan->orphaned, (void *)cplan);
+   }
+   skipcurmod:
+   curmod = curmod->next;
+  }
+ }
+
+ if (atoms) for (si = 0; atoms[si]; si++) {
   struct lmodule **cand = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
   struct mloadplan *cplan = NULL;
   struct mloadplan *tcplan = NULL;
@@ -542,8 +615,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
 
    if (plan && plan->unsatisfied) {
-//    puts ("recursive atom now satisfied");
-//    puts (atoms[si]);
     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
    }
   } else {
@@ -560,15 +631,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   free (cand);
  }
 
- if (!plan) {
-  plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
-  if (!plan) goto panic;
-  plan->task = task;
- }
- plan->orphaned = (struct mloadplan **)setcombine ((void **)plan->orphaned, (void*)nplancand);
+ plan->orphaned = (struct mloadplan **)setcombine ((void **)plan->orphaned, (void **)nplancand);
 
  plan = mod_plan_restructure(plan);
- if (plan->unsatisfied && plan->unsatisfied[0])
+ if (plan && plan->unsatisfied && plan->unsatisfied[0])
   mod_plan (plan, plan->unsatisfied, task);
 
  return plan;
@@ -701,7 +767,7 @@ void mod_plan_ls (struct mloadplan *plan) {
   case MOD_ENABLE:
    action = "enable"; break;
   case MOD_DISABLE:
-   action = "enable"; break;
+   action = "disable"; break;
   default:
    action = "do something with..."; break;
  }
