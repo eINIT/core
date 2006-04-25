@@ -240,16 +240,35 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 }
 
 int mod (unsigned int task, struct lmodule *module) {
- struct mfeedback *fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
- pthread_t *th = calloc (1, sizeof (pthread_t));
- char providefeedback = (mdefault.comment != NULL);
+ struct mfeedback *fb;
+ pthread_t *th;
+ char providefeedback;
  struct smodule *t;
  int ti;
+ unsigned int ret;
  if (!module) return 0;
- if (!fb) return bitch (BTCH_ERRNO);
- if (!th) return bitch (BTCH_ERRNO);
- if ((task == MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) return 0;
- if ((task == MOD_DISABLE) && !module->disable) return 0;
+/* wait if the module is already being processed in a different thread */
+ while (module->status & STATUS_WORKING)
+  sleep (1);
+
+ module->status = module->status | STATUS_WORKING;
+
+/* check if the task requested has already been done (or if it can be done at all) */
+ if ((task == MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
+  wontload:
+  module->status = STATUS_FAIL;
+  return STATUS_IDLE;
+ }
+ if ((task == MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED))) goto wontload;
+
+ fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
+ if (!fb) goto wontload;
+ th = calloc (1, sizeof (pthread_t));
+ if (!th) {
+  free (fb);
+  goto wontload;
+ }
+ providefeedback = (mdefault.comment != NULL);
 
  fb->module = module;
  fb->task = task;
@@ -259,21 +278,24 @@ int mod (unsigned int task, struct lmodule *module) {
    if (t = module->module) {
     if (t->requires) for (ti = 0; t->requires[ti]; ti++)
      if (!strinset (provided, t->requires[ti])) {
-      fb->status = STATUS_FAIL_REQ;
-      return fb->status;
+      module->status = STATUS_FAIL_REQ;
+      free (fb);
+      return STATUS_FAIL_REQ;
      }
    }
    break;
   case MOD_DISABLE:
    if (t = module->module) {
     if (t->rid && strinset (required, t->rid)) {
-     fb->status = STATUS_FAIL_REQ;
-     return fb->status;
+     module->status = STATUS_FAIL_REQ;
+     free (fb);
+     return STATUS_FAIL_REQ;
     }
     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
      if (strinset (required, t->provides[ti])) {
-      fb->status = STATUS_FAIL_REQ;
-      return fb->status;
+      module->status = STATUS_FAIL_REQ;
+	  free (fb);
+      return STATUS_FAIL_REQ;
      }
    }
    break;
@@ -286,8 +308,8 @@ int mod (unsigned int task, struct lmodule *module) {
 
  switch (task) {
   case MOD_ENABLE:
-   module->status = module->enable (module->param, fb);
-   if (module->status & STATUS_OK) {
+   ret = module->enable (module->param, fb);
+   if (ret & STATUS_OK) {
     if (t = module->module) {
      if (t->rid) provided = (char **)setadd ((void **)provided, (void *)t->rid);
      if (t->provides)
@@ -295,11 +317,12 @@ int mod (unsigned int task, struct lmodule *module) {
      if (t->requires)
       required = (char **)setcombine ((void **)required, (void **)t->requires);
     }
+	module->status = STATUS_ENABLED;
    }
    break;
   case MOD_DISABLE:
-   module->status = module->disable (module->param, fb);
-   if (module->status & STATUS_OK) {
+   ret = module->disable (module->param, fb);
+   if (ret & STATUS_OK) {
     if (t = module->module) {
      if (t->rid) provided = strsetdel (provided, t->rid);
      if (t->provides) for (ti = 0; t->provides[ti]; ti++)
@@ -307,6 +330,7 @@ int mod (unsigned int task, struct lmodule *module) {
      if (t->requires) for (ti = 0; t->requires[ti]; ti++)
       required = strsetdel (required, t->requires[ti]);
     }
+	module->status = STATUS_DISABLED;
    }
    break;
  }

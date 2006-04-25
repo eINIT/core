@@ -1,3 +1,6 @@
+2006/04/25: mdeininger
+ * I think I fixed the race-condition problems in mod() with threading.
+
 2006/04/24: mdeininger
  * almost there...
  * new function to delete dupes in string-sets (strsetdeldupes())

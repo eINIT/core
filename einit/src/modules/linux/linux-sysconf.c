@@ -51,10 +51,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char * provides[] = {"sysconf", NULL};
-char * os[]       = {"linux", NULL};
 
 struct smodule self = {
- EINIT_VERSION, 1, 0, 0, "Linux-specific System-Configuration", "linux-sysconf", provides, NULL, NULL, os
+ EINIT_VERSION, 1, 0, 0, "Linux-specific System-Configuration", "linux-sysconf", provides, NULL, NULL
 };
 
 int enable (void *pa, struct mfeedback *status) {
