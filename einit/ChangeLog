@@ -3,6 +3,7 @@
  * removed the threading code for feedback. it really is useless.
  * introduced safe malloc/calloc/realloc/strdup functions
    (emalloc, ecalloc, erealloc, estrdup)
+ * loading errors are now properly detected as such
 
 2006/04/25: mdeininger
  * I think I fixed the race-condition problems in mod() with threading.

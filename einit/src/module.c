@@ -293,6 +293,9 @@ int mod (unsigned int task, struct lmodule *module) {
       required = (char **)setcombine ((void **)required, (void **)t->requires);
     }
 	module->status = STATUS_ENABLED;
+    fb->status = STATUS_OK | STATUS_ENABLED;
+   } else {
+    fb->status = STATUS_FAIL;
    }
  } else if (task & MOD_DISABLE) {
    ret = module->disable (module->param, fb);
@@ -304,10 +307,12 @@ int mod (unsigned int task, struct lmodule *module) {
       required = strsetdel (required, t->requires[ti]);
     }
 	module->status = STATUS_DISABLED;
+    fb->status = STATUS_OK | STATUS_DISABLED;
+   } else {
+    fb->status = STATUS_FAIL;
    }
  }
 
- fb->status = module->status;
  status_update (fb);
  free (fb);
 
