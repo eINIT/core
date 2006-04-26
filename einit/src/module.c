@@ -83,8 +83,7 @@ int mod_scanmodules () {
  if (dir != NULL) {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
-   tmp = (char *)malloc ((mplen + strlen (entry->d_name))*sizeof (char));
-   if (tmp != NULL) {
+   tmp = (char *)emalloc ((mplen + strlen (entry->d_name))*sizeof (char));
 	struct stat sbuf;
 	struct smodule *modinfo;
     int (*func)(void *);
@@ -112,10 +111,6 @@ int mod_scanmodules () {
     }
 	
 	free (tmp);
-   } else {
-	closedir (dir);
-	return bitch(BTCH_ERRNO);
-   }
   }
   closedir (dir);
  } else {
@@ -149,8 +144,7 @@ int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*di
  int (*ftload)  (void *, struct mfeedback *);
  int (*configfunc)(struct lmodule *);
 
- nmod = calloc (1, sizeof (struct lmodule));
- if (!nmod) return bitch(BTCH_ERRNO);
+ nmod = ecalloc (1, sizeof (struct lmodule));
 
  if (mlist == NULL) {
   mlist = nmod;
@@ -263,11 +257,7 @@ int mod (unsigned int task, struct lmodule *module) {
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
   goto wontload;
 
- th = calloc (1, sizeof (pthread_t));
- if (!th) {
-  free (fb);
-  goto wontload;
- }
+ th = ecalloc (1, sizeof (pthread_t));
 
  if (task & MOD_ENABLE) {
    if (t = module->module) {
@@ -287,8 +277,7 @@ int mod (unsigned int task, struct lmodule *module) {
    }
  }
 
- fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
- if (!fb) goto wontload;
+ fb = (struct mfeedback *)ecalloc (1, sizeof (struct mfeedback));
  fb->module = module;
  fb->task = task | MOD_FEEDBACK_SHOW;
  fb->status = STATUS_WORKING;
@@ -332,19 +321,17 @@ int mod_comment (struct mfeedback *status) {
 /* helper functions for mod_plan should go right here */
 
 int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
- char *pstring = malloc ((8 + strlen (atom)) * sizeof (char));
+ char *pstring = emalloc ((8 + strlen (atom)) * sizeof (char));
  char **preftab;
  struct cfgnode *node;
  unsigned int tn = 0, cn = 0, ci;
- if (!pstring) return bitch (BTCH_ERRNO);
  pstring[0] = 0;
  strcat (pstring, "prefer-");
  strcat (pstring, atom);
  node = cfg_findnode (pstring, 0, NULL);
  if (!node || !node->svalue) return 0;
  free (pstring);
- pstring = strdup (node->svalue);
- if (!pstring) return bitch (BTCH_ERRNO);
+ pstring = estrdup (node->svalue);
  preftab = str2set (':', pstring);
  if (!preftab) {
   free (pstring);
@@ -520,8 +507,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (!atoms && !(task & MOD_DISABLE_UNSPEC)) return NULL;
 
  if (!plan) {
-  plan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
-  if (!plan) goto panic;
+  plan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
   plan->task = task;
  }
 
@@ -540,8 +526,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
         goto skipcurmod;
      }
     }
-    struct mloadplan *cplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
-    if (!cplan) goto panic;
+    struct mloadplan *cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
     cplan->task = MOD_DISABLE;
     cplan->mod = curmod;
     plan->orphaned = (struct mloadplan **)setadd ((void **)plan->orphaned, (void *)cplan);
@@ -552,17 +537,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }
 
  if (atoms) for (si = 0; atoms[si]; si++) {
-  struct lmodule **cand = (struct lmodule **)calloc (mcount+1, sizeof (struct lmodule *));
+  struct lmodule **cand = (struct lmodule **)ecalloc (mcount+1, sizeof (struct lmodule *));
   struct mloadplan *cplan = NULL;
   struct mloadplan *tcplan = NULL;
   struct mloadplan **planl = NULL;
   unsigned int cc = 0, npcc;
-  if (!cand) {
-   panic:
-   mod_plan_free (plan);
-   bitch (BTCH_ERRNO);
-   return NULL;
-  }
   curmod = mlist;
 
   while (curmod) {
@@ -578,9 +557,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 //  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
 
   if (cc) {
-   if (mod_plan_sort_by_preference (cand, atoms[si])) goto panic;
-   cplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
-   if (!cplan) goto panic;
+   if (mod_plan_sort_by_preference (cand, atoms[si])) {
+    return NULL;
+   }
+   cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
    cplan->task = task;
    cplan->mod = cand[0];
 
@@ -588,12 +568,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
    if (cc > 1) {
 	unsigned int icc = 1;
-    planl = (struct mloadplan **)calloc (cc, sizeof (struct mloadplan *));
-    if (!planl) goto panic;
+    planl = (struct mloadplan **)ecalloc (cc, sizeof (struct mloadplan *));
 	cplan->left = planl;
 	for (; icc < cc; icc++) {
-     tcplan = (struct mloadplan *)calloc (1, sizeof (struct mloadplan));
-     if (!tcplan) goto panic;
+     tcplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
      tcplan->task = task;
      tcplan->mod = cand[icc];
      cplan->left[icc-1] = tcplan;
@@ -605,8 +583,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
   } else {
    if (plan && plan->unsatisfied && strinset (plan->unsatisfied, atoms [si])) {
-    char *tmpa = strdup (atoms[si]);
-	if (!tmpa) goto panic;
+    char *tmpa = estrdup (atoms[si]);
     printf ("can't satisfy atom: %s\n", atoms[si]);
     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
@@ -635,16 +612,14 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (i & STATUS_OK) {
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
-    pthread_t *th = calloc (1, sizeof (pthread_t));
-    if (!th) goto panic;
+    pthread_t *th = ecalloc (1, sizeof (pthread_t));
     if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->right[i])) {
      childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
     }
    }
  } else if (plan->left) {
   for (i = 0; plan->left[i]; i++) {
-   pthread_t *th = calloc (1, sizeof (pthread_t));
-   if (!th) goto panic;
+   pthread_t *th = ecalloc (1, sizeof (pthread_t));
    if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->left[i])) {
     childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
    }

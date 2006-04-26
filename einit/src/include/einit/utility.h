@@ -70,4 +70,11 @@ void hashfree (struct uhash *);
 
 char *cfg_getpath (char *);
 
+/* safe malloc/calloc/realloc/strdup functions */
+
+void *emalloc (size_t);
+void *ecalloc (size_t, size_t);
+void *erealloc (void *, size_t);
+char *estrdup (char *);
+
 #endif /* _UTILITY_H */

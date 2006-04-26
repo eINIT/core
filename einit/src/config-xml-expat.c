@@ -57,40 +57,22 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (!strcmp (name, "enable")) {
    for (; atts[i] != NULL; i+=2) {
     if (!strcmp (atts[i], "mod")) {
-     char *modlist = strdup (atts[i+1]);
-     if (!modlist) {
-      bitch (BTCH_ERRNO);
-      return;
-	 }
+     char *modlist = estrdup ((char *)atts[i+1]);
 	 curmode->enable = str2set (':', modlist);
     }
    }
   }
  }
  if (!strcmp (name, "mode")) {
-  struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
-  if (!newnode) {
-   bitch (BTCH_ERRNO);
-   return;
-  }
+  struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
   cfg_addnode (newnode);
   curmode = newnode;
   for (; atts[i] != NULL; i+=2) {
    if (!strcmp (atts[i], "id")) {
-    newnode->id = strdup (atts[i+1]);
-    if (!newnode->id) {
-     free (newnode);
-     bitch (BTCH_ERRNO);
-     return;
-	}
+    newnode->id = estrdup ((char *)atts[i+1]);
    } else if (!strcmp (atts[i], "base")) {
-	char *tmp = strdup (atts[i+1]);
-    if (!tmp) {
-     free (tmp);
-     bitch (BTCH_ERRNO);
-     return;
-	}
+	char *tmp = estrdup ((char *)atts[i+1]);
 	newnode->base = str2set (':', tmp);
 	if (!newnode->base) {
      free (tmp);
@@ -99,23 +81,13 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    }
   }
  } else {
-  struct cfgnode *newnode = calloc (1, sizeof (struct cfgnode));
-  if (!newnode) {
-   bitch (BTCH_ERRNO);
-   return;
-  }
-  newnode->id = strdup (name);
+  struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
+  newnode->id = estrdup ((char *)name);
   newnode->nodetype = EI_NODETYPE_CONFIG;
   newnode->mode = curmode;
-  if (!newnode->id) {
-   free (newnode);
-   bitch (BTCH_ERRNO);
-   return;
-  }
   for (; atts[i] != NULL; i+=2) {
-   errno = 0;
    if (!strcmp (atts[i], "s"))
-    newnode->svalue = strdup (atts[i+1]);
+    newnode->svalue = estrdup ((char *)atts[i+1]);
    else if (!strcmp (atts[i], "i"))
     newnode->value = atoi (atts[i+1]);
    else if (!strcmp (atts[i], "b")) {
@@ -124,16 +96,10 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 	                 !strcmp (atts[j], "enabled") ||
 	                 !strcmp (atts[j], "yes"));
    }
-   if (errno) {
-    free (newnode->id);
-    free (newnode);
-    bitch (BTCH_ERRNO);
-    return;
-   }
   }
-  newnode->arbattrs = calloc (i+1,sizeof (char *));
+  newnode->arbattrs = ecalloc (i+1,sizeof (char *));
   for (i=0; atts[i] != NULL; i++)
-   newnode->arbattrs [i] = strdup (atts[i]);
+   newnode->arbattrs [i] = estrdup ((char *)atts[i]);
   cfg_addnode (newnode);
  }
 }
@@ -147,21 +113,20 @@ int cfg_load () {
  int cfgfd, e, blen;
  char * buf, * data;
  ssize_t rn;
- sconfiguration = calloc (1, sizeof(struct sconfiguration));
- if (!sconfiguration) return bitch(BTCH_ERRNO);
+ sconfiguration = ecalloc (1, sizeof(struct sconfiguration));
  XML_Parser par;
  cfgfd = open (configfile, O_RDONLY);
  if (cfgfd != -1) {
-  buf = malloc (BUFFERSIZE*sizeof(char));
+  buf = emalloc (BUFFERSIZE*sizeof(char));
   blen = 0;
   do {
-   buf = realloc (buf, blen + BUFFERSIZE);
+   buf = erealloc (buf, blen + BUFFERSIZE);
    if (buf == NULL) return bitch(BTCH_ERRNO);
    rn = read (cfgfd, (char *)(buf + blen), BUFFERSIZE);
    blen = blen + rn;
   } while (rn > 0);
   close (cfgfd);
-  data = realloc (buf, blen);
+  data = erealloc (buf, blen);
   par = XML_ParserCreate (NULL);
   if (par != NULL) {
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);

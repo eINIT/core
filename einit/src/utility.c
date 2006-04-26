@@ -55,11 +55,7 @@ void **setcombine (void **set1, void **set2) {
   return set1;
  }
 
- newset = calloc (setcount(set1) + setcount(set2) +1, sizeof (void *));
- if (!newset) {
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
+ newset = ecalloc (setcount(set1) + setcount(set2) +1, sizeof (void *));
 
  while (set1[x])
   { newset [x] = set1[x]; x++; }
@@ -75,14 +71,9 @@ void **setadd (void **set, void *item) {
  int x = 0, y = 0, s = 1, p = 0;
  char *strbuffer = NULL;
  if (!item) return NULL;
- if (!set) set = calloc (1, sizeof (void *));
- if (!set) return NULL;
+ if (!set) set = ecalloc (1, sizeof (void *));
 
- newset = calloc (setcount(set) + 2, sizeof (void *));
- if (!newset) {
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
+ newset = ecalloc (setcount(set) + 2, sizeof (void *));
 
  while (set[x]) {
   if (set[x] == item) {
@@ -105,11 +96,7 @@ void **setdup (void **set) {
  if (!set) return NULL;
  if (!set[0]) return NULL;
 
- newset = calloc (setcount(set) +1, sizeof (char *));
- if (!newset) {
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
+ newset = ecalloc (setcount(set) +1, sizeof (char *));
  while (set[y]) {
   newset[y] = set[y];
   y++;
@@ -168,16 +155,7 @@ char **str2set (const char sep, char *input) {
    input[i] = 0;
   }
  }
- ret = calloc (sc+1, sizeof(char *));
- if (!ret) {
-  bitch (BTCH_ERRNO);
-  for (i = 0; i < l; i++) {
-   if (input[i] == 0) {
-    input[i] = sep;
-   }
-  }
-  return NULL;
- }
+ ret = ecalloc (sc+1, sizeof(char *));
  ret[0] = input;
  for (i = 0; i < l; i++) {
   if (input[i] == 0) {
@@ -209,17 +187,8 @@ char **strsetrebuild (char **sset) {
  while (sset[y])
   { y++; s += strlen (sset[y]); }
 
- strbuffer = malloc (s*sizeof(char));
- if (!strbuffer) {
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
- ssetbuffer = (char **)calloc (setcount ((void **)sset)+1, sizeof(char *));
- if (!ssetbuffer) {
-  free (strbuffer);
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
+ strbuffer = emalloc (s*sizeof(char));
+ ssetbuffer = (char **)ecalloc (setcount ((void **)sset)+1, sizeof(char *));
  strbuffer[s-1] = 0;
  while (sset[y])
   { y++; s += strlen (sset[y]); }
@@ -232,20 +201,9 @@ char **strsetdup (char **sset) {
  if (!sset) return NULL;
  if (!sset[0]) return NULL;
 
- newset = calloc (setcount((void **)sset) +1, sizeof (char *));
- if (!newset) {
-  bitch (BTCH_ERRNO);
-  return NULL;
- }
+ newset = ecalloc (setcount((void **)sset) +1, sizeof (char *));
  while (sset[y]) {
-  newset[y] = strdup (sset[y]);
-  if (!newset [y]) {
-   bitch (BTCH_ERRNO);
-   for (y = 0; newset[y] != NULL; y++)
-    free (newset[y]);
-   free (newset);
-   return NULL;
-  }
+  newset[y] = estrdup (sset[y]);
   y++;
  }
 
@@ -309,13 +267,8 @@ char **strsetdeldupes (char **set) {
 /* hashes */
 
 struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
- struct uhash *n = calloc (1, sizeof (struct uhash));
+ struct uhash *n = ecalloc (1, sizeof (struct uhash));
  struct uhash *c = hash;
- if (!n) {
-  bitch (BTCH_ERRNO);
-  hashfree (hash);
-  return NULL;
- }
 
  n->key = key;
  n->value = value;
@@ -362,15 +315,57 @@ char *cfg_getpath (char *id) {
  if (!svpath || !svpath->svalue) return NULL;
  mplen = strlen (svpath->svalue) +1;
  if (svpath->svalue[mplen-2] != '/') {
-  char *tmpsvpath = (char *)realloc (svpath->svalue, mplen+1);
-  if (!tmpsvpath) {
-   bitch (BTCH_ERRNO);
-   return NULL;
-  }
+  char *tmpsvpath = (char *)erealloc (svpath->svalue, mplen+1);
 
   tmpsvpath[mplen-1] = '/';
   tmpsvpath[mplen] = 0;
   svpath->svalue = tmpsvpath;
  }
  return svpath->svalue;
+}
+
+/* safe malloc/calloc/realloc/strdup functions */
+
+void *emalloc (size_t s) {
+ void *p = NULL;
+
+ while (!(p = malloc (s))) {
+  bitch (BTCH_ERRNO);
+  sleep (1);
+ }
+
+ return p;
+}
+
+void *ecalloc (size_t c, size_t s) {
+ void *p = NULL;
+
+ while (!(p = calloc (c, s))) {
+  bitch (BTCH_ERRNO);
+  sleep (1);
+ }
+
+ return p;
+}
+
+void *erealloc (void *c, size_t s) {
+ void *p = NULL;
+
+ while (!(p = realloc (c, s))) {
+  bitch (BTCH_ERRNO);
+  sleep (1);
+ }
+
+ return p;
+}
+
+char *estrdup (char *s) {
+ char *p = NULL;
+
+ while (!(p = strdup (s))) {
+  bitch (BTCH_ERRNO);
+  sleep (1);
+ }
+
+ return p;
 }

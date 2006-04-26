@@ -1,6 +1,8 @@
 2006/04/26: mdeininger
  * added the --with-include= option to configure
  * removed the threading code for feedback. it really is useless.
+ * introduced safe malloc/calloc/realloc/strdup functions
+   (emalloc, ecalloc, erealloc, estrdup)
 
 2006/04/25: mdeininger
  * I think I fixed the race-condition problems in mod() with threading.
