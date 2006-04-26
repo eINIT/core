@@ -57,11 +57,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pthread.h>
 
-void *mod_comment_thread (struct mfeedback *);
+int mod_comment (struct mfeedback *status);
 
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
-	NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL
+	NULL, NULL, NULL, mod_comment, NULL, 0, NULL, NULL, NULL
 };
 int mcount = 0;
 
@@ -263,24 +263,17 @@ int mod (unsigned int task, struct lmodule *module) {
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
   goto wontload;
 
- fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
- if (!fb) goto wontload;
  th = calloc (1, sizeof (pthread_t));
  if (!th) {
   free (fb);
   goto wontload;
  }
- providefeedback = (mdefault.comment != NULL);
-
- fb->module = module;
- fb->task = task;
 
  if (task & MOD_ENABLE) {
    if (t = module->module) {
     if (t->requires) for (ti = 0; t->requires[ti]; ti++)
      if (!strinset (provided, t->requires[ti])) {
       module->status ^= STATUS_WORKING;
-      free (fb);
       return STATUS_FAIL_REQ;
      }
    }
@@ -289,16 +282,17 @@ int mod (unsigned int task, struct lmodule *module) {
     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
      if (strinset (required, t->provides[ti])) {
       module->status ^= STATUS_WORKING;
-	  free (fb);
       return STATUS_FAIL_REQ;
      }
    }
  }
 
- if (providefeedback) {
-  pthread_create (th, NULL, (void * (*)(void *))mdefault.comment, (void*)fb);
-  fb->status = STATUS_WORKING;
- }
+ fb = (struct mfeedback *)calloc (1, sizeof (struct mfeedback));
+ if (!fb) goto wontload;
+ fb->module = module;
+ fb->task = task | MOD_FEEDBACK_SHOW;
+ fb->status = STATUS_WORKING;
+ status_update (fb);
 
  if (task & MOD_ENABLE) {
    ret = module->enable (module->param, fb);
@@ -324,12 +318,15 @@ int mod (unsigned int task, struct lmodule *module) {
    }
  }
 
- if (providefeedback) {
-  pthread_join (*th, NULL);
-  free(fb);
- }
+ fb->status = module->status;
+ status_update (fb);
+ free (fb);
 
  return module->status;
+}
+
+int mod_comment (struct mfeedback *status) {
+ return 0;
 }
 
 /* helper functions for mod_plan should go right here */

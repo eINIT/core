@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_RESET 0x0008
 #define MOD_DISABLE_UNSPEC 0x1000
 #define MOD_DISABLE_UNSPEC_FEEDBACK 0x2000
+#define MOD_FEEDBACK_SHOW 0x0100
 
 #define STATUS_IDLE 0x0000
 #define STATUS_OK 0x8003
@@ -73,7 +74,6 @@ struct mfeedback {
  unsigned volatile int status;
  unsigned volatile int progress;
  unsigned volatile int task;
- unsigned volatile char changed;
  unsigned volatile int errorc;
  char volatile *verbose;
  struct lmodule * module;
@@ -133,7 +133,7 @@ int mod (unsigned int, struct lmodule *);
 #define mod_enable(lname) mod (MOD_ENABLE, lname)
 #define mod_disable(lname) mod (MOD_DISABLE, lname)
 
-// create a plan for loading a handful of requirements
+// create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int);
 
 // actually do what the plan says
@@ -152,7 +152,7 @@ void mod_plan_ls (struct mloadplan *);
 
 // use this to tell einit that there is new feedback-information
 // don't rely on this to be a macro!
-#define status_update(a) a->changed++
+#define status_update(a) if (mdefault.comment) mdefault.comment(a)
 
 #ifdef __cplusplus
 }

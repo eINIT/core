@@ -35,6 +35,9 @@ for param in $@; do
 	if test "$short" = "--prefix"; then
 		echo -n " PREFIX";
 		PREFIX=${param#*=};
+	elif test "$short" = "--with-include"; then
+		echo -n " INCLUDE";
+		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";
 	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG -g";
@@ -57,11 +60,12 @@ if test "$HELP" = "1"; then
  ./configure [--prefix=path] [--enable-*] [--debug] [--help]
 
 Options:
- --prefix=path    use this to set a path to install to (absolute!)
- --enable-sysv    enable compilation of sysv-compatibility functions
- --enable-linux   enable compilation of linux-specific modules
- --debug          will #define DEBUG.
- --help           display this text and exit.";
+ --prefix=path          use this to set a path to install to (absolute!)
+ --with-include=path    use this to set a path to install to (absolute!)
+ --enable-sysv          enable compilation of sysv-compatibility functions
+ --enable-linux         enable compilation of linux-specific modules
+ --debug                will #define DEBUG.
+ --help                 display this text and exit.";
 exit;
 fi;
 
