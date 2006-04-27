@@ -1,5 +1,8 @@
 2006/04/27: mdeininger
  * spinlocks suck -- so we won't be using them anymore
+ * okay, i just found out i've got a huge memory leak somewhere... damn ><
+   maybe not that big after all, it appears that merely calling pthread_create
+   increases einit's data size by 8m... weird
 
 2006/04/26: mdeininger
  * added the --with-include= option to configure

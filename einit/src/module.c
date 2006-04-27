@@ -618,6 +618,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return 1;
  if (!plan->mod) i = STATUS_OK;
  else i = mod(plan->task, plan->mod);
+
  if (i & STATUS_OK) {
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
@@ -625,6 +626,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
     if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->right[i])) {
      childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
     }
+//    mod_plan_commit (plan->right[i]);
    }
  } else if (plan->left) {
   for (i = 0; plan->left[i]; i++) {
@@ -636,8 +638,10 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
 
  if (childthreads) {
-  for (i = 0; childthreads[i]; i++)
+  for (i = 0; childthreads[i]; i++) {
    pthread_join (*(childthreads[i]), NULL);
+   free (childthreads[i]);
+  }
   free (childthreads);
  }
 
