@@ -61,7 +61,7 @@ int mod_comment (struct mfeedback *status);
 
 struct lmodule *mlist = NULL;
 struct lmodule mdefault = {
-	NULL, NULL, NULL, mod_comment, NULL, 0, NULL, NULL, NULL
+	NULL, NULL, NULL, mod_comment
 };
 int mcount = 0;
 
@@ -127,6 +127,7 @@ void mod_freedesc (struct lmodule *m) {
   m->cleanup (m);
  if (m->sohandle)
   dlclose (m->sohandle);
+ pthread_mutex_destroy (&m->mutex);
  free (m);
 }
 
@@ -161,6 +162,7 @@ int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*di
  nmod->param = param;
  nmod->enable = enable;
  nmod->disable = disable;
+ pthread_mutex_init (&nmod->mutex, NULL);
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
@@ -238,20 +240,21 @@ int mod (unsigned int task, struct lmodule *module) {
  pthread_t *th;
  char providefeedback;
  struct smodule *t;
- int ti;
+ int ti, errc;
  unsigned int ret;
  if (!module) return 0;
 /* wait if the module is already being processed in a different thread */
- while (module->status & STATUS_WORKING)
-  sleep (1);
+ if (errc = pthread_mutex_lock (&module->mutex)) {
+// this is bad...
+  puts (strerror (errc));
+ }
 
  module->status = module->status | STATUS_WORKING;
 
 /* check if the task requested has already been done (or if it can be done at all) */
  if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
-  module->status ^= STATUS_WORKING;
-//  module->status = STATUS_ENABLED;
+  pthread_mutex_unlock (&module->mutex);
   return STATUS_IDLE;
  }
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
@@ -263,7 +266,7 @@ int mod (unsigned int task, struct lmodule *module) {
    if (t = module->module) {
     if (t->requires) for (ti = 0; t->requires[ti]; ti++)
      if (!strinset (provided, t->requires[ti])) {
-      module->status ^= STATUS_WORKING;
+      pthread_mutex_unlock (&module->mutex);
       return STATUS_FAIL_REQ;
      }
    }
@@ -271,7 +274,7 @@ int mod (unsigned int task, struct lmodule *module) {
    if (t = module->module) {
     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
      if (strinset (required, t->provides[ti])) {
-      module->status ^= STATUS_WORKING;
+      pthread_mutex_unlock (&module->mutex);
       return STATUS_FAIL_REQ;
      }
    }
@@ -316,6 +319,7 @@ int mod (unsigned int task, struct lmodule *module) {
  status_update (fb);
  free (fb);
 
+ pthread_mutex_unlock (&module->mutex);
  return module->status;
 }
 

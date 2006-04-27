@@ -1,3 +1,6 @@
+2006/04/27: mdeininger
+ * spinlocks suck -- so we won't be using them anymore
+
 2006/04/26: mdeininger
  * added the --with-include= option to configure
  * removed the threading code for feedback. it really is useless.

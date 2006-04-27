@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _MODULE_H
 #define _MODULE_H
 
+#include <pthread.h>
+
 #define EINIT_OPT_WAIT 8
 #define EINIT_OPT_ONCE 16
 #define EINIT_OPT_KEEPALIVE 32
@@ -99,6 +101,7 @@ struct lmodule {
  int (*cleanup) (struct lmodule *);
  unsigned int status;
  void *param;
+ pthread_mutex_t mutex;
  struct smodule *module;
  struct lmodule *next;
 };
