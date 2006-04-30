@@ -122,10 +122,14 @@ int ipc_wait () {
   return bitch (BTCH_ERRNO);
  }
 
- listen (sock, 2);
+ if (listen (sock, 5)) {
+  close (sock);
+  return bitch (BTCH_ERRNO);
+ }
 
  while ((nfd = accept (sock, NULL, NULL)) != -1) {
   printf ("new connection: %i", nfd);
+  puts ("");
   close (nfd);
  }
  if (nfd == -1)
