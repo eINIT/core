@@ -307,23 +307,6 @@ void hashfree (struct uhash *hash) {
  }
 }
 
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
-
-char *cfg_getpath (char *id) {
- int mplen;
- struct cfgnode *svpath = cfg_findnode (id, 0, NULL);
- if (!svpath || !svpath->svalue) return NULL;
- mplen = strlen (svpath->svalue) +1;
- if (svpath->svalue[mplen-2] != '/') {
-  char *tmpsvpath = (char *)erealloc (svpath->svalue, mplen+1);
-
-  tmpsvpath[mplen-1] = '/';
-  tmpsvpath[mplen] = 0;
-  svpath->svalue = tmpsvpath;
- }
- return svpath->svalue;
-}
-
 /* safe malloc/calloc/realloc/strdup functions */
 
 void *emalloc (size_t s) {

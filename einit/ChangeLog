@@ -1,3 +1,7 @@
+2006/04/30: mdeininger
+ * new file: power.c
+ * revamped Makefiles
+
 2006/04/27: mdeininger
  * spinlocks suck -- so we won't be using them anymore
  * okay, i just found out i've got a huge memory leak somewhere... damn ><

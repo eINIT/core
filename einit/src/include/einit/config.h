@@ -106,6 +106,10 @@ struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
 // replace a node with a new one
 int cfg_replacenode (struct cfgnode *, struct cfgnode *);
 
+/* those i-could've-sworn-there-were-library-functions-for-that functions */
+
+char *cfg_getpath (char *);
+
 #ifdef __cplusplus
 }
 #endif

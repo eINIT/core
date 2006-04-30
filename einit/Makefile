@@ -1,17 +1,12 @@
 include config.mk
 
-einit: einit-xml
-	cp -p src/einit-xml einit
+all:
+	cd src && ${MAKE} all
 
-install: einit
-	${INSTALL} ${BINIPARAM} -d ${SBINDIR}
-	${INSTALL} ${BINIPARAM} einit ${SBINDIR}
+install: all
 	${INSTALL} ${IPARAM} -d ${ETCDIR}
 	${INSTALL} ${IPARAM} data/default.xml ${ETCDIR}
 	cd src && ${MAKE} install
-
-einit-xml:
-	cd src && ${MAKE} einit-xml
 
 depend:
 	touch src/depend.mk
@@ -20,5 +15,3 @@ depend:
 clean:
 	rm -f einit
 	cd src && ${MAKE} clean
-
-all: einit

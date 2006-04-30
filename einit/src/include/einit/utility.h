@@ -66,10 +66,6 @@ struct uhash *hashfind (struct uhash *, char *);
 void hashfree (struct uhash *);
 #define hashnext(h) h->next
 
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
-
-char *cfg_getpath (char *);
-
 /* safe malloc/calloc/realloc/strdup functions */
 
 void *emalloc (size_t);
