@@ -1,10 +1,12 @@
-/***************************************************************************
- *            utlity.h
+/*
+ *  utility.h
+ *  einit
  *
- *  Sat Mar 25 18:15:21 2006
- *  Copyright  2006  Magnus Deininger
- *  dma05@web.de
- ****************************************************************************/
+ *  Created by Magnus Deininger on 25/03/2006.
+ *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *
+ */
+
 /*
 Copyright (c) 2006, Magnus Deininger
 All rights reserved.

@@ -1,6 +1,7 @@
 2006/04/30: mdeininger
  * new file: power.c
  * revamped Makefiles
+ * some work on IPC
 
 2006/04/27: mdeininger
  * spinlocks suck -- so we won't be using them anymore

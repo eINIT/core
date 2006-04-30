@@ -1,4 +1,12 @@
-/* einit: main.c */
+/*
+ *  einit.c
+ *  einit
+ *
+ *  Created by Magnus Deininger on 06/02/2006.
+ *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *
+ */
+
 /*
 Copyright (c) 2006, Magnus Deininger
 All rights reserved.

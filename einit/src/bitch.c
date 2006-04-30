@@ -1,10 +1,12 @@
-/***************************************************************************
- *            bitch.c
+/*
+ *  bitch.c
+ *  einit
  *
- *  Tue Feb 14 15:56:59 2006
- *  Copyright  2006  Magnus Deininger
- *  dma05@web.de
- ****************************************************************************/
+ *  Created by Magnus Deininger on 14/02/2006.
+ *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *
+ */
+
 /*
 Copyright (c) 2006, Magnus Deininger
 All rights reserved.

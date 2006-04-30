@@ -1,10 +1,12 @@
-/***************************************************************************
- *            linux-sysconf.c
+/*
+ *  linux-sysconf.c
+ *  einit
  *
- *  Mon Mar 27 14:42:51 2006
- *  Copyright  2006  Magnus Deininger
- *  dma05@web.de
- ****************************************************************************/
+ *  Created by Magnus Deininger on 27/03/2006.
+ *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *
+ */
+
 /*
 Copyright (c) 2006, Magnus Deininger
 All rights reserved.

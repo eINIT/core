@@ -1,10 +1,12 @@
-/***************************************************************************
- *            config-xml-expat.c
+/*
+ *  config-xml-expat.c
+ *  einit
  *
- *  Mon Feb  6 15:42:42 2006
- *  Copyright  2006  Magnus Deininger
- *  dma05@web.de
- ****************************************************************************/
+ *  Created by Magnus Deininger on 06/02/2006.
+ *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *
+ */
+
 /*
 Copyright (c) 2006, Magnus Deininger
 All rights reserved.
