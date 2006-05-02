@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
+#include <einit/scheduler.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -50,74 +51,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int, char **);
 int print_usage_info ();
-int switchmode (char *);
-int ipc_process (int *);
+int ipc_process (char *);
 int ipc_wait ();
 
 char *currentmode = "void";
 char *newmode = "void";
-
-int switchmode (char *mode) {
- if (!mode) return -1;
- printf ("switching to mode \"%s\": ", mode);
- if (sconfiguration) {
-  struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
-  struct cfgnode *opt;
-  struct mloadplan *plan;
-  char **elist;
-  unsigned int optmask = 0;
-
-  if (!cur) {
-   puts ("mode not defined, aborting");
-   return -1;
-  }
-  opt = NULL;
-  while (opt = cfg_findnode ("disable-unspecified", 0, opt)) {
-   if (opt->mode == cur) {
-    if (opt->flag) optmask |= MOD_DISABLE_UNSPEC;
-    else optmask &= !MOD_DISABLE_UNSPEC;
-   }
-  }
-  elist = strsetdup (cur->enable);
-  newmode = mode;
-
-  if (cur->base) {
-   int y = 0;
-   struct cfgnode *cno;
-   while (cur->base[y]) {
-	cno = cfg_findnode (cur->base[y], EI_NODETYPE_MODE, NULL);
-	if (cno) {
-     elist = (char **)setcombine ((void **)strsetdup (cno->enable), (void **)elist);
-    }
-    y++;
-   }
-  }
-
-  elist = strsetdeldupes (elist);
-
-  plan = mod_plan (NULL, elist, MOD_ENABLE | optmask);
-  if (!plan) {
-   puts ("I guess I'm... clueless");
-  } else {
-#ifdef DEBUG
-   mod_plan_ls (plan);
-#endif
-   puts ("commencing");
-   mod_plan_commit (plan);
-   currentmode = mode;
-   mod_plan_free (plan);
-  }
- }
-
- return 0;
-}
 
 int print_usage_info () {
  fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h]\n", stderr);
  return -1;
 }
 
-int ipc_process (int *fd) {
+int ipc_process (char *cmd) {
+ char **argv = str2set (' ', cmd);
+ int argc = setcount ((void **)argv);
+ if (!argv) return bitch (BTCH_ERRNO);
+ if (!argv[0]) {
+  free (argv);
+  return bitch (BTCH_ERRNO);
+ }
+
+ if (!strcmp (argv[0], "power") && (argc > 1)) {
+  if (!strcmp (argv[1], "off")) {
+   sched_queue (SCHEDULER_SWITCH_MODE, "power-off");
+   sched_queue (SCHEDULER_POWER_OFF, NULL);
+  }
+ }
 }
 
 int ipc_wait () {
@@ -166,17 +125,15 @@ int ipc_wait () {
    for (i = 0; i < br; i++) {
     if ((buf[i] == '\n') || (buf[i] == '\0')) {
      lbuf[ic] = 0;
-     if (lbuf[0]) {
-      puts (lbuf);
-     }
+     if (lbuf[0])
+      ipc_process (lbuf);
      ic = -1;
      lbuf[0] = 0;
 	} else {
      if (ic >= BUFFERSIZE) {
       lbuf[ic] = 0;
-      if (lbuf[0]) {
-       puts (lbuf);
-      }
+      if (lbuf[0])
+       ipc_process (lbuf);
       ic = 0;
      }
      lbuf[ic] = buf[i];
@@ -185,9 +142,9 @@ int ipc_wait () {
    }
   }
   lbuf[ic] = 0;
-  if (lbuf[0]) {
-   puts (lbuf);
-  }
+  if (lbuf[0])
+   ipc_process (lbuf);
+
   close (nfd);
 //  close (nfd);
  }
@@ -232,7 +189,9 @@ int main(int argc, char **argv) {
  mod_ls ();
 #endif
 
- switchmode ("default");
+ sched_queue (SCHEDULER_SWITCH_MODE, "default");
+
+// switchmode ("default");
 
  ipc_wait();
 

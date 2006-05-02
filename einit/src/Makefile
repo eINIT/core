@@ -12,8 +12,8 @@ clean:
 	rm -f *.o einit-* einit power depend.mk
 	cd modules && ${MAKE} clean	
 
-einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o
-	$(CCC) einit.o module.o bitch.o config-xml-expat.o utility.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
+einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o
+	$(CCC) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
 
 einit: einit-xml
 	ln -sf einit-xml einit
@@ -35,6 +35,9 @@ power.o: power.c
 
 einit.o: einit.c
 	$(CCC) -c einit.c
+
+scheduler.o: scheduler.c
+	$(CCC) -c scheduler.c
 
 module.o: module.c
 	$(CCC) -c module.c
