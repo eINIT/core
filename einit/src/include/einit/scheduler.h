@@ -40,7 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _SCHEDULER_H
 
 #include <pthread.h>
+#include <sys/types.h>
 #include <einit/utility.h>
+#include <signal.h>
 
 #define SCHEDULER_SWITCH_MODE 0x0001
 #define SCHEDULER_POWER_OFF 0x0002
@@ -51,7 +53,13 @@ struct sschedule {
  void *param;
 };
 
+struct spidcb {
+ pid_t pid;
+ void (*cfunc)(pid_t);
+};
+
 struct sschedule **schedule;
+struct spidcb **cpids;
 pthread_t schedthread;
 
 int epoweroff ();
@@ -59,7 +67,14 @@ int epowerreset ();
 
 int switchmode (char *);
 
+void sched_init ();
 int sched_queue (unsigned int, void *);
+int sched_watch_pid (pid_t, void (*)(pid_t));
 void *sched_run (void *);
+
+/* this should be the best place for signal handlers... */
+
+void sched_signal_sigchld (int, siginfo_t *, void *);
+void sched_signal_sigint (int, siginfo_t *, void *);
 
 #endif

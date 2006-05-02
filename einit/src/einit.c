@@ -113,7 +113,13 @@ int ipc_wait () {
 
 /* i was originally intending to create one thread per connection, but i think one thread in total should
    be sufficcient */
- while ((nfd = accept (sock, NULL, NULL)) != -1) {
+ while (nfd = accept (sock, NULL, NULL)) {
+  if (nfd == -1) {
+   if (errno == EAGAIN) continue;
+   if (errno == EINTR) continue;
+   if (errno == ECONNABORTED) continue;
+   break;
+  }
 //  pthread_t *thread = ecalloc (1, sizeof (pthread_t));
 //  pthread_create (thread, &threadattr, (void *(*)(void *))ipc_process, (void *)&nfd);
 //  pthread_detach (*thread);
@@ -200,6 +206,7 @@ int main(int argc, char **argv) {
   fputs ("ERROR: cfg_load() failed\n", stderr);
   return -1;
  }
+ sched_init ();
  mod_scanmodules ();
 #ifdef DEBUG
  mod_ls ();

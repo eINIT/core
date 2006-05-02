@@ -39,11 +39,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/types.h>
 #include <einit/scheduler.h>
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
+#include <signal.h>
 
 pthread_t schedthread = 0;
 
@@ -129,12 +131,29 @@ int switchmode (char *mode) {
  return 0;
 }
 
+void sched_init () {
+ struct sigaction action;
+
+ action.sa_sigaction = sched_signal_sigchld;
+ sigemptyset(&(action.sa_mask));
+ action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART;
+
+ if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
+}
+
 int sched_queue (unsigned int task, void *param) {
  struct sschedule *nele = ecalloc (1, sizeof (struct sschedule));
  nele->task = task;
  nele->param = param;
  schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele);
  if (!schedthread) pthread_create (&schedthread, NULL, sched_run, NULL);
+}
+
+int sched_watch_pid (pid_t pid, void (*function)(pid_t)) {
+ struct spidcb *nele = ecalloc (1, sizeof (struct spidcb));
+ nele->pid = pid;
+ nele->cfunc = function;
+ cpids = (struct spidcb **) setadd ((void **)cpids, (void *)nele);
 }
 
 void *sched_run (void *p) {
@@ -170,4 +189,20 @@ void *sched_run (void *p) {
   free (c);
  }
  schedthread = 0;
+}
+
+/* signal handlers */
+
+// this should prevent any zombies from being created
+
+void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
+ int status;
+ waitpid (siginfo->si_pid, &status, 0);
+ return;
+}
+
+// (on linux) SIGINT to INIT means ctrl+alt+del was pressed
+
+void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
+ return;
 }
