@@ -19,7 +19,7 @@ einit: einit-xml
 	ln -sf einit-xml einit
 
 power: power.o bitch.o utility.o
-	$(CCC) power.o bitch.o utility.o $(XDYNAMIC) -o power
+	$(CCC) power.o bitch.o utility.o $(XDYNAMIC) -o power -ldl
 
 install:
 	${INSTALL} ${BINIPARAM} -d ${SBINDIR}
