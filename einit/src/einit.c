@@ -53,7 +53,10 @@ int main(int, char **);
 int print_usage_info ();
 int ipc_process (char *);
 int ipc_wait ();
+int cleanup ();
 
+int sock;
+struct sockaddr_un saddr;
 char *currentmode = "void";
 char *newmode = "void";
 
@@ -76,16 +79,19 @@ int ipc_process (char *cmd) {
    sched_queue (SCHEDULER_SWITCH_MODE, "power-off");
    sched_queue (SCHEDULER_POWER_OFF, NULL);
   }
+  if (!strcmp (argv[1], "reset")) {
+   sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
+   sched_queue (SCHEDULER_POWER_RESET, NULL);
+  }
  }
 }
 
 int ipc_wait () {
  struct cfgnode *node = cfg_findnode ("control-socket", 0, NULL);
- int sock = socket (AF_UNIX, SOCK_STREAM, 0);
- struct sockaddr_un saddr;
  int nfd;
  pthread_t **cthreads;
  pthread_attr_t threadattr;
+ sock = socket (AF_UNIX, SOCK_STREAM, 0);
  if (sock == -1)
   return bitch (BTCH_ERRNO);
 
@@ -159,6 +165,16 @@ int ipc_wait () {
  return 0;
 }
 
+int cleanup () {
+ if (sock) {
+  close (sock);
+  if (unlink (saddr.sun_path)) bitch (BTCH_ERRNO);
+ }
+ mod_freemodules ();
+ cfg_free ();
+ bitch (BTCH_DL + BTCH_ERRNO);
+}
+
 int main(int argc, char **argv) {
  int i;
 
@@ -191,14 +207,9 @@ int main(int argc, char **argv) {
 
  sched_queue (SCHEDULER_SWITCH_MODE, "default");
 
-// switchmode ("default");
-
  ipc_wait();
 
- switchmode ("power-off");
+ cleanup ();
 
- mod_freemodules ();
- cfg_free ();
- bitch (BTCH_DL + BTCH_ERRNO);
  return 0;
 }

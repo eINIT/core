@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SCHEDULER_SWITCH_MODE 0x0001
 #define SCHEDULER_POWER_OFF 0x0002
+#define SCHEDULER_POWER_RESET 0x0003
 
 struct sschedule {
  unsigned int task;
@@ -52,6 +53,9 @@ struct sschedule {
 
 struct sschedule **schedule;
 pthread_t schedthread;
+
+int epoweroff ();
+int epowerreset ();
 
 int switchmode (char *);
 

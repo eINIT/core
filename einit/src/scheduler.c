@@ -37,17 +37,46 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <pthread.h>
 #include <einit/scheduler.h>
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
+#include <einit/bitch.h>
 
 pthread_t schedthread = 0;
 
+int cleanup ();
+
+#ifdef LINUX
+#include <linux/reboot.h>
+
+int epoweroff () {
+ reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
+ bitch (BTCH_ERRNO);
+ puts ("\naight, who hasn't eaten his cereals this morning?");
+ exit (EXIT_FAILURE);
+}
+
+int epowerreset () {
+ reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
+ bitch (BTCH_ERRNO);
+ puts ("\naight, who hasn't eaten his cereals this morning?");
+ exit (EXIT_FAILURE);
+}
+#else
+int epoweroff () {
+ exit (EXIT_SUCCESS);
+}
+int epowerreset () {
+ exit (EXIT_SUCCESS);
+}
+#endif
+
 int switchmode (char *mode) {
  if (!mode) return -1;
- printf ("switching to mode \"%s\": ", mode);
+ printf ("scheduler: switching to mode \"%s\": ", mode);
  if (sconfiguration) {
   struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
   struct cfgnode *opt;
@@ -117,8 +146,24 @@ void *sched_run (void *p) {
     switchmode (c->param);
     break;
    case SCHEDULER_POWER_OFF:
-    puts ("everything done, halting.");
-    exit (EXIT_SUCCESS);
+    puts ("scheduler: sync()-ing");
+    sync ();
+    puts ("scheduler: cleaning up");
+    cleanup ();
+    puts ("scheduler: power off");
+    epoweroff ();
+// if we still live here, something's twocked
+    exit (EXIT_FAILURE);
+    break;
+   case SCHEDULER_POWER_RESET:
+    puts ("scheduler: sync()-ing");
+    sync ();
+    puts ("scheduler: cleaning up");
+    cleanup ();
+    puts ("scheduler: reset");
+    epowerreset ();
+// if we still live here, something's twocked
+    exit (EXIT_FAILURE);
     break;
   }
   schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
