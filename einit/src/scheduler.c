@@ -139,6 +139,9 @@ void sched_init () {
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART;
 
  if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
+
+ action.sa_sigaction = sched_signal_sigint;
+ if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
 }
 
 int sched_queue (unsigned int task, void *param) {
@@ -157,10 +160,26 @@ int sched_watch_pid (pid_t pid, void (*function)(pid_t)) {
 }
 
 void *sched_run (void *p) {
+ int i, l;
  pthread_detach (schedthread);
  while (schedule) {
   struct sschedule *c = schedule[0];
   switch (c->task) {
+   case SCHEDULER_PID_NOTIFY:
+    if (!cpids || !cpids[0]) {
+     fputs ("scheduler: warning: SCHEDULER_PID_NOTIFY scheduled, but cpids[] is empty", stderr);
+     break;
+    }
+    l = setcount ((void **)cpids);
+    for (i = 0; i < l; i++) {
+     if (cpids[i]->pid == (pid_t)c->param) {
+      if (cpids[i]->cfunc)
+       cpids[i]->cfunc ((pid_t)c->param);
+      cpids = (struct spidcb **) setdel ((void **)cpids, (void *)cpids[i]);
+      break;
+     }
+    }
+    break;
    case SCHEDULER_SWITCH_MODE:
     switchmode (c->param);
     break;
@@ -193,16 +212,32 @@ void *sched_run (void *p) {
 
 /* signal handlers */
 
+/* there's one potential bug in here: the set* functions need to *alloc(), but
+   these functions aren't considered to be "safe functions" by POSIX :/ */
+
 // this should prevent any zombies from being created
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- int status;
- waitpid (siginfo->si_pid, &status, 0);
+ int i, l = setcount ((void **)cpids);
+ pid_t pid = siginfo->si_pid;
+// check if anyone was waiting to be informed of this pid's death
+ for (i = 0; i < l; i++) {
+  if (cpids[i]->pid == pid) {
+   sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
+   return;
+  }
+ }
+// wait on it to prevent zombie-kids
+ waitpid (pid, &i, 0);
  return;
 }
 
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
 
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
+ if (siginfo->si_code == SI_KERNEL) {
+  sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
+  sched_queue (SCHEDULER_POWER_RESET, NULL);
+ }
  return;
 }
