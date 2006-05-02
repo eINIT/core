@@ -4,7 +4,7 @@
  * power off/reset should work now (on linux that is)
  * signal handlers are bitches >D
  * yet they work now... mostly; still gotta figure out how SIGINT is raised on
-   ctrl+alt+del, although I'd guess it's si_code should be SI_KERNEL...
+   ctrl+alt+del, although I'd guess its si_code should be SI_KERNEL...
 
 2006/05/01: mdeininger
  * more enhancements to IPC
