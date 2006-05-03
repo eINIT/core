@@ -26,6 +26,7 @@ install: all
 	${INSTALL} ${BINIPARAM} einit ${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit-control ${SBINDIR}
 	ln -sf einit-control ${SBINDIR}/power
+	ln -sf einit-control ${SBINDIR}/erc
 	cd modules && ${MAKE} install
 
 default-modules: einit

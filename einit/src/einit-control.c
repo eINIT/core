@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <string.h>
+#include <libgen.h>
 
 int main(int, char **);
 int print_usage_info ();
@@ -52,7 +53,7 @@ int ipc (char *);
 char *ctrlsocket = "/etc/einit-control";
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL " Power Control\nCopyright (c) 2006, Magnus Deininger\nUsage:\n power [-s control-socket] [-v] [-h] command\npossible commands:\n off    tell einit to shut down the computer\n reset  reset/reboot the computer\n", stderr);
+ fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] command\n [function] [-s control-socket] [-v] [-h] command\n\npossible commands for function \"power\":\n off    tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
  return -1;
 }
 
@@ -83,9 +84,16 @@ int ipc (char *cmd) {
 
 int main(int argc, char **argv) {
  int i, l;
- char *c = emalloc (6*sizeof (char));
+ char *c = emalloc (1*sizeof (char));
+ char *name = estrdup ((char *)basename(argv[0]));
  c[0] = 0;
- c = strcat (c, "power");
+ if (!strcmp (name, "erc")) {
+  c = (char *)erealloc (c, 3*sizeof (char));
+  c = strcat (c, "rc");
+ } else if (strcmp (name, "einit-control")) {
+  c = (char *)erealloc (c, 1+strlen(name)*sizeof (char));
+  c = strcat (c, name);
+ }
 
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
@@ -105,9 +113,13 @@ int main(int argc, char **argv) {
    }
   else {
    l = strlen(c);
-   c = erealloc (c, (l+2+strlen(argv[i]))*sizeof (char));
-   c[l] = ' ';
-   c[l+1] = 0;
+   if (l) {
+    c = erealloc (c, (l+2+strlen(argv[i]))*sizeof (char));
+    c[l] = ' ';
+    c[l+1] = 0;
+   } else {
+    c = erealloc (c, (1+strlen(argv[i]))*sizeof (char));
+   }
    c = strcat (c, argv[i]);
   }
  }

@@ -57,8 +57,6 @@ int cleanup ();
 
 int sock;
 struct sockaddr_un saddr;
-char *currentmode = "void";
-char *newmode = "void";
 
 int print_usage_info () {
  fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h]\n", stderr);
@@ -84,6 +82,16 @@ int ipc_process (char *cmd) {
    sched_queue (SCHEDULER_POWER_RESET, NULL);
   }
  }
+
+ if (!strcmp (argv[0], "rc") && (argc > 2)) {
+  if (!strcmp (argv[1], "switch-mode")) {
+   sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
+  } else {
+   sched_queue (SCHEDULER_MOD_ACTION, (void *)strsetdup (argv+1));
+  }
+ }
+
+ free (argv);
 }
 
 int ipc_wait () {

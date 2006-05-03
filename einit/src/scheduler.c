@@ -48,6 +48,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 
 pthread_t schedthread = 0;
+pthread_cond_t schedthreadcond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t schedthreadmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t schedschedulemodmutex = PTHREAD_MUTEX_INITIALIZER;
+
+char *currentmode = "void";
+char *newmode = "void";
 
 int cleanup ();
 
@@ -55,6 +61,8 @@ int cleanup ();
 #include <linux/reboot.h>
 
 int epoweroff () {
+ pthread_cond_destroy (&schedthreadcond);
+ pthread_mutex_destroy (&schedthreadmutex);
  reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
  bitch (BTCH_ERRNO);
  puts ("\naight, who hasn't eaten his cereals this morning?");
@@ -62,6 +70,8 @@ int epoweroff () {
 }
 
 int epowerreset () {
+ pthread_cond_destroy (&schedthreadcond);
+ pthread_mutex_destroy (&schedthreadmutex);
  reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
  bitch (BTCH_ERRNO);
  puts ("\naight, who hasn't eaten his cereals this morning?");
@@ -69,14 +79,18 @@ int epowerreset () {
 }
 #else
 int epoweroff () {
+ pthread_cond_destroy (&schedthreadcond);
+ pthread_mutex_destroy (&schedthreadmutex);
  exit (EXIT_SUCCESS);
 }
 int epowerreset () {
+ pthread_cond_destroy (&schedthreadcond);
+ pthread_mutex_destroy (&schedthreadmutex);
  exit (EXIT_SUCCESS);
 }
 #endif
 
-int switchmode (char *mode) {
+int sched_switchmode (char *mode) {
  if (!mode) return -1;
  printf ("scheduler: switching to mode \"%s\": ", mode);
  if (sconfiguration) {
@@ -131,6 +145,30 @@ int switchmode (char *mode) {
  return 0;
 }
 
+int sched_modaction (char **argv) {
+ int argc = setcount ((void **)argv);
+ int32_t task;
+ struct mloadplan *plan;
+ if (!argv || (argc != 2)) return -1;
+
+ if (!strcmp (argv[1], "enable")) task = MOD_ENABLE;
+ else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
+
+ argv[1] = NULL;
+
+ if (plan = mod_plan (NULL, argv, task)) {
+#ifdef DEBUG
+  mod_plan_ls (plan);
+#endif
+  mod_plan_commit (plan);
+ }
+
+ free (argv[0]);
+ free (argv);
+
+ return 0;
+}
+
 void sched_init () {
  struct sigaction action;
 
@@ -145,11 +183,22 @@ void sched_init () {
 }
 
 int sched_queue (unsigned int task, void *param) {
- struct sschedule *nele = ecalloc (1, sizeof (struct sschedule));
+ struct sschedule *nele;
+
+ nele = ecalloc (1, sizeof (struct sschedule));
  nele->task = task;
  nele->param = param;
- schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele);
- if (!schedthread) pthread_create (&schedthread, NULL, sched_run, NULL);
+
+ pthread_mutex_lock (&schedschedulemodmutex);
+  schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele);
+ pthread_mutex_unlock (&schedschedulemodmutex);
+
+ if (!schedthread) {
+  pthread_mutex_lock (&schedthreadmutex);
+  pthread_create (&schedthread, NULL, sched_run, NULL);
+ } else {
+  pthread_cond_signal (&schedthreadcond);
+ }
 }
 
 int sched_watch_pid (pid_t pid, void (*function)(pid_t)) {
@@ -181,7 +230,10 @@ void *sched_run (void *p) {
     }
     break;
    case SCHEDULER_SWITCH_MODE:
-    switchmode (c->param);
+    sched_switchmode (c->param);
+    break;
+   case SCHEDULER_MOD_ACTION:
+    sched_modaction ((char **)c->param);
     break;
    case SCHEDULER_POWER_OFF:
     puts ("scheduler: sync()-ing");
@@ -204,10 +256,13 @@ void *sched_run (void *p) {
     exit (EXIT_FAILURE);
     break;
   }
-  schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
+  pthread_mutex_lock (&schedschedulemodmutex);
+   schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
+  pthread_mutex_unlock (&schedschedulemodmutex);
   free (c);
+  if (!schedule)
+   pthread_cond_wait (&schedthreadcond, &schedthreadmutex);
  }
- schedthread = 0;
 }
 
 /* signal handlers */

@@ -82,9 +82,6 @@ struct sconfiguration {
 char *configfile;
 #endif
 
-char *currentmode;
-char *newmode;
-
 struct sconfiguration *sconfiguration;
 
 // load configuration

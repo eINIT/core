@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SCHEDULER_POWER_OFF 0x0002
 #define SCHEDULER_POWER_RESET 0x0003
 #define SCHEDULER_PID_NOTIFY 0x0004
+#define SCHEDULER_MOD_ACTION 0x0005
 
 struct sschedule {
  unsigned int task;
@@ -62,11 +63,14 @@ struct spidcb {
 struct sschedule **schedule;
 struct spidcb **cpids;
 pthread_t schedthread;
+char *currentmode;
+char *newmode;
 
 int epoweroff ();
 int epowerreset ();
 
-int switchmode (char *);
+int sched_switchmode (char *);
+int sched_modaction (char **);
 
 void sched_init ();
 int sched_queue (unsigned int, void *);
