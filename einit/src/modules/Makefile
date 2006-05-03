@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so
+all: vis-text.so mod-exec.so tty.so mod-daemon.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -12,7 +12,7 @@ clean:
 	rm -f *.so depend.mk
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} clean && cd ..; done; fi;
 
-install: vis-text.so mod-exec.so tty.so
+install: all
 	${INSTALL} ${SOIPARAM} -d ${MODDIR}
 #	${INSTALL} ${SOIPARAM} dummy.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} vis-text.so ${MODDIR}
@@ -28,6 +28,9 @@ vis-text.so: vis-text.c
 
 mod-exec.so: mod-exec.c
 	${CCL} mod-exec.c -o mod-exec.so
+
+mod-daemon.so: mod-daemon.c
+	${CCL} mod-daemon.c -o mod-daemon.so
 
 tty.so: tty.c
 	${CCL} tty.c -o tty.so

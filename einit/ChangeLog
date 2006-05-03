@@ -2,6 +2,7 @@
  * renamed power.c to einit-control.c
  * more ipc commands
  * i think i fixed the bug that caused new schedule entries to go amiss.
+ * extra support for daemoni
 
 2006/05/02: mdeininger
  * whoops, forgot a library...

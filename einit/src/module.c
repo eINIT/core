@@ -286,6 +286,7 @@ int mod (unsigned int task, struct lmodule *module) {
  fb->module = module;
  fb->task = task | MOD_FEEDBACK_SHOW;
  fb->status = STATUS_WORKING;
+ fb->errorc = 0;
  status_update (fb);
 
  if (task & MOD_ENABLE) {
@@ -297,7 +298,7 @@ int mod (unsigned int task, struct lmodule *module) {
      if (t->requires)
       required = (char **)setcombine ((void **)required, (void **)t->requires);
     }
-	module->status = STATUS_ENABLED;
+    module->status = STATUS_ENABLED;
     fb->status = STATUS_OK | STATUS_ENABLED;
    } else {
     fb->status = STATUS_FAIL;
@@ -311,7 +312,7 @@ int mod (unsigned int task, struct lmodule *module) {
      if (t->requires) for (ti = 0; t->requires[ti]; ti++)
       required = strsetdel (required, t->requires[ti]);
     }
-	module->status = STATUS_DISABLED;
+    module->status = STATUS_DISABLED;
     fb->status = STATUS_OK | STATUS_DISABLED;
    } else {
     fb->status = STATUS_FAIL;
