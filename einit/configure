@@ -148,7 +148,7 @@ CCC = \${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}
 CCL = $CCL
 LPA = $LPA" > config.mk
 
-if test -e einit; then
+if test -e src/einit; then
 	echo -n "cleaning the environment... "
 	if make clean >/dev/null 2>&1; then
 		echo "done";

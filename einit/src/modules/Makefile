@@ -18,6 +18,7 @@ install: all
 	${INSTALL} ${SOIPARAM} vis-text.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} mod-exec.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} tty.so ${MODDIR}
+	${INSTALL} ${SOIPARAM} mod-daemon.so ${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 #dummy.so: dummy.c

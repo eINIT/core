@@ -274,7 +274,7 @@ void *sched_run_sigchild (void *p) {
  while (1) {
   while (pid = waitpid (-1, &status, WNOHANG)) {
 #ifdef DEBUG
-   fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %i has died.\n", (pid_t)c->param);
+   fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %i has died.\n", (pid_t)pid);
 #endif
    for (i = 0; cpids[i]; i++) {
     if (cpids[i]->pid == (pid_t)pid) {

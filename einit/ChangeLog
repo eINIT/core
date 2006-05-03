@@ -3,6 +3,7 @@
  * more ipc commands
  * i think i fixed the bug that caused new schedule entries to go amiss.
  * extra support for daemoni
+ * ah, me silly, I forgot the install command in the modules Makefile
 
 2006/05/02: mdeininger
  * whoops, forgot a library...
