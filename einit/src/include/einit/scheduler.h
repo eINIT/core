@@ -63,6 +63,7 @@ struct spidcb {
 struct sschedule **schedule;
 struct spidcb **cpids;
 pthread_t schedthread;
+pthread_t schedthreadsigchild;
 char *currentmode;
 char *newmode;
 
@@ -76,6 +77,7 @@ void sched_init ();
 int sched_queue (unsigned int, void *);
 int sched_watch_pid (pid_t, void (*)(pid_t, int));
 void *sched_run (void *);
+void *sched_run_sigchild (void *);
 
 /* this should be the best place for signal handlers... */
 

@@ -50,7 +50,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 pthread_t schedthread = 0;
 pthread_cond_t schedthreadcond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t schedthreadsigchildcond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t schedthreadmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t schedthreadsigchildmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedschedulemodmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -188,6 +190,15 @@ void sched_init () {
 int sched_queue (unsigned int task, void *param) {
  struct sschedule *nele;
 
+ if (task == SCHEDULER_PID_NOTIFY) {
+  if (!schedthreadsigchild) {
+   pthread_mutex_lock (&schedthreadsigchildmutex);
+   pthread_create (&schedthreadsigchild, NULL, sched_run_sigchild, NULL);
+  } else {
+   pthread_cond_signal (&schedthreadsigchildcond);
+  }
+ }
+
  nele = ecalloc (1, sizeof (struct sschedule));
  nele->task = task;
  nele->param = param;
@@ -220,33 +231,6 @@ void *sched_run (void *p) {
  while (schedule) {
   struct sschedule *c = schedule[0];
   switch (c->task) {
-   case SCHEDULER_PID_NOTIFY:
-    if (!cpids || !cpids[0]) {
-     fputs ("scheduler: warning: SCHEDULER_PID_NOTIFY scheduled, but cpids[] is empty", stderr);
-     waitpid ((pid_t)c->param, &i, 0);
-     break;
-    }
-	while (pid = waitpid (-1, &status, WNOHANG)) {
-#ifdef DEBUG
-     fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %i has died.\n", (pid_t)c->param);
-#endif
-//     for (i = 0; cpids[i]; i++) {
-//      printf ("%i\n", cpids[i]->pid);
-//     }
-     for (i = 0; cpids[i]; i++) {
-      if (cpids[i]->pid == (pid_t)pid) {
-       if (cpids[i]->cfunc)
-        cpids[i]->cfunc ((pid_t)pid, status);
-
-       pthread_mutex_lock (&schedcpidmutex);
-        cpids = (struct spidcb **) setdel ((void **)cpids, (void *)cpids[i]);
-       pthread_mutex_unlock (&schedcpidmutex);
-       break;
-      }
-     }
-//     waitpid ((pid_t)c->param, &i, 0);
-    }
-    break;
    case SCHEDULER_SWITCH_MODE:
     sched_switchmode (c->param);
     break;
@@ -283,13 +267,37 @@ void *sched_run (void *p) {
  }
 }
 
+void *sched_run_sigchild (void *p) {
+ int i, l, status;
+ pid_t pid;
+ pthread_detach (schedthreadsigchild);
+ while (1) {
+  while (pid = waitpid (-1, &status, WNOHANG)) {
+#ifdef DEBUG
+   fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %i has died.\n", (pid_t)c->param);
+#endif
+   for (i = 0; cpids[i]; i++) {
+    if (cpids[i]->pid == (pid_t)pid) {
+     if (cpids[i]->cfunc)
+      cpids[i]->cfunc ((pid_t)pid, status);
+
+     pthread_mutex_lock (&schedcpidmutex);
+      cpids = (struct spidcb **) setdel ((void **)cpids, (void *)cpids[i]);
+     pthread_mutex_unlock (&schedcpidmutex);
+     break;
+    }
+   }
+  }
+  pthread_cond_wait (&schedthreadsigchildcond, &schedthreadsigchildmutex);
+ }
+}
+
 /* signal handlers */
 
-/* there's one potential bug in here: the set* functions need to *alloc(), but
-   these functions aren't considered to be "safe functions" by POSIX :/ */
+/* apparently some of the pthread*() functions aren't asnyc-safe... still it
+   appears to be working, so... */
 
 /* this should prevent any zombies from being created */
-/* somehow, this signal seems to get lost at times... weird... */
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  int i;
  pid_t pid = siginfo->si_pid;
