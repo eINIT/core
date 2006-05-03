@@ -1,7 +1,7 @@
 include ../config.mk
 include depend.mk
 
-all: einit power default-modules
+all: einit einit-control default-modules
 
 depend:
 	${CC} ${INCLUDE} -M *.c > depend.mk
@@ -9,7 +9,7 @@ depend:
 	cd modules && ${MAKE} depend
 
 clean:
-	rm -f *.o einit-* einit power depend.mk
+	rm -f *.o einit-xml einit-control einit depend.mk
 	cd modules && ${MAKE} clean	
 
 einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o
@@ -18,20 +18,21 @@ einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o
 einit: einit-xml
 	ln -sf einit-xml einit
 
-power: power.o bitch.o utility.o
-	$(CCC) power.o bitch.o utility.o $(XDYNAMIC) -o power -ldl
+einit-control: einit-control.o bitch.o utility.o
+	$(CCC) einit-control.o bitch.o utility.o $(XDYNAMIC) -o einit-control -ldl
 
-install:
+install: all
 	${INSTALL} ${BINIPARAM} -d ${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit ${SBINDIR}
-	${INSTALL} ${BINIPARAM} power ${SBINDIR}
+	${INSTALL} ${BINIPARAM} einit-control ${SBINDIR}
+	ln -sf einit-control ${SBINDIR}/power
 	cd modules && ${MAKE} install
 
 default-modules: einit
 	cd modules && ${MAKE} all
 
-power.o: power.c
-	$(CCC) -c power.c
+einit-control.o: einit-control.c
+	$(CCC) -c einit-control.c
 
 einit.o: einit.c
 	$(CCC) -c einit.c

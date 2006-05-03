@@ -1,3 +1,6 @@
+2006/05/03: mdeininger
+ * renamed power.c to einit-control.c
+
 2006/05/02: mdeininger
  * whoops, forgot a library...
  * new subsystem: scheduler.[ch]

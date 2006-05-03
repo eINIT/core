@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MODULE_H
 
 #include <pthread.h>
+#include <sys/types.h>	
+#include <stdint.h>	
 
 #define EINIT_OPT_WAIT 8
 #define EINIT_OPT_ONCE 16
@@ -75,10 +77,10 @@ extern "C"
 #endif
 
 struct mfeedback {
- unsigned volatile int status;
+ volatile uint32_t status;
  unsigned volatile int progress;
- unsigned volatile int task;
- unsigned volatile int errorc;
+ uint32_t task;
+ unsigned int errorc;
  char volatile *verbose;
  struct lmodule * module;
 };
@@ -87,7 +89,7 @@ struct smodule {
  int eiversion;
  int version;
  int mode;
- unsigned int options;
+ uint32_t options;
  char *name;
  char *rid;
  char **provides;
@@ -101,7 +103,7 @@ struct lmodule {
  int (*disable) (void *, struct mfeedback *);
  int (*comment) (struct mfeedback *);
  int (*cleanup) (struct lmodule *);
- unsigned int status;
+ uint32_t status;
  void *param;
  pthread_mutex_t mutex;
  struct smodule *module;
@@ -109,7 +111,7 @@ struct lmodule {
 };
 
 struct mloadplan {
- unsigned int task;
+ uint32_t task;
  struct lmodule *mod;
  struct mloadplan **left;  /* elements of the tree to load on failure */
  struct mloadplan **right; /* elements of the tree to load on success */
