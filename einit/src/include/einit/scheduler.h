@@ -57,7 +57,7 @@ struct sschedule {
 
 struct spidcb {
  pid_t pid;
- void (*cfunc)(pid_t);
+ void (*cfunc)(pid_t, int);
 };
 
 struct sschedule **schedule;
@@ -74,7 +74,7 @@ int sched_modaction (char **);
 
 void sched_init ();
 int sched_queue (unsigned int, void *);
-int sched_watch_pid (pid_t, void (*)(pid_t));
+int sched_watch_pid (pid_t, void (*)(pid_t, int));
 void *sched_run (void *);
 
 /* this should be the best place for signal handlers... */

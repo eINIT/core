@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <einit/scheduler.h>
 #include <einit/config.h>
 #include <einit/module.h>
@@ -179,7 +180,7 @@ void sched_init () {
 
  if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
 
- action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART;
+ action.sa_flags = SA_SIGINFO | SA_RESTART;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
 }
@@ -203,7 +204,7 @@ int sched_queue (unsigned int task, void *param) {
  }
 }
 
-int sched_watch_pid (pid_t pid, void (*function)(pid_t)) {
+int sched_watch_pid (pid_t pid, void (*function)(pid_t, int)) {
  struct spidcb *nele = ecalloc (1, sizeof (struct spidcb));
  nele->pid = pid;
  nele->cfunc = function;
@@ -213,7 +214,8 @@ int sched_watch_pid (pid_t pid, void (*function)(pid_t)) {
 }
 
 void *sched_run (void *p) {
- int i, l;
+ int i, l, status;
+ pid_t pid;
  pthread_detach (schedthread);
  while (schedule) {
   struct sschedule *c = schedule[0];
@@ -224,24 +226,26 @@ void *sched_run (void *p) {
      waitpid ((pid_t)c->param, &i, 0);
      break;
     }
+	while (pid = waitpid (-1, &status, WNOHANG)) {
 #ifdef DEBUG
-    fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %i has died.\n", (pid_t)c->param);
+     fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %i has died.\n", (pid_t)c->param);
 #endif
-//    for (i = 0; cpids[i]; i++) {
-//     printf ("%i\n", cpids[i]->pid);
-//    }
-    for (i = 0; cpids[i]; i++) {
-     if (cpids[i]->pid == (pid_t)c->param) {
-      if (cpids[i]->cfunc)
-       cpids[i]->cfunc ((pid_t)c->param);
+//     for (i = 0; cpids[i]; i++) {
+//      printf ("%i\n", cpids[i]->pid);
+//     }
+     for (i = 0; cpids[i]; i++) {
+      if (cpids[i]->pid == (pid_t)pid) {
+       if (cpids[i]->cfunc)
+        cpids[i]->cfunc ((pid_t)pid, status);
 
-      pthread_mutex_lock (&schedcpidmutex);
-       cpids = (struct spidcb **) setdel ((void **)cpids, (void *)cpids[i]);
-      pthread_mutex_unlock (&schedcpidmutex);
-      break;
+       pthread_mutex_lock (&schedcpidmutex);
+        cpids = (struct spidcb **) setdel ((void **)cpids, (void *)cpids[i]);
+       pthread_mutex_unlock (&schedcpidmutex);
+       break;
+      }
      }
+//     waitpid ((pid_t)c->param, &i, 0);
     }
-    waitpid ((pid_t)c->param, &i, 0);
     break;
    case SCHEDULER_SWITCH_MODE:
     sched_switchmode (c->param);
@@ -291,7 +295,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  pid_t pid = siginfo->si_pid;
 
 /* tell the scheduler to check on this pid
-   making the scheduler-thread to this means less time spent in here
+   making the scheduler-thread do this means less time spent in here
    also, signals seem to be per-thread, so this ought to be safe */
  sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
 
