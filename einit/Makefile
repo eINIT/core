@@ -3,6 +3,8 @@ include config.mk
 all:
 	cd src && ${MAKE} all
 
+documentation:
+
 install: all
 	${INSTALL} ${IPARAM} -d ${ETCDIR}
 	${INSTALL} ${IPARAM} data/default.xml ${ETCDIR}
