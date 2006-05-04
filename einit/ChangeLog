@@ -8,6 +8,7 @@
    the sigchld would arrive before the sched_watch_pid() was called, thus making
    the scheduler ignore the watcher... using sleep(1); after forking is a cheap
    workaround, i really oughta find something better.
+ * it seems that using SIGSTOP and SIGCONT is better a solution...
 
 2006/05/03: mdeininger
  * renamed power.c to einit-control.c

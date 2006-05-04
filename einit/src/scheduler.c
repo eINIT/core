@@ -323,7 +323,7 @@ void *sched_run_sigchild (void *p) {
   }
   if (!check) {
 #ifdef DEBUG
-   fprintf (stderr, "scheduler: going to sleep\n");
+   fprintf (stderr, "scheduler: sched_run_sigchild(): going to sleep\n");
 #endif
    pthread_cond_wait (&schedthreadsigchildcond, &schedthreadsigchildmutex);
   }
