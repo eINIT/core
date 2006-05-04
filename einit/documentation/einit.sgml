@@ -50,9 +50,7 @@
    <title>What is eINIT?</title>
    <titleabbrev>About</titleabbrev>
    <para>
-    eINIT is an "Init-System" for Unix operating systems. It starts programs on
-    startup, kills them on shutdown and tells the kernel when to reboot or cut
-    off the power.
+    eINIT is an "Init-System" for Unix operating systems. It starts programs on startup, kills them on shutdown and tells the kernel when to reboot or cut off the power.
    </para>
   </sect1>
   <sect1 id="introduction-advantages">
@@ -68,6 +66,20 @@
    <para>
     - yet to come -
    </para>
+  </sect1>
+  <sect1 id="introduction-features">
+   <title>Current Features</title>
+   <titleabbrev>Features</titleabbrev>
+   <para>It's always nice to have a list of current features, so here we go:</para>
+   <itemizedlist>
+    <listitem><para>Highly modular</para></listitem>
+    <listitem><para>Parallel processing of modules</para></listitem>
+    <listitem><para>Configuration file in XML</para></listitem>
+    <listitem><para>"Modes": no cheap runlevels (see "Concepts")</para></listitem>
+    <listitem><para>A module to start daemoni and make sure they keep running by restarting them in case they get killed</para></listitem>
+    <listitem><para>No init-scripts required: no need to parse scripts on startup (comes in handy on embedded devices)</para></listitem>
+    <listitem><para>BSD-License: Probably handy for coporate users that wish to modify eINIT without providing sources. (the module-interface would also allow for precompiled binary-only modules)</para></listitem>
+   </itemizedlist>
   </sect1>
  </chapter>
 
@@ -164,7 +176,7 @@
      - yet to come -
     </para>
    </sect2>
-   <sect2 id="usage-modules-einit-mod-exex">
+   <sect2 id="usage-modules-einit-mod-exec">
     <title>einit-mod-exec</title>
     <para>
      - yet to come -
