@@ -178,6 +178,14 @@ int sched_modaction (char **argv) {
 void sched_init () {
  struct sigaction action;
 
+/* create our two scheduler-threads right away */
+ pthread_mutex_lock (&schedthreadsigchildmutex);
+ pthread_create (&schedthreadsigchild, NULL, sched_run_sigchild, NULL);
+
+ pthread_mutex_lock (&schedthreadmutex);
+ pthread_create (&schedthread, NULL, sched_run, NULL);
+
+/* signal handlers */
  action.sa_sigaction = sched_signal_sigchld;
  sigemptyset(&(action.sa_mask));
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART;
@@ -193,12 +201,7 @@ int sched_queue (unsigned int task, void *param) {
  struct sschedule *nele;
 
  if (task == SCHEDULER_PID_NOTIFY) {
-  if (!schedthreadsigchild) {
-   pthread_mutex_lock (&schedthreadsigchildmutex);
-   pthread_create (&schedthreadsigchild, NULL, sched_run_sigchild, NULL);
-  } else {
-   pthread_cond_signal (&schedthreadsigchildcond);
-  }
+  pthread_cond_signal (&schedthreadsigchildcond);
  }
 
  nele = ecalloc (1, sizeof (struct sschedule));
@@ -209,12 +212,7 @@ int sched_queue (unsigned int task, void *param) {
   schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele);
  pthread_mutex_unlock (&schedschedulemodmutex);
 
- if (!schedthread) {
-  pthread_mutex_lock (&schedthreadmutex);
-  pthread_create (&schedthread, NULL, sched_run, NULL);
- } else {
-  pthread_cond_signal (&schedthreadcond);
- }
+ pthread_cond_signal (&schedthreadcond);
 }
 
 int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
@@ -277,6 +275,9 @@ void *sched_run_sigchild (void *p) {
  pthread_detach (schedthreadsigchild);
  int check;
  while (1) {
+#ifdef DEBUG
+  fprintf (stderr, "scheduler: sched_run_sigchild(): looking for dead kids\n", (pid_t)pid);
+#endif
   check = 0;
   if (cpids) for (i = 0; cpids[i]; i++) {
    if (cpids[i]->dead) {
@@ -327,6 +328,9 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 #endif
   if (cpids) for (i = 0; cpids[i]; i++) {
    if (cpids[i]->pid == (pid_t)pid) {
+#ifdef DEBUG
+    fprintf (stderr, "scheduler: hey, I know this one!\n", (pid_t)pid);
+#endif
     cpids[i]->status = status;
     cpids[i]->dead = 1;
     break;
