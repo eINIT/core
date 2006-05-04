@@ -85,6 +85,14 @@
 
  <chapter id="installation">
   <title>Installation</title>
+  <sect1 id="installation-aquiring">
+   <title>Aquiring a copy of eINIT</title>
+   <titleabbrev>Aquiring</titleabbrev>
+   <para>
+    Since I haven't made any release yet, you will need to get the sources off the CVS repository. The easy way to do this is to go to the official project page on sourceforge.net, which has detailed instructions on how to check out the current sources off CVS.
+   </para>
+   <para><ulink url="https://sourceforge.net/projects/einit/">Project Page on SourceForge.net</ulink></para>
+  </sect1>
   <sect1 id="installation-compiling-installing">
    <title>Compiling and Installing eINIT</title>
    <titleabbrev>Compiling/Installing</titleabbrev>
@@ -146,22 +154,40 @@
   <sect1 id="usage-einit-control">
    <title>Interfacing with eINIT: einit-control</title>
    <titleabbrev>einit-control</titleabbrev>
+   <synopsis>einit-control [-h]</synopsis>
+   <synopsis>einit-control [-s control-socket] [function] command</synopsis>
    <para>
-    - yet to come -
+    This is the main command to control eINIT: it connects to socket <varname>control-socket</varname> and submits <varname>function</varname> and <varname>command</varname> for eINIT to interpret.
    </para>
+   <note><para>The "power", "erc" and "rc" commands are usually (sym-)linked to the einit-control binary. For example, calling <userinput>einit-control power off</userinput> is the same as calling <userinput>power off</userinput>, if the proper links are in place.</para></note>
    <sect2 id="usage-einit-control-power">
     <title>The "power"-command</title>
     <titleabbrev>power</titleabbrev>
+    <synopsis>power [-h]</synopsis>
+    <synopsis>power [-s control-socket] command</synopsis>
+    <synopsis>einit-control [-s control-socket] power command</synopsis>
     <para>
-     - yet to come -
+     This command is used to tell eINIT that you wish to shut down or reboot your computer. The <varname>command</varname> must bei either of <userinput>off</userinput> or <userinput>reset</userinput>, which will tell eINIT to power off or reset, respectively.
     </para>
    </sect2>
    <sect2 id="usage-einit-control-erc">
     <title>The "erc" and "rc"-commands</title>
     <titleabbrev>erc</titleabbrev>
+    <synopsis>[e]rc [-h]</synopsis>
+    <synopsis>[e]rc [-s control-socket] command</synopsis>
+    <synopsis>einit-control [-s control-socket] rc command</synopsis>
     <para>
-     - yet to come -
+     This command is used to tell eINIT that you wish to change modes or enable/disable a module.
     </para>
+    <synopsis>[e]rc [-s control-socket] switch-mode mode</synopsis>
+    <para>
+     Make eINIT switch to the specified <varname>mode</varname>
+    </para>
+    <synopsis>[e]rc [-s control-socket] module (enable|disable)</synopsis>
+    <para>
+     Make eINIT enable or disable the specified <varname>module</varname>.
+    </para>
+    <note><para>Whether the command is/should be named rc or erc depends on the environment: if you only set up a test-environment, you would want the command to be called "erc", because sysvinit usually depends on an /sbin/rc command to do some of the dirty work.</para></note>
    </sect2>
   </sect1>
   <sect1 id="usage-modules">
