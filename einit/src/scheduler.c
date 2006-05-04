@@ -276,15 +276,21 @@ void *sched_run_sigchild (void *p) {
  int check;
  while (1) {
 #ifdef DEBUG
-  fprintf (stderr, "scheduler: sched_run_sigchild(): looking for dead kids\n", (pid_t)pid);
+  fprintf (stderr, "scheduler: sched_run_sigchild(): looking for dead kids\n");
 #endif
   check = 0;
   if (cpids) for (i = 0; cpids[i]; i++) {
+   pid = cpids[i]->pid;
    if (cpids[i]->dead) {
+#ifdef DEBUG
+    fprintf (stderr, "scheduler: sched_run_sigchild(): oh noes! they killed kenny-%i!\n", (pid_t)pid);
+#endif
     check++;
-    pid = cpids[i]->pid;
     if (cpids[i]->cfunc) {
      pthread_t th;
+#ifdef DEBUG
+     fprintf (stderr, "scheduler: sched_run_sigchild(): those bastards!\n");
+#endif
 //     cpids[i]->cfunc ((pid_t)pid, status);
      pthread_create (&th, NULL, (void *(*)(void *))cpids[i]->cfunc, (void *)cpids[i]);
      pthread_detach (th);
@@ -296,6 +302,9 @@ void *sched_run_sigchild (void *p) {
 //    free (cpids[i]);
     break;
    }
+#ifdef DEBUG
+   else fprintf (stderr, "scheduler: sched_run_sigchild(): %i seems still alive\n", (pid_t)pid);
+#endif
   }
   if (!check)
    pthread_cond_wait (&schedthreadsigchildcond, &schedthreadsigchildmutex);
@@ -316,6 +325,9 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 /* tell the scheduler to check on this pid
    making the scheduler-thread do this means less time spent in here
    also, signals seem to be per-thread, so this ought to be safe */
+#ifdef DEBUG
+ fprintf (stderr, "scheduler: received a sigchld\n", (pid_t)pid);
+#endif
  while (pid = waitpid (-1, &status, WNOHANG)) {
   if (pid == -1) {
 #ifdef DEBUG
@@ -329,7 +341,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
   if (cpids) for (i = 0; cpids[i]; i++) {
    if (cpids[i]->pid == (pid_t)pid) {
 #ifdef DEBUG
-    fprintf (stderr, "scheduler: hey, I know this one!\n", (pid_t)pid);
+    fprintf (stderr, "scheduler: hey, I know this one!\n");
 #endif
     cpids[i]->status = status;
     cpids[i]->dead = 1;
@@ -338,6 +350,9 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
   }
  }
 
+#ifdef DEBUG
+ fprintf (stderr, "scheduler: queueing a zombie-re-scan\n");
+#endif
  sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
 
  return;
