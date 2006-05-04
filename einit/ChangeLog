@@ -11,6 +11,7 @@
  * it seems that using SIGSTOP and SIGCONT is better a solution...
  * i just had a better idea, which involves the scheduler keeping track of dead
    "orphans"
+ * laid out that documentation
 
 2006/05/03: mdeininger
  * renamed power.c to einit-control.c

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 <book lang="en">
  <bookinfo>
@@ -20,14 +19,14 @@
    <para>Redistribution and use in source and binary forms, with or without modification,
     are permitted provided that the following conditions are met:</para>
    <itemizedlist>
-    <listitem>Redistributions of source code must retain the above copyright notice,
-     this list of conditions and the following disclaimer.</listitem>
-    <listitem>Redistributions in binary form must reproduce the above copyright notice,
+    <listitem><para>Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.</para></listitem>
+    <listitem><para>Redistributions in binary form must reproduce the above copyright notice,
      this list of conditions and the following disclaimer in the documentation
-     and/or other materials provided with the distribution.</listitem>
-    <listitem>Neither the name of the project nor the names of its contributors may be
+     and/or other materials provided with the distribution.</para></listitem>
+    <listitem><para>Neither the name of the project nor the names of its contributors may be
      used to endorse or promote products derived from this software without
-     specific prior written permission.</listitem>
+     specific prior written permission.</para></listitem>
    </itemizedlist>
    <para>
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
@@ -47,7 +46,7 @@
 
  <chapter id="introduction">
   <title>Introduction</title>
-  <sect1 id="what-is-einit">
+  <sect1 id="introduction-what-is-einit">
    <title>What is eINIT?</title>
    <titleabbrev>About</titleabbrev>
    <para>
@@ -55,6 +54,59 @@
     startup, kills them on shutdown and tells the kernel when to reboot or cut
     off the power.
    </para>
+  </sect1>
+  <sect1 id="introduction-advantages">
+   <title>Didn't we have sysvinit for that?</title>
+   <titleabbrev>Advantages</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+  </sect1>
+  <sect1 id="introduction-objectives">
+   <title>Project Objectives</title>
+   <titleabbrev>Objectives</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+  </sect1>
+ </chapter>
+
+ <chapter id="installation">
+  <title>Installation</title>
+  <sect1 id="installation-compiling">
+   <title>Compiling eINIT</title>
+   <titleabbrev>Compiling</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+  </sect1>
+  <sect1 id="installation-configuration">
+   <title>Configuring eINIT</title>
+   <titleabbrev>Configuring</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+  </sect1>
+  <sect1 id="installation-configuration-boot">
+   <title>Configuring your Boot-Loader to use eINIT</title>
+   <titleabbrev>eINIT and Boot-Loaders</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+   <sect2 id="installation-configuration-boot-grub">
+    <title>Configuring GRUB</title>
+    <titleabbrev>GRUB</titleabbrev>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+   <sect2 id="installation-configuration-boot-lilo">
+    <title>Configuring LILO</title>
+    <titleabbrev>LILO</titleabbrev>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
   </sect1>
  </chapter>
 

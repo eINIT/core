@@ -3,7 +3,11 @@ include config.mk
 all:
 	cd src && ${MAKE} all
 
-documentation:
+documentation-html:
+	cd documentation && ${MAKE} documentation-html
+
+documentation-man:
+	cd documentation && ${MAKE} documentation-man
 
 install: all
 	${INSTALL} ${IPARAM} -d ${ETCDIR}
