@@ -1,3 +1,9 @@
+2006/05/04: mdeininger
+ * fixes: some generic ones, some logics flaws, some in connection with uclibc
+ * watchers are now spawned as a separate process
+ * note: i just figured out that this still doesn't work with uclibs due to
+   threading issues.
+
 2006/05/03: mdeininger
  * renamed power.c to einit-control.c
  * more ipc commands

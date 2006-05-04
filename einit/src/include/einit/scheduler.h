@@ -57,7 +57,9 @@ struct sschedule {
 
 struct spidcb {
  pid_t pid;
- void (*cfunc)(pid_t, int);
+ int status;
+ char dead;
+ void *(*cfunc)(struct spidcb *);
 };
 
 struct sschedule **schedule;
@@ -75,7 +77,7 @@ int sched_modaction (char **);
 
 void sched_init ();
 int sched_queue (unsigned int, void *);
-int sched_watch_pid (pid_t, void (*)(pid_t, int));
+int sched_watch_pid (pid_t, void *(*)(struct spidcb *));
 void *sched_run (void *);
 void *sched_run_sigchild (void *);
 
