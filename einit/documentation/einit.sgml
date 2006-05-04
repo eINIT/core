@@ -73,9 +73,9 @@
 
  <chapter id="installation">
   <title>Installation</title>
-  <sect1 id="installation-compiling">
-   <title>Compiling eINIT</title>
-   <titleabbrev>Compiling</titleabbrev>
+  <sect1 id="installation-compiling-installing">
+   <title>Compiling and Installing eINIT</title>
+   <titleabbrev>Compiling/Installing</titleabbrev>
    <para>
     - yet to come -
    </para>
@@ -110,4 +110,46 @@
   </sect1>
  </chapter>
 
+ <chapter id="concepts">
+  <title>Concepts</title>
+  <sect1 id="concepts-modes">
+   <title><quote>Modes</quote></title>
+   <titleabbrev>modes</titleabbrev>
+   <para>
+    A <quote>mode</quote> is a set of modules and settings for said modules that belong together to form a sort of "usage profile" for your Unix-machine. Modes are related to sysvinit's runlevels, except that they not only contain a set of processes that need to be run to form a runlevel, but that eINIT supports configuration entries to be associated with modes. Also eINIT is not limited to 6/7 runlevels (level 1 through 6 and S, with the mentioned three
+    already having a special meaning), but it allows for an arbitrary number of named modes, each of which can depend on a set of other modes.
+   </para>
+   <para>
+    Okay, this is admittedly a tad abstract, so let's try to make this a bit more clear. As has been mentioned, modes can form a sort of usage-profile for your computer. Thus you could have one mode for "server", one for "workstation". Now, when you think about it, both require the same set of basic initialisation: mounting filesystems, setting up hardware, monitoring hardware events... and doing all these things alone would probably be sufficient for a single-user session, so we make this a new mode and call it "boot". Now we have three modes: boot, server and workstation, with server and workstation both depending on boot. That means you can put all the common modules into boot and concentrate on which services you wish to start in the server mode (network, firewall, apache, mysql) and which to start in the workstation mode (X11, e17...). Now, when eINIT boots (or switches modes) to either of "server" or "workstation", it will take all the entries in "boot" into consideration as well and it will make sure that everything is loaded with a minimum of changes to whatever is running right now, doing as much as possible in parallel.
+   </para>
+   <para>
+    And when you think about this a little harder, the server mode is just an extended "firewall" or "router"-mode... you get the drift :D
+   </para>
+  </sect1>
+ </chapter>
+
+ <chapter id="usage">
+  <title>Usage</title>
+  <sect1 id="usage-einit-control">
+   <title>Interfacing with eINIT: einit-control</title>
+   <titleabbrev>einit-control</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+   <sect2 id="usage-einit-control-power">
+    <title>The "power"-command</title>
+    <titleabbrev>power</titleabbrev>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+   <sect2 id="usage-einit-control-erc">
+    <title>The "erc" and "rc"-commands</title>
+    <titleabbrev>erc</titleabbrev>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+  </sect1>
+ </chapter>
 </book>
