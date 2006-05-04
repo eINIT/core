@@ -202,6 +202,7 @@ int sched_queue (unsigned int task, void *param) {
 
  if (task == SCHEDULER_PID_NOTIFY) {
   pthread_cond_signal (&schedthreadsigchildcond);
+  return 0;
  }
 
  nele = ecalloc (1, sizeof (struct sschedule));
@@ -213,10 +214,14 @@ int sched_queue (unsigned int task, void *param) {
  pthread_mutex_unlock (&schedschedulemodmutex);
 
  pthread_cond_signal (&schedthreadcond);
+ return 0;
 }
 
 int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  struct spidcb *nele = ecalloc (1, sizeof (struct spidcb));
+#ifdef DEBUG
+ fprintf (stderr, "scheduler: sched_watch_pid(): was told to watch %i\n", pid);
+#endif
  nele->pid = pid;
  nele->cfunc = function;
  nele->dead = 0;
@@ -230,8 +235,14 @@ void *sched_run (void *p) {
  int i, l, status;
  pid_t pid;
  pthread_detach (schedthread);
- while (schedule) {
+#ifdef DEBUG
+ fprintf (stderr, "scheduler: sched_run(): initialising\n");
+#endif
+ while (1) {
   struct sschedule *c = schedule[0];
+#ifdef DEBUG
+  fprintf (stderr, "scheduler: sched_run(): checking my schedule\n");
+#endif
   switch (c->task) {
    case SCHEDULER_SWITCH_MODE:
     sched_switchmode (c->param);
@@ -264,8 +275,12 @@ void *sched_run (void *p) {
    schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
   pthread_mutex_unlock (&schedschedulemodmutex);
   free (c);
-  if (!schedule)
+  if (!schedule) {
+#ifdef DEBUG
+   fprintf (stderr, "scheduler: sched_run(): done, going to sleep\n");
+#endif
    pthread_cond_wait (&schedthreadcond, &schedthreadmutex);
+  }
  }
 }
 
@@ -306,8 +321,12 @@ void *sched_run_sigchild (void *p) {
    else fprintf (stderr, "scheduler: sched_run_sigchild(): %i seems still alive\n", (pid_t)pid);
 #endif
   }
-  if (!check)
+  if (!check) {
+#ifdef DEBUG
+   fprintf (stderr, "scheduler: going to sleep\n");
+#endif
    pthread_cond_wait (&schedthreadsigchildcond, &schedthreadsigchildmutex);
+  }
  }
 }
 

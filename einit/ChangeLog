@@ -1,8 +1,13 @@
 2006/05/04: mdeininger
  * fixes: some generic ones, some logics flaws, some in connection with uclibc
  * watchers are now spawned as a separate process
- * note: i just figured out that this still doesn't work with uclibs due to
+ * note: i just figured out that this still doesn't work with uclibc due to
    threading issues.
+ * i found a race condition where the fork() calls would first let the new child
+   do his thing, and then if it died before the main thread got his control back
+   the sigchld would arrive before the sched_watch_pid() was called, thus making
+   the scheduler ignore the watcher... using sleep(1); after forking is a cheap
+   workaround, i really oughta find something better.
 
 2006/05/03: mdeininger
  * renamed power.c to einit-control.c
