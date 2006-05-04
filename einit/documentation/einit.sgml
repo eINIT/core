@@ -1,7 +1,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 <book lang="en">
  <bookinfo>
-  <date>2006-04-28</date>
+  <date>2006-05-04</date>
   <title>eINIT</title>
   <subtitle>User's Guide</subtitle>
   <authorgroup>
@@ -112,6 +112,7 @@
 
  <chapter id="concepts">
   <title>Concepts</title>
+  <para>Since we're trying to be revolutionary, we're bound to do some things differently, aren't we?</para>
   <sect1 id="concepts-modes">
    <title><quote>Modes</quote></title>
    <titleabbrev>modes</titleabbrev>
@@ -146,6 +147,37 @@
    <sect2 id="usage-einit-control-erc">
     <title>The "erc" and "rc"-commands</title>
     <titleabbrev>erc</titleabbrev>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+  </sect1>
+  <sect1 id="usage-modules">
+   <title>Default Modules</title>
+   <titleabbrev>default modules</titleabbrev>
+   <para>
+    - yet to come -
+   </para>
+   <sect2 id="usage-modules-einit-tty">
+    <title>einit-tty</title>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+   <sect2 id="usage-modules-einit-mod-exex">
+    <title>einit-mod-exec</title>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+   <sect2 id="usage-modules-einit-mod-daemon">
+    <title>einit-mod-daemon</title>
+    <para>
+     - yet to come -
+    </para>
+   </sect2>
+   <sect2 id="usage-modules-einit-feedback-textual">
+    <title>einit-feedback-textual</title>
     <para>
      - yet to come -
     </para>
