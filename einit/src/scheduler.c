@@ -60,6 +60,8 @@ pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 char *currentmode = "void";
 char *newmode = "void";
 
+struct spidcb **sched_deadorphans = NULL;
+
 int cleanup ();
 
 #ifdef LINUX
@@ -218,15 +220,32 @@ int sched_queue (unsigned int task, void *param) {
 }
 
 int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
- struct spidcb *nele = ecalloc (1, sizeof (struct spidcb));
-#ifdef DEBUG
- fprintf (stderr, "scheduler: sched_watch_pid(): was told to watch %i\n", pid);
-#endif
- nele->pid = pid;
- nele->cfunc = function;
- nele->dead = 0;
- nele->status = 0;
+ struct spidcb *nele;
  pthread_mutex_lock (&schedcpidmutex);
+#ifdef DEBUG
+  fprintf (stderr, "scheduler: sched_watch_pid(): was told to watch %i\n", pid);
+#endif
+  if (sched_deadorphans) {
+   int i;
+   for (i = 0; sched_deadorphans[i]; i++) {
+    if (sched_deadorphans[i]->pid == (pid_t)pid) {
+#ifdef DEBUG
+     fprintf (stderr, "scheduler: hey, we found that dead orphan's parent!\n");
+#endif
+     sched_deadorphans[i]->cfunc = function;
+     cpids = (struct spidcb **) setadd ((void **)cpids, (void *)sched_deadorphans[i]);
+     sched_deadorphans = (struct spidcb **) setdel ((void **)sched_deadorphans, (void *)sched_deadorphans[i]);
+     pthread_mutex_unlock (&schedcpidmutex);
+     pthread_cond_signal (&schedthreadsigchildcond);
+     return 0;
+    }
+   }
+  }
+  nele = ecalloc (1, sizeof (struct spidcb));
+  nele->pid = pid;
+  nele->cfunc = function;
+  nele->dead = 0;
+  nele->status = 0;
   cpids = (struct spidcb **) setadd ((void **)cpids, (void *)nele);
  pthread_mutex_unlock (&schedcpidmutex);
 }
@@ -340,6 +359,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  int i, status;
 // pid_t pid = siginfo->si_pid;
  pid_t pid;
+ char known;
 
 /* tell the scheduler to check on this pid
    making the scheduler-thread do this means less time spent in here
@@ -348,6 +368,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  fprintf (stderr, "scheduler: received a sigchld\n", (pid_t)pid);
 #endif
  while (pid = waitpid (-1, &status, WNOHANG)) {
+  known = 0;
   if (pid == -1) {
 #ifdef DEBUG
    fprintf (stderr, "scheduler: SCHEDULER_PID_NOTIFY: %s\n", strerror (errno));
@@ -362,17 +383,32 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 #ifdef DEBUG
     fprintf (stderr, "scheduler: hey, I know this one!\n");
 #endif
+    known++;
     cpids[i]->status = status;
     cpids[i]->dead = 1;
     break;
    }
+  }
+  if (!known) {
+   struct spidcb *nele = ecalloc (1, sizeof (struct spidcb));
+   pthread_mutex_lock (&schedcpidmutex);
+#ifdef DEBUG
+    fprintf (stderr, "scheduler: an orphan?\n");
+#endif
+    nele->pid = pid;
+    nele->cfunc = NULL;
+    nele->dead = 1;
+    nele->status = status;
+    sched_deadorphans = (struct spidcb **) setadd ((void **)sched_deadorphans, (void *)nele);
+   pthread_mutex_unlock (&schedcpidmutex);
   }
  }
 
 #ifdef DEBUG
  fprintf (stderr, "scheduler: queueing a zombie-re-scan\n");
 #endif
- sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
+// sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
+ pthread_cond_signal (&schedthreadsigchildcond);
 
  return;
 }

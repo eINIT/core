@@ -64,6 +64,7 @@ struct spidcb {
 
 struct sschedule **schedule;
 struct spidcb **cpids;
+struct spidcb **sched_deadorphans;
 pthread_t schedthread;
 pthread_t schedthreadsigchild;
 char *currentmode;
