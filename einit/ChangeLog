@@ -9,6 +9,8 @@
    the scheduler ignore the watcher... using sleep(1); after forking is a cheap
    workaround, i really oughta find something better.
  * it seems that using SIGSTOP and SIGCONT is better a solution...
+ * i just had a better idea, which involves the scheduler keeping track of dead
+   "orphans"
 
 2006/05/03: mdeininger
  * renamed power.c to einit-control.c
