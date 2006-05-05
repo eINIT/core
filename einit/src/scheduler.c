@@ -416,9 +416,13 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
 
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
+#ifdef LINUX
  if (siginfo->si_code == SI_KERNEL) {
+#endif
   sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
   sched_queue (SCHEDULER_POWER_RESET, NULL);
+#ifdef LINUX
  }
+#endif
  return;
 }
