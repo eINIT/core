@@ -258,42 +258,44 @@ void *sched_run (void *p) {
  fprintf (stderr, "scheduler: sched_run(): initialising\n");
 #endif
  while (1) {
-  struct sschedule *c = schedule[0];
+  if (schedule && schedule [0]) {
+   struct sschedule *c = schedule[0];
 #ifdef DEBUG
-  fprintf (stderr, "scheduler: sched_run(): checking my schedule\n");
+   fprintf (stderr, "scheduler: sched_run(): checking my schedule\n");
 #endif
-  switch (c->task) {
-   case SCHEDULER_SWITCH_MODE:
-    sched_switchmode (c->param);
-    break;
-   case SCHEDULER_MOD_ACTION:
-    sched_modaction ((char **)c->param);
-    break;
-   case SCHEDULER_POWER_OFF:
-    puts ("scheduler: sync()-ing");
-    sync ();
-    puts ("scheduler: cleaning up");
-    cleanup ();
-    puts ("scheduler: power off");
-    epoweroff ();
+   switch (c->task) {
+    case SCHEDULER_SWITCH_MODE:
+     sched_switchmode (c->param);
+     break;
+    case SCHEDULER_MOD_ACTION:
+     sched_modaction ((char **)c->param);
+     break;
+    case SCHEDULER_POWER_OFF:
+     puts ("scheduler: sync()-ing");
+     sync ();
+     puts ("scheduler: cleaning up");
+     cleanup ();
+     puts ("scheduler: power off");
+     epoweroff ();
 // if we still live here, something's twocked
-    exit (EXIT_FAILURE);
-    break;
-   case SCHEDULER_POWER_RESET:
-    puts ("scheduler: sync()-ing");
-    sync ();
-    puts ("scheduler: cleaning up");
-    cleanup ();
-    puts ("scheduler: reset");
-    epowerreset ();
+     exit (EXIT_FAILURE);
+     break;
+    case SCHEDULER_POWER_RESET:
+     puts ("scheduler: sync()-ing");
+     sync ();
+     puts ("scheduler: cleaning up");
+     cleanup ();
+     puts ("scheduler: reset");
+     epowerreset ();
 // if we still live here, something's twocked
-    exit (EXIT_FAILURE);
-    break;
+     exit (EXIT_FAILURE);
+     break;
+   }
+   pthread_mutex_lock (&schedschedulemodmutex);
+    schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
+   pthread_mutex_unlock (&schedschedulemodmutex);
+   free (c);
   }
-  pthread_mutex_lock (&schedschedulemodmutex);
-   schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
-  pthread_mutex_unlock (&schedschedulemodmutex);
-  free (c);
   if (!schedule) {
 #ifdef DEBUG
    fprintf (stderr, "scheduler: sched_run(): done, going to sleep\n");

@@ -1,3 +1,6 @@
+2006/05/06: mdeininger
+ * bad bug! baaad stupid bug in scheduler
+
 2006/05/04: mdeininger
  * fixes: some generic ones, some logics flaws, some in connection with uclibc
  * watchers are now spawned as a separate process
