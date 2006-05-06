@@ -49,22 +49,54 @@
   <sect1 id="introduction-what-is-einit">
    <title>What is eINIT?</title>
    <titleabbrev>About</titleabbrev>
-   <para>
-    eINIT is an "Init-System" for Unix operating systems. It starts programs on startup, kills them on shutdown and tells the kernel when to reboot or cut off the power.
+   <para>eINIT is an "Init-System" for Unix operating systems. To figure out what this means, I'll explain some things about how unices boot, and we'll use Linux on an x86 as an example.</para>
+   <para>Whenever you turn on your computer, the following happens:
+    <itemizedlist>
+     <listitem><para>The CPU loads your BIOS</para></listitem>
+     <listitem><para>Your BIOS sets up some devices and loads some bootloader off your HD (or whatever you're booting from)</para></listitem>
+     <listitem><para>The bootloader loads Linux</para></listitem>
+     <listitem><para>Linux mounts your root-filesystem and executes /sbin/init</para></listitem>
+     <listitem><para>/sbin/init will start up all sorts of services, check and mount filesystems, run your X-Server, etc... </para></listitem>
+     <listitem><para>Upon completion of all this, you can log in.</para></listitem>
+    </itemizedlist>
    </para>
+   <para>The /sbin/init part is what eINIT does.</para>
   </sect1>
   <sect1 id="introduction-advantages">
    <title>Didn't we have sysvinit for that?</title>
    <titleabbrev>Advantages</titleabbrev>
    <para>
-    - yet to come -
+    Yes, for example on Linux, your distributor will have put some clone of System-V's init in place. When this init is run by the kernel, it will read a file called "inittab" which contains information about what runlevel to boot, what scripts to run, etc. That usually results in an /sbin/rc or /etc/rc script to be run, which will in turn try to start a set of scripts. Then, upon completion of the rc-program, init will set up a set of ttys so that you can log-in and begin working.
+   </para>
+   <para>
+    All of this works great and tends to be very stable, but it has some drawbacks (even though most of these might be irrelevant on fast machines):
+    <itemizedlist>
+     <listitem><para>Most rc-scripts don't handle dependencies: You have to list all the scripts that have to be started in the order they need to be started.</para></listitem>
+     <listitem><para>Usually /etc/rc (or /sbin/rc) is a shell-script, and so are most of the things it starts directly: It takes time for your shell to parse these scripts. It's really not much time that is required, but this is done every single time your computer boots, which can be very bad for embedded devices that need to be up ASAP.</para></listitem>
+     <listitem><para>Some things just can't be done (easily|efficiently) in a shell-script: Dependency-calculations tend to be slow (which is probably why there aren't many rc-scripts that do this) and parallel bootup is tricky.</para></listitem>
+     <listitem><para>None of these scripts (or maybe programs) stay in memory, thus they can't store status information in RAM, so they often have to write things like PIDs and whether or not a service has already been started in files on your harddisk. This is slow, so sometimes people go ahead and put the part of their filesystem that contains such status information on a RAM-disk. Obviously, both of these methods have more overhead than simply storing a 2-byte PID and a flag that says "running" in-memory, and every single byte could count on an embedded device with limited resources.</para></listitem>
+     <listitem><para>Often you will find many init-scripts that only start or stop a daemon that all look pretty much the same. Having more than one script like this is... well, redundant.</para></listitem>
+     <listitem><para>It's hard to modify the "feedback" you get. To modify that, you would normally have to modify the main rc-script and maybe some other utility-script, maybe download a different version that gives you graphical feedback instead of textual one. It gets even more tricky when you have to rely on aural output, maybe because you're blind...</para></listitem>
+     <listitem><para>You will hardly find an init/rc combination that allows for "backup-services", as in "should named fail to start, try to get dnsmaq up". Unless, of course, you craft a special script for that.</para></listitem>
+     <listitem><para>You just can't have scripts that make sure a daemon keeps running, as in, one that resurrects a daemon should it be killed or die because it's buggy. You could, of course, write a daemon to do this for you...</para></listitem>
+    </itemizedlist>
+    eINIT tries to address all these problems.
    </para>
   </sect1>
   <sect1 id="introduction-objectives">
    <title>Project Objectives</title>
    <titleabbrev>Objectives</titleabbrev>
    <para>
-    - yet to come -
+    The Objectives of the eINIT project are as follows: (in order of importance)
+    <itemizedlist>
+     <listitem><para>Be feature-complete.</para></listitem>
+     <listitem><para>Be fast.</para></listitem>
+     <listitem><para>Be small.</para></listitem>
+     <listitem><para>Be modular.</para></listitem>
+     <listitem><para>Be easy.</para></listitem>
+     <listitem><para>Be smart.</para></listitem>
+     <listitem><para>Do not rely on shell-scripts.</para></listitem>
+    </itemizedlist>
    </para>
   </sect1>
   <sect1 id="introduction-features">
@@ -73,12 +105,13 @@
    <para>It's always nice to have a list of current features, so here we go:</para>
    <itemizedlist>
     <listitem><para>Highly modular</para></listitem>
+    <listitem><para>Does dependency calculations.</para></listitem>
     <listitem><para>Parallel processing of modules</para></listitem>
     <listitem><para>Configuration file in XML</para></listitem>
     <listitem><para>"Modes": no cheap runlevels (see "Concepts")</para></listitem>
     <listitem><para>A module to start daemoni and make sure they keep running by restarting them in case they get killed</para></listitem>
     <listitem><para>No init-scripts required: no need to parse scripts on startup (comes in handy on embedded devices)</para></listitem>
-    <listitem><para>BSD-License: Probably handy for coporate users that wish to modify eINIT without providing sources. (the module-interface would also allow for precompiled binary-only modules)</para></listitem>
+    <listitem><para>BSD-License: Probably handy for corporate users that wish to modify eINIT without providing sources. (the module-interface would also allow for precompiled binary-only modules)</para></listitem>
    </itemizedlist>
   </sect1>
  </chapter>
@@ -97,34 +130,53 @@
    <title>Compiling and Installing eINIT</title>
    <titleabbrev>Compiling/Installing</titleabbrev>
    <para>
-    - yet to come -
+    This is easy, although just now the configure-script isn't very smart. Upon aquiring a copy of the current source-tree, bring up a console and cd into the root directory of the sources and run
+    <synopsis>./configure [--enable-linux]</synopsis>
+    <note><para>DO use --enable-linux on linux, and only linux. Use the --help parameter to see more options. Especially the --prefix option could be of interest to you.</para></note>
+    This will get your sources ready for compilation. Now run
+    <synopsis>make</synopsis>
+    to compile everything, followed by
+    <synopsis>make install</synopsis>
+    to install eINIT. That is all.
+    <note><para>If you have a separate /usr partition, you will have to make sure that expat is accessible before your /usr partition is mounted. Expat is usually installed in /usr/lib/ (and sometimes even in /usr/local/lib/), so you will need to copy /usr/lib/libexpat.* to /lib/.</para></note>
    </para>
   </sect1>
   <sect1 id="installation-configuration">
    <title>Configuring eINIT</title>
    <titleabbrev>Configuring</titleabbrev>
    <para>
-    - yet to come -
+    The main (default) configuration file is <filename>/etc/einit/default.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward, so I'll postpone any detailed instructions till the specs of eINIT are in less flux.
    </para>
   </sect1>
   <sect1 id="installation-configuration-boot">
-   <title>Configuring your Boot-Loader to use eINIT</title>
+   <title>Configuring your System to use eINIT</title>
    <titleabbrev>eINIT and Boot-Loaders</titleabbrev>
    <para>
-    - yet to come -
+    In order for your unix-system to use eINIT instead of your regular init, you have to either replace the original init or make your kernel use a different init-binary.
    </para>
-   <sect2 id="installation-configuration-boot-grub">
-    <title>Configuring GRUB</title>
+   <sect2 id="installation-configuration-boot-replacing">
+    <title>Replacing your current init with eINIT</title>
+    <titleabbrev>INIT=eINIT</titleabbrev>
+    <para>
+     The easy and pretty much surefire way to do this.
+     <synopsis>ln -sf einit /bin/init</synopsis>
+    </para>
+    <note><para>This practice is NOT recommended right now, as eINIT is still alpha-software!</para></note>
+   </sect2>
+   <sect2 id="installation-configuration-boot-linux-grub">
+    <title>[LINUX] Configuring GRUB</title>
     <titleabbrev>GRUB</titleabbrev>
     <para>
-     - yet to come -
+     Modify your /boot/grub/grub.conf or /boot/grub/menu.lst or similar. Search for your current kernel entry, duplicate the whole section and add "init=/sbin/einit" to the kernel command line.
     </para>
    </sect2>
-   <sect2 id="installation-configuration-boot-lilo">
-    <title>Configuring LILO</title>
+   <sect2 id="installation-configuration-boot-linux-lilo">
+    <title>[LINUX] Configuring LILO</title>
     <titleabbrev>LILO</titleabbrev>
     <para>
-     - yet to come -
+     Modify your /etc/lilo.conf. Search for your current kernel entry, duplicate the whole section and add "init=/sbin/einit" to the kernel command line, then issue the command
+     <synopsis>lilo</synopsis>
+     on a root-console.
     </para>
    </sect2>
   </sect1>
@@ -194,12 +246,35 @@
    <title>Default Modules</title>
    <titleabbrev>default modules</titleabbrev>
    <para>
-    - yet to come -
+    eINIT comes with a bunch of default modules. To help with configuring them, I'll list what they do and what configuration options they use.
    </para>
    <sect2 id="usage-modules-einit-tty">
     <title>einit-tty</title>
     <para>
-     - yet to come -
+     This module is used to initialise terminals. Unlike sysv-init, you terminals will be brought up ASAP, which means they're usually up after the local filesystems are mounted.
+    </para>
+    <synopsis label="sample XML-configuration file">
+     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+     &lt;einit&gt;
+      &lt;!-- [...] --&gt;
+      &lt;!-- tty initialisation --&gt;
+      &lt;tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" /&gt;
+      &lt;tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" /&gt;
+      &lt;!-- [...] --&gt;
+
+      &lt;mode id="default" base="boot"&gt;
+       &lt;enable mod="tty" /&gt;
+       &lt;enable-ttys s="tty1-regular:tty2-regular" /&gt;
+      &lt;/mode&gt;
+     &lt;/einit&gt;
+    </synopsis>
+    <para>In this example configuration file, we initialise two terminals <varname>tty1-regular</varname> and <varname>tty2-regular</varname>. This is ensured by the &lt;enable /&gt;-tag inside the &lt;mode /&gt;-tag with id="default". The &lt;enable /&gt;-tag contains a mod="tty" attribute that tells eINIT to load a tty-module upon entering this mode. Then the &lt;enable-ttys /&gt;-tag in the &lt;mode /&gt;-tag tells einit-tty (or any other tty-module, should there be another one with a higher preference) to enable the ttys tty1-regular and tty2-regular (you can put an arbitrarily long list of colon-separated tty-names inside the s="" attribute of this tag).</para>
+    <para><varname>tty1-regular</varname> is defined as
+     <synopsis>      &lt;tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" /&gt;</synopsis>
+     The tag-name is the name that is mentioned in the enable-ttys-tag. You can choose whatever you wish here, including colourful swearing for all I care, the only constraints imposed on this is that it's a valid xml-tag-name and that it doesn't include a colon, for obvious reasons. The attribute
+     <synopsis>dev="/dev/tty1"</synopsis> doesn't do anything yet, but it's reserved to be used as a device identifier. You may omit this for now, albeit that would mean to risk breaking your configuration later.
+     <synopsis>command="/sbin/agetty 3800 tty1"</synopsis> This attribute tells einit-tty what command to run to get the specified tty up and running. The agetty-command in this example is intended for linux users, as most linux distributions will include agetty.
+     <synopsis>restart="yes"</synopsis> Whether to restart the specified getty-command, should it die. The default is not to restart a dead tty, so you will want to specify this option.
     </para>
    </sect2>
    <sect2 id="usage-modules-einit-mod-exec">

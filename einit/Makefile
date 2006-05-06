@@ -9,6 +9,9 @@ documentation-html:
 documentation-man:
 	cd documentation && ${MAKE} documentation-man
 
+documentation-pdf:
+	cd documentation && ${MAKE} documentation-pdf
+
 install: all
 	${INSTALL} ${IPARAM} -d ${ETCDIR}
 	${INSTALL} ${IPARAM} data/default.xml ${ETCDIR}
