@@ -70,9 +70,11 @@ int enable (void *pa, struct mfeedback *status) {
 //   for (i = 0; i < er; i++) {
 //	puts (utmpentries[i].ut_line);
 //   }
+#ifdef LINUX
    utmpentries[0].ut_type = INIT_PROCESS;
    utmpentries[0].ut_pid = 1;
    utmpentries[1].ut_type = RUN_LVL;
+#endif
 //   utmpentries[1].ut_pid = ;
    fwrite (utmpentries, sizeof (struct utmp), 2, ufile);
    fclose (ufile);

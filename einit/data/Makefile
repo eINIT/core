@@ -6,4 +6,5 @@ all:
 install:
 	${INSTALL} ${IPARAM} -d ${ETCDIR}
 	${INSTALL} ${IPARAM} default.xml ${ETCDIR}
+	${INSTALL} ${IPARAM} sandbox.xml ${ETCDIR}
 	if test -n "`echo ${PMODULES}|grep efl`"; then cd einit.edje && ${MAKE} install; fi
