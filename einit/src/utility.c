@@ -232,7 +232,7 @@ char **strsetdel (char **set, char *item) {
   free (set);
   return NULL;
  }
- 
+
  newset[x] = NULL;
 
  return newset;
@@ -284,6 +284,10 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
     return hash;
    }
    c = c->next;
+  }
+  if (c->key && !strcmp (key, c->key) && c->value == value) {
+   free (n);
+   return hash;
   }
   c->next = n;
  }

@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so mod-daemon.so
+all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -19,6 +19,8 @@ install: all
 	${INSTALL} ${SOIPARAM} mod-exec.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} tty.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} mod-daemon.so ${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-ipc.so ${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 #dummy.so: dummy.c
@@ -35,3 +37,9 @@ mod-daemon.so: mod-daemon.c
 
 tty.so: tty.c
 	${CCL} tty.c -o tty.so
+
+einit-ipc.so: einit-ipc.c
+	${CCL} einit-ipc.c -o einit-ipc.so
+
+einit-utmp-forger.so: einit-utmp-forger.c
+	${CCL} einit-utmp-forger.c -o einit-utmp-forger.so

@@ -48,6 +48,9 @@ for param in $@; do
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		PMODULES="$PMODULES linux";
+	elif test "$param" = "--enable-efl"; then
+		echo -n " EFL";
+		PMODULES="$PMODULES efl";
 	elif test "$param" = "--help"; then
 		echo -n " HELP";
 		HELP="1";
@@ -64,6 +67,7 @@ Options:
  --with-include=path    use this to set a path to install to (absolute!)
  --enable-sysv          enable compilation of sysv-compatibility functions
  --enable-linux         enable compilation of linux-specific modules
+ --enable-efl           enable compilation of modules that utilise the efl
  --debug                will #define DEBUG.
  --help                 display this text and exit.";
 exit;

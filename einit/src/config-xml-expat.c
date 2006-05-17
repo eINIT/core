@@ -92,6 +92,10 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     newnode->svalue = estrdup ((char *)atts[i+1]);
    else if (!strcmp (atts[i], "i"))
     newnode->value = atoi (atts[i+1]);
+   else if (!strcmp (atts[i], "bi"))
+    newnode->value = strtol (atts[i+1], (char **)NULL, 2);
+   else if (!strcmp (atts[i], "oi"))
+    newnode->value = strtol (atts[i+1], (char **)NULL, 8);
    else if (!strcmp (atts[i], "b")) {
 	int j = i+1;
     newnode->flag = (!strcmp (atts[j], "true") ||

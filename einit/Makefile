@@ -2,6 +2,7 @@ include config.mk
 
 all:
 	cd src && ${MAKE} all
+	cd data && ${MAKE} all
 
 documentation-html:
 	cd documentation && ${MAKE} documentation-html
@@ -13,9 +14,10 @@ documentation-pdf:
 	cd documentation && ${MAKE} documentation-pdf
 
 install: all
-	${INSTALL} ${IPARAM} -d ${ETCDIR}
-	${INSTALL} ${IPARAM} data/default.xml ${ETCDIR}
 	cd src && ${MAKE} install
+	cd data && ${MAKE} install
+
+documentation_install: documentation-html
 
 depend:
 	touch src/depend.mk

@@ -1,3 +1,65 @@
+2006/05/15: mdeininger
+ * Introduced two variables to control the edje feedback module.
+
+2006/05/14: mdeininger
+ * I created a logo for eINIT and a small website. + I started on an edje-theme.
+
+2006/05/11: mdeininger
+ * [module.c] fixed a bug that caused backup-modules and regular modules to be
+   started in parallel; also did some cleanups
+ * added einit-utmp-forger.c: a module to fake utmp entries (as they're quite
+   useless to eINIT, but some programs depend on them)
+ * added einit-efl-feedback-evas-edje.c: I always wanted to have my system boot
+   visualised by e17 libraries, didn't you too?
+   well, not that it was working, anyway :D
+
+2006/05/10: mdeininger
+ * [scheduler.c] replaced the spid and dead_orphans sets with linked lists
+ * let's try a different approach... still using mutexes, but creating an extra
+   thread from within the signal handler so that the signal handler can't dead-
+   lock
+ * this has definitely made the problem more scarce...
+ * I found out that all these lockups were more than one problem combined. one of
+   the last remaining bugs seems to be with the pipe that is to read the output
+   of called commands from mod-exec... seems like sometimes either sh doesn't
+   close the pipe or mod-exec seems to skip the eof... wicked... commenting out
+   the pipe-section seems to stop the deadlock from occuring. (i stress-tested
+   for about half an hour; it didn't crash so i suppose it works. now to figure
+   out how this pipe-problem is to be fixed...)
+
+2006/05/09: mdeininger
+ * [vis-text.c] added ANSI color-codes to indicate success/failure
+ * [tty.c] added a configuration flag to tell einit-tty whether or not to manage
+   utmp records
+ * stress-testing: there's this one very wicked bug in mod-exec... ><
+ * and another one in mod-daemon
+
+[2006/05/09: mdeininger: first public release, Version 0.01]
+
+2006/05/09: mdeininger
+ * the ipc() function will now try to unlink control-socket's file if it already
+   exists. also it will chmod() the socket to the integer value specified in the
+   <control-socket /> configuration option (yes, it's both a string and integer
+   value at the same time. this is by design)
+   we'll have to do some other security checks, although the chmod() method
+   should work on linux if the socket is created by root and chmod()-ed to 0600.
+ * created a new script to create release-tarballs: makerelease
+ * extended the way you can define variables in your configuration file:
+   attributes bi= and oi= can now be used to define "binary integers" and "octal
+   integers"
+ * i moved the ipc system to an external module. It just seems to be the clean
+   thing to do.
+ * the main thread is now the scheduler-thread
+
+2006/05/08: mdeininger
+ * mod-exec.c: you can now pass environment variables to pseudo-modules
+
+2006/05/07: mdeininger
+ * better (i.e. more complete) default configuration
+ * fixed a bug with hashes.
+ * been checking on some bugs with valgrind: no allocation errors left, only some
+   memory leaks left
+
 2006/05/06: mdeininger
  * bad bug! baaad stupid bug in scheduler
 

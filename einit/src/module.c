@@ -287,6 +287,7 @@ int mod (unsigned int task, struct lmodule *module) {
  fb->task = task | MOD_FEEDBACK_SHOW;
  fb->status = STATUS_WORKING;
  fb->errorc = 0;
+ fb->verbose = NULL;
  status_update (fb);
 
  if (task & MOD_ENABLE) {
@@ -368,61 +369,44 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  return 0;
 }
 
-struct uhash *mod_plan_wpw (struct mloadplan *plan, struct uhash *hash) {
+struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int flag) {
  struct uhash *ihash = hash;
  int i;
 
  if (!plan) return NULL;
- if (plan->left && plan->left[0]) {
+ if ((flag != MOD_P2H_PROVIDES_NOBACKUP) && plan->left && plan->left[0]) {
   for (i = 0; plan->left[i]; i++)
-   ihash = mod_plan_wpw(plan->left[i], ihash);
+   ihash = mod_plan2hash(plan->left[i], ihash, flag);
  }
  if (plan->right && plan->right[0]) {
   for (i = 0; plan->right[i]; i++)
-   ihash = mod_plan_wpw(plan->right[i], ihash);
+   ihash = mod_plan2hash(plan->right[i], ihash, flag);
  }
  if (plan->orphaned && plan->orphaned[0]) {
   for (i = 0; plan->orphaned[i]; i++)
-   ihash = mod_plan_wpw(plan->orphaned[i], ihash);
+   ihash = mod_plan2hash(plan->orphaned[i], ihash, flag);
  }
- if (plan->mod) {
+ if (flag == MOD_P2H_LIST) {
+  ihash = hashadd (ihash, "", plan);
+ } else if (plan->mod) {
   if (plan->mod->module) {
    struct smodule *mod = plan->mod->module;
-   if (mod->rid)
-    ihash = hashadd (ihash, mod->rid, plan);
-   if (mod->provides && mod->provides[0]) {
-    for (i = 0; mod->provides[i]; i++)
-     ihash = hashadd (ihash, mod->provides[i], (void *)plan);
-   }
-  }
- }
-
- return ihash;
-}
-
-struct uhash *mod_plan_wrw (struct mloadplan *plan, struct uhash *hash) {
- struct uhash *ihash = hash;
- int i;
-
- if (!plan) return NULL;
- if (plan->left && plan->left[0]) {
-  for (i = 0; plan->left[i]; i++)
-   ihash = mod_plan_wrw(plan->left[i], ihash);
- }
- if (plan->right && plan->right[0]) {
-  for (i = 0; plan->right[i]; i++)
-   ihash = mod_plan_wrw(plan->right[i], ihash);
- }
- if (plan->orphaned && plan->orphaned[0]) {
-  for (i = 0; plan->orphaned[i]; i++)
-   ihash = mod_plan_wrw(plan->orphaned[i], ihash);
- }
- if (plan->mod) {
-  if (plan->mod->module) {
-   struct smodule *mod = plan->mod->module;
-   if (mod->requires && mod->requires[0]) {
-    for (i = 0; mod->requires[i]; i++)
-     ihash = hashadd (ihash, mod->requires[i], (void *)plan);
+   switch (flag) {
+	case MOD_P2H_PROVIDES:
+    case MOD_P2H_PROVIDES_NOBACKUP:
+     if (mod->rid)
+      ihash = hashadd (ihash, mod->rid, plan);
+     if (mod->provides && mod->provides[0]) {
+      for (i = 0; mod->provides[i]; i++)
+       ihash = hashadd (ihash, mod->provides[i], (void *)plan);
+     }
+	 break;
+	case MOD_P2H_REQUIRES:
+     if (mod->requires && mod->requires[0]) {
+      for (i = 0; mod->requires[i]; i++)
+       ihash = hashadd (ihash, mod->requires[i], (void *)plan);
+     }
+     break;
    }
   }
  }
@@ -431,10 +415,7 @@ struct uhash *mod_plan_wrw (struct mloadplan *plan, struct uhash *hash) {
 }
 
 struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
- struct uhash *hash_prov;
- struct uhash *hash_req;
- struct uhash *c;
- struct uhash *d;
+ struct uhash *hash_prov, *hash_req, *hash_prov_nb, *c, *d;
  struct mloadplan **orphans = NULL;
  struct mloadplan **curpl = NULL;
  unsigned int i, j;
@@ -445,8 +426,9 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
   return NULL;
  }
 
- hash_prov = mod_plan_wpw (plan, NULL);
- hash_req = mod_plan_wrw (plan, NULL);
+ hash_req = mod_plan2hash (plan, NULL, MOD_P2H_REQUIRES);
+ hash_prov = mod_plan2hash (plan, NULL, MOD_P2H_PROVIDES);
+ hash_prov_nb = mod_plan2hash (plan, NULL, MOD_P2H_PROVIDES_NOBACKUP);
 
  d = hash_prov;
  
@@ -461,7 +443,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
   d = hashnext (d);
  }
 
- d = hash_prov;
+ d = hash_prov_nb;
  while (d) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
@@ -504,6 +486,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
   d = hashnext (d);
  }
 
+ hashfree (hash_prov_nb);
  hashfree (hash_prov);
  hashfree (hash_req);
 
@@ -529,12 +512,12 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    struct smodule *tmp = curmod->module;
    if (curmod->status & STATUS_ENABLED) {
     if (tmp) {
-	 if ((tmp->mode & EINIT_MOD_FEEDBACK) && !(task & MOD_DISABLE_UNSPEC_FEEDBACK) ||
+     if ((tmp->mode & EINIT_MOD_FEEDBACK) && !(task & MOD_DISABLE_UNSPEC_FEEDBACK) ||
          (tmp->rid && strinset (atoms, tmp->rid)))
       goto skipcurmod;
      if (tmp->provides && atoms) {
       for (si = 0; atoms[si]; si++)
-	   if (strinset (tmp->provides, atoms[si]))
+       if (strinset (tmp->provides, atoms[si]))
         goto skipcurmod;
      }
     }
@@ -548,62 +531,67 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   }
  }
 
- if (atoms) for (si = 0; atoms[si]; si++) {
-  struct lmodule **cand = (struct lmodule **)ecalloc (mcount+1, sizeof (struct lmodule *));
-  struct mloadplan *cplan = NULL;
-  struct mloadplan *tcplan = NULL;
-  struct mloadplan **planl = NULL;
-  unsigned int cc = 0, npcc;
-  curmod = mlist;
 
-  while (curmod) {
-   struct smodule *tmp = curmod->module;
-   if (tmp &&
-	   (tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
-	   (tmp->provides && strinset (tmp->provides, atoms[si]))) {
-	cand[cc] = curmod;
-    cc++;
+ if (atoms) {
+  atoms = (char **)setdup ((void **)atoms);
+  for (si = 0; atoms[si]; si++) {
+   struct lmodule **cand = (struct lmodule **)ecalloc (mcount+1, sizeof (struct lmodule *));
+   struct mloadplan *cplan = NULL;
+   struct mloadplan *tcplan = NULL;
+   struct mloadplan **planl = NULL;
+   unsigned int cc = 0, npcc;
+   curmod = mlist;
+
+   while (curmod) {
+    struct smodule *tmp = curmod->module;
+    if (tmp &&
+        (tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
+        (tmp->provides && strinset (tmp->provides, atoms[si]))) {
+     cand[cc] = curmod;
+     cc++;
+    }
+    curmod = curmod->next;
    }
-   curmod = curmod->next;
-  }
-//  printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
+//   printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
 
-  if (cc) {
-   if (mod_plan_sort_by_preference (cand, atoms[si])) {
-    return NULL;
-   }
-   cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
-   cplan->task = task;
-   cplan->mod = cand[0];
+   if (cc) {
+    if (mod_plan_sort_by_preference (cand, atoms[si])) {
+     return NULL;
+    }
+    cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
+    cplan->task = task;
+    cplan->mod = cand[0];
 
-   nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan);
+    nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan);
 
-   if (cc > 1) {
-	unsigned int icc = 1;
-    planl = (struct mloadplan **)ecalloc (cc, sizeof (struct mloadplan *));
-	cplan->left = planl;
-	for (; icc < cc; icc++) {
-     tcplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
-     tcplan->task = task;
-     tcplan->mod = cand[icc];
-     cplan->left[icc-1] = tcplan;
+    if (cc > 1) {
+     unsigned int icc = 1;
+     planl = (struct mloadplan **)ecalloc (cc, sizeof (struct mloadplan *));
+     cplan->left = planl;
+     for (; icc < cc; icc++) {
+      tcplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
+      tcplan->task = task;
+      tcplan->mod = cand[icc];
+      cplan->left[icc-1] = tcplan;
+     }
+    }
+
+    if (plan && plan->unsatisfied) {
+     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
+    }
+   } else {
+    if (plan && plan->unsatisfied && strinset (plan->unsatisfied, atoms [si])) {
+     char *tmpa = estrdup (atoms[si]);
+     printf ("can't satisfy atom: %s\n", atoms[si]);
+     plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
+     return plan;
     }
    }
 
-   if (plan && plan->unsatisfied) {
-    plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
-   }
-  } else {
-   if (plan && plan->unsatisfied && strinset (plan->unsatisfied, atoms [si])) {
-    char *tmpa = estrdup (atoms[si]);
-    printf ("can't satisfy atom: %s\n", atoms[si]);
-    plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
-    plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
-    return plan;
-   }
+   free (cand);
   }
-
-  free (cand);
+  free (atoms);
  }
 
  plan->orphaned = (struct mloadplan **)setcombine ((void **)plan->orphaned, (void **)nplancand);
@@ -655,37 +643,14 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 }
 
 
-/* collect all elements in the plan */
-struct uhash *mod_plan_ga (struct mloadplan *plan, struct uhash *hash) {
- struct uhash *ihash = hash;
- int i;
-
- if (!plan) return NULL;
- if (plan->left && plan->left[0]) {
-  for (i = 0; plan->left[i]; i++)
-   ihash = mod_plan_ga(plan->left[i], ihash);
- }
- if (plan->right && plan->right[0]) {
-  for (i = 0; plan->right[i]; i++)
-   ihash = mod_plan_ga(plan->right[i], ihash);
- }
- if (plan->orphaned && plan->orphaned[0]) {
-  for (i = 0; plan->orphaned[i]; i++)
-   ihash = mod_plan_ga(plan->orphaned[i], ihash);
- }
- ihash = hashadd (ihash, "tmp", plan);
-
- return ihash;
-}
-
 /* free all elements in the plan */
 int mod_plan_free (struct mloadplan *plan) {
- struct uhash *hash_prov;
+ struct uhash *hash_list;
  struct uhash *d;
 
- hash_prov = mod_plan_ga (plan, NULL);
+ hash_list = mod_plan2hash (plan, NULL, MOD_P2H_LIST);
 
- d = hash_prov;
+ d = hash_list;
  while (d) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
@@ -698,7 +663,7 @@ int mod_plan_free (struct mloadplan *plan) {
   d = hashnext (d);
  }
 
- hashfree (hash_prov);
+ hashfree (hash_list);
 }
 
 #ifdef DEBUG

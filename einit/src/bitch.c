@@ -45,6 +45,7 @@ int bitch (unsigned int opt) {
  if (opt & BTCH_ERRNO) {
   if (errno) {
    fputs (strerror (errno), stderr);
+   fputs ("\n", stderr);
    errno = 0;
   }
  }

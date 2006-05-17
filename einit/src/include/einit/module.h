@@ -40,7 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pthread.h>
 #include <sys/types.h>	
-#include <stdint.h>	
+#include <stdint.h>
+#include <einit/scheduler.h>
+#include <einit/utility.h>
 
 #define EINIT_OPT_WAIT 8
 #define EINIT_OPT_ONCE 16
@@ -57,6 +59,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_DISABLE_UNSPEC 0x1000
 #define MOD_DISABLE_UNSPEC_FEEDBACK 0x2000
 #define MOD_FEEDBACK_SHOW 0x0100
+#define MOD_SCHEDULER 0x1000
+#define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001
+#define MOD_SCHEDULER_PLAN_COMMIT_FINISH 0x1002
 
 #define STATUS_IDLE 0x0000
 #define STATUS_OK 0x8003
@@ -71,6 +76,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STATUS_ENABLED 0x0401
 #define STATUS_DISABLED 0x0802
 
+#define MOD_P2H_PROVIDES 0x0001
+#define MOD_P2H_PROVIDES_NOBACKUP 0x0002
+#define MOD_P2H_REQUIRES 0x0003
+#define MOD_P2H_LIST 0x0004
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -83,6 +93,7 @@ struct mfeedback {
  unsigned int errorc;
  char volatile *verbose;
  struct lmodule * module;
+ struct mloadplan * plan;
 };
 
 struct smodule {
@@ -140,12 +151,13 @@ int mod (unsigned int, struct lmodule *);
 #define mod_enable(lname) mod (MOD_ENABLE, lname)
 #define mod_disable(lname) mod (MOD_DISABLE, lname)
 
+struct uhash *mod_plan2hash (struct mloadplan *, struct uhash *, int);
+
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int);
 
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *);
-
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *);
 

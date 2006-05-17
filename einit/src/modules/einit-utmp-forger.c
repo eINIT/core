@@ -1,8 +1,8 @@
 /*
- *  scheduler.h
+ *  einit-utmp-forger.c
  *  einit
  *
- *  Created by Magnus Deininger on 02/05/2006.
+ *  Created by Magnus Deininger on 11/05/2006.
  *  Copyright 2006 Magnus Deininger. All rights reserved.
  *
  */
@@ -35,57 +35,56 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define _MODULE
 
-#ifndef _SCHEDULER_H
-#define _SCHEDULER_H
-
-#include <pthread.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <einit/module.h>
+#include <einit/config.h>
 #include <einit/utility.h>
-#include <signal.h>
+#include <utmp.h>
 
-#define SCHEDULER_SWITCH_MODE 0x0001
-#define SCHEDULER_POWER_OFF 0x0002
-#define SCHEDULER_POWER_RESET 0x0003
-#define SCHEDULER_PID_NOTIFY 0x0004
-#define SCHEDULER_MOD_ACTION 0x0005
+#define EXPECTED_EIV 1
 
-struct sschedule {
- unsigned int task;
- void *param;
-};
-
-struct spidcb {
- pid_t pid;
- int status;
- char dead;
- void *(*cfunc)(struct spidcb *);
- struct spidcb *next;
-};
-
-struct sschedule **schedule;
-struct spidcb *cpids;
-struct spidcb *sched_deadorphans;
-pthread_t schedthread;
-pthread_t schedthreadsigchild;
-char *currentmode;
-char *newmode;
-
-int epoweroff ();
-int epowerreset ();
-
-int sched_switchmode (char *);
-int sched_modaction (char **);
-
-void sched_init ();
-int sched_queue (unsigned int, void *);
-int sched_watch_pid (pid_t, void *(*)(struct spidcb *));
-void *sched_run (void *);
-void *sched_run_sigchild (void *);
-
-/* this should be the best place for signal handlers... */
-
-void sched_signal_sigchld (int, siginfo_t *, void *);
-void sched_signal_sigint (int, siginfo_t *, void *);
-
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
+
+char * provides[] = {"utmp", NULL};
+char * requires[] = {"localmount", NULL};
+
+struct smodule self = {
+ EINIT_VERSION, 1, 0, 0, "System-V compatibility: UTMP forger", "einit-utmp-forger", provides, requires, NULL
+};
+
+int enable (void *pa, struct mfeedback *status) {
+ FILE *ufile;
+ struct cfgnode *utmp_cfg = cfg_findnode ("forge-utmp", 0, NULL);
+
+ if (utmp_cfg && utmp_cfg->flag) {
+  ufile = fopen ("/var/run/utmp", "w");
+  if (ufile) {
+   struct utmp *utmpentries = ecalloc (2, sizeof (struct utmp));
+//   int er = fread (utmpentries, sizeof (struct utmp), 30, ufile);
+   int i;
+//   for (i = 0; i < er; i++) {
+//	puts (utmpentries[i].ut_line);
+//   }
+   utmpentries[0].ut_type = INIT_PROCESS;
+   utmpentries[0].ut_pid = 1;
+   utmpentries[1].ut_type = RUN_LVL;
+//   utmpentries[1].ut_pid = ;
+   fwrite (utmpentries, sizeof (struct utmp), 2, ufile);
+   fclose (ufile);
+   free (utmpentries);
+  }
+ }
+
+/* always return OK, as utmp is pretty much useless to eINIT, so no reason
+   to bitch about it... */
+ return STATUS_OK;
+}
+
+int disable (void *pa, struct mfeedback *status) {
+ return STATUS_OK;
+}
