@@ -62,13 +62,13 @@
 <!-- tty initialisation -->
  <tty-manage-utmp b="true" />
 
- <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" />
- <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" />
- <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="yes" />
- <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="yes" />
- <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="yes" />
- <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="yes" />
- <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="yes" />
+ <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="no" />
+ <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="no" />
+ <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="no" />
+ <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="no" />
+ <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="no" />
+ <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="no" />
+ <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" />
 
  <mode id="feedback">
   <enable mod="feedback-visual" />
