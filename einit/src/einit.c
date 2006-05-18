@@ -69,26 +69,27 @@ int cleanup () {
 
 int main(int argc, char **argv) {
  int i;
+ char *cfgfile = "/etc/einit/default.xml";
 
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
    switch (argv[i][1]) {
-	case 'c':
-	 if ((++i) < argc)
-      configfile = argv[i];
-	 else
-	  return print_usage_info ();
-	 break;
-	case 'h':
+    case 'c':
+     if ((++i) < argc)
+      cfgfile = argv[i];
+     else
+      return print_usage_info ();
+     break;
+    case 'h':
      return print_usage_info ();
-	 break;
-	case 'v':
+     break;
+    case 'v':
      puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
      return 0;
    }
  }
  puts("eINIT " EINIT_VERSION_LITERAL ": booting");
- if (cfg_load () == -1) {
+ if (cfg_load (cfgfile) == -1) {
   fputs ("ERROR: cfg_load() failed\n", stderr);
   return -1;
  }

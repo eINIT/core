@@ -78,14 +78,10 @@ struct sconfiguration {
  struct cfgnode *node;
 };
 
-#ifndef _MODULE
-char *configfile;
-#endif
-
 struct sconfiguration *sconfiguration;
 
 // load configuration
-int cfg_load ();
+int cfg_load (char *);
 
 // free configuration
 int cfg_free ();

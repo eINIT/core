@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <einit>
  <module-path s="lib/einit" />
+ <configuration-path s="etc/einit/" />
+ <include s="shell.xml" />
+ <include s="daemon.xml" />
 
  <forge-utmp b="true" i="3" />
  <forge-wtmp b="true" />

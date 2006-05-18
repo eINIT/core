@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PATH_MODULES 1
 #define FEEDBACK_MODULE 1
 
-char *configfile = "/etc/einit/default.xml";
 struct sconfiguration *sconfiguration = NULL;
 struct cfgnode *curmode = NULL;
 
@@ -115,12 +114,17 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
   curmode = NULL;
 }
 
-int cfg_load () {
- int cfgfd, e, blen;
+int cfg_load (char *configfile) {
+ static char recursion = 0;
+ int cfgfd, e, blen, cfgplen;
  char * buf, * data;
  ssize_t rn;
- sconfiguration = ecalloc (1, sizeof(struct sconfiguration));
+ struct cfgnode *node = NULL, *last = NULL;
+ char *confpath = NULL;
  XML_Parser par;
+ if (!configfile) return 0;
+ if (!sconfiguration)
+  sconfiguration = ecalloc (1, sizeof(struct sconfiguration));
  cfgfd = open (configfile, O_RDONLY);
  if (cfgfd != -1) {
   buf = emalloc (BUFFERSIZE*sizeof(char));
@@ -143,7 +147,31 @@ int cfg_load () {
    XML_ParserFree (par);
   }
   free (data);
-  return 1;
+
+  if (!recursion) {
+   confpath = cfg_getpath ("configuration-path");
+   if (!confpath) confpath = "/etc/einit/";
+   cfgplen = strlen(confpath) +1;
+   for (node = sconfiguration->node, last = NULL; node; node = node->next) {
+    rescan_node:
+    if (!node) break;
+    if (node->svalue && !strcmp (node->id, "include")) {
+     char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
+     last->next = node->next;
+     includefile = strcat (includefile, confpath);
+     includefile = strcat (includefile, node->svalue);
+     free (node);
+     node = last->next;
+     recursion++;
+     cfg_load (includefile);
+     recursion--;
+     free (includefile);
+     goto rescan_node;
+    }
+    last = node;
+   }
+  }
+  return sconfiguration != NULL;
  } else {
   free (sconfiguration);
   sconfiguration = NULL;

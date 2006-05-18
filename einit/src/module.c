@@ -369,6 +369,10 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  return 0;
 }
 
+struct mloadplan **mod_planpath (struct mloadplan *plan, struct mloadplan *target, struct mloadplan **path) {
+ return path;
+}
+
 struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int flag) {
  struct uhash *ihash = hash;
  int i;
@@ -392,7 +396,7 @@ struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int fla
   if (plan->mod->module) {
    struct smodule *mod = plan->mod->module;
    switch (flag) {
-	case MOD_P2H_PROVIDES:
+    case MOD_P2H_PROVIDES:
     case MOD_P2H_PROVIDES_NOBACKUP:
      if (mod->rid)
       ihash = hashadd (ihash, mod->rid, plan);
@@ -400,8 +404,8 @@ struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int fla
       for (i = 0; mod->provides[i]; i++)
        ihash = hashadd (ihash, mod->provides[i], (void *)plan);
      }
-	 break;
-	case MOD_P2H_REQUIRES:
+     break;
+    case MOD_P2H_REQUIRES:
      if (mod->requires && mod->requires[0]) {
       for (i = 0; mod->requires[i]; i++)
        ihash = hashadd (ihash, mod->requires[i], (void *)plan);
@@ -431,7 +435,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
  hash_prov_nb = mod_plan2hash (plan, NULL, MOD_P2H_PROVIDES_NOBACKUP);
 
  d = hash_prov;
- 
+
  while (d) {
   if (d->value) {
    struct mloadplan *v = (struct mloadplan *)d->value;
