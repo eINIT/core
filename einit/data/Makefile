@@ -9,4 +9,5 @@ install:
 	${INSTALL} ${IPARAM} daemon.xml ${ETCDIR}
 	${INSTALL} ${IPARAM} shell.xml ${ETCDIR}
 	${INSTALL} ${IPARAM} sandbox.xml ${ETCDIR}
+	${INSTALL} ${IPARAM} rc.xml ${ETCDIR}
 	if test -n "`echo ${PMODULES}|grep efl`"; then cd einit.edje && ${MAKE} install; fi
