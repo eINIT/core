@@ -61,6 +61,8 @@ char **strsetdup (char **);
 char **strsetdel (char **, char *);
 char **strsetdeldupes (char **);
 
+char **straddtoenviron (char **, char *, char *);
+
 /* same as above, this time with hashes */
 
 struct uhash *hashadd (struct uhash *, char *, void *);

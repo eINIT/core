@@ -1,6 +1,15 @@
+2006/05/19: mdeininger
+ * relocated the pexec() function into its own c-file. might be useful to other
+   modules as well.
+ * added the prepare="" & cleanup="" attributes to mod-daemon and the uid= and
+   gid= attributes to mod-daemon and mod-shell elements. they do what you'd expect
+   them to, hopefully...
+ * you can now manipulate environment variables in tty-entries
+
 2006/05/18: mdeininger
  * The dependency calculations need a workover.
- * added the <include /> tag. use this to instruct einit to load other sub-configuration files.
+ * added the <include /> tag. use this to instruct einit to load other sub-
+   configuration files.
  * tried a different approach at figuring out the end of the pipe in mod-exec.c
 
 2006/05/15: mdeininger

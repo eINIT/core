@@ -266,6 +266,19 @@ char **strsetdeldupes (char **set) {
  return newset;
 }
 
+char **straddtoenviron (char **environment, char *key, char *value) {
+ char *newitem;
+ int len = 1;
+ if (key) len += strlen (key);
+ if (value) len += strlen (value);
+ newitem = ecalloc (1, sizeof(char)*len);
+ if (key) newitem = strcat (newitem, key);
+ if (value) newitem = strcat (newitem, "=");
+ if (value) newitem = strcat (newitem, value);
+
+ return (char**) setadd ((void**)environment, (void*)newitem);
+}
+
 /* hashes */
 
 struct uhash *hashadd (struct uhash *hash, char *key, void *value) {

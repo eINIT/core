@@ -36,8 +36,7 @@
  <mod-shell id="shell-mount" name="local filesystems" provides="localmount" requires="sysconf:fs-proc:fs-root:fs-dev:fs-sys" enable="echo 'mount -at nonfs,noproc,noshm';" disable="echo 'umount -ar';" />
 
 <!-- udev -->
- <mod-shell id="shell-udev-prepare" name="prepare system for mounting /dev using udevd" provides="udev-prepare" requires="fs-sys" enable="echo '/bin/mount udev -t tmpfs /dev; /sbin/udevstart';" disable="echo 'umount /dev';" />
- <mod-daemon id="daemon-udev" name="udevd for /dev" provides="fs-dev:udev" requires="udev-prepare" command="/sbin/udevd" />
+ <mod-daemon id="daemon-udev" name="udevd for /dev" provides="fs-dev:udev" requires="fs-sys" command="/sbin/udevd" prepare="echo '/bin/mount udev -t tmpfs /dev; /sbin/udevstart';" cleanup="echo 'umount /dev';"/>
 
  <mod-shell id="shell-kern-eth0" name="net-eth0" provides="kern-eth0" requires="sysconf" enable="/sbin/modprobe ${kernel_module_eth0}" disable="/sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
  <mod-shell id="shell-kern-eth1" name="net-eth0" provides="kern-eth1" requires="sysconf" enable="/sbin/modprobe ${kernel_module_eth1}" disable="/sbin/rmmod ${kernel_module_eth1}" variables="kernel_module_eth1"/>
@@ -65,13 +64,13 @@
 <!-- tty initialisation -->
  <tty-manage-utmp b="true" />
 
- <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="no" />
- <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="no" />
- <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="no" />
- <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="no" />
- <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="no" />
- <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="no" />
- <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" />
+ <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="no" TERM="linux" />
+ <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="no" TERM="linux" />
+ <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="no" TERM="linux" />
+ <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="no" TERM="linux" />
+ <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="no" TERM="linux" />
+ <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="no" TERM="linux" />
+ <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" TERM="linux" />
 
  <mode id="feedback">
   <enable mod="feedback-visual" />

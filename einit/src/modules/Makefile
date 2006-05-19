@@ -9,7 +9,7 @@ depend:
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} depend && cd ..; done; fi;
 
 clean:
-	rm -f *.so depend.mk
+	rm -f *.so *.o depend.mk
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} clean && cd ..; done; fi;
 
 install: all
@@ -29,11 +29,16 @@ install: all
 vis-text.so: vis-text.c
 	${CCL} vis-text.c -o vis-text.so
 
-mod-exec.so: mod-exec.c
-	${CCL} mod-exec.c -o mod-exec.so
+pexec.o: pexec.c
+	${CCC} -c pexec.c
 
-mod-daemon.so: mod-daemon.c
-	${CCL} mod-daemon.c -o mod-daemon.so
+mod-exec.so: mod-exec.c pexec.o
+	${CCC} -c mod-exec.c
+	${CCL} mod-exec.o pexec.o -o mod-exec.so
+
+mod-daemon.so: mod-daemon.c pexec.o
+	${CCC} -c mod-daemon.c
+	${CCL} mod-daemon.o pexec.o -o mod-daemon.so
 
 tty.so: tty.c
 	${CCL} tty.c -o tty.so
