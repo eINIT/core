@@ -1,3 +1,6 @@
+2006/05/21: mdeininger
+ * this darn piping still ain't working properly... i commented out the code for it
+
 2006/05/19: mdeininger
  * relocated the pexec() function into its own c-file. might be useful to other
    modules as well.
