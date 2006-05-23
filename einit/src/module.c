@@ -48,15 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
-/*
- dynamic linker functions (POSIX)
-
- void *dlopen(const char *filename, int flag);
- char *dlerror(void);
- void *dlsym(void *handle, const char *symbol);
- int dlclose(void *handle);
-*/
-
 #include <pthread.h>
 
 int mod_comment (struct mfeedback *status);
@@ -534,7 +525,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    curmod = curmod->next;
   }
  }
-
 
  if (atoms) {
   atoms = (char **)setdup ((void **)atoms);

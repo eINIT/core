@@ -1,3 +1,6 @@
+2006/05/23: mdeininger
+ * had flawed logics in mod-daemon
+
 2006/05/22: mdeininger
  * I was cleaning /var/run a tad too much...
 
