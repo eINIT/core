@@ -4,6 +4,7 @@
  <configuration-path s="etc/einit/" />
  <include s="shell.xml" />
  <include s="daemon.xml" />
+ <include s="rc.xml" />
 
  <forge-utmp b="true" i="3" />
  <forge-wtmp b="true" />
@@ -53,14 +54,12 @@
 <!-- you can define daemoni like this -->
  <mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="sysconf:tty" command="/usr/sbin/gpm" restart="yes" />
  <mod-daemon id="daemon-apmd" name="APMD" provides="apmd" requires="localmount" command="/usr/sbin/apmd" restart="yes" />
- <mod-daemon id="daemon-dhcp-net-ethernet-eth0" name="net-eth0" provides="net-eth0:network" requires="kern-eth0" command="/sbin/dhcpcd eth0" restart="yes" />
- <mod-daemon id="daemon-dhcp-net-ethernet-eth1" name="net-eth1" provides="net-eth1:network" requires="kern-eth1" command="/sbin/dhcpcd eth1" restart="yes" />
+ <mod-daemon id="daemon-dhcp-net-ethernet-eth0" name="net-eth0" provides="net-eth0" requires="kern-eth0" command="/sbin/dhcpcd eth0" restart="yes" />
+ <mod-daemon id="daemon-dhcp-net-ethernet-eth1" name="net-eth1" provides="net-eth1" requires="kern-eth1" command="/sbin/dhcpcd eth1" restart="yes" />
 
  <mod-daemon id="daemon-metalog" name="syslogger (metalog)" provides="syslog" requires="localmount" command="/usr/sbin/metalog" restart="yes" />
 
- <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:network" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
-
- <group id="network" enable="net-lo:net-eth0" seq="most" />
+ <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
 <!-- tty initialisation -->
  <tty-manage-utmp b="true" />
@@ -77,11 +76,11 @@
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="localmount:hostname:tty:keyboard:net-lo:ipc:utmp:syslog" />
+  <enable mod="hostname:tty:keyboard:ipc:utmp:syslog:network:mythtv:clock" />
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="net-eth0:audio" />
+  <enable mod="audio" />
 <!-- this is for testing: -->
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>

@@ -1,6 +1,8 @@
 2006/05/26: mdeininger
  * i implemented these "groups" during the last few days; it seems to work agreeably
    now (except for defining members in the configuration files)
+ * just got reading group atoms from the configuration to work
+ * there had been a bug in cfg_findnode
 
 2006/05/23: mdeininger
  * had flawed logics in mod-daemon

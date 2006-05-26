@@ -250,7 +250,7 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  if (!cur || !id) return NULL;
  if (!strcmp(cur->id, id)) return cur;
 
- while (cur->next) {
+ while (cur) {
   if (!strcmp(cur->id, id) && (!type || !(cur->nodetype ^ type)))
    return cur;
   cur = cur->next;

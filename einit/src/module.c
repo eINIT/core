@@ -540,17 +540,60 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    struct mloadplan **planl = NULL;
    unsigned int cc = 0, npcc;
    curmod = mlist;
+   char **groupatoms = NULL;
+   uint32_t groupoptions = 0;
+   struct cfgnode *gnode = NULL;
+
+   while (gnode = cfg_findnode (atoms[si], 0, gnode)) {
+    uint32_t gni = 0;
+    if (gnode->arbattrs)
+     for (; gnode->arbattrs[gni]; gni+=2) {
+      if (!strcmp (gnode->arbattrs[gni], "group")) {
+       char **gatoms = str2set (':', estrdup(gnode->arbattrs[gni+1]));
+       int32_t gatomi = 0;
+       groupoptions |= MOD_PLAN_GROUP;
+       if (gatoms) {
+        for (; gatoms[gatomi]; gatomi++)
+         groupatoms = (char **)setadd ((void **)groupatoms, (void *) gatoms[gatomi]);
+        free (gatoms);
+       }
+      } else if (!strcmp (gnode->arbattrs[gni], "seq")) {
+       if (!strcmp (gnode->arbattrs[gni+1], "most")) {
+        groupoptions |= MOD_PLAN_GROUP_SEQ_MOST;
+       }
+       else if (!strcmp (gnode->arbattrs[gni+1], "any"))
+        groupoptions |= MOD_PLAN_GROUP_SEQ_ANY;
+       else if (!strcmp (gnode->arbattrs[gni+1], "any-iop"))
+        groupoptions |= MOD_PLAN_GROUP_SEQ_ANY_IOP;
+       else if (!strcmp (gnode->arbattrs[gni+1], "all"))
+        groupoptions |= MOD_PLAN_GROUP_SEQ_ALL;
+      }
+     }
+   }
 
    while (curmod) {
     struct smodule *tmp = curmod->module;
-    if (tmp &&
-        (tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
+    if (tmp) {
+     uint32_t gai;
+     if ((tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
         (tmp->provides && strinset (tmp->provides, atoms[si]))) {
-     cand[cc] = curmod;
-     cc++;
+      addmodtocandidates:
+      cand[cc] = curmod;
+      cc++;
+      curmod = curmod->next;
+      continue;
+     }
+     if (groupatoms) {
+      for (gai = 0; groupatoms[gai]; gai++) {
+       if (tmp->provides && strinset (tmp->provides, groupatoms[gai])) {
+        goto addmodtocandidates;
+       }
+      }
+     }
     }
     curmod = curmod->next;
    }
+   free (groupatoms);
 //   printf ("looking for \"%s\": %i candidate(s)\n", atoms[si], cc);
 
    if (cc) {
@@ -560,24 +603,31 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
     cplan->task = task;
     pthread_mutex_init (&cplan->mutex, NULL);
-	if (cc == 1) {
+    if (cc == 1) {
      cplan->mod = cand[0];
-	 cplan->options = MOD_PLAN_IDLE;
-	 if (cand[0]->module) {
-	  if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
+     cplan->options = MOD_PLAN_IDLE;
+     if (cand[0]->module) {
+      if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
       if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides);
      }
+     if (groupatoms)
+      cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si]);
     } else if (cc > 1) {
      unsigned int icc = 0;
      planl = (struct mloadplan **)ecalloc (cc+1, sizeof (struct mloadplan *));
      cplan->group = planl;
-	 cplan->options = MOD_PLAN_IDLE + MOD_PLAN_GROUP + MOD_PLAN_GROUP_SEQ_ANY_IOP;
+     if (groupoptions)
+      cplan->options |= groupoptions;
+     else
+      cplan->options = MOD_PLAN_IDLE + MOD_PLAN_GROUP + MOD_PLAN_GROUP_SEQ_ANY_IOP;
+
+     cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si]);
      for (; icc < cc; icc++) {
       tcplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
       tcplan->task = task;
       tcplan->mod = cand[icc];
       tcplan->options = MOD_PLAN_IDLE;
-	  pthread_mutex_init (&tcplan->mutex, NULL);
+      pthread_mutex_init (&tcplan->mutex, NULL);
       if (cand[icc]->module) {
        if (cand[icc]->module->requires) {
         int ir = 0;
@@ -814,7 +864,10 @@ void mod_plan_ls (struct mloadplan *plan) {
     name = plan->mod->module->name;
   }
  } else if (plan->options & MOD_PLAN_GROUP) {
-  rid = "group";
+  if (plan->provides && plan->provides[0])
+   rid = plan->provides[0];
+  else
+   rid = "group";
   if (plan->options & MOD_PLAN_GROUP_SEQ_ANY)
    name = "any element";
   else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY_IOP)
