@@ -13,7 +13,6 @@
  <edje-theme-path s="etc/einit/edje" />
  <edje-theme-default s="einit.edj" />
  <edje-theme-default-component s="einit/splash" />
-
  <sysconf-ctrl-alt-del b="disabled" />
  <sysv-script-path s="/etc/init.d" />
  <sysv-script-type s="plain" />
@@ -30,22 +29,22 @@
 
  <mod-shell id="shell-sysconf" name="sysconf dummy" provides="sysconf" enable="echo sysconf;" disable="echo sysconf;" />
 
- <mod-shell id="shell-mount-proc" name="/proc filesystem" provides="fs-proc" requires="sysconf:fs-root" enable="echo 'rm /etc/mtab;mount proc /proc -t proc;cp /proc/mounts /etc/mtab';" disable="echo 'umount /proc';" />
- <mod-shell id="shell-mount-sys" name="/sys filesystem" provides="fs-sys" requires="sysconf" enable="echo 'mount sys /sys -t sysfs';" disable="echo 'umount /sys';" />
- <mod-shell id="shell-mount-root" name="/ filesystem (RW-access)" provides="fs-root" requires="sysconf" enable="echo 'mount / -o remount,rw; rm -Rf /var/run/*';" disable="echo 'mount / -o remount,ro';" />
- <mod-shell id="shell-mount" name="local filesystems" provides="localmount" requires="sysconf:fs-proc:fs-root:fs-dev:fs-sys" enable="echo 'mount -at nonfs,noproc,noshm';" disable="echo 'umount -ar';" />
+ <mod-shell id="shell-mount-proc-dummy" name="/proc filesystem" provides="fs-proc" requires="sysconf:fs-root" enable="echo 'rm /etc/mtab;mount proc /proc -t proc;cp /proc/mounts /etc/mtab';" disable="echo 'umount /proc';" />
+ <mod-shell id="shell-mount-sys-dummy" name="/sys filesystem" provides="fs-sys" requires="sysconf" enable="echo 'mount sys /sys -t sysfs';" disable="echo 'umount /sys';" />
+ <mod-shell id="shell-mount-root-dummy" name="/ filesystem (RW-access)" provides="fs-root" requires="sysconf" enable="echo 'mount / -o remount,rw; rm -Rf /var/run/*';" disable="echo 'mount / -o remount,ro';" />
+ <mod-shell id="shell-mount-dummy" name="local filesystems" provides="localmount" requires="sysconf:fs-proc:fs-root:fs-dev:fs-sys" enable="echo 'mount -at nonfs,noproc,noshm';" disable="echo 'umount -ar';" />
 
 <!-- udev -->
  <mod-daemon id="daemon-udev" name="udevd for /dev" provides="fs-dev:udev" requires="fs-sys" command="/sbin/udevd" prepare="echo '/bin/mount udev -t tmpfs /dev; /sbin/udevstart';" cleanup="echo 'umount /dev';"/>
 
- <mod-shell id="shell-kern-eth0" name="net-eth0" provides="kern-eth0" requires="sysconf" enable="/sbin/modprobe ${kernel_module_eth0}" disable="/sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
- <mod-shell id="shell-kern-eth1" name="net-eth0" provides="kern-eth1" requires="sysconf" enable="/sbin/modprobe ${kernel_module_eth1}" disable="/sbin/rmmod ${kernel_module_eth1}" variables="kernel_module_eth1"/>
+ <mod-shell id="shell-kern-eth0-dummy" name="net-eth0" provides="kern-eth0" requires="sysconf" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
+ <mod-shell id="shell-kern-eth1-dummy" name="net-eth0" provides="kern-eth1" requires="sysconf" enable="echon /sbin/modprobe ${kernel_module_eth1}" disable="echo /sbin/rmmod ${kernel_module_eth1}" variables="kernel_module_eth1"/>
 
- <mod-shell id="shell-hostname" name="set hostname" provides="hostname" enable="/bin/hostname ${conf_hostname}" disable="" variables="conf_hostname"/>
- <mod-shell id="shell-domainname" name="set NIS/YP domainname" provides="domainname" enable="/bin/domainname ${conf_domainname}" disable="" variables="conf_domainname"/>
+ <mod-shell id="shell-hostname-dummy" name="set hostname" provides="hostname" enable="echo /bin/hostname ${conf_hostname}" disable="" variables="conf_hostname"/>
+ <mod-shell id="shell-domainname-dummy" name="set NIS/YP domainname" provides="domainname" enable="echo /bin/domainname ${conf_domainname}" disable="" variables="conf_domainname"/>
 
 <!-- for testing -->
- <mod-shell id="shell-keyboard" name="keyboard layout" provides="keyboard" requires="localmount" enable="/bin/loadkeys ${conf_keyboardlayout}" disable=";" variables="conf_keyboardlayout" />
+ <mod-shell id="shell-keyboard-dummy" name="keyboard layout" provides="keyboard" requires="localmount" enable="echo /bin/loadkeys ${conf_keyboardlayout}" disable=";" variables="conf_keyboardlayout" />
 
 <!-- daemon-spawn-timeout: integer: if a daemon dies within this many seconds,
   it won't be restarted and will will be thought of as being defunct or
@@ -59,7 +58,9 @@
 
  <mod-daemon id="daemon-metalog" name="syslogger (metalog)" provides="syslog" requires="localmount" command="/usr/sbin/metalog" restart="yes" />
 
- <mod-shell id="shell-net-loopback" name="net-lo" provides="net-lo:network" enable="/sbin/ifconfig lo up" disable="ifconfig lo down" />
+ <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:network" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
+
+ <group id="network" enable="net-lo:net-eth0" seq="most" />
 
 <!-- tty initialisation -->
  <tty-manage-utmp b="true" />

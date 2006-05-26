@@ -383,27 +383,26 @@ struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int fla
  }
  if (flag == MOD_P2H_LIST) {
   ihash = hashadd (ihash, "", plan);
- } else if (plan->mod) {
-  if (plan->mod->module) {
-   struct smodule *mod = plan->mod->module;
+ } else {
    switch (flag) {
     case MOD_P2H_PROVIDES:
     case MOD_P2H_PROVIDES_NOBACKUP:
-     if (mod->rid)
-      ihash = hashadd (ihash, mod->rid, plan);
-     if (mod->provides && mod->provides[0]) {
-      for (i = 0; mod->provides[i]; i++)
-       ihash = hashadd (ihash, mod->provides[i], (void *)plan);
+     if (plan->mod && plan->mod->module && plan->mod->module->rid)
+      ihash = hashadd (ihash, plan->mod->module->rid, plan);
+     if (plan->provides && plan->provides[0]) {
+      for (i = 0; plan->provides[i]; i++) {
+       ihash = hashadd (ihash, plan->provides[i], (void *)plan);
+      }
      }
      break;
     case MOD_P2H_REQUIRES:
-     if (mod->requires && mod->requires[0]) {
-      for (i = 0; mod->requires[i]; i++)
-       ihash = hashadd (ihash, mod->requires[i], (void *)plan);
+     if (plan->requires && plan->requires[0]) {
+      for (i = 0; plan->requires[i]; i++) {
+       ihash = hashadd (ihash, plan->requires[i], (void *)plan);
+      }
      }
      break;
    }
-  }
  }
 
  return ihash;
@@ -445,12 +444,12 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
 
 //   printf ("%s: %i\n", v->mod->module->rid, v->task);
 
-   if (v->mod && v->mod->module) {
-    if (((v->task & MOD_ENABLE) && (v->mod->module->requires)) ||
-        ((v->task & MOD_DISABLE) && ((v->mod->module->provides)))) {
+//   if (v->mod && v->mod->module) {
+    if (((v->task & MOD_ENABLE) && (v->requires)) ||
+        ((v->task & MOD_DISABLE) && ((v->provides)))) {
      char **req = NULL;
-     if (v->task & MOD_ENABLE) req = v->mod->module->requires;
-     if (v->task & MOD_DISABLE) req = v->mod->module->provides;
+     if (v->task & MOD_ENABLE) req = v->requires;
+     if (v->task & MOD_DISABLE) req = v->provides;
 
      for (j = 0; req[j]; j++) {
       adds = 0;
@@ -476,7 +475,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
      plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v);
      plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
     }
-   }
+//   }
   }
   d = hashnext (d);
  }
@@ -519,6 +518,12 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct mloadplan *cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
     cplan->task = MOD_DISABLE;
     cplan->mod = curmod;
+    cplan->options = MOD_PLAN_IDLE;
+    if (curmod->module) {
+     if (curmod->module->requires) cplan->requires = (char **)setdup ((void **)curmod->module->requires);
+     if (curmod->module->provides) cplan->provides = (char **)setdup ((void **)curmod->module->provides);
+    }
+    pthread_mutex_init (&cplan->mutex, NULL);
     plan->orphaned = (struct mloadplan **)setadd ((void **)plan->orphaned, (void *)cplan);
    }
    skipcurmod:
@@ -554,21 +559,44 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     }
     cplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
     cplan->task = task;
-    cplan->mod = cand[0];
-
-    nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan);
-
-    if (cc > 1) {
-     unsigned int icc = 1;
-     planl = (struct mloadplan **)ecalloc (cc, sizeof (struct mloadplan *));
-     cplan->left = planl;
+    pthread_mutex_init (&cplan->mutex, NULL);
+	if (cc == 1) {
+     cplan->mod = cand[0];
+	 cplan->options = MOD_PLAN_IDLE;
+	 if (cand[0]->module) {
+	  if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
+      if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides);
+     }
+    } else if (cc > 1) {
+     unsigned int icc = 0;
+     planl = (struct mloadplan **)ecalloc (cc+1, sizeof (struct mloadplan *));
+     cplan->group = planl;
+	 cplan->options = MOD_PLAN_IDLE + MOD_PLAN_GROUP + MOD_PLAN_GROUP_SEQ_ANY_IOP;
      for (; icc < cc; icc++) {
       tcplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
       tcplan->task = task;
       tcplan->mod = cand[icc];
-      cplan->left[icc-1] = tcplan;
+      tcplan->options = MOD_PLAN_IDLE;
+	  pthread_mutex_init (&tcplan->mutex, NULL);
+      if (cand[icc]->module) {
+       if (cand[icc]->module->requires) {
+        int ir = 0;
+        for (; cand[icc]->module->requires[ir]; ir++) {
+         cplan->requires = (char **)setadd ((void **)cplan->requires, (void *)cand[icc]->module->requires[ir]);
+        }
+       }
+       if (cand[icc]->module->provides) {
+        int ir = 0;
+        for (; cand[icc]->module->provides[ir]; ir++) {
+         cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[icc]->module->provides[ir]);
+        }
+       }
+        cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)cand[icc]->module->rid);
+      }
+      cplan->group[icc] = tcplan;
      }
     }
+    nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan);
 
     if (plan && plan->unsatisfied) {
      plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
@@ -598,13 +626,83 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- unsigned int i;
+ int32_t i, status;
  pthread_t **childthreads = NULL;
- if (!plan) return 1;
- if (!plan->mod) i = STATUS_OK;
- else i = mod(plan->task, plan->mod);
+ if (!plan) return STATUS_FAIL;
+ pthread_mutex_lock(&plan->mutex);
+ if (plan->options & MOD_PLAN_OK) return STATUS_OK;
+ if (plan->options & MOD_PLAN_FAIL) return STATUS_FAIL;
+ if (!plan->mod) {
+  if  (!(plan->options & MOD_PLAN_GROUP)) status = STATUS_OK;
+  else if (!plan->group) status = STATUS_FAIL;
+  else {
+   status = STATUS_FAIL;
+   for (; plan->group[plan->position]; plan->position++) {
+    uint32_t retval;
+    retval = mod_plan_commit (plan->group[plan->position]);
+	if (retval == STATUS_ENABLED) retval = STATUS_OK;
+	if (retval == STATUS_DISABLED) retval = STATUS_OK;
+    if (plan->options & MOD_PLAN_GROUP_SEQ_ALL) {
+	 switch (retval) {
+	  case STATUS_FAIL_REQ:
+	   status = STATUS_FAIL_REQ;
+	   goto endofmodaction;
+	   break;
+	  case STATUS_FAIL:
+	   status = STATUS_FAIL;
+	   goto endofmodaction;
+	   break;
+	  case STATUS_IDLE:
+	  case STATUS_OK:
+	   status = STATUS_OK;
+	   break;
+	 }
+    } else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) {
+	 switch (retval) {
+	  case STATUS_FAIL_REQ:
+	   status = STATUS_FAIL_REQ;
+	   goto endofmodaction;
+	   break;
+	  case STATUS_FAIL:
+	   break;
+	  case STATUS_IDLE:
+	  case STATUS_OK:
+	   status = STATUS_OK;
+	   goto endofmodaction;
+	   break;
+	 }
+    } else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY) {
+	 switch (retval) {
+	  case STATUS_FAIL_REQ:
+	  case STATUS_FAIL:
+	   break;
+	  case STATUS_IDLE:
+	  case STATUS_OK:
+	   status = STATUS_OK;
+	   goto endofmodaction;
+	   break;
+	 }
+    } else if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
+	 switch (retval) {
+	  case STATUS_FAIL_REQ:
+	  case STATUS_FAIL:
+	  case STATUS_IDLE:
+	   break;
+	  case STATUS_OK:
+	   status = STATUS_OK;
+	   break;
+	 }
+    }
+   }
+  }
+ } else {
+  status = mod(plan->task, plan->mod);
+  if ((status == STATUS_ENABLED) && (plan->task & MOD_ENABLE)) status = STATUS_OK;
+  else if ((status == STATUS_DISABLED) && (plan->task & MOD_DISABLE)) status = STATUS_OK;
+ }
+ endofmodaction:
 
- if (i & STATUS_OK) {
+ if (status & STATUS_OK) {
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
     pthread_t *th = ecalloc (1, sizeof (pthread_t));
@@ -614,7 +712,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 //    mod_plan_commit (plan->right[i]);
    }
  } else if (plan->left) {
-  for (i = 0; plan->left[i]; i++) {
+  for (status = 0; plan->left[i]; i++) {
    pthread_t *th = ecalloc (1, sizeof (pthread_t));
    if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->left[i])) {
     childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
@@ -624,14 +722,37 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (childthreads) {
   for (i = 0; childthreads[i]; i++) {
-   pthread_join (*(childthreads[i]), NULL);
+   int32_t returnvalue;
+   pthread_join (*(childthreads[i]), (void**) &returnvalue);
+/*   switch (returnvalue) {
+    case STATUS_OK:
+     puts ("success."); break;
+    case STATUS_FAIL_REQ:
+     puts ("can't load yet."); break;
+   }*/
    free (childthreads[i]);
   }
   free (childthreads);
  }
 
- return STATUS_OK;
+ switch (status) {
+  case STATUS_OK:
+   plan->options &= MOD_PLAN_OK;
+   plan->options |= MOD_PLAN_IDLE;
+   plan->options ^= MOD_PLAN_IDLE;
+   break;
+  case STATUS_FAIL:
+   plan->options &= MOD_PLAN_FAIL;
+   plan->options |= MOD_PLAN_IDLE;
+   plan->options ^= MOD_PLAN_IDLE;
+   break;
+ }
+
+ pthread_mutex_unlock(&plan->mutex);
+ return status;
+// return STATUS_OK;
  panic:
+  pthread_mutex_unlock(&plan->mutex);
   bitch (BTCH_ERRNO);
   return STATUS_FAIL;
 }
@@ -692,6 +813,16 @@ void mod_plan_ls (struct mloadplan *plan) {
    if (plan->mod->module->name)
     name = plan->mod->module->name;
   }
+ } else if (plan->options & MOD_PLAN_GROUP) {
+  rid = "group";
+  if (plan->options & MOD_PLAN_GROUP_SEQ_ANY)
+   name = "any element";
+  else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY_IOP)
+   name = "any element, in order of preference";
+  else if (plan->options & MOD_PLAN_GROUP_SEQ_MOST)
+   name = "most elements";
+  else if (plan->options & MOD_PLAN_GROUP_SEQ_ALL)
+   name = "all elements";
  }
  for (i = 0; i < recursion; i++)
   fputs (" ", stdout);
@@ -704,7 +835,7 @@ void mod_plan_ls (struct mloadplan *plan) {
    action = "do something with..."; break;
  }
  printf ("%s %s (%s)\n", action, rid, name);
- while (pass < 3) {
+ while (pass < 4) {
   recursion++;
   switch (pass) {
    case 0:
@@ -731,6 +862,15 @@ void mod_plan_ls (struct mloadplan *plan) {
       fputs (" ", stdout);
 	 cur = plan->orphaned;
      puts ("orphans {");
+	 break;
+    }
+	pass++;
+   case 3:
+    if (plan->group && plan->group[0]) {
+     for (i = 0; i < recursion; i++)
+      fputs (" ", stdout);
+	 cur = plan->group;
+     puts ("GROUP {");
 	 break;
     }
 	pass++;

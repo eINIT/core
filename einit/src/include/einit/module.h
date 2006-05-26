@@ -63,6 +63,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001
 #define MOD_SCHEDULER_PLAN_COMMIT_FINISH 0x1002
 
+#define MOD_PLAN_GROUP_SEQ_ANY 0x0010
+#define MOD_PLAN_GROUP_SEQ_ANY_IOP 0x0020
+#define MOD_PLAN_GROUP_SEQ_MOST 0x0040
+#define MOD_PLAN_GROUP_SEQ_ALL 0x0080
+#define MOD_PLAN_GROUP 0x0100
+#define MOD_PLAN_OK 0x0001
+#define MOD_PLAN_FAIL 0x0002
+#define MOD_PLAN_IDLE 0x0004
+
 #define STATUS_IDLE 0x0000
 #define STATUS_OK 0x8003
 #define STATUS_ABORTED 0x8002
@@ -124,11 +133,16 @@ struct lmodule {
 struct mloadplan {
  uint32_t task;
  struct lmodule *mod;
+ struct mloadplan **group;  /* elements of the tree that form this group */
  struct mloadplan **left;  /* elements of the tree to load on failure */
  struct mloadplan **right; /* elements of the tree to load on success */
  struct mloadplan **orphaned; /* orphaned elements */
  char **unsatisfied;
  char **unavailable;
+ char **requires;
+ char **provides;
+ uint32_t position, options;
+ pthread_mutex_t mutex;
 };
 
 extern struct lmodule mdefault;

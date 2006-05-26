@@ -1,3 +1,7 @@
+2006/05/26: mdeininger
+ * i implemented these "groups" during the last few days; it seems to work agreeably
+   now (except for defining members in the configuration files)
+
 2006/05/23: mdeininger
  * had flawed logics in mod-daemon
 
