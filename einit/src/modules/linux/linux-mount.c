@@ -48,8 +48,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char * provides[] = {"mount", NULL};
 
 struct smodule self = {
- EINIT_VERSION, 1, 0, 0, "Linux-specific Filesystem mounter", "linux-mount", provides, NULL, NULL
+ EINIT_VERSION, 1, EINIT_MOD_LOADER, 0, "Linux-specific Filesystem mounter", "linux-mount", provides, NULL, NULL
 };
+
+int scanmodules (struct lmodule *modchain) {
+}
+
+int configure (struct lmodule *this) {
+}
+
+int cleanup (struct lmodule *this) {
+}
 
 int enable (void *pa, struct mfeedback *status) {
  return STATUS_OK;
