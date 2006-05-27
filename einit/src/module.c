@@ -688,6 +688,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   else {
    if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
     plan->position = 0;
+//    puts ("assuming OK unless something happens");
     status = STATUS_OK;
    } else
     status = STATUS_FAIL;
@@ -712,40 +713,42 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 	   break;
 	 }
     } else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) {
-	 switch (retval) {
-	  case STATUS_FAIL_REQ:
-	   status = STATUS_FAIL_REQ;
-	   goto endofmodaction;
-	   break;
-	  case STATUS_FAIL:
-	   break;
-	  case STATUS_IDLE:
-	  case STATUS_OK:
-	   status = STATUS_OK;
-	   goto endofmodaction;
-	   break;
-	 }
-    } else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY) {
-	 switch (retval) {
-	  case STATUS_FAIL_REQ:
-	  case STATUS_FAIL:
-	   break;
-	  case STATUS_IDLE:
-	  case STATUS_OK:
-	   status = STATUS_OK;
-	   goto endofmodaction;
-	   break;
-	 }
-    } else if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
-	 switch (retval) {
-	  case STATUS_FAIL_REQ:
-	  case STATUS_FAIL:
+     switch (retval) {
+      case STATUS_FAIL_REQ:
        status = STATUS_FAIL_REQ;
-	   break;
-	  case STATUS_OK:
-	  case STATUS_IDLE:
-	   break;
-	 }
+       goto endofmodaction;
+       break;
+      case STATUS_FAIL:
+       break;
+      case STATUS_IDLE:
+      case STATUS_OK:
+       status = STATUS_OK;
+       goto endofmodaction;
+       break;
+     }
+    } else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY) {
+     switch (retval) {
+      case STATUS_FAIL_REQ:
+      case STATUS_FAIL:
+       break;
+      case STATUS_IDLE:
+      case STATUS_OK:
+       status = STATUS_OK;
+       goto endofmodaction;
+       break;
+     }
+    } else if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
+     switch (retval) {
+      case STATUS_FAIL_REQ:
+//       puts ("status set to FAIL_REQ");
+       status = STATUS_FAIL_REQ;
+       break;
+      case STATUS_FAIL:
+      case STATUS_OK:
+      case STATUS_IDLE:
+//       puts ("status unchanged");
+       break;
+     }
     }
    }
   }
@@ -757,6 +760,11 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  endofmodaction:
 
  if (status & STATUS_OK) {
+  if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
+//   puts ("group/most OK");
+/* this will need to be reworked a little... no way to figure out when the group is not being provided anymore */
+   provided = (char **)setadd ((void **)provided, (void *)plan->provides[0]);
+  }
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
     pthread_t *th = ecalloc (1, sizeof (pthread_t));
@@ -842,9 +850,9 @@ void mod_ls () {
  do {
   if (cur->module != NULL) {
    if (cur->module->rid)
-	fputs (cur->module->rid, stdout);
+    fputs (cur->module->rid, stdout);
    if (cur->module->name)
-	printf (" (%s)", cur->module->name, stdout);
+    printf (" (%s)", cur->module->name, stdout);
    puts ("");
   } else
    puts ("(NULL)");
@@ -863,7 +871,7 @@ void mod_plan_ls (struct mloadplan *plan) {
  if (plan->mod) {
   if (plan->mod->module) {
    if (plan->mod->module->rid)
-	rid = plan->mod->module->rid;
+    rid = plan->mod->module->rid;
    if (plan->mod->module->name)
     name = plan->mod->module->name;
   }
@@ -899,20 +907,20 @@ void mod_plan_ls (struct mloadplan *plan) {
     if (plan->left && plan->left[0]) {
      for (i = 0; i < recursion; i++)
       fputs (" ", stdout);
-	 cur = plan->left;
+     cur = plan->left;
      puts ("on failure {");
-	 break;
-	}
-	pass++;
+     break;
+    }
+    pass++;
    case 1:
     if (plan->right && plan->right[0]) {
      for (i = 0; i < recursion; i++)
       fputs (" ", stdout);
-	 cur = plan->right;
+     cur = plan->right;
      puts ("on success {");
-	 break;
+     break;
     }
-	pass++;
+    pass++;
    case 2:
     if (plan->orphaned && plan->orphaned[0]) {
      for (i = 0; i < recursion; i++)
