@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MODULE
 
 #include <einit/module.h>
+#include <einit/config.h>
 
 #define EXPECTED_EIV 1
 
