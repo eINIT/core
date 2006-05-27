@@ -79,11 +79,6 @@
   <enable mod="hostname:tty:keyboard:ipc:utmp:syslog:network:mythtv:clock" />
   <enable-ttys s="tty1-regular" />
  </mode>
- <mode id="default" base="boot">
-  <enable mod="audio" />
-<!-- this is for testing: -->
-  <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
- </mode>
  <mode id="power-off">
   <disable-unspecified b="yes" />
   <enable-ttys s="none" />
