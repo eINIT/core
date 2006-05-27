@@ -1,5 +1,6 @@
 2006/05/27: mdeininger
  * that stuff about what's already being provided and what isn't needs to be reworked
+ * added a placeholder file for a linux-specific filesystem mounter
 
 2006/05/26: mdeininger
  * i implemented these "groups" during the last few days; it seems to work agreeably
