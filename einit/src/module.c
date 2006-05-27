@@ -686,7 +686,11 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   if  (!(plan->options & MOD_PLAN_GROUP)) status = STATUS_OK;
   else if (!plan->group) status = STATUS_FAIL;
   else {
-   status = STATUS_FAIL;
+   if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
+    plan->position = 0;
+    status = STATUS_OK;
+   } else
+    status = STATUS_FAIL;
    for (; plan->group[plan->position]; plan->position++) {
     uint32_t retval;
     retval = mod_plan_commit (plan->group[plan->position]);
@@ -736,10 +740,10 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 	 switch (retval) {
 	  case STATUS_FAIL_REQ:
 	  case STATUS_FAIL:
-	  case STATUS_IDLE:
+       status = STATUS_FAIL_REQ;
 	   break;
 	  case STATUS_OK:
-	   status = STATUS_OK;
+	  case STATUS_IDLE:
 	   break;
 	 }
     }
