@@ -1,3 +1,6 @@
+2006/05/31: mdeininger
+ * temporary workaround for module groups that get cut down to a single module.
+
 2006/05/28: mdeininger
  * updated concept configuration for automatic mounter
  * added a very basic gentoo ebuild

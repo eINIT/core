@@ -606,12 +606,28 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     if (cc == 1) {
      cplan->mod = cand[0];
      cplan->options = MOD_PLAN_IDLE;
-     if (cand[0]->module) {
-      if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
-      if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides);
-     }
-     if (groupatoms)
+     if (groupatoms) {
       cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si]);
+      if (cand[0]->module) {
+       if (cand[0]->module->requires) {
+        int ir = 0;
+        for (; cand[0]->module->requires[ir]; ir++) {
+         cplan->requires = (char **)setadd ((void **)cplan->requires, (void *)cand[0]->module->requires[ir]);
+        }
+       }
+       if (cand[0]->module->provides) {
+        int ir = 0;
+        for (; cand[0]->module->provides[ir]; ir++) {
+         cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[0]->module->provides[ir]);
+        }
+       }
+	  }
+     } else {
+      if (cand[0]->module) {
+       if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
+       if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides);
+      }
+	 }
     } else if (cc > 1) {
      unsigned int icc = 0;
      planl = (struct mloadplan **)ecalloc (cc+1, sizeof (struct mloadplan *));
@@ -641,7 +657,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
          cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[icc]->module->provides[ir]);
         }
        }
-        cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)cand[icc]->module->rid);
+       cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)cand[icc]->module->rid);
       }
       cplan->group[icc] = tcplan;
      }
@@ -683,6 +699,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (plan->options & MOD_PLAN_OK) return STATUS_OK;
  if (plan->options & MOD_PLAN_FAIL) return STATUS_FAIL;
  if (!plan->mod) {
+//  puts ("starting group");
   if  (!(plan->options & MOD_PLAN_GROUP)) status = STATUS_OK;
   else if (!plan->group) status = STATUS_FAIL;
   else {
@@ -760,11 +777,12 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  endofmodaction:
 
  if (status & STATUS_OK) {
-  if (plan->options & MOD_PLAN_GROUP_SEQ_MOST) {
+//  if (plan->group && (plan->options & MOD_PLAN_GROUP_SEQ_MOST)) {
 //   puts ("group/most OK");
 /* this will need to be reworked a little... no way to figure out when the group is not being provided anymore */
+  if (plan->provides && plan->provides [0])
    provided = (char **)setadd ((void **)provided, (void *)plan->provides[0]);
-  }
+//  }
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
     pthread_t *th = ecalloc (1, sizeof (pthread_t));
@@ -965,18 +983,41 @@ void mod_plan_ls (struct mloadplan *plan) {
 
  unsat:
 
+ if (plan->provides && plan->provides[0]) {
+  for (i = 0; plan->provides[i]; i++) {
+   int ic = -1;
+   for (; ic < recursion; ic++)
+    fputs (" ", stdout);
+   printf ("provides: %s\n", plan->provides[i]);
+  }
+ }
+
+
+ if (plan->requires && plan->requires[0]) {
+  for (i = 0; plan->requires[i]; i++) {
+   int ic = -1;
+   for (; ic < recursion; ic++)
+    fputs (" ", stdout);
+   printf ("requires: %s\n", plan->requires[i]);
+  }
+ }
+
  if (plan->unsatisfied && plan->unsatisfied[0]) {
-  for (i = -1; i < recursion; i++)
-   fputs (" ", stdout);
-  for (i = 0; plan->unsatisfied[i]; i++)
+  for (i = 0; plan->unsatisfied[i]; i++) {
+   int ic = -1;
+   for (; ic < recursion; ic++)
+    fputs (" ", stdout);
    printf ("unsatisfied dependency: %s\n", plan->unsatisfied[i]);
+  }
  }
 
  if (plan->unavailable && plan->unavailable[0]) {
-  for (i = -1; i < recursion; i++)
-   fputs (" ", stdout);
-  for (i = 0; plan->unavailable[i]; i++)
+  for (i = 0; plan->unavailable[i]; i++) {
+   int ic = -1;
+   for (; ic < recursion; ic++)
+    fputs (" ", stdout);
    printf ("unavailable dependency: %s\n", plan->unavailable[i]);
+  }
  }
 }
 #endif
