@@ -78,6 +78,20 @@ struct smodule sm_dev = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/dev]", "linux-mount-dev", provides_dev, requires_dev, NULL
 };
 
+char *provides_sys[] = {"/sys", NULL};
+char *requires_sys[] = {"/", NULL};
+
+struct smodule sm_sys = {
+ EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/sys]", "linux-mount-sys", provides_sys, requires_sys, NULL
+};
+
+char *provides_proc[] = {"/proc", NULL};
+char *requires_proc[] = {"/", NULL};
+
+struct smodule sm_proc = {
+ EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/proc]", "linux-mount-proc", provides_proc, requires_proc, NULL
+};
+
 char *provides_root[] = {"/", NULL};
 
 struct smodule sm_root = {
@@ -163,6 +177,12 @@ int scanmodules (struct lmodule *modchain) {
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
 	        NULL, &sm_localmount);
+ mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
+	        (int (*)(void *, struct mfeedback *))disable,
+	        NULL, &sm_sys);
+ mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
+	        (int (*)(void *, struct mfeedback *))disable,
+	        NULL, &sm_proc);
 }
 
 int configure (struct lmodule *this) {
@@ -173,9 +193,9 @@ int cleanup (struct lmodule *this) {
 }
 
 int enable (void *pa, struct mfeedback *status) {
- return STATUS_OK;
+ return STATUS_FAIL;
 }
 
 int disable (void *pa, struct mfeedback *status) {
- return STATUS_OK;
+ return STATUS_FAIL;
 }

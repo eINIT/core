@@ -984,7 +984,7 @@ void mod_plan_ls (struct mloadplan *plan) {
 
  unsat:
 
- if (plan->provides && plan->provides[0]) {
+/* if (plan->provides && plan->provides[0]) {
   for (i = 0; plan->provides[i]; i++) {
    int ic = -1;
    for (; ic < recursion; ic++)
@@ -1019,6 +1019,6 @@ void mod_plan_ls (struct mloadplan *plan) {
     fputs (" ", stdout);
    printf ("unavailable dependency: %s\n", plan->unavailable[i]);
   }
- }
+ }*/
 }
 #endif
