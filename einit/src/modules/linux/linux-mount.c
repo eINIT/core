@@ -55,57 +55,66 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-char *provides[] = {"mount", NULL};
+/* struct definitions */
+struct bd_info {
+ char *label, *uuid, *fs;
+};
+
+struct fstab_entry {
+ char *mountpoint, *device, *options, *fs;
+ uint32_t mountflags;
+};
+
+/* variable definitions */
 char *defaultblockdevicesource[] = {"dev", NULL};
 struct uhash* blockdevices;
 pthread_mutex_t blockdevices_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/* module definitions */
+char *provides[] = {"mount", NULL};
 const struct smodule self = {
  EINIT_VERSION, 1, EINIT_MOD_LOADER, 0, "Linux-specific Filesystem mounter", "linux-mount", provides, NULL, NULL
 };
 
 char *provides_localmount[] = {"localmount", NULL};
 char *requires_localmount[] = {"/", "/dev", NULL};
-
 struct smodule sm_localmount = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [localmount]", "linux-mount-localmount", provides_localmount, requires_localmount, NULL
 };
 
 char *provides_dev[] = {"/dev", NULL};
 char *requires_dev[] = {"/", NULL};
-
 struct smodule sm_dev = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/dev]", "linux-mount-dev", provides_dev, requires_dev, NULL
 };
 
 char *provides_sys[] = {"/sys", NULL};
 char *requires_sys[] = {"/", NULL};
-
 struct smodule sm_sys = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/sys]", "linux-mount-sys", provides_sys, requires_sys, NULL
 };
 
 char *provides_proc[] = {"/proc", NULL};
 char *requires_proc[] = {"/", NULL};
-
 struct smodule sm_proc = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/proc]", "linux-mount-proc", provides_proc, requires_proc, NULL
 };
 
 char *provides_root[] = {"/", NULL};
-
 struct smodule sm_root = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/]", "linux-mount-root", provides_root, NULL, NULL
 };
 
-int enable (void *, struct mfeedback *);
-int disable (void *, struct mfeedback *);
+/* function declarations */
 void find_block_devices_recurse_path (char *);
 void update_block_devices (void);
 int scanmodules (struct lmodule *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
+int enable (void *, struct mfeedback *);
+int disable (void *, struct mfeedback *);
 
+/* function definitions */
 void find_block_devices_recurse_path (char *path) {
  DIR *dir;
  struct dirent *entry;
