@@ -59,7 +59,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char * provides[] = {"ipc", NULL};
-char * requires[] = {"fs-root", NULL};
+char * requires[] = {"/", NULL};
 
 struct smodule self = {
  EINIT_VERSION, 1, 0, 0, "eINIT IPC module", "einit-ipc", provides, requires, NULL

@@ -216,6 +216,10 @@ char **strsetdel (char **set, char *item) {
  char **newset = set;
  int x = 0, y = 0, s = 1, p = 0;
  if (!item || !set) return NULL;
+ if (!set[0]) {
+  free (set);
+  return NULL;
+ }
 
  while (set[y]) {
   if (strcmp(set[y], item)) {
@@ -229,7 +233,7 @@ char **strsetdel (char **set, char *item) {
  }
 
  if (!x) {
-  free (set);
+//  free (set);
   return NULL;
  }
 

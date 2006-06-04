@@ -1,3 +1,10 @@
+2006/06/03: mdeininger
+ * [module.c] i accidentally had the configure() functions in modules called after
+   the scanmodules() functions; this has been fixed
+ * created some functions to search for block devices
+ * there's one weird bug in the str*del() functions (or the mod() function) that
+   seems to be able to cause a double-free
+
 2006/05/31: mdeininger
  * temporary workaround for module groups that get cut down to a single module.
 

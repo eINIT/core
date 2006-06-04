@@ -159,6 +159,16 @@ int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*di
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
+// look for and execute any configure() functions in modules
+  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "configure");
+  if (configfunc != NULL) {
+   configfunc (nmod);
+  }
+// look for any cleanup() functions
+  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
+  if (configfunc != NULL) {
+   nmod->cleanup = configfunc;
+  }
 // EINIT_MOD_LOADER modules will usually want to provide a function to scan
 //  for modules so they can be included in the dependency chain
   if (module->mode & EINIT_MOD_LOADER) {
@@ -189,16 +199,6 @@ int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*di
    if (ftload != NULL) {
     nmod->disable = ftload;
    }
-  }
-// look for and execute any configure() functions in modules
-  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "configure");
-  if (configfunc != NULL) {
-   configfunc (nmod);
-  }
-// look for any cleanup() functions
-  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
-  if (configfunc != NULL) {
-   nmod->cleanup = configfunc;
   }
  }
 
@@ -299,9 +299,9 @@ int mod (unsigned int task, struct lmodule *module) {
    ret = module->disable (module->param, fb);
    if (ret & STATUS_OK) {
     if (t = module->module) {
-     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
+     if (t->provides) for (ti = 0; provided && t->provides[ti]; ti++)
       provided = strsetdel (provided, t->provides[ti]);
-     if (t->requires) for (ti = 0; t->requires[ti]; ti++)
+     if (t->requires) for (ti = 0; required && t->requires[ti]; ti++)
       required = strsetdel (required, t->requires[ti]);
     }
     module->status = STATUS_DISABLED;
@@ -310,6 +310,8 @@ int mod (unsigned int task, struct lmodule *module) {
     fb->status = STATUS_FAIL;
    }
  }
+
+// printf ("%i:%i\n", required, provided);
 
  status_update (fb);
  free (fb);
@@ -621,13 +623,13 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
          cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[0]->module->provides[ir]);
         }
        }
-	  }
+      }
      } else {
       if (cand[0]->module) {
        if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
        if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides);
       }
-	 }
+     }
     } else if (cc > 1) {
      unsigned int icc = 0;
      planl = (struct mloadplan **)ecalloc (cc+1, sizeof (struct mloadplan *));
@@ -712,23 +714,23 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    for (; plan->group[plan->position]; plan->position++) {
     uint32_t retval;
     retval = mod_plan_commit (plan->group[plan->position]);
-	if (retval == STATUS_ENABLED) retval = STATUS_OK;
-	if (retval == STATUS_DISABLED) retval = STATUS_OK;
+    if (retval == STATUS_ENABLED) retval = STATUS_OK;
+    if (retval == STATUS_DISABLED) retval = STATUS_OK;
     if (plan->options & MOD_PLAN_GROUP_SEQ_ALL) {
-	 switch (retval) {
-	  case STATUS_FAIL_REQ:
-	   status = STATUS_FAIL_REQ;
-	   goto endofmodaction;
-	   break;
-	  case STATUS_FAIL:
-	   status = STATUS_FAIL;
-	   goto endofmodaction;
-	   break;
-	  case STATUS_IDLE:
-	  case STATUS_OK:
-	   status = STATUS_OK;
-	   break;
-	 }
+     switch (retval) {
+      case STATUS_FAIL_REQ:
+       status = STATUS_FAIL_REQ;
+       goto endofmodaction;
+       break;
+      case STATUS_FAIL:
+       status = STATUS_FAIL;
+       goto endofmodaction;
+       break;
+      case STATUS_IDLE:
+      case STATUS_OK:
+       status = STATUS_OK;
+       break;
+     }
     } else if (plan->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) {
      switch (retval) {
       case STATUS_FAIL_REQ:
@@ -780,7 +782,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 //  if (plan->group && (plan->options & MOD_PLAN_GROUP_SEQ_MOST)) {
 //   puts ("group/most OK");
 /* this will need to be reworked a little... no way to figure out when the group is not being provided anymore */
-  if (plan->provides && plan->provides [0])
+  if (plan->provides && plan->provides [0] && (plan->task & MOD_ENABLE))
    provided = (char **)setadd ((void **)provided, (void *)plan->provides[0]);
 //  }
   if (plan->right)
@@ -836,7 +838,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   bitch (BTCH_ERRNO);
   return STATUS_FAIL;
 }
-
 
 /* free all elements in the plan */
 int mod_plan_free (struct mloadplan *plan) {
