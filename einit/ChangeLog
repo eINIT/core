@@ -1,4 +1,8 @@
-2006/06/03: mdeininger
+2006/06/05: mdeininger
+ * added some structs that should be able to hold all info the fstab provides
+ * added default configuration for fstab
+
+2006/06/04: mdeininger
  * [module.c] i accidentally had the configure() functions in modules called after
    the scanmodules() functions; this has been fixed
  * created some functions to search for block devices

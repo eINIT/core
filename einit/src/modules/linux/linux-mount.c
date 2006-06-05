@@ -61,14 +61,16 @@ struct bd_info {
 };
 
 struct fstab_entry {
- char *mountpoint, *device, *options, *fs;
+ char *mountpoint, *device, *fs;
+ char **options;
  uint32_t mountflags;
 };
 
 /* variable definitions */
-char *defaultblockdevicesource[] = {"dev", NULL};
-struct uhash* blockdevices;
 pthread_mutex_t blockdevices_mutex = PTHREAD_MUTEX_INITIALIZER;
+char *defaultblockdevicesource[] = {"dev", NULL};
+struct uhash *blockdevices = NULL;
+struct uhash *fstab = NULL;
 
 /* module definitions */
 char *provides[] = {"mount", NULL};
