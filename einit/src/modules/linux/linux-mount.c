@@ -69,6 +69,7 @@ struct fstab_entry {
 /* variable definitions */
 pthread_mutex_t blockdevices_mutex = PTHREAD_MUTEX_INITIALIZER;
 char *defaultblockdevicesource[] = {"dev", NULL};
+char *defaultfstabsource[] = {"label", "configuration", "fstab", NULL};
 struct uhash *blockdevices = NULL;
 struct uhash *fstab = NULL;
 
@@ -110,6 +111,7 @@ struct smodule sm_root = {
 /* function declarations */
 void find_block_devices_recurse_path (char *);
 void update_block_devices (void);
+void update_fstab (void);
 int scanmodules (struct lmodule *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
@@ -171,6 +173,25 @@ void update_block_devices (void) {
  if (bds != defaultblockdevicesource) free (bds);
 }
 
+void update_fstab (void) {
+ struct cfgnode *node = cfg_findnode ("mount-fstab-source", 0, NULL);
+ char **dfst = defaultfstabsource;
+ uint32_t i = 0;
+
+ if (node && node->svalue)
+  dfst = str2set (':', node->svalue);
+
+ for (i = 0; dfst[i]; i++) {
+  if (!strcmp(dfst[i], "configuration")) {
+   struct cfgnode *fstabnode = NULL;
+   while (fstabnode = cfg_findnode ("fstab-entry", 0, fstabnode)) {
+   }
+  } else fprintf (stderr, "einit-linux-mount: unhandled fstab-source \"%s\"\n", dfst[i]);
+ }
+
+ if (dfst != defaultfstabsource) free (dfst);
+}
+
 int scanmodules (struct lmodule *modchain) {
 /* struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
 
@@ -198,6 +219,7 @@ int scanmodules (struct lmodule *modchain) {
 
 int configure (struct lmodule *this) {
  update_block_devices ();
+ update_fstab();
 }
 
 int cleanup (struct lmodule *this) {
