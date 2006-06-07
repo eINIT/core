@@ -1,3 +1,10 @@
+2006/06/07: mdeininger
+ * created a file src/modules/common-mount.c to contain parts of the automounter
+   that would be of interest to other implementations as well
+ * moved pexec.h
+ * moved some sources out of mod-daemon.c into dexec.[ch] just like i did with
+   pexec.[ch] -- it could come in handy with the automounters.
+
 2006/06/05: mdeininger
  * added some structs that should be able to hold all info the fstab provides
  * added default configuration for fstab

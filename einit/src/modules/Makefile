@@ -32,13 +32,16 @@ vis-text.so: vis-text.c
 pexec.o: pexec.c
 	${CCC} -c pexec.c
 
+dexec.o: dexec.c
+	${CCC} -c dexec.c
+
 mod-exec.so: mod-exec.c pexec.o
 	${CCC} -c mod-exec.c
 	${CCL} mod-exec.o pexec.o -o mod-exec.so
 
-mod-daemon.so: mod-daemon.c pexec.o
+mod-daemon.so: mod-daemon.c pexec.o dexec.o
 	${CCC} -c mod-daemon.c
-	${CCL} mod-daemon.o pexec.o -o mod-daemon.so
+	${CCL} mod-daemon.o pexec.o dexec.o -o mod-daemon.so
 
 tty.so: tty.c
 	${CCL} tty.c -o tty.so
