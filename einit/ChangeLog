@@ -1,3 +1,7 @@
+2006/06/08: mdeininger
+ * started moving some things from linux-mount to common-mount
+ * added a bsd directory to contain bsd-specific modules.
+
 2006/06/07: mdeininger
  * created a file src/modules/common-mount.c to contain parts of the automounter
    that would be of interest to other implementations as well
