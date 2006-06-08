@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so
+all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.o
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -34,6 +34,9 @@ pexec.o: pexec.c
 
 dexec.o: dexec.c
 	${CCC} -c dexec.c
+
+common-mount.o: common-mount.c
+	${CCC} -c common-mount.c
 
 mod-exec.so: mod-exec.c pexec.o
 	${CCC} -c mod-exec.c
