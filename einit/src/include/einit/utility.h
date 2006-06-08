@@ -77,4 +77,16 @@ void *ecalloc (size_t, size_t);
 void *erealloc (void *, size_t);
 char *estrdup (char *);
 
+/* functions to deal with function lists */
+
+/* call_functions_in_set(): 
+ the first argument is a hash with functions that take one argument, the second argument
+ is a set that contains function names and the third argument is what is to be passed to
+ any called functions.
+ it works like this: the hash names are interpreted as function names and all functions
+ in the set are then called with the third argument.
+ the return value is the number of functions that returned != 0
+*/
+unsigned char call_functions_in_set (struct uhash *, char **, void *);
+
 #endif /* _UTILITY_H */

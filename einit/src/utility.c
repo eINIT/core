@@ -375,3 +375,21 @@ char *estrdup (char *s) {
 
  return p;
 }
+
+/* functions to deal with function lists */
+
+unsigned char call_functions_in_set (struct uhash *functions, char **set, void *argument) {
+ if (!functions || !set || !set[0]) return 0;
+ uint32_t i = 0, ret = 0;
+ unsigned char (*fu) (void *);
+
+ for (i = 0; set[i]; i++) {
+  struct uhash *fe = hashfind (functions, set[i]);
+  if (fe && fe->value) {
+   fu = (unsigned char (*)(void *)) fe->value;
+   ret += ( fu (argument) == 0 );
+  }
+ }
+
+ return ret;
+}
