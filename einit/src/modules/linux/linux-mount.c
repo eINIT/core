@@ -111,17 +111,23 @@ unsigned char read_label_linux (void *na) {
  struct ext2_super_block ext2_sb;
  struct bd_info *bdi;
  while (element) {
+  bdi = (struct bd_info *)element->value;
+
   FILE *device = NULL;
   device = fopen (element->key, "r");
   if (device) {
    if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 1)) {
 //    perror (element->key);
+    bdi->fs_status = FS_STATUS_ERROR | FS_STATUS_ERROR_IO;
    } else {
     if (ext2_sb.s_magic == EXT2_SUPER_MAGIC) {
      __u8 uuid[16];
-     memcpy (uuid, ext2_sb.s_uuid, 16);
      char c_uuid[38];
-     bdi = (struct bd_info *)element->value;
+
+     bdi->fs_type = FILESYSTEM_EXT2;
+     bdi->fs_status = FS_STATUS_OK;
+
+     memcpy (uuid, ext2_sb.s_uuid, 16);
      if (ext2_sb.s_volume_name[0])
       bdi->label = estrdup (ext2_sb.s_volume_name);
      snprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
@@ -129,8 +135,10 @@ unsigned char read_label_linux (void *na) {
     }
    }
    fclose (device);
+  } else {
+   bdi->fs_status = FS_STATUS_ERROR | FS_STATUS_ERROR_IO;
+//   perror (element->key);
   }
-//  else perror (element->key);
   errno = 0;
   element = hashnext (element);
  }
