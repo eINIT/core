@@ -1,3 +1,6 @@
+2006/06/10: mdeininger
+ * created the global variable osinfo that gets filled out via uname.
+
 2006/06/08: mdeininger
  * started moving some things from linux-mount to common-mount
  * added a bsd directory to contain bsd-specific modules.

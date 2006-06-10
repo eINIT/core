@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _CONFIG_H
 
 #include <einit/module.h>
+#include <sys/utsname.h>
 
 #define BUFFERSIZE 1024
 #define NODE_MODE 1
@@ -79,6 +80,7 @@ struct sconfiguration {
 };
 
 struct sconfiguration *sconfiguration;
+struct utsname osinfo;
 
 // load configuration
 int cfg_load (char *);

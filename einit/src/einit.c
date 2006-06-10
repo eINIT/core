@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/utsname.h>
 
 int main(int, char **);
 int print_usage_info ();
@@ -71,6 +72,8 @@ int main(int argc, char **argv) {
  int i;
  char *cfgfile = "/etc/einit/default.xml";
 
+ uname (&osinfo);
+
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
    switch (argv[i][1]) {
@@ -88,7 +91,7 @@ int main(int argc, char **argv) {
      return 0;
    }
  }
- puts("eINIT " EINIT_VERSION_LITERAL ": booting");
+ printf ("eINIT %s: booting %s\n", EINIT_VERSION_LITERAL, osinfo.sysname);
  if (cfg_load (cfgfile) == -1) {
   fputs ("ERROR: cfg_load() failed\n", stderr);
   return -1;
