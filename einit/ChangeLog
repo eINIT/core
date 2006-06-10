@@ -1,5 +1,9 @@
 2006/06/10: mdeininger
  * created the global variable osinfo that gets filled out via uname.
+ * some work on the automounter
+ * reading labels and uuid from ext2/3 filesystems works properly now.
+   NOTE: these ext2 uuids are really weird, took me a while to figure out how
+   they work...
 
 2006/06/08: mdeininger
  * started moving some things from linux-mount to common-mount

@@ -41,6 +41,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/common-mount.h>
 
+/* filesystem header files */
+#include <linux/ext2_fs.h>
+
+#define MOUNT_SUPPORT_EXT2
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -50,8 +55,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* variable definitions */
 char *defaultblockdevicesource[] = {"dev", NULL};
 char *defaultfstabsource[] = {"label", "configuration", "fstab", NULL};
+char *defaultfilesystems[] = {"linux", NULL};
 struct uhash *blockdevices = NULL;
 struct uhash *fstab = NULL;
+struct uhash *blockdevicesupdatefunctions = NULL;
+struct uhash *fstabupdatefunctions = NULL;
+struct uhash *filesystemlabelupdaterfunctions = NULL;
 
 /* module definitions */
 char *provides[] = {"mount", NULL};
@@ -89,6 +98,7 @@ struct smodule sm_root = {
 };
 
 /* function declarations */
+unsigned char read_label_linux (void *);
 int scanmodules (struct lmodule *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
@@ -96,15 +106,37 @@ int enable (void *, struct mfeedback *);
 int disable (void *, struct mfeedback *);
 
 /* function definitions */
+unsigned char read_label_linux (void *na) {
+ struct uhash *element = blockdevices;
+ struct ext2_super_block ext2_sb;
+ struct bd_info *bdi;
+ while (element) {
+  FILE *device = NULL;
+  device = fopen (element->key, "r");
+  if (device) {
+   if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 1)) {
+//    perror (element->key);
+   } else {
+    if (ext2_sb.s_magic == EXT2_SUPER_MAGIC) {
+     __u8 uuid[16];
+     memcpy (uuid, ext2_sb.s_uuid, 16);
+     char c_uuid[38];
+     bdi = (struct bd_info *)element->value;
+     if (ext2_sb.s_volume_name[0])
+      bdi->label = estrdup (ext2_sb.s_volume_name);
+     snprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+     bdi->uuid = estrdup (c_uuid);
+    }
+   }
+   fclose (device);
+  }
+//  else perror (element->key);
+  errno = 0;
+  element = hashnext (element);
+ }
+}
 
 int scanmodules (struct lmodule *modchain) {
-/* struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
-
- modinfo->mode = EINIT_MOD_EXEC;
- modinfo->rid = "linux-mount-localmount";
- modinfo->name = "linux-mount [localmount]";
- modinfo->provides = {NULL}; */
-
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
 	        NULL, &sm_dev);
@@ -123,7 +155,12 @@ int scanmodules (struct lmodule *modchain) {
 }
 
 int configure (struct lmodule *this) {
+ blockdevicesupdatefunctions = hashadd (blockdevicesupdatefunctions, "dev", (void *)find_block_devices_recurse_path);
+ fstabupdatefunctions = hashadd (fstabupdatefunctions, "label", (void *)forge_fstab_by_label);
+ filesystemlabelupdaterfunctions = hashadd (filesystemlabelupdaterfunctions, "linux", (void *)read_label_linux);
+
  update_block_devices ();
+ update_filesystem_labels ();
  update_fstab();
 }
 
