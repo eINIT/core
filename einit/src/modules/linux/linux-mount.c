@@ -40,6 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/common-mount.h>
+#include <sys/mount.h>
+#include <linux/fs.h>
+#include <errno.h>
+#include <string.h>
 
 /* filesystem header files */
 #include <linux/ext2_fs.h>
@@ -51,6 +55,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if EXPECTED_EIV != EINIT_VERSION
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
+
+enum mounttask {
+ MOUNT_ROOT = 1,
+ MOUNT_DEV = 2,
+ MOUNT_PROC = 3,
+ MOUNT_SYS = 4,
+ MOUNT_LOCALMOUNT = 5,
+ MOUNT_REMOTEMOUNT = 6,
+};
 
 /* variable definitions */
 char *defaultblockdevicesource[] = {"dev", NULL};
@@ -102,8 +115,9 @@ unsigned char read_label_linux (void *);
 int scanmodules (struct lmodule *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
-int enable (void *, struct mfeedback *);
-int disable (void *, struct mfeedback *);
+int enable (enum mounttask, struct mfeedback *);
+int disable (enum mounttask, struct mfeedback *);
+int mountwrapper (char *, struct mfeedback *);
 
 /* function definitions */
 unsigned char read_label_linux (void *na) {
@@ -142,29 +156,32 @@ unsigned char read_label_linux (void *na) {
   errno = 0;
   element = hashnext (element);
  }
+ return 0;
 }
 
 int scanmodules (struct lmodule *modchain) {
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
-	        NULL, &sm_dev);
+	        (void *)MOUNT_DEV, &sm_dev);
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
-	        NULL, &sm_root);
+	        (void *)MOUNT_ROOT, &sm_root);
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
-	        NULL, &sm_localmount);
+	        (void *)MOUNT_LOCALMOUNT, &sm_localmount);
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
-	        NULL, &sm_sys);
+	        (void *)MOUNT_SYS, &sm_sys);
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
-	        NULL, &sm_proc);
+	        (void *)MOUNT_PROC, &sm_proc);
 }
 
 int configure (struct lmodule *this) {
  blockdevicesupdatefunctions = hashadd (blockdevicesupdatefunctions, "dev", (void *)find_block_devices_recurse_path);
  fstabupdatefunctions = hashadd (fstabupdatefunctions, "label", (void *)forge_fstab_by_label);
+ fstabupdatefunctions = hashadd (fstabupdatefunctions, "configuration", (void *)read_fstab_from_configuration);
+ fstabupdatefunctions = hashadd (fstabupdatefunctions, "fstab", (void *)read_fstab);
  filesystemlabelupdaterfunctions = hashadd (filesystemlabelupdaterfunctions, "linux", (void *)read_label_linux);
 
  update_block_devices ();
@@ -175,10 +192,71 @@ int configure (struct lmodule *this) {
 int cleanup (struct lmodule *this) {
 }
 
-int enable (void *pa, struct mfeedback *status) {
- return STATUS_FAIL;
+int mountwrapper (char *mountpoint, struct mfeedback *status) {
 }
 
-int disable (void *pa, struct mfeedback *status) {
- return STATUS_FAIL;
+int enable (enum mounttask p, struct mfeedback *status) {
+ struct uhash *he = NULL;
+ struct fstab_entry *fse = NULL;
+ struct bd_info *bdi = NULL;
+ char *fstype;
+ void *fsdata = NULL;
+ char verbosebuffer [1024];
+ switch (p) {
+  case MOUNT_ROOT:
+   if ((he = hashfind (fstab, "/")) &&
+       (fse = (struct fstab_entry *)he->value) &&
+       (he = hashfind (blockdevices, fse->device)) &&
+       (bdi = (struct bd_info *)he->value)) {
+    if (bdi->label)
+     snprintf (verbosebuffer, 1023, "remounting root filesystem (%s=%s) r/w", fse->device, bdi->label);
+    else
+     snprintf (verbosebuffer, 1023, "remounting root filesystem (%s) r/w", fse->device);
+    status->verbose = verbosebuffer;
+    status_update (status);
+    switch (bdi->fs_type) {
+     case FILESYSTEM_EXT2:
+      fstype = "ext2";
+      break;
+     default:
+      status->verbose = "device filesystem type not known";
+      status_update (status);
+      return STATUS_FAIL;
+    }
+    if (mount (fse->device, fse->mountpoint, fstype, MS_REMOUNT, fsdata) == -1) {
+     if (errno < sys_nerr)
+      status->verbose = (char *)sys_errlist[errno];
+     else
+      status->verbose = "an unknown error occured while trying to mount the root filesystem";
+     status_update (status);
+     return STATUS_FAIL;
+    }
+    return STATUS_OK;
+   } else {
+    status->verbose = "nothing known about the root filesystem; bailing out.";
+    status_update (status);
+    return STATUS_FAIL;
+   }
+   break;
+  default:
+   status->verbose = "I'm clueless?";
+   status_update (status);
+   return STATUS_FAIL;
+   break;
+ }
+}
+
+int disable (enum mounttask p, struct mfeedback *status) {
+ switch (p) {
+  case MOUNT_ROOT:
+   status->verbose = "remounting root filesystem r/o";
+   status_update (status);
+   return STATUS_OK;
+   break;
+  default:
+   status->verbose = "I'm clueless?";
+   status_update (status);
+   return STATUS_FAIL;
+   break;
+ }
 }

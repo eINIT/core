@@ -4,6 +4,8 @@
  * reading labels and uuid from ext2/3 filesystems works properly now.
    NOTE: these ext2 uuids are really weird, took me a while to figure out how
    they work...
+ * first success: mounting the root filesystem with linux-mount worked just a
+   second ago
 
 2006/06/08: mdeininger
  * started moving some things from linux-mount to common-mount

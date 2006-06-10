@@ -387,7 +387,7 @@ unsigned char call_functions_in_set (struct uhash *functions, char **set, void *
   struct uhash *fe = hashfind (functions, set[i]);
   if (fe && fe->value) {
    fu = (unsigned char (*)(void *)) fe->value;
-   ret += ( fu (argument) == 0 ) ? 1 : 0;
+   ret += ( fu (argument) == 0 ) ? 0 : 1;
   } else ret += 1;
  }
 

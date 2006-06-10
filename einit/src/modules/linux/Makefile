@@ -17,6 +17,6 @@ install: linux-sysconf.so linux-mount.so
 linux-sysconf.so: linux-sysconf.c
 	${CCL} linux-sysconf.c -o linux-sysconf.so
 
-linux-mount.so: linux-mount.c ../common-mount.o
+linux-mount.so: linux-mount.c ../common-mount.o ../pexec.o ../dexec.o
 	${CCC} -c linux-mount.c
-	${CCL} linux-mount.o ../common-mount.o -o linux-mount.so
+	${CCL} linux-mount.o ../common-mount.o ../pexec.o ../dexec.o -o linux-mount.so
