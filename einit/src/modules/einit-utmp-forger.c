@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char * provides[] = {"utmp", NULL};
-char * requires[] = {"localmount", NULL};
+char * requires[] = {"mount/local", NULL};
 
 struct smodule self = {
  EINIT_VERSION, 1, 0, 0, "System-V compatibility: UTMP forger", "einit-utmp-forger", provides, requires, NULL

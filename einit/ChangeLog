@@ -1,3 +1,8 @@
+2006/06/11: mdeininger
+ * some more restructuring
+ * need a list with filesystem capabilities, so I started on a new XML file
+   that contains this information
+
 2006/06/10: mdeininger
  * created the global variable osinfo that gets filled out via uname.
  * some work on the automounter

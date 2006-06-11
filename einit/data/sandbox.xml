@@ -5,6 +5,7 @@
  <include s="shell.xml" />
  <include s="daemon.xml" />
  <include s="rc.xml" />
+ <include s="filesystems.xml" />
 
  <forge-utmp b="true" i="3" />
  <forge-wtmp b="true" />
@@ -33,7 +34,7 @@
 <!-- <mod-shell id="shell-mount-proc-dummy" name="/proc filesystem" provides="/proc" requires="/" enable="echo 'rm /etc/mtab;mount proc /proc -t proc;cp /proc/mounts /etc/mtab';" disable="echo 'umount /proc';" />
  <mod-shell id="shell-mount-sys-dummy" name="/sys filesystem" provides="/sys" enable="echo 'mount sys /sys -t sysfs';" disable="echo 'umount /sys';" />
  <mod-shell id="shell-mount-root-dummy" name="/ filesystem (RW-access)" provides="/" enable="echo 'mount / -o remount,rw; rm -Rf /var/run/*';" disable="echo 'mount / -o remount,ro';" />
- <mod-shell id="shell-mount-dummy" name="local filesystems" provides="localmount" requires="/proc:/:/dev:/sys" enable="echo 'mount -at nonfs,noproc,noshm';" disable="echo 'umount -ar';" /> -->
+ <mod-shell id="shell-mount-dummy" name="local filesystems" provides="mount/local" requires="/proc:/:/dev:/sys" enable="echo 'mount -at nonfs,noproc,noshm';" disable="echo 'umount -ar';" /> -->
 
 <!-- udev -->
  <mod-daemon id="daemon-udev" name="udevd for /dev" provides="/dev:udev" requires="/sys" command="/sbin/udevd" prepare="echo '/bin/mount udev -t tmpfs /dev; /sbin/udevstart';" cleanup="echo 'umount /dev';"/>
@@ -45,7 +46,7 @@
  <mod-shell id="shell-domainname-dummy" name="set NIS/YP domainname" provides="domainname" enable="echo /bin/domainname ${conf_domainname}" disable="" variables="conf_domainname"/>
 
 <!-- for testing -->
- <mod-shell id="shell-keyboard-dummy" name="keyboard layout" provides="keyboard" requires="localmount" enable="echo /bin/loadkeys ${conf_keyboardlayout}" disable=";" variables="conf_keyboardlayout" />
+ <mod-shell id="shell-keyboard-dummy" name="keyboard layout" provides="keyboard" requires="mount/local" enable="echo /bin/loadkeys ${conf_keyboardlayout}" disable=";" variables="conf_keyboardlayout" />
 
 <!-- daemon-spawn-timeout: integer: if a daemon dies within this many seconds,
   it won't be restarted and will will be thought of as being defunct or
@@ -53,9 +54,9 @@
  <daemon-spawn-timeout i="20" />
 <!-- you can define daemoni like this -->
  <mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="tty" command="/usr/sbin/gpm" restart="yes" />
- <mod-daemon id="daemon-apmd" name="APMD" provides="apmd" requires="localmount" command="/usr/sbin/apmd" restart="yes" />
+ <mod-daemon id="daemon-apmd" name="APMD" provides="apmd" requires="mount/local" command="/usr/sbin/apmd" restart="yes" />
 
- <mod-daemon id="daemon-metalog" name="syslogger (metalog)" provides="syslog" requires="localmount" command="/usr/sbin/metalog" restart="yes" />
+ <mod-daemon id="daemon-metalog" name="syslogger (metalog)" provides="syslog" requires="mount/local" command="/usr/sbin/metalog" restart="yes" />
 
  <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
@@ -74,7 +75,7 @@
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="localmount" />
+  <enable mod="mount/local" />
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

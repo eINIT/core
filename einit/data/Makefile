@@ -11,4 +11,5 @@ install:
 	${INSTALL} ${IPARAM} sandbox.xml ${ETCDIR}
 	${INSTALL} ${IPARAM} rc.xml ${ETCDIR}
 	${INSTALL} ${IPARAM} mount.xml ${ETCDIR}
+	${INSTALL} ${IPARAM} filesystems.xml ${ETCDIR}
 	if test -n "`echo ${PMODULES}|grep efl`"; then cd einit.edje && ${MAKE} install; fi

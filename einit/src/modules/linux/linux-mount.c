@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/fs.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
 
 /* filesystem header files */
 #include <linux/ext2_fs.h>
@@ -61,9 +62,15 @@ enum mounttask {
  MOUNT_DEV = 2,
  MOUNT_PROC = 3,
  MOUNT_SYS = 4,
- MOUNT_LOCALMOUNT = 5,
- MOUNT_REMOTEMOUNT = 6,
+ MOUNT_LOCAL = 5,
+ MOUNT_REMOTE = 6,
+ MOUNT_ENCRYPTED = 7
 };
+
+#define MOUNT_TF_MOUNT			0x0001
+#define MOUNT_TF_UMOUNT			0x0002
+#define MOUNT_TF_FORCE_RW		0x0010
+#define MOUNT_TF_FORCE_RO		0x0020
 
 /* variable definitions */
 char *defaultblockdevicesource[] = {"dev", NULL};
@@ -81,10 +88,22 @@ const struct smodule self = {
  EINIT_VERSION, 1, EINIT_MOD_LOADER, 0, "Linux-specific Filesystem mounter", "linux-mount", provides, NULL, NULL
 };
 
-char *provides_localmount[] = {"localmount", NULL};
-char *requires_localmount[] = {"/", "/dev", NULL};
-struct smodule sm_localmount = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [localmount]", "linux-mount-localmount", provides_localmount, requires_localmount, NULL
+char *provides_mountlocal[] = {"mount/local", NULL};
+char *requires_mountlocal[] = {"/", "/dev", NULL};
+struct smodule sm_mountlocal = {
+ EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [local]", "linux-mount-local", provides_mountlocal, requires_mountlocal, NULL
+};
+
+char *provides_mountremote[] = {"mount/remote", NULL};
+char *requires_mountremote[] = {"/", "/dev", "network", NULL};
+struct smodule sm_mountremote = {
+ EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [remote]", "linux-mount-remote", provides_mountremote, requires_mountremote, NULL
+};
+
+char *provides_mountencrypted[] = {"mount/encrypted", NULL};
+char *requires_mountencrypted[] = {"/", "/dev", NULL};
+struct smodule sm_mountencrypted = {
+ EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [encrypted]", "linux-mount-encrypted", provides_mountencrypted, requires_mountencrypted, NULL
 };
 
 char *provides_dev[] = {"/dev", NULL};
@@ -117,7 +136,7 @@ int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 int enable (enum mounttask, struct mfeedback *);
 int disable (enum mounttask, struct mfeedback *);
-int mountwrapper (char *, struct mfeedback *);
+int mountwrapper (char *, struct mfeedback *, uint32_t);
 
 /* function definitions */
 unsigned char read_label_linux (void *na) {
@@ -168,7 +187,13 @@ int scanmodules (struct lmodule *modchain) {
 	        (void *)MOUNT_ROOT, &sm_root);
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_LOCALMOUNT, &sm_localmount);
+	        (void *)MOUNT_LOCAL, &sm_mountlocal);
+ mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
+	        (int (*)(void *, struct mfeedback *))disable,
+	        (void *)MOUNT_REMOTE, &sm_mountremote);
+ mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
+	        (int (*)(void *, struct mfeedback *))disable,
+	        (void *)MOUNT_ENCRYPTED, &sm_mountencrypted);
  mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
 	        (int (*)(void *, struct mfeedback *))disable,
 	        (void *)MOUNT_SYS, &sm_sys);
@@ -178,6 +203,8 @@ int scanmodules (struct lmodule *modchain) {
 }
 
 int configure (struct lmodule *this) {
+ read_filesystem_flags_from_configuration (NULL);
+
  blockdevicesupdatefunctions = hashadd (blockdevicesupdatefunctions, "dev", (void *)find_block_devices_recurse_path);
  fstabupdatefunctions = hashadd (fstabupdatefunctions, "label", (void *)forge_fstab_by_label);
  fstabupdatefunctions = hashadd (fstabupdatefunctions, "configuration", (void *)read_fstab_from_configuration);
@@ -192,7 +219,7 @@ int configure (struct lmodule *this) {
 int cleanup (struct lmodule *this) {
 }
 
-int mountwrapper (char *mountpoint, struct mfeedback *status) {
+int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
 }
 
 int enable (enum mounttask p, struct mfeedback *status) {
