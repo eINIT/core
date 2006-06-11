@@ -92,7 +92,7 @@ const struct smodule self = {
 };
 
 char *provides_mountlocal[] = {"mount/local", NULL};
-char *requires_mountlocal[] = {"/", "/dev", NULL};
+char *requires_mountlocal[] = {"/", "/dev", "/sys", "/proc", NULL};
 struct smodule sm_mountlocal = {
  EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [local]", "linux-mount-local", provides_mountlocal, requires_mountlocal, NULL
 };
@@ -277,8 +277,7 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
    if (fse->before_mount)
     pexec (fse->before_mount, fse->variables, 0, 0, status);
 
-//   if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) {
-   if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
+/*   if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
     if (errno == EBUSY) {
      if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) goto mount_panic;
     } else {
@@ -298,7 +297,7 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
     pexec (fse->after_mount, fse->variables, 0, 0, status);
 
    if (fse->manager)
-    startdaemon (fse->manager, status);
+    startdaemon (fse->manager, status); */
 
    return STATUS_OK;
   } else {
@@ -310,18 +309,36 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
 }
 
 int enable (enum mounttask p, struct mfeedback *status) {
+ struct uhash *ha = fstab;
+ struct fstab_entry *fse;
+ uint32_t i;
  switch (p) {
+  case MOUNT_LOCAL:
+   while (ha) {
+    if (strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
+     if ((fse = (struct fstab_entry *)ha->value) && fse->options) {
+      for (i = 0; fse->options[i]; i++) {
+       if (!strcmp (fse->options[i], "noauto")) goto mount_local_skip;
+      }
+     }
+     mountwrapper (ha->key, status, MOUNT_TF_MOUNT);
+    }
+    mount_local_skip:
+    ha = hashnext (ha);
+   }
+   return STATUS_OK;
+   break;
   case MOUNT_ROOT:
-   mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+   return mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
    break;
   case MOUNT_DEV:
-   mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
+   return mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
    break;
   case MOUNT_PROC:
-   mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
+   return mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
    break;
   case MOUNT_SYS:
-   mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
+   return mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
    break;
   default:
    status->verbose = "I'm clueless?";
@@ -332,6 +349,7 @@ int enable (enum mounttask p, struct mfeedback *status) {
 }
 
 int disable (enum mounttask p, struct mfeedback *status) {
+ return STATUS_OK;
  switch (p) {
   case MOUNT_ROOT:
    status->verbose = "remounting root filesystem r/o";

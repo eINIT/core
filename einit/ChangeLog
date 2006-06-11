@@ -4,6 +4,10 @@
    that contains this information
  * internal fstab: added the before-mount, after-mount, before-umount, after-
    umount and manager attributes; they're pretty much self-explanatory
+ * the mount/local step should work now
+   NOTE: mount options are still being ignored. all of them. automatic device-
+   to-mountpoint matching still doesn't work either. and still no processing of
+   /etc/mtab, /proc/mounts or the legacy /etc/fstab.
 
 2006/06/10: mdeininger
  * created the global variable osinfo that gets filled out via uname.
