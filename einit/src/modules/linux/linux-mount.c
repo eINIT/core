@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <einit/pexec.h>
+#include <einit/dexec.h>
 
 /* filesystem header files */
 #include <linux/ext2_fs.h>
@@ -57,6 +59,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+/* definitions */
 enum mounttask {
  MOUNT_ROOT = 1,
  MOUNT_DEV = 2,
@@ -203,6 +206,15 @@ int scanmodules (struct lmodule *modchain) {
 }
 
 int configure (struct lmodule *this) {
+/* pexec configuration */
+ struct cfgnode *node;
+ node = cfg_findnode ("shell", 0, NULL);
+ if (node && node->svalue)
+  shell = (char **)str2set (' ', estrdup(node->svalue));
+ else
+  shell = dshell;
+
+/* own configuration */
  read_filesystem_flags_from_configuration (NULL);
 
  blockdevicesupdatefunctions = hashadd (blockdevicesupdatefunctions, "dev", (void *)find_block_devices_recurse_path);
@@ -220,50 +232,96 @@ int cleanup (struct lmodule *this) {
 }
 
 int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
-}
-
-int enable (enum mounttask p, struct mfeedback *status) {
- struct uhash *he = NULL;
+ struct uhash *he = fstab;
+ struct uhash *de = blockdevices;
  struct fstab_entry *fse = NULL;
  struct bd_info *bdi = NULL;
+ char *source;
  char *fstype;
  void *fsdata = NULL;
+ uint32_t fsntype;
  char verbosebuffer [1024];
- switch (p) {
-  case MOUNT_ROOT:
-   if ((he = hashfind (fstab, "/")) &&
-       (fse = (struct fstab_entry *)he->value) &&
-       (he = hashfind (blockdevices, fse->device)) &&
-       (bdi = (struct bd_info *)he->value)) {
-    if (bdi->label)
-     snprintf (verbosebuffer, 1023, "remounting root filesystem (%s=%s) r/w", fse->device, bdi->label);
-    else
-     snprintf (verbosebuffer, 1023, "remounting root filesystem (%s) r/w", fse->device);
-    status->verbose = verbosebuffer;
-    status_update (status);
-    switch (bdi->fs_type) {
+
+ if (tflags & MOUNT_TF_MOUNT) {
+  if ((he = hashfind (he, mountpoint)) && (fse = (struct fstab_entry *)he->value)) {
+   source = fse->device;
+   fsntype = 0;
+   if ((de = hashfind (de, source)) && (bdi = (struct bd_info *)de->value)) {
+    fsntype = bdi->fs_type;
+   }
+
+   if (fse->fs) {
+    fstype = fse->fs;
+   } else {
+    if (fsntype) switch (fsntype) {
      case FILESYSTEM_EXT2:
       fstype = "ext2";
       break;
      default:
-      status->verbose = "device filesystem type not known";
+      status->verbose = "filesystem type not known";
       status_update (status);
       return STATUS_FAIL;
     }
-    if (mount (fse->device, fse->mountpoint, fstype, MS_REMOUNT, fsdata) == -1) {
+   }
+
+   if (!source)
+    source = fstype;
+
+   if (bdi && bdi->label)
+    snprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
+   else
+    snprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
+   status->verbose = verbosebuffer;
+   status_update (status);
+
+   if (fse->before_mount)
+    pexec (fse->before_mount, fse->variables, 0, 0, status);
+
+//   if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) {
+   if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
+    if (errno == EBUSY) {
+     if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) goto mount_panic;
+    } else {
+     mount_panic:
      if (errno < sys_nerr)
       status->verbose = (char *)sys_errlist[errno];
      else
-      status->verbose = "an unknown error occured while trying to mount the root filesystem";
+      status->verbose = "an unknown error occured while trying to mount the filesystem";
      status_update (status);
+     if (fse->after_umount)
+      pexec (fse->after_umount, fse->variables, 0, 0, status);
      return STATUS_FAIL;
     }
-    return STATUS_OK;
-   } else {
-    status->verbose = "nothing known about the root filesystem; bailing out.";
-    status_update (status);
-    return STATUS_FAIL;
    }
+
+   if (fse->after_mount)
+    pexec (fse->after_mount, fse->variables, 0, 0, status);
+
+   if (fse->manager)
+    startdaemon (fse->manager, status);
+
+   return STATUS_OK;
+  } else {
+   status->verbose = "nothing known about this mountpoint; bailing out.";
+   status_update (status);
+   return STATUS_FAIL;
+  }
+ }
+}
+
+int enable (enum mounttask p, struct mfeedback *status) {
+ switch (p) {
+  case MOUNT_ROOT:
+   mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+   break;
+  case MOUNT_DEV:
+   mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
+   break;
+  case MOUNT_PROC:
+   mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
+   break;
+  case MOUNT_SYS:
+   mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
    break;
   default:
    status->verbose = "I'm clueless?";

@@ -2,6 +2,8 @@
  * some more restructuring
  * need a list with filesystem capabilities, so I started on a new XML file
    that contains this information
+ * internal fstab: added the before-mount, after-mount, before-umount, after-
+   umount and manager attributes; they're pretty much self-explanatory
 
 2006/06/10: mdeininger
  * created the global variable osinfo that gets filled out via uname.

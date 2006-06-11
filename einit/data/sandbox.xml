@@ -36,8 +36,8 @@
  <mod-shell id="shell-mount-root-dummy" name="/ filesystem (RW-access)" provides="/" enable="echo 'mount / -o remount,rw; rm -Rf /var/run/*';" disable="echo 'mount / -o remount,ro';" />
  <mod-shell id="shell-mount-dummy" name="local filesystems" provides="mount/local" requires="/proc:/:/dev:/sys" enable="echo 'mount -at nonfs,noproc,noshm';" disable="echo 'umount -ar';" /> -->
 
-<!-- udev -->
- <mod-daemon id="daemon-udev" name="udevd for /dev" provides="/dev:udev" requires="/sys" command="/sbin/udevd" prepare="echo '/bin/mount udev -t tmpfs /dev; /sbin/udevstart';" cleanup="echo 'umount /dev';"/>
+<!-- udev dummy -->
+<!-- <mod-daemon id="daemon-udev" name="udevd for /dev" provides="/dev:udev" requires="/sys" command="/sbin/udevd" prepare="echo '/bin/mount udev -t tmpfs /dev; /sbin/udevstart';" cleanup="echo 'umount /dev';"/> -->
 
  <mod-shell id="shell-kern-eth0-dummy" name="net-eth0" provides="kern-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
  <mod-shell id="shell-kern-eth1-dummy" name="net-eth0" provides="kern-eth1" enable="echon /sbin/modprobe ${kernel_module_eth1}" disable="echo /sbin/rmmod ${kernel_module_eth1}" variables="kernel_module_eth1"/>
