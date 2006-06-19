@@ -71,6 +71,9 @@
  <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="no" TERM="linux" />
  <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" TERM="linux" />
 
+<!-- dummy daemon -->
+ <mod-daemon id="daemon-dummy" provides="dummyd" command="/bin/sh -c 'while true; do echo -n .; sleep 1; done'" restart="yes" />
+
  <mode id="feedback">
   <enable mod="feedback-visual" />
  </mode>
@@ -79,7 +82,7 @@
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc" />
+  <enable mod="ipc:dummyd" />
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">
