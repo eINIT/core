@@ -83,7 +83,7 @@ int ipc (char *cmd) {
  }
  if (len == -1) bitch (BTCH_ERRNO);
  while ((len = read (sock, buffer, 1023)) > 0) {
-  buffer[len+1] = 0;
+  buffer[len] = 0;
   fputs (buffer, stdout);
  }
  if (len == -1) bitch (BTCH_ERRNO);

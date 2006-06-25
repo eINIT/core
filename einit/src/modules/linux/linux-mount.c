@@ -388,7 +388,7 @@ void linux_mount_ipc_handler(struct einit_event *event) {
    while (cur) {
     val = (struct bd_info *) cur->value;
     if (val) {
-     snprintf (buffer, 1024, "%s [type=%s;label=%s;uuid=%s;flags=%i]\n", val->fs, val->fs_type, val->label, val->uuid, val->fs_status);
+     snprintf (buffer, 1023, "%s [type=%i;label=%s;uuid=%s;flags=%i]\n", val->fs, val->fs_type, val->label, val->uuid, val->fs_status);
      write (event->integer, buffer, strlen (buffer));
     }
     cur = hashnext (cur);
