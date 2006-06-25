@@ -1,3 +1,9 @@
+2006/06/25: mdeininger
+ * added a "sandbox"-flag to configure: sets the prefix to `pwd`/sandbox and
+   #defines SANDBOX
+ * did some cleaning (I had already done this but... you know how sf.net CVS
+   had some trouble)
+
 2006/06/19: mdeininger
  whoops, my new playstation 2 seems to keep me fairly occupied... anyway, here
  goes:

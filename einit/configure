@@ -41,6 +41,10 @@ for param in $@; do
 	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG -g";
+	elif test "$param" = "--sandbox"; then
+		echo -n " SANDBOX";
+		XCFLAGS="$XCFLAGS -DSANDBOX";
+		PREFIX=`pwd`/sandbox;
 	elif test "$param" = "--enable-sysv"; then
 		echo -n " SYSV";
 		XCFLAGS="$XCFLAGS -DSYSV";

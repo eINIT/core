@@ -274,10 +274,11 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
    status->verbose = verbosebuffer;
    status_update (status);
 
+#ifndef SANDBOX
    if (fse->before_mount)
     pexec (fse->before_mount, fse->variables, 0, 0, status);
 
-/*   if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
+   if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
     if (errno == EBUSY) {
      if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) goto mount_panic;
     } else {
@@ -297,7 +298,8 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
     pexec (fse->after_mount, fse->variables, 0, 0, status);
 
    if (fse->manager)
-    startdaemon (fse->manager, status); */
+    startdaemon (fse->manager, status);
+#endif
 
    return STATUS_OK;
   } else {
@@ -305,6 +307,8 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
    status_update (status);
    return STATUS_FAIL;
   }
+ }
+ if (tflags & MOUNT_TF_MOUNT) {
  }
 }
 

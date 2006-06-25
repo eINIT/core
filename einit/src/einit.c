@@ -70,7 +70,11 @@ int cleanup () {
 
 int main(int argc, char **argv) {
  int i;
+#ifdef SANDBOX
+ char *cfgfile = "etc/einit/sandbox.xml";
+#else
  char *cfgfile = "/etc/einit/default.xml";
+#endif
 
  uname (&osinfo);
 
