@@ -82,7 +82,7 @@
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc:dummyd" />
+  <enable mod="ipc" />
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">

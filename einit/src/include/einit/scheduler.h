@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <sys/types.h>
 #include <einit/utility.h>
+#include <einit/event.h>
 #include <signal.h>
 
 #define SCHEDULER_SWITCH_MODE 0x0001
@@ -87,5 +88,7 @@ void *sched_run_sigchild (void *);
 
 void sched_signal_sigchld (int, siginfo_t *, void *);
 void sched_signal_sigint (int, siginfo_t *, void *);
+
+void sched_event_handler(struct einit_event *);
 
 #endif

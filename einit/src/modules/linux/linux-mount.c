@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/common-mount.h>
+#include <einit/event.h>
 #include <sys/mount.h>
 #include <linux/fs.h>
 #include <errno.h>
@@ -141,6 +142,8 @@ int enable (enum mounttask, struct mfeedback *);
 int disable (enum mounttask, struct mfeedback *);
 int mountwrapper (char *, struct mfeedback *, uint32_t);
 
+void linux_mount_ipc_handler(struct einit_event *);
+
 /* function definitions */
 unsigned char read_label_linux (void *na) {
  struct uhash *element = blockdevices;
@@ -226,6 +229,8 @@ int configure (struct lmodule *this) {
  update_block_devices ();
  update_filesystem_labels ();
  update_fstab();
+
+ event_listen (EINIT_EVENT_TYPE_IPC, linux_mount_ipc_handler);
 }
 
 int cleanup (struct lmodule *this) {
@@ -294,6 +299,8 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
     }
    }
 
+   fse->fs_status |= FS_STATUS_MOUNTED;
+
    if (fse->after_mount)
     pexec (fse->after_mount, fse->variables, 0, 0, status);
 
@@ -308,7 +315,7 @@ int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
    return STATUS_FAIL;
   }
  }
- if (tflags & MOUNT_TF_MOUNT) {
+ if (tflags & MOUNT_TF_UMOUNT) {
  }
 }
 
@@ -365,5 +372,27 @@ int disable (enum mounttask p, struct mfeedback *status) {
    status_update (status);
    return STATUS_FAIL;
    break;
+ }
+}
+
+void linux_mount_ipc_handler(struct einit_event *event) {
+ if (!event) return;
+ char **argv = (char **) event->set;
+ if (argv[0] && argv[1] && !strcmp (argv[0], "mount")) {
+  if (!strcmp (argv[1], "ls_fstab")) {
+   write (event->integer, "ls_fstab\n", 20);
+  } else if (!strcmp (argv[1], "ls_blockdev")) {
+   char buffer[1024];
+   struct uhash *cur = blockdevices;
+   struct bd_info *val = NULL;
+   while (cur) {
+    val = (struct bd_info *) cur->value;
+    if (val) {
+     snprintf (buffer, 1024, "%s [type=%s;label=%s;uuid=%s;flags=%i]\n", val->fs, val->fs_type, val->label, val->uuid, val->fs_status);
+     write (event->integer, buffer, strlen (buffer));
+    }
+    cur = hashnext (cur);
+   }
+  }
  }
 }

@@ -3,6 +3,9 @@
    #defines SANDBOX
  * did some cleaning (I had already done this but... you know how sf.net CVS
    had some trouble)
+ * I was thinking for a while, and now I'm pretty sure that einit needs some
+   sort of event-system, so, I added that and made some "improvements" to the
+   current IPC code.
 
 2006/06/19: mdeininger
  whoops, my new playstation 2 seems to keep me fairly occupied... anyway, here

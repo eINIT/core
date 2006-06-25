@@ -63,6 +63,7 @@ int print_usage_info () {
 
 int ipc (char *cmd) {
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
+ char buffer[1024];
  struct sockaddr_un saddr;
  int len;
  if (sock == -1)
@@ -79,6 +80,11 @@ int ipc (char *cmd) {
  while ((len = write (sock, cmd, strlen(cmd)+1)) != -1) {
   if (len < strlen (cmd)) cmd += len;
   else break;
+ }
+ if (len == -1) bitch (BTCH_ERRNO);
+ while ((len = read (sock, buffer, 1023)) > 0) {
+  buffer[len+1] = 0;
+  fputs (buffer, stdout);
  }
  if (len == -1) bitch (BTCH_ERRNO);
 
@@ -129,9 +135,8 @@ int main(int argc, char **argv) {
  }
 
  l = strlen(c);
- c = erealloc (c, (l+1)*sizeof (char));
- c[l] = '\n';
- c[l+1] = 0;
+ c = erealloc (c, (l+9)*sizeof (char));
+ c = strcat (c, "\nIPC//out\n\0");
 
  ipc(c);
 

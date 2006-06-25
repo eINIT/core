@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <einit/scheduler.h>
+#include <einit/event.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -67,35 +68,22 @@ struct smodule self = {
 
 pthread_t ipc_thread;
 
-int ipc_process (char *cmd) {
- char **argv = str2set (' ', cmd);
- int argc = setcount ((void **)argv);
- if (!argv) return bitch (BTCH_ERRNO);
- if (!argv[0]) {
+int ipc_process (char *cmd, uint32_t fd) {
+ if (!strcmp (cmd, "IPC//out")) {
+  return 1;
+ } else {
+  char **argv = str2set (' ', cmd);
+  struct einit_event *event = ecalloc (1, sizeof(struct einit_event));
+
+  event->type = EINIT_EVENT_TYPE_IPC;
+  event->set = (void **)argv;
+  event->integer = fd;
+  event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
+  free (event);
+
   free (argv);
-  return bitch (BTCH_ERRNO);
+  return 0;
  }
-
- if (!strcmp (argv[0], "power") && (argc > 1)) {
-  if (!strcmp (argv[1], "off")) {
-   sched_queue (SCHEDULER_SWITCH_MODE, "power-off");
-   sched_queue (SCHEDULER_POWER_OFF, NULL);
-  }
-  if (!strcmp (argv[1], "reset")) {
-   sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
-   sched_queue (SCHEDULER_POWER_RESET, NULL);
-  }
- }
-
- if (!strcmp (argv[0], "rc") && (argc > 2)) {
-  if (!strcmp (argv[1], "switch-mode")) {
-   sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
-  } else {
-   sched_queue (SCHEDULER_MOD_ACTION, (void *)strsetdup (argv+1));
-  }
- }
-
- free (argv);
 }
 
 void * ipc_wait (void *unused_parameter) {
@@ -159,15 +147,13 @@ void * ipc_wait (void *unused_parameter) {
    for (i = 0; i < br; i++) {
     if ((buf[i] == '\n') || (buf[i] == '\0')) {
      lbuf[ic] = 0;
-     if (lbuf[0])
-      ipc_process (lbuf);
+     if (lbuf[0] && ipc_process (lbuf, nfd)) goto close_connection;
      ic = -1;
      lbuf[0] = 0;
-	} else {
+    } else {
      if (ic >= BUFFERSIZE) {
       lbuf[ic] = 0;
-      if (lbuf[0])
-       ipc_process (lbuf);
+      if (lbuf[0] && ipc_process (lbuf, nfd)) goto close_connection;
       ic = 0;
      }
      lbuf[ic] = buf[i];
@@ -177,10 +163,10 @@ void * ipc_wait (void *unused_parameter) {
   }
   lbuf[ic] = 0;
   if (lbuf[0])
-   ipc_process (lbuf);
+   ipc_process (lbuf, nfd);
 
+  close_connection:
   close (nfd);
-//  close (nfd);
  }
 
  if (nfd == -1)

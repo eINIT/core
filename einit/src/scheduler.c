@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
+#include <einit/event.h>
 #include <signal.h>
 #include <errno.h>
 #include <sys/reboot.h>
@@ -205,6 +206,8 @@ void sched_init () {
  action.sa_flags = SA_SIGINFO | SA_RESTART;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
+
+ event_listen (EINIT_EVENT_TYPE_IPC, sched_event_handler);
 }
 
 int sched_queue (unsigned int task, void *param) {
@@ -424,3 +427,45 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #endif
  return;
 }
+
+void sched_event_handler(struct einit_event *event) {
+ errno = 0;
+ if (!event) return;
+ else {
+  char **argv = (char **)event->set;
+  int argc = setcount ((void **)argv);
+  if (!argv) {
+   bitch (BTCH_ERRNO);
+   return;
+  } else if (!argv[0]) {
+   free (argv);
+   bitch (BTCH_ERRNO);
+   return;
+  }
+
+  if (!strcmp (argv[0], "power") && (argc > 1)) {
+   if (!strcmp (argv[1], "off")) {
+    sched_queue (SCHEDULER_SWITCH_MODE, "power-off");
+    sched_queue (SCHEDULER_POWER_OFF, NULL);
+    write (event->integer, "request processed\n", 19);
+   }
+   if (!strcmp (argv[1], "reset")) {
+    sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
+    sched_queue (SCHEDULER_POWER_RESET, NULL);
+    write (event->integer, "request processed\n", 19);
+   }
+  }
+
+  if (!strcmp (argv[0], "rc") && (argc > 2)) {
+   if (!strcmp (argv[1], "switch-mode")) {
+    sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
+    write (event->integer, "modeswitch queued\n", 19);
+   } else {
+    sched_queue (SCHEDULER_MOD_ACTION, (void *)strsetdup (argv+1));
+    write (event->integer, "request processed\n", 19);
+   }
+  }
+  bitch (BTCH_ERRNO);
+ }
+}
+
