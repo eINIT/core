@@ -1,3 +1,7 @@
+2006/07/09: mdeininger
+ sorry, don't get to much just now
+ * added a new flag to ./configure
+
 2006/06/25: mdeininger
  * added a "sandbox"-flag to configure: sets the prefix to `pwd`/sandbox and
    #defines SANDBOX
