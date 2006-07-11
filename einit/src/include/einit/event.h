@@ -42,13 +42,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EINIT_EVENT_FLAG_BROADCAST	0x0001
 #define EINIT_EVENT_TYPE_IPC		0x0001
+#define EINIT_EVENT_TYPE_REQ_MOUNT	0x0002
+#define EINIT_EVENT_TYPE_CUSTOM		0xFFFF
 
 struct einit_event {
  uint16_t type;
+ char *type_custom;
  void **set;
  char *string;
  int32_t integer;
  unsigned char flag;
+ void *para;
 };
 
 struct event_function {
@@ -59,7 +63,14 @@ struct event_function {
 
 struct event_function *event_functions;
 
-void event_emit (struct einit_event *, uint16_t);
+void *event_emit (struct einit_event *, uint16_t);
 void event_listen (uint16_t, void (*)(struct einit_event *));
+
+#define event_emit_flag(a, b) {\
+	struct einit_event *c = ecalloc (1, sizeof(struct einit_event));\
+	c->type = a;\
+	c->flag = b;\
+	event_emit (c, EINIT_EVENT_FLAG_BROADCAST);\
+	free (c);}
 
 #endif

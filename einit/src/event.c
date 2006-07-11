@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct event_function *event_functions = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void event_emit (struct einit_event *event, uint16_t flags) {
+void *event_emit (struct einit_event *event, uint16_t flags) {
  if (!event || !event->type) return;
  pthread_mutex_lock (&evf_mutex);
   struct event_function *cur = event_functions;

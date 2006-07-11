@@ -71,11 +71,6 @@ enum mounttask {
  MOUNT_ENCRYPTED = 7
 };
 
-#define MOUNT_TF_MOUNT			0x0001
-#define MOUNT_TF_UMOUNT			0x0002
-#define MOUNT_TF_FORCE_RW		0x0010
-#define MOUNT_TF_FORCE_RO		0x0020
-
 /* variable definitions */
 char *defaultblockdevicesource[] = {"dev", NULL};
 char *defaultfstabsource[] = {"label", "configuration", "fstab", NULL};
@@ -143,6 +138,7 @@ int disable (enum mounttask, struct mfeedback *);
 int mountwrapper (char *, struct mfeedback *, uint32_t);
 
 void linux_mount_ipc_handler(struct einit_event *);
+void linux_mount_req_mount_handler(struct einit_event *event);
 
 /* function definitions */
 unsigned char read_label_linux (void *na) {
@@ -231,6 +227,7 @@ int configure (struct lmodule *this) {
  update_fstab();
 
  event_listen (EINIT_EVENT_TYPE_IPC, linux_mount_ipc_handler);
+ event_listen (EINIT_EVENT_TYPE_REQ_MOUNT, linux_mount_req_mount_handler);
 }
 
 int cleanup (struct lmodule *this) {
@@ -323,6 +320,7 @@ int enable (enum mounttask p, struct mfeedback *status) {
  struct uhash *ha = fstab;
  struct fstab_entry *fse;
  uint32_t i;
+// event_emit_flag (EINIT_EVENT_TYPE_REQ_MOUNT, MOUNT_TF_MOUNT);
  switch (p) {
   case MOUNT_LOCAL:
    while (ha) {
@@ -395,4 +393,7 @@ void linux_mount_ipc_handler(struct einit_event *event) {
    }
   }
  }
+}
+
+void linux_mount_req_mount_handler(struct einit_event *event) {
 }
