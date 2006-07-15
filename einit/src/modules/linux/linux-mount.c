@@ -63,20 +63,26 @@ const struct smodule self = {
 };
 
 /* function declarations */
-unsigned char read_metadata_linux (void *);
+unsigned char read_metadata_linux (struct uhash *);
 unsigned char mount_linux_ext2 (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct mfeedback *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 
 /* function definitions */
-unsigned char read_metadata_linux (void *na) {
+unsigned char read_metadata_linux (struct uhash *blockdevices) {
  struct uhash *element = blockdevices;
  struct ext2_super_block ext2_sb;
  struct bd_info *bdi;
- while (element) {
-  bdi = (struct bd_info *)element->value;
+ uint32_t cdev = 0;
 
+ while (element) {
   FILE *device = NULL;
+  bdi = (struct bd_info *)element->value;
+  cdev++;
+
+//  printf ("\e[K\e[sscanning device #%i: %s\e[u", cdev, element->key);
+  printf ("\e[255D\e[Kscanning device #%i: %s... ", cdev, element->key);
+//  printf ("scanning device #%i: %s", cdev, element->key);
   device = fopen (element->key, "r");
   if (device) {
    if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 1)) {
@@ -105,6 +111,8 @@ unsigned char read_metadata_linux (void *na) {
   errno = 0;
   element = hashnext (element);
  }
+
+ puts ("done");
  return 0;
 }
 
@@ -133,9 +141,16 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
 }
 
 int configure (struct lmodule *this) {
+ struct einit_event *ev = ecalloc (1, sizeof(struct einit_event));
+
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
  function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
+
+ ev->type = EINIT_EVENT_TYPE_MOUNT_UPDATE;
+ ev->flag = EVENT_UPDATE_METADATA;
+ event_emit (ev, EINIT_EVENT_FLAG_BROADCAST);
+// free (ev);
 }
 
 int cleanup (struct lmodule *this) {
