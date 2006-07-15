@@ -41,18 +41,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/common-mount.h>
 #include <einit/event.h>
-#include <sys/mount.h>
 #include <linux/fs.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
-#include <einit/pexec.h>
-#include <einit/dexec.h>
 
 /* filesystem header files */
 #include <linux/ext2_fs.h>
-
-#define MOUNT_SUPPORT_EXT2
 
 #define EXPECTED_EIV 1
 
@@ -60,88 +55,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-/* definitions */
-enum mounttask {
- MOUNT_ROOT = 1,
- MOUNT_DEV = 2,
- MOUNT_PROC = 3,
- MOUNT_SYS = 4,
- MOUNT_LOCAL = 5,
- MOUNT_REMOTE = 6,
- MOUNT_ENCRYPTED = 7
-};
-
-/* variable definitions */
-char *defaultblockdevicesource[] = {"dev", NULL};
-char *defaultfstabsource[] = {"label", "configuration", "fstab", NULL};
-char *defaultfilesystems[] = {"linux", NULL};
-struct uhash *blockdevices = NULL;
-struct uhash *fstab = NULL;
-struct uhash *blockdevicesupdatefunctions = NULL;
-struct uhash *fstabupdatefunctions = NULL;
-struct uhash *filesystemlabelupdaterfunctions = NULL;
-
 /* module definitions */
 char *provides[] = {"mount", NULL};
 const struct smodule self = {
- EINIT_VERSION, 1, EINIT_MOD_LOADER, 0, "Linux-specific Filesystem mounter", "linux-mount", provides, NULL, NULL
-};
-
-char *provides_mountlocal[] = {"mount/local", NULL};
-char *requires_mountlocal[] = {"/", "/dev", "/sys", "/proc", NULL};
-struct smodule sm_mountlocal = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [local]", "linux-mount-local", provides_mountlocal, requires_mountlocal, NULL
-};
-
-char *provides_mountremote[] = {"mount/remote", NULL};
-char *requires_mountremote[] = {"/", "/dev", "network", NULL};
-struct smodule sm_mountremote = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [remote]", "linux-mount-remote", provides_mountremote, requires_mountremote, NULL
-};
-
-char *provides_mountencrypted[] = {"mount/encrypted", NULL};
-char *requires_mountencrypted[] = {"/", "/dev", NULL};
-struct smodule sm_mountencrypted = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [encrypted]", "linux-mount-encrypted", provides_mountencrypted, requires_mountencrypted, NULL
-};
-
-char *provides_dev[] = {"/dev", NULL};
-char *requires_dev[] = {"/", NULL};
-struct smodule sm_dev = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/dev]", "linux-mount-dev", provides_dev, requires_dev, NULL
-};
-
-char *provides_sys[] = {"/sys", NULL};
-char *requires_sys[] = {"/", NULL};
-struct smodule sm_sys = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/sys]", "linux-mount-sys", provides_sys, requires_sys, NULL
-};
-
-char *provides_proc[] = {"/proc", NULL};
-char *requires_proc[] = {"/", NULL};
-struct smodule sm_proc = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/proc]", "linux-mount-proc", provides_proc, requires_proc, NULL
-};
-
-char *provides_root[] = {"/", NULL};
-struct smodule sm_root = {
- EINIT_VERSION, 1, EINIT_MOD_EXEC, 0, "linux-mount [/]", "linux-mount-root", provides_root, NULL, NULL
+ EINIT_VERSION, 1, 0, 0, "Linux-specific Filesystem-Mounter Functions", "linux-mount", provides, NULL, NULL
 };
 
 /* function declarations */
-unsigned char read_label_linux (void *);
-int scanmodules (struct lmodule *);
+unsigned char read_metadata_linux (void *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
-int enable (enum mounttask, struct mfeedback *);
-int disable (enum mounttask, struct mfeedback *);
-int mountwrapper (char *, struct mfeedback *, uint32_t);
-
-void linux_mount_ipc_handler(struct einit_event *);
-void linux_mount_req_mount_handler(struct einit_event *event);
 
 /* function definitions */
-unsigned char read_label_linux (void *na) {
+unsigned char read_metadata_linux (void *na) {
  struct uhash *element = blockdevices;
  struct ext2_super_block ext2_sb;
  struct bd_info *bdi;
@@ -180,223 +106,12 @@ unsigned char read_label_linux (void *na) {
  return 0;
 }
 
-int scanmodules (struct lmodule *modchain) {
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_DEV, &sm_dev);
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_ROOT, &sm_root);
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_LOCAL, &sm_mountlocal);
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_REMOTE, &sm_mountremote);
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_ENCRYPTED, &sm_mountencrypted);
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_SYS, &sm_sys);
- mod_add (NULL, (int (*)(void *, struct mfeedback *))enable,
-	        (int (*)(void *, struct mfeedback *))disable,
-	        (void *)MOUNT_PROC, &sm_proc);
+unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse) {
+ return 1;
 }
 
 int configure (struct lmodule *this) {
-/* pexec configuration */
- struct cfgnode *node;
- node = cfg_findnode ("shell", 0, NULL);
- if (node && node->svalue)
-  shell = (char **)str2set (' ', estrdup(node->svalue));
- else
-  shell = dshell;
-
-/* own configuration */
- read_filesystem_flags_from_configuration (NULL);
-
- blockdevicesupdatefunctions = hashadd (blockdevicesupdatefunctions, "dev", (void *)find_block_devices_recurse_path);
- fstabupdatefunctions = hashadd (fstabupdatefunctions, "label", (void *)forge_fstab_by_label);
- fstabupdatefunctions = hashadd (fstabupdatefunctions, "configuration", (void *)read_fstab_from_configuration);
- fstabupdatefunctions = hashadd (fstabupdatefunctions, "fstab", (void *)read_fstab);
- filesystemlabelupdaterfunctions = hashadd (filesystemlabelupdaterfunctions, "linux", (void *)read_label_linux);
-
- update_block_devices ();
- update_filesystem_labels ();
- update_fstab();
-
- event_listen (EINIT_EVENT_TYPE_IPC, linux_mount_ipc_handler);
- event_listen (EINIT_EVENT_TYPE_REQ_MOUNT, linux_mount_req_mount_handler);
-
- function_post ("fs-read-label", 1, (void *)read_label_linux);
- function_post ("fs-mount", 1, (void *)mountwrapper);
-}
-
-int cleanup (struct lmodule *this) {
-}
-
-int mountwrapper (char *mountpoint, struct mfeedback *status, uint32_t tflags) {
- struct uhash *he = fstab;
- struct uhash *de = blockdevices;
- struct fstab_entry *fse = NULL;
- struct bd_info *bdi = NULL;
- char *source;
- char *fstype;
- void *fsdata = NULL;
- uint32_t fsntype;
- char verbosebuffer [1024];
-
- if (tflags & MOUNT_TF_MOUNT) {
-  if ((he = hashfind (he, mountpoint)) && (fse = (struct fstab_entry *)he->value)) {
-   source = fse->device;
-   fsntype = 0;
-   if ((de = hashfind (de, source)) && (bdi = (struct bd_info *)de->value)) {
-    fsntype = bdi->fs_type;
-   }
-
-   if (fse->fs) {
-    fstype = fse->fs;
-   } else {
-    if (fsntype) switch (fsntype) {
-     case FILESYSTEM_EXT2:
-      fstype = "ext2";
-      break;
-     default:
-      status->verbose = "filesystem type not known";
-      status_update (status);
-      return STATUS_FAIL;
-    }
-   }
-
-   if (!source)
-    source = fstype;
-
-   if (bdi && bdi->label)
-    snprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
-   else
-    snprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
-   status->verbose = verbosebuffer;
-   status_update (status);
-
-#ifndef SANDBOX
-   if (fse->before_mount)
-    pexec (fse->before_mount, fse->variables, 0, 0, status);
-
-   if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
-    if (errno == EBUSY) {
-     if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) goto mount_panic;
-    } else {
-     mount_panic:
-     if (errno < sys_nerr)
-      status->verbose = (char *)sys_errlist[errno];
-     else
-      status->verbose = "an unknown error occured while trying to mount the filesystem";
-     status_update (status);
-     if (fse->after_umount)
-      pexec (fse->after_umount, fse->variables, 0, 0, status);
-     return STATUS_FAIL;
-    }
-   }
-
-   fse->fs_status |= FS_STATUS_MOUNTED;
-
-   if (fse->after_mount)
-    pexec (fse->after_mount, fse->variables, 0, 0, status);
-
-   if (fse->manager)
-    startdaemon (fse->manager, status);
-#endif
-
-   return STATUS_OK;
-  } else {
-   status->verbose = "nothing known about this mountpoint; bailing out.";
-   status_update (status);
-   return STATUS_FAIL;
-  }
- }
- if (tflags & MOUNT_TF_UMOUNT) {
- }
-}
-
-int enable (enum mounttask p, struct mfeedback *status) {
- struct uhash *ha = fstab;
- struct fstab_entry *fse;
- uint32_t i;
-// event_emit_flag (EINIT_EVENT_TYPE_REQ_MOUNT, MOUNT_TF_MOUNT);
- switch (p) {
-  case MOUNT_LOCAL:
-   while (ha) {
-    if (strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
-     if ((fse = (struct fstab_entry *)ha->value) && fse->options) {
-      for (i = 0; fse->options[i]; i++) {
-       if (!strcmp (fse->options[i], "noauto")) goto mount_local_skip;
-      }
-     }
-     mountwrapper (ha->key, status, MOUNT_TF_MOUNT);
-    }
-    mount_local_skip:
-    ha = hashnext (ha);
-   }
-   return STATUS_OK;
-   break;
-  case MOUNT_ROOT:
-   return mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
-   break;
-  case MOUNT_DEV:
-   return mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
-   break;
-  case MOUNT_PROC:
-   return mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
-   break;
-  case MOUNT_SYS:
-   return mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
-   break;
-  default:
-   status->verbose = "I'm clueless?";
-   status_update (status);
-   return STATUS_FAIL;
-   break;
- }
-}
-
-int disable (enum mounttask p, struct mfeedback *status) {
- return STATUS_OK;
- switch (p) {
-  case MOUNT_ROOT:
-   status->verbose = "remounting root filesystem r/o";
-   status_update (status);
-   return STATUS_OK;
-   break;
-  default:
-   status->verbose = "I'm clueless?";
-   status_update (status);
-   return STATUS_FAIL;
-   break;
- }
-}
-
-void linux_mount_ipc_handler(struct einit_event *event) {
- if (!event) return;
- char **argv = (char **) event->set;
- if (argv[0] && argv[1] && !strcmp (argv[0], "mount")) {
-  if (!strcmp (argv[1], "ls_fstab")) {
-   write (event->integer, "ls_fstab\n", 20);
-  } else if (!strcmp (argv[1], "ls_blockdev")) {
-   char buffer[1024];
-   struct uhash *cur = blockdevices;
-   struct bd_info *val = NULL;
-   while (cur) {
-    val = (struct bd_info *) cur->value;
-    if (val) {
-     snprintf (buffer, 1023, "%s [type=%i;label=%s;uuid=%s;flags=%i]\n", val->fs, val->fs_type, val->label, val->uuid, val->fs_status);
-     write (event->integer, buffer, strlen (buffer));
-    }
-    cur = hashnext (cur);
-   }
-  }
- }
-}
-
-void linux_mount_req_mount_handler(struct einit_event *event) {
+ function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
+ function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
+ function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 }

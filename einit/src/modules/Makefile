@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.o pexec.o dexec.o
+all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.so pexec.o dexec.o
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -21,6 +21,7 @@ install: all
 	${INSTALL} ${SOIPARAM} mod-daemon.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-ipc.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${MODDIR}
+	${INSTALL} ${SOIPARAM} common-mount.so ${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 #dummy.so: dummy.c
@@ -35,8 +36,9 @@ pexec.o: pexec.c
 dexec.o: dexec.c
 	${CCC} -c dexec.c
 
-common-mount.o: common-mount.c
+common-mount.so: common-mount.c pexec.o dexec.o
 	${CCC} -c common-mount.c
+	${CCL} common-mount.o pexec.o dexec.o -o common-mount.so
 
 mod-exec.so: mod-exec.c pexec.o
 	${CCC} -c mod-exec.c

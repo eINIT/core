@@ -1,5 +1,7 @@
 2006/07/15: mdeininger
- * new functions to "post" functions for other modules to use (in event.h)
+ * new functions to "register" functions for other modules to use (in event.h)
+ * lotsa changes with the automounter (it now consists of more than just one
+   module and makes use of the function_register/function_find system.
 
 2006/07/12: mdeininger
  * updated default configuration (no real changes)

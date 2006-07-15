@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <inttypes.h>
 #include <pthread.h>
+#include <string.h>
 #include <einit/event.h>
 #include <einit/utility.h>
 
@@ -71,7 +72,7 @@ void event_listen (uint16_t type, void (*handler)(struct einit_event *)) {
  pthread_mutex_unlock (&evf_mutex);
 }
 
-void function_post (char *name, uint32_t version, void *function) {
+void function_register (char *name, uint32_t version, void *function) {
  if (!name || !function) return;
  struct function_list *fstruct = ecalloc (1, sizeof (struct function_list));
 
@@ -87,15 +88,38 @@ void function_post (char *name, uint32_t version, void *function) {
  pthread_mutex_unlock (&pof_mutex);
 }
 
-void **function_find (char *name, uint32_t version) {
+void **function_find (char *name, uint32_t version, char **sub) {
  if (!posted_functions) return NULL;
  void **set = NULL;
 
  pthread_mutex_lock (&pof_mutex);
-  struct function_list *cur = posted_functions;
-  while (cur) {
-   if ((cur->version==version) && !strcmp (cur->name, name)) set = setadd (set, (void*)cur->function);
-   cur = cur->next;
+  if (sub && sub[0]) {
+   uint32_t i = 0, j = setcount ((void**)sub), k = strlen (name)+1;
+   char *n = emalloc (k+1);
+   *n = 0;
+   strcat (n, name);
+   *(n + k - 1) = '-';
+
+   for (; i < j; i++) {
+    *(n + k) = 0;
+    n = erealloc (n, k+1+strlen (sub[i]));
+    strcat (n, sub[i]);
+    {
+     struct function_list *cur = posted_functions;
+     while (cur) {
+      if ((cur->version==version) && !strcmp (cur->name, n)) set = setadd (set, (void*)cur->function);
+      cur = cur->next;
+     }
+    }
+   }
+
+   free (n);
+  } else {
+   struct function_list *cur = posted_functions;
+   while (cur) {
+    if ((cur->version==version) && !strcmp (cur->name, name)) set = setadd (set, (void*)cur->function);
+    cur = cur->next;
+   }
   }
  pthread_mutex_unlock (&pof_mutex);
 
