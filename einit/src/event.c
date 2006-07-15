@@ -125,3 +125,30 @@ void **function_find (char *name, uint32_t version, char **sub) {
 
  return set;
 }
+
+void function_unregister (char *name, uint32_t version, void *function) {
+ if (!posted_functions) return;
+
+ pthread_mutex_lock (&pof_mutex);
+  struct function_list *cur = posted_functions;
+  struct function_list *prev = NULL;
+  while (cur) {
+   if ((cur->version==version) && !strcmp (cur->name, name)) {
+    if (prev == NULL) {
+     posted_functions = cur->next;
+     free (cur);
+     cur = posted_functions;
+    } else {
+     prev->next = cur->next;
+     free (cur);
+     cur = prev->next;
+    }
+   } else {
+    prev = cur;
+    cur = cur->next;
+   }
+  }
+ pthread_mutex_unlock (&pof_mutex);
+
+ return;
+}

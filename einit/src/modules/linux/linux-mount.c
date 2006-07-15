@@ -137,3 +137,9 @@ int configure (struct lmodule *this) {
  function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
  function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 }
+
+int cleanup (struct lmodule *this) {
+ function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
+ function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
+ function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
+}

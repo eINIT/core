@@ -73,22 +73,32 @@ int epoweroff () {
  pthread_cond_destroy (&schedthreadcond);
  pthread_mutex_destroy (&schedthreadmutex);
 
+#ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_POWER_OFF);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
 // bitch (BTCH_ERRNO);
  puts ("\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
+#else
+ puts ("compiled in sandbox-mode: not sending power-off command");
+ exit (EXIT_SUCCESS);
+#endif
 }
 
 int epowerreset () {
  pthread_cond_destroy (&schedthreadcond);
  pthread_mutex_destroy (&schedthreadmutex);
 
+#ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_RESTART);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
 // bitch (BTCH_ERRNO);
  puts ("\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
+#else
+ puts ("compiled in sandbox-mode: not sending reboot command");
+ exit (EXIT_SUCCESS);
+#endif
 }
 #else
 int epoweroff () {
