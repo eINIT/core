@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define _MODULE
 
+#include <sys/mount.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/common-mount.h>
@@ -63,6 +64,7 @@ const struct smodule self = {
 
 /* function declarations */
 unsigned char read_metadata_linux (void *);
+unsigned char mount_linux_ext2 (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct mfeedback *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 
@@ -106,8 +108,28 @@ unsigned char read_metadata_linux (void *na) {
  return 0;
 }
 
-unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse) {
- return 1;
+unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct mfeedback *status) {
+ void *fsdata = NULL;
+
+#ifndef SANDBOX
+ if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
+  if (errno == EBUSY) {
+   if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) goto mount_panic;
+  } else {
+   mount_panic:
+   if (errno < sys_nerr)
+    status->verbose = (char *)sys_errlist[errno];
+   else
+    status->verbose = "an unknown error occured while trying to mount the filesystem";
+   status_update (status);
+   if (fse->after_umount)
+    pexec (fse->after_umount, fse->variables, 0, 0, status);
+   return 1;
+  }
+ }
+#endif
+
+ return 0;
 }
 
 int configure (struct lmodule *this) {
