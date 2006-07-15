@@ -61,10 +61,20 @@ struct event_function {
  struct event_function *next;
 };
 
+struct function_list {
+ char *name;
+ uint32_t version;
+ void *function;
+ struct function_list *next;
+};
+
 struct event_function *event_functions;
 
 void *event_emit (struct einit_event *, uint16_t);
 void event_listen (uint16_t, void (*)(struct einit_event *));
+
+void function_post (char *, uint32_t, void *);
+void **function_find (char *, uint32_t);
 
 #define event_emit_flag(a, b) {\
 	struct einit_event *c = ecalloc (1, sizeof(struct einit_event));\

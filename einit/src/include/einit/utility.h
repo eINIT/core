@@ -79,7 +79,7 @@ char *estrdup (char *);
 
 /* functions to deal with function lists */
 
-/* call_functions_in_set(): 
+/* call_functions_in_set():
  the first argument is a hash with functions that take  a single argument, the
  second argument is a set that contains function names and the third argument
  is what is to be passed to any called functions.

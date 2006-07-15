@@ -41,7 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 
 struct event_function *event_functions = NULL;
+struct function_list *posted_functions = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *event_emit (struct einit_event *event, uint16_t flags) {
  if (!event || !event->type) return;
@@ -67,4 +69,35 @@ void event_listen (uint16_t type, void (*handler)(struct einit_event *)) {
 
   event_functions = fstruct;
  pthread_mutex_unlock (&evf_mutex);
+}
+
+void function_post (char *name, uint32_t version, void *function) {
+ if (!name || !function) return;
+ struct function_list *fstruct = ecalloc (1, sizeof (struct function_list));
+
+ fstruct->name = name;
+ fstruct->version = version;
+ fstruct->function = function;
+
+ pthread_mutex_lock (&pof_mutex);
+  if (posted_functions)
+   fstruct->next = posted_functions;
+
+  posted_functions = fstruct;
+ pthread_mutex_unlock (&pof_mutex);
+}
+
+void **function_find (char *name, uint32_t version) {
+ if (!posted_functions) return NULL;
+ void **set = NULL;
+
+ pthread_mutex_lock (&pof_mutex);
+  struct function_list *cur = posted_functions;
+  while (cur) {
+   if ((cur->version==version) && !strcmp (cur->name, name)) set = setadd (set, (void*)cur->function);
+   cur = cur->next;
+  }
+ pthread_mutex_unlock (&pof_mutex);
+
+ return set;
 }

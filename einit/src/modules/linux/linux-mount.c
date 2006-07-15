@@ -228,6 +228,9 @@ int configure (struct lmodule *this) {
 
  event_listen (EINIT_EVENT_TYPE_IPC, linux_mount_ipc_handler);
  event_listen (EINIT_EVENT_TYPE_REQ_MOUNT, linux_mount_req_mount_handler);
+
+ function_post ("fs-read-label", 1, (void *)read_label_linux);
+ function_post ("fs-mount", 1, (void *)mountwrapper);
 }
 
 int cleanup (struct lmodule *this) {
