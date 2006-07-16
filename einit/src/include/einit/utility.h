@@ -77,4 +77,7 @@ void *ecalloc (size_t, size_t);
 void *erealloc (void *, size_t);
 char *estrdup (char *);
 
+/* nifty string functions */
+void strtrim (char *);
+
 #endif /* _UTILITY_H */

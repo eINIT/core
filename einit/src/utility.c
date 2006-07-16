@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <ctype.h>
 
 /* some common functions to work with null-terminated arrays */
 
@@ -289,7 +290,7 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
  struct uhash *n = ecalloc (1, sizeof (struct uhash));
  struct uhash *c = hash;
 
- n->key = key;
+ n->key = estrdup(key);
  n->value = value;
 
  if (!hash)
@@ -326,6 +327,7 @@ void hashfree (struct uhash *hash) {
  while (c) {
   struct uhash *d = c;
   c = c->next;
+  free (d->key);
   free (d);
  }
 }
@@ -376,3 +378,29 @@ char *estrdup (char *s) {
  return p;
 }
 
+/* nifty string functions */
+void strtrim (char *s) {
+ if (!s) return;
+ uint32_t l = strlen (s), i = 0, offset = 0;
+
+ for (; i < l; i++) {
+  if (isspace (s[i])) offset++;
+  else {
+   if (offset)
+    memmove (s, s+offset, l-offset);
+   break;
+  }
+ }
+
+ if (i == l) {
+  s[0] = 0;
+  return;
+ }
+
+ l -= offset+1;
+
+ for (i = l; i >= 0; i--) {
+  if (isspace (s[i])) s[i] = 0;
+  else break;
+ }
+}
