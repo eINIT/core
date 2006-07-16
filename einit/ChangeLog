@@ -1,3 +1,11 @@
+2006/07/16: mdeininger
+ * added a new flag to ./configure: --use-posix-regex
+ * modified the find_block_devices_recurse_path() function to utilise regex-
+   functions if configure was told to use these (added so that not all devices
+   get scanned in the read-metadata step; on my box there's ~4000 block device-
+   nodes before udev is up, which means there's lots of things being done that
+   only waste cpu cycles)
+
 2006/07/15: mdeininger
  * new functions to "register" functions for other modules to use (in event.h)
  * lotsa changes with the automounter (it now consists of more than just one

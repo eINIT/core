@@ -61,6 +61,9 @@ for param in $@; do
 	elif test "$param" = "--bitch-a-lot"; then
 		echo -n " BITCHY";
 		XCFLAGS="$XCFLAGS -Wall -DBITCHY";
+	elif test "$param" = "--use-posix-regex"; then
+		echo -n " REGEX";
+		XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 	fi;
 done;
 echo " ]";
@@ -76,6 +79,8 @@ Options:
  --enable-linux         enable compilation of linux-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
  --bitch-a-lot          tell all programs used to compile and link to be more... verbose
+ --use-posix-regex      use posix.2 regular expressions
+ --sandbox              #define SANDBOX and set prefix=\`pwd\`/sandbox
  --debug                will #define DEBUG.
  --help                 display this text and exit.";
 exit;
@@ -111,7 +116,7 @@ if test -n {EXPAT}; then
 	echo "";
 else
 	echo "not found";
-	echo "expat currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or http://expat.sf.net/.";
+	echo "expat is currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or go to http://expat.sf.net/.";
 fi
 
 echo -n "checking system type... "
