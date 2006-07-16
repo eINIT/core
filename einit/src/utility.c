@@ -387,7 +387,7 @@ void strtrim (char *s) {
   if (isspace (s[i])) offset++;
   else {
    if (offset)
-    memmove (s, s+offset, l-offset);
+    memmove (s, s+offset, l-offset+1);
    break;
   }
  }
