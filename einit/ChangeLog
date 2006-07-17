@@ -1,5 +1,6 @@
 2006/07/17: mdeininger
  * the mtab and fstab files get parsed completely now
+ * the IPC commands "mount ls_fstab" and "mount ls_mtab" now work
 
 2006/07/16: mdeininger
  * added a new flag to ./configure: --use-posix-regex
