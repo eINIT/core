@@ -63,14 +63,14 @@ const struct smodule self = {
 };
 
 /* function declarations */
-unsigned char read_metadata_linux (struct uhash *);
+unsigned char read_metadata_linux (struct mount_control_block *);
 unsigned char mount_linux_ext2 (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct mfeedback *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 
 /* function definitions */
-unsigned char read_metadata_linux (struct uhash *blockdevices) {
- struct uhash *element = blockdevices;
+unsigned char read_metadata_linux (struct mount_control_block *mcb) {
+ struct uhash *element = mcb->blockdevices;
  struct ext2_super_block ext2_sb;
  struct bd_info *bdi;
  uint32_t cdev = 0;
