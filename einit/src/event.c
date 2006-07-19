@@ -76,7 +76,8 @@ void function_register (char *name, uint32_t version, void *function) {
  if (!name || !function) return;
  struct function_list *fstruct = ecalloc (1, sizeof (struct function_list));
 
- fstruct->name = name;
+ fstruct->name = estrdup(name);
+// fstruct->name = name;
  fstruct->version = version;
  fstruct->function = function;
 
@@ -130,6 +131,8 @@ void function_unregister (char *name, uint32_t version, void *function) {
  if (!posted_functions) return;
 
  pthread_mutex_lock (&pof_mutex);
+  if (!name) return NULL;
+
   struct function_list *cur = posted_functions;
   struct function_list *prev = NULL;
   while (cur) {

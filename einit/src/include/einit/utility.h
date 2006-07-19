@@ -38,6 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _UTILITY_H
 #define _UTILITY_H
 
+#include <inttypes.h>
+
 struct uhash {
  char *key;
  void *value;
@@ -65,7 +67,7 @@ char **straddtoenviron (char **, char *, char *);
 
 /* same as above, this time with hashes */
 
-struct uhash *hashadd (struct uhash *, char *, void *);
+struct uhash *hashadd (struct uhash *, char *, void *, int32_t);
 struct uhash *hashfind (struct uhash *, char *);
 void hashfree (struct uhash *);
 #define hashnext(h) h->next

@@ -286,12 +286,33 @@ char **straddtoenviron (char **environment, char *key, char *value) {
 
 /* hashes */
 
-struct uhash *hashadd (struct uhash *hash, char *key, void *value) {
- struct uhash *n = ecalloc (1, sizeof (struct uhash));
+struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen) {
+ struct uhash *n;
  struct uhash *c = hash;
+ uint32_t hklen;
 
- n->key = estrdup(key);
- n->value = value;
+ if (!key) return hash;
+ hklen = strlen (key)+1;
+
+ if (vlen == -1) {
+  n = ecalloc (1, sizeof (struct uhash) + hklen);
+
+  memcpy ((((char *)n) + sizeof (struct uhash)), key, hklen);
+
+  n->key = (((char *)n) + sizeof (struct uhash));
+  n->value = value;
+ } else {
+  if (!value) return hash;
+  if (vlen == 0)
+   vlen = strlen (value)+1;
+
+  n = ecalloc (1, sizeof (struct uhash) + hklen + vlen);
+  memcpy ((((char *)n) + sizeof (struct uhash)), key, hklen);
+  memcpy ((((char *)n) + sizeof (struct uhash) + hklen), value, vlen);
+
+  n->key = (((char *)n) + sizeof (struct uhash));
+  n->value = (((char *)n) + sizeof (struct uhash) + hklen);
+ }
 
  if (!hash)
   hash = n;
@@ -327,7 +348,6 @@ void hashfree (struct uhash *hash) {
  while (c) {
   struct uhash *d = c;
   c = c->next;
-  free (d->key);
   free (d);
  }
 }
