@@ -286,9 +286,9 @@ int mod (unsigned int task, struct lmodule *module) {
    if (ret & STATUS_OK) {
     if (t = module->module) {
      if (t->provides)
-      provided = (char **)setcombine ((void **)provided, (void **)t->provides);
+      provided = (char **)setcombine ((void **)provided, (void **)t->provides, -1);
      if (t->requires)
-      required = (char **)setcombine ((void **)required, (void **)t->requires);
+      required = (char **)setcombine ((void **)required, (void **)t->requires, -1);
     }
     module->status = STATUS_ENABLED;
     fb->status = STATUS_OK | STATUS_ENABLED;
@@ -464,21 +464,21 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
       while (c && (c = hashfind (c, req[j]))) {
        struct mloadplan *e = c->value;
        adds++;
-       e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v);
+       e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v, -1);
        c = c->next;
       }
       if (adds) {
        plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
       } else if (v->task & MOD_ENABLE) {
        if (!strinset (plan->unavailable, req[j]) && !strinset (plan->unsatisfied, req[j]))
-        plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j]);
+        plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j], -1);
       } else if (v->task & MOD_DISABLE) {
-       plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v);
+       plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
        plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
       }
      }
     } else {
-     plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v);
+     plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
      plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
     }
 //   }
@@ -530,7 +530,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      if (curmod->module->provides) cplan->provides = (char **)setdup ((void **)curmod->module->provides);
     }
     pthread_mutex_init (&cplan->mutex, NULL);
-    plan->orphaned = (struct mloadplan **)setadd ((void **)plan->orphaned, (void *)cplan);
+    plan->orphaned = (struct mloadplan **)setadd ((void **)plan->orphaned, (void *)cplan, -1);
    }
    skipcurmod:
    curmod = curmod->next;
@@ -560,7 +560,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
        groupoptions |= MOD_PLAN_GROUP;
        if (gatoms) {
         for (; gatoms[gatomi]; gatomi++)
-         groupatoms = (char **)setadd ((void **)groupatoms, (void *) gatoms[gatomi]);
+         groupatoms = (char **)setadd ((void **)groupatoms, (void *) gatoms[gatomi], -1);
         free (gatoms);
        }
       } else if (!strcmp (gnode->arbattrs[gni], "seq")) {
@@ -613,18 +613,18 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      cplan->mod = cand[0];
      cplan->options = MOD_PLAN_IDLE;
      if (groupatoms) {
-      cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si]);
+      cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si], -1);
       if (cand[0]->module) {
        if (cand[0]->module->requires) {
         int ir = 0;
         for (; cand[0]->module->requires[ir]; ir++) {
-         cplan->requires = (char **)setadd ((void **)cplan->requires, (void *)cand[0]->module->requires[ir]);
+         cplan->requires = (char **)setadd ((void **)cplan->requires, (void *)cand[0]->module->requires[ir], -1);
         }
        }
        if (cand[0]->module->provides) {
         int ir = 0;
         for (; cand[0]->module->provides[ir]; ir++) {
-         cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[0]->module->provides[ir]);
+         cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[0]->module->provides[ir], -1);
         }
        }
       }
@@ -643,7 +643,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      else
       cplan->options = MOD_PLAN_IDLE + MOD_PLAN_GROUP + MOD_PLAN_GROUP_SEQ_ANY_IOP;
 
-     cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si]);
+     cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)atoms[si], -1);
      for (; icc < cc; icc++) {
       tcplan = (struct mloadplan *)ecalloc (1, sizeof (struct mloadplan));
       tcplan->task = task;
@@ -654,21 +654,21 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
        if (cand[icc]->module->requires) {
         int ir = 0;
         for (; cand[icc]->module->requires[ir]; ir++) {
-         cplan->requires = (char **)setadd ((void **)cplan->requires, (void *)cand[icc]->module->requires[ir]);
+         cplan->requires = (char **)setadd ((void **)cplan->requires, (void *)cand[icc]->module->requires[ir], -1);
         }
        }
        if (cand[icc]->module->provides) {
         int ir = 0;
         for (; cand[icc]->module->provides[ir]; ir++) {
-         cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[icc]->module->provides[ir]);
+         cplan->provides = (char **)setadd ((void **)cplan->provides, (void *)cand[icc]->module->provides[ir], -1);
         }
        }
-       cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)cand[icc]->module->rid);
+       cplan->provides = (char **)setadd ((void **)cplan->provides, (void **)cand[icc]->module->rid, -1);
       }
       cplan->group[icc] = tcplan;
      }
     }
-    nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan);
+    nplancand = (struct mloadplan **)setadd ((void **)nplancand, (void *)cplan, -1);
 
     if (plan && plan->unsatisfied) {
      plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
@@ -678,7 +678,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      char *tmpa = estrdup (atoms[si]);
      printf ("can't satisfy atom: %s\n", atoms[si]);
      plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
-     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa);
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)tmpa, -1);
      return plan;
     }
    }
@@ -688,7 +688,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   free (atoms);
  }
 
- plan->orphaned = (struct mloadplan **)setcombine ((void **)plan->orphaned, (void **)nplancand);
+ plan->orphaned = (struct mloadplan **)setcombine ((void **)plan->orphaned, (void **)nplancand, -1);
 
  plan = mod_plan_restructure(plan);
  if (plan && plan->unsatisfied && plan->unsatisfied[0])
@@ -787,13 +787,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 //   puts ("group/most OK");
 /* this will need to be reworked a little... no way to figure out when the group is not being provided anymore */
   if (plan->provides && plan->provides [0] && (plan->task & MOD_ENABLE))
-   provided = (char **)setadd ((void **)provided, (void *)plan->provides[0]);
+   provided = (char **)setadd ((void **)provided, (void *)plan->provides[0], -1);
 //  }
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
     pthread_t *th = ecalloc (1, sizeof (pthread_t));
     if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->right[i])) {
-     childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
+     childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th, -1);
     }
 //    mod_plan_commit (plan->right[i]);
    }
@@ -801,7 +801,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   for (status = 0; plan->left[i]; i++) {
    pthread_t *th = ecalloc (1, sizeof (pthread_t));
    if (!pthread_create (th, NULL, (void * (*)(void *))mod_plan_commit, (void*)plan->left[i])) {
-    childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th);
+    childthreads = (pthread_t **)setadd ((void **)childthreads, (void *)th, -1);
    }
   }
  }

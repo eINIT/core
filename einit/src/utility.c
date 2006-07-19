@@ -43,9 +43,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
-void **setcombine (void **set1, void **set2) {
+void **setcombine (void **set1, void **set2, int32_t esize) {
  void **newset;
  int x = 0, y = 0, s = 1, p = 0;
+ uint32_t count = 0, size = 0;
  char *strbuffer = NULL;
  if (!set1) return set2;
  if (!set1[0]) {
@@ -58,37 +59,97 @@ void **setcombine (void **set1, void **set2) {
   return set1;
  }
 
- newset = ecalloc (setcount(set1) + setcount(set2) +1, sizeof (void *));
+// if (esize == -1) {
+  for (; set1[count]; count++);
+  size = count+1;
 
- while (set1[x])
-  { newset [x] = set1[x]; x++; }
- y = x; x = 0;
- while (set2[x])
-  { newset [y] = set2[x]; x++; y++; }
+  for (count = 0; set2[count]; count++);
+  size += count;
+  size *= sizeof (void*);
+
+  newset = ecalloc (1, size);
+
+  while (set1[x])
+   { newset [x] = set1[x]; x++; }
+  y = x; x = 0;
+  while (set2[x])
+   { newset [y] = set2[x]; x++; y++; }
+// } else {
+// }
 
  return newset;
 }
 
-void **setadd (void **set, void *item) {
+void **setadd (void **set, void *item, int32_t esize) {
  void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  char *strbuffer = NULL;
+ uint32_t count = 0, size = 0;
  if (!item) return NULL;
  if (!set) set = ecalloc (1, sizeof (void *));
 
- newset = ecalloc (setcount(set) + 2, sizeof (void *));
+ if (esize == -1) {
+  for (; set[count]; count++);
+  size = (count+2)*sizeof(void*);
 
- while (set[x]) {
-  if (set[x] == item) {
-   free (newset);
-   return set;
+  newset = ecalloc (1, size);
+
+  while (set[x]) {
+   if (set[x] == item) {
+    free (newset);
+    return set;
+   }
+   newset [x] = set[x];
+   x++;
   }
-  newset [x] = set[x];
-  x++;
- }
 
- newset[x] = item;
- free (set);
+  newset[x] = item;
+  free (set);
+ } else if (esize == 0) {
+  char *cpnt;
+
+  for (; set[count]; count++)
+   size += sizeof(void*) + 1 + strlen(set[count]);
+  size += sizeof(void*);
+
+  newset = ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
+
+  while (set[x]) {
+   if (set[x] == item) {
+    free (newset);
+    return set;
+   }
+   newset [x] = cpnt;
+   x++;
+  }
+
+  newset[x] = item;
+  free (set);
+ } else {
+  char *cpnt;
+
+  for (; set[count]; count++)
+   size += sizeof(void*) + esize;
+  size += sizeof(void*);
+
+  newset = ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
+
+  while (set[x]) {
+   if (set[x] == item) {
+    free (newset);
+    return set;
+   }
+   cpnt += esize;
+   memcpy (cpnt, set[x], esize);
+   newset [x] = cpnt;
+   x++;
+  }
+
+  newset[x] = item;
+  free (set);
+ }
 
  return newset;
 }
@@ -180,24 +241,6 @@ int strinset (char **haystack, const char *needle) {
  return 0;
 }
 
-char **strsetrebuild (char **sset) {
- int y = 0, p = 0, s = 1;
- char *strbuffer;
- char **ssetbuffer;
- if (!sset) return NULL;
- if (!sset[0]) return NULL;
-
- while (sset[y])
-  { y++; s += strlen (sset[y]); }
-
- strbuffer = emalloc (s*sizeof(char));
- ssetbuffer = (char **)ecalloc (setcount ((void **)sset)+1, sizeof(char *));
- strbuffer[s-1] = 0;
- while (sset[y])
-  { y++; s += strlen (sset[y]); }
- return ssetbuffer;
-}
-
 char **strsetdup (char **sset) {
  char **newset;
  int y = 0;
@@ -265,13 +308,14 @@ char **strsetdeldupes (char **set) {
   free (set);
   return NULL;
  }
- 
+
  newset[x] = NULL;
 
  return newset;
 }
 
 char **straddtoenviron (char **environment, char *key, char *value) {
+ char **ret;
  char *newitem;
  int len = 1;
  if (key) len += strlen (key);
@@ -281,7 +325,10 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  if (value) newitem = strcat (newitem, "=");
  if (value) newitem = strcat (newitem, value);
 
- return (char**) setadd ((void**)environment, (void*)newitem);
+ ret = (char**) setadd ((void**)environment, (void*)newitem, 0);
+ free (newitem);
+
+ return ret;
 }
 
 /* hashes */

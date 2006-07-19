@@ -108,7 +108,7 @@ void **function_find (char *name, uint32_t version, char **sub) {
     {
      struct function_list *cur = posted_functions;
      while (cur) {
-      if ((cur->version==version) && !strcmp (cur->name, n)) set = setadd (set, (void*)cur->function);
+      if ((cur->version==version) && !strcmp (cur->name, n)) set = setadd (set, (void*)cur->function, -1);
       cur = cur->next;
      }
     }
@@ -118,7 +118,7 @@ void **function_find (char *name, uint32_t version, char **sub) {
   } else {
    struct function_list *cur = posted_functions;
    while (cur) {
-    if ((cur->version==version) && !strcmp (cur->name, name)) set = setadd (set, (void*)cur->function);
+    if ((cur->version==version) && !strcmp (cur->name, name)) set = setadd (set, (void*)cur->function, -1);
     cur = cur->next;
    }
   }

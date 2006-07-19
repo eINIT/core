@@ -1,6 +1,7 @@
 2006/07/18: mdeininger
  * some fixes; some memory management improvements to keep the resident
    memory size smaller (at the expense of some CPU cycles)
+ * started on some changes to the set-code
 
 2006/07/18: mdeininger
  * added a control-block to the common-mount module to propagate to modules

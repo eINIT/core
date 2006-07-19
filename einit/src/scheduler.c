@@ -144,7 +144,7 @@ int sched_switchmode (char *mode) {
    while (cur->base[y]) {
     cno = cfg_findnode (cur->base[y], EI_NODETYPE_MODE, NULL);
     if (cno) {
-     elist = (char **)setcombine ((void **)strsetdup (cno->enable), (void **)elist);
+     elist = (char **)setcombine ((void **)strsetdup (cno->enable), (void **)elist, -1);
     }
     y++;
    }
@@ -233,7 +233,7 @@ int sched_queue (unsigned int task, void *param) {
  nele->param = param;
 
  pthread_mutex_lock (&schedschedulemodmutex);
-  schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele);
+  schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele, -1);
  pthread_mutex_unlock (&schedschedulemodmutex);
 
  pthread_cond_signal (&schedthreadcond);
