@@ -526,8 +526,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     cplan->mod = curmod;
     cplan->options = MOD_PLAN_IDLE;
     if (curmod->module) {
-     if (curmod->module->requires) cplan->requires = (char **)setdup ((void **)curmod->module->requires);
-     if (curmod->module->provides) cplan->provides = (char **)setdup ((void **)curmod->module->provides);
+     if (curmod->module->requires) cplan->requires = (char **)setdup ((void **)curmod->module->requires, -1);
+     if (curmod->module->provides) cplan->provides = (char **)setdup ((void **)curmod->module->provides, -1);
     }
     pthread_mutex_init (&cplan->mutex, NULL);
     plan->orphaned = (struct mloadplan **)setadd ((void **)plan->orphaned, (void *)cplan, -1);
@@ -538,7 +538,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }
 
  if (atoms) {
-  atoms = (char **)setdup ((void **)atoms);
+  atoms = (char **)setdup ((void **)atoms, -1);
   for (si = 0; atoms[si]; si++) {
    struct lmodule **cand = (struct lmodule **)ecalloc (mcount+1, sizeof (struct lmodule *));
    struct mloadplan *cplan = NULL;
@@ -630,8 +630,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
       }
      } else {
       if (cand[0]->module) {
-       if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires);
-       if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides);
+       if (cand[0]->module->requires) cplan->requires = (char **)setdup ((void **)cand[0]->module->requires, -1);
+       if (cand[0]->module->provides) cplan->provides = (char **)setdup ((void **)cand[0]->module->provides, -1);
       }
      }
     } else if (cc > 1) {

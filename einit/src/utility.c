@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
-void **setcombine (void **set1, void **set2, signed int esize) {
+void **setcombine (void **set1, void **set2, int32_t esize) {
  void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  uint32_t count = 0, size = 0;
@@ -133,7 +133,7 @@ void **setcombine (void **set1, void **set2, signed int esize) {
  return newset;
 }
 
-void **setadd (void **set, void *item, signed int esize) {
+void **setadd (void **set, void *item, int32_t esize) {
  void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  char *strbuffer = NULL;
@@ -215,16 +215,30 @@ void **setadd (void **set, void *item, signed int esize) {
  return newset;
 }
 
-void **setdup (void **set) {
+void **setdup (void **set, int32_t esize) {
  void **newset;
  int y = 0;
  if (!set) return NULL;
  if (!set[0]) return NULL;
 
- newset = ecalloc (setcount(set) +1, sizeof (char *));
- while (set[y]) {
-  newset[y] = set[y];
-  y++;
+ if (esize == -1) {
+  newset = ecalloc (setcount(set) +1, sizeof (char *));
+  while (set[y]) {
+   newset[y] = set[y];
+   y++;
+  }
+ } else if (esize == 0) {
+  newset = ecalloc (setcount(set) +1, sizeof (char *));
+  while (set[y]) {
+   newset[y] = estrdup (set[y]);
+   y++;
+  }
+ } else {
+  newset = ecalloc (setcount(set) +1, sizeof (char *));
+  while (set[y]) {
+   newset[y] = estrdup (set[y]);
+   y++;
+  }
  }
 
  return newset;
@@ -300,21 +314,6 @@ int strinset (char **haystack, const char *needle) {
   if (!strcmp (haystack[c], needle)) return 1;
  }
  return 0;
-}
-
-char **strsetdup (char **sset) {
- char **newset;
- int y = 0;
- if (!sset) return NULL;
- if (!sset[0]) return NULL;
-
- newset = ecalloc (setcount((void **)sset) +1, sizeof (char *));
- while (sset[y]) {
-  newset[y] = estrdup (sset[y]);
-  y++;
- }
-
- return newset;
 }
 
 char **strsetdel (char **set, char *item) {

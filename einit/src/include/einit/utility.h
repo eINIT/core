@@ -48,9 +48,9 @@ struct uhash {
 
 /* some common functions to work with null-terminated arrays */
 
-void **setcombine (void **, void **, signed int);
-void **setadd (void **, void *, signed int);
-void **setdup (void **);
+void **setcombine (void **, void **, int32_t);
+void **setadd (void **, void *, int32_t);
+void **setdup (void **, int32_t);
 void **setdel (void **, void *);
 int setcount (void **);
 
@@ -58,7 +58,6 @@ int setcount (void **);
 
 char **str2set (const char, char *);
 int strinset (char **, const char *);
-char **strsetdup (char **);
 char **strsetdel (char **, char *);
 char **strsetdeldupes (char **);
 

@@ -135,7 +135,7 @@ int sched_switchmode (char *mode) {
     else optmask &= !MOD_DISABLE_UNSPEC;
    }
   }
-  elist = strsetdup (cur->enable);
+  elist = (char **)setdup ((void **)cur->enable, -1);
   newmode = mode;
 
   if (cur->base) {
@@ -144,7 +144,7 @@ int sched_switchmode (char *mode) {
    while (cur->base[y]) {
     cno = cfg_findnode (cur->base[y], EI_NODETYPE_MODE, NULL);
     if (cno) {
-     elist = (char **)setcombine ((void **)strsetdup (cno->enable), (void **)elist, -1);
+     elist = (char **)setcombine ((void **)setdup ((void **)cno->enable, -1), (void **)elist, -1);
     }
     y++;
    }
@@ -471,7 +471,7 @@ void sched_event_handler(struct einit_event *event) {
     sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
     write (event->integer, "modeswitch queued\n", 19);
    } else {
-    sched_queue (SCHEDULER_MOD_ACTION, (void *)strsetdup (argv+1));
+    sched_queue (SCHEDULER_MOD_ACTION, (void *)setdup ((void **)argv+1, -1));
     write (event->integer, "request processed\n", 19);
    }
   }
