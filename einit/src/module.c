@@ -1014,7 +1014,7 @@ void mod_plan_ls (struct mloadplan *plan) {
     fputs (" ", stdout);
    printf ("unsatisfied dependency: %s\n", plan->unsatisfied[i]);
   }
- }
+ }*/
 
  if (plan->unavailable && plan->unavailable[0]) {
   for (i = 0; plan->unavailable[i]; i++) {
@@ -1023,6 +1023,6 @@ void mod_plan_ls (struct mloadplan *plan) {
     fputs (" ", stdout);
    printf ("unavailable dependency: %s\n", plan->unavailable[i]);
   }
- }*/
+ }
 }
 #endif

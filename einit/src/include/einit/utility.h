@@ -48,8 +48,8 @@ struct uhash {
 
 /* some common functions to work with null-terminated arrays */
 
-void **setcombine (void **, void **, int32_t);
-void **setadd (void **, void *, int32_t);
+void **setcombine (void **, void **, signed int);
+void **setadd (void **, void *, signed int);
 void **setdup (void **);
 void **setdel (void **, void *);
 int setcount (void **);

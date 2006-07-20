@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
-void **setcombine (void **set1, void **set2, int32_t esize) {
+void **setcombine (void **set1, void **set2, signed int esize) {
  void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  uint32_t count = 0, size = 0;
@@ -74,13 +74,64 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
   y = x; x = 0;
   while (set2[x])
    { newset [y] = set2[x]; x++; y++; }
-// } else {
-// }
+/* } else if (esize == 0) {
+  char *cpnt;
+
+  for (; set1[count]; count++)
+   size += sizeof(void*) + 1 + strlen(set1[count]);
+  size += sizeof(void*);
+  for (x = 0; set2[x]; x++)
+   size += sizeof(void*) + 1 + strlen(set2[x]);
+  count += x;
+
+  newset = ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+
+  x = 0;
+  while (set1[x]) {
+   esize = 1+strlen(set1[x]);
+   memcpy (cpnt, set1[x], esize);
+   newset [x] = cpnt;
+   cpnt += esize;
+  }
+  y = x; x = 0;
+  while (set2[x]) {
+   esize = 1+strlen(set2[x]);
+   memcpy (cpnt, set2[x], esize);
+   newset [y] = cpnt;
+   cpnt += esize;
+  }
+ } else {
+  char *cpnt;
+
+  for (; set1[count]; count++)
+   size += sizeof(void*) + 1 + esize;;
+  size += sizeof(void*);
+  for (x = 0; set2[x]; x++)
+   size += sizeof(void*) + 1 + esize;
+  count += x;
+
+  newset = ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+
+  x = 0;
+  while (set1[x]) {
+   memcpy (cpnt, set1[x], esize);
+   newset [x] = cpnt;
+   cpnt += esize;
+  }
+  y = x; x = 0;
+  while (set2[x]) {
+   memcpy (cpnt, set2[x], esize);
+   newset [y] = cpnt;
+   cpnt += esize;
+  }
+ }*/
 
  return newset;
 }
 
-void **setadd (void **set, void *item, int32_t esize) {
+void **setadd (void **set, void *item, signed int esize) {
  void **newset;
  int x = 0, y = 0, s = 1, p = 0;
  char *strbuffer = NULL;
@@ -88,7 +139,7 @@ void **setadd (void **set, void *item, int32_t esize) {
  if (!item) return NULL;
  if (!set) set = ecalloc (1, sizeof (void *));
 
- if (esize == -1) {
+// if (esize == -1) {
   for (; set[count]; count++);
   size = (count+2)*sizeof(void*);
 
@@ -105,7 +156,7 @@ void **setadd (void **set, void *item, int32_t esize) {
 
   newset[x] = item;
   free (set);
- } else if (esize == 0) {
+/* } else if (esize == 0) {
   char *cpnt;
 
   for (; set[count]; count++)
@@ -113,18 +164,24 @@ void **setadd (void **set, void *item, int32_t esize) {
   size += sizeof(void*);
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
 
   while (set[x]) {
    if (set[x] == item) {
     free (newset);
     return set;
    }
+   esize = 1+strlen(set[x]);
+   memcpy (cpnt, set[x], esize);
    newset [x] = cpnt;
+   cpnt += esize;
    x++;
   }
 
-  newset[x] = item;
+  memcpy (cpnt, item, esize);
+  newset [x] = cpnt;
+//  cpnt += 1+strlen(item);
+
   free (set);
  } else {
   char *cpnt;
@@ -134,22 +191,24 @@ void **setadd (void **set, void *item, int32_t esize) {
   size += sizeof(void*);
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
 
   while (set[x]) {
    if (set[x] == item) {
     free (newset);
     return set;
    }
-   cpnt += esize;
    memcpy (cpnt, set[x], esize);
    newset [x] = cpnt;
+   cpnt += esize;
    x++;
   }
 
-  newset[x] = item;
+  memcpy (cpnt, item, esize);
+  newset [x] = cpnt;
+//  cpnt += esize;
   free (set);
- }
+ }*/
 
  return newset;
 }
