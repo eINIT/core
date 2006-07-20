@@ -59,22 +59,24 @@ void **setcombine (void **set1, void **set2, signed int esize) {
   return set1;
  }
 
-// if (esize == -1) {
+ if (esize == -1) {
   for (; set1[count]; count++);
   size = count+1;
 
-  for (count = 0; set2[count]; count++);
-  size += count;
+  for (x = 0; set2[x]; x++);
+  size += x;
+  count += x;
   size *= sizeof (void*);
 
   newset = ecalloc (1, size);
 
+  x = 0;
   while (set1[x])
    { newset [x] = set1[x]; x++; }
   y = x; x = 0;
   while (set2[x])
    { newset [y] = set2[x]; x++; y++; }
-/* } else if (esize == 0) {
+ } else if (esize == 0) {
   char *cpnt;
 
   for (; set1[count]; count++)
@@ -126,7 +128,7 @@ void **setcombine (void **set1, void **set2, signed int esize) {
    newset [y] = cpnt;
    cpnt += esize;
   }
- }*/
+ }
 
  return newset;
 }
@@ -139,7 +141,7 @@ void **setadd (void **set, void *item, signed int esize) {
  if (!item) return NULL;
  if (!set) set = ecalloc (1, sizeof (void *));
 
-// if (esize == -1) {
+ if (esize == -1) {
   for (; set[count]; count++);
   size = (count+2)*sizeof(void*);
 
@@ -156,7 +158,7 @@ void **setadd (void **set, void *item, signed int esize) {
 
   newset[x] = item;
   free (set);
-/* } else if (esize == 0) {
+ } else if (esize == 0) {
   char *cpnt;
 
   for (; set[count]; count++)
@@ -208,7 +210,7 @@ void **setadd (void **set, void *item, signed int esize) {
   newset [x] = cpnt;
 //  cpnt += esize;
   free (set);
- }*/
+ }
 
  return newset;
 }
