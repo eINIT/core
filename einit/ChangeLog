@@ -1,4 +1,7 @@
-2006/07/18: mdeininger
+2006/07/20: mdeininger
+ * added a shell-type module to support swap-devices
+
+2006/07/19: mdeininger
  * some fixes; some memory management improvements to keep the resident
    memory size smaller (at the expense of some CPU cycles)
  * started on some changes to the set-code
