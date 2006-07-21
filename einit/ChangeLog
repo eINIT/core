@@ -1,5 +1,7 @@
 2006/07/20: mdeininger
  * added a shell-type module to support swap-devices
+ * some more changes that'll be needed for some changes in the set-type
+  functions
 
 2006/07/19: mdeininger
  * some fixes; some memory management improvements to keep the resident

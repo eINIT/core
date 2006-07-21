@@ -385,7 +385,7 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  if (value) newitem = strcat (newitem, "=");
  if (value) newitem = strcat (newitem, value);
 
- ret = (char**) setadd ((void**)environment, (void*)newitem, 0);
+ ret = (char**) setadd ((void**)environment, (void*)newitem, -1);
  free (newitem);
 
  return ret;
