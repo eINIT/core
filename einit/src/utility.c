@@ -163,10 +163,10 @@ void **setadd (void **set, void *item, int32_t esize) {
 
   for (; set[count]; count++)
    size += sizeof(void*) + 1 + strlen(set[count]);
-  size += sizeof(void*);
+  size += sizeof(void*)*2 + 1 +strlen(item);
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+2)*sizeof(void*)+1;
 
   while (set[x]) {
    if (set[x] == item) {
@@ -190,10 +190,10 @@ void **setadd (void **set, void *item, int32_t esize) {
 
   for (; set[count]; count++)
    size += sizeof(void*) + esize;
-  size += sizeof(void*);
+  size += sizeof(void*)*2 + esize;
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+2)*sizeof(void*)+1;
 
   while (set[x]) {
    if (set[x] == item) {
@@ -217,7 +217,7 @@ void **setadd (void **set, void *item, int32_t esize) {
 
 void **setdup (void **set, int32_t esize) {
  void **newset;
- int y = 0;
+ uint32_t y = 0, count = 0, size = 0;
  if (!set) return NULL;
  if (!set[0]) return NULL;
 
@@ -228,9 +228,20 @@ void **setdup (void **set, int32_t esize) {
    y++;
   }
  } else if (esize == 0) {
-  newset = ecalloc (setcount(set) +1, sizeof (char *));
+  char *cpnt;
+
+  for (; set[count]; count++)
+   size += sizeof(void*) + 1 + strlen(set[count]);
+  size += sizeof(void*)*2;
+
+  newset = ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+
   while (set[y]) {
-   newset[y] = estrdup (set[y]);
+   esize = 1+strlen(set[y]);
+   memcpy (cpnt, set[y], esize);
+   newset [y] = cpnt;
+   cpnt += esize;
    y++;
   }
  } else {

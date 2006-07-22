@@ -59,7 +59,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    for (; atts[i] != NULL; i+=2) {
     if (!strcmp (atts[i], "mod")) {
      char *modlist = estrdup ((char *)atts[i+1]);
-	 curmode->enable = str2set (':', modlist);
+     curmode->enable = str2set (':', modlist);
     }
    }
   }
@@ -73,11 +73,11 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    if (!strcmp (atts[i], "id")) {
     newnode->id = estrdup ((char *)atts[i+1]);
    } else if (!strcmp (atts[i], "base")) {
-	char *tmp = estrdup ((char *)atts[i+1]);
-	newnode->base = str2set (':', tmp);
-	if (!newnode->base) {
+    char *tmp = estrdup ((char *)atts[i+1]);
+    newnode->base = str2set (':', tmp);
+    if (!newnode->base) {
      free (tmp);
-	 return;
+     return;
     }
    }
   }
@@ -102,9 +102,10 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 	                 !strcmp (atts[j], "yes"));
    }
   }
-  newnode->arbattrs = ecalloc (i+1,sizeof (char *));
-  for (i=0; atts[i] != NULL; i++)
-   newnode->arbattrs [i] = estrdup ((char *)atts[i]);
+//  newnode->arbattrs = ecalloc (i+1,sizeof (char *));
+//  for (i=0; atts[i] != NULL; i++)
+//   newnode->arbattrs [i] = estrdup ((char *)atts[i]);
+  newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
   cfg_addnode (newnode);
  }
 }
@@ -195,9 +196,9 @@ int cfg_freenode (struct cfgnode *node) {
 
  if (node->nodetype & EI_NODETYPE_CONFIG) {
   if (node->arbattrs) {
-   int i = 0;
+/*   int i = 0;
    for (; node->arbattrs[i] != NULL; i++)
-    free (node->arbattrs[i]);
+    free (node->arbattrs[i]);*/
    free (node->arbattrs);
   }
  }

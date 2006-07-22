@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _UTILITY_H
 
 #include <inttypes.h>
+#define	SET_TYPE_STRING		0
 
 struct uhash {
  char *key;
