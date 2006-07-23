@@ -1,3 +1,6 @@
+2006/07/23: mdeininger
+ * some changes to the str2set function.
+
 2006/07/22: mdeininger
  * put the new setdup() function to use in config-xml-expat
 

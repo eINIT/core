@@ -245,9 +245,19 @@ void **setdup (void **set, int32_t esize) {
    y++;
   }
  } else {
-  newset = ecalloc (setcount(set) +1, sizeof (char *));
+  char *cpnt;
+
+  for (; set[count]; count++)
+   size += sizeof(void*) + esize;
+  size += sizeof(void*)*2;
+
+  newset = ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+
   while (set[y]) {
-   newset[y] = estrdup (set[y]);
+   memcpy (cpnt, set[y], esize);
+   newset [y] = cpnt;
+   cpnt += esize;
    y++;
   }
  }
@@ -302,14 +312,17 @@ char **str2set (const char sep, char *input) {
  for (; i < l; i++) {
   if (input[i] == sep) {
    sc++;
-   input[i] = 0;
+//   input[i] = 0;
   }
  }
- ret = ecalloc (sc+1, sizeof(char *));
+ ret = ecalloc (1, ((sc+1)*sizeof(char *)) + 2 + l);
+ memcpy ((((char *)ret) + ((sc+1)*sizeof(char *))), input, 2 + l);
+ input = (char *)(((char *)ret) + ((sc+1)*sizeof(char *)));
  ret[0] = input;
  for (i = 0; i < l; i++) {
-  if (input[i] == 0) {
+  if (input[i] == sep) {
    ret[cr] = input+i+1;
+   input[i] = 0;
    cr++;
   }
  }
@@ -388,15 +401,19 @@ char **strsetdeldupes (char **set) {
 char **straddtoenviron (char **environment, char *key, char *value) {
  char **ret;
  char *newitem;
- int len = 1;
+ int len = 2;
  if (key) len += strlen (key);
  if (value) len += strlen (value);
  newitem = ecalloc (1, sizeof(char)*len);
+// newitem = ecalloc (1, len);
+// newitem[0] = 0;
  if (key) newitem = strcat (newitem, key);
  if (value) newitem = strcat (newitem, "=");
  if (value) newitem = strcat (newitem, value);
 
- ret = (char**) setadd ((void**)environment, (void*)newitem, -1);
+// puts (newitem);
+
+ ret = (char**) setadd ((void**)environment, (void*)newitem, 0);
  free (newitem);
 
  return ret;

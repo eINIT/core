@@ -58,8 +58,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (!strcmp (name, "enable")) {
    for (; atts[i] != NULL; i+=2) {
     if (!strcmp (atts[i], "mod")) {
-     char *modlist = estrdup ((char *)atts[i+1]);
-     curmode->enable = str2set (':', modlist);
+     curmode->enable = str2set (':', (char *)atts[i+1]);
     }
    }
   }
@@ -73,12 +72,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    if (!strcmp (atts[i], "id")) {
     newnode->id = estrdup ((char *)atts[i+1]);
    } else if (!strcmp (atts[i], "base")) {
-    char *tmp = estrdup ((char *)atts[i+1]);
-    newnode->base = str2set (':', tmp);
-    if (!newnode->base) {
-     free (tmp);
-     return;
-    }
+    newnode->base = str2set (':', (char *)atts[i+1]);
    }
   }
  } else {
@@ -96,15 +90,12 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    else if (!strcmp (atts[i], "oi"))
     newnode->value = strtol (atts[i+1], (char **)NULL, 8);
    else if (!strcmp (atts[i], "b")) {
-	int j = i+1;
+    int j = i+1;
     newnode->flag = (!strcmp (atts[j], "true") ||
-	                 !strcmp (atts[j], "enabled") ||
-	                 !strcmp (atts[j], "yes"));
+                     !strcmp (atts[j], "enabled") ||
+                     !strcmp (atts[j], "yes"));
    }
   }
-//  newnode->arbattrs = ecalloc (i+1,sizeof (char *));
-//  for (i=0; atts[i] != NULL; i++)
-//   newnode->arbattrs [i] = estrdup ((char *)atts[i]);
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
   cfg_addnode (newnode);
  }
@@ -194,14 +185,14 @@ int cfg_freenode (struct cfgnode *node) {
  if (node->next)
   cfg_freenode (node->next);
 
- if (node->nodetype & EI_NODETYPE_CONFIG) {
-  if (node->arbattrs) {
-/*   int i = 0;
-   for (; node->arbattrs[i] != NULL; i++)
-    free (node->arbattrs[i]);*/
-   free (node->arbattrs);
-  }
- }
+// if (node->nodetype & EI_NODETYPE_CONFIG) {
+// }
+ if (node->arbattrs)
+  free (node->arbattrs);
+ if (node->base)
+  free (node->base);
+ if (node->enable)
+  free (node->enable);
 
  if (node->id)
   free (node->id);

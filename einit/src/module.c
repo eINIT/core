@@ -337,12 +337,7 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
  node = cfg_findnode (pstring, 0, NULL);
  if (!node || !node->svalue) return 0;
  free (pstring);
- pstring = estrdup (node->svalue);
- preftab = str2set (':', pstring);
- if (!preftab) {
-  free (pstring);
-  return bitch (BTCH_ERRNO);
- }
+ preftab = str2set (':', node->svalue);
 
  for (; preftab[tn]; tn++) {
   for (ci = 0; cand[ci]; ci++) {
@@ -350,14 +345,13 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
        !strcmp (cand[ci]->module->rid, preftab[tn])) {
     struct lmodule *tmp = cand[cn];
     cand[cn] = cand[ci];
-	cand[ci] = tmp;
-	cn++;
-	break;
+    cand[ci] = tmp;
+    cn++;
+    break;
    }
   }
  }
 
- free (pstring);
  free (preftab);
  return 0;
 }
@@ -555,13 +549,13 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     if (gnode->arbattrs)
      for (; gnode->arbattrs[gni]; gni+=2) {
       if (!strcmp (gnode->arbattrs[gni], "group")) {
-       char **gatoms = str2set (':', estrdup(gnode->arbattrs[gni+1]));
+       char **gatoms = str2set (':', gnode->arbattrs[gni+1]);
        int32_t gatomi = 0;
        groupoptions |= MOD_PLAN_GROUP;
        if (gatoms) {
         for (; gatoms[gatomi]; gatomi++)
          groupatoms = (char **)setadd ((void **)groupatoms, (void *) gatoms[gatomi], -1);
-        free (gatoms);
+//        free (gatoms);
        }
       } else if (!strcmp (gnode->arbattrs[gni], "seq")) {
        if (!strcmp (gnode->arbattrs[gni+1], "most")) {
