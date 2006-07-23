@@ -87,7 +87,7 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
   count += x;
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
 
   x = 0;
   while (set1[x]) {
@@ -95,6 +95,7 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
    memcpy (cpnt, set1[x], esize);
    newset [x] = cpnt;
    cpnt += esize;
+   x++;
   }
   y = x; x = 0;
   while (set2[x]) {
@@ -102,6 +103,7 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
    memcpy (cpnt, set2[x], esize);
    newset [y] = cpnt;
    cpnt += esize;
+   x++;
   }
  } else {
   char *cpnt;
@@ -114,19 +116,21 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
   count += x;
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
 
   x = 0;
   while (set1[x]) {
    memcpy (cpnt, set1[x], esize);
    newset [x] = cpnt;
    cpnt += esize;
+   x++;
   }
   y = x; x = 0;
   while (set2[x]) {
    memcpy (cpnt, set2[x], esize);
    newset [y] = cpnt;
    cpnt += esize;
+   x++;
   }
  }
 
@@ -161,12 +165,13 @@ void **setadd (void **set, void *item, int32_t esize) {
  } else if (esize == 0) {
   char *cpnt;
 
+  puts ("adding object to string-set");
   for (; set[count]; count++)
    size += sizeof(void*) + 1 + strlen(set[count]);
   size += sizeof(void*)*2 + 1 +strlen(item);
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+2)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+2)*sizeof(void*);
 
   while (set[x]) {
    if (set[x] == item) {
@@ -177,11 +182,14 @@ void **setadd (void **set, void *item, int32_t esize) {
    memcpy (cpnt, set[x], esize);
    newset [x] = cpnt;
    cpnt += esize;
+   puts(set[x]);
    x++;
   }
 
+  esize = 1+strlen(item);
   memcpy (cpnt, item, esize);
   newset [x] = cpnt;
+  puts(item);
 //  cpnt += 1+strlen(item);
 
   free (set);
@@ -193,7 +201,7 @@ void **setadd (void **set, void *item, int32_t esize) {
   size += sizeof(void*)*2 + esize;
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+2)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+2)*sizeof(void*);
 
   while (set[x]) {
    if (set[x] == item) {
@@ -235,7 +243,7 @@ void **setdup (void **set, int32_t esize) {
   size += sizeof(void*)*2;
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
 
   while (set[y]) {
    esize = 1+strlen(set[y]);
@@ -252,7 +260,7 @@ void **setdup (void **set, int32_t esize) {
   size += sizeof(void*)*2;
 
   newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*)+1;
+  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
 
   while (set[y]) {
    memcpy (cpnt, set[y], esize);
@@ -413,8 +421,8 @@ char **straddtoenviron (char **environment, char *key, char *value) {
 
 // puts (newitem);
 
- ret = (char**) setadd ((void**)environment, (void*)newitem, 0);
- free (newitem);
+ ret = (char**) setadd ((void**)environment, (void*)newitem, SET_TYPE_STRING);
+// free (newitem);
 
  return ret;
 }

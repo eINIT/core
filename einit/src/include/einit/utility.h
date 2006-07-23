@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <inttypes.h>
 #define	SET_TYPE_STRING		0
+#define	SET_NOALLOC		-1
 
 struct uhash {
  char *key;
