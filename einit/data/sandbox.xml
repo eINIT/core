@@ -20,7 +20,7 @@
  <sysv-script-type s="plain" />
  <prefer-feedback s="einit-feedback-visual:einit-efl-feedback-evas" />
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
- <shell s="/bin/sh -c" />
+ <shell s="/bin/sh -c" TZ="CEST" />
 
  <conf_hostname s="localhost" />
  <conf_domainname s="localnet" />

@@ -165,7 +165,7 @@ void **setadd (void **set, void *item, int32_t esize) {
  } else if (esize == 0) {
   char *cpnt;
 
-  puts ("adding object to string-set");
+//  puts ("adding object to string-set");
   for (; set[count]; count++)
    size += sizeof(void*) + 1 + strlen(set[count]);
   size += sizeof(void*)*2 + 1 +strlen(item);
@@ -182,14 +182,14 @@ void **setadd (void **set, void *item, int32_t esize) {
    memcpy (cpnt, set[x], esize);
    newset [x] = cpnt;
    cpnt += esize;
-   puts(set[x]);
+//   puts(set[x]);
    x++;
   }
 
   esize = 1+strlen(item);
   memcpy (cpnt, item, esize);
   newset [x] = cpnt;
-  puts(item);
+//  puts(item);
 //  cpnt += 1+strlen(item);
 
   free (set);
