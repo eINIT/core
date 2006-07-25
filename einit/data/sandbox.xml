@@ -78,7 +78,7 @@
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="mount/local:dummyd" />
+  <enable mod="mount/local" />
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

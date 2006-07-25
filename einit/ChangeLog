@@ -2,6 +2,7 @@
  * different handling for X-Sessions
  * fixes/improvements to mod-daemon and mod-exec [they now handle variables the
    same way as the tty-module]
+ * improved mount-code [options]
 
 2006/07/24: mdeininger
  * cleanups n stuff in mod-exec, mod-daemon and tty.

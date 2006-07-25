@@ -117,7 +117,23 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
 }
 
 unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct mfeedback *status) {
- void *fsdata = NULL;
+ char *fsdata = NULL;
+
+ if (fse->options) {
+  int fi = 0;
+  for (; fse->options[fi]; fi++) {
+   if (!fsdata) {
+    uint32_t slen = strlen (fse->options[fi])+1;
+    fsdata = ecalloc (1, slen);
+    memcpy (fsdata, fse->options[fi], slen);
+   } else {
+    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (fse->options[fi])+1;
+    fsdata = erealloc (fsdata, fsdl+slen);
+    *(fsdata + fsdl -1) = ',';
+    memcpy (fsdata+fsdl, fse->options[fi], slen);
+   }
+  }
+ }
 
 #ifndef SANDBOX
  if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
