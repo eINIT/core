@@ -72,6 +72,33 @@ void event_listen (uint16_t type, void (*handler)(struct einit_event *)) {
  pthread_mutex_unlock (&evf_mutex);
 }
 
+void event_ignore (uint16_t type, void (*handler)(struct einit_event *)) {
+ if (!event_functions) return;
+
+ pthread_mutex_lock (&evf_mutex);
+  struct event_function *cur = event_functions;
+  struct event_function *prev = NULL;
+  while (cur) {
+   if ((cur->type==type) && (cur->handler==handler)) {
+    if (prev == NULL) {
+     event_functions = cur->next;
+     free (cur);
+     cur = event_functions;
+    } else {
+     prev->next = cur->next;
+     free (cur);
+     cur = prev->next;
+    }
+   } else {
+    prev = cur;
+    cur = cur->next;
+   }
+  }
+ pthread_mutex_unlock (&evf_mutex);
+
+ return;
+}
+
 void function_register (char *name, uint32_t version, void *function) {
  if (!name || !function) return;
  struct function_list *fstruct = ecalloc (1, sizeof (struct function_list));

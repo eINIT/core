@@ -3,6 +3,7 @@
  * fixes/improvements to mod-daemon and mod-exec [they now handle variables the
    same way as the tty-module]
  * improved mount-code [options]
+ * some changes that'll be used for a workover of the feedback-system
 
 2006/07/24: mdeininger
  * cleanups n stuff in mod-exec, mod-daemon and tty.

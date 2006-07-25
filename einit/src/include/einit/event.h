@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EINIT_EVENT_TYPE_IPC		0x0001
 #define EINIT_EVENT_TYPE_NEED_MODULE	0x0002
 #define EINIT_EVENT_TYPE_MOUNT_UPDATE	0x0004
+#define EINIT_EVENT_TYPE_FEEDBACK	0x0008
 #define EINIT_EVENT_TYPE_CUSTOM		0xFFFF
 
 struct einit_event {
@@ -73,6 +74,7 @@ struct event_function *event_functions;
 
 void *event_emit (struct einit_event *, uint16_t);
 void event_listen (uint16_t, void (*)(struct einit_event *));
+void event_ignore (uint16_t, void (*)(struct einit_event *));
 
 void function_register (char *, uint32_t, void *);
 void function_unregister (char *, uint32_t, void *);

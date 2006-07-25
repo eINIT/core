@@ -50,6 +50,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <pthread.h>
 
+struct einit_event ei_module_feedback_default = {
+	.type		= EINIT_EVENT_TYPE_FEEDBACK,
+	.type_custom	= NULL,
+	.set		= NULL,
+	.string		= NULL,
+	.integer	= 0,
+	.flag		= 0,
+	.para		= NULL
+};
+
 int mod_comment (struct mfeedback *status);
 
 struct lmodule *mlist = NULL;

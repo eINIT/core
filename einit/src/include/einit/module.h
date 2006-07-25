@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <einit/scheduler.h>
 #include <einit/utility.h>
+#include <einit/event.h>
 
 #define EINIT_OPT_WAIT 8
 #define EINIT_OPT_ONCE 16
@@ -145,6 +146,7 @@ struct mloadplan {
  pthread_mutex_t mutex;
 };
 
+struct einit_event ei_module_feedback_default;
 extern struct lmodule mdefault;
 
 // scans for modules (i.e. load their .so and add it to the list)
