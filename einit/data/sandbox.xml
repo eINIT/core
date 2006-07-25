@@ -72,13 +72,13 @@
  <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" TERM="linux" />
 
 <!-- dummy daemon -->
- <mod-daemon id="daemon-dummy" provides="dummyd" command="/bin/sh -c 'while true; do echo -n .; sleep 1; done'" restart="yes" />
+ <mod-daemon id="daemon-dummy" provides="dummyd" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
 
  <mode id="feedback">
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="mount/local" />
+  <enable mod="mount/local:dummyd" />
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

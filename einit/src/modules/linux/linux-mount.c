@@ -131,7 +131,7 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
     status->verbose = "an unknown error occured while trying to mount the filesystem";
    status_update (status);
 //   if (fse->after_umount)
-//    pexec (fse->after_umount, fse->variables, 0, 0, status);
+//    pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
    return 1;
   }
  }

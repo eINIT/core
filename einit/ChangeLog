@@ -1,3 +1,8 @@
+2006/07/25: mdeininger
+ * different handling for X-Sessions
+ * fixes/improvements to mod-daemon and mod-exec [they now handle variables the
+   same way as the tty-module]
+
 2006/07/24: mdeininger
  * cleanups n stuff in mod-exec, mod-daemon and tty.
  * the <shell /> tag now allows you to specify a default environment for
