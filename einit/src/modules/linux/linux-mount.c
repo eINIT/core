@@ -59,7 +59,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* module definitions */
 char *provides[] = {"mount", NULL};
 const struct smodule self = {
- EINIT_VERSION, 1, 0, 0, "Linux-specific Filesystem-Mounter Functions", "linux-mount", provides, NULL, NULL
+	.eiversion	= EINIT_VERSION,
+	.version	= 1,
+	.mode		= 0,
+	.options	= 0,
+	.name		= "Linux-specific Filesystem-Mounter Functions",
+	.rid		= "linux-mount",
+	.provides	= provides,
+	.requires	= NULL,
+	.notwith	= NULL
 };
 
 /* function declarations */
