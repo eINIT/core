@@ -16,11 +16,11 @@
  <edje-theme-default s="einit.edj" />
  <edje-theme-default-component s="einit/splash" />
  <sysconf-ctrl-alt-del b="disabled" />
- <sysv-script-path s="/etc/init.d" />
- <sysv-script-type s="plain" />
  <prefer-feedback s="einit-feedback-visual:einit-efl-feedback-evas" />
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
  <shell s="/bin/sh -c" TZ="CEST" />
+
+ <use-ansi-codes b="true" />
 
  <conf_hostname s="localhost" />
  <conf_domainname s="localnet" />
