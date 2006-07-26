@@ -45,10 +45,6 @@ for param in $@; do
 		echo -n " SANDBOX";
 		XCFLAGS="$XCFLAGS -DSANDBOX";
 		PREFIX=`pwd`/sandbox;
-	elif test "$param" = "--enable-sysv"; then
-		echo -n " SYSV";
-		XCFLAGS="$XCFLAGS -DSYSV";
-		PMODULES="$PMODULES sysv";
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		PMODULES="$PMODULES linux";
@@ -75,7 +71,6 @@ if test "$HELP" = "1"; then
 Options:
  --prefix=path          use this to set a path to install to (absolute!)
  --with-include=path    use this to set a path to install to (absolute!)
- --enable-sysv          enable compilation of sysv-compatibility functions
  --enable-linux         enable compilation of linux-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
  --bitch-a-lot          tell all programs used to compile and link to be more... verbose
