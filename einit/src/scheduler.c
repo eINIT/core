@@ -115,7 +115,7 @@ int epowerreset () {
 
 int sched_switchmode (char *mode) {
  if (!mode) return -1;
- struct mfeedback *fb = ecalloc (1, sizeof (struct mfeedback));
+ struct einit_event *fb = ecalloc (1, sizeof (struct einit_event));
  if (sconfiguration) {
   struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
   struct cfgnode *opt;
@@ -160,7 +160,7 @@ int sched_switchmode (char *mode) {
    mod_plan_ls (plan);
 #endif
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
-   fb->plan = plan;
+   fb->para = (void *)plan;
    status_update (fb);
    mod_plan_commit (plan);
    currentmode = mode;

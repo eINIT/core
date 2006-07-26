@@ -58,15 +58,15 @@ struct smodule self = {
  EINIT_VERSION, 1, 0, 0, "Linux-specific System-Configuration", "linux-sysconf", provides, NULL, NULL
 };
 
-int enable (void *pa, struct mfeedback *status) {
+int enable (void *pa, struct einit_event *status) {
 
  {
   struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0, NULL);
   if (cfg && !cfg->flag) {
    if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
-    status->verbose = strerror(errno);
-	errno = 0;
-	status->errorc++;
+    status->string = strerror(errno);
+    errno = 0;
+    status->flag++;
     status_update (status);
    }
   }
@@ -75,6 +75,6 @@ int enable (void *pa, struct mfeedback *status) {
  return STATUS_OK;
 }
 
-int disable (void *pa, struct mfeedback *status) {
+int disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }

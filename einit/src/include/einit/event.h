@@ -52,7 +52,7 @@ struct einit_event {
  char *type_custom;
  void **set;
  char *string;
- int32_t integer;
+ int32_t integer, status, task;
  unsigned char flag;
  void *para;
 };

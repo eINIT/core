@@ -57,7 +57,7 @@ struct smodule self = {
  EINIT_VERSION, 1, 0, 0, "System-V compatibility: UTMP forger", "einit-utmp-forger", provides, requires, NULL
 };
 
-int enable (void *pa, struct mfeedback *status) {
+int enable (void *pa, struct einit_event *status) {
  FILE *ufile;
  struct cfgnode *utmp_cfg = cfg_findnode ("forge-utmp", 0, NULL);
 
@@ -87,6 +87,6 @@ int enable (void *pa, struct mfeedback *status) {
  return STATUS_OK;
 }
 
-int disable (void *pa, struct mfeedback *status) {
+int disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }

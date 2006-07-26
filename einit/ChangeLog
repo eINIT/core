@@ -1,3 +1,8 @@
+2006/07/26: mdeininger
+ * feedback-system workover
+ * the dummy module and mod-sysv.c are no longer being maintained and have been
+   removed from the the repository
+
 2006/07/25: mdeininger
  * different handling for X-Sessions
  * fixes/improvements to mod-daemon and mod-exec [they now handle variables the

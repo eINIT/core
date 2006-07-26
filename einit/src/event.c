@@ -158,7 +158,7 @@ void function_unregister (char *name, uint32_t version, void *function) {
  if (!posted_functions) return;
 
  pthread_mutex_lock (&pof_mutex);
-  if (!name) return NULL;
+  if (!name) return;
 
   struct function_list *cur = posted_functions;
   struct function_list *prev = NULL;

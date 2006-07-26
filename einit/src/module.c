@@ -50,22 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <pthread.h>
 
-struct einit_event ei_module_feedback_default = {
-	.type		= EINIT_EVENT_TYPE_FEEDBACK,
-	.type_custom	= NULL,
-	.set		= NULL,
-	.string		= NULL,
-	.integer	= 0,
-	.flag		= 0,
-	.para		= NULL
-};
-
-int mod_comment (struct mfeedback *status);
-
 struct lmodule *mlist = NULL;
-struct lmodule mdefault = {
-	NULL, NULL, NULL, mod_comment
-};
 int mcount = 0;
 
 char **provided = NULL;
@@ -141,11 +126,10 @@ int mod_freemodules () {
  return 1;
 }
 
-int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*disable)(void *, struct mfeedback *), void *param, struct smodule *module) {
+int mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
- int (*comment) (struct mfeedback *);
- int (*ftload)  (void *, struct mfeedback *);
+ int (*ftload)  (void *, struct einit_event *);
  int (*configfunc)(struct lmodule *);
 
  nmod = ecalloc (1, sizeof (struct lmodule));
@@ -188,24 +172,15 @@ int mod_add (void *sohandle, int (*enable)(void *, struct mfeedback *), int (*di
    }
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
-// EINIT_MOD_FEEDBACK-type modules will usually want to provide a comment()-
-//  function in order to provide feedback about how a module is loading...
-  if (module->mode & EINIT_MOD_FEEDBACK) {
-   comment = (int (*)(struct mfeedback *)) dlsym (sohandle, "comment");
-   if (comment != NULL) {
-    nmod->comment = comment;
-   }
-   else bitch(BTCH_ERRNO + BTCH_DL);
-  }
 // we need to scan for load and unload functions if NULL was supplied for these
   if (enable == NULL) {
-   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "enable");
+   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "enable");
    if (ftload != NULL) {
     nmod->enable = ftload;
    }
   }
   if (disable == NULL) {
-   ftload = (int (*)(void *, struct mfeedback *)) dlsym (sohandle, "disable");
+   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "disable");
    if (ftload != NULL) {
     nmod->disable = ftload;
    }
@@ -239,7 +214,7 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 }
 
 int mod (unsigned int task, struct lmodule *module) {
- struct mfeedback *fb;
+ struct einit_event *fb;
  pthread_t *th;
  char providefeedback;
  struct smodule *t;
@@ -283,12 +258,13 @@ int mod (unsigned int task, struct lmodule *module) {
    }
  }
 
- fb = (struct mfeedback *)ecalloc (1, sizeof (struct mfeedback));
- fb->module = module;
+ fb = (struct einit_event *)ecalloc (1, sizeof (struct einit_event));
+ fb->para = (void *)module;
+ fb->type = EINIT_EVENT_TYPE_FEEDBACK;
  fb->task = task | MOD_FEEDBACK_SHOW;
  fb->status = STATUS_WORKING;
- fb->errorc = 0;
- fb->verbose = NULL;
+ fb->flag = 0;
+ fb->string = NULL;
  status_update (fb);
 
  if (task & MOD_ENABLE) {
@@ -328,10 +304,6 @@ int mod (unsigned int task, struct lmodule *module) {
 
  pthread_mutex_unlock (&module->mutex);
  return module->status;
-}
-
-int mod_comment (struct mfeedback *status) {
- return 0;
 }
 
 /* helper functions for mod_plan should go right here */

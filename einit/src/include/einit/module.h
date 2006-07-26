@@ -96,16 +96,6 @@ extern "C"
 {
 #endif
 
-struct mfeedback {
- volatile uint32_t status;
- unsigned volatile int progress;
- uint32_t task;
- unsigned int errorc;
- char volatile *verbose;
- struct lmodule * module;
- struct mloadplan * plan;
-};
-
 struct smodule {
  int eiversion;
  int version;
@@ -120,9 +110,8 @@ struct smodule {
 
 struct lmodule {
  void *sohandle;
- int (*enable)  (void *, struct mfeedback *);
- int (*disable) (void *, struct mfeedback *);
- int (*comment) (struct mfeedback *);
+ int (*enable)  (void *, struct einit_event *);
+ int (*disable) (void *, struct einit_event *);
  int (*cleanup) (struct lmodule *);
  uint32_t status;
  void *param;
@@ -156,7 +145,7 @@ int mod_scanmodules ();
 int mod_freemodules ();
 
 // adds a module to the main chain of modules
-int mod_add (void *, int (*)(void *, struct mfeedback *), int (*)(void *, struct mfeedback *), void *, struct smodule *);
+int mod_add (void *, int (*)(void *, struct einit_event *), int (*)(void *, struct einit_event *), void *, struct smodule *);
 
 // find a module
 struct lmodule *mod_find (char *rid, unsigned int options);
@@ -187,30 +176,10 @@ void mod_plan_ls (struct mloadplan *);
 
 // use this to tell einit that there is new feedback-information
 // don't rely on this to be a macro!
-#define status_update(a) if (mdefault.comment) mdefault.comment(a)
+#define status_update(a) event_emit(a, EINIT_EVENT_FLAG_BROADCAST)
 
 #ifdef __cplusplus
 }
 #endif
-
-/* what your module would usually have to define:
-//
-// _ALL_ modules:
-// struct smodule self;
-//
-// modules that want to configure themselves:
-// int configure (struct lmodule *);
-//
-// feedback-modules:
-// int comment (struct mfeedback *status);
-//
-// modules that load something:
-// int load (void *pa, struct mfeedback *status);
-// int unload (void *pa, struct mfeedback *status);
-//
-// modules for loading different types of modules:
-// int scanmodules (struct lmodule *);
-//
-// ------------------------------------------------ */
 
 #endif /* _MODULE_H */

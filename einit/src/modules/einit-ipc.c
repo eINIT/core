@@ -177,11 +177,11 @@ void * ipc_wait (void *unused_parameter) {
  return NULL;
 }
 
-int enable (void *pa, struct mfeedback *status) {
+int enable (void *pa, struct einit_event *status) {
  pthread_create (&ipc_thread, NULL, ipc_wait, NULL);
  return STATUS_OK;
 }
 
-int disable (void *pa, struct mfeedback *status) {
+int disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }

@@ -14,7 +14,6 @@ clean:
 
 install: all
 	${INSTALL} ${SOIPARAM} -d ${MODDIR}
-#	${INSTALL} ${SOIPARAM} dummy.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} vis-text.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} mod-exec.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} tty.so ${MODDIR}
@@ -23,9 +22,6 @@ install: all
 	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${MODDIR}
 	${INSTALL} ${SOIPARAM} common-mount.so ${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
-
-#dummy.so: dummy.c
-#	${CCL} dummy.c -o dummy.so
 
 vis-text.so: vis-text.c
 	${CCL} vis-text.c -o vis-text.so
