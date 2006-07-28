@@ -2,6 +2,7 @@
  * feedback-system workover
  * the dummy module and mod-sysv.c are no longer being maintained and have been
    removed from the the repository
+ * concept configuration for redirecting text input/output
 
 2006/07/25: mdeininger
  * different handling for X-Sessions

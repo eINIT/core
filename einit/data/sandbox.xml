@@ -21,6 +21,7 @@
  <shell s="/bin/sh -c" TZ="CEST" />
 
  <use-ansi-codes b="true" />
+ <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="einit-stderr" />
 
  <conf_hostname s="localhost" />
  <conf_domainname s="localnet" />
