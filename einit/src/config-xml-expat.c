@@ -185,8 +185,6 @@ int cfg_freenode (struct cfgnode *node) {
  if (node->next)
   cfg_freenode (node->next);
 
-// if (node->nodetype & EI_NODETYPE_CONFIG) {
-// }
  if (node->arbattrs)
   free (node->arbattrs);
  if (node->base)

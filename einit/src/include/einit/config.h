@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _CONFIG_H
 
 #include <einit/module.h>
+#include <einit/utility.h>
 #include <sys/utsname.h>
 
 #define BUFFERSIZE 1024
