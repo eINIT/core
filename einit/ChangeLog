@@ -1,3 +1,7 @@
+2006/07/29: mdeininger
+ * combined the update_* functions in common-mount.c into update()
+   all called functions now get the &mcb pointer as their first argument
+
 2006/07/26: mdeininger
  * feedback-system workover
  * the dummy module and mod-sysv.c are no longer being maintained and have been

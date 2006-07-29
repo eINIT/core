@@ -48,6 +48,9 @@ for param in $@; do
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		PMODULES="$PMODULES linux";
+	elif test "$param" = "--enable-bsd"; then
+		echo -n " BSD";
+		PMODULES="$PMODULES bsd";
 	elif test "$param" = "--enable-efl"; then
 		echo -n " EFL";
 		PMODULES="$PMODULES efl";
@@ -72,6 +75,7 @@ Options:
  --prefix=path          use this to set a path to install to (absolute!)
  --with-include=path    use this to set a path to install to (absolute!)
  --enable-linux         enable compilation of linux-specific modules
+ --enable-bsd           enable compilation of bsd-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
  --bitch-a-lot          tell all programs used to compile and link to be more... verbose
  --use-posix-regex      use posix.2 regular expressions
@@ -120,17 +124,17 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
-	CCL="$CCL -bundle -Wl,-bundle_loader,`pwd`/src/einit";
+	CCL="$CCL -bundle -fPIC -Wl,-bundle_loader,`pwd`/src/einit";
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
 	XCFLAGS="$XCFLAGS -DPOSIX -DLINUX";
-	CCL="$CCL -shared";
+	CCL="$CCL -shared -fPIC";
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
 else
 	echo "(guess) generic posix-ish unix";
 	XCFLAGS="$XCFLAGS -DPOSIX";
-	CCL="$CCL -shared";
+	CCL="$CCL -shared -fPIC";
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
 fi
