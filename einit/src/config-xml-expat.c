@@ -217,6 +217,8 @@ int cfg_free () {
     free (node->enable);
    if (node->disable)
     free (node->disable);
+   if (node->svalue)
+    free (node->svalue);
 
    if (node->id)
     free (node->id);
@@ -226,6 +228,7 @@ int cfg_free () {
   cur = hashnext (cur);
  }
  hashfree (hconfiguration);
+ hconfiguration = NULL;
  return 1;
 }
 

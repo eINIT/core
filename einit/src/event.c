@@ -166,10 +166,12 @@ void function_unregister (char *name, uint32_t version, void *function) {
    if ((cur->version==version) && !strcmp (cur->name, name)) {
     if (prev == NULL) {
      posted_functions = cur->next;
+     free (cur->name);
      free (cur);
      cur = posted_functions;
     } else {
      prev->next = cur->next;
+     free (cur->name);
      free (cur);
      cur = prev->next;
     }
