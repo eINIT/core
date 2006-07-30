@@ -234,7 +234,7 @@ int cfg_free () {
 
 int cfg_addnode (struct cfgnode *node) {
  if (!node) return;
- hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode));
+ hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), NULL);
 // hconfiguration = hashadd (hconfiguration, node->id, node, -1);
 }
 

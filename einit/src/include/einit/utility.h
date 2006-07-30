@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct uhash {
  char *key;
  void *value;
+ void *luggage;
  struct uhash *next;
 };
 
@@ -67,7 +68,7 @@ char **straddtoenviron (char **, char *, char *);
 
 /* same as above, this time with hashes */
 
-struct uhash *hashadd (struct uhash *, char *, void *, int32_t);
+struct uhash *hashadd (struct uhash *, char *, void *, int32_t, void *);
 struct uhash *hashfind (struct uhash *, char *);
 struct uhash *hashdel (struct uhash *, struct uhash *);
 void hashfree (struct uhash *);

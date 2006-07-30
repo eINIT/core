@@ -359,18 +359,18 @@ struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int fla
  }
  if (flag == MOD_P2H_LIST) {
 //  ihash = hashadd (ihash, "", plan, sizeof (struct mloadplan));
-  ihash = hashadd (ihash, "", plan, -1);
+  ihash = hashadd (ihash, "", plan, -1, NULL);
  } else {
    switch (flag) {
     case MOD_P2H_PROVIDES:
     case MOD_P2H_PROVIDES_NOBACKUP:
      if (plan->mod && plan->mod->module && plan->mod->module->rid)
 //      ihash = hashadd (ihash, plan->mod->module->rid, plan, sizeof (struct mloadplan));
-      ihash = hashadd (ihash, plan->mod->module->rid, plan, -1);
+      ihash = hashadd (ihash, plan->mod->module->rid, plan, -1, NULL);
      if (plan->provides && plan->provides[0]) {
       for (i = 0; plan->provides[i]; i++) {
 //       ihash = hashadd (ihash, plan->provides[i], (void *)plan, sizeof (struct mloadplan));
-       ihash = hashadd (ihash, plan->provides[i], (void *)plan, -1);
+       ihash = hashadd (ihash, plan->provides[i], (void *)plan, -1, NULL);
       }
      }
      break;
@@ -378,7 +378,7 @@ struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int fla
      if (plan->requires && plan->requires[0]) {
       for (i = 0; plan->requires[i]; i++) {
 //       ihash = hashadd (ihash, plan->requires[i], (void *)plan, sizeof (struct mloadplan));
-       ihash = hashadd (ihash, plan->requires[i], (void *)plan, -1);
+       ihash = hashadd (ihash, plan->requires[i], (void *)plan, -1, NULL);
       }
      }
      break;

@@ -430,7 +430,7 @@ char **straddtoenviron (char **environment, char *key, char *value) {
 
 /* hashes */
 
-struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen) {
+struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen, void *luggage) {
  struct uhash *n;
  struct uhash *c = hash;
  uint32_t hklen;
@@ -492,6 +492,7 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
   cur = cur->next;
  if (cur && (cur->next == subject)) {
   cur->next = subject->next;
+  if (subject->luggage) free (subject->luggage);
   free (subject);
   return cur;
  }
@@ -511,6 +512,7 @@ void hashfree (struct uhash *hash) {
  while (c) {
   struct uhash *d = c;
   c = c->next;
+  if (d->luggage) free (d->luggage);
   free (d);
  }
 }
