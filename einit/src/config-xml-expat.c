@@ -58,7 +58,15 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (!strcmp (name, "enable")) {
    for (; atts[i] != NULL; i+=2) {
     if (!strcmp (atts[i], "mod")) {
+     if (curmode->enable) free (curmode->enable);
      curmode->enable = str2set (':', (char *)atts[i+1]);
+    }
+   }
+  } else if (!strcmp (name, "disable")) {
+   for (; atts[i] != NULL; i+=2) {
+    if (!strcmp (atts[i], "mod")) {
+     if (curmode->disable) free (curmode->disable);
+     curmode->disable = str2set (':', (char *)atts[i+1]);
     }
    }
   }
@@ -66,7 +74,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
  if (!strcmp (name, "mode")) {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
-  curmode = newnode;
   for (; atts[i] != NULL; i+=2) {
    if (!strcmp (atts[i], "id")) {
     newnode->id = estrdup ((char *)atts[i+1]);
@@ -74,7 +81,18 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     newnode->base = str2set (':', (char *)atts[i+1]);
    }
   }
-  cfg_addnode (newnode);
+  if (newnode->id) {
+   char *id = newnode->id;
+   cfg_addnode (newnode);
+   free (newnode);
+/* this is admittedly a tad more complicated than necessary, however its the only way to find the last addition to the hash
+   with this id */
+   curmode = NULL;
+   while (curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode)) {
+    newnode = curmode;
+   }
+   curmode = newnode;
+  }
  } else {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->id = estrdup ((char *)name);
@@ -98,6 +116,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   }
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
   cfg_addnode (newnode);
+  free (newnode);
  }
 }
 
@@ -186,40 +205,34 @@ int cfg_load (char *configfile) {
 }
 
 int cfg_free () {
-/* if (sconfiguration == NULL)
-  return 1;
- if (sconfiguration->node != NULL)
-  cfg_freenode (sconfiguration->node);
+ struct uhash *cur = hconfiguration;
+ struct cfgnode *node = NULL;
+ while (cur) {
+  if (node = (struct cfgnode *)cur->value) {
+   if (node->arbattrs)
+    free (node->arbattrs);
+   if (node->base)
+    free (node->base);
+   if (node->enable)
+    free (node->enable);
+   if (node->disable)
+    free (node->disable);
 
- free (sconfiguration);*/
+   if (node->id)
+    free (node->id);
+   if (node->custom)
+    free (node->custom);
+  }
+  cur = hashnext (cur);
+ }
  hashfree (hconfiguration);
  return 1;
 }
 
-int cfg_freenode (struct cfgnode *node) {
-// if (node->next)
-//  cfg_freenode (node->next);
-
- if (node->arbattrs)
-  free (node->arbattrs);
- if (node->base)
-  free (node->base);
- if (node->enable)
-  free (node->enable);
-
- if (node->id)
-  free (node->id);
- if (node->custom)
-  free (node->custom);
-
- free (node);
- return;
-}
-
- int cfg_addnode (struct cfgnode *node) {
+int cfg_addnode (struct cfgnode *node) {
  if (!node) return;
-// hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode *));
- hconfiguration = hashadd (hconfiguration, node->id, node, -1);
+ hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode));
+// hconfiguration = hashadd (hconfiguration, node->id, node, -1);
 }
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {

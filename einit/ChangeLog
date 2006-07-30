@@ -1,5 +1,8 @@
 2006/07/30: mdeininger
  * reworked cfgnodes to use the hash functions
+ * fixed a bug in mod-daemon that caused a segfault due to resurrected
+   daemoni lacking a pointer to their module.
+ * the vis-text module will now redirect the std(in|out|err) files
 
 2006/07/29: mdeininger
  * combined the update_* functions in common-mount.c into update()

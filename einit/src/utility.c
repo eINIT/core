@@ -450,6 +450,8 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen)
   if (vlen == 0)
    vlen = strlen (value)+1;
 
+//  printf ("new hash-node: key=%s, vlen=%i\n", key, vlen);
+
   n = ecalloc (1, sizeof (struct uhash) + hklen + vlen);
   memcpy ((((char *)n) + sizeof (struct uhash)), key, hklen);
   memcpy ((((char *)n) + sizeof (struct uhash) + hklen), value, vlen);

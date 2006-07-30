@@ -80,9 +80,6 @@ int cfg_load (char *);
 // free configuration
 int cfg_free ();
 
-// free a node and all its descendants
-int cfg_freenode (struct cfgnode *);
-
 // add a node to the main configuration
 int cfg_addnode (struct cfgnode *);
 
