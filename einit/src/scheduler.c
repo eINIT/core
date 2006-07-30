@@ -116,7 +116,6 @@ int epowerreset () {
 int sched_switchmode (char *mode) {
  if (!mode) return -1;
  struct einit_event *fb = ecalloc (1, sizeof (struct einit_event));
- if (sconfiguration) {
   struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
   struct cfgnode *opt;
   struct mloadplan *plan;
@@ -168,7 +167,6 @@ int sched_switchmode (char *mode) {
    status_update (fb);
    mod_plan_free (plan);
   }
- }
 
  free (fb);
  return 0;

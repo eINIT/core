@@ -60,7 +60,6 @@ extern "C"
 struct cfgnode {
  unsigned int nodetype;
  char *id;
- struct cfgnode *next;
  struct cfgnode *mode;
  unsigned char flag;
  long int value;
@@ -72,15 +71,7 @@ struct cfgnode {
  void *custom;
 };
 
-struct sconfiguration {
- int eiversion;
- int version;
- unsigned int options;
- char **arbattrs;
- struct cfgnode *node;
-};
-
-struct sconfiguration *sconfiguration;
+struct uhash *configuration;
 struct utsname osinfo;
 
 // load configuration
@@ -95,14 +86,8 @@ int cfg_freenode (struct cfgnode *);
 // add a node to the main configuration
 int cfg_addnode (struct cfgnode *);
 
-// remove a node from the main configuration (by pointer)
-int cfg_delnode (struct cfgnode *);
-
 // find a node (by id)
 struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
-
-// replace a node with a new one
-int cfg_replacenode (struct cfgnode *, struct cfgnode *);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 

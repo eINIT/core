@@ -473,8 +473,25 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen)
   }
   c->next = n;
  }
+// n->next = hash;
+// hash = n;
 
  return hash;
+}
+
+struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
+ if (!cur || !subject) return cur;
+ if ((cur == subject) && !subject->next) {
+  free (cur);
+  return NULL;
+ }
+ while (cur && (cur->next != subject))
+  cur = cur->next;
+ if (cur->next == subject) {
+  cur->next == subject->next;
+  free (subject);
+  return cur;
+ }
 }
 
 struct uhash *hashfind (struct uhash *hash, char *key) {

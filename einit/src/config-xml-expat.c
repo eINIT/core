@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PATH_MODULES 1
 #define FEEDBACK_MODULE 1
 
-struct sconfiguration *sconfiguration = NULL;
+struct uhash *hconfiguration = NULL;
 struct cfgnode *curmode = NULL;
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
@@ -110,13 +110,12 @@ int cfg_load (char *configfile) {
  static char recursion = 0;
  int cfgfd, e, blen, cfgplen;
  char * buf, * data;
+ struct uhash *hnode;
  ssize_t rn;
  struct cfgnode *node = NULL, *last = NULL;
  char *confpath = NULL;
  XML_Parser par;
  if (!configfile) return 0;
- if (!sconfiguration)
-  sconfiguration = ecalloc (1, sizeof(struct sconfiguration));
  cfgfd = open (configfile, O_RDONLY);
  if (cfgfd != -1) {
   buf = emalloc (BUFFERSIZE*sizeof(char));
@@ -144,8 +143,9 @@ int cfg_load (char *configfile) {
    confpath = cfg_getpath ("configuration-path");
    if (!confpath) confpath = "/etc/einit/";
    cfgplen = strlen(confpath) +1;
-   for (node = sconfiguration->node, last = NULL; node; node = node->next) {
+/*   for (hnode = configuration, last = NULL; hnode; hnode = hashnext (hnode)) {
     rescan_node:
+	node = (struct cfgnode *)hnode->value;
     if (!node) break;
     if (node->svalue && !strcmp (node->id, "include")) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
@@ -161,29 +161,42 @@ int cfg_load (char *configfile) {
      goto rescan_node;
     }
     last = node;
+   }*/
+   rescan_node:
+   hnode = hconfiguration;
+   while (hnode = hashfind (hnode, "include")) {
+	node = (struct cfgnode *)hnode->value;
+    char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
+    includefile = strcat (includefile, confpath);
+    includefile = strcat (includefile, node->svalue);
+    recursion++;
+    cfg_load (includefile);
+    recursion--;
+    free (includefile);
+	hashdel (hconfiguration, hnode);
+    goto rescan_node;
    }
   }
-  return sconfiguration != NULL;
+  return hconfiguration != NULL;
  } else {
-  free (sconfiguration);
-  sconfiguration = NULL;
   return bitch(BTCH_ERRNO);
  }
 }
 
 int cfg_free () {
- if (sconfiguration == NULL)
+/* if (sconfiguration == NULL)
   return 1;
  if (sconfiguration->node != NULL)
   cfg_freenode (sconfiguration->node);
 
- free (sconfiguration);
+ free (sconfiguration);*/
+ hashfree (hconfiguration);
  return 1;
 }
 
 int cfg_freenode (struct cfgnode *node) {
- if (node->next)
-  cfg_freenode (node->next);
+// if (node->next)
+//  cfg_freenode (node->next);
 
  if (node->arbattrs)
   free (node->arbattrs);
@@ -202,76 +215,33 @@ int cfg_freenode (struct cfgnode *node) {
 }
 
 int cfg_addnode (struct cfgnode *node) {
- struct cfgnode *cur = sconfiguration->node;
- if (!cur)
-  sconfiguration->node = node;
- else {
-  while (cur->next)
-   cur = cur->next;
-  cur->next = node;
- }
-}
-
-int cfg_delnode (struct cfgnode *node) {
- struct cfgnode *cur = sconfiguration->node;
- if (!node || !cur) return -1;
- if (cur == node) {
-  sconfiguration->node = node->next;
-  goto cleanup;
-/*  node->next = NULL;
-  cfg_freenode (node);
-  return 0;*/
- }
- while (cur->next) {
-  if (cur->next == node) {
-   cur->next = node->next;
-   cleanup:
-   node->next = NULL;
-   cfg_freenode (node);
-   return 0;
-  }
-  cur = cur->next;
- }
- return -1;
+ if (!node) return;
+ hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode *));
 }
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
- struct cfgnode *cur = base ? base->next : sconfiguration->node;
+ struct uhash *cur = hconfiguration;
+ if (base) {
+  while (cur) {
+   if (cur->value == base) break;
+   cur = hashnext (cur);
+  }
+ }
  if (!cur || !id) return NULL;
- if (!strcmp(cur->id, id)) return cur;
+ puts (".");
+/* if (!strcmp(cur->id, id)) return cur;
 
  while (cur) {
   if (!strcmp(cur->id, id) && (!type || !(cur->nodetype ^ type)))
    return cur;
   cur = cur->next;
+ }*/
+ while (cur) {
+  if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
+   return cur->value;
+  cur = hashfind (cur, id);
  }
  return NULL;
-}
-
-int cfg_replacenode (struct cfgnode *old, struct cfgnode *new) {
- struct cfgnode *cur = sconfiguration->node;
- if (!old || !new || !cur) return -1;
- new->next = old->next;
-
- if (cur == old) {
-  sconfiguration->node = new;
-/*  old->next = NULL
-  cfg_freenode (old);
-  return 0;*/
-  goto cleanup;
- }
-
- while (cur->next) {
-  if (cur->next == old) {
-   cur->next = new;
-   cleanup:
-   old->next = NULL;
-   cfg_freenode (old);
-   return 0;
-  }
-  cur = cur->next;
- }
- return -1;
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */

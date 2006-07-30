@@ -69,6 +69,7 @@ char **straddtoenviron (char **, char *, char *);
 
 struct uhash *hashadd (struct uhash *, char *, void *, int32_t);
 struct uhash *hashfind (struct uhash *, char *);
+struct uhash *hashdel (struct uhash *, struct uhash *);
 void hashfree (struct uhash *);
 #define hashnext(h) h->next
 
