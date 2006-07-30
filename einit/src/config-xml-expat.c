@@ -66,7 +66,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
  if (!strcmp (name, "mode")) {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
-  cfg_addnode (newnode);
   curmode = newnode;
   for (; atts[i] != NULL; i+=2) {
    if (!strcmp (atts[i], "id")) {
@@ -75,6 +74,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     newnode->base = str2set (':', (char *)atts[i+1]);
    }
   }
+  cfg_addnode (newnode);
  } else {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->id = estrdup ((char *)name);
@@ -166,15 +166,17 @@ int cfg_load (char *configfile) {
    hnode = hconfiguration;
    while (hnode = hashfind (hnode, "include")) {
 	node = (struct cfgnode *)hnode->value;
-    char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
-    includefile = strcat (includefile, confpath);
-    includefile = strcat (includefile, node->svalue);
-    recursion++;
-    cfg_load (includefile);
-    recursion--;
-    free (includefile);
-	hashdel (hconfiguration, hnode);
-    goto rescan_node;
+	if (node->svalue) {
+     char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
+     includefile = strcat (includefile, confpath);
+     includefile = strcat (includefile, node->svalue);
+     recursion++;
+     cfg_load (includefile);
+     recursion--;
+     free (includefile);
+	 hashdel (hconfiguration, hnode);
+     goto rescan_node;
+    }
    }
   }
   return hconfiguration != NULL;
@@ -216,19 +218,23 @@ int cfg_freenode (struct cfgnode *node) {
 
 int cfg_addnode (struct cfgnode *node) {
  if (!node) return;
- hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode *));
+// hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode *));
+ hconfiguration = hashadd (hconfiguration, node->id, node, -1);
 }
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
  struct uhash *cur = hconfiguration;
  if (base) {
   while (cur) {
-   if (cur->value == base) break;
+   if (cur->value == base) {
+    cur = hashnext (cur);
+    break;
+   }
    cur = hashnext (cur);
   }
  }
  if (!cur || !id) return NULL;
- puts (".");
+// puts (".");
 /* if (!strcmp(cur->id, id)) return cur;
 
  while (cur) {
@@ -236,10 +242,13 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
    return cur;
   cur = cur->next;
  }*/
- while (cur) {
+// puts (id);
+ while (cur = hashfind (cur, id)) {
+//  puts (((struct cfgnode *)cur->value)->id);
+//  puts (cur->key);
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
    return cur->value;
-  cur = hashfind (cur, id);
+  cur = hashnext (cur);
  }
  return NULL;
 }

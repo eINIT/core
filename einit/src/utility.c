@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <ctype.h>
+#include <stdio.h>
 
 /* some common functions to work with null-terminated arrays */
 
@@ -444,7 +445,7 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen)
 
   n->key = (((char *)n) + sizeof (struct uhash));
   n->value = value;
- } else {
+ } else  {
   if (!value) return hash;
   if (vlen == 0)
    vlen = strlen (value)+1;
@@ -487,8 +488,8 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
  }
  while (cur && (cur->next != subject))
   cur = cur->next;
- if (cur->next == subject) {
-  cur->next == subject->next;
+ if (cur && (cur->next == subject)) {
+  cur->next = subject->next;
   free (subject);
   return cur;
  }
