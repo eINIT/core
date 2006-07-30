@@ -71,7 +71,7 @@ struct cfgnode {
  void *custom;
 };
 
-struct uhash *configuration;
+struct uhash *hconfiguration;
 struct utsname osinfo;
 
 // load configuration
