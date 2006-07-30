@@ -158,6 +158,7 @@ int sched_switchmode (char *mode) {
 #ifdef DEBUG
    mod_plan_ls (plan);
 #endif
+   fb->type = EINIT_EVENT_TYPE_FEEDBACK;
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
    fb->para = (void *)plan;
    status_update (fb);
