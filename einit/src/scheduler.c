@@ -401,7 +401,7 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  int i, status;
  pid_t pid;
- struct spidcb *nele = ecalloc (1, sizeof (struct spidcb));
+ struct spidcb *nele;
  pthread_t th;
 
  while (pid = waitpid (-1, &status, WNOHANG)) {
@@ -415,7 +415,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
   nele->status = status;
 
   if (pthread_create (&th, NULL, (void *(*)(void *))sched_signal_sigchld_addentrythreadfunction, (void *)nele)) {
-   fprintf (stderr, "couldn't create sigchld thread: %s\n", strerror (errno));
+   fprintf (stdout, "couldn't create sigchld thread: %s\n", strerror (errno));
   } else
    pthread_detach (th);
  }

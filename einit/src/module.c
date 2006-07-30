@@ -123,6 +123,7 @@ int mod_freemodules () {
  if (mlist != NULL)
   mod_freedesc (mlist);
  mlist = NULL;
+ mcount = 0;
  return 1;
 }
 
@@ -215,7 +216,6 @@ struct lmodule *mod_find (char *rid, unsigned int modeflags) {
 
 int mod (unsigned int task, struct lmodule *module) {
  struct einit_event *fb;
- pthread_t *th;
  char providefeedback;
  struct smodule *t;
  int ti, errc;
@@ -237,8 +237,6 @@ int mod (unsigned int task, struct lmodule *module) {
  }
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
   goto wontload;
-
- th = ecalloc (1, sizeof (pthread_t));
 
  if (task & MOD_ENABLE) {
    if (t = module->module) {
