@@ -27,21 +27,21 @@ vis-text.so: vis-text.c
 	${CCL} vis-text.c -o vis-text.so
 
 pexec.o: pexec.c
-	${CCC} -c pexec.c
+	${CCC} -fPIC -c pexec.c
 
 dexec.o: dexec.c
-	${CCC} -c dexec.c
+	${CCC} -fPIC -c dexec.c
 
 common-mount.so: common-mount.c pexec.o dexec.o
-	${CCC} -c common-mount.c
+	${CCC} -fPIC -c common-mount.c
 	${CCL} common-mount.o pexec.o dexec.o -o common-mount.so
 
 mod-exec.so: mod-exec.c pexec.o
-	${CCC} -c mod-exec.c
+	${CCC} -fPIC -c mod-exec.c
 	${CCL} mod-exec.o pexec.o -o mod-exec.so
 
 mod-daemon.so: mod-daemon.c pexec.o dexec.o
-	${CCC} -c mod-daemon.c
+	${CCC} -fPIC -c mod-daemon.c
 	${CCL} mod-daemon.o pexec.o dexec.o -o mod-daemon.so
 
 tty.so: tty.c
