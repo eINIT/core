@@ -1,3 +1,7 @@
+2006/08/05: mdeininger
+ * fixes for Darwin
+ * fixes for Linux/x86_64
+
 2006/07/30: mdeininger
  * reworked cfgnodes to use the hash functions
  * fixed a bug in mod-daemon that caused a segfault due to resurrected
