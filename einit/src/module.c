@@ -91,10 +91,11 @@ int mod_scanmodules () {
 	 continue;
 	}
 	modinfo = (struct smodule *)dlsym (sohandle, "self");
-	if (modinfo != NULL) {
+	if (modinfo != NULL)
      mod_add (sohandle, NULL, NULL, NULL, modinfo);
-    }
-	
+    else
+     dlclose (sohandle);
+
 	free (tmp);
   }
   closedir (dir);
