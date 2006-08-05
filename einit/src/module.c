@@ -55,6 +55,7 @@ int mcount = 0;
 
 char **provided = NULL;
 char **required = NULL;
+pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int mod_scanmodules () {
  DIR *dir;
@@ -74,7 +75,6 @@ int mod_scanmodules () {
    tmp = (char *)emalloc ((mplen + strlen (entry->d_name))*sizeof (char));
 	struct stat sbuf;
 	struct smodule *modinfo;
-    int (*func)(void *);
     *tmp = 0;
     strcat (tmp, modulepath);
     strcat (tmp, entry->d_name);
@@ -93,9 +93,6 @@ int mod_scanmodules () {
 	modinfo = (struct smodule *)dlsym (sohandle, "self");
 	if (modinfo != NULL) {
      mod_add (sohandle, NULL, NULL, NULL, modinfo);
-	 if (modinfo->mode & EINIT_MOD_LOADER) {
-      func = (int (*)(void *)) dlsym (sohandle, "scanmodules");
-	 }
     }
 	
 	free (tmp);
@@ -127,7 +124,7 @@ int mod_freemodules () {
  return 1;
 }
 
-int mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), void *param, struct smodule *module) {
+struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
  int (*ftload)  (void *, struct einit_event *);
@@ -135,15 +132,11 @@ int mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*
 
  nmod = ecalloc (1, sizeof (struct lmodule));
 
- if (mlist == NULL) {
-  mlist = nmod;
- } else {
-  cur = mlist;
-  while (cur->next)
-   cur = cur->next;
-  cur->next = nmod;
- }
+ pthread_mutex_lock (&mlist_mutex);
+ nmod->next = mlist;
+ mlist = nmod;
  mcount++;
+ pthread_mutex_unlock (&mlist_mutex);
 
  nmod->sohandle = sohandle;
  nmod->module = module;
@@ -186,9 +179,17 @@ int mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*
     nmod->disable = ftload;
    }
   }
+  ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reset");
+  if (ftload != NULL) {
+   nmod->reset = ftload;
+  }
+  ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reload");
+  if (ftload != NULL) {
+   nmod->reload = ftload;
+  }
  }
 
- return 0;
+ return nmod;
 }
 
 struct lmodule *mod_find (char *rid, unsigned int modeflags) {

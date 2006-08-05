@@ -2,6 +2,7 @@
  * fixes for Darwin
  * fixes for Linux/x86_64
  * added console redirection support (for Linux)
+ * optimised some portions of the module-loader code
 
 2006/07/30: mdeininger
  * reworked cfgnodes to use the hash functions

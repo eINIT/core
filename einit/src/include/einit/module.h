@@ -112,6 +112,8 @@ struct lmodule {
  void *sohandle;
  int (*enable)  (void *, struct einit_event *);
  int (*disable) (void *, struct einit_event *);
+ int (*reset) (void *, struct einit_event *);
+ int (*reload) (void *, struct einit_event *);
  int (*cleanup) (struct lmodule *);
  uint32_t status;
  void *param;
@@ -145,7 +147,7 @@ int mod_scanmodules ();
 int mod_freemodules ();
 
 // adds a module to the main chain of modules
-int mod_add (void *, int (*)(void *, struct einit_event *), int (*)(void *, struct einit_event *), void *, struct smodule *);
+struct lmodule *mod_add (void *, int (*)(void *, struct einit_event *), int (*)(void *, struct einit_event *), void *, struct smodule *);
 
 // find a module
 struct lmodule *mod_find (char *rid, unsigned int options);
