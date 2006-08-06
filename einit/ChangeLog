@@ -1,6 +1,7 @@
 2006/08/06: mdeininger
  * trying to make the default textual visualiser better
  * the default visualiser now looks a lot cleaner
+ * fixed some bugs with parallelism and memory management
 
 2006/08/05: mdeininger
  * fixes for Darwin

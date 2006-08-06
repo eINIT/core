@@ -20,7 +20,7 @@
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
  <shell s="/bin/sh -c" TZ="CEST" />
 
- <use-ansi-codes b="true" />
+ <use-ansi-codes b="false" />
  <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="einit-stderr" />
 
  <mount-block-devices-dev-constraints s=".*" />
