@@ -154,7 +154,7 @@ int sched_switchmode (char *mode) {
   elist = strsetdeldupes (elist);
   dlist = strsetdeldupes (dlist);
 
-  if (elist)
+  if (elist || optmask)
    plan = mod_plan (plan, elist, MOD_ENABLE | optmask);
   if (dlist)
    plan = mod_plan (plan, dlist, MOD_DISABLE | optmask);
