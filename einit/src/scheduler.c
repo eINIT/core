@@ -118,8 +118,8 @@ int sched_switchmode (char *mode) {
  struct einit_event *fb = ecalloc (1, sizeof (struct einit_event));
   struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
   struct cfgnode *opt;
-  struct mloadplan *plan;
-  char **elist;
+  struct mloadplan *plan = NULL;
+  char **elist, **dlist;
   unsigned int optmask = 0;
 
   if (!cur) {
@@ -135,6 +135,7 @@ int sched_switchmode (char *mode) {
    }
   }
   elist = (char **)setdup ((void **)cur->enable, -1);
+  dlist = (char **)setdup ((void **)cur->disable, -1);
   newmode = mode;
 
   if (cur->base) {
@@ -144,14 +145,19 @@ int sched_switchmode (char *mode) {
     cno = cfg_findnode (cur->base[y], EI_NODETYPE_MODE, NULL);
     if (cno) {
      elist = (char **)setcombine ((void **)setdup ((void **)cno->enable, -1), (void **)elist, -1);
+     dlist = (char **)setcombine ((void **)setdup ((void **)cno->disable, -1), (void **)dlist, -1);
     }
     y++;
    }
   }
 
   elist = strsetdeldupes (elist);
+  dlist = strsetdeldupes (dlist);
 
-  plan = mod_plan (NULL, elist, MOD_ENABLE | optmask);
+  if (elist)
+   plan = mod_plan (plan, elist, MOD_ENABLE | optmask);
+  if (dlist)
+   plan = mod_plan (plan, dlist, MOD_DISABLE | optmask);
   if (!plan) {
    puts ("scheduler: scheduled mode defined but nothing to be done");
   } else {
@@ -181,6 +187,8 @@ int sched_modaction (char **argv) {
 
  if (!strcmp (argv[1], "enable")) task = MOD_ENABLE;
  else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
+ else if (!strcmp (argv[1], "reset")) task = MOD_RESET;
+ else if (!strcmp (argv[1], "reload")) task = MOD_RELOAD;
 
  argv[1] = NULL;
 

@@ -5,6 +5,9 @@
  * optimised some portions of the module-loader code
  * fixes in common-mount.c: somehow directories and sockets seem to be related
    on Darwin...
+ * implemented the disable() function in tty.c and added some code to allow for
+   specifying which device a tty-command is to be run on (not tested)
+ * some improvements in the module loader logic
 
 2006/07/30: mdeininger
  * reworked cfgnodes to use the hash functions

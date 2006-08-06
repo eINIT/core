@@ -239,6 +239,8 @@ int mod (unsigned int task, struct lmodule *module) {
  }
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
   goto wontload;
+ if ((task & MOD_RELOAD) && (module->status & STATUS_DISABLED))
+  goto wontload;
 
  if (task & MOD_ENABLE) {
    if (t = module->module) {
@@ -295,6 +297,26 @@ int mod (unsigned int task, struct lmodule *module) {
    } else {
     fb->status = STATUS_FAIL;
    }
+ } else if (task & MOD_RESET) {
+  if (module->reset) {
+   ret = module->reset (module->param, fb);
+   if (ret & STATUS_OK) {
+    fb->status = STATUS_OK | module->status;
+   } else
+    fb->status = STATUS_FAIL;
+  } else if (module->disable && module->enable) {
+   ret = module->disable (module->param, fb);
+   if (ret & STATUS_OK) {
+    ret = module->enable (module->param, fb);
+   } else
+    fb->status = STATUS_FAIL;
+  }
+ } else if (task & MOD_RESET) {
+  ret = module->reload (module->param, fb);
+  if (ret & STATUS_OK) {
+   fb->status = STATUS_OK | module->status;
+  } else
+   fb->status = STATUS_FAIL;
  }
 
 // printf ("%i:%i\n", required, provided);
