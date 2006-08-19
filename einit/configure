@@ -38,6 +38,15 @@ for param in $@; do
 	elif test "$short" = "--with-include"; then
 		echo -n " INCLUDE";
 		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";
+	elif test "$short" = "--host"; then
+		echo -n " HOST";
+		RCHOST="${param#*=}";
+	elif test "$short" = "--target"; then
+		echo -n " TARGET";
+		RCTARGET="${param#*=}";
+	elif test "$short" = "--version"; then
+		echo -n " VERSION";
+		RCVERSION="${param#*=}";
 	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG -g";
@@ -94,12 +103,46 @@ else
 fi
 echo " ]"
 
+if test -n "$RCHOST"; then CHOST=$RCHOST; fi;
+if test -n "$RCTARGET"; then CTARGET=$RCTARGET; fi;
+#GCCVERSION=`gcc --version`;
+
+echo -n "checking system type... "
+if test -n "$CHOST"; then
+	CHOST=$CHOST;
+else
+#	CHOST=${GCCVERSION%%gcc-* *};
+#	CHOST="${CHOST}libc";
+	CHOST="gcc";
+fi
+echo " $CHOST";
+
+echo -n "checking target system type... "
+if test -n "$CTARGET"; then
+	CTARGET=$CTARGET;
+else
+	CTARGET=$CHOST;
+fi
+echo " $CTARGET";
+
 echo -n "checking for a default compiler... "
 if test -n "$CC"; then
 	echo "got one! ($CC)";
 else
-	echo "none set, defaulting to cc";
-	CC=cc;
+	if test -x "$(which ${CTARGET}-gcc-${RCVERSION})"; then CC="${CTARGET}-gcc-${RCVERSION}";
+	elif test -x "$(which ${CTARGET}-gcc)"; then CC="${CTARGET}-gcc";
+	elif test -x "$(which ${CTARGET}-cc)"; then CC="${CTARGET}-cc";
+	elif test -x "$(which ${CHOST}-gcc-${RCVERSION})"; then CC="${CHOST}-gcc-${RCVERSION}";
+	elif test -x "$(which ${CHOST}-gcc)"; then CC="${CHOST}-gcc";
+	elif test -x "$(which ${CHOST}-cc)"; then CC="${CHOST}-cc";
+	elif test -x "$(which gcc)"; then CC=cc;
+	elif test -x "$(which icc)"; then CC=cc;
+	elif test -x "$(which cc)"; then CC=cc; fi;
+	if test -n "$CC"; then
+		echo "got one! ($CC)";
+	else
+		echo "no compiler found, bailing out!"; exit;
+	fi;
 fi
 
 echo "finding absolute include directory..."
