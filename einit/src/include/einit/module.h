@@ -137,7 +137,6 @@ struct mloadplan {
  pthread_mutex_t mutex;
 };
 
-struct einit_event ei_module_feedback_default;
 extern struct lmodule mdefault;
 
 // scans for modules (i.e. load their .so and add it to the list)
@@ -168,10 +167,10 @@ unsigned int mod_plan_commit (struct mloadplan *);
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *);
 
-#ifdef DEBUG
-// lists all known modules to stdout
-void mod_ls ();
+// event handler
+void mod_event_handler(struct einit_event *);
 
+#ifdef DEBUG
 // write out a plan-struct to stdout
 void mod_plan_ls (struct mloadplan *);
 #endif

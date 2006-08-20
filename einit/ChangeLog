@@ -1,3 +1,10 @@
+2006/08/20: mdeininger
+ * fixed some memory allocation issues in the scheduler and einit-control
+ * added an ipc function "modules ls_modules"
+ * removed the mod_ls() function
+ * some fixes in the module tsk planning logic
+ * enabling/disabling modules using erc now works properly
+
 2006/08/19: mdeininger
  * changes to ./configure [need crosscompile support]
 

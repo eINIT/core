@@ -101,9 +101,6 @@ int main(int argc, char **argv) {
   return -1;
  }
  mod_scanmodules ();
-#ifdef DEBUG
- mod_ls ();
-#endif
  sched_init ();
 
  sched_queue (SCHEDULER_SWITCH_MODE, "feedback");

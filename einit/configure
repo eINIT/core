@@ -125,7 +125,7 @@ else
 fi
 echo " $CTARGET";
 
-echo -n "checking for a default compiler... "
+echo -n "checking for a compiler... "
 if test -n "$CC"; then
 	echo "got one! ($CC)";
 else
@@ -139,7 +139,7 @@ else
 	elif test -x "$(which icc 2>1)"; then CC=cc;
 	elif test -x "$(which cc 2>1)"; then CC=cc; fi;
 	if test -n "$CC"; then
-		echo "got one! ($CC)";
+		echo "$CC";
 	else
 		echo "no compiler found, bailing out!"; exit;
 	fi;

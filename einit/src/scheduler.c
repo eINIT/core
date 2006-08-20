@@ -199,7 +199,7 @@ int sched_modaction (char **argv) {
   mod_plan_commit (plan);
  }
 
- free (argv[0]);
+// free (argv[0]);
  free (argv);
 
  return 0;
@@ -478,7 +478,7 @@ void sched_event_handler(struct einit_event *event) {
     sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
     write (event->integer, "modeswitch queued\n", 19);
    } else {
-    sched_queue (SCHEDULER_MOD_ACTION, (void *)setdup ((void **)argv+1, -1));
+    sched_queue (SCHEDULER_MOD_ACTION, (void *)setdup ((void **)argv+1, 0));
     write (event->integer, "request processed\n", 19);
    }
   }

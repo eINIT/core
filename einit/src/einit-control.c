@@ -101,23 +101,23 @@ int main(int argc, char **argv) {
   c = (char *)erealloc (c, 3*sizeof (char));
   c = strcat (c, "rc");
  } else if (strcmp (name, "einit-control")) {
-  c = (char *)erealloc (c, 1+strlen(name)*sizeof (char));
+  c = (char *)erealloc (c, (1+strlen(name))*sizeof (char));
   c = strcat (c, name);
  }
 
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
    switch (argv[i][1]) {
-	case 's':
-	 if ((++i) < argc)
+    case 's':
+     if ((++i) < argc)
       ctrlsocket = argv[i];
-	 else
-	  return print_usage_info ();
-	 break;
-	case 'h':
+     else
+      return print_usage_info ();
+     break;
+    case 'h':
      return print_usage_info ();
-	 break;
-	case 'v':
+     break;
+    case 'v':
      puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
      return 0;
    }
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
  }
 
  l = strlen(c);
- c = erealloc (c, (l+9)*sizeof (char));
+ c = erealloc (c, (l+11)*sizeof (char));
  c = strcat (c, "\nIPC//out\n\0");
 
  ipc(c);

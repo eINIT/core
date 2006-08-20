@@ -64,6 +64,9 @@ int mod_scanmodules () {
  int mplen;
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
+
+ event_listen (EINIT_EVENT_TYPE_IPC, mod_event_handler);
+
  char *modulepath = cfg_getpath ("module-path");
  if (!modulepath) return -1;
 
@@ -457,13 +460,21 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
 
      for (j = 0; req[j]; j++) {
       adds = 0;
-      if (v->task & MOD_ENABLE) c = hash_prov;
-      if (v->task & MOD_DISABLE) c = hash_req;
-      while (c && (c = hashfind (c, req[j]))) {
-       struct mloadplan *e = c->value;
+      if ((v->task & MOD_ENABLE) && strinset (provided, req[j])) {
+       plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
        adds++;
-       e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v, -1);
-       c = c->next;
+      } else if ((v->task & MOD_DISABLE) && strinset (required, req[j])) {
+       plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
+       adds++;
+      } else {
+       if (v->task & MOD_ENABLE) c = hash_prov;
+       if (v->task & MOD_DISABLE) c = hash_req;
+       while (c && (c = hashfind (c, req[j]))) {
+        struct mloadplan *e = c->value;
+        adds++;
+        e->right = (struct mloadplan **)setadd ((void **)e->right, (void *)v, -1);
+        c = c->next;
+       }
       }
       if (adds) {
        plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
@@ -864,23 +875,26 @@ int mod_plan_free (struct mloadplan *plan) {
  hashfree (hash_list);
 }
 
-#ifdef DEBUG
-/* debugging functions: only available if DEBUG is set (obviously...) */
-void mod_ls () {
- struct lmodule *cur = mlist;
- do {
-  if (cur->module != NULL) {
-   if (cur->module->rid)
-    fputs (cur->module->rid, stdout);
-   if (cur->module->name)
-    printf (" (%s)", cur->module->name, stdout);
-   puts ("");
-  } else
-   puts ("(NULL)");
-  cur = cur->next;
- } while (cur != NULL);
+// event handler
+void mod_event_handler(struct einit_event *event) {
+ if (!event || !event->set) return;
+ char **argv = (char **) event->set;
+ if (argv[0] && argv[1] && !strcmp (argv[0], "modules")) {
+  if (!strcmp (argv[1], "ls_modules")) {
+   char buffer[1024];
+   struct lmodule *cur = mlist;
+   while (cur) {
+    if (cur->module)
+     snprintf (buffer, 1024, "%s (%s) [status=%i]\n", cur->module->rid, cur->module->name, cur->status);
+    write (event->integer, buffer, strlen (buffer));
+    cur = cur->next;
+   }
+  }
+ }
 }
 
+#ifdef DEBUG
+/* debugging functions: only available if DEBUG is set (obviously...) */
 void mod_plan_ls (struct mloadplan *plan) {
  char *rid = "n/a", *name = "unknown", *action;
  static int recursion;
