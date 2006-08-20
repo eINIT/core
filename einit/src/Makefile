@@ -22,11 +22,11 @@ einit-control: einit-control.o bitch.o utility.o
 	$(CCC) einit-control.o bitch.o utility.o $(XDYNAMIC) -o einit-control -ldl
 
 install: all
-	${INSTALL} ${BINIPARAM} -d ${SBINDIR}
-	${INSTALL} ${BINIPARAM} einit ${SBINDIR}
-	${INSTALL} ${BINIPARAM} einit-control ${SBINDIR}
-	ln -sf einit-control ${SBINDIR}/power
-	ln -sf einit-control ${SBINDIR}/erc
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} einit ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
+	ln -sf einit-control ${DESTDIR}/${SBINDIR}/power
+	ln -sf einit-control ${DESTDIR}/${SBINDIR}/erc
 	cd modules && ${MAKE} install
 
 default-modules: einit

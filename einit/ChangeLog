@@ -4,6 +4,7 @@
  * removed the mod_ls() function
  * some fixes in the module tsk planning logic
  * enabling/disabling modules using erc now works properly
+ * changed the makefiles to accept ${DESTDIR} for gentoo
 
 2006/08/19: mdeininger
  * changes to ./configure [need crosscompile support]

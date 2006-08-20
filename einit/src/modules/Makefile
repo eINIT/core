@@ -13,14 +13,14 @@ clean:
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} clean && cd ..; done; fi;
 
 install: all
-	${INSTALL} ${SOIPARAM} -d ${MODDIR}
-	${INSTALL} ${SOIPARAM} vis-text.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} mod-exec.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} tty.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} mod-daemon.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} einit-ipc.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${MODDIR}
-	${INSTALL} ${SOIPARAM} common-mount.so ${MODDIR}
+	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} vis-text.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} mod-exec.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} tty.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} mod-daemon.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-ipc.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} common-mount.so ${DESTDIR}/${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 vis-text.so: vis-text.c

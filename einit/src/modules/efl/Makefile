@@ -10,8 +10,8 @@ clean:
 	rm -f *.so depend.mk
 
 install: all
-	${INSTALL} ${SOIPARAM} -d ${MODDIR}
-	${INSTALL} ${SOIPARAM} einit-efl-feedback-evas-edje.so ${MODDIR}
+	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-efl-feedback-evas-edje.so ${DESTDIR}/${MODDIR}
 
 einit-efl-feedback-evas-edje.so: einit-efl-feedback-evas-edje.c
 	${CCL} einit-efl-feedback-evas-edje.c -o einit-efl-feedback-evas-edje.so\
