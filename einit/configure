@@ -129,15 +129,15 @@ echo -n "checking for a default compiler... "
 if test -n "$CC"; then
 	echo "got one! ($CC)";
 else
-	if test -x "$(which ${CTARGET}-gcc-${RCVERSION})"; then CC="${CTARGET}-gcc-${RCVERSION}";
-	elif test -x "$(which ${CTARGET}-gcc)"; then CC="${CTARGET}-gcc";
-	elif test -x "$(which ${CTARGET}-cc)"; then CC="${CTARGET}-cc";
-	elif test -x "$(which ${CHOST}-gcc-${RCVERSION})"; then CC="${CHOST}-gcc-${RCVERSION}";
-	elif test -x "$(which ${CHOST}-gcc)"; then CC="${CHOST}-gcc";
-	elif test -x "$(which ${CHOST}-cc)"; then CC="${CHOST}-cc";
-	elif test -x "$(which gcc)"; then CC=cc;
-	elif test -x "$(which icc)"; then CC=cc;
-	elif test -x "$(which cc)"; then CC=cc; fi;
+	if test -x "$(which ${CTARGET}-gcc-${RCVERSION} 2>1)"; then CC="${CTARGET}-gcc-${RCVERSION}";
+	elif test -x "$(which ${CTARGET}-gcc 2>1)"; then CC="${CTARGET}-gcc";
+	elif test -x "$(which ${CTARGET}-cc 2>1)"; then CC="${CTARGET}-cc";
+	elif test -x "$(which ${CHOST}-gcc-${RCVERSION} 2>1)"; then CC="${CHOST}-gcc-${RCVERSION}";
+	elif test -x "$(which ${CHOST}-gcc 2>1)"; then CC="${CHOST}-gcc";
+	elif test -x "$(which ${CHOST}-cc 2>1)"; then CC="${CHOST}-cc";
+	elif test -x "$(which gcc 2>1)"; then CC=cc;
+	elif test -x "$(which icc 2>1)"; then CC=cc;
+	elif test -x "$(which cc 2>1)"; then CC=cc; fi;
 	if test -n "$CC"; then
 		echo "got one! ($CC)";
 	else
