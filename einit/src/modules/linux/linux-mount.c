@@ -50,6 +50,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* filesystem header files */
 #include <linux/ext2_fs.h>
 
+#if 0
+#include <linux/nfs.h>
+#include <linux/nfs_mount.h>
+#include <sys/socket.h>
+
+/* these should be included, but it works without 'em and compilation breaks on my system if i include them */
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#else
+#include <einit/pexec.h>
+#endif
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -73,6 +86,8 @@ const struct smodule self = {
 /* function declarations */
 unsigned char read_metadata_linux (struct mount_control_block *);
 unsigned char mount_linux_ext2 (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
+//unsigned char mount_linux_nfs (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
+unsigned char mount_linux_real_mount (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 
@@ -154,8 +169,8 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
    else
     status->string = "an unknown error occured while trying to mount the filesystem";
    status_update (status);
-//   if (fse->after_umount)
-//    pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
+   if (fse->after_umount)
+    pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
    return 1;
   }
  }
@@ -164,12 +179,141 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
  return 0;
 }
 
+#if 0
+unsigned char mount_linux_nfs (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
+/* this doesn't really work just now, so we'll delegate it to a real mount command for the time being */
+ char **hnrd;
+ struct nfs_mount_data *data = ecalloc (1, sizeof(struct nfs_mount_data));
+ struct sockaddr_in server;
+ struct addrinfo *lres = NULL;
+/* struct addrinfo reshints = {
+  reshints.ai_family = AF_INET
+ };*/
+
+ hnrd = str2set (':', source);
+ if (!hnrd || !hnrd[0] || !hnrd[1] || hnrd[2]) {
+  status->string = "mount_linux_nfs: there's something wrong with your source specification";
+  status_update (status);
+  return 1;
+ }
+ status->string = hnrd[0];
+ status_update (status);
+
+ if (getaddrinfo(hnrd[0], NULL, NULL, &lres)) {
+  status->string = "mount_linux_nfs: can't resolve host";
+  status_update (status);
+  return 1;
+ }
+
+// puts (lres->ai_family);
+
+/* if (fse->options) {
+  int fi = 0;
+  for (; fse->options[fi]; fi++) {
+   if (!fsdata) {
+    uint32_t slen = strlen (fse->options[fi])+1;
+    fsdata = ecalloc (1, slen);
+    memcpy (fsdata, fse->options[fi], slen);
+   } else {
+    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (fse->options[fi])+1;
+    fsdata = erealloc (fsdata, fsdl+slen);
+    *(fsdata + fsdl -1) = ',';
+    memcpy (fsdata+fsdl, fse->options[fi], slen);
+   }
+  }
+ }*/
+
+ freeaddrinfo (lres);
+
+/* vers=3,rsize=32768,wsize=32768,hard,proto=udp,timeo=7,retrans=3,sec=sys,addr=chronos */
+#ifndef SANDBOX
+ if (mount (source, mountpoint, fstype, 0, data) == -1) {
+  if (errno == EBUSY) {
+   if (mount (source, mountpoint, fstype, MS_REMOUNT, data) == -1) goto mount_panic;
+  } else {
+   mount_panic:
+   if (errno < sys_nerr)
+    status->string = (char *)sys_errlist[errno];
+   else
+    status->string = "an unknown error occured while trying to mount the filesystem";
+   status_update (status);
+//   if (fse->after_umount)
+//    pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
+   return 1;
+  }
+ }
+#endif
+
+ free (hnrd);
+
+ return 0;
+}
+#endif
+
+unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
+ char *fsdata = NULL;
+ char command[4096];
+
+ if (fse->options) {
+  int fi = 0;
+  for (; fse->options[fi]; fi++) {
+   if (!fsdata) {
+    uint32_t slen = strlen (fse->options[fi])+1;
+    fsdata = ecalloc (1, slen);
+    memcpy (fsdata, fse->options[fi], slen);
+   } else {
+    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (fse->options[fi])+1;
+    fsdata = erealloc (fsdata, fsdl+slen);
+    *(fsdata + fsdl -1) = ',';
+    memcpy (fsdata+fsdl, fse->options[fi], slen);
+   }
+  }
+ }
+
+ if (fsdata) {
+  if (tflags & MOUNT_TF_FORCE_RW)
+   snprintf (command, 4096, "/bin/mount %s %s -t %s -o \"rw,%s\"", source, mountpoint, fstype, fsdata);
+  else if (tflags & MOUNT_TF_FORCE_RO)
+   snprintf (command, 4096, "/bin/mount %s %s -t %s -o \"ro,%s\"", source, mountpoint, fstype, fsdata);
+  else
+   snprintf (command, 4096, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
+ } else {
+  if (tflags & MOUNT_TF_FORCE_RW)
+   snprintf (command, 4096, "/bin/mount %s %s -t %s -o rw", source, mountpoint, fstype);
+  else if (tflags & MOUNT_TF_FORCE_RO)
+   snprintf (command, 4096, "/bin/mount %s %s -t %s -o ro", source, mountpoint, fstype);
+  else
+   snprintf (command, 4096, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
+ }
+
+#ifndef SANDBOX
+ if (pexec (command, NULL, 0, 0, NULL, status) == STATUS_OK)
+  return 0;
+ else {
+  if (fse->after_umount)
+   pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
+  return 1;
+ }
+#else
+ status->string = command;
+ status_update (status);
+#endif
+
+ return 0;
+}
+
 int configure (struct lmodule *this) {
+/* pexec configuration */
+ pexec_configure (this);
+
  struct einit_event *ev = ecalloc (1, sizeof(struct einit_event));
 
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
  function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
+// function_register ("fs-mount-nfs", 1, (void *)mount_linux_nfs);
+/* nfs mounting is a real, royal PITA. we'll use the regular /bin/mount command for the time being */
+ function_register ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
 
  ev->type = EINIT_EVENT_TYPE_MOUNT_UPDATE;
  ev->flag = EVENT_UPDATE_METADATA;
@@ -179,6 +323,7 @@ int configure (struct lmodule *this) {
 
 int cleanup (struct lmodule *this) {
  function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
+ function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_ext2);
  function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
  function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 }

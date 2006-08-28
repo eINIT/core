@@ -53,7 +53,7 @@
 
  <mod-daemon id="daemon-metalog" name="syslogger (metalog)" provides="syslog" requires="mount/local" command="/usr/sbin/metalog" restart="yes" />
 
- <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
+ <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
 <!-- tty initialisation -->
  <tty-manage-utmp b="true" />
@@ -73,7 +73,7 @@
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="mount/local" />
+  <enable mod="mount/remote" />
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

@@ -1,3 +1,7 @@
+2006/08/28: mdeininger
+ * I tried to add NFS support today, but that's a real bitch it seems. for now,
+   eINIT will pexec() /bin/mount to do all the dirty work with nfs.
+
 2006/08/20: mdeininger
  * fixed some memory allocation issues in the scheduler and einit-control
  * added an ipc function "modules ls_modules"
