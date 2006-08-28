@@ -25,13 +25,6 @@
 
  <mount-block-devices-dev-constraints s=".*" />
 
- <conf_hostname s="localhost" />
- <conf_domainname s="localnet" />
- <conf_keyboardlayout s="de" />
-<!-- these modules should be OK for an ASUS K7N8X-E Gold Motherboard -->
- <kernel_module_eth0 s="forcedeth" />
- <kernel_module_eth1 s="skge" />
-
  <mod-shell id="shell-sysconf" name="sysconf dummy" provides="sysconf" enable="echo sysconf;" disable="echo sysconf;" />
 
  <mod-shell id="shell-kern-eth0-dummy" name="net-eth0" provides="kern-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />

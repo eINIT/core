@@ -4,6 +4,7 @@
  * common-mount now also keeps track of major/minor block device-numbers for
    added block devices (in order to (re-)construct missing device nodes)
  * the add_* functions now detect dupes
+ * common-mount will now guess some entries of your fstab based on disk-labels
 
 2006/08/20: mdeininger
  * fixed some memory allocation issues in the scheduler and einit-control
