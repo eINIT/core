@@ -1,6 +1,9 @@
 2006/08/28: mdeininger
  * I tried to add NFS support today, but that's a real bitch it seems. for now,
    eINIT will pexec() /bin/mount to do all the dirty work with nfs.
+ * common-mount now also keeps track of major/minor block device-numbers for
+   added block devices (in order to (re-)construct missing device nodes)
+ * the add_* functions now detect dupes
 
 2006/08/20: mdeininger
  * fixed some memory allocation issues in the scheduler and einit-control

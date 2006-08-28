@@ -46,6 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <ctype.h>
+#include <stdlib.h>
 
 /* filesystem header files */
 #include <linux/ext2_fs.h>
@@ -88,6 +90,7 @@ unsigned char read_metadata_linux (struct mount_control_block *);
 unsigned char mount_linux_ext2 (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 //unsigned char mount_linux_nfs (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 unsigned char mount_linux_real_mount (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
+unsigned char find_block_devices_proc (struct mount_control_block *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 
@@ -98,13 +101,15 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  struct bd_info *bdi;
  uint32_t cdev = 0;
 
+ if (!element) return 1;
+
  while (element) {
   FILE *device = NULL;
   bdi = (struct bd_info *)element->value;
   cdev++;
 
 //  printf ("\e[K\e[sscanning device #%i: %s\e[u", cdev, element->key);
-  printf ("\e[255D\e[Kscanning device #%i: %s... ", cdev, element->key);
+//  printf ("\e[255D\e[Kscanning device #%i: %s... ", cdev, element->key);
 //  printf ("scanning device #%i: %s", cdev, element->key);
   device = fopen (element->key, "r");
   if (device) {
@@ -125,6 +130,8 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
      snprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
      bdi->uuid = estrdup (c_uuid);
     }
+
+//    if (bdi->label) fputs (bdi->label, stdout);
    }
    fclose (device);
   } else {
@@ -135,7 +142,73 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
   element = hashnext (element);
  }
 
- puts ("done");
+// puts ("done");
+ return 0;
+}
+
+unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
+ FILE *f = fopen ("/proc/partitions", "r");
+ char tmp[1024];
+ uint32_t line = 0, device_major = 0, device_minor = 0, device_size = 0, field = 0;
+ char *device_name = NULL;
+ if (!f) return 1;
+
+ errno = 0;
+ while (!errno) {
+  if (!fgets (tmp, 1024, f)) {
+   switch (errno) {
+    case EINTR:
+    case EAGAIN:
+     errno = 0;
+     break;
+    case 0:
+     return 1;
+    default:
+     bitch(BTCH_ERRNO);
+     return 1;
+   }
+  } else {
+   line++;
+   if (line <= 2) continue;
+
+   if (tmp[0]) {
+    char *cur = estrdup (tmp);
+    char *scur = cur;
+    uint32_t icur = 0;
+    field = 0;
+    strtrim (cur);
+    for (; *cur; cur++) {
+     if (isspace (*cur)) {
+      *cur = 0;
+      field++;
+      switch (field) {
+       case 1: device_major = (int) strtol(scur, (char **)NULL, 10); break;
+       case 2: device_minor = (int) strtol(scur, (char **)NULL, 10); break;
+       case 3: device_size = (int) strtol(scur, (char **)NULL, 10); break;
+       case 4: device_name = scur; break;
+      }
+      scur = cur+1;
+      strtrim (scur);
+     }
+    }
+    if (cur != scur) {
+     field++;
+     switch (field) {
+      case 1: device_major = (int) strtol(scur, (char **)NULL, 10); break;
+      case 2: device_minor = (int) strtol(scur, (char **)NULL, 10); break;
+      case 3: device_size = (int) strtol(scur, (char **)NULL, 10); break;
+      case 4: device_name = scur; break;
+     }
+    }
+//    puts (tmp);
+    strcpy (tmp, "/dev/");
+    strcat (tmp, device_name);
+//    printf ("parsed: device=%s (%i/%i) [%i blocks]\n", tmp, device_major, device_minor, device_size);
+    mcb->add_block_device (tmp, device_major, device_minor);
+   }
+  }
+ }
+
  return 0;
 }
 
@@ -308,6 +381,7 @@ int configure (struct lmodule *this) {
 
  struct einit_event *ev = ecalloc (1, sizeof(struct einit_event));
 
+ function_register ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
  function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
@@ -322,6 +396,7 @@ int configure (struct lmodule *this) {
 }
 
 int cleanup (struct lmodule *this) {
+ function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_ext2);
  function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
