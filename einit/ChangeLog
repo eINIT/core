@@ -1,3 +1,7 @@
+2006/09/03: mdeininger
+ * combined the /dev, /proc and /sys mounting steps into "mount/system"
+   (better for interoperability, theoretically at least)
+
 2006/08/28: mdeininger
  * I tried to add NFS support today, but that's a real bitch it seems. for now,
    eINIT will pexec() /bin/mount to do all the dirty work with nfs.
