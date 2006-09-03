@@ -4,6 +4,7 @@
  * the blockdevice- and metadata-scans performed by common-mount are now optional
  * vis-text can now be configured to automatically switch to a specified VT
    upon being enabled [linux only]
+ * console messages don't clutter up tty1 anymore [sometimes, anyway]
 
 2006/08/28: mdeininger
  * I tried to add NFS support today, but that's a real bitch it seems. for now,
