@@ -21,7 +21,7 @@
  <shell s="/bin/sh -c" TZ="CEST" />
 
  <use-ansi-codes b="false" />
- <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty" activate-vt="1" />
+ <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" />
 
  <mount-block-devices-dev-constraints s=".*" />
 
