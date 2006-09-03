@@ -2,6 +2,8 @@
  * combined the /dev, /proc and /sys mounting steps into "mount/system"
    (better for interoperability, theoretically at least)
  * the blockdevice- and metadata-scans performed by common-mount are now optional
+ * vis-text can now be configured to automatically switch to a specified VT
+   upon being enabled [linux only]
 
 2006/08/28: mdeininger
  * I tried to add NFS support today, but that's a real bitch it seems. for now,
