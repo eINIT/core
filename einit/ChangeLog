@@ -1,3 +1,8 @@
+2006/09/05: mdeininger
+ * fixed a nasty bug in setcombine()
+ * fixed the daemon definition for entrance -- it works again with the latest
+   entrance from CVS
+
 2006/09/03: mdeininger
  * combined the /dev, /proc and /sys mounting steps into "mount/system"
    (better for interoperability, theoretically at least)

@@ -105,6 +105,7 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
    newset [y] = cpnt;
    cpnt += esize;
    x++;
+   y++;
   }
  } else {
   char *cpnt;
@@ -132,6 +133,7 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
    newset [y] = cpnt;
    cpnt += esize;
    x++;
+   y++;
   }
  }
 
