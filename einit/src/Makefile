@@ -12,8 +12,8 @@ clean:
 	rm -f *.o einit-xml einit-control einit depend.mk
 	cd modules && ${MAKE} clean	
 
-einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o
-	$(CCC) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
+einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o
+	$(CCC) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
 
 einit: einit-xml
 	ln -sf einit-xml einit
@@ -46,6 +46,9 @@ scheduler.o: scheduler.c
 
 module.o: module.c
 	$(CCC) -c module.c
+
+module-logic.o: module-logic.c
+	$(CCC) -c module-logic.c
 
 bitch.o: bitch.c
 	$(CCC) -c bitch.c

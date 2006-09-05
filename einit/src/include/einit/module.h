@@ -137,6 +137,20 @@ struct mloadplan {
  pthread_mutex_t mutex;
 };
 
+//struct mloadplan_node {
+// uint32_t task;
+// struct lmodule *mod;
+// struct mloadplan_node **group;  /* elements of the tree that form this group */
+// struct mloadplan_node **left;  /* elements of the tree to load on failure */
+// struct mloadplan_node **right; /* elements of the tree to load on success */
+// char **unsatisfied;
+// char **unavailable;
+// char **requires;
+// char **provides;
+// uint32_t position, options;
+// pthread_mutex_t mutex;
+//};
+
 extern struct lmodule mdefault;
 
 // scans for modules (i.e. load their .so and add it to the list)

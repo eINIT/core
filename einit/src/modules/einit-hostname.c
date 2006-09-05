@@ -1,8 +1,8 @@
 /*
- *  linux-sysconf.c
+ *  einit-hostname.c
  *  einit
  *
- *  Created by Magnus Deininger on 27/03/2006.
+ *  Created by Magnus Deininger on 05/09/2006.
  *  Copyright 2006 Magnus Deininger. All rights reserved.
  *
  */
@@ -52,23 +52,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-char * provides[] = {"sysconf", NULL};
+char * provides[] = {"hostname", "domainname", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
 	.mode		= 0,
 	.options	= 0,
-	.name		= "Linux-specific System-Configuration",
-	.rid		= "linux-sysconf",
+	.name		= "Set Host- and Domainname",
+	.rid		= "einit-hostname",
 	.provides	= provides,
 	.requires	= NULL,
 	.notwith	= NULL
 };
 
 int enable (void *pa, struct einit_event *status) {
- struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0, NULL);
- if (cfg && !cfg->flag) {
-  if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
+ struct cfgnode *cfg = cfg_findnode ("hostname", 0, NULL);
+ if (cfg && cfg->svalue) {
+  status->string = "setting hostname";
+  status_update (status);
+  if (sethostname (cfg->svalue, strlen (cfg->svalue))) {
    status->string = strerror(errno);
    errno = 0;
    status->flag++;
@@ -76,11 +78,17 @@ int enable (void *pa, struct einit_event *status) {
   }
  }
 
-/* cfg = cfg_findnode ("hostname", 0, NULL);
- if (cfg && !cfg->svalue) {
-  if (sethostname (cfg->svalue, strlen (cfg->svalue)))
-   
- }*/
+ cfg = cfg_findnode ("domainname", 0, NULL);
+ if (cfg && cfg->svalue) {
+  status->string = "setting domainname";
+  status_update (status);
+  if (setdomainname (cfg->svalue, strlen (cfg->svalue))) {
+   status->string = strerror(errno);
+   errno = 0;
+   status->flag++;
+   status_update (status);
+  }
+ }
 
  return STATUS_OK;
 }

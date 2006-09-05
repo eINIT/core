@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.so pexec.o dexec.o
+all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.so pexec.o dexec.o einit-hostname.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -19,6 +19,7 @@ install: all
 	${INSTALL} ${SOIPARAM} tty.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} mod-daemon.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-ipc.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-hostname.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} common-mount.so ${DESTDIR}/${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
@@ -49,6 +50,9 @@ tty.so: tty.c
 
 einit-ipc.so: einit-ipc.c
 	${CCL} einit-ipc.c -o einit-ipc.so
+
+einit-hostname.so: einit-hostname.c
+	${CCL} einit-hostname.c -o einit-hostname.so
 
 einit-utmp-forger.so: einit-utmp-forger.c
 	${CCL} einit-utmp-forger.c -o einit-utmp-forger.so

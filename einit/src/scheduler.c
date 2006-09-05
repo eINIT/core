@@ -60,6 +60,7 @@ pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
 char *currentmode = "void";
 char *newmode = "void";
+stack_t signalstack;
 
 struct spidcb *cpids = NULL;
 struct spidcb *sched_deadorphans = NULL;
@@ -70,8 +71,18 @@ int cleanup ();
 #include <linux/reboot.h>
 
 int epoweroff () {
+ stack_t curstack;
  pthread_cond_destroy (&schedthreadcond);
  pthread_mutex_destroy (&schedthreadmutex);
+
+ if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
+  curstack.ss_size = SIGSTKSZ;
+  curstack.ss_flags = SS_DISABLE;
+  sigaltstack (&curstack, NULL);
+  free (curstack.ss_sp);
+ } else {
+  fputs ("schedule: no alternate signal stack or alternate stack in use; not cleaning up", stderr);
+ }
 
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_POWER_OFF);
@@ -86,8 +97,18 @@ int epoweroff () {
 }
 
 int epowerreset () {
+ stack_t curstack;
  pthread_cond_destroy (&schedthreadcond);
  pthread_mutex_destroy (&schedthreadmutex);
+
+ if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
+  curstack.ss_size = SIGSTKSZ;
+  curstack.ss_flags = SS_DISABLE;
+  sigaltstack (&curstack, NULL);
+  free (curstack.ss_sp);
+ } else {
+  fputs ("schedule: no alternate signal stack or alternate stack in use; not cleaning up", stderr);
+ }
 
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_RESTART);
@@ -208,6 +229,11 @@ int sched_modaction (char **argv) {
 void sched_init () {
  struct sigaction action;
 
+ signalstack.ss_sp = emalloc (SIGSTKSZ);
+ signalstack.ss_size = SIGSTKSZ;
+ signalstack.ss_flags = 0;
+ sigaltstack (&signalstack, NULL);
+
 /* create our sigchld-scheduler-thread right away */
  pthread_mutex_lock (&schedthreadsigchildmutex);
  pthread_create (&schedthreadsigchild, NULL, sched_run_sigchild, NULL);
@@ -215,12 +241,12 @@ void sched_init () {
 /* signal handlers */
  action.sa_sigaction = sched_signal_sigchld;
  sigemptyset(&(action.sa_mask));
- action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER;
+ action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
 // SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
 
  if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
 
- action.sa_flags = SA_SIGINFO | SA_RESTART;
+ action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
 

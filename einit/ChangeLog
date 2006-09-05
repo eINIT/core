@@ -2,6 +2,8 @@
  * fixed a nasty bug in setcombine()
  * fixed the daemon definition for entrance -- it works again with the latest
    entrance from CVS
+ * put the module planning logic into its own file: module-logic.c
+ * added a new module that sets host- and domainname: einit-hostname.c
 
 2006/09/03: mdeininger
  * combined the /dev, /proc and /sys mounting steps into "mount/system"
