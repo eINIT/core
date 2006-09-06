@@ -1,4 +1,7 @@
 2006/09/05: mdeininger
+ * fixed a bug that caused some update steps to be skipped
+
+2006/09/05: mdeininger
  * fixed a nasty bug in setcombine()
  * fixed the daemon definition for entrance -- it works again with the latest
    entrance from CVS
