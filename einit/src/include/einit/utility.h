@@ -42,6 +42,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define	SET_TYPE_STRING		0
 #define	SET_NOALLOC		-1
 
+#define SORT_SET_STRING_LEXICAL	0x01
+#define SORT_SET_CUSTOM		0xFF
+
 struct uhash {
  char *key;
  void *value;
@@ -56,6 +59,7 @@ void **setadd (void **, void *, int32_t);
 void **setdup (void **, int32_t);
 void **setdel (void **, void *);
 int setcount (void **);
+void setsort (void **, char, signed int(*)(void *, void*));
 
 /* some functions to work with string-sets */
 

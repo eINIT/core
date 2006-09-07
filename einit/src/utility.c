@@ -312,6 +312,30 @@ int setcount (void **set) {
  return i;
 }
 
+void setsort (void **set, char task, signed int(*sortfunction)(void *, void*)) {
+ uint32_t c = 0, c2 = 0, x = 0, dc = 1;
+ void *tmp;
+ if (!set) return;
+
+ if (task == SORT_SET_STRING_LEXICAL)
+  sortfunction = (signed int(*)(void *, void*))strcmp;
+ else if (!sortfunction) return;
+
+/* this doesn't work, yet */
+ for (; set[c]; c++) {
+  for (c2 = c+1; set[c2]; c2++) {
+   if ((x = sortfunction(set[c], set[c2])) > 0) {
+    dc = 1;
+    tmp = set[c2];
+    set[c2] = set[c];
+    set[c] = tmp;
+   }
+  }
+ }
+
+ return;
+}
+
 /* some functions to work with string-sets */
 
 char **str2set (const char sep, char *input) {
