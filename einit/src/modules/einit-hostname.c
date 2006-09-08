@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
-#include <linux/reboot.h>
 #include <errno.h>
 #include <string.h>
 

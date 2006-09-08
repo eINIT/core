@@ -1,3 +1,7 @@
+2006/09/08: mdeininger
+ * removed an unnecessary header file from einit-hostname.
+ * changed some design parametres: encryption should be handled transparently
+
 2006/09/07: mdeininger
  * added a function prototype to sort sets
  * some cleanups in common-mount.c
