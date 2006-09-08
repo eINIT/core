@@ -7,6 +7,8 @@
  * some cleanups in common-mount.c
  * made sure deeper paths get mounted after lower paths. (i.e.: /usr/portage
    after /usr) it's probably way too slow, but hey, it works.
+ * BUG: whenever einit tries to mount something without knowing the filesystem,
+   things go weird.
 
 2006/09/06: mdeininger
  * fixed a bug that caused some update steps to be skipped
