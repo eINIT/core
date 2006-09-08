@@ -1,6 +1,9 @@
 2006/09/08: mdeininger
  * removed an unnecessary header file from einit-hostname.
  * changed some design parametres: encryption should be handled transparently
+ * added mount/critical (to replace mount/local as a requirement for programs,
+   since mount/local should rather mount the other things. that way, the
+   system can start faster)
 
 2006/09/07: mdeininger
  * added a function prototype to sort sets
