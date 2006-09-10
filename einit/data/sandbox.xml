@@ -65,7 +65,7 @@
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="mount/local" />
+  <enable mod="mount/local:hostname" />
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

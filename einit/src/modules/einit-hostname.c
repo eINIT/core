@@ -75,6 +75,10 @@ int enable (void *pa, struct einit_event *status) {
    status->flag++;
    status_update (status);
   }
+ } else {
+  status->string = "no hostname configured";
+  status->flag++;
+  status_update (status);
  }
 
  cfg = cfg_findnode ("domainname", 0, NULL);
@@ -87,6 +91,10 @@ int enable (void *pa, struct einit_event *status) {
    status->flag++;
    status_update (status);
   }
+ } else {
+  status->string = "no domainname configured";
+  status->flag++;
+  status_update (status);
  }
 
  return STATUS_OK;
