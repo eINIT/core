@@ -115,14 +115,14 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
   if (device) {
    if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 1)) {
 //    perror (element->key);
-    bdi->fs_status = FS_STATUS_ERROR | FS_STATUS_ERROR_IO;
+    bdi->status = BF_STATUS_ERROR_IO;
    } else {
     if (ext2_sb.s_magic == EXT2_SUPER_MAGIC) {
      __u8 uuid[16];
      char c_uuid[38];
 
      bdi->fs_type = FILESYSTEM_EXT2;
-     bdi->fs_status = FS_STATUS_OK;
+     bdi->status = BF_STATUS_HAS_MEDIUM;
 
      memcpy (uuid, ext2_sb.s_uuid, 16);
      if (ext2_sb.s_volume_name[0])
@@ -135,7 +135,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
    }
    fclose (device);
   } else {
-   bdi->fs_status = FS_STATUS_ERROR | FS_STATUS_ERROR_IO;
+   bdi->status = BF_STATUS_ERROR_IO;
 //   perror (element->key);
   }
   errno = 0;
@@ -212,6 +212,8 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
  return 0;
 }
 
+// this function is currently completely useless
+/*
 unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
  char *fsdata = NULL;
 
@@ -251,6 +253,7 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
 
  return 0;
 }
+*/
 
 #if 0
 unsigned char mount_linux_nfs (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
@@ -383,8 +386,8 @@ int configure (struct lmodule *this) {
 
  function_register ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
- function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
- function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
+// function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
+// function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 // function_register ("fs-mount-nfs", 1, (void *)mount_linux_nfs);
 /* nfs mounting is a real, royal PITA. we'll use the regular /bin/mount command for the time being */
  function_register ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
@@ -398,7 +401,7 @@ int configure (struct lmodule *this) {
 int cleanup (struct lmodule *this) {
  function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
- function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_ext2);
- function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
- function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
+ function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
+// function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
+// function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 }
