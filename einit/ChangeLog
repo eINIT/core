@@ -1,6 +1,8 @@
 2006/09/10: mdeininger
  * added some code to allow for fsck'ing dirty filesystems (need to update
    metadata-reader to actually mark filesystems as dirty)
+ * changed mount/local to mount/critical (mount/local should only be used for
+   storage and other non-critical mounting actions)
 
 2006/09/08: mdeininger
  * removed an unnecessary header file from einit-hostname.
