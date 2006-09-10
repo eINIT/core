@@ -48,9 +48,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <time.h>
 
 /* filesystem header files */
 #include <linux/ext2_fs.h>
+#include <linux/ext3_fs.h>
+
+/* NOTE: i seem to have trouble #include-ing the reiserfs-headers, and since i don't want to #include an
+ excessive amount of headers just to read a filesystem's label, i'll be a cheapo and just create a very
+ simple struct that only contains the information that i really need */
+
+struct reiserfs_super_block {
+ uint32_t s_block_count;
+ char na_1[40];
+ uint16_t s_blocksize;
+ char na_2[4];
+ uint16_t s_umount_state;
+ char s_magic[10]; /* i kept the original designators where appropriate */
+ uint16_t s_fs_state;
+ char na_3[0x14];
+ char s_uuid[16];
+ char s_label[16];
+ char s_unused[88];
+};
+
+/* now that i think about it, i might as well do the same for ext2/3 */
 
 #if 0
 #include <linux/nfs.h>
@@ -98,8 +120,12 @@ int cleanup (struct lmodule *);
 unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  struct uhash *element = mcb->blockdevices;
  struct ext2_super_block ext2_sb;
+ struct reiserfs_super_block reiser_sb;
  struct bd_info *bdi;
  uint32_t cdev = 0;
+ __u8 uuid[16];
+ char c_uuid[38];
+ char tmp[1024];
 
  if (!element) return 1;
 
@@ -113,25 +139,68 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
 //  printf ("scanning device #%i: %s", cdev, element->key);
   device = fopen (element->key, "r");
   if (device) {
-   if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 1)) {
+   c_uuid[0] = 0;
+   if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 0)) {
 //    perror (element->key);
     bdi->status = BF_STATUS_ERROR_IO;
    } else {
     if (ext2_sb.s_magic == EXT2_SUPER_MAGIC) {
-     __u8 uuid[16];
-     char c_uuid[38];
+#if 0
+/* this doesn't work properly with actual ext2 devices (as opposed to ext3 ones) */
 
-     bdi->fs_type = FILESYSTEM_EXT2;
-     bdi->status = BF_STATUS_HAS_MEDIUM;
+      if (fseek (device, (uintmax_t)((uintmax_t)(ext2_sb.s_blocks_count -1) * (uintmax_t)ext2_sb.s_log_block_size), SEEK_SET) || fread (&tmp, (ext2_sb.s_log_block_size < 1024 ? ext2_sb.s_log_block_size : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
+       fprintf (stderr, "%s: EXT2/3 superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, ext2_sb.s_blocks_count, ext2_sb.s_log_block_size);
+       bdi->status = BF_STATUS_ERROR_IO;
+      } else
+#endif
+      {
+       bdi->fs_type = FILESYSTEM_EXT2;
+       bdi->status = BF_STATUS_HAS_MEDIUM;
 
-     memcpy (uuid, ext2_sb.s_uuid, 16);
-     if (ext2_sb.s_volume_name[0])
-      bdi->label = estrdup (ext2_sb.s_volume_name);
-     snprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
-     bdi->uuid = estrdup (c_uuid);
+/* checks to see if the filesystem is dirty */
+       if (ext2_sb.s_mnt_count >= ext2_sb.s_max_mnt_count) // the "maximum mount count"-thing
+        bdi->status |= BF_STATUS_DIRTY;
+
+       if (ext2_sb.s_lastcheck + ext2_sb.s_checkinterval >= time(NULL)) // the "check-interval"-thing
+        bdi->status |= BF_STATUS_DIRTY;
+
+       if (ext2_sb.s_state != EXT2_VALID_FS) // the current filesystem state
+        bdi->status |= BF_STATUS_DIRTY;
+
+       if (ext2_sb.s_rev_level == EXT2_DYNAMIC_REV) {
+        memcpy (uuid, ext2_sb.s_uuid, 16);
+        if (ext2_sb.s_volume_name[0])
+         bdi->label = estrdup (ext2_sb.s_volume_name);
+      }
+     }
+    } else {
+     if (fseek (device, 64*1024, SEEK_SET) || (fread (&reiser_sb, sizeof(struct reiserfs_super_block), 1, device) < 0)) {
+//    perror (element->key);
+      bdi->status = BF_STATUS_ERROR_IO;
+     } else if (!strcmp (reiser_sb.s_magic, "ReIsErFs") || !strcmp (reiser_sb.s_magic, "ReIsEr2Fs") || !strcmp (reiser_sb.s_magic, "ReIsEr3Fs")) {
+      if (fseek (device, (uintmax_t)((uintmax_t)(reiser_sb.s_block_count -1) * (uintmax_t)reiser_sb.s_blocksize), SEEK_SET) || fread (&tmp, (reiser_sb.s_blocksize < 1024 ? reiser_sb.s_blocksize : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
+       fprintf (stderr, "%s: ReiserFS superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, reiser_sb.s_block_count, reiser_sb.s_blocksize);
+       bdi->status = BF_STATUS_ERROR_IO;
+      } else {
+       bdi->fs_type = FILESYSTEM_REISERFS;
+       bdi->status = BF_STATUS_HAS_MEDIUM;
+
+       if (reiser_sb.s_umount_state == 2) // 1 means cleanly unmounted, 2 means the device wasn't unmounted
+        bdi->status |= BF_STATUS_DIRTY;
+
+       if (reiser_sb.s_label[0])
+        bdi->label = estrdup (reiser_sb.s_label);
+
+       memcpy (uuid, reiser_sb.s_uuid, 16);
+      }
+     }
     }
-
 //    if (bdi->label) fputs (bdi->label, stdout);
+   }
+
+   if (bdi->fs_type) {
+    snprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+    bdi->uuid = estrdup (c_uuid);
    }
    fclose (device);
   } else {

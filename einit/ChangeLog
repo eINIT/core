@@ -4,6 +4,8 @@
  * changed mount/local to mount/critical (mount/local should only be used for
    storage and other non-critical mounting actions)
  * minor fix (lots of inaccessible devices would be mounted in auto-fstab-mode)
+ * reiserfs-metadata support
+ * checks for dirty filesystems (ext2/3/reiserfs)
 
 2006/09/08: mdeininger
  * removed an unnecessary header file from einit-hostname.
