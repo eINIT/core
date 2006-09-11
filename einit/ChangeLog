@@ -1,5 +1,6 @@
 2006/09/11: mdeininger
  * support for lm-sensors
+ * support for festival (tts)
 
 2006/09/10: mdeininger
  * added some code to allow for fsck'ing dirty filesystems (need to update
