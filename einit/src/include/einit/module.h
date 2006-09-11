@@ -191,7 +191,9 @@ void mod_plan_ls (struct mloadplan *);
 
 // use this to tell einit that there is new feedback-information
 // don't rely on this to be a macro!
-#define status_update(a) event_emit(a, EINIT_EVENT_FLAG_BROADCAST)
+#define status_update(a) \
+ event_emit(a, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE); \
+ if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL
 
 #ifdef __cplusplus
 }

@@ -263,9 +263,9 @@ int mod (unsigned int task, struct lmodule *module) {
    }
  }
 
- fb = (struct einit_event *)ecalloc (1, sizeof (struct einit_event));
+// fb = (struct einit_event *)ecalloc (1, sizeof (struct einit_event));
+ fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
  fb->para = (void *)module;
- fb->type = EINIT_EVENT_TYPE_FEEDBACK;
  fb->task = task | MOD_FEEDBACK_SHOW;
  fb->status = STATUS_WORKING;
  fb->flag = 0;
@@ -325,7 +325,8 @@ int mod (unsigned int task, struct lmodule *module) {
 // printf ("%i:%i\n", required, provided);
 
  status_update (fb);
- free (fb);
+ evdestroy (fb);
+// free (fb);
 
  pthread_mutex_unlock (&module->mutex);
  return module->status;

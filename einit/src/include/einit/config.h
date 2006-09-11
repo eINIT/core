@@ -73,6 +73,7 @@ struct cfgnode {
 
 struct uhash *hconfiguration;
 struct utsname osinfo;
+pthread_attr_t thread_attribute_detached;
 
 // load configuration
 int cfg_load (char *);

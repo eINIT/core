@@ -18,8 +18,8 @@ einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o eve
 einit: einit-xml
 	ln -sf einit-xml einit
 
-einit-control: einit-control.o bitch.o utility.o
-	$(CCC) einit-control.o bitch.o utility.o $(XDYNAMIC) -o einit-control -ldl
+einit-control: einit-control.o bitch.o utility.o event.o
+	$(CCC) einit-control.o bitch.o utility.o event.o $(XDYNAMIC) -o einit-control -ldl $(LPA)
 
 install: all
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}

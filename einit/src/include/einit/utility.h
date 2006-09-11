@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _UTILITY_H
 
 #include <inttypes.h>
+#include <einit/event.h>
+
 #define	SET_TYPE_STRING		0
 #define	SET_NOALLOC		-1
 
@@ -87,5 +89,11 @@ char *estrdup (char *);
 
 /* nifty string functions */
 void strtrim (char *);
+
+/* event-helpers */
+void notice (unsigned char, char *);
+struct einit_event *evdup (struct einit_event *);
+struct einit_event *evinit (uint16_t);
+void evdestroy (struct einit_event *);
 
 #endif /* _UTILITY_H */

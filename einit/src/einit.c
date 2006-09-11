@@ -96,6 +96,13 @@ int main(int argc, char **argv) {
    }
  }
  printf ("eINIT %s: booting %s\n", EINIT_VERSION_LITERAL, osinfo.sysname);
+
+ if (pthread_attr_init (&thread_attribute_detached)) {
+  fputs ("pthread initialisation failed.\n", stderr);
+  return -1;
+ } else
+  pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
+
  if (cfg_load (cfgfile) == -1) {
   fputs ("ERROR: cfg_load() failed\n", stderr);
   return -1;

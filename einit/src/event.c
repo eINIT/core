@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <pthread.h>
 #include <string.h>
+#include <einit/config.h>
 #include <einit/event.h>
 #include <einit/utility.h>
 
@@ -51,8 +52,14 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
  pthread_mutex_lock (&evf_mutex);
   struct event_function *cur = event_functions;
   while (cur) {
-   if ((cur->type & event->type) && cur->handler)
-    cur->handler (event);
+   if ((cur->type & event->type) && cur->handler) {
+    if (flags & EINIT_EVENT_FLAG_SPAWN_THREAD) {
+     pthread_t threadid;
+     pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, (flags & EINIT_EVENT_FLAG_DUPLICATE) ? evdup(event) : event);
+    } else {
+     cur->handler ((flags & EINIT_EVENT_FLAG_DUPLICATE) ? evdup(event) : event);
+    }
+   }
    cur = cur->next;
   }
  pthread_mutex_unlock (&evf_mutex);

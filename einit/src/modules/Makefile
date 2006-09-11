@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.so pexec.o dexec.o einit-hostname.so
+all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.so pexec.o dexec.o einit-hostname.so einit-feedback-aural.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -15,6 +15,7 @@ clean:
 install: all
 	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} vis-text.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-feedback-aural.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} mod-exec.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} tty.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} mod-daemon.so ${DESTDIR}/${MODDIR}
@@ -26,6 +27,10 @@ install: all
 
 vis-text.so: vis-text.c
 	${CCL} vis-text.c -o vis-text.so
+
+einit-feedback-aural.so: einit-feedback-aural.c pexec.o
+	${CCC} -fPIC -c einit-feedback-aural.c
+	${CCL} einit-feedback-aural.o pexec.o -o einit-feedback-aural.so
 
 pexec.o: pexec.c
 	${CCC} -fPIC -c pexec.c

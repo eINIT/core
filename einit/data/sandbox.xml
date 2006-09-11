@@ -12,6 +12,9 @@
 
  <control-socket s="etc/einit-control" oi="0600" />
 
+ <tts-synthesizer-command s="echo %s|/usr/bin/festival --tts" />
+ <tts-vocalising-threshold i="6" />
+
  <edje-theme-path s="etc/einit/edje" />
  <edje-theme-default s="einit.edj" />
  <edje-theme-default-component s="einit/splash" />
@@ -61,15 +64,41 @@
 <!-- dummy daemon -->
  <mod-daemon id="daemon-dummy" provides="dummyd" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
 
+<!-- mount settings -->
+<!-- default: <mount-fstab-source s="label:configuration:legacy" /> -->
+ <mount-update-steps s="block-devices:metadata" />
+ <mount-fstab-source s="label:configuration" />
+<!-- the following is safe and faster, but you don't have labels at your disposal, 
+ also filesystems won't be checked, so even though it's faster, you maybe shouldn't use it -->
+<!--
+ <mount-update-steps s="none" />
+ <mount-fstab-source s="configuration" />
+-->
+ <mount-mtab-source s="legacy" />
+<!-- using information in /proc is faster than deep-scanning /dev, but i can't get all the devices from
+   /proc yet + it only works on linux so far -->
+<!-- <mount-block-devices-source s="proc:dev" /> -->
+ <mount-block-devices-source s="dev" />
+ <mount-filesystem-label-readers s="linux" />
+ <mount-ramdisk-fs s="tmpfs" />
+ <mount-union s="unionfs" />
+ <mount-critical s="/usr:/var" />
+ <mount-fsck-command s="/sbin/fsck -a -T -t %s %s" />
+
+<!-- things that should be implemented someday -->
+<!-- <mount-block-devices-source s="proc:sys:dev" /> -->
+<!-- how to force r/w access on an r/o filesystem -->
+ <mount-force-writeable-action s="ram-overlay" />
+
  <mode id="feedback">
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="mount/local:hostname" />
+<!--  <enable mod="mount/local" /> -->
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc" />
+  <enable mod="ipc:feedback-aural" />
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">

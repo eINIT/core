@@ -39,11 +39,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _EINIT_EVENT_H
 
 #include <inttypes.h>
+#include <pthread.h>
 
 #define EINIT_EVENT_FLAG_BROADCAST	0x0001
  /* this should always be specified, although just now it's being ignored */
 #define EINIT_EVENT_FLAG_SPAWN_THREAD	0x0002
  /* use this to tell einit that you don't wish/need to wait for this to return */
+#define EINIT_EVENT_FLAG_DUPLICATE	0x0004
+ /* duplicate event data block. important with SPAWN_THREAD */
 
 #define EINIT_EVENT_TYPE_IPC		0x0001
  /* incoming IPC request */
@@ -53,10 +56,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  /* update mount status */
 #define EINIT_EVENT_TYPE_FEEDBACK	0x0008
  /* the para field specifies a module that caused the feedback */
-#define EINIT_EVENT_TYPE_WARNING	0x0010
- /* use the integer field to specify a severity, 0+ is critical, 6+ is important, etc...  */
+#define EINIT_EVENT_TYPE_NOTICE		0x0010
+ /* use the flag field to specify a severity, 0+ is critical, 6+ is important, etc...  */
 #define EINIT_EVENT_TYPE_POWER		0x0020
  /* notify others that the power is failing, has been restored or similar */
+#define EINIT_EVENT_TYPE_TIMER		0x0040
+ /* set/receive timer. integer is interpreted as absolute callback time, task as relative */
+#define EINIT_EVENT_TYPE_PANIC		0x0080
+ /* put everyone on the same host into a state of panic/calm everyone down; flag contains a reason */
 #define EINIT_EVENT_TYPE_CUSTOM		0xFFFF
  /* custom events; not yet implemented */
 
@@ -68,6 +75,7 @@ struct einit_event {
  int32_t integer, status, task;  /* integers */
  unsigned char flag;             /* flags */
  void *para;                     /* additional parametres */
+ pthread_mutex_t mutex;           /* mutex for this event to be used by handlers */
 };
 
 struct event_function {

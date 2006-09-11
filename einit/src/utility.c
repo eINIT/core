@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/event.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -621,4 +622,51 @@ void strtrim (char *s) {
   if (isspace (s[i])) s[i] = 0;
   else break;
  }
+}
+
+/* event-helpers */
+void notice (unsigned char severity, char *message) {
+ struct einit_event ev;
+ bzero (&ev, sizeof (struct einit_event));
+
+ ev.type = EINIT_EVENT_TYPE_NOTICE;
+ ev.flag = severity;
+ ev.string = message;
+
+ event_emit (&ev, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+}
+
+struct einit_event *evdup (struct einit_event *ev) {
+ struct einit_event *nev = emalloc (sizeof (struct einit_event));
+
+ memcpy (nev, ev, sizeof (struct einit_event));
+ bzero (&nev->mutex, sizeof (pthread_mutex_t));
+
+ if (nev->string) {
+  uint32_t l;
+  char *np;
+  nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->string) +1));
+
+  memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->string, l);
+
+  nev->string = np;
+ }
+
+ pthread_mutex_init (&nev->mutex, NULL);
+
+ return nev;
+}
+
+struct einit_event *evinit (uint16_t type) {
+ struct einit_event *nev = ecalloc (1, sizeof (struct einit_event));
+
+ nev->type = type;
+ pthread_mutex_init (&nev->mutex, NULL);
+
+ return nev;
+}
+
+void evdestroy (struct einit_event *ev) {
+ pthread_mutex_destroy (&ev->mutex);
+ free (ev);
 }
