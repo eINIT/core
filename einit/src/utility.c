@@ -509,19 +509,26 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
 }
 
 struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
+ struct uhash *be = cur;
+
  if (!cur || !subject) return cur;
- if ((cur == subject) && !subject->next) {
+ if (cur == subject) {
+  be = cur->next;
   free (cur);
-  return NULL;
+  return be;
  }
+
  while (cur && (cur->next != subject))
   cur = cur->next;
+
  if (cur && (cur->next == subject)) {
   cur->next = subject->next;
   if (subject->luggage) free (subject->luggage);
   free (subject);
   return cur;
  }
+
+ return be;
 }
 
 struct uhash *hashfind (struct uhash *hash, char *key) {

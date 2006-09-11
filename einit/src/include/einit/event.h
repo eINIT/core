@@ -41,35 +41,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 
 #define EINIT_EVENT_FLAG_BROADCAST	0x0001
+ /* this should always be specified, although just now it's being ignored */
+#define EINIT_EVENT_FLAG_SPAWN_THREAD	0x0002
+ /* use this to tell einit that you don't wish/need to wait for this to return */
+
 #define EINIT_EVENT_TYPE_IPC		0x0001
+ /* incoming IPC request */
 #define EINIT_EVENT_TYPE_NEED_MODULE	0x0002
+ /* this is to be used in case a module finds out it doesn't have everything it needs, yet */
 #define EINIT_EVENT_TYPE_MOUNT_UPDATE	0x0004
+ /* update mount status */
 #define EINIT_EVENT_TYPE_FEEDBACK	0x0008
+ /* the para field specifies a module that caused the feedback */
 #define EINIT_EVENT_TYPE_WARNING	0x0010
+ /* use the integer field to specify a severity, 0+ is critical, 6+ is important, etc...  */
 #define EINIT_EVENT_TYPE_POWER		0x0020
+ /* notify others that the power is failing, has been restored or similar */
 #define EINIT_EVENT_TYPE_CUSTOM		0xFFFF
+ /* custom events; not yet implemented */
 
 struct einit_event {
- uint16_t type;
- char *type_custom;
- void **set;
- char *string;
- int32_t integer, status, task;
- unsigned char flag;
- void *para;
+ uint16_t type;                  /* OR some EINIT_EVENT_TYPE_* constants to specify the event type*/
+ char *type_custom;              /* not yet implemented; reserved for custom events */
+ void **set;                     /* a set that should make sense in combination with the event type */
+ char *string;                   /* a string */
+ int32_t integer, status, task;  /* integers */
+ unsigned char flag;             /* flags */
+ void *para;                     /* additional parametres */
 };
 
 struct event_function {
- uint16_t type;
- void (*handler)(struct einit_event *);
- struct event_function *next;
+ uint16_t type;                          /* type of function */
+ void (*handler)(struct einit_event *);  /* handler function */
+ struct event_function *next;            /* next function */
 };
 
-struct function_list {
- char *name;
- uint32_t version;
- void *function;
- struct function_list *next;
+struct exported_function {
+ uint32_t version;                       /* API version (for internal use) */
+ void *function;                         /* pointer to the function */
 };
 
 struct event_function *event_functions;

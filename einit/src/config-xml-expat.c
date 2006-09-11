@@ -193,7 +193,7 @@ int cfg_load (char *configfile) {
      cfg_load (includefile);
      recursion--;
      free (includefile);
-	 hashdel (hconfiguration, hnode);
+     hashdel (hconfiguration, hnode);
      goto rescan_node;
     }
    }

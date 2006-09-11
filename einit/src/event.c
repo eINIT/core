@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 
 struct event_function *event_functions = NULL;
-struct function_list *posted_functions = NULL;
+struct uhash *exported_functions = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -101,85 +101,68 @@ void event_ignore (uint16_t type, void (*handler)(struct einit_event *)) {
 
 void function_register (char *name, uint32_t version, void *function) {
  if (!name || !function) return;
- struct function_list *fstruct = ecalloc (1, sizeof (struct function_list));
+ struct exported_function *fstruct = ecalloc (1, sizeof (struct exported_function));
 
- fstruct->name = estrdup(name);
-// fstruct->name = name;
  fstruct->version = version;
  fstruct->function = function;
 
  pthread_mutex_lock (&pof_mutex);
-  if (posted_functions)
-   fstruct->next = posted_functions;
-
-  posted_functions = fstruct;
+  exported_functions = hashadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
  pthread_mutex_unlock (&pof_mutex);
 }
 
 void **function_find (char *name, uint32_t version, char **sub) {
- if (!posted_functions) return NULL;
+ if (!exported_functions) return NULL;
  void **set = NULL;
+ struct uhash *ha = exported_functions;
 
  pthread_mutex_lock (&pof_mutex);
-  if (sub && sub[0]) {
-   uint32_t i = 0, j = setcount ((void**)sub), k = strlen (name)+1;
-   char *n = emalloc (k+1);
-   *n = 0;
-   strcat (n, name);
-   *(n + k - 1) = '-';
+ if (!sub) {
+  while (ha = hashfind (ha, name)) {
+   struct exported_function *ef = ha->value;
+   if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
+  }
 
-   for (; i < j; i++) {
-    *(n + k) = 0;
-    n = erealloc (n, k+1+strlen (sub[i]));
-    strcat (n, sub[i]);
-    {
-     struct function_list *cur = posted_functions;
-     while (cur) {
-      if ((cur->version==version) && !strcmp (cur->name, n)) set = setadd (set, (void*)cur->function, -1);
-      cur = cur->next;
-     }
-    }
-   }
+  ha = hashnext (ha);
+ } else {
+  uint32_t i = 0, k = strlen (name)+1;
+  char *n = emalloc (k+1);
+  *n = 0;
+  strcat (n, name);
+  *(n + k - 1) = '-';
 
-   free (n);
-  } else {
-   struct function_list *cur = posted_functions;
-   while (cur) {
-    if ((cur->version==version) && !strcmp (cur->name, name)) set = setadd (set, (void*)cur->function, -1);
-    cur = cur->next;
+  for (; sub[i]; i++) {
+   *(n + k) = 0;
+   n = erealloc (n, k+1+strlen (sub[i]));
+   strcat (n, sub[i]);
+   ha = exported_functions;
+   while (ha = hashfind (ha, n)) {
+    struct exported_function *ef = ha->value;
+    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
+
+    ha = hashnext (ha);
    }
   }
+ }
  pthread_mutex_unlock (&pof_mutex);
 
  return set;
 }
 
 void function_unregister (char *name, uint32_t version, void *function) {
- if (!posted_functions) return;
+ if (!exported_functions) return;
+ struct uhash *ha = exported_functions;
 
  pthread_mutex_lock (&pof_mutex);
-  if (!name) return;
-
-  struct function_list *cur = posted_functions;
-  struct function_list *prev = NULL;
-  while (cur) {
-   if ((cur->version==version) && !strcmp (cur->name, name)) {
-    if (prev == NULL) {
-     posted_functions = cur->next;
-     free (cur->name);
-     free (cur);
-     cur = posted_functions;
-    } else {
-     prev->next = cur->next;
-     free (cur->name);
-     free (cur);
-     cur = prev->next;
-    }
-   } else {
-    prev = cur;
-    cur = cur->next;
-   }
-  }
+ while (ha = hashfind (ha, name)) {
+  struct exported_function *ef = ha->value;
+  if (ef && (ef->version == version)) {
+   exported_functions = hashdel (exported_functions, ha);
+   ha = exported_functions;
+   if (!ha) break;
+  } else
+   ha = hashnext (ha);
+ }
  pthread_mutex_unlock (&pof_mutex);
 
  return;
