@@ -49,7 +49,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <pthread.h>
+#include <einit/module-logic.h>
 
+#ifdef STABLE
 struct lmodule *mlist;
 int mcount;
 
@@ -87,10 +89,6 @@ int mod_plan_sort_by_preference (struct lmodule **cand, char *atom) {
 
  free (preftab);
  return 0;
-}
-
-struct mloadplan **mod_planpath (struct mloadplan *plan, struct mloadplan *target, struct mloadplan **path) {
- return path;
 }
 
 struct uhash *mod_plan2hash (struct mloadplan *plan, struct uhash *hash, int flag) {
@@ -230,7 +228,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
 
 /* end helper functions */
 
-struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task) {
+struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode_notused) {
  struct lmodule *curmod;
  struct mloadplan **nplancand = NULL;
  int si = 0;
@@ -427,7 +425,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
  plan = mod_plan_restructure(plan);
  if (plan && plan->unsatisfied && plan->unsatisfied[0])
-  mod_plan (plan, plan->unsatisfied, task);
+  mod_plan (plan, plan->unsatisfied, task, NULL);
 
  return plan;
 }
@@ -601,29 +599,6 @@ int mod_plan_free (struct mloadplan *plan) {
  hashfree (hash_list);
 }
 
-// event handler
-void mod_event_handler(struct einit_event *event) {
- if (!event || !event->set) return;
- char **argv = (char **) event->set;
- if (argv[0] && argv[1] && !strcmp (argv[0], "modules")) {
-  if (!strcmp (argv[1], "ls_modules")) {
-   char buffer[1024];
-   struct lmodule *cur = mlist;
-   while (cur) {
-    if (cur->module)
-     snprintf (buffer, 1024, "%s (%s) [status=%i]\n", cur->module->rid, cur->module->name, cur->status);
-    write (event->integer, buffer, strlen (buffer));
-    cur = cur->next;
-   }
-  }
- }
-}
-
-
-
-
-
-
 #ifdef DEBUG
 /* debugging functions: only available if DEBUG is set (obviously...) */
 void mod_plan_ls (struct mloadplan *plan) {
@@ -768,4 +743,25 @@ void mod_plan_ls (struct mloadplan *plan) {
   }
  }
 }
+#endif
+
+#else
+
+struct uhash *service_usage = NULL;
+
+// create a plan for loading a set of atoms
+struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
+ return NULL;
+}
+
+// actually do what the plan says
+unsigned int mod_plan_commit (struct mloadplan *plan) {
+ return 0;
+}
+
+// free all of the resources of the plan
+int mod_plan_free (struct mloadplan *plan) {
+ return 0;
+}
+
 #endif

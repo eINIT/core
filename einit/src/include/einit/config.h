@@ -34,6 +34,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
@@ -51,11 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EI_NODETYPE_CONFIG 2
 #define EI_NODETYPE_CONFIG_CUSTOM 4
 #define EI_NODETYPE_MODE 8
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 struct cfgnode {
  unsigned int nodetype;
@@ -90,9 +86,5 @@ struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 
 char *cfg_getpath (char *);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _CONFIG_H */

@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 #include <errno.h>
 #include <sys/reboot.h>
+#include <einit/module-logic.h>
 
 pthread_cond_t schedthreadcond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t schedthreadsigchildcond = PTHREAD_COND_INITIALIZER;
@@ -137,9 +138,10 @@ int epowerreset () {
 int sched_switchmode (char *mode) {
  if (!mode) return -1;
  struct einit_event *fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
-  struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
+ struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
+ struct mloadplan *plan = NULL;
+#ifdef STABLE
   struct cfgnode *opt;
-  struct mloadplan *plan = NULL;
   char **elist, **dlist;
   unsigned int optmask = 0;
 
@@ -176,9 +178,20 @@ int sched_switchmode (char *mode) {
   dlist = strsetdeldupes (dlist);
 
   if (elist || optmask)
-   plan = mod_plan (plan, elist, MOD_ENABLE | optmask);
+   plan = mod_plan (plan, elist, MOD_ENABLE | optmask, NULL);
   if (dlist)
-   plan = mod_plan (plan, dlist, MOD_DISABLE | optmask);
+   plan = mod_plan (plan, dlist, MOD_DISABLE | optmask, NULL);
+#else
+  puts ("WARNING: using experimental module-planning");
+
+  if (!cur) {
+   puts ("scheduler: scheduled mode not defined, aborting");
+   free (fb);
+   return -1;
+  }
+
+  plan = mod_plan (plan, NULL, 0, cur);
+#endif
   if (!plan) {
    puts ("scheduler: scheduled mode defined but nothing to be done");
   } else {
@@ -212,7 +225,7 @@ int sched_modaction (char **argv) {
 
  argv[1] = NULL;
 
- if (plan = mod_plan (NULL, argv, task)) {
+ if (plan = mod_plan (NULL, argv, task, NULL)) {
 #ifdef DEBUG
   mod_plan_ls (plan);
 #endif

@@ -351,3 +351,21 @@ int mod (unsigned int task, struct lmodule *module) {
  pthread_mutex_unlock (&module->mutex);
  return module->status;
 }
+
+// event handler
+void mod_event_handler(struct einit_event *event) {
+ if (!event || !event->set) return;
+ char **argv = (char **) event->set;
+ if (argv[0] && argv[1] && !strcmp (argv[0], "modules")) {
+  if (!strcmp (argv[1], "ls_modules")) {
+   char buffer[1024];
+   struct lmodule *cur = mlist;
+   while (cur) {
+    if (cur->module)
+     snprintf (buffer, 1024, "%s (%s) [status=%i]\n", cur->module->rid, cur->module->name, cur->status);
+    write (event->integer, buffer, strlen (buffer));
+    cur = cur->next;
+   }
+  }
+ }
+}

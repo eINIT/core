@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 #include <sys/utsname.h>
 
 int main(int, char **);
@@ -69,7 +70,7 @@ int cleanup () {
 }
 
 int main(int argc, char **argv) {
- int i;
+ int i, stime;
 #ifdef SANDBOX
  char *cfgfile = "etc/einit/sandbox.xml";
 #else
@@ -95,7 +96,9 @@ int main(int argc, char **argv) {
      return 0;
    }
  }
- printf ("eINIT %s: booting %s\n", EINIT_VERSION_LITERAL, osinfo.sysname);
+// printf ("eINIT %s: booting %s: initialising\n", EINIT_VERSION_LITERAL, osinfo.sysname);
+ stime = time(NULL);
+ printf ("eINIT " EINIT_VERSION_LITERAL ": booting %s: Initialising\n", osinfo.sysname);
 
  if (pthread_attr_init (&thread_attribute_detached)) {
   fputs ("pthread initialisation failed.\n", stderr);
@@ -113,6 +116,7 @@ int main(int argc, char **argv) {
  sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
  sched_queue (SCHEDULER_SWITCH_MODE, "default");
 
+ printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
  sched_run (NULL);
 
  cleanup ();
