@@ -64,6 +64,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001
 #define MOD_SCHEDULER_PLAN_COMMIT_FINISH 0x1002
 
+#define MOD_LOCKED 0x8000
+
 #define MOD_PLAN_GROUP_SEQ_ANY 0x0010
 #define MOD_PLAN_GROUP_SEQ_ANY_IOP 0x0020
 #define MOD_PLAN_GROUP_SEQ_MOST 0x0040
@@ -118,6 +120,7 @@ struct lmodule {
  uint32_t status;
  void *param;
  pthread_mutex_t mutex;
+ pthread_mutex_t imutex;
  struct smodule *module;
  struct lmodule *next;
 };

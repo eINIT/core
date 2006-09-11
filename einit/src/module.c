@@ -76,30 +76,30 @@ int mod_scanmodules () {
   while (entry = readdir (dir)) {
    if (entry->d_name[0] == '.') continue;
    tmp = (char *)emalloc ((mplen + strlen (entry->d_name))*sizeof (char));
-	struct stat sbuf;
-	struct smodule *modinfo;
-    *tmp = 0;
-    strcat (tmp, modulepath);
-    strcat (tmp, entry->d_name);
-	dlerror ();
-    if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
-	 free (tmp);
-	 continue;
-	}
+   struct stat sbuf;
+   struct smodule *modinfo;
+   *tmp = 0;
+   strcat (tmp, modulepath);
+   strcat (tmp, entry->d_name);
+   dlerror ();
+   if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
+    free (tmp);
+    continue;
+   }
 
-	sohandle = dlopen (tmp, RTLD_NOW);
-	if (sohandle == NULL) {
-	 puts (dlerror ());
-	 free (tmp);
-	 continue;
-	}
-	modinfo = (struct smodule *)dlsym (sohandle, "self");
-	if (modinfo != NULL)
-     mod_add (sohandle, NULL, NULL, NULL, modinfo);
-    else
-     dlclose (sohandle);
+   sohandle = dlopen (tmp, RTLD_NOW);
+   if (sohandle == NULL) {
+    puts (dlerror ());
+    free (tmp);
+    continue;
+   }
+   modinfo = (struct smodule *)dlsym (sohandle, "self");
+   if (modinfo != NULL)
+    mod_add (sohandle, NULL, NULL, NULL, modinfo);
+   else
+    dlclose (sohandle);
 
-	free (tmp);
+   free (tmp);
   }
   closedir (dir);
  } else {
@@ -110,13 +110,22 @@ int mod_scanmodules () {
 }
 
 void mod_freedesc (struct lmodule *m) {
+ pthread_mutex_lock (&m->mutex);
+ pthread_mutex_lock (&m->imutex);
+
  if (m->next != NULL)
   mod_freedesc (m->next);
  if (m->cleanup)
   m->cleanup (m);
  if (m->sohandle)
   dlclose (m->sohandle);
+
+ m->status |= MOD_LOCKED;
+
+ pthread_mutex_unlock (&m->mutex);
  pthread_mutex_destroy (&m->mutex);
+ pthread_mutex_unlock (&m->imutex);
+ pthread_mutex_destroy (&m->imutex);
  free (m);
 }
 
@@ -148,6 +157,7 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
  nmod->enable = enable;
  nmod->disable = disable;
  pthread_mutex_init (&nmod->mutex, NULL);
+ pthread_mutex_init (&nmod->imutex, NULL);
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
@@ -230,6 +240,16 @@ int mod (unsigned int task, struct lmodule *module) {
  if (errc = pthread_mutex_lock (&module->mutex)) {
 // this is bad...
   puts (strerror (errc));
+ }
+
+ if (module->status & MOD_LOCKED) { // this means the module is locked. maybe we're shutting down just now.
+  pthread_mutex_unlock (&module->mutex);
+  if (task & MOD_ENABLE)
+   return STATUS_FAIL;
+  else if (task & MOD_DISABLE)
+   return STATUS_OK;
+  else
+   return STATUS_OK;
  }
 
  module->status = module->status | STATUS_WORKING;
