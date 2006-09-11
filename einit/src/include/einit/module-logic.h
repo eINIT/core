@@ -78,6 +78,7 @@ struct mloadplan {
 #else
 
 struct mloadplan {
+ struct mloadplan_node **root;
  struct uhash *requirements;
  char **requested;
  char **unavailable;

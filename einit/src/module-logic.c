@@ -751,6 +751,14 @@ struct uhash *service_usage = NULL;
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
+ uint32_t a = 0;
+ if (mode) {
+ }
+
+ for (a = 0; atoms[a]; a++) {
+  puts (atoms[a]);
+ }
+
  return NULL;
 }
 

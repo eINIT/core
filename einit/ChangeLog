@@ -5,6 +5,7 @@
  * new event-helper functions: notice(), evdup(), evinit() and evdestroy()
  * support for feedback via TTS (currently only for notices)
  * feedback-events are now processed in the background (in their own threads)
+ * the module-logic code needs a workover. badly.
 
 2006/09/10: mdeininger
  * added some code to allow for fsck'ing dirty filesystems (need to update
