@@ -50,15 +50,15 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
  int x = 0, y = 0, s = 1, p = 0;
  uint32_t count = 0, size = 0;
  char *strbuffer = NULL;
- if (!set1) return set2;
+ if (!set1) return setdup(set2, esize);
  if (!set1[0]) {
   free (set1);
-  return set2;
+  return setdup(set2, esize);
  }
- if (!set2) return set1;
+ if (!set2) return setdup(set1, esize);
  if (!set2[0]) {
   free (set2);
-  return set1;
+  return setdup(set1, esize);
  }
 
  if (esize == -1) {
@@ -492,6 +492,8 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
   n->key = (((char *)n) + sizeof (struct uhash));
   n->value = (((char *)n) + sizeof (struct uhash) + hklen);
  }
+
+ n->luggage = luggage;
 
  if (!hash)
   hash = n;

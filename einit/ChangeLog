@@ -9,6 +9,7 @@
    the id paramtre for cfg_getstring can either be a node id, or of the form
    node-id/attribute-name. the latter is primarily intended for environment
    variable definitions.
+ * i think i made some progress with the new module-planning code
 
 2006/09/11: mdeininger
  * support for lm-sensors

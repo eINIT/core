@@ -747,7 +747,13 @@ void mod_plan_ls (struct mloadplan *plan) {
 }
 #endif
 
+/*
+   new, experimental, completely instable and not working version of the previous code.
+*/
+
 #else
+
+struct lmodule *mlist;
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
@@ -757,6 +763,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   **disable = NULL, **adisable = NULL,
   **reset = NULL, **areset = NULL;
  struct cfgnode *rmode = mode;
+ struct mloadplan_node nnode;
 
  if (!plan) plan = ecalloc (1, sizeof (struct mloadplan));
 
@@ -814,24 +821,43 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   puts ("enable:");
   while (current) {
    for (a = 0; current[a]; a++) {
-    struct mloadplan_node nnode;
+    struct lmodule *cur = mlist;
+    struct uhash *ha;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (nnode.mod) {
-     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), NULL);
-     puts (current[a]);
-    } else if (nnode.group) {
-     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), NULL);
+    if (ha = hashfind (plan->services, current[a]))
+     continue;
+
+    while (cur) {
+     struct smodule *mo = cur->module;
+     if (mo && inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+      recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+     }
+
+     cur = cur->next;
+    }
+
+    if (!nnode.mod) {
+     char tmp[2048]; tmp[0] = 0;
+     strcat (tmp, current[a]);
+     strcat (tmp, "/group");
+
+     if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
+      recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
+    }
+
+    if (nnode.mod || nnode.group) {
+     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     aenable = (char **)setadd ((void **)aenable, (void *)current[a], SET_TYPE_STRING);
      puts (current[a]);
     } else {
      plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
     }
    }
 
-   free (current); current = NULL;
+   free (current); current = recurse; recurse = NULL;
   }
-
-  if (recurse) free (recurse);
  }
  if (reset) {
   char **current = (char **)setdup ((void **)reset, SET_TYPE_STRING);
