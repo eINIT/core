@@ -58,6 +58,8 @@ int ipc_process (char *);
 int ipc_wait ();
 int cleanup ();
 
+struct cfgnode *cmode = NULL, *amode = NULL;
+
 int print_usage_info () {
  fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h]\n", stderr);
  return -1;

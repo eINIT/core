@@ -269,8 +269,12 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  return NULL;
 }
 
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
+// get string (by id)
+char *cfg_getstring (char *id, struct cfgnode *mode) {
+ mode = mode ? mode : cmode;
+}
 
+/* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *cfg_getpath (char *id) {
  int mplen;
  struct cfgnode *svpath = cfg_findnode (id, 0, NULL);

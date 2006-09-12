@@ -398,7 +398,10 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
  struct uhash *ha;
  char **t;
  uint32_t i;
- if (!module || !module->module) return 0;
+ struct service_usage_item *item;
+
+ if ((!module || !module->module) && !service) return 0;
+
  pthread_mutex_lock (&service_usage_mutex);
  if (task & SERVICE_NOT_IN_USE) {
   ret |= SERVICE_NOT_IN_USE;
@@ -423,7 +426,6 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    }
   }
  } else if (task & SERVICE_UPDATE) {
-  struct service_usage_item *item;
   if (t = module->module->requires) {
    for (i = 0; t[i]; i++) {
     if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
@@ -448,6 +450,12 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    }
   }
 /* this will be removed ASAP */
+ } else if (task & SERVICE_IS_REQUIRED) {
+  if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->users))
+   ret |= SERVICE_IS_REQUIRED;
+ } else if (task & SERVICE_IS_PROVIDED) {
+  if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
+   ret |= SERVICE_IS_PROVIDED;
  } else if (task & SERVICE_INJECT_PROVIDER) {
   if (!(ha = hashfind (service_usage, service))) {
    struct service_usage_item nitem;

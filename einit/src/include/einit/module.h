@@ -82,9 +82,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SERVICE_NOT_IN_USE              0x0001
 #define SERVICE_REQUIREMENTS_MET        0x0002
+#define SERVICE_IS_REQUIRED             0x0004
+#define SERVICE_IS_PROVIDED             0x0008
 #define SERVICE_UPDATE                  0x0100
 
-/* these will hopefully not be necessary once we're done */
+/* this will hopefully not be necessary once we're done */
 #define SERVICE_INJECT_PROVIDER         0x0200
 
 struct smodule {

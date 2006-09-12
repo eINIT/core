@@ -78,9 +78,8 @@ struct mloadplan {
 #else
 
 struct mloadplan {
- struct mloadplan_node **root;
+ struct mloadplan_node **entry_nodes;
  struct uhash *requirements;
- char **requested;
  char **unavailable;
  uint32_t options;
  pthread_mutex_t mutex;

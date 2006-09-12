@@ -150,6 +150,9 @@ int sched_switchmode (char *mode) {
    free (fb);
    return -1;
   }
+
+  cmode = cur;
+
   opt = NULL;
   while (opt = cfg_findnode ("disable-unspecified", 0, opt)) {
    if (opt->mode == cur) {

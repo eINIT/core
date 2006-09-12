@@ -71,6 +71,8 @@ struct uhash *hconfiguration;
 struct utsname osinfo;
 pthread_attr_t thread_attribute_detached;
 
+struct cfgnode *cmode, *amode;
+
 // load configuration
 int cfg_load (char *);
 
@@ -82,6 +84,9 @@ int cfg_addnode (struct cfgnode *);
 
 // find a node (by id)
 struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
+
+// get string (by id)
+char *cfg_getstring (char *, struct cfgnode *);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 
