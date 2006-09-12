@@ -184,10 +184,10 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
 
      for (j = 0; req[j]; j++) {
       adds = 0;
-      if ((v->task & MOD_ENABLE) && strinset (provided, req[j])) {
+      if ((v->task & MOD_ENABLE) && inset ((void **)provided, (void *)req[j], SET_TYPE_STRING)) {
        plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
        adds++;
-      } else if ((v->task & MOD_DISABLE) && strinset (required, req[j])) {
+      } else if ((v->task & MOD_DISABLE) && inset ((void **)required, (void *)req[j], SET_TYPE_STRING)) {
        plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
        adds++;
       } else {
@@ -203,7 +203,7 @@ struct mloadplan *mod_plan_restructure (struct mloadplan *plan) {
       if (adds) {
        plan->orphaned = (struct mloadplan **)setdel ((void **)plan->orphaned, (void*)v);
       } else if (v->task & MOD_ENABLE) {
-       if (!strinset (plan->unavailable, req[j]) && !strinset (plan->unsatisfied, req[j]))
+       if (!inset ((void **)plan->unavailable, (void *)req[j], SET_TYPE_STRING) && !inset ((void **)plan->unsatisfied, (void *)req[j], SET_TYPE_STRING))
         plan->unsatisfied = (char **)setadd ((void **)plan->unsatisfied, (void *)req[j], -1);
       } else if (v->task & MOD_DISABLE) {
        plan->right = (struct mloadplan **)setadd ((void **)plan->right, (void *)v, -1);
@@ -246,11 +246,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    if (curmod->status & STATUS_ENABLED) {
     if (tmp) {
      if ((tmp->mode & EINIT_MOD_FEEDBACK) && !(task & MOD_DISABLE_UNSPEC_FEEDBACK) ||
-         (tmp->rid && strinset (atoms, tmp->rid)))
+         (tmp->rid && inset ((void **)atoms, (void *)tmp->rid, SET_TYPE_STRING)))
       goto skipcurmod;
      if (tmp->provides && atoms) {
       for (si = 0; atoms[si]; si++)
-       if (strinset (tmp->provides, atoms[si]))
+       if (inset ((void **)tmp->provides, (void *)atoms[si], SET_TYPE_STRING))
         goto skipcurmod;
      }
     }
@@ -315,7 +315,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     if (tmp) {
      uint32_t gai;
      if ((tmp->rid && !strcmp (tmp->rid, atoms[si])) ||
-        (tmp->provides && strinset (tmp->provides, atoms[si]))) {
+        (tmp->provides && inset ((void **)tmp->provides, (void *)atoms[si], SET_TYPE_STRING))) {
       addmodtocandidates:
       cand[cc] = curmod;
       cc++;
@@ -324,7 +324,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      }
      if (groupatoms) {
       for (gai = 0; groupatoms[gai]; gai++) {
-       if (tmp->provides && strinset (tmp->provides, groupatoms[gai])) {
+       if (tmp->provides && inset ((void **)tmp->provides, (void *)groupatoms[gai], SET_TYPE_STRING)) {
         goto addmodtocandidates;
        }
       }
@@ -407,7 +407,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
     }
    } else {
-    if (plan && plan->unsatisfied && strinset (plan->unsatisfied, atoms [si])) {
+    if (plan && plan->unsatisfied && inset ((void **)plan->unsatisfied, (void *)atoms [si], SET_TYPE_STRING)) {
      char *tmpa = estrdup (atoms[si]);
      printf ("can't satisfy atom: %s\n", atoms[si]);
      plan->unsatisfied = strsetdel (plan->unsatisfied, atoms[si]);
@@ -519,8 +519,10 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 //  if (plan->group && (plan->options & MOD_PLAN_GROUP_SEQ_MOST)) {
 //   puts ("group/most OK");
 /* this will need to be reworked a little... no way to figure out when the group is not being provided anymore */
-  if (plan->provides && plan->provides [0] && (plan->task & MOD_ENABLE))
+  if (plan->provides && plan->provides [0] && (plan->task & MOD_ENABLE)) {
    provided = (char **)setadd ((void **)provided, (void *)plan->provides[0], -1);
+   service_usage_query (SERVICE_INJECT_PROVIDER, plan->mod, plan->provides[0]);
+  }
 //  }
   if (plan->right)
    for (i = 0; plan->right[i]; i++) {
@@ -746,8 +748,6 @@ void mod_plan_ls (struct mloadplan *plan) {
 #endif
 
 #else
-
-struct uhash *service_usage = NULL;
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {

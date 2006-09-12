@@ -93,12 +93,6 @@ struct mloadplan_node {
  pthread_mutex_t mutex;
 };
 
-struct service_usage_item {
- uint32_t users;            /* how many modules use this service */
- struct lmodule *provider;  /* the module that is currently providing this service */
- struct lmodule **modules;  /* the modules that currently use this service */
-};
-
 #endif
 
 // create a plan for loading a set of atoms

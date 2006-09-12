@@ -1,5 +1,10 @@
-2006/09/11: mdeininger
+2006/09/12: mdeininger
  * fixed a bug in event.c that caused an infinite loop.
+ * turned strinset() into inset()
+ * new function: service_usage_query()
+ * the module subsystem uses a new record-keeping method [I'm not sure if the
+   current version will boot... maybe you should postpone updates until i get
+   better module logic together...]
 
 2006/09/11: mdeininger
  * support for lm-sensors

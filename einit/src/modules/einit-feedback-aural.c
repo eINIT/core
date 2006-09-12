@@ -68,6 +68,8 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
+struct lmodule *self_l = NULL;
+
 void comment_event_handler(struct einit_event *);
 void notice_event_handler(struct einit_event *);
 char *synthesizer;
@@ -82,24 +84,32 @@ int configure (struct lmodule *this) {
 
  if (node = cfg_findnode ("tts-vocalising-threshold", 0, NULL))
   sev_threshold = node->value;
+
+ self_l = this;
 }
 
 int cleanup (struct lmodule *this) {
 }
 
 int enable (void *pa, struct einit_event *status) {
+ pthread_mutex_lock (&self_l->imutex);
  event_listen (EINIT_EVENT_TYPE_FEEDBACK, comment_event_handler);
  event_listen (EINIT_EVENT_TYPE_NOTICE, notice_event_handler);
+ pthread_mutex_unlock (&self_l->imutex);
  return STATUS_OK;
 }
 
 int disable (void *pa, struct einit_event *status) {
+ pthread_mutex_lock (&self_l->imutex);
  event_ignore (EINIT_EVENT_TYPE_FEEDBACK, comment_event_handler);
  event_ignore (EINIT_EVENT_TYPE_NOTICE, notice_event_handler);
+ pthread_mutex_unlock (&self_l->imutex);
  return STATUS_OK;
 }
 
 void comment_event_handler(struct einit_event *ev) {
+ pthread_mutex_lock (&self_l->imutex);
+
  char phrase[2048], cmd[2048];
  phrase[0] = 0;
 
@@ -121,10 +131,13 @@ void comment_event_handler(struct einit_event *ev) {
   pexec (cmd, NULL, 0, 0, NULL, ev);
  }
 
+ pthread_mutex_unlock (&self_l->imutex);
  return;
 }
 
 void notice_event_handler(struct einit_event *ev) {
+ pthread_mutex_lock (&self_l->imutex);
+
  char cmd[2048];
  char *tx;
 
@@ -136,5 +149,6 @@ void notice_event_handler(struct einit_event *ev) {
   pexec (cmd, NULL, 0, 0, NULL, ev);
  }
 
+ pthread_mutex_unlock (&self_l->imutex);
  return;
 }

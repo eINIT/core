@@ -337,6 +337,23 @@ void setsort (void **set, char task, signed int(*sortfunction)(void *, void*)) {
  return;
 }
 
+int inset (void **haystack, const void *needle, int32_t esize) {
+ int c = 0;
+
+ if (!haystack) return 0;
+ if (!haystack[0]) return 0;
+ if (!needle) return 0;
+
+ if (esize == SET_TYPE_STRING) {
+  for (; haystack[c] != NULL; c++)
+   if (!strcmp (haystack[c], needle)) return 1;
+ } else if (esize == -1) {
+  for (; haystack[c] != NULL; c++)
+   if (haystack[c] == needle) return 1;
+ }
+ return 0;
+}
+
 /* some functions to work with string-sets */
 
 char **str2set (const char sep, char *input) {
@@ -363,17 +380,6 @@ char **str2set (const char sep, char *input) {
   }
  }
  return ret;
-}
-
-int strinset (char **haystack, const char *needle) {
- int c = 0;
- if (!haystack) return 0;
- if (!haystack[0]) return 0;
- if (!needle) return 0;
- for (; haystack[c] != NULL; c++) {
-  if (!strcmp (haystack[c], needle)) return 1;
- }
- return 0;
 }
 
 char **strsetdel (char **set, char *item) {
@@ -414,7 +420,7 @@ char **strsetdeldupes (char **set) {
  while (set[y]) {
   char *tmp = set[y];
   set[y] = NULL;
-  if (!strinset (set, tmp)) {
+  if (!inset ((void **)set, (void *)tmp, SET_TYPE_STRING)) {
    newset [x] = tmp;
    x++;
   }

@@ -63,10 +63,11 @@ void **setdel (void **, void *);
 int setcount (void **);
 void setsort (void **, char, signed int(*)(void *, void*));
 
+int inset (void **, const void *, int32_t);
+
 /* some functions to work with string-sets */
 
 char **str2set (const char, char *);
-int strinset (char **, const char *);
 char **strsetdel (char **, char *);
 char **strsetdeldupes (char **);
 

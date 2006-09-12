@@ -57,6 +57,9 @@ char **provided = NULL;
 char **required = NULL;
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct uhash *service_usage = NULL;
+pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int mod_scanmodules () {
  DIR *dir;
  struct dirent *entry;
@@ -235,6 +238,7 @@ int mod (unsigned int task, struct lmodule *module) {
  struct smodule *t;
  int ti, errc;
  unsigned int ret;
+ struct uhash *ha;
  if (!module) return 0;
 /* wait if the module is already being processed in a different thread */
  if (errc = pthread_mutex_lock (&module->mutex)) {
@@ -257,6 +261,7 @@ int mod (unsigned int task, struct lmodule *module) {
 /* check if the task requested has already been done (or if it can be done at all) */
  if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
+  printf ("refusing to change state of %s\n", module->module->rid);
   pthread_mutex_unlock (&module->mutex);
   return STATUS_IDLE;
  }
@@ -265,23 +270,39 @@ int mod (unsigned int task, struct lmodule *module) {
  if ((task & MOD_RELOAD) && (module->status & STATUS_DISABLED))
   goto wontload;
 
+#if 0
  if (task & MOD_ENABLE) {
    if (t = module->module) {
-    if (t->requires) for (ti = 0; t->requires[ti]; ti++)
-     if (!strinset (provided, t->requires[ti])) {
+    if (t->requires) for (ti = 0; t->requires[ti]; ti++) {
+      pthread_mutex_unlock (&module->mutex);
+      return STATUS_FAIL_REQ;
+     }*/
+     if (!inset ((void **)provided, (void *)t->requires[ti], SET_TYPE_STRING)) {
       pthread_mutex_unlock (&module->mutex);
       return STATUS_FAIL_REQ;
      }
+    }
    }
  } else if (task & MOD_DISABLE) {
    if (t = module->module) {
     if (t->provides) for (ti = 0; t->provides[ti]; ti++)
-     if (strinset (required, t->provides[ti])) {
+      pthread_mutex_unlock (&module->mutex);
+      return STATUS_FAIL_REQ;*/
+     if (inset ((void **)required, (void *)t->provides[ti], SET_TYPE_STRING)) {
       pthread_mutex_unlock (&module->mutex);
       return STATUS_FAIL_REQ;
      }
    }
  }
+#else
+ if (task & MOD_ENABLE) {
+  if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL))
+   goto wontload;
+ } else if (task & MOD_DISABLE) {
+  if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL))
+   goto wontload;
+ }
+#endif
 
 // fb = (struct einit_event *)ecalloc (1, sizeof (struct einit_event));
  fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
@@ -348,6 +369,8 @@ int mod (unsigned int task, struct lmodule *module) {
  evdestroy (fb);
 // free (fb);
 
+ service_usage_query(SERVICE_UPDATE, module, NULL);
+
  pthread_mutex_unlock (&module->mutex);
  return module->status;
 }
@@ -368,4 +391,72 @@ void mod_event_handler(struct einit_event *event) {
    }
   }
  }
+}
+
+uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service) {
+ uint16_t ret = 0;
+ struct uhash *ha;
+ char **t;
+ uint32_t i;
+ if (!module || !module->module) return 0;
+ pthread_mutex_lock (&service_usage_mutex);
+ if (task & SERVICE_NOT_IN_USE) {
+  ret |= SERVICE_NOT_IN_USE;
+  if (t = module->module->provides) {
+   for (i = 0; t[i]; i++) {
+    if ((ha = hashfind (service_usage, t[i])) &&
+        ((struct service_usage_item *)(ha->value))->users) {
+     ret ^= SERVICE_NOT_IN_USE;
+     break;
+    }
+   }
+  }
+ } else if (task & SERVICE_REQUIREMENTS_MET) {
+  ret |= SERVICE_REQUIREMENTS_MET;
+  if (t = module->module->requires) {
+   for (i = 0; t[i]; i++) {
+    if (!(ha = hashfind (service_usage, t[i])) ||
+        !((struct service_usage_item *)(ha->value))->provider) {
+     ret ^= SERVICE_REQUIREMENTS_MET;
+     break;
+    }
+   }
+  }
+ } else if (task & SERVICE_UPDATE) {
+  struct service_usage_item *item;
+  if (t = module->module->requires) {
+   for (i = 0; t[i]; i++) {
+    if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
+     item->users = module->status & STATUS_ENABLED ?
+      (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC) :
+      (struct lmodule **)setdel ((void **)item->users, (void *)module);
+    }
+   }
+  }
+  if (t = module->module->provides) {
+   for (i = 0; t[i]; i++) {
+    if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
+     item->provider = module->status & STATUS_ENABLED ?
+      (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC) :
+      (struct lmodule **)setdel ((void **)item->provider, (void *)module);
+    } else if (module->status & STATUS_ENABLED) {
+     struct service_usage_item nitem;
+     memset (&nitem, 0, sizeof (struct service_usage_item));
+     nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
+     service_usage = hashadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+    }
+   }
+  }
+/* this will be removed ASAP */
+ } else if (task & SERVICE_INJECT_PROVIDER) {
+  if (!(ha = hashfind (service_usage, service))) {
+   struct service_usage_item nitem;
+   memset (&nitem, 0, sizeof (struct service_usage_item));
+   nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
+   service_usage = hashadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
+  }
+ }
+
+ pthread_mutex_unlock (&service_usage_mutex);
+ return ret;
 }

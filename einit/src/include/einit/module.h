@@ -80,6 +80,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STATUS_ENABLED 0x0401
 #define STATUS_DISABLED 0x0802
 
+#define SERVICE_NOT_IN_USE              0x0001
+#define SERVICE_REQUIREMENTS_MET        0x0002
+#define SERVICE_UPDATE                  0x0100
+
+/* these will hopefully not be necessary once we're done */
+#define SERVICE_INJECT_PROVIDER         0x0200
+
 struct smodule {
  int eiversion;
  int version;
@@ -107,6 +114,13 @@ struct lmodule {
  struct lmodule *next;
 };
 
+struct service_usage_item {
+ struct lmodule **provider;  /* the modules that currently provide this service */
+ struct lmodule **users;     /* the modules that currently use this service */
+};
+
+struct uhash *service_usage;
+
 // scan for modules (i.e. load their .so and add it to the list)
 int mod_scanmodules ();
 
@@ -127,6 +141,9 @@ int mod (unsigned int, struct lmodule *);
 
 // event handler
 void mod_event_handler(struct einit_event *);
+
+// service usage
+uint16_t service_usage_query (uint16_t, struct lmodule *, char *);
 
 // use this to tell einit that there is new feedback-information
 // don't rely on this to be a macro!
