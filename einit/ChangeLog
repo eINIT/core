@@ -1,4 +1,7 @@
 2006/09/11: mdeininger
+ * fixed a bug in event.c that caused an infinite loop.
+
+2006/09/11: mdeininger
  * support for lm-sensors
  * support for festival (tts)
  * the event-system now uses uhash-es for the list of exported functions

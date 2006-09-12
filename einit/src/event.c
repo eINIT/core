@@ -126,8 +126,12 @@ void **function_find (char *name, uint32_t version, char **sub) {
  pthread_mutex_lock (&pof_mutex);
  if (!sub) {
   while (ha = hashfind (ha, name)) {
+/*   char tmp[2048];
+   snprintf (tmp, 2048, "returned with %zx", ha);
+   puts (tmp);*/
    struct exported_function *ef = ha->value;
    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
+   ha = hashnext (ha);
   }
 
   ha = hashnext (ha);
@@ -144,6 +148,10 @@ void **function_find (char *name, uint32_t version, char **sub) {
    strcat (n, sub[i]);
    ha = exported_functions;
    while (ha = hashfind (ha, n)) {
+/*    char tmp[2048];
+    snprintf (tmp, 2048, "returned with %zx", ha);
+    puts (tmp);*/
+
     struct exported_function *ef = ha->value;
     if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
 

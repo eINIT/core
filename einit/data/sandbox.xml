@@ -94,7 +94,8 @@
   <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
-<!--  <enable mod="mount/local" /> -->
+  <enable mod="sysconf" />
+<!--  <enable mod="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:feedback-aural" /> -->
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

@@ -68,12 +68,21 @@ const struct smodule self = {
 int enable (void *pa, struct einit_event *status) {
  struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0, NULL);
  if (cfg && !cfg->flag) {
+#ifndef SANDBOX
   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
    status->string = strerror(errno);
    errno = 0;
    status->flag++;
    status_update (status);
   }
+#else
+  if (1) {
+   status->string = strerror(errno);
+   errno = 0;
+   status->flag++;
+   status_update (status);
+  }
+#endif
  }
 
 /* cfg = cfg_findnode ("hostname", 0, NULL);

@@ -513,6 +513,11 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
  struct uhash *be = cur;
 
  if (!cur || !subject) return cur;
+
+/* char tmp[2048];
+ snprintf (tmp, 2048, "hashdel(): need to remove 0x%zx from 0x%zx", subject, cur);
+ puts (tmp);*/
+
  if (cur == subject) {
   be = cur->next;
   free (cur);
@@ -535,6 +540,11 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
 struct uhash *hashfind (struct uhash *hash, char *key) {
  struct uhash *c = hash;
  if (!hash || !key) return NULL;
+
+/* char tmp[2048];
+ snprintf (tmp, 2048, "hashfind(): need to find %s in 0x%zx", key, hash);
+ puts (tmp); */
+
  while ((!c->key || strcmp (key, c->key)) && c->next) c = c->next;
  if (!c->next && strcmp (key, c->key)) return NULL;
  return c;
