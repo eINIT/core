@@ -751,24 +751,135 @@ void mod_plan_ls (struct mloadplan *plan) {
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- uint32_t a = 0;
+ uint32_t a = 0, b = 0;
+ char
+  **enable = NULL, **aenable = NULL,
+  **disable = NULL, **adisable = NULL,
+  **reset = NULL, **areset = NULL;
+ struct cfgnode *rmode = mode;
+
+ if (!plan) plan = ecalloc (1, sizeof (struct mloadplan));
+
  if (mode) {
+  enable  = str2set (':', cfg_getstring ("enable/mod", mode)),
+  disable = str2set (':', cfg_getstring ("disable/mod", mode)),
+  reset   = str2set (':', cfg_getstring ("reset/mod", mode));
+
+  if (mode->base) {
+   int y = 0;
+   struct cfgnode *cno;
+   while (mode->base[y]) {
+    cno = cfg_findnode (mode->base[y], EI_NODETYPE_MODE, NULL);
+    if (cno) {
+     char
+      **denable  = str2set (':', cfg_getstring ("enable/mod", cno)),
+      **ddisable = str2set (':', cfg_getstring ("disable/mod", cno)),
+      **dreset   = str2set (':', cfg_getstring ("reset/mod", cno));
+
+     if (denable) {
+      char **t = (char **)setcombine ((void **)denable, (void **)enable, SET_TYPE_STRING);
+      free (denable);
+      free (enable);
+      enable = t;
+     }
+     if (ddisable) {
+      char **t = (char **)setcombine ((void **)ddisable, (void **)disable, SET_TYPE_STRING);
+      free (ddisable);
+      free (disable);
+      enable = t;
+     }
+     if (dreset) {
+      char **t = (char **)setcombine ((void **)dreset, (void **)reset, SET_TYPE_STRING);
+      free (dreset);
+      free (reset);
+      enable = t;
+     }
+    }
+    y++;
+   }
+  }
  }
 
- for (a = 0; atoms[a]; a++) {
-  puts (atoms[a]);
+ if (disable) {
+  char **current = (char **)setdup ((void **)disable, SET_TYPE_STRING);
+  puts ("disable:");
+  for (a = 0; current[a]; a++) {
+   puts (current[a]);
+  }
+  if (current) free (current);
+ }
+ if (enable) {
+  char **current = (char **)setdup ((void **)enable, SET_TYPE_STRING);
+  char **recurse = NULL;
+  puts ("enable:");
+  while (current) {
+   for (a = 0; current[a]; a++) {
+    struct mloadplan_node nnode;
+    memset (&nnode, 0, sizeof (struct mloadplan_node));
+
+    if (nnode.mod) {
+     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), NULL);
+     puts (current[a]);
+    } else if (nnode.group) {
+     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), NULL);
+     puts (current[a]);
+    } else {
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
+    }
+   }
+
+   free (current); current = NULL;
+  }
+
+  if (recurse) free (recurse);
+ }
+ if (reset) {
+  char **current = (char **)setdup ((void **)reset, SET_TYPE_STRING);
+  puts ("reset:");
+  for (a = 0; current[a]; a++) {
+   puts (current[a]);
+  }
+  if (current) free (current);
  }
 
- return NULL;
+ plan->enable = enable;
+ plan->disable = disable;
+ plan->reset = reset;
+
+ return plan;
 }
 
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
+ if (!plan) return;
+
+ if (plan->unavailable) {
+  char tmp[2048] = "WARNING: unavailable services:", tmp2[2048];
+  uint32_t u = 0;
+
+  for (; plan->unavailable[u]; u++) {
+   strcpy (tmp2, tmp);
+   snprintf (tmp, 2048, "%s %s", tmp2, plan->unavailable[u]);
+  }
+
+  puts (tmp);
+//  notice (2, tmp);
+ }
+
  return 0;
 }
 
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *plan) {
+ if (plan->enable) free (plan->enable);
+ if (plan->disable) free (plan->disable);
+ if (plan->reset) free (plan->reset);
+ if (plan->unavailable) free (plan->unavailable);
+
+ if (plan->services) hashfree (plan->services);
+
+ free (plan);
+
  return 0;
 }
 

@@ -5,6 +5,10 @@
  * the module subsystem uses a new record-keeping method [I'm not sure if the
    current version will boot... maybe you should postpone updates until i get
    better module logic together...]
+ * new functions: cfg_getstring() and cfg_getnode().
+   the id paramtre for cfg_getstring can either be a node id, or of the form
+   node-id/attribute-name. the latter is primarily intended for environment
+   variable definitions.
 
 2006/09/11: mdeininger
  * support for lm-sensors

@@ -91,7 +91,7 @@
  <mount-force-writeable-action s="ram-overlay" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual" />
+  <enable mod="feedback-visual:dummyd" />
  </mode>
  <mode id="boot">
   <enable mod="sysconf" />
@@ -100,6 +100,7 @@
  </mode>
  <mode id="default" base="boot">
   <enable mod="ipc:feedback-aural" />
+  <disable mod="dummyd" />
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">

@@ -78,9 +78,12 @@ struct mloadplan {
 #else
 
 struct mloadplan {
- struct mloadplan_node **entry_nodes;
- struct uhash *requirements;
+ struct uhash *services;
+ char **enable;
+ char **disable;
+ char **reset;
  char **unavailable;
+ char **locked;
  uint32_t options;
  pthread_mutex_t mutex;
 };
@@ -88,6 +91,7 @@ struct mloadplan {
 struct mloadplan_node {
  uint32_t task, status;
  struct lmodule **mod;      /* modules */
+ char **group;
  uint32_t options;
  pthread_mutex_t mutex;
 };

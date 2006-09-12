@@ -271,7 +271,66 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
 
 // get string (by id)
 char *cfg_getstring (char *id, struct cfgnode *mode) {
+ struct cfgnode *node = NULL;
+ char *ret = NULL, **sub;
+ uint32_t i;
+
+ if (!id) return NULL;
  mode = mode ? mode : cmode;
+ if (strchr (id, '/')) {
+  sub = str2set ('/', id);
+  while (node = cfg_findnode (sub[0], 0, node)) {
+   if (node->arbattrs) {
+    if (node->mode == mode) {
+     char f = 0;
+     for (i = 0; node->arbattrs[i]; i+=2) {
+      if (f = (!strcmp(node->arbattrs[i], sub[1]))) {
+       ret = node->arbattrs[i+1];
+       break;
+      }
+     }
+     if (f) break;
+    } else if (!ret && !node->mode) {
+     for (i = 0; node->arbattrs[i]; i+=2) {
+      if (!strcmp(node->arbattrs[i], sub[1])) {
+       ret = node->arbattrs[i+1];
+       break;
+      }
+     }
+    }
+   }
+  }
+  free (sub);
+ } else
+  while (node = cfg_findnode (id, 0, node)) {
+   if (node->svalue) {
+    if (node->mode == mode) {
+     ret = node->svalue;
+     break;
+    } else if (!ret && !node->mode)
+     ret = node->svalue;
+   }
+  }
+
+ return ret;
+}
+
+// get node (by id)
+struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
+ struct cfgnode *node = NULL;
+ struct cfgnode *ret = NULL;
+
+ mode = mode ? mode : cmode;
+
+ while (node = cfg_findnode (id, 0, node)) {
+  if (node->mode == mode) {
+   ret = node;
+   break;
+  } else if (!ret && !node->mode)
+   ret = node;
+ }
+
+ return ret;
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
