@@ -119,9 +119,13 @@ void function_register (char *name, uint32_t version, void *function) {
 }
 
 void **function_find (char *name, uint32_t version, char **sub) {
- if (!exported_functions) return NULL;
+ if (!exported_functions || !name) return NULL;
  void **set = NULL;
  struct uhash *ha = exported_functions;
+
+/* char tmp[2048];
+ snprintf (tmp, 2048, "looking for %s in %zx", name, ha);
+ puts (tmp); */
 
  pthread_mutex_lock (&pof_mutex);
  if (!sub) {
@@ -133,8 +137,6 @@ void **function_find (char *name, uint32_t version, char **sub) {
    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
    ha = hashnext (ha);
   }
-
-  ha = hashnext (ha);
  } else {
   uint32_t i = 0, k = strlen (name)+1;
   char *n = emalloc (k+1);

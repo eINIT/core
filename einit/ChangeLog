@@ -1,3 +1,7 @@
+2006/09/13: mdeininger
+ * fixed a stupid bug that caused a SIGBUS
+ * slight progress with module-logic.c
+
 2006/09/12: mdeininger
  * fixed a bug in event.c that caused an infinite loop.
  * turned strinset() into inset()

@@ -100,7 +100,7 @@
  </mode>
  <mode id="default" base="boot">
   <enable mod="ipc:feedback-aural" />
-  <disable mod="dummyd" />
+<!--  <disable mod="dummyd" /> -->
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">

@@ -63,9 +63,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct mloadplan {
  uint32_t task;
  struct lmodule *mod;
- struct mloadplan **group;  /* elements of the tree that form this group */
- struct mloadplan **left;  /* elements of the tree to load on failure */
- struct mloadplan **right; /* elements of the tree to load on success */
+ struct mloadplan **group;    /* elements of the tree that form this group */
+ struct mloadplan **left;     /* elements of the tree to load on failure */
+ struct mloadplan **right;    /* elements of the tree to load on success */
  struct mloadplan **orphaned; /* orphaned elements */
  char **unsatisfied;
  char **unavailable;

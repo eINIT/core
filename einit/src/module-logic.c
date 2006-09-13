@@ -818,12 +818,13 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (enable) {
   char **current = (char **)setdup ((void **)enable, SET_TYPE_STRING);
   char **recurse = NULL;
-  puts ("enable:");
+//  puts ("enable:");
   while (current) {
    for (a = 0; current[a]; a++) {
     struct lmodule *cur = mlist;
     struct uhash *ha;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
+    pthread_mutex_init (&nnode.mutex, NULL);
 
     if (ha = hashfind (plan->services, current[a]))
      continue;
@@ -850,9 +851,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     if (nnode.mod || nnode.group) {
      plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
      aenable = (char **)setadd ((void **)aenable, (void *)current[a], SET_TYPE_STRING);
-     puts (current[a]);
+//     puts (current[a]);
     } else {
      plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
+     pthread_mutex_destroy (&nnode.mutex);
     }
    }
 
@@ -875,9 +877,49 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  return plan;
 }
 
+// the actual loader function
+unsigned int mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
+ if (node->mod) {
+  fprintf (stderr, "enabling node 0x%zx\n", node);
+
+  if (node->mod[1]) {
+  } else {
+
+   mod (MOD_ENABLE, node->mod[0]);
+  }
+ } else if (node->group) {
+  char tmp[2048] = "NOTE: enable: group:", tmp2[2048];
+  uint32_t u = 0;
+
+  for (; node->group[u]; u++) {
+   strcpy (tmp2, tmp);
+   snprintf (tmp, 2048, "%s %s", tmp2, node->group[u]);
+  }
+ }
+}
+
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return;
+
+ pthread_t **subthreads = NULL;
+ struct uhash *ha;
+
+ if (plan->enable) {
+  uint32_t u = 0;
+
+  for (; plan->enable[u]; u++) {
+   if (ha = hashfind (plan->services, plan->enable[u])) {
+    pthread_t th = ecalloc (1, sizeof (pthread_t));
+    puts (plan->enable[u]);
+    pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_enable, (void *)ha->value);
+    subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)th, SET_NOALLOC);
+   }
+  }
+ }
+
+ if (subthreads) {
+ }
 
  if (plan->unavailable) {
   char tmp[2048] = "WARNING: unavailable services:", tmp2[2048];
