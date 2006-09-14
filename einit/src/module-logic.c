@@ -825,6 +825,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct uhash *ha;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
     pthread_mutex_init (&nnode.mutex, NULL);
+    nnode.plan = plan;
 
     if (ha = hashfind (plan->services, current[a]))
      continue;
@@ -878,14 +879,15 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 }
 
 // the actual loader function
-unsigned int mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
+void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
  if (node->mod) {
+  uint32_t i = 0;
   fprintf (stderr, "enabling node 0x%zx\n", node);
 
-  if (node->mod[1]) {
-  } else {
+  for (i = 0; node->mod[i]; i++) {
+   char **services = (node->mod[i]->module) ? node->mod[i]->module->requires : NULL;
 
-   mod (MOD_ENABLE, node->mod[0]);
+   mod (MOD_ENABLE, node->mod[i]);
   }
  } else if (node->group) {
   char tmp[2048] = "NOTE: enable: group:", tmp2[2048];
@@ -896,6 +898,8 @@ unsigned int mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    snprintf (tmp, 2048, "%s %s", tmp2, node->group[u]);
   }
  }
+
+ pthread_exit (NULL);
 }
 
 // actually do what the plan says
@@ -919,6 +923,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
 
  if (subthreads) {
+  uint32_t u = 0;
+
+  for (; subthreads[u]; u++) {
+   pthread_join ((subthreads[u]), NULL);
+   free (*(subthreads[u]));
+  }
+  free (subthreads);
  }
 
  if (plan->unavailable) {

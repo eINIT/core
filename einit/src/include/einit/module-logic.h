@@ -93,6 +93,7 @@ struct mloadplan_node {
  struct lmodule **mod;      /* modules */
  char **group;
  uint32_t options;
+ struct mloadplan *plan;
  pthread_mutex_t mutex;
 };
 
