@@ -55,9 +55,19 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
    if ((cur->type & event->type) && cur->handler) {
     if (flags & EINIT_EVENT_FLAG_SPAWN_THREAD) {
      pthread_t threadid;
-     pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, (flags & EINIT_EVENT_FLAG_DUPLICATE) ? evdup(event) : event);
+     if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
+      struct einit_event *ev = evdup(event);
+      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
+//      evdestroy (ev);
+     } else
+      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
     } else {
-     cur->handler ((flags & EINIT_EVENT_FLAG_DUPLICATE) ? evdup(event) : event);
+     if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
+      struct einit_event *ev = evdup(event);
+      cur->handler (ev);
+//      evdestroy (ev);
+     } else
+      cur->handler (event);
     }
    }
    cur = cur->next;

@@ -449,13 +449,13 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
     }
    }
   }
-/* this will be removed ASAP */
  } else if (task & SERVICE_IS_REQUIRED) {
   if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->users))
    ret |= SERVICE_IS_REQUIRED;
  } else if (task & SERVICE_IS_PROVIDED) {
   if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
+/* this will be removed ASAP */
  } else if (task & SERVICE_INJECT_PROVIDER) {
   if (!(ha = hashfind (service_usage, service))) {
    struct service_usage_item nitem;

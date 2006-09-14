@@ -198,6 +198,7 @@ int sched_switchmode (char *mode) {
   if (!plan) {
    puts ("scheduler: scheduled mode defined but nothing to be done");
   } else {
+   newmode = mode;
 #ifdef DEBUG
    mod_plan_ls (plan);
 #endif

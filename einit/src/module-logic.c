@@ -765,7 +765,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  struct cfgnode *rmode = mode;
  struct mloadplan_node nnode;
 
- if (!plan) plan = ecalloc (1, sizeof (struct mloadplan));
+ if (!plan) {
+  plan = ecalloc (1, sizeof (struct mloadplan));
+  pthread_mutex_init (&plan->mutex, NULL);
+ }
+ pthread_mutex_lock (&plan->mutex);
 
  if (mode) {
   enable  = str2set (':', cfg_getstring ("enable/mod", mode)),
@@ -871,70 +875,114 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   if (current) free (current);
  }
 
+ if (plan->services) {
+  struct uhash *ha = plan->services;
+
+  while (ha) {
+   ((struct mloadplan_node *)(ha->value))->service = ha->key;
+
+   ha = hashnext (ha);
+  }
+ }
+
  plan->enable = enable;
  plan->disable = disable;
  plan->reset = reset;
 
+ pthread_mutex_unlock (&plan->mutex);
  return plan;
 }
 
 // the actual loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
+ pthread_mutex_lock (&node->mutex);
+ pthread_t **subthreads = NULL;
+ struct uhash *ha;
+ uint32_t i = 0, u = 0;
+
  if (node->mod) {
-  uint32_t i = 0;
   fprintf (stderr, "enabling node 0x%zx\n", node);
 
   for (i = 0; node->mod[i]; i++) {
    char **services = (node->mod[i]->module) ? node->mod[i]->module->requires : NULL;
 
-   mod (MOD_ENABLE, node->mod[i]);
+   if (services) {
+    uint32_t j = 0;
+    for (; services[j]; j++)
+     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, services[j]) && (ha = hashfind (node->plan->services, services[j]))) {
+      pthread_t th;
+      puts (services[j]);
+      if (!pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_enable, (void *)ha->value))
+       subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof(pthread_t));
+      else {
+       notice (2, "warning: subthread creation failed!");
+       mod_plan_commit_recurse_enable (ha->value);
+      }
+     }
+   }
+
+   if (subthreads) {
+    for (u = 0; subthreads[u]; u++)
+     pthread_join (*(subthreads[u]), NULL);
+
+    free (subthreads); subthreads = NULL;
+   }
+
+   if ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED) break;
   }
  } else if (node->group) {
-  char tmp[2048] = "NOTE: enable: group:", tmp2[2048];
-  uint32_t u = 0;
+  for (u = 0; node->group[u]; u++) {
+   if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+    struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
 
-  for (; node->group[u]; u++) {
-   strcpy (tmp2, tmp);
-   snprintf (tmp, 2048, "%s %s", tmp2, node->group[u]);
+    mod_plan_commit_recurse_enable (cnode);
+
+    if (cnode->status & STATUS_ENABLED) {
+     service_usage_query (SERVICE_INJECT_PROVIDER, cnode->mod[i], node->service);
+     node->status |= STATUS_ENABLED;
+    }
+   }
   }
  }
 
- pthread_exit (NULL);
+ pthread_mutex_unlock (&node->mutex);
+// pthread_exit (NULL);
+ return NULL;
 }
 
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return;
+ pthread_mutex_lock (&plan->mutex);
 
  pthread_t **subthreads = NULL;
  struct uhash *ha;
+ uint32_t u = 0;
 
  if (plan->enable) {
-  uint32_t u = 0;
-
-  for (; plan->enable[u]; u++) {
-   if (ha = hashfind (plan->services, plan->enable[u])) {
-    pthread_t th = ecalloc (1, sizeof (pthread_t));
+  for (u = 0; plan->enable[u]; u++) {
+   if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, plan->enable[u]) && (ha = hashfind (plan->services, plan->enable[u]))) {
+    pthread_t th;
     puts (plan->enable[u]);
-    pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_enable, (void *)ha->value);
-    subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)th, SET_NOALLOC);
+    if (!pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_enable, (void *)ha->value))
+     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
+    else {
+     notice (2, "warning: subthread creation failed!");
+     mod_plan_commit_recurse_enable (ha->value);
+    }
    }
   }
  }
 
  if (subthreads) {
-  uint32_t u = 0;
+  for (u = 0; subthreads[u]; u++)
+   pthread_join (*(subthreads[u]), NULL);
 
-  for (; subthreads[u]; u++) {
-   pthread_join ((subthreads[u]), NULL);
-   free (*(subthreads[u]));
-  }
-  free (subthreads);
+  free (subthreads); subthreads = NULL;
  }
 
  if (plan->unavailable) {
   char tmp[2048] = "WARNING: unavailable services:", tmp2[2048];
-  uint32_t u = 0;
 
   for (; plan->unavailable[u]; u++) {
    strcpy (tmp2, tmp);
@@ -945,20 +993,35 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 //  notice (2, tmp);
  }
 
+ pthread_mutex_unlock (&plan->mutex);
  return 0;
 }
 
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *plan) {
+ pthread_mutex_lock (&plan->mutex);
  if (plan->enable) free (plan->enable);
  if (plan->disable) free (plan->disable);
  if (plan->reset) free (plan->reset);
  if (plan->unavailable) free (plan->unavailable);
 
- if (plan->services) hashfree (plan->services);
+ if (plan->services) {
+  struct uhash *ha = plan->services;
+  struct mloadplan_node *no = NULL;
+
+  while (ha) {
+   if (no = (struct mloadplan_node *)ha->value)
+    pthread_mutex_destroy (&no->mutex);
+
+   ha = hashnext (ha);
+  }
+  hashfree (plan->services);
+ }
+
+ pthread_mutex_unlock (&plan->mutex);
+ pthread_mutex_destroy (&plan->mutex);
 
  free (plan);
-
  return 0;
 }
 

@@ -91,7 +91,7 @@
  <mount-force-writeable-action s="ram-overlay" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual:dummyd" />
+  <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
   <enable mod="sysconf" />

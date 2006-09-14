@@ -89,6 +89,7 @@ struct mloadplan {
 };
 
 struct mloadplan_node {
+ char *service;
  uint32_t task, status;
  struct lmodule **mod;      /* modules */
  char **group;
