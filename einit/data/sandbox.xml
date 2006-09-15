@@ -91,7 +91,7 @@
  <mount-force-writeable-action s="ram-overlay" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual" />
+  <enable mod="feedback-visual:hostname" />
  </mode>
  <mode id="boot">
   <enable mod="sysconf" />
@@ -99,15 +99,16 @@
   <enable-ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc:feedback-aural" />
-<!--  <disable mod="dummyd" /> -->
+  <enable mod="ipc:mount/critical" />
+  <disable mod="hostname" />
   <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">
+  <disable mod="all-but-feedback" />
   <disable-unspecified b="yes" />
   <enable-ttys s="none" />
  </mode>
- <mode id="power-reset">
+ <mode id="power-reset" base="power-off">
   <disable-unspecified b="yes" />
   <enable-ttys s="none" />
  </mode>

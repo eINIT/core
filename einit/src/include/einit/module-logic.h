@@ -57,26 +57,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_P2H_REQUIRES 0x0003
 #define MOD_P2H_LIST 0x0004
 
-#define STABLE
-
-#ifdef STABLE
-struct mloadplan {
- uint32_t task;
- struct lmodule *mod;
- struct mloadplan **group;    /* elements of the tree that form this group */
- struct mloadplan **left;     /* elements of the tree to load on failure */
- struct mloadplan **right;    /* elements of the tree to load on success */
- struct mloadplan **orphaned; /* orphaned elements */
- char **unsatisfied;
- char **unavailable;
- char **requires;
- char **provides;
- uint32_t position, options;
- pthread_mutex_t mutex;
-};
-
-#else
-
 struct mloadplan {
  struct uhash *services;
  char **enable;
@@ -97,8 +77,6 @@ struct mloadplan_node {
  struct mloadplan *plan;
  pthread_mutex_t mutex;
 };
-
-#endif
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);

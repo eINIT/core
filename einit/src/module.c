@@ -261,7 +261,11 @@ int mod (unsigned int task, struct lmodule *module) {
 /* check if the task requested has already been done (or if it can be done at all) */
  if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
-  printf ("refusing to change state of %s\n", module->module->rid);
+  {
+   char tmp[2048];
+   snprintf (tmp, 2048, "refusing to change state of %s\n", module->module->rid);
+   notice (10, tmp);
+  }
   pthread_mutex_unlock (&module->mutex);
   return STATUS_IDLE;
  }
@@ -270,31 +274,6 @@ int mod (unsigned int task, struct lmodule *module) {
  if ((task & MOD_RELOAD) && (module->status & STATUS_DISABLED))
   goto wontload;
 
-#if 0
- if (task & MOD_ENABLE) {
-   if (t = module->module) {
-    if (t->requires) for (ti = 0; t->requires[ti]; ti++) {
-      pthread_mutex_unlock (&module->mutex);
-      return STATUS_FAIL_REQ;
-     }*/
-     if (!inset ((void **)provided, (void *)t->requires[ti], SET_TYPE_STRING)) {
-      pthread_mutex_unlock (&module->mutex);
-      return STATUS_FAIL_REQ;
-     }
-    }
-   }
- } else if (task & MOD_DISABLE) {
-   if (t = module->module) {
-    if (t->provides) for (ti = 0; t->provides[ti]; ti++)
-      pthread_mutex_unlock (&module->mutex);
-      return STATUS_FAIL_REQ;*/
-     if (inset ((void **)required, (void *)t->provides[ti], SET_TYPE_STRING)) {
-      pthread_mutex_unlock (&module->mutex);
-      return STATUS_FAIL_REQ;
-     }
-   }
- }
-#else
  if (task & MOD_ENABLE) {
   if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL))
    goto wontload;
@@ -302,9 +281,7 @@ int mod (unsigned int task, struct lmodule *module) {
   if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL))
    goto wontload;
  }
-#endif
 
-// fb = (struct einit_event *)ecalloc (1, sizeof (struct einit_event));
  fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
  fb->para = (void *)module;
  fb->task = task | MOD_FEEDBACK_SHOW;
@@ -363,11 +340,8 @@ int mod (unsigned int task, struct lmodule *module) {
    fb->status = STATUS_FAIL;
  }
 
-// printf ("%i:%i\n", required, provided);
-
  status_update (fb);
  evdestroy (fb);
-// free (fb);
 
  service_usage_query(SERVICE_UPDATE, module, NULL);
 
@@ -462,6 +436,24 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
    service_usage = hashadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
+  }
+ }
+
+ pthread_mutex_unlock (&service_usage_mutex);
+ return ret;
+}
+
+char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service) {
+ pthread_mutex_lock (&service_usage_mutex);
+
+ char **ret = NULL;
+
+ if (task & SERVICE_GET_ALL_PROVIDED) {
+  struct uhash *ha = service_usage;
+
+  while (ha) {
+   ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
+   ha = hashnext (ha);
   }
  }
 

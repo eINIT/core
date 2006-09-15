@@ -140,52 +140,6 @@ int sched_switchmode (char *mode) {
  struct einit_event *fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
  struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
  struct mloadplan *plan = NULL;
-#ifdef STABLE
-  struct cfgnode *opt;
-  char **elist, **dlist;
-  unsigned int optmask = 0;
-
-  if (!cur) {
-   puts ("scheduler: scheduled mode not defined, aborting");
-   free (fb);
-   return -1;
-  }
-
-  cmode = cur;
-
-  opt = NULL;
-  while (opt = cfg_findnode ("disable-unspecified", 0, opt)) {
-   if (opt->mode == cur) {
-    if (opt->flag) optmask |= MOD_DISABLE_UNSPEC;
-    else optmask &= !MOD_DISABLE_UNSPEC;
-   }
-  }
-  elist = (char **)setdup ((void **)cur->enable, -1);
-  dlist = (char **)setdup ((void **)cur->disable, -1);
-  newmode = mode;
-
-  if (cur->base) {
-   int y = 0;
-   struct cfgnode *cno;
-   while (cur->base[y]) {
-    cno = cfg_findnode (cur->base[y], EI_NODETYPE_MODE, NULL);
-    if (cno) {
-     elist = (char **)setcombine ((void **)setdup ((void **)cno->enable, -1), (void **)elist, -1);
-     dlist = (char **)setcombine ((void **)setdup ((void **)cno->disable, -1), (void **)dlist, -1);
-    }
-    y++;
-   }
-  }
-
-  elist = strsetdeldupes (elist);
-  dlist = strsetdeldupes (dlist);
-
-  if (elist || optmask)
-   plan = mod_plan (plan, elist, MOD_ENABLE | optmask, NULL);
-  if (dlist)
-   plan = mod_plan (plan, dlist, MOD_DISABLE | optmask, NULL);
-#else
-  puts ("WARNING: using experimental module-planning");
 
   if (!cur) {
    puts ("scheduler: scheduled mode not defined, aborting");
@@ -194,14 +148,10 @@ int sched_switchmode (char *mode) {
   }
 
   plan = mod_plan (plan, NULL, 0, cur);
-#endif
   if (!plan) {
    puts ("scheduler: scheduled mode defined but nothing to be done");
   } else {
    newmode = mode;
-#ifdef DEBUG
-   mod_plan_ls (plan);
-#endif
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
    fb->para = (void *)plan;
    status_update (fb);

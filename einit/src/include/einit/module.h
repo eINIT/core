@@ -86,6 +86,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SERVICE_IS_PROVIDED             0x0008
 #define SERVICE_UPDATE                  0x0100
 
+#define SERVICE_GET_ALL_PROVIDED        0x0010
+
 /* this will hopefully not be necessary once we're done */
 #define SERVICE_INJECT_PROVIDER         0x0200
 
@@ -146,11 +148,12 @@ void mod_event_handler(struct einit_event *);
 
 // service usage
 uint16_t service_usage_query (uint16_t, struct lmodule *, char *);
+char **service_usage_query_cr (uint16_t, struct lmodule *, char *);
 
 // use this to tell einit that there is new feedback-information
 // don't rely on this to be a macro!
 #define status_update(a) \
  event_emit(a, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE); \
- if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL
+ if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL; a->integer++
 
 #endif

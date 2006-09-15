@@ -528,6 +528,7 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
 
  if (cur == subject) {
   be = cur->next;
+  if (cur->luggage) free (cur->luggage);
   free (cur);
   return be;
  }
@@ -644,21 +645,21 @@ void strtrim (char *s) {
 
 /* event-helpers */
 void notice (unsigned char severity, char *message) {
- struct einit_event ev;
- bzero (&ev, sizeof (struct einit_event));
+ struct einit_event *ev = evinit (EINIT_EVENT_TYPE_NOTICE);
 
- ev.type = EINIT_EVENT_TYPE_NOTICE;
- ev.flag = severity;
- ev.string = message;
+ ev->flag = severity;
+ ev->string = message;
 
- event_emit (&ev, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+ event_emit (ev, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+
+ evdestroy (ev);
 }
 
 struct einit_event *evdup (struct einit_event *ev) {
  struct einit_event *nev = emalloc (sizeof (struct einit_event));
 
  memcpy (nev, ev, sizeof (struct einit_event));
- bzero (&nev->mutex, sizeof (pthread_mutex_t));
+ memset (&nev->mutex, 0, sizeof (pthread_mutex_t));
 
  if (nev->string) {
   uint32_t l;

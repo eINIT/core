@@ -110,13 +110,15 @@ int disable (void *pa, struct einit_event *status) {
 void comment_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&self_l->imutex);
 
- char phrase[2048], cmd[2048];
+ char phrase[2048], cmd[2048], hostname[128];
  phrase[0] = 0;
 
  if (ev->task & MOD_SCHEDULER) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
-    snprintf (phrase, 2048, "This is eINIT: Now switching to mode \"%s\".", newmode);
+    if (gethostname (hostname, 128)) strcpy (hostname, "localhost");
+    hostname[127] = 0;
+    snprintf (phrase, 2048, "Host \"%s\" now switching to mode \"%s\".", hostname, newmode);
     break;
    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
     snprintf (phrase, 2048, "New mode \"%s\" is now in effect.", currentmode);
@@ -145,7 +147,9 @@ void notice_event_handler(struct einit_event *ev) {
   strtrim (ev->string);
 
   if (!(tx = strrchr (ev->string, ':'))) tx = ev->string;
+  else tx ++;
   snprintf (cmd, 2048, synthesizer, tx);
+
   pexec (cmd, NULL, 0, 0, NULL, ev);
  }
 
