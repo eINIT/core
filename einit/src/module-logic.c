@@ -290,7 +290,9 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
    node->status = mod (MOD_DISABLE, node->mod[i]);
 //   puts ("-");
   }
- }
+ }/* else if (node->group) {
+  fputs ("---- SUPPOSED TO DISABLE GROUP ---- ; disabling groups not impleneted", stderr);
+ }*/ // this could actually be redundant...
 
  pthread_mutex_unlock (&node->mutex);
 // pthread_exit (NULL);
@@ -341,7 +343,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
     mod_plan_commit_recurse_enable (cnode);
 
     if (cnode->status & STATUS_ENABLED) {
-     service_usage_query (SERVICE_INJECT_PROVIDER, cnode->mod[i], node->service);
+     service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[i], node->service);
      node->status |= STATUS_ENABLED;
     }
    }

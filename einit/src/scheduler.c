@@ -82,17 +82,17 @@ int epoweroff () {
   sigaltstack (&curstack, NULL);
   free (curstack.ss_sp);
  } else {
-  fputs ("schedule: no alternate signal stack or alternate stack in use; not cleaning up", stderr);
+  notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
  }
 
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_POWER_OFF);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
 // bitch (BTCH_ERRNO);
- puts ("\naight, who hasn't eaten his cereals this morning?");
+ notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
 #else
- puts ("compiled in sandbox-mode: not sending power-off command");
+ notice (1, "compiled in sandbox-mode: not sending power-off command");
  exit (EXIT_SUCCESS);
 #endif
 }
@@ -108,17 +108,17 @@ int epowerreset () {
   sigaltstack (&curstack, NULL);
   free (curstack.ss_sp);
  } else {
-  fputs ("schedule: no alternate signal stack or alternate stack in use; not cleaning up", stderr);
+  notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
  }
 
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_RESTART);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
 // bitch (BTCH_ERRNO);
- puts ("\naight, who hasn't eaten his cereals this morning?");
+ notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
 #else
- puts ("compiled in sandbox-mode: not sending reboot command");
+ notice (1, "compiled in sandbox-mode: not sending reboot command");
  exit (EXIT_SUCCESS);
 #endif
 }
@@ -142,14 +142,14 @@ int sched_switchmode (char *mode) {
  struct mloadplan *plan = NULL;
 
   if (!cur) {
-   puts ("scheduler: scheduled mode not defined, aborting");
+   notice (1, "scheduler: scheduled mode not defined, aborting");
    free (fb);
    return -1;
   }
 
   plan = mod_plan (plan, NULL, 0, cur);
   if (!plan) {
-   puts ("scheduler: scheduled mode defined but nothing to be done");
+   notice (1, "scheduler: scheduled mode defined but nothing to be done");
   } else {
    newmode = mode;
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
@@ -292,21 +292,21 @@ void *sched_run (void *p) {
      sched_modaction ((char **)c->param);
      break;
     case SCHEDULER_POWER_OFF:
-     puts ("scheduler: sync()-ing");
+     notice (1, "scheduler: sync()-ing");
      sync ();
-     puts ("scheduler: cleaning up");
+     notice (1, "scheduler: cleaning up");
      cleanup ();
-     puts ("scheduler: power off");
+     fputs ("scheduler: power off", stderr);
      epoweroff ();
 // if we still live here, something's twocked
      exit (EXIT_FAILURE);
      break;
     case SCHEDULER_POWER_RESET:
-     puts ("scheduler: sync()-ing");
+     notice (1, "scheduler: sync()-ing");
      sync ();
-     puts ("scheduler: cleaning up");
+     notice (1, "scheduler: cleaning up");
      cleanup ();
-     puts ("scheduler: reset");
+     fputs ("scheduler: reset", stderr);
      epowerreset ();
 // if we still live here, something's twocked
      exit (EXIT_FAILURE);

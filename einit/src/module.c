@@ -288,6 +288,7 @@ int mod (unsigned int task, struct lmodule *module) {
  fb->status = STATUS_WORKING;
  fb->flag = 0;
  fb->string = NULL;
+ fb->integer = module->fbseq+1;
  status_update (fb);
 
  if (task & MOD_ENABLE) {
@@ -339,6 +340,8 @@ int mod (unsigned int task, struct lmodule *module) {
   } else
    fb->status = STATUS_FAIL;
  }
+
+ module->fbseq = fb->integer + 1;
 
  status_update (fb);
  evdestroy (fb);
@@ -423,6 +426,23 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
     }
    }
   }
+
+/* more cleanup code */
+  ha = service_usage;
+  while (ha) {
+   item = (struct service_usage_item *)ha->value;
+
+   if (!(module->status & STATUS_ENABLED))
+    item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
+   else {
+   }
+
+   if (!item->provider && !item->users) {
+    service_usage = hashdel (service_usage, ha);
+   }
+
+   ha = hashnext (ha);
+  }
  } else if (task & SERVICE_IS_REQUIRED) {
   if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->users))
    ret |= SERVICE_IS_REQUIRED;
@@ -430,7 +450,23 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
 /* this will be removed ASAP */
- } else if (task & SERVICE_INJECT_PROVIDER) {
+ }
+
+ pthread_mutex_unlock (&service_usage_mutex);
+ return ret;
+}
+
+uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service) {
+ uint16_t ret = 0;
+ struct uhash *ha;
+ char **t;
+ uint32_t i;
+ struct service_usage_item *item;
+
+ if ((!module || !module->module) && !service) return 0;
+
+ pthread_mutex_lock (&service_usage_mutex);
+ if (task & SERVICE_ADD_GROUP_PROVIDER) {
   if (!(ha = hashfind (service_usage, service))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));

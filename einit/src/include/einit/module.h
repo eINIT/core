@@ -88,8 +88,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SERVICE_GET_ALL_PROVIDED        0x0010
 
-/* this will hopefully not be necessary once we're done */
-#define SERVICE_INJECT_PROVIDER         0x0200
+#define SERVICE_ADD_GROUP_PROVIDER      0x0200
 
 struct smodule {
  int eiversion;
@@ -116,6 +115,7 @@ struct lmodule {
  pthread_mutex_t imutex;
  struct smodule *module;
  struct lmodule *next;
+ uint32_t fbseq;
 };
 
 struct service_usage_item {
@@ -149,6 +149,7 @@ void mod_event_handler(struct einit_event *);
 // service usage
 uint16_t service_usage_query (uint16_t, struct lmodule *, char *);
 char **service_usage_query_cr (uint16_t, struct lmodule *, char *);
+uint16_t service_usage_query_group (uint16_t, struct lmodule *, char *);
 
 // use this to tell einit that there is new feedback-information
 // don't rely on this to be a macro!
