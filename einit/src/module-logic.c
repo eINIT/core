@@ -348,7 +348,7 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
 //   puts ("-");
   }
  } else if (node->group) {
-  fputs ("---- SUPPOSED TO DISABLE GROUP ---- ; disabling groups not implemented properly", stderr);
+//  fputs ("---- SUPPOSED TO DISABLE GROUP ---- ; disabling groups not implemented properly", stderr);
   for (u = 0; node->group[u]; u++) {
    if (ha = hashfind (node->plan->services, node->group[u])) {
     struct mloadplan_node *cnode = (struct mloadplan_node *)ha->value;

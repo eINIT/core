@@ -99,7 +99,7 @@
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc:tty:feedback-aural" />
+  <enable mod="ipc:keyboard" />
 <!--  <disable mod="hostname" /> -->
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
