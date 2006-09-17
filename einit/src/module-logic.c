@@ -175,7 +175,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   while (current) {
    for (a = 0; current[a]; a++) {
-    puts (current[a]);
+//    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
     pthread_mutex_init (&nnode.mutex, NULL);
@@ -223,7 +223,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
  }
 
- puts ("done");
+// puts ("done");
 /* find services that should be enabled */
  if (enable) {
   char **current = (char **)setdup ((void **)enable, SET_TYPE_STRING);
