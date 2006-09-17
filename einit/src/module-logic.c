@@ -109,11 +109,15 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     y++;
    }
   }
+ } else {
+  if (task & MOD_ENABLE) enable = atoms;
+  else if (task & MOD_DISABLE) disable = atoms;
+  else if (task & MOD_RESET) reset = atoms;
  }
 
 /* find services that should be disabled */
  if (disable) {
-  char **current = (char **)setdup ((void **)disable, SET_TYPE_STRING);
+  char **current = (char **)setdup ((void **)disable, SET_TYPE_STRING), **recurse = NULL;
   disa_rescan:
 //  puts ("disable");
 
@@ -137,8 +141,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct smodule *mo = cur->module;
     if ((cur->status & STATUS_ENABLED) && mo &&
         (!dabf || !(mo->mode & EINIT_MOD_FEEDBACK)) &&
-         inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING))
+         inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+     char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+     recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
+    }
 
     cur = cur->next;
    }
@@ -148,7 +155,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     strcat (tmp, current[a]);
     strcat (tmp, "/group");
 
-    nnode.group = str2set (':', cfg_getstring (tmp, mode));
+    if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
+     recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
    }
 
    if (nnode.mod || nnode.group) {
@@ -160,7 +168,50 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
   }
 
-  free (current); current = NULL;
+  free (current); current = recurse; recurse = NULL;
+
+  while (current) {
+   for (a = 0; current[a]; a++) {
+    struct lmodule *cur = mlist;
+    memset (&nnode, 0, sizeof (struct mloadplan_node));
+    pthread_mutex_init (&nnode.mutex, NULL);
+    nnode.plan = plan;
+
+    if (ha = hashfind (plan->services, current[a]))
+     continue;
+
+    while (cur) {
+     struct smodule *mo = cur->module;
+     if (!(cur->status & STATUS_ENABLED) && mo && inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+      recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+     }
+
+     cur = cur->next;
+    }
+
+    if (!nnode.mod) {
+     char tmp[2048]; tmp[0] = 0;
+     strcat (tmp, current[a]);
+     strcat (tmp, "/group");
+
+     if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
+      recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
+    }
+
+    if (nnode.mod || nnode.group) {
+     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     adisable = (char **)setadd ((void **)adisable, (void *)current[a], SET_TYPE_STRING);
+//     puts (current[a]);
+    } else {
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
+     pthread_mutex_destroy (&nnode.mutex);
+    }
+   }
+
+   free (current); current = recurse; recurse = NULL;
+  }
+
  }
 /* find services that should be enabled */
  if (enable) {
@@ -235,6 +286,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  else
   plan->disable = disable;
  plan->reset = reset;
+ plan->mode = mode;
 
  pthread_mutex_unlock (&plan->mutex);
  return plan;
@@ -370,10 +422,27 @@ void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
  return NULL;
 }
 
+// the reload function
+void *mod_plan_commit_recurse_reload (struct mloadplan_node *node) {
+ pthread_mutex_lock (&node->mutex);
+ uint32_t i = 0;
+
+ if (node->mod) {
+  for (i = 0; node->mod[i]; i++) {
+   node->status = mod (MOD_RELOAD, node->mod[i]);
+  }
+ }
+
+ pthread_mutex_unlock (&node->mutex);
+ return NULL;
+}
+
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return;
  pthread_mutex_lock (&plan->mutex);
+
+ if (plan->mode) cmode = plan->mode;
 
  pthread_t **subthreads = NULL;
  struct uhash *ha;
@@ -411,7 +480,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (plan->reset) {
   for (u = 0; plan->reset[u]; u++) {
-   puts (plan->reset[u]);
+//   puts (plan->reset[u]);
    if (ha = hashfind (plan->services, plan->reset[u])) {
     pthread_t th;
 
@@ -445,6 +514,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 //  puts (tmp);
   notice (2, tmp);
  }
+
+ if (plan->mode) amode = plan->mode;
 
  pthread_mutex_unlock (&plan->mutex);
  return 0;

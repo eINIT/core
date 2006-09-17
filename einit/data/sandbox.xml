@@ -96,18 +96,18 @@
  <mode id="boot">
   <enable mod="sysconf" />
 <!--  <enable mod="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:feedback-aural" /> -->
-  <enable-ttys s="tty1-regular" />
+  <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc:feedback-aural" />
-  <disable mod="hostname" />
-  <enable-ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+  <enable mod="ipc:tty:feedback-aural" />
+<!--  <disable mod="hostname" /> -->
+  <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">
   <disable mod="all-but-feedback" />
-  <enable-ttys s="none" />
+  <ttys s="none" />
  </mode>
  <mode id="power-reset" base="power-off">
-  <enable-ttys s="none" />
+  <ttys s="none" />
  </mode>
 </einit>

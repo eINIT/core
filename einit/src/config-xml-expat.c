@@ -277,6 +277,7 @@ char *cfg_getstring (char *id, struct cfgnode *mode) {
 
  if (!id) return NULL;
  mode = mode ? mode : cmode;
+
  if (strchr (id, '/')) {
   sub = str2set ('/', id);
   while (node = cfg_findnode (sub[0], 0, node)) {
@@ -320,6 +321,7 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
  struct cfgnode *node = NULL;
  struct cfgnode *ret = NULL;
 
+ if (!id) return NULL;
  mode = mode ? mode : cmode;
 
  while (node = cfg_findnode (id, 0, node)) {

@@ -51,10 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 
 struct lmodule *mlist = NULL;
-int mcount = 0;
 
-char **provided = NULL;
-char **required = NULL;
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct uhash *service_usage = NULL;
@@ -136,7 +133,6 @@ int mod_freemodules () {
  if (mlist != NULL)
   mod_freedesc (mlist);
  mlist = NULL;
- mcount = 0;
  return 1;
 }
 
@@ -151,7 +147,6 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
  pthread_mutex_lock (&mlist_mutex);
  nmod->next = mlist;
  mlist = nmod;
- mcount++;
  pthread_mutex_unlock (&mlist_mutex);
 
  nmod->sohandle = sohandle;
@@ -294,12 +289,6 @@ int mod (unsigned int task, struct lmodule *module) {
  if (task & MOD_ENABLE) {
    ret = module->enable (module->param, fb);
    if (ret & STATUS_OK) {
-    if (t = module->module) {
-     if (t->provides)
-      provided = (char **)setcombine ((void **)provided, (void **)t->provides, -1);
-     if (t->requires)
-      required = (char **)setcombine ((void **)required, (void **)t->requires, -1);
-    }
     module->status = STATUS_ENABLED;
     fb->status = STATUS_OK | STATUS_ENABLED;
    } else {
@@ -308,12 +297,6 @@ int mod (unsigned int task, struct lmodule *module) {
  } else if (task & MOD_DISABLE) {
    ret = module->disable (module->param, fb);
    if (ret & STATUS_OK) {
-    if (t = module->module) {
-     if (t->provides) for (ti = 0; provided && t->provides[ti]; ti++)
-      provided = strsetdel (provided, t->provides[ti]);
-     if (t->requires) for (ti = 0; required && t->requires[ti]; ti++)
-      required = strsetdel (required, t->requires[ti]);
-    }
     module->status = STATUS_DISABLED;
     fb->status = STATUS_OK | STATUS_DISABLED;
    } else {
@@ -327,18 +310,20 @@ int mod (unsigned int task, struct lmodule *module) {
    } else
     fb->status = STATUS_FAIL;
   } else if (module->disable && module->enable) {
-   ret = module->disable (module->param, fb);
+    ret = module->disable (module->param, fb);
    if (ret & STATUS_OK) {
     ret = module->enable (module->param, fb);
    } else
     fb->status = STATUS_FAIL;
   }
- } else if (task & MOD_RESET) {
-  ret = module->reload (module->param, fb);
-  if (ret & STATUS_OK) {
-   fb->status = STATUS_OK | module->status;
-  } else
-   fb->status = STATUS_FAIL;
+ } else if (task & MOD_RELOAD) {
+  if (module->reload) {
+   ret = module->reload (module->param, fb);
+   if (ret & STATUS_OK) {
+    fb->status = STATUS_OK | module->status;
+   } else
+    fb->status = STATUS_FAIL;
+  }
  }
 
  module->fbseq = fb->integer + 1;
@@ -382,7 +367,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
  pthread_mutex_lock (&service_usage_mutex);
  if (task & SERVICE_NOT_IN_USE) {
   ret |= SERVICE_NOT_IN_USE;
-  if (t = module->module->provides) {
+/*  if (t = module->module->provides) {
    for (i = 0; t[i]; i++) {
     if ((ha = hashfind (service_usage, t[i])) &&
         ((struct service_usage_item *)(ha->value))->users) {
@@ -390,6 +375,25 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
      break;
     }
    }
+  }*/
+  struct uhash *ha = service_usage;
+
+  while (ha) {
+   if (((struct service_usage_item *)(ha->value))->users &&
+       inset ((void **)(((struct service_usage_item *)(ha->value))->provider), module, -1)) {
+
+    char tmp[2048], tmp2[2048];
+    snprintf (tmp, 2048, "module %s in use (via %s), by: %s", module->module->rid, ha->key, ((struct service_usage_item *)(ha->value))->users[0]->module->rid);
+    for (i = 1; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
+     strcpy (tmp2, tmp);
+     snprintf (tmp, 2048, "%s, %s", tmp2, ((struct service_usage_item *)(ha->value))->users[i]->module->rid);
+    }
+    notice(10, tmp);
+
+    ret ^= SERVICE_NOT_IN_USE;
+    break;
+   }
+   ha = hashnext (ha);
   }
  } else if (task & SERVICE_REQUIREMENTS_MET) {
   ret |= SERVICE_REQUIREMENTS_MET;
@@ -439,9 +443,9 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
 
    if (!item->provider && !item->users) {
     service_usage = hashdel (service_usage, ha);
-   }
-
-   ha = hashnext (ha);
+    ha = service_usage;
+   } else
+    ha = hashnext (ha);
   }
  } else if (task & SERVICE_IS_REQUIRED) {
   if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->users))
@@ -449,7 +453,6 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
  } else if (task & SERVICE_IS_PROVIDED) {
   if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
-/* this will be removed ASAP */
  }
 
  pthread_mutex_unlock (&service_usage_mutex);
@@ -482,14 +485,24 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
 char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service) {
  pthread_mutex_lock (&service_usage_mutex);
 
+ struct uhash *ha = service_usage;
  char **ret = NULL;
 
  if (task & SERVICE_GET_ALL_PROVIDED) {
-  struct uhash *ha = service_usage;
-
   while (ha) {
    ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
    ha = hashnext (ha);
+  }
+ } else if (task & SERVICE_GET_SERVICES_THAT_USE) {
+//  puts ("--------------");
+  if (module) {
+   while (ha) {
+    if (inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, 0)) {
+//     puts (ha->key);
+     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
+    }
+    ha = hashnext (ha);
+   }
   }
  }
 

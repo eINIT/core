@@ -65,6 +65,7 @@ struct mloadplan {
  char **unavailable;
  char **locked;
  uint32_t options;
+ struct cfgnode *mode;
  pthread_mutex_t mutex;
 };
 
