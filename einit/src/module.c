@@ -256,11 +256,13 @@ int mod (unsigned int task, struct lmodule *module) {
 /* check if the task requested has already been done (or if it can be done at all) */
  if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
+#ifdef DEBUG
   {
    char tmp[2048];
    snprintf (tmp, 2048, "refusing to change state of %s\n", module->module->rid);
    notice (10, tmp);
   }
+#endif
   pthread_mutex_unlock (&module->mutex);
   return STATUS_IDLE;
  }
@@ -382,6 +384,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    if (((struct service_usage_item *)(ha->value))->users &&
        inset ((void **)(((struct service_usage_item *)(ha->value))->provider), module, -1)) {
 
+#ifdef DEBUG
     char tmp[2048], tmp2[2048];
     snprintf (tmp, 2048, "module %s in use (via %s), by: %s", module->module->rid, ha->key, ((struct service_usage_item *)(ha->value))->users[0]->module->rid);
     for (i = 1; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
@@ -389,6 +392,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
      snprintf (tmp, 2048, "%s, %s", tmp2, ((struct service_usage_item *)(ha->value))->users[i]->module->rid);
     }
     notice(10, tmp);
+#endif
 
     ret ^= SERVICE_NOT_IN_USE;
     break;
@@ -491,7 +495,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
 
  if (task & SERVICE_GET_ALL_PROVIDED) {
   while (ha) {
-   puts (ha->key);
+//   puts (ha->key);
    ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
    ha = hashnext (ha);
   }

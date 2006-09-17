@@ -23,7 +23,7 @@
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
  <shell s="/bin/sh -c" TZ="CEST" PATH="/bin:/sbin:/usr/bin:/usr/sbin" />
 
- <use-ansi-codes b="false" />
+ <use-ansi-codes b="true" />
  <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
 
  <mount-block-devices-dev-constraints s=".*" />
