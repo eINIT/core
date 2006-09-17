@@ -91,7 +91,7 @@
  <mount-force-writeable-action s="ram-overlay" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual:hostname" />
+  <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
   <enable mod="sysconf" />
@@ -99,7 +99,7 @@
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc:keyboard" />
+  <enable mod="ipc" />
 <!--  <disable mod="hostname" /> -->
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
