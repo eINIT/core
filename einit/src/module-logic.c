@@ -121,6 +121,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   disa_rescan:
 //  puts ("disable");
 
+  if (current)
   for (a = 0; current[a]; a++) {
    struct lmodule *cur = mlist;
    if ((!da && (da = !strcmp (current[a], "all"))) || (!dabf && (dabf = !strcmp (current[a], "all-but-feedback")))) {
@@ -223,7 +224,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
  }
 
-// puts ("done");
 /* find services that should be enabled */
  if (enable) {
   char **current = (char **)setdup ((void **)enable, SET_TYPE_STRING);
@@ -318,7 +318,7 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
 
   for (i = 0; node->mod[i]; i++) {
 //   puts ("+");
-/*   if (!service_usage_query (SERVICE_NOT_IN_USE, node->mod[i], NULL)) {
+   if (!service_usage_query (SERVICE_NOT_IN_USE, node->mod[i], NULL)) {
     pthread_t th;
     char **t;
     if (t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, node->mod[i], NULL)) {
@@ -335,7 +335,7 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
      free (t);
      t = NULL;
     }
-   }*/
+   }
 
    if (subthreads) {
     for (u = 0; subthreads[u]; u++)

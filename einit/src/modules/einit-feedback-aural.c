@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-char *provides[] = {"feedback", "feedback-aural", NULL};
+char *provides[] = {"feedback-aural", NULL};
 char *requires[] = {"audio", "mount/critical", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,

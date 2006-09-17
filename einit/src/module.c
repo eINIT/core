@@ -487,17 +487,24 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
 
  struct uhash *ha = service_usage;
  char **ret = NULL;
+ uint32_t i;
 
  if (task & SERVICE_GET_ALL_PROVIDED) {
   while (ha) {
+   puts (ha->key);
    ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
    ha = hashnext (ha);
   }
  } else if (task & SERVICE_GET_SERVICES_THAT_USE) {
   if (module) {
    while (ha) {
-    if (inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
-     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
+    if (((struct service_usage_item *)(ha->value))->users &&
+        inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
+     for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
+      if (((struct service_usage_item *)(ha->value))->users[i]->module)
+       ret = (char **)setcombine ((void **)ret, (void **)((struct service_usage_item *)(ha->value))->users[i]->module->provides, SET_TYPE_STRING);
+     }
+//     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }
     ha = hashnext (ha);
    }

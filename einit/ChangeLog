@@ -1,6 +1,7 @@
 2006/09/17: mdeininger
  * did some cleanups (tty.c, among other places)
  * there's some bugs in recursive disabling of modules.
+ * mhh, i dare say stuff works as it ought to now (at least for en-/disabling)
 
 2006/09/15: mdeininger
  * the new module-logic code *almost* works

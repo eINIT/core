@@ -540,7 +540,7 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
   cur->next = subject->next;
   if (subject->luggage) free (subject->luggage);
   free (subject);
-  return cur;
+//  return cur;
  }
 
  return be;
