@@ -144,7 +144,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
          inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
      char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-     recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
+     if (t) {
+      recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
+      free (t);
+     }
     }
 
     cur = cur->next;
@@ -172,6 +175,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   while (current) {
    for (a = 0; current[a]; a++) {
+    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
     pthread_mutex_init (&nnode.mutex, NULL);
@@ -182,9 +186,14 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     while (cur) {
      struct smodule *mo = cur->module;
-     if (!(cur->status & STATUS_ENABLED) && mo && inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+     if ((cur->status & STATUS_ENABLED) && mo && inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+      char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
       nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-      recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+//      recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+      if (t) {
+       recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
+       free (t);
+      }
      }
 
      cur = cur->next;
@@ -213,6 +222,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   }
 
  }
+
+ puts ("done");
 /* find services that should be enabled */
  if (enable) {
   char **current = (char **)setdup ((void **)enable, SET_TYPE_STRING);
@@ -244,6 +255,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
      if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
       recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
+//     recurse = (char **)setcombine ((void **)recurse, (void **)str2set (':', cfg_getstring (tmp, mode)), SET_NOALLOC);
     }
 
     if (nnode.mod || nnode.group) {
@@ -296,41 +308,34 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  pthread_mutex_lock (&node->mutex);
  pthread_t **subthreads = NULL;
- struct uhash *ha;
+ struct uhash *ha, *rha = NULL;
  uint32_t i = 0, u = 0, j = 0;
+
+// notice (3, node->service);
 
  if (node->mod) {
 //  fprintf (stdout, "disabling node 0x%zx\n", node);
 
   for (i = 0; node->mod[i]; i++) {
 //   puts ("+");
-   if (!service_usage_query (SERVICE_NOT_IN_USE, node->mod[i], NULL)) {
+/*   if (!service_usage_query (SERVICE_NOT_IN_USE, node->mod[i], NULL)) {
     pthread_t th;
-    ha = node->plan->services;
-//    puts ("XX need to recurse");
-
-    while (ha) {
-     struct mloadplan_node *smo = ha->value;
-//     printf ("XX checking service %s", ha->key);
-
-     if (smo->mod)
-      for (j = 0; smo->mod[j]; j++) {
-       if (smo->mod[j]->module && inset ((void **)smo->mod[j]->module->requires, (void *)node->service, SET_TYPE_STRING)) {
-//        puts ("XXX spawning subthread");
-        if (!pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_disable, (void *)smo))
-         subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-        else {
-         notice (2, "warning: subthread creation failed!");
-         mod_plan_commit_recurse_disable (smo);
-        }
-
-        break;
+    char **t;
+    if (t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, node->mod[i], NULL)) {
+     for (u = 0; t[u]; u++) {
+      if (rha = hashfind (node->plan->services, t[u])) {
+       if (!pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_disable, (void *)rha->value))
+        subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
+       else {
+        notice (2, "warning: subthread creation failed!");
+        mod_plan_commit_recurse_disable ((struct mloadplan_node *)rha->value);
        }
       }
-
-     ha = hashnext (ha);
+     }
+     free (t);
+     t = NULL;
     }
-   }
+   }*/
 
    if (subthreads) {
     for (u = 0; subthreads[u]; u++)
@@ -342,9 +347,20 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
    node->status = mod (MOD_DISABLE, node->mod[i]);
 //   puts ("-");
   }
- }/* else if (node->group) {
-  fputs ("---- SUPPOSED TO DISABLE GROUP ---- ; disabling groups not impleneted", stderr);
- }*/ // this could actually be redundant...
+ } else if (node->group) {
+  fputs ("---- SUPPOSED TO DISABLE GROUP ---- ; disabling groups not implemented properly", stderr);
+  for (u = 0; node->group[u]; u++) {
+   if (ha = hashfind (node->plan->services, node->group[u])) {
+    struct mloadplan_node *cnode = (struct mloadplan_node *)ha->value;
+
+    mod_plan_commit_recurse_disable (cnode);
+
+    if (cnode->status & STATUS_DISABLED) {
+     node->status |= STATUS_DISABLED;
+    }
+   }
+  }
+ } // this could actually be redundant...
 
  pthread_mutex_unlock (&node->mutex);
 // pthread_exit (NULL);

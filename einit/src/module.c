@@ -494,11 +494,18 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
    ha = hashnext (ha);
   }
  } else if (task & SERVICE_GET_SERVICES_THAT_USE) {
-//  puts ("--------------");
   if (module) {
    while (ha) {
-    if (inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, 0)) {
-//     puts (ha->key);
+    if (inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
+     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
+    }
+    ha = hashnext (ha);
+   }
+  }
+ } else if (task & SERVICE_GET_SERVICES_USED_BY) {
+  if (module) {
+   while (ha) {
+    if (inset ((void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {
      ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }
     ha = hashnext (ha);
