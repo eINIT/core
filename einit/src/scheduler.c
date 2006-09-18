@@ -147,7 +147,7 @@ int sched_switchmode (char *mode) {
    return -1;
   }
 
-  plan = mod_plan (plan, NULL, 0, cur);
+  plan = mod_plan (NULL, NULL, 0, cur);
   if (!plan) {
    notice (1, "scheduler: scheduled mode defined but nothing to be done");
   } else {

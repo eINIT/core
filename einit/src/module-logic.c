@@ -132,9 +132,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
 
    memset (&nnode, 0, sizeof (struct mloadplan_node));
-//   pthread_mutex_init (&nnode.mutex, NULL);
-   nnode.plan = plan;
-
    if (ha = hashfind (plan->services, current[a]))
     continue;
 
@@ -166,11 +163,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    if (nnode.mod || nnode.group) {
     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
     adisable = (char **)setadd ((void **)adisable, (void *)current[a], SET_TYPE_STRING);
-    ha = hashfind (plan->services, current[a]);
-    pthread_mutex_init (&(((struct mloadplan_node *)(ha->value))->mutex), NULL);
    } else {
     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
-//    pthread_mutex_destroy (&nnode.mutex);
    }
   }
 
@@ -181,8 +175,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 //    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
-//    pthread_mutex_init (&nnode.mutex, NULL);
-    nnode.plan = plan;
 
     if (ha = hashfind (plan->services, current[a]))
      continue;
@@ -214,12 +206,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     if (nnode.mod || nnode.group) {
      plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
      adisable = (char **)setadd ((void **)adisable, (void *)current[a], SET_TYPE_STRING);
-     ha = hashfind (plan->services, current[a]);
-     pthread_mutex_init (&(((struct mloadplan_node *)(ha->value))->mutex), NULL);
-//     puts (current[a]);
     } else {
      plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
-//     pthread_mutex_destroy (&nnode.mutex);
     }
    }
 
@@ -236,8 +224,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    for (a = 0; current[a]; a++) {
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
-//    pthread_mutex_init (&nnode.mutex, NULL);
-    nnode.plan = plan;
 
     if (ha = hashfind (plan->services, current[a]))
      continue;
@@ -265,12 +251,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     if (nnode.mod || nnode.group) {
      plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
      aenable = (char **)setadd ((void **)aenable, (void *)current[a], SET_TYPE_STRING);
-     ha = hashfind (plan->services, current[a]);
-     pthread_mutex_init (&(((struct mloadplan_node *)(ha->value))->mutex), NULL);
-//     puts (current[a]);
     } else {
      plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
-//     pthread_mutex_destroy (&nnode.mutex);
     }
    }
 
@@ -292,6 +274,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   while (ha) {
    ((struct mloadplan_node *)(ha->value))->service = ha->key;
+   ((struct mloadplan_node *)(ha->value))->plan = plan;
+   pthread_mutex_init (&(((struct mloadplan_node *)(ha->value))->mutex), NULL);
 
    ha = hashnext (ha);
   }
@@ -313,9 +297,13 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 #define run_or_spawn_subthreads(set,function,plan,subthreads) \
 { \
  uint32_t u; struct uhash *rha; pthread_t th; \
- if (set[1]) \
+ puts (":");\
+ if (set && set[0] && set[1]) { \
+  puts (".");\
   for (u = 0; set[u]; u++) { \
-   if (rha = hashfind (plan->services, set[u])) { \
+   puts (set[u]);\
+   if ((rha = hashfind (plan->services, set[u])) && rha->value) { \
+    puts ("s1");\
     if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
     else { \
@@ -324,8 +312,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     } \
    } \
   } \
- else { \
-  if (rha = hashfind (plan->services, set[u])) { \
+ } else { \
+  puts (set[0]);\
+  if ((rha = hashfind (plan->services, set[0])) && rha->value) { \
+   puts ("s2");\
    function ((struct mloadplan_node *)rha->value); \
   } \
  } \
