@@ -23,7 +23,7 @@
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
  <shell s="/bin/sh -c" TZ="CEST" PATH="/bin:/sbin:/usr/bin:/usr/sbin" />
 
- <use-ansi-codes b="false" />
+ <use-ansi-codes b="true" />
  <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
 
  <mount-block-devices-dev-constraints s=".*" />
@@ -99,7 +99,7 @@
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc" />
+  <enable mod="ipc:tty:audio" />
 <!--  <disable mod="hostname" /> -->
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>

@@ -297,13 +297,9 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 #define run_or_spawn_subthreads(set,function,plan,subthreads) \
 { \
  uint32_t u; struct uhash *rha; pthread_t th; \
- puts (":");\
  if (set && set[0] && set[1]) { \
-  puts (".");\
   for (u = 0; set[u]; u++) { \
-   puts (set[u]);\
    if ((rha = hashfind (plan->services, set[u])) && rha->value) { \
-    puts ("s1");\
     if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
     else { \
@@ -313,9 +309,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    } \
   } \
  } else { \
-  puts (set[0]);\
   if ((rha = hashfind (plan->services, set[0])) && rha->value) { \
-   puts ("s2");\
    function ((struct mloadplan_node *)rha->value); \
   } \
  } \
@@ -323,7 +317,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
 // the un-loader function
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
+ if (node->status & STATUS_DISABLED) return;
  pthread_mutex_lock (&node->mutex);
+ node->status |= STATUS_WORKING;
+
  pthread_t **subthreads = NULL;
  struct uhash *ha, *rha = NULL;
  uint32_t i = 0, u = 0, j = 0;
@@ -377,7 +374,10 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
 
 // the loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
+ if (node->status & STATUS_ENABLED) return;
  pthread_mutex_lock (&node->mutex);
+ node->status |= STATUS_WORKING;
+
  pthread_t **subthreads = NULL;
  struct uhash *ha;
  uint32_t i = 0, u = 0;
@@ -422,6 +422,9 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 
 // the reset function
 void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
+ pthread_mutex_lock (&node->mutex);
+ node->status |= STATUS_WORKING;
+
  pthread_mutex_lock (&node->mutex);
  uint32_t i = 0;
 
