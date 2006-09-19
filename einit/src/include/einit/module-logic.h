@@ -76,7 +76,7 @@ struct mloadplan_node {
  char **group;
  uint32_t options;
  struct mloadplan *plan;
- pthread_mutex_t mutex;
+ pthread_mutex_t *mutex;
 };
 
 // create a plan for loading a set of atoms

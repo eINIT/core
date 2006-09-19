@@ -275,7 +275,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   while (ha) {
    ((struct mloadplan_node *)(ha->value))->service = ha->key;
    ((struct mloadplan_node *)(ha->value))->plan = plan;
-   pthread_mutex_init (&(((struct mloadplan_node *)(ha->value))->mutex), NULL);
+   (((struct mloadplan_node *)(ha->value))->mutex) = ecalloc (1, sizeof(pthread_mutex_t));
+   pthread_mutex_init ((((struct mloadplan_node *)(ha->value))->mutex), NULL);
 
    ha = hashnext (ha);
   }
@@ -317,9 +318,9 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
 // the un-loader function
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
- pthread_mutex_lock (&node->mutex);
+ pthread_mutex_lock (node->mutex);
  if ((node->status & STATUS_DISABLED) || (node->status & STATUS_FAIL)) {
-  pthread_mutex_unlock (&node->mutex);
+  pthread_mutex_unlock (node->mutex);
   return;
  }
  node->status |= STATUS_WORKING;
@@ -370,16 +371,16 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
   }
  } // this could actually be redundant...
 
- pthread_mutex_unlock (&node->mutex);
+ pthread_mutex_unlock (node->mutex);
 // pthread_exit (NULL);
  return &(node->status);
 }
 
 // the loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
- pthread_mutex_lock (&node->mutex);
+ pthread_mutex_lock (node->mutex);
  if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
-  pthread_mutex_unlock (&node->mutex);
+  pthread_mutex_unlock (node->mutex);
   return;
  }
  node->status |= STATUS_WORKING;
@@ -421,17 +422,15 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
   }
  }
 
- pthread_mutex_unlock (&node->mutex);
+ pthread_mutex_unlock (node->mutex);
 // pthread_exit (NULL);
  return &(node->status);
 }
 
 // the reset function
 void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
- pthread_mutex_lock (&node->mutex);
+ pthread_mutex_lock (node->mutex);
  node->status |= STATUS_WORKING;
-
- pthread_mutex_lock (&node->mutex);
  uint32_t i = 0;
 
  if (node->mod) {
@@ -440,13 +439,13 @@ void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
   }
  }
 
- pthread_mutex_unlock (&node->mutex);
+ pthread_mutex_unlock (node->mutex);
  return &(node->status);
 }
 
 // the reload function
 void *mod_plan_commit_recurse_reload (struct mloadplan_node *node) {
- pthread_mutex_lock (&node->mutex);
+ pthread_mutex_lock (node->mutex);
  uint32_t i = 0;
 
  if (node->mod) {
@@ -455,7 +454,7 @@ void *mod_plan_commit_recurse_reload (struct mloadplan_node *node) {
   }
  }
 
- pthread_mutex_unlock (&node->mutex);
+ pthread_mutex_unlock (node->mutex);
  return &(node->status);
 }
 
@@ -518,8 +517,10 @@ int mod_plan_free (struct mloadplan *plan) {
   struct mloadplan_node *no = NULL;
 
   while (ha) {
-   if (no = (struct mloadplan_node *)ha->value)
-    pthread_mutex_destroy (&no->mutex);
+   if (no = (struct mloadplan_node *)ha->value) {
+    pthread_mutex_destroy (no->mutex);
+    free (no->mutex);
+   }
 
    ha = hashnext (ha);
   }

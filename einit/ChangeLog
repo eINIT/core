@@ -1,5 +1,6 @@
 2006/09/19: mdeininger
  * minor changes, fixes and adjustments
+ * mkay, now it works on osx...
 
 2006/09/18: mdeininger
  weird. the module-logic code works pretty much flawlessly on linux, but
