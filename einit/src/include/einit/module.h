@@ -35,6 +35,13 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*!@file einit/module.h
+ * @brief Module-functions and structs.
+ * @author Magnus Deininger
+ *
+ * This header file declares all structs and functions that deal with modules.
+*/
+
 #ifndef _MODULE_H
 #define _MODULE_H
 
@@ -90,69 +97,126 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SERVICE_ADD_GROUP_PROVIDER      0x0200
 
+/*!@brief On-file module definition
+ *
+ * The static module definition that is kept in the module's .so-file.
+*/
 struct smodule {
- int eiversion;
- int version;
- int mode;
- uint32_t options;
- char *name;
- char *rid;
- char **provides;
- char **requires;
- char **notwith;
+ int eiversion;         /*!< The version of eINIT that the module was compiled with. */
+ int version;           /*!< The module's version; this is currently ignored by eINIT. */
+ int mode;              /*!< The module type; should be EINIT_MOD_EXEC for most modules. */
+ uint32_t options;      /*!< Module options; this is currently ignored. */
+ char *name;            /*!< The real name of the module. */
+ char *rid;             /*!< The short ID of the module. */
+ char **provides;       /*!< A list of services that this module provides. */
+ char **requires;       /*!< A list of services that this module requires. */
+ char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
 };
 
+/*!@brief In-memory module definition
+ *
+ * The dynamic module definition that is kept in memory after the module is loaded.
+*/
 struct lmodule {
- void *sohandle;
- int (*enable)  (void *, struct einit_event *);
- int (*disable) (void *, struct einit_event *);
- int (*reset) (void *, struct einit_event *);
- int (*reload) (void *, struct einit_event *);
- int (*cleanup) (struct lmodule *);
- uint32_t status;
- void *param;
- pthread_mutex_t mutex;
- pthread_mutex_t imutex;
- struct smodule *module;
- struct lmodule *next;
- uint32_t fbseq;
+ void *sohandle;                                /*!< .so file-handle */
+ int (*enable)  (void *, struct einit_event *); /*!< Pointer to the module's enable()-function */
+ int (*disable) (void *, struct einit_event *); /*!< Pointer to the module's disable()-function */
+ int (*reset) (void *, struct einit_event *);   /*!< Pointer to the module's reset()-function */
+ int (*reload) (void *, struct einit_event *);  /*!< Pointer to the module's reload()-function */
+ int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
+ uint32_t status;                               /*!< Current module status (enabled, disabled, ...) */
+ void *param;                                   /*!< Parametre for state-changing functions */
+ pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
+ pthread_mutex_t imutex;                        /*!< Internal module-mutex; to be used by the module */
+ struct smodule *module;                        /*!< Pointer to the static module definition */
+ struct lmodule *next;                          /*!< Pointer to the next module in the list */
+ uint32_t fbseq;                                /*!< Feedback sequence-number */
 };
 
+/*!@brief Service-usage information.
+ *
+ * This struct is used as values for the service_usage hash.
+*/
 struct service_usage_item {
- struct lmodule **provider;  /* the modules that currently provide this service */
- struct lmodule **users;     /* the modules that currently use this service */
+ struct lmodule **provider;  /*!< the modules that currently provide this service */
+ struct lmodule **users;     /*!< the modules that currently use this service */
 };
 
+/*!@brief Service-usage information.
+ *
+ * This hash is used to figure out what services are currently being provided, and which services depend
+ * on which services.
+*/
 struct uhash *service_usage;
 
-// scan for modules (i.e. load their .so and add it to the list)
+/*!@brief Scan for modules
+ *
+ * This will scan the configuration file to find the path where module .so files can be found,
+ * then load them.
+*/
 int mod_scanmodules ();
 
-// free the chain of loaded modules and unload the .so-files
+/*!@brief Clean up
+ *
+ * Free the chain of loaded modules and unload the .so-files
+*/
 int mod_freemodules ();
 
-// add a module to the main chain of modules
+/*!@brief Register module
+ * @todo Enhance this function so that one may specify reset() and reload() functions.
+ *
+ * This functions adds a module to the main chain of modules, so that it can be used in depency
+ * calculations.
+*/
 struct lmodule *mod_add (void *, int (*)(void *, struct einit_event *), int (*)(void *, struct einit_event *), void *, struct smodule *);
 
-// find a module
+/*!@brief Find a module
+ * @deprecated This should not be used anymore. Functions that need to do this should know enough about
+ *             the internal workings of the main module loader to know how to find modules themselves.
+ *
+ * This was originally intended to aid in finding specific modules.
+*/
 struct lmodule *mod_find (char *rid, unsigned int options);
 
-// do something to a module
-int mod (unsigned int, struct lmodule *);
+/*!@brief Change module's state
+ * @param[in]     task   What state the module should be put in.
+ * @param[in,out] module The module that is to be manipulated.
+ *
+ * Use this to change the state of a module, i.e. enable it, disable it, reset it or reload it.
+*/
+int mod (unsigned int task, struct lmodule *module);
 
-#define mod_enable(lname) mod (MOD_ENABLE, lname)
-#define mod_disable(lname) mod (MOD_DISABLE, lname)
-
-// event handler
-void mod_event_handler(struct einit_event *);
-
-// service usage
+/*!@brief Query service-usage information.
+ *
+ * This function can be used to query/update certain service-usage information where the result can be
+ * expressed as an integer.
+*/
 uint16_t service_usage_query (uint16_t, struct lmodule *, char *);
+
+/*!@brief Query service-usage information.
+ *
+ * This function can be used to query certain service-usage information where the result can be expressed
+ * as a set of strings.
+*/
 char **service_usage_query_cr (uint16_t, struct lmodule *, char *);
+
+/*!@brief Query service-usage information.
+ *
+ * This function can be used to query/update certain service-group information where the result can be
+ * expressed as an integer.
+*/
 uint16_t service_usage_query_group (uint16_t, struct lmodule *, char *);
 
-// use this to tell einit that there is new feedback-information
-// don't rely on this to be a macro!
+/*!@brief The module loader's event-handler.
+ *
+ * This event-handler answers some on-line status-queries.
+*/
+void mod_event_handler(struct einit_event *);
+
+/*!@brief Update status information.
+ *
+ * This macro should be used to provide any feedback-modules with updated status information.
+*/
 #define status_update(a) \
  event_emit(a, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE); \
  if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL; a->integer++

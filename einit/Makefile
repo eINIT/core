@@ -13,13 +13,15 @@ documentation-man:
 documentation-pdf:
 	cd documentation && ${MAKE} documentation-pdf
 
-documentation: documentation-html
+documentation-api:
+	rm -rf build/documentation/api
+	doxygen Doxyfile
+
+documentation: documentation-html documentation-api
 
 install: all
 	cd src && ${MAKE} install
 	cd data && ${MAKE} install
-
-documentation_install: documentation-html
 
 depend:
 	touch src/depend.mk
