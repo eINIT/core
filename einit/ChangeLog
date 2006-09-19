@@ -1,3 +1,6 @@
+2006/09/19: mdeininger
+ * minor changes, fixes and adjustments
+
 2006/09/18: mdeininger
  weird. the module-logic code works pretty much flawlessly on linux, but
  crashes 99% on darwin. something seems to be wrong with the mutex-code.
