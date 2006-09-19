@@ -13,6 +13,8 @@ documentation-man:
 documentation-pdf:
 	cd documentation && ${MAKE} documentation-pdf
 
+documentation: documentation-html
+
 install: all
 	cd src && ${MAKE} install
 	cd data && ${MAKE} install

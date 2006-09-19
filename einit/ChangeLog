@@ -1,6 +1,8 @@
 2006/09/19: mdeininger
  * minor changes, fixes and adjustments
- * mkay, now it works on osx...
+ * mkay, now it works on osx... and somehow, things got way faster, wtf?
+ * i think i should resume commenting and documenting things ;)
+   (vesselin, you're absolutely right :D)
 
 2006/09/18: mdeininger
  weird. the module-logic code works pretty much flawlessly on linux, but
