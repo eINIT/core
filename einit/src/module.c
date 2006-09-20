@@ -57,7 +57,7 @@ pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct uhash *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int mod_scanmodules () {
+int mod_scanmodules ( void ) {
  DIR *dir;
  struct dirent *entry;
  char *tmp;
@@ -129,7 +129,7 @@ void mod_freedesc (struct lmodule *m) {
  free (m);
 }
 
-int mod_freemodules () {
+int mod_freemodules ( void ) {
  if (mlist != NULL)
   mod_freedesc (mlist);
  mlist = NULL;

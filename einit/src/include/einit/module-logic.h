@@ -35,9 +35,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*!@file einit/module-logic.h
- * @brief Module-planning logic.
- * @author Magnus Deininger
+/*!\file einit/module-logic.h
+ * \brief Module-planning logic.
+ * \author Magnus Deininger
  *
  * This header file declares all structs and functions that deal with planning and executing mode-switches
  * and enabling / disabling of modules. Client-modules might want to use these functions if they need
@@ -57,16 +57,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_PLAN_GROUP_SEQ_MOST 0x0040
 #define MOD_PLAN_GROUP_SEQ_ALL 0x0080
 #define MOD_PLAN_GROUP 0x0100
-#define MOD_PLAN_OK 0x0001
-#define MOD_PLAN_FAIL 0x0002
-#define MOD_PLAN_IDLE 0x0004
 
-#define MOD_P2H_PROVIDES 0x0001
-#define MOD_P2H_PROVIDES_NOBACKUP 0x0002
-#define MOD_P2H_REQUIRES 0x0003
-#define MOD_P2H_LIST 0x0004
-
-/*!@brief Plan
+/*!\brief Plan
  *
  * This struct is used to keep all the information that is needed for a mode-switch, or a module-status-change.
 */
@@ -82,7 +74,7 @@ struct mloadplan {
  pthread_mutex_t mutex;  /*!< Mutex for this plan. */
 };
 
-/*!@brief Plan, Node
+/*!\brief Plan, Node
  *
  * Data node for the mloadplan struct.
 */
@@ -96,19 +88,19 @@ struct mloadplan_node {
  pthread_mutex_t *mutex; /*!< This node's mutex.*/
 };
 
-/*!@brief Create a plan
+/*!\brief Create a plan
  *
  * Create a plan for a set of atoms or a mode.
 */
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);
 
-/*!@brief Execute a plan
+/*!\brief Execute a plan
  *
  * Actually do what the plan says.
 */
 unsigned int mod_plan_commit (struct mloadplan *);
 
-/*!@brief Free a plan
+/*!\brief Free a plan
  *
  * Free all of the resources that had been associated with a plan.
 */
