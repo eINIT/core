@@ -35,6 +35,15 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*!@file einit/module-logic.h
+ * @brief Module-planning logic.
+ * @author Magnus Deininger
+ *
+ * This header file declares all structs and functions that deal with planning and executing mode-switches
+ * and enabling / disabling of modules. Client-modules might want to use these functions if they need
+ * to perform mode-switches and similar things without using the scheduler.
+*/
+
 #ifndef _MODULE_LOGIC_H
 #define _MODULE_LOGIC_H
 
@@ -57,40 +66,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_P2H_REQUIRES 0x0003
 #define MOD_P2H_LIST 0x0004
 
+/*!@brief Plan
+ *
+ * This struct is used to keep all the information that is needed for a mode-switch, or a module-status-change.
+*/
 struct mloadplan {
- struct uhash *services;
- char **enable;
- char **disable;
- char **reset;
- char **unavailable;
- char **locked;
- uint32_t options;
- struct cfgnode *mode;
- pthread_mutex_t mutex;
+ struct uhash *services; /*!< Hash of all services that are to be used. */
+ char **enable;          /*!< Set of all services that are to be enabled. */
+ char **disable;         /*!< Set of all services that are to be disabled. */
+ char **reset;           /*!< Set of all services that are to be reset. */
+ char **unavailable;     /*!< Set of services that were to be changed but were not available. */
+ char **locked;          /*!< Set of services that were to be changed, but it's not possible to do so. */
+ uint32_t options;       /*!< Plan-options; reserved */
+ struct cfgnode *mode;   /*!< Pointer to the mode that was used to construct this plan, if applicable. */
+ pthread_mutex_t mutex;  /*!< Mutex for this plan. */
 };
 
+/*!@brief Plan, Node
+ *
+ * Data node for the mloadplan struct.
+*/
 struct mloadplan_node {
- char *service;
- uint32_t task, status;
- struct lmodule **mod;      /* modules */
- char **group;
- uint32_t options;
- struct mloadplan *plan;
- pthread_mutex_t *mutex;
+ char *service;          /*!< Name of this node's service. */
+ uint32_t status;        /*!< This service's status. */
+ struct lmodule **mod;   /*!< Modules that are to be used. */
+ char **group;           /*!< List of other services that form a group to provide this service. */
+ uint32_t options;       /*!< Node-options; reserved */
+ struct mloadplan *plan; /*!< Pointer to this node's plan. */
+ pthread_mutex_t *mutex; /*!< This node's mutex.*/
 };
 
-// create a plan for loading a set of atoms
+/*!@brief Create a plan
+ *
+ * Create a plan for a set of atoms or a mode.
+*/
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);
 
-// actually do what the plan says
+/*!@brief Execute a plan
+ *
+ * Actually do what the plan says.
+*/
 unsigned int mod_plan_commit (struct mloadplan *);
 
-// free all of the plan's resources
+/*!@brief Free a plan
+ *
+ * Free all of the resources that had been associated with a plan.
+*/
 int mod_plan_free (struct mloadplan *);
-
-#ifdef DEBUG
-// write out a plan-struct to stdout
-void mod_plan_ls (struct mloadplan *);
-#endif
 
 #endif
