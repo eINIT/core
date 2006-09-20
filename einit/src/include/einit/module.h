@@ -42,6 +42,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * This header file declares all structs and functions that deal with modules.
 */
 
+/*!@defgroup statusinformation Status-Information
+ * @defgroup serviceusagequeries Service-Usage-Queries
+ * @defgroup modulemanipulation Module-Manipulation
+ * @defgroup moduledefinition Module-Definition
+*/
+
+/*!@dir src/modules
+ * @brief Default Modules
+ *
+ * All the default modules are in this directory. Modules in this directory should build and work on
+ * most posix-compliant systems.
+*/
+
+/*!@dir src/modules/linux
+ * @brief Default Linux Modules
+ *
+ * All the default linux-specific modules are in this directory.
+*/
+
+/*!@dir src/modules/bsd
+ * @brief Default BSD Modules
+ *
+ * All the default bsd-specific modules are in this directory.
+*/
+
+/*!@dir src/modules/efl
+ * @brief Default EFL Modules
+ *
+ * Modules that depend on EFL-Libraries are in this directory. Specifically this will contain the evas-/edje-
+ * based visualiser once i get to it.
+*/
+
 #ifndef _MODULE_H
 #define _MODULE_H
 
@@ -53,15 +85,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/event.h>
 
+/*!@ingroup modulemdefinition
+ * @{ */
 #define EINIT_MOD_LOADER 1    /*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
 #define EINIT_MOD_FEEDBACK 2  /*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
 #define EINIT_MOD_EXEC 4      /*!< Module-type: Regular modules, i.e. those that provide services. */
+/*!@} */
 
+/*!@ingroup modulemanipulation
+ * @{ */
 #define MOD_ENABLE 0x0001        /*!< Command for mod(): Enable specified module. */
 #define MOD_DISABLE 0x0002       /*!< Command for mod(): Disable specified module. */
 #define MOD_RELOAD 0x0004        /*!< Command for mod(): Reload specified module. */
 #define MOD_RESET 0x0008         /*!< Command for mod(): Reset specified module. */
 #define MOD_FEEDBACK_SHOW 0x0100 /*!< Option set by mod(): Show feedback. */
+/*!@} */
 
 #define MOD_SCHEDULER 0x1000                    /*!< Bitmask for scheduler-feedback-options. */
 #define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001  /*!< Scheduler-feedback-option: "New plan is now being executed.". */
@@ -69,6 +107,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define MOD_LOCKED 0x8000        /*!< Module-option: Module is locked. */
 
+/*!@ingroup statusinformation
+ * @{ */
 #define STATUS_IDLE 0x0000      /*!< Status Information: Object is currently idle. */
 #define STATUS_OK 0x8003        /*!< Status Information: Last command executed OK. */
 #define STATUS_ABORTED 0x8002   /*!< Status Information: Last command was aborted. */
@@ -81,7 +121,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STATUS_RELOADING 0x0013 /*!< Status Information: Object is currently being reloaded. */
 #define STATUS_ENABLED 0x0401   /*!< Status Information: Object is enabled. */
 #define STATUS_DISABLED 0x0802  /*!< Status Information: Object is disabled. */
+/*!@} */
 
+/*!@ingroup serviceusagequeries
+ * @{*/
 #define SERVICE_NOT_IN_USE              0x0001 /*!< Service-usage-query: "Is this module not in use?" */
 #define SERVICE_REQUIREMENTS_MET        0x0002 /*!< Service-usage-query: "Are this module's requirements met?" */
 #define SERVICE_IS_REQUIRED             0x0004 /*!< Service-usage-query: "Is this currently required?" */
@@ -93,8 +136,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SERVICE_GET_SERVICES_USED_BY    0x0040 /*!< Service-usage-query: "What services are used by this?" */
 
 #define SERVICE_ADD_GROUP_PROVIDER      0x0200 /*!< Service-usage-query: "This module provides this service" */
+/*!@} */
 
 /*!@brief On-file module definition
+ * @ingroup moduledefinition
  *
  * The static module definition that is kept in the module's .so-file.
 */
@@ -111,6 +156,7 @@ struct smodule {
 };
 
 /*!@brief In-memory module definition
+ * @ingroup moduledefinition
  *
  * The dynamic module definition that is kept in memory after the module is loaded.
 */
@@ -131,6 +177,7 @@ struct lmodule {
 };
 
 /*!@brief Service-usage information.
+ * @ingroup serviceusagequeries
  *
  * This struct is used as values for the service_usage hash.
 */
@@ -140,6 +187,7 @@ struct service_usage_item {
 };
 
 /*!@brief Service-usage information.
+ * @ingroup serviceusagequeries
  *
  * This hash is used to figure out what services are currently being provided, and which services depend
  * on which services.
@@ -160,6 +208,7 @@ int mod_scanmodules ();
 int mod_freemodules ();
 
 /*!@brief Register module
+ * @ingroup moduledefinition
  * @todo Enhance this function so that one may specify reset() and reload() functions.
  *
  * This functions adds a module to the main chain of modules, so that it can be used in dependency
@@ -178,11 +227,14 @@ struct lmodule *mod_find (char *rid, unsigned int options);
 /*!@brief Change module's state
  * @param[in]     task   What state the module should be put in.
  * @param[in,out] module The module that is to be manipulated.
+ * @ingroup modulemanipulation
  *
  * Use this to change the state of a module, i.e. enable it, disable it, reset it or reload it.
 */
 int mod (unsigned int task, struct lmodule *module);
 
+/*!@ingroup serviceusagequeries
+ * @{ */
 /*!@brief Query service-usage information.
  *
  * This function can be used to query/update certain service-usage information where the result can be
@@ -203,6 +255,7 @@ char **service_usage_query_cr (uint16_t, struct lmodule *, char *);
  * expressed as an integer.
 */
 uint16_t service_usage_query_group (uint16_t, struct lmodule *, char *);
+/*! @} */
 
 /*!@brief The module loader's event-handler.
  *
@@ -211,6 +264,7 @@ uint16_t service_usage_query_group (uint16_t, struct lmodule *, char *);
 void mod_event_handler(struct einit_event *);
 
 /*!@brief Update status information.
+ * @ingroup statusinformation
  *
  * This macro should be used to provide any feedback-modules with updated status information.
 */
