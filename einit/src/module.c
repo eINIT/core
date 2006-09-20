@@ -204,29 +204,6 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
  return nmod;
 }
 
-struct lmodule *mod_find (char *rid, unsigned int modeflags) {
- struct lmodule *cur = mlist;
- if (mlist == NULL)
-  return NULL;
-
- if (rid) {
-  while (!cur->module || !cur->module->rid ||
-    (modeflags && (cur->module->mode ^ modeflags)) ||
-    strcmp(rid, cur->module->rid)) {
-   if (!cur->next) return NULL;
-   cur = cur->next;
-  }
- } else {
-  while (!cur->module ||
-    (modeflags && (cur->module->mode ^ modeflags))) {
-   if (!cur->next) return NULL;
-   cur = cur->next;
-  }
- }
-
- return cur;
-}
-
 int mod (unsigned int task, struct lmodule *module) {
  struct einit_event *fb;
  char providefeedback;

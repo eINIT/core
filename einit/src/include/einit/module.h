@@ -42,10 +42,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * This header file declares all structs and functions that deal with modules.
 */
 
-/*!\defgroup statusinformation Status-Information
- * \defgroup serviceusagequeries Service-Usage-Queries
- * \defgroup modulemanipulation Module-Manipulation
- * \defgroup moduledefinition Module-Definition
+/*!\defgroup serviceusagequeries eINIT Internals: Service-Usage-Queries
+ * \defgroup modulemanipulation Writing Modules: Manipulating Modules
+ * \defgroup moduledefinition Writing Modules: Defining Modules
+ * \defgroup statusinformation Writing Modules: Status-Information Macros and Constants
 */
 
 /*!\dir src/modules
@@ -233,35 +233,46 @@ int mod (unsigned int task, struct lmodule *module);
 /*!\ingroup serviceusagequeries
  * \{ */
 /*!\brief Query service-usage information.
+ * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
+ * \param[in] module  Depending on the command that you pass to this function, a module may be required.
+ * \param[in] service Depending on the command that you pass to this function, a service-name may be required.
  *
  * This function can be used to query/update certain service-usage information where the result can be
  * expressed as an integer.
 */
-uint16_t service_usage_query (uint16_t, struct lmodule *, char *);
+uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service);
 
 /*!\brief Query service-usage information.
+ * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
+ * \param[in] module  Depending on the command that you pass to this function, a module may be required.
+ * \param[in] service Depending on the command that you pass to this function, a service-name may be required.
  *
  * This function can be used to query certain service-usage information where the result can be expressed
  * as a set of strings.
 */
-char **service_usage_query_cr (uint16_t, struct lmodule *, char *);
+char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service);
 
 /*!\brief Query service-usage information.
+ * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
+ * \param[in] module  Depending on the command that you pass to this function, a module may be required.
+ * \param[in] service Depending on the command that you pass to this function, a service-name may be required.
  *
  * This function can be used to query/update certain service-group information where the result can be
  * expressed as an integer.
 */
-uint16_t service_usage_query_group (uint16_t, struct lmodule *, char *);
+uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service);
 /*! \} */
 
 /*!\brief The module loader's event-handler.
+ * \param[in] event Information that will be passed to this function by the event-system.
  *
  * This event-handler answers some on-line status-queries.
 */
-void mod_event_handler(struct einit_event *);
+void mod_event_handler(struct einit_event *event);
 
 /*!\brief Update status information.
  * \ingroup statusinformation
+ * \param[in] a The status information that is to be updated. Use your module-function's second parametre here.
  *
  * This macro should be used to provide any feedback-modules with updated status information.
 */
