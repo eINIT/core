@@ -65,11 +65,11 @@ const struct smodule self = {
 };
 
 int enable (void *pa, struct einit_event *status) {
- struct cfgnode *cfg = cfg_findnode ("hostname", 0, NULL);
- if (cfg && cfg->svalue) {
+ char *name;
+ if (name = cfg_getstring ("hostname", NULL)) {
   status->string = "setting hostname";
   status_update (status);
-  if (sethostname (cfg->svalue, strlen (cfg->svalue))) {
+  if (sethostname (name, strlen (name))) {
    status->string = strerror(errno);
    errno = 0;
    status->flag++;
@@ -81,11 +81,10 @@ int enable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- cfg = cfg_findnode ("domainname", 0, NULL);
- if (cfg && cfg->svalue) {
+ if (name = cfg_getstring ("domainname", NULL)) {
   status->string = "setting domainname";
   status_update (status);
-  if (setdomainname (cfg->svalue, strlen (cfg->svalue))) {
+  if (setdomainname (name, strlen (name))) {
    status->string = strerror(errno);
    errno = 0;
    status->flag++;
