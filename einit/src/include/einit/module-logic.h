@@ -60,7 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MOD_PLAN_GROUP_SEQ_MOST 0x0040     /*!< Module-Group: Most services to get up */
 #define MOD_PLAN_GROUP_SEQ_ALL 0x0080      /*!< Module-Group: All services need to get up */
 
-#define STATUS_WORKING_FINISH_GROUP 0x0020 /*!< Status Information: Used to tell the recursive plan-node functions that they're a secondary thread spawned to complete loading a group. */
+#define STATUS_WORKING_FINISH_GROUP 0x0200 /*!< Status Information: Used to tell the recursive plan-node functions that they're a secondary thread spawned to complete loading a group. */
 /*! \}*/
 
 /*!\brief Plan

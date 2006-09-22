@@ -296,6 +296,9 @@ void *sched_run (void *p) {
      sync ();
      notice (1, "scheduler: cleaning up");
      cleanup ();
+     event_ignore (EINIT_EVENT_TYPE_IPC, sched_event_handler);
+     pthread_cancel (schedthreadsigchild);
+     pthread_join (schedthreadsigchild, NULL);
      fputs ("scheduler: power off", stderr);
      epoweroff ();
 // if we still live here, something's twocked
@@ -306,6 +309,9 @@ void *sched_run (void *p) {
      sync ();
      notice (1, "scheduler: cleaning up");
      cleanup ();
+     event_ignore (EINIT_EVENT_TYPE_IPC, sched_event_handler);
+     pthread_cancel (schedthreadsigchild);
+     pthread_join (schedthreadsigchild, NULL);
      fputs ("scheduler: reset", stderr);
      epowerreset ();
 // if we still live here, something's twocked

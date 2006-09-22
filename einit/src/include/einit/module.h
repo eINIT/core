@@ -94,11 +94,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*!\ingroup modulemanipulation
  * \{ */
-#define MOD_ENABLE 0x0001        /*!< Command for mod(): Enable specified module. */
-#define MOD_DISABLE 0x0002       /*!< Command for mod(): Disable specified module. */
-#define MOD_RELOAD 0x0004        /*!< Command for mod(): Reload specified module. */
-#define MOD_RESET 0x0008         /*!< Command for mod(): Reset specified module. */
-#define MOD_FEEDBACK_SHOW 0x0100 /*!< Option set by mod(): Show feedback. */
+#define MOD_ENABLE 0x0001              /*!< Command for mod(): Enable specified module. */
+#define MOD_DISABLE 0x0002             /*!< Command for mod(): Disable specified module. */
+#define MOD_RELOAD 0x0004              /*!< Command for mod(): Reload specified module. */
+#define MOD_RESET 0x0008               /*!< Command for mod(): Reset specified module. */
+#define MOD_FEEDBACK_SHOW 0x0100       /*!< Option set by mod(): Show feedback. */
+#define MOD_IGNORE_DEPENDENCIES 0x0800 /*!< Option: Ignore dependencies on module status change with mod() */
+#define MOD_NOMUTEX 0x0400             /*!< Option: Do not use mutex */
 /*!\} */
 
 #define MOD_SCHEDULER 0x1000                    /*!< Bitmask for scheduler-feedback-options. */

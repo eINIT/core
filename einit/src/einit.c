@@ -68,7 +68,7 @@ int print_usage_info () {
 int cleanup () {
  mod_freemodules ();
  cfg_free ();
- bitch (BTCH_DL + BTCH_ERRNO);
+// bitch (BTCH_DL + BTCH_ERRNO);
 }
 
 int main(int argc, char **argv) {

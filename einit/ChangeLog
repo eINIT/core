@@ -4,6 +4,9 @@
  * enhancements to group-handling
  * disabling groups still seems to work as it should...
  * need to slightly enhance some of the group-enabling code
+   (seq=any/any-iop/most/all are all the same right now)
+ * unloading modules seems to kill my box when trying to shut down... i'll
+   deactivate the rmmods for now.
 
 2006/09/20: mdeininger
  * more documentation

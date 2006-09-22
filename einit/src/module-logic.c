@@ -424,7 +424,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 
      if (cnode->status & STATUS_ENABLED) {
       service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
-      node->status = STATUS_ENABLED;
+      node->status |= STATUS_ENABLED;
      }
     }
    }
@@ -437,7 +437,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 
      if (cnode->status & STATUS_ENABLED) {
       service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
-      node->status = STATUS_ENABLED;
+      node->status |= STATUS_ENABLED;
      }
     }
    }

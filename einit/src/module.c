@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <pthread.h>
+#include <errno.h>
 
 struct lmodule *mlist = NULL;
 
@@ -115,10 +116,16 @@ void mod_freedesc (struct lmodule *m) {
 
  if (m->next != NULL)
   mod_freedesc (m->next);
+
+ m->next = NULL;
+ if (m->status & STATUS_ENABLED) {
+  pthread_mutex_unlock (&m->imutex);
+  mod (MOD_DISABLE | MOD_IGNORE_DEPENDENCIES | MOD_NOMUTEX, m);
+  pthread_mutex_lock (&m->imutex);
+ }
+
  if (m->cleanup)
   m->cleanup (m);
- if (m->sohandle)
-  dlclose (m->sohandle);
 
  m->status |= MOD_LOCKED;
 
@@ -126,6 +133,10 @@ void mod_freedesc (struct lmodule *m) {
  pthread_mutex_destroy (&m->mutex);
  pthread_mutex_unlock (&m->imutex);
  pthread_mutex_destroy (&m->imutex);
+
+// if (m->sohandle)
+//  dlclose (m->sohandle);
+
  free (m);
 }
 
@@ -133,6 +144,7 @@ int mod_freemodules ( void ) {
  if (mlist != NULL)
   mod_freedesc (mlist);
  mlist = NULL;
+ event_ignore (EINIT_EVENT_TYPE_IPC, mod_event_handler);
  return 1;
 }
 
@@ -213,13 +225,22 @@ int mod (unsigned int task, struct lmodule *module) {
  struct uhash *ha;
  if (!module) return 0;
 /* wait if the module is already being processed in a different thread */
- if (errc = pthread_mutex_lock (&module->mutex)) {
-// this is bad...
-  puts (strerror (errc));
+ if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_lock (&module->mutex))) {
+  if (errno)
+   perror ("locking mutex");
+ }
+
+ if (task & MOD_IGNORE_DEPENDENCIES) {
+  notice (2, "module: skipping dependency-checks");
+  task ^= MOD_IGNORE_DEPENDENCIES;
+  goto skipdependencies;
  }
 
  if (module->status & MOD_LOCKED) { // this means the module is locked. maybe we're shutting down just now.
-  pthread_mutex_unlock (&module->mutex);
+  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
+   if (errno)
+    perror ("unlocking mutex");
+  }
   if (task & MOD_ENABLE)
    return STATUS_FAIL;
   else if (task & MOD_DISABLE)
@@ -228,7 +249,7 @@ int mod (unsigned int task, struct lmodule *module) {
    return STATUS_OK;
  }
 
- module->status = module->status | STATUS_WORKING;
+ module->status |= STATUS_WORKING;
 
 /* check if the task requested has already been done (or if it can be done at all) */
  if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
@@ -240,7 +261,11 @@ int mod (unsigned int task, struct lmodule *module) {
    notice (10, tmp);
   }
 #endif
-  pthread_mutex_unlock (&module->mutex);
+  module->status ^= STATUS_WORKING;
+  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
+   if (errno)
+    perror ("unlocking mutex");
+  }
   return STATUS_IDLE;
  }
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
@@ -255,6 +280,8 @@ int mod (unsigned int task, struct lmodule *module) {
   if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL))
    goto wontload;
  }
+
+ skipdependencies:
 
  fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
  fb->para = (void *)module;
@@ -312,7 +339,11 @@ int mod (unsigned int task, struct lmodule *module) {
 
  service_usage_query(SERVICE_UPDATE, module, NULL);
 
- pthread_mutex_unlock (&module->mutex);
+ if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
+// this is bad...
+  if (errno)
+   perror ("unlocking mutex");
+ }
  return module->status;
 }
 
