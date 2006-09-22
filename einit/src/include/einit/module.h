@@ -116,9 +116,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STATUS_FAIL_REQ 0x0300  /*!< Status Information: Last command cannot be executed, because requirements are not met. */
 #define STATUS_DONE 0x8000      /*!< Status Information: Bitmask: Last command is not executing anymore. */
 #define STATUS_WORKING 0x0010   /*!< Status Information: Bitmask: Someone is working on this object just now. */
-#define STATUS_ENABLING 0x0011  /*!< Status Information: Object is currently being enabled. */
-#define STATUS_DISABLING 0x0012 /*!< Status Information: Object is currently being disabled. */
-#define STATUS_RELOADING 0x0013 /*!< Status Information: Object is currently being reloaded. */
+
+#define STATUS_ENABLING STATUS_WORKING | MOD_ENABLE  /*!< Status Information: Object is currently being enabled. */
+#define STATUS_DISABLING STATUS_WORKING | MOD_DISABLE /*!< Status Information: Object is currently being disabled. */
+#define STATUS_RELOADING STATUS_WORKING | MOD_RELOAD /*!< Status Information: Object is currently being reloaded. */
+#define STATUS_RESETTING STATUS_WORKING | MOD_RESET /*!< Status Information: Object is currently being reset. */
+
 #define STATUS_ENABLED 0x0401   /*!< Status Information: Object is enabled. */
 #define STATUS_DISABLED 0x0802  /*!< Status Information: Object is disabled. */
 /*!\} */

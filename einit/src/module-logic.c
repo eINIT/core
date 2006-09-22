@@ -53,14 +53,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct lmodule *mlist;
 
+#define mod_plan_searchgroup(nnode,service) \
+ if (!nnode.mod && (gnode = cfg_getnode (service, mode)) && gnode->arbattrs) {\
+  for (r = 0; gnode->arbattrs[r]; r+=2) {\
+   if (!strcmp (gnode->arbattrs[r], "group")) {\
+    if (nnode.group = str2set (':', gnode->arbattrs[r+1]))\
+     recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);\
+   } else if (!strcmp (gnode->arbattrs[r], "seq")) {\
+    if (!strcmp (gnode->arbattrs[r+1], "any"))\
+     nnode.options |=  MOD_PLAN_GROUP_SEQ_ANY;\
+    else if (!strcmp (gnode->arbattrs[r+1], "all"))\
+     nnode.options |=  MOD_PLAN_GROUP_SEQ_ALL;\
+    else if (!strcmp (gnode->arbattrs[r+1], "any-iop"))\
+     nnode.options |=  MOD_PLAN_GROUP_SEQ_ANY_IOP;\
+    else if (!strcmp (gnode->arbattrs[r+1], "most"))\
+     nnode.options |=  MOD_PLAN_GROUP_SEQ_MOST;\
+   }\
+  }\
+ }
+
+
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- uint32_t a = 0, b = 0;
+ uint32_t a = 0, b = 0, r = 0;
  char
   **enable = NULL, **aenable = NULL,
   **disable = NULL, **adisable = NULL,
   **reset = NULL, **areset = NULL;
- struct cfgnode *rmode = mode;
+ struct cfgnode *rmode = mode, *gnode;
  struct mloadplan_node nnode;
  struct uhash *ha;
  char da = 0, dabf = 0;
@@ -151,14 +171,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     cur = cur->next;
    }
 
-   if (!nnode.mod) {
-    char tmp[2048]; tmp[0] = 0;
-    strcat (tmp, current[a]);
-    strcat (tmp, "/group");
-
-    if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
-     recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
-   }
+   mod_plan_searchgroup(nnode, current[a]);
 
    if (nnode.mod || nnode.group) {
     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
@@ -194,14 +207,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      cur = cur->next;
     }
 
-    if (!nnode.mod) {
-     char tmp[2048]; tmp[0] = 0;
-     strcat (tmp, current[a]);
-     strcat (tmp, "/group");
-
-     if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
-      recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
-    }
+    mod_plan_searchgroup(nnode, current[a]);
 
     if (nnode.mod || nnode.group) {
      plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
@@ -238,15 +244,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      cur = cur->next;
     }
 
-    if (!nnode.mod) {
-     char tmp[2048]; tmp[0] = 0;
-     strcat (tmp, current[a]);
-     strcat (tmp, "/group");
-
-     if (nnode.group = str2set (':', cfg_getstring (tmp, mode)))
-      recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);
-//     recurse = (char **)setcombine ((void **)recurse, (void **)str2set (':', cfg_getstring (tmp, mode)), SET_NOALLOC);
-    }
+    mod_plan_searchgroup(nnode, current[a]);
 
     if (nnode.mod || nnode.group) {
      plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
@@ -329,13 +327,8 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  struct uhash *ha, *rha = NULL;
  uint32_t i = 0, u = 0, j = 0;
 
-// notice (3, node->service);
-
  if (node->mod) {
-//  fprintf (stdout, "disabling node 0x%zx\n", node);
-
   for (i = 0; node->mod[i]; i++) {
-//   puts ("+");
    if (!service_usage_query (SERVICE_NOT_IN_USE, node->mod[i], NULL)) {
     pthread_t th;
     char **t;
@@ -354,32 +347,29 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
    }
 
    node->status = mod (MOD_DISABLE, node->mod[i]);
-//   puts ("-");
   }
  } else if (node->group) {
-//  fputs ("---- SUPPOSED TO DISABLE GROUP ---- ; disabling groups not implemented properly", stderr);
-  for (u = 0; node->group[u]; u++) {
-   if (ha = hashfind (node->plan->services, node->group[u])) {
-    struct mloadplan_node *cnode = (struct mloadplan_node *)ha->value;
+  run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED);
 
-    mod_plan_commit_recurse_disable (cnode);
+  if (subthreads) {
+   for (u = 0; subthreads[u]; u++)
+    pthread_join (*(subthreads[u]), NULL);
 
-    if (cnode->status & STATUS_DISABLED) {
-     node->status |= STATUS_DISABLED;
-    }
-   }
+   free (subthreads); subthreads = NULL;
   }
- } // this could actually be redundant...
+  node->status |= STATUS_DISABLED;
+ }
 
  pthread_mutex_unlock (node->mutex);
-// pthread_exit (NULL);
  return &(node->status);
 }
 
 // the loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
- if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
+ if (node->group && (node->status == STATUS_ENABLING))
+  goto resume_group_enable;
+ else if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
   pthread_mutex_unlock (node->mutex);
   return;
  }
@@ -408,19 +398,55 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    if ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED) break;
   }
  } else if (node->group) {
-  for (u = 0; node->group[u]; u++) {
-   if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
-    struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
+/* implement proper group logic here */
+/* BUG: need to find the module that was actually enabled, shouldn't assume 0 */
+  resume_group_enable:
+  if ((node->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) || (node->options & MOD_PLAN_GROUP_SEQ_ANY)) {
+   for (u = 0; node->group[u]; u++) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+     struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
 
-    mod_plan_commit_recurse_enable (cnode);
+     mod_plan_commit_recurse_enable (cnode);
 
-    if (cnode->status & STATUS_ENABLED) {
-     service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[i], node->service);
-     node->status |= STATUS_ENABLED;
+     if (cnode->status & STATUS_ENABLED) {
+      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
+      node->status = STATUS_ENABLED;
+      goto exit;
+     }
+    }
+   }
+  } else if (node->options & MOD_PLAN_GROUP_SEQ_MOST) {
+   for (u = 0; node->group[u]; u++) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+     struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
+
+     mod_plan_commit_recurse_enable (cnode);
+
+     if (cnode->status & STATUS_ENABLED) {
+      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
+      node->status = STATUS_ENABLED;
+     }
+    }
+   }
+  } else if (node->options & MOD_PLAN_GROUP_SEQ_ALL) {
+   for (u = 0; node->group[u]; u++) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+     struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
+
+     mod_plan_commit_recurse_enable (cnode);
+
+     if (cnode->status & STATUS_ENABLED) {
+      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
+      node->status = STATUS_ENABLED;
+     }
     }
    }
   }
  }
+
+ exit:
+
+ if (node->status & STATUS_WORKING) node->status ^= STATUS_WORKING;
 
  pthread_mutex_unlock (node->mutex);
 // pthread_exit (NULL);

@@ -1,3 +1,10 @@
+2006/09/22: mdeininger
+ * cleanups
+ * documentation updates
+ * enhancements to group-handling
+ * disabling groups still seems to work as it should...
+ * need to slightly enhance some of the group-enabling code
+
 2006/09/20: mdeininger
  * more documentation
  * minor cleanups

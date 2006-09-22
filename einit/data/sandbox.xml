@@ -33,21 +33,11 @@
  <mod-shell id="shell-kern-eth0-dummy" name="net-eth0" provides="kern-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
  <mod-shell id="shell-kern-eth1-dummy" name="net-eth0" provides="kern-eth1" enable="echon /sbin/modprobe ${kernel_module_eth1}" disable="echo /sbin/rmmod ${kernel_module_eth1}" variables="kernel_module_eth1"/>
 
+ <mod-shell id="shell-eth0-dummy" name="net-eth0-dummy" provides="net-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
+
 <!-- <mod-shell id="shell-domainname-dummy" name="set NIS/YP domainname" provides="domainname" enable="echo /bin/domainname ${conf_domainname}" disable="" variables="conf_domainname"/> -->
 
-<!-- for testing -->
- <mod-shell id="shell-keyboard-dummy" name="keyboard layout" provides="keyboard" requires="mount/local" enable="echo /bin/loadkeys ${conf_keyboardlayout}" disable=";" variables="conf_keyboardlayout" />
-
-<!-- daemon-spawn-timeout: integer: if a daemon dies within this many seconds,
-  it won't be restarted and will will be thought of as being defunct or
-  misconfigured -->
  <daemon-spawn-timeout i="20" />
-<!-- you can define daemoni like this -->
- <mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="tty" command="/usr/sbin/gpm" restart="yes" />
- <mod-daemon id="daemon-apmd" name="APMD" provides="apmd" requires="mount/local" command="/usr/sbin/apmd" restart="yes" />
-
- <mod-daemon id="daemon-metalog" name="syslogger (metalog)" provides="syslog" requires="mount/local" command="/usr/sbin/metalog" restart="yes" />
-
  <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
 <!-- tty initialisation -->
@@ -62,7 +52,7 @@
  <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" TERM="linux" />
 
 <!-- dummy daemon -->
- <mod-daemon id="daemon-dummy" provides="dummyd" requires="audio" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
+ <mod-daemon id="daemon-dummy" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
 
 <!-- mount settings -->
 <!-- default: <mount-fstab-source s="label:configuration:legacy" /> -->
@@ -91,7 +81,7 @@
  <mount-force-writeable-action s="ram-overlay" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual:hostname" />
+  <enable mod="feedback-visual:dummyd" />
  </mode>
  <mode id="boot">
   <enable mod="sysconf" />
@@ -100,7 +90,7 @@
  </mode>
  <mode id="default" base="boot">
   <enable mod="ipc:tty:audio" />
-<!--  <disable mod="hostname" /> -->
+  <disable mod="network" />
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">
