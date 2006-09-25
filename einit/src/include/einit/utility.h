@@ -46,10 +46,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _UTILITY_H
 
 /*!\defgroup utilityfunctionssets eINIT Utility Functions: Sets
- *!\defgroup utilityfunctionshashes eINIT Utility Functions: Hashes
- *!\defgroup utilityfunctionsevents eINIT Utility Functions: Events
- *!\defgroup utilityfunctionsstrings eINIT Utility Functions: String-manipulation
- *!\defgroup utilityfunctionsmem eINIT Utility Functions: Memory-management wrappers
+ * \defgroup utilityfunctionshashes eINIT Utility Functions: Hashes
+ * \defgroup utilityfunctionsevents eINIT Utility Functions: Events
+ * \defgroup utilityfunctionsstrings eINIT Utility Functions: String-manipulation
+ * \defgroup utilityfunctionsmem eINIT Utility Functions: Memory-management wrappers
 */
 #include <inttypes.h>
 #include <einit/event.h>
@@ -57,22 +57,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!\ingroup utilityfunctionssets
  * \{
 */
-#define	SET_TYPE_STRING		0    /*!< Set-type: Set consists of strings */
-#define	SET_NOALLOC		-1   /*!< Set-type: User takes care of (de-)allocating set members */
+#define	SET_TYPE_STRING         0    /*!< Set-type: Set consists of strings */
+#define	SET_NOALLOC            -1   /*!< Set-type: User takes care of (de-)allocating set members */
 
-#define SORT_SET_STRING_LEXICAL	0x01 /*!< Sort string lexically */
-#define SORT_SET_CUSTOM		0xFF /*!< Sort string with a custom sorting function */
+#define SORT_SET_STRING_LEXICAL 0x01 /*!< Sort string lexically */
+#define SORT_SET_CUSTOM         0xFF /*!< Sort string with a custom sorting function */
 
-/*!\brief Hash-Element
- * \ingroup utilityfunctionshashes
+/*!\ingroup utilityfunctionshashes
+ * \brief Hash-Element
  *
- * This struct represent a hash-element. Note that, for this matter, hashes are merely key/value pairs. The key is always a string, the value can be any pointer.
+ * This struct represents a hash-element. Note that, for this matter, hashes are merely key/value pairs. The
+ * key is always a string, the value can be any pointer.
 */
 struct uhash {
- char *key;
- void *value;
- void *luggage;
- struct uhash *next;
+ char *key;          /*!< the key (perl-style; think of it as a variable-name) */
+ void *value;        /*!< the value associated with the key */
+ void *luggage;      /*!< a pointer to an area of memory that is references by the value (will be free()d) */
+ struct uhash *next; /*!< next element */
 };
 
 /*!\brief Combine \b set1 and \b set2.
@@ -202,6 +203,7 @@ char **straddtoenviron (char **environment, char *key, char *value);
  * \param[in,out] hash    the hash to be manipulated
  * \param[in]     key     the name of the variable
  * \param[in]     value   the variable's value
+ * \param[in]     vlen    the size of the element; use either sizeof(), SET_TYPE_STRING or SET_NOALLOC
  * \param[in]     luggage a pointer to an area of memory that was malloc()d for the value
  *                        (will be freed if element is free()d)
  * \return This will manipulate \b hash by adding \b key = \b value to it. It may free( \b hash ).
@@ -238,13 +240,13 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject);
  * \return This function does not return any value.
  *
  * This function will deallocate all resources used by the specified hash, including all luggage-areas. After
- * the function returns, using the free()d hash with any of the hash functions will result in undefined behaviour
- * (usually a SIGSEGV or a SIGBUS, though, so don't do it).
+ * the function returns, using the free()d hash with any of the hash functions will result in undefined
+ * behaviour (usually a SIGSEGV or a SIGBUS, though, so don't do it).
 */
 void hashfree (struct uhash *hash);
 
 /*!\brief Return next hash element
- * \param[in] the hash
+ * \param[in] h the hash
  * \return This function will return the next hash element.
  *
  * This macro can be used to sequentially step through a hash, instead of by keys.
@@ -292,8 +294,8 @@ char *estrdup (char *);
  * \param[in,out] s the string to be modified
  * \return This function does not return any value.
  *
- * This function will remove leading and trailing whitespace (spaces, tabs, newlines, carriage returns, etc.) from
- * the string \s that is given to it. The string will be modified if necessary.
+ * This function will remove leading and trailing whitespace (spaces, tabs, newlines, carriage returns, etc.)
+ * from the string \b s that is given to it. The string will be modified if necessary.
 */
 void strtrim (char *s);
 /*!\}*/

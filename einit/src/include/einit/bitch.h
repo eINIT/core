@@ -20,6 +20,13 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*!\file einit/bitch.h
+ * \brief Error-reporting functions
+ * \author Magnus Deininger
+ *
+ * Error reporting (a.k.a. "bitching") is fairly important, although there's only one function for that so far.
+*/
+
 #ifndef _BITCH_H
 #define _BITCH_H
 
@@ -28,9 +35,15 @@ extern "C"
 {
 #endif
 
-#define BTCH_ERRNO 1
-#define BTCH_DL 2
+#define BTCH_ERRNO 1 /*!< report error from the errno variable */
+#define BTCH_DL 2    /*!< report dynamic linker error */
 
+/*!\brief Bitch about whatever happened just now
+ * \param[in] opt bitwise OR of BTCH_ERRNO and BTCH_DL
+ * \return (int)-1. Don't ask.
+ *
+ * Bitch about whatever happened just now, i.e. report the last error.
+*/
 int bitch (unsigned int opt);
 
 #ifdef __cplusplus
