@@ -269,23 +269,78 @@ void *emalloc (size_t);
  * that this function will not fail.
 */
 void *ecalloc (size_t, size_t);
+
+/*!\brief realloc()-wrapper
+ *
+ * This is a wrapper around realloc(). Usage and return conditions are exactly the same as for realloc(), except
+ * that this function will not fail.
+*/
 void *erealloc (void *, size_t);
+
+/*!\brief strdup()-wrapper
+ *
+ * This is a wrapper around strdup(). Usage and return conditions are exactly the same as for strdup(), except
+ * that this function will not fail.
+*/
 char *estrdup (char *);
 /*!\}*/
 
 /*!\ingroup utilityfunctionsstrings
  * \{
 */
-void strtrim (char *);
+/*!\brief Remove leading and trailing whitespace from string \b s
+ * \param[in,out] s the string to be modified
+ * \return This function does not return any value.
+ *
+ * This function will remove leading and trailing whitespace (spaces, tabs, newlines, carriage returns, etc.) from
+ * the string \s that is given to it. The string will be modified if necessary.
+*/
+void strtrim (char *s);
 /*!\}*/
 
 /*!\ingroup utilityfunctionsevents
  * \{
 */
-void notice (unsigned char, char *);
-struct einit_event *evdup (struct einit_event *);
-struct einit_event *evinit (uint16_t);
-void evdestroy (struct einit_event *);
+/*!\brief Submit textual notice
+ * \param[in] severity a number that is used to indicate the severity of the message
+ * \param[in] message  a string describing something that just happened
+ * \return This function does not return any value.
+ *
+ * This function can be used to log messages, provide debug information or to warn the user if anything weird
+ * just happened. \b severity should be a positive integer between 1 and 20, indicating how important the
+ * \b message is. a \b severity of 10+ indicates DEBUG information, <=5 indicates that the information should
+ * be pointed out to system users, if possible/appropriate.
+ * (The aural feedback module will, by default, vocalise all messages with a severity of <=5 and play them on
+ * the system's default speakers.)
+*/
+void notice (unsigned char severity, char *message);
+
+/*!\brief Duplicate event structure \b ev
+ * \param[in] ev the event structure to be modified
+ * \return This function will return a duplicate of the event structure that it was passed, or NULL on error.
+ *         Any returned event structure should be dealloced with evdestroy once it becomes obsolete.
+ *
+ * This function will duplicate and return the event structure \b ev that is passed to it.
+*/
+struct einit_event *evdup (struct einit_event *ev);
+
+/*!\brief Initialise event structure of type \b type
+ * \param[in] type the type of the structure that is to be initalised.
+ * \return This function will return a new event structure, or NULL on error.
+ *         Any returned event structure should be dealloced with evdestroy once it becomes obsolete.
+ *
+ * This function will create and return a new event structure of type \b type.
+*/
+struct einit_event *evinit (uint16_t type);
+
+/*!\brief Destroy event structure \b ev
+ * \param[in,out] ev the event to be destroyed.
+ * \return This function does not return any value.
+ *
+ * This function will deallocate all resources that had been used to create the event structure \b ev. After this
+ * function has run, \b ev will be invalid and attempting to use it will result in undefined behaviour.
+*/
+void evdestroy (struct einit_event *ev);
 /*!\}*/
 
 #endif /* _UTILITY_H */
