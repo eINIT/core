@@ -314,6 +314,25 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  } \
 }
 
+#define wait_on_subthreads(subthreads) \
+{\
+ uint32_t u; \
+ if (subthreads) {\
+  for (u = 0; subthreads[u]; u++)\
+   pthread_join (*(subthreads[u]), NULL);\
+\
+  free (subthreads); subthreads = NULL;\
+ }\
+}
+
+#define run_or_spawn_subthreads_and_wait(set,function,plan,tstatus)\
+{\
+ pthread_t **subthreads = NULL;\
+\
+ run_or_spawn_subthreads(set, function, plan, subthreads, tstatus);\
+ wait_on_subthreads (subthreads);\
+}
+
 // the un-loader function
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
@@ -339,24 +358,14 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
     }
    }
 
-   if (subthreads) {
-    for (u = 0; subthreads[u]; u++)
-     pthread_join (*(subthreads[u]), NULL);
-
-    free (subthreads); subthreads = NULL;
-   }
+   wait_on_subthreads (subthreads);
 
    node->status = mod (MOD_DISABLE, node->mod[i]);
   }
  } else if (node->group) {
   run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED);
 
-  if (subthreads) {
-   for (u = 0; subthreads[u]; u++)
-    pthread_join (*(subthreads[u]), NULL);
-
-   free (subthreads); subthreads = NULL;
-  }
+  wait_on_subthreads (subthreads);
   node->status |= STATUS_DISABLED;
  }
 
@@ -386,14 +395,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    char **services = (node->mod[i]->module) ? node->mod[i]->module->requires : NULL;
 
    if (services)
-    run_or_spawn_subthreads (services,mod_plan_commit_recurse_enable,node->plan,subthreads,STATUS_ENABLED);
-
-   if (subthreads) {
-    for (u = 0; subthreads[u]; u++)
-     pthread_join (*(subthreads[u]), NULL);
-
-    free (subthreads); subthreads = NULL;
-   }
+    run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
 
    if ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED) break;
   }
@@ -504,12 +506,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (plan->reset)
   run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,subthreads,0);
 
- if (subthreads) {
-  for (u = 0; subthreads[u]; u++)
-   pthread_join (*(subthreads[u]), NULL);
-
-  free (subthreads); subthreads = NULL;
- }
+ wait_on_subthreads (subthreads);
 
  if (plan->unavailable) {
   char tmp[2048], tmp2[2048];
