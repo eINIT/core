@@ -198,17 +198,76 @@ char **straddtoenviron (char **environment, char *key, char *value);
 /*!\ingroup utilityfunctionshashes
  * \{
 */
-struct uhash *hashadd (struct uhash *, char *, void *, int32_t, void *);
-struct uhash *hashfind (struct uhash *, char *);
-struct uhash *hashdel (struct uhash *, struct uhash *);
-void hashfree (struct uhash *);
+/*!\brief Add the \b key with \b value to \b hash.
+ * \param[in,out] hash    the hash to be manipulated
+ * \param[in]     key     the name of the variable
+ * \param[in]     value   the variable's value
+ * \param[in]     luggage a pointer to an area of memory that was malloc()d for the value
+ *                        (will be freed if element is free()d)
+ * \return This will manipulate \b hash by adding \b key = \b value to it. It may free( \b hash ).
+ *         You will need to hashfree() the returned hash once you're done with it.
+ *
+ * This is used to add hash elements to a hash, or to initialise it. You may point the luggage variable to
+ * an area of memory that is to be free()d if the corresponding element is free()d.
+*/
+struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen, void *luggage);
+
+/*!\brief Find the \b key in \b hash.
+ * \param[in] hash    the hash to be manipulated
+ * \param[in] key     the name of the variable
+ * \return This will return a pointer to the hash element that is identified by the \b key. You should not
+ *         modify anything but the value and luggage fields in the returned element.
+ *
+ * This is used to find hash elements in a hash.
+*/
+struct uhash *hashfind (struct uhash *hash, char *key);
+
+/*!\brief Delete the \b subject from the hash \b cur.
+ * \param[in,out] cur     the hash to be manipulated
+ * \param[in]     subject the hash element to be deleted
+ * \return This will return a pointer to the first hash element you passed to it, or to the first element after
+ *         \b subject has been erased.
+ *
+ * This function will delete an element from a hash. It will also free() any resources allocated by other hash
+ * functions for the element in question, and it will erase any \b luggage if it has been defined.
+*/
+struct uhash *hashdel (struct uhash *cur, struct uhash *subject);
+
+/*!\brief Free ( \b hash ).
+ * \param[in] hash the hash to be free()d
+ * \return This function does not return any value.
+ *
+ * This function will deallocate all resources used by the specified hash, including all luggage-areas. After
+ * the function returns, using the free()d hash with any of the hash functions will result in undefined behaviour
+ * (usually a SIGSEGV or a SIGBUS, though, so don't do it).
+*/
+void hashfree (struct uhash *hash);
+
+/*!\brief Return next hash element
+ * \param[in] the hash
+ * \return This function will return the next hash element.
+ *
+ * This macro can be used to sequentially step through a hash, instead of by keys.
+*/
 #define hashnext(h) h->next
 /*!\}*/
 
 /*!\ingroup utilityfunctionsmem
  * \{
 */
+
+/*!\brief malloc()-wrapper
+ *
+ * This is a wrapper around malloc(). Usage and return conditions are exactly the same as for malloc(), except
+ * that this function will not fail.
+*/
 void *emalloc (size_t);
+
+/*!\brief calloc()-wrapper
+ *
+ * This is a wrapper around calloc(). Usage and return conditions are exactly the same as for calloc(), except
+ * that this function will not fail.
+*/
 void *ecalloc (size_t, size_t);
 void *erealloc (void *, size_t);
 char *estrdup (char *);
