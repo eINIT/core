@@ -1,3 +1,6 @@
+2006/09/27: mdeininger
+ * enabling a group should now associate the correct modules with the group.
+
 2006/09/26: mdeininger
  * enhanced documentation (a little)
  * minor cleanups

@@ -397,11 +397,13 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    if (services)
     run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
 
-   if ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED) break;
+   if ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED) {
+    node->pos = i;
+    break;
+   }
   }
  } else if (node->group) {
 /* implement proper group logic here */
-/* BUG: need to find the module that was actually enabled, shouldn't assume 0 */
   resume_group_enable:
   if ((node->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) || (node->options & MOD_PLAN_GROUP_SEQ_ANY)) {
    for (u = 0; node->group[u]; u++) {
@@ -411,7 +413,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
      mod_plan_commit_recurse_enable (cnode);
 
      if (cnode->status & STATUS_ENABLED) {
-      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
+      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
       node->status = STATUS_ENABLED;
       goto exit;
      }
@@ -425,7 +427,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
      mod_plan_commit_recurse_enable (cnode);
 
      if (cnode->status & STATUS_ENABLED) {
-      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
+      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
       node->status |= STATUS_ENABLED;
      }
     }
@@ -438,7 +440,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
      mod_plan_commit_recurse_enable (cnode);
 
      if (cnode->status & STATUS_ENABLED) {
-      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[0], node->service);
+      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
       node->status |= STATUS_ENABLED;
      }
     }

@@ -86,6 +86,7 @@ struct mloadplan {
 struct mloadplan_node {
  char *service;          /*!< Name of this node's service. */
  uint32_t status;        /*!< This service's status. */
+ uint32_t pos;           /*!< Current position */
  struct lmodule **mod;   /*!< Modules that are to be used. */
  char **group;           /*!< List of other services that form a group to provide this service. */
  uint32_t options;       /*!< Node-options; reserved */
