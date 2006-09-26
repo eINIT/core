@@ -153,10 +153,15 @@ void notice_event_handler(struct einit_event *ev) {
  return;
 }
 
+/* BUG: using popen/pclose might interfere with the scheduler's zombie-auto-reaping code */
 void synthesize (char *string) {
- FILE *px = popen (synthesizer, "w");;
+ FILE *px = popen (synthesizer, "w");
 
- fputs (string, px);
+ if (px) {
+  fputs (string, px);
 
- pclose (px);
+  if (pclose (px) == -1)
+   perror ("tts: pclose");
+ } else
+  perror ("tts: popen");
 }
