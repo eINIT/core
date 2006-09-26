@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/pexec.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #define EXPECTED_EIV 1
 
@@ -72,15 +73,16 @@ struct lmodule *self_l = NULL;
 
 void comment_event_handler(struct einit_event *);
 void notice_event_handler(struct einit_event *);
+void synthesize (char *);
 char *synthesizer;
 int sev_threshold = 2;
 
 int configure (struct lmodule *this) {
  pexec_configure (this);
 
- struct cfgnode *node = cfg_findnode ("tts-synthesizer-command", 0, NULL);
- if (node && node->svalue)
-  synthesizer = node->svalue;
+ struct cfgnode *node;
+
+ synthesizer = cfg_getstring ("tts-synthesizer-command", NULL);
 
  if (node = cfg_findnode ("tts-vocalising-threshold", 0, NULL))
   sev_threshold = node->value;
@@ -126,12 +128,7 @@ void comment_event_handler(struct einit_event *ev) {
   }
  }
 
- if (synthesizer && phrase[0]) {
-  strtrim (ev->string);
-
-  snprintf (cmd, 2048, synthesizer, phrase);
-  pexec (cmd, NULL, 0, 0, NULL, ev);
- }
+ synthesize (phrase);
 
  pthread_mutex_unlock (&self_l->imutex);
  return;
@@ -148,11 +145,18 @@ void notice_event_handler(struct einit_event *ev) {
 
   if (!(tx = strrchr (ev->string, ':'))) tx = ev->string;
   else tx ++;
-  snprintf (cmd, 2048, synthesizer, tx);
 
-  pexec (cmd, NULL, 0, 0, NULL, ev);
+  synthesize (tx);
  }
 
  pthread_mutex_unlock (&self_l->imutex);
  return;
+}
+
+void synthesize (char *string) {
+ FILE *px = popen (synthesizer, "w");;
+
+ fputs (string, px);
+
+ pclose (px);
 }
