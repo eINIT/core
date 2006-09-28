@@ -285,11 +285,20 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
 /*
 unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
  char *fsdata = NULL;
+// unsigned long mntflags = MS_MANDLOCK;
+ unsigned long mntflags = 0;
 
  if (fse->options) {
   int fi = 0;
   for (; fse->options[fi]; fi++) {
-   if (!fsdata) {
+   if (!strcmp (fse->options[fi], "noatime")) mntflags |= MS_NOATIME;
+   else if (!strcmp (fse->options[fi], "nodev")) mntflags |= MS_NODEV;
+   else if (!strcmp (fse->options[fi], "nodiratime")) mntflags |= MS_NODIRATIME;
+   else if (!strcmp (fse->options[fi], "ro")) mntflags |= MS_RDONLY;
+   else if (!strcmp (fse->options[fi], "nomand")) mntflags ^= MS_MANDLOCK;
+   else if (!strcmp (fse->options[fi], "nosuid")) mntflags |= MS_NOSUID;
+   else if (!strcmp (fse->options[fi], "remount")) mntflags |= MS_REMOUNT;
+   else if (!fsdata) {
     uint32_t slen = strlen (fse->options[fi])+1;
     fsdata = ecalloc (1, slen);
     memcpy (fsdata, fse->options[fi], slen);
@@ -303,9 +312,9 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
  }
 
 #ifndef SANDBOX
- if (mount (source, mountpoint, fstype, 0, fsdata) == -1) {
+ if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1) {
   if (errno == EBUSY) {
-   if (mount (source, mountpoint, fstype, MS_REMOUNT, fsdata) == -1) goto mount_panic;
+   if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
   } else {
    mount_panic:
    if (errno < sys_nerr)

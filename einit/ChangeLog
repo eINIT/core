@@ -1,4 +1,7 @@
 2006/09/27: mdeininger
+ * added support for some more mount flags
+
+2006/09/27: mdeininger
  * enabling a group should now associate the correct modules with the group.
  * cleanups, conceptual changes
  * made tts comment/notice handler more robust
