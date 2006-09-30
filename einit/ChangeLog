@@ -3,7 +3,8 @@
    one to do what einit's supposed to do.
  * switched to semaphores on some functions, better handling of wait() (at
    least on system that support wait()-ing on other threads' childrean, i.e.
-   at least linux >= 2.4 without uclibc)
+   at least linux >= 2.4 without uclibc and it seems to work flawlessly on
+   osx 10.4, except that semaphores seem to use lots of CPU power...)
 
 2006/09/27: mdeininger
  * added support for some more mount flags

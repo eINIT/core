@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
  }
 // printf ("eINIT %s: booting %s: initialising\n", EINIT_VERSION_LITERAL, osinfo.sysname);
  pid = getpid();
-/* if ((pid = getpid()) == 1)*/ einit_sub = fork();
+ if ((pid = getpid()) == 1) einit_sub = fork();
 
  if (einit_sub) {
   int rstatus;

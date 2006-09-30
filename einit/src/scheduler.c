@@ -346,7 +346,9 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid()))) {
 #else
 /* only shut down if the SIGINT was sent by process 1 or by the parent process */
- if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) {
+/* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
+// note: this relies on a proper pthreads() implementation so... i deactivated it for now.
+ {
 #endif
   sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
   sched_queue (SCHEDULER_POWER_RESET, NULL);
@@ -498,8 +500,6 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 }
 
 #else
-int child_status_changed = 0;
-
 void *sched_run_sigchild (void *p) {
  int i, l, status, check;
  pid_t pid;
