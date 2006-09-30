@@ -73,6 +73,7 @@ int cleanup ();
 
 #ifdef LINUX
 #include <linux/reboot.h>
+#endif
 
 int epoweroff () {
  stack_t curstack;
@@ -90,6 +91,7 @@ int epoweroff () {
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
  sem_destroy (sigchild_semaphore);
+ free (sigchild_semaphore);
 #elif defined(DARWIN)
  sem_close (sigchild_semaphore);
 #else
@@ -97,6 +99,7 @@ int epoweroff () {
   sem_close (sigchild_semaphore);
 #endif
 
+#ifdef LINUX
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_POWER_OFF);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
@@ -105,6 +108,10 @@ int epoweroff () {
  exit (EXIT_FAILURE);
 #else
  notice (1, "compiled in sandbox-mode: not sending power-off command");
+ exit (EXIT_SUCCESS);
+#endif
+#else
+ notice (1, "no support for power-off command");
  exit (EXIT_SUCCESS);
 #endif
 }
@@ -123,6 +130,7 @@ int epowerreset () {
   notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
  }
 
+#ifdef LINUX
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_RESTART);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
@@ -133,8 +141,11 @@ int epowerreset () {
  notice (1, "compiled in sandbox-mode: not sending reboot command");
  exit (EXIT_SUCCESS);
 #endif
-}
+#else
+ notice (1, "no support for power-off command");
+ exit (EXIT_SUCCESS);
 #endif
+}
 
 int sched_switchmode (char *mode) {
  if (!mode) return -1;
@@ -206,22 +217,24 @@ void sched_init () {
  pthread_mutex_lock (&schedthreadsigchildmutex);
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sigchild_semaphore = calloc (1, sizeof(sem_t));
+ sigchild_semaphore = ecalloc (1, sizeof (sem_t));
  sem_init (sigchild_semaphore, 0, 0);
 #elif defined(DARWIN)
  snprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
 
- if ((sigchild_semaphore = sem_open ("/einit-sigchild-semaphore", O_CREAT | O_RDWR, 0) == SEM_FAILED)) {
+ if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
   perror ("scheduler: semaphore setup");
   exit (EXIT_FAILURE);
  }
 #else
 #warning no proper or recognised semaphores implementation, i can't promise this code will work.
 /* let's just hope for the best... */
- sigchild_semaphore = calloc (1, sizeof(sem_t));
+ sigchild_semaphore = ecalloc (1, sizeof (sem_t));
  if (sem_init (sigchild_semaphore, 0, 0) == -1) {
   free (sigchild_semaphore);
-  if ((sigchild_semaphore = sem_open ("/einit-sigchild-semaphore", O_CREAT, 0) == SEM_FAILED)) {
+  snprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
+
+  if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
    perror ("scheduler: semaphore setup");
    exit (EXIT_FAILURE);
   }
