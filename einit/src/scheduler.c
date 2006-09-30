@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <sys/reboot.h>
 #include <einit/module-logic.h>
+#include <semaphore.h>
 
 pthread_cond_t schedthreadcond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t schedthreadsigchildcond = PTHREAD_COND_INITIALIZER;
@@ -58,6 +59,8 @@ pthread_mutex_t schedthreadmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedthreadsigchildmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedschedulemodmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
+
+sem_t sigchild_semaphore;
 
 char *currentmode = "void";
 char *newmode = "void";
@@ -202,11 +205,15 @@ void sched_init () {
 
 /* create our sigchld-scheduler-thread right away */
  pthread_mutex_lock (&schedthreadsigchildmutex);
- pthread_create (&schedthreadsigchild, NULL, sched_run_sigchild, NULL);
+
+ sem_init (&sigchild_semaphore, 0, 0);
+
+ pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
+
+ sigemptyset(&(action.sa_mask));
 
 /* signal handlers */
  action.sa_sigaction = sched_signal_sigchld;
- sigemptyset(&(action.sa_mask));
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
 // SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
 
@@ -242,6 +249,7 @@ int sched_queue (unsigned int task, void *param) {
 int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  struct spidcb *nele;
  pthread_mutex_lock (&schedcpidmutex);
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
   if (sched_deadorphans) {
    struct spidcb *start = sched_deadorphans, *prev = NULL, *cur = start;
    for (; cur; cur = cur->next) {
@@ -265,6 +273,7 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
      prev = cur;
    }
   }
+#endif
   nele = ecalloc (1, sizeof (struct spidcb));
   nele->pid = pid;
   nele->cfunc = function;
@@ -273,6 +282,7 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
   nele->next = cpids;
  cpids = nele;
  pthread_mutex_unlock (&schedcpidmutex);
+ sem_post (&sigchild_semaphore);
 }
 
 void *sched_run (void *p) {
@@ -329,117 +339,18 @@ void *sched_run (void *p) {
  }
 }
 
-void *sched_run_sigchild (void *p) {
- int i, l, status;
- pid_t pid;
- pthread_detach (schedthreadsigchild);
- int check;
- while (1) {
-  pthread_mutex_lock (&schedcpidmutex);
-  struct spidcb *start = cpids, *prev = NULL, *cur = start;
-  check = 0;
-  for (; cur; cur = cur->next) {
-   pid = cur->pid;
-   if (cur->dead) {
-    check++;
-
-    if (cur->cfunc) {
-     pthread_t th;
-     pthread_create (&th, NULL, (void *(*)(void *))cur->cfunc, (void *)cur);
-     pthread_detach (th);
-    }
-
-     if (prev)
-      prev->next = cur->next;
-     else
-      cpids = cur->next;
-
-    break;
-   }
-   if (start != cpids) {
-    cur = cpids;
-    start = cur;
-    prev = NULL;
-   } else
-    prev = cur;
-  }
-  pthread_mutex_unlock (&schedcpidmutex);
-  if (!check) {
-   pthread_cond_wait (&schedthreadsigchildcond, &schedthreadsigchildmutex);
-  }
- }
-}
-
-/* signal handlers */
-
-/* apparently some of the pthread*() functions aren't asnyc-safe... still it
-   appears to be working, so... */
-
-/* I came up with this pretty cheap solution to prevent deadlocks while still being able to use mutexes */
-void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
- char known = 0;
- pthread_mutex_lock (&schedcpidmutex);
- struct spidcb *cur = cpids;
-  for (; cur; cur = cur->next) {
-   if (cur->pid == (pid_t)nele->pid) {
-    known++;
-    cur->status = nele->status;
-    cur->dead = 1;
-    free (nele);
-    break;
-   }
-  }
-
-  if (!known) {
-   nele->cfunc = NULL;
-   nele->dead = 1;
-
-   nele->next = sched_deadorphans;
-   sched_deadorphans = nele;
-  }
- pthread_mutex_unlock (&schedcpidmutex);
-
-// sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
- pthread_cond_signal (&schedthreadsigchildcond);
-}
-
-/* this should prevent any zombies from being created */
-void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- int i, status;
- pid_t pid;
- struct spidcb *nele;
- pthread_t th;
-
- while (pid = waitpid (-1, &status, WNOHANG)) {
-  if (pid == -1) {
-   break;
-  }
-//  fprintf (stderr, "scheduler: %i died\n", (pid_t)pid);
-
-  nele = ecalloc (1, sizeof (struct spidcb));
-  nele->pid = pid;
-  nele->status = status;
-
-  if (pthread_create (&th, NULL, (void *(*)(void *))sched_signal_sigchld_addentrythreadfunction, (void *)nele)) {
-   fprintf (stdout, "couldn't create sigchld thread: %s\n", strerror (errno));
-  } else
-   pthread_detach (th);
- }
-
- return;
-}
-
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
-
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #ifdef LINUX
- if (siginfo->si_code == SI_KERNEL) {
+/* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
+ if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid()))) {
+#else
+/* only shut down if the SIGINT was sent by process 1 or by the parent process */
+ if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) {
 #endif
   sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
   sched_queue (SCHEDULER_POWER_RESET, NULL);
-#ifdef LINUX
  }
-#endif
  return;
 }
 
@@ -484,3 +395,156 @@ void sched_event_handler(struct einit_event *event) {
  }
 }
 
+/* BUG: linux pthread-libraries on kernel <= 2.4 can not wait on other threads' children, thus
+        when doing a ./configure, you have to specify the option --pthread-wait-bug. these functions
+        are buggy too, though, and subject to racing bugs. */
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
+void *sched_run_sigchild (void *p) {
+ int i, l, status;
+ pid_t pid;
+ pthread_detach (schedthreadsigchild);
+ int check;
+ while (1) {
+  pthread_mutex_lock (&schedcpidmutex);
+  struct spidcb *start = cpids, *prev = NULL, *cur = start;
+  check = 0;
+  for (; cur; cur = cur->next) {
+   pid = cur->pid;
+   if (cur->dead) {
+    check++;
+
+    if (cur->cfunc) {
+     pthread_t th;
+     pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
+    }
+
+    if (prev)
+     prev->next = cur->next;
+    else
+     cpids = cur->next;
+
+    break;
+   }
+   if (start != cpids) {
+    cur = cpids;
+    start = cur;
+    prev = NULL;
+   } else
+    prev = cur;
+  }
+  pthread_mutex_unlock (&schedcpidmutex);
+  if (!check) {
+   sem_wait (&sigchild_semaphore);
+  }
+ }
+}
+
+/* signal handlers */
+
+/* apparently some of the pthread*() functions aren't asnyc-safe... still it
+   appears to be working, so... */
+
+/* I came up with this pretty cheap solution to prevent deadlocks while still being able to use mutexes */
+void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
+ char known = 0;
+ pthread_mutex_lock (&schedcpidmutex);
+ struct spidcb *cur = cpids;
+  for (; cur; cur = cur->next) {
+   if (cur->pid == (pid_t)nele->pid) {
+    known++;
+    cur->status = nele->status;
+    cur->dead = 1;
+    free (nele);
+    break;
+   }
+  }
+
+  if (!known) {
+   nele->cfunc = NULL;
+   nele->dead = 1;
+
+   nele->next = sched_deadorphans;
+   sched_deadorphans = nele;
+  }
+ pthread_mutex_unlock (&schedcpidmutex);
+
+// sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
+ sem_post (&sigchild_semaphore);
+}
+
+/* this should prevent any zombies from being created */
+void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
+ int i, status;
+ pid_t pid;
+ struct spidcb *nele;
+ pthread_t th;
+
+ while (pid = waitpid (-1, &status, WNOHANG)) {
+  if (pid == -1) {
+   break;
+  }
+//  fprintf (stderr, "scheduler: %i died\n", (pid_t)pid);
+
+  nele = ecalloc (1, sizeof (struct spidcb));
+  nele->pid = pid;
+  nele->status = status;
+
+  if (pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))sched_signal_sigchld_addentrythreadfunction, (void *)nele)) {
+   fprintf (stdout, "couldn't create sigchld thread: %s\n", strerror (errno));
+  }
+ }
+
+ return;
+}
+
+#else
+int child_status_changed = 0;
+
+void *sched_run_sigchild (void *p) {
+ int i, l, status, check;
+ pid_t pid;
+ while (1) {
+  pthread_mutex_lock (&schedcpidmutex);
+  struct spidcb *start = cpids, *prev = NULL, *cur = start;
+  check = 0;
+  for (; cur; cur = cur->next) {
+   pid = cur->pid;
+   if ((!cur->dead) && (waitpid (pid, &status, WNOHANG) > 0)) {
+    if (WIFEXITED(status) || WIFSIGNALED(status)) cur->dead = 1;
+   }
+
+   if (cur->dead) {
+    check++;
+    if (cur->cfunc) {
+     pthread_t th;
+     pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
+    }
+
+    if (prev)
+     prev->next = cur->next;
+    else
+     cpids = cur->next;
+
+    break;
+   }
+
+   if (start != cpids) {
+    cur = cpids;
+    start = cur;
+    prev = NULL;
+   } else
+    prev = cur;
+  }
+  pthread_mutex_unlock (&schedcpidmutex);
+  if (!check) {
+   sem_wait (&sigchild_semaphore);
+  }
+ }
+}
+
+void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
+ sem_post (&sigchild_semaphore);
+
+ return;
+}
+#endif

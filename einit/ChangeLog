@@ -1,3 +1,10 @@
+2006/09/30: mdeininger
+ * einit now forks into two processes at startup: one to do the init-auto-wait,
+   one to do what einit's supposed to do.
+ * switched to semaphores on some functions, better handling of wait() (at
+   least on system that support wait()-ing on other threads' childrean, i.e.
+   at least linux >= 2.4 without uclibc)
+
 2006/09/27: mdeininger
  * added support for some more mount flags
 

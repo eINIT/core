@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <einit/bitch.h>
 #include <einit/config.h>
@@ -51,12 +52,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <time.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 
 int main(int, char **);
 int print_usage_info ();
 int ipc_process (char *);
 int ipc_wait ();
 int cleanup ();
+
+pid_t einit_sub = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 
@@ -71,8 +75,14 @@ int cleanup () {
 // bitch (BTCH_DL + BTCH_ERRNO);
 }
 
+void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
+ kill (einit_sub, SIGINT);
+}
+
 int main(int argc, char **argv) {
  int i, stime;
+ pid_t pid = 0, wpid = 0;
+
 #ifdef SANDBOX
  char *cfgfile = "etc/einit/sandbox.xml";
 #else
@@ -99,29 +109,56 @@ int main(int argc, char **argv) {
    }
  }
 // printf ("eINIT %s: booting %s: initialising\n", EINIT_VERSION_LITERAL, osinfo.sysname);
- stime = time(NULL);
- printf ("eINIT " EINIT_VERSION_LITERAL ": booting %s: Initialising\n", osinfo.sysname);
+ pid = getpid();
+/* if ((pid = getpid()) == 1)*/ einit_sub = fork();
 
- if (pthread_attr_init (&thread_attribute_detached)) {
-  fputs ("pthread initialisation failed.\n", stderr);
-  return -1;
- } else
-  pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
+ if (einit_sub) {
+  int rstatus;
+  struct sigaction action;
 
- if (cfg_load (cfgfile) == -1) {
-  fputs ("ERROR: cfg_load() failed\n", stderr);
-  return -1;
+/* signal handlers */
+  action.sa_sigaction = einit_sigint;
+  sigemptyset(&(action.sa_mask));
+  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER;
+  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
+
+  while (1) {
+   wpid = waitpid(-1, &rstatus, 0);
+
+   if (wpid == einit_sub) {
+    if (WIFEXITED(rstatus))
+     exit (EXIT_SUCCESS);
+    if (WIFSIGNALED(rstatus)) {
+     puts ("eINIT terminated by a signal...");
+     exit (EXIT_FAILURE);
+    }
+   }
+  }
+ } else {
+  stime = time(NULL);
+  printf ("eINIT " EINIT_VERSION_LITERAL ": booting %s: Initialising\n", osinfo.sysname);
+
+  if (pthread_attr_init (&thread_attribute_detached)) {
+   fputs ("pthread initialisation failed.\n", stderr);
+   return -1;
+  } else
+   pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
+
+  if (cfg_load (cfgfile) == -1) {
+   fputs ("ERROR: cfg_load() failed\n", stderr);
+   return -1;
+  }
+  mod_scanmodules ();
+  sched_init ();
+
+  sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
+  sched_queue (SCHEDULER_SWITCH_MODE, "default");
+
+  printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
+  sched_run (NULL);
+
+  cleanup ();
+
+  return 0;
  }
- mod_scanmodules ();
- sched_init ();
-
- sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
- sched_queue (SCHEDULER_SWITCH_MODE, "default");
-
- printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
- sched_run (NULL);
-
- cleanup ();
-
- return 0;
 }

@@ -72,6 +72,9 @@ for param in $@; do
 	elif test "$param" = "--use-posix-regex"; then
 		echo -n " REGEX";
 		XCFLAGS="$XCFLAGS -DPOSIXREGEX";
+	elif test "$param" = "--pthread-wait-bug"; then
+		echo -n " PTHREAD-WAIT-BUG";
+		XCFLAGS="$XCFLAGS -DBUGGY_PTHREAD_CHILD_WAIT_HANDLING";
 	fi;
 done;
 echo " ]";
@@ -86,8 +89,11 @@ Options:
  --enable-linux         enable compilation of linux-specific modules
  --enable-bsd           enable compilation of bsd-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
- --bitch-a-lot          tell all programs used to compile and link to be more... verbose
+ --bitch-a-lot          tell all programs used to compile and link to be more
+                        verbose
  --use-posix-regex      use posix.2 regular expressions
+ --pthread-wait-bug     some pthreads implementations don't allow all threads
+                        in one process to wait on other processes' children
  --sandbox              #define SANDBOX and set prefix=\`pwd\`/sandbox
  --debug                will #define DEBUG.
  --help                 display this text and exit.";
