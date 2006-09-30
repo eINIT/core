@@ -60,7 +60,7 @@ pthread_mutex_t schedthreadsigchildmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedschedulemodmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
-sem_t sigchild_semaphore;
+sem_t *sigchild_semaphore;
 
 char *currentmode = "void";
 char *newmode = "void";
@@ -87,6 +87,15 @@ int epoweroff () {
  } else {
   notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
  }
+
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+ sem_destroy (sigchild_semaphore);
+#elif defined(DARWIN)
+ sem_close (sigchild_semaphore);
+#else
+ if (sem_destroy (sigchild_semaphore))
+  sem_close (sigchild_semaphore);
+#endif
 
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_POWER_OFF);
@@ -124,17 +133,6 @@ int epowerreset () {
  notice (1, "compiled in sandbox-mode: not sending reboot command");
  exit (EXIT_SUCCESS);
 #endif
-}
-#else
-int epoweroff () {
- pthread_cond_destroy (&schedthreadcond);
- pthread_mutex_destroy (&schedthreadmutex);
- exit (EXIT_SUCCESS);
-}
-int epowerreset () {
- pthread_cond_destroy (&schedthreadcond);
- pthread_mutex_destroy (&schedthreadmutex);
- exit (EXIT_SUCCESS);
 }
 #endif
 
@@ -196,6 +194,7 @@ int sched_modaction (char **argv) {
 }
 
 void sched_init () {
+ char tmp[1024];
  struct sigaction action;
 
  signalstack.ss_sp = emalloc (SIGSTKSZ);
@@ -206,7 +205,28 @@ void sched_init () {
 /* create our sigchld-scheduler-thread right away */
  pthread_mutex_lock (&schedthreadsigchildmutex);
 
- sem_init (&sigchild_semaphore, 0, 0);
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+ sigchild_semaphore = calloc (1, sizeof(sem_t));
+ sem_init (sigchild_semaphore, 0, 0);
+#elif defined(DARWIN)
+ snprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
+
+ if ((sigchild_semaphore = sem_open ("/einit-sigchild-semaphore", O_CREAT | O_RDWR, 0) == SEM_FAILED)) {
+  perror ("scheduler: semaphore setup");
+  exit (EXIT_FAILURE);
+ }
+#else
+#warning no proper or recognised semaphores implementation, i can't promise this code will work.
+/* let's just hope for the best... */
+ sigchild_semaphore = calloc (1, sizeof(sem_t));
+ if (sem_init (sigchild_semaphore, 0, 0) == -1) {
+  free (sigchild_semaphore);
+  if ((sigchild_semaphore = sem_open ("/einit-sigchild-semaphore", O_CREAT, 0) == SEM_FAILED)) {
+   perror ("scheduler: semaphore setup");
+   exit (EXIT_FAILURE);
+  }
+ }
+#endif
 
  pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
 
@@ -282,7 +302,7 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
   nele->next = cpids;
  cpids = nele;
  pthread_mutex_unlock (&schedcpidmutex);
- sem_post (&sigchild_semaphore);
+ sem_post (sigchild_semaphore);
 }
 
 void *sched_run (void *p) {
@@ -436,7 +456,7 @@ void *sched_run_sigchild (void *p) {
   }
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
-   sem_wait (&sigchild_semaphore);
+   sem_wait (sigchild_semaphore);
   }
  }
 }
@@ -471,7 +491,7 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
  pthread_mutex_unlock (&schedcpidmutex);
 
 // sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
- sem_post (&sigchild_semaphore);
+ sem_post (sigchild_semaphore);
 }
 
 /* this should prevent any zombies from being created */
@@ -537,13 +557,13 @@ void *sched_run_sigchild (void *p) {
   }
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
-   sem_wait (&sigchild_semaphore);
+   sem_wait (sigchild_semaphore);
   }
  }
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- sem_post (&sigchild_semaphore);
+ sem_post (sigchild_semaphore);
 
  return;
 }
