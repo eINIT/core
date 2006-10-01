@@ -51,28 +51,63 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 
 /* filesystem header files */
-#include <linux/ext2_fs.h>
-#include <linux/ext3_fs.h>
-
+/* i kept the original designators where appropriate */
 /* NOTE: i seem to have trouble #include-ing the reiserfs-headers, and since i don't want to #include an
  excessive amount of headers just to read a filesystem's label, i'll be a cheapo and just create a very
  simple struct that only contains the information that i really need */
 
 struct reiserfs_super_block {
  uint32_t s_block_count;
- char na_1[40];
+ char     na_1[40];
  uint16_t s_blocksize;
- char na_2[4];
+ char     na_2[4];
  uint16_t s_umount_state;
- char s_magic[10]; /* i kept the original designators where appropriate */
+ char     s_magic[10];
  uint16_t s_fs_state;
- char na_3[0x14];
- char s_uuid[16];
- char s_label[16];
- char s_unused[88];
+ char     na_3[0x14];
+ char     s_uuid[16];
+ char     s_label[16];
+ char     s_unused[88];
 };
 
-/* now that i think about it, i might as well do the same for ext2/3 */
+/* now that i think about it, i might as well do the same for ext2/3:
+   (this should fix a reported bug about this module not compiling properly) */
+struct ext2_super_block {
+ uint32_t s_inodes_count;
+ uint32_t s_blocks_count;
+ uint32_t s_r_blocks_count;
+ uint32_t na_1[3];
+ uint32_t s_log_block_size;
+ uint32_t s_log_frag_size;
+ uint32_t s_blocks_per_group;
+ uint32_t s_frags_per_group;
+ uint32_t s_inodes_per_group;
+ uint32_t s_mtime;
+ uint32_t s_wtime;
+ uint16_t s_mnt_count;
+ uint16_t s_max_mnt_count;
+ uint16_t s_magic;
+ uint16_t s_state;
+ uint16_t s_errors;
+ uint16_t s_minor_rev_level;
+ uint32_t s_lastcheck;
+ uint32_t s_checkinterval;
+ uint32_t s_creator_os;
+ uint32_t s_rev_level;
+ uint16_t na_2[12];
+ uint8_t  s_uuid[16];
+ char     s_volume_name[16];
+ char     s_last_mounted[64];
+ uint32_t s_reserved[222];
+};
+
+// from ext2 kernel header files
+#define EXT2_GOOD_OLD_REV 0
+#define EXT2_DYNAMIC_REV  1
+#define EXT2_VALID_FS     0x0001
+#define EXT2_ERROR_FS     0x0002
+#define EXT2_SUPER_MAGIC  0xEF53
+
 
 #if 0
 #include <linux/nfs.h>
@@ -123,7 +158,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  struct reiserfs_super_block reiser_sb;
  struct bd_info *bdi;
  uint32_t cdev = 0;
- __u8 uuid[16];
+ uint8_t uuid[16];
  char c_uuid[38];
  char tmp[1024];
 
