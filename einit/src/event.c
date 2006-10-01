@@ -126,6 +126,8 @@ void function_register (char *name, uint32_t version, void *function) {
  pthread_mutex_lock (&pof_mutex);
   exported_functions = hashadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
  pthread_mutex_unlock (&pof_mutex);
+
+ free (fstruct);
 }
 
 void **function_find (char *name, uint32_t version, char **sub) {

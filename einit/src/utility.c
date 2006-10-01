@@ -147,47 +147,53 @@ void **setadd (void **set, void *item, int32_t esize) {
  char *strbuffer = NULL;
  uint32_t count = 0, size = 0;
  if (!item) return NULL;
- if (!set) set = ecalloc (1, sizeof (void *));
+// if (!set) set = ecalloc (1, sizeof (void *));
 
  if (esize == -1) {
-  for (; set[count]; count++);
+  if (set) for (; set[count]; count++);
+  else count = 1;
   size = (count+2)*sizeof(void*);
 
   newset = ecalloc (1, size);
 
-  while (set[x]) {
-   if (set[x] == item) {
-    free (newset);
-    return set;
+  if (set) {
+   while (set[x]) {
+    if (set[x] == item) {
+     free (newset);
+     return set;
+    }
+    newset [x] = set[x];
+    x++;
    }
-   newset [x] = set[x];
-   x++;
+   free (set);
   }
 
   newset[x] = item;
-  free (set);
  } else if (esize == 0) {
   char *cpnt;
 
 //  puts ("adding object to string-set");
-  for (; set[count]; count++)
+  if (set) for (; set[count]; count++) {
    size += sizeof(void*) + 1 + strlen(set[count]);
+  }
   size += sizeof(void*)*2 + 1 +strlen(item);
 
   newset = ecalloc (1, size);
   cpnt = ((char *)newset) + (count+2)*sizeof(void*);
 
-  while (set[x]) {
-   if (set[x] == item) {
-    free (newset);
-    return set;
+  if (set) {
+   while (set[x]) {
+    if (set[x] == item) {
+     free (newset);
+     return set;
+    }
+    esize = 1+strlen(set[x]);
+    memcpy (cpnt, set[x], esize);
+    newset [x] = cpnt;
+    cpnt += esize;
+    x++;
    }
-   esize = 1+strlen(set[x]);
-   memcpy (cpnt, set[x], esize);
-   newset [x] = cpnt;
-   cpnt += esize;
-//   puts(set[x]);
-   x++;
+   free (set);
   }
 
   esize = 1+strlen(item);
@@ -195,33 +201,34 @@ void **setadd (void **set, void *item, int32_t esize) {
   newset [x] = cpnt;
 //  puts(item);
 //  cpnt += 1+strlen(item);
-
-  free (set);
  } else {
   char *cpnt;
 
-  for (; set[count]; count++)
+  if (set) for (; set[count]; count++) {
    size += sizeof(void*) + esize;
+  }
   size += sizeof(void*)*2 + esize;
 
   newset = ecalloc (1, size);
   cpnt = ((char *)newset) + (count+2)*sizeof(void*);
 
-  while (set[x]) {
-   if (set[x] == item) {
-    free (newset);
-    return set;
+  if (set) {
+   while (set[x]) {
+    if (set[x] == item) {
+     free (newset);
+     return set;
+    }
+    memcpy (cpnt, set[x], esize);
+    newset [x] = cpnt;
+    cpnt += esize;
+    x++;
    }
-   memcpy (cpnt, set[x], esize);
-   newset [x] = cpnt;
-   cpnt += esize;
-   x++;
+   free (set);
   }
 
   memcpy (cpnt, item, esize);
   newset [x] = cpnt;
 //  cpnt += esize;
-  free (set);
  }
 
  return newset;

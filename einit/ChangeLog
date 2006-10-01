@@ -4,6 +4,7 @@
  * i did some extensive memory-leak-hunting, and i think i dramatically reduced
    the number of leaks in this code. (~11k marked as "definitely lost" last
    time i ran it in valgrind)
+ * erased most memory leaks (~6k definitely, ~2k possibly)
 
 2006/09/30: mdeininger
  * einit now forks into two processes at startup: one to do the init-auto-wait,
