@@ -54,7 +54,10 @@
 
 <!-- dummy daemon -->
  <mod-daemon id="daemon-dummy-1" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
- <mod-daemon id="daemon-dummy-2" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
+ <mod-daemon id="daemon-dummy-2" provides="dummyd" requires="network" prepare="/bin/false" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
+ <mod-daemon id="daemon-dummy-3" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
+
+ <prefer-dummyd s="daemon-dummy-1" />
 
 <!-- mount settings -->
 <!-- default: <mount-fstab-source s="label:configuration:legacy" /> -->
@@ -84,6 +87,7 @@
 
  <mode id="feedback">
   <enable mod="feedback-visual:dummyd" />
+  <prefer-dummyd s="daemon-dummy-2:daemon-dummy-1" />
  </mode>
  <mode id="boot">
   <enable mod="sysconf" />

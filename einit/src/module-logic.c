@@ -244,6 +244,34 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      cur = cur->next;
     }
 
+/* order modules that should be enabled according to the user's preference */
+    if (nnode.mod) {
+     uint32_t mpx, mpy, mpz = 0;
+     char *pnode = NULL, **preference = NULL;
+
+     pnode = emalloc (strlen (current[a])+8);
+     pnode[0] = 0;
+     strcat (pnode, "prefer-");
+     strcat (pnode, current[a]);
+     if (preference = str2set (':', cfg_getstring (pnode, mode))) {
+      for (mpx = 0; preference[mpx]; mpx++) {
+       for (mpy = 0; nnode.mod[mpy]; mpy++) {
+        if (nnode.mod[mpy]->module && nnode.mod[mpy]->module->rid && !strcmp(nnode.mod[mpy]->module->rid, preference[mpx])) {
+         struct lmodule *tm = nnode.mod[mpy];
+
+         nnode.mod[mpy] = nnode.mod[mpz];
+         nnode.mod[mpz] = tm;
+
+         mpz++;
+        }
+       }
+      }
+      free (preference);
+     }
+
+     free (pnode);
+    }
+
     mod_plan_searchgroup(nnode, current[a]);
 
     if (nnode.mod || nnode.group) {

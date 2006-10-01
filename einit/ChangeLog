@@ -6,6 +6,7 @@
    time i ran it in valgrind)
  * fixed most memory leaks (~6k definitely, ~2k possibly)
  * fixed a typo (d'oh)
+ * the <prefer-* /> tags work again
 
 2006/09/30: mdeininger
  * einit now forks into two processes at startup: one to do the init-auto-wait,
