@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/common-mount.h>
 #include <einit/event.h>
-#include <linux/fs.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
