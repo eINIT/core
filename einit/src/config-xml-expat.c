@@ -54,31 +54,15 @@ struct cfgnode *curmode = NULL;
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int i = 0;
- if (curmode) {
-  if (!strcmp (name, "enable")) {
-   for (; atts[i] != NULL; i+=2) {
-    if (!strcmp (atts[i], "mod")) {
-     if (curmode->enable) free (curmode->enable);
-     curmode->enable = str2set (':', (char *)atts[i+1]);
-    }
-   }
-  } else if (!strcmp (name, "disable")) {
-   for (; atts[i] != NULL; i+=2) {
-    if (!strcmp (atts[i], "mod")) {
-     if (curmode->disable) free (curmode->disable);
-     curmode->disable = str2set (':', (char *)atts[i+1]);
-    }
-   }
-  }
- }
  if (!strcmp (name, "mode")) {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
-  for (; atts[i] != NULL; i+=2) {
-   if (!strcmp (atts[i], "id")) {
-    newnode->id = estrdup ((char *)atts[i+1]);
-   } else if (!strcmp (atts[i], "base")) {
-    newnode->base = str2set (':', (char *)atts[i+1]);
+  newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+  for (; newnode->arbattrs[i] != NULL; i+=2) {
+   if (!strcmp (newnode->arbattrs[i], "id")) {
+    newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
+   } else if (!strcmp (newnode->arbattrs[i], "base")) {
+    newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
    }
   }
   if (newnode->id) {
@@ -98,23 +82,24 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   newnode->id = estrdup ((char *)name);
   newnode->nodetype = EI_NODETYPE_CONFIG;
   newnode->mode = curmode;
-  for (; atts[i] != NULL; i+=2) {
-   if (!strcmp (atts[i], "s"))
-    newnode->svalue = estrdup ((char *)atts[i+1]);
-   else if (!strcmp (atts[i], "i"))
-    newnode->value = atoi (atts[i+1]);
-   else if (!strcmp (atts[i], "bi"))
-    newnode->value = strtol (atts[i+1], (char **)NULL, 2);
-   else if (!strcmp (atts[i], "oi"))
-    newnode->value = strtol (atts[i+1], (char **)NULL, 8);
-   else if (!strcmp (atts[i], "b")) {
-    int j = i+1;
-    newnode->flag = (!strcmp (atts[j], "true") ||
-                     !strcmp (atts[j], "enabled") ||
-                     !strcmp (atts[j], "yes"));
-   }
-  }
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+  if (newnode->arbattrs)
+   for (; newnode->arbattrs[i] != NULL; i+=2) {
+    if (!strcmp (newnode->arbattrs[i], "s"))
+     newnode->svalue = (char *)newnode->arbattrs[i+1];
+    else if (!strcmp (newnode->arbattrs[i], "i"))
+     newnode->value = atoi (newnode->arbattrs[i+1]);
+    else if (!strcmp (newnode->arbattrs[i], "bi"))
+     newnode->value = strtol (newnode->arbattrs[i+1], (char **)NULL, 2);
+    else if (!strcmp (newnode->arbattrs[i], "oi"))
+     newnode->value = strtol (newnode->arbattrs[i+1], (char **)NULL, 8);
+    else if (!strcmp (newnode->arbattrs[i], "b")) {
+     int j = i+1;
+     newnode->flag = (!strcmp (newnode->arbattrs[j], "true") ||
+                      !strcmp (newnode->arbattrs[j], "enabled") ||
+                      !strcmp (newnode->arbattrs[j], "yes"));
+    }
+   }
   cfg_addnode (newnode);
   free (newnode);
  }
@@ -162,30 +147,11 @@ int cfg_load (char *configfile) {
    confpath = cfg_getpath ("configuration-path");
    if (!confpath) confpath = "/etc/einit/";
    cfgplen = strlen(confpath) +1;
-/*   for (hnode = configuration, last = NULL; hnode; hnode = hashnext (hnode)) {
-    rescan_node:
-	node = (struct cfgnode *)hnode->value;
-    if (!node) break;
-    if (node->svalue && !strcmp (node->id, "include")) {
-     char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
-     last->next = node->next;
-     includefile = strcat (includefile, confpath);
-     includefile = strcat (includefile, node->svalue);
-     free (node);
-     node = last->next;
-     recursion++;
-     cfg_load (includefile);
-     recursion--;
-     free (includefile);
-     goto rescan_node;
-    }
-    last = node;
-   }*/
    rescan_node:
    hnode = hconfiguration;
    while (hnode = hashfind (hnode, "include")) {
-	node = (struct cfgnode *)hnode->value;
-	if (node->svalue) {
+    node = (struct cfgnode *)hnode->value;
+    if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
      includefile = strcat (includefile, confpath);
      includefile = strcat (includefile, node->svalue);
@@ -193,6 +159,7 @@ int cfg_load (char *configfile) {
      cfg_load (includefile);
      recursion--;
      free (includefile);
+     if (node->id) free (node->id);
      hashdel (hconfiguration, hnode);
      goto rescan_node;
     }
@@ -209,21 +176,15 @@ int cfg_free () {
  struct cfgnode *node = NULL;
  while (cur) {
   if (node = (struct cfgnode *)cur->value) {
-   if (node->arbattrs)
-    free (node->arbattrs);
    if (node->base)
     free (node->base);
-   if (node->enable)
-    free (node->enable);
-   if (node->disable)
-    free (node->disable);
-   if (node->svalue)
-    free (node->svalue);
 
-   if (node->id)
-    free (node->id);
    if (node->custom)
     free (node->custom);
+   if (node->id)
+    free (node->id);
+   if (node->path)
+    free (node->path);
   }
   cur = hashnext (cur);
  }
@@ -234,7 +195,7 @@ int cfg_free () {
 
 int cfg_addnode (struct cfgnode *node) {
  if (!node) return;
- hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), NULL);
+ hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
 // hconfiguration = hashadd (hconfiguration, node->id, node, -1);
 }
 
@@ -250,18 +211,7 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
   }
  }
  if (!cur || !id) return NULL;
-// puts (".");
-/* if (!strcmp(cur->id, id)) return cur;
-
- while (cur) {
-  if (!strcmp(cur->id, id) && (!type || !(cur->nodetype ^ type)))
-   return cur;
-  cur = cur->next;
- }*/
-// puts (id);
  while (cur = hashfind (cur, id)) {
-//  puts (((struct cfgnode *)cur->value)->id);
-//  puts (cur->key);
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
    return cur->value;
   cur = hashnext (cur);
@@ -342,11 +292,16 @@ char *cfg_getpath (char *id) {
  if (!svpath || !svpath->svalue) return NULL;
  mplen = strlen (svpath->svalue) +1;
  if (svpath->svalue[mplen-2] != '/') {
-  char *tmpsvpath = (char *)erealloc (svpath->svalue, mplen+1);
+  if (svpath->path) return svpath->path;
+  char *tmpsvpath = (char *)emalloc (mplen+1);
+  tmpsvpath[0] = 0;
 
+  strcat (tmpsvpath, svpath->svalue);
   tmpsvpath[mplen-1] = '/';
   tmpsvpath[mplen] = 0;
-  svpath->svalue = tmpsvpath;
+//  svpath->svalue = tmpsvpath;
+  svpath->path = tmpsvpath;
+  return tmpsvpath;
  }
  return svpath->svalue;
 }

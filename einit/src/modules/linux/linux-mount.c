@@ -480,4 +480,6 @@ int cleanup (struct lmodule *this) {
  function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
 // function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
 // function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
+
+ pexec_cleanup(this);
 }

@@ -446,17 +446,15 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  int len = 2;
  if (key) len += strlen (key);
  if (value) len += strlen (value);
- newitem = ecalloc (1, sizeof(char)*len);
-// newitem = ecalloc (1, len);
-// newitem[0] = 0;
+ newitem = emalloc (sizeof(char)*len);
+ newitem[0] = 0;
  if (key) newitem = strcat (newitem, key);
  if (value) newitem = strcat (newitem, "=");
  if (value) newitem = strcat (newitem, value);
 
-// puts (newitem);
 
  ret = (char**) setadd ((void**)environment, (void*)newitem, SET_TYPE_STRING);
-// free (newitem);
+ free (newitem);
 
  return ret;
 }

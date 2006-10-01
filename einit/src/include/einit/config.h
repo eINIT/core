@@ -60,11 +60,10 @@ struct cfgnode {
  unsigned char flag;
  long int value;
  char *svalue;
- char **enable;
- char **disable;
  char **base;
  char **arbattrs;
  void *custom;
+ char *path;
 };
 
 struct uhash *hconfiguration;

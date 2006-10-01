@@ -130,6 +130,16 @@ int epowerreset () {
   notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
  }
 
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+ sem_destroy (sigchild_semaphore);
+ free (sigchild_semaphore);
+#elif defined(DARWIN)
+ sem_close (sigchild_semaphore);
+#else
+ if (sem_destroy (sigchild_semaphore))
+  sem_close (sigchild_semaphore);
+#endif
+
 #ifdef LINUX
 #ifndef SANDBOX
  reboot (LINUX_REBOOT_CMD_RESTART);

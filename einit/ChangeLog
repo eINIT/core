@@ -1,3 +1,10 @@
+2006/10/01: mdeininger
+ * module loaders may now specify reload(), reset() and cleanup() functions
+   for modules they add to the system.
+ * i did some extensive memory-leak-hunting, and i think i dramatically reduced
+   the number of leaks in this code. (~11k marked as "definitely lost" last
+   time i ran it in valgrind)
+
 2006/09/30: mdeininger
  * einit now forks into two processes at startup: one to do the init-auto-wait,
    one to do what einit's supposed to do.
@@ -5,6 +12,10 @@
    least on system that support wait()-ing on other threads' childrean, i.e.
    at least linux >= 2.4 without uclibc and it seems to work flawlessly on
    osx 10.4, except that semaphores seem to use lots of CPU power...)
+ * the osx bug has been resolved, apparently unnamed semaphores aren't
+   supported
+ * the epoweroff/ereset functions have been combined into one.
+ * the configuration-code won't waste that much memory anymore.
 
 2006/09/27: mdeininger
  * added support for some more mount flags

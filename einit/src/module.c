@@ -96,7 +96,7 @@ int mod_scanmodules ( void ) {
    }
    modinfo = (struct smodule *)dlsym (sohandle, "self");
    if (modinfo != NULL)
-    mod_add (sohandle, NULL, NULL, NULL, modinfo);
+    mod_add (sohandle, NULL, NULL, NULL, NULL, NULL, NULL, modinfo);
    else
     dlclose (sohandle);
 
@@ -148,7 +148,7 @@ int mod_freemodules ( void ) {
  return 1;
 }
 
-struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), void *param, struct smodule *module) {
+struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
  int (*ftload)  (void *, struct einit_event *);
@@ -166,6 +166,9 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
  nmod->param = param;
  nmod->enable = enable;
  nmod->disable = disable;
+ nmod->reset = reset;
+ nmod->reload = reload;
+ nmod->cleanup = cleanup;
  pthread_mutex_init (&nmod->mutex, NULL);
  pthread_mutex_init (&nmod->imutex, NULL);
 
@@ -177,9 +180,11 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
    configfunc (nmod);
   }
 // look for any cleanup() functions
-  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
-  if (configfunc != NULL) {
-   nmod->cleanup = configfunc;
+  if (!nmod->cleanup) {
+   configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
+   if (configfunc != NULL) {
+    nmod->cleanup = configfunc;
+   }
   }
 // EINIT_MOD_LOADER modules will usually want to provide a function to scan
 //  for modules so they can be included in the dependency chain
@@ -191,25 +196,29 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
    else bitch(BTCH_ERRNO + BTCH_DL);
   }
 // we need to scan for load and unload functions if NULL was supplied for these
-  if (enable == NULL) {
+  if (!nmod->enable) {
    ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "enable");
    if (ftload != NULL) {
     nmod->enable = ftload;
    }
   }
-  if (disable == NULL) {
+  if (!nmod->disable) {
    ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "disable");
    if (ftload != NULL) {
     nmod->disable = ftload;
    }
   }
-  ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reset");
-  if (ftload != NULL) {
-   nmod->reset = ftload;
+  if (!nmod->reset) {
+   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reset");
+   if (ftload != NULL) {
+    nmod->reset = ftload;
+   }
   }
-  ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reload");
-  if (ftload != NULL) {
-   nmod->reload = ftload;
+  if (!nmod->reload) {
+   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reload");
+   if (ftload != NULL) {
+    nmod->reload = ftload;
+   }
   }
  }
 

@@ -170,6 +170,8 @@ void **function_find (char *name, uint32_t version, char **sub) {
     ha = hashnext (ha);
    }
   }
+
+  if (n) free (n);
  }
  pthread_mutex_unlock (&pof_mutex);
 

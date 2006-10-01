@@ -91,6 +91,7 @@ int configure (struct lmodule *this) {
 }
 
 int cleanup (struct lmodule *this) {
+ pexec_cleanup(this);
 }
 
 int enable (void *pa, struct einit_event *status) {

@@ -108,7 +108,6 @@ int main(int argc, char **argv) {
      return 0;
    }
  }
-// printf ("eINIT %s: booting %s: initialising\n", EINIT_VERSION_LITERAL, osinfo.sysname);
  pid = getpid();
  if ((pid = getpid()) == 1) einit_sub = fork();
 
@@ -148,7 +147,10 @@ int main(int argc, char **argv) {
    fputs ("ERROR: cfg_load() failed\n", stderr);
    return -1;
   }
+
   mod_scanmodules ();
+//  cleanup(); return 0;
+
   sched_init ();
 
   sched_queue (SCHEDULER_SWITCH_MODE, "feedback");

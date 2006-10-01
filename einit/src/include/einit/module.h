@@ -214,17 +214,19 @@ int mod_freemodules ( void );
 
 /*!\brief Register module
  * \ingroup moduledefinition
- * \todo Enhance this function so that one may specify reset() and reload() functions.
  * \param[in] sohandle Handle for the module's .so file
  * \param[in] enable   Pointer to the module's enable()-function
  * \param[in] disable  Pointer to the module's disable()-function
+ * \param[in] reset    Pointer to the module's reset()-function
+ * \param[in] reload   Pointer to the module's reload()-function
+ * \param[in] cleanup  Pointer to the module's cleanup()-function
  * \param[in] param    A (void*)Pointer that will be passed to the module's mode-switching functions as the first parametre
  * \param[in] module   Pointer to the module's static (on-file) module definition
  *
  * This functions adds a module to the main chain of modules, so that it can be used in dependency
  * calculations.
 */
-struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), void *param, struct smodule *module);
+struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module);
 
 /*!\brief Change module's state
  * \param[in]     task   What state the module should be put in.
