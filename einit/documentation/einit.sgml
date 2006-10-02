@@ -474,6 +474,40 @@
       </listitem>
      </varlistentry>
     </variablelist>
+    <variablelist><title>TTY-Variable Attributes</title>
+     <varlistentry>
+      <term>Attribute <varname>dev</varname> [STRING]</term>
+      <listitem>
+       <para>
+        Path to a tty device-file. (This is currently ignored)
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>command</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to run for the tty to get up. (i.e. the getty binary with parametres)
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>restart</varname> [BOOLEAN]</term>
+      <listitem>
+       <para>
+        Whether or not to restart the TTY if it dies.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>All remaining Attributes</term>
+      <listitem>
+       <para>
+        These attributes are added to the command's environment as variable=value pairs upon execution.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
    </sect2>
    <sect2 id="configuration-modules-einit-mod-exec">
     <title>einit-mod-exec</title>
