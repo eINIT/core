@@ -1,7 +1,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 <book lang="en">
  <bookinfo>
-  <date>2006-05-04</date>
+  <date>2006-10-02</date>
   <title>eINIT</title>
   <subtitle>User's Guide</subtitle>
   <authorgroup>
@@ -9,7 +9,7 @@
     <firstname>Magnus</firstname>
     <surname>Deininger</surname>
    </author>
-</authorgroup>
+  </authorgroup>
   <copyright>
    <year>2006</year>
    <holder>Magnus Deininger</holder>
@@ -41,6 +41,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   </para>
   </legalnotice>
+  <abstract>
+   <para>This Documentation was written with eINIT version 0.10 in mind. It was written to help new users to find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
+  </abstract>
  </bookinfo>
  <toc></toc>
 
@@ -83,19 +86,15 @@
     eINIT tries to address all these problems.
    </para>
   </sect1>
-  <sect1 id="introduction-objectives">
-   <title>Project Objectives</title>
-   <titleabbrev>Objectives</titleabbrev>
+    <sect1 id="introduction-differences-upstart">
+   <title>Design differences between Upstart and eINIT</title>
+   <titleabbrev>Differences to Upstart</titleabbrev>
    <para>
-    The Objectives of the eINIT project are as follows: (in order of importance)
+    Since just recently the Ubuntu crowd started hacking on their own init-replacement, called "Upstart", I thought that it might be a good time to point out the key differences between Upstart's and eINIT's design.
     <itemizedlist>
-     <listitem><para>Be feature-complete.</para></listitem>
-     <listitem><para>Be fast.</para></listitem>
-     <listitem><para>Be small.</para></listitem>
-     <listitem><para>Be modular.</para></listitem>
-     <listitem><para>Be easy.</para></listitem>
-     <listitem><para>Be smart.</para></listitem>
-     <listitem><para>Do not rely on shell-scripts.</para></listitem>
+     <listitem><para>Upstart is designed to be completely event based -- eINIT will be partially event-based.</para></listitem>
+     <listitem><para>eINIT is designed for embedded devices and things like headless servers.</para></listitem>
+     <listitem><para>Upstart is designed with backwards-compatibility to sysv in mind, eINIT is not.</para></listitem>
     </itemizedlist>
    </para>
   </sect1>
@@ -105,9 +104,9 @@
    <para>It's always nice to have a list of current features, so here we go:</para>
    <itemizedlist>
     <listitem><para>Highly modular</para></listitem>
-    <listitem><para>Does dependency calculations.</para></listitem>
+    <listitem><para>Dependency calculations based on abstract "services".</para></listitem>
     <listitem><para>Parallel processing of modules</para></listitem>
-    <listitem><para>Configuration file in XML</para></listitem>
+    <listitem><para>Configuration files in XML</para></listitem>
     <listitem><para>"Modes": no cheap runlevels (see "Concepts")</para></listitem>
     <listitem><para>A module to start daemoni and make sure they keep running by restarting them in case they get killed</para></listitem>
     <listitem><para>No init-scripts required: no need to parse scripts on startup (comes in handy on embedded devices)</para></listitem>
@@ -118,34 +117,51 @@
 
  <chapter id="installation">
   <title>Installation</title>
-  <sect1 id="installation-aquiring">
-   <title>Aquiring a copy of eINIT</title>
-   <titleabbrev>Aquiring</titleabbrev>
+  <sect1 id="installation-gentoo">
+   <title>Installing eINIT on Gentoo/Linux</title>
+   <titleabbrev>Gentoo/Linux</titleabbrev>
    <para>
-    Since I haven't made any release yet, you will need to get the sources off the CVS repository. The easy way to do this is to go to the official project page on sourceforge.net, which has detailed instructions on how to check out the current sources off CVS.
+    Since my main/favourite Linux distribution is Gentoo/Linux, I wrote some ebuilds for eINIT to faciliate testing and installation.
+    <itemizedlist>
+     <listitem><para>Step 1: Download this <ulink url="http://jyujin.de/~mdeininger/projects/einit-cvs-portage-overlay.tar.bz2">portage overlay</ulink> and unpack it into your portage overlay.</para></listitem>
+     <listitem><para>Step 2: emerge eINIT:<synopsis>emerge -aNDv einit</synopsis> Note the "doc"-flag in this ebuild: if it is disabled, the user's guide and the API documentation will not be generated.</para></listitem>
+    </itemizedlist>
+    <note><para>THIS IS VERY IMPORTANT! If you have a separate /usr partition, you will have to make sure that expat is accessible before your /usr partition is mounted. Expat is usually installed in /usr/lib/ (and sometimes even in /usr/local/lib/), so you will need to copy /usr/lib/libexpat.* to /lib/.</para></note>
    </para>
-   <para><ulink url="https://sourceforge.net/projects/einit/">Project Page on SourceForge.net</ulink></para>
   </sect1>
-  <sect1 id="installation-compiling-installing">
-   <title>Compiling and Installing eINIT</title>
-   <titleabbrev>Compiling/Installing</titleabbrev>
-   <para>
-    This is easy, although just now the configure-script isn't very smart. Upon aquiring a copy of the current source-tree, bring up a console and cd into the root directory of the sources and run
-    <synopsis>./configure [--enable-linux]</synopsis>
-    <note><para>DO use --enable-linux on linux, and only linux. Use the --help parameter to see more options. Especially the --prefix option could be of interest to you.</para></note>
-    This will get your sources ready for compilation. Now run
-    <synopsis>make</synopsis>
-    to compile everything, followed by
-    <synopsis>make install</synopsis>
-    to install eINIT. That is all.
-    <note><para>If you have a separate /usr partition, you will have to make sure that expat is accessible before your /usr partition is mounted. Expat is usually installed in /usr/lib/ (and sometimes even in /usr/local/lib/), so you will need to copy /usr/lib/libexpat.* to /lib/.</para></note>
-   </para>
+  <sect1 id="installation-manual">
+   <title>Installing eINIT on other Linux distributions or other unices.</title>
+   <titleabbrev>Anything but Gentoo/Linux</titleabbrev>
+   <sect2 id="installation-aquiring">
+    <title>Aquiring a copy of eINIT</title>
+    <titleabbrev>Aquiring</titleabbrev>
+    <para>
+     The project page on sourceforge.net contains links to some releases of eINIT and instructions on how to download the CVS version.
+    </para>
+    <para><ulink url="https://sourceforge.net/projects/einit/">Project Page on SourceForge.net</ulink></para>
+   </sect2>
+   <sect2 id="installation-manual-compiling-installing">
+    <title>Compiling and Installing eINIT</title>
+    <titleabbrev>Compiling/Installing</titleabbrev>
+    <para>
+     This is easy, although just now the configure-script isn't very smart. Upon aquiring a copy of the current source-tree, bring up a console and cd into the root directory of the sources and run
+     <synopsis>./configure [--enable-linux] --enable-posix-regex [--pthread-wait-bug]</synopsis>
+     <note><para>DO use --enable-linux on linux, and only linux. Use the --help parameter to see more options. Especially the --prefix option could be of interest to you. Also, --enable-posix-regex is always a good idea.</para></note>
+     <note><para>If your Unix system provides a buggy pthreads implementation that doesn't allow threads of one process to wait on another thread's children to die (this specifically applies to linux with a kernel < 2.4 and to linux with uclibc), you will need to specify --pthread-wait-bug.</para></note>
+     This will get your sources ready for compilation. Now run
+     <synopsis>make</synopsis>
+     to compile everything, followed by
+     <synopsis>make install</synopsis>
+     to install eINIT. That is all.
+     <note><para>THIS IS VERY IMPORTANT! If you have a separate /usr partition, you will have to make sure that expat is accessible before your /usr partition is mounted. Expat is usually installed in /usr/lib/ (and sometimes even in /usr/local/lib/), so you will need to copy /usr/lib/libexpat.* to /lib/.</para></note>
+    </para>
+   </sect2>
   </sect1>
   <sect1 id="installation-configuration">
    <title>Configuring eINIT</title>
    <titleabbrev>Configuring</titleabbrev>
    <para>
-    The main (default) configuration file is <filename>/etc/einit/default.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward, so I'll postpone any detailed instructions till the specs of eINIT are in less flux.
+    The main (default) configuration file is <filename>/etc/einit/default.xml</filename>, the file you should modify is <filename>/etc/einit/rc.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward. For details, see the chapter on configuring eINIT.
    </para>
   </sect1>
   <sect1 id="installation-configuration-boot">
@@ -159,7 +175,7 @@
     <titleabbrev>INIT=eINIT</titleabbrev>
     <para>
      The easy and pretty much surefire way to do this.
-     <synopsis>ln -sf einit /bin/init</synopsis>
+     <synopsis>ln -sf einit /sbin/init</synopsis>
     </para>
     <note><para>This practice is NOT recommended right now, as eINIT is still alpha-software!</para></note>
    </sect2>
@@ -186,7 +202,7 @@
   <title>Concepts</title>
   <para>Since we're trying to be revolutionary, we're bound to do some things differently, aren't we?</para>
   <sect1 id="concepts-modes">
-   <title><quote>Modes</quote></title>
+   <title>Modes</title>
    <titleabbrev>modes</titleabbrev>
    <para>
     A <quote>mode</quote> is a set of modules and settings for said modules that belong together to form a sort of "usage profile" for your Unix-machine. Modes are related to sysvinit's runlevels, except that they not only contain a set of processes that need to be run to form a runlevel, but that eINIT supports configuration entries to be associated with modes. Also eINIT is not limited to 6/7 runlevels (level 1 through 6 and S, with the mentioned three
@@ -201,54 +217,147 @@
   </sect1>
  </chapter>
 
- <chapter id="usage">
-  <title>Usage</title>
-  <sect1 id="usage-einit-control">
-   <title>Interfacing with eINIT: einit-control</title>
-   <titleabbrev>einit-control</titleabbrev>
-   <synopsis>einit-control [-h]</synopsis>
-   <synopsis>einit-control [-s control-socket] [function] command</synopsis>
+ <chapter id="configuration">
+  <title>The Configuration Files.</title>
+  <titleabbrev>/etc/einit</titleabbrev>
+  <para>eINIT uses XML files to store its configuration. These files are located in /etc/einit, the default files are:
+   <itemizedlist>
+    <listitem><para><filename>default.xml</filename>: This is the "entry point" for eINIT. Whenever it starts, it will load and process this file.</para></listitem>
+    <listitem><para><filename>sandbox.xml</filename>: This is the "entry point" for eINIT if it was compiled in "sandbox-mode".</para></listitem>
+    <listitem><para><filename>daemon.xml</filename>: daemon definitions (sshd, xdm, ...)</para></listitem>
+    <listitem><para><filename>shell.xml</filename>: command-based module definitions (keyboard setup, clock synchronisation, ...)</para></listitem>
+    <listitem><para><filename>rc.xml</filename>: all configuration details that are specific to the host that einit is run on go into this file; this is the file you should modify.</para></listitem>
+   </itemizedlist>
+  </para>
+  <sect1 id="configuration-generic">
+   <title>Configuration File Layout</title>
+   <titleabbrev>file layout</titleabbrev>
    <para>
-    This is the main command to control eINIT: it connects to socket <varname>control-socket</varname> and submits <varname>function</varname> and <varname>command</varname> for eINIT to interpret.
+    eINIT configuration files look like this:
    </para>
-   <note><para>The "power", "erc" and "rc" commands are usually (sym-)linked to the einit-control binary. For example, calling <userinput>einit-control power off</userinput> is the same as calling <userinput>power off</userinput>, if the proper links are in place.</para></note>
-   <sect2 id="usage-einit-control-power">
-    <title>The "power"-command</title>
-    <titleabbrev>power</titleabbrev>
-    <synopsis>power [-h]</synopsis>
-    <synopsis>power [-s control-socket] command</synopsis>
-    <synopsis>einit-control [-s control-socket] power command</synopsis>
-    <para>
-     This command is used to tell eINIT that you wish to shut down or reboot your computer. The <varname>command</varname> must bei either of <userinput>off</userinput> or <userinput>reset</userinput>, which will tell eINIT to power off or reset, respectively.
-    </para>
+   <synopsis label="sample XML-configuration file">
+    &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+    &lt;einit&gt;
+     &lt;!-- [...] --&gt;
+
+     &lt;decimal-integer-variable i="10" /&gt;
+     &lt;octal-integer-variable oi="8" /&gt;
+     &lt;binary-integer-variable bi="8" /&gt;
+     &lt;string-variable s="string" /&gt;
+     &lt;mixed-type-variable s="string" i="10" /&gt;
+     &lt;boolean-true-variable b="enabled" /&gt;
+     &lt;boolean-false-variable b="false" /&gt;
+
+     &lt;!-- [...] --&gt;
+
+     &lt;mode id="default" base="boot"&gt;
+      &lt;enable mod="module1:module2:module3" /&gt;
+      &lt;variable1 s="contents" /&gt;
+     &lt;/mode&gt;
+    &lt;/einit&gt;
+   </synopsis>
+   <para>
+    if we examine this fictional snippet, we can observe the following:
+    <itemizedlist>
+     <listitem><para>eINIT configuration files are regular, free-form XML files. They need to be syntactically correct (don't forget the / in elements! i.e. <varname>&lt;mode /&gt;</varname>) and should be written in UTF-8.</para></listitem>
+     <listitem><para>Most elements define variables.</para></listitem>
+     <listitem><para>The only (inner) element that contains elements is the <varname>&lt;mode /&gt;</varname>-element.</para></listitem>
+     <listitem><para>Values are assigned to elements using attributes, i.e. <varname>&lt;variable s="string" /&gt;</varname> as opposed to <varname>&lt;variable&gt;string&lt;/variable&gt;</varname>. This is different from most other programs that use XML files for configuration, but I find this way to be more logical and intuitive.</para></listitem>
+     <listitem><para>The type of a value is determined by the attribute that is used: The attribute <varname>i=""</varname> specifies an decimal integer value, <varname>s=""</varname> a string, <varname>bi=""</varname> a binary integer, <varname>oi=""</varname> an octal integer and <varname>b=""</varname> specifies a boolean flag (the values "true", "enabled" and "yes" mean the flag is on, everything else means the flag is off).</para></listitem>
+     <listitem><para>A variable can have more than one type of value: it can be a string, a boolean and an integer at the same time. Which of the values is used is up to the using module to decide.</para></listitem>
+     <listitem><para>A "set" of strings is always a string of the form "element1:element2", i.e. a string where the elements are delimited using a colon (':').</para></listitem>
+    </itemizedlist>
+   </para>
+   <sect2 id="configuration-generic-special">
+    <title>Special Variables</title>
+    <titleabbrev>special variables</titleabbrev>
+    <para>Some variables have a special meaning to eINIT's core:</para>
+    <synopsis label="sample XML-configuration file">
+     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+     &lt;einit&gt;
+      &lt;!-- [...] --&gt;
+
+      &lt;module-path s="/lib/einit" /&gt;
+      &lt;configuration-path s="/etc/einit/" /&gt;
+
+      &lt;include s="file-to-include.xml" /&gt;
+
+      &lt;!-- [...] --&gt;
+     &lt;/einit&gt;
+    </synopsis>
+    <variablelist><title>Special Variables</title>
+     <varlistentry>
+      <term><varname>module-path</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The default path for ".so-modules" (i.e. those loaded using the dynamic linker). This variable is mandatory, and you should not mess with it unless you know what you're doing.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>configuration-path</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The base path for configuration files. Also mandatory, and you shouldn't mess with the default.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>include</varname> [STRING]</term>
+      <listitem>
+       <para>
+        This is used to include other configuration files. The specified string is a filename relative to the <varname>configuration-path</varname>. Use this to split the configuration into smaller parts for easier handling (see above for the default files).
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
    </sect2>
-   <sect2 id="usage-einit-control-erc">
-    <title>The "erc" and "rc"-commands</title>
-    <titleabbrev>erc</titleabbrev>
-    <synopsis>[e]rc [-h]</synopsis>
-    <synopsis>[e]rc [-s control-socket] command</synopsis>
-    <synopsis>einit-control [-s control-socket] rc command</synopsis>
-    <para>
-     This command is used to tell eINIT that you wish to change modes or enable/disable a module.
-    </para>
-    <synopsis>[e]rc [-s control-socket] switch-mode mode</synopsis>
-    <para>
-     Make eINIT switch to the specified <varname>mode</varname>
-    </para>
-    <synopsis>[e]rc [-s control-socket] module (enable|disable)</synopsis>
-    <para>
-     Make eINIT enable or disable the specified <varname>module</varname>.
-    </para>
-    <note><para>Whether the command is/should be named rc or erc depends on the environment: if you only set up a test-environment, you would want the command to be called "erc", because sysvinit usually depends on an /sbin/rc command to do some of the dirty work.</para></note>
+   <sect2 id="configuration-generic-modes">
+    <title>Mode configuration</title>
+    <titleabbrev>modes</titleabbrev>
+    <para>As has been mentioned, modes are the only elements with subelements. Consider this configuration sample:</para>
+    <synopsis label="sample XML-configuration file">
+     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+     &lt;einit&gt;
+      &lt;!-- [...] --&gt;
+
+      &lt;variable1 s="x" /&gt;
+
+      &lt;mode id="boot"&gt;
+       &lt;enable mod="module4:module6" /&gt;
+      &lt;/mode&gt;
+
+      &lt;mode id="default" base="boot"&gt;
+       &lt;enable mod="module1:module2:module3" /&gt;
+       &lt;disable mod="module4:module5" /&gt;
+       &lt;reset mod="module6" /&gt;
+       &lt;variable1 s="not x" /&gt;
+      &lt;/mode&gt;
+
+      &lt;!-- [...] --&gt;
+     &lt;/einit&gt;
+    </synopsis>
+    <para>This sample defined the modes "default" and "boot", where "default" depends on "boot". This means that default can be considered an "extension" of boot: boot is a complete mode that can be enabled and handled like all other modes, and so is default. However, if you tell einit to switch to the mode "default", then it will do all the regular dependeny calculations but it will also include the <varname>enable</varname>, <varname>disable</varname> and <varname>reset</varname> statements in the boot-mode, as if they had been specified in the default mode.</para>
+    <para>Something else that should be noted: notice the element <varname>variable1</varname> in the definition of the mode "default"? This demonstrates how you can have variables that are "global" and how you can have them overriden in modes: Whenever eINIT searches for a variable, it first searches in the mode that is currently enabled (or the one that is to be enabled), then it looks for variables that are not attached to any mode. This means: in our example if you switched to mode "default" and a module requested the variable "variable1", then it would get the string "not x". If you switched to mode "boot", then "variable1" would be the string "x".</para>
+    <variablelist><title>Elements and Attributes in Modes</title>
+     <varlistentry>
+      <term>Element <varname>enable</varname>, Attribute <varname>mod</varname> [STRING]</term>
+      <listitem>
+       <para>
+        A colon-separated set of service names that should be enabled if this module is loaded.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
    </sect2>
   </sect1>
-  <sect1 id="usage-modules">
+  <sect1 id="configuration-modules">
    <title>Default Modules</title>
    <titleabbrev>default modules</titleabbrev>
    <para>
     eINIT comes with a bunch of default modules. To help with configuring them, I'll list what they do and what configuration options they use.
    </para>
-   <sect2 id="usage-modules-einit-tty">
+   <sect2 id="configuration-modules-einit-tty">
     <title>einit-tty</title>
     <para>
      This module is used to initialise terminals. Unlike sysv-init, you terminals will be brought up ASAP, which means they're usually up after the local filesystems are mounted.
@@ -277,7 +386,7 @@
      <synopsis>restart="yes"</synopsis> Whether to restart the specified getty-command, should it die. The default is not to restart a dead tty, so you will want to specify this option.
     </para>
    </sect2>
-   <sect2 id="usage-modules-einit-mod-exec">
+   <sect2 id="configuration-modules-einit-mod-exec">
     <title>einit-mod-exec</title>
     <para>
      This module is used to create pseudo-modules that execute arbitrary shell-commands.
@@ -322,6 +431,49 @@
     <para>
      This is the default feedback-module. It comments on certain events, like modules being enabled or disabled; verbose output from the modules is also put on-screen. Developers could use the source file of this module to create other, more complex feedback modules.
     </para>
+   </sect2>
+  </sect1>
+ </chapter>
+
+ <chapter id="usage">
+  <title>Usage</title>
+  <sect1 id="usage-einit-control">
+   <title>Interfacing with eINIT: einit-control</title>
+   <titleabbrev>einit-control</titleabbrev>
+   <synopsis>einit-control [-h]</synopsis>
+   <synopsis>einit-control [-s control-socket] [function] command</synopsis>
+   <para>
+    This is the main command to control eINIT: it connects to socket <varname>control-socket</varname> and submits <varname>function</varname> and <varname>command</varname> for eINIT to interpret.
+   </para>
+   <note><para>The "power", "erc" and "rc" commands are usually (sym-)linked to the einit-control binary. For example, calling <userinput>einit-control power off</userinput> is the same as calling <userinput>power off</userinput>, if the proper links are in place.</para></note>
+   <sect2 id="usage-einit-control-power">
+    <title>The "power"-command</title>
+    <titleabbrev>power</titleabbrev>
+    <synopsis>power [-h]</synopsis>
+    <synopsis>power [-s control-socket] command</synopsis>
+    <synopsis>einit-control [-s control-socket] power command</synopsis>
+    <para>
+     This command is used to tell eINIT that you wish to shut down or reboot your computer. The <varname>command</varname> must bei either of <userinput>off</userinput> or <userinput>reset</userinput>, which will tell eINIT to power off or reset, respectively.
+    </para>
+   </sect2>
+   <sect2 id="usage-einit-control-erc">
+    <title>The "erc" and "rc"-commands</title>
+    <titleabbrev>erc</titleabbrev>
+    <synopsis>[e]rc [-h]</synopsis>
+    <synopsis>[e]rc [-s control-socket] command</synopsis>
+    <synopsis>einit-control [-s control-socket] rc command</synopsis>
+    <para>
+     This command is used to tell eINIT that you wish to change modes or enable/disable a module.
+    </para>
+    <synopsis>[e]rc [-s control-socket] switch-mode mode</synopsis>
+    <para>
+     Make eINIT switch to the specified <varname>mode</varname>
+    </para>
+    <synopsis>[e]rc [-s control-socket] module (enable|disable)</synopsis>
+    <para>
+     Make eINIT enable or disable the specified <varname>module</varname>.
+    </para>
+    <note><para>Whether the command is/should be named rc or erc depends on the environment: if you only set up a test-environment, you would want the command to be called "erc", because sysvinit usually depends on an /sbin/rc command to do some of the dirty work.</para></note>
    </sect2>
   </sect1>
  </chapter>
