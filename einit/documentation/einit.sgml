@@ -339,41 +339,112 @@
     </synopsis>
     <para>This sample defined the modes "default" and "boot", where "default" depends on "boot". This means that default can be considered an "extension" of boot: boot is a complete mode that can be enabled and handled like all other modes, and so is default. However, if you tell einit to switch to the mode "default", then it will do all the regular dependeny calculations but it will also include the <varname>enable</varname>, <varname>disable</varname> and <varname>reset</varname> statements in the boot-mode, as if they had been specified in the default mode.</para>
     <para>Something else that should be noted: notice the element <varname>variable1</varname> in the definition of the mode "default"? This demonstrates how you can have variables that are "global" and how you can have them overriden in modes: Whenever eINIT searches for a variable, it first searches in the mode that is currently enabled (or the one that is to be enabled), then it looks for variables that are not attached to any mode. This means: in our example if you switched to mode "default" and a module requested the variable "variable1", then it would get the string "not x". If you switched to mode "boot", then "variable1" would be the string "x".</para>
-    <variablelist><title>Elements and Attributes in Modes</title>
+    <variablelist><title>Attributes in Mode-Definitions</title>
      <varlistentry>
-      <term>Element <varname>enable</varname>, Attribute <varname>mod</varname> [STRING]</term>
+      <term>Element <varname>mode</varname>, Attribute <varname>id</varname> [STRING]</term>
       <listitem>
        <para>
-        A colon-separated set of service names that should be enabled if this module is loaded.
+        The name of this mode.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Element <varname>mode</varname>, Attribute <varname>base</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        IDs of other modes that this mode is based upon (see above for an explanation).
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+    <variablelist><title>Elements and Attributes in Modes</title>
+     <varlistentry>
+      <term>Element <varname>enable</varname>, Attribute <varname>mod</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of service names that should be enabled if einit is instructed to switch to this mode.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Element <varname>disable</varname>, Attribute <varname>mod</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of service names that should be disabled if einit is instructed to switch to this mode.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Element <varname>reset</varname>, Attribute <varname>mod</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of service names that should be reset if einit is instructed to switch to this mode.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </sect2>
+   <sect2 id="configuration-generic-services">
+    <title>Special Service-Variables: Preferring some Modules over others.</title>
+    <titleabbrev>special service-variables</titleabbrev>
+    <synopsis label="sample XML-configuration file">
+     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+     &lt;einit&gt;
+      &lt;!-- [...] --&gt;
+
+      &lt;prefer-servicename1 s="module1:module2:module3:module4" /&gt;
+      &lt;prefer-servicename2 s="module5" /&gt;
+
+      &lt;prefer-xdm s="daemon-gdm:daemon-entrance" /&gt;
+
+      &lt;!-- [...] --&gt;
+     &lt;/einit&gt;
+    </synopsis>
+    <para>
+     Suppose you have three modules that provide the service "xdm": daemon-gdm, daemon-kdm, daemon-entrance. If you requested the service "xdm" to be enabled (for example in a mode-switch, or using the erc command), you would get these three modules, but the order in which these three modules would be tried is unspecified. Using the prefer-xdm element in this example, we tell einit to re-order these modules, so that daemon-gdm is the first to be tried, daemon-entrance is the second, and anything else (daemon-kdm in our example) is tried after that.
+    </para>
+    <para>
+     Note that these sections only apply to any modules found using that exact service name: if you requested a service named "x11" and daemon-kdm and daemon-gdm would also provide this service, then the service-xdm variable would not affect the order that these two modules would be tried in.
+    </para>
+    <variablelist><title>Module-preference</title>
+     <varlistentry>
+      <term><varname>prefer-&lt;service&gt;</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of module-ids. Replace &lt;service&gt; with the service name for which you want to specify module-preferences.
        </para>
       </listitem>
      </varlistentry>
     </variablelist>
    </sect2>
   </sect1>
+
   <sect1 id="configuration-modules">
    <title>Default Modules</title>
    <titleabbrev>default modules</titleabbrev>
    <para>
-    eINIT comes with a bunch of default modules. To help with configuring them, I'll list what they do and what configuration options they use.
+    When I mentioned that eINIT was heavily modular, I was *not* kidding: almost all services that eINIT provides are actually provided by modules, including TTY initialisation, shell-command exection and daemon-supervision.
+   </para>
+   <para>
+    Most of these modules use special configuration elements that are parsed by them, this section should help you find out what configuration elements there are and which modules use them.
    </para>
    <sect2 id="configuration-modules-einit-tty">
-    <title>einit-tty</title>
+    <title>[einit-tty] Specifying TTYs</title>
     <para>
-     This module is used to initialise terminals. Unlike sysv-init, you terminals will be brought up ASAP, which means they're usually up after the local filesystems are mounted.
+     The "einit-tty" module is used to initialise terminals. Unlike sysv-init, your terminals will be brought up ASAP, which means they're usually up after the critical filesystems are mounted.
     </para>
     <synopsis label="sample XML-configuration file">
      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
      &lt;einit&gt;
       &lt;!-- [...] --&gt;
       &lt;!-- tty initialisation --&gt;
-      &lt;tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" /&gt;
-      &lt;tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" /&gt;
+      &lt;tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" TERM="linux" /&gt;
+      &lt;tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" TERM="linux" /&gt;
       &lt;!-- [...] --&gt;
 
       &lt;mode id="default" base="boot"&gt;
        &lt;enable mod="tty" /&gt;
-       &lt;enable-ttys s="tty1-regular:tty2-regular" /&gt;
+       &lt;ttys s="tty1-regular:tty2-regular" /&gt;
       &lt;/mode&gt;
      &lt;/einit&gt;
     </synopsis>
@@ -385,6 +456,24 @@
      <synopsis>command="/sbin/agetty 3800 tty1"</synopsis> This attribute tells einit-tty what command to run to get the specified tty up and running. The agetty-command in this example is intended for linux users, as most linux distributions will include agetty.
      <synopsis>restart="yes"</synopsis> Whether to restart the specified getty-command, should it die. The default is not to restart a dead tty, so you will want to specify this option.
     </para>
+    <variablelist><title>Service Names and used Variables</title>
+     <varlistentry>
+      <term>Service <varname>tty</varname></term>
+      <listitem>
+       <para>
+        Enable this service to enable ttys, disable to kill all ttys, reset to kill all those ttys that are enabled but should not be enabled in this mode and enable those that aren't enabled yet.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Variable <varname>ttys</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings specifying tty-definition variables.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
    </sect2>
    <sect2 id="configuration-modules-einit-mod-exec">
     <title>einit-mod-exec</title>
