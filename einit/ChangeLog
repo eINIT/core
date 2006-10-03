@@ -1,3 +1,11 @@
+2006/10/03: mdeininger
+ * updated documentation
+ * some new services (dbus and kdm)
+ * vis-text: the current module status is now displayed on the left, before the
+   module name, also the module name is now the actual name (if available), not
+   the rid.
+ * cleaned up some name tags
+
 2006/10/02: mdeininger
  * I'm trying to get the user's guide up to date for version 0.10
 
