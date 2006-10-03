@@ -197,25 +197,6 @@
   </sect1>
  </chapter>
 
- <chapter id="concepts">
-  <title>Concepts</title>
-  <para>Since we're trying to be revolutionary, we're bound to do some things differently, aren't we?</para>
-  <sect1 id="concepts-modes">
-   <title>Modes</title>
-   <titleabbrev>modes</titleabbrev>
-   <para>
-    A <quote>mode</quote> is a set of modules and settings for said modules that belong together to form a sort of "usage profile" for your Unix-machine. Modes are related to sysvinit's runlevels, except that they not only contain a set of processes that need to be run to form a runlevel, but that eINIT supports configuration entries to be associated with modes. Also eINIT is not limited to 6/7 runlevels (level 1 through 6 and S, with the mentioned three
-    already having a special meaning), but it allows for an arbitrary number of named modes, each of which can depend on a set of other modes.
-   </para>
-   <para>
-    Okay, this is admittedly a tad abstract, so let's try to make this a bit more clear. As has been mentioned, modes can form a sort of usage-profile for your computer. Thus you could have one mode for "server", one for "workstation". Now, when you think about it, both require the same set of basic initialisation: mounting filesystems, setting up hardware, monitoring hardware events... and doing all these things alone would probably be sufficient for a single-user session, so we make this a new mode and call it "boot". Now we have three modes: boot, server and workstation, with server and workstation both depending on boot. That means you can put all the common modules into boot and concentrate on which services you wish to start in the server mode (network, firewall, apache, mysql) and which to start in the workstation mode (X11, e17...). Now, when eINIT boots (or switches modes) to either of "server" or "workstation", it will take all the entries in "boot" into consideration as well and it will make sure that everything is loaded with a minimum of changes to whatever is running right now, doing as much as possible in parallel.
-   </para>
-   <para>
-    And when you think about this a little harder, the server mode is just an extended "firewall" or "router"-mode... you get the drift :D
-   </para>
-  </sect1>
- </chapter>
-
  <chapter id="configuration">
   <title>The Configuration Files.</title>
   <titleabbrev>/etc/einit</titleabbrev>
@@ -386,37 +367,81 @@
     </variablelist>
    </sect2>
    <sect2 id="configuration-generic-services">
-    <title>Special Service-Variables: Preferring some Modules over others.</title>
+    <title>Special Service-Variables</title>
     <titleabbrev>special service-variables</titleabbrev>
     <synopsis label="sample XML-configuration file">
      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
      &lt;einit&gt;
       &lt;!-- [...] --&gt;
 
+      &lt;!-- preferring modules --&gt;
       &lt;prefer-servicename1 s="module1:module2:module3:module4" /&gt;
       &lt;prefer-servicename2 s="module5" /&gt;
 
       &lt;prefer-xdm s="daemon-gdm:daemon-entrance" /&gt;
 
+      &lt;!-- service groups --&gt;
+      &lt;network group="net-lo:net-eth0" seq="most" /&gt;
+      &lt;video group="kern-nvidia" seq="any-iop" /&gt;
+
       &lt;!-- [...] --&gt;
      &lt;/einit&gt;
     </synopsis>
-    <para>
-     Suppose you have three modules that provide the service "xdm": daemon-gdm, daemon-kdm, daemon-entrance. If you requested the service "xdm" to be enabled (for example in a mode-switch, or using the erc command), you would get these three modules, but the order in which these three modules would be tried is unspecified. Using the prefer-xdm element in this example, we tell einit to re-order these modules, so that daemon-gdm is the first to be tried, daemon-entrance is the second, and anything else (daemon-kdm in our example) is tried after that.
-    </para>
-    <para>
-     Note that these sections only apply to any modules found using that exact service name: if you requested a service named "x11" and daemon-kdm and daemon-gdm would also provide this service, then the service-xdm variable would not affect the order that these two modules would be tried in.
-    </para>
-    <variablelist><title>Module-preference</title>
-     <varlistentry>
-      <term><varname>prefer-&lt;service&gt;</varname> [STRING] [SET]</term>
-      <listitem>
+    <formalpara>
+     <title>Preferring modules</title>
+     <para>
+      Suppose you have three modules that provide the service "xdm": daemon-gdm, daemon-kdm, daemon-entrance. If you requested the service "xdm" to be enabled (for example in a mode-switch, or using the erc command), you would get these three modules, but the order in which these three modules would be tried is unspecified. Using the prefer-xdm element in this example, we tell einit to re-order these modules, so that daemon-gdm is the first to be tried, daemon-entrance is the second, and anything else (daemon-kdm in our example) is tried after that.
+      <note>
        <para>
-        A colon-separated set of module-ids. Replace &lt;service&gt; with the service name for which you want to specify module-preferences.
+        These sections only apply to any modules found using that exact service name: if you requested a service named "x11" and daemon-kdm and daemon-gdm would also provide this service, then the service-xdm variable would not affect the order that these two modules would be tried in.
        </para>
-      </listitem>
-     </varlistentry>
-    </variablelist>
+      </note>
+      <variablelist><title>Module Preferences: Elements</title>
+       <varlistentry>
+        <term><varname>prefer-&lt;service&gt;</varname> [STRING] [SET]</term>
+        <listitem>
+         <para>
+          A colon-separated set of module-ids. Replace &lt;service&gt; with the service name for which you want to specify module-preferences.
+         </para>
+        </listitem>
+       </varlistentry>
+      </variablelist>
+     </para>
+    </formalpara>
+    <formalpara>
+     <title>Service groups</title>
+     <para>
+      The <varname>network</varname> and <varname>video</varname> elements in the example above both define service groups; Service groups are defined by creating an element with the name of the service to be defined and by adding the attribute <varname>group=""</varname> to this service that contains a set of service-names that form this abstract service. For example the <varname>network</varname>-service defined above consists of the services <varname>net-lo</varname> and <varname>net-eth0</varname>. The <varname>seq=""</varname> attribute is used to tell eINIT how many of the services need to be up to for the group to be considered "enabled".
+      <note>
+       <para>
+        If you have a service group and a module that both provide the same service, then the module "wins". This approach was taken in order to allow for specialised moduels that can take the role of a service group.
+       </para>
+      </note>
+      <variablelist><title>Service-Groups-Variables: Attributes</title>
+       <varlistentry>
+        <term>Attribute <varname>group</varname> [STRING] [SET]</term>
+        <listitem>
+         <para>
+          A colon-separated set of service ids that form this group.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>seq</varname> [STRING] ( any | any-iop | most | all )</term>
+        <listitem>
+         <para>
+          The type of this group. <quote>any</quote> means that the service will be up if any module is up, <quote>any-iop</quote> is basically the same, but it indicates that the services are in order of preference. <quote>most</quote> tells einit to first get up as many of the listed services as possible and then to consider the group as enabled and finally <quote>all</quote> requires all services to be enabled.
+          <warning>
+           <para>
+            The types <quote>most</quote> and <quote>all</quote> are not fully implemented, yet.
+           </para>
+          </warning>
+         </para>
+        </listitem>
+       </varlistentry>
+      </variablelist>
+     </para>
+    </formalpara>
    </sect2>
   </sect1>
 
@@ -601,4 +626,34 @@
    </sect2>
   </sect1>
  </chapter>
+
+ <appendix id="concepts">
+  <title>Concepts</title>
+  <para>Since we're trying to be revolutionary, we're bound to do some things differently, aren't we?</para>
+  <sect1 id="concepts-modes">
+   <title>Modes</title>
+   <titleabbrev>modes</titleabbrev>
+   <para>
+    A <quote>mode</quote> is a set of modules and settings for said modules that belong together to form a sort of "usage profile" for your Unix-machine. Modes are related to sysvinit's runlevels, except that they not only contain a set of processes that need to be run to form a runlevel, but that eINIT supports configuration entries to be associated with modes. Also eINIT is not limited to 6/7 runlevels (level 1 through 6 and S, with the mentioned three
+    already having a special meaning), but it allows for an arbitrary number of named modes, each of which can depend on a set of other modes.
+   </para>
+   <para>
+    Okay, this is admittedly a tad abstract, so let's try to make this a bit more clear. As has been mentioned, modes can form a sort of usage-profile for your computer. Thus you could have one mode for "server", one for "workstation". Now, when you think about it, both require the same set of basic initialisation: mounting filesystems, setting up hardware, monitoring hardware events... and doing all these things alone would probably be sufficient for a single-user session, so we make this a new mode and call it "boot". Now we have three modes: boot, server and workstation, with server and workstation both depending on boot. That means you can put all the common modules into boot and concentrate on which services you wish to start in the server mode (network, firewall, apache, mysql) and which to start in the workstation mode (X11, e17...). Now, when eINIT boots (or switches modes) to either of "server" or "workstation", it will take all the entries in "boot" into consideration as well and it will make sure that everything is loaded with a minimum of changes to whatever is running right now, doing as much as possible in parallel.
+   </para>
+   <para>
+    And when you think about this a little harder, the server mode is just an extended "firewall" or "router"-mode... you get the drift :D
+   </para>
+  </sect1>
+  <sect1 id="concepts-services">
+   <title>Services</title>
+   <titleabbrev>services</titleabbrev>
+   <para> -- write me! -- </para>
+   <sect2 id="concepts-services-groups">
+    <title>Service Groups</title>
+    <titleabbrev>service groups</titleabbrev>
+    <para> -- write me! -- </para>
+   </sect2>
+  </sect1>
+ </appendix>
+
 </book>

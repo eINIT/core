@@ -6,6 +6,11 @@
    the rid.
  * cleaned up some name tags
  * combined kern-eth0 and kern-eth1 to kern-ethernet
+ * some configuration relocation/cleanups
+ * common-mount.c: will now symlink /etc/mtab to /proc/mounts on linux (some of
+   the linux commands apparently enjoy recreating this, thus causing trouble
+   since einit has no reason to actively maintain this, at least not on linux,
+   since the kernel already maintains a copy of this)
 
 2006/10/02: mdeininger
  * I'm trying to get the user's guide up to date for version 0.10

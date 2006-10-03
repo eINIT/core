@@ -73,7 +73,17 @@
  <mount-ramdisk-fs s="tmpfs" />
  <mount-union s="unionfs" />
  <mount-critical s="/usr:/var" />
+<!-- parametre 1 is the filesystem type, parametre 2 is the device -->
  <mount-fsck-command s="/sbin/fsck -a -T -t %s %s" />
+
+<!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
+ <fstab-entry mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" />
+ <fstab-entry mountpoint="/sys" fs="sysfs" />
+ <fstab-entry mountpoint="/proc" fs="proc" />
+
+ <fstab-entry mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
+ <fstab-entry mountpoint="/dev/shm" fs="tmpfs" before-mount="mkdir /dev/shm" options="critical" />
+ <fstab-entry mountpoint="/dev/pts" fs="devpts" before-mount="mkdir /dev/pts" options="critical" />
 
 <!-- things that should be implemented someday -->
 <!-- <mount-block-devices-source s="proc:sys:dev" /> -->
