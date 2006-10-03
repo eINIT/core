@@ -42,10 +42,9 @@
   </para>
   </legalnotice>
   <abstract>
-   <para>This Documentation was written with eINIT version 0.10 in mind. It was written to help new users to find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
+   <para>This Documentation was written with eINIT version 0.10 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
   </abstract>
  </bookinfo>
- <toc></toc>
 
  <chapter id="introduction">
   <title>Introduction</title>
@@ -259,7 +258,9 @@
    <para>
     if we examine this fictional snippet, we can observe the following:
     <itemizedlist>
-     <listitem><para>eINIT configuration files are regular, free-form XML files. They need to be syntactically correct (don't forget the / in elements! i.e. <varname>&lt;mode /&gt;</varname>) and should be written in UTF-8.</para></listitem>
+     <listitem>
+      <para>eINIT configuration files are regular, free-form XML files. They need to be syntactically correct (don't forget the / in elements! For example <varname>&lt;decimal-integer-variable /&gt;</varname> instead of <varname>&lt;decimal-integer-variable&gt;</varname>) and should be written in UTF-8.</para>
+     </listitem>
      <listitem><para>Most elements define variables.</para></listitem>
      <listitem><para>The only (inner) element that contains elements is the <varname>&lt;mode /&gt;</varname>-element.</para></listitem>
      <listitem><para>Values are assigned to elements using attributes, i.e. <varname>&lt;variable s="string" /&gt;</varname> as opposed to <varname>&lt;variable&gt;string&lt;/variable&gt;</varname>. This is different from most other programs that use XML files for configuration, but I find this way to be more logical and intuitive.</para></listitem>

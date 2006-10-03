@@ -5,6 +5,7 @@
    module name, also the module name is now the actual name (if available), not
    the rid.
  * cleaned up some name tags
+ * combined kern-eth0 and kern-eth1 to kern-ethernet
 
 2006/10/02: mdeininger
  * I'm trying to get the user's guide up to date for version 0.10

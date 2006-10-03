@@ -31,12 +31,7 @@
 
  <mod-shell id="shell-sysconf" name="sysconf dummy" provides="sysconf" enable="echo sysconf;" disable="echo sysconf;" />
 
- <mod-shell id="shell-kern-eth0-dummy" name="net-eth0" provides="kern-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
- <mod-shell id="shell-kern-eth1-dummy" name="net-eth0" provides="kern-eth1" enable="echon /sbin/modprobe ${kernel_module_eth1}" disable="echo /sbin/rmmod ${kernel_module_eth1}" variables="kernel_module_eth1"/>
-
  <mod-shell id="shell-eth0-dummy" name="net-eth0-dummy" provides="net-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
-
-<!-- <mod-shell id="shell-domainname-dummy" name="set NIS/YP domainname" provides="domainname" enable="echo /bin/domainname ${conf_domainname}" disable="" variables="conf_domainname"/> -->
 
  <daemon-spawn-timeout i="20" />
  <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
