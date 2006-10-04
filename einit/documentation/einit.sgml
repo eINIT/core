@@ -401,7 +401,7 @@
         <term><varname>prefer-&lt;service&gt;</varname> [STRING] [SET]</term>
         <listitem>
          <para>
-          A colon-separated set of module-ids. Replace &lt;service&gt; with the service name for which you want to specify module-preferences.
+          A colon-separated set of module-ids. Replace &lt;service&gt; with the service name for which you want to specify certain modules to prefer.
          </para>
         </listitem>
        </varlistentry>
@@ -414,7 +414,7 @@
       The <varname>network</varname> and <varname>video</varname> elements in the example above both define service groups; Service groups are defined by creating an element with the name of the service to be defined and by adding the attribute <varname>group=""</varname> to this service that contains a set of service-names that form this abstract service. For example the <varname>network</varname>-service defined above consists of the services <varname>net-lo</varname> and <varname>net-eth0</varname>. The <varname>seq=""</varname> attribute is used to tell eINIT how many of the services need to be up to for the group to be considered "enabled".
       <note>
        <para>
-        If you have a service group and a module that both provide the same service, then the module "wins". This approach was taken in order to allow for specialised moduels that can take the role of a service group.
+        If you have a service group and a module that both provide the same service, then the module "wins". This approach was taken in order to allow for specialised modules that can take the role of a service group.
        </para>
       </note>
       <variablelist><title>Service-Groups-Variables: Attributes</title>
@@ -580,6 +580,18 @@
     <para>
      This is the default feedback-module. It comments on certain events, like modules being enabled or disabled; verbose output from the modules is also put on-screen. Developers could use the source file of this module to create other, more complex feedback modules.
     </para>
+   </sect2>
+   <sect2 id="usage-modules-mount">
+    <title>[*mount] Mounting Filesystems</title>
+    <para>
+     The module "common-mount.so" (and "linux-mount.so" on linux) are used to mount and unmount filesystems. They use a rather large number of variables, and you will most likely need to modify at least one of them.
+    </para>
+    <sect3 id="usage-modules-mount-fstab">
+     <title>FSTab sources</title>
+     <para>
+      The module "common-mount.so" (and "linux-mount.so" on linux) are used to mount and unmount filesystems. They use a rather large number of variables, and you will most likely need to modify at least one of them.
+     </para>
+    </sect3>
    </sect2>
   </sect1>
  </chapter>
