@@ -648,13 +648,12 @@
        </para>
       </listitem>
      </varlistentry>
-
-     <note>
-      <para>
-       Even though it is considered good practice by lots of *nix zealots, it is not necessary to have all these filesystems on their own partitions. If there are no fstab-entries for some of these, then they are silently "skipped". You could think of these services as "availability levels": in your modules, simply make sure to specify the right "level". If in doubt, you'll most likely need "mount/critical".
-      </para>
-     </note>
     </variablelist>
+    <note>
+     <para>
+      Even though it is considered good practice by lots of *nix zealots, it is not necessary to have all these filesystems on their own partitions or harddisks. If there are no fstab-entries for some of these, then they are silently skipped. You could think of these services as "availability levels": in your modules, simply make sure to specify the right "level". If in doubt, you'll most likely need "mount/critical".
+     </para>
+    </note>
     <variablelist><title>Variables (excerpt)</title>
      <varlistentry>
       <term>Variable <varname>mount-update-steps</varname> [STRING] [SET]</term>
