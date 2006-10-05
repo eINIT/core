@@ -9,13 +9,46 @@
  <style-specification id="print" use="print-stylesheet">
   <style-specification-body> 
 
-    ;; customize the print stylesheet
+;; customize the print stylesheet
   </style-specification-body>
  </style-specification>
  <style-specification id="html" use="html-stylesheet">
   <style-specification-body> 
 
-    ;; customize the html stylesheet
+   (define %html-ext% ".html")
+   (define %root-filename% "index")
+   (define %use-id-as-filename% #t)
+
+   (define %generate-legalnotice-link% #t)
+
+<!-- some portions of this were inspired by the freebsd stylesheet, see
+ http://www.freebsd.org/cgi/cvsweb.cgi/doc/share/sgml/freebsd.dsl?rev=1.91&content-type=text/x-cvsweb-markup -->
+   (define ($footer$)
+    (make sequence
+     (make empty-element gi: "hr")
+     (literal "hosting provided by:")
+     (make empty-element gi: "br")
+     (make element gi: "a"
+       attributes: (list (list "href" "http://sourceforge.net"))
+     (make empty-element gi: "img"
+       attributes: (list 
+                     (list "src" (string-append "http://sflogo.sourceforge.net/sflogo.php?group_id=159321" "&" "type=2"))
+                     (list "width" "125")
+                     (list "height" "37")
+                     (list "border" "0")
+                     (list "alt" "SourceForge.net Logo")
+))
+)
+))
+
+   (define ($html-body-end$)
+    (if (equal? $footer$ (normalize ""))
+     (empty-sosofo)
+     (make sequence
+      (if nochunks
+       (make empty-element gi: "hr")
+       (empty-sosofo))
+       ($footer$))))
 
   </style-specification-body>
  </style-specification>
