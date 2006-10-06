@@ -781,7 +781,7 @@
      <sect4 id="usage-modules-mount-fstab-legacy">
       <title>Legacy FSTab (/etc/fstab)</title>
       <para>
-       Like most other related *nix tools, eINIT can use your /etc/fstab file. If you need to find out how this file is supposed to look like, see your unix man pages, the node is usually called "fstab" or "mount".
+       Like most other related *nix tools, eINIT can use your /etc/fstab file. If you need to find out what this file is supposed to look like, see your unix man pages, the node is usually called "fstab" or "mount".
       </para>
       <note>
        <para>
@@ -803,13 +803,104 @@
        &lt;/einit&gt;
       </synopsis>
       <para>
-       FSTab-entries can be specified inside your configuration file (a good place would be rc.xml). This is the most flexible way to
+       FSTab-entries can be specified inside your configuration file (a good place would be rc.xml) using the element <varname>&lt;fstab-entry /&gt;</varname>. This is the most flexible way to specify mountpoints, because you can (optionally) combine the mounting action with commands to run.
       </para>
       <warning>
        <para>
-	    Never disable
+	    Never disable this fstab-source, unless you want /dev, /proc, /sys, /dev/pts and similar to break! Also, don't remove the configuration file entries for these mountpoints, or things will go haywire in the same way! You have been warned!
        </para>
       </warning>
+      <variablelist><title>Attributes of the</title>
+       <varlistentry>
+        <term>Attribute <varname>mountpoint</varname> [STRING]</term>
+        <listitem>
+         <para>
+          The mountpoint where this filesystem should be mounted. You always have to specify this.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>device</varname> [STRING]</term>
+        <listitem>
+         <para>
+          What to mount there. Usually a block-device, but could be of the form <filename>host:/path/to/directory</filename> for remote filesystems.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>fs</varname> [STRING]</term>
+        <listitem>
+         <para>
+          The filesystem name to pass to the kernel (ufs, ext2, ext3, reiserfs, ...).
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>encryption</varname> [STRING]</term>
+        <listitem>
+         <para>
+          What encryption algorithm to use...
+         </para>
+         <note><para> - NOT IMPLEMENTED - </para></note>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>options</varname> [STRING] [SET]</term>
+        <listitem>
+         <para>
+          Filesystem options (noatime, rw, ro, ...). See your filesystem's manual for a complete list of allowed options. Note that this set uses the colon (:) as a delimiter (!), not the comma that you would normally find in your /etc/fstab.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>before-mount</varname> [STRING]</term>
+        <listitem>
+         <para>
+          A command to run before the filesystem is mounted, possibly to prepare the filesystem for being mounted.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>after-mount</varname> [STRING]</term>
+        <listitem>
+         <para>
+          A command to run after the filesystem is mounted.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>manager</varname> [STRING]</term>
+        <listitem>
+         <para>
+          A daemon that will be started after the filesystem is mounted, and after the "after-mount" command was executed (if any). This is, for example, used to bring up udevd after /dev has been mounted on newer linux kernels.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>before-umount</varname> [STRING]</term>
+        <listitem>
+         <para>
+          A command to run before the filesystem is unmounted.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>after-umount</varname> [STRING]</term>
+        <listitem>
+         <para>
+          A command to run after the filesystem is unmounted, or if it failed to mount at all.
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
+        <listitem>
+         <para>
+          You can specify a set of (configuration-)variables to be passed to the command as environment variables using this attribute.
+         </para>
+        </listitem>
+       </varlistentry>
+      <variablelist>
      </sect4>
     </sect3>
    </sect2>
