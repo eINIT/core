@@ -538,6 +538,7 @@
    <sect2 id="configuration-modules-einit-mod">
     <title>Creating Script-Modules and Daemoni</title>
     <para>
+     These two types of modules are very closely related. They both execute arbitrary commands, thus allowing you to create modules by specifying the commands that need to be run to form these modules. The "shell-type" modules do exactly and only that: they execute commands to provide services. The "daemon-type" modules are similar, they however try to make sure that whatever program is executed by them will actually stay running.
     </para>
 
     <sect3 id="configuration-modules-einit-mod-exec">
@@ -662,9 +663,9 @@
      </variablelist>
     </sect3>
     <sect2 id="usage-modules-einit-mod-daemon">
-     <title>einit-mod-daemon</title>
+     <title>[einit-mod-daemon] Daemoni</title>
      <para>
-      One of the things I criticized about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
+      One of the things I criticised about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
      </para>
      <synopsis label="sample XML-configuration file">
       &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
@@ -680,10 +681,111 @@
       &lt;/einit&gt;
      </synopsis>
      <para>The mod-daemon-tag is very similar to the mod-shell tag. In this example we see that requires="" and provides="" is actually interpreted as a colon-separated list; this is also true for the mod-shell tag. Instead of the enable="" and disable="" attributes, we have one command="" attribute that is used to specify a command that needs to be run to get this daemon up. Also this tag sports a special restart="" attribute, that tells einit-mod-daemon whether to resurrect a dead daemon or not.</para>
+     <variablelist><title>Elements used to specify daemon-type modules</title>
+      <varlistentry>
+       <term>Element <varname>mod-daemon</varname> [COMPLEX VARIABLE]</term>
+       <listitem>
+        <para>
+         Used to specify daemon-type modules.
+        </para>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+     <variablelist><title><varname>mod-daemon</varname> Attributes</title>
+      <varlistentry>
+       <term>Attribute <varname>id</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The ID of the module. This would, for example, be used in module-preferences.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>name</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The module's name. This is used by visualisers, etc.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>provides</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         A colon-separated set of strings; specifies services that this module provides.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>requires</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         A colon-separated set of strings; specifies services that this module requires.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>notwith</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         A colon-separated set of strings; specifies the modules this module is known not to work with.
+        </para>
+        <note><para>Not implemented</para></note>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>command</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run to enable the module. This is passed to /bin/sh -c (usually). The module will be considered enabled as long as this command keeps running.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>prepare</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run before the daemon is executed.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>cleanup</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run after the daemon finishes executing.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>restart</varname> [BOOLEAN] (yes|no)</term>
+       <listitem>
+        <para>
+         Whether or not to restart the daemon in case it dies. The default is not to restart the daemon, so you will want to specify this.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+ 		A colon-separated set of (string-)variables that will be "imported" into the called shell upon status-changes as environment variables.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>All other attributes</term>
+       <listitem>
+        <para>
+         All other attributes are saved as environment variables that are passed to the commands executed on behalf of this definition.
+        </para>
+       </listitem>
+      </varlistentry>
+     </variablelist>
     </sect3>
    </sect2>
    <sect2 id="usage-modules-einit-feedback-textual">
-    <title>einit-feedback-textual</title>
+    <title>[einit-feedback-textual] Status Feedback</title>
     <para>
      This is the default feedback-module. It comments on certain events, like modules being enabled or disabled; verbose output from the modules is also put on-screen. Developers could use the source file of this module to create other, more complex feedback modules.
     </para>
