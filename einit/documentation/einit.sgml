@@ -667,7 +667,7 @@
       <term>Variable <varname>mount-fstab-source</varname> [STRING] [SET]</term>
       <listitem>
        <para>
-        A colon-separated set of strings specifying all the fstab sources the *mount modules should use. See below for a list of all the available options and which of them does what.
+        A colon-separated set of strings specifying all the fstab sources the *mount modules should use. See <xref linkend="usage-modules-mount-fstab" /> for a list of all the available options and which of them does what.
        </para>
       </listitem>
      </varlistentry>
@@ -902,6 +902,27 @@
        </varlistentry>
       <variablelist>
      </sect4>
+
+     <sect4 id="usage-modules-mount-fstab-label">
+      <title>FSTab-from-label-forger</title>
+      <para>
+       This is a somewhat new idea: Instead of specifying an fstab yourself, you can use filesystem labels and have eINIT *guess* the mountpoint of the filesystems by these labels.
+      </para>
+      <para>
+       The approach eINIT takes to guessing looks somewhat like this:
+      </para>
+      <itemizedlist>
+       <listitem><para>Are there slashes (/) in the label? If so, use the label as the mountpoint.</para></listitem>
+       <listitem><para>Are there dashes (-) in the label <emphasis>and</emphasis> does the label start with the hostname, followed by a dash? If so, convert a label of the form <quote>hostname-path-to-mountpoint</quote> to <quote>/path/to/mountpoint</quote> if the hostname in the label is the same as the current hostname. (exception: <quote>hostname-root</quote> becomes <quote>/</quote>)</para></listitem>
+       <listitem><para>Else, dashes or not, mount the filesystem as <quote>/media/&lt;label&gt;</quote></para></listitem>
+      </itemizedlist>
+      <note>
+       <para>
+        This label reader has apparently caused some havoc in the past, so it is now disabled by default. The main problem was that it could cause filesystems to be mounted twice if the filesystem has another source specify a mountpoint and the label is in a format that eINIT can base no guesses on, and thus an fsck could be run on an already mounted filesystem. Then fsck would complain and expect user input, which was impossible, and then the modeswitch got stuck.
+       </para>
+      </note>
+     </sect4>
+
     </sect3>
    </sect2>
   </sect1>

@@ -1,3 +1,8 @@
+2006/10/08: mdeininger
+ * removed the "label" fstab-source from the default list. it seems to do more
+   more havoc than good due to lack of understanding.
+ * oh yeah: more documentation
+
 2006/10/05: mdeininger
  * more documentation updates
  * updated module definitions from KKtm (thanks a bunch ;) )
