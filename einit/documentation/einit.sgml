@@ -662,7 +662,7 @@
       </varlistentry>
      </variablelist>
     </sect3>
-    <sect2 id="usage-modules-einit-mod-daemon">
+    <sect3 id="usage-modules-einit-mod-daemon">
      <title>[einit-mod-daemon] Daemoni</title>
      <para>
       One of the things I criticised about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
@@ -950,7 +950,7 @@
      <para>
       eINIT can use more than one "source" for FSTab entries. The number of sources is theoretically unlimited, but right now we only have three of them:
      </para>
-     <variablelist><title>FSTab Sources</title>
+     <variablelist><title>Elements used to specify FSTab Sources</title>
       <varlistentry>
        <term>Variable <varname>mount-fstab-source</varname> [STRING] [SET]</term>
        <listitem>
@@ -960,12 +960,12 @@
        </listitem>
       </varlistentry>
      </variablelist>
-     <variablelist><title>FSTab Sources</title>
+     <variablelist><title>Currently implemented FSTab Sources</title>
       <varlistentry>
        <term><varname>legacy</varname></term>
        <listitem>
         <para>
-         Legacy fstab (/etc/fstab), see below.
+         Legacy fstab (/etc/fstab), see <xref linkend="usage-modules-mount-fstab-legacy">.
         </para>
        </listitem>
       </varlistentry>
@@ -973,7 +973,7 @@
        <term><varname>configuration</varname></term>
        <listitem>
         <para>
-         FSTab entries in your configuration file (&lt;fstab-entry /&gt;-nodes), see below.
+         FSTab entries in your configuration file (&lt;fstab-entry /&gt;-nodes), see <xref linkend="usage-modules-mount-fstab-configuration">.
         </para>
        </listitem>
       </varlistentry>
@@ -981,7 +981,7 @@
        <term><varname>label</varname></term>
        <listitem>
         <para>
-         This will make eINIT <quote>guess</quote> filesystem mount points by their labels, see below.
+         This will make eINIT <quote>guess</quote> filesystem mount points by their labels, see <xref linkend="usage-modules-mount-fstab-label">.
         </para>
        </listitem>
       </varlistentry>
@@ -1016,10 +1016,10 @@
       </para>
       <warning>
        <para>
-	    Never disable this fstab-source, unless you want /dev, /proc, /sys, /dev/pts and similar to break! Also, don't remove the configuration file entries for these mountpoints, or things will go haywire in the same way! You have been warned!
+        Never disable this fstab-source, unless you want /dev, /proc, /sys, /dev/pts and similar to break! Also, don't remove the configuration file entries for these mountpoints, or things will go haywire in the same way! You have been warned!
        </para>
       </warning>
-      <variablelist><title>Attributes of the</title>
+      <variablelist><title>Attributes of the fstab-entry Element</title>
        <varlistentry>
         <term>Attribute <varname>mountpoint</varname> [STRING]</term>
         <listitem>
@@ -1109,7 +1109,7 @@
          </para>
         </listitem>
        </varlistentry>
-      <variablelist>
+      </variablelist>
      </sect4>
 
      <sect4 id="usage-modules-mount-fstab-label">

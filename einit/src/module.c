@@ -428,26 +428,24 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    }
   }
  } else if (task & SERVICE_UPDATE) {
-  if (t = module->module->requires) {
-   for (i = 0; t[i]; i++) {
-    if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
-     item->users = module->status & STATUS_ENABLED ?
-      (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC) :
-      (struct lmodule **)setdel ((void **)item->users, (void *)module);
+  if (module->status & STATUS_ENABLED) {
+   if (t = module->module->requires) {
+    for (i = 0; t[i]; i++) {
+     if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
+      item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
+     }
     }
    }
-  }
-  if (t = module->module->provides) {
-   for (i = 0; t[i]; i++) {
-    if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
-     item->provider = module->status & STATUS_ENABLED ?
-      (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC) :
-      (struct lmodule **)setdel ((void **)item->provider, (void *)module);
-    } else if (module->status & STATUS_ENABLED) {
-     struct service_usage_item nitem;
-     memset (&nitem, 0, sizeof (struct service_usage_item));
-     nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
-     service_usage = hashadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+   if (t = module->module->provides) {
+    for (i = 0; t[i]; i++) {
+     if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
+      item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
+     } else {
+      struct service_usage_item nitem;
+      memset (&nitem, 0, sizeof (struct service_usage_item));
+      nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
+      service_usage = hashadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+     }
     }
    }
   }
@@ -457,9 +455,9 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   while (ha) {
    item = (struct service_usage_item *)ha->value;
 
-   if (!(module->status & STATUS_ENABLED))
-    item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
-   else {
+   if (!(module->status & STATUS_ENABLED)) {
+     item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
+     item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
    }
 
    if (!item->provider && !item->users) {
