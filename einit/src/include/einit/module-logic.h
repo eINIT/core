@@ -68,15 +68,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * This struct is used to keep all the information that is needed for a mode-switch, or a module-status-change.
 */
 struct mloadplan {
- struct uhash *services; /*!< Hash of all services that are to be used. */
- char **enable;          /*!< Set of all services that are to be enabled. */
- char **disable;         /*!< Set of all services that are to be disabled. */
- char **reset;           /*!< Set of all services that are to be reset. */
- char **unavailable;     /*!< Set of services that were to be changed but were not available. */
- char **locked;          /*!< Set of services that were to be changed, but it's not possible to do so. */
- uint32_t options;       /*!< Plan-options; reserved */
- struct cfgnode *mode;   /*!< Pointer to the mode that was used to construct this plan, if applicable. */
- pthread_mutex_t mutex;  /*!< Mutex for this plan. */
+ struct uhash *services;   /*!< Hash of all services that are to be used. */
+ char **enable;            /*!< Set of all services that are to be enabled. */
+ char **disable;           /*!< Set of all services that are to be disabled. */
+ char **reset;             /*!< Set of all services that are to be reset. */
+ char **unavailable;       /*!< Set of services that were to be changed but were not available. */
+ char **locked;            /*!< Set of services that were to be changed, but it's not possible to do so. */
+ uint32_t options;         /*!< Plan-options; reserved */
+ struct cfgnode *mode;     /*!< Pointer to the mode that was used to construct this plan, if applicable. */
+ pthread_mutex_t mutex;    /*!< Mutex for this plan. */
+
+ pthread_t **subthreads;   /*!< Subthreads of this plan that need to be joined. */
+ pthread_mutex_t st_mutex; /*!< Mutex for subthread-modifications. */
 };
 
 /*!\brief Plan, Node

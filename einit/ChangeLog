@@ -3,6 +3,7 @@
    more havoc than good due to lack of understanding.
  * oh yeah: more documentation. this should do for v0.10, now to fix more bugs.
  * fixed a bug in the module-logic code involving groups and related modules.
+ * almost got proper "most"-type group-handling working
 
 2006/10/05: mdeininger
  * more documentation updates

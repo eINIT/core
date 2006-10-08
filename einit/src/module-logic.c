@@ -88,6 +88,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (!plan) {
   plan = ecalloc (1, sizeof (struct mloadplan));
   pthread_mutex_init (&plan->mutex, NULL);
+  pthread_mutex_init (&plan->st_mutex, NULL);
  }
  pthread_mutex_lock (&plan->mutex);
 
@@ -401,6 +402,29 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  return &(node->status);
 }
 
+void *mod_plan_commit_recurse_enable (struct mloadplan_node *);
+
+void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *node) {
+ pthread_mutex_lock (node->mutex);
+
+ if ((node->group) && (node->group[0])) {
+  uint32_t u = 0;
+  struct uhash *ha;
+
+  run_or_spawn_subthreads_and_wait (node->group, mod_plan_commit_recurse_enable, node->plan, STATUS_ENABLED);
+
+  for (u = 0; node->group; u++) {
+   if (ha = hashfind (node->plan->services, node->group[u])) {
+    struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
+    service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
+   }
+  }
+ }
+
+ pthread_mutex_unlock (node->mutex);
+ return NULL;
+}
+
 // the loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
@@ -436,7 +460,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
   if ((node->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) || (node->options & MOD_PLAN_GROUP_SEQ_ANY)) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
-     struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
+     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
 
@@ -450,20 +474,34 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
   } else if (node->options & MOD_PLAN_GROUP_SEQ_MOST) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
-     struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
+     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
 
      if (cnode->status & STATUS_ENABLED) {
+      pthread_t th;
+
       service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
       node->status |= STATUS_ENABLED;
+
+/* only real condition is that one of the elements need to be enabled, but the others should
+   be enabled too; call subthread with function to enable remaining elements of the group */
+#if 0
+      pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_enable_group_remaining, node);
+
+      pthread_mutex_lock (&(node->plan->st_mutex));
+      node->plan->subthreads = (pthread_t **)setadd ((void **)node->plan->subthreads, (void *)&th, sizeof (pthread_t));
+      pthread_mutex_unlock (&(node->plan->st_mutex));
+
+      goto exit;
+#endif
      }
     }
    }
   } else if (node->options & MOD_PLAN_GROUP_SEQ_ALL) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
-     struct mloadplan_node  *cnode = (struct mloadplan_node  *)ha->value;
+     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
 
@@ -526,20 +564,40 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (plan->mode) cmode = plan->mode;
 
- pthread_t **subthreads = NULL;
  struct uhash *ha;
  uint32_t u = 0;
 
+ pthread_mutex_lock (&(plan->st_mutex));
+
  if (plan->disable)
-  run_or_spawn_subthreads (plan->disable,mod_plan_commit_recurse_disable,plan,subthreads,STATUS_DISABLED);
+  run_or_spawn_subthreads (plan->disable,mod_plan_commit_recurse_disable,plan,plan->subthreads,STATUS_DISABLED);
 
  if (plan->enable)
-  run_or_spawn_subthreads (plan->enable,mod_plan_commit_recurse_enable,plan,subthreads,STATUS_ENABLED);
+  run_or_spawn_subthreads (plan->enable,mod_plan_commit_recurse_enable,plan,plan->subthreads,STATUS_ENABLED);
 
  if (plan->reset)
-  run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,subthreads,0);
+  run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,plan->subthreads,0);
 
- wait_on_subthreads (subthreads);
+ pthread_mutex_unlock (&(plan->st_mutex));
+
+#if 0
+ while (plan->subthreads) {
+  pthread_mutex_lock (&(plan->st_mutex));
+  {
+   for (u = 0; plan->subthreads[u]; u++)
+    pthread_join (*(plan->subthreads[u]), NULL);
+
+   free (plan->subthreads); plan->subthreads = NULL;
+  }
+
+  pthread_mutex_unlock (&(plan->st_mutex));
+  sleep (1);
+ }
+#else
+ pthread_mutex_lock (&(plan->st_mutex));
+ wait_on_subthreads (plan->subthreads);
+ pthread_mutex_unlock (&(plan->st_mutex));
+#endif
 
  if (plan->unavailable) {
   char tmp[2048], tmp2[2048];
