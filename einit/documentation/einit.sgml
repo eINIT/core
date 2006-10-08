@@ -535,45 +535,152 @@
      </varlistentry>
     </variablelist>
    </sect2>
-   <sect2 id="configuration-modules-einit-mod-exec">
-    <title>einit-mod-exec</title>
+   <sect2 id="configuration-modules-einit-mod">
+    <title>Creating Script-Modules and Daemoni</title>
     <para>
-     This module is used to create pseudo-modules that execute arbitrary shell-commands.
     </para>
-    <synopsis label="sample XML-configuration file">
-     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
-     &lt;einit&gt;
-      &lt;!-- [...] --&gt;
-      &lt;mod-shell id="shell-mount" name="Filesystems" provides="localmount" requires="sysconf"
-       enable="mount -a" disable="umount -ar; mount / -o remount,ro" /&gt;
-      &lt;!-- [...] --&gt;
 
-      &lt;mode id="boot"&gt;
-       &lt;enable mod="localmount" /&gt;
-      &lt;/mode&gt;
-     &lt;/einit&gt;
-    </synopsis>
-    <para>In this excerpt from the default configuration file, we see the definition of a module called "shell-mount", that goes by the name of "Filesystems". It provides a module for the "localmount"-requirement, which is required in our exemplary "boot"-mode. Additionally, it requires a "sysconf"-module to be enabled before it. The attributes <varname>enable=</varname> and <varname>disable=</varname> specify what commands to run upon enabling or disabling this pseudo-module.</para>
-   </sect2>
-   <sect2 id="usage-modules-einit-mod-daemon">
-    <title>einit-mod-daemon</title>
-    <para>
-     One of the things I criticized about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
-    </para>
-    <synopsis label="sample XML-configuration file">
-     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
-     &lt;einit&gt;
-      &lt;!-- [...] --&gt;
-      &lt;mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="sysconf:tty"
-       command="/usr/sbin/gpm" restart="yes" /&gt;
-      &lt;!-- [...] --&gt;
+    <sect3 id="configuration-modules-einit-mod-exec">
+     <title>[einit-mod-exec] simple Shell-Modules</title>
+     <para>
+      This module is used to create pseudo-modules that execute arbitrary shell-commands.
+     </para>
+     <synopsis label="sample XML-configuration file">
+      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+      &lt;einit&gt;
+       &lt;!-- [...] --&gt;
+       &lt;mod-shell id="shell-mount" name="Filesystems" provides="localmount" requires="sysconf"
+        enable="mount -a" disable="umount -ar; mount / -o remount,ro" /&gt;
+       &lt;!-- [...] --&gt;
 
-      &lt;mode id="default" base="boot"&gt;
-       &lt;enable mod="gpm" /&gt;
-      &lt;/mode&gt;
-     &lt;/einit&gt;
-    </synopsis>
-    <para>The mod-daemon-tag is very similar to the mod-shell tag. In this example we see that requires="" and provides="" is actually interpreted as a colon-separated list; this is also true for the mod-shell tag. Instead of the enable="" and disable="" attributes, we have one command="" attribute that is used to specify a command that needs to be run to get this daemon up. Also this tag sports a special restart="" attribute, that tells einit-mod-daemon whether to resurrect a dead daemon or not.</para>
+       &lt;mode id="boot"&gt;
+        &lt;enable mod="localmount" /&gt;
+       &lt;/mode&gt;
+      &lt;/einit&gt;
+     </synopsis>
+     <para>In this excerpt from the default configuration file, we see the definition of a module called "shell-mount", that goes by the name of "Filesystems". It provides a module for the "localmount"-requirement, which is required in our exemplary "boot"-mode. Additionally, it requires a "sysconf"-module to be enabled before it. The attributes <varname>enable=</varname> and <varname>disable=</varname> specify what commands to run upon enabling or disabling this pseudo-module.</para>
+     <variablelist><title>Elements used to specify shell-type modules</title>
+      <varlistentry>
+       <term>Element <varname>mod-shell</varname> [COMPLEX VARIABLE]</term>
+       <listitem>
+        <para>
+         Used to specify shell-type modules.
+        </para>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+     <variablelist><title><varname>mod-shell</varname> Attributes</title>
+      <varlistentry>
+       <term>Attribute <varname>id</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The ID of the module. This would, for example, be used in module-preferences.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>name</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The module's name. This is used by visualisers, etc.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>provides</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         A colon-separated set of strings; specifies services that this module provides.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>requires</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         A colon-separated set of strings; specifies services that this module requires.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>notwith</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         A colon-separated set of strings; specifies the modules this module is known not to work with.
+        </para>
+        <note><para>Not implemented</para></note>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>enable</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run to enable the module. This is passed to /bin/sh -c (usually).
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>disable</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run to disable the module. This is passed to /bin/sh -c (usually).
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>reset</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run to reset the module. This is passed to /bin/sh -c (usually).
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>reload</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The command to be run to re-load the module. This is passed to /bin/sh -c (usually).
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+ 		A colon-separated set of (string-)variables that will be "imported" into the called shell upon status-changes as environment variables.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>All other attributes</term>
+       <listitem>
+        <para>
+         All other attributes are saved as environment variables that are passed to the commands executed on behalf of this definition.
+        </para>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+    </sect3>
+    <sect2 id="usage-modules-einit-mod-daemon">
+     <title>einit-mod-daemon</title>
+     <para>
+      One of the things I criticized about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
+     </para>
+     <synopsis label="sample XML-configuration file">
+      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+      &lt;einit&gt;
+       &lt;!-- [...] --&gt;
+       &lt;mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="sysconf:tty"
+        command="/usr/sbin/gpm" restart="yes" /&gt;
+       &lt;!-- [...] --&gt;
+
+       &lt;mode id="default" base="boot"&gt;
+        &lt;enable mod="gpm" /&gt;
+       &lt;/mode&gt;
+      &lt;/einit&gt;
+     </synopsis>
+     <para>The mod-daemon-tag is very similar to the mod-shell tag. In this example we see that requires="" and provides="" is actually interpreted as a colon-separated list; this is also true for the mod-shell tag. Instead of the enable="" and disable="" attributes, we have one command="" attribute that is used to specify a command that needs to be run to get this daemon up. Also this tag sports a special restart="" attribute, that tells einit-mod-daemon whether to resurrect a dead daemon or not.</para>
+    </sect3>
    </sect2>
    <sect2 id="usage-modules-einit-feedback-textual">
     <title>einit-feedback-textual</title>
