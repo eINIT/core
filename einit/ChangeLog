@@ -1,3 +1,6 @@
+2006/10/09: mdeininger
+ * extension to the event-system: module status changes now emit an event.
+
 2006/10/08: mdeininger
  * removed the "label" fstab-source from the default list. it seems to do more
    more havoc than good due to lack of understanding.

@@ -232,6 +232,7 @@ int mod (unsigned int task, struct lmodule *module) {
  int ti, errc;
  unsigned int ret;
  struct uhash *ha;
+
  if (!module) return 0;
 /* wait if the module is already being processed in a different thread */
  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_lock (&module->mutex))) {
@@ -292,66 +293,82 @@ int mod (unsigned int task, struct lmodule *module) {
 
  skipdependencies:
 
- fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
- fb->para = (void *)module;
- fb->task = task | MOD_FEEDBACK_SHOW;
- fb->status = STATUS_WORKING;
- fb->flag = 0;
- fb->string = NULL;
- fb->integer = module->fbseq+1;
- status_update (fb);
+/* actual loading bit */
+ {
+  struct einit_event evmstatupdate = evstaticinit(EINIT_EVENT_MODULE_STATUS_UPDATE);
 
- if (task & MOD_ENABLE) {
-   ret = module->enable (module->param, fb);
-   if (ret & STATUS_OK) {
-    module->status = STATUS_ENABLED;
-    fb->status = STATUS_OK | STATUS_ENABLED;
-   } else {
-    fb->status = STATUS_FAIL;
-   }
- } else if (task & MOD_DISABLE) {
-   ret = module->disable (module->param, fb);
-   if (ret & STATUS_OK) {
-    module->status = STATUS_DISABLED;
-    fb->status = STATUS_OK | STATUS_DISABLED;
-   } else {
-    fb->status = STATUS_FAIL;
-   }
- } else if (task & MOD_RESET) {
-  if (module->reset) {
-   ret = module->reset (module->param, fb);
-   if (ret & STATUS_OK) {
-    fb->status = STATUS_OK | module->status;
-   } else
-    fb->status = STATUS_FAIL;
-  } else if (module->disable && module->enable) {
-    ret = module->disable (module->param, fb);
-   if (ret & STATUS_OK) {
+  evmstatupdate.task = task;
+  evmstatupdate.para = (void *)module;
+  evmstatupdate.status = STATUS_WORKING;
+  event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+
+  fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
+  fb->para = (void *)module;
+  fb->task = task | MOD_FEEDBACK_SHOW;
+  fb->status = STATUS_WORKING;
+  fb->flag = 0;
+  fb->string = NULL;
+  fb->integer = module->fbseq+1;
+  status_update (fb);
+
+  if (task & MOD_ENABLE) {
     ret = module->enable (module->param, fb);
-   } else
-    fb->status = STATUS_FAIL;
+    if (ret & STATUS_OK) {
+     module->status = STATUS_ENABLED;
+     fb->status = STATUS_OK | STATUS_ENABLED;
+    } else {
+     fb->status = STATUS_FAIL;
+    }
+  } else if (task & MOD_DISABLE) {
+    ret = module->disable (module->param, fb);
+    if (ret & STATUS_OK) {
+     module->status = STATUS_DISABLED;
+     fb->status = STATUS_OK | STATUS_DISABLED;
+    } else {
+     fb->status = STATUS_FAIL;
+    }
+  } else if (task & MOD_RESET) {
+   if (module->reset) {
+    ret = module->reset (module->param, fb);
+    if (ret & STATUS_OK) {
+     fb->status = STATUS_OK | module->status;
+    } else
+     fb->status = STATUS_FAIL;
+   } else if (module->disable && module->enable) {
+     ret = module->disable (module->param, fb);
+    if (ret & STATUS_OK) {
+     ret = module->enable (module->param, fb);
+    } else
+     fb->status = STATUS_FAIL;
+   }
+  } else if (task & MOD_RELOAD) {
+   if (module->reload) {
+    ret = module->reload (module->param, fb);
+    if (ret & STATUS_OK) {
+     fb->status = STATUS_OK | module->status;
+    } else
+     fb->status = STATUS_FAIL;
+   }
   }
- } else if (task & MOD_RELOAD) {
-  if (module->reload) {
-   ret = module->reload (module->param, fb);
-   if (ret & STATUS_OK) {
-    fb->status = STATUS_OK | module->status;
-   } else
-    fb->status = STATUS_FAIL;
+
+  module->fbseq = fb->integer + 1;
+
+  evmstatupdate.status = fb->status;
+  event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+
+  status_update (fb);
+  evdestroy (fb);
+
+  service_usage_query(SERVICE_UPDATE, module, NULL);
+
+  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
+//  this is bad...
+   if (errno)
+    perror ("unlocking mutex");
   }
- }
 
- module->fbseq = fb->integer + 1;
+  evstaticdestroy (evmstatupdate);
 
- status_update (fb);
- evdestroy (fb);
-
- service_usage_query(SERVICE_UPDATE, module, NULL);
-
- if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
-// this is bad...
-  if (errno)
-   perror ("unlocking mutex");
  }
  return module->status;
 }

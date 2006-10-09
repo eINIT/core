@@ -41,41 +41,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <pthread.h>
 
-#define EINIT_EVENT_FLAG_BROADCAST	0x0001
+#define EINIT_EVENT_FLAG_BROADCAST	0x00000001
  /* this should always be specified, although just now it's being ignored */
-#define EINIT_EVENT_FLAG_SPAWN_THREAD	0x0002
+#define EINIT_EVENT_FLAG_SPAWN_THREAD	0x00000002
  /* use this to tell einit that you don't wish/need to wait for this to return */
-#define EINIT_EVENT_FLAG_DUPLICATE	0x0004
+#define EINIT_EVENT_FLAG_DUPLICATE	0x00000004
  /* duplicate event data block. important with SPAWN_THREAD */
 
-#define EINIT_EVENT_TYPE_IPC		0x0001
+#define EINIT_EVENT_TYPE_IPC		0x00000001
  /* incoming IPC request */
-#define EINIT_EVENT_TYPE_NEED_MODULE	0x0002
+#define EINIT_EVENT_TYPE_NEED_MODULE	0x00000002
  /* this is to be used in case a module finds out it doesn't have everything it needs, yet */
-#define EINIT_EVENT_TYPE_MOUNT_UPDATE	0x0004
+#define EINIT_EVENT_TYPE_MOUNT_UPDATE	0x00000004
  /* update mount status */
-#define EINIT_EVENT_TYPE_FEEDBACK	0x0008
+#define EINIT_EVENT_TYPE_FEEDBACK	0x00000008
  /* the para field specifies a module that caused the feedback */
-#define EINIT_EVENT_TYPE_NOTICE		0x0010
+#define EINIT_EVENT_TYPE_NOTICE		0x00000010
  /* use the flag field to specify a severity, 0+ is critical, 6+ is important, etc...  */
-#define EINIT_EVENT_TYPE_POWER		0x0020
+#define EINIT_EVENT_TYPE_POWER		0x00000020
  /* notify others that the power is failing, has been restored or similar */
-#define EINIT_EVENT_TYPE_TIMER		0x0040
+#define EINIT_EVENT_TYPE_TIMER		0x00000040
  /* set/receive timer. integer is interpreted as absolute callback time, task as relative */
-#define EINIT_EVENT_TYPE_PANIC		0x0080
- /* put everyone on the same host into a state of panic/calm everyone down; flag contains a reason */
-#define EINIT_EVENT_TYPE_CUSTOM		0xFFFF
- /* custom events; not yet implemented */
+
+#define EINIT_EVENT_TYPE_PANIC		0x00000080
+/*!< put everyone in the cast range into a state of panic/calm everyone down; status contains a reason */
+
+#define EINIT_EVENT_MODULE_STATUS_UPDATE	0x00000100
+/*!< Module status changing; use the task and status fields to find out just what happened */
+#define EINIT_EVENT_SERVICE_UPDATE		0x00000200
+/*!< Service availability changing; use the task and status fields to find out just what happened */
+
+#define EINIT_EVENT_TYPE_CUSTOM		0x80000000
+/*!< custom events; not yet implemented */
+
+#define evstaticinit(ttype) { .type = ttype, .type_custom = NULL, .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
+#define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
- uint16_t type;                  /* OR some EINIT_EVENT_TYPE_* constants to specify the event type*/
+ uint32_t type;                  /* OR some EINIT_EVENT_TYPE_* constants to specify the event type*/
  char *type_custom;              /* not yet implemented; reserved for custom events */
  void **set;                     /* a set that should make sense in combination with the event type */
  char *string;                   /* a string */
  int32_t integer, status, task;  /* integers */
  unsigned char flag;             /* flags */
  void *para;                     /* additional parametres */
- pthread_mutex_t mutex;           /* mutex for this event to be used by handlers */
+ pthread_mutex_t mutex;          /* mutex for this event to be used by handlers */
 };
 
 struct event_function {
