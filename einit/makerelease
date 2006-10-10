@@ -40,7 +40,19 @@ cp -a einit/ einit-$1 &&
 cd einit-$1 &&
 make clean &&
 rm -fR sandbox* einit.* web build docs &&
-rm -fR `find . -name "nohup.out" -o -name "CVS*" -o -name "*~" -o -iname "" -o -iname "*Doxy*" -o -name "*.mk" -o -name "*.so" -o -iname ".[a-z#]*"` &&
+rm -fR `find . -name "nohup.out" -o -name "CVS*" -o -name "*~" -o -iname "" -o -name "*.mk" -o -name "*.so" -o -iname ".[a-z#]*" -o -name "1"` &&
+
 cd .. &&
-tar -cjf einit-$1.tar.bz2 einit-$1 &&
-tar -czf einit-$1.tar.gz einit-$1
+tar -cjf einit-$1.tar.bz2 einit-$1 --exclude einit-$1/gentoo &&
+tar -czf einit-$1.tar.gz einit-$1 --exclude einit-$1/gentoo &&
+
+su -c "cp einit-$1.tar.bz2 /usr/portage/distfiles" &&
+
+ebuild einit-$1/gentoo/portage/sys-apps/einit/einit-9999.ebuild digest &&
+cd einit-$1/gentoo/portage &&
+
+tar -cjf ../../../einit-$1-portage-overlay.tar.bz2 . &&
+cd ../../../ &&
+
+cp -a einit-$1/gentoo einit/ &&
+rm -Rf einit-$1/gentoo
