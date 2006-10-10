@@ -25,7 +25,8 @@
  <shell s="/bin/sh -c" TZ="CEST" PATH="/bin:/sbin:/usr/bin:/usr/sbin" />
 
  <use-ansi-codes b="true" />
- <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
+<!-- <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" kernel-vt="12" /> -->
+ <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" />
 
  <mount-block-devices-dev-constraints s=".*" />
 
@@ -48,7 +49,7 @@
  <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" TERM="linux" />
 
 <!-- dummy daemon -->
- <mod-daemon id="daemon-dummy-1" name="Dummy Daemon (1)" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
+ <mod-daemon id="daemon-dummy-1" name="Dummy Daemon (1)" provides="dummyd" command="/bin/sh -c 'while true; do id; sleep 1; done'" restart="yes" prepare="id" user="mdeininger" group="rpc" />
  <mod-daemon id="daemon-dummy-2" name="Dummy Daemon (2)" provides="dummyd" requires="network" prepare="/bin/false" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
  <mod-daemon id="daemon-dummy-3" name="Dummy Daemon (3)" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
 
@@ -94,18 +95,17 @@
  <rmmod s="/sbin/rmmod" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual:audio:network" />
-  <prefer-dummyd s="daemon-dummy-2:daemon-dummy-1" />
+  <enable mod="feedback-visual:dummyd" />
  </mode>
  <mode id="boot">
-  <enable mod="sysconf:dbus" />
+<!--  <enable mod="sysconf" /> -->
 <!--  <enable mod="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:feedback-aural" /> -->
-  <disable mod="audio" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
   <enable mod="ipc" />
-  <disable mod="network" />
+<!--  <disable mod="network" /> -->
+  <disable mod="audio:dummyd" />
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">

@@ -345,4 +345,7 @@ struct einit_event *evinit (uint16_t type);
 void evdestroy (struct einit_event *ev);
 /*!\}*/
 
+/* user/group functions */
+int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group);
+
 #endif /* _UTILITY_H */

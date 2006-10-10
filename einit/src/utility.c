@@ -43,6 +43,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <stdio.h>
 
+#include <pwd.h>
+#include <grp.h>
+#include <errno.h>
+#include <limits.h>
+#include <unistd.h>
+
+long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
+
 /* some common functions to work with null-terminated arrays */
 
 void **setcombine (void **set1, void **set2, int32_t esize) {
@@ -693,4 +701,66 @@ struct einit_event *evinit (uint16_t type) {
 void evdestroy (struct einit_event *ev) {
  pthread_mutex_destroy (&ev->mutex);
  free (ev);
+}
+
+
+/* user/group functions */
+int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group) {
+ if (!_getgr_r_size_max) _getgr_r_size_max = sysconf (_SC_GETGR_R_SIZE_MAX);
+ if (!_getpw_r_size_max) _getpw_r_size_max = sysconf (_SC_GETPW_R_SIZE_MAX);
+
+ if (user) {
+  struct passwd pwd, *pwdptr;
+  char *buffer = malloc (_getpw_r_size_max);
+  errno = 0;
+  while (getpwnam_r(user, &pwd, buffer, _getpw_r_size_max, &pwdptr)) {
+   switch (errno) {
+    case EIO:
+    case EMFILE:
+    case ENFILE:
+    case ERANGE:
+     perror ("getpwnam_r");
+     free (buffer);
+     return -1;
+    case EINTR:
+     continue;
+    default:
+     free (buffer);
+     goto abortusersearch;
+   }
+  }
+
+  *uid = pwd.pw_uid;
+  if (!group) *gid = pwd.pw_gid;
+  free (buffer);
+ }
+
+ abortusersearch:
+
+ if (group) {
+  struct group grp, *grpptr;
+  char *buffer = emalloc (_getgr_r_size_max);
+  errno = 0;
+  while (getgrnam_r(group, &grp, buffer, _getgr_r_size_max, &grpptr)) {
+   switch (errno) {
+    case EIO:
+    case EMFILE:
+    case ENFILE:
+    case ERANGE:
+     perror ("getgrnam_r");
+     free (buffer);
+     return -2;
+    default:
+     free (buffer);
+     goto abortgroupsearch;
+   }
+  }
+
+  *gid = grp.gr_gid;
+  free (buffer);
+ }
+
+ abortgroupsearch:
+
+ return 0;
 }

@@ -1,3 +1,6 @@
+2006/10/10: mdeininger
+ * proper user/group handling for dexec/pexec
+
 2006/10/09: mdeininger
  * extension to the event-system: module status changes now emit an event.
 

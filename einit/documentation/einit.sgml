@@ -535,278 +535,445 @@
      </varlistentry>
     </variablelist>
    </sect2>
-   <sect2 id="configuration-modules-einit-mod">
-    <title>Creating Script-Modules and Daemoni</title>
-    <para>
-     These two types of modules are very closely related. They both execute arbitrary commands, thus allowing you to create modules by specifying the commands that need to be run to form these modules. The "shell-type" modules do exactly and only that: they execute commands to provide services. The "daemon-type" modules are similar, they however try to make sure that whatever program is executed by them will actually stay running.
-    </para>
 
-    <sect3 id="configuration-modules-einit-mod-exec">
-     <title>[einit-mod-exec] simple Shell-Modules</title>
-     <para>
-      This module is used to create pseudo-modules that execute arbitrary shell-commands.
-     </para>
-     <synopsis label="sample XML-configuration file">
-      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
-      &lt;einit&gt;
-       &lt;!-- [...] --&gt;
-       &lt;mod-shell id="shell-mount" name="Filesystems" provides="localmount" requires="sysconf"
-        enable="mount -a" disable="umount -ar; mount / -o remount,ro" /&gt;
-       &lt;!-- [...] --&gt;
-
-       &lt;mode id="boot"&gt;
-        &lt;enable mod="localmount" /&gt;
-       &lt;/mode&gt;
-      &lt;/einit&gt;
-     </synopsis>
-     <para>In this excerpt from the default configuration file, we see the definition of a module called "shell-mount", that goes by the name of "Filesystems". It provides a module for the "localmount"-requirement, which is required in our exemplary "boot"-mode. Additionally, it requires a "sysconf"-module to be enabled before it. The attributes <varname>enable=</varname> and <varname>disable=</varname> specify what commands to run upon enabling or disabling this pseudo-module.</para>
-     <variablelist><title>Elements used to specify shell-type modules</title>
-      <varlistentry>
-       <term>Element <varname>mod-shell</varname> [COMPLEX VARIABLE]</term>
-       <listitem>
-        <para>
-         Used to specify shell-type modules.
-        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-     <variablelist><title><varname>mod-shell</varname> Attributes</title>
-      <varlistentry>
-       <term>Attribute <varname>id</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The ID of the module. This would, for example, be used in module-preferences.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>name</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The module's name. This is used by visualisers, etc.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>provides</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
-         A colon-separated set of strings; specifies services that this module provides.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>requires</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
-         A colon-separated set of strings; specifies services that this module requires.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>notwith</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
-         A colon-separated set of strings; specifies the modules this module is known not to work with.
-        </para>
-        <note><para>Not implemented</para></note>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>enable</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run to enable the module. This is passed to /bin/sh -c (usually).
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>disable</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run to disable the module. This is passed to /bin/sh -c (usually).
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>reset</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run to reset the module. This is passed to /bin/sh -c (usually).
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>reload</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run to re-load the module. This is passed to /bin/sh -c (usually).
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
- 		A colon-separated set of (string-)variables that will be "imported" into the called shell upon status-changes as environment variables.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>All other attributes</term>
-       <listitem>
-        <para>
-         All other attributes are saved as environment variables that are passed to the commands executed on behalf of this definition.
-        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-    </sect3>
-    <sect3 id="usage-modules-einit-mod-daemon">
-     <title>[einit-mod-daemon] Daemoni</title>
-     <para>
-      One of the things I criticised about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
-     </para>
-     <synopsis label="sample XML-configuration file">
-      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
-      &lt;einit&gt;
-       &lt;!-- [...] --&gt;
-       &lt;mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="sysconf:tty"
-        command="/usr/sbin/gpm" restart="yes" /&gt;
-       &lt;!-- [...] --&gt;
-
-       &lt;mode id="default" base="boot"&gt;
-        &lt;enable mod="gpm" /&gt;
-       &lt;/mode&gt;
-      &lt;/einit&gt;
-     </synopsis>
-     <para>The mod-daemon-tag is very similar to the mod-shell tag. In this example we see that requires="" and provides="" is actually interpreted as a colon-separated list; this is also true for the mod-shell tag. Instead of the enable="" and disable="" attributes, we have one command="" attribute that is used to specify a command that needs to be run to get this daemon up. Also this tag sports a special restart="" attribute, that tells einit-mod-daemon whether to resurrect a dead daemon or not.</para>
-     <variablelist><title>Elements used to specify daemon-type modules</title>
-      <varlistentry>
-       <term>Element <varname>mod-daemon</varname> [COMPLEX VARIABLE]</term>
-       <listitem>
-        <para>
-         Used to specify daemon-type modules.
-        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-     <variablelist><title><varname>mod-daemon</varname> Attributes</title>
-      <varlistentry>
-       <term>Attribute <varname>id</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The ID of the module. This would, for example, be used in module-preferences.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>name</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The module's name. This is used by visualisers, etc.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>provides</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
-         A colon-separated set of strings; specifies services that this module provides.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>requires</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
-         A colon-separated set of strings; specifies services that this module requires.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>notwith</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
-         A colon-separated set of strings; specifies the modules this module is known not to work with.
-        </para>
-        <note><para>Not implemented</para></note>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>command</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run to enable the module. This is passed to /bin/sh -c (usually). The module will be considered enabled as long as this command keeps running.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>prepare</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run before the daemon is executed.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>cleanup</varname> [STRING]</term>
-       <listitem>
-        <para>
-         The command to be run after the daemon finishes executing.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>restart</varname> [BOOLEAN] (yes|no)</term>
-       <listitem>
-        <para>
-         Whether or not to restart the daemon in case it dies. The default is not to restart the daemon, so you will want to specify this.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
-       <listitem>
-        <para>
- 		A colon-separated set of (string-)variables that will be "imported" into the called shell upon status-changes as environment variables.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term>All other attributes</term>
-       <listitem>
-        <para>
-         All other attributes are saved as environment variables that are passed to the commands executed on behalf of this definition.
-        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-    </sect3>
-   </sect2>
    <sect2 id="usage-modules-einit-feedback-textual">
     <title>[einit-feedback-textual] Status Feedback</title>
     <para>
      This is the default feedback-module. It comments on certain events, like modules being enabled or disabled; verbose output from the modules is also put on-screen. Developers could use the source file of this module to create other, more complex feedback modules.
     </para>
    </sect2>
-   <sect2 id="usage-modules-mount">
-    <title>[*mount] Mounting Filesystems</title>
+  </sect1>
+
+  <sect1 id="configuration-modules-einit-mod">
+   <title>Creating Script-Modules and Daemoni</title>
+   <para>
+    These two types of modules are very closely related. They both execute arbitrary commands, thus allowing you to create modules by specifying the commands that need to be run to form these modules. The "shell-type" modules do exactly and only that: they execute commands to provide services. The "daemon-type" modules are similar, they however try to make sure that whatever program is executed by them will actually stay running.
+   </para>
+
+   <sect2 id="configuration-modules-einit-mod-exec">
+    <title>[einit-mod-exec] simple Shell-Modules</title>
     <para>
-     The module "common-mount.so" (and "linux-mount.so" on linux) are used to mount and unmount filesystems. They use a rather large number of variables, and you will most likely need to modify at least one of them.
+     This module is used to create pseudo-modules that execute arbitrary shell-commands.
     </para>
     <synopsis label="sample XML-configuration file">
      &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
      &lt;einit&gt;
       &lt;!-- [...] --&gt;
+      &lt;mod-shell id="shell-mount" name="Filesystems" provides="localmount" requires="sysconf"
+       enable="mount -a" disable="umount -ar; mount / -o remount,ro" /&gt;
+      &lt;!-- [...] --&gt;
 
-      &lt;mount-update-steps s="block-devices:metadata" /&gt;
+      &lt;mode id="boot"&gt;
+       &lt;enable mod="localmount" /&gt;
+      &lt;/mode&gt;
+     &lt;/einit&gt;
+    </synopsis>
+    <para>In this excerpt from the default configuration file, we see the definition of a module called "shell-mount", that goes by the name of "Filesystems". It provides a module for the "localmount"-requirement, which is required in our exemplary "boot"-mode. Additionally, it requires a "sysconf"-module to be enabled before it. The attributes <varname>enable=</varname> and <varname>disable=</varname> specify what commands to run upon enabling or disabling this pseudo-module.</para>
+    <variablelist><title>Elements used to specify shell-type modules</title>
+     <varlistentry>
+      <term>Element <varname>mod-shell</varname> [COMPLEX VARIABLE]</term>
+      <listitem>
+       <para>
+        Used to specify shell-type modules.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+    <variablelist><title><varname>mod-shell</varname> Attributes</title>
+     <varlistentry>
+      <term>Attribute <varname>id</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The ID of the module. This would, for example, be used in module-preferences.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>name</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The module's name. This is used by visualisers, etc.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>provides</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings; specifies services that this module provides.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>requires</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings; specifies services that this module requires.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>notwith</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings; specifies the modules this module is known not to work with.
+       </para>
+       <note><para>Not implemented</para></note>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>enable</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run to enable the module. This is passed to /bin/sh -c (usually).
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>disable</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run to disable the module. This is passed to /bin/sh -c (usually).
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>reset</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run to reset the module. This is passed to /bin/sh -c (usually).
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>reload</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run to re-load the module. This is passed to /bin/sh -c (usually).
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of (string-)variables that will be "imported" into the called shell upon status-changes as environment variables.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attributes <varname>uid</varname> [INTEGER] and <varname>user</varname> [STRING]</term>
+      <listitem>
+       <para>
+        These attributes allow you to specify what user to run these commands as. If you use uid, then any fork()-ed process's uid is set to that exact value, if you user, then the uid is set to whatever getpwent_r returns.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attributes <varname>gid</varname> [INTEGER] and <varname>group</varname> [STRING]</term>
+      <listitem>
+       <para>
+        Same as uid/user, but for groups.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>All other attributes</term>
+      <listitem>
+       <para>
+        All other attributes are saved as environment variables that are passed to the commands executed on behalf of this definition.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </sect2>
+   <sect2 id="usage-modules-einit-mod-daemon">
+    <title>[einit-mod-daemon] Daemoni</title>
+    <para>
+     One of the things I criticised about sysvinit was that there was no way to ensure that a daemon keeps running with only shell-scripts. This module provides exactly this functionality: You can have a special pseudo-module created that only loads a daemon, and that will resurrect this daemon if it dies.
+    </para>
+    <synopsis label="sample XML-configuration file">
+     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+     &lt;einit&gt;
+      &lt;!-- [...] --&gt;
+      &lt;mod-daemon id="daemon-gpm" name="GPM" provides="gpm" requires="sysconf:tty"
+       command="/usr/sbin/gpm" restart="yes" /&gt;
+      &lt;!-- [...] --&gt;
+
+      &lt;mode id="default" base="boot"&gt;
+       &lt;enable mod="gpm" /&gt;
+      &lt;/mode&gt;
+     &lt;/einit&gt;
+    </synopsis>
+    <para>The mod-daemon-tag is very similar to the mod-shell tag. In this example we see that requires="" and provides="" is actually interpreted as a colon-separated list; this is also true for the mod-shell tag. Instead of the enable="" and disable="" attributes, we have one command="" attribute that is used to specify a command that needs to be run to get this daemon up. Also this tag sports a special restart="" attribute, that tells einit-mod-daemon whether to resurrect a dead daemon or not.</para>
+    <variablelist><title>Elements used to specify daemon-type modules</title>
+     <varlistentry>
+      <term>Element <varname>mod-daemon</varname> [COMPLEX VARIABLE]</term>
+      <listitem>
+       <para>
+        Used to specify daemon-type modules.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+    <variablelist><title><varname>mod-daemon</varname> Attributes</title>
+     <varlistentry>
+      <term>Attribute <varname>id</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The ID of the module. This would, for example, be used in module-preferences.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>name</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The module's name. This is used by visualisers, etc.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>provides</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings; specifies services that this module provides.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>requires</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings; specifies services that this module requires.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>notwith</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of strings; specifies the modules this module is known not to work with.
+       </para>
+       <note><para>Not implemented</para></note>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>command</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run to enable the module. This is passed to /bin/sh -c (usually). The module will be considered enabled as long as this command keeps running.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>prepare</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run before the daemon is executed.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>cleanup</varname> [STRING]</term>
+      <listitem>
+       <para>
+        The command to be run after the daemon finishes executing.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>restart</varname> [BOOLEAN] (yes|no)</term>
+      <listitem>
+       <para>
+        Whether or not to restart the daemon in case it dies. The default is not to restart the daemon, so you will want to specify this.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
+      <listitem>
+       <para>
+        A colon-separated set of (string-)variables that will be "imported" into the called shell upon status-changes as environment variables.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attributes <varname>uid</varname> [INTEGER] and <varname>user</varname> [STRING]</term>
+      <listitem>
+       <para>
+        These attributes allow you to specify what user to run these commands as. If you use uid, then any fork()-ed process's uid is set to that exact value, if you user, then the uid is set to whatever getpwent_r returns.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>Attributes <varname>gid</varname> [INTEGER] and <varname>group</varname> [STRING]</term>
+      <listitem>
+       <para>
+        Same as uid/user, but for groups.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term>All other attributes</term>
+      <listitem>
+       <para>
+        All other attributes are saved as environment variables that are passed to the commands executed on behalf of this definition.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </sect2>
+  </sect1>
+
+  <sect1 id="usage-modules-mount">
+   <title>[*mount] Mounting Filesystems</title>
+   <para>
+    The module "common-mount.so" (and "linux-mount.so" on linux) are used to mount and unmount filesystems. They use a rather large number of variables, and you will most likely need to modify at least one of them.
+   </para>
+   <synopsis label="sample XML-configuration file">
+    &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+    &lt;einit&gt;
+     &lt;!-- [...] --&gt;
+
+     &lt;mount-update-steps s="block-devices:metadata" /&gt;
+     &lt;mount-fstab-source s="label:configuration" /&gt;
+     &lt;mount-mtab-source s="legacy" /&gt;
+     &lt;mount-block-devices-source s="dev" /&gt;
+     &lt;mount-filesystem-label-readers s="linux" /&gt;
+     &lt;mount-critical s="/usr:/var" /&gt;
+     &lt;mount-fsck-command s="/sbin/fsck -a -T -t %s %s" /&gt;
+
+     &lt;!-- [...] --&gt;
+
+     &lt;fstab-entry mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" /&gt;
+     &lt;fstab-entry mountpoint="/sys" fs="sysfs" /&gt;
+
+     &lt;!-- [...] --&gt;
+    &lt;/einit&gt;
+   </synopsis>
+   <variablelist><title>Service Names</title>
+    <varlistentry>
+     <term>Service <varname>mount/root</varname></term>
+     <listitem>
+      <para>
+       (Re-)Mount the root-filesystem (RW).
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Service <varname>mount/system</varname></term>
+     <listitem>
+      <para>
+       Mount important system-specific mountpoints (e.g. /dev, /proc and /sys on linux).
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Service <varname>mount/critical</varname></term>
+     <listitem>
+      <para>
+       Mount "critical" filesystems. "Critical filesystems" are those that are needed for your system to function beyond putting cryptic messages on your screen, i.e. "/usr" and "/var" would be critical filesystems. There is more than one way to specify what filesystems are critical, see below.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Service <varname>mount/local</varname></term>
+     <listitem>
+      <para>
+       Mount all the other local filesystems. Things like /home and /media/*.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Service <varname>mount/remote</varname></term>
+     <listitem>
+      <para>
+       Mount all the other remote filesystems. Things like your nfs directories.
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+   <note>
+    <para>
+     Even though it is considered good practice by lots of *nix zealots, it is not necessary to have all these filesystems on their own partitions or harddisks. If there are no fstab-entries for some of these, then they are silently skipped. You could think of these services as "availability levels": in your modules, simply make sure to specify the right "level". If in doubt, you'll most likely need "mount/critical".
+    </para>
+   </note>
+   <variablelist><title>Variables (excerpt)</title>
+    <varlistentry>
+     <term>Variable <varname>mount-update-steps</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       A colon-separated set of strings specifying all the optional update steps for the *mount modules. If this is not specified, then all update steps will be performed, if this is specified, then everything will be done, except for metadata reading and block-device scans, see below for more information.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>mount-fstab-source</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       A colon-separated set of strings specifying all the fstab sources the *mount modules should use. See <xref linkend="usage-modules-mount-fstab" /> for a list of all the available options and which of them does what.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>mount-mtab-source</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       A colon-separated set of strings specifying all the mtab sources the *mount modules should use. Currently there's only the option "legacy", so you better just leave it like that.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>mount-block-devices-source</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       Sources for the in-memory block-device list. This list is used by the metadata scanner, and could be used by some of the mount-functions. "dev" is a good choice here, but see below for a complete explanation.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>mount-filesystem-label-readers</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       What filesystem metadata readers to use. "linux" currently reads metadata from ext2/3 and reiserfs filesystems, but it's only available on linux (or rather, if linux-mount.so is loaded).
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>mount-critical</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       Define which filesystems are considered "critical", see below for a full explanation.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>mount-fsck-command</varname> [STRING] [SET]</term>
+     <listitem>
+      <para>
+       Define a template for the fsck command to be used on unclean filesystems. This is passed to printf, the first %s is replaced by the filesystem type, the second %s is replaced by the block device node.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>Variable <varname>fstab-entry</varname> [COMPLEX VARIABLE]</term>
+     <listitem>
+      <para>
+       Define a mountpoint and what to mount there, see below for a full explanation of how this works.
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+
+   <sect2 id="usage-modules-mount-fstab">
+    <title>FSTab sources</title>
+    <synopsis label="relevant elements from sample XML-configuration file">
+     &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+     &lt;einit&gt;
+      &lt;!-- [...] --&gt;
+
       &lt;mount-fstab-source s="label:configuration" /&gt;
-      &lt;mount-mtab-source s="legacy" /&gt;
-      &lt;mount-block-devices-source s="dev" /&gt;
-      &lt;mount-filesystem-label-readers s="linux" /&gt;
-      &lt;mount-critical s="/usr:/var" /&gt;
-      &lt;mount-fsck-command s="/sbin/fsck -a -T -t %s %s" /&gt;
 
       &lt;!-- [...] --&gt;
 
@@ -816,323 +983,191 @@
       &lt;!-- [...] --&gt;
      &lt;/einit&gt;
     </synopsis>
-    <variablelist><title>Service Names</title>
-     <varlistentry>
-      <term>Service <varname>mount/root</varname></term>
-      <listitem>
-       <para>
-        (Re-)Mount the root-filesystem (RW).
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Service <varname>mount/system</varname></term>
-      <listitem>
-       <para>
-        Mount important system-specific mountpoints (e.g. /dev, /proc and /sys on linux).
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Service <varname>mount/critical</varname></term>
-      <listitem>
-       <para>
-        Mount "critical" filesystems. "Critical filesystems" are those that are needed for your system to function beyond putting cryptic messages on your screen, i.e. "/usr" and "/var" would be critical filesystems. There is more than one way to specify what filesystems are critical, see below.
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Service <varname>mount/local</varname></term>
-      <listitem>
-       <para>
-        Mount all the other local filesystems. Things like /home and /media/*.
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Service <varname>mount/remote</varname></term>
-      <listitem>
-       <para>
-        Mount all the other remote filesystems. Things like your nfs directories.
-       </para>
-      </listitem>
-     </varlistentry>
-    </variablelist>
-    <note>
-     <para>
-      Even though it is considered good practice by lots of *nix zealots, it is not necessary to have all these filesystems on their own partitions or harddisks. If there are no fstab-entries for some of these, then they are silently skipped. You could think of these services as "availability levels": in your modules, simply make sure to specify the right "level". If in doubt, you'll most likely need "mount/critical".
-     </para>
-    </note>
-    <variablelist><title>Variables (excerpt)</title>
-     <varlistentry>
-      <term>Variable <varname>mount-update-steps</varname> [STRING] [SET]</term>
-      <listitem>
-       <para>
-        A colon-separated set of strings specifying all the optional update steps for the *mount modules. If this is not specified, then all update steps will be performed, if this is specified, then everything will be done, except for metadata reading and block-device scans, see below for more information.
-       </para>
-      </listitem>
-     </varlistentry>
+    <para>
+     eINIT can use more than one "source" for FSTab entries. The number of sources is theoretically unlimited, but right now we only have three of them:
+    </para>
+    <variablelist><title>Elements used to specify FSTab Sources</title>
      <varlistentry>
       <term>Variable <varname>mount-fstab-source</varname> [STRING] [SET]</term>
       <listitem>
        <para>
-        A colon-separated set of strings specifying all the fstab sources the *mount modules should use. See <xref linkend="usage-modules-mount-fstab" /> for a list of all the available options and which of them does what.
+        A colon-separated set of strings specifying all the fstab sources the *mount modules should use. See the following list for strings thar might be in this set.
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+    <variablelist><title>Currently implemented FSTab Sources</title>
+     <varlistentry>
+      <term><varname>legacy</varname></term>
+      <listitem>
+       <para>
+        Legacy fstab (/etc/fstab), see <xref linkend="usage-modules-mount-fstab-legacy">.
        </para>
       </listitem>
      </varlistentry>
      <varlistentry>
-      <term>Variable <varname>mount-mtab-source</varname> [STRING] [SET]</term>
+      <term><varname>configuration</varname></term>
       <listitem>
        <para>
-        A colon-separated set of strings specifying all the mtab sources the *mount modules should use. Currently there's only the option "legacy", so you better just leave it like that.
+        FSTab entries in your configuration file (&lt;fstab-entry /&gt;-nodes), see <xref linkend="usage-modules-mount-fstab-configuration">.
        </para>
       </listitem>
      </varlistentry>
      <varlistentry>
-      <term>Variable <varname>mount-block-devices-source</varname> [STRING] [SET]</term>
+      <term><varname>label</varname></term>
       <listitem>
        <para>
-        Sources for the in-memory block-device list. This list is used by the metadata scanner, and could be used by some of the mount-functions. "dev" is a good choice here, but see below for a complete explanation.
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Variable <varname>mount-filesystem-label-readers</varname> [STRING] [SET]</term>
-      <listitem>
-       <para>
-        What filesystem metadata readers to use. "linux" currently reads metadata from ext2/3 and reiserfs filesystems, but it's only available on linux (or rather, if linux-mount.so is loaded).
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Variable <varname>mount-critical</varname> [STRING] [SET]</term>
-      <listitem>
-       <para>
-        Define which filesystems are considered "critical", see below for a full explanation.
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Variable <varname>mount-fsck-command</varname> [STRING] [SET]</term>
-      <listitem>
-       <para>
-        Define a template for the fsck command to be used on unclean filesystems. This is passed to printf, the first %s is replaced by the filesystem type, the second %s is replaced by the block device node.
-       </para>
-      </listitem>
-     </varlistentry>
-     <varlistentry>
-      <term>Variable <varname>fstab-entry</varname> [COMPLEX VARIABLE]</term>
-      <listitem>
-       <para>
-        Define a mountpoint and what to mount there, see below for a full explanation of how this works.
+        This will make eINIT <quote>guess</quote> filesystem mount points by their labels, see <xref linkend="usage-modules-mount-fstab-label">.
        </para>
       </listitem>
      </varlistentry>
     </variablelist>
 
-    <sect3 id="usage-modules-mount-fstab">
-     <title>FSTab sources</title>
+    <sect3 id="usage-modules-mount-fstab-legacy">
+     <title>Legacy FSTab (/etc/fstab)</title>
+     <para>
+      Like most other related *nix tools, eINIT can use your /etc/fstab file. If you need to find out what this file is supposed to look like, see your unix man pages, the node is usually called "fstab" or "mount".
+     </para>
+     <note>
+      <para>
+       These "legacy" fstab entries are less flexible than their configuration-file equivalents, thus you should rather use those, if possible. If you're just testing eINIT, you could probably use this, if not, you should use the configuration entries.
+      </para>
+     </note>
+    </sect3>
+
+    <sect3 id="usage-modules-mount-fstab-configuration">
+     <title>Configuration-Fstab-Entries</title>
      <synopsis label="relevant elements from sample XML-configuration file">
       &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
       &lt;einit&gt;
        &lt;!-- [...] --&gt;
 
-       &lt;mount-fstab-source s="label:configuration" /&gt;
-
-       &lt;!-- [...] --&gt;
-
        &lt;fstab-entry mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" /&gt;
-       &lt;fstab-entry mountpoint="/sys" fs="sysfs" /&gt;
 
        &lt;!-- [...] --&gt;
       &lt;/einit&gt;
      </synopsis>
      <para>
-      eINIT can use more than one "source" for FSTab entries. The number of sources is theoretically unlimited, but right now we only have three of them:
+      FSTab-entries can be specified inside your configuration file (a good place would be rc.xml) using the element <varname>&lt;fstab-entry /&gt;</varname>. This is the most flexible way to specify mountpoints, because you can (optionally) combine the mounting action with commands to run.
      </para>
-     <variablelist><title>Elements used to specify FSTab Sources</title>
+     <warning>
+      <para>
+       Never disable this fstab-source, unless you want /dev, /proc, /sys, /dev/pts and similar to break! Also, don't remove the configuration file entries for these mountpoints, or things will go haywire in the same way! You have been warned!
+      </para>
+     </warning>
+     <variablelist><title>Attributes of the fstab-entry Element</title>
       <varlistentry>
-       <term>Variable <varname>mount-fstab-source</varname> [STRING] [SET]</term>
+       <term>Attribute <varname>mountpoint</varname> [STRING]</term>
        <listitem>
         <para>
-         A colon-separated set of strings specifying all the fstab sources the *mount modules should use. See the following list for strings thar might be in this set.
+         The mountpoint where this filesystem should be mounted. You always have to specify this.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>device</varname> [STRING]</term>
+       <listitem>
+        <para>
+         What to mount there. Usually a block-device, but could be of the form <filename>host:/path/to/directory</filename> for remote filesystems.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>fs</varname> [STRING]</term>
+       <listitem>
+        <para>
+         The filesystem name to pass to the kernel (ufs, ext2, ext3, reiserfs, ...).
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>encryption</varname> [STRING]</term>
+       <listitem>
+        <para>
+         What encryption algorithm to use...
+        </para>
+        <note><para> - NOT IMPLEMENTED - </para></note>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>options</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         Filesystem options (noatime, rw, ro, ...). See your filesystem's manual for a complete list of allowed options. Note that this set uses the colon (:) as a delimiter (!), not the comma that you would normally find in your /etc/fstab.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>before-mount</varname> [STRING]</term>
+       <listitem>
+        <para>
+         A command to run before the filesystem is mounted, possibly to prepare the filesystem for being mounted.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>after-mount</varname> [STRING]</term>
+       <listitem>
+        <para>
+         A command to run after the filesystem is mounted.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>manager</varname> [STRING]</term>
+       <listitem>
+        <para>
+         A daemon that will be started after the filesystem is mounted, and after the "after-mount" command was executed (if any). This is, for example, used to bring up udevd after /dev has been mounted on newer linux kernels.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>before-umount</varname> [STRING]</term>
+       <listitem>
+        <para>
+         A command to run before the filesystem is unmounted.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>after-umount</varname> [STRING]</term>
+       <listitem>
+        <para>
+         A command to run after the filesystem is unmounted, or if it failed to mount at all.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
+       <listitem>
+        <para>
+         You can specify a set of (configuration-)variables to be passed to the command as environment variables using this attribute.
         </para>
        </listitem>
       </varlistentry>
      </variablelist>
-     <variablelist><title>Currently implemented FSTab Sources</title>
-      <varlistentry>
-       <term><varname>legacy</varname></term>
-       <listitem>
-        <para>
-         Legacy fstab (/etc/fstab), see <xref linkend="usage-modules-mount-fstab-legacy">.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term><varname>configuration</varname></term>
-       <listitem>
-        <para>
-         FSTab entries in your configuration file (&lt;fstab-entry /&gt;-nodes), see <xref linkend="usage-modules-mount-fstab-configuration">.
-        </para>
-       </listitem>
-      </varlistentry>
-      <varlistentry>
-       <term><varname>label</varname></term>
-       <listitem>
-        <para>
-         This will make eINIT <quote>guess</quote> filesystem mount points by their labels, see <xref linkend="usage-modules-mount-fstab-label">.
-        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-
-     <sect4 id="usage-modules-mount-fstab-legacy">
-      <title>Legacy FSTab (/etc/fstab)</title>
-      <para>
-       Like most other related *nix tools, eINIT can use your /etc/fstab file. If you need to find out what this file is supposed to look like, see your unix man pages, the node is usually called "fstab" or "mount".
-      </para>
-      <note>
-       <para>
-        These "legacy" fstab entries are less flexible than their configuration-file equivalents, thus you should rather use those, if possible. If you're just testing eINIT, you could probably use this, if not, you should use the configuration entries.
-       </para>
-      </note>
-     </sect4>
-
-     <sect4 id="usage-modules-mount-fstab-configuration">
-      <title>Configuration-Fstab-Entries</title>
-      <synopsis label="relevant elements from sample XML-configuration file">
-       &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
-       &lt;einit&gt;
-        &lt;!-- [...] --&gt;
-
-        &lt;fstab-entry mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" /&gt;
-
-        &lt;!-- [...] --&gt;
-       &lt;/einit&gt;
-      </synopsis>
-      <para>
-       FSTab-entries can be specified inside your configuration file (a good place would be rc.xml) using the element <varname>&lt;fstab-entry /&gt;</varname>. This is the most flexible way to specify mountpoints, because you can (optionally) combine the mounting action with commands to run.
-      </para>
-      <warning>
-       <para>
-        Never disable this fstab-source, unless you want /dev, /proc, /sys, /dev/pts and similar to break! Also, don't remove the configuration file entries for these mountpoints, or things will go haywire in the same way! You have been warned!
-       </para>
-      </warning>
-      <variablelist><title>Attributes of the fstab-entry Element</title>
-       <varlistentry>
-        <term>Attribute <varname>mountpoint</varname> [STRING]</term>
-        <listitem>
-         <para>
-          The mountpoint where this filesystem should be mounted. You always have to specify this.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>device</varname> [STRING]</term>
-        <listitem>
-         <para>
-          What to mount there. Usually a block-device, but could be of the form <filename>host:/path/to/directory</filename> for remote filesystems.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>fs</varname> [STRING]</term>
-        <listitem>
-         <para>
-          The filesystem name to pass to the kernel (ufs, ext2, ext3, reiserfs, ...).
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>encryption</varname> [STRING]</term>
-        <listitem>
-         <para>
-          What encryption algorithm to use...
-         </para>
-         <note><para> - NOT IMPLEMENTED - </para></note>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>options</varname> [STRING] [SET]</term>
-        <listitem>
-         <para>
-          Filesystem options (noatime, rw, ro, ...). See your filesystem's manual for a complete list of allowed options. Note that this set uses the colon (:) as a delimiter (!), not the comma that you would normally find in your /etc/fstab.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>before-mount</varname> [STRING]</term>
-        <listitem>
-         <para>
-          A command to run before the filesystem is mounted, possibly to prepare the filesystem for being mounted.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>after-mount</varname> [STRING]</term>
-        <listitem>
-         <para>
-          A command to run after the filesystem is mounted.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>manager</varname> [STRING]</term>
-        <listitem>
-         <para>
-          A daemon that will be started after the filesystem is mounted, and after the "after-mount" command was executed (if any). This is, for example, used to bring up udevd after /dev has been mounted on newer linux kernels.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>before-umount</varname> [STRING]</term>
-        <listitem>
-         <para>
-          A command to run before the filesystem is unmounted.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>after-umount</varname> [STRING]</term>
-        <listitem>
-         <para>
-          A command to run after the filesystem is unmounted, or if it failed to mount at all.
-         </para>
-        </listitem>
-       </varlistentry>
-       <varlistentry>
-        <term>Attribute <varname>variables</varname> [STRING] [SET]</term>
-        <listitem>
-         <para>
-          You can specify a set of (configuration-)variables to be passed to the command as environment variables using this attribute.
-         </para>
-        </listitem>
-       </varlistentry>
-      </variablelist>
-     </sect4>
-
-     <sect4 id="usage-modules-mount-fstab-label">
-      <title>FSTab-from-label-forger</title>
-      <para>
-       This is a somewhat new idea: Instead of specifying an fstab yourself, you can use filesystem labels and have eINIT *guess* the mountpoint of the filesystems by these labels.
-      </para>
-      <para>
-       The approach eINIT takes to guessing looks somewhat like this:
-      </para>
-      <itemizedlist>
-       <listitem><para>Are there slashes (/) in the label? If so, use the label as the mountpoint.</para></listitem>
-       <listitem><para>Are there dashes (-) in the label <emphasis>and</emphasis> does the label start with the hostname, followed by a dash? If so, convert a label of the form <quote>hostname-path-to-mountpoint</quote> to <quote>/path/to/mountpoint</quote> if the hostname in the label is the same as the current hostname. (exception: <quote>hostname-root</quote> becomes <quote>/</quote>)</para></listitem>
-       <listitem><para>Else, dashes or not, mount the filesystem as <quote>/media/&lt;label&gt;</quote></para></listitem>
-      </itemizedlist>
-      <note>
-       <para>
-        This label reader has apparently caused some havoc in the past, so it is now disabled by default. The main problem was that it could cause filesystems to be mounted twice if the filesystem has another source specify a mountpoint and the label is in a format that eINIT can base no guesses on, and thus an fsck could be run on an already mounted filesystem. Then fsck would complain and expect user input, which was impossible, and then the modeswitch got stuck.
-       </para>
-      </note>
-     </sect4>
-
     </sect3>
+
+    <sect3 id="usage-modules-mount-fstab-label">
+     <title>FSTab-from-label-forger</title>
+     <para>
+      This is a somewhat new idea: Instead of specifying an fstab yourself, you can use filesystem labels and have eINIT *guess* the mountpoint of the filesystems by these labels.
+     </para>
+     <para>
+      The approach eINIT takes to guessing looks somewhat like this:
+     </para>
+     <itemizedlist>
+      <listitem><para>Are there slashes (/) in the label? If so, use the label as the mountpoint.</para></listitem>
+      <listitem><para>Are there dashes (-) in the label <emphasis>and</emphasis> does the label start with the hostname, followed by a dash? If so, convert a label of the form <quote>hostname-path-to-mountpoint</quote> to <quote>/path/to/mountpoint</quote> if the hostname in the label is the same as the current hostname. (exception: <quote>hostname-root</quote> becomes <quote>/</quote>)</para></listitem>
+      <listitem><para>Else, dashes or not, mount the filesystem as <quote>/media/&lt;label&gt;</quote></para></listitem>
+     </itemizedlist>
+     <note>
+      <para>
+       This label reader has apparently caused some havoc in the past, so it is now disabled by default. The main problem was that it could cause filesystems to be mounted twice if the filesystem has another source specify a mountpoint and the label is in a format that eINIT can base no guesses on, and thus an fsck could be run on an already mounted filesystem. Then fsck would complain and expect user input, which was impossible, and then the modeswitch got stuck.
+      </para>
+     </note>
+    </sect3>
+
    </sect2>
   </sect1>
  </chapter>
