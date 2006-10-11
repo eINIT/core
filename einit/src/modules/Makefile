@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: vis-text.so mod-exec.so tty.so mod-daemon.so einit-ipc.so einit-utmp-forger.so common-mount.so pexec.o dexec.o einit-hostname.so einit-feedback-aural.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-utmp-forger.so einit-mount.so pexec.o dexec.o einit-hostname.so einit-feedback-aural.so einit-network.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -14,19 +14,20 @@ clean:
 
 install: all
 	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} vis-text.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-feedback-visual-textual.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-feedback-aural.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} mod-exec.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} tty.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} mod-daemon.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-mod-exec.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-tty.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-mod-daemon.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-ipc.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-hostname.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} common-mount.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-mount.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-network.so ${DESTDIR}/${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
-vis-text.so: vis-text.c
-	${CCL} vis-text.c -o vis-text.so
+einit-feedback-visual-textual.so: einit-feedback-visual-textual.c
+	${CCL} einit-feedback-visual-textual.c -o einit-feedback-visual-textual.so
 
 einit-feedback-aural.so: einit-feedback-aural.c pexec.o
 	${CCC} -fPIC -c einit-feedback-aural.c
@@ -38,20 +39,23 @@ pexec.o: pexec.c
 dexec.o: dexec.c
 	${CCC} -fPIC -c dexec.c
 
-common-mount.so: common-mount.c pexec.o dexec.o
-	${CCC} -fPIC -c common-mount.c
-	${CCL} common-mount.o pexec.o dexec.o -o common-mount.so
+einit-mount.so: einit-mount.c pexec.o dexec.o
+	${CCC} -fPIC -c einit-mount.c
+	${CCL} einit-mount.o pexec.o dexec.o -o einit-mount.so
 
-mod-exec.so: mod-exec.c pexec.o
-	${CCC} -fPIC -c mod-exec.c
-	${CCL} mod-exec.o pexec.o -o mod-exec.so
+einit-mod-exec.so: einit-mod-exec.c pexec.o
+	${CCC} -fPIC -c einit-mod-exec.c
+	${CCL} einit-mod-exec.o pexec.o -o einit-mod-exec.so
 
-mod-daemon.so: mod-daemon.c pexec.o dexec.o
-	${CCC} -fPIC -c mod-daemon.c
-	${CCL} mod-daemon.o pexec.o dexec.o -o mod-daemon.so
+einit-mod-daemon.so: einit-mod-daemon.c pexec.o dexec.o
+	${CCC} -fPIC -c einit-mod-daemon.c
+	${CCL} einit-mod-daemon.o pexec.o dexec.o -o einit-mod-daemon.so
 
-tty.so: tty.c
-	${CCL} tty.c -o tty.so
+einit-tty.so: einit-tty.c
+	${CCL} einit-tty.c -o einit-tty.so
+
+einit-network.so: einit-network.c
+	${CCL} einit-network.c -o einit-network.so
 
 einit-ipc.so: einit-ipc.c
 	${CCL} einit-ipc.c -o einit-ipc.so

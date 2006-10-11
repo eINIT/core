@@ -1,3 +1,9 @@
+2006/10/11: mdeininger
+ * off to the promised new features for v0.11:
+ * started with a new module for network configuration
+ * changed the names on some of the source-files so they all follow a more
+   logical pattern.
+
 [2006/10/10: mdeininger: release, Version 0.10, first BETA]
 
 2006/10/10: mdeininger
