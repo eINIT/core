@@ -179,6 +179,26 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
   if (configfunc != NULL) {
    configfunc (nmod);
   }
+
+  if (check_configuration) {
+   char *bname = (module && module->rid) ? module->rid : "unidentified binary module";
+   configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "examine_configuration");
+   if (configfunc) {
+    fprintf (stderr, "%s:\n", bname);
+    uint32_t lerror = configfunc (nmod);
+
+    switch (lerror) {
+     case 0: fputs (" * no problems\n", stderr); break;
+     case 1: fputs (" * one problem\n", stderr); break;
+     default: fprintf (stderr, " * %i problems\n", lerror); break;
+    }
+
+    check_configuration += lerror;
+   } else {
+    fprintf (stderr, "%s: no examine_configuration() function.\n", bname);
+    check_configuration++;
+   }
+  }
 // look for any cleanup() functions
   if (!nmod->cleanup) {
    configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");

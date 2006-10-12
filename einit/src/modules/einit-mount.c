@@ -204,6 +204,21 @@ int disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
 
 /* function definitions */
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ fputs (" * need to implement proper checks here.\n", stderr);
+ pr++;
+
+/* if (!cfg_getnode("control-socket", NULL)) {
+  fputs (" * configuration variable \"control-socket\" not found.\n", stderr);
+  pr++;
+ }*/
+
+ return pr;
+}
+
+
 int configure (struct lmodule *this) {
  struct cfgnode *node = NULL;
 

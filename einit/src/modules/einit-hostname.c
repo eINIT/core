@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _MODULE
 
 #include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <einit/module.h>
 #include <einit/config.h>
@@ -63,6 +64,22 @@ const struct smodule self = {
 	.requires	= NULL,
 	.notwith	= NULL
 };
+
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getstring("hostname", NULL)) {
+  fputs (" * configuration variable \"hostname\" not found.\n", stderr);
+  pr++;
+ }
+
+ if (!cfg_getstring("domainname", NULL)) {
+  fputs (" * configuration variable \"domainname\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
 
 int enable (void *pa, struct einit_event *status) {
  char *name;

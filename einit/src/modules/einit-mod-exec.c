@@ -90,6 +90,17 @@ int scanmodules (struct lmodule *);
 int pexec_wrapper (struct mexecinfo *, struct einit_event *);
 int configure (struct lmodule *);
 
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getnode("shell", NULL)) {
+  fputs (" * configuration variable \"shell\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
+
 int configure (struct lmodule *irr) {
  pexec_configure (irr);
 }

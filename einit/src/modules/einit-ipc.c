@@ -61,12 +61,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char * provides[] = {"ipc", NULL};
 char * requires[] = {"/", NULL};
-
-struct smodule self = {
- EINIT_VERSION, 1, 0, 0, "eINIT IPC module", "einit-ipc", provides, requires, NULL
+const struct smodule self = {
+	.eiversion	= EINIT_VERSION,
+	.version	= 1,
+	.mode		= 0,
+	.options	= 0,
+	.name		= "eINIT IPC module",
+	.rid		= "einit-ipc",
+	.provides	= provides,
+	.requires	= requires,
+	.notwith	= NULL
 };
 
 pthread_t ipc_thread;
+
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getnode("control-socket", NULL)) {
+  fputs (" * configuration variable \"control-socket\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
 
 int ipc_process (char *cmd, uint32_t fd) {
  if (!strcmp (cmd, "IPC//out")) {
@@ -87,7 +105,7 @@ int ipc_process (char *cmd, uint32_t fd) {
 }
 
 void * ipc_wait (void *unused_parameter) {
- struct cfgnode *node = cfg_findnode ("control-socket", 0, NULL);
+ struct cfgnode *node = cfg_getnode ("control-socket", NULL);
  int nfd;
  pthread_t **cthreads;
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
@@ -99,8 +117,7 @@ void * ipc_wait (void *unused_parameter) {
  }
 
  saddr.sun_family = AF_UNIX;
- if (!node || !node->svalue) strncpy (saddr.sun_path, "/etc/einit-control", sizeof(saddr.sun_path) - 1);
- else strncpy (saddr.sun_path, node->svalue, sizeof(saddr.sun_path) - 1);
+ strncpy (saddr.sun_path, (node && node->svalue ? node->svalue : "/etc/einit-control"), sizeof(saddr.sun_path) - 1);
 
  if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
   unlink (saddr.sun_path);

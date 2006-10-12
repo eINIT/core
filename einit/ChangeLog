@@ -1,4 +1,7 @@
 2006/10/11: mdeininger
+ * added a "check configuration files only"-option to einit: --check-config
+
+2006/10/11: mdeininger
  * off to the promised new features for v0.11:
  * started with a new module for network configuration
  * changed the names on some of the source-files so they all follow a more

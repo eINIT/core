@@ -83,6 +83,17 @@ const struct smodule self = {
 int scanmodules (struct lmodule *);
 int configure (struct lmodule *);
 
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getnode("shell", NULL)) {
+  fputs (" * configuration variable \"shell\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
+
 int configure (struct lmodule *irr) {
  pexec_configure (irr);
 }

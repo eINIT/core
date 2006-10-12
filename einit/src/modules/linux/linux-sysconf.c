@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
@@ -65,8 +66,19 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getnode("sysconf-ctrl-alt-del", NULL)) {
+  fputs (" * configuration variable \"sysconf-ctrl-alt-del\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
+
 int enable (void *pa, struct einit_event *status) {
- struct cfgnode *cfg = cfg_findnode ("sysconf-ctrl-alt-del", 0, NULL);
+ struct cfgnode *cfg = cfg_getnode ("sysconf-ctrl-alt-del", NULL);
  if (cfg && !cfg->flag) {
 #ifndef SANDBOX
   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {

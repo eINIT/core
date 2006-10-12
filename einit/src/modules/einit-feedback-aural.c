@@ -77,6 +77,21 @@ void synthesize (char *);
 char *synthesizer;
 int sev_threshold = 2;
 
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getstring("tts-synthesizer-command", NULL)) {
+  fputs (" * configuration variable \"tts-synthesizer-command\" not found.\n", stderr);
+  pr++;
+ }
+ if (!cfg_getnode("tts-vocalising-threshold", NULL)) {
+  fputs (" * configuration variable \"tts-vocalising-threshold\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
+
 int configure (struct lmodule *this) {
  pexec_configure (this);
 
@@ -84,7 +99,7 @@ int configure (struct lmodule *this) {
 
  synthesizer = cfg_getstring ("tts-synthesizer-command", NULL);
 
- if (node = cfg_findnode ("tts-vocalising-threshold", 0, NULL))
+ if (node = cfg_getnode ("tts-vocalising-threshold", NULL))
   sev_threshold = node->value;
 
  self_l = this;

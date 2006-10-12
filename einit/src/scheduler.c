@@ -347,8 +347,10 @@ void *sched_run (void *p) {
     case SCHEDULER_POWER_OFF:
      notice (1, "scheduler: sync()-ing");
      sync ();
+#ifdef SANDBOX
      notice (1, "scheduler: cleaning up");
      cleanup ();
+#endif
      event_ignore (EINIT_EVENT_TYPE_IPC, sched_event_handler);
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);
@@ -360,8 +362,10 @@ void *sched_run (void *p) {
     case SCHEDULER_POWER_RESET:
      notice (1, "scheduler: sync()-ing");
      sync ();
+#ifdef SANDBOX
      notice (1, "scheduler: cleaning up");
      cleanup ();
+#endif
      event_ignore (EINIT_EVENT_TYPE_IPC, sched_event_handler);
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);

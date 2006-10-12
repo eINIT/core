@@ -83,6 +83,12 @@ struct ttyst *ttys = NULL;
 char do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ return pr;
+}
+
 int configure (struct lmodule *this) {
  struct cfgnode *utmpnode = cfg_findnode ("tty-manage-utmp", 0, NULL);
  if (utmpnode)

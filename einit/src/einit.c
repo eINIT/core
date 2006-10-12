@@ -61,17 +61,22 @@ int ipc_wait ();
 int cleanup ();
 
 pid_t einit_sub = 0;
+uint32_t check_configuration = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h]\n", stderr);
+ fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h] [--check-configuration]\n", stderr);
  return -1;
 }
 
+/* cleanups are only required to check for memory leaks, OS kernels will usually
+   clean up after a program terminates -- especially with an init this shouldn't be much of
+   a problem, since it's THE program that doesn't terminate. */
 int cleanup () {
  mod_freemodules ();
  cfg_free ();
+
 // bitch (BTCH_DL + BTCH_ERRNO);
 }
 
@@ -106,10 +111,13 @@ int main(int argc, char **argv) {
     case 'v':
      puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
      return 0;
+    case '-':
+     if (!strcmp(argv[i], "--check-configuration") && ((pid = getpid()) != 1))
+      check_configuration = 1;
+     break;
    }
  }
- pid = getpid();
- if ((pid = getpid()) == 1) einit_sub = fork();
+ if (pid == 1) einit_sub = fork();
 
  if (einit_sub) {
   int rstatus;
@@ -135,7 +143,7 @@ int main(int argc, char **argv) {
   }
  } else {
   stime = time(NULL);
-  printf ("eINIT " EINIT_VERSION_LITERAL ": booting %s: Initialising\n", osinfo.sysname);
+  printf ("eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 
   if (pthread_attr_init (&thread_attribute_detached)) {
    fputs ("pthread initialisation failed.\n", stderr);
@@ -150,16 +158,31 @@ int main(int argc, char **argv) {
 
   mod_scanmodules ();
 //  cleanup(); return 0;
+  if (!check_configuration) {
+   sched_init ();
 
-  sched_init ();
+   sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
+   sched_queue (SCHEDULER_SWITCH_MODE, "default");
 
-  sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
-  sched_queue (SCHEDULER_SWITCH_MODE, "default");
+   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
+   sched_run (NULL);
+  } else {
+   uint32_t errors = check_configuration -1;
+   switch (errors) {
+    case 0:
+     puts ("\neINIT: no problems reported."); break;
+    case 1:
+     puts ("\neINIT: one problem reported."); break;
+    default:
+     printf ("\neINIT: %i problems reported.\n", errors); break;
+   }
 
-  printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
-  sched_run (NULL);
+   return errors; // return number of (potential) errors
+  }
 
+#ifdef SANDBOX
   cleanup ();
+#endif
 
   return 0;
  }

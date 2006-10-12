@@ -72,6 +72,8 @@ pthread_attr_t thread_attribute_detached;
 
 struct cfgnode *cmode, *amode;
 
+uint32_t check_configuration;
+
 // load configuration
 int cfg_load (char *);
 

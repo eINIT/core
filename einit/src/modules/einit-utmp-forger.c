@@ -52,10 +52,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char * provides[] = {"utmp", NULL};
 char * requires[] = {"mount/critical", NULL};
-
-struct smodule self = {
- EINIT_VERSION, 1, 0, 0, "System-V compatibility: UTMP forger", "einit-utmp-forger", provides, requires, NULL
+const struct smodule self = {
+	.eiversion	= EINIT_VERSION,
+	.version	= 1,
+	.mode		= 0,
+	.options	= 0,
+	.name		= "System-V compatibility: UTMP forger",
+	.rid		= "einit-utmp-forger",
+	.provides	= provides,
+	.requires	= requires,
+	.notwith	= NULL
 };
+
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ return pr;
+}
 
 int enable (void *pa, struct einit_event *status) {
  FILE *ufile;

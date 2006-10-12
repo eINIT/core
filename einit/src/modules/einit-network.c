@@ -63,6 +63,12 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ return pr;
+}
+
 int enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }

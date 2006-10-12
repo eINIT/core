@@ -136,10 +136,23 @@ int cfg_load (char *configfile) {
   if (par != NULL) {
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
    if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
-    puts ("cfg_load(): XML_Parse() failed:");
-    puts (XML_ErrorString (XML_GetErrorCode (par)));
+    uint32_t line = XML_GetCurrentLineNumber (par);
+    char **tx = str2set ('\n', data);
+
+    fprintf (stderr, "cfg_load(): XML_Parse() failed: %s\n", XML_ErrorString (XML_GetErrorCode (par)));
+    fprintf (stderr, " * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
+
+    if (tx) {
+     if (setcount ((void **)tx) >= line)
+      fprintf (stderr, " * offending line:\n%s", tx[line-1]);
+     free (tx);
+    }
+
+    if (check_configuration) check_configuration++;
    }
    XML_ParserFree (par);
+  } else {
+   fputs ("cfg_load(): XML Parser could not be created\n", stderr);
   }
   free (data);
 
