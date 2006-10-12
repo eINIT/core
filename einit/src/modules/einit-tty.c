@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/bitch.h>
 #include <einit/scheduler.h>
+#include <string.h>
 
 #include <signal.h>
 #include <pthread.h>
@@ -72,7 +73,7 @@ const struct smodule self = {
 	.version	= 1,
 	.mode		= 0,
 	.options	= 0,
-	.name		= "tty-configuration module",
+	.name		= "TTY-Configuration",
 	.rid		= "einit-tty",
 	.provides	= provides,
 	.requires	= requires,
@@ -80,7 +81,7 @@ const struct smodule self = {
 };
 
 struct ttyst *ttys = NULL;
-char **local_environment = NULL;
+char **tty_local_environment = NULL;
 char do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -141,7 +142,7 @@ void *watcher (struct spidcb *spid) {
 int texec (struct cfgnode *node) {
  int i = 0, restart = 0;
  char *device, *command;
- char **environment = NULL;
+ char **environment = (char **)setdup((void **)tty_local_environment, SET_TYPE_STRING);
  char **variables = NULL;
 
  for (; node->arbattrs[i]; i+=2) {
@@ -216,12 +217,22 @@ int enable (void *pa, struct einit_event *status) {
   return STATUS_FAIL;
  }
 
- node = cfg_getnode("shell", NULL);
+ status->string = "creating environment";
+ if (tty_local_environment) {
+  free (tty_local_environment);
+  tty_local_environment = NULL;
+ }
+ if ((node = cfg_getnode("shell", NULL)) && node->arbattrs) {
+  for (i = 0; node->arbattrs[i]; i+=2) {
+   if (!strcmp (node->arbattrs[i], "s"))
+    tty_local_environment = straddtoenviron(tty_local_environment, node->arbattrs[i], node->arbattrs[i+1]);
+  }
+ }
 
  status->string = "commencing";
  status_update (status);
 
- for (; ttys[i]; i++) {
+ for (i = 0; ttys[i]; i++) {
   status->string = ttys[i];
   status_update (status);
   node = cfg_getnode (ttys[i], NULL);
