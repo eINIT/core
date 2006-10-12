@@ -1,5 +1,6 @@
-2006/10/11: mdeininger
+2006/10/12: mdeininger
  * added a "check configuration files only"-option to einit: --check-config
+ * added acknowledgments and credits section to the manual.
 
 2006/10/11: mdeininger
  * off to the promised new features for v0.11:

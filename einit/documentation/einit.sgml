@@ -1,7 +1,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 <book lang="en">
  <bookinfo>
-  <date>2006-10-02</date>
+  <date>2006-10-12</date>
   <title>eINIT</title>
   <subtitle>User's Guide</subtitle>
   <authorgroup>
@@ -15,7 +15,7 @@
    <holder>Magnus Deininger</holder>
   </copyright>
   <legalnotice>
-   <para>All rights reserved.</para>
+   <para>(C) 2006 Magnus Deininge, All rights reserved.</para>
    <para>Redistribution and use in source and binary forms, with or without modification,
     are permitted provided that the following conditions are met:</para>
    <itemizedlist>
@@ -39,10 +39,10 @@
     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  </para>
+   </para>
   </legalnotice>
   <abstract>
-   <para>This Documentation was written with eINIT version 0.10 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
+   <para>This Documentation was written with eINIT version 0.11 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
   </abstract>
  </bookinfo>
 
@@ -1244,4 +1244,59 @@
   </sect1>
  </appendix>
 
+ <appendix id="acknowledgements">
+  <title>Acknowledgements/Credits</title>
+  <para>In no particular order, I would like to thank some projects for being open-source and allowing me to use their libraries due to their license. I'm sure I missed some very important ones</para>
+  <sect1 id="acknowledgements-linux">
+   <title>Linux</title>
+   <para>I really like this OS. I'm glad Linus came up with it, and I'm glad that people keep contributing to it.</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://www.linux.org/">linux.org</ulink></para></listitem>
+    <listitem><para><ulink url="http://www.kernel.org/">The Linux Kernel Archives</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+  <sect1 id="acknowledgements-bsd">
+   <title>The *BSD crowd</title>
+   <para>I like *BSD even more than Linux, although the latter has more practical application for me as of late. w00t for *BSD!</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://www.freebsd.org/">FreeBSD Homepage</ulink></para></listitem>
+    <listitem><para><ulink url="http://www.openbsd.org/">OpenBSD Homepage</ulink></para></listitem>
+    <listitem><para><ulink url="http://www.netbsd.org/">NetBSD Homepage</ulink></para></listitem>
+    <listitem><para><ulink url="http://www.dragonflybsd.org/">DragonFly BSD Homepage</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+  <sect1 id="acknowledgements-gnu">
+   <title>GNU GLIBC and the GNU C Compiler</title>
+   <para>While I wrote this code with the POSIX manual in hands, I still feel that credit is due to the GNU project for providing excellent development tools under their LGPL, because most of the testing and development was done with these two pieces of software.</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://www.gnu.org/">GNU Homepage</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+  <sect1 id="acknowledgements-expat">
+   <title>&lt;eXpat/&gt;</title>
+   <formalpara><title>This software depends on the expat library for parsing XML files,</title><para>which is released under these terms:</para></formalpara>
+   <para>Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd and Clark Cooper</para>
+   <para>Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat maintainers.</para>
+   <para>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</para>
+   <para>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</para>
+   <para>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://expat.sourceforge.net/">Expat Homepage</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+  <sect1 id="acknowledgements-gentoo">
+   <title>Gentoo/*</title>
+   <para>_best_distribution_ever_. Need I say more?</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://www.gentoo.org/">Gentoo Homepage</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+  <sect1 id="acknowledgements-enlightenment">
+   <title>The Enlightenment Project</title>
+   <para>I just wish e17 was already out, although the CVS version works pretty nice so far. Anyway, I'm looking into using some of the EFL libraries, they own! Go Enlightenment!</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://www.enlightenment.org/">enlightenment.org</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+ </appendix>
 </book>
