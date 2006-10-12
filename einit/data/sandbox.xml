@@ -22,7 +22,7 @@
  <sysconf-ctrl-alt-del b="disabled" />
  <prefer-feedback s="einit-feedback-visual:einit-efl-feedback-evas" />
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
- <shell s="/bin/sh -c" TZ="CEST" PATH="/bin:/sbin:/usr/bin:/usr/sbin" />
+ <shell s="/bin/sh -c" PATH="/bin:/sbin:/usr/bin:/usr/sbin" TZ="CEST" />
 
  <use-ansi-codes b="true" />
 <!-- <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" kernel-vt="12" /> -->

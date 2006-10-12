@@ -80,11 +80,17 @@ const struct smodule self = {
 };
 
 struct ttyst *ttys = NULL;
+char **local_environment = NULL;
 char do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
+
+ if (!cfg_getnode("shell", NULL)) {
+  fputs (" * configuration variable \"shell\" not found.\n", stderr);
+  pr++;
+ }
 
  return pr;
 }
@@ -210,13 +216,15 @@ int enable (void *pa, struct einit_event *status) {
   return STATUS_FAIL;
  }
 
+ node = cfg_getnode("shell", NULL);
+
  status->string = "commencing";
  status_update (status);
 
  for (; ttys[i]; i++) {
   status->string = ttys[i];
   status_update (status);
-  node = cfg_findnode (ttys[i], 0, NULL);
+  node = cfg_getnode (ttys[i], NULL);
   if (node && node->arbattrs) {
    texec (node);
   }

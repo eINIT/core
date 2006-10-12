@@ -212,7 +212,7 @@
   <sect1 id="configuration-syntax">
    <title>A word on Syntax and Good Practices(tm)</title>
    <para>
-    As you will already have guessed, we use expat to parse our XML files. And, as you may or may not know, expat is VERY picky when it comes to syntactical correctness -- if it encounters a syntax error -- any error --, it'll refuse to resume parsing the file the error occured in, and there is nothing that I, as a user of the expat library, can do to make expat resume parsing. Also keep in mind that due to how flexible eINIT is, it allows you to break your configuration very easily; this lead me to create the following option for eINIT:
+    As you will already have guessed, we use expat to parse our XML files. And, as you may or may not know, expat is VERY picky when it comes to syntactical correctness -- if it encounters a syntax error -- any error --, it'll refuse to resume parsing the file the error occured in, and there is nothing that I, as a user of the expat library, can do to make expat resume parsing. Also keep in mind that due to how flexible eINIT is, it allows you to break your configuration very easily; this led me to create the following option for eINIT:
    </para>
    <synopsis label="run this after you modify the configuration">
     /sbin/einit --check-configuration

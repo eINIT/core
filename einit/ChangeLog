@@ -2,6 +2,7 @@
  * added a "check configuration files only"-option to einit: --check-config
  * added acknowledgments and credits section to the manual.
  * added a note on einit --check-configuration to the documentation -- use it!
+ * updated module definitions -- thanks haader and KKtm
 
 2006/10/11: mdeininger
  * off to the promised new features for v0.11:
