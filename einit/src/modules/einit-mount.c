@@ -204,6 +204,8 @@ int disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
 
 /* function definitions */
+
+/* error checking... */
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
  char **tmpset, *tmpstring;
@@ -251,7 +253,7 @@ int examine_configuration (struct lmodule *irr) {
   fputs (" * your fstab is empty.\n", stderr);
   pr++;
  } else {
-  struct uhash *thash;
+  struct uhash *thash, *fhash;
   if (!(thash = hashfind (mcb.fstab, "/"))) {
    fputs (" * your fstab does not contain an entry for \"/\".\n", stderr);
    pr++;
@@ -262,11 +264,33 @@ int examine_configuration (struct lmodule *irr) {
    fputs (" * you didn't edit your rc.xml to specify your root-filesystem.\n", stderr);
    pr++;
   }
+
+  thash = mcb.fstab;
+  while (thash) {
+   struct stat stbuf;
+
+   if (!(((struct fstab_entry *)(thash->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(thash->value))->fs))) {
+    fprintf (stderr, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", thash->key);
+    pr++;
+   }
+
+   if (!(((struct fstab_entry *)(thash->value))->device)) { 
+    if ((((struct fstab_entry *)(thash->value))->fs) && (fhash = hashfind (mcb.filesystems, (((struct fstab_entry *)(thash->value))->fs))) && !((uintptr_t)fhash->value & FS_CAPA_VOLATILE)) {
+     fprintf (stderr, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", thash->key);
+     pr++;
+    }
+   } else if (stat ((((struct fstab_entry *)(thash->value))->device), &stbuf) == -1) {
+    fprintf (stderr, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(thash->value))->device), thash->key, strerror (errno));
+    pr++;
+   }
+   thash = hashnext (thash);
+  }
  }
 
  return pr;
 }
 
+/* the actual module */
 
 int configure (struct lmodule *this) {
  struct cfgnode *node = NULL;
