@@ -177,7 +177,7 @@ char *fslist_hr[] = {
  "ufs"
 };
 char *defaultblockdevicesource[] = {"dev", NULL};
-char *defaultfstabsource[] = {"label", "configuration", "legacy", NULL};
+char *defaultfstabsource[] = {"configuration", NULL};
 char *defaultmtabsource[] = {"legacy", NULL};
 char *defaultfilesystems[] = {"linux", NULL};
 char *fsck_command = NULL;
@@ -206,14 +206,63 @@ int mountwrapper (char *, struct einit_event *, uint32_t);
 /* function definitions */
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
+ char **tmpset, *tmpstring;
 
- fputs (" * need to implement proper checks here.\n", stderr);
- pr++;
-
-/* if (!cfg_getnode("control-socket", NULL)) {
-  fputs (" * configuration variable \"control-socket\" not found.\n", stderr);
+ if (!(tmpstring = cfg_getstring("mount-fstab-source", NULL))) {
+  fputs (" * configuration variable \"mount-fstab-source\" not found.\n", stderr);
   pr++;
- }*/
+ } else {
+  tmpset = str2set(':', tmpstring);
+
+  if (inset ((void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
+   if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
+    fputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", stderr);
+    pr++;
+   }
+   if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
+    fputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", stderr);
+    pr++;
+   }
+  }
+
+  if (!inset ((void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
+   fputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", stderr);
+   pr++;
+  }
+
+  if (inset ((void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
+   fputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", stderr);
+   pr++;
+  }
+
+  free (tmpset);
+ }
+
+ if (mcb.update_options & EVENT_UPDATE_METADATA) {
+  if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
+   fputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", stderr);
+   pr++;
+  }
+ } else {
+  fputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", stderr);
+ }
+
+ if (!mcb.fstab) {
+  fputs (" * your fstab is empty.\n", stderr);
+  pr++;
+ } else {
+  struct uhash *thash;
+  if (!(thash = hashfind (mcb.fstab, "/"))) {
+   fputs (" * your fstab does not contain an entry for \"/\".\n", stderr);
+   pr++;
+  } else if (!(((struct fstab_entry *)(thash->value))->device)) {
+   fputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", stderr);
+   pr++;
+  } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(thash->value))->device))) {
+   fputs (" * you didn't edit your rc.xml to specify your root-filesystem.\n", stderr);
+   pr++;
+  }
+ }
 
  return pr;
 }

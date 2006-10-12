@@ -67,15 +67,21 @@ const struct smodule self = {
 
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
+ char *s;
 
- if (!cfg_getstring("hostname", NULL)) {
+ if (!(s = cfg_getstring("hostname", NULL))) {
   fputs (" * configuration variable \"hostname\" not found.\n", stderr);
+  pr++;
+ } else if (!strcmp ("localhost", s)) {
+  fputs (" * you should take your time to specify a hostname, go edit rc.xml, look for the hostname-element.\n", stderr);
   pr++;
  }
 
- if (!cfg_getstring("domainname", NULL)) {
+ if (!(s = cfg_getstring("domainname", NULL))) {
   fputs (" * configuration variable \"domainname\" not found.\n", stderr);
   pr++;
+ } else if (!strcmp ("local", s)) {
+  fputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit rc.xml, look for the domainname-element.\n", stderr);
  }
 
  return pr;

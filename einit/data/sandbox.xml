@@ -58,7 +58,7 @@
 <!-- mount settings -->
 <!-- default: <mount-fstab-source s="label:configuration:legacy" /> -->
  <mount-update-steps s="block-devices:metadata" />
- <mount-fstab-source s="label:configuration" />
+ <mount-fstab-source s="configuration" />
 <!-- the following is safe and faster, but you don't have labels at your disposal, 
  also filesystems won't be checked, so even though it's faster, you maybe shouldn't use it -->
 <!--
