@@ -209,6 +209,21 @@
     <listitem><para><filename>rc.xml</filename>: all configuration details that are specific to the host that einit is run on go into this file; this is the file you should modify.</para></listitem>
    </itemizedlist>
   </para>
+  <sect1 id="configuration-syntax">
+   <title>A word on Syntax and Good Practices(tm)</title>
+   <para>
+    As you will already have guessed, we use expat to parse our XML files. And, as you may or may not know, expat is VERY picky when it comes to syntactical correctness -- if it encounters a syntax error -- any error --, it'll refuse to resume parsing the file the error occured in, and there is nothing that I, as a user of the expat library, can do to make expat resume parsing. Also keep in mind that due to how flexible eINIT is, it allows you to break your configuration very easily; this lead me to create the following option for eINIT:
+   </para>
+   <synopsis label="run this after you modify the configuration">
+    /sbin/einit --check-configuration
+   </synopsis>
+   <para>
+    You should always run this command after you modify the configuration, it'll verbosely display any XML syntax errors, and all the modules get their chance at checking the configuration for sanity too. You should be able to run it as a regular user, too, but then maybe one or the other check will not be performed.
+   </para>
+   <warning>
+    <para>This option is only available in the current CVS version, and it will be published in the main distribution with version 0.11. Specifically this option is NOT included in versions <= 0.10, if you do specify it, eINIT will simply try to boot -- no biggie if you ran the command as a normal user, but it will mess with things if you ran the command as root!</para>
+   </warning>
+  </sect1>
   <sect1 id="configuration-generic">
    <title>Configuration File Layout</title>
    <titleabbrev>file layout</titleabbrev>
