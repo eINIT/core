@@ -420,11 +420,15 @@ void sched_event_handler(struct einit_event *event) {
 
   if (!strcmp (argv[0], "power") && (argc > 1)) {
    if (!strcmp (argv[1], "off")) {
+    if (!event->flag) event->flag = 1;
+
     sched_queue (SCHEDULER_SWITCH_MODE, "power-off");
     sched_queue (SCHEDULER_POWER_OFF, NULL);
     write (event->integer, "request processed\n", 19);
    }
    if (!strcmp (argv[1], "reset")) {
+    if (!event->flag) event->flag = 1;
+
     sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
     sched_queue (SCHEDULER_POWER_RESET, NULL);
     write (event->integer, "request processed\n", 19);
@@ -432,6 +436,8 @@ void sched_event_handler(struct einit_event *event) {
   }
 
   if (!strcmp (argv[0], "rc") && (argc > 2)) {
+   if (!event->flag) event->flag = 1;
+
    if (!strcmp (argv[1], "switch-mode")) {
     sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
     write (event->integer, "modeswitch queued\n", 19);

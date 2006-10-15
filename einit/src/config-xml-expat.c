@@ -144,7 +144,7 @@ int cfg_load (char *configfile) {
 
     if (tx) {
      if (setcount ((void **)tx) >= line)
-      fprintf (stderr, " * offending line:\n%s", tx[line-1]);
+      fprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
      free (tx);
     }
 

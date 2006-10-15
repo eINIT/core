@@ -333,7 +333,7 @@ struct einit_event *evdup (struct einit_event *ev);
  *
  * This function will create and return a new event structure of type \b type.
 */
-struct einit_event *evinit (uint16_t type);
+struct einit_event *evinit (uint32_t type);
 
 /*!\brief Destroy event structure \b ev
  * \param[in,out] ev the event to be destroyed.

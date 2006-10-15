@@ -1,12 +1,14 @@
 2006/10/14: mdeininger
  * minor bugfix in the configure script
+ * einit-ipc will now spawn subthreads to handle IPC events.
+ * general ipc improvements.
 
 2006/10/12: mdeininger
  * added a "check configuration files only"-option to einit: --check-config
  * added acknowledgments and credits section to the manual.
  * added a note on einit --check-configuration to the documentation -- use it!
  * updated module definitions -- thanks haader and KKtm
- * TTYs should not import the environment variables in <shell />
+ * TTYs should now import the environment variables in <shell />
 
 2006/10/11: mdeininger
  * off to the promised new features for v0.11:

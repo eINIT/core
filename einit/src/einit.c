@@ -177,6 +177,8 @@ int main(int argc, char **argv) {
      printf ("\neINIT: %i problems reported.\n", errors); break;
    }
 
+   cleanup();
+
    return errors; // return number of (potential) errors
   }
 

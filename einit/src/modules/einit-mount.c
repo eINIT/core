@@ -1201,10 +1201,12 @@ void mount_ipc_handler(struct einit_event *event) {
  char **argv = (char **) event->set;
  if (argv[0] && argv[1] && !strcmp (argv[0], "mount")) {
   if (!strcmp (argv[1], "ls_fstab")) {
-
    char buffer[1024];
    struct uhash *cur = mcb.fstab;
    struct fstab_entry *val = NULL;
+
+   if (!event->flag) event->flag = 1;
+
    while (cur) {
     val = (struct fstab_entry *) cur->value;
     if (val) {
@@ -1217,6 +1219,9 @@ void mount_ipc_handler(struct einit_event *event) {
    char buffer[1024];
    struct uhash *cur = mcb.blockdevices;
    struct bd_info *val = NULL;
+
+   if (!event->flag) event->flag = 1;
+
    while (cur) {
     val = (struct bd_info *) cur->value;
     if (val) {
@@ -1229,6 +1234,9 @@ void mount_ipc_handler(struct einit_event *event) {
    char buffer[1024];
    struct uhash *cur = mcb.mtab;
    struct legacy_fstab_entry *val = NULL;
+
+   if (!event->flag) event->flag = 1;
+
    while (cur) {
     val = (struct legacy_fstab_entry *) cur->value;
     if (val) {

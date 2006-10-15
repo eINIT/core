@@ -393,19 +393,43 @@ int mod (unsigned int task, struct lmodule *module) {
  return module->status;
 }
 
+#define STATUS2STRING(status)\
+ (status == STATUS_IDLE ? "idle" : \
+ (status & STATUS_WORKING ? "working" : \
+ (status & STATUS_ENABLED ? "enabled" : "disabled")))
+#define STATUS2STRING_SHORT(status)\
+ (status == STATUS_IDLE ? "I" : \
+ (status & STATUS_WORKING ? "W" : \
+ (status & STATUS_ENABLED ? "E" : "D")))
+
 // event handler
 void mod_event_handler(struct einit_event *event) {
  if (!event || !event->set) return;
  char **argv = (char **) event->set;
- if (argv[0] && argv[1] && !strcmp (argv[0], "modules")) {
-  if (!strcmp (argv[1], "ls_modules")) {
-   char buffer[1024];
-   struct lmodule *cur = mlist;
-   while (cur) {
-    if (cur->module)
-     snprintf (buffer, 1024, "%s (%s) [status=%i]\n", cur->module->rid, cur->module->name, cur->status);
-    write (event->integer, buffer, strlen (buffer));
-    cur = cur->next;
+ int argc = setcount (event->set);
+ uint32_t options = event->status;
+
+ if (argc >= 2) {
+  if (!strcmp (argv[0], "list")) {
+   if (!strcmp (argv[1], "modules")) {
+    char buffer[1024];
+    struct lmodule *cur = mlist;
+
+    if (!event->flag) event->flag = 1;
+
+    while (cur) {
+     if (cur->module && !(options & EM_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
+      if (options & EM_OUTPUT_XML)
+       snprintf (buffer, 2048, "<module id=\"%s\" name=\"%s\" status=\"%s\" />\n",
+         (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
+      else
+       snprintf (buffer, 1024, "[%s] %s (%s)\n",
+        STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
+
+      write (event->integer, buffer, strlen (buffer));
+     }
+     cur = cur->next;
+    }
    }
   }
  }

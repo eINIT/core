@@ -86,20 +86,75 @@ int examine_configuration (struct lmodule *irr) {
  return pr;
 }
 
+int ipc_read (int *nfd) {
+ ssize_t br;
+ ssize_t ic = 0;
+ ssize_t i;
+ char buf[BUFFERSIZE+1];
+ char lbuf[BUFFERSIZE+1];
+
+ while (br = read (*nfd, buf, BUFFERSIZE)) {
+  if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
+   bitch (BTCH_ERRNO);
+   break;
+  }
+  for (i = 0; i < br; i++) {
+   if ((buf[i] == '\n') || (buf[i] == '\0')) {
+    lbuf[ic] = 0;
+    if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
+    ic = -1;
+    lbuf[0] = 0;
+   } else {
+    if (ic >= BUFFERSIZE) {
+     lbuf[ic] = 0;
+     if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
+     ic = 0;
+    }
+    lbuf[ic] = buf[i];
+   }
+   ic++;
+  }
+ }
+ lbuf[ic] = 0;
+ if (lbuf[0])
+  ipc_process (lbuf, *nfd);
+
+ close_connection:
+ close (*nfd);
+}
+
 int ipc_process (char *cmd, uint32_t fd) {
- if (!strcmp (cmd, "IPC//out")) {
+ if (!cmd) return 0;
+ else if (!strcmp (cmd, "IPC//out")) {
   return 1;
  } else {
-  char **argv = str2set (' ', cmd);
-  struct einit_event *event = ecalloc (1, sizeof(struct einit_event));
+  struct einit_event *event = evinit (EINIT_EVENT_TYPE_IPC);
+  uint32_t ic, ec;
 
-  event->type = EINIT_EVENT_TYPE_IPC;
-  event->set = (void **)argv;
+  event->set = (void **)str2set (' ', cmd);
   event->integer = fd;
-  event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
-  free (event);
+  event->flag = 0;
 
-  free (argv);
+  ec = setcount (event->set);
+
+  for (ic = 0; ic < ec; ic++) {
+   if (!strcmp (event->set[ic], "--xml")) event->status |= EM_OUTPUT_XML;
+   else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EM_ONLY_RELEVANT;
+  }
+
+  if (event->status & EM_OUTPUT_XML) event->set = (void**)strsetdel ((char**)event->set, "--xml");
+  if (event->status & EM_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
+
+  event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
+  free (event->set);
+
+  if (!event->flag) {
+   char buffer[2048];
+   snprintf (buffer, 2048, "einit-ipc: %s: command not implemented.\n", cmd);
+   write (fd, buffer, strlen (buffer));
+  }
+
+  evdestroy (event);
   return 0;
  }
 }
@@ -145,45 +200,11 @@ void * ipc_wait (void *unused_parameter) {
    if (errno == EAGAIN) continue;
    if (errno == EINTR) continue;
    if (errno == ECONNABORTED) continue;
-   break;
+  } else {
+   pthread_t thread;
+   pthread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd);
+//   puts ("new thread created.");
   }
-//  pthread_t *thread = ecalloc (1, sizeof (pthread_t));
-//  pthread_create (thread, &threadattr, (void *(*)(void *))ipc_process, (void *)&nfd);
-//  pthread_detach (*thread);
-  ssize_t br;
-  ssize_t ic = 0;
-  ssize_t i;
-  char buf[BUFFERSIZE+1];
-  char lbuf[BUFFERSIZE+1];
-
-  while (br = read (nfd, buf, BUFFERSIZE)) {
-   if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
-    bitch (BTCH_ERRNO);
-    break;
-   }
-   for (i = 0; i < br; i++) {
-    if ((buf[i] == '\n') || (buf[i] == '\0')) {
-     lbuf[ic] = 0;
-     if (lbuf[0] && ipc_process (lbuf, nfd)) goto close_connection;
-     ic = -1;
-     lbuf[0] = 0;
-    } else {
-     if (ic >= BUFFERSIZE) {
-      lbuf[ic] = 0;
-      if (lbuf[0] && ipc_process (lbuf, nfd)) goto close_connection;
-      ic = 0;
-     }
-     lbuf[ic] = buf[i];
-    }
-    ic++;
-   }
-  }
-  lbuf[ic] = 0;
-  if (lbuf[0])
-   ipc_process (lbuf, nfd);
-
-  close_connection:
-  close (nfd);
  }
 
  if (nfd == -1)

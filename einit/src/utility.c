@@ -689,7 +689,7 @@ struct einit_event *evdup (struct einit_event *ev) {
  return nev;
 }
 
-struct einit_event *evinit (uint16_t type) {
+struct einit_event *evinit (uint32_t type) {
  struct einit_event *nev = ecalloc (1, sizeof (struct einit_event));
 
  nev->type = type;

@@ -57,7 +57,7 @@ char *ctrlsocket = "/etc/einit-control";
 #endif
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] command\n [function] [-s control-socket] [-v] [-h] command\n\npossible commands for function \"power\":\n off    tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
+ fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] [--] command\n [function] [-s control-socket] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n off    tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
  return -1;
 }
 
@@ -120,8 +120,13 @@ int main(int argc, char **argv) {
     case 'v':
      puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
      return 0;
+    case '-':
+     i++;
+     if (i < argc) goto copy_remainder_verbatim;
+     return 0;
    }
-  else {
+  else while (i < argc) {
+   copy_remainder_verbatim:
    l = strlen(c);
    if (l) {
     c = erealloc (c, (l+2+strlen(argv[i]))*sizeof (char));
@@ -131,6 +136,8 @@ int main(int argc, char **argv) {
     c = erealloc (c, (1+strlen(argv[i]))*sizeof (char));
    }
    c = strcat (c, argv[i]);
+
+   i++;
   }
  }
 
