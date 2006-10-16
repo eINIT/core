@@ -500,7 +500,7 @@ int configure (struct lmodule *this) {
 /* pexec configuration */
  pexec_configure (this);
 
- struct einit_event *ev = evinit (EINIT_EVENT_TYPE_MOUNT_UPDATE);
+ struct einit_event *ev = evinit (EVE_DO_UPDATE);
 
  function_register ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);

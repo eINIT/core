@@ -41,54 +41,55 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <pthread.h>
 
-#define EINIT_EVENT_FLAG_BROADCAST	0x00000001
+#define EVENT_SUBSYSTEM_MASK		0xfffff000
+#define EVENT_CODE_MASK			0x00000fff
+
+#define EINIT_EVENT_FLAG_BROADCAST	0x0001
 /*!< this should always be specified, although just now it's being ignored */
-#define EINIT_EVENT_FLAG_SPAWN_THREAD	0x00000002
+#define EINIT_EVENT_FLAG_SPAWN_THREAD	0x0002
 /*!< use this to tell einit that you don't wish/need to wait for this to return */
-#define EINIT_EVENT_FLAG_DUPLICATE	0x00000004
+#define EINIT_EVENT_FLAG_DUPLICATE	0x0004
 /*!< duplicate event data block. important with SPAWN_THREAD */
 
-#define EINIT_EVENT_TYPE_IPC		0x00000001
-/*!< incoming IPC request */
-#define EINIT_EVENT_TYPE_NEED_MODULE	0x00000002
-/*!< this is to be used in case a module finds out it doesn't have everything it needs, yet */
-#define EINIT_EVENT_TYPE_MOUNT_UPDATE	0x00000004
-/*!< update mount status */
-#define EINIT_EVENT_TYPE_FEEDBACK	0x00000008
-/*!< the para field specifies a module that caused the feedback */
-#define EINIT_EVENT_TYPE_NOTICE		0x00000010
-/*!< use the flag field to specify a severity, 0+ is critical, 6+ is important, etc...  */
-#define EINIT_EVENT_TYPE_POWER		0x00000020
-/*!< notify others that the power is failing, has been restored or similar */
-#define EINIT_EVENT_TYPE_TIMER		0x00000040
-/*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
-
-#define EINIT_EVENT_TYPE_PANIC		0x00000080
+#define EVENT_SUBSYSTEM_EINIT		0x00001000
+#define EVE_PANIC			0x00001001
 /*!< put everyone in the cast range into a state of panic/calm everyone down; status contains a reason */
-
-#define EINIT_EVENT_MODULE_STATUS_UPDATE	0x00000100
+#define EVE_MODULE_UPDATE		0x00001002
 /*!< Module status changing; use the task and status fields to find out just what happened */
-#define EINIT_EVENT_SERVICE_UPDATE		0x00000200
+#define EVE_SERVICE_UPDATE		0x00001003
 /*!< Service availability changing; use the task and status fields to find out just what happened */
-
-#define EINIT_EVENT_TYPE_CORE_UPDATE	0x40000000
-/*!< updated core information */
-#define EINIT_EVENT_TYPE_CUSTOM		0x80000000
-/*!< custom events; not yet implemented */
-
-#define ECU_CONFIGURATION		0x00000001
+#define EVE_CONFIGURATION_UPDATE	0x00001004
 /*!< updated core information: new configuration elements */
 
-/* IPC-event flags */
-#define EM_OUTPUT_XML           0x0001
-#define EM_ONLY_RELEVANT        0x1000
+#define EVENT_SUBSYSTEM_IPC		0x00002000
+/*!< incoming IPC request */
+#define EVENT_SUBSYSTEM_MOUNT		0x00003000
+#define EVE_DO_UPDATE			0x00003001
+/*!< update mount status */
+#define EVENT_SUBSYSTEM_FEEDBACK	0x00004000
+#define EVE_FEEDBACK_MODULE_STATUS	0x00004001
+/*!< the para field specifies a module that caused the feedback */
+#define EVE_FEEDBACK_PLAN_STATUS	0x00004002
+#define EVE_FEEDBACK_NOTICE		0x00004003
+
+#define EVENT_SUBSYSTEM_POWER		0x00005000
+/*!< notify others that the power is failing, has been restored or similar */
+#define EVENT_SUBSYSTEM_TIMER		0x00006000
+/*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
+
+#define EVENT_SUBSYSTEM_CUSTOM		0xfffff000
+/*!< custom events; not yet implemented */
+
+/* (generic) IPC-event flags */
+#define EIPC_OUTPUT_XML           0x0001
+#define EIPC_ONLY_RELEVANT        0x1000
+#define EIPC_HELP                 0x0002
 
 #define evstaticinit(ttype) { .type = ttype, .type_custom = NULL, .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
- uint32_t type;                  /*!< OR some EINIT_EVENT_TYPE_* constants to specify the event type */
- uint32_t subtype;               /*!< closer information on the event. */
+ uint32_t type;                  /*!< the event or subsystem to watch */
  char *type_custom;              /*!< not yet implemented; reserved for custom events */
  void **set;                     /*!< a set that should make sense in combination with the event type */
  char *string;                   /*!< a string */
@@ -112,8 +113,8 @@ struct exported_function {
 struct event_function *event_functions;
 
 void *event_emit (struct einit_event *, uint16_t);
-void event_listen (uint16_t, void (*)(struct einit_event *));
-void event_ignore (uint16_t, void (*)(struct einit_event *));
+void event_listen (uint32_t, void (*)(struct einit_event *));
+void event_ignore (uint32_t, void (*)(struct einit_event *));
 
 void function_register (char *, uint32_t, void *);
 void function_unregister (char *, uint32_t, void *);

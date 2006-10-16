@@ -48,11 +48,14 @@ pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *event_emit (struct einit_event *event, uint16_t flags) {
+ uint32_t subsystem;
  if (!event || !event->type) return;
+ subsystem = event->type & EVENT_SUBSYSTEM_MASK;
+
  pthread_mutex_lock (&evf_mutex);
   struct event_function *cur = event_functions;
   while (cur) {
-   if ((cur->type & event->type) && cur->handler) {
+   if ((cur->type == subsystem) && cur->handler) {
     if (flags & EINIT_EVENT_FLAG_SPAWN_THREAD) {
      pthread_t threadid;
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
@@ -75,10 +78,10 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
  pthread_mutex_unlock (&evf_mutex);
 }
 
-void event_listen (uint16_t type, void (*handler)(struct einit_event *)) {
+void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {
  struct event_function *fstruct = ecalloc (1, sizeof (struct event_function));
 
- fstruct->type = type;
+ fstruct->type = type & EVENT_SUBSYSTEM_MASK;
  fstruct->handler = handler;
 
  pthread_mutex_lock (&evf_mutex);
@@ -89,8 +92,10 @@ void event_listen (uint16_t type, void (*handler)(struct einit_event *)) {
  pthread_mutex_unlock (&evf_mutex);
 }
 
-void event_ignore (uint16_t type, void (*handler)(struct einit_event *)) {
+void event_ignore (uint32_t type, void (*handler)(struct einit_event *)) {
  if (!event_functions) return;
+
+ type &= EVENT_SUBSYSTEM_MASK;
 
  pthread_mutex_lock (&evf_mutex);
   struct event_function *cur = event_functions;

@@ -658,7 +658,7 @@ void strtrim (char *s) {
 
 /* event-helpers */
 void notice (unsigned char severity, char *message) {
- struct einit_event *ev = evinit (EINIT_EVENT_TYPE_NOTICE);
+ struct einit_event *ev = evinit (EVE_FEEDBACK_NOTICE);
 
  ev->flag = severity;
  ev->string = message;

@@ -95,7 +95,7 @@
  <rmmod s="/sbin/rmmod" />
 
  <mode id="feedback">
-  <enable mod="feedback-visual:dummyd" />
+  <enable mod="feedback-visual" />
  </mode>
  <mode id="boot">
 <!--  <enable mod="sysconf" /> -->
@@ -104,8 +104,6 @@
  </mode>
  <mode id="default" base="boot">
   <enable mod="ipc:tty" />
-<!--  <disable mod="network" /> -->
-  <disable mod="audio:dummyd" />
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-off">

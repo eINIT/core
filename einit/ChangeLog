@@ -1,4 +1,13 @@
-2006/10/14: mdeininger
+2006/10/16: mdeininger
+ * the sandbox.xml configuration file will only be installed if einit has been
+   configured in sandbox-mode
+ * structural changes to the event-system.
+   (now: event-types are 32-bit integers, with the high 20 bits (x86) defining
+    the subsystem this event belongs to, and the low/other 12 bits defining the
+    actual event or request.)
+ * ipc system updates
+
+2006/10/15: mdeininger
  * minor bugfix in the configure script
  * einit-ipc will now spawn subthreads to handle IPC events.
  * general ipc improvements.

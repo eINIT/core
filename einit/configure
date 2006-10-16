@@ -54,6 +54,7 @@ for param in $@; do
 		echo -n " SANDBOX";
 		XCFLAGS="$XCFLAGS -DSANDBOX";
 		PREFIX=`pwd`/sandbox;
+		OPTIONS="$OPTIONS sandbox";
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		PMODULES="$PMODULES linux";
@@ -202,6 +203,7 @@ SOIPARAM = \${IPARAM}
 BINIPARAM = \${IPARAM}
 
 PMODULES = $PMODULES
+OPTIONS = $OPTIONS
 INCLUDE = $INCLUDE
 
 XDYNAMIC = $XDYNAMIC

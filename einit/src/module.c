@@ -66,7 +66,7 @@ int mod_scanmodules ( void ) {
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
 
- event_listen (EINIT_EVENT_TYPE_IPC, mod_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, mod_event_handler);
 
  char *modulepath = cfg_getpath ("module-path");
  if (!modulepath) return -1;
@@ -144,7 +144,7 @@ int mod_freemodules ( void ) {
  if (mlist != NULL)
   mod_freedesc (mlist);
  mlist = NULL;
- event_ignore (EINIT_EVENT_TYPE_IPC, mod_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, mod_event_handler);
  return 1;
 }
 
@@ -315,14 +315,14 @@ int mod (unsigned int task, struct lmodule *module) {
 
 /* actual loading bit */
  {
-  struct einit_event evmstatupdate = evstaticinit(EINIT_EVENT_MODULE_STATUS_UPDATE);
+  struct einit_event evmstatupdate = evstaticinit(EVE_MODULE_UPDATE);
 
   evmstatupdate.task = task;
   evmstatupdate.para = (void *)module;
   evmstatupdate.status = STATUS_WORKING;
   event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
 
-  fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
+  fb = evinit (EVE_FEEDBACK_MODULE_STATUS);
   fb->para = (void *)module;
   fb->task = task | MOD_FEEDBACK_SHOW;
   fb->status = STATUS_WORKING;
@@ -418,9 +418,9 @@ void mod_event_handler(struct einit_event *event) {
     if (!event->flag) event->flag = 1;
 
     while (cur) {
-     if (cur->module && !(options & EM_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
-      if (options & EM_OUTPUT_XML)
-       snprintf (buffer, 2048, "<module id=\"%s\" name=\"%s\" status=\"%s\" />\n",
+     if (cur->module && !(options & EIPC_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
+      if (options & EIPC_OUTPUT_XML)
+       snprintf (buffer, 2048, " <module id=\"%s\" name=\"%s\" status=\"%s\" />\n",
          (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
       else
        snprintf (buffer, 1024, "[%s] %s (%s)\n",

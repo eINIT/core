@@ -71,8 +71,7 @@ const struct smodule self = {
 
 struct lmodule *self_l = NULL;
 
-void comment_event_handler(struct einit_event *);
-void notice_event_handler(struct einit_event *);
+void feedback_event_handler(struct einit_event *);
 void synthesize (char *);
 char *synthesizer;
 int sev_threshold = 2;
@@ -111,27 +110,25 @@ int cleanup (struct lmodule *this) {
 
 int enable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&self_l->imutex);
- event_listen (EINIT_EVENT_TYPE_FEEDBACK, comment_event_handler);
- event_listen (EINIT_EVENT_TYPE_NOTICE, notice_event_handler);
+ event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  pthread_mutex_unlock (&self_l->imutex);
  return STATUS_OK;
 }
 
 int disable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&self_l->imutex);
- event_ignore (EINIT_EVENT_TYPE_FEEDBACK, comment_event_handler);
- event_ignore (EINIT_EVENT_TYPE_NOTICE, notice_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  pthread_mutex_unlock (&self_l->imutex);
  return STATUS_OK;
 }
 
-void comment_event_handler(struct einit_event *ev) {
+void feedback_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&self_l->imutex);
 
- char phrase[2048], cmd[2048], hostname[128];
+ char phrase[2048], hostname[128];
  phrase[0] = 0;
 
- if (ev->task & MOD_SCHEDULER) {
+ if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (gethostname (hostname, 128)) strcpy (hostname, "localhost");
@@ -142,34 +139,26 @@ void comment_event_handler(struct einit_event *ev) {
     snprintf (phrase, 2048, "New mode \"%s\" is now in effect.", currentmode);
     break;
   }
+ } else if (ev->type == EVE_FEEDBACK_NOTICE) {
+  if (synthesizer && ev->string && (ev->flag < sev_threshold)) {
+   char *tx;
+   strtrim (ev->string);
+
+   if (!(tx = strrchr (ev->string, ':'))) tx = ev->string;
+   else tx ++;
+
+   if (tx) strncat (phrase, tx, 2047);
+  }
  }
 
- synthesize (phrase);
+ if (phrase[0]) synthesize (phrase);
 
  pthread_mutex_unlock (&self_l->imutex);
  return;
 }
 
-void notice_event_handler(struct einit_event *ev) {
- pthread_mutex_lock (&self_l->imutex);
-
- char cmd[2048];
- char *tx;
-
- if (synthesizer && ev->string && (ev->flag < sev_threshold)) {
-  strtrim (ev->string);
-
-  if (!(tx = strrchr (ev->string, ':'))) tx = ev->string;
-  else tx ++;
-
-  synthesize (tx);
- }
-
- pthread_mutex_unlock (&self_l->imutex);
- return;
-}
-
-/* BUG: using popen/pclose might interfere with the scheduler's zombie-auto-reaping code */
+/* BUG: using popen/pclose might interfere with the scheduler's zombie-auto-reaping code,
+        if we're running this on a system with a buggy pthreads implementation */
 void synthesize (char *string) {
  FILE *px = popen (synthesizer, "w");
 

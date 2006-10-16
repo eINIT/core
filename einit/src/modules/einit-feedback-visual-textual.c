@@ -89,8 +89,7 @@ struct mstat {
  time_t lastupdate;
 };
 
-void comment_event_handler(struct einit_event *);
-void notice_event_handler(struct einit_event *);
+void feedback_event_handler(struct einit_event *);
 
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
@@ -208,8 +207,7 @@ int enable (void *pa, struct einit_event *status) {
  if (enableansicodes)
   fputs ("\e[2J\e[0;0H", stdout);
 
- event_listen (EINIT_EVENT_TYPE_FEEDBACK, comment_event_handler);
- event_listen (EINIT_EVENT_TYPE_NOTICE, notice_event_handler);
+ event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
 
  pthread_mutex_unlock (&me->imutex);
  return STATUS_OK;
@@ -217,18 +215,16 @@ int enable (void *pa, struct einit_event *status) {
 
 int disable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
- event_ignore (EINIT_EVENT_TYPE_FEEDBACK, comment_event_handler);
- event_ignore (EINIT_EVENT_TYPE_NOTICE, notice_event_handler);
-// cleanup ((struct lmodule *)status->para);
+ event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  pthread_mutex_unlock (&me->imutex);
  return STATUS_OK;
 }
 
-void comment_event_handler(struct einit_event *ev) {
+void feedback_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
  uint32_t line = 0, olines = 0;
- if (ev->task & MOD_SCHEDULER) {
+ if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
   int i = 0;
   struct planref plan, *cul = NULL;
   uint32_t startedat = 0;
@@ -268,7 +264,7 @@ void comment_event_handler(struct einit_event *ev) {
      printf ("new mode %s is now in effect.\n", currentmode);
     break;
   }
- } else {
+ } if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
   time_t lupdate;
 
   if (enableansicodes) {
@@ -396,19 +392,15 @@ void comment_event_handler(struct einit_event *ev) {
    else if (ev->status & STATUS_FAIL)
     printf ("%s: failed\n", name);
   }
+ } if (ev->type == EVE_FEEDBACK_NOTICE) {
+  if (ev->string) {
+   strtrim (ev->string);
+   fprintf (stderr, "[time=%i; severity=%i] %s\n", time(NULL), ev->flag, ev->string);
+  }
  }
 
  fsync(STDOUT_FILENO);
 
  pthread_mutex_unlock (&me->imutex);
  return;
-}
-
-void notice_event_handler(struct einit_event *ev) {
- pthread_mutex_lock (&me->imutex);
- if (ev->string) {
-  strtrim (ev->string);
-  fprintf (stderr, "[time=%i; severity=%i] %s\n", time(NULL), ev->flag, ev->string);
- }
- pthread_mutex_unlock (&me->imutex);
 }

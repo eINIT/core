@@ -298,8 +298,8 @@ int configure (struct lmodule *this) {
 /* pexec configuration */
  pexec_configure (this);
 
- event_listen (EINIT_EVENT_TYPE_IPC, mount_ipc_handler);
- event_listen (EINIT_EVENT_TYPE_MOUNT_UPDATE, mount_update_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
+ event_listen (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
 
  read_filesystem_flags_from_configuration (NULL);
 
@@ -386,8 +386,8 @@ int cleanup (struct lmodule *this) {
  function_unregister ("read-mtab-legacy", 1, (void *)read_mtab);
  function_unregister ("fs-mount", 1, (void *)mountwrapper);
 
- event_ignore (EINIT_EVENT_TYPE_IPC, mount_ipc_handler);
- event_ignore (EINIT_EVENT_TYPE_MOUNT_UPDATE, mount_update_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
+ event_ignore (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
 
  if (fsck_command) {
   free (fsck_command);
@@ -1197,7 +1197,7 @@ void add_filesystem (char *name, char *options) {
 
 /* all the current IPC commands will be made #DEBUG-only, but we'll keep 'em for now */
 void mount_ipc_handler(struct einit_event *event) {
- if (!event) return;
+ if (!event || !event->set) return;
  char **argv = (char **) event->set;
  if (argv[0] && argv[1] && !strcmp (argv[0], "mount")) {
   if (!strcmp (argv[1], "ls_fstab")) {

@@ -159,7 +159,7 @@ int epowerreset () {
 
 int sched_switchmode (char *mode) {
  if (!mode) return -1;
- struct einit_event *fb = evinit (EINIT_EVENT_TYPE_FEEDBACK);
+ struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
  struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
  struct mloadplan *plan = NULL;
 
@@ -266,7 +266,7 @@ void sched_init () {
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
 
- event_listen (EINIT_EVENT_TYPE_IPC, sched_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, sched_event_handler);
 }
 
 int sched_queue (unsigned int task, void *param) {
@@ -351,7 +351,7 @@ void *sched_run (void *p) {
      notice (1, "scheduler: cleaning up");
      cleanup ();
 #endif
-     event_ignore (EINIT_EVENT_TYPE_IPC, sched_event_handler);
+     event_ignore (EVENT_SUBSYSTEM_IPC, sched_event_handler);
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);
      fputs ("scheduler: power off", stderr);
@@ -366,7 +366,7 @@ void *sched_run (void *p) {
      notice (1, "scheduler: cleaning up");
      cleanup ();
 #endif
-     event_ignore (EINIT_EVENT_TYPE_IPC, sched_event_handler);
+     event_ignore (EVENT_SUBSYSTEM_IPC, sched_event_handler);
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);
      fputs ("scheduler: reset", stderr);
