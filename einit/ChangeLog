@@ -1,3 +1,6 @@
+2006/10/18: mdeininger
+ * credits to yoyo for the cpufreq-module.
+
 2006/10/16: mdeininger
  * the sandbox.xml configuration file will only be installed if einit has been
    configured in sandbox-mode
