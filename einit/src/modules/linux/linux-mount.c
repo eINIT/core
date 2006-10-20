@@ -40,7 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/mount.h>
 #include <einit/module.h>
 #include <einit/config.h>
-#include <einit/common-mount.h>
 #include <einit/event.h>
 #include <errno.h>
 #include <string.h>
@@ -48,6 +47,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <einit-modules/mount.h>
 
 /* filesystem header files */
 /* i kept the original designators where appropriate */

@@ -1,3 +1,7 @@
+2006/10/20: mdeininger
+ * more verbose error checks in the default visualiser
+ * did a little hacking for the network-devices-configuration
+
 2006/10/18: mdeininger
  * credits to yoyo for the cpufreq-module.
 

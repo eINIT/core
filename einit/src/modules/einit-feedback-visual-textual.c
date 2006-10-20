@@ -157,20 +157,30 @@ int enable (void *pa, struct einit_event *status) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
       if (!tmp)
-       freopen ("einit-panic-stdin", "r+", stdin);
+       freopen ("/dev/null", "r+", stdin);
      } else {
       perror ("einit-feedback-visual-textual: opening stdin");
      }
     } else if (!strcmp (filenode->arbattrs[i], "stdout")) {
-     tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
-     if (!tmp)
-      tmp = freopen ("einit-panic-stdout", "w", stdout);
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "w", stdout);
+     } else {
+      perror ("einit-feedback-visual-textual: opening stdout");
+      enableansicodes = 0;
+     }
     } else if (!strcmp (filenode->arbattrs[i], "stderr")) {
-     tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
-     if (!tmp)
-      tmp = freopen ("einit-panic-stdout", "a", stderr);
-     if (tmp)
-      fprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", time(NULL));
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "a", stderr);
+      if (tmp)
+       fprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", time(NULL));
+     } else {
+      perror ("einit-feedback-visual-textual: opening stderr");
+      enableansicodes = 0;
+     }
     } else if (!strcmp (filenode->arbattrs[i], "console")) {
 #ifdef LINUX
      int tfd = 0, tioarg = (12 << 8) | 11;

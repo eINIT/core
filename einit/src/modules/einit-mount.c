@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #define _MODULE
-#include <einit/common-mount.h>
+#include <einit-modules/mount.h>
 
 #include <stdio.h>
 #include <einit/module.h>
