@@ -49,6 +49,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+
 #ifdef LINUX
 #include <errno.h>
 #include <fcntl.h>
@@ -143,12 +147,20 @@ int enable (void *pa, struct einit_event *status) {
  if (filenode && filenode->arbattrs) {
   uint32_t i = 0;
   FILE *tmp;
+  struct stat st;
+
   for (; filenode->arbattrs[i]; i+=2) {
+   errno = 0;
+
    if (filenode->arbattrs[i])
     if (!strcmp (filenode->arbattrs[i], "stdin")) {
-     tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
-     if (!tmp)
-      freopen ("einit-panic-stdin", "r+", stdin);
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
+      if (!tmp)
+       freopen ("einit-panic-stdin", "r+", stdin);
+     } else {
+      perror ("einit-feedback-visual-textual: opening stdin");
+     }
     } else if (!strcmp (filenode->arbattrs[i], "stdout")) {
      tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
      if (!tmp)
