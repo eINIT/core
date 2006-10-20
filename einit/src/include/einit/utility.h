@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <inttypes.h>
 #include <einit/event.h>
+#include <sys/types.h>
 
 /*!\ingroup utilityfunctionssets
  * \{

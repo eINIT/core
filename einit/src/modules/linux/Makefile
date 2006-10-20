@@ -9,10 +9,11 @@ depend:
 clean:
 	rm -f *.so depend.mk
 
-install: linux-sysconf.so linux-mount.so
+install: linux-sysconf.so linux-mount.so linux-network.so
 	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} linux-sysconf.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} linux-mount.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} linux-network.so ${DESTDIR}/${MODDIR}
 
 linux-sysconf.so: linux-sysconf.c
 	${CCL} linux-sysconf.c -o linux-sysconf.so
@@ -20,3 +21,6 @@ linux-sysconf.so: linux-sysconf.c
 linux-mount.so: linux-mount.c ../pexec.c
 	${CCC} -fPIC -c linux-mount.c
 	${CCL} linux-mount.o ../pexec.o -o linux-mount.so
+
+linux-network.so: linux-network.c
+	${CCL} linux-network.c -o linux-network.so

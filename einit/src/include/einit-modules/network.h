@@ -38,6 +38,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _EINIT_MODULES_NETWORK_H
 #define _EINIT_MODULES_NETWORK_H
 
+#include <einit/utility.h>
+#include <einit/utility.h>
 
+struct network_control_block {
+ struct uhash *interfaces;
+};
 
 #endif

@@ -57,13 +57,14 @@ const struct smodule self = {
 	.mode		= 0,
 	.options	= 0,
 	.name		= "Network Configuration (Linux-specific Parts)",
-	.rid		= "einit-network-experimental",
+	.rid		= "linux-network-experimental",
 	.provides	= provides,
 	.requires	= NULL,
 	.notwith	= NULL
 };
 
-void find_network_devices_proc (struct ncb *nc) {
+void find_network_interfaces_proc (struct network_control_block *cb) {
+
 }
 
 int examine_configuration (struct lmodule *irr) {
@@ -73,13 +74,13 @@ int examine_configuration (struct lmodule *irr) {
 }
 
 int configure (struct lmodule *irr) {
- function_register ("find-network-devices-proc", 1, (void *)find_network_devices_proc);
+ function_register ("find-network-interfaces-proc", 1, (void *)find_network_interfaces_proc);
 
  return 0;
 }
 
 int cleanup (struct lmodule *irr) {
- function_unregister ("find-network-devices-proc", 1, (void *)find_network_devices_proc);
+ function_unregister ("find-network-interfaces-proc", 1, (void *)find_network_interfaces_proc);
 
  return 0;
 }

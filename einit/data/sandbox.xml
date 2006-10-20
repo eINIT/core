@@ -91,6 +91,9 @@
 <!-- how to force r/w access on an r/o filesystem -->
  <mount-force-writeable-action s="ram-overlay" />
 
+<!-- networking -->
+ <network-interfaces-source s="proc" />
+
 <!-- the command to run to remove a module from the kernel -->
  <rmmod s="/sbin/rmmod" />
 

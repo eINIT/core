@@ -37,6 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define _MODULE
 
+#include <einit-modules/network.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
@@ -63,13 +65,41 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
+struct network_control_block mncb = {
+	.interfaces	= NULL
+};
+
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
  return pr;
 }
 
+char *defaultinterfaces[] = { "proc", NULL };
+
+void update () {
+ char **interfacessource = str2set (':', cfg_getstring("network-interfaces-source", NULL));
+ void **functions = NULL;
+ void (*f)(struct network_control_block *);
+ uint32_t i = 0;
+
+ if (!interfacessource) interfacessource = defaultinterfaces;
+
+ functions = function_find ("find-network-interfaces", 1, interfacessource);
+ if (functions && functions[0]) {
+  for (i = 0; functions[i]; i++) {
+   f = (void (*)(struct network_control_block *))functions[i];
+   f (&mncb);
+  }
+  free (functions);
+ }
+
+ if (interfacessource != defaultinterfaces) free (interfacessource);
+}
+
 int enable (void *pa, struct einit_event *status) {
+ update ();
+
  return STATUS_OK;
 }
 
