@@ -35,10 +35,10 @@ echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
 	if test "$short" = "--internal-modules"; then
-		echo -n " PREFIX";
+		echo -n " INTERNAL";
 		INTERNALMODULES=${param#*=};
 	elif test "$short" = "--external-modules"; then
-		echo -n " PREFIX";
+		echo -n " EXTERNAL";
 		EXTERNALMODULES=${param#*=};
 	elif test "$short" = "--prefix"; then
 		echo -n " PREFIX";

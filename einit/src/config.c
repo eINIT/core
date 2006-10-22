@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/event.h>
 
 struct uhash *hconfiguration = NULL;
 
@@ -181,4 +182,15 @@ char *cfg_getpath (char *id) {
   return tmpsvpath;
  }
  return svpath->svalue;
+}
+
+/* new, event-based configuration-file-loader */
+int cfg_load (char *configfile) {
+ struct einit_event ev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+
+ ev.string = configfile;
+
+ event_emit (&ev, EINIT_EVENT_FLAG_BROADCAST);
+
+ evstaticdestroy(ev);
 }

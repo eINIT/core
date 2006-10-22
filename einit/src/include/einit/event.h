@@ -60,6 +60,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< Service availability changing; use the task and status fields to find out just what happened */
 #define EVE_CONFIGURATION_UPDATE	0x00001004
 /*!< updated core information: new configuration elements */
+#define EVE_UPDATE_CONFIGURATION	0x00001101
+/*!< update the configuration */
+
 
 #define EVENT_SUBSYSTEM_IPC		0x00002000
 /*!< incoming IPC request */

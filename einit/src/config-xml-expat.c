@@ -111,7 +111,7 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
   curmode = NULL;
 }
 
-int cfg_load (char *configfile) {
+int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  static char recursion = 0;
  int cfgfd, e, blen, cfgplen;
  char * buf, * data;
@@ -141,7 +141,7 @@ int cfg_load (char *configfile) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 
-    fprintf (stderr, "cfg_load(): XML_Parse() failed: %s\n", XML_ErrorString (XML_GetErrorCode (par)));
+    fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse() failed: %s\n", XML_ErrorString (XML_GetErrorCode (par)));
     fprintf (stderr, " * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
 
     if (tx) {
@@ -154,7 +154,7 @@ int cfg_load (char *configfile) {
    }
    XML_ParserFree (par);
   } else {
-   fputs ("cfg_load(): XML Parser could not be created\n", stderr);
+   fputs ("einit_config_xml_expat_parse_configuration_file(): XML Parser could not be created\n", stderr);
   }
   free (data);
 
@@ -171,7 +171,7 @@ int cfg_load (char *configfile) {
      includefile = strcat (includefile, confpath);
      includefile = strcat (includefile, node->svalue);
      recursion++;
-     cfg_load (includefile);
+     einit_config_xml_expat_parse_configuration_file (includefile);
      recursion--;
      free (includefile);
      if (node->id) free (node->id);
@@ -187,4 +187,7 @@ int cfg_load (char *configfile) {
 }
 
 void einit_config_xml_expat_event_handler (struct einit_event *ev) {
+ if ((ev->type == EVE_UPDATE_CONFIGURATION) && ev->string) {
+  einit_config_xml_expat_parse_configuration_file (ev->string);
+ }
 }
