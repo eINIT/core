@@ -1,3 +1,8 @@
+2006/10/22: mdeininger
+ * split the configuration into config-xml-expat.c (xml-specific) and config.c
+   (generic)
+ * some changes to allow for multiple/external configuration-modules
+
 2006/10/20: mdeininger
  * more verbose error checks in the default visualiser
  * did a little hacking for the network-devices-configuration

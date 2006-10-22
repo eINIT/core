@@ -45,11 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/event.h>
 
-#define PATH_MODULES 1
-#define FEEDBACK_MODULE 1
-
-struct uhash *hconfiguration = NULL;
 struct cfgnode *curmode = NULL;
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
@@ -58,6 +55,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+  newnode->source = "xml-expat";
+  newnode->source_file = (char *)userData;
   for (; newnode->arbattrs[i] != NULL; i+=2) {
    if (!strcmp (newnode->arbattrs[i], "id")) {
     newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
@@ -69,8 +68,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    char *id = newnode->id;
    cfg_addnode (newnode);
    free (newnode);
-/* this is admittedly a tad more complicated than necessary, however its the only way to find the last addition to the hash
-   with this id */
+/* this is admittedly a tad more complicated than necessary, however its the only way to find the
+   last addition to the hash with this id */
    curmode = NULL;
    while (curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode)) {
     newnode = curmode;
@@ -83,6 +82,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   newnode->nodetype = EI_NODETYPE_CONFIG;
   newnode->mode = curmode;
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+  newnode->source = "xml-expat";
+  newnode->source_file = (char *)userData;
   if (newnode->arbattrs)
    for (; newnode->arbattrs[i] != NULL; i+=2) {
     if (!strcmp (newnode->arbattrs[i], "s"))
@@ -133,6 +134,7 @@ int cfg_load (char *configfile) {
   close (cfgfd);
   data = erealloc (buf, blen);
   par = XML_ParserCreate (NULL);
+  XML_SetUserData (par, (void *)configfile);
   if (par != NULL) {
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
    if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
@@ -184,137 +186,5 @@ int cfg_load (char *configfile) {
  }
 }
 
-int cfg_free () {
- struct uhash *cur = hconfiguration;
- struct cfgnode *node = NULL;
- while (cur) {
-  if (node = (struct cfgnode *)cur->value) {
-   if (node->base)
-    free (node->base);
-
-   if (node->custom)
-    free (node->custom);
-   if (node->id)
-    free (node->id);
-   if (node->path)
-    free (node->path);
-  }
-  cur = hashnext (cur);
- }
- hashfree (hconfiguration);
- hconfiguration = NULL;
- return 1;
-}
-
-int cfg_addnode (struct cfgnode *node) {
- if (!node) return;
- hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
-// hconfiguration = hashadd (hconfiguration, node->id, node, -1);
-}
-
-struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
- struct uhash *cur = hconfiguration;
- if (base) {
-  while (cur) {
-   if (cur->value == base) {
-    cur = hashnext (cur);
-    break;
-   }
-   cur = hashnext (cur);
-  }
- }
- if (!cur || !id) return NULL;
- while (cur = hashfind (cur, id)) {
-  if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
-   return cur->value;
-  cur = hashnext (cur);
- }
- return NULL;
-}
-
-// get string (by id)
-char *cfg_getstring (char *id, struct cfgnode *mode) {
- struct cfgnode *node = NULL;
- char *ret = NULL, **sub;
- uint32_t i;
-
- if (!id) return NULL;
- mode = mode ? mode : cmode;
-
- if (strchr (id, '/')) {
-  sub = str2set ('/', id);
-  while (node = cfg_findnode (sub[0], 0, node)) {
-   if (node->arbattrs) {
-    if (node->mode == mode) {
-     char f = 0;
-     for (i = 0; node->arbattrs[i]; i+=2) {
-      if (f = (!strcmp(node->arbattrs[i], sub[1]))) {
-       ret = node->arbattrs[i+1];
-       break;
-      }
-     }
-     if (f) break;
-    } else if (!ret && !node->mode) {
-     for (i = 0; node->arbattrs[i]; i+=2) {
-      if (!strcmp(node->arbattrs[i], sub[1])) {
-       ret = node->arbattrs[i+1];
-       break;
-      }
-     }
-    }
-   }
-  }
-  free (sub);
- } else
-  while (node = cfg_findnode (id, 0, node)) {
-   if (node->svalue) {
-    if (node->mode == mode) {
-     ret = node->svalue;
-     break;
-    } else if (!ret && !node->mode)
-     ret = node->svalue;
-   }
-  }
-
- return ret;
-}
-
-// get node (by id)
-struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
- struct cfgnode *node = NULL;
- struct cfgnode *ret = NULL;
-
- if (!id) return NULL;
- mode = mode ? mode : cmode;
-
- while (node = cfg_findnode (id, 0, node)) {
-  if (node->mode == mode) {
-   ret = node;
-   break;
-  } else if (!ret && !node->mode)
-   ret = node;
- }
-
- return ret;
-}
-
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
-char *cfg_getpath (char *id) {
- int mplen;
- struct cfgnode *svpath = cfg_findnode (id, 0, NULL);
- if (!svpath || !svpath->svalue) return NULL;
- mplen = strlen (svpath->svalue) +1;
- if (svpath->svalue[mplen-2] != '/') {
-  if (svpath->path) return svpath->path;
-  char *tmpsvpath = (char *)emalloc (mplen+1);
-  tmpsvpath[0] = 0;
-
-  strcat (tmpsvpath, svpath->svalue);
-  tmpsvpath[mplen-1] = '/';
-  tmpsvpath[mplen] = 0;
-//  svpath->svalue = tmpsvpath;
-  svpath->path = tmpsvpath;
-  return tmpsvpath;
- }
- return svpath->svalue;
+void einit_config_xml_expat_event_handler (struct einit_event *ev) {
 }

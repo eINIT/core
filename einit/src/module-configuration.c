@@ -1,8 +1,8 @@
 /*
- *  config.h
- *  einit
+ *  module-configuration.h
+ *  eINIT
  *
- *  Created by Magnus Deininger on 06/02/2006.
+ *  Created by Magnus Deininger on 22/10/2006.
  *  Copyright 2006 Magnus Deininger. All rights reserved.
  *
  */
@@ -35,65 +35,23 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#include <einit-modules/configuration.h>
+#include <einit/event.h>
 
-#include <einit/module.h>
-#include <einit/utility.h>
-#include <sys/utsname.h>
+#define EVENT_FUNCTIONS_PTR NULL
 
-#define BUFFERSIZE 1024
-#define NODE_MODE 1
+#if ( EINIT_MODULES_XML_EXPAT == 'y' )
+void einit_config_xml_expat_event_handler (struct einit_event *);
 
-#define EINIT_VERSION 1
-#define EINIT_VERSION_LITERAL "0.11"
-
-#define EI_NODETYPE_BASENODE 1
-#define EI_NODETYPE_CONFIG 2
-#define EI_NODETYPE_CONFIG_CUSTOM 4
-#define EI_NODETYPE_MODE 8
-
-struct cfgnode {
- unsigned int nodetype;
- char *id;
- struct cfgnode *mode;
- unsigned char flag;
- long int value;
- char *svalue;
- char **base;
- char **arbattrs;
- void *custom;
- char *path;
- char *source;
- char *source_file;
+struct event_function einit_config_xml_expat_event_handler_ef = {
+ .type = EVENT_SUBSYSTEM_EINIT,
+ .handler = einit_config_xml_expat_event_handler,
+ .next = EVENT_FUNCTIONS_PTR
 };
 
-struct uhash *hconfiguration;
-struct utsname osinfo;
-pthread_attr_t thread_attribute_detached;
+#undef EVENT_FUNCTIONS_PTR
+#define EVENT_FUNCTIONS_PTR &einit_config_xml_expat_event_handler_ef
 
-struct cfgnode *cmode, *amode;
+#endif
 
-uint32_t check_configuration;
-
-// load configuration
-int cfg_load (char *);
-
-// free configuration
-int cfg_free ();
-
-// add a node to the main configuration
-int cfg_addnode (struct cfgnode *);
-
-// find a node (by id)
-struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
-
-/* these functions take the current mode into consideration */
-char *cfg_getstring (char *, struct cfgnode *);          // get string (by id)
-struct cfgnode *cfg_getnode (char *, struct cfgnode *);  // get node (by id)
-
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
-
-char *cfg_getpath (char *);
-
-#endif /* _CONFIG_H */
+struct event_function *event_functions = EVENT_FUNCTIONS_PTR;

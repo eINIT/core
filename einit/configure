@@ -28,11 +28,19 @@
 # -----------------
 
 INCLUDEPATH="/usr/local/include"
+INTERNALMODULES="einit-config-xml-expat"
+EXTERNALMODULES=""
 
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
-	if test "$short" = "--prefix"; then
+	if test "$short" = "--internal-modules"; then
+		echo -n " PREFIX";
+		INTERNALMODULES=${param#*=};
+	elif test "$short" = "--external-modules"; then
+		echo -n " PREFIX";
+		EXTERNALMODULES=${param#*=};
+	elif test "$short" = "--prefix"; then
 		echo -n " PREFIX";
 		PREFIX=${param#*=};
 	elif test "$short" = "--with-include"; then
@@ -95,6 +103,8 @@ Options:
  --use-posix-regex      use posix.2 regular expressions
  --pthread-wait-bug     some pthreads implementations don't allow all threads
                         in one process to wait on other processes' children
+ --internal-modules     the modules to compile-in
+ --external-modules     the modules to compile as loadable .so-files
  --sandbox              #define SANDBOX and set prefix=\`pwd\`/sandbox
  --debug                will #define DEBUG.
  --help                 display this text and exit.";
@@ -214,6 +224,25 @@ LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}
 CCL = $CCL
 LPA = $LPA" > config.mk
+
+echo "creating module-configuration.c"
+echo "/* created by the configure-script, you shouldn't modify this */
+
+#ifndef _EINIT_MODULES_CONFIGURATION_H
+#define _EINIT_MODULES_CONFIGURATION_H
+
+" > src/include/einit-modules/configuration.h
+
+if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
+ echo "#define EINIT_MODULES_XML_EXPAT 'y'" >> src/include/einit-modules/configuration.h;
+elif test -n "`echo ${EXTERNALMODULES}|grep einit-config-xml-expat`"; then
+ echo "#define EINIT_MODULES_XML_EXPAT 'm'" >> src/include/einit-modules/configuration.h;
+else
+ echo "#define EINIT_MODULES_XML_EXPAT 'n'" >> src/include/einit-modules/configuration.h;
+fi;
+
+echo "#endif
+" >> src/include/einit-modules/configuration.h
 
 if test -e src/einit; then
 	echo -n "cleaning the environment... "

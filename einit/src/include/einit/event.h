@@ -100,7 +100,7 @@ struct einit_event {
 };
 
 struct event_function {
- uint16_t type;                          /*!< type of function */
+ uint32_t type;                          /*!< type of function */
  void (*handler)(struct einit_event *);  /*!< handler function */
  struct event_function *next;            /*!< next function */
 };
@@ -110,8 +110,6 @@ struct exported_function {
  void *function;                         /*!< pointer to the function */
 };
 
-struct event_function *event_functions;
-
 void *event_emit (struct einit_event *, uint16_t);
 void event_listen (uint32_t, void (*)(struct einit_event *));
 void event_ignore (uint32_t, void (*)(struct einit_event *));
@@ -120,12 +118,7 @@ void function_register (char *, uint32_t, void *);
 void function_unregister (char *, uint32_t, void *);
 void **function_find (char *, uint32_t, char **);
 
-#define event_emit_flag(a, b) {\
-	struct einit_event *c = ecalloc (1, sizeof(struct einit_event));\
-	c->type = a;\
-	c->flag = b;\
-	event_emit (c, EINIT_EVENT_FLAG_BROADCAST);\
-	//free (c);\
-	}
+struct event_function *event_functions;
+struct uhash *exported_functions;
 
 #endif

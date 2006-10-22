@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <einit/utility.h>
 
-struct event_function *event_functions = NULL;
 struct uhash *exported_functions = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
