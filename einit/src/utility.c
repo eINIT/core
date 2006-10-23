@@ -508,7 +508,7 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
 
  n->luggage = luggage;
 
- if (!hash)
+/* if (!hash)
   hash = n;
  else {
   while (c->next) {
@@ -523,9 +523,9 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
    return hash;
   }
   c->next = n;
- }
-// n->next = hash;
-// hash = n;
+ }*/
+ n->next = hash;
+ hash = n;
 
  return hash;
 }

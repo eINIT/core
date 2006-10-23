@@ -69,15 +69,15 @@ int examine_configuration (struct lmodule *irr) {
  int pr = 0;
  char *s;
 
- if (!(s = cfg_getstring("hostname", NULL))) {
-  fputs (" * configuration variable \"hostname\" not found.\n", stderr);
+ if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
+  fputs (" * configuration variable \"configuration-network-hostname\" not found.\n", stderr);
   pr++;
  } else if (!strcmp ("localhost", s)) {
   fputs (" * you should take your time to specify a hostname, go edit rc.xml, look for the hostname-element.\n", stderr);
   pr++;
  }
 
- if (!(s = cfg_getstring("domainname", NULL))) {
+ if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
   fputs (" * configuration variable \"domainname\" not found.\n", stderr);
   pr++;
  } else if (!strcmp ("local", s)) {
@@ -89,7 +89,7 @@ int examine_configuration (struct lmodule *irr) {
 
 int enable (void *pa, struct einit_event *status) {
  char *name;
- if (name = cfg_getstring ("hostname", NULL)) {
+ if (name = cfg_getstring ("configuration-network-hostname", NULL)) {
   status->string = "setting hostname";
   status_update (status);
   if (sethostname (name, strlen (name))) {
@@ -104,7 +104,7 @@ int enable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- if (name = cfg_getstring ("domainname", NULL)) {
+ if (name = cfg_getstring ("configuration-network-domainname", NULL)) {
   status->string = "setting domainname";
   status_update (status);
   if (setdomainname (name, strlen (name))) {

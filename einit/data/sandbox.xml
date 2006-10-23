@@ -1,32 +1,100 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <einit>
- <module-path s="lib/einit" />
- <configuration-path s="etc/einit/" />
- <include s="shell.xml" />
- <include s="daemon.xml" />
- <include s="rc.xml" />
- <include s="filesystems.xml" />
+ <core>
+  <settings>
+   <module-path s="lib/einit" />
+   <configuration-path s="etc/einit/" />
+  </settings>
+  <commands>
+   <include>
+    <file s="shell.xml" />
+    <file s="daemon.xml" />
+    <file s="rc.xml" />
+   </include>
+  </commands>
+ </core>
+
+ <configuration>
+  <system>
+   <ctrl-alt-del b="disabled" />
+  </system>
+
+  <network>
+   <hostname s="localhost" />
+   <domainname s="local" />
+  </network>
+
+  <feedback>
+   <visual>
+    <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" />
+    <use-ansi-codes b="true" />
+   </visual>
+   <aural>
+    <tts>
+     <synthesizer-command s="/usr/bin/festival --tts --pipe" />
+     <vocalising-threshold i="6" />
+    </tts>
+   </aural>
+  </feedback>
+
+  <ipc>
+   <control-socket s="etc/einit-control" oi="0600" />
+  </ipc>
+ </configuration>
+
+ <information>
+  <filesystem>
+<!-- all-purpose filesystems -->
+   <type id="ext2" flags="rw" />
+   <type id="ext3" flags="rw" />
+   <type id="reiserfs" flags="rw" />
+   <type id="reiser4" flags="rw" />
+   <type id="xfs" flags="rw" />
+   <type id="jfs" flags="rw" />
+
+<!-- special-purpose filesystems -->
+   <type id="tmpfs" flags="volatile:rw" />
+   <type id="squashfs" />
+   <type id="romfs" />
+   <type id="cramfs" />
+
+<!-- network filesystems -->
+   <type id="nfs" flags="network" />
+
+<!-- dos-ish filesystems -->
+   <type id="vfat" flags="rw" />
+   <type id="ntfs" />
+
+<!-- popular on cd/dvd media -->
+   <type id="iso9660" />
+   <type id="udf" flags="rw" />
+
+<!-- internal-use filesystems -->
+   <type id="unionfs" />
+   <type id="proc" flags="rw:volatile" />
+   <type id="sysfs" flags="rw:volatile" />
+  </filesystem>
+ </information>
+
+ <conceptual>
+  <tty-manage-utmp b="true" />
+
+  <feedback>
+   <edje>
+    <theme-path s="etc/einit/edje" />
+    <theme-default s="einit.edj" />
+    <theme-default-component s="einit/splash" />
+   </edje>
+  </feedback>
+ </conceptual>
+
 
  <forge-utmp b="true" i="3" />
  <forge-wtmp b="true" />
 
- <control-socket s="etc/einit-control" oi="0600" />
-
- <tts-synthesizer-command s="/usr/bin/festival --tts --pipe" />
-
- <tts-vocalising-threshold i="6" />
-
- <edje-theme-path s="etc/einit/edje" />
- <edje-theme-default s="einit.edj" />
- <edje-theme-default-component s="einit/splash" />
- <sysconf-ctrl-alt-del b="disabled" />
  <prefer-feedback s="einit-feedback-visual:einit-efl-feedback-evas" />
  <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
  <shell s="/bin/sh -c" PATH="/bin:/sbin:/usr/bin:/usr/sbin" TZ="CEST" />
-
- <use-ansi-codes b="true" />
-<!-- <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" console="/dev/tty12" activate-vt="1" kernel-vt="12" /> -->
- <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" />
 
  <mount-block-devices-dev-constraints s=".*" />
 
@@ -38,8 +106,6 @@
  <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
 <!-- tty initialisation -->
- <tty-manage-utmp b="true" />
-
  <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="no" TERM="linux" />
  <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="no" TERM="linux" />
  <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="no" TERM="linux" />

@@ -69,8 +69,8 @@ const struct smodule self = {
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
- if (!cfg_getnode("sysconf-ctrl-alt-del", NULL)) {
-  fputs (" * configuration variable \"sysconf-ctrl-alt-del\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
+  fputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", stderr);
   pr++;
  }
 
@@ -78,7 +78,7 @@ int examine_configuration (struct lmodule *irr) {
 }
 
 int enable (void *pa, struct einit_event *status) {
- struct cfgnode *cfg = cfg_getnode ("sysconf-ctrl-alt-del", NULL);
+ struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
  if (cfg && !cfg->flag) {
 #ifndef SANDBOX
   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
@@ -96,12 +96,6 @@ int enable (void *pa, struct einit_event *status) {
   }
 #endif
  }
-
-/* cfg = cfg_findnode ("hostname", 0, NULL);
- if (cfg && !cfg->svalue) {
-  if (sethostname (cfg->svalue, strlen (cfg->svalue)))
-   
- }*/
 
  return STATUS_OK;
 }

@@ -49,14 +49,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct cfgnode *curmode = NULL;
 
+#define ECXE_MASTERTAG 0x00000001
+
+struct einit_xml_expat_user_data {
+ uint32_t options;
+ char *file, *prefix;
+};
+
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
+ int nlen = strlen (name);
+ if (!strcmp (name, "einit")) {
+  ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG;
+  return;
+ }
+
+ if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
+
+ if (!((struct einit_xml_expat_user_data *)userData)->prefix) {
+  ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (nlen+1);
+  *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
+ } else {
+  int plen = strlen (((struct einit_xml_expat_user_data *)userData)->prefix);
+  ((struct einit_xml_expat_user_data *)userData)->prefix = erealloc (((struct einit_xml_expat_user_data *)userData)->prefix, plen + nlen+2);
+  *((((struct einit_xml_expat_user_data *)userData)->prefix) + plen) = '-';
+  *((((struct einit_xml_expat_user_data *)userData)->prefix) + plen + 1) = 0;
+ }
+ strcat (((struct einit_xml_expat_user_data *)userData)->prefix, name);
+
+// if (((struct einit_xml_expat_user_data *)userData)->prefix) puts (((struct einit_xml_expat_user_data *)userData)->prefix);
+
  int i = 0;
  if (!strcmp (name, "mode")) {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
   newnode->source = "xml-expat";
-  newnode->source_file = (char *)userData;
+  newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
   for (; newnode->arbattrs[i] != NULL; i+=2) {
    if (!strcmp (newnode->arbattrs[i], "id")) {
     newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
@@ -71,19 +99,20 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 /* this is admittedly a tad more complicated than necessary, however its the only way to find the
    last addition to the hash with this id */
    curmode = NULL;
-   while (curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode)) {
+/*   while (curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode)) {
     newnode = curmode;
-   }
-   curmode = newnode;
+   }*/
+   curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode);
+//   curmode = newnode;
   }
  } else {
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-  newnode->id = estrdup ((char *)name);
+  newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
   newnode->nodetype = EI_NODETYPE_CONFIG;
   newnode->mode = curmode;
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
   newnode->source = "xml-expat";
-  newnode->source_file = (char *)userData;
+  newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
   if (newnode->arbattrs)
    for (; newnode->arbattrs[i] != NULL; i+=2) {
     if (!strcmp (newnode->arbattrs[i], "s"))
@@ -107,6 +136,23 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 }
 
 void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
+ if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
+
+ if (!strcmp (name, "einit")) {
+  ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG;
+  return;
+ }
+
+ if (((struct einit_xml_expat_user_data *)userData)->prefix) {
+  int tlen = strlen(name)+1;
+  char *last = strrchr (((struct einit_xml_expat_user_data *)userData)->prefix, 0);
+  if ((last-tlen) > ((struct einit_xml_expat_user_data *)userData)->prefix) *(last-tlen) = 0;
+  else {
+   free (((struct einit_xml_expat_user_data *)userData)->prefix);
+   ((struct einit_xml_expat_user_data *)userData)->prefix = NULL;
+  }
+ }
+
  if (!strcmp (name, "mode"))
   curmode = NULL;
 }
@@ -120,6 +166,13 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  struct cfgnode *node = NULL, *last = NULL;
  char *confpath = NULL;
  XML_Parser par;
+
+ struct einit_xml_expat_user_data expatuserdata = {
+  .options = 0,
+  .file = configfile,
+  .prefix = NULL
+ };
+
  if (!configfile) return 0;
  cfgfd = open (configfile, O_RDONLY);
  if (cfgfd != -1) {
@@ -134,7 +187,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   close (cfgfd);
   data = erealloc (buf, blen);
   par = XML_ParserCreate (NULL);
-  XML_SetUserData (par, (void *)configfile);
+  XML_SetUserData (par, (void *)&expatuserdata);
   if (par != NULL) {
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
    if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
@@ -159,12 +212,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   free (data);
 
   if (!recursion) {
-   confpath = cfg_getpath ("configuration-path");
+   confpath = cfg_getpath ("core-settings-configuration-path");
    if (!confpath) confpath = "/etc/einit/";
    cfgplen = strlen(confpath) +1;
    rescan_node:
    hnode = hconfiguration;
-   while (hnode = hashfind (hnode, "include")) {
+   while (hnode = hashfind (hnode, "core-commands-include-file")) {
     node = (struct cfgnode *)hnode->value;
     if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
@@ -180,6 +233,9 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     }
    }
   }
+
+  if (expatuserdata.prefix) free (expatuserdata.prefix);
+
   return hconfiguration != NULL;
  } else {
   return bitch(BTCH_ERRNO);

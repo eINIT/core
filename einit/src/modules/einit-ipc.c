@@ -78,8 +78,8 @@ pthread_t ipc_thread;
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
- if (!cfg_getnode("control-socket", NULL)) {
-  fputs (" * configuration variable \"control-socket\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
+  fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", stderr);
   pr++;
  }
 
@@ -182,7 +182,7 @@ int ipc_process (char *cmd, uint32_t fd) {
 }
 
 void * ipc_wait (void *unused_parameter) {
- struct cfgnode *node = cfg_getnode ("control-socket", NULL);
+ struct cfgnode *node = cfg_getnode ("configuration-ipc-control-socket", NULL);
  int nfd;
  pthread_t **cthreads;
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);

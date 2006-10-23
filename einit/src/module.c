@@ -66,7 +66,7 @@ int mod_scanmodules ( void ) {
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
 
- char *modulepath = cfg_getpath ("module-path");
+ char *modulepath = cfg_getpath ("core-settings-module-path");
  if (!modulepath) return -1;
 
  mplen = strlen (modulepath) +1;

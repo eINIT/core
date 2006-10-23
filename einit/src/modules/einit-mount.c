@@ -718,7 +718,7 @@ unsigned char read_filesystem_flags_from_configuration (void *na) {
  struct cfgnode *node = NULL;
  uint32_t i, j;
  char *id, *flags;
- while (node = cfg_findnode ("filesystem", 0, node)) {
+ while (node = cfg_findnode ("information-filesystem-type", 0, node)) {
   if (node->arbattrs) {
    id = NULL;
    flags = 0;

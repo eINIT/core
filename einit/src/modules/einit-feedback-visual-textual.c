@@ -105,12 +105,12 @@ char enableansicodes = 1;
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
- if (!cfg_getnode("use-ansi-codes", NULL)) {
-  fputs (" * configuration variable \"use-ansi-codes\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
+  fputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", stderr);
   pr++;
  }
- if (!cfg_getnode("std-io", NULL)) {
-  fputs (" * configuration variable \"std-io\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
+  fputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", stderr);
   pr++;
  }
 
@@ -118,7 +118,7 @@ int examine_configuration (struct lmodule *irr) {
 }
 
 int configure (struct lmodule *this) {
- struct cfgnode *node = cfg_getnode ("use-ansi-codes", NULL);
+ struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
 
@@ -142,7 +142,7 @@ int cleanup (struct lmodule *this) {
 
 int enable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
- struct cfgnode *filenode = cfg_getnode ("std-io", NULL);
+ struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
 
  if (filenode && filenode->arbattrs) {
   uint32_t i = 0;

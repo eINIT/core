@@ -79,12 +79,12 @@ int sev_threshold = 2;
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
- if (!cfg_getstring("tts-synthesizer-command", NULL)) {
-  fputs (" * configuration variable \"tts-synthesizer-command\" not found.\n", stderr);
+ if (!cfg_getstring("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
+  fputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", stderr);
   pr++;
  }
- if (!cfg_getnode("tts-vocalising-threshold", NULL)) {
-  fputs (" * configuration variable \"tts-vocalising-threshold\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
+  fputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", stderr);
   pr++;
  }
 
@@ -96,9 +96,9 @@ int configure (struct lmodule *this) {
 
  struct cfgnode *node;
 
- synthesizer = cfg_getstring ("tts-synthesizer-command", NULL);
+ synthesizer = cfg_getstring ("configuration-feedback-aural-tts-synthesizer-command", NULL);
 
- if (node = cfg_getnode ("tts-vocalising-threshold", NULL))
+ if (node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL))
   sev_threshold = node->value;
 
  self_l = this;
