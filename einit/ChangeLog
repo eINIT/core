@@ -1,3 +1,6 @@
+2006/10/23: mdeininger
+ * static initialisation for more default ipc handlers
+
 2006/10/22: mdeininger
  * split the configuration into config-xml-expat.c (xml-specific) and config.c
    (generic)

@@ -66,8 +66,6 @@ int mod_scanmodules ( void ) {
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
 
- event_listen (EVENT_SUBSYSTEM_IPC, mod_event_handler);
-
  char *modulepath = cfg_getpath ("module-path");
  if (!modulepath) return -1;
 
@@ -144,7 +142,6 @@ int mod_freemodules ( void ) {
  if (mlist != NULL)
   mod_freedesc (mlist);
  mlist = NULL;
- event_ignore (EVENT_SUBSYSTEM_IPC, mod_event_handler);
  return 1;
 }
 
