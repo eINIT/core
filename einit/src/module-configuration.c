@@ -54,4 +54,15 @@ struct event_function einit_config_xml_expat_event_handler_ef = {
 
 #endif
 
+void sched_event_handler(struct einit_event *);
+
+struct event_function einit_sched_event_handler_handler_ef = {
+ .type = EVENT_SUBSYSTEM_IPC,
+ .handler = sched_event_handler,
+ .next = EVENT_FUNCTIONS_PTR
+};
+
+#undef EVENT_FUNCTIONS_PTR
+#define EVENT_FUNCTIONS_PTR &einit_sched_event_handler_handler_ef
+
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;

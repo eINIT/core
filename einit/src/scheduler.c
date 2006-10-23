@@ -265,8 +265,6 @@ void sched_init () {
  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
-
- event_listen (EVENT_SUBSYSTEM_IPC, sched_event_handler);
 }
 
 int sched_queue (unsigned int task, void *param) {
@@ -351,7 +349,6 @@ void *sched_run (void *p) {
      notice (1, "scheduler: cleaning up");
      cleanup ();
 #endif
-     event_ignore (EVENT_SUBSYSTEM_IPC, sched_event_handler);
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);
      fputs ("scheduler: power off", stderr);
@@ -366,7 +363,6 @@ void *sched_run (void *p) {
      notice (1, "scheduler: cleaning up");
      cleanup ();
 #endif
-     event_ignore (EVENT_SUBSYSTEM_IPC, sched_event_handler);
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);
      fputs ("scheduler: reset", stderr);
