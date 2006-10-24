@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <core>
+  <settings>
+   <module-path s="/lib/einit" />
+   <configuration-path s="/etc/einit/" />
+  </settings>
+<!--
+   with the current configuration files, this is not required, but you could still use it
+  <commands>
+   <include>
+    <file s="local.xml" />
+   </include>
+  </commands> -->
+ </core>
+
+ <configuration>
+  <system>
+   <ctrl-alt-del b="disabled" />
+   <daemon-spawn-timeout i="20" />
+   <shell s="/bin/sh -c" PATH="/bin:/sbin:/usr/bin:/usr/sbin" />
+  </system>
+
+  <network>
+   <hostname s="localhost" />
+   <domainname s="local" />
+
+   <interfaces>
+    <source s="proc" />
+   </interfaces>
+  </network>
+
+  <peripherals>
+   <keyboard layout="us" />
+  </peripherals>
+
+  <feedback>
+   <visual>
+    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
+    <use-ansi-codes b="true" />
+   </visual>
+   <aural>
+    <tts>
+     <synthesizer-command s="/usr/bin/festival --tts --pipe" />
+     <vocalising-threshold i="6" />
+    </tts>
+   </aural>
+  </feedback>
+
+  <ipc>
+   <control-socket s="/etc/einit-control" oi="0600" />
+  </ipc>
+
+  <audio>
+   <alsa-mixer file="/etc/asound.state" />
+  </audio>
+
+  <tty>
+   <manage-utmp b="1" />
+
+<!-- tty initialisation -->
+   <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" TERM="linux" />
+   <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" TERM="linux" />
+   <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="yes" TERM="linux" />
+   <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="yes" TERM="linux" />
+   <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="yes" TERM="linux" />
+   <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="yes" TERM="linux" />
+   <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="yes" TERM="linux" />
+  </tty>
+
+  <compatibility>
+   <sysv>
+    <forge-utmp b="true" i="3" />
+    <forge-wtmp b="true" />
+   </sysv>
+  </compatibility>
+
+<!-- mount settings -->
+  <storage>
+   <update-steps s="block-devices:metadata" />
+   <mtab-source s="legacy" />
+   <filesystem-label-readers s="linux" />
+   <critical-mountpoints s="/usr:/var" />
+<!-- parametre 1 is the filesystem type, parametre 2 is the device -->
+   <fsck-command s="/sbin/fsck -a -T -t %s %s" />
+
+   <block-devices>
+    <dev-constraints s="/dev/([shm]d[a-z]?[0-9]*)" />
+    <source s="dev" />
+   </block-devices>
+
+   <fstab>
+<!-- NEVER remove the configuration fstab-source! -->
+    <source s="configuration" />
+
+<!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
+    <node mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" />
+    <node mountpoint="/sys" fs="sysfs" />
+    <node mountpoint="/proc" fs="proc" />
+
+    <node mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
+    <node mountpoint="/dev/shm" fs="tmpfs" before-mount="mkdir /dev/shm" options="critical" />
+    <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir /dev/pts" options="critical" />
+   </fstab>
+  </storage>
+
+  <command>
+<!-- the command to run to remove a module from the kernel -->
+   <rmmod s="/sbin/rmmod" />
+  </command>
+
+  <program-options>
+   <cpufreq s="performance" />
+   <hwclock s="--utc" />
+  </program-options>
+ </configuration>
+
+ <information>
+  <filesystem>
+<!-- all-purpose filesystems -->
+   <type id="ext2" flags="rw" />
+   <type id="ext3" flags="rw" />
+   <type id="reiserfs" flags="rw" />
+   <type id="reiser4" flags="rw" />
+   <type id="xfs" flags="rw" />
+   <type id="jfs" flags="rw" />
+
+<!-- special-purpose filesystems -->
+   <type id="tmpfs" flags="volatile:rw" />
+   <type id="squashfs" />
+   <type id="romfs" />
+   <type id="cramfs" />
+
+<!-- network filesystems -->
+   <type id="nfs" flags="network" />
+
+<!-- dos-ish filesystems -->
+   <type id="vfat" flags="rw" />
+   <type id="ntfs" />
+
+<!-- popular on cd/dvd media -->
+   <type id="iso9660" />
+   <type id="udf" flags="rw" />
+
+<!-- internal-use filesystems -->
+   <type id="unionfs" />
+   <type id="proc" flags="rw:volatile" />
+   <type id="sysfs" flags="rw:volatile" />
+  </filesystem>
+ </information>
+
+ <services>
+  <virtual>
+   <module>
+<!-- you can define daemoni like this -->
+    <daemon id="daemon-gpm"
+     name="GPM"
+     provides="gpm"
+     requires="tty"
+     command="/usr/sbin/gpm"
+     restart="yes" />
+
+    <daemon id="daemon-apmd"
+     name="APMd"
+     provides="apmd"
+     requires="mount/critical"
+     command="/usr/sbin/apmd"
+     restart="yes" />
+
+<!-- DBUS -->
+    <shell id="shell-dbus"
+     name="D-BUS system messagebus"
+     provides="dbus"
+     requires="mount/critical"
+     enable="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; /usr/bin/dbus-daemon --system"
+     disable="killall dbus-daemon; rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid" />
+
+<!-- HALD -->
+<!-- credits to KKtm from the Gentoo Forums... -->
+    <daemon id="daemon-hald"
+     name="Hardware Abstraction Layer Daemon"
+     provides="hal"
+     requires="mount/critical:dbus"
+     command="/usr/sbin/hald --daemon=no --use-syslog"
+     restart="yes" />
+
+<!-- ACPI --> 
+<!-- ... and more credits to KKtm from the Gentoo Forums :) -->
+    <daemon id="daemon-acpi"
+     name="Advanced Configuration and Power Interface daemon"
+     provides="acpi"
+     requires="mount/critical"
+     command="/usr/sbin/acpid --foreground"
+     restart="yes" />
+
+<!-- Syslog -->
+    <daemon id="daemon-metalog"
+     name="Syslogger (metalog)"
+     provides="syslog"
+     requires="mount/critical"
+     command="/usr/sbin/metalog"
+     restart="yes" />
+
+<!-- haader uses syslog-ng - thanks haader! ;) -->
+    <daemon id="daemon-syslog-ng"
+     name="Syslogger (syslog-ng)"
+     provides="syslog"
+     requires="mount/critical"
+     command="/usr/sbin/syslog-ng -F"
+     restart="yes" />
+
+<!-- festival -->
+    <daemon id="daemon-tts-festival"
+     name="TTS (festival)"
+     provides="festival:speechd:tts"
+     requires="mount/critical:audio"
+     command="/usr/bin/festival --server -b /etc/festival/server.scm"
+     restart="yes" />
+
+<!-- network daemoni -->
+    <daemon id="daemon-sshd"
+     name="SSHd"
+     provides="sshd"
+     requires="network:mount/critical"
+     command="/usr/sbin/sshd -D"
+     restart="yes" />
+
+<!-- proxies -->
+    <daemon id="daemon-privoxy"
+     name="Privoxy Daemon"
+     provides="privoxy"
+     requires="network:mount/critical"
+     command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
+     restart="yes" />
+    <daemon id="daemon-tor"
+     name="TOR Daemon"
+     provides="tor"
+     requires="network:mount/critical"
+     command="/usr/bin/tor"
+     restart="yes" />
+
+<!-- portmap -->
+<!-- you need this for NFS -->
+    <daemon id="daemon-portmap"
+     name="Portmap Daemon"
+     provides="portmap"
+     requires="mount/critical:/"
+     command="/sbin/portmap -d"
+     restart="yes" />
+
+<!-- X11 -->
+<!-- credits to KKtm from the gentoo forums for this one -->
+    <daemon id="daemon-gdm"
+     name="XDM (GDM)"
+     provides="xdm:x11"
+     requires="network:video:mount/critical"
+     command="/usr/sbin/gdm -nodaemon"
+     restart="yes"
+     DISPLAY=":0.0"
+     HOME="/root" />
+
+    <daemon id="daemon-kdm"
+     name="XDM (KDM)"
+     provides="xdm:x11"
+     requires="network:video:mount/critical"
+     prepare="rm -f /var/run/kdm.pid"
+     command="/usr/kde/3.5/bin/kdm -nodaemon"
+     restart="yes"
+     DISPLAY=":0.0"
+     HOME="/root" />
+
+<!-- credits to haader from the gentoo forums for this one -->
+    <daemon id="daemon-xdm"
+     name="XDM (xdm)"
+     provides="xdm:x11"
+     requires="network:video:mount/critical"
+     command="/usr/bin/xdm -nodaemon"
+     restart="yes" />
+
+    <daemon id="daemon-xorg"
+     name="X11 (Xorg)"
+     provides="x11"
+     requires="network:video:mount/critical"
+     command="/usr/X11R6/bin/Xorg :0"
+     restart="yes" />
+
+    <daemon id="daemon-entrance"
+     name="XDM (Entrance)"
+     provides="xdm"
+     requires="x11"
+     command="/usr/bin/entrance"
+     restart="yes"
+     DISPLAY=":0.0"
+     HOME="/root" />
+
+<!-- swap -->
+    <shell id="shell-swap"
+     name="Swap-Device(s)"
+     provides="swap"
+     requires="mount/system"
+     enable="swapon ${configuration_system_swap_device}"
+     disable="swapoff ${configuration_system_swap_device}"
+     variables="configuration-system-swap/device" />
+
+<!-- modules -->
+    <shell id="shell-kern-ethernet"
+     name="Kernel Modules (ethernet)"
+     provides="kern-ethernet"
+     requires="mount/system"
+     enable="
+      for x in ${configuration_kernel_modules_ethernet};
+       do echo $x; modprobe $x;
+      done; /bin/true"
+     disable="
+      for x in ${configuration_kernel_modules_ethernet}; do
+       ${configuration_command_rmmod} $x;
+      done; /bin/true"
+     variables="configuration-kernel-modules-ethernet:configuration-command-rmmod" />
+
+    <shell id="shell-kern-audio-alsa"
+     name="Kernel Modules (ALSA)"
+     provides="kern-alsa"
+     requires="mount/system"
+     enable="
+      kernel_modules_alsa=`/sbin/modprobe -c|grep -E '(snd-card|sound-service)-[0-9]'|awk '{print $3}'`;
+      for x in ${kernel_modules_alsa};
+       do echo $x; modprobe $x;
+      done; /bin/true"
+     disable="
+      kernel_modules_alsa=`cat /proc/asound/modules|awk '{print $2}'`;
+      for x in ${kernel_modules_alsa}; do
+       ${configuration_command_rmmod} $x;
+      done;
+      /bin/true"
+     variables="configuration-command-rmmod" />
+
+    <shell id="shell-kern-video-dvb"
+     name="Kernel Modules (DVB)"
+     provides="kern-dvb"
+     requires="mount/system"
+     enable="
+      for x in ${configuration_kernel_modules_dvb};
+       do echo $x; modprobe $x;
+      done; /bin/true"
+     disable="
+      for x in ${configuration_kernel_modules_dvb}; do
+       ${configuration_command_rmmod} $x;
+      done; /bin/true"
+     variables="configuration-kernel-modules-dvb:configuration-command-rmmod" />
+
+    <shell id="shell-kern-arbitrary"
+     name="Kernel Modules (arbitrary)"
+     provides="kern-arbitrary"
+     requires="mount/system"
+     enable="
+      for x in ${configuration_kernel_modules_arbitrary};
+       do echo $x; modprobe $x;
+      done; /bin/true"
+     disable="
+      for x in ${configuration_kernel_modules_arbitrary}; do
+       ${configuration_command_rmmod} $x;
+      done; /bin/true"
+     variables="configuration-kernel-modules-arbitrary:configuration-command-rmmod" />
+
+    <shell id="shell-sensors"
+     name="LM-Sensors"
+     provides="sensors"
+     requires="mount/critical"
+     enable="
+      for x in ${configuration_kernel_modules_sensors};
+       do echo $x; modprobe $x;
+      done;
+      /usr/bin/sensors -s"
+     disable="
+      for x in ${configuration_kernel_modules_sensors}; do
+       ${configuration_command_rmmod} $x;
+      done; /bin/true"
+     variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
+
+<!-- nvidia -->
+<!-- this would normally only load the module, but somehow uevents seem not to work properly
+ with this one... *shrugs* might be an old driver of mine -->
+    <shell id="shell-kern-nvidia"
+     name="Proprietary NVIDIA X11 Drivers"
+     provides="kern-nvidia"
+     requires="mount/system"
+     enable="modprobe nvidia;
+      for i in 0 1 2 3 4 5 6 7; do
+       mknod /dev/nvidia$i c 195 $i;
+      done;
+      mknod /dev/nvidiactl c 195 255;
+      chgrp video /dev/nvidia*;
+      chmod 0660 /dev/nvidia*;
+      /bin/true;"
+     disable="${configuration_command_rmmod} nvidia;
+      rm /dev/nvidia*"
+     variables="configuration-command-rmmod" />
+
+<!-- no guarantee on this one, just wrote what i remember should be working -->
+    <shell id="shell-kern-ati"
+     name="Proprietary ATI X11 Drivers"
+     provides="kern-ati"
+     requires="mount/system"
+     enable="modprobe fglrx"
+     disable="${configuration_command_rmmod} fglrx"
+     variables="configuration-command-rmmod" />
+
+<!-- some things that people tend to like :twisted: -->
+    <shell id="shell-keyboard"
+     name="Console (Keyboard Layout)"
+     provides="keyboard"
+     requires="mount/local"
+     enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout}"
+     disable="/bin/loadkeys us"
+     variables="configuration-peripherals-keyboard/layout" />
+
+    <shell id="shell-net-loopback"
+     name="Network (Loopback)"
+     provides="net-lo"
+     enable="/sbin/ifconfig lo up 127.0.0.1/8; route add -net 127.0.0.0/8 gw 127.0.0.1"
+     disable="ifconfig lo down" />
+
+<!-- Clock -->
+    <shell id="shell-clock-ntpdate"
+     name="Set the system clock using ntpdate"
+     provides="clock:ntpc"
+     requires="mount/critical:network"
+     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock};
+     ntpdate -b pool.ntp.org"
+     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
+              /bin/true"
+     variables="configuration-program-options-hwclock" />
+
+<!-- I modified what KKtm wrote as a mod-daemon -->
+    <shell id="shell-clock-hwclock"
+     name="Set the system clock using the hardware clock"
+     provides="clock"
+     requires="mount/system"
+     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock}"
+     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
+              /bin/true"
+     variables="configuration-program-options-hwclock" />
+
+<!-- another hooray for haader, who contributed this module definition.
+    this should (in theory) work for his Atheros WLAN NIC. I slightly modified it to pass the SSID
+    as a varialble, just like he wanted. -->
+    <shell id="shell-net-ath0"
+     name="Network (Wireless, Atheros)"
+     requires="mount/system"
+     provides="net-ath0"
+     enable="rm -f /var/run/dhcpcd-ath0.pid ;
+             /sbin/modprobe ${configuration_kernel_module_ath0} ;
+             /sbin/wlanconfig ath0 create wlandev wifi0 wlanmode sta ;
+             /sbin/iwconfig ath0 essid ${configuration_network_wireless_ssid} ;
+             /sbin/iwpriv ath0 mode 3 ;
+             /sbin/wpa_supplicant -Dmadwifi -c/etc/wpa_supplicant.conf -W -B -iath0 -P/var/run/wpa_supplicant-ath0.pid ;
+             /bin/wpa_cli -iath0 -B ;
+             dhcpcd ath0 ;
+             /sbin/ifconfig ath0 ; "
+     disable="${configuration_command_rmmod} ${configuration_kernel_module_ath0}"
+     variables="configuration-kernel-module-ath0:configuration-network-wireless-ssid:configuration-command-rmmod" />
+
+<!-- ALSA -->
+    <shell id="shell-audio-alsa"
+     name="Audio (ALSA)"
+     provides="alsa"
+     requires="kern-alsa:mount/critical"
+     enable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} restore;"
+     disable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} store; /bin/true"
+     variables="configuration-audio-alsa-mixer/file" />
+
+<!-- DHCPcd -->
+<!-- strictly speaking this is a daemon, but it can't be supervised like one... -->
+    <shell id="shell-ethernet-eth0-dhcp"
+     name="Network (eth0, using DHCP)"
+     provides="net-eth0"
+     requires="kern-ethernet:mount/critical"
+     enable="rm -f /var/run/dhcpcd-eth0.pid; /sbin/dhcpcd -d -t 60 eth0;"
+     disable="killall dhcpcd; rm -f /var/run/dhcpcd-eth0.pid;" />
+
+<!-- mythtv -->
+<!-- damn this thing's a bitch -->
+    <shell id="shell-mythtv-backend"
+     name="MythTV Backend"
+     provides="mythtv"
+     requires="network:mount/critical:kern-dvb"
+     enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
+     disable="killall mythbackend; /bin/true"
+     HOME="/etc/mythtv"/>
+
+<!-- CpuFrequtils -->
+<!-- thanks to yoyo for this one -->
+<!-- ... Need some improvments to set governor on multi core/cpus -->
+    <shell id="shell-cpufreq"
+     name="Cpufreq Governor"
+     provides="cpufreq"
+     requires="mount/critical:acpi"
+     enable="/usr/bin/cpufreq-set --governor ${configuration_program_options_cpufreq}"
+     disable="/usr/bin/cpufreq-set --governor performance"
+     variables="configuration-program-options-cpufreq" />
+
+<!-- fcron -->
+<!-- this one was written by Janax@Gentoo Forums -->
+    <daemon id="daemon-fcron"
+     name="Cron (fcron)"
+     provides="cron"
+     requires="mount/critical"
+     command="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf"
+     restart="yes" />
+   </module>
+  </virtual>
+ </services>
+
+ <mode id="feedback">
+  <enable mod="feedback-visual" />
+ </mode>
+ <mode id="boot">
+  <enable mod="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal" />
+  <ttys s="tty1-regular" />
+ </mode>
+ <mode id="power-off">
+  <disable mod="all-but-feedback" />
+  <ttys s="none" />
+ </mode>
+ <mode id="power-reset" base="power-off">
+  <ttys s="none" />
+ </mode>
+</einit>

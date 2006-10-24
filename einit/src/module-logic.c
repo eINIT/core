@@ -53,8 +53,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct lmodule *mlist;
 
-#define mod_plan_searchgroup(nnode,service) \
- if (!nnode.mod && (gnode = cfg_getnode (service, mode)) && gnode->arbattrs) {\
+#define mod_plan_searchgroup(nnode,service) if (service) {\
+ char *tnodeid = emalloc (strlen (service)+17); \
+ memcpy (tnodeid, "services-alias-", 16);\
+ strcat (tnodeid, service);\
+ if (!nnode.mod && (gnode = cfg_getnode (tnodeid, mode)) && gnode->arbattrs) {\
   for (r = 0; gnode->arbattrs[r]; r+=2) {\
    if (!strcmp (gnode->arbattrs[r], "group")) {\
     if (nnode.group = str2set (':', gnode->arbattrs[r+1]))\
@@ -70,7 +73,9 @@ struct lmodule *mlist;
      nnode.options |=  MOD_PLAN_GROUP_SEQ_MOST;\
    }\
   }\
- }
+ }\
+ if (tnodeid) free (tnodeid);\
+}
 
 
 // create a plan for loading a set of atoms
@@ -250,9 +255,9 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      uint32_t mpx, mpy, mpz = 0;
      char *pnode = NULL, **preference = NULL;
 
-     pnode = emalloc (strlen (current[a])+8);
+     pnode = emalloc (strlen (current[a])+18);
      pnode[0] = 0;
-     strcat (pnode, "prefer-");
+     strcat (pnode, "services-prefer-");
      strcat (pnode, current[a]);
      if (preference = str2set (':', cfg_getstring (pnode, mode))) {
       for (mpx = 0; preference[mpx]; mpx++) {

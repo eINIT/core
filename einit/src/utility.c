@@ -463,10 +463,16 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  if (value) len += strlen (value);
  newitem = emalloc (sizeof(char)*len);
  newitem[0] = 0;
- if (key) newitem = strcat (newitem, key);
+ if (key) {
+  uint32_t len = strlen (key), i = 0;
+
+  newitem = strcat (newitem, key);
+  for (; newitem[i]; i++) {
+   if (!isalnum (newitem[i])) newitem[i] = '_';
+  }
+ }
  if (value) newitem = strcat (newitem, "=");
  if (value) newitem = strcat (newitem, value);
-
 
  ret = (char**) setadd ((void**)environment, (void*)newitem, SET_TYPE_STRING);
  free (newitem);

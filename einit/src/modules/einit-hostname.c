@@ -73,7 +73,7 @@ int examine_configuration (struct lmodule *irr) {
   fputs (" * configuration variable \"configuration-network-hostname\" not found.\n", stderr);
   pr++;
  } else if (!strcmp ("localhost", s)) {
-  fputs (" * you should take your time to specify a hostname, go edit rc.xml, look for the hostname-element.\n", stderr);
+  fputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", stderr);
   pr++;
  }
 
@@ -81,7 +81,7 @@ int examine_configuration (struct lmodule *irr) {
   fputs (" * configuration variable \"domainname\" not found.\n", stderr);
   pr++;
  } else if (!strcmp ("local", s)) {
-  fputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit rc.xml, look for the domainname-element.\n", stderr);
+  fputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", stderr);
  }
 
  return pr;

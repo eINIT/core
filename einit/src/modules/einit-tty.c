@@ -88,8 +88,8 @@ pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
- if (!cfg_getnode("shell", NULL)) {
-  fputs (" * configuration variable \"shell\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-system-shell", NULL)) {
+  fputs (" * configuration variable \"configuration-system-shell\" not found.\n", stderr);
   pr++;
  }
 
@@ -97,7 +97,7 @@ int examine_configuration (struct lmodule *irr) {
 }
 
 int configure (struct lmodule *this) {
- struct cfgnode *utmpnode = cfg_findnode ("tty-manage-utmp", 0, NULL);
+ struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
   do_utmp = utmpnode->flag;
 }
@@ -155,9 +155,9 @@ int texec (struct cfgnode *node) {
   else if (!strcmp("variables", node->arbattrs[i])) {
    int i = 0;
    for (variables = str2set (':', node->arbattrs[i+1]); variables[i]; i++) {
-    struct cfgnode *node = cfg_findnode (variables[i], 0, NULL);
+    char *variablevalue = cfg_getstring (variables[i], NULL);
     if (node)
-     environment = straddtoenviron (environment, variables[i], node->svalue);
+     environment = straddtoenviron (environment, variables[i], variablevalue);
    }
   } else {
    environment = straddtoenviron (environment, node->arbattrs[i], node->arbattrs[i+1]);
@@ -222,7 +222,7 @@ int enable (void *pa, struct einit_event *status) {
   free (tty_local_environment);
   tty_local_environment = NULL;
  }
- if ((node = cfg_getnode("shell", NULL)) && node->arbattrs) {
+ if ((node = cfg_getnode("configuration-system-shell", NULL)) && node->arbattrs) {
   for (i = 0; node->arbattrs[i]; i+=2) {
    if (!strcmp (node->arbattrs[i], "s"))
     tty_local_environment = straddtoenviron(tty_local_environment, node->arbattrs[i], node->arbattrs[i+1]);
@@ -233,12 +233,23 @@ int enable (void *pa, struct einit_event *status) {
  status_update (status);
 
  for (i = 0; ttys[i]; i++) {
+  char *tmpnodeid = emalloc (strlen(ttys[i])+20);
   status->string = ttys[i];
   status_update (status);
-  node = cfg_getnode (ttys[i], NULL);
+
+  memcpy (tmpnodeid, "configuration-tty-", 19);
+  strcat (tmpnodeid, ttys[i]);
+
+  node = cfg_getnode (tmpnodeid, NULL);
   if (node && node->arbattrs) {
    texec (node);
+  } else {
+   char warning[1024];
+   snprintf (warning, 1024, "einit-tty: node %s not found", tmpnodeid);
+   notice (3, warning);
   }
+
+  free (tmpnodeid);
  }
 
  status->string="all ttys up";

@@ -1,3 +1,13 @@
+2006/10/24: mdeininger
+ * more changes to the configuration file layout (now we only have einit.xml
+   for the global profile and local.xml for local overrides. + sandbox.xml for
+   overrides in sandbox-mode)
+ * straddtoenviron() now converts non-alnum characters in the key to an
+   underscore, this allows you to use all configuration file entries as
+   variables in virtual modules
+ * lots of variables and locations changed, do look into the new files. it
+   should be easier to understand now, but you will need to reconfigure (!)
+
 2006/10/23: mdeininger
  * static initialisation for more default ipc handlers
  * started to import some of the changes proposed by rmh3093

@@ -5,76 +5,43 @@
    <module-path s="lib/einit" />
    <configuration-path s="etc/einit/" />
   </settings>
-  <commands>
-   <include>
-    <file s="shell.xml" />
-    <file s="daemon.xml" />
-    <file s="rc.xml" />
-   </include>
-  </commands>
  </core>
 
  <configuration>
-  <system>
-   <ctrl-alt-del b="disabled" />
-  </system>
-
-  <network>
-   <hostname s="localhost" />
-   <domainname s="local" />
-  </network>
-
   <feedback>
    <visual>
     <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" />
     <use-ansi-codes b="true" />
    </visual>
-   <aural>
-    <tts>
-     <synthesizer-command s="/usr/bin/festival --tts --pipe" />
-     <vocalising-threshold i="6" />
-    </tts>
-   </aural>
   </feedback>
 
   <ipc>
    <control-socket s="etc/einit-control" oi="0600" />
   </ipc>
+
+  <kernel>
+   <modules>
+    <usb s="" />
+    <bluetooth s="" />
+    <hid s="" />
+    <sensors s="i2c-isa eeprom w83627ehf" />
+    <dvb s="b2c2-flexcop-pci" />
+    <ethernet s="uli526x" />
+    <arbitrary s="evdev psmouse" />
+   </modules>
+
+   <module>
+    <ath0 s="ath_pci" />
+   </module>
+  </kernel>
+
+  <storage>
+   <fstab>
+    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
+    <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" />
+   </fstab>
+  </storage>
  </configuration>
-
- <information>
-  <filesystem>
-<!-- all-purpose filesystems -->
-   <type id="ext2" flags="rw" />
-   <type id="ext3" flags="rw" />
-   <type id="reiserfs" flags="rw" />
-   <type id="reiser4" flags="rw" />
-   <type id="xfs" flags="rw" />
-   <type id="jfs" flags="rw" />
-
-<!-- special-purpose filesystems -->
-   <type id="tmpfs" flags="volatile:rw" />
-   <type id="squashfs" />
-   <type id="romfs" />
-   <type id="cramfs" />
-
-<!-- network filesystems -->
-   <type id="nfs" flags="network" />
-
-<!-- dos-ish filesystems -->
-   <type id="vfat" flags="rw" />
-   <type id="ntfs" />
-
-<!-- popular on cd/dvd media -->
-   <type id="iso9660" />
-   <type id="udf" flags="rw" />
-
-<!-- internal-use filesystems -->
-   <type id="unionfs" />
-   <type id="proc" flags="rw:volatile" />
-   <type id="sysfs" flags="rw:volatile" />
-  </filesystem>
- </information>
 
  <conceptual>
   <tty-manage-utmp b="true" />
@@ -86,100 +53,46 @@
     <theme-default-component s="einit/splash" />
    </edje>
   </feedback>
+
+  <mount-force-writeable-action s="ram-overlay" />
+  <mount-ramdisk-fs s="tmpfs" />
+  <mount-union s="unionfs" />
  </conceptual>
 
+ <services>
+  <virtual>
+   <module>
+    <shell id="shell-sysconf" name="sysconf dummy" provides="sysconf" enable="echo sysconf;" disable="echo sysconf;" />
 
- <forge-utmp b="true" i="3" />
- <forge-wtmp b="true" />
+    <shell id="shell-eth0-dummy" name="net-eth0-dummy" provides="net-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
 
- <prefer-feedback s="einit-feedback-visual:einit-efl-feedback-evas" />
- <prefer-feedback-visual s="einit-efl-feedback-evas-edje:einit-feedback-visual" />
- <shell s="/bin/sh -c" PATH="/bin:/sbin:/usr/bin:/usr/sbin" TZ="CEST" />
-
- <mount-block-devices-dev-constraints s=".*" />
-
- <mod-shell id="shell-sysconf" name="sysconf dummy" provides="sysconf" enable="echo sysconf;" disable="echo sysconf;" />
-
- <mod-shell id="shell-eth0-dummy" name="net-eth0-dummy" provides="net-eth0" enable="echo /sbin/modprobe ${kernel_module_eth0}" disable="echo /sbin/rmmod ${kernel_module_eth0}" variables="kernel_module_eth0" />
-
- <daemon-spawn-timeout i="20" />
- <mod-shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
-
-<!-- tty initialisation -->
- <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="no" TERM="linux" />
- <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="no" TERM="linux" />
- <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="no" TERM="linux" />
- <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="no" TERM="linux" />
- <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="no" TERM="linux" />
- <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="no" TERM="linux" />
- <tty10-regular dev="/dev/tty10" command="/sbin/agetty 38400 tty10" restart="no" TERM="linux" />
+    <shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
 <!-- dummy daemon -->
- <mod-daemon id="daemon-dummy-1" name="Dummy Daemon (1)" provides="dummyd" command="/bin/sh -c 'while true; do id; sleep 1; done'" restart="yes" prepare="id" user="mdeininger" group="rpc" />
- <mod-daemon id="daemon-dummy-2" name="Dummy Daemon (2)" provides="dummyd" requires="network" prepare="/bin/false" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
- <mod-daemon id="daemon-dummy-3" name="Dummy Daemon (3)" provides="dummyd" requires="network" command="/bin/sh -c 'while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done'" restart="yes" ELEMENT="."/>
+    <shell id="daemon-dummy-1" name="Dummy Daemon (1)" provides="dummyd" enable="while true; do id; sleep 1; done" restart="no" disable="/bin/true" prepare="id" user="mdeininger" group="rpc" />
+    <shell id="daemon-dummy-2" name="Dummy Daemon (2)" provides="dummyd" requires="network" enable="while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done"  disable="/bin/true" ELEMENT="."/>
+    <shell id="daemon-dummy-3" name="Dummy Daemon (3)" provides="dummyd" requires="network" enable="while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done"  disable="/bin/true" ELEMENT="."/>
+   </module>
+  </virtual>
 
- <prefer-dummyd s="daemon-dummy-1" />
+  <prefer>
+   <dummyd s="daemon-dummy-3" />
+  </prefer>
 
-<!-- mount settings -->
-<!-- default: <mount-fstab-source s="label:configuration:legacy" /> -->
- <mount-update-steps s="block-devices:metadata" />
- <mount-fstab-source s="configuration" />
-<!-- the following is safe and faster, but you don't have labels at your disposal, 
- also filesystems won't be checked, so even though it's faster, you maybe shouldn't use it -->
-<!--
- <mount-update-steps s="none" />
- <mount-fstab-source s="configuration" />
--->
- <mount-mtab-source s="legacy" />
-<!-- using information in /proc is faster than deep-scanning /dev, but i can't get all the devices from
-   /proc yet + it only works on linux so far -->
-<!-- <mount-block-devices-source s="proc:dev" /> -->
- <mount-block-devices-source s="dev" />
- <mount-filesystem-label-readers s="linux" />
- <mount-ramdisk-fs s="tmpfs" />
- <mount-union s="unionfs" />
- <mount-critical s="/usr:/var" />
-<!-- parametre 1 is the filesystem type, parametre 2 is the device -->
- <mount-fsck-command s="/sbin/fsck -a -T -t %s %s" />
+  <alias>
+<!-- module groups -->
+   <network group="net-lo" seq="most" />
+   <video group="kern-nvidia" seq="any-iop" />
+   <audio group="alsa" seq="any-iop" />
+  </alias>
+ </services>
 
-<!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
- <fstab-entry mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" />
- <fstab-entry mountpoint="/sys" fs="sysfs" />
- <fstab-entry mountpoint="/proc" fs="proc" />
-
- <fstab-entry mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
- <fstab-entry mountpoint="/dev/shm" fs="tmpfs" before-mount="mkdir /dev/shm" options="critical" />
- <fstab-entry mountpoint="/dev/pts" fs="devpts" before-mount="mkdir /dev/pts" options="critical" />
-
-<!-- things that should be implemented someday -->
-<!-- <mount-block-devices-source s="proc:sys:dev" /> -->
-<!-- how to force r/w access on an r/o filesystem -->
- <mount-force-writeable-action s="ram-overlay" />
-
-<!-- networking -->
- <network-interfaces-source s="proc" />
-
-<!-- the command to run to remove a module from the kernel -->
- <rmmod s="/sbin/rmmod" />
-
- <mode id="feedback">
-  <enable mod="feedback-visual" />
- </mode>
  <mode id="boot">
-<!--  <enable mod="sysconf" /> -->
-<!--  <enable mod="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:feedback-aural" /> -->
+  <enable mod="ipc:audio" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="ipc:network/experimental" />
-  <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
- </mode>
- <mode id="power-off">
-  <disable mod="all-but-feedback" />
-  <ttys s="none" />
- </mode>
- <mode id="power-reset" base="power-off">
-  <ttys s="none" />
+  <enable mod="network/experimental:tty" />
+  <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular:tty-stfu" />
  </mode>
 </einit>

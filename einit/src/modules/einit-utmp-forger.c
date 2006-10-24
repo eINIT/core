@@ -72,7 +72,7 @@ int examine_configuration (struct lmodule *irr) {
 
 int enable (void *pa, struct einit_event *status) {
  FILE *ufile;
- struct cfgnode *utmp_cfg = cfg_findnode ("forge-utmp", 0, NULL);
+ struct cfgnode *utmp_cfg = cfg_findnode ("configuration-compatibility-sysv-forge-utmp", 0, NULL);
 
  if (utmp_cfg && utmp_cfg->flag) {
   ufile = fopen ("/var/run/utmp", "w");

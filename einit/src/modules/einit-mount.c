@@ -210,8 +210,8 @@ int examine_configuration (struct lmodule *irr) {
  int pr = 0;
  char **tmpset, *tmpstring;
 
- if (!(tmpstring = cfg_getstring("mount-fstab-source", NULL))) {
-  fputs (" * configuration variable \"mount-fstab-source\" not found.\n", stderr);
+ if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
+  fputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", stderr);
   pr++;
  } else {
   tmpset = str2set(':', tmpstring);
@@ -261,7 +261,7 @@ int examine_configuration (struct lmodule *irr) {
    fputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", stderr);
    pr++;
   } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(thash->value))->device))) {
-   fputs (" * you didn't edit your rc.xml to specify your root-filesystem.\n", stderr);
+   fputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", stderr);
    pr++;
   }
 
@@ -310,7 +310,7 @@ int configure (struct lmodule *this) {
  function_register ("read-mtab-legacy", 1, (void *)read_mtab);
  function_register ("fs-mount", 1, (void *)mountwrapper);
 
- if ((node = cfg_findnode ("mount-update-steps",0,NULL)) && node->svalue) {
+ if ((node = cfg_findnode ("configuration-storage-update-steps",0,NULL)) && node->svalue) {
   char **tmp = str2set(':', node->svalue);
   uint32_t c = 0;
   mcb.update_options = EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB;
@@ -321,10 +321,10 @@ int configure (struct lmodule *this) {
   free (tmp);
  }
 
- if ((node = cfg_findnode ("mount-critical",0,NULL)) && node->svalue)
+ if ((node = cfg_findnode ("configuration-storage-critical-mountpoints",0,NULL)) && node->svalue)
   mcb.critical = str2set(':', node->svalue);
 
- if ((node = cfg_findnode ("mount-fsck-command",0,NULL)) && node->svalue)
+ if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
   fsck_command = estrdup(node->svalue);
 
  if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
@@ -415,7 +415,7 @@ unsigned char find_block_devices_recurse_path (char *path) {
 
  if (!npattern) {
   nfitfc = 1;
-  npattern = cfg_findnode ("mount-block-devices-dev-constraints", 0, NULL);
+  npattern = cfg_findnode ("configuration-storage-block-devices-dev-constraints", 0, NULL);
   if (npattern && npattern->svalue) {
    uint32_t err;
    if (!(err = regcomp (&devpattern, npattern->svalue, REG_EXTENDED)))
@@ -567,7 +567,7 @@ unsigned char forge_fstab_by_label (void *na) {
 unsigned char read_fstab_from_configuration (void *na) {
  struct cfgnode *node = NULL;
  uint32_t i;
- while (node = cfg_findnode ("fstab-entry", 0, node)) {
+ while (node = cfg_findnode ("configuration-storage-fstab-node", 0, node)) {
   char *mountpoint = NULL, *device = NULL, *fs = NULL, **options = NULL, *before_mount = NULL, *after_mount = NULL, *before_umount = NULL, *after_umount = NULL, *manager = NULL, **variables = NULL;
   uint32_t mountflags = 0;
 
@@ -746,25 +746,25 @@ void update (enum update_task task) {
  switch (task) {
   case UPDATE_METADATA:
    if (!(mcb.update_options & EVENT_UPDATE_METADATA)) return;
-   node = cfg_findnode ("mount-filesystem-label-readers", 0, NULL);
+   node = cfg_findnode ("configuration-storage-filesystem-label-readers", 0, NULL);
    fl = defaultfilesystems;
    flb = "fs-read-metadata";
    break;
   case UPDATE_BLOCK_DEVICES:
    if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) return;
-   node = cfg_findnode ("mount-block-devices-source", 0, NULL);
+   node = cfg_findnode ("configuration-storage-block-devices-source", 0, NULL);
    fl = defaultblockdevicesource;
    flb = "find-block-devices";
    break;
   case UPDATE_FSTAB:
    if (!(mcb.update_options & EVENT_UPDATE_FSTAB)) return;
-   node = cfg_findnode ("mount-fstab-source", 0, NULL);
+   node = cfg_findnode ("configuration-storage-fstab-source", 0, NULL);
    fl = defaultfstabsource;
    flb = "read-fstab";
    break;
   case UPDATE_MTAB:
    if (!(mcb.update_options & EVENT_UPDATE_MTAB)) return;
-   node = cfg_findnode ("mount-mtab-source", 0, NULL);
+   node = cfg_findnode ("configuration-storage-mtab-source", 0, NULL);
    fl = defaultmtabsource;
    flb = "read-mtab";
    break;

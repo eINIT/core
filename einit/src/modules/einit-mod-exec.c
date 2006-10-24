@@ -93,8 +93,8 @@ int configure (struct lmodule *);
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
- if (!cfg_getnode("shell", NULL)) {
-  fputs (" * configuration variable \"shell\" not found.\n", stderr);
+ if (!cfg_getnode("configuration-system-shell", NULL)) {
+  fputs (" * configuration variable \"configuration-system-shell\" not found.\n", stderr);
   pr++;
  }
 
@@ -132,7 +132,7 @@ int scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
 
  node = NULL;
- while (node = cfg_findnode ("mod-shell", 0, node)) {
+ while (node = cfg_findnode ("services-virtual-module-shell", 0, node)) {
   struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
   struct mexecinfo *mexec = ecalloc (1, sizeof (struct mexecinfo));
   int i = 0;

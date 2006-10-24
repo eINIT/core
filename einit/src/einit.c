@@ -84,15 +84,19 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
  kill (einit_sub, SIGINT);
 }
 
+#ifndef SANDBOX
+#define MAINCONFIGURATIONFILE "/etc/einit/einit.xml"
+#define DEFAULTADDONCONFIGURATIONFILE "/etc/einit/local.xml"
+#else
+#define MAINCONFIGURATIONFILE "etc/einit/einit.xml"
+#define DEFAULTADDONCONFIGURATIONFILE "etc/einit/sandbox.xml"
+#endif
+
+
 int main(int argc, char **argv) {
  int i, stime;
- pid_t pid = 0, wpid = 0;
-
-#ifdef SANDBOX
- char *cfgfile = "etc/einit/sandbox.xml";
-#else
- char *cfgfile = "/etc/einit/default.xml";
-#endif
+ pid_t pid = getpid(), wpid = 0;
+ char *cfgfile = DEFAULTADDONCONFIGURATIONFILE;
 
  uname (&osinfo);
 
@@ -112,7 +116,7 @@ int main(int argc, char **argv) {
      puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
      return 0;
     case '-':
-     if (!strcmp(argv[i], "--check-configuration") && ((pid = getpid()) != 1))
+     if (!strcmp(argv[i], "--check-configuration") && (pid != 1))
       check_configuration = 1;
      break;
    }
@@ -151,9 +155,11 @@ int main(int argc, char **argv) {
   } else
    pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
 
+  if (cfg_load (MAINCONFIGURATIONFILE) == -1) {
+   fputs ("ERROR: cfg_load() failed.\n", stderr);
+  }
   if (cfg_load (cfgfile) == -1) {
-   fputs ("ERROR: cfg_load() failed\n", stderr);
-   return -1;
+   fputs ("WARNING: loading configuration overlay failed.\n", stderr);
   }
 
   mod_scanmodules ();

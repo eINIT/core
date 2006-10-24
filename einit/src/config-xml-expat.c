@@ -190,7 +190,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   XML_SetUserData (par, (void *)&expatuserdata);
   if (par != NULL) {
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
-   if (XML_Parse (par, data, blen, 1) == XML_STATUS_ERROR) {
+   *(data+blen-1) = 0;
+   if (XML_Parse (par, data, blen-1, 1) == XML_STATUS_ERROR) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 

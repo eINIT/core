@@ -78,7 +78,7 @@ int examine_configuration (struct lmodule *irr) {
 char *defaultinterfaces[] = { "proc", NULL };
 
 void update () {
- char **interfacessource = str2set (':', cfg_getstring("network-interfaces-source", NULL));
+ char **interfacessource = str2set (':', cfg_getstring("configuration-network-interfaces-source", NULL));
  void **functions = NULL;
  void (*f)(struct network_control_block *);
  uint32_t i = 0;
