@@ -394,7 +394,11 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
 
    wait_on_subthreads (subthreads);
 
-   node->status = mod (MOD_DISABLE, node->mod[i]);
+   if (
+    ((node->status = node->mod[i]->status) & STATUS_DISABLED) ||
+    ((node->status = mod (MOD_DISABLE, node->mod[i])) & STATUS_DISABLED)) {
+// okay, disabled, nothing to do in this case, yet...
+   }
   }
  } else if (node->group) {
   run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED);
@@ -454,7 +458,9 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    if (services)
     run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
 
-   if ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED) {
+   if (
+    ((node->status = node->mod[i]->status) & STATUS_ENABLED) ||
+    ((node->status = mod (MOD_ENABLE, node->mod[i])) & STATUS_ENABLED)) {
     node->pos = i;
     break;
    }

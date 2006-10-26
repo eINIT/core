@@ -98,6 +98,10 @@ struct einit_event {
  char *string;                   /*!< a string */
  int32_t integer, status, task;  /*!< integers */
  unsigned char flag;             /*!< flags */
+
+ uint32_t seqid;
+ time_t timestamp;
+
  void *para;                     /*!< additional parametres */
  pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */
 };
@@ -113,6 +117,22 @@ struct exported_function {
  void *function;                         /*!< pointer to the function */
 };
 
+struct event_ringbuffer_node {
+ uint32_t type;
+ char *type_custom;
+ void **set; /* watch out when trying to use this one, can't duplicate it */
+ char *string;
+ int32_t integer, status, task;
+ unsigned char flag;
+
+ uint32_t seqid;
+ time_t timestamp;
+
+ void *para; /* watch out when trying to use this one */
+
+ struct event_ringbuffer_node *previous, *next;
+};
+
 void *event_emit (struct einit_event *, uint16_t);
 void event_listen (uint32_t, void (*)(struct einit_event *));
 void event_ignore (uint32_t, void (*)(struct einit_event *));
@@ -123,5 +143,10 @@ void **function_find (char *, uint32_t, char **);
 
 struct event_function *event_functions;
 struct uhash *exported_functions;
+struct event_ringbuffer_node *event_logbuffer;
+pthread_mutex_t event_logbuffer_mutex;
+
+char *event_code_to_string (uint32_t);
+uint32_t event_string_to_code (char *);
 
 #endif

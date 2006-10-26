@@ -80,4 +80,16 @@ struct event_function einit_mod_event_handler_ef = {
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_mod_event_handler_ef
 
+/* ipc-handler for the default event system manager */
+void event_ipc_handler(struct einit_event *);
+
+struct event_function einit_event_ipc_handler_ef = {
+ .type = EVENT_SUBSYSTEM_IPC,
+ .handler = event_ipc_handler,
+ .next = EVENT_FUNCTIONS_PTR
+};
+
+#undef EVENT_FUNCTIONS_PTR
+#define EVENT_FUNCTIONS_PTR &einit_event_ipc_handler_ef
+
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;

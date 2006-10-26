@@ -148,6 +148,8 @@ int main(int argc, char **argv) {
   }
  } else {
 /* actual system initialisation */
+  struct einit_event cev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+
   stime = time(NULL);
   printf ("eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 
@@ -157,12 +159,12 @@ int main(int argc, char **argv) {
   } else
    pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
 
-  if (cfg_load (MAINCONFIGURATIONFILE) == -1) {
-   fputs ("ERROR: cfg_load() failed.\n", stderr);
-  }
-  if (cfg_load (cfgfile) == -1) {
-   fputs ("WARNING: loading configuration overlay failed.\n", stderr);
-  }
+  cev.string = MAINCONFIGURATIONFILE;
+  event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+  cev.string = cfgfile;
+  event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+
+  evstaticdestroy(cev);
 
   mod_scanmodules ();
 //  cleanup(); return 0;

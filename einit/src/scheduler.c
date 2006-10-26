@@ -259,12 +259,34 @@ void sched_init () {
  action.sa_sigaction = sched_signal_sigchld;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
 // SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
-
  if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
 
  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
+
+/* ignore most signals */
+ action.sa_sigaction = SIG_IGN;
+ if ( sigaction (SIGQUIT, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGPIPE, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGALRM, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGUSR1, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGUSR2, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGTSTP, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGTTIN, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGTTOU, &action, NULL) ) bitch (BTCH_ERRNO);
+#ifndef SANDBOX
+ if ( sigaction (SIGTERM, &action, NULL) ) bitch (BTCH_ERRNO);
+#endif
+ if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGPROF, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGXCPU, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (BTCH_ERRNO);
+#ifdef SIGIO
+ if ( sigaction (SIGIO, &action, NULL) ) bitch (BTCH_ERRNO);
+#endif
 }
 
 int sched_queue (unsigned int task, void *param) {

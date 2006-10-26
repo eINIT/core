@@ -76,9 +76,6 @@ struct cfgnode *cmode, *amode;
 
 uint32_t check_configuration;
 
-// load configuration
-int cfg_load (char *);
-
 // free configuration
 int cfg_free ();
 

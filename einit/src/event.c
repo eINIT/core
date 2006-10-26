@@ -38,20 +38,63 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <pthread.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <einit/config.h>
 #include <einit/event.h>
 #include <einit/utility.h>
 
 struct uhash *exported_functions = NULL;
+struct event_ringbuffer_node *event_logbuffer = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t event_logbuffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+uint32_t cseqid = 0;
 
 void *event_emit (struct einit_event *event, uint16_t flags) {
  uint32_t subsystem;
+ struct event_ringbuffer_node *new_logbuffer_node;
+
  if (!event || !event->type) return;
  subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
- pthread_mutex_lock (&evf_mutex);
+// pthread_mutex_lock (&evf_mutex);
+// pthread_mutex_lock (&event_logbuffer_mutex);
+/* initialise sequence id and timestamp of the event */
+  event->seqid = cseqid++;
+  event->timestamp = time(NULL);
+
+/* initialise copy for the log-ringbuffer */
+  new_logbuffer_node = emalloc (sizeof(struct event_ringbuffer_node));
+
+  new_logbuffer_node->type = event->type;
+  new_logbuffer_node->type_custom = (event->type_custom ? estrdup (event->type_custom) : NULL);
+  new_logbuffer_node->set = event->set;
+  new_logbuffer_node->string = (event->string ? estrdup (event->string) : NULL);
+  new_logbuffer_node->integer = event->integer;
+  new_logbuffer_node->status = event->status;
+  new_logbuffer_node->task = event->task;
+  new_logbuffer_node->flag = event->flag;
+  new_logbuffer_node->seqid = event->seqid;
+  new_logbuffer_node->timestamp = event->timestamp;
+  new_logbuffer_node->para = event->para;
+
+  if (event_logbuffer) {
+   new_logbuffer_node->next = event_logbuffer->next;
+   new_logbuffer_node->previous = event_logbuffer;
+
+   event_logbuffer->next->previous = new_logbuffer_node;
+   event_logbuffer->next = new_logbuffer_node;
+  } else {
+   new_logbuffer_node->previous = new_logbuffer_node;
+   new_logbuffer_node->next = new_logbuffer_node;
+  }
+  event_logbuffer = new_logbuffer_node;
+
+// pthread_mutex_unlock (&event_logbuffer_mutex);
+
   struct event_function *cur = event_functions;
   while (cur) {
    if ((cur->type == subsystem) && cur->handler) {
@@ -74,7 +117,9 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
    }
    cur = cur->next;
   }
- pthread_mutex_unlock (&evf_mutex);
+
+
+// pthread_mutex_unlock (&evf_mutex);
 }
 
 void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {
@@ -201,4 +246,81 @@ void function_unregister (char *name, uint32_t version, void *function) {
  pthread_mutex_unlock (&pof_mutex);
 
  return;
+}
+
+char *event_code_to_string (uint32_t code) {
+ switch (code) {
+  case EVE_UPDATE_CONFIGURATION: return "core/update-configuration";
+ }
+
+ switch (code & EVENT_SUBSYSTEM_MASK) {
+  case EVENT_SUBSYSTEM_EINIT:    return "core/{unknown}";
+  case EVENT_SUBSYSTEM_IPC:      return "ipc/{unknown}";
+  case EVENT_SUBSYSTEM_FEEDBACK: return "feedback/{unknown}";
+  case EVENT_SUBSYSTEM_POWER:    return "power/{unknown}";
+  case EVENT_SUBSYSTEM_TIMER:    return "timer/{unknown}";
+  case EVENT_SUBSYSTEM_CUSTOM:   return "custom/{unknown}";
+ }
+
+ return "unknown/custom";
+}
+
+uint32_t event_string_to_code (char *code) {
+ return EVENT_SUBSYSTEM_CUSTOM;
+}
+
+// event-system ipc-handler
+void event_ipc_handler(struct einit_event *event) {
+ if (!event || !event->set) return;
+ char **argv = (char **) event->set;
+ int argc = setcount (event->set);
+ uint32_t options = event->status;
+
+ if (argc >= 2) {
+  if (!strcmp (argv[0], "emit-event")) {
+   if (argv[1] && argv[2] && !strcmp (argv[1], "core/update-configuration")) {
+    struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+    nev.string = argv[2];
+
+    fprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
+    event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+
+    evstaticdestroy(nev);
+
+    if (!event->flag) event->flag = 1;
+   }
+  } else if (!strcmp (argv[0], "list")) {
+   if (!strcmp (argv[1], "event-log")) {
+    char textbuffer[2048];
+
+    if (event_logbuffer) {
+     struct event_ringbuffer_node *cnode = event_logbuffer;
+
+     do {
+      char print = 0, *vstring;
+      if (cnode->string) {
+       strtrim(cnode->string);
+       vstring = cnode->string;
+
+       print++;
+      } else {
+       vstring = "- no verbose message -";
+       if (!(options & EIPC_ONLY_RELEVANT)) print++;
+      }
+
+      snprintf (textbuffer, 2048, "[%6i] %s: %s\n", cnode->seqid, event_code_to_string(cnode->type), vstring);
+
+      if (print)
+       write (event->integer, textbuffer, strlen(textbuffer));
+
+      cnode = cnode->next;
+     } while (cnode != event_logbuffer);
+    } else {
+     write (event->integer, " - log buffer empty -\n", 23);
+    }
+
+    if (!event->flag) event->flag = 1;
+   }
+  }
+ }
 }

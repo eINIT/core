@@ -55,6 +55,10 @@
    <alsa-mixer file="/etc/asound.state" />
   </audio>
 
+  <bluetooth>
+   <hidd options="" />
+  </bluetooth>
+
   <tty>
    <manage-utmp b="1" />
 
@@ -110,7 +114,8 @@
   </command>
 
   <program-options>
-   <cpufreq s="performance" />
+   <cpufreq-governor s="ondemand" /> 
+   <cpufreq-cpus s="0 1" /> 
    <hwclock s="--utc" />
   </program-options>
  </configuration>
@@ -489,15 +494,19 @@
      HOME="/etc/mythtv"/>
 
 <!-- CpuFrequtils -->
-<!-- thanks to yoyo for this one -->
-<!-- ... Need some improvments to set governor on multi core/cpus -->
+<!-- original credits to yoyo for this one, and to Lloeki for enhancing it to work with multi-CPU/-core systems -->
     <shell id="shell-cpufreq"
      name="Cpufreq Governor"
      provides="cpufreq"
      requires="mount/critical:acpi"
-     enable="/usr/bin/cpufreq-set --governor ${configuration_program_options_cpufreq}"
-     disable="/usr/bin/cpufreq-set --governor performance"
-     variables="configuration-program-options-cpufreq" />
+     enable="for i in ${configuration_program_options_cpufreq_cpus};
+      do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
+      done; /bin/true"
+     disable="for i in ${configuration_program_options_cpufreq_cpus} ;
+      do /usr/bin/cpufreq-set --cpu $i --governor performance ;
+      done; /bin/true"
+     variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufreq-cpus" />
+
 
 <!-- fcron -->
 <!-- this one was written by Janax@Gentoo Forums -->
@@ -507,6 +516,58 @@
      requires="mount/critical"
      command="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf"
      restart="yes" />
+
+<!-- Bluetooth modules, thanks Lloeki!
+    err, i modified one variable ;) -->
+    <shell id="shell-kern-bluetooth"
+      name="Kernel Modules (bluetooth)"
+      provides="kern-bluetooth"
+      requires="mount/local:kern-usb"
+      enable="
+       for x in ${configuration_kernel_modules_bluetooth};
+        do echo $x; modprobe $x;
+       done; /bin/true"
+      disable="
+       for x in ${configuration_kernel_modules_bluetooth}; do
+        ${configuration_command_rmmod} $x;
+       done; /bin/true"
+      variables="configuration-kernel-modules-bluetooth:configuration-command-rmmod" />
+
+     <shell id="shell-bluez-hid2hci"
+      name="Bluetooth (HID2HCI)"
+      provides="bluetooth-hid2hci"
+      requires="mount/local:kern-bluetooth"
+      enable="/usr/sbin/hid2hci -0 -q"
+      disable="/bin/true" />
+
+     <shell id="shell-bluez-rfcomm"
+      name="Bluetooth (RFCOMM)"
+      provides="bluetooth-rfcomm"
+      requires="mount/local:kern-bluetooth:bluetooth-hci"
+      enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
+      disable="/usr/bin/rfcomm release all" />
+
+     <shell id="shell-bluez-hcid"
+      name="Bluetooth (HCI)"
+      provides="bluetooth-hci"
+      requires="mount/local:kern-bluetooth"
+      enable="/usr/sbin/hcid -f /etc/bluetooth/hcid.conf"
+      disable="killall hcid" />
+
+     <shell id="shell-bluez-sdpd"
+      name="Bluetooth (SDP)"
+      provides="bluetooth-sdp"
+      requires="mount/local:kern-bluetooth:bluetooth-hci"
+      enable="/usr/sbin/sdpd"
+      disable="killall sdpd" />
+
+     <shell id="shell-bluez-hidd"
+      name="Bluetooth (HID)"
+      provides="bluetooth-hid"
+      requires="mount/local:kern-bluetooth:bluetooth-hci"
+      enable="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server"
+      disable="killall hidd"
+      variables="configuration-bluetooth-hidd/options" />
    </module>
   </virtual>
  </services>
