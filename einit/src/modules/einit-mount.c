@@ -967,8 +967,6 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
    mount_success:
 
-//   fse->status |= FS_STATUS_MOUNTED;
-
    if (fse->after_mount)
     pexec_simple (fse->after_mount, fse->variables, NULL, status);
 
@@ -977,6 +975,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 #else
    mount_success:
 #endif
+   fse->status |= BF_STATUS_MOUNTED;
+
    if (fs_mount_functions) free (fs_mount_functions);
 
    return STATUS_OK;
@@ -989,7 +989,12 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  if (tflags & MOUNT_TF_UMOUNT) {
   char textbuffer[1024];
   errno = 0;
-  snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
+  if ((he = hashfind (he, mountpoint)) && (fse = (struct fstab_entry *)he->value));
+
+  if (fse && !(fse->status & BF_STATUS_MOUNTED))
+   snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
+  else
+   snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
   status->string = textbuffer;
   status_update (status);
 #ifndef SANDBOX
@@ -1021,12 +1026,12 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
        snprintf (textbuffer, 1024, "%s: remounted r/o but detaching failed: %s", mountpoint, strerror(errno));
        status->string = textbuffer;
        status_update (status);
-       return STATUS_OK;
+       goto umount_ok;
       } else {
        snprintf (textbuffer, 1024, "%s: remounted r/o and detached", mountpoint);
        status->string = textbuffer;
        status_update (status);
-       return STATUS_OK;
+       goto umount_ok;
       }
      }
     } else {
@@ -1041,6 +1046,14 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 #endif
   }
 #endif
+  umount_ok:
+#ifndef SANDBOX
+  if (fse && fse->after_umount)
+   pexec_simple (fse->after_umount, fse->variables, NULL, status);
+#endif
+  if (fse && (fse->status & BF_STATUS_MOUNTED))
+   fse->status ^= BF_STATUS_MOUNTED;
+
   return STATUS_OK;
  }
 }
@@ -1270,15 +1283,17 @@ int enable (enum mounttask p, struct einit_event *status) {
   case MOUNT_LOCAL:
   case MOUNT_REMOTE:
    while (ha) {
-    if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) && strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
+    if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) &&
+         strcmp (ha->key, "/") && strcmp (ha->key, "/dev") &&
+         strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if (fse = (struct fstab_entry *)ha->value) {
-      if (fse->mountflags & MOUNT_FSTAB_NOAUTO)
+      if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
        goto mount_skip;
 
       if (fse->fs && (fsi = hashfind (mcb.filesystems, fse->fs))) {
        if (p == MOUNT_LOCAL) {
         if ((uintptr_t)fsi->value & FS_CAPA_NETWORK) goto mount_skip;
-       } else if (p == MOUNT_REMOTE) {
+       } else {
          if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {

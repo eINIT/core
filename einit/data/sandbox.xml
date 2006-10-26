@@ -88,7 +88,7 @@
  </services>
 
  <mode id="boot">
-  <enable mod="ipc:audio" />
+  <enable mod="ipc" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

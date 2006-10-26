@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
  if (pid == 1) einit_sub = fork();
 
  if (einit_sub) {
+/* PID==1 part */
   int rstatus;
   struct sigaction action;
 
@@ -134,7 +135,7 @@ int main(int argc, char **argv) {
   if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
 
   while (1) {
-   wpid = waitpid(-1, &rstatus, 0);
+   wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
 
    if (wpid == einit_sub) {
     if (WIFEXITED(rstatus))
@@ -146,6 +147,7 @@ int main(int argc, char **argv) {
    }
   }
  } else {
+/* actual system initialisation */
   stime = time(NULL);
   printf ("eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 

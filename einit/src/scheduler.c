@@ -230,7 +230,7 @@ void sched_init () {
  sigchild_semaphore = ecalloc (1, sizeof (sem_t));
  sem_init (sigchild_semaphore, 0, 0);
 #elif defined(DARWIN)
- snprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
+ snprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
 
  if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
   perror ("scheduler: semaphore setup");
