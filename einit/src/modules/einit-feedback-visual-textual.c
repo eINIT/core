@@ -353,7 +353,10 @@ void feedback_event_handler(struct einit_event *ev) {
    }
 
    if (ev->string) {
-    printf ("\e[%i;10H%s: %s\e[K\n", line, name, ev->string);
+    if (strlen(ev->string) < 45)
+     printf ("\e[%i;10H%s: %s\e[K\n", line, name, ev->string);
+    else
+     printf ("\e[%i;10H%s: <...>\e[K\n", line, name);
     ev->string = NULL;
    }
   } else {
