@@ -80,6 +80,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 
  int i = 0;
  if (!strcmp (name, "mode")) {
+/* parse the information presented in the element as a mode-definition */
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->nodetype = EI_NODETYPE_MODE;
   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
@@ -95,17 +96,12 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (newnode->id) {
    char *id = newnode->id;
    cfg_addnode (newnode);
-   free (newnode);
-/* this is admittedly a tad more complicated than necessary, however its the only way to find the
-   last addition to the hash with this id */
    curmode = NULL;
-/*   while (curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode)) {
-    newnode = curmode;
-   }*/
    curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode);
-//   curmode = newnode;
+   free (newnode);
   }
  } else {
+/* parse the information presented in the element as a variable */
   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
   newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
   newnode->nodetype = EI_NODETYPE_CONFIG;

@@ -72,9 +72,39 @@ int cfg_free () {
 }
 
 int cfg_addnode (struct cfgnode *node) {
- if (!node) return;
- hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
-// hconfiguration = hashadd (hconfiguration, node->id, node, -1);
+ if (!node || !node->id) return;
+ struct uhash *cur = hconfiguration;
+ char noop = 0;
+
+ if (node->nodetype & EI_NODETYPE_MODE) {
+/* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
+  only the first one would be used anyway. */
+  while (cur = hashfind (cur, node->id)) {
+   if (cur->value && !(((struct cfgnode *)cur->value)->nodetype ^ EI_NODETYPE_MODE)) {
+// this means we found something that looks like it
+    void *bsl = cur->luggage;
+
+// we risk not being atomic at this point but... it really is unlikely to go weird.
+    ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
+    cur->luggage = node->arbattrs;
+
+    free (bsl);
+
+    noop = 1;
+
+    break;
+   }
+   cur = hashnext (cur);
+  }
+ } else {
+/* look for other definitions that are exactly the same, only marginally different or that sport a
+   matching id="" attribute */
+
+// implement me !
+ }
+
+ if (!noop)
+  hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
 }
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {

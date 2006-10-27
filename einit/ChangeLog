@@ -1,4 +1,9 @@
-2006/10/25: mdeininger
+2006/10/27: mdeininger
+ * configurator changes
+ * some modifications to (theoretically) allow a mode= paramtre on the kernel-
+   command-line
+
+2006/10/26: mdeininger
  * random fixes all over the place (especially with mounting...)
  * Lloeki improved the cpufreq-module to work with multi-core/-CPU systems,
    and he also posted bluetooth modules (yay! =))

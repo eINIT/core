@@ -84,6 +84,9 @@ for param in $@; do
 	elif test "$param" = "--pthread-wait-bug"; then
 		echo -n " PTHREAD-WAIT-BUG";
 		XCFLAGS="$XCFLAGS -DBUGGY_PTHREAD_CHILD_WAIT_HANDLING";
+	elif test "$param" = "--no-nix-environ"; then
+		echo -n " NO-NIX-ENVIRON";
+		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
 	fi;
 done;
 echo " ]";

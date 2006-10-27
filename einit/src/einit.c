@@ -54,7 +54,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/utsname.h>
 #include <sys/wait.h>
 
+#ifndef NONIXENVIRON
+int main(int, char **, char **);
+#else
 int main(int, char **);
+#endif
 int print_usage_info ();
 int ipc_process (char *);
 int ipc_wait ();
@@ -64,6 +68,16 @@ pid_t einit_sub = 0;
 uint32_t check_configuration = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
+
+/* some more variables that are only of relevance to main() */
+char **einit_startup_mode_switches = NULL;
+
+char einit_do_feedback_switch = 1; // whether or not to initalise the feedback mode first
+char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list of modes to activate by default
+
+#ifdef NONIXENVIRON
+char ** environ;
+#endif
 
 int print_usage_info () {
  fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h] [--check-configuration]\n", stderr);
@@ -78,6 +92,10 @@ int cleanup () {
  cfg_free ();
 
 // bitch (BTCH_DL + BTCH_ERRNO);
+
+ if (einit_startup_mode_switches != einit_default_startup_mode_switches) {
+  free (einit_startup_mode_switches);
+ }
 }
 
 void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
@@ -92,14 +110,19 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
 #define DEFAULTADDONCONFIGURATIONFILE "etc/einit/sandbox.xml"
 #endif
 
-
+/* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
+#ifndef NONIXENVIRON
+int main(int argc, char **argv, char **environ) {
+#else
 int main(int argc, char **argv) {
+#endif
  int i, stime;
  pid_t pid = getpid(), wpid = 0;
  char *cfgfile = DEFAULTADDONCONFIGURATIONFILE;
 
  uname (&osinfo);
 
+/* check command line arguments */
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
    switch (argv[i][1]) {
@@ -116,11 +139,39 @@ int main(int argc, char **argv) {
      puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
      return 0;
     case '-':
-     if (!strcmp(argv[i], "--check-configuration") && (pid != 1))
-      check_configuration = 1;
+     if (!strcmp(argv[i], "--check-configuration")) {
+      if (pid != 1)
+       check_configuration = 1;
+     } else if (!strcmp(argv[i], "--no-feedback-switch"))
+      einit_do_feedback_switch = 0;
+     else if (!strcmp(argv[i], "--feedback-switch"))
+      einit_do_feedback_switch = 1;
+
      break;
    }
  }
+
+/* check environment */
+ if (environ) {
+  uint32_t e = 0;
+  for (e = 0; environ[e]; e++) {
+   char *ed = estrdup (environ[e]);
+   char *lp = strchr (ed, '=');
+
+   *lp = 0;
+   lp++;
+
+   if (!strcmp (ed, "mode")) {
+/* override default mode-switches with the ones in the environment variable mode= */
+    einit_startup_mode_switches = str2set (':', lp);
+   }
+
+   free (ed);
+  }
+ }
+
+ if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
+
  if (pid == 1) einit_sub = fork();
 
  if (einit_sub) {
@@ -159,6 +210,7 @@ int main(int argc, char **argv) {
   } else
    pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
 
+/* emit events to read configuration files */
   cev.string = MAINCONFIGURATIONFILE;
   event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
   cev.string = cfgfile;
@@ -169,10 +221,16 @@ int main(int argc, char **argv) {
   mod_scanmodules ();
 //  cleanup(); return 0;
   if (!check_configuration) {
+   uint32_t e = 0;
    sched_init ();
 
-   sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
-   sched_queue (SCHEDULER_SWITCH_MODE, "default");
+/* queue default mode-switches */
+   if (einit_do_feedback_switch)
+    sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
+
+   for (e = 0; einit_startup_mode_switches[e]; e++) {
+    sched_queue (SCHEDULER_SWITCH_MODE, einit_startup_mode_switches[e]);
+   }
 
    printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
    sched_run (NULL);
