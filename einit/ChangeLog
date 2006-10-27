@@ -2,6 +2,7 @@
  * configurator changes
  * some modifications to (theoretically) allow a mode= paramtre on the kernel-
    command-line
+ * fixed missing event-names
 
 2006/10/26: mdeininger
  * random fixes all over the place (especially with mounting...)

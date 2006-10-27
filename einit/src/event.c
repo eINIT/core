@@ -250,12 +250,22 @@ void function_unregister (char *name, uint32_t version, void *function) {
 
 char *event_code_to_string (uint32_t code) {
  switch (code) {
-  case EVE_UPDATE_CONFIGURATION: return "core/update-configuration";
+  case EVE_UPDATE_CONFIGURATION:   return "core/update-configuration";
+  case EVE_MODULE_UPDATE:          return "core/module-status-update";
+  case EVE_SERVICE_UPDATE:         return "core/service-status-update";
+  case EVE_CONFIGURATION_UPDATE:   return "core/configuration-status-update";
+
+  case EVE_DO_UPDATE:              return "mount/update";
+
+  case EVE_FEEDBACK_MODULE_STATUS: return "feedback/module";
+  case EVE_FEEDBACK_PLAN_STATUS:   return "feedback/plan";
+  case EVE_FEEDBACK_NOTICE:        return "feedback/notice";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
   case EVENT_SUBSYSTEM_EINIT:    return "core/{unknown}";
   case EVENT_SUBSYSTEM_IPC:      return "ipc/{unknown}";
+  case EVENT_SUBSYSTEM_MOUNT:    return "mount/{unknown}";
   case EVENT_SUBSYSTEM_FEEDBACK: return "feedback/{unknown}";
   case EVENT_SUBSYSTEM_POWER:    return "power/{unknown}";
   case EVENT_SUBSYSTEM_TIMER:    return "timer/{unknown}";
