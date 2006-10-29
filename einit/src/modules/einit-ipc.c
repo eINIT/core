@@ -75,54 +75,6 @@ const struct smodule self = {
 
 pthread_t ipc_thread;
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
-
- if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
-  fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", stderr);
-  pr++;
- }
-
- return pr;
-}
-
-int ipc_read (int *nfd) {
- ssize_t br;
- ssize_t ic = 0;
- ssize_t i;
- char buf[BUFFERSIZE+1];
- char lbuf[BUFFERSIZE+1];
-
- while (br = read (*nfd, buf, BUFFERSIZE)) {
-  if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
-   bitch (BTCH_ERRNO);
-   break;
-  }
-  for (i = 0; i < br; i++) {
-   if ((buf[i] == '\n') || (buf[i] == '\0')) {
-    lbuf[ic] = 0;
-    if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
-    ic = -1;
-    lbuf[0] = 0;
-   } else {
-    if (ic >= BUFFERSIZE) {
-     lbuf[ic] = 0;
-     if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
-     ic = 0;
-    }
-    lbuf[ic] = buf[i];
-   }
-   ic++;
-  }
- }
- lbuf[ic] = 0;
- if (lbuf[0])
-  ipc_process (lbuf, *nfd);
-
- close_connection:
- close (*nfd);
-}
-
 int ipc_process (char *cmd, uint32_t fd) {
  if (!cmd) return 0;
  else if (!strcmp (cmd, "IPC//out")) {
@@ -179,6 +131,54 @@ int ipc_process (char *cmd, uint32_t fd) {
   evdestroy (event);
   return 0;
  }
+}
+
+int examine_configuration (struct lmodule *irr) {
+ int pr = 0;
+
+ if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
+  fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", stderr);
+  pr++;
+ }
+
+ return pr;
+}
+
+int ipc_read (int *nfd) {
+ ssize_t br;
+ ssize_t ic = 0;
+ ssize_t i;
+ char buf[BUFFERSIZE+1];
+ char lbuf[BUFFERSIZE+1];
+
+ while (br = read (*nfd, buf, BUFFERSIZE)) {
+  if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
+   bitch (BTCH_ERRNO);
+   break;
+  }
+  for (i = 0; i < br; i++) {
+   if ((buf[i] == '\n') || (buf[i] == '\0')) {
+    lbuf[ic] = 0;
+    if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
+    ic = -1;
+    lbuf[0] = 0;
+   } else {
+    if (ic >= BUFFERSIZE) {
+     lbuf[ic] = 0;
+     if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
+     ic = 0;
+    }
+    lbuf[ic] = buf[i];
+   }
+   ic++;
+  }
+ }
+ lbuf[ic] = 0;
+ if (lbuf[0])
+  ipc_process (lbuf, *nfd);
+
+ close_connection:
+ close (*nfd);
 }
 
 void * ipc_wait (void *unused_parameter) {

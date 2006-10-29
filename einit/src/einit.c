@@ -90,6 +90,8 @@ int print_usage_info () {
   "-v                   print version and copyright notice, then exit\n"
   "--no-feedback-switch disable the first switch to the feedback mode\n"
   "--feedback-switch    enable the mode-switch to the feedback mode (default)\n"
+  "--ipc-command        don't boot, only run specified ipc-command\n"
+  "                     (you can use this more than once)\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
@@ -130,7 +132,8 @@ int main(int argc, char **argv) {
 #endif
  int i, stime;
  pid_t pid = getpid(), wpid = 0;
- char *cfgfile = DEFAULTADDONCONFIGURATIONFILE;
+ char *cfgfile = DEFAULTADDONCONFIGURATIONFILE,
+      **ipccommands = NULL;
 
  uname (&osinfo);
 
@@ -164,6 +167,8 @@ int main(int argc, char **argv) {
       einit_do_feedback_switch = 1;
      else if (!strcmp(argv[i], "--help"))
       return print_usage_info ();
+     else if (!strcmp(argv[i], "--ipc-command") && argv[i+1])
+      ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
 
      break;
    }
@@ -238,7 +243,60 @@ int main(int argc, char **argv) {
 
   mod_scanmodules ();
 //  cleanup(); return 0;
-  if (!check_configuration) {
+  if (ipccommands) {
+   uint32_t rx = 0;
+   for (; ipccommands[rx]; rx++) {
+    struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
+    uint32_t ic, ec;
+
+    event->set = (void **)str2set (' ', ipccommands[rx]);
+    event->integer = STDOUT_FILENO;
+    event->flag = 0;
+
+    ec = setcount (event->set);
+
+    for (ic = 0; ic < ec; ic++) {
+     if (!strcmp (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
+     else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
+     else if (!strcmp (event->set[ic], "--help")) event->status |= EIPC_HELP;
+    }
+
+    if (event->status & EIPC_OUTPUT_XML) {
+     write (STDOUT_FILENO, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", 52);
+     event->set = (void**)strsetdel ((char**)event->set, "--xml");
+    }
+    if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
+    if (event->status & EIPC_HELP) {
+     char buffer[2048];
+
+     if (event->status & EIPC_OUTPUT_XML)
+      snprintf (buffer, 2048, " <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n");
+     else
+      snprintf (buffer, 2048, "eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n");
+     write (STDOUT_FILENO, buffer, strlen (buffer));
+
+     event->set = (void**)strsetdel ((char**)event->set, "--help");
+    }
+
+    event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
+
+    if (event->set) free (event->set);
+
+    if (!event->flag) {
+     char buffer[2048];
+     if (event->status & EIPC_OUTPUT_XML)
+      snprintf (buffer, 2048, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", ipccommands[rx]);
+     else
+      snprintf (buffer, 2048, "einit: %s: command not implemented.\n", ipccommands[rx]);
+     write (STDOUT_FILENO, buffer, strlen (buffer));
+    }
+    if (event->status & EIPC_OUTPUT_XML) {
+     write (STDOUT_FILENO, "</einit-ipc>\n", 13);
+    }
+
+    evdestroy (event);
+   }
+  } else if (!check_configuration) {
    uint32_t e = 0;
    sched_init ();
 
