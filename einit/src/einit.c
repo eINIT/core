@@ -80,7 +80,19 @@ char ** environ;
 #endif
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit [-c configfile] [-v] [-h] [--check-configuration]\n", stderr);
+ fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\n"
+  "Usage:\n"
+  " einit [-c <filename>] [options]\n"
+  "\n"
+  "Options:\n"
+  "-c <filename>        load <filename> instead of/etc/einit/local.xml\n"
+  "-h, --help           display this text\n"
+  "-v                   print version and copyright notice, then exit\n"
+  "--no-feedback-switch disable the first switch to the feedback mode\n"
+  "--feedback-switch    enable the mode-switch to the feedback mode (default)\n"
+  "\n"
+  "Environment Variables (or key=value kernel parametres):\n"
+  "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
  return -1;
 }
 
@@ -136,7 +148,11 @@ int main(int argc, char **argv) {
      return print_usage_info ();
      break;
     case 'v':
-     puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
+     puts("eINIT " EINIT_VERSION_LITERAL
+          "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
+          "--------------------------------------------------------------------------------\n"
+          "Copyright (c) 2006, Magnus Deininger\n"
+          BSDLICENSE);
      return 0;
     case '-':
      if (!strcmp(argv[i], "--check-configuration")) {
@@ -146,6 +162,8 @@ int main(int argc, char **argv) {
       einit_do_feedback_switch = 0;
      else if (!strcmp(argv[i], "--feedback-switch"))
       einit_do_feedback_switch = 1;
+     else if (!strcmp(argv[i], "--help"))
+      return print_usage_info ();
 
      break;
    }
