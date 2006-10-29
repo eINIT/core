@@ -39,10 +39,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit-modules/network.h>
+#include <dirent.h>
+
+#if 0
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
+#endif
 
 #define EXPECTED_EIV 1
 
@@ -64,7 +71,33 @@ const struct smodule self = {
 };
 
 void find_network_interfaces_proc (struct network_control_block *cb) {
+// cb->add_network_interface ("eth0", "Generic Network Interface", 0x00000001);
+}
 
+void find_network_interfaces_sys (struct network_control_block *cb) {
+ DIR *dir;
+ struct dirent *entry;
+
+ dir = opendir ("/sys/class/net");
+ if (dir != NULL) {
+  while (entry = readdir (dir)) {
+   char tmp[2048];
+   if (entry->d_name[0] == '.') continue;
+
+#if 0
+   ioctl (0, SIOCGIFNAME, entry->d_name, &tmp);
+
+   puts (tmp);
+
+   cb->add_network_interface (entry->d_name, tmp, 0x00000001);
+#else
+   cb->add_network_interface (entry->d_name, "Generic Network Interface", 0x00000001);
+#endif
+  }
+  closedir (dir);
+ } else {
+  notice (3, "couldn't open directory in /sys, is it mounted?");
+ }
 }
 
 int examine_configuration (struct lmodule *irr) {
@@ -75,12 +108,14 @@ int examine_configuration (struct lmodule *irr) {
 
 int configure (struct lmodule *irr) {
  function_register ("find-network-interfaces-proc", 1, (void *)find_network_interfaces_proc);
+ function_register ("find-network-interfaces-sys", 1, (void *)find_network_interfaces_sys);
 
  return 0;
 }
 
 int cleanup (struct lmodule *irr) {
  function_unregister ("find-network-interfaces-proc", 1, (void *)find_network_interfaces_proc);
+ function_unregister ("find-network-interfaces-sys", 1, (void *)find_network_interfaces_sys);
 
  return 0;
 }

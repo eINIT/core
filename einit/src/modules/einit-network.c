@@ -66,7 +66,8 @@ const struct smodule self = {
 };
 
 struct network_control_block mncb = {
-	.interfaces	= NULL
+	.interfaces		= NULL,
+	.add_network_interface	= add_network_interface
 };
 
 int examine_configuration (struct lmodule *irr) {
@@ -75,7 +76,24 @@ int examine_configuration (struct lmodule *irr) {
  return pr;
 }
 
-char *defaultinterfaces[] = { "proc", NULL };
+char *defaultinterfaces[] = { "sys", "proc", NULL };
+pthread_mutex_t interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void network_ipc_handler(struct einit_event *);
+void network_update_handler(struct einit_event *);
+void update ();
+
+int configure (struct lmodule *this) {
+ event_listen (EVENT_SUBSYSTEM_IPC, network_ipc_handler);
+ event_listen (EVENT_SUBSYSTEM_NETWORK, network_update_handler);
+
+ update ();
+}
+
+int cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, network_ipc_handler);
+ event_ignore (EVENT_SUBSYSTEM_NETWORK, network_update_handler);
+}
 
 void update () {
  char **interfacessource = str2set (':', cfg_getstring("configuration-network-interfaces-source", NULL));
@@ -95,6 +113,56 @@ void update () {
  }
 
  if (interfacessource != defaultinterfaces) free (interfacessource);
+}
+
+void network_ipc_handler(struct einit_event *event) {
+ if (!event || !event->set) return;
+ char **argv = (char **) event->set;
+ uint32_t argc = setcount ((void **)argv);
+
+ if ((argc >= 2) && !strcmp (argv[0], "list")) {
+  if (!strcmp (argv[1], "network-interfaces")) {
+   char buffer[1024];
+   struct interface_parametres *cval;
+   struct uhash *cur = mncb.interfaces;
+
+   while (cur) {
+    cval = cur->value;
+
+    if (cval->name)
+     snprintf (buffer, 1024, "%s (%s) [options=%x]\n", cur->key, cval->name, cval->options);
+    else
+     snprintf (buffer, 1024, "%s [options=%x]\n", cur->key, cval->options);
+    write (event->integer, buffer, strlen(buffer));
+
+    cur = hashnext (cur);
+   }
+
+   if (!event->flag) event->flag++;
+  }
+ }
+}
+
+void network_update_handler(struct einit_event *event) {
+ if (event) {
+  if (event->flag & EVENT_NETWORK_UPDATE_INTERFACES) update();
+ }
+}
+
+void add_network_interface (char *id, char *name, uint32_t options) {
+ struct interface_parametres ip = {
+  .options = options
+ };
+
+ if (!id) return;
+ ip.id = estrdup (id);
+ ip.name = (name ? estrdup (name) : NULL);
+
+ pthread_mutex_lock (&interfaces_mutex);
+
+ mncb.interfaces = hashadd (mncb.interfaces, id, &ip, sizeof (struct interface_parametres), ip.name);
+
+ pthread_mutex_unlock (&interfaces_mutex);
 }
 
 int enable (void *pa, struct einit_event *status) {

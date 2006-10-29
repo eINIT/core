@@ -80,6 +80,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_SUBSYSTEM_TIMER		0x00006000
 /*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
 
+#define EVENT_SUBSYSTEM_NETWORK		0x00007000
+#define EVE_NETWORK_DO_UPDATE		0x00007001
+
+
 #define EVENT_SUBSYSTEM_CUSTOM		0xfffff000
 /*!< custom events; not yet implemented */
 

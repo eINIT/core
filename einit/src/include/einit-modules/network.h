@@ -41,8 +41,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/utility.h>
 
+#define NETWORK_OPTION_HAS_LINK    0x00000001
+#define NETWORK_OPTION_UNAVAILABLE 0x80000000
+#define NETWORK_OPTION_WIRELESS    0x01000000
+
+#define EVENT_NETWORK_UPDATE_INTERFACES 0x01
+
+struct interface_parametres {
+ char *id;
+ char *name;
+ uint32_t options;
+};
+
 struct network_control_block {
  struct uhash *interfaces;
+ void (*add_network_interface) (char *, char *, uint32_t);
 };
+
+void add_network_interface (char *, char *, uint32_t);
 
 #endif
