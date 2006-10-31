@@ -1,3 +1,6 @@
+2006/10/30: mdeininger
+ * bluetooth module updates from lloeki
+
 2006/10/29: mdeininger
  * command line parametres updated (added --help and --ipc-command)
  * minor work on the interface-handling

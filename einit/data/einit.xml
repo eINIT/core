@@ -519,7 +519,7 @@
 
 <!-- Bluetooth modules, thanks Lloeki!
     err, i modified one variable ;) -->
-    <shell id="shell-kern-bluetooth"
+     <shell id="shell-kern-bluetooth"
       name="Kernel Modules (bluetooth)"
       provides="kern-bluetooth"
       requires="mount/local:kern-usb"
@@ -547,27 +547,47 @@
       enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
       disable="/usr/bin/rfcomm release all" />
 
-     <shell id="shell-bluez-hcid"
+<!--     <shell id="shell-bluez-hcid"
       name="Bluetooth (HCI)"
       provides="bluetooth-hci"
       requires="mount/local:kern-bluetooth"
       enable="/usr/sbin/hcid -f /etc/bluetooth/hcid.conf"
-      disable="killall hcid" />
+      disable="killall hcid" /> -->
+     <daemon id="daemon-bluez-hcid"
+      name="Bluetooth (HCId)"
+      provides="bluetooth-hci"
+      requires="mount/critical:kern-bluetooth"
+      command="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf"
+      restart="yes" /> 
 
-     <shell id="shell-bluez-sdpd"
+<!--     <shell id="shell-bluez-sdpd"
       name="Bluetooth (SDP)"
       provides="bluetooth-sdp"
       requires="mount/local:kern-bluetooth:bluetooth-hci"
       enable="/usr/sbin/sdpd"
-      disable="killall sdpd" />
+      disable="killall sdpd" /> -->
+     <daemon id="daemon-bluez-sdpd"
+      name="Bluetooth (SDPd)"
+      provides="bluetooth-sdp"
+      requires="mount/critical:kern-bluetooth:bluetooth-hci"
+      command="/usr/sbin/sdpd -n"
+      restart="yes" />
 
-     <shell id="shell-bluez-hidd"
+<!--     <shell id="shell-bluez-hidd"
       name="Bluetooth (HID)"
       provides="bluetooth-hid"
       requires="mount/local:kern-bluetooth:bluetooth-hci"
       enable="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server"
       disable="killall hidd"
+      variables="configuration-bluetooth-hidd/options" /> -->
+     <daemon id="shell-bluez-hidd"
+      name="Bluetooth (HIDd)"
+      provides="bluetooth-hid"
+      requires="mount/critical:kern-bluetooth:bluetooth-hci"
+      command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
+      restart="yes"
       variables="configuration-bluetooth-hidd/options" />
+
    </module>
   </virtual>
  </services>
