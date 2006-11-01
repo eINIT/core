@@ -5,6 +5,12 @@
    <module-path s="lib/einit" />
    <configuration-path s="etc/einit/" />
   </settings>
+
+<!--  <commands>
+   <include>
+    <directory s="local" />
+   </include>
+  </commands> -->
  </core>
 
  <configuration>

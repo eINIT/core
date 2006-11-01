@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit-modules/network.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #if 0
 #include <sys/ioctl.h>

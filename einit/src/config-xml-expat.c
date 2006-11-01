@@ -46,6 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 struct cfgnode *curmode = NULL;
 
@@ -214,16 +216,96 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    cfgplen = strlen(confpath) +1;
    rescan_node:
    hnode = hconfiguration;
-   while (hnode = hashfind (hnode, "core-commands-include-file")) {
+
+/*   while (hnode = hashfind (hnode, "core-commands-include-file")) {
     node = (struct cfgnode *)hnode->value;
     if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
      includefile = strcat (includefile, confpath);
      includefile = strcat (includefile, node->svalue);
      recursion++;
+
+     if (check_configuration) {
+      printf ("einit_config_xml_expat_parse_configuration_file(): including file \"%s\"\n", includefile);
+     }
+
      einit_config_xml_expat_parse_configuration_file (includefile);
      recursion--;
      free (includefile);
+     if (node->id) free (node->id);
+     hashdel (hconfiguration, hnode);
+     goto rescan_node;
+    }
+   }*/
+
+   while (hnode = hashfind (hnode, "core-commands-include-directory")) {
+    node = (struct cfgnode *)hnode->value;
+
+    if (node->svalue) {
+     char *includedir = NULL;
+     DIR *dir;
+     struct dirent *entry;
+     uint32_t bdlen = strlen(node->svalue)+1;
+
+     if (node->svalue[0] == '/') {
+      if (node->svalue[bdlen-2] == '/')
+       includedir = estrdup (node->svalue);
+      else {
+       bdlen++;
+       includedir = ecalloc (1, sizeof(char)*(bdlen));
+       includedir = strcat (includedir, node->svalue);
+       includedir[bdlen-2] = '/';
+       includedir[bdlen-1] = 0;
+      }
+     } else {
+      char tb = 1;
+      if (tb = (node->svalue[bdlen-2] == '/'))
+       bdlen += cfgplen - 1;
+      else
+       bdlen += cfgplen;
+
+      includedir = ecalloc (1, sizeof(char)*(bdlen));
+      includedir = strcat (includedir, confpath);
+      includedir = strcat (includedir, node->svalue);
+
+      if (!tb) {
+       includedir[bdlen-2] = '/';
+       includedir[bdlen-1] = 0;
+      }
+     }
+
+     if (check_configuration) {
+      printf ("einit_config_xml_expat_parse_configuration_file(): including all files in \"%s\"\n", includedir);
+     }
+
+     dir = opendir (includedir);
+     if (dir != NULL) {
+      char *includefile = (char *)emalloc (bdlen);
+      memcpy (includefile, includedir, bdlen-1);
+      struct stat statres;
+
+      while (entry = readdir (dir)) {
+       includefile[bdlen-1] = 0;
+
+       includefile = erealloc (includefile, bdlen+strlen(entry->d_name));
+       strcat (includefile, entry->d_name);
+
+       if (!stat (includefile, &statres) && !S_ISDIR(statres.st_mode)) {
+        recursion++;
+        if (check_configuration) {
+         printf ("einit_config_xml_expat_parse_configuration_file(): including file \"%s\"\n", includefile);
+        }
+        einit_config_xml_expat_parse_configuration_file (includefile);
+        recursion--;
+       }
+      }
+      closedir (dir);
+     } else {
+      printf ("einit_config_xml_expat_parse_configuration_file(): cannot open directory \"%s\": %s\n", includedir, strerror(errno));
+      if (check_configuration) check_configuration++;
+     }
+
+     free (includedir);
      if (node->id) free (node->id);
      hashdel (hconfiguration, hnode);
      goto rescan_node;
