@@ -1,6 +1,8 @@
 2006/11/01: mdeininger
  * need a "uses"-attribute for modules 
  * damn, broken configuration file
+ * build-versioning
+ * darwin fix
 
 2006/10/30: mdeininger
  * bluetooth module updates from lloeki

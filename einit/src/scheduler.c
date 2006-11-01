@@ -279,7 +279,9 @@ void sched_init () {
 #ifndef SANDBOX
  if ( sigaction (SIGTERM, &action, NULL) ) bitch (BTCH_ERRNO);
 #endif
+#ifdef SIGPOLL
  if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BTCH_ERRNO);
+#endif
  if ( sigaction (SIGPROF, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGXCPU, &action, NULL) ) bitch (BTCH_ERRNO);

@@ -37,7 +37,7 @@ if test -d CVS; then
 	echo "configuring eINIT-cvs-${BUILDNUMBER}..."
 else
 	ISCVS=0
-	echo "configuring eINIT-#${BUILDNUMBER}..."
+	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
 echo -n "checking options [";
