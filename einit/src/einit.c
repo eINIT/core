@@ -71,9 +71,18 @@ struct cfgnode *cmode = NULL, *amode = NULL;
 
 /* some more variables that are only of relevance to main() */
 char **einit_startup_mode_switches = NULL;
+char **einit_startup_configuration_files = NULL;
 
 char einit_do_feedback_switch = 1; // whether or not to initalise the feedback mode first
 char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list of modes to activate by default
+
+// the list of files to  parse by default
+char *einit_default_startup_configuration_files[] =
+#ifndef SANDBOX
+ { "/etc/einit/einit.xml", "/etc/einit/local.xml", NULL };
+#else
+ { "etc/einit/einit.xml", "etc/einit/sandbox.xml", NULL };
+#endif
 
 #ifdef NONIXENVIRON
 char ** environ;
@@ -116,14 +125,6 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
  kill (einit_sub, SIGINT);
 }
 
-#ifndef SANDBOX
-#define MAINCONFIGURATIONFILE "/etc/einit/einit.xml"
-#define DEFAULTADDONCONFIGURATIONFILE "/etc/einit/local.xml"
-#else
-#define MAINCONFIGURATIONFILE "etc/einit/einit.xml"
-#define DEFAULTADDONCONFIGURATIONFILE "etc/einit/sandbox.xml"
-#endif
-
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 #ifndef NONIXENVIRON
 int main(int argc, char **argv, char **environ) {
@@ -132,8 +133,7 @@ int main(int argc, char **argv) {
 #endif
  int i, stime;
  pid_t pid = getpid(), wpid = 0;
- char *cfgfile = DEFAULTADDONCONFIGURATIONFILE,
-      **ipccommands = NULL;
+ char **ipccommands = NULL;
 
  uname (&osinfo);
 
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
    switch (argv[i][1]) {
     case 'c':
      if ((++i) < argc)
-      cfgfile = argv[i];
+      einit_default_startup_configuration_files[1] = argv[i];
      else
       return print_usage_info ();
      break;
@@ -187,6 +187,28 @@ int main(int argc, char **argv) {
    if (!strcmp (ed, "mode")) {
 /* override default mode-switches with the ones in the environment variable mode= */
     einit_startup_mode_switches = str2set (':', lp);
+   } else if (!strcmp (ed, "einit")) {
+/* override default configuration files and/or mode-switches with the ones in the variable einit= */
+    char **tmpstrset = str2set (',', lp);
+    uint32_t rx = 0;
+
+    for (rx = 0; tmpstrset[rx]; rx++) {
+     char **atom = str2set (':', tmpstrset[rx]);
+
+     if (!strcmp (atom[0], "file")) {
+/* specify configuration files */
+      einit_startup_configuration_files = (char **)setdup ((void **)atom, SET_TYPE_STRING);
+      einit_startup_configuration_files = (char **)strsetdel (einit_startup_configuration_files, (void *)"file");
+     } else if (!strcmp (atom[0], "mode")) {
+/* specify mode-switches */
+      einit_startup_mode_switches = (char **)setdup ((void **)atom, SET_TYPE_STRING);
+      einit_startup_mode_switches = (char **)strsetdel (einit_startup_mode_switches, (void *)"mode");
+     }
+
+     free (atom);
+    }
+
+    free (tmpstrset);
    }
 
    free (ed);
@@ -194,6 +216,7 @@ int main(int argc, char **argv) {
  }
 
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
+ if (!einit_startup_configuration_files) einit_startup_configuration_files = einit_default_startup_configuration_files;
 
  if (pid == 1) einit_sub = fork();
 
@@ -234,10 +257,17 @@ int main(int argc, char **argv) {
    pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
 
 /* emit events to read configuration files */
-  cev.string = MAINCONFIGURATIONFILE;
-  event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
-  cev.string = cfgfile;
-  event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+  if (einit_startup_configuration_files) {
+   uint32_t rx = 0;
+   for (; einit_startup_configuration_files[rx]; rx++) {
+    cev.string = einit_startup_configuration_files[rx];
+    event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+   }
+
+   if (einit_startup_configuration_files != einit_default_startup_configuration_files) {
+    free (einit_startup_configuration_files);
+   }
+  }
 
   evstaticdestroy(cev);
 
