@@ -217,7 +217,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    rescan_node:
    hnode = hconfiguration;
 
-/*   while (hnode = hashfind (hnode, "core-commands-include-file")) {
+   while (hnode = hashfind (hconfiguration, "core-commands-include-file")) {
     node = (struct cfgnode *)hnode->value;
     if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
@@ -236,9 +236,9 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      hashdel (hconfiguration, hnode);
      goto rescan_node;
     }
-   }*/
+   }
 
-   while (hnode = hashfind (hnode, "core-commands-include-directory")) {
+   while (hnode = hashfind (hconfiguration, "core-commands-include-directory")) {
     node = (struct cfgnode *)hnode->value;
 
     if (node->svalue) {

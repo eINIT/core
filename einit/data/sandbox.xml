@@ -8,6 +8,7 @@
 
 <!--  <commands>
    <include>
+    <file s="local.xml" />
     <directory s="local" />
    </include>
   </commands> -->
