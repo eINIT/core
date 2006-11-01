@@ -31,6 +31,15 @@ INCLUDEPATH="/usr/local/include"
 INTERNALMODULES="einit-config-xml-expat"
 EXTERNALMODULES=""
 
+BUILDNUMBER=`cat buildnumber`
+if test -d CVS; then
+	ISCVS=1
+	echo "configuring eINIT-cvs-${BUILDNUMBER}..."
+else
+	ISCVS=0
+	echo "configuring eINIT-#${BUILDNUMBER}..."
+fi
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
@@ -220,8 +229,10 @@ OPTIONS = $OPTIONS
 INCLUDE = $INCLUDE
 
 XDYNAMIC = $XDYNAMIC
+BUILDNUMBER = $BUILDNUMBER
+ISCVS = $ISCVS
 
-CC = $CC
+CC = $CC -DBUILDNUMBER=\"\\\"\${BUILDNUMBER}\\\"\" -DISCVS=\${ISCVS}
 CFLAGS = $CFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}
