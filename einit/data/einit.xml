@@ -577,7 +577,7 @@
       name="Bluetooth (HID)"
       provides="bluetooth-hid"
       requires="mount/local:kern-bluetooth:bluetooth-hci"
-      enable="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server"
+      enable="/usr/bin/hidd ${configuration_bluetooth_hidd_options} -\-server"
       disable="killall hidd"
       variables="configuration-bluetooth-hidd/options" /> -->
      <daemon id="shell-bluez-hidd"

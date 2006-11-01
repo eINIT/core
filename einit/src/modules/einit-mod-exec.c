@@ -162,6 +162,8 @@ int scanmodules (struct lmodule *modchain) {
     modinfo->requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))
     modinfo->provides = str2set (':', node->arbattrs[i+1]);
+   else if (!strcmp (node->arbattrs[i], "uses"))
+    modinfo->uses = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "notwith"))
     modinfo->notwith = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "variables"))

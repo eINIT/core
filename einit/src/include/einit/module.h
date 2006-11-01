@@ -157,6 +157,7 @@ struct smodule {
  char *rid;             /*!< The short ID of the module. */
  char **provides;       /*!< A list of services that this module provides. */
  char **requires;       /*!< A list of services that this module requires. */
+ char **uses;           /*!< Load this module after these services, but only if they're loaded to begin with */
  char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
 };
 
