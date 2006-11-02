@@ -989,63 +989,84 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  if (tflags & MOUNT_TF_UMOUNT) {
   char textbuffer[1024];
   errno = 0;
-  if ((he = hashfind (he, mountpoint)) && (fse = (struct fstab_entry *)he->value));
+  uint32_t retry = 0;
+  
+  while (1) {
+   retry++;
+   if (he = hashfind (he, mountpoint)) fse = (struct fstab_entry *)he->value;
 
-  if (fse && !(fse->status & BF_STATUS_MOUNTED))
-   snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
-  else
-   snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
-  status->string = textbuffer;
-  status_update (status);
-#ifndef SANDBOX
-  if (umount (mountpoint)) {
-   snprintf (textbuffer, 1024, "%s: umount() failed: %s", mountpoint, strerror(errno));
+   if (fse && !(fse->status & BF_STATUS_MOUNTED))
+    snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
+   else
+    snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
+
    status->string = textbuffer;
    status_update (status);
-#ifdef LINUX
-   if (umount2 (mountpoint, MNT_FORCE)) {
-    snprintf (textbuffer, 1024, "%s: umount2() failed: %s", mountpoint, strerror(errno));
+#ifndef SANDBOX
+   if (umount (mountpoint)) {
+    snprintf (textbuffer, 1024, "%s: umount() failed: %s", mountpoint, strerror(errno));
     status->string = textbuffer;
     status_update (status);
-
-    struct uhash *hav = hashfind (mcb.mtab, mountpoint);
-    if (!hav) {
-     status->string = "wtf? this ain't mounted, bitch!";
-     status_update (status);
-     return STATUS_FAIL;
-    }
-    struct legacy_fstab_entry *lfse = (struct legacy_fstab_entry *)hav->value;
-    if (lfse) {
-     if (mount (lfse->fs_spec, lfse->fs_file, NULL, MS_REMOUNT | MS_RDONLY, NULL)) {
-      snprintf (textbuffer, 1024, "%s: remounting r/o failed: %s", mountpoint, strerror(errno));
-      status->string = textbuffer;
-      status_update (status);
-      return STATUS_FAIL;
-     } else {
-      if (umount2 (mountpoint, MNT_DETACH)) {
-       snprintf (textbuffer, 1024, "%s: remounted r/o but detaching failed: %s", mountpoint, strerror(errno));
-       status->string = textbuffer;
-       status_update (status);
-       goto umount_ok;
-      } else {
-       snprintf (textbuffer, 1024, "%s: remounted r/o and detached", mountpoint);
-       status->string = textbuffer;
-       status_update (status);
-       goto umount_ok;
-      }
-     }
-    } else {
-     snprintf (textbuffer, 1024, "%s: device mounted but I don't know anything more; bailing out", mountpoint);
+#ifdef LINUX
+    if (umount2 (mountpoint, MNT_FORCE)) {
+     snprintf (textbuffer, 1024, "%s: umount2() failed: %s", mountpoint, strerror(errno));
      status->string = textbuffer;
      status_update (status);
-     return STATUS_FAIL;
+
+     struct uhash *hav = hashfind (mcb.mtab, mountpoint);
+     if (!hav) {
+      status->string = "wtf? this ain't mounted, bitch!";
+      status_update (status);
+      goto umount_fail;
+     }
+     struct legacy_fstab_entry *lfse = (struct legacy_fstab_entry *)hav->value;
+     if (lfse) {
+      if (mount (lfse->fs_spec, lfse->fs_file, NULL, MS_REMOUNT | MS_RDONLY, NULL)) {
+       snprintf (textbuffer, 1024, "%s: remounting r/o failed: %s", mountpoint, strerror(errno));
+       status->string = textbuffer;
+       status_update (status);
+       goto umount_fail;
+      } else {
+       if (umount2 (mountpoint, MNT_DETACH)) {
+        snprintf (textbuffer, 1024, "%s: remounted r/o but detaching failed: %s", mountpoint, strerror(errno));
+        status->string = textbuffer;
+        status_update (status);
+        goto umount_ok;
+       } else {
+        snprintf (textbuffer, 1024, "%s: remounted r/o and detached", mountpoint);
+        status->string = textbuffer;
+        status_update (status);
+        goto umount_ok;
+       }
+      }
+     } else {
+      snprintf (textbuffer, 1024, "%s: device mounted but I don't know anything more; bailing out", mountpoint);
+      status->string = textbuffer;
+      status_update (status);
+      goto umount_fail;
+     }
     }
-   }
 #else
-   return STATUS_FAIL;
+    goto umount_fail;
 #endif
+   }
+#endif
+
+   umount_fail:
+
+   if (retry < 3) {
+    snprintf (textbuffer, 1024, "%s: attempt %i: device still mounted...", mountpoint, retry);
+    status->string = textbuffer;
+    status_update (status);
+   } else {
+    snprintf (textbuffer, 1024, "%s: attempt %i: failed, not retrying.", mountpoint, retry);
+    status->string = textbuffer;
+    status_update (status);
+	return STATUS_FAIL;
+   }
+   sleep (1);
   }
-#endif
+
   umount_ok:
 #ifndef SANDBOX
   if (fse && fse->after_umount)
@@ -1415,21 +1436,23 @@ int disable (enum mounttask p, struct einit_event *status) {
    }
    break;
   case MOUNT_ROOT:
-   mountwrapper ("/", status, MOUNT_TF_UMOUNT);
-   return STATUS_OK;
+   return mountwrapper ("/", status, MOUNT_TF_UMOUNT);
+//   return STATUS_OK;
    break;
   case MOUNT_SYSTEM:
-   mountwrapper ("/dev", status, MOUNT_TF_UMOUNT);
+   {
+    mountwrapper ("/dev", status, MOUNT_TF_UMOUNT);
 #ifdef LINUX
-   mountwrapper ("/sys", status, MOUNT_TF_UMOUNT);
-   unlink ("/etc/mtab");
-   mountwrapper ("/proc", status, MOUNT_TF_UMOUNT);
+    mountwrapper ("/sys", status, MOUNT_TF_UMOUNT);
+    unlink ("/etc/mtab");
+    mountwrapper ("/proc", status, MOUNT_TF_UMOUNT);
 #endif
-   if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
-    status->string = "re-scanning block devices";
-    status_update (status);
+    if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
+     status->string = "re-scanning block devices";
+     status_update (status);
 // things go weird if this if enabled:
-//    update (UPDATE_BLOCK_DEVICES);
+//     update (UPDATE_BLOCK_DEVICES);
+    }
    }
    return STATUS_OK;
   case MOUNT_CRITICAL:
