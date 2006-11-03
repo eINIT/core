@@ -63,6 +63,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVE_UPDATE_CONFIGURATION	0x00001101
 /*!< update the configuration */
 
+#define EVE_SHUTDOWN_SCHEDULED		0x00000101
+/*!< shutdown scheduled */
+#define EVE_SHUTDOWN_IMMINENT		0x00000102
+/*!< shutdown going to happen after this event */
+
 
 #define EVENT_SUBSYSTEM_IPC		0x00002000
 /*!< incoming IPC request */

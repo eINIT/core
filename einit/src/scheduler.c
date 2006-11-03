@@ -367,6 +367,12 @@ void *sched_run (void *p) {
      sched_modaction ((char **)c->param);
      break;
     case SCHEDULER_POWER_OFF:
+     notice (1, "emitting shutdown-event");
+     {
+      struct einit_event ee = evstaticinit (EVE_SHUTDOWN_IMMINENT);
+      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+      evstaticdestroy (ee);
+     }
      notice (1, "scheduler: sync()-ing");
      sync ();
 #ifdef SANDBOX
@@ -381,6 +387,12 @@ void *sched_run (void *p) {
      exit (EXIT_FAILURE);
      break;
     case SCHEDULER_POWER_RESET:
+     notice (1, "emitting shutdown-event");
+     {
+      struct einit_event ee = evstaticinit (EVE_SHUTDOWN_IMMINENT);
+      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+      evstaticdestroy (ee);
+     }
      notice (1, "scheduler: sync()-ing");
      sync ();
 #ifdef SANDBOX

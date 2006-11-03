@@ -1,3 +1,9 @@
+2006/11/03: mdeininger
+ * shutdown-events
+
+2006/11/02: mdeininger
+ * wait-retry cycles for unmounting
+
 2006/11/01: mdeininger
  * need a "uses"-attribute for modules
  * damn, broken configuration file
