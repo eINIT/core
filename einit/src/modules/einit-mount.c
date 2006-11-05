@@ -1054,6 +1054,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
    umount_fail:
 
+   status->flag++;
    if (retry < 3) {
     snprintf (textbuffer, 1024, "%s: attempt %i: device still mounted...", mountpoint, retry);
     status->string = textbuffer;
@@ -1062,7 +1063,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     snprintf (textbuffer, 1024, "%s: attempt %i: failed, not retrying.", mountpoint, retry);
     status->string = textbuffer;
     status_update (status);
-	return STATUS_FAIL;
+    return STATUS_FAIL;
    }
    sleep (1);
   }
@@ -1437,7 +1438,7 @@ int disable (enum mounttask p, struct einit_event *status) {
    break;
   case MOUNT_ROOT:
    return mountwrapper ("/", status, MOUNT_TF_UMOUNT);
-//   return STATUS_OK;
+   STATUS_OK;
    break;
   case MOUNT_SYSTEM:
    {
@@ -1448,8 +1449,8 @@ int disable (enum mounttask p, struct einit_event *status) {
     mountwrapper ("/proc", status, MOUNT_TF_UMOUNT);
 #endif
     if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
-     status->string = "re-scanning block devices";
-     status_update (status);
+//     status->string = "re-scanning block devices";
+//     status_update (status);
 // things go weird if this if enabled:
 //     update (UPDATE_BLOCK_DEVICES);
     }

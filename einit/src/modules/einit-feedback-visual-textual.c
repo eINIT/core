@@ -88,15 +88,27 @@ struct planref {
  time_t startedat;
 };
 
+struct nstring {
+ uint32_t seqid;
+ char *string;
+};
+
 struct mstat {
  struct lmodule *mod;
- uint32_t seqid, lines;
+ uint32_t seqid, lines, task;
  time_t lastupdate;
- char errors;
+ char errors, display;
+ struct nstring **textbuffer;
 };
 
 void feedback_event_handler(struct einit_event *);
 void einit_event_handler(struct einit_event *);
+
+void update_screen_neat (struct einit_event *, struct mstat *);
+void update_screen_noansi (struct einit_event *, struct mstat *);
+void update_screen_ansi (struct einit_event *, struct mstat *);
+
+int nstringsetsort (struct nstring *, struct nstring *);
 
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
@@ -104,7 +116,7 @@ struct lmodule *me;
 pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
 char enableansicodes = 1;
-uint32_t shutdownfailuretimeout = 10;
+uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
@@ -144,13 +156,29 @@ int cleanup (struct lmodule *this) {
   pthread_mutex_unlock (&plansmutex);
  }
  if (modules) {
+  uint32_t y = 0, x = 0;
   pthread_mutex_lock (&modulesmutex);
+
+  for (y = 0; modules[y]; y++) {
+   if (modules[y]->textbuffer) {
+    for (x = 0; modules[y]->textbuffer[x]; x++) {
+     if (modules[y]->textbuffer[x]->string) {
+      free (modules[y]->textbuffer[x]->string);
+     }
+    }
+    free (modules[y]->textbuffer);
+   }
+  }
+
   free (modules);
   modules = NULL;
   pthread_mutex_unlock (&modulesmutex);
  }
 }
 
+/*
+  -------- function to enable and configure this module -----------------------
+ */
 int enable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
  struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
@@ -247,6 +275,9 @@ int enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
+/*
+  -------- function to disable this module ------------------------------------
+ */
 int disable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
@@ -255,6 +286,9 @@ int disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
+/*
+  -------- feedback event-handler ---------------------------------------------
+ */
 void feedback_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
@@ -309,12 +343,24 @@ void feedback_event_handler(struct einit_event *ev) {
   if (modules) {
    for (i = 0; modules[i]; i++)
     if (((struct mstat *)(modules[i]))->mod == ev->para) {
+     if (ev->string) {
+      struct nstring tm = {
+       .seqid = ev->seqid,
+       .string = estrdup (ev->string)
+      };
+
+      ((struct mstat *)(modules[i]))->textbuffer = (struct nstring **)setadd ((void **)(((struct mstat *)(modules[i]))->textbuffer), (void *)&tm, sizeof (struct nstring));
+
+      setsort ((void **)(((struct mstat *)(modules[i]))->textbuffer), 0, (signed int(*)(void *, void*))nstringsetsort);
+     }
+
      if (((struct mstat *)(modules[i]))->seqid > ev->seqid) {
 /* discard older messages that came in after newer ones (happens frequently in multi-threaded situations) */
       pthread_mutex_unlock (&me->imutex);
       pthread_mutex_unlock (&modulesmutex);
       return;
      }
+
      ((struct mstat *)(modules[i]))->seqid = ev->seqid;
      break;
     }
@@ -325,129 +371,42 @@ void feedback_event_handler(struct einit_event *ev) {
    m.seqid = ev->seqid;
    m.errors = 0;
    m.lines = 1;
+   m.display = 1;
+   if (ev->string) {
+    struct nstring tm = {
+     .seqid = ev->seqid,
+     .string = estrdup (ev->string)
+    };
+
+    m.textbuffer = (struct nstring **)setadd ((void **)m.textbuffer, (void *)&tm, sizeof (struct nstring));
+   } else {
+    m.textbuffer = NULL;
+   }
+
    modules = (struct mstat **)setadd ((void **)modules, (void *)&m, sizeof (struct mstat));
   }
 
-  olines = setcount ((void **)modules) + 2;
   pthread_mutex_unlock (&modulesmutex);
 
-  line = 1;
-
-  if (modules) for (i = 0; modules[i]; i++) {
-   line += ((struct mstat *)(modules[i]))->lines;
+  for (i = 0; modules[i]; i++) {
    if (((struct mstat *)(modules[i]))->mod == ev->para) {
     mst = (struct mstat *)(modules[i]);
     break;
    }
   }
 
-  if (ev->para && ((struct lmodule *)ev->para)->module) {
-   struct smodule *mod = ((struct lmodule *)ev->para)->module;
-   if (mod->name) {
-    name = mod->name;
-   } else if (mod->rid) {
-    name = mod->rid;
-   }
+  mst->task = ev->task;
+
+  if ((ev->status & STATUS_FAIL) || ev->flag) {
+   mst->lines = 4;
+   mst->errors = 1 + ev->flag;
+   update_screen_neat (ev, mst);
   }
 
-  if (enableansicodes) {
-   if (ev->task & MOD_FEEDBACK_SHOW) {
-    ev->task ^= MOD_FEEDBACK_SHOW;
-    switch (ev->task) {
-     case MOD_ENABLE:
-      printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
-      break;
-     case MOD_DISABLE:
-      printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[K\n", line, name);
-      break;
-     default:
-      printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[K\n", line, name);
-      break;
-    }
-   }
-
-   switch (ev->status) {
-    case STATUS_IDLE:
-      printf ("\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[K\n", line, name);
-     break;
-    case STATUS_ENABLING:
-      printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
-     break;
-   }
-
-   if (ev->string) {
-    if (strlen(ev->string) < 45)
-     printf ("\e[%i;10H%s: %s\e[K\n", line, name, ev->string);
-    else
-     printf ("\e[%i;10H%s: <...>\e[K\n", line, name);
-    ev->string = NULL;
-   }
-  } else {
-   if (ev->task & MOD_FEEDBACK_SHOW) {
-    ev->task ^= MOD_FEEDBACK_SHOW;
-    switch (ev->task) {
-     case MOD_ENABLE:
-      printf ("%s: enabling\n", name);
-      break;
-     case MOD_DISABLE:
-      printf ("%s: disabling\n", name);
-      break;
-     default:
-      printf ("%s:\n", name);
-      break;
-    }
-   }
-
-   switch (ev->status) {
-    case STATUS_IDLE:
-      printf ("%s: idle\n", name);
-     break;
-    case STATUS_ENABLING:
-      printf ("%s: enabling\n", name);
-     break;
-   }
-
-   if (ev->string) {
-    printf ("%s: %s\n", name, ev->string);
-    ev->string = NULL;
-   }
-  }
-
-  if (enableansicodes) {
-   if ((ev->status & STATUS_OK) && ev->flag) {
-    printf ("\e[%i;0H[ \e[33mWA%2.2i\e[0m ] %s\n", line, ev->flag, name);
-    mst->errors = 1;
-   } else if (ev->status & STATUS_OK) {
-    if (ev->task & MOD_ENABLE)
-     printf ("\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name);
-    else if (ev->task & MOD_DISABLE)
-     printf ("\e[%i;0H[ \e[32mDISA\e[0m ] %s\n", line, name);
-    else if (ev->task & MOD_RESET)
-     printf ("\e[%i;0H[ \e[32mRSET\e[0m ] %s\n", line, name);
-    else if (ev->task & MOD_RELOAD)
-     printf ("\e[%i;0H[ \e[32mRELO\e[0m ] %s\n", line, name);
-    else
-     printf ("\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name);
-
-    mst->errors = 0;
-   } else if (ev->status & STATUS_FAIL) {
-    printf ("\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
-    mst->errors = 1;
-   }
-
-/* go to the last line, so that subsequent output of other sources will not mess up the screen */
-   printf ("\e[%i;0H", olines);
-  } else {
-   if ((ev->status & STATUS_OK) && ev->flag) {
-    printf ("%s: success, with %i error(s)\n", name, ev->flag);
-    mst->errors = 1;
-   } else if (ev->status & STATUS_OK) {
-    printf ("%s: success\n", name);
-    mst->errors = 0;
-   } else if (ev->status & STATUS_FAIL) {
-    printf ("%s: failed\n", name);
-    mst->errors = 1;
-   }
+  switch (enableansicodes) {
+   case 2: update_screen_neat (ev, mst); break;
+   case 1: update_screen_ansi (ev, mst); break;
+   default: update_screen_noansi (ev, mst);
   }
  } if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
@@ -462,6 +421,236 @@ void feedback_event_handler(struct einit_event *ev) {
  return;
 }
 
+/*
+  -------- update screen the complicated way ----------------------------------
+ */
+void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
+ uint32_t i, line = 4, j;
+
+ if (enableansicodes == 0) update_screen_noansi (ev, mst);
+
+ enableansicodes = 2;
+ statusbarlines = 4;
+
+ puts ("\e[2J\e[0;0H");
+
+ if (plans) {
+  fprintf (stdout, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
+ }
+
+ pthread_mutex_lock (&modulesmutex);
+
+ if (modules) {
+  fputs ("\e[2;0H( \e[32menabled\e[0m  |", stdout);
+  for (i = 0; modules[i]; i++) {
+   if ((!((struct mstat *)(modules[i]))->errors) &&
+       (((struct mstat *)(modules[i]))->mod) &&
+       (((struct mstat *)(modules[i]))->mod->module) &&
+       (((struct mstat *)(modules[i]))->mod->module->provides) &&
+       (((struct mstat *)(modules[i]))->mod->module->provides[0])) {
+    if (((struct mstat *)(modules[i]))->mod->status & STATUS_ENABLED) {
+     fputs (" ", stdout);
+     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], stdout);
+     ((struct mstat *)(modules[i]))->display = 0;
+     ((struct mstat *)(modules[i]))->lines = 0;
+    }
+   }
+  }
+  fputs (" )\e[K\n", stdout);
+
+  fputs ("\e[3;0H( \e[32mdisabled\e[0m |", stdout);
+  for (i = 0; modules[i]; i++) {
+   if ((!((struct mstat *)(modules[i]))->errors) &&
+       (((struct mstat *)(modules[i]))->mod) &&
+       (((struct mstat *)(modules[i]))->mod->module) &&
+       (((struct mstat *)(modules[i]))->mod->module->provides) &&
+       (((struct mstat *)(modules[i]))->mod->module->provides[0])) {
+    if (((struct mstat *)(modules[i]))->mod->status & STATUS_DISABLED) {
+     fputs (" ", stdout);
+     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], stdout);
+     ((struct mstat *)(modules[i]))->display = 0;
+     ((struct mstat *)(modules[i]))->lines = 0;
+    }
+   }
+  }
+  fputs (" )\e[K\n", stdout);
+ }
+
+ for (i = 0; modules[i]; i++) {
+  if ((((struct mstat *)(modules[i]))->errors) &&
+      (((struct mstat *)(modules[i]))->mod) &&
+      (((struct mstat *)(modules[i]))->mod->module)) {
+   char *name = (((struct mstat *)(modules[i]))->mod->module->name ? ((struct mstat *)(modules[i]))->mod->module->name : "unknown");
+
+   printf ("\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
+   for (j = 0; ((struct mstat *)(modules[i]))->textbuffer[j] && ((j +1) < ((struct mstat *)(modules[i]))->lines); j++) {
+    if (((struct mstat *)(modules[i]))->textbuffer[j]->string && (strlen (((struct mstat *)(modules[i]))->textbuffer[j]->string) < 76)) {
+     printf (" \e[33m>>\e[0m %s\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
+    } else {
+     printf (" \e[33m>>\e[0m \e[31m...\e[0m");
+    }
+   }
+  }
+  line += ((struct mstat *)(modules[i]))->lines;
+//  line ++;
+ }
+
+ pthread_mutex_unlock (&modulesmutex);
+}
+
+/*
+  -------- update screen without ansi codes -----------------------------------
+ */
+void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
+ if (enableansicodes) update_screen_ansi (ev, mst);
+
+ char *name = "unknown/unnamed";
+
+ if (((struct lmodule *)ev->para)->module) {
+  struct smodule *mod = ((struct lmodule *)ev->para)->module;
+  if (mod->name) {
+   name = mod->name;
+  } else if (mod->rid) {
+   name = mod->rid;
+  }
+ }
+
+ if (ev->task & MOD_FEEDBACK_SHOW) {
+  ev->task ^= MOD_FEEDBACK_SHOW;
+  switch (ev->task) {
+   case MOD_ENABLE:
+    printf ("%s: enabling\n", name);
+    break;
+   case MOD_DISABLE:
+    printf ("%s: disabling\n", name);
+    break;
+   default:
+    printf ("%s:\n", name);
+    break;
+  }
+ }
+
+ switch (ev->status) {
+  case STATUS_IDLE:
+    printf ("%s: idle\n", name);
+   break;
+  case STATUS_ENABLING:
+    printf ("%s: enabling\n", name);
+   break;
+ }
+
+ if (ev->string) {
+  printf ("%s: %s\n", name, ev->string);
+  ev->string = NULL;
+ }
+
+ if ((ev->status & STATUS_OK) && ev->flag) {
+  printf ("%s: success, with %i error(s)\n", name, ev->flag);
+  mst->errors = 1;
+ } else if (ev->status & STATUS_OK) {
+  printf ("%s: success\n", name);
+  mst->errors = 0;
+ } else if (ev->status & STATUS_FAIL) {
+  printf ("%s: failed\n", name);
+  mst->errors = 1;
+ }
+}
+
+
+/*
+  -------- update screen with ansi codes --------------------------------------
+ */
+void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
+ if (enableansicodes == 0) update_screen_noansi (ev, mst);
+ if (enableansicodes == 2) update_screen_neat (ev, mst);
+
+ char *name = "unknown/unnamed";
+ uint32_t line = statusbarlines, lines = 0, i = 0;
+
+ for (i = 0; modules[i]; i++) {
+  if (((struct mstat *)(modules[i]))->mod == ev->para) {
+   mst = (struct mstat *)(modules[i]);
+   break;
+  }
+  line += ((struct mstat *)(modules[i]))->lines;
+ }
+
+ if (((struct lmodule *)ev->para)->module) {
+  struct smodule *mod = ((struct lmodule *)ev->para)->module;
+  if (mod->name) {
+   name = mod->name;
+  } else if (mod->rid) {
+   name = mod->rid;
+  }
+ }
+
+ if (ev->task & MOD_FEEDBACK_SHOW) {
+  ev->task ^= MOD_FEEDBACK_SHOW;
+  switch (ev->task) {
+   case MOD_ENABLE:
+    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
+    break;
+   case MOD_DISABLE:
+    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[K\n", line, name);
+    break;
+   default:
+    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[K\n", line, name);
+    break;
+  }
+ }
+
+ switch (ev->status) {
+  case STATUS_IDLE:
+    printf ("\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[K\n", line, name);
+   break;
+  case STATUS_ENABLING:
+    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
+   break;
+ }
+
+ if (ev->string) {
+  if (strlen(ev->string) < 45)
+   printf ("\e[%i;10H%s: %s\e[K\n", line, name, ev->string);
+  else
+   printf ("\e[%i;10H%s: <...>\e[K\n", line, name);
+  ev->string = NULL;
+ }
+
+ if ((ev->status & STATUS_OK) && ev->flag) {
+  printf ("\e[%i;0H[ \e[33mWA%2.2i\e[0m ] %s\n", line, ev->flag, name);
+  mst->errors = 1;
+ } else if (ev->status & STATUS_OK) {
+  if (ev->task & MOD_ENABLE)
+   printf ("\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name);
+  else if (ev->task & MOD_DISABLE)
+   printf ("\e[%i;0H[ \e[32mDISA\e[0m ] %s\n", line, name);
+  else if (ev->task & MOD_RESET)
+   printf ("\e[%i;0H[ \e[32mRSET\e[0m ] %s\n", line, name);
+  else if (ev->task & MOD_RELOAD)
+   printf ("\e[%i;0H[ \e[32mRELO\e[0m ] %s\n", line, name);
+  else
+   printf ("\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name);
+
+  mst->errors = 0;
+ } else if (ev->status & STATUS_FAIL) {
+  printf ("\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
+  mst->errors = 1;
+ }
+}
+
+/*
+  -------- function to sort the string-buffer ---------------------------------
+ */
+int nstringsetsort (struct nstring *st1, struct nstring *st2) {
+ if (!st1) return 1;
+ if (!st2) return -1;
+
+ return (st2->seqid - st1->seqid);
+}
+
+/*
+  -------- core event-handler -------------------------------------------------
+ */
 void einit_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 

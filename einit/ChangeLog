@@ -1,3 +1,7 @@
+2006/11/05: mdeininger
+ * warning/waiting on errors while shutting down has been implemented
+ * advanced textual visualiser (you'll notice, trust me)
+
 2006/11/03: mdeininger
  * shutdown-events
 
