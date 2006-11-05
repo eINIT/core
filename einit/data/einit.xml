@@ -44,6 +44,13 @@
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="15" />
    </visual>
+
+   <visual-edje>
+    <theme-path s="etc/einit/edje" />
+    <theme-default s="einit.edj" />
+    <theme-default-component s="einit/splash" />
+   </visual-edje>
+
    <aural>
     <tts>
      <synthesizer-command s="/usr/bin/festival --tts --pipe" />

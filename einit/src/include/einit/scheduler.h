@@ -79,6 +79,7 @@ int sched_switchmode (char *);
 int sched_modaction (char **);
 
 void sched_init ();
+void sched_reset_event_handlers ();
 int sched_queue (unsigned int, void *);
 int sched_watch_pid (pid_t, void *(*)(struct spidcb *));
 void *sched_run (void *);

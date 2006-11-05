@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/event.h>
 #include <pthread.h>
 #include <time.h>
 
@@ -56,13 +57,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-char * provides[] = {"feedback", "feedback-visual", NULL};
-
-struct smodule self = {
- EINIT_VERSION, 1, EINIT_MOD_FEEDBACK, 0, "visual/evas-based feedback module", "einit-efl-feedback-evas-edje", provides, NULL, NULL
+char * provides[] = {"feedback-visual", NULL};
+const struct smodule self = {
+	.eiversion	= EINIT_VERSION,
+	.version	= 1,
+	.mode		= EINIT_MOD_FEEDBACK,
+	.options	= 0,
+	.name		= "visual/evas-based feedback module",
+	.rid		= "einit-efl-feedback-evas-edje",
+	.provides	= provides,
+	.requires	= NULL,
+	.notwith	= NULL
 };
 
-struct lmodule prevdefault;
 char enableansicodes = 1;
 
 struct planref {
@@ -72,6 +79,8 @@ struct planref {
 
 struct planref **plans = NULL;
 pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
+
+void feedback_event_handler(struct einit_event *ev);
 
 Ecore_Evas *ee;
 Evas *evas;
@@ -84,11 +93,12 @@ pthread_t ethread_th;
 // pthread_cond_t ethread_cond = PTHREAD_COND_INITIALIZER;
 // pthread_mutex_t ethread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int disable (void *, struct mfeedback *);
+int disable (void *, struct einit_event *);
 
 int configure (struct lmodule *this) {
  evas_init();
  ecore_init();
+ sched_reset_event_handlers();
  ecore_evas_init();
  edje_init();
 }
@@ -100,23 +110,25 @@ int cleanup (struct lmodule *this) {
  edje_shutdown();
  ecore_evas_shutdown();
  ecore_shutdown();
+ sched_reset_event_handlers();
  evas_shutdown();
 }
 
 void *ethread (void *not_used) {
- char *edjepath = cfg_getpath ("edje-theme-path");
- char *themefile;
- struct cfgnode *node_theme = cfg_findnode ("edje-theme-default", 0, NULL);
- struct cfgnode *node_component = cfg_findnode ("edje-theme-default-component", 0, NULL);
- if (!edjepath || !node_theme || !node_theme->svalue || !node_component ||
-	 !node_component->svalue)
+ char *edjepath = cfg_getpath ("configuration-feedback-visual-edje-theme-path"),
+      *themefile,
+      *theme_default = cfg_getstring ("configuration-feedback-visual-edje-theme-default", NULL),
+      *theme_default_component = cfg_getstring ("configuration-feedback-visual-edje-theme-default-component", NULL);
+
+ if (!edjepath || !theme_default || !theme_default_component)
   return NULL;
 
-/* this is from evas tutorial 1: the basics */
+/* this is (modified) from evas tutorial 1: the basics */
  /* create our Ecore_Evas and show it */
  if (!(ee = ecore_evas_software_x11_new(0, 0, 0, 0, width, height)))
   if (!(ee = ecore_evas_fb_new(NULL, 0, width, height)))
    return NULL;
+
  ecore_evas_title_set(ee, "eINIT EVAS feedback");
  ecore_evas_show(ee);
 
@@ -125,11 +137,11 @@ void *ethread (void *not_used) {
 
  edje = edje_object_add(evas);
 
- themefile = ecalloc (1, sizeof(char)*(strlen(edjepath) + strlen(node_theme->svalue) + 1));
+ themefile = ecalloc (1, sizeof(char)*(strlen(edjepath) + strlen(theme_default) + 1));
  themefile = strcat (themefile, edjepath);
- themefile = strcat (themefile, node_theme->svalue);
+ themefile = strcat (themefile, theme_default);
 
- edje_object_file_set(edje, themefile, node_component->svalue);
+ edje_object_file_set(edje, themefile, theme_default_component);
  free (themefile);
 
  evas_object_move(edje, 0, 0);
@@ -153,114 +165,24 @@ void *ethread (void *not_used) {
  return NULL;
 }
 
-int enable (void *pa, struct mfeedback *status) {
+int enable (void *pa, struct einit_event *status) {
  if (!pthread_create (&ethread_th, NULL, ethread, NULL)) {
-  prevdefault.comment = mdefault.comment;
-  if (status->module)
-   mdefault.comment = status->module->comment;
+
+  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
+
   return STATUS_OK;
  } else {
   return STATUS_FAIL;
  }
 }
 
-int disable (void *pa, struct mfeedback *status) {
+int disable (void *pa, struct einit_event *status) {
  if (ee) {
   ecore_main_loop_quit ();
   pthread_join (ethread_th, NULL);
  }
- mdefault.comment = prevdefault.comment;
  return STATUS_OK;
 }
 
-int comment (struct mfeedback *status) {
- if (status->task & MOD_SCHEDULER) {
-  int i = 0;
-  struct planref *plan = NULL;
-  switch (status->task) {
-   case MOD_SCHEDULER_PLAN_COMMIT_START:
-//    if (ee)
-//     ecore_evas_show(ee);
-    plan = ecalloc (1, sizeof(struct planref));
-    if (enableansicodes)
-     printf ("\e[34mswitching to mode %s.\e[0m\n", newmode);
-    else
-     printf ("switching to mode %s.\n", newmode);
-    pthread_mutex_lock (&plansmutex);
-     plan->plan = status->plan;
-     plan->startedat = time (NULL);
-     plans = (struct planref **)setadd ((void **)plans, (void *)plan);
-    pthread_mutex_unlock (&plansmutex);
-    break;
-   case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
-//    if (ee)
-//     ecore_evas_hide(ee);
-    if (!plans) break;
-    pthread_mutex_lock (&plansmutex);
-     for (; plans[i]; i++)
-      if (plans[i]->plan == status->plan) {
-       plan = plans[i];
-       break;
-      }
-     plans = (struct planref **)setdel ((void **)plans, (void *)plan);
-    pthread_mutex_unlock (&plansmutex);
-    if (enableansicodes)
-     printf ("\e[34mnew mode %s is now in effect\e[0m; it has taken %i seconds to activate this mode.\n", currentmode,  time(NULL) - plan->startedat);
-    else
-     printf ("new mode %s is now in effect.\n", currentmode);
-    free (plan);
-    break;
-  }
- } else {
-  char *rid = "unknown/unspecified";
-  if (status->module && status->module->module) {
-   struct smodule *mod = status->module->module;
-   if (mod->rid) {
-    rid = mod->rid;
-   }
-  }
-
-  if (status->task & MOD_FEEDBACK_SHOW) {
-   status->task ^= MOD_FEEDBACK_SHOW;
-   switch (status->task) {
-    case MOD_ENABLE:
-     printf ("enabling module: %s\n", rid);
-     break;
-    case MOD_DISABLE:
-     printf ("disabling module: %s\n", rid);
-     break;
-   }
-  }
-
-  switch (status->status) {
-   case STATUS_IDLE:
-    printf ("%s: idle\n", rid);
-    break;
-   case STATUS_ENABLING:
-    printf ("%s: enabling\n", rid);
-    break;
-  }
-
-  if (status->verbose) {
-   printf ("%s: %s\n", rid, status->verbose);
-   status->verbose = NULL;
-  }
-
-  if (enableansicodes) {
-   if ((status->status & STATUS_OK) && status->errorc)
-    printf ("\e[33m%s succeeded, with %i error(s)\e[0m\n", rid, status->errorc);
-   else if (status->status & STATUS_OK)
-    printf ("\e[32m%s succeeded\e[0m\n", rid);
-   else if (status->status & STATUS_FAIL)
-    printf ("\e[31m%s failed\e[0m\n", rid);
-  } else {
-   if ((status->status & STATUS_OK) && status->errorc)
-    printf ("%s: success, with %i error(s)\n", rid, status->errorc);
-   else if (status->status & STATUS_OK)
-    printf ("%s: success\n", rid);
-   else if (status->status & STATUS_FAIL)
-    printf ("%s: failed\n", rid);
-  }
- }
- return 0;
+void feedback_event_handler(struct einit_event *ev) {
 }

@@ -20,6 +20,12 @@
     <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" />
     <use-ansi-codes b="true" />
    </visual>
+
+   <visual-edje>
+    <theme-path s="etc/einit/edje" />
+    <theme-default s="einit.edj" />
+    <theme-default-component s="einit/splash" />
+   </visual-edje>
   </feedback>
 
   <ipc>
@@ -53,14 +59,6 @@
  <conceptual>
   <tty-manage-utmp b="true" />
 
-  <feedback>
-   <edje>
-    <theme-path s="etc/einit/edje" />
-    <theme-default s="einit.edj" />
-    <theme-default-component s="einit/splash" />
-   </edje>
-  </feedback>
-
   <mount-force-writeable-action s="ram-overlay" />
   <mount-ramdisk-fs s="tmpfs" />
   <mount-union s="unionfs" />
@@ -84,6 +82,7 @@
 
   <prefer>
    <dummyd s="daemon-dummy-3" />
+   <feedback-visual s="einit-efl-feedback-evas-edje" />
   </prefer>
 
   <alias>

@@ -216,12 +216,6 @@ int sched_modaction (char **argv) {
 
 void sched_init () {
  char tmp[1024];
- struct sigaction action;
-
- signalstack.ss_sp = emalloc (SIGSTKSZ);
- signalstack.ss_size = SIGSTKSZ;
- signalstack.ss_flags = 0;
- sigaltstack (&signalstack, NULL);
 
 /* create our sigchld-scheduler-thread right away */
  pthread_mutex_lock (&schedthreadsigchildmutex);
@@ -252,6 +246,17 @@ void sched_init () {
 #endif
 
  pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
+
+ sched_reset_event_handlers ();
+}
+
+void sched_reset_event_handlers () {
+ struct sigaction action;
+
+ signalstack.ss_sp = emalloc (SIGSTKSZ);
+ signalstack.ss_size = SIGSTKSZ;
+ signalstack.ss_flags = 0;
+ sigaltstack (&signalstack, NULL);
 
  sigemptyset(&(action.sa_mask));
 
@@ -289,6 +294,7 @@ void sched_init () {
 #ifdef SIGIO
  if ( sigaction (SIGIO, &action, NULL) ) bitch (BTCH_ERRNO);
 #endif
+
 }
 
 int sched_queue (unsigned int task, void *param) {
