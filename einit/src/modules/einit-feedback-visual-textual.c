@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -89,11 +90,13 @@ struct planref {
 
 struct mstat {
  struct lmodule *mod;
- uint32_t seqid;
+ uint32_t seqid, lines;
  time_t lastupdate;
+ char errors;
 };
 
 void feedback_event_handler(struct einit_event *);
+void einit_event_handler(struct einit_event *);
 
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
@@ -101,6 +104,7 @@ struct lmodule *me;
 pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
 char enableansicodes = 1;
+uint32_t shutdownfailuretimeout = 10;
 
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
@@ -113,6 +117,10 @@ int examine_configuration (struct lmodule *irr) {
   fputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", stderr);
   pr++;
  }
+ if (!cfg_getnode("configuration-feedback-visual-shutdown-failure-timeout", NULL)) {
+  fputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", stderr);
+  pr++;
+ }
 
  return pr;
 }
@@ -121,6 +129,9 @@ int configure (struct lmodule *this) {
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
+
+ if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
+  shutdownfailuretimeout = node->value;
 
  me = this;
 }
@@ -230,6 +241,7 @@ int enable (void *pa, struct einit_event *status) {
   fputs ("\e[2J\e[0;0H", stdout);
 
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
 
  pthread_mutex_unlock (&me->imutex);
  return STATUS_OK;
@@ -237,6 +249,7 @@ int enable (void *pa, struct einit_event *status) {
 
 int disable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  pthread_mutex_unlock (&me->imutex);
  return STATUS_OK;
@@ -288,36 +301,46 @@ void feedback_event_handler(struct einit_event *ev) {
   }
  } if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
   time_t lupdate;
+  struct mstat *mst = NULL;
+  char *name = "unknown/unspecified";
+  uint32_t i = 0;
 
-  if (enableansicodes) {
-   pthread_mutex_lock (&modulesmutex);
-   if (modules) {
-    for (; modules[line]; line++)
-     if (((struct mstat *)(modules[line]))->mod == ev->para) {
-      if (((struct mstat *)(modules[line]))->seqid > ev->integer) {
+  pthread_mutex_lock (&modulesmutex);
+  if (modules) {
+   for (i = 0; modules[i]; i++)
+    if (((struct mstat *)(modules[i]))->mod == ev->para) {
+     if (((struct mstat *)(modules[i]))->seqid > ev->seqid) {
 /* discard older messages that came in after newer ones (happens frequently in multi-threaded situations) */
-       pthread_mutex_unlock (&me->imutex);
-       pthread_mutex_unlock (&modulesmutex);
-       return;
-      }
-      ((struct mstat *)(modules[line]))->seqid = ev->integer;
-      break;
+      pthread_mutex_unlock (&me->imutex);
+      pthread_mutex_unlock (&modulesmutex);
+      return;
      }
-   }
-   if (!modules || !modules [line]) {
-    struct mstat m; memset (&m, 0, sizeof (struct mstat));
-    m.mod = ev->para;
-    m.seqid = ev->integer;
-    modules = (struct mstat **)setadd ((void **)modules, (void *)&m, sizeof (struct mstat));
-   }
-
-   olines = setcount ((void **)modules) + 2;
-   pthread_mutex_unlock (&modulesmutex);
-
-   line+=2;
+     ((struct mstat *)(modules[i]))->seqid = ev->seqid;
+     break;
+    }
+  }
+  if (!modules || !modules [i]) {
+   struct mstat m; memset (&m, 0, sizeof (struct mstat));
+   m.mod = ev->para;
+   m.seqid = ev->seqid;
+   m.errors = 0;
+   m.lines = 1;
+   modules = (struct mstat **)setadd ((void **)modules, (void *)&m, sizeof (struct mstat));
   }
 
-  char *name = "unknown/unspecified";
+  olines = setcount ((void **)modules) + 2;
+  pthread_mutex_unlock (&modulesmutex);
+
+  line = 1;
+
+  if (modules) for (i = 0; modules[i]; i++) {
+   line += ((struct mstat *)(modules[i]))->lines;
+   if (((struct mstat *)(modules[i]))->mod == ev->para) {
+    mst = (struct mstat *)(modules[i]);
+    break;
+   }
+  }
+
   if (ev->para && ((struct lmodule *)ev->para)->module) {
    struct smodule *mod = ((struct lmodule *)ev->para)->module;
    if (mod->name) {
@@ -391,9 +414,10 @@ void feedback_event_handler(struct einit_event *ev) {
   }
 
   if (enableansicodes) {
-   if ((ev->status & STATUS_OK) && ev->flag)
+   if ((ev->status & STATUS_OK) && ev->flag) {
     printf ("\e[%i;0H[ \e[33mWA%2.2i\e[0m ] %s\n", line, ev->flag, name);
-   else if (ev->status & STATUS_OK) {
+    mst->errors = 1;
+   } else if (ev->status & STATUS_OK) {
     if (ev->task & MOD_ENABLE)
      printf ("\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name);
     else if (ev->task & MOD_DISABLE)
@@ -404,18 +428,26 @@ void feedback_event_handler(struct einit_event *ev) {
      printf ("\e[%i;0H[ \e[32mRELO\e[0m ] %s\n", line, name);
     else
      printf ("\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name);
-   } else if (ev->status & STATUS_FAIL)
-    printf ("\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
 
-/* goto the last line, so that subsequent output of other sources will not mess up the screen */
+    mst->errors = 0;
+   } else if (ev->status & STATUS_FAIL) {
+    printf ("\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
+    mst->errors = 1;
+   }
+
+/* go to the last line, so that subsequent output of other sources will not mess up the screen */
    printf ("\e[%i;0H", olines);
   } else {
-   if ((ev->status & STATUS_OK) && ev->flag)
+   if ((ev->status & STATUS_OK) && ev->flag) {
     printf ("%s: success, with %i error(s)\n", name, ev->flag);
-   else if (ev->status & STATUS_OK)
+    mst->errors = 1;
+   } else if (ev->status & STATUS_OK) {
     printf ("%s: success\n", name);
-   else if (ev->status & STATUS_FAIL)
+    mst->errors = 0;
+   } else if (ev->status & STATUS_FAIL) {
     printf ("%s: failed\n", name);
+    mst->errors = 1;
+   }
   }
  } if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
@@ -425,6 +457,35 @@ void feedback_event_handler(struct einit_event *ev) {
  }
 
  fsync(STDOUT_FILENO);
+
+ pthread_mutex_unlock (&me->imutex);
+ return;
+}
+
+void einit_event_handler(struct einit_event *ev) {
+ pthread_mutex_lock (&me->imutex);
+
+ if ((ev->type == EVE_SHUTDOWN_IMMINENT) || (ev->type == EVE_REBOOT_IMMINENT)) {
+// shutdown imminent
+  uint32_t c = shutdownfailuretimeout;
+  char errors = 0;
+
+  if (modules) {
+   uint32_t i = 0;
+   for (; modules [i]; i++) {
+    if ((modules [i])->errors) {
+     errors = 1;
+    }
+   }
+  }
+
+  if (errors)
+   while (c) {
+    sleep (1);
+    printf ("\e[0;0H[ \e[31m%04.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\n", c);
+    c--;
+   }
+ }
 
  pthread_mutex_unlock (&me->imutex);
  return;

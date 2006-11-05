@@ -389,7 +389,7 @@ void *sched_run (void *p) {
     case SCHEDULER_POWER_RESET:
      notice (1, "emitting shutdown-event");
      {
-      struct einit_event ee = evstaticinit (EVE_SHUTDOWN_IMMINENT);
+      struct einit_event ee = evstaticinit (EVE_REBOOT_IMMINENT);
       event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
       evstaticdestroy (ee);
      }
@@ -426,7 +426,7 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #else
 /* only shut down if the SIGINT was sent by process 1 or by the parent process */
 /* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
-// note: this relies on a proper pthreads() implementation so... i deactivated it for now.
+// note: this relies on a proper pthreads implementation so... i deactivated it for now.
  {
 #endif
   sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");

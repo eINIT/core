@@ -42,6 +42,7 @@
    <visual>
     <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
     <use-ansi-codes b="true" />
+    <shutdown-failure-timeout i="15" />
    </visual>
    <aural>
     <tts>
