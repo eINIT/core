@@ -70,8 +70,6 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
-char enableansicodes = 1;
-
 struct planref {
  struct mloadplan *plan;
  time_t startedat;
@@ -88,6 +86,7 @@ Evas_Object *edje;
 Evas_Coord edje_w, edje_h;
 // int width = 1024, height = 768;
 int width = 800, height = 600;
+struct lmodule *me;
 
 pthread_t ethread_th;
 // pthread_cond_t ethread_cond = PTHREAD_COND_INITIALIZER;
@@ -96,10 +95,11 @@ pthread_t ethread_th;
 int disable (void *, struct einit_event *);
 
 int configure (struct lmodule *this) {
+ me = this;
  evas_init();
  ecore_init();
- sched_reset_event_handlers();
  ecore_evas_init();
+ sched_reset_event_handlers();
  edje_init();
 }
 
@@ -167,7 +167,6 @@ void *ethread (void *not_used) {
 
 int enable (void *pa, struct einit_event *status) {
  if (!pthread_create (&ethread_th, NULL, ethread, NULL)) {
-
   event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
 
   return STATUS_OK;
@@ -185,4 +184,40 @@ int disable (void *pa, struct einit_event *status) {
 }
 
 void feedback_event_handler(struct einit_event *ev) {
+ pthread_mutex_lock (&me->imutex);
+
+ if (ee) {
+  if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
+   int i = 0;
+   struct planref plan, *cul = NULL;
+   uint32_t startedat = 0;
+   switch (ev->task) {
+    case MOD_SCHEDULER_PLAN_COMMIT_START:
+     pthread_mutex_lock (&plansmutex);
+      plan.plan = (struct mloadplan *)ev->para;
+      plan.startedat = time (NULL);
+      plans = (struct planref **)setadd ((void **)plans, (void *)&plan, sizeof (struct planref));
+      ecore_evas_show (ee);
+     pthread_mutex_unlock (&plansmutex);
+     break;
+    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
+     if (!plans) break;
+     pthread_mutex_lock (&plansmutex);
+      for (; plans[i]; i++)
+       if (plans[i]->plan == (struct mloadplan *)ev->para) {
+        cul = plans[i];
+        startedat = plans[i]->startedat;
+        break;
+       }
+      if (cul) {
+       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
+       ecore_evas_hide (ee);
+      }
+     pthread_mutex_unlock (&plansmutex);
+     break;
+   }
+  }
+ }
+
+ pthread_mutex_unlock (&me->imutex);
 }
