@@ -409,16 +409,16 @@ unsigned char find_block_devices_recurse_path (char *path) {
 
 #ifdef POSIXREGEX
  unsigned char nfitfc = 0;
- static struct cfgnode *npattern = NULL;
+ static char *npattern = NULL;
  static regex_t devpattern;
  static unsigned char havedevpattern = 0;
 
  if (!npattern) {
   nfitfc = 1;
-  npattern = cfg_findnode ("configuration-storage-block-devices-dev-constraints", 0, NULL);
-  if (npattern && npattern->svalue) {
+  npattern = cfg_getstring ("configuration-storage-block-devices-dev-constraints", NULL);
+  if (npattern) {
    uint32_t err;
-   if (!(err = regcomp (&devpattern, npattern->svalue, REG_EXTENDED)))
+   if (!(err = regcomp (&devpattern, npattern, REG_EXTENDED)))
     havedevpattern = 1;
    else {
     char errorcode [1024];
@@ -450,7 +450,9 @@ unsigned char find_block_devices_recurse_path (char *path) {
     if (S_ISBLK (statbuf.st_mode)) {
 #endif
      add_block_device (tmp, 0, 0);
-    } else if (S_ISSOCK (statbuf.st_mode) && S_ISDIR (statbuf.st_mode)) {
+// what was i thinking with this one?
+//    } else if (S_ISSOCK (statbuf.st_mode) && S_ISDIR (statbuf.st_mode)) {
+    } else if (S_ISDIR (statbuf.st_mode)) {
      tmp = strcat (tmp, "/");
      find_block_devices_recurse_path (tmp);
     }

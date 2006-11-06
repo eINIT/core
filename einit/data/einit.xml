@@ -43,6 +43,7 @@
     <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="15" />
+    <broadcast-constraints s="/dev/(tty[1-9][12]?|pts/.*)" />
    </visual>
 
    <visual-edje>
@@ -618,8 +619,10 @@
  <mode id="power-off">
   <disable mod="all-but-feedback" />
   <ttys s="none" />
+  <emit-event on-switch="einit/shutdown-scheduled" />
  </mode>
  <mode id="power-reset" base="power-off">
   <ttys s="none" />
+  <emit-event on-switch="einit/reboot-scheduled" />
  </mode>
 </einit>

@@ -577,6 +577,18 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  struct uhash *ha;
  uint32_t u = 0;
+ char *switchevent = cfg_getstring ("emit-event/on-switch", cmode);
+ if (switchevent) {
+  if (!strcmp(switchevent, "einit/reboot-scheduled")) {
+   struct einit_event ee = evstaticinit (EVE_REBOOT_SCHEDULED);
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  } else if (!strcmp(switchevent, "einit/shutdown-scheduled")) {
+   struct einit_event ee = evstaticinit (EVE_SHUTDOWN_SCHEDULED);
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  }
+ }
 
  pthread_mutex_lock (&(plan->st_mutex));
 

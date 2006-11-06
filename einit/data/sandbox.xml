@@ -19,6 +19,7 @@
    <visual>
     <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" />
     <use-ansi-codes b="true" />
+    <shutdown-failure-timeout i="2" />
    </visual>
 
    <visual-edje>
@@ -82,7 +83,7 @@
 
   <prefer>
    <dummyd s="daemon-dummy-3" />
-   <feedback-visual s="einit-efl-feedback-evas-edje" />
+   <feedback-visual s="einit-feedback-visual-textual:einit-efl-feedback-evas-edje" />
   </prefer>
 
   <alias>

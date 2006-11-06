@@ -64,6 +64,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/vt.h>
 #endif
 
+#ifdef POSIXREGEX
+#include <regex.h>
+#include <dirent.h>
+#endif
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -109,6 +114,7 @@ void update_screen_noansi (struct einit_event *, struct mstat *);
 void update_screen_ansi (struct einit_event *, struct mstat *);
 
 int nstringsetsort (struct nstring *, struct nstring *);
+unsigned char broadcast_message (char *, char *);
 
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
@@ -432,7 +438,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
  enableansicodes = 2;
  statusbarlines = 4;
 
- puts ("\e[2J\e[0;0H");
+// puts ("\e[2J\e[0;0H");
 
  if (plans) {
   fprintf (stdout, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
@@ -482,10 +488,10 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
       (((struct mstat *)(modules[i]))->mod->module)) {
    char *name = (((struct mstat *)(modules[i]))->mod->module->name ? ((struct mstat *)(modules[i]))->mod->module->name : "unknown");
 
-   printf ("\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
+   printf ("\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[K\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
    for (j = 0; ((struct mstat *)(modules[i]))->textbuffer[j] && ((j +1) < ((struct mstat *)(modules[i]))->lines); j++) {
     if (((struct mstat *)(modules[i]))->textbuffer[j]->string && (strlen (((struct mstat *)(modules[i]))->textbuffer[j]->string) < 76)) {
-     printf (" \e[33m>>\e[0m %s\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
+     printf (" \e[33m>>\e[0m %s\e[K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
     } else {
      printf (" \e[33m>>\e[0m \e[31m...\e[0m");
     }
@@ -654,6 +660,11 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
 void einit_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
+ if (ev->type == EVE_SHUTDOWN_SCHEDULED)
+  broadcast_message ("/dev/", "a shutdown has been scheduled, commencing...");
+ if (ev->type == EVE_REBOOT_SCHEDULED)
+  broadcast_message ("/dev/", "a reboot has been scheduled, commencing...");
+
  if ((ev->type == EVE_SHUTDOWN_IMMINENT) || (ev->type == EVE_REBOOT_IMMINENT)) {
 // shutdown imminent
   uint32_t c = shutdownfailuretimeout;
@@ -674,8 +685,85 @@ void einit_event_handler(struct einit_event *ev) {
     printf ("\e[0;0H[ \e[31m%04.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\n", c);
     c--;
    }
+
+  if (ev->type == EVE_SHUTDOWN_IMMINENT)
+   broadcast_message ("/dev/", "shutting down NOW!");
+  if (ev->type == EVE_REBOOT_IMMINENT)
+   broadcast_message ("/dev/", "rebooting NOW!");
  }
 
  pthread_mutex_unlock (&me->imutex);
  return;
+}
+
+unsigned char broadcast_message (char *path, char *message) {
+#ifdef POSIXREGEX
+ DIR *dir;
+ struct dirent *entry;
+ if (!path) path = "/dev/";
+
+ unsigned char nfitfc = 0;
+ static char *npattern = NULL;
+ static regex_t devpattern;
+ static unsigned char havedevpattern = 0;
+
+ if (!npattern) {
+  nfitfc = 1;
+  npattern = cfg_getstring ("configuration-feedback-visual-broadcast-constraints", NULL);
+  if (npattern) {
+   uint32_t err;
+   if (!(err = regcomp (&devpattern, npattern, REG_EXTENDED)))
+    havedevpattern = 1;
+   else {
+    char errorcode [1024];
+    regerror (err, &devpattern, errorcode, 1024);
+    fputs (errorcode, stdout);
+   }
+  }
+ }
+
+ dir = opendir (path);
+ if (dir != NULL) {
+  while (entry = readdir (dir)) {
+   if (entry->d_name[0] == '.') continue;
+   struct stat statbuf;
+   char *tmp = emalloc (strlen(path) + entry->d_reclen);
+   tmp[0] = 0;
+   tmp = strcat (tmp, path);
+   tmp = strcat (tmp, entry->d_name);
+   if (lstat (tmp, &statbuf)) {
+    perror ("einit-feedback-visual-textual");
+    free (tmp);
+    continue;
+   }
+   if (!S_ISLNK(statbuf.st_mode)) {
+    if (S_ISCHR (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0))) {
+     FILE *sf = fopen (tmp, "w");
+     if (sf) {
+      fprintf (sf, "\n---( BROADCAST MESSAGE )----------------------------------------------------\n >> %s\n---------------------------------------------------------( eINIT-%6.6i )---\n", message, getpid());
+      fclose (sf);
+     }
+    } else if (S_ISDIR (statbuf.st_mode)) {
+     tmp = strcat (tmp, "/");
+     broadcast_message (tmp, message);
+    }
+   }
+
+   free (tmp);
+  }
+  closedir (dir);
+ } else {
+  fprintf (stdout, "einit-feedback-visual-textual: could not open %s\n", path);
+  errno = 0;
+  return 1;
+ }
+
+
+ if (nfitfc) {
+  npattern = NULL;
+  havedevpattern = 0;
+  regfree (&devpattern);
+ }
+#endif
+ return 0;
 }
