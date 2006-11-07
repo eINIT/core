@@ -68,8 +68,9 @@ struct event_function einit_sched_event_handler_handler_ef = {
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_sched_event_handler_handler_ef
 
-/* event handler for the default module loader */
+/* event handlers for the default module loader */
 void mod_event_handler(struct einit_event *);
+void module_loader_einit_event_handler (struct einit_event *);
 
 struct event_function einit_mod_event_handler_ef = {
  .type = EVENT_SUBSYSTEM_IPC,
@@ -77,8 +78,14 @@ struct event_function einit_mod_event_handler_ef = {
  .next = EVENT_FUNCTIONS_PTR
 };
 
+struct event_function module_loader_einit_event_handler_ef = {
+ .type = EVENT_SUBSYSTEM_EINIT,
+ .handler = module_loader_einit_event_handler,
+ .next = &einit_mod_event_handler_ef
+};
+
 #undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_mod_event_handler_ef
+#define EVENT_FUNCTIONS_PTR &module_loader_einit_event_handler_ef
 
 /* ipc-handler for the default event system manager */
 void event_ipc_handler(struct einit_event *);

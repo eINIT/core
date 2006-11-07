@@ -1,5 +1,8 @@
 2006/11/07: mdeininger
  * changes to the dhcp module, updated textual visualiser
+ * damn i'm stupid, forgot to kill the manager-daemon on mounts!
+   (udevd, unmounting problems, /dev, kinda makes sense...)
+ * emitting EVE_CONFIGURATION_UPDATE
 
 2006/11/06: mdeininger
  * broadcast messages on shutdown/reboot

@@ -315,6 +315,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
   if (expatuserdata.prefix) free (expatuserdata.prefix);
 
+  {
+   struct einit_event ee = evstaticinit (EVE_CONFIGURATION_UPDATE);
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  }
+
   return hconfiguration != NULL;
  } else {
   return bitch(BTCH_ERRNO);

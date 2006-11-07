@@ -90,6 +90,8 @@ int scanmodules (struct lmodule *);
 int pexec_wrapper (struct mexecinfo *, struct einit_event *);
 int configure (struct lmodule *);
 
+struct mexecinfo **mxdata = NULL;
+
 int examine_configuration (struct lmodule *irr) {
  int pr = 0;
 
@@ -171,6 +173,9 @@ int scanmodules (struct lmodule *modchain) {
    else
     mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
+
+  mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
+
   mod_add (NULL,
            (int (*)(void *, struct einit_event *))pexec_wrapper, /* enable */
            (int (*)(void *, struct einit_event *))pexec_wrapper, /* disable */
@@ -200,3 +205,4 @@ int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
 
  return pexec (command, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 }
+

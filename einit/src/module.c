@@ -58,6 +58,8 @@ pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct uhash *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void module_loader_einit_event_handler (struct einit_event *);
+
 int mod_scanmodules ( void ) {
  DIR *dir;
  struct dirent *entry;
@@ -599,4 +601,10 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
 
  pthread_mutex_unlock (&service_usage_mutex);
  return ret;
+}
+
+void module_loader_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  notice (2, "should update modules now");
+ }
 }

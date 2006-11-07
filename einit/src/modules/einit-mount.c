@@ -992,7 +992,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   char textbuffer[1024];
   errno = 0;
   uint32_t retry = 0;
-  
+
   while (1) {
    retry++;
    if (he = hashfind (he, mountpoint)) fse = (struct fstab_entry *)he->value;
@@ -1001,6 +1001,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
    else
     snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
+
+   if (fse && fse->manager)
+    stopdaemon (fse->manager, status);
 
    status->string = textbuffer;
    status_update (status);
