@@ -434,11 +434,10 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
  uint32_t i, line = 4, j;
 
  if (enableansicodes == 0) update_screen_noansi (ev, mst);
+ if (enableansicodes == 1) puts ("\e[2J\e[0;0H");
 
  enableansicodes = 2;
  statusbarlines = 4;
-
-// puts ("\e[2J\e[0;0H");
 
  if (plans) {
   fprintf (stdout, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
