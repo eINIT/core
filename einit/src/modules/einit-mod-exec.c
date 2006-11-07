@@ -137,6 +137,7 @@ int scanmodules (struct lmodule *modchain) {
  while (node = cfg_findnode ("services-virtual-module-shell", 0, node)) {
   struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
   struct mexecinfo *mexec = ecalloc (1, sizeof (struct mexecinfo));
+  struct lmodule *new;
   int i = 0;
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
@@ -176,13 +177,23 @@ int scanmodules (struct lmodule *modchain) {
 
   mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
 
-  mod_add (NULL,
-           (int (*)(void *, struct einit_event *))pexec_wrapper, /* enable */
-           (int (*)(void *, struct einit_event *))pexec_wrapper, /* disable */
-           (int (*)(void *, struct einit_event *))pexec_wrapper, /* reset */
-           (int (*)(void *, struct einit_event *))pexec_wrapper, /* reload */
-           cleanup_after_module,  /* cleanup */
-           (void *)mexec, modinfo);
+  new = mod_add (NULL,
+//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* enable */
+//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* disable */
+//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* reset */
+//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* reload */
+//           cleanup_after_module,  /* cleanup */
+//           (void *)mexec,
+           modinfo);
+  if (new) {
+   new->source = estrdup (modinfo->rid);
+   new->param = (void *)mexec;
+   new->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
+   new->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;
+   new->reset = (int (*)(void *, struct einit_event *))pexec_wrapper;
+   new->reload = (int (*)(void *, struct einit_event *))pexec_wrapper;
+   new->cleanup = cleanup_after_module;
+  }
  }
 }
 

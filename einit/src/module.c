@@ -58,8 +58,6 @@ pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct uhash *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void module_loader_einit_event_handler (struct einit_event *);
-
 int mod_scanmodules ( void ) {
  DIR *dir;
  struct dirent *entry;
@@ -79,25 +77,40 @@ int mod_scanmodules ( void ) {
    tmp = (char *)emalloc ((mplen + strlen (entry->d_name))*sizeof (char));
    struct stat sbuf;
    struct smodule *modinfo;
+   struct lmodule *lm;
    *tmp = 0;
    strcat (tmp, modulepath);
    strcat (tmp, entry->d_name);
    dlerror ();
    if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
+    cleanup_continue:
     free (tmp);
     continue;
+   }
+
+   lm = mlist;
+   while (lm && lm->source) {
+    if (!strcmp(lm->source, tmp)) {
+     notice (4, "einit-module-loader: module already loaded.");
+     goto cleanup_continue;
+    }
+    lm = lm->next;
    }
 
    sohandle = dlopen (tmp, RTLD_NOW);
    if (sohandle == NULL) {
     puts (dlerror ());
-    free (tmp);
-    continue;
+//    free (tmp);
+//    continue;
+    goto cleanup_continue;
    }
    modinfo = (struct smodule *)dlsym (sohandle, "self");
-   if (modinfo != NULL)
-    mod_add (sohandle, NULL, NULL, NULL, NULL, NULL, NULL, modinfo);
-   else
+   if (modinfo != NULL) {
+//    struct lmodule *new = mod_add (sohandle, NULL, NULL, NULL, NULL, NULL, NULL, modinfo);
+    struct lmodule *new = mod_add (sohandle, modinfo);
+    if (new)
+     new->source = estrdup(tmp);
+   } else
     dlclose (sohandle);
 
    free (tmp);
@@ -147,7 +160,8 @@ int mod_freemodules ( void ) {
  return 1;
 }
 
-struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module) {
+// struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module) {
+struct lmodule *mod_add (void *sohandle, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
  int (*ftload)  (void *, struct einit_event *);
@@ -162,12 +176,12 @@ struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_even
 
  nmod->sohandle = sohandle;
  nmod->module = module;
- nmod->param = param;
+/* nmod->param = param;
  nmod->enable = enable;
  nmod->disable = disable;
  nmod->reset = reset;
  nmod->reload = reload;
- nmod->cleanup = cleanup;
+ nmod->cleanup = cleanup;*/
  pthread_mutex_init (&nmod->mutex, NULL);
  pthread_mutex_init (&nmod->imutex, NULL);
 
@@ -392,48 +406,6 @@ int mod (unsigned int task, struct lmodule *module) {
  return module->status;
 }
 
-#define STATUS2STRING(status)\
- (status == STATUS_IDLE ? "idle" : \
- (status & STATUS_WORKING ? "working" : \
- (status & STATUS_ENABLED ? "enabled" : "disabled")))
-#define STATUS2STRING_SHORT(status)\
- (status == STATUS_IDLE ? "I" : \
- (status & STATUS_WORKING ? "W" : \
- (status & STATUS_ENABLED ? "E" : "D")))
-
-// event handler
-void mod_event_handler(struct einit_event *event) {
- if (!event || !event->set) return;
- char **argv = (char **) event->set;
- int argc = setcount (event->set);
- uint32_t options = event->status;
-
- if (argc >= 2) {
-  if (!strcmp (argv[0], "list")) {
-   if (!strcmp (argv[1], "modules")) {
-    char buffer[1024];
-    struct lmodule *cur = mlist;
-
-    if (!event->flag) event->flag = 1;
-
-    while (cur) {
-     if (cur->module && !(options & EIPC_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
-      if (options & EIPC_OUTPUT_XML)
-       snprintf (buffer, 2048, " <module id=\"%s\" name=\"%s\" status=\"%s\" />\n",
-         (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
-      else
-       snprintf (buffer, 1024, "[%s] %s (%s)\n",
-        STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
-
-      write (event->integer, buffer, strlen (buffer));
-     }
-     cur = cur->next;
-    }
-   }
-  }
- }
-}
-
 uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service) {
  uint16_t ret = 0;
  struct uhash *ha;
@@ -603,8 +575,52 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
  return ret;
 }
 
+
+/* ---------------------------------------------------- event handlers ----- */
+#define STATUS2STRING(status)\
+ (status == STATUS_IDLE ? "idle" : \
+ (status & STATUS_WORKING ? "working" : \
+ (status & STATUS_ENABLED ? "enabled" : "disabled")))
+#define STATUS2STRING_SHORT(status)\
+ (status == STATUS_IDLE ? "I" : \
+ (status & STATUS_WORKING ? "W" : \
+ (status & STATUS_ENABLED ? "E" : "D")))
+
+void mod_event_handler(struct einit_event *event) {
+ if (!event || !event->set) return;
+ char **argv = (char **) event->set;
+ int argc = setcount (event->set);
+ uint32_t options = event->status;
+
+ if (argc >= 2) {
+  if (!strcmp (argv[0], "list")) {
+   if (!strcmp (argv[1], "modules")) {
+    char buffer[1024];
+    struct lmodule *cur = mlist;
+
+    if (!event->flag) event->flag = 1;
+
+    while (cur) {
+     if (cur->module && !(options & EIPC_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
+      if (options & EIPC_OUTPUT_XML)
+       snprintf (buffer, 2048, " <module id=\"%s\" name=\"%s\" status=\"%s\" />\n",
+         (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
+      else
+       snprintf (buffer, 1024, "[%s] %s (%s)\n",
+        STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
+
+      write (event->integer, buffer, strlen (buffer));
+     }
+     cur = cur->next;
+    }
+   }
+  }
+ }
+}
+
 void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  notice (2, "should update modules now");
+//  notice (2, "should update modules now");
+//  mod_scanmodules();
  }
 }

@@ -808,26 +808,38 @@ void update (enum update_task task) {
 }
 
 int scanmodules (struct lmodule *modchain) {
- mod_add (NULL, (int (*)(void *, struct einit_event *))enable,
-          (int (*)(void *, struct einit_event *))disable,
-          NULL, NULL, NULL,
-          (void *)MOUNT_ROOT, &sm_root);
- mod_add (NULL, (int (*)(void *, struct einit_event *))enable,
-          (int (*)(void *, struct einit_event *))disable,
-          NULL, NULL, NULL,
-          (void *)MOUNT_LOCAL, &sm_mountlocal);
- mod_add (NULL, (int (*)(void *, struct einit_event *))enable,
-          (int (*)(void *, struct einit_event *))disable,
-          NULL, NULL, NULL,
-          (void *)MOUNT_REMOTE, &sm_mountremote);
- mod_add (NULL, (int (*)(void *, struct einit_event *))enable,
-          (int (*)(void *, struct einit_event *))disable,
-          NULL, NULL, NULL,
-          (void *)MOUNT_SYSTEM, &sm_system);
- mod_add (NULL, (int (*)(void *, struct einit_event *))enable,
-          (int (*)(void *, struct einit_event *))disable,
-          NULL, NULL, NULL,
-          (void *)MOUNT_CRITICAL, &sm_critical);
+ struct lmodule *new;
+
+ if (new = mod_add (NULL, &sm_root)) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))enable;
+  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->param = (void *)MOUNT_ROOT;
+ }
+ if (new = mod_add (NULL, &sm_mountlocal)) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))enable;
+  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->param = (void *)MOUNT_LOCAL;
+ }
+ if (new = mod_add (NULL, &sm_mountremote)) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))enable;
+  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->param = (void *)MOUNT_REMOTE;
+ }
+ if (new = mod_add (NULL, &sm_system)) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))enable;
+  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->param = (void *)MOUNT_SYSTEM;
+ }
+ if (new = mod_add (NULL, &sm_critical)) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))enable;
+  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->param = (void *)MOUNT_CRITICAL;
+ }
 }
 
 int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags) {

@@ -3,6 +3,7 @@
  * damn i'm stupid, forgot to kill the manager-daemon on mounts!
    (udevd, unmounting problems, /dev, kinda makes sense...)
  * emitting EVE_CONFIGURATION_UPDATE
+ * module scanning/adding cleaned up
 
 2006/11/06: mdeininger
  * broadcast messages on shutdown/reboot

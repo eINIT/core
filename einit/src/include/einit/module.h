@@ -167,6 +167,7 @@ struct smodule {
  * The dynamic module definition that is kept in memory after the module is loaded.
 */
 struct lmodule {
+ char *source;                                  /*!< module source (filename, etc..) */
  void *sohandle;                                /*!< .so file-handle */
  int (*enable)  (void *, struct einit_event *); /*!< Pointer to the module's enable()-function */
  int (*disable) (void *, struct einit_event *); /*!< Pointer to the module's disable()-function */
@@ -227,7 +228,9 @@ int mod_freemodules ( void );
  * This functions adds a module to the main chain of modules, so that it can be used in dependency
  * calculations.
 */
-struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module);
+// struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module);
+
+struct lmodule *mod_add (void *sohandle, struct smodule *module);
 
 /*!\brief Change module's state
  * \param[in]     task   What state the module should be put in.

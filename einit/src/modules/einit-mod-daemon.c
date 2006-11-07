@@ -133,6 +133,7 @@ int scanmodules (struct lmodule *modchain) {
  while (node = cfg_findnode ("services-virtual-module-daemon", 0, node)) {
   struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
   struct dexecinfo *dexec = ecalloc (1, sizeof (struct dexecinfo));
+  struct lmodule *new;
   int i = 0;
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
@@ -169,9 +170,20 @@ int scanmodules (struct lmodule *modchain) {
    else
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
-  mod_add (NULL, (int (*)(void *, struct einit_event *))startdaemon,
+/*  new = mod_add (NULL, (int (*)(void *, struct einit_event *))startdaemon,
            (int (*)(void *, struct einit_event *))stopdaemon, NULL, NULL,
            cleanup_after_module,
-           (void *)dexec, modinfo);
+           (void *)dexec, modinfo);*/
+  new = mod_add (NULL, modinfo);
+
+  if (new) {
+   new->source = estrdup (modinfo->rid);
+   new->param = (void *)dexec;
+   new->enable = (int (*)(void *, struct einit_event *))startdaemon;
+   new->disable = (int (*)(void *, struct einit_event *))stopdaemon;
+/*   new->reset = (int (*)(void *, struct einit_event *))NULL;
+   new->reload = (int (*)(void *, struct einit_event *))NULL;*/
+   new->cleanup = cleanup_after_module;
+  }
  }
 }
