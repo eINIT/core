@@ -116,6 +116,8 @@ void update_screen_ansi (struct einit_event *, struct mstat *);
 int nstringsetsort (struct nstring *, struct nstring *);
 unsigned char broadcast_message (char *, char *);
 
+FILE *vofile = NULL;
+
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
 struct lmodule *me;
@@ -226,6 +228,15 @@ int enable (void *pa, struct einit_event *status) {
       perror ("einit-feedback-visual-textual: opening stderr");
       enableansicodes = 0;
      }
+    } else if (!strcmp (filenode->arbattrs[i], "verbose-output")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      if (vofile)
+       vofile = freopen (filenode->arbattrs[i+1], "w", vofile);
+      else
+       vofile = fopen (filenode->arbattrs[i+1], "w");
+     } else {
+      perror ("einit-feedback-visual-textual: opening verbose-output file");
+     }
     } else if (!strcmp (filenode->arbattrs[i], "console")) {
 #ifdef LINUX
      int tfd = 0, tioarg = (12 << 8) | 11;
@@ -273,6 +284,8 @@ int enable (void *pa, struct einit_event *status) {
 
  if (enableansicodes)
   fputs ("\e[2J\e[0;0H", stdout);
+ if (vofile)
+  fputs ("\e[2J\e[0;0H", vofile);
 
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
@@ -309,6 +322,9 @@ void feedback_event_handler(struct einit_event *ev) {
      printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
     else
      printf ("switching to mode %s.\n", newmode);
+
+    if (vofile)
+     fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
     pthread_mutex_lock (&plansmutex);
      plan.plan = (struct mloadplan *)ev->para;
      plan.startedat = time (NULL);
@@ -337,7 +353,9 @@ void feedback_event_handler(struct einit_event *ev) {
      printf ("\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, currentmode);
     else
      printf ("new mode %s is now in effect.\n", currentmode);
-    break;
+
+    if (vofile)
+     fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, currentmode); break;
   }
  } if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
   time_t lupdate;
@@ -406,14 +424,12 @@ void feedback_event_handler(struct einit_event *ev) {
   if ((ev->status & STATUS_FAIL) || ev->flag) {
    mst->lines = 4;
    mst->errors = 1 + ev->flag;
-   update_screen_neat (ev, mst);
   }
 
-  switch (enableansicodes) {
-   case 2: update_screen_neat (ev, mst); break;
-   case 1: update_screen_ansi (ev, mst); break;
-   default: update_screen_noansi (ev, mst);
-  }
+  if (enableansicodes) update_screen_ansi (ev, mst);
+  else update_screen_noansi (ev, mst);
+  if (vofile) update_screen_neat (ev, mst);
+
  } if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
    strtrim (ev->string);
@@ -433,20 +449,18 @@ void feedback_event_handler(struct einit_event *ev) {
 void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
  uint32_t i, line = 4, j;
 
- if (enableansicodes == 0) update_screen_noansi (ev, mst);
- if (enableansicodes == 1) puts ("\e[2J\e[0;0H");
+ if (!vofile) return;
 
- enableansicodes = 2;
- statusbarlines = 4;
+// statusbarlines = 4;
 
  if (plans) {
-  fprintf (stdout, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
+  fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
  }
 
  pthread_mutex_lock (&modulesmutex);
 
  if (modules) {
-  fputs ("\e[2;0H( \e[32menabled\e[0m  |", stdout);
+  fputs ("\e[2;0H( \e[32menabled\e[0m  |", vofile);
   for (i = 0; modules[i]; i++) {
    if ((!((struct mstat *)(modules[i]))->errors) &&
        (((struct mstat *)(modules[i]))->mod) &&
@@ -454,16 +468,16 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
        (((struct mstat *)(modules[i]))->mod->module->provides) &&
        (((struct mstat *)(modules[i]))->mod->module->provides[0])) {
     if (((struct mstat *)(modules[i]))->mod->status & STATUS_ENABLED) {
-     fputs (" ", stdout);
-     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], stdout);
+     fputs (" ", vofile);
+     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
      ((struct mstat *)(modules[i]))->lines = 0;
     }
    }
   }
-  fputs (" )\e[K\n", stdout);
+  fputs (" )\e[K\n", vofile);
 
-  fputs ("\e[3;0H( \e[32mdisabled\e[0m |", stdout);
+  fputs ("\e[3;0H( \e[32mdisabled\e[0m |", vofile);
   for (i = 0; modules[i]; i++) {
    if ((!((struct mstat *)(modules[i]))->errors) &&
        (((struct mstat *)(modules[i]))->mod) &&
@@ -471,14 +485,14 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
        (((struct mstat *)(modules[i]))->mod->module->provides) &&
        (((struct mstat *)(modules[i]))->mod->module->provides[0])) {
     if (((struct mstat *)(modules[i]))->mod->status & STATUS_DISABLED) {
-     fputs (" ", stdout);
-     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], stdout);
+     fputs (" ", vofile);
+     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
      ((struct mstat *)(modules[i]))->lines = 0;
     }
    }
   }
-  fputs (" )\e[K\n", stdout);
+  fputs (" )\e[K\n", vofile);
  }
 
  for (i = 0; modules[i]; i++) {
@@ -487,12 +501,12 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
       (((struct mstat *)(modules[i]))->mod->module)) {
    char *name = (((struct mstat *)(modules[i]))->mod->module->name ? ((struct mstat *)(modules[i]))->mod->module->name : "unknown");
 
-   printf ("\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[K\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
+   fprintf (vofile, "\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[K\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
    for (j = 0; ((struct mstat *)(modules[i]))->textbuffer[j] && ((j +1) < ((struct mstat *)(modules[i]))->lines); j++) {
     if (((struct mstat *)(modules[i]))->textbuffer[j]->string && (strlen (((struct mstat *)(modules[i]))->textbuffer[j]->string) < 76)) {
-     printf (" \e[33m>>\e[0m %s\e[K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
+     fprintf (vofile, " \e[33m>>\e[0m %s\e[K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
     } else {
-     printf (" \e[33m>>\e[0m \e[31m...\e[0m");
+     fprintf (vofile, " \e[33m>>\e[0m \e[31m...\e[0m");
     }
    }
   }
@@ -566,8 +580,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
   -------- update screen with ansi codes --------------------------------------
  */
 void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
- if (enableansicodes == 0) update_screen_noansi (ev, mst);
- if (enableansicodes == 2) update_screen_neat (ev, mst);
+ if (!enableansicodes) update_screen_noansi (ev, mst);
 
  char *name = "unknown/unnamed";
  uint32_t line = statusbarlines, lines = 0, i = 0;
@@ -577,7 +590,8 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
    mst = (struct mstat *)(modules[i]);
    break;
   }
-  line += ((struct mstat *)(modules[i]))->lines;
+//  line += ((struct mstat *)(modules[i]))->lines;
+  line ++;
  }
 
  if (((struct lmodule *)ev->para)->module) {

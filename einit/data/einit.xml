@@ -32,6 +32,10 @@
    <interfaces>
     <source s="sys:proc" />
    </interfaces>
+
+   <dhcp>
+    <timeout s="60"/>
+   </dhcp>
   </network>
 
   <peripherals>
@@ -40,7 +44,7 @@
 
   <feedback>
    <visual>
-    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
+    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" />
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="15" />
     <broadcast-constraints s="/dev/(tty[1-9][12]?|pts/.*)" />
@@ -489,12 +493,20 @@
 
 <!-- DHCPcd -->
 <!-- strictly speaking this is a daemon, but it can't be supervised like one... -->
-    <shell id="shell-ethernet-eth0-dhcp"
+<!--    <shell id="shell-ethernet-eth0-dhcp"
      name="Network (eth0, using DHCP)"
      provides="net-eth0"
      requires="kern-ethernet:mount/critical"
      enable="rm -f /var/run/dhcpcd-eth0.pid; /sbin/dhcpcd -d -t 60 eth0;"
-     disable="killall dhcpcd; rm -f /var/run/dhcpcd-eth0.pid;" />
+     disable="killall dhcpcd; rm -f /var/run/dhcpcd-eth0.pid;" /> -->
+<!-- modified version from KKtm, good idea! -->
+    <shell id="shell-ethernet-eth0-dhcp"
+     name="Network (eth0, using DHCP)"
+     provides="net-eth0"
+     requires="kern-ethernet:mount/critical"
+     enable="rm -f /var/run/dhcpcd-eth0.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} eth0;"
+     disable="killall dhcpcd; rm -f /var/run/dhcpcd-eth0.pid;"
+     variables="configuration-network-dhcp-timeout" />
 
 <!-- mythtv -->
 <!-- damn this thing's a bitch -->

@@ -1,3 +1,6 @@
+2006/11/07: mdeininger
+ * changes to the dhcp module, updated textual visualiser
+
 2006/11/06: mdeininger
  * broadcast messages on shutdown/reboot
 
