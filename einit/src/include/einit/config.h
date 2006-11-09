@@ -92,7 +92,8 @@ struct cfgnode {
  char *svalue;
  char **base;
  char **arbattrs;
- void *custom;
+ char *idattr;
+// void *custom;
  char *path;
  char *source;
  char *source_file;

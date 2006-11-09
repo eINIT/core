@@ -135,6 +135,7 @@ int scanmodules (struct lmodule *modchain) {
   struct dexecinfo *dexec = ecalloc (1, sizeof (struct dexecinfo));
   struct lmodule *new;
   int i = 0;
+  char doop = 1;
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
    if (!strcmp (node->arbattrs[i], "id"))
@@ -174,16 +175,36 @@ int scanmodules (struct lmodule *modchain) {
            (int (*)(void *, struct einit_event *))stopdaemon, NULL, NULL,
            cleanup_after_module,
            (void *)dexec, modinfo);*/
-  new = mod_add (NULL, modinfo);
 
-  if (new) {
-   new->source = estrdup (modinfo->rid);
-   new->param = (void *)dexec;
-   new->enable = (int (*)(void *, struct einit_event *))startdaemon;
-   new->disable = (int (*)(void *, struct einit_event *))stopdaemon;
-/*   new->reset = (int (*)(void *, struct einit_event *))NULL;
-   new->reload = (int (*)(void *, struct einit_event *))NULL;*/
-   new->cleanup = cleanup_after_module;
+  if (!modinfo->rid) continue;
+
+  struct lmodule *lm = modchain;
+  while (lm && lm->source) {
+   if (!strcmp(lm->source, modinfo->rid)) {
+    notice (5, "einit-mod-daemon: module already loaded, updating...");
+
+    free (modinfo->rid);
+    lm->param = (void *)dexec;
+    lm->enable = (int (*)(void *, struct einit_event *))startdaemon;
+    lm->disable = (int (*)(void *, struct einit_event *))stopdaemon;
+    lm->cleanup = cleanup_after_module;
+
+	doop = 0;
+	break;
+   }
+   lm = lm->next;
+  }
+  if (doop) {
+   new = mod_add (NULL, modinfo);
+   if (new) {
+    new->source = estrdup (modinfo->rid);
+    new->param = (void *)dexec;
+    new->enable = (int (*)(void *, struct einit_event *))startdaemon;
+    new->disable = (int (*)(void *, struct einit_event *))stopdaemon;
+/*    new->reset = (int (*)(void *, struct einit_event *))NULL;
+    new->reload = (int (*)(void *, struct einit_event *))NULL;*/
+    new->cleanup = cleanup_after_module;
+   }
   }
  }
 }

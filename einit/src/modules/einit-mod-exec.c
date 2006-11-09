@@ -139,6 +139,8 @@ int scanmodules (struct lmodule *modchain) {
   struct mexecinfo *mexec = ecalloc (1, sizeof (struct mexecinfo));
   struct lmodule *new;
   int i = 0;
+  char doop = 1;
+
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
    if (!strcmp (node->arbattrs[i], "id"))
@@ -177,22 +179,46 @@ int scanmodules (struct lmodule *modchain) {
 
   mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
 
-  new = mod_add (NULL,
-//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* enable */
-//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* disable */
-//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* reset */
-//           (int (*)(void *, struct einit_event *))pexec_wrapper, /* reload */
-//           cleanup_after_module,  /* cleanup */
-//           (void *)mexec,
-           modinfo);
-  if (new) {
-   new->source = estrdup (modinfo->rid);
-   new->param = (void *)mexec;
-   new->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
-   new->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;
-   new->reset = (int (*)(void *, struct einit_event *))pexec_wrapper;
-   new->reload = (int (*)(void *, struct einit_event *))pexec_wrapper;
-   new->cleanup = cleanup_after_module;
+  if (!modinfo->rid) continue;
+
+  struct lmodule *lm = modchain;
+  while (lm && lm->source) {
+   if (!strcmp(lm->source, modinfo->rid)) {
+    notice (5, "einit-mod-daemon: module already loaded, updating...");
+
+//    lm->source = estrdup (modinfo->rid);
+    free (modinfo->rid);
+    lm->param = (void *)mexec;
+    lm->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    lm->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    lm->reset = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    lm->reload = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    lm->cleanup = cleanup_after_module;
+
+	doop = 0;
+	break;
+   }
+   lm = lm->next;
+  }
+
+  if (doop) {
+   new = mod_add (NULL,
+//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* enable */
+//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* disable */
+//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* reset */
+//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* reload */
+//            cleanup_after_module,  /* cleanup */
+//            (void *)mexec,
+            modinfo);
+   if (new) {
+    new->source = estrdup (modinfo->rid);
+    new->param = (void *)mexec;
+    new->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    new->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    new->reset = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    new->reload = (int (*)(void *, struct einit_event *))pexec_wrapper;
+    new->cleanup = cleanup_after_module;
+   }
   }
  }
 }

@@ -620,7 +620,7 @@ void mod_event_handler(struct einit_event *event) {
 
 void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-//  notice (2, "should update modules now");
-//  mod_scanmodules();
+  notice (2, "should update modules now");
+  mod_scanmodules();
  }
 }

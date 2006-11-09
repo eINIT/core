@@ -57,8 +57,8 @@ int cfg_free () {
    if (node->base)
     free (node->base);
 
-   if (node->custom)
-    free (node->custom);
+//   if (node->custom)
+//    free (node->custom);
    if (node->id)
     free (node->id);
    if (node->path)
@@ -75,6 +75,13 @@ int cfg_addnode (struct cfgnode *node) {
  if (!node || !node->id) return;
  struct uhash *cur = hconfiguration;
  char noop = 0;
+
+ if (node->arbattrs) {
+  uint32_t r = 0;
+  for (; node->arbattrs[r]; r+=2) {
+   if (!strcmp ("id", node->arbattrs[r])) node->idattr = node->arbattrs[r+1];
+  }
+ }
 
  if (node->nodetype & EI_NODETYPE_MODE) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
@@ -100,7 +107,43 @@ int cfg_addnode (struct cfgnode *node) {
 /* look for other definitions that are exactly the same, only marginally different or that sport a
    matching id="" attribute */
 
-// implement me !
+  while (cur = hashfind (cur, node->id)) {
+// this means we found a node wit the same path
+   if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
+       !strcmp (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
+// NTS: implement checks to figure out if the node is similar
+
+// this means we found something that looks like it
+    void *bsl = cur->luggage;
+    ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
+    cur->luggage = node->arbattrs;
+    free (bsl);
+
+    ((struct cfgnode *)cur->value)->nodetype    = node->nodetype;
+    ((struct cfgnode *)cur->value)->mode        = node->mode;
+    ((struct cfgnode *)cur->value)->flag        = node->flag;
+    ((struct cfgnode *)cur->value)->value       = node->value;
+    bsl = (void *)((struct cfgnode *)cur->value)->svalue;
+    ((struct cfgnode *)cur->value)->svalue      = node->svalue;
+    free (bsl);
+    ((struct cfgnode *)cur->value)->idattr      = node->idattr;
+    bsl = (void *)((struct cfgnode *)cur->value)->path;
+    ((struct cfgnode *)cur->value)->path        = node->path;
+    free (bsl);
+    bsl = (void *)((struct cfgnode *)cur->value)->source;
+    ((struct cfgnode *)cur->value)->source      = node->source;
+    free (bsl);
+    bsl = (void *)((struct cfgnode *)cur->value)->source_file;
+    ((struct cfgnode *)cur->value)->source_file = node->source_file;
+    free (bsl);
+
+    noop = 1;
+    fprintf (stderr, "configuration: found match for %s\n", node->id);
+
+    break;
+   }
+   cur = hashnext (cur);
+  }
  }
 
  if (!noop)
