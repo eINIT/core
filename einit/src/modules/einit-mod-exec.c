@@ -92,23 +92,25 @@ int configure (struct lmodule *);
 
 struct mexecinfo **mxdata = NULL;
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  if (!cfg_getnode("configuration-system-shell", NULL)) {
+   fdputs (" * configuration variable \"configuration-system-shell\" not found.\n", ev->integer);
+   ev->task++;
+  }
 
- if (!cfg_getnode("configuration-system-shell", NULL)) {
-  fputs (" * configuration variable \"configuration-system-shell\" not found.\n", stderr);
-  pr++;
+  ev->flag = 1;
  }
-
- return pr;
 }
 
 int configure (struct lmodule *irr) {
  pexec_configure (irr);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
  pexec_cleanup(this);
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup_after_module (struct lmodule *this) {
@@ -182,21 +184,24 @@ int scanmodules (struct lmodule *modchain) {
   if (!modinfo->rid) continue;
 
   struct lmodule *lm = modchain;
-  while (lm && lm->source) {
-   if (!strcmp(lm->source, modinfo->rid)) {
-    notice (5, "einit-mod-daemon: module already loaded, updating...");
+  while (lm) {
+   if (lm->source && !strcmp(lm->source, modinfo->rid)) {
+/*    char tnotice[512];
+    snprintf (tnotice, 512, "einit-mod-exec: module already loaded: %s: updating\n", modinfo->rid);
+    notice (5, tnotice);*/
 
 //    lm->source = estrdup (modinfo->rid);
-    free (modinfo->rid);
+//    free (modinfo->rid);
     lm->param = (void *)mexec;
     lm->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
     lm->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;
     lm->reset = (int (*)(void *, struct einit_event *))pexec_wrapper;
     lm->reload = (int (*)(void *, struct einit_event *))pexec_wrapper;
     lm->cleanup = cleanup_after_module;
+    lm->module = modinfo;
 
-	doop = 0;
-	break;
+    doop = 0;
+    break;
    }
    lm = lm->next;
   }

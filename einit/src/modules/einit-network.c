@@ -70,12 +70,6 @@ struct network_control_block mncb = {
 	.add_network_interface	= add_network_interface
 };
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
-
- return pr;
-}
-
 char *defaultinterfaces[] = { "sys", "proc", NULL };
 pthread_mutex_t interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
 

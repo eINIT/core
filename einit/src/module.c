@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct lmodule *mlist = NULL;
 
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct uhash *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -66,8 +67,17 @@ int mod_scanmodules ( void ) {
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
 
+ pthread_mutex_lock (&modules_update_mutex);
+
  char *modulepath = cfg_getpath ("core-settings-module-path");
- if (!modulepath) return -1;
+ if (!modulepath) {
+  pthread_mutex_unlock (&modules_update_mutex);
+  return -1;
+ }
+#ifdef SANDBOX
+// override module path in sandbox-mode to be relative
+ if (modulepath[0] == '/') modulepath++;
+#endif
 
  mplen = strlen (modulepath) +1;
  dir = opendir (modulepath);
@@ -83,15 +93,21 @@ int mod_scanmodules ( void ) {
    strcat (tmp, entry->d_name);
    dlerror ();
    if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
-    cleanup_continue:
-    free (tmp);
-    continue;
+    goto cleanup_continue;
    }
 
    lm = mlist;
-   while (lm && lm->source) {
-    if (!strcmp(lm->source, tmp)) {
-     notice (4, "einit-module-loader: module already loaded.");
+   while (lm) {
+    if (lm->source && !strcmp(lm->source, tmp)) {
+// tell module to scan for changes if it's a module-loader
+     if (lm->module && lm->sohandle && (lm->module->mode & EINIT_MOD_LOADER)) {
+      int (*scanfunc)(struct lmodule *) = (int (*)(struct lmodule *)) dlsym (lm->sohandle, "scanmodules");
+      if (scanfunc != NULL) {
+       scanfunc (mlist);
+      }
+      else bitch(BTCH_ERRNO + BTCH_DL);
+     }
+
      goto cleanup_continue;
     }
     lm = lm->next;
@@ -106,20 +122,25 @@ int mod_scanmodules ( void ) {
    }
    modinfo = (struct smodule *)dlsym (sohandle, "self");
    if (modinfo != NULL) {
-//    struct lmodule *new = mod_add (sohandle, NULL, NULL, NULL, NULL, NULL, NULL, modinfo);
     struct lmodule *new = mod_add (sohandle, modinfo);
-    if (new)
+    if (new) {
+//     fprintf (stderr, "einit-module-loader: module added: %s\n", tmp);
      new->source = estrdup(tmp);
+    }
    } else
     dlclose (sohandle);
 
+   cleanup_continue:
    free (tmp);
   }
   closedir (dir);
  } else {
   fputs ("couldn't open module directory\n", stderr);
+
+  pthread_mutex_unlock (&modules_update_mutex);
   return bitch(BTCH_ERRNO);
  }
+ pthread_mutex_unlock (&modules_update_mutex);
  return 1;
 }
 
@@ -160,7 +181,6 @@ int mod_freemodules ( void ) {
  return 1;
 }
 
-// struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module) {
 struct lmodule *mod_add (void *sohandle, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
@@ -176,12 +196,6 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
 
  nmod->sohandle = sohandle;
  nmod->module = module;
-/* nmod->param = param;
- nmod->enable = enable;
- nmod->disable = disable;
- nmod->reset = reset;
- nmod->reload = reload;
- nmod->cleanup = cleanup;*/
  pthread_mutex_init (&nmod->mutex, NULL);
  pthread_mutex_init (&nmod->imutex, NULL);
 
@@ -193,25 +207,6 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
    configfunc (nmod);
   }
 
-  if (check_configuration) {
-   char *bname = (module && module->rid) ? module->rid : "unidentified binary module";
-   configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "examine_configuration");
-   if (configfunc) {
-    fprintf (stderr, "%s:\n", bname);
-    uint32_t lerror = configfunc (nmod);
-
-    switch (lerror) {
-     case 0: fputs (" * no problems\n", stderr); break;
-     case 1: fputs (" * one problem\n", stderr); break;
-     default: fprintf (stderr, " * %i problems\n", lerror); break;
-    }
-
-    check_configuration += lerror;
-   } else {
-    fprintf (stderr, "%s: no examine_configuration() function.\n", bname);
-    check_configuration++;
-   }
-  }
 // look for any cleanup() functions
   if (!nmod->cleanup) {
    configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
@@ -620,7 +615,7 @@ void mod_event_handler(struct einit_event *event) {
 
 void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  notice (2, "should update modules now");
+//  notice (2, "should update modules now");
   mod_scanmodules();
  }
 }

@@ -74,7 +74,7 @@ int cfg_free () {
 int cfg_addnode (struct cfgnode *node) {
  if (!node || !node->id) return;
  struct uhash *cur = hconfiguration;
- char noop = 0;
+ char doop = 1;
 
  if (node->arbattrs) {
   uint32_t r = 0;
@@ -97,7 +97,7 @@ int cfg_addnode (struct cfgnode *node) {
 
     free (bsl);
 
-    noop = 1;
+    doop = 0;
 
     break;
    }
@@ -117,7 +117,7 @@ int cfg_addnode (struct cfgnode *node) {
     void *bsl = cur->luggage;
     ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
     cur->luggage = node->arbattrs;
-    free (bsl);
+    if (bsl) free (bsl);
 
     ((struct cfgnode *)cur->value)->nodetype    = node->nodetype;
     ((struct cfgnode *)cur->value)->mode        = node->mode;
@@ -125,20 +125,20 @@ int cfg_addnode (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->value       = node->value;
     bsl = (void *)((struct cfgnode *)cur->value)->svalue;
     ((struct cfgnode *)cur->value)->svalue      = node->svalue;
-    free (bsl);
+    if (bsl) free (bsl);
     ((struct cfgnode *)cur->value)->idattr      = node->idattr;
     bsl = (void *)((struct cfgnode *)cur->value)->path;
     ((struct cfgnode *)cur->value)->path        = node->path;
-    free (bsl);
+    if (bsl) free (bsl);
     bsl = (void *)((struct cfgnode *)cur->value)->source;
     ((struct cfgnode *)cur->value)->source      = node->source;
-    free (bsl);
+//    if (bsl) free (bsl);
     bsl = (void *)((struct cfgnode *)cur->value)->source_file;
     ((struct cfgnode *)cur->value)->source_file = node->source_file;
-    free (bsl);
+//    if (bsl) free (bsl);
 
-    noop = 1;
-    fprintf (stderr, "configuration: found match for %s\n", node->id);
+    doop = 0;
+//    fprintf (stderr, "configuration: found match for %s\n", node->id);
 
     break;
    }
@@ -146,7 +146,7 @@ int cfg_addnode (struct cfgnode *node) {
   }
  }
 
- if (!noop)
+ if (doop)
   hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
 }
 

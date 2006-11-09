@@ -65,27 +65,36 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
- char *s;
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  char *s;
 
- if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
-  fputs (" * configuration variable \"configuration-network-hostname\" not found.\n", stderr);
-  pr++;
- } else if (!strcmp ("localhost", s)) {
-  fputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", stderr);
-  pr++;
+  if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
+   fdputs (" * configuration variable \"configuration-network-hostname\" not found.\n", ev->integer);
+   ev->task++;
+  } else if (!strcmp ("localhost", s)) {
+   fdputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", ev->integer);
+   ev->task++;
+  }
+  if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
+   fdputs (" * configuration variable \"configuration-network-domainname\" not found.\n", ev->integer);
+   ev->task++;
+  } else if (!strcmp ("local", s)) {
+   fdputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", ev->integer);
+  }
+
+  ev->flag = 1;
  }
-
- if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
-  fputs (" * configuration variable \"domainname\" not found.\n", stderr);
-  pr++;
- } else if (!strcmp ("local", s)) {
-  fputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", stderr);
- }
-
- return pr;
 }
+
+int configure (struct lmodule *irr) {
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+}
+
+int cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+}
+
 
 int enable (void *pa, struct einit_event *status) {
  char *name;

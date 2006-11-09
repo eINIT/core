@@ -76,19 +76,19 @@ void synthesize (char *);
 char *synthesizer;
 int sev_threshold = 2;
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  if (!cfg_getnode("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
+   fdputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", ev->integer);
+   ev->task++;
+  }
+  if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
+   fdputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", ev->integer);
+   ev->task++;
+  }
 
- if (!cfg_getstring("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
-  fputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", stderr);
-  pr++;
+  ev->flag = 1;
  }
- if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
-  fputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", stderr);
-  pr++;
- }
-
- return pr;
 }
 
 int configure (struct lmodule *this) {
@@ -102,10 +102,12 @@ int configure (struct lmodule *this) {
   sev_threshold = node->value;
 
  self_l = this;
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
  pexec_cleanup(this);
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int enable (void *pa, struct einit_event *status) {

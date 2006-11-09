@@ -105,8 +105,6 @@ pthread_attr_t thread_attribute_detached;
 
 struct cfgnode *cmode, *amode;
 
-uint32_t check_configuration;
-
 // free configuration
 int cfg_free ();
 

@@ -101,12 +101,6 @@ void find_network_interfaces_sys (struct network_control_block *cb) {
  }
 }
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
-
- return pr;
-}
-
 int configure (struct lmodule *irr) {
  function_register ("find-network-interfaces-proc", 1, (void *)find_network_interfaces_proc);
  function_register ("find-network-interfaces-sys", 1, (void *)find_network_interfaces_sys);

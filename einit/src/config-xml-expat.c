@@ -201,8 +201,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       fprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
      free (tx);
     }
-
-    if (check_configuration) check_configuration++;
    }
    XML_ParserFree (par);
   } else {
@@ -224,10 +222,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      includefile = strcat (includefile, confpath);
      includefile = strcat (includefile, node->svalue);
      recursion++;
-
-     if (check_configuration) {
-      printf ("einit_config_xml_expat_parse_configuration_file(): including file \"%s\"\n", includefile);
-     }
 
      einit_config_xml_expat_parse_configuration_file (includefile);
      recursion--;
@@ -274,10 +268,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       }
      }
 
-     if (check_configuration) {
-      printf ("einit_config_xml_expat_parse_configuration_file(): including all files in \"%s\"\n", includedir);
-     }
-
      dir = opendir (includedir);
      if (dir != NULL) {
       char *includefile = (char *)emalloc (bdlen);
@@ -292,9 +282,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
        if (!stat (includefile, &statres) && !S_ISDIR(statres.st_mode)) {
         recursion++;
-        if (check_configuration) {
-         printf ("einit_config_xml_expat_parse_configuration_file(): including file \"%s\"\n", includefile);
-        }
         einit_config_xml_expat_parse_configuration_file (includefile);
         recursion--;
        }
@@ -302,7 +289,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       closedir (dir);
      } else {
       printf ("einit_config_xml_expat_parse_configuration_file(): cannot open directory \"%s\": %s\n", includedir, strerror(errno));
-      if (check_configuration) check_configuration++;
      }
 
      free (includedir);

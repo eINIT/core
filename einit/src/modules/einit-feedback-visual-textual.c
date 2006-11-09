@@ -126,23 +126,23 @@ pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
 char enableansicodes = 1;
 uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
+   fdputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", ev->integer);
+   ev->task++;
+  }
+  if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
+   fdputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", ev->integer);
+   ev->task++;
+  }
+  if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
+   fdputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", ev->integer);
+   ev->task++;
+  }
 
- if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-  fputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", stderr);
-  pr++;
+  ev->flag = 1;
  }
- if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
-  fputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", stderr);
-  pr++;
- }
- if (!cfg_getnode("configuration-feedback-visual-shutdown-failure-timeout", NULL)) {
-  fputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", stderr);
-  pr++;
- }
-
- return pr;
 }
 
 int configure (struct lmodule *this) {
@@ -154,9 +154,11 @@ int configure (struct lmodule *this) {
   shutdownfailuretimeout = node->value;
 
  me = this;
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  if (plans) {
   pthread_mutex_lock (&plansmutex);
   free (plans);

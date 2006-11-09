@@ -152,12 +152,6 @@ int configure (struct lmodule *);
 int cleanup (struct lmodule *);
 
 /* function definitions */
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
-
- return pr;
-}
-
 unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  struct uhash *element = mcb->blockdevices;
  struct ext2_super_block ext2_sb;

@@ -69,7 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< shutdown going to happen after this event */
 #define EVE_REBOOT_SCHEDULED		0x00001203
 /*!< reboot scheduled */
-#define EVE_REBOOT_IMMINENT			0x00001204
+#define EVE_REBOOT_IMMINENT		0x00001204
 /*!< reboot going to happen after this event */
 
 

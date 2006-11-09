@@ -66,15 +66,23 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
+   fdputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", ev->integer);
+   ev->task++;
+  }
 
- if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
-  fputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", stderr);
-  pr++;
+  ev->flag = 1;
  }
+}
 
- return pr;
+int configure (struct lmodule *irr) {
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+}
+
+int cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int enable (void *pa, struct einit_event *status) {

@@ -202,93 +202,9 @@ int cleanup (struct lmodule *);
 int enable (enum mounttask, struct einit_event *);
 int disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
+void einit_event_handler (struct einit_event *);
 
 /* function definitions */
-
-/* error checking... */
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
- char **tmpset, *tmpstring;
-
- if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
-  fputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", stderr);
-  pr++;
- } else {
-  tmpset = str2set(':', tmpstring);
-
-  if (inset ((void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
-   if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
-    fputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", stderr);
-    pr++;
-   }
-   if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
-    fputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", stderr);
-    pr++;
-   }
-  }
-
-  if (!inset ((void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
-   fputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", stderr);
-   pr++;
-  }
-
-  if (inset ((void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
-   fputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", stderr);
-   pr++;
-  }
-
-  free (tmpset);
- }
-
- if (mcb.update_options & EVENT_UPDATE_METADATA) {
-  if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
-   fputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", stderr);
-   pr++;
-  }
- } else {
-  fputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", stderr);
- }
-
- if (!mcb.fstab) {
-  fputs (" * your fstab is empty.\n", stderr);
-  pr++;
- } else {
-  struct uhash *thash, *fhash;
-  if (!(thash = hashfind (mcb.fstab, "/"))) {
-   fputs (" * your fstab does not contain an entry for \"/\".\n", stderr);
-   pr++;
-  } else if (!(((struct fstab_entry *)(thash->value))->device)) {
-   fputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", stderr);
-   pr++;
-  } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(thash->value))->device))) {
-   fputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", stderr);
-   pr++;
-  }
-
-  thash = mcb.fstab;
-  while (thash) {
-   struct stat stbuf;
-
-   if (!(((struct fstab_entry *)(thash->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(thash->value))->fs))) {
-    fprintf (stderr, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", thash->key);
-    pr++;
-   }
-
-   if (!(((struct fstab_entry *)(thash->value))->device)) { 
-    if ((((struct fstab_entry *)(thash->value))->fs) && (fhash = hashfind (mcb.filesystems, (((struct fstab_entry *)(thash->value))->fs))) && !((uintptr_t)fhash->value & FS_CAPA_VOLATILE)) {
-     fprintf (stderr, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", thash->key);
-     pr++;
-    }
-   } else if (stat ((((struct fstab_entry *)(thash->value))->device), &stbuf) == -1) {
-    fprintf (stderr, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(thash->value))->device), thash->key, strerror (errno));
-    pr++;
-   }
-   thash = hashnext (thash);
-  }
- }
-
- return pr;
-}
 
 /* the actual module */
 
@@ -300,6 +216,7 @@ int configure (struct lmodule *this) {
 
  event_listen (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
  event_listen (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
 
  read_filesystem_flags_from_configuration (NULL);
 
@@ -386,6 +303,7 @@ int cleanup (struct lmodule *this) {
  function_unregister ("read-mtab-legacy", 1, (void *)read_mtab);
  function_unregister ("fs-mount", 1, (void *)mountwrapper);
 
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
  event_ignore (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
 
@@ -808,33 +726,52 @@ void update (enum update_task task) {
 }
 
 int scanmodules (struct lmodule *modchain) {
- struct lmodule *new;
+ struct lmodule *new,
+                *lm = modchain;
+ char doop = 1;
 
- if (new = mod_add (NULL, &sm_root)) {
-  new->source = new->module->rid;
-  new->enable = (int (*)(void *, struct einit_event *))enable;
-  new->disable = (int (*)(void *, struct einit_event *))disable;
-  new->param = (void *)MOUNT_ROOT;
- }
- if (new = mod_add (NULL, &sm_mountlocal)) {
-  new->source = new->module->rid;
-  new->enable = (int (*)(void *, struct einit_event *))enable;
-  new->disable = (int (*)(void *, struct einit_event *))disable;
-  new->param = (void *)MOUNT_LOCAL;
- }
- if (new = mod_add (NULL, &sm_mountremote)) {
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_root.rid)) { doop = 0; break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_root))) {
+   new->source = new->module->rid;
+   new->enable = (int (*)(void *, struct einit_event *))enable;
+   new->disable = (int (*)(void *, struct einit_event *))disable;
+   new->param = (void *)MOUNT_ROOT;
+  }
+
+ doop = 1;
+ lm = modchain;
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_mountlocal.rid)) { doop = 0; break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_mountlocal))) {
+   new->source = new->module->rid;
+   new->enable = (int (*)(void *, struct einit_event *))enable;
+   new->disable = (int (*)(void *, struct einit_event *))disable;
+   new->param = (void *)MOUNT_LOCAL;
+  }
+
+ doop = 1;
+ lm = modchain;
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_mountremote.rid)) { doop = 0; break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_mountremote))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
   new->disable = (int (*)(void *, struct einit_event *))disable;
   new->param = (void *)MOUNT_REMOTE;
  }
- if (new = mod_add (NULL, &sm_system)) {
+
+ doop = 1;
+ lm = modchain;
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_system.rid)) { doop = 0; break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_system))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
   new->disable = (int (*)(void *, struct einit_event *))disable;
   new->param = (void *)MOUNT_SYSTEM;
  }
- if (new = mod_add (NULL, &sm_critical)) {
+
+ doop = 1;
+ lm = modchain;
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_critical.rid)) { doop = 0; break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_critical))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
   new->disable = (int (*)(void *, struct einit_event *))disable;
@@ -1248,55 +1185,146 @@ void add_filesystem (char *name, char *options) {
 }
 
 /* all the current IPC commands will be made #DEBUG-only, but we'll keep 'em for now */
-void mount_ipc_handler(struct einit_event *event) {
- if (!event || !event->set) return;
- char **argv = (char **) event->set;
- if (argv[0] && argv[1] && !strcmp (argv[0], "mount")) {
-  if (!strcmp (argv[1], "ls_fstab")) {
-   char buffer[1024];
-   struct uhash *cur = mcb.fstab;
-   struct fstab_entry *val = NULL;
+void mount_ipc_handler(struct einit_event *ev) {
+ if (!ev || !ev->set) return;
+ char **argv = (char **) ev->set;
+ if (argv[0] && argv[1]) {
+  if (!strcmp (argv[0], "list")) {
+   if (!strcmp (argv[1], "fstab")) {
+    char buffer[1024];
+    struct uhash *cur = mcb.fstab;
+    struct fstab_entry *val = NULL;
 
-   if (!event->flag) event->flag = 1;
+    ev->flag = 1;
 
-   while (cur) {
-    val = (struct fstab_entry *) cur->value;
-    if (val) {
-     snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status);
-     write (event->integer, buffer, strlen (buffer));
+    while (cur) {
+     val = (struct fstab_entry *) cur->value;
+     if (val) {
+      snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status);
+      fdputs (buffer, ev->integer);
+     }
+     cur = hashnext (cur);
     }
-    cur = hashnext (cur);
-   }
-  } else if (!strcmp (argv[1], "ls_blockdev")) {
-   char buffer[1024];
-   struct uhash *cur = mcb.blockdevices;
-   struct bd_info *val = NULL;
+   } else if (!strcmp (argv[1], "block-devices")) {
+    char buffer[1024];
+    struct uhash *cur = mcb.blockdevices;
+    struct bd_info *val = NULL;
 
-   if (!event->flag) event->flag = 1;
+    ev->flag = 1;
 
-   while (cur) {
-    val = (struct bd_info *) cur->value;
-    if (val) {
-     snprintf (buffer, 1023, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status);
-     write (event->integer, buffer, strlen (buffer));
+    while (cur) {
+     val = (struct bd_info *) cur->value;
+     if (val) {
+      snprintf (buffer, 1023, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status);
+      fdputs (buffer, ev->integer);
+     }
+     cur = hashnext (cur);
     }
-    cur = hashnext (cur);
-   }
-  } else if (!strcmp (argv[1], "ls_mtab")) {
-   char buffer[1024];
-   struct uhash *cur = mcb.mtab;
-   struct legacy_fstab_entry *val = NULL;
+   } else if (!strcmp (argv[1], "mtab")) {
+    char buffer[1024];
+    struct uhash *cur = mcb.mtab;
+    struct legacy_fstab_entry *val = NULL;
 
-   if (!event->flag) event->flag = 1;
+    ev->flag = 1;
 
-   while (cur) {
-    val = (struct legacy_fstab_entry *) cur->value;
-    if (val) {
-     snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;mntops=%s;freq=%i;passno=%i]\n", val->fs_file, val->fs_spec, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
-     write (event->integer, buffer, strlen (buffer));
+    while (cur) {
+     val = (struct legacy_fstab_entry *) cur->value;
+     if (val) {
+      snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;mntops=%s;freq=%i;passno=%i]\n", val->fs_file, val->fs_spec, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
+      fdputs (buffer, ev->integer);
+     }
+     cur = hashnext (cur);
     }
-    cur = hashnext (cur);
    }
+  } else if (!strcmp (argv[0], "examine") && !strcmp (argv[1], "configuration")) {
+/* error checking... */
+   char **tmpset, *tmpstring;
+
+   ev->flag = 1;
+
+   if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
+    fdputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", ev->integer);
+    ev->task++;
+   } else {
+    tmpset = str2set(':', tmpstring);
+
+    if (inset ((void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
+     if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
+      fdputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", ev->integer);
+      ev->task++;
+     }
+     if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
+      fdputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", ev->integer);
+      ev->task++;
+     }
+    }
+
+    if (!inset ((void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
+     fdputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", ev->integer);
+     ev->task++;
+    }
+
+    if (inset ((void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
+     fdputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", ev->integer);
+     ev->task++;
+    }
+
+    free (tmpset);
+   }
+
+   if (mcb.update_options & EVENT_UPDATE_METADATA) {
+    if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
+     fdputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", ev->integer);
+     ev->task++;
+    }
+   } else {
+    fdputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", ev->integer);
+   }
+
+   if (!mcb.fstab) {
+    fdputs (" * your fstab is empty.\n", ev->integer);
+    ev->task++;
+   } else {
+    struct uhash *thash, *fhash;
+    if (!(thash = hashfind (mcb.fstab, "/"))) {
+     fdputs (" * your fstab does not contain an entry for \"/\".\n", ev->integer);
+     ev->task++;
+    } else if (!(((struct fstab_entry *)(thash->value))->device)) {
+     fdputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", ev->integer);
+     ev->task++;
+    } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(thash->value))->device))) {
+     fdputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", ev->integer);
+     ev->task++;
+    }
+
+    thash = mcb.fstab;
+    while (thash) {
+     struct stat stbuf;
+
+     if (!(((struct fstab_entry *)(thash->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(thash->value))->fs))) {
+      char tmpstr[1024];
+      snprintf (tmpstr, 1024, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", thash->key);
+      fdputs (tmpstr, ev->integer);
+      ev->task++;
+     }
+
+     if (!(((struct fstab_entry *)(thash->value))->device)) { 
+      if ((((struct fstab_entry *)(thash->value))->fs) && (fhash = hashfind (mcb.filesystems, (((struct fstab_entry *)(thash->value))->fs))) && !((uintptr_t)fhash->value & FS_CAPA_VOLATILE)) {
+       char tmpstr[1024];
+       snprintf (tmpstr, 1024, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", thash->key);
+       fdputs (tmpstr, ev->integer);
+       ev->task++;
+      }
+     } else if (stat ((((struct fstab_entry *)(thash->value))->device), &stbuf) == -1) {
+      char tmpstr[1024];
+      snprintf (tmpstr, 1024, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(thash->value))->device), thash->key, strerror (errno));
+      fdputs (tmpstr, ev->integer);
+      ev->task++;
+     }
+     thash = hashnext (thash);
+    }
+   }
+
   }
  }
 }
@@ -1522,4 +1550,12 @@ int disable (enum mounttask p, struct einit_event *status) {
  }
 
  return STATUS_OK;
+}
+
+void einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+//  notice (6, "einit-mount: updating fstab");
+//  fputs ("einit-mount: updating fstab\n", stdout);
+  update_fstab();
+ }
 }

@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/bitch.h>
 #include <einit/scheduler.h>
+#include <einit/event.h>
 #include <string.h>
 
 #include <signal.h>
@@ -85,24 +86,27 @@ char **tty_local_environment = NULL;
 char do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  if (!cfg_getnode("configuration-system-shell", NULL)) {
+   fdputs (" * configuration variable \"configuration-system-shell\" not found.\n", ev->integer);
+   ev->task++;
+  }
 
- if (!cfg_getnode("configuration-system-shell", NULL)) {
-  fputs (" * configuration variable \"configuration-system-shell\" not found.\n", stderr);
-  pr++;
+  ev->flag = 1;
  }
-
- return pr;
 }
 
 int configure (struct lmodule *this) {
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
   do_utmp = utmpnode->flag;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 void *watcher (struct spidcb *spid) {

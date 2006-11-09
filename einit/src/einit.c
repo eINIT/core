@@ -65,7 +65,6 @@ int ipc_wait ();
 int cleanup ();
 
 pid_t einit_sub = 0;
-uint32_t check_configuration = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 
@@ -159,8 +158,7 @@ int main(int argc, char **argv) {
      return 0;
     case '-':
      if (!strcmp(argv[i], "--check-configuration")) {
-      if (pid != 1)
-       check_configuration = 1;
+      ipccommands = (char **)setadd ((void **)ipccommands, "examine configuration", SET_TYPE_STRING);
      } else if (!strcmp(argv[i], "--no-feedback-switch"))
       einit_do_feedback_switch = 0;
      else if (!strcmp(argv[i], "--feedback-switch"))
@@ -271,8 +269,8 @@ int main(int argc, char **argv) {
 
   evstaticdestroy(cev);
 
-  mod_scanmodules ();
-//  cleanup(); return 0;
+// this is now obsolete:
+//  mod_scanmodules ();
   if (ipccommands) {
    uint32_t rx = 0;
    for (; ipccommands[rx]; rx++) {
@@ -326,7 +324,7 @@ int main(int argc, char **argv) {
 
     evdestroy (event);
    }
-  } else if (!check_configuration) {
+  } else {
    uint32_t e = 0;
    sched_init ();
 
@@ -340,20 +338,6 @@ int main(int argc, char **argv) {
 
    printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
    sched_run (NULL);
-  } else {
-   uint32_t errors = check_configuration -1;
-   switch (errors) {
-    case 0:
-     puts ("\neINIT: no problems reported."); break;
-    case 1:
-     puts ("\neINIT: one problem reported."); break;
-    default:
-     printf ("\neINIT: %i problems reported.\n", errors); break;
-   }
-
-   cleanup();
-
-   return errors; // return number of (potential) errors
   }
 
 #ifdef SANDBOX

@@ -64,12 +64,6 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
-int examine_configuration (struct lmodule *irr) {
- int pr = 0;
-
- return pr;
-}
-
 int enable (void *pa, struct einit_event *status) {
  FILE *ufile;
  struct cfgnode *utmp_cfg = cfg_findnode ("configuration-compatibility-sysv-forge-utmp", 0, NULL);
