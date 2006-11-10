@@ -157,8 +157,8 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
 
 int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  static char recursion = 0;
- int cfgfd, e, blen, cfgplen;
- char * buf, * data;
+ int e, blen, cfgplen;
+ char * data;
  struct uhash *hnode;
  ssize_t rn;
  struct cfgnode *node = NULL, *last = NULL;
@@ -172,23 +172,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  };
 
  if (!configfile) return 0;
- cfgfd = open (configfile, O_RDONLY);
- if (cfgfd != -1) {
-  buf = emalloc (BUFFERSIZE*sizeof(char));
-  blen = 0;
-  do {
-   buf = erealloc (buf, blen + BUFFERSIZE);
-   if (buf == NULL) return bitch(BTCH_ERRNO);
-   rn = read (cfgfd, (char *)(buf + blen), BUFFERSIZE);
-   blen = blen + rn;
-  } while (rn > 0);
-  close (cfgfd);
-  data = erealloc (buf, blen);
+ if (data = readfile (configfile)) {
+  blen = strlen(data)+1;
   par = XML_ParserCreate (NULL);
   XML_SetUserData (par, (void *)&expatuserdata);
   if (par != NULL) {
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
-   *(data+blen-1) = 0;
    if (XML_Parse (par, data, blen-1, 1) == XML_STATUS_ERROR) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);

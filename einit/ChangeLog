@@ -2,6 +2,8 @@
  * parsing initng .ii files could be handy...
  * pattern matching for loading .so-modules has been implemented
  * new environment code added
+ * compatibility-sysv-gentoo: module to include gentoo's profile.env
+   (more uses for this module expected to come soon)
 
 2006/11/09: mdeininger
  * live configuration updating (including pseudo-modules)

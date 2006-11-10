@@ -4,7 +4,9 @@
   <settings>
    <module>
     <path s="/lib/einit" />
-    <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" />
+<!-- use this to disable the compatibility modules -->
+<!--    <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
+    <load pattern-allow=".*\.so" />
    </module>
    <configuration-path s="/etc/einit/" />
   </settings>
@@ -113,16 +115,19 @@
      </gentoo>
     </distribution>
    </sysv>
+
+<!-- not yet implemented
    <initng>
     <i-files s="/etc/initng" />
     <transformations>
     </transformations>
    </initng>
+
    <upstart />
    <jinit />
    <cinit />
    <launchd />
-   <bsd />
+   <bsd /> -->
   </compatibility>
 
 <!-- mount settings -->

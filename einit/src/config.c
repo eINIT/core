@@ -124,9 +124,7 @@ int cfg_addnode (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->mode        = node->mode;
     ((struct cfgnode *)cur->value)->flag        = node->flag;
     ((struct cfgnode *)cur->value)->value       = node->value;
-    bsl = (void *)((struct cfgnode *)cur->value)->svalue;
     ((struct cfgnode *)cur->value)->svalue      = node->svalue;
-    if (bsl) free (bsl);
     ((struct cfgnode *)cur->value)->idattr      = node->idattr;
     bsl = (void *)((struct cfgnode *)cur->value)->path;
     ((struct cfgnode *)cur->value)->path        = node->path;

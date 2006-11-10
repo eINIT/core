@@ -40,6 +40,9 @@ else
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
+# this is on by default for now
+PMODULES="compatibility"
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};

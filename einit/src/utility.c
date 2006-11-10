@@ -48,6 +48,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
@@ -478,6 +481,32 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  free (newitem);
 
  return ret;
+}
+
+char *readfile (char *filename) {
+ int fd = 0, rn = 0;
+ void *buf = NULL;
+ char *data = NULL;
+ uint32_t blen = 0;
+
+ if (!filename) return NULL;
+ fd = open (filename, O_RDONLY);
+
+ if (fd != -1) {
+  buf = emalloc (BUFFERSIZE*sizeof(char));
+  blen = 0;
+  do {
+   buf = erealloc (buf, blen + BUFFERSIZE);
+   if (buf == NULL) return NULL;
+   rn = read (fd, (char *)(buf + blen), BUFFERSIZE);
+   blen = blen + rn;
+  } while (rn > 0);
+  close (fd);
+  data = erealloc (buf, blen);
+  *(data+blen-1) = 0;
+ }
+
+ return data;
 }
 
 /* hashes */

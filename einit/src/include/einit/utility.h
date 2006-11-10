@@ -195,6 +195,8 @@ char **strsetdeldupes (char **);
 */
 char **straddtoenviron (char **environment, char *key, char *value);
 
+char *readfile (char *filename);
+
 /*!\}*/
 
 /*!\ingroup utilityfunctionshashes
