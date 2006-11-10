@@ -51,6 +51,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <errno.h>
 
+#ifdef POSIXREGEX
+#include <regex.h>
+#endif
+
 struct lmodule *mlist = NULL;
 
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -66,6 +70,12 @@ int mod_scanmodules ( void ) {
  int mplen;
  void *sohandle;
  struct lmodule *cmod = NULL, *nmod;
+#ifdef POSIXREGEX
+ unsigned char freeallow = 0, freedisallow = 0;
+ regex_t allowpattern, disallowpattern;
+ unsigned char haveallowpattern = 0, havedisallowpattern = 0;
+ char *spattern = NULL;
+#endif
 
  pthread_mutex_lock (&modules_update_mutex);
 
@@ -79,11 +89,44 @@ int mod_scanmodules ( void ) {
  if (modulepath[0] == '/') modulepath++;
 #endif
 
+#ifdef POSIXREGEX
+ if (spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL)) {
+  uint32_t err;
+
+  if (!(err = regcomp (&allowpattern, spattern, REG_EXTENDED)))
+   haveallowpattern = 1;
+  else {
+   char errorcode [1024];
+   regerror (err, &allowpattern, errorcode, 1024);
+   fputs (errorcode, stderr);
+  }
+ }
+
+ if (spattern = cfg_getstring ("core-settings-module-load/pattern-disallow", NULL)) {
+  uint32_t err;
+
+  if (!(err = regcomp (&disallowpattern, spattern, REG_EXTENDED)))
+   havedisallowpattern = 1;
+  else {
+   char errorcode [1024];
+   regerror (err, &disallowpattern, errorcode, 1024);
+   fputs (errorcode, stderr);
+  }
+ }
+#endif
+
  mplen = strlen (modulepath) +1;
  dir = opendir (modulepath);
  if (dir != NULL) {
   while (entry = readdir (dir)) {
+// if we have posix regular expressions, match them against the filename, if not, exclude '.'-files
+#ifdef POSIXREGEX
+   if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
+   if (havedisallowpattern && !regexec (&disallowpattern, entry->d_name, 0, NULL, 0)) continue;
+#else
    if (entry->d_name[0] == '.') continue;
+#endif
+
    tmp = (char *)emalloc ((mplen + strlen (entry->d_name))*sizeof (char));
    struct stat sbuf;
    struct smodule *modinfo;
@@ -137,9 +180,20 @@ int mod_scanmodules ( void ) {
  } else {
   fputs ("couldn't open module directory\n", stderr);
 
+#ifdef POSIXREGEX
+  if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
+  if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
+#endif
+
   pthread_mutex_unlock (&modules_update_mutex);
   return bitch(BTCH_ERRNO);
  }
+
+#ifdef POSIXREGEX
+ if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
+ if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
+#endif
+
  pthread_mutex_unlock (&modules_update_mutex);
  return 1;
 }

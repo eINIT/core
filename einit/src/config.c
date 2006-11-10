@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 
 struct uhash *hconfiguration = NULL;
+char **einit_global_environment = NULL;
 
 int cfg_free () {
  struct uhash *cur = hconfiguration;
@@ -250,4 +251,24 @@ char *cfg_getpath (char *id) {
   return tmpsvpath;
  }
  return svpath->svalue;
+}
+
+void einit_config_event_handler (struct einit_event *ev) {
+/* if ((ev->type == EVE_UPDATE_CONFIGURATION) && ev->string) {
+
+ } else*/ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+// update global environment here
+  char **env = einit_global_environment;
+  einit_global_environment = NULL;
+  struct cfgnode *node = NULL;
+  free (env);
+
+  env = NULL;
+  while (node = cfg_findnode ("configuration-environment-global", 0, node)) {
+   if (node->idattr && node->svalue) {
+    env = straddtoenviron (env, node->idattr, node->svalue);
+   }
+  }
+  einit_global_environment = env;
+ }
 }

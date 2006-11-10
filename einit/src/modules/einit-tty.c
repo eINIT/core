@@ -82,7 +82,6 @@ const struct smodule self = {
 };
 
 struct ttyst *ttys = NULL;
-char **tty_local_environment = NULL;
 char do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -146,7 +145,7 @@ void *watcher (struct spidcb *spid) {
 int texec (struct cfgnode *node) {
  int i = 0, restart = 0;
  char *device, *command;
- char **environment = (char **)setdup((void **)tty_local_environment, SET_TYPE_STRING);
+ char **environment = (char **)setdup((void **)einit_global_environment, SET_TYPE_STRING);
  char **variables = NULL;
 
  for (; node->arbattrs[i]; i+=2) {
@@ -222,16 +221,6 @@ int enable (void *pa, struct einit_event *status) {
  }
 
  status->string = "creating environment";
- if (tty_local_environment) {
-  free (tty_local_environment);
-  tty_local_environment = NULL;
- }
- if ((node = cfg_getnode("configuration-system-shell", NULL)) && node->arbattrs) {
-  for (i = 0; node->arbattrs[i]; i+=2) {
-   if (!strcmp (node->arbattrs[i], "s"))
-    tty_local_environment = straddtoenviron(tty_local_environment, node->arbattrs[i], node->arbattrs[i+1]);
-  }
- }
 
  status->string = "commencing";
  status_update (status);

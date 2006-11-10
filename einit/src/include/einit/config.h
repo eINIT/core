@@ -105,6 +105,8 @@ pthread_attr_t thread_attribute_detached;
 
 struct cfgnode *cmode, *amode;
 
+char **einit_global_environment;
+
 // free configuration
 int cfg_free ();
 

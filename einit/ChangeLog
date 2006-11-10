@@ -1,4 +1,9 @@
-2006/11/08: mdeininger
+2006/11/10: mdeininger
+ * parsing initng .ii files could be handy...
+ * pattern matching for loading .so-modules has been implemented
+ * new environment code added
+
+2006/11/09: mdeininger
  * live configuration updating (including pseudo-modules)
  * --scan-configuration has been reworked to be an ipc-command
    ("examine configuration")
