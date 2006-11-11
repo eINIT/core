@@ -194,7 +194,7 @@ void sh_add_environ_callback (char **data, uint8_t status) {
 void einit_event_handler (struct einit_event *ev) {
  if ((ev->type == EVE_UPDATE_CONFIGURATION) && ev->string) {
   char *cs = cfg_getstring("configuration-compatibility-sysv-distribution", NULL);
-  if (cs && !strcmp("auto", cs) || !strcmp("gentoo", cs)) {
+  if (cs && !strcmp("auto", cs) && !strcmp("gentoo", cs)) {
    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-parse-env.d", NULL);
    if (node && node->flag) {
     char *data = readfile ("/etc/profile.env");

@@ -33,6 +33,7 @@
     <usb s="" />
     <bluetooth s="" />
     <hid s="" />
+    <sound s="" />
     <sensors s="i2c-isa eeprom w83627ehf" />
     <dvb s="b2c2-flexcop-pci" />
     <ethernet s="uli526x" />
@@ -75,6 +76,7 @@
  <services>
   <prefer>
    <xdm s="daemon-kdm:daemon-entrance" />
+   <kern-alsa s="shell-kern-audio-alsa" />
   </prefer>
 
   <alias>

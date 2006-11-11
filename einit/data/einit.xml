@@ -390,6 +390,18 @@
       /bin/true"
      variables="configuration-command-rmmod" />
 
+<!-- slightly modified this definition of haader's -->
+    <shell id="shell-kern-audio"
+     name="Kernel Modules (Sound, Manual)"
+     provides="kern-sound:kern-alsa"
+     requires="mount/system"
+     enable="for x in ${kernel_modules_sound};
+       do echo $x; modprobe $x;
+       done; /bin/true"
+     disable="/bin/true"
+     variables="kernel_modules_sound" />
+
+
     <shell id="shell-kern-video-dvb"
      name="Kernel Modules (DVB)"
      provides="kern-dvb"
@@ -647,8 +659,34 @@
       restart="yes"
       variables="configuration-bluetooth-hidd/options" />
 
+<!-- creds to lloeki for the next three :) -->
+     <daemon id="daemon-lighttpd"
+      name="HTTPd (Lighty)"
+      provides="httpd"
+      requires="mount/local:net-lo"
+      command="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf"
+      restart="yes" />
+
+     <daemon id="daemon-vixie-cron"
+      name="Cron (Vixie)"
+      provides="cron"
+      requires="mount/local:net-lo"
+      command="/usr/sbin/cron -n"
+      restart="yes" />
+
+     <daemon id="daemon-mysqld"
+      name="Database (MySQL)"
+      provides="mysqld"
+      requires="mount/local:net-lo"
+      command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
+      restart="yes" />
+
    </module>
   </virtual>
+
+  <prefer>
+   <kern-alsa s="shell-kern-audio-alsa" />
+  </prefer>
  </services>
 
  <mode id="feedback">
