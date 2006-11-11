@@ -512,7 +512,7 @@ char *readfile (char *filename) {
 /* hashes */
 
 struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen, void *luggage) {
- struct uhash *n;
+ struct uhash *n, *rootnode = (hash ? *(hash->root) : NULL);
  struct uhash *c = hash;
  uint32_t hklen;
 
@@ -531,8 +531,6 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
   if (vlen == 0)
    vlen = strlen (value)+1;
 
-//  printf ("new hash-node: key=%s, vlen=%i\n", key, vlen);
-
   n = ecalloc (1, sizeof (struct uhash) + hklen + vlen);
   memcpy ((((char *)n) + sizeof (struct uhash)), key, hklen);
   memcpy ((((char *)n) + sizeof (struct uhash) + hklen), value, vlen);
@@ -543,24 +541,39 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
 
  n->luggage = luggage;
 
-/* if (!hash)
-  hash = n;
- else {
-  while (c->next) {
-   if (c->key && !strcmp (key, c->key) && c->value == value) {
-    free (n);
-    return hash;
-   }
-   c = c->next;
-  }
-  if (c->key && !strcmp (key, c->key) && c->value == value) {
-   free (n);
-   return hash;
-  }
-  c->next = n;
- }*/
  n->next = hash;
  hash = n;
+
+#if 0
+
+ if (!rootnode) {
+  hash->root = emalloc (sizeof(struct uhash *));
+  *(hash->root) = hash;
+ } else {
+  struct uhash *parent = rootnode, *current = rootnode;
+  uint32_t e = 0;
+
+/*  for (; key[e]; e++) {
+   if (current) {
+    if (key[e] < current->key[e]) {
+     parent = current;
+     current = current->left;
+    } else {
+     parent = current;
+     current = current->right;
+    }
+   } else {
+    if (key[e] < parent->key[e])
+     parent->left = n;
+    else
+     parent->right = n;
+
+    return hash;
+//    break;
+   }
+  }*/
+ }
+#endif
 
  return hash;
 }

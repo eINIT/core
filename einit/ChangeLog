@@ -1,6 +1,7 @@
 2006/11/11: mdeininger
  * that one segfault (it was in the gentoo-compatibility module)
- * incorporated some modules haader wrote quite a while ago (so~rry!)
+ * incorporated some modules haader and lloeki wrote some time ago (so~rry!)
+ * need to implement BST hashes
 
 [2006/11/10: mdeininger: release, Version 0.12]
 

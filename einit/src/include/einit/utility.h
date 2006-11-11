@@ -71,10 +71,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * key is always a string, the value can be any pointer.
 */
 struct uhash {
- char *key;          /*!< the key (perl-style; think of it as a variable-name) */
- void *value;        /*!< the value associated with the key */
- void *luggage;      /*!< a pointer to an area of memory that is references by the value (will be free()d) */
- struct uhash *next; /*!< next element */
+ char *key;           /*!< the key (perl-style; think of it as a variable-name) */
+ void *value;         /*!< the value associated with the key */
+ void *luggage;       /*!< a pointer to an area of memory that is references by the value (will be free()d) */
+ struct uhash *next;  /*!< next element (for sequential tree traversal) */
+
+ struct uhash **root; /*!< double-pointer to the root-element */
+ struct uhash *left;  /*!< left element */
+ struct uhash *right; /*!< right element */
 };
 
 /*!\brief Combine \b set1 and \b set2.

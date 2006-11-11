@@ -681,6 +681,13 @@
       command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
       restart="yes" />
 
+<!-- w00t haader! :) -->
+     <daemon id="daemon-mpd"
+      name="Music Player Daemon"
+      provides="mpd"
+      requires="mount/local"
+      command="/usr/bin/mpd --no-create-db --no-daemon"
+      restart="yes" />
    </module>
   </virtual>
 
