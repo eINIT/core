@@ -87,7 +87,8 @@ int cfg_addnode (struct cfgnode *node) {
  if (node->nodetype & EI_NODETYPE_MODE) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
   only the first one would be used anyway. */
-  while (cur = hashfind (cur, node->id)) {
+  cur = hashfind (cur, node->id, HASH_FIND_FIRST);
+  while (cur) {
    if (cur->value && !(((struct cfgnode *)cur->value)->nodetype ^ EI_NODETYPE_MODE)) {
 // this means we found something that looks like it
     void *bsl = cur->luggage;
@@ -102,13 +103,15 @@ int cfg_addnode (struct cfgnode *node) {
 
     break;
    }
-   cur = hashnext (cur);
+//   cur = hashnext (cur);
+   cur = hashfind (cur, node->id, HASH_FIND_NEXT);
   }
  } else {
 /* look for other definitions that are exactly the same, only marginally different or that sport a
    matching id="" attribute */
 
-  while (cur = hashfind (cur, node->id)) {
+  cur = hashfind (cur, node->id, HASH_FIND_FIRST);
+  while (cur) {
 // this means we found a node wit the same path
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
        !strcmp (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
@@ -141,7 +144,8 @@ int cfg_addnode (struct cfgnode *node) {
 
     break;
    }
-   cur = hashnext (cur);
+//   cur = hashnext (cur);
+   cur = hashfind (cur, node->id, HASH_FIND_NEXT);
   }
  }
 
@@ -154,17 +158,27 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  if (base) {
   while (cur) {
    if (cur->value == base) {
-    cur = hashnext (cur);
+//    cur = hashnext (cur);
+    cur = hashfind (cur, id, HASH_FIND_NEXT);
     break;
    }
    cur = hashnext (cur);
   }
- }
- if (!cur || !id) return NULL;
- while (cur = hashfind (cur, id)) {
+ } else
+ cur = hashfind (cur, id, HASH_FIND_FIRST);
+
+ if (!cur || !id) {
+//  printf ("no node found for %s\n", id);
+//  if (base) printf ("(had some before)\n");
+  return NULL;
+ } else
+//  printf ("XX node found for %s\n", id);
+
+ while (cur) {
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
    return cur->value;
-  cur = hashnext (cur);
+//  cur = hashnext (cur);
+  cur = hashfind (cur, id, HASH_FIND_NEXT);
  }
  return NULL;
 }

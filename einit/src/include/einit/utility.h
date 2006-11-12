@@ -64,6 +64,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SORT_SET_STRING_LEXICAL 0x01 /*!< Sort string lexically */
 #define SORT_SET_CUSTOM         0xFF /*!< Sort string with a custom sorting function */
 
+#define HASH_FIND_FIRST         0x01
+#define HASH_FIND_NEXT          0x02
+
 /*!\ingroup utilityfunctionshashes
  * \brief Hash-Element
  *
@@ -229,10 +232,9 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
  *
  * This is used to find hash elements in a hash.
 */
-struct uhash *hashfind (struct uhash *hash, char *key);
+struct uhash *hashfind (struct uhash *hash, char *key, char options);
 
-/*!\brief Delete the \b subject from the hash \b cur.
- * \param[in,out] cur     the hash to be manipulated
+/*!\brief Delete the \b subject from its hash.
  * \param[in]     subject the hash element to be deleted
  * \return This will return a pointer to the first hash element you passed to it, or to the first element after
  *         \b subject has been erased.
@@ -240,7 +242,7 @@ struct uhash *hashfind (struct uhash *hash, char *key);
  * This function will delete an element from a hash. It will also free() any resources allocated by other hash
  * functions for the element in question, and it will erase any \b luggage if it has been defined.
 */
-struct uhash *hashdel (struct uhash *cur, struct uhash *subject);
+struct uhash *hashdel (struct uhash *subject);
 
 /*!\brief Free ( \b hash ).
  * \param[in] hash the hash to be free()d

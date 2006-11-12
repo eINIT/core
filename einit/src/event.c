@@ -172,6 +172,8 @@ void function_register (char *name, uint32_t version, void *function) {
  fstruct->version = version;
  fstruct->function = function;
 
+// printf ("adding %s to %zx\n", name, exported_functions);
+
  pthread_mutex_lock (&pof_mutex);
   exported_functions = hashadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
  pthread_mutex_unlock (&pof_mutex);
@@ -188,15 +190,19 @@ void **function_find (char *name, uint32_t version, char **sub) {
  snprintf (tmp, 2048, "looking for %s in %zx", name, ha);
  puts (tmp); */
 
+// printf ("looking for %s in %zx->%s\n", name, ha, ha->key);
+
  pthread_mutex_lock (&pof_mutex);
  if (!sub) {
-  while (ha = hashfind (ha, name)) {
+//  printf ("simple lookup ");
+  ha = hashfind (exported_functions, name, HASH_FIND_FIRST);
+  while (ha) {
 /*   char tmp[2048];
    snprintf (tmp, 2048, "returned with %zx", ha);
    puts (tmp);*/
    struct exported_function *ef = ha->value;
    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
-   ha = hashnext (ha);
+   ha = hashfind (ha, name, HASH_FIND_NEXT);
   }
  } else {
   uint32_t i = 0, k = strlen (name)+1;
@@ -205,12 +211,20 @@ void **function_find (char *name, uint32_t version, char **sub) {
   strcat (n, name);
   *(n + k - 1) = '-';
 
+//  printf ("complex lookup ");
+
   for (; sub[i]; i++) {
    *(n + k) = 0;
    n = erealloc (n, k+1+strlen (sub[i]));
    strcat (n, sub[i]);
-   ha = exported_functions;
-   while (ha = hashfind (ha, n)) {
+//   printf ("%s ", n);
+
+   ha = hashfind (exported_functions, n, HASH_FIND_FIRST);
+/*   if (!ha) {
+    puts ("no initial result");
+   }*/
+
+   while (ha) {
 /*    char tmp[2048];
     snprintf (tmp, 2048, "returned with %zx", ha);
     puts (tmp);*/
@@ -218,13 +232,15 @@ void **function_find (char *name, uint32_t version, char **sub) {
     struct exported_function *ef = ha->value;
     if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
 
-    ha = hashnext (ha);
+    ha = hashfind (ha, n, HASH_FIND_NEXT);
    }
   }
 
   if (n) free (n);
  }
  pthread_mutex_unlock (&pof_mutex);
+
+// printf ("returning %x\n", set);
 
  return set;
 }
@@ -234,14 +250,17 @@ void function_unregister (char *name, uint32_t version, void *function) {
  struct uhash *ha = exported_functions;
 
  pthread_mutex_lock (&pof_mutex);
- while (ha = hashfind (ha, name)) {
+ ha = hashfind (exported_functions, name, HASH_FIND_FIRST);
+ while (ha) {
   struct exported_function *ef = ha->value;
   if (ef && (ef->version == version)) {
-   exported_functions = hashdel (exported_functions, ha);
-   ha = exported_functions;
-   if (!ha) break;
+//   exported_functions = hashdel (exported_functions, ha);
+   exported_functions = hashdel (ha);
+   ha = hashfind (exported_functions, name, HASH_FIND_FIRST);
+//   ha = exported_functions;
+//   if (!ha) break;
   } else
-   ha = hashnext (ha);
+   ha = hashfind (exported_functions, name, HASH_FIND_NEXT);
  }
  pthread_mutex_unlock (&pof_mutex);
 

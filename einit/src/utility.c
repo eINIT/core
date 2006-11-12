@@ -541,25 +541,31 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
 
  n->luggage = luggage;
 
+ n->root = hash ? hash->root : NULL;
+
+/* n->next = hash;
+ hash = n;*/
  n->next = hash;
  hash = n;
-
-#if 0
 
  if (!rootnode) {
   hash->root = emalloc (sizeof(struct uhash *));
   *(hash->root) = hash;
  } else {
+  *(hash->root) = hash;
+ }
+
+#if 0
+ else {
   struct uhash *parent = rootnode, *current = rootnode;
   uint32_t e = 0;
 
-/*  for (; key[e]; e++) {
+  for (; key[e]; e++) {
    if (current) {
+    parent = current;
     if (key[e] < current->key[e]) {
-     parent = current;
      current = current->left;
     } else {
-     parent = current;
      current = current->right;
     }
    } else {
@@ -568,20 +574,23 @@ struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen,
     else
      parent->right = n;
 
+    printf ("%s now %i child of %s[%x], under %s\n", n->key, (key[e] < parent->key[e]), parent->key, parent, rootnode->key);
+
     return hash;
 //    break;
    }
-  }*/
+  }
  }
 #endif
 
  return hash;
 }
 
-struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
- struct uhash *be = cur;
+struct uhash *hashdel (struct uhash *subject) {
+ struct uhash *cur = (subject ? *(subject->root) : NULL),
+              *be = cur;
 
- if (!cur || !subject) return cur;
+ if (!cur || !subject) return subject;
 
 /* char tmp[2048];
  snprintf (tmp, 2048, "hashdel(): need to remove 0x%zx from 0x%zx", subject, cur);
@@ -589,6 +598,7 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
 
  if (cur == subject) {
   be = cur->next;
+  *(subject->root) = be;
   if (cur->luggage) free (cur->luggage);
   free (cur);
   return be;
@@ -607,16 +617,27 @@ struct uhash *hashdel (struct uhash *cur, struct uhash *subject) {
  return be;
 }
 
-struct uhash *hashfind (struct uhash *hash, char *key) {
- struct uhash *c = hash;
+struct uhash *hashfind (struct uhash *hash, char *key, char options) {
+ struct uhash *c;
  if (!hash || !key) return NULL;
 
 /* char tmp[2048];
  snprintf (tmp, 2048, "hashfind(): need to find %s in 0x%zx", key, hash);
  puts (tmp); */
 
- while ((!c->key || strcmp (key, c->key)) && c->next) c = c->next;
+ if (options == HASH_FIND_FIRST) c = *(hash->root);
+ else /* if (options == HASH_FIND_NEXT) */ c = hash->next;
+
+ if (!c) return NULL;
+// printf ("hashfind(): need to find %s in 0x%zx->%s\n", key, c, c->key);
+
+ while (strcmp (key, c->key) && c->next) c = c->next;
+//  printf ("%s==%s?\n", key, c->key);
+// }
  if (!c->next && strcmp (key, c->key)) return NULL;
+// if (strcmp (key, c->key)) return NULL;
+
+// printf ("hashfind(): returning 0x%zx->%s for %s\n", c, c->key, key);
  return c;
 }
 

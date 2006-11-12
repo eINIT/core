@@ -487,6 +487,7 @@ unsigned char forge_fstab_by_label (void *na) {
 unsigned char read_fstab_from_configuration (void *na) {
  struct cfgnode *node = NULL;
  uint32_t i;
+// puts ("adding fstab node");
  while (node = cfg_findnode ("configuration-storage-fstab-node", 0, node)) {
   char *mountpoint = NULL, *device = NULL, *fs = NULL, **options = NULL, *before_mount = NULL, *after_mount = NULL, *before_umount = NULL, *after_umount = NULL, *manager = NULL, **variables = NULL;
   uint32_t mountflags = 0;
@@ -796,10 +797,10 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  unsigned long mntflags = 0;
 
  if (tflags & MOUNT_TF_MOUNT) {
-  if ((he = hashfind (he, mountpoint)) && (fse = (struct fstab_entry *)he->value)) {
+  if ((he = hashfind (he, mountpoint, HASH_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
    source = fse->device;
    fsntype = 0;
-   if ((de = hashfind (de, source)) && (bdi = (struct bd_info *)de->value)) {
+   if ((de = hashfind (de, source, HASH_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
     fsntype = bdi->fs_type;
    }
 
@@ -944,7 +945,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
   while (1) {
    retry++;
-   if (he = hashfind (he, mountpoint)) fse = (struct fstab_entry *)he->value;
+   if (he = hashfind (he, mountpoint, HASH_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
 
    if (fse && !(fse->status & BF_STATUS_MOUNTED))
     snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
@@ -967,7 +968,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      status->string = textbuffer;
      status_update (status);
 
-     struct uhash *hav = hashfind (mcb.mtab, mountpoint);
+     struct uhash *hav = hashfind (mcb.mtab, mountpoint, HASH_FIND_FIRST);
      if (!hav) {
       status->string = "wtf? this ain't mounted, bitch!";
       status_update (status);
@@ -1043,7 +1044,7 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
  bdi.minor = minor;
  bdi.status = BF_STATUS_HAS_MEDIUM | BF_STATUS_ERROR_NOTINIT;
  pthread_mutex_lock (&blockdevices_mutex);
- if (hashfind (mcb.blockdevices, devicefile)) {
+ if (hashfind (mcb.blockdevices, devicefile, HASH_FIND_FIRST)) {
   pthread_mutex_unlock (&blockdevices_mutex);
   return;
  }
@@ -1088,7 +1089,7 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  fse.variables = variables;
 
  pthread_mutex_lock (&fstab_mutex);
- if (hashfind (mcb.fstab, mountpoint)) {
+ if (hashfind (mcb.fstab, mountpoint, HASH_FIND_FIRST)) {
   if (fse.mountpoint)
    free (fse.mountpoint);
   if (fse.device)
@@ -1149,7 +1150,7 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
  lfse.fs_passno = fs_passno;
 
  pthread_mutex_lock (&mtab_mutex);
- if (hashfind (mcb.mtab, fs_file)) {
+ if (hashfind (mcb.mtab, fs_file, HASH_FIND_FIRST)) {
   free (dset);
   pthread_mutex_unlock (&mtab_mutex);
   return;
@@ -1175,7 +1176,7 @@ void add_filesystem (char *name, char *options) {
  }
 
  pthread_mutex_lock (&fs_mutex);
- if (hashfind (mcb.filesystems, name)) {
+ if (hashfind (mcb.filesystems, name, HASH_FIND_FIRST)) {
   pthread_mutex_unlock (&fs_mutex);
   return;
  }
@@ -1286,7 +1287,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     ev->task++;
    } else {
     struct uhash *thash, *fhash;
-    if (!(thash = hashfind (mcb.fstab, "/"))) {
+    if (!(thash = hashfind (mcb.fstab, "/", HASH_FIND_FIRST))) {
      fdputs (" * your fstab does not contain an entry for \"/\".\n", ev->integer);
      ev->task++;
     } else if (!(((struct fstab_entry *)(thash->value))->device)) {
@@ -1309,7 +1310,7 @@ void mount_ipc_handler(struct einit_event *ev) {
      }
 
      if (!(((struct fstab_entry *)(thash->value))->device)) { 
-      if ((((struct fstab_entry *)(thash->value))->fs) && (fhash = hashfind (mcb.filesystems, (((struct fstab_entry *)(thash->value))->fs))) && !((uintptr_t)fhash->value & FS_CAPA_VOLATILE)) {
+      if ((((struct fstab_entry *)(thash->value))->fs) && (fhash = hashfind (mcb.filesystems, (((struct fstab_entry *)(thash->value))->fs), HASH_FIND_FIRST)) && !((uintptr_t)fhash->value & FS_CAPA_VOLATILE)) {
        char tmpstr[1024];
        snprintf (tmpstr, 1024, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", thash->key);
        fdputs (tmpstr, ev->integer);
@@ -1357,7 +1358,7 @@ int enable (enum mounttask p, struct einit_event *status) {
       if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
        goto mount_skip;
 
-      if (fse->fs && (fsi = hashfind (mcb.filesystems, fse->fs))) {
+      if (fse->fs && (fsi = hashfind (mcb.filesystems, fse->fs, HASH_FIND_FIRST))) {
        if (p == MOUNT_LOCAL) {
         if ((uintptr_t)fsi->value & FS_CAPA_NETWORK) goto mount_skip;
        } else {
@@ -1467,10 +1468,10 @@ int disable (enum mounttask p, struct einit_event *status) {
      if (lfse = (struct legacy_fstab_entry *)ha->value) {
       if (p == MOUNT_LOCAL) {
        if (lfse->fs_vfstype) {
-        if ((fsi = hashfind (mcb.filesystems, lfse->fs_vfstype)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+        if ((fsi = hashfind (mcb.filesystems, lfse->fs_vfstype, HASH_FIND_FIRST)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
-       if (lfse->fs_vfstype && (fsi = hashfind (mcb.filesystems, lfse->fs_vfstype))) {
+       if (lfse->fs_vfstype && (fsi = hashfind (mcb.filesystems, lfse->fs_vfstype, HASH_FIND_FIRST))) {
         if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        } else goto mount_skip;
       }

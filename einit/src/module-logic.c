@@ -158,7 +158,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
 
    memset (&nnode, 0, sizeof (struct mloadplan_node));
-   if (ha = hashfind (plan->services, current[a]))
+   if (ha = hashfind (plan->services, current[a], HASH_FIND_FIRST))
     continue;
 
    while (cur) {
@@ -195,7 +195,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = hashfind (plan->services, current[a]))
+    if (ha = hashfind (plan->services, current[a], HASH_FIND_FIRST))
      continue;
 
     while (cur) {
@@ -237,7 +237,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = hashfind (plan->services, current[a]))
+    if (ha = hashfind (plan->services, current[a], HASH_FIND_FIRST))
      continue;
 
     while (cur) {
@@ -332,7 +332,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  uint32_t u; struct uhash *rha; pthread_t th; \
  if (set && set[0] && set[1]) { \
   for (u = 0; set[u]; u++) { \
-   if ((rha = hashfind (plan->services, set[u])) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) { \
+   if ((rha = hashfind (plan->services, set[u], HASH_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) { \
     if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
     else { \
@@ -342,7 +342,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    } \
   } \
  } else { \
-  if ((rha = hashfind (plan->services, set[0])) && rha->value) { \
+  if ((rha = hashfind (plan->services, set[0], HASH_FIND_FIRST)) && rha->value) { \
    function ((struct mloadplan_node *)rha->value); \
   } \
  } \
@@ -423,7 +423,7 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
   run_or_spawn_subthreads_and_wait (node->group, mod_plan_commit_recurse_enable, node->plan, STATUS_ENABLED);
 
   for (u = 0; node->group; u++) {
-   if (ha = hashfind (node->plan->services, node->group[u])) {
+   if (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST)) {
     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
     service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
    }
@@ -470,7 +470,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
   resume_group_enable:
   if ((node->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) || (node->options & MOD_PLAN_GROUP_SEQ_ANY)) {
    for (u = 0; node->group[u]; u++) {
-    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
@@ -484,7 +484,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    }
   } else if (node->options & MOD_PLAN_GROUP_SEQ_MOST) {
    for (u = 0; node->group[u]; u++) {
-    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
@@ -511,7 +511,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    }
   } else if (node->options & MOD_PLAN_GROUP_SEQ_ALL) {
    for (u = 0; node->group[u]; u++) {
-    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u]))) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);

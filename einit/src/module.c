@@ -501,7 +501,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   ret |= SERVICE_REQUIREMENTS_MET;
   if (t = module->module->requires) {
    for (i = 0; t[i]; i++) {
-    if (!(ha = hashfind (service_usage, t[i])) ||
+    if (!(ha = hashfind (service_usage, t[i], HASH_FIND_FIRST)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
      ret ^= SERVICE_REQUIREMENTS_MET;
      break;
@@ -512,14 +512,14 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   if (module->status & STATUS_ENABLED) {
    if (t = module->module->requires) {
     for (i = 0; t[i]; i++) {
-     if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
+     if ((ha = hashfind (service_usage, t[i], HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
    if (t = module->module->provides) {
     for (i = 0; t[i]; i++) {
-     if ((ha = hashfind (service_usage, t[i])) && (item = (struct service_usage_item *)ha->value)) {
+     if ((ha = hashfind (service_usage, t[i], HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
      } else {
       struct service_usage_item nitem;
@@ -542,16 +542,17 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    }
 
    if (!item->provider && !item->users) {
-    service_usage = hashdel (service_usage, ha);
+//    service_usage = hashdel (service_usage, ha);
+    service_usage = hashdel (ha);
     ha = service_usage;
    } else
     ha = hashnext (ha);
   }
  } else if (task & SERVICE_IS_REQUIRED) {
-  if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->users))
+  if ((ha = hashfind (service_usage, service, HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->users))
    ret |= SERVICE_IS_REQUIRED;
  } else if (task & SERVICE_IS_PROVIDED) {
-  if ((ha = hashfind (service_usage, service)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
+  if ((ha = hashfind (service_usage, service, HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
  }
 
@@ -570,7 +571,7 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
 
  pthread_mutex_lock (&service_usage_mutex);
  if (task & SERVICE_ADD_GROUP_PROVIDER) {
-  if (!(ha = hashfind (service_usage, service))) {
+  if (!(ha = hashfind (service_usage, service, HASH_FIND_FIRST))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);

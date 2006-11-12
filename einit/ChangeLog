@@ -2,6 +2,8 @@
  * that one segfault (it was in the gentoo-compatibility module)
  * incorporated some modules haader and lloeki wrote some time ago (so~rry!)
  * need to implement BST hashes
+ * API change to hashdel() (only one argument needed now)
+ * API change to hashfind() (needs another "options" argument now)
 
 [2006/11/10: mdeininger: release, Version 0.12]
 
