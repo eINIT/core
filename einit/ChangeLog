@@ -1,3 +1,7 @@
+2006/11/14: mdeininger
+ * API cleanups (scheduler and OS-dependant code)
+ * relocated the hash-code to tree.h, API/ABI changes (uhash->stree)
+
 2006/11/11: mdeininger
  * that one segfault (it was in the gentoo-compatibility module)
  * incorporated some modules haader and lloeki wrote some time ago (so~rry!)

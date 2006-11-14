@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
+#include <einit/tree.h>
 #include <pthread.h>
 #include <errno.h>
 
@@ -60,7 +61,7 @@ struct lmodule *mlist = NULL;
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-struct uhash *service_usage = NULL;
+struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int mod_scanmodules ( void ) {
@@ -313,7 +314,7 @@ int mod (unsigned int task, struct lmodule *module) {
  struct smodule *t;
  int ti, errc;
  unsigned int ret;
- struct uhash *ha;
+ struct stree *ha;
 
  if (!module) return 0;
 /* wait if the module is already being processed in a different thread */
@@ -457,7 +458,7 @@ int mod (unsigned int task, struct lmodule *module) {
 
 uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service) {
  uint16_t ret = 0;
- struct uhash *ha;
+ struct stree *ha;
  char **t;
  uint32_t i;
  struct service_usage_item *item;
@@ -469,14 +470,14 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   ret |= SERVICE_NOT_IN_USE;
 /*  if (t = module->module->provides) {
    for (i = 0; t[i]; i++) {
-    if ((ha = hashfind (service_usage, t[i])) &&
+    if ((ha = streefind (service_usage, t[i])) &&
         ((struct service_usage_item *)(ha->value))->users) {
      ret ^= SERVICE_NOT_IN_USE;
      break;
     }
    }
   }*/
-  struct uhash *ha = service_usage;
+  struct stree *ha = service_usage;
 
   while (ha) {
    if (((struct service_usage_item *)(ha->value))->users &&
@@ -495,13 +496,13 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
     ret ^= SERVICE_NOT_IN_USE;
     break;
    }
-   ha = hashnext (ha);
+   ha = streenext (ha);
   }
  } else if (task & SERVICE_REQUIREMENTS_MET) {
   ret |= SERVICE_REQUIREMENTS_MET;
   if (t = module->module->requires) {
    for (i = 0; t[i]; i++) {
-    if (!(ha = hashfind (service_usage, t[i], HASH_FIND_FIRST)) ||
+    if (!(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
      ret ^= SERVICE_REQUIREMENTS_MET;
      break;
@@ -512,20 +513,20 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   if (module->status & STATUS_ENABLED) {
    if (t = module->module->requires) {
     for (i = 0; t[i]; i++) {
-     if ((ha = hashfind (service_usage, t[i], HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
+     if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
    if (t = module->module->provides) {
     for (i = 0; t[i]; i++) {
-     if ((ha = hashfind (service_usage, t[i], HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
+     if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
      } else {
       struct service_usage_item nitem;
       memset (&nitem, 0, sizeof (struct service_usage_item));
       nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
-      service_usage = hashadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+      service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
      }
     }
    }
@@ -542,17 +543,17 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    }
 
    if (!item->provider && !item->users) {
-//    service_usage = hashdel (service_usage, ha);
-    service_usage = hashdel (ha);
+//    service_usage = streedel (service_usage, ha);
+    service_usage = streedel (ha);
     ha = service_usage;
    } else
-    ha = hashnext (ha);
+    ha = streenext (ha);
   }
  } else if (task & SERVICE_IS_REQUIRED) {
-  if ((ha = hashfind (service_usage, service, HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->users))
+  if ((ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->users))
    ret |= SERVICE_IS_REQUIRED;
  } else if (task & SERVICE_IS_PROVIDED) {
-  if ((ha = hashfind (service_usage, service, HASH_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
+  if ((ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
  }
 
@@ -562,7 +563,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
 
 uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service) {
  uint16_t ret = 0;
- struct uhash *ha;
+ struct stree *ha;
  char **t;
  uint32_t i;
  struct service_usage_item *item;
@@ -571,11 +572,11 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
 
  pthread_mutex_lock (&service_usage_mutex);
  if (task & SERVICE_ADD_GROUP_PROVIDER) {
-  if (!(ha = hashfind (service_usage, service, HASH_FIND_FIRST))) {
+  if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
-   service_usage = hashadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
+   service_usage = streeadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
   }
  }
 
@@ -586,7 +587,7 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
 char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service) {
  pthread_mutex_lock (&service_usage_mutex);
 
- struct uhash *ha = service_usage;
+ struct stree *ha = service_usage;
  char **ret = NULL;
  uint32_t i;
 
@@ -594,7 +595,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
   while (ha) {
 //   puts (ha->key);
    ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
-   ha = hashnext (ha);
+   ha = streenext (ha);
   }
  } else if (task & SERVICE_GET_SERVICES_THAT_USE) {
   if (module) {
@@ -607,7 +608,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
      }
 //     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }
-    ha = hashnext (ha);
+    ha = streenext (ha);
    }
   }
  } else if (task & SERVICE_GET_SERVICES_USED_BY) {
@@ -616,7 +617,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
     if (inset ((void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {
      ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }
-    ha = hashnext (ha);
+    ha = streenext (ha);
    }
   }
  }

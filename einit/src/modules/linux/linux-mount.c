@@ -153,7 +153,7 @@ int cleanup (struct lmodule *);
 
 /* function definitions */
 unsigned char read_metadata_linux (struct mount_control_block *mcb) {
- struct uhash *element = mcb->blockdevices;
+ struct stree *element = mcb->blockdevices;
  struct ext2_super_block ext2_sb;
  struct reiserfs_super_block reiser_sb;
  struct bd_info *bdi;
@@ -243,7 +243,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
 //   perror (element->key);
   }
   errno = 0;
-  element = hashnext (element);
+  element = streenext (element);
  }
 
 // puts ("done");

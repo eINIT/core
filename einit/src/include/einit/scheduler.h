@@ -72,8 +72,7 @@ pthread_t schedthreadsigchild;
 char *currentmode;
 char *newmode;
 
-int epoweroff ();
-int epowerreset ();
+int scheduler_cleanup ();
 
 int sched_switchmode (char *);
 int sched_modaction (char **);

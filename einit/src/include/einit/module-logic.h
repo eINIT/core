@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <einit/module.h>
 #include <einit/config.h>
+#include <einit/tree.h>
 
 /*!\name Option-Constants: Module-Groups.
  * \{
@@ -68,7 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * This struct is used to keep all the information that is needed for a mode-switch, or a module-status-change.
 */
 struct mloadplan {
- struct uhash *services;   /*!< Hash of all services that are to be used. */
+ struct stree *services;   /*!< Hash of all services that are to be used. */
  char **enable;            /*!< Set of all services that are to be enabled. */
  char **disable;           /*!< Set of all services that are to be disabled. */
  char **reset;             /*!< Set of all services that are to be reset. */

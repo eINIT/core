@@ -10,16 +10,16 @@ depend:
 
 clean:
 	rm -f *.o einit-xml einit-control einit depend.mk
-	cd modules && ${MAKE} clean	
+	cd modules && ${MAKE} clean
 
-einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o
-	$(CCC) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
+einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o
+	$(CCC) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o $(XDYNAMIC) -o einit-xml -ldl -lexpat $(LPA)
 
 einit: einit-xml
 	ln -sf einit-xml einit
 
-einit-control: einit-control.o bitch.o utility.o event.o
-	$(CCC) einit-control.o bitch.o utility.o event.o $(XDYNAMIC) -o einit-control -ldl $(LPA)
+einit-control: einit-control.o bitch.o utility.o event.o tree.o
+	$(CCC) einit-control.o bitch.o utility.o event.o tree.o $(XDYNAMIC) -o einit-control -ldl $(LPA)
 
 install: all
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
@@ -40,6 +40,9 @@ einit.o: einit.c
 
 config.o: config.c
 	$(CCC) -c config.c
+
+tree.o: tree-linear.c tree-bst-splay.c
+	$(CCC) -c tree-${TREETYPE}.c -o tree.o
 
 event.o: event.c
 	$(CCC) -c event.c

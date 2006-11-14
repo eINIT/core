@@ -39,14 +39,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * \brief Utility-Functions
  * \author Magnus Deininger
  *
- * These are functions should be of use to all modules and eINIT itself.
+ * These are functions that should be of use to all modules and eINIT itself.
 */
 
 #ifndef _UTILITY_H
 #define _UTILITY_H
 
 /*!\defgroup utilityfunctionssets eINIT Utility Functions: Sets
- * \defgroup utilityfunctionshashes eINIT Utility Functions: Hashes
  * \defgroup utilityfunctionsevents eINIT Utility Functions: Events
  * \defgroup utilityfunctionsstrings eINIT Utility Functions: String-manipulation
  * \defgroup utilityfunctionsmem eINIT Utility Functions: Memory-management wrappers
@@ -63,26 +62,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SORT_SET_STRING_LEXICAL 0x01 /*!< Sort string lexically */
 #define SORT_SET_CUSTOM         0xFF /*!< Sort string with a custom sorting function */
-
-#define HASH_FIND_FIRST         0x01
-#define HASH_FIND_NEXT          0x02
-
-/*!\ingroup utilityfunctionshashes
- * \brief Hash-Element
- *
- * This struct represents a hash-element. Note that, for this matter, hashes are merely key/value pairs. The
- * key is always a string, the value can be any pointer.
-*/
-struct uhash {
- char *key;           /*!< the key (perl-style; think of it as a variable-name) */
- void *value;         /*!< the value associated with the key */
- void *luggage;       /*!< a pointer to an area of memory that is references by the value (will be free()d) */
- struct uhash *next;  /*!< next element (for sequential tree traversal) */
-
- struct uhash **root; /*!< double-pointer to the root-element */
- struct uhash *left;  /*!< left element */
- struct uhash *right; /*!< right element */
-};
 
 /*!\brief Combine \b set1 and \b set2.
  * \param[in] set1  the first set
@@ -204,63 +183,6 @@ char **straddtoenviron (char **environment, char *key, char *value);
 
 char *readfile (char *filename);
 
-/*!\}*/
-
-/*!\ingroup utilityfunctionshashes
- * \{
-*/
-/*!\brief Add the \b key with \b value to \b hash.
- * \param[in,out] hash    the hash to be manipulated
- * \param[in]     key     the name of the variable
- * \param[in]     value   the variable's value
- * \param[in]     vlen    the size of the element; use either sizeof(), SET_TYPE_STRING or SET_NOALLOC
- * \param[in]     luggage a pointer to an area of memory that was malloc()d for the value
- *                        (will be freed if element is free()d)
- * \return This will manipulate \b hash by adding \b key = \b value to it. It may free( \b hash ).
- *         You will need to hashfree() the returned hash once you're done with it.
- *
- * This is used to add hash elements to a hash, or to initialise it. You may point the luggage variable to
- * an area of memory that is to be free()d if the corresponding element is free()d.
-*/
-struct uhash *hashadd (struct uhash *hash, char *key, void *value, int32_t vlen, void *luggage);
-
-/*!\brief Find the \b key in \b hash.
- * \param[in] hash    the hash to be manipulated
- * \param[in] key     the name of the variable
- * \return This will return a pointer to the hash element that is identified by the \b key. You should not
- *         modify anything but the value and luggage fields in the returned element.
- *
- * This is used to find hash elements in a hash.
-*/
-struct uhash *hashfind (struct uhash *hash, char *key, char options);
-
-/*!\brief Delete the \b subject from its hash.
- * \param[in]     subject the hash element to be deleted
- * \return This will return a pointer to the first hash element you passed to it, or to the first element after
- *         \b subject has been erased.
- *
- * This function will delete an element from a hash. It will also free() any resources allocated by other hash
- * functions for the element in question, and it will erase any \b luggage if it has been defined.
-*/
-struct uhash *hashdel (struct uhash *subject);
-
-/*!\brief Free ( \b hash ).
- * \param[in] hash the hash to be free()d
- * \return This function does not return any value.
- *
- * This function will deallocate all resources used by the specified hash, including all luggage-areas. After
- * the function returns, using the free()d hash with any of the hash functions will result in undefined
- * behaviour (usually a SIGSEGV or a SIGBUS, though, so don't do it).
-*/
-void hashfree (struct uhash *hash);
-
-/*!\brief Return next hash element
- * \param[in] h the hash
- * \return This function will return the next hash element.
- *
- * This macro can be used to sequentially step through a hash, instead of by keys.
-*/
-#define hashnext(h) h->next
 /*!\}*/
 
 /*!\ingroup utilityfunctionsmem

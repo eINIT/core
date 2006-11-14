@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <inttypes.h>
 #include <pthread.h>
+#include <einit/tree.h>
 
 #define EVENT_SUBSYSTEM_MASK		0xfffff000
 #define EVENT_CODE_MASK			0x00000fff
@@ -155,7 +156,7 @@ void function_unregister (char *, uint32_t, void *);
 void **function_find (char *, uint32_t, char **);
 
 struct event_function *event_functions;
-struct uhash *exported_functions;
+struct stree *exported_functions;
 struct event_ringbuffer_node *event_logbuffer;
 pthread_mutex_t event_logbuffer_mutex;
 

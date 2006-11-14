@@ -45,13 +45,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/tree.h>
 #include <einit/event.h>
 
-struct uhash *hconfiguration = NULL;
+struct stree *hconfiguration = NULL;
 char **einit_global_environment = NULL;
 
 int cfg_free () {
- struct uhash *cur = hconfiguration;
+ struct stree *cur = hconfiguration;
  struct cfgnode *node = NULL;
  while (cur) {
   if (node = (struct cfgnode *)cur->value) {
@@ -65,16 +66,16 @@ int cfg_free () {
    if (node->path)
     free (node->path);
   }
-  cur = hashnext (cur);
+  cur = streenext (cur);
  }
- hashfree (hconfiguration);
+ streefree (hconfiguration);
  hconfiguration = NULL;
  return 1;
 }
 
 int cfg_addnode (struct cfgnode *node) {
  if (!node || !node->id) return;
- struct uhash *cur = hconfiguration;
+ struct stree *cur = hconfiguration;
  char doop = 1;
 
  if (node->arbattrs) {
@@ -87,7 +88,7 @@ int cfg_addnode (struct cfgnode *node) {
  if (node->nodetype & EI_NODETYPE_MODE) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
   only the first one would be used anyway. */
-  cur = hashfind (cur, node->id, HASH_FIND_FIRST);
+  cur = streefind (cur, node->id, TREE_FIND_FIRST);
   while (cur) {
    if (cur->value && !(((struct cfgnode *)cur->value)->nodetype ^ EI_NODETYPE_MODE)) {
 // this means we found something that looks like it
@@ -103,14 +104,14 @@ int cfg_addnode (struct cfgnode *node) {
 
     break;
    }
-//   cur = hashnext (cur);
-   cur = hashfind (cur, node->id, HASH_FIND_NEXT);
+//   cur = streenext (cur);
+   cur = streefind (cur, node->id, TREE_FIND_NEXT);
   }
  } else {
 /* look for other definitions that are exactly the same, only marginally different or that sport a
    matching id="" attribute */
 
-  cur = hashfind (cur, node->id, HASH_FIND_FIRST);
+  cur = streefind (cur, node->id, TREE_FIND_FIRST);
   while (cur) {
 // this means we found a node wit the same path
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
@@ -144,28 +145,28 @@ int cfg_addnode (struct cfgnode *node) {
 
     break;
    }
-//   cur = hashnext (cur);
-   cur = hashfind (cur, node->id, HASH_FIND_NEXT);
+//   cur = streenext (cur);
+   cur = streefind (cur, node->id, TREE_FIND_NEXT);
   }
  }
 
  if (doop)
-  hconfiguration = hashadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
+  hconfiguration = streeadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
 }
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
- struct uhash *cur = hconfiguration;
+ struct stree *cur = hconfiguration;
  if (base) {
   while (cur) {
    if (cur->value == base) {
-//    cur = hashnext (cur);
-    cur = hashfind (cur, id, HASH_FIND_NEXT);
+//    cur = streenext (cur);
+    cur = streefind (cur, id, TREE_FIND_NEXT);
     break;
    }
-   cur = hashnext (cur);
+   cur = streenext (cur);
   }
  } else
- cur = hashfind (cur, id, HASH_FIND_FIRST);
+ cur = streefind (cur, id, TREE_FIND_FIRST);
 
  if (!cur || !id) {
 //  printf ("no node found for %s\n", id);
@@ -177,8 +178,8 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  while (cur) {
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
    return cur->value;
-//  cur = hashnext (cur);
-  cur = hashfind (cur, id, HASH_FIND_NEXT);
+//  cur = streenext (cur);
+  cur = streefind (cur, id, TREE_FIND_NEXT);
  }
  return NULL;
 }

@@ -75,7 +75,7 @@ int cleanup ();
 #include <linux/reboot.h>
 #endif
 
-int epoweroff () {
+int scheduler_cleanup () {
  stack_t curstack;
  pthread_cond_destroy (&schedthreadcond);
  pthread_mutex_destroy (&schedthreadmutex);
@@ -97,63 +97,6 @@ int epoweroff () {
 #else
  if (sem_destroy (sigchild_semaphore))
   sem_close (sigchild_semaphore);
-#endif
-
-#ifdef LINUX
-#ifndef SANDBOX
- reboot (LINUX_REBOOT_CMD_POWER_OFF);
-// reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
-// bitch (BTCH_ERRNO);
- notice (1, "\naight, who hasn't eaten his cereals this morning?");
- exit (EXIT_FAILURE);
-#else
- notice (1, "compiled in sandbox-mode: not sending power-off command");
- exit (EXIT_SUCCESS);
-#endif
-#else
- notice (1, "no support for power-off command");
- exit (EXIT_SUCCESS);
-#endif
-}
-
-int epowerreset () {
- stack_t curstack;
- pthread_cond_destroy (&schedthreadcond);
- pthread_mutex_destroy (&schedthreadmutex);
-
- if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
-  curstack.ss_size = SIGSTKSZ;
-  curstack.ss_flags = SS_DISABLE;
-  sigaltstack (&curstack, NULL);
-  free (curstack.ss_sp);
- } else {
-  notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
- }
-
-#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sem_destroy (sigchild_semaphore);
- free (sigchild_semaphore);
-#elif defined(DARWIN)
- sem_close (sigchild_semaphore);
-#else
- if (sem_destroy (sigchild_semaphore))
-  sem_close (sigchild_semaphore);
-#endif
-
-#ifdef LINUX
-#ifndef SANDBOX
- reboot (LINUX_REBOOT_CMD_RESTART);
-// reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
-// bitch (BTCH_ERRNO);
- notice (1, "\naight, who hasn't eaten his cereals this morning?");
- exit (EXIT_FAILURE);
-#else
- notice (1, "compiled in sandbox-mode: not sending reboot command");
- exit (EXIT_SUCCESS);
-#endif
-#else
- notice (1, "no support for power-off command");
- exit (EXIT_SUCCESS);
 #endif
 }
 
@@ -271,7 +214,8 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
 
 /* ignore most signals */
- action.sa_sigaction = SIG_IGN;
+ action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+
  if ( sigaction (SIGQUIT, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGABRT, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGPIPE, &action, NULL) ) bitch (BTCH_ERRNO);
@@ -372,30 +316,11 @@ void *sched_run (void *p) {
     case SCHEDULER_MOD_ACTION:
      sched_modaction ((char **)c->param);
      break;
-    case SCHEDULER_POWER_OFF:
-     notice (1, "emitting shutdown-event");
-     {
-      struct einit_event ee = evstaticinit (EVE_SHUTDOWN_IMMINENT);
-      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-      evstaticdestroy (ee);
-     }
-     notice (1, "scheduler: sync()-ing");
-     sync ();
-#ifdef SANDBOX
-     notice (1, "scheduler: cleaning up");
-     cleanup ();
-#endif
-     pthread_cancel (schedthreadsigchild);
-     pthread_join (schedthreadsigchild, NULL);
-     fputs ("scheduler: power off", stderr);
-     epoweroff ();
-// if we still live here, something's twocked
-     exit (EXIT_FAILURE);
-     break;
     case SCHEDULER_POWER_RESET:
-     notice (1, "emitting shutdown-event");
+    case SCHEDULER_POWER_OFF:
+     notice (1, "emitting shutdown/reboot-event");
      {
-      struct einit_event ee = evstaticinit (EVE_REBOOT_IMMINENT);
+      struct einit_event ee = evstaticinit ((c->task == SCHEDULER_POWER_OFF) ? EVE_SHUTDOWN_IMMINENT : EVE_REBOOT_IMMINENT);
       event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
       evstaticdestroy (ee);
      }
@@ -407,9 +332,31 @@ void *sched_run (void *p) {
 #endif
      pthread_cancel (schedthreadsigchild);
      pthread_join (schedthreadsigchild, NULL);
-     fputs ("scheduler: reset", stderr);
-     epowerreset ();
+     scheduler_cleanup ();
+
+     {
+      char **shutdownfunctionsubnames = str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
+      void  ((**reset_functions)()) = (void (**)())
+       (shutdownfunctionsubnames ? function_find(((c->task == SCHEDULER_POWER_OFF) ? "core-power-off" : "core-power-reset"), 1, shutdownfunctionsubnames) : NULL);
+
+      fputs (((c->task == SCHEDULER_POWER_OFF) ? "scheduler: power off\n" : "scheduler: reset\n"), stderr);
+
+      if (reset_functions) {
+       uint32_t xn = 0;
+
+       for (; reset_functions[xn]; xn++) {
+        (reset_functions[xn]) ();
+       }
+      } else {
+       fputs ("scheduler: no (accepted) functions found, exiting\n", stderr);
+       exit (EXIT_SUCCESS);
+      }
+
+      if (shutdownfunctionsubnames) free (shutdownfunctionsubnames);
+     }
+
 // if we still live here, something's twocked
+     fputs ("scheduler: failed, exiting\n", stderr);
      exit (EXIT_FAILURE);
      break;
    }

@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
+#include <einit/tree.h>
 #include <pthread.h>
 #include <einit/module-logic.h>
 
@@ -87,7 +88,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   **reset = NULL, **areset = NULL;
  struct cfgnode *rmode = mode, *gnode;
  struct mloadplan_node nnode;
- struct uhash *ha;
+ struct stree *ha;
  char da = 0, dabf = 0;
 
  if (!plan) {
@@ -158,7 +159,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
 
    memset (&nnode, 0, sizeof (struct mloadplan_node));
-   if (ha = hashfind (plan->services, current[a], HASH_FIND_FIRST))
+   if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
     continue;
 
    while (cur) {
@@ -180,7 +181,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    mod_plan_searchgroup(nnode, current[a]);
 
    if (nnode.mod || nnode.group) {
-    plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+    plan->services = streeadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
     adisable = (char **)setadd ((void **)adisable, (void *)current[a], SET_TYPE_STRING);
    } else {
     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
@@ -195,7 +196,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = hashfind (plan->services, current[a], HASH_FIND_FIRST))
+    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
      continue;
 
     while (cur) {
@@ -216,7 +217,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     mod_plan_searchgroup(nnode, current[a]);
 
     if (nnode.mod || nnode.group) {
-     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     plan->services = streeadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
      adisable = (char **)setadd ((void **)adisable, (void *)current[a], SET_TYPE_STRING);
     } else {
      plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
@@ -237,7 +238,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = hashfind (plan->services, current[a], HASH_FIND_FIRST))
+    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
      continue;
 
     while (cur) {
@@ -281,7 +282,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     mod_plan_searchgroup(nnode, current[a]);
 
     if (nnode.mod || nnode.group) {
-     plan->services = hashadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     plan->services = streeadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
      aenable = (char **)setadd ((void **)aenable, (void *)current[a], SET_TYPE_STRING);
     } else {
      plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
@@ -302,7 +303,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }
 
  if (plan->services) {
-  struct uhash *ha = plan->services;
+  struct stree *ha = plan->services;
 
   while (ha) {
    ((struct mloadplan_node *)(ha->value))->service = ha->key;
@@ -310,7 +311,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    (((struct mloadplan_node *)(ha->value))->mutex) = ecalloc (1, sizeof(pthread_mutex_t));
    pthread_mutex_init ((((struct mloadplan_node *)(ha->value))->mutex), NULL);
 
-   ha = hashnext (ha);
+   ha = streenext (ha);
   }
  }
 
@@ -329,10 +330,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
 #define run_or_spawn_subthreads(set,function,plan,subthreads,tstatus) \
 { \
- uint32_t u; struct uhash *rha; pthread_t th; \
+ uint32_t u; struct stree *rha; pthread_t th; \
  if (set && set[0] && set[1]) { \
   for (u = 0; set[u]; u++) { \
-   if ((rha = hashfind (plan->services, set[u], HASH_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) { \
+   if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) { \
     if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
     else { \
@@ -342,7 +343,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    } \
   } \
  } else { \
-  if ((rha = hashfind (plan->services, set[0], HASH_FIND_FIRST)) && rha->value) { \
+  if ((rha = streefind (plan->services, set[0], TREE_FIND_FIRST)) && rha->value) { \
    function ((struct mloadplan_node *)rha->value); \
   } \
  } \
@@ -377,7 +378,7 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  node->status |= STATUS_WORKING;
 
  pthread_t **subthreads = NULL;
- struct uhash *ha, *rha = NULL;
+ struct stree *ha, *rha = NULL;
  uint32_t i = 0, u = 0, j = 0;
 
  if (node->mod) {
@@ -418,12 +419,12 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
 
  if ((node->group) && (node->group[0])) {
   uint32_t u = 0;
-  struct uhash *ha;
+  struct stree *ha;
 
   run_or_spawn_subthreads_and_wait (node->group, mod_plan_commit_recurse_enable, node->plan, STATUS_ENABLED);
 
   for (u = 0; node->group; u++) {
-   if (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST)) {
+   if (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST)) {
     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
     service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
    }
@@ -446,7 +447,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
  node->status |= STATUS_WORKING;
 
  pthread_t **subthreads = NULL;
- struct uhash *ha;
+ struct stree *ha;
  uint32_t i = 0, u = 0;
 
  if (node->mod) {
@@ -470,7 +471,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
   resume_group_enable:
   if ((node->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) || (node->options & MOD_PLAN_GROUP_SEQ_ANY)) {
    for (u = 0; node->group[u]; u++) {
-    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST))) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
@@ -484,7 +485,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    }
   } else if (node->options & MOD_PLAN_GROUP_SEQ_MOST) {
    for (u = 0; node->group[u]; u++) {
-    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST))) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
@@ -511,7 +512,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    }
   } else if (node->options & MOD_PLAN_GROUP_SEQ_ALL) {
    for (u = 0; node->group[u]; u++) {
-    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = hashfind (node->plan->services, node->group[u], HASH_FIND_FIRST))) {
+    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
 
      mod_plan_commit_recurse_enable (cnode);
@@ -575,7 +576,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (plan->mode) cmode = plan->mode;
 
- struct uhash *ha;
+ struct stree *ha;
  uint32_t u = 0;
  char *switchevent = cfg_getstring ("emit-event/on-switch", cmode);
  if (switchevent) {
@@ -650,7 +651,7 @@ int mod_plan_free (struct mloadplan *plan) {
  if (plan->unavailable) free (plan->unavailable);
 
  if (plan->services) {
-  struct uhash *ha = plan->services;
+  struct stree *ha = plan->services;
   struct mloadplan_node *no = NULL;
 
   while (ha) {
@@ -659,9 +660,9 @@ int mod_plan_free (struct mloadplan *plan) {
     free (no->mutex);
    }
 
-   ha = hashnext (ha);
+   ha = streenext (ha);
   }
-  hashfree (plan->services);
+  streefree (plan->services);
  }
 
  pthread_mutex_unlock (&plan->mutex);

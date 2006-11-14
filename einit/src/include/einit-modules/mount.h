@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
+#include <einit/tree.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
@@ -170,10 +171,10 @@ struct legacy_fstab_entry {
 };
 
 struct mount_control_block {
- struct uhash *blockdevices;
- struct uhash *fstab;
- struct uhash *mtab;
- struct uhash *filesystems;
+ struct stree *blockdevices;
+ struct stree *fstab;
+ struct stree *mtab;
+ struct stree *filesystems;
  void (*add_block_device) (char *, uint32_t, uint32_t);
  void (*add_fstab_entry) (char *, char *, char *, char **, uint32_t, char *, char *, char *, char *, char *, uint32_t, char **);
  void (*add_mtab_entry) (char *, char *, char *, char *, uint32_t, uint32_t);
@@ -210,6 +211,6 @@ void add_fstab_entry (char *, char *, char *, char **, uint32_t, char *, char *,
 void add_mtab_entry (char *, char *, char *, char *, uint32_t, uint32_t);
 void add_filesystem (char *, char *);
 
-struct uhash *read_fsspec_file (char *);
+struct stree *read_fsspec_file (char *);
 
 #endif

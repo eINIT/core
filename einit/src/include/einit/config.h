@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <sys/utsname.h>
+#include <einit/tree.h>
 
 #define BSDLICENSE "All rights reserved.\n"\
  "\n"\
@@ -99,7 +100,7 @@ struct cfgnode {
  char *source_file;
 };
 
-struct uhash *hconfiguration;
+struct stree *hconfiguration;
 struct utsname osinfo;
 pthread_attr_t thread_attribute_detached;
 

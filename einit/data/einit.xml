@@ -10,6 +10,9 @@
    </module>
    <configuration-path s="/etc/einit/" />
   </settings>
+  <scheduler>
+   <shutdown-function-suffixes s="linux" />
+  </scheduler>
 <!-- with the current configuration files, this is not required, but you could still use it
   <commands>
    <include>
@@ -61,6 +64,7 @@
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="15" />
     <broadcast-constraints s="/dev/(tty[1-9][12]?|pts/.*)" />
+    <reset-shutdown-broadcast-messages b="true" />
    </visual>
 
    <visual-edje>
@@ -338,6 +342,14 @@
      provides="x11"
      requires="net-lo:video:mount/critical"
      command="/usr/X11R6/bin/Xorg :0"
+     restart="yes" />
+
+    <daemon id="daemon-xcompmgr"
+     name="X11 (xcompmgr)"
+     provides="x11-composite"
+     requires="x11"
+     command="/usr/bin/xcompmgr -c"
+     DISPLAY=":0.0"
      restart="yes" />
 
     <daemon id="daemon-entrance"

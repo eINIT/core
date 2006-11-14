@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/tree.h>
 #include <einit/event.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -159,7 +160,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  static char recursion = 0;
  int e, blen, cfgplen;
  char * data;
- struct uhash *hnode;
+ struct stree *hnode;
  ssize_t rn;
  struct cfgnode *node = NULL, *last = NULL;
  char *confpath = NULL;
@@ -204,7 +205,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    rescan_node:
    hnode = hconfiguration;
 
-   while (hnode = hashfind (hconfiguration, "core-commands-include-file", HASH_FIND_FIRST)) {
+   while (hnode = streefind (hconfiguration, "core-commands-include-file", TREE_FIND_FIRST)) {
     node = (struct cfgnode *)hnode->value;
     if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
@@ -216,13 +217,13 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      recursion--;
      free (includefile);
      if (node->id) free (node->id);
-//     hashdel (hconfiguration, hnode);
-     hashdel (hnode);
+//     streedel (hconfiguration, hnode);
+     streedel (hnode);
      goto rescan_node;
     }
    }
 
-   while (hnode = hashfind (hconfiguration, "core-commands-include-directory", HASH_FIND_FIRST)) {
+   while (hnode = streefind (hconfiguration, "core-commands-include-directory", TREE_FIND_FIRST)) {
     node = (struct cfgnode *)hnode->value;
 
     if (node->svalue) {
@@ -283,8 +284,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
      free (includedir);
      if (node->id) free (node->id);
-//     hashdel (hconfiguration, hnode);
-     hashdel (hnode);
+//     streedel (hconfiguration, hnode);
+     streedel (hnode);
      goto rescan_node;
     }
    }

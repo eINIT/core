@@ -675,9 +675,11 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
 void einit_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
- if (ev->type == EVE_SHUTDOWN_SCHEDULED)
+ struct cfgnode *n;
+
+ if ((ev->type == EVE_SHUTDOWN_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
   broadcast_message ("/dev/", "a shutdown has been scheduled, commencing...");
- if (ev->type == EVE_REBOOT_SCHEDULED)
+ if ((ev->type == EVE_REBOOT_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
   broadcast_message ("/dev/", "a reboot has been scheduled, commencing...");
 
  if ((ev->type == EVE_SHUTDOWN_IMMINENT) || (ev->type == EVE_REBOOT_IMMINENT)) {
@@ -701,9 +703,9 @@ void einit_event_handler(struct einit_event *ev) {
     c--;
    }
 
-  if (ev->type == EVE_SHUTDOWN_IMMINENT)
+  if ((ev->type == EVE_SHUTDOWN_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
    broadcast_message ("/dev/", "shutting down NOW!");
-  if (ev->type == EVE_REBOOT_IMMINENT)
+  if ((ev->type == EVE_REBOOT_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
    broadcast_message ("/dev/", "rebooting NOW!");
  }
 

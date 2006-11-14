@@ -54,7 +54,7 @@ struct interface_parametres {
 };
 
 struct network_control_block {
- struct uhash *interfaces;
+ struct stree *interfaces;
  void (*add_network_interface) (char *, char *, uint32_t);
 };
 

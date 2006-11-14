@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/tree.h>
 #include <einit/bitch.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -256,9 +257,9 @@ int configure (struct lmodule *this) {
 }
 
 int cleanup (struct lmodule *this) {
- struct uhash *ucur;
+ struct stree *ucur;
 
- hashfree (mcb.blockdevices);
+ streefree (mcb.blockdevices);
  ucur = mcb.fstab;
  while (ucur) {
   if (ucur->value) {
@@ -285,11 +286,11 @@ int cleanup (struct lmodule *this) {
     free (((struct fstab_entry *)(ucur->value))->manager);
    }
   }
-  ucur = hashnext (ucur);
+  ucur = streenext (ucur);
  }
- hashfree (mcb.fstab);
- hashfree (mcb.mtab);
- hashfree (mcb.filesystems);
+ streefree (mcb.fstab);
+ streefree (mcb.mtab);
+ streefree (mcb.filesystems);
 
  mcb.blockdevices = NULL;
  mcb.fstab = NULL;
@@ -397,7 +398,7 @@ unsigned char find_block_devices_recurse_path (char *path) {
 }
 
 unsigned char forge_fstab_by_label (void *na) {
- struct uhash *element = mcb.blockdevices;
+ struct stree *element = mcb.blockdevices;
  struct cfgnode *node = NULL;
  char *hostname = NULL;
  uint32_t hnl = 0;
@@ -479,7 +480,7 @@ unsigned char forge_fstab_by_label (void *na) {
      mcb.add_fstab_entry (estrdup(mpoint), estrdup(element->key), estrdup(fsname), NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
    }
   }
-  element = hashnext (element);
+  element = streenext (element);
  }
  return 0;
 }
@@ -523,29 +524,29 @@ unsigned char read_fstab_from_configuration (void *na) {
 }
 
 unsigned char read_fstab (void *na) {
- struct uhash *workhash = read_fsspec_file ("/etc/fstab");
- struct uhash *cur = workhash;
+ struct stree *workstree = read_fsspec_file ("/etc/fstab");
+ struct stree *cur = workstree;
 
  while (cur) {
   struct legacy_fstab_entry * val = (struct legacy_fstab_entry *)cur->value;
 
   add_fstab_entry (val->fs_file ? estrdup(val->fs_file) : NULL, val->fs_spec ? estrdup(val->fs_spec) : NULL, val->fs_vfstype ? estrdup(val->fs_vfstype) : NULL, str2set (',', val->fs_mntops), 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
 
-  cur = hashnext (cur);
+  cur = streenext (cur);
  }
 
- hashfree(workhash);
+ streefree(workstree);
  return 0;
 }
 
 unsigned char read_mtab (void *na) {
- struct uhash *workhash = read_fsspec_file ("/etc/mtab");
- struct uhash *cur = workhash;
+ struct stree *workstree = read_fsspec_file ("/etc/mtab");
+ struct stree *cur = workstree;
 
 /* this will be removed later */
-// hashfree_mtab(mcb.mtab);
+// streefree_mtab(mcb.mtab);
  pthread_mutex_lock (&mtab_mutex);
- hashfree (mcb.mtab);
+ streefree (mcb.mtab);
  mcb.mtab = NULL;
  pthread_mutex_unlock (&mtab_mutex);
 
@@ -554,15 +555,15 @@ unsigned char read_mtab (void *na) {
   struct legacy_fstab_entry * val = (struct legacy_fstab_entry *)cur->value;
   add_mtab_entry (val->fs_spec, val->fs_file, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
 
-  cur = hashnext (cur);
+  cur = streenext (cur);
  }
 
- hashfree(workhash);
+ streefree(workstree);
  return 0;
 }
 
-struct uhash *read_fsspec_file (char *file) {
- struct uhash *workhash = NULL;
+struct stree *read_fsspec_file (char *file) {
+ struct stree *workstree = NULL;
  FILE *fp;
  if (!file) return NULL;
 
@@ -623,8 +624,8 @@ struct uhash *read_fsspec_file (char *file) {
 #ifdef DEBUG
      printf ("parsed fstab entry: fs_spec=%s, fs_file=%s, fs_vfstype=%s, fs_mntops=%s, fs_freq=%i, fs_passno=%i\n", ne.fs_spec, ne.fs_file, ne.fs_vfstype, ne.fs_mntops, ne.fs_freq, ne.fs_passno);
 #endif
-     workhash = hashadd (workhash, ne.fs_file, &ne, sizeof (struct legacy_fstab_entry), ascur);
-//     workhash = hashadd (workhash, ne->fs_file, ne, -1);
+     workstree = streeadd (workstree, ne.fs_file, &ne, sizeof (struct legacy_fstab_entry), ascur);
+//     workstree = streeadd (workstree, ne->fs_file, ne, -1);
     }
    }
   }
@@ -632,7 +633,7 @@ struct uhash *read_fsspec_file (char *file) {
   fclose (fp);
  }
 
- return workhash;
+ return workstree;
 }
 
 unsigned char read_filesystem_flags_from_configuration (void *na) {
@@ -781,8 +782,8 @@ int scanmodules (struct lmodule *modchain) {
 }
 
 int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags) {
- struct uhash *he = mcb.fstab;
- struct uhash *de = mcb.blockdevices;
+ struct stree *he = mcb.fstab;
+ struct stree *de = mcb.blockdevices;
  struct fstab_entry *fse = NULL;
  struct bd_info *bdi = NULL;
  char *source;
@@ -797,10 +798,10 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  unsigned long mntflags = 0;
 
  if (tflags & MOUNT_TF_MOUNT) {
-  if ((he = hashfind (he, mountpoint, HASH_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
+  if ((he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
    source = fse->device;
    fsntype = 0;
-   if ((de = hashfind (de, source, HASH_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
+   if ((de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
     fsntype = bdi->fs_type;
    }
 
@@ -945,7 +946,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
   while (1) {
    retry++;
-   if (he = hashfind (he, mountpoint, HASH_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
+   if (he = streefind (he, mountpoint, TREE_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
 
    if (fse && !(fse->status & BF_STATUS_MOUNTED))
     snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
@@ -968,7 +969,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      status->string = textbuffer;
      status_update (status);
 
-     struct uhash *hav = hashfind (mcb.mtab, mountpoint, HASH_FIND_FIRST);
+     struct stree *hav = streefind (mcb.mtab, mountpoint, TREE_FIND_FIRST);
      if (!hav) {
       status->string = "wtf? this ain't mounted, bitch!";
       status_update (status);
@@ -1044,13 +1045,13 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
  bdi.minor = minor;
  bdi.status = BF_STATUS_HAS_MEDIUM | BF_STATUS_ERROR_NOTINIT;
  pthread_mutex_lock (&blockdevices_mutex);
- if (hashfind (mcb.blockdevices, devicefile, HASH_FIND_FIRST)) {
+ if (streefind (mcb.blockdevices, devicefile, TREE_FIND_FIRST)) {
   pthread_mutex_unlock (&blockdevices_mutex);
   return;
  }
 
- mcb.blockdevices = hashadd (mcb.blockdevices, devicefile, &bdi, sizeof (struct bd_info), NULL);
-// mcb.blockdevices = hashadd (mcb.blockdevices, devicefile, bdi, -1);
+ mcb.blockdevices = streeadd (mcb.blockdevices, devicefile, &bdi, sizeof (struct bd_info), NULL);
+// mcb.blockdevices = streeadd (mcb.blockdevices, devicefile, bdi, -1);
 
  pthread_mutex_unlock (&blockdevices_mutex);
 }
@@ -1089,7 +1090,7 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  fse.variables = variables;
 
  pthread_mutex_lock (&fstab_mutex);
- if (hashfind (mcb.fstab, mountpoint, HASH_FIND_FIRST)) {
+ if (streefind (mcb.fstab, mountpoint, TREE_FIND_FIRST)) {
   if (fse.mountpoint)
    free (fse.mountpoint);
   if (fse.device)
@@ -1119,9 +1120,9 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
   return;
  }
 
- mcb.fstab = hashadd (mcb.fstab, mountpoint, &fse, sizeof (struct fstab_entry), fse.options);
+ mcb.fstab = streeadd (mcb.fstab, mountpoint, &fse, sizeof (struct fstab_entry), fse.options);
  pthread_mutex_unlock (&fstab_mutex);
-// mcb.fstab = hashadd (mcb.fstab, mountpoint, fse, -1);
+// mcb.fstab = streeadd (mcb.fstab, mountpoint, fse, -1);
 }
 
 void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mntops, uint32_t fs_freq, uint32_t fs_passno) {
@@ -1150,13 +1151,13 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
  lfse.fs_passno = fs_passno;
 
  pthread_mutex_lock (&mtab_mutex);
- if (hashfind (mcb.mtab, fs_file, HASH_FIND_FIRST)) {
+ if (streefind (mcb.mtab, fs_file, TREE_FIND_FIRST)) {
   free (dset);
   pthread_mutex_unlock (&mtab_mutex);
   return;
  }
 
- mcb.mtab = hashadd (mcb.mtab, fs_file, &lfse, sizeof (struct legacy_fstab_entry), dset);
+ mcb.mtab = streeadd (mcb.mtab, fs_file, &lfse, sizeof (struct legacy_fstab_entry), dset);
  pthread_mutex_unlock (&mtab_mutex);
 }
 
@@ -1176,12 +1177,12 @@ void add_filesystem (char *name, char *options) {
  }
 
  pthread_mutex_lock (&fs_mutex);
- if (hashfind (mcb.filesystems, name, HASH_FIND_FIRST)) {
+ if (streefind (mcb.filesystems, name, TREE_FIND_FIRST)) {
   pthread_mutex_unlock (&fs_mutex);
   return;
  }
 
- mcb.filesystems = hashadd (mcb.filesystems, name, (void *)flags, -1, NULL);
+ mcb.filesystems = streeadd (mcb.filesystems, name, (void *)flags, -1, NULL);
  pthread_mutex_unlock (&fs_mutex);
 }
 
@@ -1193,7 +1194,7 @@ void mount_ipc_handler(struct einit_event *ev) {
   if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "fstab")) {
     char buffer[1024];
-    struct uhash *cur = mcb.fstab;
+    struct stree *cur = mcb.fstab;
     struct fstab_entry *val = NULL;
 
     ev->flag = 1;
@@ -1204,11 +1205,11 @@ void mount_ipc_handler(struct einit_event *ev) {
       snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status);
       fdputs (buffer, ev->integer);
      }
-     cur = hashnext (cur);
+     cur = streenext (cur);
     }
    } else if (!strcmp (argv[1], "block-devices")) {
     char buffer[1024];
-    struct uhash *cur = mcb.blockdevices;
+    struct stree *cur = mcb.blockdevices;
     struct bd_info *val = NULL;
 
     ev->flag = 1;
@@ -1219,11 +1220,11 @@ void mount_ipc_handler(struct einit_event *ev) {
       snprintf (buffer, 1023, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status);
       fdputs (buffer, ev->integer);
      }
-     cur = hashnext (cur);
+     cur = streenext (cur);
     }
    } else if (!strcmp (argv[1], "mtab")) {
     char buffer[1024];
-    struct uhash *cur = mcb.mtab;
+    struct stree *cur = mcb.mtab;
     struct legacy_fstab_entry *val = NULL;
 
     ev->flag = 1;
@@ -1234,7 +1235,7 @@ void mount_ipc_handler(struct einit_event *ev) {
       snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;mntops=%s;freq=%i;passno=%i]\n", val->fs_file, val->fs_spec, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
       fdputs (buffer, ev->integer);
      }
-     cur = hashnext (cur);
+     cur = streenext (cur);
     }
    }
   } else if (!strcmp (argv[0], "examine") && !strcmp (argv[1], "configuration")) {
@@ -1286,43 +1287,43 @@ void mount_ipc_handler(struct einit_event *ev) {
     fdputs (" * your fstab is empty.\n", ev->integer);
     ev->task++;
    } else {
-    struct uhash *thash, *fhash;
-    if (!(thash = hashfind (mcb.fstab, "/", HASH_FIND_FIRST))) {
+    struct stree *tstree, *fstree;
+    if (!(tstree = streefind (mcb.fstab, "/", TREE_FIND_FIRST))) {
      fdputs (" * your fstab does not contain an entry for \"/\".\n", ev->integer);
      ev->task++;
-    } else if (!(((struct fstab_entry *)(thash->value))->device)) {
+    } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
      fdputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", ev->integer);
      ev->task++;
-    } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(thash->value))->device))) {
+    } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
      fdputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", ev->integer);
      ev->task++;
     }
 
-    thash = mcb.fstab;
-    while (thash) {
+    tstree = mcb.fstab;
+    while (tstree) {
      struct stat stbuf;
 
-     if (!(((struct fstab_entry *)(thash->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(thash->value))->fs))) {
+     if (!(((struct fstab_entry *)(tstree->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
       char tmpstr[1024];
-      snprintf (tmpstr, 1024, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", thash->key);
+      snprintf (tmpstr, 1024, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", tstree->key);
       fdputs (tmpstr, ev->integer);
       ev->task++;
      }
 
-     if (!(((struct fstab_entry *)(thash->value))->device)) { 
-      if ((((struct fstab_entry *)(thash->value))->fs) && (fhash = hashfind (mcb.filesystems, (((struct fstab_entry *)(thash->value))->fs), HASH_FIND_FIRST)) && !((uintptr_t)fhash->value & FS_CAPA_VOLATILE)) {
+     if (!(((struct fstab_entry *)(tstree->value))->device)) { 
+      if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
        char tmpstr[1024];
-       snprintf (tmpstr, 1024, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", thash->key);
+       snprintf (tmpstr, 1024, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
        fdputs (tmpstr, ev->integer);
        ev->task++;
       }
-     } else if (stat ((((struct fstab_entry *)(thash->value))->device), &stbuf) == -1) {
+     } else if (stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) {
       char tmpstr[1024];
-      snprintf (tmpstr, 1024, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(thash->value))->device), thash->key, strerror (errno));
+      snprintf (tmpstr, 1024, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
       fdputs (tmpstr, ev->integer);
       ev->task++;
      }
-     thash = hashnext (thash);
+     tstree = streenext (tstree);
     }
    }
 
@@ -1341,7 +1342,7 @@ void mount_update_handler(struct einit_event *event) {
 
 int enable (enum mounttask p, struct einit_event *status) {
 // struct einit_event feedback = ei_module_feedback_default;
- struct uhash *ha = mcb.fstab, *fsi = NULL;
+ struct stree *ha = mcb.fstab, *fsi = NULL;
  struct fstab_entry *fse;
  char **candidates = NULL;
  uint32_t i, ret, sc = 0, slc;
@@ -1358,7 +1359,7 @@ int enable (enum mounttask p, struct einit_event *status) {
       if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
        goto mount_skip;
 
-      if (fse->fs && (fsi = hashfind (mcb.filesystems, fse->fs, HASH_FIND_FIRST))) {
+      if (fse->fs && (fsi = streefind (mcb.filesystems, fse->fs, TREE_FIND_FIRST))) {
        if (p == MOUNT_LOCAL) {
         if ((uintptr_t)fsi->value & FS_CAPA_NETWORK) goto mount_skip;
        } else {
@@ -1371,7 +1372,7 @@ int enable (enum mounttask p, struct einit_event *status) {
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
     }
     mount_skip:
-    ha = hashnext (ha);
+    ha = streenext (ha);
    }
    break;
   case MOUNT_ROOT:
@@ -1403,7 +1404,7 @@ int enable (enum mounttask p, struct einit_event *status) {
     else if (inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
 
-    ha = hashnext (ha);
+    ha = streenext (ha);
    }
    break;
   default:
@@ -1423,7 +1424,7 @@ int enable (enum mounttask p, struct einit_event *status) {
 
 /* this next loop will shift stuff around so that every time the process gets to the if (acand) step, acand will
  contain all the mountpoints with the next-higher number of /-s inside. this is to make sure that deeper paths
- will be mounted after lower paths, no matter how they were sorted in the fstab-hash */
+ will be mounted after lower paths, no matter how they were sorted in the fstab-stree */
  while (candidates) {
   uint32_t c = 0, sin = 0;
   char **acand = NULL;
@@ -1453,8 +1454,8 @@ int enable (enum mounttask p, struct einit_event *status) {
 
 int disable (enum mounttask p, struct einit_event *status) {
 // return STATUS_OK;
- struct uhash *ha = mcb.mtab;
- struct uhash *fsi;
+ struct stree *ha = mcb.mtab;
+ struct stree *fsi;
  struct legacy_fstab_entry *lfse = NULL;
  char **candidates = NULL;
  uint32_t i, ret, sc = 0, slc;
@@ -1468,10 +1469,10 @@ int disable (enum mounttask p, struct einit_event *status) {
      if (lfse = (struct legacy_fstab_entry *)ha->value) {
       if (p == MOUNT_LOCAL) {
        if (lfse->fs_vfstype) {
-        if ((fsi = hashfind (mcb.filesystems, lfse->fs_vfstype, HASH_FIND_FIRST)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+        if ((fsi = streefind (mcb.filesystems, lfse->fs_vfstype, TREE_FIND_FIRST)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
-       if (lfse->fs_vfstype && (fsi = hashfind (mcb.filesystems, lfse->fs_vfstype, HASH_FIND_FIRST))) {
+       if (lfse->fs_vfstype && (fsi = streefind (mcb.filesystems, lfse->fs_vfstype, TREE_FIND_FIRST))) {
         if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        } else goto mount_skip;
       }
@@ -1479,7 +1480,7 @@ int disable (enum mounttask p, struct einit_event *status) {
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
     }
     mount_skip:
-    ha = hashnext (ha);
+    ha = streenext (ha);
    }
    break;
   case MOUNT_ROOT:
@@ -1507,7 +1508,7 @@ int disable (enum mounttask p, struct einit_event *status) {
     if (inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
 
-    ha = hashnext (ha);
+    ha = streenext (ha);
    }
    break;
   default:

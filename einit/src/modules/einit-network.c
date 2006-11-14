@@ -118,7 +118,7 @@ void network_ipc_handler(struct einit_event *event) {
   if (!strcmp (argv[1], "network-interfaces")) {
    char buffer[1024];
    struct interface_parametres *cval;
-   struct uhash *cur = mncb.interfaces;
+   struct stree *cur = mncb.interfaces;
 
    while (cur) {
     cval = cur->value;
@@ -129,7 +129,7 @@ void network_ipc_handler(struct einit_event *event) {
      snprintf (buffer, 1024, "%s [options=%x]\n", cur->key, cval->options);
     write (event->integer, buffer, strlen(buffer));
 
-    cur = hashnext (cur);
+    cur = streenext (cur);
    }
 
    if (!event->flag) event->flag++;
@@ -154,7 +154,7 @@ void add_network_interface (char *id, char *name, uint32_t options) {
 
  pthread_mutex_lock (&interfaces_mutex);
 
- mncb.interfaces = hashadd (mncb.interfaces, id, &ip, sizeof (struct interface_parametres), ip.name);
+ mncb.interfaces = streeadd (mncb.interfaces, id, &ip, sizeof (struct interface_parametres), ip.name);
 
  pthread_mutex_unlock (&interfaces_mutex);
 }

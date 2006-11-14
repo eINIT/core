@@ -20,6 +20,7 @@
     <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" verbose-output="/dev/tty10" />
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="2" />
+    <reset-shutdown-broadcast-messages b="false" />
    </visual>
 
    <visual-edje>

@@ -186,7 +186,7 @@ struct lmodule {
 /*!\brief Service-usage information.
  * \ingroup serviceusagequeries
  *
- * This struct is used as values for the service_usage hash.
+ * This struct is used as values for the service_usage stree.
 */
 struct service_usage_item {
  struct lmodule **provider;  /*!< the modules that currently provide this service */
@@ -196,10 +196,10 @@ struct service_usage_item {
 /*!\brief Service-usage information.
  * \ingroup serviceusagequeries
  *
- * This hash is used to figure out what services are currently being provided, and which services depend
+ * This stree is used to figure out what services are currently being provided, and which services depend
  * on which services.
 */
-struct uhash *service_usage;
+struct stree *service_usage;
 
 /*!\brief Scan for modules
  *

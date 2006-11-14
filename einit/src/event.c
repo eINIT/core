@@ -44,8 +44,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/event.h>
 #include <einit/utility.h>
+#include <einit/tree.h>
 
-struct uhash *exported_functions = NULL;
+struct stree *exported_functions = NULL;
 struct event_ringbuffer_node *event_logbuffer = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -175,7 +176,7 @@ void function_register (char *name, uint32_t version, void *function) {
 // printf ("adding %s to %zx\n", name, exported_functions);
 
  pthread_mutex_lock (&pof_mutex);
-  exported_functions = hashadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
+  exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
  pthread_mutex_unlock (&pof_mutex);
 
  free (fstruct);
@@ -184,7 +185,7 @@ void function_register (char *name, uint32_t version, void *function) {
 void **function_find (char *name, uint32_t version, char **sub) {
  if (!exported_functions || !name) return NULL;
  void **set = NULL;
- struct uhash *ha = exported_functions;
+ struct stree *ha = exported_functions;
 
 /* char tmp[2048];
  snprintf (tmp, 2048, "looking for %s in %zx", name, ha);
@@ -195,14 +196,14 @@ void **function_find (char *name, uint32_t version, char **sub) {
  pthread_mutex_lock (&pof_mutex);
  if (!sub) {
 //  printf ("simple lookup ");
-  ha = hashfind (exported_functions, name, HASH_FIND_FIRST);
+  ha = streefind (exported_functions, name, TREE_FIND_FIRST);
   while (ha) {
 /*   char tmp[2048];
    snprintf (tmp, 2048, "returned with %zx", ha);
    puts (tmp);*/
    struct exported_function *ef = ha->value;
    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
-   ha = hashfind (ha, name, HASH_FIND_NEXT);
+   ha = streefind (ha, name, TREE_FIND_NEXT);
   }
  } else {
   uint32_t i = 0, k = strlen (name)+1;
@@ -219,7 +220,7 @@ void **function_find (char *name, uint32_t version, char **sub) {
    strcat (n, sub[i]);
 //   printf ("%s ", n);
 
-   ha = hashfind (exported_functions, n, HASH_FIND_FIRST);
+   ha = streefind (exported_functions, n, TREE_FIND_FIRST);
 /*   if (!ha) {
     puts ("no initial result");
    }*/
@@ -232,7 +233,7 @@ void **function_find (char *name, uint32_t version, char **sub) {
     struct exported_function *ef = ha->value;
     if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
 
-    ha = hashfind (ha, n, HASH_FIND_NEXT);
+    ha = streefind (ha, n, TREE_FIND_NEXT);
    }
   }
 
@@ -247,20 +248,20 @@ void **function_find (char *name, uint32_t version, char **sub) {
 
 void function_unregister (char *name, uint32_t version, void *function) {
  if (!exported_functions) return;
- struct uhash *ha = exported_functions;
+ struct stree *ha = exported_functions;
 
  pthread_mutex_lock (&pof_mutex);
- ha = hashfind (exported_functions, name, HASH_FIND_FIRST);
+ ha = streefind (exported_functions, name, TREE_FIND_FIRST);
  while (ha) {
   struct exported_function *ef = ha->value;
   if (ef && (ef->version == version)) {
-//   exported_functions = hashdel (exported_functions, ha);
-   exported_functions = hashdel (ha);
-   ha = hashfind (exported_functions, name, HASH_FIND_FIRST);
+//   exported_functions = streedel (exported_functions, ha);
+   exported_functions = streedel (ha);
+   ha = streefind (exported_functions, name, TREE_FIND_FIRST);
 //   ha = exported_functions;
 //   if (!ha) break;
   } else
-   ha = hashfind (exported_functions, name, HASH_FIND_NEXT);
+   ha = streefind (exported_functions, name, TREE_FIND_NEXT);
  }
  pthread_mutex_unlock (&pof_mutex);
 
