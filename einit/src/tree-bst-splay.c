@@ -40,10 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
+#include <einit/tree.h>
 #include <ctype.h>
 #include <stdio.h>
 
-#include <errno.h>
 #include <limits.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -52,8 +52,140 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* strees */
 
+// this is the splay-tree implementation. it should be considerably faster than the linear implementation
+
+uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *grandparent) {
+ if (!current || (current == *(current->root))) return; // bail out early if something is weird
+ if (!parent) parent = current->parent;
+ if (!grandparent && parent) grandparent = parent->parent;
+
+ while (grandparent) {
+  struct stree **gppsp;
+
+//  puts ("splaying");
+
+  if (grandparent->parent) { // find pointer to modify for the root
+   if (grandparent->parent->left == grandparent)
+    gppsp = &(grandparent->parent->left);
+   else
+    gppsp = &(grandparent->parent->right);
+  } else
+   gppsp = current->root;
+
+  if ((parent->right == current) && (grandparent->left == parent)) {         // zig-zag left
+   struct stree *cl = current->left;
+   struct stree *cr = current->right;
+
+   current->left = parent;
+   current->right = grandparent;
+
+   parent->right = cl;
+   grandparent->left = cr;
+
+   if (cr) cr->parent = grandparent;
+   if (cl) cl->parent = parent;
+   current->parent = grandparent->parent;
+
+   parent->parent = current;
+   grandparent->parent = current;
+
+   *gppsp = current;
+  } else if ((parent->left == current) && (grandparent->right == parent)) {  // zig-zag right
+   struct stree *cl = current->left;
+   struct stree *cr = current->right;
+
+   current->left = grandparent;
+   current->right = parent;
+
+   parent->left = cr;
+   grandparent->right = cl;
+
+   if (cr) cr->parent = parent;
+   if (cl) cl->parent = grandparent;
+   current->parent = grandparent->parent;
+
+   parent->parent = current;
+   grandparent->parent = current;
+
+   *gppsp = current;
+  } else if ((parent->left == current) && (grandparent->left == parent)) {   // zig-zig left
+   struct stree *cr = current->right;
+   struct stree *pr = parent->right;
+
+   current->right = parent;
+   parent->right = grandparent;
+
+   parent->left = cr;
+   grandparent->left = pr;
+
+   if (cr) cr->parent = parent;
+   if (pr) pr->parent = grandparent;
+   current->parent = grandparent->parent;
+
+   parent->parent = current;
+   grandparent->parent = parent;
+
+   *gppsp = current;
+  } else if ((parent->right == current) && (grandparent->right == parent)) { // zig-zig right
+   struct stree *cl = current->left;
+   struct stree *pl = parent->left;
+
+   current->left = parent;
+   parent->left = grandparent;
+
+   parent->right = cl;
+   grandparent->right = pl;
+
+   if (cl) cl->parent = parent;
+   if (pl) pl->parent = grandparent;
+   current->parent = grandparent->parent;
+
+   parent->parent = current;
+   grandparent->parent = parent;
+
+   *gppsp = current;
+  }
+
+  if (parent = current->parent)
+   grandparent = parent->parent;
+  else
+   grandparent = NULL;
+ }
+
+ if (current->parent) {
+  if (parent->left == current) {  // zig step left
+   struct stree *cr = current->right;
+
+   current->right = parent;
+
+   parent->parent = current;
+   current->parent = NULL;
+
+   parent->left = cr;
+   if (cr) cr->parent = parent;
+  } else {                        // zig step left
+   struct stree *cl = current->left;
+
+   current->left = parent;
+
+   parent->parent = current;
+   current->parent = NULL;
+
+   parent->right = cl;
+   if (cl) cl->parent = parent;
+  }
+
+  *(current->root) = current;
+ }
+
+
+ return 0;
+}
+
 struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vlen, void *luggage) {
- struct stree *n, *rootnode = (stree ? *(stree->root) : NULL);
+ struct stree *n,
+              *rootnode = (stree ? *(stree->root) : NULL),
+              *base = (stree ? *(stree->lbase) : NULL);
  struct stree *c = stree;
  uint32_t hklen;
 
@@ -83,50 +215,50 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
  n->luggage = luggage;
 
  n->root = stree ? stree->root : NULL;
+ n->lbase = stree ? stree->lbase : NULL;
 
-/* n->next = stree;
- stree = n;*/
  n->next = stree;
  stree = n;
+
+ if (!base)
+  stree->lbase = emalloc (sizeof(struct stree *));
+
+ *(stree->lbase) = stree;
 
  if (!rootnode) {
   stree->root = emalloc (sizeof(struct stree *));
   *(stree->root) = stree;
  } else {
-  *(stree->root) = stree;
- }
+  struct stree *grandparent = NULL, *parent = NULL, *current = rootnode;
+  uint32_t cres = 0;
 
-/* else {
-  struct stree *parent = rootnode, *current = rootnode;
-  uint32_t e = 0;
-
-  for (; key[e]; e++) {
-   if (current) {
-    parent = current;
-    if (key[e] < current->key[e]) {
-     current = current->left;
-    } else {
-     current = current->right;
-    }
-   } else {
-    if (key[e] < parent->key[e])
-     parent->left = n;
-    else
-     parent->right = n;
-
-    printf ("%s now %i child of %s[%x], under %s\n", n->key, (key[e] < parent->key[e]), parent->key, parent, rootnode->key);
-
-    return stree;
-//    break;
+  while (current) {
+   grandparent = parent;
+   parent = current;
+   if ((cres = strcmp (key, current->key)) < 0) { // to the left... (<)
+    current = current->left;
+   } else { // to the right... (>=)
+    current = current->right;
    }
   }
- }*/
+
+  current = stree;
+
+  if (cres < 0) {
+   parent->left = stree;
+  } else {
+   parent->right = stree;
+  }
+  stree->parent = parent;
+
+  streesplay(stree, parent, grandparent);
+ }
 
  return stree;
 }
 
 struct stree *streedel (struct stree *subject) {
- struct stree *cur = (subject ? *(subject->root) : NULL),
+ struct stree *cur = (subject ? *(subject->lbase) : NULL),
               *be = cur;
 
  if (!cur || !subject) return subject;
@@ -137,8 +269,19 @@ struct stree *streedel (struct stree *subject) {
 
  if (cur == subject) {
   be = cur->next;
-  *(subject->root) = be;
+  *(subject->lbase) = be;
   if (cur->luggage) free (cur->luggage);
+
+  if (cur->parent) {
+   if (cur->parent->left == cur) cur->parent->left = NULL;
+   else cur->parent->right = NULL;
+  }
+
+  if (cur == *(cur->root)) *(cur->root) = (cur->parent ? cur->parent : (cur->left ? cur->left : cur->right));
+
+  if (cur->left)  cur->left->parent  = cur->parent;
+  if (cur->right) cur->right->parent = cur->parent;
+
   free (cur);
   return be;
  }
@@ -149,6 +292,17 @@ struct stree *streedel (struct stree *subject) {
  if (cur && (cur->next == subject)) {
   cur->next = subject->next;
   if (subject->luggage) free (subject->luggage);
+
+  if (subject->parent) {
+   if (subject->parent->left == subject) subject->parent->left = NULL;
+   else subject->parent->right = NULL;
+  }
+
+  if (subject == *(subject->root)) *(subject->root) = (subject->parent ? subject->parent : (subject->left ? subject->left : subject->right));
+
+  if (subject->left)  subject->left->parent  = subject->parent;
+  if (subject->right) subject->right->parent = subject->parent;
+
   free (subject);
 //  return cur;
  }
@@ -158,6 +312,7 @@ struct stree *streedel (struct stree *subject) {
 
 struct stree *streefind (struct stree *stree, char *key, char options) {
  struct stree *c;
+ char cmp = 0;
  if (!stree || !key) return NULL;
 
 /* char tmp[2048];
@@ -165,18 +320,22 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  puts (tmp); */
 
  if (options == TREE_FIND_FIRST) c = *(stree->root);
- else /* if (options == TREE_FIND_NEXT) */ c = stree->next;
+ else if (options == TREE_FIND_NEXT) {
+  if (!strcmp (key, stree->key))
+   c = stree->right;
+  else
+   c = stree;
+ }
+
+ while (c && (cmp = strcmp (key, c->key))) {
+  if (cmp < 0) c = c->right;
+  else c = c->left;
+ }
 
  if (!c) return NULL;
-// printf ("streefind(): need to find %s in 0x%zx->%s\n", key, c, c->key);
 
- while (strcmp (key, c->key) && c->next) c = c->next;
-//  printf ("%s==%s?\n", key, c->key);
-// }
- if (!c->next && strcmp (key, c->key)) return NULL;
-// if (strcmp (key, c->key)) return NULL;
+ if (c) streesplay (c, NULL, NULL);
 
-// printf ("streefind(): returning 0x%zx->%s for %s\n", c, c->key, key);
  return c;
 }
 

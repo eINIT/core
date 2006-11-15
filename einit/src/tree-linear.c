@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // linear implementation
 
 struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vlen, void *luggage) {
- struct stree *n, *rootnode = (stree ? *(stree->root) : NULL);
+ struct stree *n, *base = (stree ? *(stree->lbase) : NULL);
  struct stree *c = stree;
  uint32_t hklen;
 
@@ -83,28 +83,28 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
 
  n->luggage = luggage;
 
- n->root = stree ? stree->root : NULL;
+ n->lbase = stree ? stree->lbase : NULL;
 
  n->next = stree;
  stree = n;
 
- if (!rootnode)
-  stree->root = emalloc (sizeof(struct stree *));
+ if (!base)
+  stree->lbase = emalloc (sizeof(struct stree *));
 
- *(stree->root) = stree;
+ *(stree->lbase) = stree;
 
  return stree;
 }
 
 struct stree *streedel (struct stree *subject) {
- struct stree *cur = (subject ? *(subject->root) : NULL),
+ struct stree *cur = (subject ? *(subject->lbase) : NULL),
               *be = cur;
 
  if (!cur || !subject) return subject;
 
  if (cur == subject) {
   be = cur->next;
-  *(subject->root) = be;
+  *(subject->lbase) = be;
   if (cur->luggage) free (cur->luggage);
   free (cur);
   return be;
@@ -126,13 +126,13 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  struct stree *c;
  if (!stree || !key) return NULL;
 
- if (options == TREE_FIND_FIRST) c = *(stree->root);
+ if (options == TREE_FIND_FIRST) c = *(stree->lbase);
  else c = stree->next;
 
  if (!c) return NULL;
 
  while (strcmp (key, c->key) && c->next) c = c->next;
- if (!c->next && strcmp (key, c->key)) return NULL;
+ if (c && (!c->next) && strcmp (key, c->key)) return NULL;
 
  return c;
 }

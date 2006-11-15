@@ -1,6 +1,9 @@
 2006/11/14: mdeininger
  * API cleanups (scheduler and OS-dependant code)
  * relocated the hash-code to tree.h, API/ABI changes (uhash->stree)
+ * started working on implementing splay-trees (doesn't work yet, isn't used)
+ * need to change the module-system to use trees to sort the lmodule-struct
+   by its rid (or the source-id...)
 
 2006/11/11: mdeininger
  * that one segfault (it was in the gentoo-compatibility module)
