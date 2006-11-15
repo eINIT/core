@@ -1194,7 +1194,7 @@ void mount_ipc_handler(struct einit_event *ev) {
   if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "fstab")) {
     char buffer[1024];
-    struct stree *cur = mcb.fstab;
+    struct stree *cur = ( mcb.fstab ? *(mcb.fstab->lbase) : NULL );
     struct fstab_entry *val = NULL;
 
     ev->flag = 1;

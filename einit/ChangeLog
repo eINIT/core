@@ -1,3 +1,7 @@
+2006/11/15: mdeininger
+ * did some hacking on those splay trees... they kinda work as basic BSTs,
+   but the splaying doesn't work
+
 2006/11/14: mdeininger
  * API cleanups (scheduler and OS-dependant code)
  * relocated the hash-code to tree.h, API/ABI changes (uhash->stree)

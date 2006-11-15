@@ -156,29 +156,29 @@ int cfg_addnode (struct cfgnode *node) {
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
  struct stree *cur = hconfiguration;
+ if (!id) return;
+
+// printf ("supposed to find id=%s, base=%x\n", id, base);
+
  if (base) {
+//  if (!cur) puts ("searching for entry node");
+  cur = streefind (cur, id, TREE_FIND_FIRST);
   while (cur) {
    if (cur->value == base) {
-//    cur = streenext (cur);
     cur = streefind (cur, id, TREE_FIND_NEXT);
     break;
    }
-   cur = streenext (cur);
+//   cur = streenext (cur);
+    cur = streefind (cur, id, TREE_FIND_NEXT);
   }
  } else
- cur = streefind (cur, id, TREE_FIND_FIRST);
+  cur = streefind (cur, id, TREE_FIND_FIRST);
 
- if (!cur || !id) {
-//  printf ("no node found for %s\n", id);
-//  if (base) printf ("(had some before)\n");
-  return NULL;
- } else
-//  printf ("XX node found for %s\n", id);
+// if (!cur) puts ("no node found!");
 
  while (cur) {
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
    return cur->value;
-//  cur = streenext (cur);
   cur = streefind (cur, id, TREE_FIND_NEXT);
  }
  return NULL;
@@ -220,28 +220,31 @@ char *cfg_getstring (char *id, struct cfgnode *mode) {
 struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
  struct cfgnode *node = NULL;
  struct cfgnode *ret = NULL;
- char *tmpnodename = NULL;
 
  if (!id) return NULL;
  mode = mode ? mode : cmode;
 
- tmpnodename = emalloc (6+strlen (id));
- *tmpnodename = 0;
+ if (mode) {
+  char *tmpnodename = NULL;
+  tmpnodename = emalloc (6+strlen (id));
+  *tmpnodename = 0;
 
- strcat (tmpnodename, "mode-");
- strcat (tmpnodename, id);
+  strcat (tmpnodename, "mode-");
+  strcat (tmpnodename, id);
 
- while (node = cfg_findnode (tmpnodename, 0, node)) {
-  if (node->mode == mode) {
-   ret = node;
-   break;
+  while (node = cfg_findnode (tmpnodename, 0, node)) {
+   if (node->mode == mode) {
+    ret = node;
+    break;
+   }
   }
+  
+  free (tmpnodename);
  }
 
  if (!ret && (node = cfg_findnode (id, 0, NULL)))
   ret = node;
 
- free (tmpnodename);
  return ret;
 }
 

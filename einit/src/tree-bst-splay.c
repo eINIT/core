@@ -54,15 +54,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // this is the splay-tree implementation. it should be considerably faster than the linear implementation
 
-uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *grandparent) {
+void streesplay (struct stree *current, struct stree *parent, struct stree *grandparent) {
  if (!current || (current == *(current->root))) return; // bail out early if something is weird
  if (!parent) parent = current->parent;
  if (!grandparent && parent) grandparent = parent->parent;
 
+/* puts ((*(current->root))->key);
+ if (current->left) *(current->root) = current->left;
+ else if (current->right) *(current->root) = current->right;
+
+ puts ((*(current->root))->key);*/
+
+// return;
+
  while (grandparent) {
   struct stree **gppsp;
 
-//  puts ("splaying");
+//  printf ("splaying: root=%s(%x), node=%s(%x), parent=%s(%x), grandparent=%s(%x)\n", (*(current->root))->key, *(current->root), current->key, current, parent->key, parent, grandparent->key, grandparent);
 
   if (grandparent->parent) { // find pointer to modify for the root
    if (grandparent->parent->left == grandparent)
@@ -72,7 +80,11 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
   } else
    gppsp = current->root;
 
+//  return;
+
   if ((parent->right == current) && (grandparent->left == parent)) {         // zig-zag left
+//   return;
+
    struct stree *cl = current->left;
    struct stree *cr = current->right;
 
@@ -91,6 +103,8 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
 
    *gppsp = current;
   } else if ((parent->left == current) && (grandparent->right == parent)) {  // zig-zag right
+ //  return;
+
    struct stree *cl = current->left;
    struct stree *cr = current->right;
 
@@ -109,6 +123,8 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
 
    *gppsp = current;
   } else if ((parent->left == current) && (grandparent->left == parent)) {   // zig-zig left
+//   return;
+
    struct stree *cr = current->right;
    struct stree *pr = parent->right;
 
@@ -127,6 +143,8 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
 
    *gppsp = current;
   } else if ((parent->right == current) && (grandparent->right == parent)) { // zig-zig right
+//   return;
+
    struct stree *cl = current->left;
    struct stree *pl = parent->left;
 
@@ -154,6 +172,8 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
 
  if (current->parent) {
   if (parent->left == current) {  // zig step left
+//   return;
+
    struct stree *cr = current->right;
 
    current->right = parent;
@@ -164,6 +184,8 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
    parent->left = cr;
    if (cr) cr->parent = parent;
   } else {                        // zig step left
+//   return;
+
    struct stree *cl = current->left;
 
    current->left = parent;
@@ -179,7 +201,7 @@ uint32_t streesplay (struct stree *current, struct stree *parent, struct stree *
  }
 
 
- return 0;
+ return;
 }
 
 struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vlen, void *luggage) {
@@ -217,7 +239,7 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
  n->root = stree ? stree->root : NULL;
  n->lbase = stree ? stree->lbase : NULL;
 
- n->next = stree;
+ n->next = base;
  stree = n;
 
  if (!base)
@@ -229,16 +251,24 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
   stree->root = emalloc (sizeof(struct stree *));
   *(stree->root) = stree;
  } else {
-  struct stree *grandparent = NULL, *parent = NULL, *current = rootnode;
-  uint32_t cres = 0;
+  struct stree *parent = NULL, *current = rootnode;
+  signed char cres = 0;
 
   while (current) {
-   grandparent = parent;
    parent = current;
    if ((cres = strcmp (key, current->key)) < 0) { // to the left... (<)
+//    printf ("%s < %s\n", key, current->key);
     current = current->left;
-   } else { // to the right... (>=)
+   } else if (cres > 0) { // to the right... (>)
+//    printf ("%s > %s\n", key, current->key);
     current = current->right;
+   } else { // insert as right subnode if keys are identical
+//    printf ("keys identical: %s adding to the right\n", key);
+    stree->right = current->right;
+	stree->parent = current;
+	if (stree->right) stree->right->parent = stree;
+    current->right = stree;
+	goto insert_done;
    }
   }
 
@@ -251,10 +281,14 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
   }
   stree->parent = parent;
 
-  streesplay(stree, parent, grandparent);
+// doesn't really make sense to splay the tree after inserting an element, but it's nice for testing...
+  streesplay(stree, parent, NULL);
  }
 
+ insert_done:
+
  return stree;
+// return *(stree->lbase);
 }
 
 struct stree *streedel (struct stree *subject) {
@@ -298,13 +332,13 @@ struct stree *streedel (struct stree *subject) {
    else subject->parent->right = NULL;
   }
 
-  if (subject == *(subject->root)) *(subject->root) = (subject->parent ? subject->parent : (subject->left ? subject->left : subject->right));
+  if (subject == *(subject->root)) *(subject->root) =
+   (subject->parent ? subject->parent : (subject->left ? subject->left : subject->right));
 
   if (subject->left)  subject->left->parent  = subject->parent;
   if (subject->right) subject->right->parent = subject->parent;
 
   free (subject);
-//  return cur;
  }
 
  return be;
@@ -312,7 +346,7 @@ struct stree *streedel (struct stree *subject) {
 
 struct stree *streefind (struct stree *stree, char *key, char options) {
  struct stree *c;
- char cmp = 0;
+ signed char cmp = 0;
  if (!stree || !key) return NULL;
 
 /* char tmp[2048];
@@ -328,8 +362,8 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  }
 
  while (c && (cmp = strcmp (key, c->key))) {
-  if (cmp < 0) c = c->right;
-  else c = c->left;
+  if (cmp < 0) c = c->left;
+  else c = c->right;
  }
 
  if (!c) return NULL;
