@@ -20,6 +20,7 @@
     <directory s="local" />
    </include>
   </commands> -->
+  <mode s="init" />
  </core>
 
  <configuration>

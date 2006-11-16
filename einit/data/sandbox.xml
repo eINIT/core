@@ -5,6 +5,9 @@
    <module-path s="lib/einit" />
    <configuration-path s="etc/einit/" />
   </settings>
+  <scheduler>
+   <shutdown-function-suffixes s="none" />
+  </scheduler>
 
 <!--  <commands>
    <include>
@@ -12,6 +15,7 @@
     <directory s="local" />
    </include>
   </commands> -->
+  <mode s="metadaemon" />
  </core>
 
  <configuration>

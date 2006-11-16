@@ -65,6 +65,7 @@ int ipc_wait ();
 int cleanup ();
 
 pid_t einit_sub = 0;
+char isinit = 1, initoverride = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 
@@ -93,13 +94,15 @@ int print_usage_info () {
   " einit [-c <filename>] [options]\n"
   "\n"
   "Options:\n"
-  "-c <filename>        load <filename> instead of/etc/einit/local.xml\n"
-  "-h, --help           display this text\n"
-  "-v                   print version and copyright notice, then exit\n"
-  "--no-feedback-switch disable the first switch to the feedback mode\n"
-  "--feedback-switch    enable the mode-switch to the feedback mode (default)\n"
-  "--ipc-command        don't boot, only run specified ipc-command\n"
-  "                     (you can use this more than once)\n"
+  "-c <filename>         load <filename> instead of/etc/einit/local.xml\n"
+  "-h, --help            display this text\n"
+  "-v                    print version and copyright notice, then exit\n"
+  "--no-feedback-switch  disable the first switch to the feedback mode\n"
+  "--feedback-switch     enable the mode-switch to the feedback mode (default)\n"
+  "--ipc-command         don't boot, only run specified ipc-command\n"
+  "                      (you can use this more than once)\n"
+  "--override-init-check einit will check if it process 1, override with this flag\n"
+  "--check-configuration tell all modules to check for configuration errors. use this!\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
@@ -136,6 +139,9 @@ int main(int argc, char **argv) {
 
  uname (&osinfo);
 
+// is this the system's init-process?
+ isinit = getpid() == 1;
+
 /* check command line arguments */
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
@@ -167,6 +173,8 @@ int main(int argc, char **argv) {
       return print_usage_info ();
      else if (!strcmp(argv[i], "--ipc-command") && argv[i+1])
       ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
+     else if (!strcmp(argv[i], "--override-init-check"))
+      initoverride = 1;
 
      break;
    }
@@ -216,7 +224,10 @@ int main(int argc, char **argv) {
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
  if (!einit_startup_configuration_files) einit_startup_configuration_files = einit_default_startup_configuration_files;
 
- if (pid == 1) einit_sub = fork();
+ if (pid == 1) {
+  initoverride = 1;
+  einit_sub = fork();
+ }
 
  if (einit_sub) {
 /* PID==1 part */
@@ -324,6 +335,11 @@ int main(int argc, char **argv) {
 
     evdestroy (event);
    }
+#ifndef SANDBOX
+  } else if (!isinit && !initoverride) {
+   printf ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and --override-init-check flag was not spcified.\nexiting...\n\n");
+   exit (EXIT_FAILURE);
+#endif
   } else {
    uint32_t e = 0;
    sched_init ();

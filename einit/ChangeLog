@@ -1,3 +1,6 @@
+2006/11/16: mdeininger
+ * added check to prevent init from being run if it is not pid=1
+
 2006/11/15: mdeininger
  * did some hacking on those splay trees... they kinda work as basic BSTs,
    but the splaying doesn't work
