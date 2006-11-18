@@ -59,6 +59,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
+#include <einit-modules/process.h>
+
 #ifdef LINUX
 #include <linux/fs.h>
 
@@ -882,6 +884,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      else if (!strcmp (fse->options[fi], "ro")) mntflags |= MS_RDONLY;
      else if (!strcmp (fse->options[fi], "nomand")) mntflags ^= MS_MANDLOCK;
      else if (!strcmp (fse->options[fi], "nosuid")) mntflags |= MS_NOSUID;
+     else if (!strcmp (fse->options[fi], "bind")) mntflags |= MS_BIND;
      else if (!strcmp (fse->options[fi], "remount")) mntflags |= MS_REMOUNT;
      else
 #endif
@@ -1305,7 +1308,14 @@ void mount_ipc_handler(struct einit_event *ev) {
 
      if (!(((struct fstab_entry *)(tstree->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
       char tmpstr[1024];
-      snprintf (tmpstr, 1024, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", tstree->key);
+	  if (inset ((void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
+#ifdef LINUX
+       tstree = streenext (tstree);
+       continue;
+#else
+	   snprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
+#endif
+	  } else snprintf (tmpstr, 1024, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", tstree->key);
       fdputs (tmpstr, ev->integer);
       ev->task++;
      }

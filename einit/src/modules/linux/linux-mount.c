@@ -332,6 +332,7 @@ unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint,
    else if (!strcmp (fse->options[fi], "ro")) mntflags |= MS_RDONLY;
    else if (!strcmp (fse->options[fi], "nomand")) mntflags ^= MS_MANDLOCK;
    else if (!strcmp (fse->options[fi], "nosuid")) mntflags |= MS_NOSUID;
+   else if (!strcmp (fse->options[fi], "bind")) mntflags |= MS_BIND;
    else if (!strcmp (fse->options[fi], "remount")) mntflags |= MS_REMOUNT;
    else if (!fsdata) {
     uint32_t slen = strlen (fse->options[fi])+1;

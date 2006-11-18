@@ -1,3 +1,6 @@
+2006/11/18: mdeininger
+ * added support for linux bind-mounts
+
 2006/11/16: mdeininger
  * added check to prevent init from being run if it is not pid=1
 

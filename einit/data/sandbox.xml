@@ -58,6 +58,7 @@
    <fstab>
     <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
     <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" />
+    <node device="/boot" mountpoint="/sys/boot" options="bind" />
    </fstab>
   </storage>
  </configuration>
