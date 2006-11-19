@@ -1,5 +1,6 @@
 2006/11/19: mdeininger
- * added some more modules
+ * added some more modules (creds to the gentoo forums :D)
+ * some work on the process-handling framework
 
 2006/11/18: mdeininger
  * added support for linux bind-mounts

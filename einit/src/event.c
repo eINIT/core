@@ -246,6 +246,15 @@ void **function_find (char *name, uint32_t version, char **sub) {
  return set;
 }
 
+void *function_find_one (char *name, uint32_t version, char **sub) {
+ void **t = function_find(name, version, sub);
+ void *f = (t? t[0] : NULL);
+
+ if (t) free (t);
+
+ return f;
+}
+
 void function_unregister (char *name, uint32_t version, void *function) {
  if (!exported_functions) return;
  struct stree *ha = exported_functions;

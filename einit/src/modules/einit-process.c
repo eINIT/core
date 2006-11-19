@@ -1,8 +1,8 @@
 /*
- *  process.h
- *  eINIT
+ *  einit-process.c
+ *  einit
  *
- *  Created by Magnus Deininger on 18/11/2006.
+ *  Created by Magnus Deininger on 19/09/2006.
  *  Copyright 2006 Magnus Deininger. All rights reserved.
  *
  */
@@ -35,30 +35,49 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _EINIT_MODULES_PROCESS_H
-#define _EINIT_MODULES_PROCESS_H
+#define _MODULE
 
 #include <unistd.h>
-#include <inttypes.h>
-#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/event.h>
+#include <einit-modules/process.h>
+#include <errno.h>
+#include <string.h>
 
-#define PC_CONDITION_OPTIONAL  0x0001
-#define PC_COLLECT_ADDITIVE    0x0010
-#define PC_COLLECT_SUBTRACTIVE 0x0020
+#define EXPECTED_EIV 1
 
-struct pc_conditional {
- char *match;
- void *para;
- uint16_t match_options;
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+const struct smodule self = {
+	.eiversion	= EINIT_VERSION,
+	.version	= 1,
+	.mode		= 0,
+	.options	= 0,
+	.name		= "eINIT Process Function Library",
+	.rid		= "einit-process",
+	.provides	= NULL,
+	.requires	= NULL,
+	.notwith	= NULL
 };
 
-typedef pid_t **(*process_collector)(struct pc_conditional **);
+pid_t **collect_processes(struct pc_conditional **pcc) {
+ puts ("hello world");
+}
 
-process_collector pcf;
+int configure (struct lmodule *irr) {
+ process_configure(irr);
+ function_register ("einit-process-collect", 1, collect_processes);
+}
 
-#define pcollect(x) (pcf? pcf(x) : ((pcf = function_find_one("einit-process-collect", 1, NULL)) ? pcf(x) : NULL))
+int cleanup (struct lmodule *this) {
+ function_unregister ("einit-process-collect", 1, collect_processes);
+ process_cleanup(irr);
+}
 
-#define process_configure(mod) pcf = NULL;
-#define process_cleanup(mod) pcf = NULL;
-
-#endif
+/* passive module, no enable/disable */

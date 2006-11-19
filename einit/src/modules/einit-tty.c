@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/scheduler.h>
 #include <einit/event.h>
 #include <string.h>
+#include <einit-modules/process.h>
 
 #include <signal.h>
 #include <pthread.h>

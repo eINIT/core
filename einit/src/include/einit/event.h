@@ -154,6 +154,7 @@ void event_ignore (uint32_t, void (*)(struct einit_event *));
 void function_register (char *, uint32_t, void *);
 void function_unregister (char *, uint32_t, void *);
 void **function_find (char *, uint32_t, char **);
+void *function_find_one (char *, uint32_t, char **);
 
 struct event_function *event_functions;
 struct stree *exported_functions;
