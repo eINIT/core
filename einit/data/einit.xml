@@ -110,7 +110,7 @@
 
   <video>
    <intel>
-    <resolution x="1280" y="1024" bpp="32" />
+    <resolution x="1280" y="1024" bpp="32" mode="5c" />
    </intel>
   </video>
 
@@ -156,6 +156,9 @@
    </block-devices>
 
    <fstab>
+<!--
+    <sandbox-ignore nodes="/:/boot:/proc:/proc/bus/usb:/dev/shm:/dev/pts:/dev:/sys" /> -->
+
 <!-- NEVER remove the configuration fstab-source! -->
     <source s="configuration" />
 
@@ -521,13 +524,13 @@
      variables="configuration-command-rmmod" />
 
 <!-- olof from the gentoo forums made a draft for this one -->
-    <shell id="shell-915resolution" 
-     name="Resolution (Intel)" 
-     provides="video-intel-resolution" 
-     requires="mount/critical" 
-     enable="915resolution 5c ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true" 
+    <shell id="shell-915resolution"
+     name="Resolution (Intel)"
+     provides="video-intel-resolution"
+     requires="mount/critical"
+     enable="915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true"
      disable="/bin/true"
-	 variables="configuration-video-intel-resolution/x:configuration-video-intel-resolution/y:configuration-video-intel-resolution/bpp" /> 
+     variables="configuration-video-intel-resolution/x:configuration-video-intel-resolution/y:configuration-video-intel-resolution/bpp:configuration-video-intel-resolution/mode" />
 
 <!-- some things that people tend to like :twisted: -->
     <shell id="shell-keyboard"

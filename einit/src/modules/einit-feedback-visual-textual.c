@@ -709,6 +709,13 @@ void einit_event_handler(struct einit_event *ev) {
    broadcast_message ("/dev/", "rebooting NOW!");
  }
 
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  struct cfgnode *node;
+
+  if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
+   shutdownfailuretimeout = node->value;
+ }
+
  pthread_mutex_unlock (&me->imutex);
  return;
 }

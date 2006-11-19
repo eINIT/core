@@ -814,7 +814,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      fstype = fslist_hr[bdi->fs_type];
     else
      fstype = "auto";
-   }
+   } else
+    fstype = "auto";
 
    if (bdi && (bdi->status & BF_STATUS_DIRTY)) {
     if (fsck_command) {
@@ -1063,6 +1064,17 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  struct fstab_entry fse;
  uint32_t i = 0;
  if (!mountpoint) return;
+
+#ifdef SANDBOX
+ char **ign = str2set (':', cfg_getstring("configuration-storage-fstab-sandbox-ignore/nodes", NULL));
+
+ if (ign) {
+  char dr = 0;
+  dr = inset ((void **)ign, (void *)mountpoint, SET_TYPE_STRING);
+  free (ign);
+  if (dr) return;
+ }
+#endif
 
  memset (&fse, 0, sizeof (struct fstab_entry));
 

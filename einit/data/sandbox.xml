@@ -23,7 +23,7 @@
    <visual>
     <std-io stdin="/dev/tty" stdout="/dev/tty" stderr="einit-stderr" verbose-output="/dev/tty10" />
     <use-ansi-codes b="true" />
-    <shutdown-failure-timeout i="2" />
+    <shutdown-failure-timeout i="1" />
     <reset-shutdown-broadcast-messages b="false" />
    </visual>
 
@@ -58,7 +58,7 @@
    <fstab>
     <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
     <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" />
-    <node device="/boot" mountpoint="/sys/boot" options="bind" />
+    <node device="/boot" mountpoint="/media/boot" options="bind:critical" />
    </fstab>
   </storage>
  </configuration>

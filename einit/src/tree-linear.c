@@ -85,7 +85,7 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
 
  n->lbase = stree ? stree->lbase : NULL;
 
- n->next = stree;
+ n->next = base;
  stree = n;
 
  if (!base)
