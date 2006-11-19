@@ -52,6 +52,12 @@ struct pc_conditional {
  uint16_t match_options;
 };
 
+struct process_status {
+ time_t last_check;
+ pid_t pid;
+ char *command;
+};
+
 typedef pid_t **(*process_collector)(struct pc_conditional **);
 
 process_collector pcf;

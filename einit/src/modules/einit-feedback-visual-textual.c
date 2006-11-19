@@ -146,13 +146,6 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *this) {
- struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
- if (node)
-  enableansicodes = node->flag;
-
- if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
-  shutdownfailuretimeout = node->value;
-
  me = this;
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
@@ -191,6 +184,14 @@ int cleanup (struct lmodule *this) {
  */
 int enable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
+
+ struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
+ if (node)
+  enableansicodes = node->flag;
+
+ if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
+  shutdownfailuretimeout = node->value;
+
  struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
 
  if (filenode && filenode->arbattrs) {
@@ -711,6 +712,7 @@ void einit_event_handler(struct einit_event *ev) {
 
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node;
+  fprintf (stderr, "[[ updating configuration ]]\n");
 
   if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
    shutdownfailuretimeout = node->value;

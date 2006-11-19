@@ -718,6 +718,22 @@
       restart="yes"
       variables="configuration-bluetooth-hidd/options" />
 
+<!-- Credits to DieselPower for these :) -->
+     <daemon id="daemon-smbd"
+      name="Samba-daemon"
+      provides="smbd"
+      requires="mount/local:net-lo:nmbd"
+      command="/usr/sbin/smbd -D -s /etc/samba/smb.conf"
+      restart="yes" />
+
+
+     <daemon id="daemon-nmbd"
+      name="NetBIOS name server"
+      provides="nmbd"
+      requires="mount/local:net-lo"
+      command="/usr/sbin/nmbd -D"
+      restart="yes" />
+
 <!-- creds to lloeki for the next three :) -->
      <daemon id="daemon-lighttpd"
       name="HTTPd (Lighty)"
