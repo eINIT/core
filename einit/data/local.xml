@@ -69,6 +69,9 @@
 <!-- this should be a good idea... -->
     <node mountpoint="/tmp" fs="tmpfs" />
 
+<!-- use this if you don't have usb built into your kernel -->
+<!--    <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" before-mount="modprobe usbcore" /> -->
+
    </fstab>
   </storage>
  </configuration>

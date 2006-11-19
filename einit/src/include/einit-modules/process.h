@@ -38,6 +38,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _EINIT_MODULES_PROCESS_H
 #define _EINIT_MODULES_PROCESS_H
 
+#include <unistd.h>
+#include <inttypes.h>
+#include <sys/types.h>
 
+#define PC_CONDITION_OPTIONAL  0x0001
+#define PC_COLLECT_ADDITIVE    0x0010
+#define PC_COLLECT_SUBTRACTIVE 0x0020
+
+struct pc_conditional {
+ char *match;
+ void *para;
+ uint16_t match_options;
+};
+
+typedef pid_t **(*process_collector)(struct pc_conditional **);
 
 #endif
