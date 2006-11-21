@@ -66,8 +66,8 @@
 <!-- <node mountpoint="/media/storage-1" device="host:/media/storage-1" fs="nfs" />
     <node mountpoint="/media/storage-0" device="chronos:/media/storage-0" fs="nfs" /> -->
 
-<!-- this should be a good idea... -->
-    <node mountpoint="/tmp" fs="tmpfs" />
+<!-- this should be a good idea... but apparently causes problems with beryl/compiz + not everyone has enough ram to do it this way -->
+<!--    <node mountpoint="/tmp" fs="tmpfs" /> -->
 
 <!-- use this if you don't have usb built into your kernel -->
 <!--    <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" before-mount="modprobe usbcore" /> -->

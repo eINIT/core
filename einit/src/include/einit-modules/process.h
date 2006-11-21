@@ -55,7 +55,7 @@ struct pc_conditional {
 struct process_status {
  time_t last_check;
  pid_t pid;
- char *command;
+ char *cmd;
  char *cwd;
 
  char **files;

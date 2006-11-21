@@ -35,6 +35,7 @@
    <daemon-term-timeout-secondary i="20" />
    <shell s="/bin/sh -c" />
    <shell-exec-timeout i="20" />
+   <proc-path s="/proc" />
   </system>
 
   <environment>
@@ -168,7 +169,7 @@
     <node mountpoint="/proc" fs="proc" />
 
     <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
-    <node mountpoint="/dev/shm" fs="tmpfs" before-mount="mkdir /dev/shm" options="critical" />
+    <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir /dev/shm" options="critical" />
     <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir /dev/pts" options="critical" />
    </fstab>
   </storage>
@@ -328,6 +329,14 @@
      restart="yes"
      DISPLAY=":0.0"
      HOME="/root" />
+
+<!-- rmh3093 wrote this module definition for gdm which resolved his beryl issues -->
+    <shell id="shell-gdm"
+     name="GDM"
+     provides="xdm:x11"
+     requires="net-lo:video:mount/local:dbus:hal"
+     enable="gdm"
+     disable="gdm-stop" />
 
     <daemon id="daemon-kdm"
      name="XDM (KDM)"
@@ -764,13 +773,13 @@
       command="/usr/bin/mpd --no-create-db --no-daemon"
       restart="yes" />
 
-     <daemon id="daemon-ivman" 
-      name="Ikke's Volume Manager (daemon)" 
-      provides="ivman" 
-      requires="hald" 
-      prepare="rm -f /var/run/ivman.pid ; sleep 7" 
-      cleanup="rm -f /var/run/ivman.pid" 
-      command="/usr/bin/ivman --system --nofork" 
+     <daemon id="daemon-ivman"
+      name="Ikke's Volume Manager (daemon)"
+      provides="ivman"
+      requires="hald"
+      prepare="rm -f /var/run/ivman.pid ; sleep 7"
+      cleanup="rm -f /var/run/ivman.pid"
+      command="/usr/bin/ivman --system --nofork"
       restart="yes" />
 
    </module>

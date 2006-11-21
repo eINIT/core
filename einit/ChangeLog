@@ -1,5 +1,9 @@
 2006/11/21: mdeininger
  * added --wtf and --checkup as alternatives to --check-configuration
+ * some layout changes to process handling, getting closer to work...
+ * forgot to commit some modules earlier...
+ * rmh3093 got his gdm/beryl setup working with a different module-definition
+   for gdm :)
 
 2006/11/19: mdeininger
  * added some more modules (creds to the gentoo forums :D)
