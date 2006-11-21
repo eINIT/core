@@ -56,6 +56,9 @@ struct process_status {
  time_t last_check;
  pid_t pid;
  char *command;
+ char *cwd;
+
+ char **files;
  char state;
  pid_t ppid;
  pid_t pgrp;
@@ -98,6 +101,8 @@ struct process_status {
 };
 
 typedef pid_t **(*process_collector)(struct pc_conditional **);
+typedef pid_t **(*process_filter)(struct pc_conditional *, pid_t **, struct process_status **);
+typedef struct process_status **(*process_status_updater)(struct process_status **);
 
 process_collector pcf;
 

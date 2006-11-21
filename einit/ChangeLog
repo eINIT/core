@@ -1,3 +1,6 @@
+2006/11/21: mdeininger
+ * added --wtf and --checkup as alternatives to --check-configuration
+
 2006/11/19: mdeininger
  * added some more modules (creds to the gentoo forums :D)
  * some work on the process-handling framework

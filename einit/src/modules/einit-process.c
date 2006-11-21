@@ -66,18 +66,83 @@ const struct smodule self = {
 	.notwith	= NULL
 };
 
+struct process_status **ps = NULL;
+
 pid_t **collect_processes(struct pc_conditional **pcc) {
- puts ("hello world");
+ pid_t **ret = NULL;
+ process_status_updater pse = function_find_one("einit-process-status-updater", 1, NULL);
+ uint32_t i;
+
+ if (!pcc) return;
+
+ if (pse)
+  ps = pse (ps);
+
+ if (ps) for (i = 0; pcc[i]; i++) {
+  process_filter pf = NULL;
+  char *fname = NULL;
+
+  if (!(pcc[i]->match)) continue;
+
+  fname = emalloc (22+strlen(pcc[i]->match));
+  *fname = 0;
+  strcat (fname, "einit-process-filter-");
+  strcat (fname, pcc[i]->match);
+  
+  fputs (fname, stderr);
+
+  pf = function_find_one(fname, 1, NULL);
+  if (pf) ret = pf (pcc[i], ret, ps);
+ }
+
+// if (!ret) ret = (pid_t **)setadd ((void **)ret, (void *)1, SET_NOALLOC);
+
+ return ret;
+}
+
+
+pid_t **filter_processes_cwd (struct pc_conditional * cond, pid_t ** ret, struct process_status ** stat) {
+ if (!ret) ret = (pid_t **)setadd ((void **)ret, (void *)1, SET_NOALLOC);
+
+ return ret;
+}
+
+
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && !strcmp (ev->set[0], "list")) {
+  if (ev->set[1] && !strcmp (ev->set[1], "processes") && ev->set[2]) {
+   struct pc_conditional pcc = {.match = ev->set[2], .para = NULL, .match_options = PC_COLLECT_ADDITIVE},
+                         *pcl[2] = { &pcc, NULL };
+   pid_t **process_list = NULL, i;
+
+   process_list = pcollect ( pcl );
+
+   if (process_list) for (i = 0; process_list[i]; i++) {
+    char buffer [1024];
+	snprintf (buffer, 1024, "pid=%i\n", process_list[i]);
+    fdputs (buffer, ev->integer);
+	free (process_list);
+   } else {
+    fdputs ("einit-process: ipc-event-handler: no matching processes for your request\n", ev->integer);
+   }
+
+   ev->flag ++;
+  }
+ }
 }
 
 int configure (struct lmodule *irr) {
- process_configure(irr);
+ process_configure (irr);
+ function_register ("einit-process-filter-cwd-below", 1, filter_processes_cwd);
  function_register ("einit-process-collect", 1, collect_processes);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-process-collect", 1, collect_processes);
- process_cleanup(irr);
+ function_unregister ("einit-process-filter-cwd-below", 1, filter_processes_cwd);
+ process_cleanup (irr);
 }
 
 /* passive module, no enable/disable */

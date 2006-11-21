@@ -103,6 +103,7 @@ int print_usage_info () {
   "                      (you can use this more than once)\n"
   "--override-init-check einit will check if it process 1, override with this flag\n"
   "--check-configuration tell all modules to check for configuration errors. use this!\n"
+  "--checkup, --wtf      synonymous to --check-configuration\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
@@ -163,7 +164,7 @@ int main(int argc, char **argv) {
           BSDLICENSE);
      return 0;
     case '-':
-     if (!strcmp(argv[i], "--check-configuration")) {
+     if (!strcmp(argv[i], "--check-configuration") || !strcmp(argv[i], "--checkup") || !strcmp(argv[i], "--wtf")) {
       ipccommands = (char **)setadd ((void **)ipccommands, "examine configuration", SET_TYPE_STRING);
      } else if (!strcmp(argv[i], "--no-feedback-switch"))
       einit_do_feedback_switch = 0;
