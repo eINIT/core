@@ -77,9 +77,15 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
  char *path = cfg_getpath ("configuration-system-proc-path");
  struct dirent *entry;
 
+ time_t starttime = time(NULL);
+
  if (path) {
+  size_t plength = strlen (path) +1;
   dir = opendir (path);
   if (dir != NULL) {
+   char *txf = emalloc (plength);
+   txf = memcpy (txf, path, plength);
+
    while (entry = readdir (dir)) {
     uint32_t cl = 0, cont = 1;
     if (entry->d_name[0] == '.') continue;
@@ -87,12 +93,31 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
     for (; entry->d_name[cl]; cl++) if (!isdigit (entry->d_name[cl])) { cont = 0; break; }
 
     if (cont) {
-     struct process_status tmppse = {.pid = atoi (entry->d_name), .cwd = estrdup("/"), .cmd = estrdup ("einit")};
+     struct process_status tmppse = {.update = starttime, .pid = atoi (entry->d_name), .cwd = NULL, .cmd = NULL};
+     char linkbuffer[1024];
+     size_t linklen;
+     txf = erealloc (txf, strlen (entry->d_name) + plength + 4);
+     *(txf+plength-1) = 0;
+
+     strcat (txf, entry->d_name);
+     strcat (txf, "/cwd");
+
+     if ((linklen = readlink (txf, linkbuffer, 1023)) != -1) {
+      *(linkbuffer+linklen) = 0;
+
+      tmppse.cwd = emalloc (linklen+1);
+      memcpy (tmppse.cwd, linkbuffer, linklen+1);
+
+//      puts (tmppse.cwd);
+     }
+
      pstat = (struct process_status **)setadd ((void **)pstat, (void *)&tmppse, sizeof (struct process_status));
 
 //     puts (entry->d_name);
     }
+
    }
+   if (txf) free (txf);
   }
   closedir (dir);
  }

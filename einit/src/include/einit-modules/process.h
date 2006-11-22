@@ -53,12 +53,12 @@ struct pc_conditional {
 };
 
 struct process_status {
- time_t last_check;
+ time_t update;
  pid_t pid;
  char *cmd;
  char *cwd;
 
- char **files;
+/* char **files;
  char state;
  pid_t ppid;
  pid_t pgrp;
@@ -97,7 +97,7 @@ struct process_status {
  int exit_signal;
  uint32_t processor;
  uint32_t rt_priority;
- uint32_t policy;
+ uint32_t policy;*/
 };
 
 typedef pid_t **(*process_collector)(struct pc_conditional **);

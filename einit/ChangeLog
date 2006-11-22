@@ -1,3 +1,6 @@
+2006/11/22: mdeininger
+ * the process collector finally does something useful (on linux, anyway...)
+
 2006/11/21: mdeininger
  * added --wtf and --checkup as alternatives to --check-configuration
  * some layout changes to process handling, getting closer to work...
