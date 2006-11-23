@@ -101,14 +101,19 @@ struct process_status {
 };
 
 typedef pid_t **(*process_collector)(struct pc_conditional **);
+typedef int (*process_signal_function)(struct pc_conditional **, int);
 typedef pid_t **(*process_filter)(struct pc_conditional *, pid_t **, struct process_status **);
 typedef struct process_status **(*process_status_updater)(struct process_status **);
 
-process_collector pcf;
+process_collector __f_process_collector, __f_p_jktdb;
+process_signal_function __f_e_kill;
 
-#define pcollect(x) (pcf? pcf(x) : ((pcf = function_find_one("einit-process-collect", 1, NULL)) ? pcf(x) : NULL))
+#define pcollect(x) (__f_process_collector? __f_process_collector(x) : ((__f_process_collector = function_find_one("einit-process-collect", 1, NULL)) ? __f_process_collector(x) : NULL))
 
-#define process_configure(mod) pcf = NULL;
-#define process_cleanup(mod) pcf = NULL;
+#define ekill(x,signal) (__f_e_kill? __f_e_kill(x,signal) : ((__f_e_kill = function_find_one("einit-process-ekill", 1, NULL)) ? __f_e_kill(x,signal) : -1))
+#define pxkill(x) (__f_p_jktdb? __f_p_jktdb(x) : ((__f_p_jktdb = function_find_one("einit-process-just-kill-it", 1, NULL)) ? __f_p_jktdb(x) : -1))
+
+#define process_configure(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
+#define process_cleanup(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
 
 #endif
