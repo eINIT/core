@@ -728,19 +728,19 @@
       variables="configuration-bluetooth-hidd/options" />
 
 <!-- Credits to DieselPower for these :) -->
+<!-- slightly modified by rmh3093 (presumably so that they don't fork(?)) -->
      <daemon id="daemon-smbd"
       name="Samba-daemon"
       provides="smbd"
       requires="mount/local:net-lo:nmbd"
-      command="/usr/sbin/smbd -D -s /etc/samba/smb.conf"
+      command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
       restart="yes" />
-
 
      <daemon id="daemon-nmbd"
       name="NetBIOS name server"
       provides="nmbd"
       requires="mount/local:net-lo"
-      command="/usr/sbin/nmbd -D"
+      command="/usr/sbin/nmbd -F"
       restart="yes" />
 
 <!-- creds to lloeki for the next three :) -->
@@ -782,6 +782,62 @@
       command="/usr/bin/ivman --system --nofork"
       restart="yes" />
 
+<!-- thanks, rmh3093! -->
+     <daemon id="deamon-dhcdbd"
+      name="dhcdbd"
+      provides="dhcdbd"
+      requires="dbus"
+      command="rm -f /var/run/dhcdbd.pid; dhcdbd -sn"
+      restart="yes" />
+
+     <daemon id="daemon-NetworkManager"
+      name="NetworkManager"
+      provides="NM"
+      requires="dhcdbd"
+      command="NetworkManager --no-daemon"
+      restart="yes" />
+
+     <daemon id="daemon-atieventsd"
+      name="atieventsd - ATI external events daemon"
+      provides="atieventsd"
+      requires="acpi"
+      command="atieventsd --nodaemon"
+      restart="yes" />
+
+     <daemon id="daemon-ipw3945d"
+      name="ipw3945d - regulatory daemon"
+      provides="ipw3945d"
+      requires="mount/critical:kern-ethernet"
+      command="rm -f /var/run/ipw3945d.pid; ipw3945d --foreground"
+      restart="yes" />
+
+     <daemon id="daemon-cupsd"
+      name="cupsd - common unix printing system daemon"
+      provides="cupsd"
+      requires="mount/critical:net-lo"
+      command="cupsd -f"
+      restart="yes" />
+
+     <daemon id="daemon-ntpd"
+      name="ntpd"
+      provides="ntpd"
+      requires="mount/critical:net-lo"
+      command="ntpd -n"
+      restart="yes" />
+
+     <daemon id="daemon-avahi-dnsconfd"
+      name="avahi-dnsconfd"
+      provides="avahi-dnsconfd"
+      requires="avahi-daemon"
+      command="avahi-dnsconfd"
+      restart="yes" />
+
+     <daemon id="deamon-avahi-daemon"
+      name="avahi-daemon"
+      provides="avahi-daemon"
+      requires="net-lo:mount/critical"
+      command="avahi-daemon"
+      restart="yes" />
    </module>
   </virtual>
 
