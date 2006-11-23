@@ -1,3 +1,6 @@
+2006/11/23: mdeininger
+ * no need to link against pexec.o/dexec.o anymore (use einit-modules/exec.h)
+
 2006/11/22: mdeininger
  * the process collector finally does something useful (on linux, anyway...)
 

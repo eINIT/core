@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-utmp-forger.so einit-mount.so pexec.o dexec.o einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-utmp-forger.so einit-mount.so pexec.o dexec.o einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so einit-exec.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -25,6 +25,7 @@ install: all
 	${INSTALL} ${SOIPARAM} einit-mount.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-process.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-network.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-exec.so ${DESTDIR}/${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 einit-feedback-visual-textual.so: einit-feedback-visual-textual.c
@@ -63,6 +64,9 @@ einit-process.so: einit-process.c
 
 einit-ipc.so: einit-ipc.c
 	${CCL} einit-ipc.c -o einit-ipc.so
+
+einit-exec.so: einit-exec.c
+	${CCL} einit-exec.c -o einit-exec.so
 
 einit-hostname.so: einit-hostname.c
 	${CCL} einit-hostname.c -o einit-hostname.so
