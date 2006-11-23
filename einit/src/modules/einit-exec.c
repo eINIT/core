@@ -85,6 +85,10 @@ int configure (struct lmodule *irr) {
  if (!(shell = (char **)str2set (' ', cfg_getstring ("configuration-system-shell", NULL))))
   shell = dshell;
  exec_configure (irr);
+
+ if (node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL))
+  spawn_timeout = node->value;
+
  function_register ("einit-execute-command", 1, __pexec_function);
  function_register ("einit-execute-daemon", 1, __start_daemon_function);
  function_register ("einit-stop-daemon", 1, __stop_daemon_function);

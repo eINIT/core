@@ -53,7 +53,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
-#include <einit/pexec.h>
+
+#include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -104,12 +105,14 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *irr) {
- pexec_configure (irr);
+// pexec_configure (irr);
+ exec_configure (irr);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
- pexec_cleanup(this);
+// pexec_cleanup(this);
+ exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 

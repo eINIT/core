@@ -19,9 +19,8 @@ install: all
 linux-sysconf.so: linux-sysconf.c
 	${CCL} linux-sysconf.c -o linux-sysconf.so
 
-linux-mount.so: linux-mount.c ../pexec.c
-	${CCC} -fPIC -c linux-mount.c
-	${CCL} linux-mount.o ../pexec.o -o linux-mount.so
+linux-mount.so: linux-mount.c
+	${CCL} linux-mount.c -o linux-mount.so
 
 linux-network.so: linux-network.c
 	${CCL} linux-network.c -o linux-network.so

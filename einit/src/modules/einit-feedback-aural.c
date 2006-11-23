@@ -44,10 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/event.h>
 #include <pthread.h>
-#include <einit/pexec.h>
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -92,7 +92,7 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *this) {
- pexec_configure (this);
+ exec_configure (this);
 
  struct cfgnode *node;
 
@@ -106,7 +106,7 @@ int configure (struct lmodule *this) {
 }
 
 int cleanup (struct lmodule *this) {
- pexec_cleanup(this);
+ exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 

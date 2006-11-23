@@ -56,9 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 #include <pthread.h>
 
-#include <einit/pexec.h>
-#include <einit/dexec.h>
 #include <inttypes.h>
+#include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -82,6 +81,8 @@ const struct smodule self = {
 
 int scanmodules (struct lmodule *);
 int configure (struct lmodule *);
+int enable (struct dexecinfo *dexec, struct einit_event *status);
+int disable (struct dexecinfo *dexec, struct einit_event *status);
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
@@ -95,12 +96,12 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *irr) {
- pexec_configure (irr);
+ exec_configure (irr);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
- pexec_cleanup(this);
+ exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
@@ -125,11 +126,6 @@ int cleanup_after_module (struct lmodule *this) {
 
 int scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
-
- node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL);
- if (node) {
-  spawn_timeout = node->value;
- }
 
  node = NULL;
  while (node = cfg_findnode ("services-virtual-module-daemon", 0, node)) {
@@ -189,8 +185,8 @@ int scanmodules (struct lmodule *modchain) {
 
 //    free (modinfo->rid);
     lm->param = (void *)dexec;
-    lm->enable = (int (*)(void *, struct einit_event *))startdaemon;
-    lm->disable = (int (*)(void *, struct einit_event *))stopdaemon;
+    lm->enable = (int (*)(void *, struct einit_event *))enable;
+    lm->disable = (int (*)(void *, struct einit_event *))disable;
     lm->cleanup = cleanup_after_module;
     lm->module = modinfo;
 
@@ -204,12 +200,20 @@ int scanmodules (struct lmodule *modchain) {
    if (new) {
     new->source = estrdup (modinfo->rid);
     new->param = (void *)dexec;
-    new->enable = (int (*)(void *, struct einit_event *))startdaemon;
-    new->disable = (int (*)(void *, struct einit_event *))stopdaemon;
+    new->enable = (int (*)(void *, struct einit_event *))enable;
+    new->disable = (int (*)(void *, struct einit_event *))disable;
 /*    new->reset = (int (*)(void *, struct einit_event *))NULL;
     new->reload = (int (*)(void *, struct einit_event *))NULL;*/
     new->cleanup = cleanup_after_module;
    }
   }
  }
+}
+
+int enable (struct dexecinfo *dexec, struct einit_event *status) {
+ return startdaemon (dexec, status);
+}
+
+int disable (struct dexecinfo *dexec, struct einit_event *status) {
+ return stopdaemon (dexec, status);
 }

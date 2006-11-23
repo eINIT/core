@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <sys/stat.h>
 #include <pthread.h>
-#include <einit/dexec.h>
+#include <einit-modules/exec.h>
 
 /*!\name Filesystem Capabilities
  * \bug not used

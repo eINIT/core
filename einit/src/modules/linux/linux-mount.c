@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 
 #include <einit-modules/mount.h>
+#include <einit-modules/exec.h>
 
 /* filesystem header files */
 /* i kept the original designators where appropriate */
@@ -118,8 +119,6 @@ struct ext2_super_block {
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else
-#include <einit/pexec.h>
 #endif
 
 #define EXPECTED_EIV 1
@@ -494,7 +493,7 @@ unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mount
 
 int configure (struct lmodule *this) {
 /* pexec configuration */
- pexec_configure (this);
+ exec_configure (this);
 
  struct einit_event *ev = evinit (EVE_DO_UPDATE);
 
@@ -517,5 +516,5 @@ int cleanup (struct lmodule *this) {
 // function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
 // function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 
- pexec_cleanup(this);
+ exec_cleanup(this);
 }

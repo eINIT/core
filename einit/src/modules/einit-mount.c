@@ -52,14 +52,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <sys/stat.h>
 #include <pthread.h>
-#include <einit/dexec.h>
-#include <einit/pexec.h>
 #include <sys/mount.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <einit-modules/process.h>
+#include <einit-modules/exec.h>
 
 #ifdef LINUX
 #include <linux/fs.h>
@@ -215,7 +214,7 @@ int configure (struct lmodule *this) {
  struct cfgnode *node = NULL;
 
 /* pexec configuration */
- pexec_configure (this);
+ exec_configure (this);
 
  event_listen (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
  event_listen (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
@@ -320,7 +319,7 @@ int cleanup (struct lmodule *this) {
   mcb.critical = NULL;
  }
 
- pexec_cleanup(this);
+ exec_cleanup(this);
 }
 
 unsigned char find_block_devices_recurse_path (char *path) {

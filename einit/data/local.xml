@@ -87,6 +87,10 @@
    <network group="net-lo:net-eth0" seq="most" />
    <video group="kern-nvidia" seq="any-iop" />
    <audio group="alsa" seq="any-iop" />
+
+<!-- service groups -->
+   <avahi group="avahi-dnsconfd" seq="any-iop" />
+   <samba group="smbd:nmbd" seq="any-iop" />
   </alias>
  </services>
 

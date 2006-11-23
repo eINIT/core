@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-utmp-forger.so einit-mount.so pexec.o dexec.o einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so einit-exec.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-utmp-forger.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so einit-exec.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -31,27 +31,17 @@ install: all
 einit-feedback-visual-textual.so: einit-feedback-visual-textual.c
 	${CCL} einit-feedback-visual-textual.c -o einit-feedback-visual-textual.so
 
-einit-feedback-aural.so: einit-feedback-aural.c pexec.o
-	${CCC} -fPIC -c einit-feedback-aural.c
-	${CCL} einit-feedback-aural.o pexec.o -o einit-feedback-aural.so
+einit-feedback-aural.so: einit-feedback-aural.c
+	${CCL} einit-feedback-aural.c -o einit-feedback-aural.so
 
-pexec.o: pexec.c
-	${CCC} -fPIC -c pexec.c
+einit-mount.so: einit-mount.c
+	${CCL} einit-mount.c -o einit-mount.so
 
-dexec.o: dexec.c
-	${CCC} -fPIC -c dexec.c
+einit-mod-exec.so: einit-mod-exec.c
+	${CCL} einit-mod-exec.c -o einit-mod-exec.so
 
-einit-mount.so: einit-mount.c pexec.o dexec.o
-	${CCC} -fPIC -c einit-mount.c
-	${CCL} einit-mount.o pexec.o dexec.o -o einit-mount.so
-
-einit-mod-exec.so: einit-mod-exec.c pexec.o
-	${CCC} -fPIC -c einit-mod-exec.c
-	${CCL} einit-mod-exec.o pexec.o -o einit-mod-exec.so
-
-einit-mod-daemon.so: einit-mod-daemon.c pexec.o dexec.o
-	${CCC} -fPIC -c einit-mod-daemon.c
-	${CCL} einit-mod-daemon.o pexec.o dexec.o -o einit-mod-daemon.so
+einit-mod-daemon.so: einit-mod-daemon.c
+	${CCL} einit-mod-daemon.c -o einit-mod-daemon.so
 
 einit-tty.so: einit-tty.c
 	${CCL} einit-tty.c -o einit-tty.so
