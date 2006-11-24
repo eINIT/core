@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <string.h>
 #include <einit-modules/process.h>
+#include <einit-modules/exec.h>
 
 #include <signal.h>
 #include <pthread.h>
@@ -103,10 +104,12 @@ int configure (struct lmodule *this) {
   do_utmp = utmpnode->flag;
 
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ exec_configure(this);
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ exec_cleanup(this);
 }
 
 void *watcher (struct spidcb *spid) {
@@ -157,12 +160,9 @@ int texec (struct cfgnode *node) {
   else if (!strcmp("restart", node->arbattrs[i]))
    restart = !strcmp(node->arbattrs[i+1], "yes");
   else if (!strcmp("variables", node->arbattrs[i])) {
-   int i = 0;
-   for (variables = str2set (':', node->arbattrs[i+1]); variables[i]; i++) {
-    char *variablevalue = cfg_getstring (variables[i], NULL);
-    if (node)
-     environment = straddtoenviron (environment, variables[i], variablevalue);
-   }
+   variables = str2set (':', node->arbattrs[i+1]);
+   environment = create_environment(environment, variables);
+   free (variables);
   } else {
    environment = straddtoenviron (environment, node->arbattrs[i], node->arbattrs[i+1]);
   }

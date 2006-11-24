@@ -462,11 +462,13 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  char **ret;
  char *newitem;
  int len = 2;
- if (key) len += strlen (key);
+ if (!key) return environment;
+
+ len += strlen (key);
  if (value) len += strlen (value);
  newitem = emalloc (sizeof(char)*len);
  newitem[0] = 0;
- if (key) {
+ {
   uint32_t len = strlen (key), i = 0;
 
   newitem = strcat (newitem, key);

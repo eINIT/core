@@ -1,3 +1,9 @@
+2006/11/24: mdeininger
+ * [pd]exec.[och] have been removed from the repository in favour of
+   einit-modules/exec.h and einit-exec.c
+ * added code to allow for wildcards in the attribute part of variable names
+   in environment variables (requires the use of POSIX regular expressions)
+
 2006/11/23: mdeininger
  * no need to link against pexec.o/dexec.o anymore (use einit-modules/exec.h)
  * more modules from rmh3093 (thanks man! =))

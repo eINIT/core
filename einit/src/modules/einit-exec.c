@@ -53,6 +53,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <einit-modules/exec.h>
 
+#ifdef POSIXREGEX
+#include <regex.h>
+#endif
+
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -64,6 +68,8 @@ const struct smodule self = {
 	.requires	= NULL,
 	.notwith	= NULL
 };
+
+// char hasslash = strchr(key, '/') ? 1 : 0;
 
 /* variables */
 struct daemonst * running = NULL;
@@ -79,6 +85,7 @@ int spawn_timeout = 5;
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
+char **__create_environment (char **environment, char **variables);
 
 int configure (struct lmodule *irr) {
  struct cfgnode *node;
@@ -92,6 +99,7 @@ int configure (struct lmodule *irr) {
  function_register ("einit-execute-command", 1, __pexec_function);
  function_register ("einit-execute-daemon", 1, __start_daemon_function);
  function_register ("einit-stop-daemon", 1, __stop_daemon_function);
+ function_register ("einit-create-environment", 1, __create_environment);
 }
 
 int cleanup (struct lmodule *irr) {
@@ -100,6 +108,7 @@ int cleanup (struct lmodule *irr) {
  function_unregister ("einit-execute-command", 1, __pexec_function);
  function_unregister ("einit-execute-daemon", 1, __start_daemon_function);
  function_unregister ("einit-stop-daemon", 1, __stop_daemon_function);
+ function_unregister ("einit-create-environment", 1, __create_environment);
 }
 
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
@@ -124,6 +133,105 @@ void *pexec_watcher (struct spidcb *spid) {
  pthread_mutex_unlock (&pexec_running_mutex);
 }
 #endif
+
+char **__create_environment (char **environment, char **variables) {
+ int i = 0;
+ char *variablevalue = NULL;
+ if (variables) for (i = 0; variables[i]; i++) {
+#ifdef POSIXREGEX
+  if (variablevalue = strchr (variables[i], '/')) {
+/* special treatment if we have an attribue specifier in the variable name */
+   char *name = NULL, *filter = variablevalue+1;
+   struct cfgnode *node;
+   *variablevalue = 0;
+   name = estrdup(variables[i]);
+   *variablevalue = '/';
+
+   if ((node = cfg_getnode (name, NULL)) && node->arbattrs) {
+    size_t bkeylen = strlen (name)+2, pvlen = 1;
+    char *key = emalloc (bkeylen);
+    char *pvalue = NULL;
+    regex_t pattern;
+    uint32_t err = regcomp (&pattern, filter, REG_EXTENDED);
+
+    if (err) {
+     char errorcode [1024];
+     regerror (err, &pattern, errorcode, 1024);
+     fputs (errorcode, stderr);
+    } else {
+     int y = 0;
+     *key = 0;
+     strcat (key, name);
+     *(key+bkeylen-2) = '/';
+     *(key+bkeylen-1) = 0;
+
+     for (y = 0; node->arbattrs[y]; y+=2) if (!regexec (&pattern, node->arbattrs[y], 0, NULL, 0)) {
+      size_t attrlen = strlen (node->arbattrs[y])+1;
+      char *subkey = emalloc (bkeylen+attrlen);
+      *subkey = 0;
+      strcat (subkey, key);
+      strcat (subkey, node->arbattrs[y]);
+//      *(subkey+bkeylen+attrlen-1) = 0;
+//      printf ("%s:%s:%s:%i:%i\n", subkey, key, node->arbattrs[y], attrlen, bkeylen + attrlen);
+//      puts (node->arbattrs[y]);
+      environment = straddtoenviron (environment, subkey, node->arbattrs[y+1]);
+      free (subkey);
+
+      if (pvalue) {
+       pvalue=erealloc (pvalue, pvlen+attrlen);
+       *(pvalue+pvlen-2) = ' ';
+       *(pvalue+pvlen-1) = 0;
+       strcat (pvalue, node->arbattrs[y]);
+       pvlen += attrlen;
+      } else {
+       pvalue=emalloc (pvlen+attrlen);
+       *pvalue = 0;
+       strcat (pvalue, node->arbattrs[y]);
+       pvlen += attrlen;
+      }
+     }
+
+     regfree (&pattern);
+    }
+
+    if (pvalue)  {
+     uint32_t len = strlen (pvalue), i = 0;
+     for (; pvalue[i]; i++) {
+      if (!isalnum (pvalue[i]) && (pvalue[i] != ' ')) pvalue[i] = '_';
+     }
+     *(key+bkeylen-2) = 0;
+     environment = straddtoenviron (environment, key, pvalue);
+
+     free (pvalue);
+    }
+    free (key);
+    free (name);
+   }
+  } else {
+/* else: just add it */
+   char *variablevalue = cfg_getstring (variables[i], NULL);
+   if (variablevalue)
+    environment = straddtoenviron (environment, variables[i], variablevalue);
+  }
+#else
+  char *variablevalue = cfg_getstring (variables[i], NULL);
+  if (variablevalue)
+   environment = straddtoenviron (environment, variables[i], variablevalue);
+#endif
+ }
+
+/*  if (variables) {
+   int i = 0;
+   for (; variables [i]; i++) {
+    char *variablevalue = cfg_getstring (variables [i], NULL);
+    if (variablevalue) {
+     exec_environment = straddtoenviron (exec_environment, variables [i], variablevalue);
+    }
+   }
+  }*/
+
+ return environment;
+}
 
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
 // int pipefderr [2];
@@ -211,15 +319,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
-  if (variables) {
-   int i = 0;
-   for (; variables [i]; i++) {
-    char *variablevalue = cfg_getstring (variables [i], NULL);
-    if (variablevalue) {
-     exec_environment = straddtoenviron (exec_environment, variables [i], variablevalue);
-    }
-   }
-  }
+  exec_environment = __create_environment (exec_environment, variables);
+
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);
   free (cmd);
@@ -454,15 +555,7 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   dup2 (2, 1);
 
   daemon_environment = (char **)setcombine ((void **)einit_global_environment, (void **)shellcmd->environment, SET_TYPE_STRING);
-  if (shellcmd->variables) {
-   int i = 0;
-   for (; shellcmd->variables [i]; i++) {
-    char *variablevalue = cfg_getstring (shellcmd->variables [i], NULL);
-    if (variablevalue) {
-     daemon_environment = straddtoenviron (daemon_environment, shellcmd->variables [i], variablevalue);
-    }
-   }
-  }
+  daemon_environment = __create_environment (daemon_environment, shellcmd->variables);
 
   execve (cmd[0], cmd, daemon_environment);
   free (cmd);
