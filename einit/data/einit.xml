@@ -58,6 +58,9 @@
 
   <peripherals>
    <keyboard layout="us" />
+   <pointing-device>
+    <gpm device="/dev/input/mice" type="ps2" />
+   </pointing-device>
   </peripherals>
 
   <feedback>
@@ -224,19 +227,23 @@
   <virtual>
    <module>
 <!-- you can define daemoni like this -->
-    <daemon id="daemon-gpm"
-     name="GPM"
-     provides="gpm"
-     requires="tty"
-     command="/usr/sbin/gpm"
-     restart="yes" />
-
     <daemon id="daemon-apmd"
      name="APMd"
      provides="apmd"
      requires="mount/critical"
      command="/usr/sbin/apmd"
      restart="yes" />
+
+<!-- modified version of the gpm module by teppic from the wiki -->
+<!-- as has been suggested by him, i have modified this to use variables, hope it works... -->
+    <shell id="shell-gpm"
+     name="Console mouse services (GPM)"
+     provides="gpm"
+     requires="tty"
+     enable="/usr/sbin/gpm -m ${configuration_peripherals_pointing_device_gpm_device} -t ${configuration_peripherals_pointing_device_gpm_type}"
+     disable="killall gpm"
+     restart="yes"
+     vairables="configuration-peripherals-pointing-device-gpm/.*" />
 
 <!-- DBUS -->
     <shell id="shell-dbus"
@@ -773,11 +780,14 @@
       command="/usr/bin/mpd --no-create-db --no-daemon"
       restart="yes" />
 
+<!-- modified version of the ivman module by teppic from the wiki -->
      <daemon id="daemon-ivman"
-      name="Ikke's Volume Manager (daemon)"
+      name="Ikke's Volume Manager (IVMAN)"
+      uid="ivman"
+      gid="plugdev"
       provides="ivman"
       requires="hald"
-      prepare="rm -f /var/run/ivman.pid ; sleep 7"
+      prepare="rm -f /var/run/ivman.pid"
       cleanup="rm -f /var/run/ivman.pid"
       command="/usr/bin/ivman --system --nofork"
       restart="yes" />
@@ -838,6 +848,35 @@
       requires="net-lo:mount/critical"
       command="avahi-daemon"
       restart="yes" />
+
+<!-- modules by teppic from the wiki -->
+     <daemon id="daemon-cupsd"
+      name="CUPS (Common Unix Printing System)"
+      provides="cupsd"
+      requires="network:syslog:mount/critical"
+      command="/usr/sbin/cupsd -F"
+      restart="yes" />
+     <shell id="shell-dovecot"
+      name="IMAP/POP3 server (Dovecot)"
+      provides="dovecot"
+      requires="network:mount/critical:mysqld"
+      enable="/usr/sbin/dovecot"
+      disable="/usr/bin/killall dovecot" />
+     <shell id="shell-postfix"
+      name="postfix"
+      uid="postfix"
+      provides="mta"
+      requires="network:mount/critical"
+      enable="/usr/sbin/postfix start"
+      disable="/usr/sbin/postfix stop"
+      reload="/usr/sbin/postfix reload" />
+     <shell id="shell-lisa"
+      name="LAN Information Server (LISA)"
+      provides="lisa"
+      requires="network:mount/critical"
+      enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
+      disable="/usr/bin/killall lisa" />
+
    </module>
   </virtual>
 

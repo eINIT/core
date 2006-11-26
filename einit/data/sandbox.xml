@@ -61,6 +61,10 @@
     <node device="/boot" mountpoint="/media/boot" options="bind:critical" />
    </fstab>
   </storage>
+
+  <tty>
+   <tty9-regular dev="/dev/tty9" command="/sbin/agetty 38400 tty9" restart="yes" />
+  </tty>
  </configuration>
 
  <conceptual>
@@ -107,7 +111,7 @@
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="network/experimental" />
-  <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular:tty-stfu" />
+  <enable mod="network/experimental:tty" />
+  <ttys s="tty9-regular" />
  </mode>
 </einit>

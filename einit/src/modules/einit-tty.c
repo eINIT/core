@@ -122,6 +122,8 @@ void *watcher (struct spidcb *spid) {
  struct cfgnode *node = NULL;
  while (cur) {
   if (cur->pid == pid) {
+   killpg (pid, SIGHUP); // send a SIGHUP to the getty's process group
+
    if (cur->restart)
     node = cur->node;
    if (prev != NULL) {
@@ -195,12 +197,10 @@ int texec (struct cfgnode *node) {
 
     sched_watch_pid (cpid, watcher);
 
-#if 0
-	setpgid (cpid, cpid);  // create a new process group for the new process
+    setpgid (cpid, cpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
         ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
         ((curpgrp = tcgetpgrp(ctty = 1)) < 0)) tcsetpgrp(ctty, cpid); // set foreground group
-#endif
 
     struct ttyst *new = ecalloc (1, sizeof (struct ttyst));
     new->pid = cpid;

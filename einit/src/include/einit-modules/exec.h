@@ -89,12 +89,12 @@ environment_function __f_create_environment;
 #define exec_configure(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL;
 #define exec_cleanup(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL;
 
-#define pexec(command, variables, uid, gid, user, group, local_environment, status) (__f_pxe? __f_pxe(command, variables, uid, gid, user, group, local_environment, status) : ((__f_pxe = function_find_one("einit-execute-command", 1, NULL)) ? __f_pxe(command, variables, uid, gid, user, group, local_environment, status) : STATUS_FAIL))
-#define pexec_simple(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
+#define pexec(command, variables, uid, gid, user, group, local_environment, status) ((__f_pxe || (__f_pxe = function_find_one("einit-execute-command", 1, NULL)))? __f_pxe(command, variables, uid, gid, user, group, local_environment, status) : STATUS_FAIL)
+#define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
 
-#define startdaemon(execheader, status) (__f_start_daemon? __f_start_daemon(execheader, status) : ((__f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)) ? __f_start_daemon(execheader, status) : STATUS_FAIL))
-#define stopdaemon(execheader, status) (__f_stop_daemon? __f_stop_daemon(execheader, status) : ((__f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)) ? __f_stop_daemon(execheader, status) : STATUS_FAIL))
+#define startdaemon(execheader, status) ((__f_start_daemon || (__f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? __f_start_daemon(execheader, status) : STATUS_FAIL)
+#define stopdaemon(execheader, status) ((__f_stop_daemon || (__f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? __f_stop_daemon(execheader, status) : STATUS_FAIL)
 
-#define create_environment(environment, variables) (__f_create_environment? __f_create_environment(environment, variables) : ((__f_create_environment = function_find_one("einit-create-environment", 1, NULL)) ? __f_create_environment(environment, variables) : environment))
+#define create_environment(environment, variables) ((__f_create_environment || (__f_create_environment = function_find_one("einit-create-environment", 1, NULL)))? __f_create_environment(environment, variables) : environment)
 
 #endif

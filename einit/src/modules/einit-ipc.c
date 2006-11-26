@@ -53,6 +53,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
+#include <einit-modules/ipc.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -75,7 +77,7 @@ const struct smodule self = {
 
 pthread_t ipc_thread;
 
-int ipc_process (char *cmd, uint32_t fd) {
+int __ipc_process (char *cmd, uint32_t fd) {
  if (!cmd) return 0;
  else if (!strcmp (cmd, "IPC//out")) {
   return 1;
@@ -146,10 +148,12 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ function_register ("einit-ipc-process-string", 1, __ipc_process);
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ function_unregister ("einit-ipc-process-string", 1, __ipc_process);
 }
 
 int ipc_read (int *nfd) {
@@ -167,13 +171,13 @@ int ipc_read (int *nfd) {
   for (i = 0; i < br; i++) {
    if ((buf[i] == '\n') || (buf[i] == '\0')) {
     lbuf[ic] = 0;
-    if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
+    if (lbuf[0] && __ipc_process (lbuf, *nfd)) goto close_connection;
     ic = -1;
     lbuf[0] = 0;
    } else {
     if (ic >= BUFFERSIZE) {
      lbuf[ic] = 0;
-     if (lbuf[0] && ipc_process (lbuf, *nfd)) goto close_connection;
+     if (lbuf[0] && __ipc_process (lbuf, *nfd)) goto close_connection;
      ic = 0;
     }
     lbuf[ic] = buf[i];
@@ -183,7 +187,7 @@ int ipc_read (int *nfd) {
  }
  lbuf[ic] = 0;
  if (lbuf[0])
-  ipc_process (lbuf, *nfd);
+  __ipc_process (lbuf, *nfd);
 
  close_connection:
  close (*nfd);

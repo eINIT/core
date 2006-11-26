@@ -108,10 +108,10 @@ typedef struct process_status **(*process_status_updater)(struct process_status 
 process_collector __f_process_collector, __f_p_jktdb;
 process_signal_function __f_e_kill;
 
-#define pcollect(x) (__f_process_collector? __f_process_collector(x) : ((__f_process_collector = function_find_one("einit-process-collect", 1, NULL)) ? __f_process_collector(x) : NULL))
+#define pcollect(x) ((__f_process_collector || (__f_process_collector = function_find_one("einit-process-collect", 1, NULL))) ? __f_process_collector(x) : NULL)
 
-#define ekill(x,signal) (__f_e_kill? __f_e_kill(x,signal) : ((__f_e_kill = function_find_one("einit-process-ekill", 1, NULL)) ? __f_e_kill(x,signal) : -1))
-#define pxkill(x) (__f_p_jktdb? __f_p_jktdb(x) : ((__f_p_jktdb = function_find_one("einit-process-just-kill-it", 1, NULL)) ? __f_p_jktdb(x) : -1))
+#define ekill(x,signal) ((__f_e_kill || (__f_e_kill = function_find_one("einit-process-ekill", 1, NULL))) ? __f_e_kill(x,signal) : -1)
+#define pekill(x) ((__f_p_jktdb || (__f_p_jktdb = function_find_one("einit-process-killing-spree", 1, NULL))) ? __f_p_jktdb(x) : NULL)
 
 #define process_configure(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
 #define process_cleanup(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
