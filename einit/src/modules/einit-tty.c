@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>
@@ -161,12 +162,13 @@ int texec (struct cfgnode *node) {
    restart = !strcmp(node->arbattrs[i+1], "yes");
   else if (!strcmp("variables", node->arbattrs[i])) {
    variables = str2set (':', node->arbattrs[i+1]);
-   environment = create_environment(environment, variables);
-   free (variables);
   } else {
    environment = straddtoenviron (environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
  }
+
+ environment = create_environment(environment, variables);
+ if (variables) free (variables);
 
  if (command) {
   char **cmds = str2set (' ', command);
@@ -188,7 +190,18 @@ int texec (struct cfgnode *node) {
     bitch (BTCH_ERRNO);
     exit(-1);
    } else if (cpid != -1) {
+    int ctty = -1;
+    pid_t curpgrp;
+
     sched_watch_pid (cpid, watcher);
+
+#if 0
+	setpgid (cpid, cpid);  // create a new process group for the new process
+    if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
+        ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
+        ((curpgrp = tcgetpgrp(ctty = 1)) < 0)) tcsetpgrp(ctty, cpid); // set foreground group
+#endif
+
     struct ttyst *new = ecalloc (1, sizeof (struct ttyst));
     new->pid = cpid;
     new->node = node;
@@ -257,6 +270,7 @@ int disable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&ttys_mutex);
  while (cur) {
   cur->restart = 0;
+  killpg (cur->pid, SIGHUP); // send a SIGHUP to the getty's process group
   kill (cur->pid, SIGTERM);
   cur = cur->next;
  }
