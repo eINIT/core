@@ -825,7 +825,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      snprintf (tmp, 1024, fsck_command, fstype, de->key);
 #ifndef SANDBOX
 //     pexec (tmp, NULL, 0, 0, NULL, status);
-     pexec_simple (tmp, NULL, NULL, status);
+     pexec_v1 (tmp, NULL, NULL, status);
 #else
      status->string = tmp;
      status_update (status);
@@ -855,7 +855,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
 #ifndef SANDBOX
    if (fse->before_mount)
-    pexec_simple (fse->before_mount, fse->variables, NULL, status);
+    pexec_v1 (fse->before_mount, fse->variables, NULL, status);
 //    pexec (fse->before_mount, fse->variables, 0, 0, NULL, status);
 #endif
 
@@ -916,7 +916,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       status->string = "an unknown error occured while trying to mount the filesystem";
      status_update (status);
      if (fse->after_umount)
-      pexec_simple (fse->after_umount, fse->variables, NULL, status);
+      pexec_v1 (fse->after_umount, fse->variables, NULL, status);
      return STATUS_FAIL;
     }
    }
@@ -924,7 +924,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
    mount_success:
 
    if (fse->after_mount)
-    pexec_simple (fse->after_mount, fse->variables, NULL, status);
+    pexec_v1 (fse->after_mount, fse->variables, NULL, status);
 
    if (fse->manager)
     startdaemon (fse->manager, status);
@@ -1030,7 +1030,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   umount_ok:
 #ifndef SANDBOX
   if (fse && fse->after_umount)
-   pexec_simple (fse->after_umount, fse->variables, NULL, status);
+   pexec_v1 (fse->after_umount, fse->variables, NULL, status);
 #endif
   if (fse && (fse->status & BF_STATUS_MOUNTED))
    fse->status ^= BF_STATUS_MOUNTED;
