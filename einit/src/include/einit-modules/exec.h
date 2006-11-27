@@ -63,6 +63,7 @@ struct daemonst {
  pid_t pid;
  int status;
  time_t starttime;
+ time_t timer;
  struct lmodule *module;
  struct dexecinfo *dx;
  struct daemonst *next;

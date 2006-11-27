@@ -219,7 +219,7 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGQUIT, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGABRT, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGPIPE, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGALRM, &action, NULL) ) bitch (BTCH_ERRNO);
+// if ( sigaction (SIGALRM, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGUSR1, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGUSR2, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGTSTP, &action, NULL) ) bitch (BTCH_ERRNO);
@@ -232,7 +232,7 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BTCH_ERRNO);
 #endif
  if ( sigaction (SIGPROF, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BTCH_ERRNO);
+// if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGXCPU, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (BTCH_ERRNO);
 #ifdef SIGIO

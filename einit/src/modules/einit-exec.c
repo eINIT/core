@@ -81,6 +81,7 @@ struct execst * pexec_running = NULL;
 pthread_mutex_t pexec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
+char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
@@ -95,6 +96,10 @@ int configure (struct lmodule *irr) {
 
  if (node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL))
   spawn_timeout = node->value;
+ if (node = cfg_findnode ("configuration-system-daemon-term-timeout-primary", 0, NULL))
+  kill_timeout_primary = node->value;
+ if (node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL))
+  kill_timeout_secondary = node->value;
 
  function_register ("einit-execute-command", 1, __pexec_function);
  function_register ("einit-execute-daemon", 1, __start_daemon_function);
@@ -570,13 +575,43 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
  return STATUS_OK;
 }
 
+void dexec_resume_timer (struct dexecinfo *dx) {
+ time_t timer = ((dx && dx->cb) ? dx->cb->timer : 1);
+ while (dx && dx->cb && (timer = sleep(timer)));
+
+ if (dx && dx->cb) {
+  dx->cb->timer = timer;
+  pthread_mutex_trylock (&dx->cb->mutex); // make sure the thing is locked
+  pthread_mutex_unlock (&dx->cb->mutex);  // unlock it
+ }
+}
+
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status) {
  if (shellcmd->cb) {
+  pthread_t th;
 //  puts ("control-block intact, trying to kill the daemon");
-  pthread_mutex_lock (&shellcmd->cb->mutex);
+  pthread_mutex_trylock (&shellcmd->cb->mutex);
+  shellcmd->cb->timer = kill_timeout_primary;
   kill (shellcmd->cb->pid, SIGTERM);
+
+  pthread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
   pthread_mutex_lock (&shellcmd->cb->mutex);
-  pthread_mutex_unlock (&shellcmd->cb->mutex);
+
+  if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
+   status->string = "SIGTERM timer ran out, killing...";
+   status_update (status);
+
+   pthread_cancel (th);
+   pthread_mutex_trylock (&shellcmd->cb->mutex);
+   shellcmd->cb->timer = kill_timeout_secondary;
+   kill (shellcmd->cb->pid, SIGKILL);
+
+   pthread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
+   pthread_mutex_lock (&shellcmd->cb->mutex);
+  }
+  pthread_cancel (th);
+
+  pthread_mutex_unlock (&shellcmd->cb->mutex); // just in case
   pthread_mutex_destroy (&shellcmd->cb->mutex);
  }
 

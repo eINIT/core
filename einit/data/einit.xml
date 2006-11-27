@@ -31,8 +31,8 @@
   <system>
    <ctrl-alt-del b="disabled" />
    <daemon-spawn-timeout i="20" />
-   <daemon-term-timeout-primary i="20" />
-   <daemon-term-timeout-secondary i="20" />
+   <daemon-term-timeout-primary i="10" />
+   <daemon-term-timeout-secondary i="2" />
    <shell s="/bin/sh -c" />
    <shell-exec-timeout i="20" />
    <proc-path s="/proc" />
