@@ -692,3 +692,25 @@ int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group) {
 
  return 0;
 }
+
+signed int parse_integer (char *s) {
+ signed int ret = 0;
+
+ if (!s) return ret;
+
+ if (s[strlen (s)-1] == 'b') {
+   ret = strtol (s, (char **)NULL, 2); // parse as binary number if argument ends with b, eg 100b
+ } else if (s[0] == '0') {
+  if (s[1] == 'x')
+   ret = strtol (s+2, (char **)NULL, 16); // parse as hex number if argument starts with 0x, eg 0xff3
+  else
+   ret = strtol (s, (char **)NULL, 8); // parse as octal number if argument starts with 0, eg 0643
+ } else
+  ret = atoi (s); // if nothing else worked, parse as decimal argument
+
+ return ret;
+}
+
+char parse_boolean (char *s) {
+ return s && (!strcmp (s, "true") || !strcmp (s, "enabled") || !strcmp (s, "yes"));
+}

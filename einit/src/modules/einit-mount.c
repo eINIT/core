@@ -1205,6 +1205,7 @@ void mount_ipc_handler(struct einit_event *ev) {
  if (!ev || !ev->set) return;
  char **argv = (char **) ev->set;
  if (argv[0] && argv[1]) {
+#ifdef DEBUG
   if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "fstab")) {
     char buffer[1024];
@@ -1252,7 +1253,9 @@ void mount_ipc_handler(struct einit_event *ev) {
      cur = streenext (cur);
     }
    }
-  } else if (!strcmp (argv[0], "examine") && !strcmp (argv[1], "configuration")) {
+  } else
+#endif
+  if (!strcmp (argv[0], "examine") && !strcmp (argv[1], "configuration")) {
 /* error checking... */
    char **tmpset, *tmpstring;
 

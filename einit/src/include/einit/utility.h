@@ -281,4 +281,8 @@ void evdestroy (struct einit_event *ev);
 /* user/group functions */
 int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group);
 
+/* parser functions */
+signed int parse_integer (char *);
+char parse_boolean (char *);
+
 #endif /* _UTILITY_H */

@@ -35,7 +35,7 @@
   </feedback>
 
   <ipc>
-   <control-socket s="etc/einit-control" oi="0600" />
+   <control-socket s="etc/einit-control" i="0600" />
   </ipc>
 
   <kernel>

@@ -62,8 +62,6 @@ pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
 sem_t *sigchild_semaphore;
 
-char *currentmode = "void";
-char *newmode = "void";
 stack_t signalstack;
 
 struct spidcb *cpids = NULL;
@@ -116,12 +114,11 @@ int sched_switchmode (char *mode) {
   if (!plan) {
    notice (1, "scheduler: scheduled mode defined but nothing to be done");
   } else {
-   newmode = mode;
+   if (plan->mode) cmode = plan->mode;
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
    fb->para = (void *)plan;
    status_update (fb);
    mod_plan_commit (plan);
-   currentmode = mode;
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
    status_update (fb);
    mod_plan_free (plan);
@@ -145,9 +142,6 @@ int sched_modaction (char **argv) {
  argv[1] = NULL;
 
  if (plan = mod_plan (NULL, argv, task, NULL)) {
-#ifdef DEBUG
-  mod_plan_ls (plan);
-#endif
   mod_plan_commit (plan);
  }
 

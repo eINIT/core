@@ -117,16 +117,9 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     if (!strcmp (newnode->arbattrs[i], "s"))
      newnode->svalue = (char *)newnode->arbattrs[i+1];
     else if (!strcmp (newnode->arbattrs[i], "i"))
-     newnode->value = atoi (newnode->arbattrs[i+1]);
-    else if (!strcmp (newnode->arbattrs[i], "bi"))
-     newnode->value = strtol (newnode->arbattrs[i+1], (char **)NULL, 2);
-    else if (!strcmp (newnode->arbattrs[i], "oi"))
-     newnode->value = strtol (newnode->arbattrs[i+1], (char **)NULL, 8);
+     newnode->value = parse_integer (newnode->arbattrs[i+1]);
     else if (!strcmp (newnode->arbattrs[i], "b")) {
-     int j = i+1;
-     newnode->flag = (!strcmp (newnode->arbattrs[j], "true") ||
-                      !strcmp (newnode->arbattrs[j], "enabled") ||
-                      !strcmp (newnode->arbattrs[j], "yes"));
+     newnode->flag = parse_boolean (newnode->arbattrs[i+1]);
     }
    }
   cfg_addnode (newnode);

@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>

@@ -1,3 +1,7 @@
+2006/11/28: mdeininger
+ * some cleanups (new functions "parse_integer" and "parse_boolean")
+ * removed the oi and bi flags
+
 2006/11/27: mdeininger
  * some work on the daemon-killing-issue; might be fixed now...
 

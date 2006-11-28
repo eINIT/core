@@ -322,12 +322,12 @@ void feedback_event_handler(struct einit_event *ev) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (enableansicodes)
-     printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
+     printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", (cmode && cmode->id) ? cmode->id : "unknown");
     else
-     printf ("switching to mode %s.\n", newmode);
+     printf ("switching to mode %s.\n", (cmode && cmode->id) ? cmode->id : "unknown");
 
     if (vofile)
-     fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
+     fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", (cmode && cmode->id) ? cmode->id : "unknown");
     pthread_mutex_lock (&plansmutex);
      plan.plan = (struct mloadplan *)ev->para;
      plan.startedat = time (NULL);
@@ -353,12 +353,12 @@ void feedback_event_handler(struct einit_event *ev) {
       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
     pthread_mutex_unlock (&plansmutex);
     if (enableansicodes)
-     printf ("\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, currentmode);
+     printf ("\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown");
     else
-     printf ("new mode %s is now in effect.\n", currentmode);
+     printf ("new mode %s is now in effect.\n", (amode && amode->id) ? amode->id : "unknown");
 
     if (vofile)
-     fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, currentmode); break;
+     fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown"); break;
   }
  } if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
   time_t lupdate;
@@ -457,7 +457,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
 // statusbarlines = 4;
 
  if (plans) {
-  fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", newmode);
+  fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", (cmode && cmode->id) ? cmode->id : "unknown");
  }
 
  pthread_mutex_lock (&modulesmutex);

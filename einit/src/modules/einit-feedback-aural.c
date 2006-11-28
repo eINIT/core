@@ -135,10 +135,10 @@ void feedback_event_handler(struct einit_event *ev) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (gethostname (hostname, 128)) strcpy (hostname, "localhost");
     hostname[127] = 0;
-    snprintf (phrase, 2048, "Host \"%s\" now switching to mode \"%s\".", hostname, newmode);
+    snprintf (phrase, 2048, "Host \"%s\" now switching to mode \"%s\".", hostname, (cmode && cmode->id) ? cmode->id : "unknown");
     break;
    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
-    snprintf (phrase, 2048, "New mode \"%s\" is now in effect.", currentmode);
+    snprintf (phrase, 2048, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
     break;
   }
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
