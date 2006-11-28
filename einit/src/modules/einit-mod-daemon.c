@@ -155,7 +155,7 @@ int scanmodules (struct lmodule *modchain) {
    else if (!strcmp (node->arbattrs[i], "group"))
     dexec->group = node->arbattrs[i+1];
    else if (!strcmp("restart", node->arbattrs[i]))
-    dexec->restart = !strcmp(node->arbattrs[i+1], "yes");
+    dexec->restart = parse_boolean(node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "requires"))
     modinfo->requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))

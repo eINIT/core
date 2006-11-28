@@ -85,9 +85,9 @@
     <shell id="shell-net-loopback-dummy" name="net-lo" provides="net-lo:net-lo-dummy" enable="echo /sbin/ifconfig lo up" disable="echo ifconfig lo down" />
 
 <!-- dummy daemon -->
-    <shell id="daemon-dummy-1" name="Dummy Daemon (1)" provides="dummyd" enable="while true; do id; sleep 1; done" restart="no" disable="/bin/true" prepare="id" user="mdeininger" group="rpc" />
-    <daemon id="daemon-dummy-2" name="Dummy Daemon (2)" provides="dummyd" requires="network" command="trap '' 15; while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done"  disable="/bin/true" ELEMENT="."/>
-    <daemon id="daemon-dummy-3" name="Dummy Daemon (3)" provides="dummydx" requires="network" command="while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done"  disable="/bin/true" ELEMENT="."/>
+    <shell id="daemon-dummy-1" name="Dummy Daemon (1)" provides="dummyd" enable="while true; do id; sleep 1; done" restart="no" disable="/bin/true" prepare="id" user="mdeininger" group="rpc" restart="yes" />
+    <daemon id="daemon-dummy-2" name="Dummy Daemon (2)" provides="dummyd" requires="network" command="trap '' 15; while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done"  disable="/bin/true" ELEMENT="." restart="yes" />
+    <daemon id="daemon-dummy-3" name="Dummy Daemon (3)" provides="dummydx" requires="network" command="while true; do echo -n ${ELEMENT}${TZ}; sleep 1; done"  disable="/bin/true" ELEMENT="." restart="yes" />
 
     <shell id="daemon-dummy-1" name="Dummy Daemon (1, override)" provides="dummyd" requires="network" enable="set; echo ${LESSOPEN}:1:${WHATEVER}:2:${STFU}:x:${configuration_feedback_visual_std_io_stderr}:${configuration_feedback_visual_std_io}" disable="/bin/true" variables="configuration-feedback-visual-std-io/.*" />
    </module>
