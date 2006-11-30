@@ -1,6 +1,9 @@
+2006/11/30: mdeininger
+ * templating ftw...
+
 2006/11/28: mdeininger
  * some cleanups (new functions "parse_integer" and "parse_boolean")
- * removed the oi and bi flags
+ * removed the oi and bi attributes
 
 2006/11/27: mdeininger
  * some work on the daemon-killing-issue; might be fixed now...
@@ -8,7 +11,7 @@
 2006/11/26: mdeininger
  * tty code update (this should now behave pretty much the same as sysv)
  * ipc code cleanup
- * cleaned ups ome of the macro magic...
+ * cleaned up some of the macro magic...
  * included the modules teppic posted on the wiki (thanks a lot! :D)
 
 2006/11/25: mdeininger

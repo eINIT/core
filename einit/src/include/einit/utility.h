@@ -285,4 +285,6 @@ int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group);
 signed int parse_integer (char *);
 char parse_boolean (char *);
 
+char *apply_variables (char *string, char **env);
+
 #endif /* _UTILITY_H */

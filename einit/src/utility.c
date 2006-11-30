@@ -714,3 +714,20 @@ signed int parse_integer (char *s) {
 char parse_boolean (char *s) {
  return s && (!strcmp (s, "true") || !strcmp (s, "enabled") || !strcmp (s, "yes"));
 }
+
+char *apply_variables (char *string, char **env) {
+ char *ret;
+ uint32_t len = 0, rpos = 0, spos = 0;
+
+ if (!string) return NULL;
+ if (!env) return estrdup (string);
+
+ ret = emalloc (len = (strlen (string) + 1));
+ *ret = 0;
+
+ for (spos = 0, rpos = 0; string[spos]; spos++, rpos++) {
+  ret[rpos] = string[spos];
+ }
+
+ return ret;
+}
