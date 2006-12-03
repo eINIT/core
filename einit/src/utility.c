@@ -727,37 +727,42 @@ char *apply_variables (char *string, char **env) {
 
 // puts (string);
  for (spos = 0, rpos = 0; string[spos]; spos++) {
-  if (string[spos] == '$') {
-   for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
-    ret[rpos] = string[rspos];
-    rpos++;
-   }
-   tsin = 1;
-  } else if ((tsin == 1) && (string[spos] == '{')) {
-   rspos = spos+1;
-   vst = string+rspos;
-   tsin = 2;
-  } else if (tsin == 2) {
+  if (tsin == 2) {
    if (string[spos] == '}') {
     uint32_t i = 0, xi = 0;
     string[spos] = 0;
-	for (; env[i]; i+=2) {
+    for (; env[i]; i+=2) {
      if (!strcmp (env[i], vst)) {
-	  xi = i+1; break;
-	 }
-	}
+      xi = i+1; break;
+     }
+    }
     if (xi) {
-	 len = len - strlen (vst) - 3 + strlen (env[xi]);
-	 ret = erealloc (ret, len);
+     len = len - strlen (vst) - 3 + strlen (env[xi]);
+     ret = erealloc (ret, len);
      for (i = 0; env[xi][i]; i++) {
       ret[rpos] = env[xi][i];
       rpos++;
      }
     } else {
-	}
+     for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
+      ret[rpos] = string[rspos];
+      rpos++;
+     }
+     ret[rpos] = '}';
+     rpos++;
+    }
     string[spos] = '}';
     tsin = 0;
    }
+  } else if ((string[spos] == '$') && (string[spos+1] == '{')) {
+   for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
+    ret[rpos] = string[rspos];
+    rpos++;
+   }
+   spos++;
+   rspos = spos+1;
+   vst = string+rspos;
+   tsin = 2;
   } else {
    tsin = 0;
    rspos = spos+3;

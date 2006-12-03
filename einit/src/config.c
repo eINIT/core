@@ -86,7 +86,6 @@ int cfg_addnode (struct cfgnode *node) {
   }
  }
 
-#if 1
  if (template) {
   char **attrs = NULL, *nodename = NULL;
   uint32_t ii = 0, idn = 0;
@@ -97,7 +96,7 @@ int cfg_addnode (struct cfgnode *node) {
   strcat (nodename, node->id);
   strcat (nodename, "-template");
 
-  while (tnode = cfg_findnode (nodename, 0, NULL)) {
+  while (tnode = cfg_findnode (nodename, 0, tnode)) {
    if (tnode->idattr && !strcmp (tnode->idattr, template)) break; // found a matching template
   }
   if (!tnode || !tnode->arbattrs) goto no_template;
@@ -120,7 +119,6 @@ int cfg_addnode (struct cfgnode *node) {
   node->idattr = attrs[idn];
  }
  no_template:
-#endif
 
  if (node->nodetype & EI_NODETYPE_MODE) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but

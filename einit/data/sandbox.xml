@@ -36,7 +36,7 @@
 
   <network>
    <interfaces>
-    <eth3 network="10.6.0.2/16" gateway="10.6.0.1" />
+    <eth1 network="10.6.0.2/16" gateway="10.6.0.1" />
    </interfaces>
   </network>
 
@@ -97,16 +97,12 @@
 
     <shell id="daemon-dummy-1" name="Dummy Daemon (1, override)" provides="dummyd" requires="network" enable="set; echo ${LESSOPEN}:1:${WHATEVER}:2:${STFU}:x:${configuration_feedback_visual_std_io_stderr}:${configuration_feedback_visual_std_io}" disable="/bin/true" variables="configuration-feedback-visual-std-io/.*" />
 
-    <shell-template id="template-shell-net-static"
-     name="Network (${interface}, static)"
-     provides="net-${interface}"
-     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_network}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
-     disable="ifconfig ${interface} down"
-	 variables="configuration-network-interfaces-${interface}/.*" />
-
-    <shell id="shell-net-static-eth3"
+    <shell id="shell-net-eth1-dhcp"
+     based-on-template="template-shell-net-dhcp"
+     interface="eth1" />
+    <shell id="shell-net-static-eth1"
      based-on-template="template-shell-net-static"
-	 interface="eth3" />
+     interface="eth1" />
 
    </module>
   </virtual>

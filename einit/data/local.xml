@@ -12,7 +12,6 @@
  <configuration>
   <system>
    <swap device="/dev/sdb3" affinity="0" />
-   <swap device="/dev/sdc3" affinity="0" />
   </system>
 
   <network>
@@ -22,6 +21,11 @@
    <wireless>
     <ssid s="default" />
    </wireless>
+
+<!-- example for a static network configuration, use with the commented module using the shell-net-eth1-static template from below -->
+<!--   <interfaces>
+    <eth1 network="10.6.0.2/16" gateway="10.6.0.1" />
+   </interfaces> -->
   </network>
 
   <peripherals>
@@ -77,6 +81,18 @@
  </configuration>
 
  <services>
+<!-- both of the following would define a net-eth1 module, one using dhcp, the other with a static address from above -->
+<!--  <virtual>
+   <module>
+    <shell id="shell-net-eth1-dhcp"
+     based-on-template="template-shell-net-dhcp"
+     interface="eth1" />
+    <shell id="shell-net-eth1-static"
+     based-on-template="template-shell-net-static"
+     interface="eth1" />
+   </module>
+  </virtual> -->
+
   <prefer>
    <xdm s="daemon-kdm:daemon-entrance" />
    <kern-alsa s="shell-kern-audio-alsa" />

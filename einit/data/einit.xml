@@ -49,6 +49,7 @@
 
    <interfaces>
     <source s="sys:proc" />
+    <lo network="127.0.0.1/8" gateway="127.0.0.1" />
    </interfaces>
 
    <dhcp>
@@ -397,19 +398,45 @@
      variables="configuration-system-swap/device" />
 
 <!-- modules -->
-    <shell id="shell-kern-ethernet"
-     name="Kernel Modules (ethernet)"
-     provides="kern-ethernet"
+    <shell-template id="template-shell-kern-module-loader"
+     name="Kernel Modules (${system})"
+     provides="kern-${system}"
      requires="mount/system"
      enable="
-      for x in ${configuration_kernel_modules_ethernet};
+      for x in ${configuration_kernel_modules_${system}};
        do echo $x; modprobe $x;
       done; /bin/true"
      disable="
-      for x in ${configuration_kernel_modules_ethernet}; do
+      for x in ${configuration_kernel_modules_${system}}; do
        ${configuration_command_rmmod} $x;
       done; /bin/true"
-     variables="configuration-kernel-modules-ethernet:configuration-command-rmmod" />
+     variables="configuration-kernel-modules-${system}:configuration-command-rmmod" />
+
+    <shell id="shell-kern-ethernet"
+     based-on-template="template-shell-kern-module-loader"
+     disable="/bin/true"
+     system="ethernet" />
+    <shell id="shell-kern-sound"
+     based-on-template="template-shell-kern-module-loader"
+     provides="kern-sound:kern-alsa"
+     disable="/bin/true"
+     system="sound" />
+    <shell id="shell-kern-dvb"
+     based-on-template="template-shell-kern-module-loader"
+     system="dvb" />
+    <shell id="shell-kern-arbitrary"
+     based-on-template="template-shell-kern-module-loader"
+     disable="/bin/true"
+     system="arbitrary" />
+    <shell id="shell-kern-usb"
+     based-on-template="template-shell-kern-module-loader"
+     system="usb" />
+    <shell id="shell-kern-hid"
+     based-on-template="template-shell-kern-module-loader"
+     system="hid" />
+    <shell id="shell-kern-bluetooth"
+     based-on-template="template-shell-kern-module-loader"
+     system="bluetooth" />
 
     <shell id="shell-kern-audio-alsa"
      name="Kernel Modules (ALSA)"
@@ -427,74 +454,6 @@
       done;
       /bin/true"
      variables="configuration-command-rmmod" />
-
-<!-- slightly modified this definition of haader's -->
-    <shell id="shell-kern-audio"
-     name="Kernel Modules (Sound, Manual)"
-     provides="kern-sound:kern-alsa"
-     requires="mount/system"
-     enable="for x in ${kernel_modules_sound};
-       do echo $x; modprobe $x;
-       done; /bin/true"
-     disable="/bin/true"
-     variables="kernel_modules_sound" />
-
-
-    <shell id="shell-kern-video-dvb"
-     name="Kernel Modules (DVB)"
-     provides="kern-dvb"
-     requires="mount/system"
-     enable="
-      for x in ${configuration_kernel_modules_dvb};
-       do echo $x; modprobe $x;
-      done; /bin/true"
-     disable="
-      for x in ${configuration_kernel_modules_dvb}; do
-       ${configuration_command_rmmod} $x;
-      done; /bin/true"
-     variables="configuration-kernel-modules-dvb:configuration-command-rmmod" />
-
-    <shell id="shell-kern-arbitrary"
-     name="Kernel Modules (arbitrary)"
-     provides="kern-arbitrary"
-     requires="mount/system"
-     enable="
-      for x in ${configuration_kernel_modules_arbitrary};
-       do echo $x; modprobe $x;
-      done; /bin/true"
-     disable="
-      for x in ${configuration_kernel_modules_arbitrary}; do
-       ${configuration_command_rmmod} $x;
-      done; /bin/true"
-     variables="configuration-kernel-modules-arbitrary:configuration-command-rmmod" />
-
-    <shell id="shell-kern-usb"
-     name="Kernel Modules (usb)"
-     provides="kern-usb"
-     requires="mount/system"
-     enable="
-      for x in ${configuration_kernel_modules_usb};
-       do echo $x; modprobe $x;
-      done; /bin/true"
-     disable="
-      for x in ${configuration_kernel_modules_usb}; do
-       ${configuration_command_rmmod} $x;
-      done; /bin/true"
-     variables="configuration-kernel-modules-usb:configuration-command-rmmod" />
-
-    <shell id="shell-kern-hid"
-     name="Kernel Modules (hid)"
-     provides="kern-hid"
-     requires="mount/system"
-     enable="
-      for x in ${configuration_kernel_modules_hid};
-       do echo $x; modprobe $x;
-      done; /bin/true"
-     disable="
-      for x in ${configuration_kernel_modules_hid}; do
-       ${configuration_command_rmmod} $x;
-      done; /bin/true"
-     variables="configuration-kernel-modules-hid:configuration-command-rmmod" />
 
     <shell id="shell-sensors"
      name="LM-Sensors"
@@ -557,11 +516,16 @@
      disable="/bin/loadkeys us"
      variables="configuration-peripherals-keyboard/layout" />
 
-    <shell id="shell-net-loopback"
-     name="Network (Loopback)"
-     provides="net-lo"
-     enable="/sbin/ifconfig lo up 127.0.0.1/8; route add -net 127.0.0.0/8 gw 127.0.0.1"
-     disable="ifconfig lo down" />
+    <shell-template id="template-shell-net-static"
+     name="Network (${interface}, static)"
+     provides="net-${interface}"
+     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_network}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
+     disable="ifconfig ${interface} down"
+     variables="configuration-network-interfaces-${interface}/.*" />
+
+    <shell id="shell-net-static-loopback"
+     based-on-template="template-shell-net-static"
+     interface="lo" />
 
 <!-- Clock -->
     <shell id="shell-clock-ntpdate"
@@ -613,21 +577,17 @@
      variables="configuration-audio-alsa-mixer/file" />
 
 <!-- DHCPcd -->
-<!-- strictly speaking this is a daemon, but it can't be supervised like one... -->
-<!--    <shell id="shell-ethernet-eth0-dhcp"
-     name="Network (eth0, using DHCP)"
-     provides="net-eth0"
+    <shell-template id="template-shell-net-dhcp"
+     name="Network (${interface}, using DHCP)"
+     provides="net-${interface}"
      requires="kern-ethernet:mount/critical"
-     enable="rm -f /var/run/dhcpcd-eth0.pid; /sbin/dhcpcd -d -t 60 eth0;"
-     disable="killall dhcpcd; rm -f /var/run/dhcpcd-eth0.pid;" /> -->
-<!-- modified version from KKtm, good idea! -->
-    <shell id="shell-ethernet-eth0-dhcp"
-     name="Network (eth0, using DHCP)"
-     provides="net-eth0"
-     requires="kern-ethernet:mount/critical"
-     enable="rm -f /var/run/dhcpcd-eth0.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} eth0;"
-     disable="killall dhcpcd; rm -f /var/run/dhcpcd-eth0.pid;"
+     enable="rm -f /var/run/dhcpcd-${interface}.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
+     disable="killall dhcpcd; rm -f /var/run/dhcpcd-${interface}.pid;"
      variables="configuration-network-dhcp-timeout" />
+
+    <shell id="shell-net-eth0-dhcp"
+     based-on-template="template-shell-net-dhcp"
+     interface="eth0" />
 
 <!-- mythtv -->
 <!-- damn this thing's a bitch -->
@@ -665,20 +625,6 @@
 
 <!-- Bluetooth modules, thanks Lloeki!
     err, i modified one variable ;) -->
-     <shell id="shell-kern-bluetooth"
-      name="Kernel Modules (bluetooth)"
-      provides="kern-bluetooth"
-      requires="mount/local:kern-usb"
-      enable="
-       for x in ${configuration_kernel_modules_bluetooth};
-        do echo $x; modprobe $x;
-       done; /bin/true"
-      disable="
-       for x in ${configuration_kernel_modules_bluetooth}; do
-        ${configuration_command_rmmod} $x;
-       done; /bin/true"
-      variables="configuration-kernel-modules-bluetooth:configuration-command-rmmod" />
-
      <shell id="shell-bluez-hid2hci"
       name="Bluetooth (HID2HCI)"
       provides="bluetooth-hid2hci"
@@ -693,12 +639,6 @@
       enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
       disable="/usr/bin/rfcomm release all" />
 
-<!--     <shell id="shell-bluez-hcid"
-      name="Bluetooth (HCI)"
-      provides="bluetooth-hci"
-      requires="mount/local:kern-bluetooth"
-      enable="/usr/sbin/hcid -f /etc/bluetooth/hcid.conf"
-      disable="killall hcid" /> -->
      <daemon id="daemon-bluez-hcid"
       name="Bluetooth (HCId)"
       provides="bluetooth-hci"
@@ -706,12 +646,6 @@
       command="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf"
       restart="yes" /> 
 
-<!--     <shell id="shell-bluez-sdpd"
-      name="Bluetooth (SDP)"
-      provides="bluetooth-sdp"
-      requires="mount/local:kern-bluetooth:bluetooth-hci"
-      enable="/usr/sbin/sdpd"
-      disable="killall sdpd" /> -->
      <daemon id="daemon-bluez-sdpd"
       name="Bluetooth (SDPd)"
       provides="bluetooth-sdp"
@@ -719,13 +653,6 @@
       command="/usr/sbin/sdpd -n"
       restart="yes" />
 
-<!--     <shell id="shell-bluez-hidd"
-      name="Bluetooth (HID)"
-      provides="bluetooth-hid"
-      requires="mount/local:kern-bluetooth:bluetooth-hci"
-      enable="/usr/bin/hidd ${configuration_bluetooth_hidd_options} -\-server"
-      disable="killall hidd"
-      variables="configuration-bluetooth-hidd/options" /> -->
      <daemon id="shell-bluez-hidd"
       name="Bluetooth (HIDd)"
       provides="bluetooth-hid"
