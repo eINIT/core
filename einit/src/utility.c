@@ -727,7 +727,16 @@ char *apply_variables (char *string, char **env) {
 
 // puts (string);
  for (spos = 0, rpos = 0; string[spos]; spos++) {
-  if (tsin == 2) {
+  if ((string[spos] == '$') && (string[spos+1] == '{')) {
+   for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
+    ret[rpos] = string[rspos];
+    rpos++;
+   }
+   spos++;
+   rspos = spos+1;
+   vst = string+rspos;
+   tsin = 2;
+  } else if (tsin == 2) {
    if (string[spos] == '}') {
     uint32_t i = 0, xi = 0;
     string[spos] = 0;
@@ -754,15 +763,6 @@ char *apply_variables (char *string, char **env) {
     string[spos] = '}';
     tsin = 0;
    }
-  } else if ((string[spos] == '$') && (string[spos+1] == '{')) {
-   for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
-    ret[rpos] = string[rspos];
-    rpos++;
-   }
-   spos++;
-   rspos = spos+1;
-   vst = string+rspos;
-   tsin = 2;
   } else {
    tsin = 0;
    rspos = spos+3;
@@ -771,7 +771,7 @@ char *apply_variables (char *string, char **env) {
   }
  }
  ret[rpos] = 0;
-// puts (ret);
+ puts (ret);
 
  return ret;
 }
