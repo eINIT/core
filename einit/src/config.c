@@ -82,15 +82,15 @@ int cfg_addnode (struct cfgnode *node) {
   uint32_t r = 0;
   for (; node->arbattrs[r]; r+=2) {
    if (!strcmp ("id", node->arbattrs[r])) node->idattr = node->arbattrs[r+1];
-//   else if (!strcmp ("based-on-template", node->arbattrs[r])) template = node->arbattrs[r+1];
+   else if (!strcmp ("based-on-template", node->arbattrs[r])) template = node->arbattrs[r+1];
   }
  }
 
-#if 0
+#if 1
  if (template) {
   char **attrs = NULL, *nodename = NULL;
   uint32_t ii = 0, idn = 0;
-  char *cfgnode tnode = NULL;
+  struct cfgnode *tnode = NULL;
 
   nodename = emalloc (strlen(node->id) + 10);
   *nodename = 0;
@@ -100,13 +100,18 @@ int cfg_addnode (struct cfgnode *node) {
   while (tnode = cfg_findnode (nodename, 0, NULL)) {
    if (tnode->idattr && !strcmp (tnode->idattr, template)) break; // found a matching template
   }
-  if (!tnode) goto no_template;
+  if (!tnode || !tnode->arbattrs) goto no_template;
 
   for (ii = 0; node->arbattrs[ii]; ii+=2) {
-   char *tmp = apply_variables (node->arbattrs[ii+1], node->arbattrs);
-   attrs = setadd (attrs, node->arbattrs[ii], SET_TYPE_STRING);
-   attrs = setadd (attrs, tmp, SET_TYPE_STRING);
+   attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii], SET_TYPE_STRING);
+   attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii+1], SET_TYPE_STRING);
    if (!strcmp (node->arbattrs[ii], "id")) idn = ii+1;
+  }
+  for (ii = 0; tnode->arbattrs[ii]; ii+=2) if (!inset ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING)) {
+   char *tmp = apply_variables (tnode->arbattrs[ii+1], node->arbattrs);
+   attrs = (char **)setadd ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING);
+   attrs = (char **)setadd ((void **)attrs, (void *)tmp, SET_TYPE_STRING);
+   if (!strcmp (tnode->arbattrs[ii], "id")) idn = ii+1;
    free (tmp);
   }
 

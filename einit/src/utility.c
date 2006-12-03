@@ -716,8 +716,8 @@ char parse_boolean (char *s) {
 }
 
 char *apply_variables (char *string, char **env) {
- char *ret;
- uint32_t len = 0, rpos = 0, spos = 0;
+ char *ret, *vst, tsin = 0;
+ uint32_t len = 0, rpos = 0, spos = 0, rspos = 0;
 
  if (!string) return NULL;
  if (!env) return estrdup (string);
@@ -725,9 +725,48 @@ char *apply_variables (char *string, char **env) {
  ret = emalloc (len = (strlen (string) + 1));
  *ret = 0;
 
- for (spos = 0, rpos = 0; string[spos]; spos++, rpos++) {
-  ret[rpos] = string[spos];
+// puts (string);
+ for (spos = 0, rpos = 0; string[spos]; spos++) {
+  if (string[spos] == '$') {
+   for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
+    ret[rpos] = string[rspos];
+    rpos++;
+   }
+   tsin = 1;
+  } else if ((tsin == 1) && (string[spos] == '{')) {
+   rspos = spos+1;
+   vst = string+rspos;
+   tsin = 2;
+  } else if (tsin == 2) {
+   if (string[spos] == '}') {
+    uint32_t i = 0, xi = 0;
+    string[spos] = 0;
+	for (; env[i]; i+=2) {
+     if (!strcmp (env[i], vst)) {
+	  xi = i+1; break;
+	 }
+	}
+    if (xi) {
+	 len = len - strlen (vst) - 3 + strlen (env[xi]);
+	 ret = erealloc (ret, len);
+     for (i = 0; env[xi][i]; i++) {
+      ret[rpos] = env[xi][i];
+      rpos++;
+     }
+    } else {
+	}
+    string[spos] = '}';
+    tsin = 0;
+   }
+  } else {
+   tsin = 0;
+   rspos = spos+3;
+   ret[rpos] = string[spos];
+   rpos++;
+  }
  }
+ ret[rpos] = 0;
+// puts (ret);
 
  return ret;
 }
