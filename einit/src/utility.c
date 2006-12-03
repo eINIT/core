@@ -771,7 +771,7 @@ char *apply_variables (char *string, char **env) {
   }
  }
  ret[rpos] = 0;
- puts (ret);
+// puts (ret);
 
  return ret;
 }

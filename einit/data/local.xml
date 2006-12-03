@@ -24,7 +24,7 @@
 
 <!-- example for a static network configuration, use with the commented module using the shell-net-eth1-static template from below -->
 <!--   <interfaces>
-    <eth1 network="10.6.0.2/16" gateway="10.6.0.1" />
+    <eth1 address="10.6.0.2/16" network="10.6.0.0/16" gateway="10.6.0.1" />
    </interfaces> -->
   </network>
 

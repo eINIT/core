@@ -49,7 +49,7 @@
 
    <interfaces>
     <source s="sys:proc" />
-    <lo network="127.0.0.1/8" gateway="127.0.0.1" />
+    <lo address="127.0.0.1/8" network="127.0.0.0/8" gateway="127.0.0.1" />
    </interfaces>
 
    <dhcp>
@@ -519,7 +519,7 @@
     <shell-template id="template-shell-net-static"
      name="Network (${interface}, static)"
      provides="net-${interface}"
-     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_network}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
+     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
 
