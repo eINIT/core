@@ -1,4 +1,5 @@
 images {
+ image: "einit-logo-bg.png" COMP;
  image: "einit-logo.png" COMP;
  image: "loading-bar-underlay.png" COMP;
  image: "loading-bar.png" COMP;
@@ -24,7 +25,7 @@ collections {
     }
    }
    part {
-    name: "background_image";
+    name: "einit_logo_bg";
     description {
      state: "default" 0.0;
      min: 248 248;
@@ -34,6 +35,27 @@ collections {
       offset, 0 0;
      }
      rel2 {
+      relative, 1.0 1.0;
+      offset, 0 0;
+     }
+     image {
+      normal: "einit-logo-bg.png";
+     }
+    }
+   }
+   part {
+    name: "einit_logo";
+    description {
+     state: "default" 0.0;
+     min: 200 200;
+     max: 200 200;
+     rel1 {
+      to: "einit_logo_bg";
+      relative, 0.0 0.0;
+      offset, 0 0;
+     }
+     rel2 {
+      to: "einit_logo_bg";
       relative, 1.0 1.0;
       offset, 0 0;
      }
