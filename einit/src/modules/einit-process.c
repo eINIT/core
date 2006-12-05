@@ -139,16 +139,41 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
+int __ekill (struct pc_conditional **pcc, int sign) {
+ pid_t **pl = pcollect (pcc);
+ uint32_t i = 0;
+
+ if (!pl) return -1;
+
+ for (; pl[i]; i++) {
+  printf ("sending signal %i to process %i", sign, pl[i]);
+  kill ((pid_t)pl[i], sign);
+ }
+
+ free (pl);
+}
+
+int __pekill (struct pc_conditional **pcc) {
+/* pid **pl = pcollect (pcc);
+
+ free (pl);*/
+ ekill (pcc, SIGKILL);
+}
+
 int configure (struct lmodule *irr) {
  process_configure (irr);
  function_register ("einit-process-filter-cwd", 1, filter_processes_cwd);
  function_register ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
  function_register ("einit-process-collect", 1, collect_processes);
+ function_register ("einit-process-ekill", 1, __ekill);
+ function_register ("einit-process-killing-spree", 1, __pekill);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ function_unregister ("einit-process-killing-spree", 1, __pekill);
+ function_unregister ("einit-process-ekill", 1, __ekill);
  function_unregister ("einit-process-collect", 1, collect_processes);
  function_unregister ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
  function_unregister ("einit-process-filter-cwd", 1, filter_processes_cwd);

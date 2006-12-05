@@ -52,6 +52,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/process.h>
 #include <einit-modules/exec.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+
 #include <signal.h>
 #include <pthread.h>
 #include <utmp.h>
@@ -90,10 +94,10 @@ pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
-  if (!cfg_getnode("configuration-system-shell", NULL)) {
-   fdputs (" * configuration variable \"configuration-system-shell\" not found.\n", ev->integer);
-   ev->task++;
-  }
+//  if (!cfg_getnode("configuration-system-shell", NULL)) {
+//   fdputs (" * configuration variable \"configuration-system-shell\" not found.\n", ev->integer);
+//   ev->task++;
+//  }
 
   ev->flag = 1;
  }
@@ -176,7 +180,12 @@ int texec (struct cfgnode *node) {
   char **cmds = str2set (' ', command);
   pid_t cpid;
   if (cmds && cmds[0]) {
-   if (!(cpid = fork())) {
+   struct stat statbuf;
+   if (lstat (cmds[0], &statbuf)) {
+    char cret [1024];
+	snprintf (cret, 1024, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
+    notice (2, cret);
+   } else if (!(cpid = fork())) {
     if (device) {
      int newfd = open(device, O_RDWR, 0);
      if (newfd) {

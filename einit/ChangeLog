@@ -1,3 +1,7 @@
+2006/12/05: mdeininger
+ * bleedin umount problem...
+ * einit-tty will now check the ttys to be called for existence
+
 2006/12/04: mdeininger
  * some work on a default splash-screen
 

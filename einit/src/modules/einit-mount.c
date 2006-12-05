@@ -962,12 +962,21 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
    status->string = textbuffer;
    status_update (status);
 #ifndef SANDBOX
+#ifdef DARWIN
+   if (unmount (mountpoint, 0)) {
+#else
    if (umount (mountpoint)) {
+#endif
+    struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
+                         *pcl[2] = { &pcc, NULL };
+	
     snprintf (textbuffer, 1024, "%s: umount() failed: %s", mountpoint, strerror(errno));
     status->string = textbuffer;
     status_update (status);
+
+    pekill (pcl);
 #ifdef LINUX
-    if (umount2 (mountpoint, MNT_FORCE)) {
+    if ((retry >= 2) && umount2 (mountpoint, MNT_FORCE)) {
      snprintf (textbuffer, 1024, "%s: umount2() failed: %s", mountpoint, strerror(errno));
      status->string = textbuffer;
      status_update (status);
@@ -980,7 +989,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      }
      struct legacy_fstab_entry *lfse = (struct legacy_fstab_entry *)hav->value;
      if (lfse) {
-      if (mount (lfse->fs_spec, lfse->fs_file, NULL, MS_REMOUNT | MS_RDONLY, NULL)) {
+      if ((retry >= 3) && mount (lfse->fs_spec, lfse->fs_file, NULL, MS_REMOUNT | MS_RDONLY, NULL)) {
        snprintf (textbuffer, 1024, "%s: remounting r/o failed: %s", mountpoint, strerror(errno));
        status->string = textbuffer;
        status_update (status);
@@ -1472,6 +1481,14 @@ int enable (enum mounttask p, struct einit_event *status) {
   free (acand);
   sc++;
  }
+
+ struct einit_event rev = evstaticinit(EVE_NEW_MOUNT_LEVEL);
+ rev.integer = p;
+ event_emit (&rev, EINIT_EVENT_FLAG_BROADCAST);
+ evstaticdestroy (rev);
+
+// scan for new modules after mounting all critical filesystems
+ if (p == MOUNT_CRITICAL) mod_scanmodules();
 
  return STATUS_OK;
 }

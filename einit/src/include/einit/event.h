@@ -53,11 +53,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< duplicate event data block. important with SPAWN_THREAD */
 
 #define EVENT_SUBSYSTEM_EINIT		0x00001000
-#define EVE_PANIC			0x00001001
+#define EVE_PANIC					0x00001001
 /*!< put everyone in the cast range into a state of panic/calm everyone down; status contains a reason */
-#define EVE_MODULE_UPDATE		0x00001002
+#define EVE_MODULE_UPDATE			0x00001002
 /*!< Module status changing; use the task and status fields to find out just what happened */
-#define EVE_SERVICE_UPDATE		0x00001003
+#define EVE_SERVICE_UPDATE			0x00001003
 /*!< Service availability changing; use the task and status fields to find out just what happened */
 #define EVE_CONFIGURATION_UPDATE	0x00001004
 /*!< updated core information: new configuration elements */
@@ -70,20 +70,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< shutdown going to happen after this event */
 #define EVE_REBOOT_SCHEDULED		0x00001203
 /*!< reboot scheduled */
-#define EVE_REBOOT_IMMINENT		0x00001204
+#define EVE_REBOOT_IMMINENT			0x00001204
 /*!< reboot going to happen after this event */
 
-
-#define EVENT_SUBSYSTEM_IPC		0x00002000
+#define EVENT_SUBSYSTEM_IPC			0x00002000
 /*!< incoming IPC request */
 #define EVENT_SUBSYSTEM_MOUNT		0x00003000
-#define EVE_DO_UPDATE			0x00003001
+#define EVE_DO_UPDATE				0x00003001
+#define EVE_NEW_NODE_MOUNTED		0x00003002
+#define EVE_NEW_MOUNT_LEVEL			0x00003003
 /*!< update mount status */
 #define EVENT_SUBSYSTEM_FEEDBACK	0x00004000
 #define EVE_FEEDBACK_MODULE_STATUS	0x00004001
 /*!< the para field specifies a module that caused the feedback */
 #define EVE_FEEDBACK_PLAN_STATUS	0x00004002
-#define EVE_FEEDBACK_NOTICE		0x00004003
+#define EVE_FEEDBACK_NOTICE			0x00004003
 
 #define EVENT_SUBSYSTEM_POWER		0x00005000
 /*!< notify others that the power is failing, has been restored or similar */
@@ -93,14 +94,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_SUBSYSTEM_NETWORK		0x00007000
 #define EVE_NETWORK_DO_UPDATE		0x00007001
 
-
 #define EVENT_SUBSYSTEM_CUSTOM		0xfffff000
 /*!< custom events; not yet implemented */
 
 /* (generic) IPC-event flags */
-#define EIPC_OUTPUT_XML           0x0001
-#define EIPC_ONLY_RELEVANT        0x1000
-#define EIPC_HELP                 0x0002
+#define EIPC_OUTPUT_XML             0x0001
+#define EIPC_ONLY_RELEVANT          0x1000
+#define EIPC_HELP                   0x0002
 
 #define evstaticinit(ttype) { .type = ttype, .type_custom = NULL, .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
