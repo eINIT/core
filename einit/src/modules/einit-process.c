@@ -145,8 +145,8 @@ int __ekill (struct pc_conditional **pcc, int sign) {
 
  if (!pl) return -1;
 
- for (; pl[i]; i++) {
-  printf ("sending signal %i to process %i", sign, pl[i]);
+ for (; pl[i]; i++) if ((pl[i] != 1) && (pl[i] != getpid())){
+  fprintf (stderr, "sending signal %i to process %i", sign, pl[i]);
   kill ((pid_t)pl[i], sign);
  }
 
