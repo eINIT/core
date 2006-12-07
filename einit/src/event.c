@@ -47,10 +47,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 
 struct stree *exported_functions = NULL;
-struct event_ringbuffer_node *event_logbuffer = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#ifdef DEBUG
 pthread_mutex_t event_logbuffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+struct event_ringbuffer_node *event_logbuffer = NULL;
+#endif
 
 uint32_t cseqid = 0;
 
@@ -67,6 +70,7 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
   event->seqid = cseqid++;
   event->timestamp = time(NULL);
 
+#ifdef DEBUG
 /* initialise copy for the log-ringbuffer */
   new_logbuffer_node = emalloc (sizeof(struct event_ringbuffer_node));
 
@@ -93,6 +97,7 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
    new_logbuffer_node->next = new_logbuffer_node;
   }
   event_logbuffer = new_logbuffer_node;
+#endif
 
 // pthread_mutex_unlock (&event_logbuffer_mutex);
 
@@ -316,19 +321,23 @@ void event_ipc_handler(struct einit_event *event) {
  uint32_t options = event->status;
 
  if (argc >= 2) {
-  if (!strcmp (argv[0], "emit-event")) {
-   if (argv[1] && argv[2] && !strcmp (argv[1], "core/update-configuration")) {
-    struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
-    nev.string = argv[2];
+  if ((!strcmp (argv[0], "update") && !strcmp (argv[1], "configuration")) ||
+      (!strcmp (argv[0], "emit-event") && !strcmp (argv[1], "core/update-configuration"))) {
+   struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+   nev.string = argv[2];
 
+   if (nev.string)
     fprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
-    event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+   else
+    fprintf (stderr, "event-subsystem: updating configuration\n", argv[2]);
+   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
 
-    evstaticdestroy(nev);
+   evstaticdestroy(nev);
 
-    if (!event->flag) event->flag = 1;
-   }
-  } else if (!strcmp (argv[0], "list")) {
+   if (!event->flag) event->flag = 1;
+  }
+#ifdef DEBUG
+   else if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "event-log")) {
     char textbuffer[2048];
 
@@ -361,5 +370,6 @@ void event_ipc_handler(struct einit_event *event) {
     if (!event->flag) event->flag = 1;
    }
   }
+#endif
  }
 }

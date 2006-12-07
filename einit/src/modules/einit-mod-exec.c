@@ -189,12 +189,6 @@ int scanmodules (struct lmodule *modchain) {
   struct lmodule *lm = modchain;
   while (lm) {
    if (lm->source && !strcmp(lm->source, modinfo->rid)) {
-/*    char tnotice[512];
-    snprintf (tnotice, 512, "einit-mod-exec: module already loaded: %s: updating\n", modinfo->rid);
-    notice (5, tnotice);*/
-
-//    lm->source = estrdup (modinfo->rid);
-//    free (modinfo->rid);
     lm->param = (void *)mexec;
     lm->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
     lm->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;
@@ -210,14 +204,7 @@ int scanmodules (struct lmodule *modchain) {
   }
 
   if (doop) {
-   new = mod_add (NULL,
-//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* enable */
-//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* disable */
-//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* reset */
-//            (int (*)(void *, struct einit_event *))pexec_wrapper, /* reload */
-//            cleanup_after_module,  /* cleanup */
-//            (void *)mexec,
-            modinfo);
+   new = mod_add (NULL, modinfo);
    if (new) {
     new->source = estrdup (modinfo->rid);
     new->param = (void *)mexec;

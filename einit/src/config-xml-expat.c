@@ -54,6 +54,8 @@ struct cfgnode *curmode = NULL;
 
 #define ECXE_MASTERTAG 0x00000001
 
+char **xml_configuration_files = NULL;
+
 struct einit_xml_expat_user_data {
  uint32_t options;
  char *file, *prefix;
@@ -185,6 +187,9 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      free (tx);
     }
    }
+   if (!inset ((void **)xml_configuration_files, (void *)configfile, SET_TYPE_STRING))
+    xml_configuration_files = (char **)setadd ((void **)xml_configuration_files,
+                                               (void *)configfile, SET_TYPE_STRING);
    XML_ParserFree (par);
   } else {
    fputs ("einit_config_xml_expat_parse_configuration_file(): XML Parser could not be created\n", stderr);
@@ -299,7 +304,16 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 }
 
 void einit_config_xml_expat_event_handler (struct einit_event *ev) {
- if ((ev->type == EVE_UPDATE_CONFIGURATION) && ev->string) {
-  einit_config_xml_expat_parse_configuration_file (ev->string);
+ if (ev->type == EVE_UPDATE_CONFIGURATION) {
+  if (xml_configuration_files) {
+   uint32_t i = 0;
+   for (; xml_configuration_files && xml_configuration_files [i]; i++) {
+    einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
+   }
+  }
+
+  if (ev->string) {
+   einit_config_xml_expat_parse_configuration_file (ev->string);
+  }
  }
 }

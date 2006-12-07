@@ -131,6 +131,8 @@ struct exported_function {
  void *function;                         /*!< pointer to the function */
 };
 
+#ifdef DEBUG
+// we don't need this for normal operation...
 struct event_ringbuffer_node {
  uint32_t type;
  char *type_custom;
@@ -147,6 +149,10 @@ struct event_ringbuffer_node {
  struct event_ringbuffer_node *previous, *next;
 };
 
+struct event_ringbuffer_node *event_logbuffer;
+pthread_mutex_t event_logbuffer_mutex;
+#endif
+
 void *event_emit (struct einit_event *, uint16_t);
 void event_listen (uint32_t, void (*)(struct einit_event *));
 void event_ignore (uint32_t, void (*)(struct einit_event *));
@@ -158,8 +164,6 @@ void *function_find_one (char *, uint32_t, char **);
 
 struct event_function *event_functions;
 struct stree *exported_functions;
-struct event_ringbuffer_node *event_logbuffer;
-pthread_mutex_t event_logbuffer_mutex;
 
 char *event_code_to_string (uint32_t);
 uint32_t event_string_to_code (char *);
