@@ -65,7 +65,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-char *provides[] = {"daemon", NULL};
+// char *provides[] = {"daemon", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -73,7 +73,7 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "daemon-pseudo-module support",
 	.rid		= "einit-mod-daemon",
-	.provides	= provides,
+	.provides	= NULL,
 	.requires	= NULL,
 	.notwith	= NULL
 };

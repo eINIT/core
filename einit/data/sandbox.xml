@@ -123,7 +123,7 @@
  </services>
 
  <mode id="boot">
-  <enable mod="ipc:dummyd:dummydx" />
+  <enable mod="ipc:dummyd:dummydx:mount" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

@@ -74,7 +74,7 @@ struct mexecinfo {
  char *user, *group;
 };
 
-char *provides[] = {"exec", NULL};
+// char *provides[] = {"exec", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -82,7 +82,7 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "shell-command-pseudo-module support",
 	.rid		= "einit-mod-exec",
-	.provides	= provides,
+	.provides	= NULL,
 	.requires	= NULL,
 	.notwith	= NULL
 };

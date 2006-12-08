@@ -81,7 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 /* module definitions */
-char *provides[] = {"mount", NULL};
+// char *provides[] = {"mount", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -89,7 +89,7 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Filesystem-Mounter",
 	.rid		= "einit-mount",
-	.provides	= provides,
+	.provides	= NULL,
 	.requires	= NULL,
 	.notwith	= NULL
 };
