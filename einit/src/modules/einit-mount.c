@@ -1074,7 +1074,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 #endif
     struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
                          *pcl[2] = { &pcc, NULL };
-	
+
     snprintf (textbuffer, 1024, "%s: umount() failed: %s", mountpoint, strerror(errno));
     status->string = textbuffer;
     status_update (status);

@@ -173,6 +173,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
       recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
       free (t);
      }
+
+     skip_disable: ;
     }
 
     cur = cur->next;
@@ -201,13 +203,15 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     while (cur) {
      struct smodule *mo = cur->module;
-     if ((cur->status & STATUS_ENABLED) && mo && inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
-      char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
-      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-//      recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
-      if (t) {
-       recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
-       free (t);
+     if (inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+      if ((cur->status & STATUS_ENABLED) && mo) {
+       nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+//       recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_TYPE_STRING);
+       char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
+       if (t) {
+        recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
+        free (t);
+       }
       }
      }
 
@@ -243,9 +247,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     while (cur) {
      struct smodule *mo = cur->module;
-     if (!(cur->status & STATUS_ENABLED) && mo && inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
-      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-      recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+     if (inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+      if (!(cur->status & STATUS_ENABLED) && mo) {
+       nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+       recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+      }
      }
 
      cur = cur->next;
@@ -372,6 +378,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
  if ((node->status & STATUS_DISABLED) || (node->status & STATUS_FAIL)) {
+  pthread_mutex_unlock (node->mutex);
+  return;
+ }
+ if (inset ((void **)node->plan->enable, (void *)node->service, SET_TYPE_STRING)) {
+  node->status = STATUS_ENABLED | STATUS_FAIL;
   pthread_mutex_unlock (node->mutex);
   return;
  }

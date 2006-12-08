@@ -130,4 +130,10 @@
   <enable mod="network/experimental:tty" />
   <ttys s="tty9-regular" />
  </mode>
+<!-- <mode id="power-off">
+  <enable mod="tty" />
+  <disable mod="all-but-feedback" />
+  <ttys s="none" />
+  <emit-event on-switch="einit/shutdown-scheduled" />
+ </mode> -->
 </einit>

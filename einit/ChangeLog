@@ -3,6 +3,8 @@
  * slightly enhanced error checking
  * guessing filesystems *should* work now, you can now also specify more than
    one filesystem to try (using the fs1[:fs2[:fs3[...]]] syntax)
+ * module-logic: allow for exceptions to <disable />: <enable /> will now
+   override the <disable />-definition
 
 2006/12/07: mdeininger
  * updating the configuration just got a whole lot easier... hopefully
