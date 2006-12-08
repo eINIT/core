@@ -1,3 +1,9 @@
+2006/12/08: mdeininger
+ * mount: positive mountflags (+ i had forgotten "(no)exec") and cleanups
+ * slightly enhanced error checking
+ * guessing filesystems *should* work now, you can now also specify more than
+   one filesystem to try (using the fs1[:fs2[:fs3[...]]] syntax)
+
 2006/12/07: mdeininger
  * updating the configuration just got a whole lot easier... hopefully
    (use "einit-control emit-event core/update-configuration")

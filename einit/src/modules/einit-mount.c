@@ -204,6 +204,7 @@ int cleanup (struct lmodule *);
 int enable (enum mounttask, struct einit_event *);
 int disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
+char *__options_string_to_mountflags (char **, unsigned long *, char *);
 void einit_event_handler (struct einit_event *);
 
 /* function definitions */
@@ -782,6 +783,119 @@ int scanmodules (struct lmodule *modchain) {
  }
 }
 
+char *__options_string_to_mountflags (char **options, unsigned long *mntflags, char *mountpoint) {
+ int fi = 0;
+ char *ret = NULL;
+
+ for (; options[fi]; fi++) {
+#ifdef LINUX
+  if (!strcmp (options[fi], "user") || !strcmp (options[fi], "users")) {
+   fprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
+
+#ifdef MS_NOEXEC
+   (*mntflags) |= MS_NOEXEC;
+#endif
+#ifdef MS_NODEV
+   (*mntflags) |= MS_NODEV;
+#endif
+#ifdef MS_NOSUID
+   (*mntflags) |= MS_NOSUID;
+#endif
+  } else if (!strcmp (options[fi], "owner")) {
+   fprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
+
+#ifdef MS_NODEV
+   (*mntflags) |= MS_NODEV;
+#endif
+#ifdef MS_NOSUID
+   (*mntflags) |= MS_NOSUID;
+#endif
+  } else if (!strcmp (options[fi], "nouser") || !strcmp (options[fi], "group") || !strcmp (options[fi], "auto") || !strcmp (options[fi], "defaults")) {
+   fprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
+  } else if (!strcmp (options[fi], "_netdev")) {
+   fprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
+  } else
+#endif
+
+#ifdef MS_NOATIME
+  if (!strcmp (options[fi], "noatime")) (*mntflags) |= MS_NOATIME;
+  else if (!strcmp (options[fi], "atime")) (*mntflags) = ((*mntflags) & MS_NOATIME) ? (*mntflags) ^ MS_NOATIME : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NODEV
+  if (!strcmp (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
+  else if (!strcmp (options[fi], "dev")) (*mntflags) = ((*mntflags) & MS_NODEV) ? (*mntflags) ^ MS_NODEV : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NODIRATIME
+  if (!strcmp (options[fi], "nodiratime")) (*mntflags) |= MS_NODIRATIME;
+  else if (!strcmp (options[fi], "diratime")) (*mntflags) = ((*mntflags) & MS_NODIRATIME) ? (*mntflags) ^ MS_NODIRATIME : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NOEXEC
+  if (!strcmp (options[fi], "noexec")) (*mntflags) |= MS_NOEXEC;
+  else if (!strcmp (options[fi], "exec")) (*mntflags) = ((*mntflags) & MS_NOEXEC) ? (*mntflags) ^ MS_NOEXEC : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NOSUID
+  if (!strcmp (options[fi], "nosuid")) (*mntflags) |= MS_NOSUID;
+  else if (!strcmp (options[fi], "suid")) (*mntflags) = ((*mntflags) & MS_NOSUID) ? (*mntflags) ^ MS_NOSUID : (*mntflags);
+  else
+#endif
+
+#ifdef MS_DIRSYNC
+  if (!strcmp (options[fi], "dirsync")) (*mntflags) |= MS_DIRSYNC;
+  else if (!strcmp (options[fi], "nodirsync")) (*mntflags) = ((*mntflags) & MS_DIRSYNC) ? (*mntflags) ^ MS_DIRSYNC : (*mntflags);
+  else
+#endif
+
+#ifdef MS_SYNCHRONOUS
+  if (!strcmp (options[fi], "sync")) (*mntflags) |= MS_SYNCHRONOUS;
+  else if (!strcmp (options[fi], "nosync")) (*mntflags) = ((*mntflags) & MS_SYNCHRONOUS) ? (*mntflags) ^ MS_SYNCHRONOUS : (*mntflags);
+  else
+#endif
+
+#ifdef MS_MANDLOCK
+  if (!strcmp (options[fi], "mand")) (*mntflags) |= MS_MANDLOCK;
+  else if (!strcmp (options[fi], "nomand")) (*mntflags) = ((*mntflags) & MS_MANDLOCK) ? (*mntflags) ^ MS_MANDLOCK : (*mntflags);
+  else
+#endif
+
+#ifdef MS_RDONLY
+  if (!strcmp (options[fi], "ro")) (*mntflags) |= MS_RDONLY;
+  else if (!strcmp (options[fi], "rw")) (*mntflags) = ((*mntflags) & MS_RDONLY) ? (*mntflags) ^ MS_RDONLY : (*mntflags);
+  else
+#endif
+
+#ifdef MS_BIND
+  if (!strcmp (options[fi], "bind")) (*mntflags) |= MS_BIND;
+  else
+#endif
+
+#ifdef MS_REMOUNT
+  if (!strcmp (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
+  else
+#endif
+
+  if (!ret) {
+   uint32_t slen = strlen (options[fi])+1;
+   ret = ecalloc (1, slen);
+   memcpy (ret, options[fi], slen);
+  } else {
+   uint32_t fsdl = strlen(ret) +1, slen = strlen (options[fi])+1;
+   ret = erealloc (ret, fsdl+slen);
+   *(ret + fsdl -1) = ',';
+   memcpy (ret+fsdl, options[fi], slen);
+  }
+ }
+
+ return ret;
+}
+
 int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags) {
  struct stree *he = mcb.fstab;
  struct stree *de = mcb.blockdevices;
@@ -799,6 +913,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  unsigned long mntflags = 0;
 
  if (tflags & MOUNT_TF_MOUNT) {
+  char **fstype_s = NULL;
+  uint32_t fsts_i = 0;
   if ((he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
    source = fse->device;
    fsntype = 0;
@@ -812,9 +928,11 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     if (bdi->fs_type < 0xffff)
      fstype = fslist_hr[bdi->fs_type];
     else
-     fstype = "auto";
+     fstype = NULL;
    } else
-    fstype = "auto";
+    fstype = NULL;
+
+   if (!fstype) fstype = "auto";
 
    if (bdi && (bdi->status & BF_STATUS_DIRTY)) {
     if (fsck_command) {
@@ -836,106 +954,93 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     }
    }
 
-   fs_mount_function_name = emalloc (10+strlen (fstype));
-   *fs_mount_function_name = 0;
-   fs_mount_function_name = strcat (fs_mount_function_name, "fs-mount-");
-   fs_mount_function_name = strcat (fs_mount_function_name, fstype);
-
-   fs_mount_functions = function_find (fs_mount_function_name, 1, NULL);
-
    if (!source)
     source = fstype;
 
-   if (bdi && bdi->label)
-    snprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
-   else
-    snprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
-   status->string = verbosebuffer;
-   status_update (status);
+   if (!strcmp (fstype, "auto"))
+    fstype = cfg_getstring ("configuration-storage-filesystem-guessing-order", NULL);
+
+   fstype_s = str2set (':', fstype);
+
+   mntflags = 0;
+   if (fse->options)
+    fsdata = __options_string_to_mountflags (fse->options, &mntflags, mountpoint);
 
 #ifndef SANDBOX
    if (fse->before_mount)
     pexec_v1 (fse->before_mount, fse->variables, NULL, status);
-//    pexec (fse->before_mount, fse->variables, 0, 0, NULL, status);
 #endif
 
-   if (fs_mount_functions && fs_mount_functions[0]) {
-    uint32_t j = 0;
-    for (; fs_mount_functions[j]; j++) {
-     mount_function = fs_mount_functions[j];
-     if (!mount_function (tflags, source, mountpoint, fstype, bdi, fse, status))
-      goto mount_success;
+   if (fstype_s) for (; fstype_s[fsts_i]; fsts_i++) {
+    fstype = fstype_s[fsts_i];
+
+    if (bdi && bdi->label)
+     snprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
+    else
+     snprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
+    status->string = verbosebuffer;
+    status_update (status);
+
+    fs_mount_function_name = emalloc (10+strlen (fstype));
+    *fs_mount_function_name = 0;
+    fs_mount_function_name = strcat (fs_mount_function_name, "fs-mount-");
+    fs_mount_function_name = strcat (fs_mount_function_name, fstype);
+
+    if (fs_mount_function_name) {
+     fs_mount_functions = function_find (fs_mount_function_name, 1, NULL);
+     free (fs_mount_function_name);
     }
-   }
 
-#ifdef LINUX
-//   mntflags = MS_MANDLOCK;
-   mntflags = 0;
-#else
-   mntflags = 0;
-#endif
-   if (fse->options) {
-    int fi = 0;
-    for (; fse->options[fi]; fi++) {
-#ifdef LINUX
-     if (!strcmp (fse->options[fi], "noatime")) mntflags |= MS_NOATIME;
-     else if (!strcmp (fse->options[fi], "nodev")) mntflags |= MS_NODEV;
-     else if (!strcmp (fse->options[fi], "nodiratime")) mntflags |= MS_NODIRATIME;
-     else if (!strcmp (fse->options[fi], "ro")) mntflags |= MS_RDONLY;
-     else if (!strcmp (fse->options[fi], "nomand")) mntflags ^= MS_MANDLOCK;
-     else if (!strcmp (fse->options[fi], "nosuid")) mntflags |= MS_NOSUID;
-     else if (!strcmp (fse->options[fi], "bind")) mntflags |= MS_BIND;
-     else if (!strcmp (fse->options[fi], "remount")) mntflags |= MS_REMOUNT;
-     else
-#endif
-     if (!fsdata) {
-      uint32_t slen = strlen (fse->options[fi])+1;
-      fsdata = ecalloc (1, slen);
-      memcpy (fsdata, fse->options[fi], slen);
+    if (fs_mount_functions && fs_mount_functions[0]) {
+     uint32_t j = 0;
+     for (; fs_mount_functions[j]; j++) {
+      mount_function = fs_mount_functions[j];
+      if (!mount_function (tflags, source, mountpoint, fstype, bdi, fse, status)) {
+       free (fs_mount_functions);
+       goto mount_success;
+      }
+     }
+     free (fs_mount_functions);
+    }
+
+#ifndef SANDBOX
+    if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1) {
+     if (errno == EBUSY) {
+      if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
      } else {
-      uint32_t fsdl = strlen(fsdata) +1, slen = strlen (fse->options[fi])+1;
-      fsdata = erealloc (fsdata, fsdl+slen);
-      *(fsdata + fsdl -1) = ',';
-      memcpy (fsdata+fsdl, fse->options[fi], slen);
+      mount_panic:
+      if (errno < sys_nerr)
+       status->string = (char *)sys_errlist[errno];
+      else
+       status->string = "an unknown error occured while trying to mount the filesystem";
+      status_update (status);
+      if (fse->after_umount)
+       pexec_v1 (fse->after_umount, fse->variables, NULL, status);
+//      return STATUS_FAIL;
+       continue;
      }
     }
-   }
 
-//   fprintf (stderr, "mntflags=%i\n", mntflags);
+    mount_success:
 
-//   fsdata = NULL;
-#ifndef SANDBOX
-   if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1) {
-    if (errno == EBUSY) {
-     if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
-    } else {
-     mount_panic:
-     if (errno < sys_nerr)
-      status->string = (char *)sys_errlist[errno];
-     else
-      status->string = "an unknown error occured while trying to mount the filesystem";
-     status_update (status);
-     if (fse->after_umount)
-      pexec_v1 (fse->after_umount, fse->variables, NULL, status);
-     return STATUS_FAIL;
-    }
-   }
+    if (fse->after_mount)
+     pexec_v1 (fse->after_mount, fse->variables, NULL, status);
 
-   mount_success:
-
-   if (fse->after_mount)
-    pexec_v1 (fse->after_mount, fse->variables, NULL, status);
-
-   if (fse->manager)
-    startdaemon (fse->manager, status);
+    if (fse->manager)
+     startdaemon (fse->manager, status);
 #else
-   mount_success:
+    mount_success:
 #endif
-   fse->status |= BF_STATUS_MOUNTED;
+    fse->status |= BF_STATUS_MOUNTED;
 
-   if (fs_mount_functions) free (fs_mount_functions);
+    if (fs_mount_functions) free (fs_mount_functions);
 
-   return STATUS_OK;
+    return STATUS_OK;
+   }
+
+// we reach this if none of the attempts worked out
+   if (fstype_s) free (fstype_s);
+   return STATUS_FAIL;
   } else {
    status->string = "nothing known about this mountpoint; bailing out.";
    status_update (status);
@@ -983,7 +1088,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
      struct stree *hav = streefind (mcb.mtab, mountpoint, TREE_FIND_FIRST);
      if (!hav) {
-      status->string = "wtf? this ain't mounted, bitch!";
+      status->string = "i've no records of this...";
       status_update (status);
       goto umount_fail;
      }
@@ -1331,31 +1436,47 @@ void mount_ipc_handler(struct einit_event *ev) {
 
      if (!(((struct fstab_entry *)(tstree->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
       char tmpstr[1024];
-	  if (inset ((void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
+      if (inset ((void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
 #ifdef LINUX
        tstree = streenext (tstree);
        continue;
 #else
-	   snprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
+       snprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
 #endif
-	  } else snprintf (tmpstr, 1024, " * no filesystem type specified for fstab-node \"%s\", or type set to auto -- eINIT cannot do that, yet, please specify the filesystem type.\n", tstree->key);
-      fdputs (tmpstr, ev->integer);
-      ev->task++;
+       fdputs (tmpstr, ev->integer);
+       ev->task++;
+      }
      }
 
-     if (!(((struct fstab_entry *)(tstree->value))->device)) { 
+     if (!(((struct fstab_entry *)(tstree->value))->device)) {
       if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
        char tmpstr[1024];
        snprintf (tmpstr, 1024, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
        fdputs (tmpstr, ev->integer);
        ev->task++;
       }
-     } else if (stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) {
+     } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || ((fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)))) {
       char tmpstr[1024];
       snprintf (tmpstr, 1024, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
       fdputs (tmpstr, ev->integer);
       ev->task++;
      }
+
+     if (((struct fstab_entry *)(tstree->value))->options) {
+      unsigned long tmpmnt = 0;
+      char *xtmp = __options_string_to_mountflags ((((struct fstab_entry *)(tstree->value))->options), &tmpmnt, (((struct fstab_entry *)(tstree->value))->mountpoint));
+
+      if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && !strcmp (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
+       char tmp[1024];
+       snprintf (tmp, 1024, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
+       fdputs (tmp, ev->integer);
+      }
+
+      if (xtmp) {
+       free (xtmp);
+      }
+     }
+
      tstree = streenext (tstree);
     }
    }

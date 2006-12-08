@@ -150,7 +150,10 @@
   <storage>
    <update-steps s="block-devices:metadata" />
    <mtab-source s="legacy" />
-   <filesystem-label-readers s="linux" />
+   <filesystem>
+    <label-readers s="linux" />
+    <guessing-order s="ext4:ext3:ext2:reiser4:reiserfs:xfs:jfs:ufs:udf" />
+   </filesystem>
    <critical-mountpoints s="/usr:/var" />
 <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
    <fsck-command s="/sbin/fsck -a -T -t %s %s" />
