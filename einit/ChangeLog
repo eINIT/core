@@ -1,3 +1,6 @@
+2006/12/09: mdeininger
+ * stupid little bug in the mounter...
+
 2006/12/08: mdeininger
  * mount: positive mountflags (+ i had forgotten "(no)exec") and cleanups
  * slightly enhanced error checking

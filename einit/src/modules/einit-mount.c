@@ -896,6 +896,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
  return ret;
 }
 
+/* --------- the big mount-wrapper-function ------------------------------- */
 int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags) {
  struct stree *he = mcb.fstab;
  struct stree *de = mcb.blockdevices;
@@ -1032,8 +1033,6 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     mount_success:
 #endif
     fse->status |= BF_STATUS_MOUNTED;
-
-    if (fs_mount_functions) free (fs_mount_functions);
 
     return STATUS_OK;
    }
@@ -1315,6 +1314,7 @@ void add_filesystem (char *name, char *options) {
 }
 
 /* all the current IPC commands will be made #DEBUG-only, but we'll keep 'em for now */
+/* --------- error checking and direct user interaction ------------------- */
 void mount_ipc_handler(struct einit_event *ev) {
  if (!ev || !ev->set) return;
  char **argv = (char **) ev->set;
@@ -1494,6 +1494,8 @@ void mount_update_handler(struct einit_event *event) {
  }
 }
 
+
+/* --------- enabling and disabling --------------------------------------- */
 int enable (enum mounttask p, struct einit_event *status) {
 // struct einit_event feedback = ei_module_feedback_default;
  struct stree *ha = mcb.fstab, *fsi = NULL;

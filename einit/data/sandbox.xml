@@ -66,6 +66,10 @@
     <node mountpoint="/" device="/dev/ROOT" options="noatime" />
     <node device="/boot" mountpoint="/media/boot" options="bind:critical" />
     <node device="/dev/hdc" mountpoint="/media/cdrom" options="users:exec" />
+
+    <node mountpoint="/media/storage-1" device="host:/media/storage-1" fs="nfs" />
+    <node mountpoint="/media/storage-0" device="chronos:/media/storage-0" fs="nfs" />
+
    </fstab>
   </storage>
 
@@ -123,11 +127,11 @@
  </services>
 
  <mode id="boot">
-  <enable mod="ipc:dummyd:dummydx:mount" />
+  <enable mod="ipc:mount/remote" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="network/experimental:tty" />
+<!--  <enable mod="network/experimental:tty" /> -->
   <ttys s="tty9-regular" />
  </mode>
 <!-- <mode id="power-off">
