@@ -310,14 +310,14 @@ int main(int argc, char **argv) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "feedback";
     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST || EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE);
-	evstaticdestroy(ee);
+    evstaticdestroy(ee);
    }
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = einit_startup_mode_switches[e];
     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST || EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE);
-	evstaticdestroy(ee);
+    evstaticdestroy(ee);
    }
 
 //   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);

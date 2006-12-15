@@ -116,7 +116,7 @@ int mod_scanmodules ( void ) {
  }
 #endif
 
- mplen = strlen (modulepath) +1;
+ mplen = strlen (modulepath) +4;
  dir = opendir (modulepath);
  if (dir != NULL) {
   while (entry = readdir (dir)) {
