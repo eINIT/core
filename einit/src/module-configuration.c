@@ -56,16 +56,23 @@ struct event_function einit_config_xml_expat_event_handler_ef = {
 #endif
 
 /* event handler for the default scheduler */
-void sched_event_handler(struct einit_event *);
+void sched_ipc_event_handler(struct einit_event *);
+void sched_core_event_handler(struct einit_event *);
 
-struct event_function einit_sched_event_handler_handler_ef = {
+struct event_function einit_sched_ipc_event_handler_handler_ef = {
  .type = EVENT_SUBSYSTEM_IPC,
- .handler = sched_event_handler,
+ .handler = sched_ipc_event_handler,
  .next = EVENT_FUNCTIONS_PTR
 };
 
+struct event_function einit_sched_core_event_handler_handler_ef = {
+ .type = EVENT_SUBSYSTEM_EINIT,
+ .handler = sched_core_event_handler,
+ .next = &einit_sched_ipc_event_handler_handler_ef
+};
+
 #undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_sched_event_handler_handler_ef
+#define EVENT_FUNCTIONS_PTR &einit_sched_core_event_handler_handler_ef
 
 /* event handlers for the default module loader and configuration system */
 void mod_event_handler(struct einit_event *);

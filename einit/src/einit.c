@@ -61,7 +61,6 @@ int main(int, char **, char **);
 int main(int, char **);
 #endif
 int print_usage_info ();
-int ipc_wait ();
 int cleanup ();
 
 pid_t einit_sub = 0;
@@ -139,6 +138,9 @@ int main(int argc, char **argv) {
  char **ipccommands = NULL;
 
  uname (&osinfo);
+
+// initialise subsystems
+ ipc_configure(NULL);
 
 // is this the system's init-process?
  isinit = getpid() == 1;
@@ -304,15 +306,22 @@ int main(int argc, char **argv) {
    sched_init ();
 
 /* queue default mode-switches */
-   if (einit_do_feedback_switch)
-    sched_queue (SCHEDULER_SWITCH_MODE, "feedback");
-
-   for (e = 0; einit_startup_mode_switches[e]; e++) {
-    sched_queue (SCHEDULER_SWITCH_MODE, einit_startup_mode_switches[e]);
+   if (einit_do_feedback_switch) {
+    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    ee.string = "feedback";
+    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST || EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE);
+	evstaticdestroy(ee);
    }
 
-   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
-   sched_run (NULL);
+   for (e = 0; einit_startup_mode_switches[e]; e++) {
+    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    ee.string = einit_startup_mode_switches[e];
+    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST || EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE);
+	evstaticdestroy(ee);
+   }
+
+//   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
+   sched_run_sigchild (NULL);
   }
 
 #ifdef SANDBOX

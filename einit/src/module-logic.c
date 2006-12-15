@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <pthread.h>
 #include <einit/module-logic.h>
+#include <einit-modules/ipc.h>
 
 struct lmodule *mlist;
 
@@ -585,12 +586,30 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return;
  pthread_mutex_lock (&plan->mutex);
 
- if (plan->mode) cmode = plan->mode;
+// do some extra work if the plan was derived from a mode
+ if (plan->mode) {
+  char *cmdt;
+  cmode = plan->mode;
+
+  if (cmdt = cfg_getstring ("before-switch/emit-event", cmode)) {
+   struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  }
+
+  if (cmdt = cfg_getstring ("before-switch/ipc", cmode)) {
+   char **cmdts = str2set (';', cmdt);
+   uint32_t in = 0;
+
+   for (; cmdts[in]; in++)
+    ipc_process(cmdts[in], STDERR_FILENO);
+  }
+ }
 
  struct stree *ha;
  uint32_t u = 0;
- char *switchevent = cfg_getstring ("emit-event/on-switch", cmode);
- if (switchevent) {
+// char *switchevent = cfg_getstring ("emit-event/on-switch", cmode);
+/* if (switchevent) {
   if (!strcmp(switchevent, "einit/reboot-scheduled")) {
    struct einit_event ee = evstaticinit (EVE_REBOOT_SCHEDULED);
    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
@@ -600,7 +619,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
    evstaticdestroy (ee);
   }
- }
+ }*/
 
  pthread_mutex_lock (&(plan->st_mutex));
 
@@ -647,7 +666,25 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   notice (2, tmp);
  }
 
- if (plan->mode) amode = plan->mode;
+// do some more extra work if the plan was derived from a mode
+ if (plan->mode) {
+  char *cmdt;
+  amode = plan->mode;
+
+  if (cmdt = cfg_getstring ("after-switch/emit-event", amode)) {
+   struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  }
+
+  if (cmdt = cfg_getstring ("after-switch/ipc", amode)) {
+   char **cmdts = str2set (';', cmdt);
+   uint32_t in = 0;
+
+   for (; cmdts[in]; in++)
+    ipc_process(cmdts[in], STDERR_FILENO);
+  }
+ }
 
  pthread_mutex_unlock (&plan->mutex);
  return 0;

@@ -133,7 +133,9 @@ exit;
 fi;
 
 echo -n "/etc/make.conf ["
-if test -f /etc/make.conf; then
+if test -n ""${CFLAGS}; then
+	echo -n " skipping";
+elif test -f /etc/make.conf; then
 	echo -n " sourcing";
 	source /etc/make.conf;
 else

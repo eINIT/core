@@ -67,8 +67,6 @@ struct spidcb {
 struct sschedule **schedule;
 struct spidcb *cpids;
 struct spidcb *sched_deadorphans;
-pthread_t schedthread;
-pthread_t schedthreadsigchild;
 
 int scheduler_cleanup ();
 
@@ -79,7 +77,6 @@ void sched_init ();
 void sched_reset_event_handlers ();
 int sched_queue (unsigned int, void *);
 int sched_watch_pid (pid_t, void *(*)(struct spidcb *));
-void *sched_run (void *);
 void *sched_run_sigchild (void *);
 
 /* this should be the best place for signal handlers... */

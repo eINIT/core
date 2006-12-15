@@ -87,9 +87,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 char **__create_environment (char **environment, char **variables);
+void ipc_event_handler (struct einit_event *);
+struct lmodule *me;
 
 int configure (struct lmodule *irr) {
  struct cfgnode *node;
+ me = irr;
  if (!(shell = (char **)str2set (' ', cfg_getstring ("configuration-system-shell", NULL))))
   shell = dshell;
  exec_configure (irr);
@@ -101,6 +104,8 @@ int configure (struct lmodule *irr) {
  if (node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL))
   kill_timeout_secondary = node->value;
 
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
  function_register ("einit-execute-command", 1, __pexec_function);
  function_register ("einit-execute-daemon", 1, __start_daemon_function);
  function_register ("einit-stop-daemon", 1, __stop_daemon_function);
@@ -110,10 +115,24 @@ int configure (struct lmodule *irr) {
 int cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) free (shell);
  exec_cleanup (irr);
+
  function_unregister ("einit-execute-command", 1, __pexec_function);
  function_unregister ("einit-execute-daemon", 1, __start_daemon_function);
  function_unregister ("einit-stop-daemon", 1, __stop_daemon_function);
  function_unregister ("einit-create-environment", 1, __create_environment);
+
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+}
+
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "exec")) {
+  struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
+  ev->flag = 1;
+  ee.para = (void *)me;
+
+  __pexec_function (ev->string, NULL, 0, 0, NULL, NULL, NULL, &ee);
+  evstaticdestroy(ee);
+ }
 }
 
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING

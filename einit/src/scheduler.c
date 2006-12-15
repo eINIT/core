@@ -182,7 +182,7 @@ void sched_init () {
  }
 #endif
 
- pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
+// pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
 
  sched_reset_event_handlers ();
 }
@@ -235,26 +235,6 @@ void sched_reset_event_handlers () {
 
 }
 
-int sched_queue (unsigned int task, void *param) {
- struct sschedule *nele;
-
- if (task == SCHEDULER_PID_NOTIFY) {
-  pthread_cond_signal (&schedthreadsigchildcond);
-  return 0;
- }
-
- nele = ecalloc (1, sizeof (struct sschedule));
- nele->task = task;
- nele->param = param;
-
- pthread_mutex_lock (&schedschedulemodmutex);
-  schedule = (struct sschedule **) setadd ((void **)schedule, (void *)nele, -1);
- pthread_mutex_unlock (&schedschedulemodmutex);
-
- pthread_cond_signal (&schedthreadcond);
- return 0;
-}
-
 int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  struct spidcb *nele;
  pthread_mutex_lock (&schedcpidmutex);
@@ -294,46 +274,87 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  sem_post (sigchild_semaphore);
 }
 
-void *sched_run (void *p) {
- int i, l, status;
- pid_t pid;
- pthread_mutex_lock (&schedthreadmutex);
- while (1) {
-  pthread_mutex_lock (&schedschedulemodmutex);
-  if (schedule && schedule [0]) {
-   pthread_mutex_unlock (&schedschedulemodmutex);
-   struct sschedule *c = schedule[0];
-   switch (c->task) {
-    case SCHEDULER_SWITCH_MODE:
-     sched_switchmode (c->param);
-     break;
-    case SCHEDULER_MOD_ACTION:
-     sched_modaction ((char **)c->param);
-     break;
-    case SCHEDULER_POWER_RESET:
-    case SCHEDULER_POWER_OFF:
-     notice (1, "emitting shutdown/reboot-event");
-     {
-      struct einit_event ee = evstaticinit ((c->task == SCHEDULER_POWER_OFF) ? EVE_SHUTDOWN_IMMINENT : EVE_REBOOT_IMMINENT);
-      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-      evstaticdestroy (ee);
-     }
+// (on linux) SIGINT to INIT means ctrl+alt+del was pressed
+void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
+#ifdef LINUX
+/* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
+ if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid()))) {
+#else
+/* only shut down if the SIGINT was sent by process 1 or by the parent process */
+/* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
+// note: this relies on a proper pthreads implementation so... i deactivated it for now.
+ {
+#endif
+  struct einit_event ee;
+  ee.type = EVE_SWITCH_MODE;
+  ee.string = "power-reset";
+
+  ee.type_custom = NULL;
+
+  event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+//  evstaticdestroy(ee);
+
+  
+ }
+ return;
+}
+
+void sched_ipc_event_handler(struct einit_event *event) {
+ errno = 0;
+ if (!event) return;
+ else {
+  char **argv = (char **)event->set;
+  int argc = setcount ((void **)argv);
+  if (!argv) {
+   bitch (BTCH_ERRNO);
+   return;
+  } else if (!argv[0]) {
+   free (argv);
+   bitch (BTCH_ERRNO);
+   return;
+  }
+
+  if (!strcmp (argv[0], "power") && (argc > 1)) {
+   if (!strcmp (argv[1], "down")) {
+    if (!event->flag) event->flag = 1;
+
+    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    ee.string = "power-down";
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+    write (event->integer, "shutting down...\n", 18);
+	evstaticdestroy(ee);
+   }
+   if (!strcmp (argv[1], "reset")) {
+    if (!event->flag) event->flag = 1;
+
+    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    ee.string = "power-reset";
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+    write (event->integer, "resetting now...\n", 18);
+	evstaticdestroy(ee);
+   }
+  }
+
+/* actual power-down/power-reset IPC commands */
+  if (!strcmp (argv[0], "scheduler") && (argc > 1)) {
+   char reset = 0;
+   if (!strcmp (argv[1], "power-down") || (reset = !strcmp (argv[1], "power-reset"))) {
+    if (!event->flag) event->flag = 1;
+
      notice (1, "scheduler: sync()-ing");
      sync ();
 #ifdef SANDBOX
      notice (1, "scheduler: cleaning up");
      cleanup ();
 #endif
-     pthread_cancel (schedthreadsigchild);
-     pthread_join (schedthreadsigchild, NULL);
      scheduler_cleanup ();
 
      {
       char **shutdownfunctionsubnames = str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
       void  ((**reset_functions)()) = (void (**)())
-       (shutdownfunctionsubnames ? function_find(((c->task == SCHEDULER_POWER_OFF) ? "core-power-off" : "core-power-reset"), 1, shutdownfunctionsubnames) : NULL);
+       (shutdownfunctionsubnames ? function_find((reset ? "core-power-reset" : "core-power-off"), 1, shutdownfunctionsubnames) : NULL);
 
-      fputs (((c->task == SCHEDULER_POWER_OFF) ? "scheduler: power off\n" : "scheduler: reset\n"), stderr);
+      fputs ((reset ? "scheduler: reset\n" : "scheduler: power down\n"), stderr);
 
       if (reset_functions) {
        uint32_t xn = 0;
@@ -352,65 +373,6 @@ void *sched_run (void *p) {
 // if we still live here, something's twocked
      fputs ("scheduler: failed, exiting\n", stderr);
      exit (EXIT_FAILURE);
-     break;
-   }
-   pthread_mutex_lock (&schedschedulemodmutex);
-    schedule = (struct sschedule **) setdel ((void **)schedule, (void *)c);
-   pthread_mutex_unlock (&schedschedulemodmutex);
-   free (c);
-  } else {
-   pthread_mutex_unlock (&schedschedulemodmutex);
-   pthread_cond_wait (&schedthreadcond, &schedthreadmutex);
-  }
- }
-}
-
-// (on linux) SIGINT to INIT means ctrl+alt+del was pressed
-void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
-#ifdef LINUX
-/* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
- if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid()))) {
-#else
-/* only shut down if the SIGINT was sent by process 1 or by the parent process */
-/* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
-// note: this relies on a proper pthreads implementation so... i deactivated it for now.
- {
-#endif
-  sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
-  sched_queue (SCHEDULER_POWER_RESET, NULL);
- }
- return;
-}
-
-void sched_event_handler(struct einit_event *event) {
- errno = 0;
- if (!event) return;
- else {
-  char **argv = (char **)event->set;
-  int argc = setcount ((void **)argv);
-  if (!argv) {
-   bitch (BTCH_ERRNO);
-   return;
-  } else if (!argv[0]) {
-   free (argv);
-   bitch (BTCH_ERRNO);
-   return;
-  }
-
-  if (!strcmp (argv[0], "power") && (argc > 1)) {
-   if (!strcmp (argv[1], "off")) {
-    if (!event->flag) event->flag = 1;
-
-    sched_queue (SCHEDULER_SWITCH_MODE, "power-off");
-    sched_queue (SCHEDULER_POWER_OFF, NULL);
-    write (event->integer, "request processed\n", 19);
-   }
-   if (!strcmp (argv[1], "reset")) {
-    if (!event->flag) event->flag = 1;
-
-    sched_queue (SCHEDULER_SWITCH_MODE, "power-reset");
-    sched_queue (SCHEDULER_POWER_RESET, NULL);
-    write (event->integer, "request processed\n", 19);
    }
   }
 
@@ -418,14 +380,32 @@ void sched_event_handler(struct einit_event *event) {
    if (!event->flag) event->flag = 1;
 
    if (!strcmp (argv[1], "switch-mode")) {
-    sched_queue (SCHEDULER_SWITCH_MODE, argv[2]);
+    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    ee.string = argv[2];
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
     write (event->integer, "modeswitch queued\n", 19);
+	evstaticdestroy(ee);
    } else {
-    sched_queue (SCHEDULER_MOD_ACTION, (void *)setdup ((void **)argv+1, 0));
+    struct einit_event ee = evstaticinit(EVE_CHANGE_SERVICE_STATUS);
+    ee.set = (void **)setdup ((void **)argv+1, SET_TYPE_STRING);
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
     write (event->integer, "request processed\n", 19);
+	evstaticdestroy(ee);
    }
   }
   bitch (BTCH_ERRNO);
+ }
+}
+
+void sched_core_event_handler(struct einit_event *event) {
+ if (!event) return;
+ switch (event->type) {
+  case EVE_SWITCH_MODE:
+   if (!event->string) return;
+   sched_switchmode (event->string);
+  case EVE_CHANGE_SERVICE_STATUS:
+   if (!event->set) return;
+   sched_modaction ((char **)event->set);
  }
 }
 
@@ -502,7 +482,6 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
   }
  pthread_mutex_unlock (&schedcpidmutex);
 
-// sched_queue (SCHEDULER_PID_NOTIFY, (void *)pid);
  sem_post (sigchild_semaphore);
 }
 

@@ -85,6 +85,7 @@ int __ipc_process (char *cmd, uint32_t fd) {
   struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
   uint32_t ic, ec;
 
+  event->string = cmd;
   event->set = (void **)str2set (' ', cmd);
   event->integer = fd;
   event->flag = 0;

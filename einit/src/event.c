@@ -310,7 +310,45 @@ char *event_code_to_string (uint32_t code) {
 }
 
 uint32_t event_string_to_code (char *code) {
- return EVENT_SUBSYSTEM_CUSTOM;
+ char **tcode = str2set ('/', code);
+ uint32_t ret = EVENT_SUBSYSTEM_CUSTOM;
+
+ if (tcode) {
+  if (!strcmp (tcode[0], "core"))          ret = EVENT_SUBSYSTEM_EINIT;
+  else if (!strcmp (tcode[0], "ipc"))      ret = EVENT_SUBSYSTEM_IPC;
+  else if (!strcmp (tcode[0], "mount"))    ret = EVENT_SUBSYSTEM_MOUNT;
+  else if (!strcmp (tcode[0], "feedback")) ret = EVENT_SUBSYSTEM_FEEDBACK;
+  else if (!strcmp (tcode[0], "power"))    ret = EVENT_SUBSYSTEM_POWER;
+  else if (!strcmp (tcode[0], "timer"))    ret = EVENT_SUBSYSTEM_TIMER;
+
+  if (tcode[1])
+   switch (ret) {
+    case EVENT_SUBSYSTEM_EINIT:
+     if (!strcmp (tcode[1], "update-configuration")) ret = EVE_UPDATE_CONFIGURATION;
+     else if (!strcmp (tcode[1], "module-status-update")) ret = EVE_MODULE_UPDATE;
+     else if (!strcmp (tcode[1], "service-status-update")) ret = EVE_SERVICE_UPDATE;
+     else if (!strcmp (tcode[1], "configuration-status-update")) ret = EVE_CONFIGURATION_UPDATE;
+     break;
+    case EVENT_SUBSYSTEM_MOUNT:
+     if (!strcmp (tcode[1], "update")) ret = EVE_DO_UPDATE;
+     break;
+    case EVENT_SUBSYSTEM_FEEDBACK:
+     if (!strcmp (tcode[1], "module")) ret = EVE_FEEDBACK_MODULE_STATUS;
+     else if (!strcmp (tcode[1], "plan")) ret = EVE_FEEDBACK_PLAN_STATUS;
+     else if (!strcmp (tcode[1], "notice")) ret = EVE_FEEDBACK_NOTICE;
+     break;
+    case EVENT_SUBSYSTEM_POWER:
+     if (!strcmp (tcode[1], "reset-scheduled")) ret = EVENT_POWER_RESET_SCHEDULED;
+     else if (!strcmp (tcode[1], "reset-imminent")) ret = EVENT_POWER_RESET_IMMINENT;
+     else if (!strcmp (tcode[1], "mps-down-scheduled")) ret = EVENT_POWER_DOWN_SCHEDULED;
+     else if (!strcmp (tcode[1], "mps-down-imminent")) ret = EVENT_POWER_DOWN_IMMINENT;
+     break;
+   }
+
+  free (tcode);
+ }
+
+ return ret;
 }
 
 // event-system ipc-handler
@@ -321,8 +359,7 @@ void event_ipc_handler(struct einit_event *event) {
  uint32_t options = event->status;
 
  if (argc >= 2) {
-  if ((!strcmp (argv[0], "update") && !strcmp (argv[1], "configuration")) ||
-      (!strcmp (argv[0], "emit-event") && !strcmp (argv[1], "core/update-configuration"))) {
+  if (!strcmp (argv[0], "update") && !strcmp (argv[1], "configuration")) {
    struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
    nev.string = argv[2];
 
@@ -330,6 +367,16 @@ void event_ipc_handler(struct einit_event *event) {
     fprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
    else
     fprintf (stderr, "event-subsystem: updating configuration\n", argv[2]);
+   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+
+   evstaticdestroy(nev);
+
+   if (!event->flag) event->flag = 1;
+  } else if (!strcmp (argv[0], "emit-event")) {
+   struct einit_event nev = evstaticinit(event_string_to_code(argv[1]));
+   nev.string = argv[2];
+   nev.set = (void **)(argv+2);
+
    event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
 
    evstaticdestroy(nev);

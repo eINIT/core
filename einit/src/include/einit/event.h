@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 
 #define EVENT_SUBSYSTEM_MASK		0xfffff000
-#define EVENT_CODE_MASK			0x00000fff
+#define EVENT_CODE_MASK				0x00000fff
 
 #define EINIT_EVENT_FLAG_BROADCAST	0x0001
 /*!< this should always be specified, although just now it's being ignored */
@@ -63,15 +63,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< updated core information: new configuration elements */
 #define EVE_UPDATE_CONFIGURATION	0x00001101
 /*!< update the configuration */
-
-#define EVE_SHUTDOWN_SCHEDULED		0x00001201
-/*!< shutdown scheduled */
-#define EVE_SHUTDOWN_IMMINENT		0x00001202
-/*!< shutdown going to happen after this event */
-#define EVE_REBOOT_SCHEDULED		0x00001203
-/*!< reboot scheduled */
-#define EVE_REBOOT_IMMINENT			0x00001204
-/*!< reboot going to happen after this event */
+#define EVE_CHANGE_SERVICE_STATUS	0x00001102
+/*!< change status of a service */
+#define EVE_SWITCH_MODE				0x00001103
+/*!< change status of a service */
 
 #define EVENT_SUBSYSTEM_IPC			0x00002000
 /*!< incoming IPC request */
@@ -88,6 +83,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_SUBSYSTEM_POWER		0x00005000
 /*!< notify others that the power is failing, has been restored or similar */
+#define EVENT_POWER_DOWN_SCHEDULED	0x00005001
+/*!< shutdown scheduled */
+#define EVENT_POWER_DOWN_IMMINENT	0x00005002
+/*!< shutdown going to happen after this event */
+#define EVENT_POWER_RESET_SCHEDULED	0x00005003
+/*!< reboot scheduled */
+#define EVENT_POWER_RESET_IMMINENT	0x00005004
+/*!< reboot going to happen after this event */
+
+
 #define EVENT_SUBSYSTEM_TIMER		0x00006000
 /*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
 

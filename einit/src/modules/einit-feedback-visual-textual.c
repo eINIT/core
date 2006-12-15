@@ -108,6 +108,7 @@ struct mstat {
 
 void feedback_event_handler(struct einit_event *);
 void einit_event_handler(struct einit_event *);
+void power_event_handler(struct einit_event *);
 
 void update_screen_neat (struct einit_event *, struct mstat *);
 void update_screen_noansi (struct einit_event *, struct mstat *);
@@ -292,6 +293,7 @@ int enable (void *pa, struct einit_event *status) {
 
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_POWER, power_event_handler);
 
  pthread_mutex_unlock (&me->imutex);
  return STATUS_OK;
@@ -302,6 +304,7 @@ int enable (void *pa, struct einit_event *status) {
  */
 int disable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&me->imutex);
+ event_ignore (EVENT_SUBSYSTEM_POWER, power_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  pthread_mutex_unlock (&me->imutex);
@@ -678,12 +681,32 @@ void einit_event_handler(struct einit_event *ev) {
 
  struct cfgnode *n;
 
- if ((ev->type == EVE_SHUTDOWN_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  struct cfgnode *node;
+  fprintf (stderr, "[[ updating configuration ]]\n");
+
+  if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
+   shutdownfailuretimeout = node->value;
+ }
+
+ pthread_mutex_unlock (&me->imutex);
+ return;
+}
+
+/*
+  -------- power event-handler -------------------------------------------------
+ */
+void power_event_handler(struct einit_event *ev) {
+ pthread_mutex_lock (&me->imutex);
+
+ struct cfgnode *n;
+
+ if ((ev->type == EVENT_POWER_DOWN_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
   broadcast_message ("/dev/", "a shutdown has been scheduled, commencing...");
- if ((ev->type == EVE_REBOOT_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
+ if ((ev->type == EVENT_POWER_RESET_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
   broadcast_message ("/dev/", "a reboot has been scheduled, commencing...");
 
- if ((ev->type == EVE_SHUTDOWN_IMMINENT) || (ev->type == EVE_REBOOT_IMMINENT)) {
+ if ((ev->type == EVENT_POWER_DOWN_IMMINENT) || (ev->type == EVENT_POWER_RESET_IMMINENT)) {
 // shutdown imminent
   uint32_t c = shutdownfailuretimeout;
   char errors = 0;
@@ -704,18 +727,10 @@ void einit_event_handler(struct einit_event *ev) {
     c--;
    }
 
-  if ((ev->type == EVE_SHUTDOWN_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
+  if ((ev->type == EVENT_POWER_DOWN_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
    broadcast_message ("/dev/", "shutting down NOW!");
-  if ((ev->type == EVE_REBOOT_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
+  if ((ev->type == EVENT_POWER_RESET_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
    broadcast_message ("/dev/", "rebooting NOW!");
- }
-
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  struct cfgnode *node;
-  fprintf (stderr, "[[ updating configuration ]]\n");
-
-  if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
-   shutdownfailuretimeout = node->value;
  }
 
  pthread_mutex_unlock (&me->imutex);
