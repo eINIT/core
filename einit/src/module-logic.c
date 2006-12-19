@@ -167,7 +167,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct smodule *mo = cur->module;
     if ((cur->status & STATUS_ENABLED) && mo &&
         (!dabf || !(mo->mode & EINIT_MOD_FEEDBACK)) &&
-         inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+         inset ((void **)cur->provides, (void *)current[a], SET_TYPE_STRING)) {
      char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
      nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
      if (t) {
@@ -204,10 +204,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     while (cur) {
      struct smodule *mo = cur->module;
-     if (inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+     if (inset ((void **)cur->provides, (void *)current[a], SET_TYPE_STRING)) {
       if ((cur->status & STATUS_ENABLED) && mo) {
        nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-//       recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_TYPE_STRING);
+//       recurse = (char **)setcombine ((void **)recurse, (void **)cur->requires, SET_TYPE_STRING);
        char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
        if (t) {
         recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
@@ -248,10 +248,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     while (cur) {
      struct smodule *mo = cur->module;
-     if (inset ((void **)mo->provides, (void *)current[a], SET_TYPE_STRING)) {
+     if (inset ((void **)cur->provides, (void *)current[a], SET_TYPE_STRING)) {
       if (!(cur->status & STATUS_ENABLED) && mo) {
        nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-       recurse = (char **)setcombine ((void **)recurse, (void **)mo->requires, SET_NOALLOC);
+       recurse = (char **)setcombine ((void **)recurse, (void **)cur->requires, SET_NOALLOC);
       }
      }
 
@@ -466,7 +466,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 //  fprintf (stderr, "enabling node 0x%zx\n", node);
 
   for (i = 0; node->mod[i]; i++) {
-   char **services = (node->mod[i]->module) ? node->mod[i]->module->requires : NULL;
+   char **services = (node->mod[i]->module) ? node->mod[i]->requires : NULL;
 
    if (services)
     run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);

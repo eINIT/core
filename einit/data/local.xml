@@ -108,6 +108,13 @@
    <avahi group="avahi-dnsconfd" seq="any-iop" />
    <samba group="smbd:nmbd" seq="any-iop" />
   </alias>
+
+<!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
+     to use quingy and have the terminals controlled using einit-tty, then you will need mount/critical
+	 if /usr is on its own partition (due to libquingy) -->
+<!--  <override>
+   <module id="einit-tty" requires="mount/critical" />
+  </override> -->
  </services>
 
  <mode id="default" base="boot">

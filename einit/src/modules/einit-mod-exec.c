@@ -197,6 +197,7 @@ int scanmodules (struct lmodule *modchain) {
     lm->cleanup = cleanup_after_module;
     lm->module = modinfo;
 
+    lm = mod_update (lm);
     doop = 0;
     break;
    }

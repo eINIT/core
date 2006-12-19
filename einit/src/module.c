@@ -143,6 +143,8 @@ int mod_scanmodules ( void ) {
    lm = mlist;
    while (lm) {
     if (lm->source && !strcmp(lm->source, tmp)) {
+     lm = mod_update (lm);
+
 // tell module to scan for changes if it's a module-loader
      if (lm->module && lm->sohandle && (lm->module->mode & EINIT_MOD_LOADER)) {
       int (*scanfunc)(struct lmodule *) = (int (*)(struct lmodule *)) dlsym (lm->sohandle, "scanmodules");
@@ -236,6 +238,24 @@ int mod_freemodules ( void ) {
  return 1;
 }
 
+struct lmodule *mod_update (struct lmodule *module) {
+ struct cfgnode *lnode = NULL;
+ if (!module->module) return module;
+
+ while (lnode = cfg_findnode ("services-override-module", 0, lnode))
+  if (lnode->idattr && module->module->rid && !strcmp(lnode->idattr, module->module->rid)) {
+   uint32_t i = 0;
+   for (; lnode->arbattrs[i]; i+=2) {
+    if (!strcmp (lnode->arbattrs[i], "requires")) module->requires = str2set (':', lnode->arbattrs[i+1]);
+    else if (!strcmp (lnode->arbattrs[i], "provides")) module->provides = str2set (':', lnode->arbattrs[i+1]);
+    else if (!strcmp (lnode->arbattrs[i], "uses")) module->uses = str2set (':', lnode->arbattrs[i+1]);
+    else if (!strcmp (lnode->arbattrs[i], "notwith")) module->notwith = str2set (':', lnode->arbattrs[i+1]);
+   }
+   break;
+  }
+ return module;
+}
+
 struct lmodule *mod_add (void *sohandle, struct smodule *module) {
  struct lmodule *nmod, *cur;
  int (*scanfunc)(struct lmodule *);
@@ -253,6 +273,12 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
  nmod->module = module;
  pthread_mutex_init (&nmod->mutex, NULL);
  pthread_mutex_init (&nmod->imutex, NULL);
+
+ 
+ nmod->requires = module->requires;
+ nmod->provides = module->provides;
+ nmod->uses = module->uses;
+ nmod->notwith = module->notwith;
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
@@ -468,7 +494,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
  pthread_mutex_lock (&service_usage_mutex);
  if (task & SERVICE_NOT_IN_USE) {
   ret |= SERVICE_NOT_IN_USE;
-/*  if (t = module->module->provides) {
+/*  if (t = module->provides) {
    for (i = 0; t[i]; i++) {
     if ((ha = streefind (service_usage, t[i])) &&
         ((struct service_usage_item *)(ha->value))->users) {
@@ -500,7 +526,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   }
  } else if (task & SERVICE_REQUIREMENTS_MET) {
   ret |= SERVICE_REQUIREMENTS_MET;
-  if (t = module->module->requires) {
+  if (t = module->requires) {
    for (i = 0; t[i]; i++) {
     if (!(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
@@ -511,14 +537,14 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   }
  } else if (task & SERVICE_UPDATE) {
   if (module->status & STATUS_ENABLED) {
-   if (t = module->module->requires) {
+   if (t = module->requires) {
     for (i = 0; t[i]; i++) {
      if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
-   if (t = module->module->provides) {
+   if (t = module->provides) {
     for (i = 0; t[i]; i++) {
      if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
@@ -604,7 +630,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
         inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
      for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
       if (((struct service_usage_item *)(ha->value))->users[i]->module)
-       ret = (char **)setcombine ((void **)ret, (void **)((struct service_usage_item *)(ha->value))->users[i]->module->provides, SET_TYPE_STRING);
+       ret = (char **)setcombine ((void **)ret, (void **)((struct service_usage_item *)(ha->value))->users[i]->provides, SET_TYPE_STRING);
      }
 //     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }

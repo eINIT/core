@@ -1,3 +1,6 @@
+2006/12/19: mdeininger
+ * service overrides
+
 2006/12/15: mdeininger
  * fix for the makefile
  * obsoleted the main scheduler function

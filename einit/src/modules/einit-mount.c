@@ -734,7 +734,7 @@ int scanmodules (struct lmodule *modchain) {
                 *lm = modchain;
  char doop = 1;
 
- while (lm) { if (lm->source && !strcmp(lm->source, sm_root.rid)) { doop = 0; break; } lm = lm->next; }
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_root.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_root))) {
    new->source = new->module->rid;
    new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -744,7 +744,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_mountlocal.rid)) { doop = 0; break; } lm = lm->next; }
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_mountlocal.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountlocal))) {
    new->source = new->module->rid;
    new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -754,7 +754,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_mountremote.rid)) { doop = 0; break; } lm = lm->next; }
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_mountremote.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountremote))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -764,7 +764,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_system.rid)) { doop = 0; break; } lm = lm->next; }
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_system.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_system))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -774,7 +774,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_critical.rid)) { doop = 0; break; } lm = lm->next; }
+ while (lm) { if (lm->source && !strcmp(lm->source, sm_critical.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_critical))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;

@@ -181,6 +181,10 @@ struct lmodule {
  struct smodule *module;                        /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  uint32_t fbseq;                                /*!< Feedback sequence-number */
+ char **provides;                               /*!< A list of services that this module provides. */
+ char **requires;                               /*!< A list of services that this module requires. */
+ char **uses;                                   /*!< Load this module after these services, but only if they're loaded to begin with */
+ char **notwith;                                /*!< A list of services that may not be loaded together with this module; ignored. */
 };
 
 /*!\brief Service-usage information.
@@ -214,22 +218,16 @@ int mod_scanmodules ( void );
 */
 int mod_freemodules ( void );
 
+struct lmodule *mod_update (struct lmodule *);
+
 /*!\brief Register module
  * \ingroup moduledefinition
  * \param[in] sohandle Handle for the module's .so file
- * \param[in] enable   Pointer to the module's enable()-function
- * \param[in] disable  Pointer to the module's disable()-function
- * \param[in] reset    Pointer to the module's reset()-function
- * \param[in] reload   Pointer to the module's reload()-function
- * \param[in] cleanup  Pointer to the module's cleanup()-function
- * \param[in] param    A (void*)Pointer that will be passed to the module's mode-switching functions as the first parametre
  * \param[in] module   Pointer to the module's static (on-file) module definition
  *
  * This functions adds a module to the main chain of modules, so that it can be used in dependency
  * calculations.
 */
-// struct lmodule *mod_add (void *sohandle, int (*enable)(void *, struct einit_event *), int (*disable)(void *, struct einit_event *), int (*reset)(void *, struct einit_event *), int (*reload)(void *, struct einit_event *), int (*cleanup)(struct lmodule *), void *param, struct smodule *module);
-
 struct lmodule *mod_add (void *sohandle, struct smodule *module);
 
 /*!\brief Change module's state

@@ -124,20 +124,21 @@
    <video group="kern-nvidia" seq="any-iop" />
    <audio group="alsa" seq="any-iop" />
   </alias>
+
+<!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
+     to use quingy and have the terminals controlled using einit-tty, then you will need mount/critical
+	 if /usr is on its own partition (due to libquingy) -->
+  <override>
+   <module id="einit-tty" requires="mount/critical:xdm" />
+  </override>
  </services>
 
  <mode id="boot">
-  <enable mod="ipc:mount/remote" />
+  <enable mod="ipc" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-<!--  <enable mod="network/experimental:tty" /> -->
+  <enable mod="tty" />
   <ttys s="tty9-regular" />
  </mode>
-<!-- <mode id="power-off">
-  <enable mod="tty" />
-  <disable mod="all-but-feedback" />
-  <ttys s="none" />
-  <emit-event on-switch="einit/shutdown-scheduled" />
- </mode> -->
 </einit>
