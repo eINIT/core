@@ -32,11 +32,11 @@ INTERNALMODULES="einit-config-xml-expat"
 EXTERNALMODULES=""
 
 BUILDNUMBER=`cat buildnumber`
-if test -d CVS; then
-	ISCVS=1
-	echo "configuring eINIT-cvs-${BUILDNUMBER}..."
+if test -d .svn; then
+	ISSVN=1
+	echo "configuring eINIT-svn-${BUILDNUMBER}..."
 else
-	ISCVS=0
+	ISSVN=0
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
@@ -241,10 +241,10 @@ INCLUDE = $INCLUDE
 
 XDYNAMIC = $XDYNAMIC
 BUILDNUMBER = $BUILDNUMBER
-ISCVS = $ISCVS
+ISSVN = $ISSVN
 TREETYPE = ${TREETYPE}
 
-CC = $CC -DBUILDNUMBER=\"\\\"\${BUILDNUMBER}\\\"\" -DISCVS=\${ISCVS}
+CC = $CC -DBUILDNUMBER=\"\\\"\${BUILDNUMBER}\\\"\" -DISSVN=\${ISSVN}
 CFLAGS = $CFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS} \${LDFLAGS}

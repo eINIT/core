@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -----------------
 # commit
 # einit
@@ -34,4 +34,4 @@ let "x=${x}+1"
 
 echo ${x}>buildnumber;
 echo "commiting build ${x}";
-cvs commit -m "\"$@\"";
+svn commit -m "\"$@\"";
