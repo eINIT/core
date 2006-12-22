@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-inherit subversion
+inherit subversion versionator
 
 ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/${PN}"
 SRC_URI=""
@@ -10,7 +10,7 @@ SRC_URI=""
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.sourceforge.net/"
  
-ESVN_REVISION='{'${PV##*_pre}'}'
+ESVN_REVISION=$(get_version_component_range 4 ${PV})
 ESVN_FETCH_CMD="svn co -r ${ESVN_REVISION}" 
 ESVN_UPDATE_CMD="svn up -r ${ESVN_REVISION}"
 
