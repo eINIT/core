@@ -13,12 +13,12 @@ HOMEPAGE="http://einit.sourceforge.net/"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
-IUSE="doc"
+IUSE="doc efl"
 
 RDEPEND="dev-libs/expat
-	doc? ( app-text/docbook-sgml app-doc/doxygen )"
+	doc? ( app-text/docbook-sgml app-doc/doxygen )
+	efl? ( media-libs/edje x11-libs/evas x11-libs/ecore )"
 DEPEND="${RDEPEND}"
-PDEPEND=""
 
 S=${WORKDIR}/${PN}
 
@@ -28,15 +28,19 @@ src_unpack() {
 }
 
 src_compile() {
-	econf \
-		--enable-linux \
-		--use-posix-regex \
-		--prefix=/ \
-		 || die
-#	./configure --enable-linux || die
+	local myconf
+
+	if use efl ; then
+		myconf="${myconf} --enable-linux --use-posix-regex --prefix=${ROOT} --enable-efl"
+	else
+		myconf="${myconf} --enable-linux --use-posix-regex --prefix=${ROOT}"
+	fi
+
+	econf ${myconf} || die
 	emake || die
+
 	if use doc ; then
-		make documentation ||die
+		make documentation || die
 	fi
 }
 
