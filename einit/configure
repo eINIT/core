@@ -104,6 +104,12 @@ for param in $@; do
 	elif test "$param" = "--no-nix-environ"; then
 		echo -n " NO-NIX-ENVIRON";
 		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
+        elif test "$param" = "--svn"; then
+                echo -n " SVN";
+                ISSVN=1;
+        elif test "$param" = "--ebuild"; then
+                echo -n " EBUILD";
+                EBUILD="1";
 	fi;
 done;
 echo " ]";
@@ -128,13 +134,17 @@ Options:
  --tree-type=           define the type of tree-structures einit should use.
  --sandbox              #define SANDBOX and set prefix=\`pwd\`/sandbox
  --debug                will #define DEBUG.
- --help                 display this text and exit.";
+ --help                 display this text and exit.
+ --svn                  indicate that this is a build off SVN.
+ --ebuild               indicate that this script was called from portage/e.a.";
 exit;
 fi;
 
 echo -n "/etc/make.conf ["
-if test -n ""${CFLAGS}; then
-	echo -n " skipping";
+if test "$EBUILD" = "1"; then
+	echo -n " skipping (ebuild)";
+elif test -n ""${CFLAGS}; then
+	echo -n " skipping (CFLAGS set)";
 elif test -f /etc/make.conf; then
 	echo -n " sourcing";
 	source /etc/make.conf;
