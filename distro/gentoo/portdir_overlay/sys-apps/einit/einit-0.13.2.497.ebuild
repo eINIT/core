@@ -36,12 +36,10 @@ src_unpack() {
 src_compile() {
         local myconf
 
-        myconf="--svn --ebuild"
+        myconf="--svn --ebuild --enable-linux --use-posix-regex --prefix=${ROOT}"
 
         if use efl ; then
-                myconf="${myconf} --enable-linux --use-posix-regex --prefix=${ROOT} --enable-efl"
-        else
-                myconf="${myconf} --enable-linux --use-posix-regex --prefix=${ROOT}"
+                myconf="${myconf} --enable-efl"
         fi
 
         econf ${myconf} || die
