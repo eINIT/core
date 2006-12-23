@@ -60,9 +60,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Set Host- and Domainname",
 	.rid		= "einit-hostname",
-	.provides	= provides,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 void ipc_event_handler (struct einit_event *ev) {

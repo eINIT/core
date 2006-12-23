@@ -62,9 +62,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Linux-specific System-Configuration",
 	.rid		= "linux-sysconf",
-	.provides	= provides,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 #ifndef SANDBOX

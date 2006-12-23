@@ -61,9 +61,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Network Configuration",
 	.rid		= "einit-network-experimental",
-	.provides	= provides,
-	.requires	= requires,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = requires,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 struct network_control_block mncb = {

@@ -65,9 +65,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "visual/evas-based feedback module",
 	.rid		= "einit-efl-feedback-evas-edje",
-	.provides	= provides,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 struct planref {

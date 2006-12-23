@@ -89,9 +89,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Filesystem-Mounter",
 	.rid		= "einit-mount",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 char *provides_mountlocal[] = {"mount/local", NULL};
@@ -103,9 +106,12 @@ struct smodule sm_mountlocal = {
 	.options	= 0,
 	.name		= "mount (local)",
 	.rid		= "einit-mount-local",
-	.provides	= provides_mountlocal,
-	.requires	= requires_mountlocal,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides_mountlocal,
+        .requires = requires_mountlocal,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 char *provides_mountremote[] = {"mount/remote", NULL};
@@ -117,9 +123,12 @@ struct smodule sm_mountremote = {
 	.options	= 0,
 	.name		= "mount (remote)",
 	.rid		= "einit-mount-remote",
-	.provides	= provides_mountremote,
-	.requires	= requires_mountremote,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides_mountremote,
+        .requires = requires_mountremote,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 char *provides_system[] = {"mount/system", NULL};
@@ -131,9 +140,12 @@ struct smodule sm_system = {
 	.options	= 0,
 	.name		= "mount (system)",
 	.rid		= "einit-mount-system",
-	.provides	= provides_system,
-	.requires	= requires_system,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides_system,
+        .requires = requires_system,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 char *provides_critical[] = {"mount/critical", NULL};
@@ -145,9 +157,12 @@ struct smodule sm_critical = {
 	.options	= 0,
 	.name		= "mount (critical)",
 	.rid		= "einit-mount-critical",
-	.provides	= provides_critical,
-	.requires	= requires_critical,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides_critical,
+        .requires = requires_critical,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 char *provides_root[] = {"/", NULL};
@@ -158,9 +173,12 @@ struct smodule sm_root = {
 	.options	= 0,
 	.name		= "mount (/)",
 	.rid		= "einit-mount-root",
-	.provides	= provides_root,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides_root,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 /* variable definitions */

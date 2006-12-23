@@ -74,7 +74,6 @@ struct mexecinfo {
  char *user, *group;
 };
 
-// char *provides[] = {"exec", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -82,9 +81,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "shell-command-pseudo-module support",
 	.rid		= "einit-mod-exec",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 int scanmodules (struct lmodule *);
@@ -117,6 +119,7 @@ int cleanup (struct lmodule *this) {
 }
 
 int cleanup_after_module (struct lmodule *this) {
+#if 0
  if (this->module) {
   if (this->module->provides)
    free (this->module->provides);
@@ -126,6 +129,7 @@ int cleanup_after_module (struct lmodule *this) {
    free (this->module->notwith);
   free (this->module);
  }
+#endif
  if (this->param) {
   if (((struct mexecinfo *)(this->param))->variables)
    free (((struct mexecinfo *)(this->param))->variables);
@@ -169,13 +173,13 @@ int scanmodules (struct lmodule *modchain) {
    else if (!strcmp (node->arbattrs[i], "group"))
     mexec->group = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "requires"))
-    modinfo->requires = str2set (':', node->arbattrs[i+1]);
+    modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))
-    modinfo->provides = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "uses"))
-    modinfo->uses = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "notwith"))
-    modinfo->notwith = str2set (':', node->arbattrs[i+1]);
+    modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
+   else if (!strcmp (node->arbattrs[i], "after"))
+    modinfo->si.after = str2set (':', node->arbattrs[i+1]);
+   else if (!strcmp (node->arbattrs[i], "before"))
+    modinfo->si.before = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "variables"))
     mexec->variables = str2set (':', node->arbattrs[i+1]);
    else

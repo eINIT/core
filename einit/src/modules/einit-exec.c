@@ -64,9 +64,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "pexec/dexec library module",
 	.rid		= "einit-exec",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 // char hasslash = strchr(key, '/') ? 1 : 0;

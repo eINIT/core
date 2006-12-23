@@ -61,9 +61,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "eINIT Process Function Library",
 	.rid		= "einit-process",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 struct process_status **ps = NULL;

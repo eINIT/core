@@ -143,6 +143,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SERVICE_ADD_GROUP_PROVIDER      0x0200 /*!< Service-usage-query: "This module provides this service" */
 /*!\} */
 
+struct service_information {
+ char **provides;       /*!< A list of services that this module provides. */
+ char **requires;       /*!< A list of services that this module requires. */
+ char **after;          /*!< Load this module after these services, but only if they're loaded to begin with */
+ char **before;         /*!< Load this module before these services, but only if they're loaded to begin with */
+#if 0
+ char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
+#endif
+};
+
 /*!\brief Static (on-file) module definition
  * \ingroup moduledefinition
  *
@@ -155,10 +165,7 @@ struct smodule {
  uint32_t options;      /*!< Module options; this is currently ignored. */
  char *name;            /*!< The real name of the module. */
  char *rid;             /*!< The short ID of the module. */
- char **provides;       /*!< A list of services that this module provides. */
- char **requires;       /*!< A list of services that this module requires. */
- char **uses;           /*!< Load this module after these services, but only if they're loaded to begin with */
- char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
+ struct service_information si;
 };
 
 /*!\brief In-memory module definition
@@ -181,10 +188,7 @@ struct lmodule {
  struct smodule *module;                        /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  uint32_t fbseq;                                /*!< Feedback sequence-number */
- char **provides;                               /*!< A list of services that this module provides. */
- char **requires;                               /*!< A list of services that this module requires. */
- char **uses;                                   /*!< Load this module after these services, but only if they're loaded to begin with */
- char **notwith;                                /*!< A list of services that may not be loaded together with this module; ignored. */
+ struct service_information *si;
 };
 
 /*!\brief Service-usage information.

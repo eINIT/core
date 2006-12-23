@@ -65,7 +65,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-// char *provides[] = {"daemon", NULL};
 const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -73,9 +72,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "daemon-pseudo-module support",
 	.rid		= "einit-mod-daemon",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 
@@ -106,6 +108,7 @@ int cleanup (struct lmodule *this) {
 }
 
 int cleanup_after_module (struct lmodule *this) {
+#if 0
  if (this->module) {
   if (this->module->provides)
    free (this->module->provides);
@@ -115,6 +118,7 @@ int cleanup_after_module (struct lmodule *this) {
    free (this->module->notwith);
   free (this->module);
  }
+#endif
  if (this->param) {
   if (((struct dexecinfo *)(this->param))->variables)
    free (((struct dexecinfo *)(this->param))->variables);
@@ -157,13 +161,13 @@ int scanmodules (struct lmodule *modchain) {
    else if (!strcmp("restart", node->arbattrs[i]))
     dexec->restart = parse_boolean(node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "requires"))
-    modinfo->requires = str2set (':', node->arbattrs[i+1]);
+    modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))
-    modinfo->provides = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "uses"))
-    modinfo->uses = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "notwith"))
-    modinfo->notwith = str2set (':', node->arbattrs[i+1]);
+    modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
+   else if (!strcmp (node->arbattrs[i], "after"))
+    modinfo->si.after = str2set (':', node->arbattrs[i+1]);
+   else if (!strcmp (node->arbattrs[i], "before"))
+    modinfo->si.before = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "variables"))
     dexec->variables = str2set (':', node->arbattrs[i+1]);
    else

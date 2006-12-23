@@ -136,9 +136,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Linux-specific Filesystem-Mounter Functions",
 	.rid		= "linux-mount",
-	.provides	= provides,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 /* function declarations */

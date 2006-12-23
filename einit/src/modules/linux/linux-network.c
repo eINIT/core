@@ -66,9 +66,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "Network Configuration (Linux-specific Parts)",
 	.rid		= "linux-network-experimental",
-	.provides	= provides,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 void find_network_interfaces_proc (struct network_control_block *cb) {

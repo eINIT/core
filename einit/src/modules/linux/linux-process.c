@@ -67,9 +67,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "eINIT Process Function Library (Linux-Specific Parts)",
 	.rid		= "linux-process",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 struct process_status ** update_processes_proc_linux (struct process_status **pstat) {

@@ -70,9 +70,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "eINIT IPC module",
 	.rid		= "einit-ipc",
-	.provides	= provides,
-	.requires	= requires,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = requires,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 pthread_t ipc_thread;

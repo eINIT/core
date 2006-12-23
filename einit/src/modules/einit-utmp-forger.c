@@ -59,9 +59,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "System-V compatibility: UTMP forger",
 	.rid		= "einit-utmp-forger",
-	.provides	= provides,
-	.requires	= requires,
-	.notwith	= NULL
+    .si           = {
+        .provides = provides,
+        .requires = requires,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 int enable (void *pa, struct einit_event *status) {

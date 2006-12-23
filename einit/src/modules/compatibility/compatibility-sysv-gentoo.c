@@ -67,9 +67,12 @@ const struct smodule self = {
 	.options	= 0,
 	.name		= "SysV-Gentoo Compatibility Module",
 	.rid		= "compatibility-sysv-gentoo",
-	.provides	= NULL,
-	.requires	= NULL,
-	.notwith	= NULL
+    .si           = {
+        .provides = NULL,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 // parse sh-style files and call back for each line

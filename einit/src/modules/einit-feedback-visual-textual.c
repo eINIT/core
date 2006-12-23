@@ -77,15 +77,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char * provides[] = {"feedback-visual", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= EINIT_MOD_FEEDBACK,
-	.options	= 0,
-	.name		= "visual/text-based feedback module",
-	.rid		= "einit-feedback-visual-textual",
-	.provides	= provides,
-	.requires	= NULL,
-	.notwith	= NULL
+	.eiversion    = EINIT_VERSION,
+	.version      = 1,
+	.mode         = EINIT_MOD_FEEDBACK,
+	.options      = 0,
+	.name		  = "visual/text-based feedback module",
+	.rid		  = "einit-feedback-visual-textual",
+    .si           = {
+        .provides = provides,
+        .requires = NULL,
+        .after    = NULL,
+        .before   = NULL
+    }
 };
 
 struct planref {
@@ -470,12 +473,12 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
   for (i = 0; modules[i]; i++) {
    if ((!((struct mstat *)(modules[i]))->errors) &&
        (((struct mstat *)(modules[i]))->mod) &&
-       (((struct mstat *)(modules[i]))->mod->module) &&
-       (((struct mstat *)(modules[i]))->mod->module->provides) &&
-       (((struct mstat *)(modules[i]))->mod->module->provides[0])) {
+       (((struct mstat *)(modules[i]))->mod->si) &&
+       (((struct mstat *)(modules[i]))->mod->si->provides) &&
+       (((struct mstat *)(modules[i]))->mod->si->provides[0])) {
     if (((struct mstat *)(modules[i]))->mod->status & STATUS_ENABLED) {
      fputs (" ", vofile);
-     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], vofile);
+     fputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
      ((struct mstat *)(modules[i]))->lines = 0;
     }
@@ -487,12 +490,12 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
   for (i = 0; modules[i]; i++) {
    if ((!((struct mstat *)(modules[i]))->errors) &&
        (((struct mstat *)(modules[i]))->mod) &&
-       (((struct mstat *)(modules[i]))->mod->module) &&
-       (((struct mstat *)(modules[i]))->mod->module->provides) &&
-       (((struct mstat *)(modules[i]))->mod->module->provides[0])) {
+       (((struct mstat *)(modules[i]))->mod->si) &&
+       (((struct mstat *)(modules[i]))->mod->si->provides) &&
+       (((struct mstat *)(modules[i]))->mod->si->provides[0])) {
     if (((struct mstat *)(modules[i]))->mod->status & STATUS_DISABLED) {
      fputs (" ", vofile);
-     fputs (((struct mstat *)(modules[i]))->mod->module->provides[0], vofile);
+     fputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
      ((struct mstat *)(modules[i]))->lines = 0;
     }
