@@ -751,12 +751,12 @@
       command="rm -f /var/run/ipw3945d.pid; ipw3945d --foreground"
       restart="yes" />
 
-     <daemon id="daemon-cupsd"
+<!--     <daemon id="daemon-cupsd"
       name="cupsd - common unix printing system daemon"
       provides="cupsd"
       requires="mount/critical:net-lo"
       command="cupsd -f"
-      restart="yes" />
+      restart="yes" /> -->
 
      <daemon id="daemon-ntpd"
       name="ntpd"
@@ -786,6 +786,7 @@
       requires="network:syslog:mount/critical"
       command="/usr/sbin/cupsd -F"
       restart="yes" />
+
      <shell id="shell-dovecot"
       name="IMAP/POP3 server (Dovecot)"
       provides="dovecot"

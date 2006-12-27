@@ -160,6 +160,7 @@ int scanmodules (struct lmodule *modchain) {
     dexec->group = node->arbattrs[i+1];
    else if (!strcmp("restart", node->arbattrs[i]))
     dexec->restart = parse_boolean(node->arbattrs[i+1]);
+
    else if (!strcmp (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))
@@ -168,6 +169,7 @@ int scanmodules (struct lmodule *modchain) {
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "before"))
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
+
    else if (!strcmp (node->arbattrs[i], "variables"))
     dexec->variables = str2set (':', node->arbattrs[i+1]);
    else

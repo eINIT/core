@@ -96,6 +96,8 @@ struct mloadplan_node {
  uint32_t options;       /*!< Node-options; reserved */
  struct mloadplan *plan; /*!< Pointer to this node's plan. */
  pthread_mutex_t *mutex; /*!< This node's mutex.*/
+
+ char **si_after;        /*!< same as a module's si.after, needed to implement before="" .*/
 };
 
 /*!\brief Create a plan

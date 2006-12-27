@@ -335,6 +335,8 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
   }
  }
 
+ nmod = mod_update (nmod);
+
  return nmod;
 }
 
@@ -694,6 +696,28 @@ void mod_event_handler(struct einit_event *event) {
      }
      cur = cur->next;
     }
+   } else if (!strcmp (argv[1], "services")) {
+    char buffer[1024];
+    struct stree *cur = service_usage;
+
+    if (!event->flag) event->flag = 1;
+
+    while (cur) {
+	 struct service_usage_item *su = (struct service_usage_item *)cur->value;
+     snprintf (buffer, 1024, "%s\n", cur->key);
+     fdputs (buffer, event->integer);
+     if (su->provider) {
+      uint32_t i = 0;
+      for (; su->provider[i]; i++) {
+       if (su->provider[i]->module) {
+        snprintf (buffer, 1024, " >> %s (%s)\n", su->provider[i]->module->rid ? su->provider[i]->module->rid : "unknown", su->provider[i]->module->name ? su->provider[i]->module->name : "unknown");
+       } else
+        snprintf (buffer, 1024, " >> unknown module\n");
+	  }
+      fdputs (buffer, event->integer);
+     }
+     cur = streenext (cur);
+	}
    }
   }
  }

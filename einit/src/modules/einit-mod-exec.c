@@ -172,6 +172,7 @@ int scanmodules (struct lmodule *modchain) {
     mexec->user = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "group"))
     mexec->group = node->arbattrs[i+1];
+
    else if (!strcmp (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))
@@ -179,6 +180,7 @@ int scanmodules (struct lmodule *modchain) {
    else if (!strcmp (node->arbattrs[i], "after"))
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "before"))
+
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "variables"))
     mexec->variables = str2set (':', node->arbattrs[i+1]);

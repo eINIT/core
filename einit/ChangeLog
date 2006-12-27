@@ -1,3 +1,9 @@
+2006/12/27: mdeininger
+ * module to provide "external" services
+   (for using einit with sysv or similar)
+ * new command to "list services"
+ * the "after" and "before" attributes now have a purpose
+
 2006/12/23: mdeininger
  * cleanups (services)
 

@@ -726,7 +726,10 @@ void power_event_handler(struct einit_event *ev) {
   if (errors)
    while (c) {
     sleep (1);
-    printf ("\e[0;0H[ \e[31m%04.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\n", c);
+    if (enableansicodes)
+     printf ("\e[0;0H\e[0m[ \e[31m%04.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
+    else
+     printf ("[ %04.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
     c--;
    }
 

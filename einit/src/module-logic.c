@@ -243,7 +243,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+    if ((ha = streefind (plan->services, current[a], TREE_FIND_FIRST)) || (service_usage_query(SERVICE_IS_PROVIDED, NULL, current[a]) & SERVICE_IS_PROVIDED))
      continue;
 
     while (cur) {
@@ -316,6 +316,21 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    ((struct mloadplan_node *)(ha->value))->service = ha->key;
    ((struct mloadplan_node *)(ha->value))->plan = plan;
    (((struct mloadplan_node *)(ha->value))->mutex) = ecalloc (1, sizeof(pthread_mutex_t));
+
+   if (((struct mloadplan_node *)(ha->value))->mod) {
+    uint32_t i = 0;
+    for (; ((struct mloadplan_node *)(ha->value))->mod[i]; i++) {
+     if (((struct mloadplan_node *)(ha->value))->mod[i]->si && ((struct mloadplan_node *)(ha->value))->mod[i]->si->before) {
+      uint32_t k = 0;
+      for (; ((struct mloadplan_node *)(ha->value))->mod[i]->si->before[k]; k++) {
+       struct stree *sel = streefind (plan->services, ((struct mloadplan_node *)(ha->value))->mod[i]->si->before[k], TREE_FIND_FIRST);
+	   if (sel && !inset ((void **) (((struct mloadplan_node *)(sel->value))->si_after), ha->key, SET_TYPE_STRING)) {
+        ((struct mloadplan_node *)(sel->value))->si_after = (char **)setadd ((void **) (((struct mloadplan_node *)(sel->value))->si_after), (void *)ha->key, SET_TYPE_STRING);
+       }
+	  }
+	 }
+	}
+   }
    pthread_mutex_init ((((struct mloadplan_node *)(ha->value))->mutex), NULL);
 
    ha = streenext (ha);
@@ -466,10 +481,15 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 //  fprintf (stderr, "enabling node 0x%zx\n", node);
 
   for (i = 0; node->mod[i]; i++) {
-   char **services = node->mod[i]->si->requires;
+   char **services = node->mod[i]->si->requires,
+        **after = node->mod[i]->si->after;
 
    if (services)
     run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
+   if (after)
+    run_or_spawn_subthreads_and_wait (after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
+   if (node->si_after)
+    run_or_spawn_subthreads_and_wait (node->si_after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
 
    if (
     ((node->status = node->mod[i]->status) & STATUS_ENABLED) ||
