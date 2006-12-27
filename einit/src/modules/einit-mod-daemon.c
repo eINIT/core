@@ -118,7 +118,6 @@ int cleanup_after_module (struct lmodule *this) {
    free (this->module->notwith);
   free (this->module);
  }
-#endif
  if (this->param) {
   if (((struct dexecinfo *)(this->param))->variables)
    free (((struct dexecinfo *)(this->param))->variables);
@@ -126,6 +125,7 @@ int cleanup_after_module (struct lmodule *this) {
    free (((struct dexecinfo *)(this->param))->environment);
   free (this->param);
  }
+#endif
 }
 
 int scanmodules (struct lmodule *modchain) {

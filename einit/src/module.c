@@ -120,6 +120,7 @@ int mod_scanmodules ( void ) {
  dir = opendir (modulepath);
  if (dir != NULL) {
   while (entry = readdir (dir)) {
+//   uint32_t el = 0;
 // if we have posix regular expressions, match them against the filename, if not, exclude '.'-files
 #ifdef POSIXREGEX
    if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
@@ -128,7 +129,8 @@ int mod_scanmodules ( void ) {
    if (entry->d_name[0] == '.') continue;
 #endif
 
-   tmp = (char *)emalloc ((mplen + strlen (entry->d_name))*sizeof (char));
+//   tmp = (char *)emalloc (el = (((mplen + strlen (entry->d_name))) & (~3))+4);
+   tmp = (char *)emalloc (mplen + strlen (entry->d_name));
    struct stat sbuf;
    struct smodule *modinfo;
    struct lmodule *lm;
@@ -159,6 +161,7 @@ int mod_scanmodules ( void ) {
     lm = lm->next;
    }
 
+//   printf ("module %s(%i) not found, loading.\n", tmp, el);
    sohandle = dlopen (tmp, RTLD_NOW);
    if (sohandle == NULL) {
     puts (dlerror ());
@@ -166,6 +169,8 @@ int mod_scanmodules ( void ) {
 //    continue;
     goto cleanup_continue;
    }
+
+//   printf ("checking for self-identifier in module %s.\n", tmp);
    modinfo = (struct smodule *)dlsym (sohandle, "self");
    if (modinfo != NULL) {
     struct lmodule *new = mod_add (sohandle, modinfo);
@@ -281,7 +286,7 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
  nmod->module = module;
  pthread_mutex_init (&nmod->mutex, NULL);
  pthread_mutex_init (&nmod->imutex, NULL);
- 
+
  nmod->si = &module->si;
 
 // this will do additional initialisation functions for certain module-types
