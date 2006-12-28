@@ -12,14 +12,6 @@
    <shutdown-function-suffixes s="linux" />
   </scheduler>
 
-<!--  <if match="core-mode:init">
-   <settings>
-    <module-path s="/lib/einit" />
-    <configuration-path s="/etc/einit/" />
-   </settings>
-   <commands-include-file s="local.xml" />
-  </if> -->
-
   <if match="core-mode:sandbox">
    <settings>
     <module-path s="lib/einit" />
@@ -149,6 +141,9 @@
       <parse-env.d b="true" />
      </gentoo>
     </distribution>
+<!-- in case you wish to use init.d scripts, use this:
+     NOTE that this does NOT work with gentoo's init.d scripts! -->
+<!--    <init.d s="/etc/init.d/" /> -->
    </sysv>
 
 <!-- not yet implemented

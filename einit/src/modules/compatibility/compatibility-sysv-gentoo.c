@@ -61,12 +61,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= 0,
-	.options	= 0,
-	.name		= "SysV-Gentoo Compatibility Module",
-	.rid		= "compatibility-sysv-gentoo",
+    .eiversion    = EINIT_VERSION,
+    .version      = 1,
+    .mode         = 0,
+    .options      = 0,
+    .name         = "System-V Compatibility: Gentoo Support",
+    .rid          = "compatibility-sysv-gentoo",
     .si           = {
         .provides = NULL,
         .requires = NULL,

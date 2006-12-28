@@ -1,7 +1,7 @@
 include ../../../config.mk
 include depend.mk
 
-all: compatibility-sysv-gentoo.so compatibility-sysv-utmp.so
+all: compatibility-sysv-gentoo.so compatibility-sysv-utmp.so compatibility-mod-sysv-init-d.so
 
 depend:
 	${CC} ${INCLUDE} -M *.c > depend.mk
@@ -13,9 +13,13 @@ install: all
 	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} compatibility-sysv-gentoo.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} compatibility-sysv-utmp.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} compatibility-mod-sysv-init-d.so ${DESTDIR}/${MODDIR}
 
 compatibility-sysv-gentoo.so: compatibility-sysv-gentoo.c
 	${CCL} compatibility-sysv-gentoo.c -o compatibility-sysv-gentoo.so
 
 compatibility-sysv-utmp.so: compatibility-sysv-utmp.c
 	${CCL} compatibility-sysv-utmp.c -o compatibility-sysv-utmp.so
+
+compatibility-mod-sysv-init-d.so: compatibility-mod-sysv-init-d.c
+	${CCL} compatibility-mod-sysv-init-d.c -o compatibility-mod-sysv-init-d.so
