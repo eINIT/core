@@ -60,6 +60,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INITCTL_CMD_POWERFAILNOW 0x00000003
 #define INITCTL_CMD_POWEROK      0x00000004
 
+#define INITCTL_CMD_SETENV       0x00000006
+#define INITCTL_CMD_UNSETENV     0x00000007
+
 struct init_command {
  uint32_t signature;    // signature, must be INITCTL_MAGIC
  uint32_t command;      // the request ID
@@ -136,15 +139,16 @@ void * initctl_wait (char *fifo) {
   if (read (nfd, &ic, 384) > 12) { // enough bytrs to process were read
    if (ic.signature == INITCTL_MAGIC) {
 //  INITCTL_CMD_START: what's that do?
+//  INITCTL_CMD_UNSETENV is deliberately ignored
     if (ic.command == INITCTL_CMD_RUNLVL) { // switch runlevels (modes...)
      struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
      char tmp[256], *nmode;
 
 // we need to look up the runlevel to find out what mode it corresponds to:
-     snprintf (tmp, 256, "configuration-compatibility-sysv-runlevel-mode-relations/runlevel%i", ic.runlevel);
+     snprintf (tmp, 256, "configuration-compatibility-sysv-runlevel-mode-relations/runlevel%c", ic.runlevel);
      nmode = cfg_getstring (tmp, NULL);
      if (nmode) {
-      snprintf (tmp, 256, "initctl: switching to mode %s (runlevel %i)", nmode, ic.runlevel);
+      snprintf (tmp, 256, "initctl: switching to mode %s (runlevel %c)", nmode, ic.runlevel);
       notice (4, tmp);
 
       ee.string = nmode; // this is where we need to put the mode to switch to
@@ -164,7 +168,7 @@ void * initctl_wait (char *fifo) {
       event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
       evstaticdestroy(ee);
      } else {
-      snprintf (tmp, 256, "initctl: told to switch to runlevel %i, which did not resolve to a valid mode", ic.runlevel);
+      snprintf (tmp, 256, "initctl: told to switch to runlevel %c, which did not resolve to a valid mode", ic.runlevel);
       notice (3, tmp);
      }
     } else if (ic.command == INITCTL_CMD_POWERFAIL) {
@@ -185,6 +189,22 @@ void * initctl_wait (char *fifo) {
 
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
+    } else if (ic.command == INITCTL_CMD_SETENV) { // padding contains the new environment string
+     char **cx = str2set (':', ic.padding);
+     if (cx) {
+      if (cx[0] && cx[1]) {
+       if (!strcmp (cx[0], "INIT_HALT")) {
+        if (!strcmp (cx[1], "HALT") || !strcmp (cx[1], "POWERDOWN")) {
+         struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+         ee.string = "power-down";
+         event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+         evstaticdestroy(ee);
+        }
+       }
+      }
+
+      free (cx);
+     }
     } else
       notice (4, "invalid initctl received: unknown command");
    } else {

@@ -156,7 +156,7 @@
     </if>
 
 <!-- this variable is used to bind runlevels to einit modes -->
-    <runlevel-mode-relations runlevel0="power-off" runlevel1="single" runlevel2="default" runlevel3="default" runlevel4="default" runlevel5="default" runlevel6="power-reset" runlevelS="single" runlevels="single" />
+    <runlevel-mode-relations runlevel0="power-down" runlevel1="single" runlevel2="default" runlevel3="default" runlevel4="default" runlevel5="default" runlevel6="power-reset" runlevelS="single" runlevels="single" />
    </sysv>
 
 <!-- not yet implemented
