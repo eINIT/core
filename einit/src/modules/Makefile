@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-utmp-forger.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so einit-exec.so einit-external.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so einit-exec.so einit-external.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -21,7 +21,6 @@ install: all
 	${INSTALL} ${SOIPARAM} einit-mod-daemon.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-ipc.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-hostname.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} einit-utmp-forger.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-mount.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-process.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-network.so ${DESTDIR}/${MODDIR}
@@ -64,6 +63,3 @@ einit-exec.so: einit-exec.c
 
 einit-hostname.so: einit-hostname.c
 	${CCL} einit-hostname.c -o einit-hostname.so
-
-einit-utmp-forger.so: einit-utmp-forger.c
-	${CCL} einit-utmp-forger.c -o einit-utmp-forger.so

@@ -53,11 +53,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct cfgnode *curmode = NULL;
 
 #define ECXE_MASTERTAG 0x00000001
+#define IF_OK          0x1
 
 char **xml_configuration_files = NULL;
 
 struct einit_xml_expat_user_data {
- uint32_t options;
+ uint32_t options,
+          if_level,
+          if_results;
  char *file, *prefix;
 };
 
@@ -70,62 +73,108 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 
  if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
 
- if (!((struct einit_xml_expat_user_data *)userData)->prefix) {
-  ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (nlen+1);
-  *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
- } else {
-  int plen = strlen (((struct einit_xml_expat_user_data *)userData)->prefix);
-  ((struct einit_xml_expat_user_data *)userData)->prefix = erealloc (((struct einit_xml_expat_user_data *)userData)->prefix, plen + nlen+2);
-  *((((struct einit_xml_expat_user_data *)userData)->prefix) + plen) = '-';
-  *((((struct einit_xml_expat_user_data *)userData)->prefix) + plen + 1) = 0;
- }
- strcat (((struct einit_xml_expat_user_data *)userData)->prefix, name);
+ if (!strcmp (name, "if")) {
+  (((struct einit_xml_expat_user_data *)userData)->if_level)++;
+/* shift results to the left -- make room for another result */
+  (((struct einit_xml_expat_user_data *)userData)->if_results) <<= 1;
 
-// if (((struct einit_xml_expat_user_data *)userData)->prefix) puts (((struct einit_xml_expat_user_data *)userData)->prefix);
+/* clear the result bit for this one -- might not be necessary */
+  (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
+  (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
 
- int i = 0;
- if (!strcmp (name, "mode")) {
-/* parse the information presented in the element as a mode-definition */
-  struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-  newnode->nodetype = EI_NODETYPE_MODE;
-  newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
-  newnode->source = "xml-expat";
-  newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
-  for (; newnode->arbattrs[i] != NULL; i+=2) {
-   if (!strcmp (newnode->arbattrs[i], "id")) {
-    newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
-   } else if (!strcmp (newnode->arbattrs[i], "base")) {
-    newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
-   }
-  }
-  if (newnode->id) {
-   char *id = newnode->id;
-   cfg_addnode (newnode);
-   curmode = NULL;
-   curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode);
-   free (newnode);
-  }
- } else {
-/* parse the information presented in the element as a variable */
-  struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-  newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
-  newnode->nodetype = EI_NODETYPE_CONFIG;
-  newnode->mode = curmode;
-  newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
-  newnode->source = "xml-expat";
-  newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
-  if (newnode->arbattrs)
-   for (; newnode->arbattrs[i] != NULL; i+=2) {
-    if (!strcmp (newnode->arbattrs[i], "s"))
-     newnode->svalue = (char *)newnode->arbattrs[i+1];
-    else if (!strcmp (newnode->arbattrs[i], "i"))
-     newnode->value = parse_integer (newnode->arbattrs[i+1]);
-    else if (!strcmp (newnode->arbattrs[i], "b")) {
-     newnode->flag = parse_boolean (newnode->arbattrs[i+1]);
+  if (atts) {
+   uint32_t i = 0;
+
+   for (; atts[i]; i+=2) {
+    if (!strcmp (atts[i], "match")) { // condition is a literal string match
+     char **mt = str2set (':', atts[i+1]);
+     if (mt && mt[0] && mt[1]) {
+      if (!strcmp (mt[0], "core-mode")) { // literal match is against the einit core mode (gmode)
+       mt[0] = ((gmode == EINIT_GMODE_INIT) ? "init" :
+               ((gmode == EINIT_GMODE_METADAEMON) ? "metadaemon" :
+               ((gmode == EINIT_GMODE_SANDBOX) ? "sandbox" : "undefined")));
+      }
+
+      if (!strcmp (mt[0], mt[1]))
+       (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
+     }
+
+     if (mt) free (mt);
     }
    }
-  cfg_addnode (newnode);
-  free (newnode);
+  }
+
+  return;
+ } else if (!strcmp (name, "else") && (((struct einit_xml_expat_user_data *)userData)->if_level)) {
+  (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
+
+  return;
+ }
+
+ if (!(((struct einit_xml_expat_user_data *)userData)->if_level) ||
+      ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
+
+/*  if ((((struct einit_xml_expat_user_data *)userData)->if_level) && ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
+   printf ("in node %s:%s, with positive <if>\n", ((struct einit_xml_expat_user_data *)userData)->file, name);
+  }*/
+
+  if (!((struct einit_xml_expat_user_data *)userData)->prefix) {
+   ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (nlen+1);
+   *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
+  } else {
+   int plen = strlen (((struct einit_xml_expat_user_data *)userData)->prefix);
+   ((struct einit_xml_expat_user_data *)userData)->prefix = erealloc (((struct einit_xml_expat_user_data *)userData)->prefix, plen + nlen+2);
+   *((((struct einit_xml_expat_user_data *)userData)->prefix) + plen) = '-';
+   *((((struct einit_xml_expat_user_data *)userData)->prefix) + plen + 1) = 0;
+  }
+  strcat (((struct einit_xml_expat_user_data *)userData)->prefix, name);
+
+//  puts (((struct einit_xml_expat_user_data *)userData)->prefix);
+
+  int i = 0;
+  if (!strcmp (name, "mode")) {
+/* parse the information presented in the element as a mode-definition */
+   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
+   newnode->nodetype = EI_NODETYPE_MODE;
+   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+   newnode->source = "xml-expat";
+   newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
+   for (; newnode->arbattrs[i] != NULL; i+=2) {
+    if (!strcmp (newnode->arbattrs[i], "id")) {
+     newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
+    } else if (!strcmp (newnode->arbattrs[i], "base")) {
+     newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
+    }
+   }
+   if (newnode->id) {
+    char *id = newnode->id;
+    cfg_addnode (newnode);
+    curmode = NULL;
+    curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode);
+    free (newnode);
+   }
+  } else {
+/* parse the information presented in the element as a variable */
+   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
+   newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
+   newnode->nodetype = EI_NODETYPE_CONFIG;
+   newnode->mode = curmode;
+   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+   newnode->source = "xml-expat";
+   newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
+   if (newnode->arbattrs)
+    for (; newnode->arbattrs[i] != NULL; i+=2) {
+     if (!strcmp (newnode->arbattrs[i], "s"))
+      newnode->svalue = (char *)newnode->arbattrs[i+1];
+     else if (!strcmp (newnode->arbattrs[i], "i"))
+      newnode->value = parse_integer (newnode->arbattrs[i+1]);
+     else if (!strcmp (newnode->arbattrs[i], "b")) {
+      newnode->flag = parse_boolean (newnode->arbattrs[i+1]);
+     }
+    }
+   cfg_addnode (newnode);
+   free (newnode);
+  }
  }
 }
 
@@ -135,20 +184,32 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
  if (!strcmp (name, "einit")) {
   ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG;
   return;
+ } else if (!strcmp (name, "if")) {
+  (((struct einit_xml_expat_user_data *)userData)->if_level)--;
+  (((struct einit_xml_expat_user_data *)userData)->if_results) >>= 1;
+  return;
+ } else if (!strcmp (name, "else")) {
+  if  (((struct einit_xml_expat_user_data *)userData)->if_level)
+   (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
+
+  return;
  }
 
- if (((struct einit_xml_expat_user_data *)userData)->prefix) {
-  int tlen = strlen(name)+1;
-  char *last = strrchr (((struct einit_xml_expat_user_data *)userData)->prefix, 0);
-  if ((last-tlen) > ((struct einit_xml_expat_user_data *)userData)->prefix) *(last-tlen) = 0;
-  else {
-   free (((struct einit_xml_expat_user_data *)userData)->prefix);
-   ((struct einit_xml_expat_user_data *)userData)->prefix = NULL;
+ if (!(((struct einit_xml_expat_user_data *)userData)->if_level) ||
+      ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
+  if (((struct einit_xml_expat_user_data *)userData)->prefix) {
+   int tlen = strlen(name)+1;
+   char *last = strrchr (((struct einit_xml_expat_user_data *)userData)->prefix, 0);
+   if ((last-tlen) > ((struct einit_xml_expat_user_data *)userData)->prefix) *(last-tlen) = 0;
+   else {
+    free (((struct einit_xml_expat_user_data *)userData)->prefix);
+    ((struct einit_xml_expat_user_data *)userData)->prefix = NULL;
+   }
   }
- }
 
- if (!strcmp (name, "mode"))
-  curmode = NULL;
+  if (!strcmp (name, "mode"))
+   curmode = NULL;
+ }
 }
 
 int einit_config_xml_expat_parse_configuration_file (char *configfile) {
@@ -163,11 +224,15 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
+  .if_level = 0,
   .file = configfile,
   .prefix = NULL
  };
 
  if (!configfile) return 0;
+
+ printf (" >> parsing file %s.\n", configfile);
+
  if (data = readfile (configfile)) {
   blen = strlen(data)+1;
   par = XML_ParserCreate (NULL);

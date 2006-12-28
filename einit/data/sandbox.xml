@@ -62,10 +62,11 @@
 
   <storage>
    <fstab>
-    <node mountpoint="/boot" device="/dev/BOOT" options="noatime" />
+    <source s="configuration:legacy" />
+<!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime" />
     <node mountpoint="/" device="/dev/ROOT" options="noatime" />
     <node device="/boot" mountpoint="/media/boot" options="bind:critical" />
-    <node device="/dev/hdc" mountpoint="/media/cdrom" options="users:exec" />
+    <node device="/dev/hdc" mountpoint="/media/cdrom" options="users:exec" /> -->
 
     <node mountpoint="/media/storage-1" device="host:/media/storage-1" fs="nfs" />
     <node mountpoint="/media/storage-0" device="chronos:/media/storage-0" fs="nfs" />

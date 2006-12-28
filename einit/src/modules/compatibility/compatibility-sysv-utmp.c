@@ -1,8 +1,9 @@
 /*
- *  einit-utmp-forger.c
+ *  compatibility-sysv-utmp.c
  *  einit
  *
  *  Created by Magnus Deininger on 11/05/2006.
+ *  renamed and moved from einit-utmp-forger.c on 2006/12/28
  *  Copyright 2006 Magnus Deininger. All rights reserved.
  *
  */
@@ -53,12 +54,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char * provides[] = {"utmp", NULL};
 char * requires[] = {"mount/critical", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= 0,
-	.options	= 0,
-	.name		= "System-V compatibility: UTMP forger",
-	.rid		= "einit-utmp-forger",
+    .eiversion    = EINIT_VERSION,
+    .version      = 1,
+    .mode         = 0,
+    .options      = 0,
+    .name         = "System-V Compatibility: {U|W}TMP",
+    .rid          = "compatibility-sysv-utmp",
     .si           = {
         .provides = provides,
         .requires = requires,
@@ -69,9 +70,9 @@ const struct smodule self = {
 
 int enable (void *pa, struct einit_event *status) {
  FILE *ufile;
- struct cfgnode *utmp_cfg = cfg_findnode ("configuration-compatibility-sysv-forge-utmp", 0, NULL);
+ char utmp_cfg = parse_boolean (cfg_getstring ("configuration-compatibility-sysv/utmp", NULL));
 
- if (utmp_cfg && utmp_cfg->flag) {
+ if (utmp_cfg) {
   ufile = fopen ("/var/run/utmp", "w");
   if (ufile) {
    struct utmp *utmpentries = ecalloc (2, sizeof (struct utmp));

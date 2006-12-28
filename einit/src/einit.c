@@ -67,6 +67,7 @@ pid_t einit_sub = 0;
 char isinit = 1, initoverride = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
+uint32_t gmode = EINIT_GMODE_INIT;
 
 /* some more variables that are only of relevance to main() */
 char **einit_startup_mode_switches = NULL;
@@ -76,12 +77,7 @@ char einit_do_feedback_switch = 1; // whether or not to initalise the feedback m
 char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list of modes to activate by default
 
 // the list of files to  parse by default
-char *einit_default_startup_configuration_files[] =
-#ifndef SANDBOX
- { "/etc/einit/einit.xml", "/etc/einit/local.xml", NULL };
-#else
- { "etc/einit/einit.xml", "etc/einit/sandbox.xml", NULL };
-#endif
+char *einit_default_startup_configuration_files[] = { "/etc/einit/einit.xml", NULL };
 
 #ifdef NONIXENVIRON
 char ** environ;
@@ -103,6 +99,9 @@ int print_usage_info () {
   "--override-init-check einit will check if it process 1, override with this flag\n"
   "--check-configuration tell all modules to check for configuration errors. use this!\n"
   "--checkup, --wtf      synonymous to --check-configuration\n"
+  "\n"
+  "--sandbox             run einit in \"sandbox mode\"\n"
+  "--metadaemon          run einit in \"metadaemon mode\"\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
@@ -151,7 +150,7 @@ int main(int argc, char **argv) {
    switch (argv[i][1]) {
     case 'c':
      if ((++i) < argc)
-      einit_default_startup_configuration_files[1] = argv[i];
+      einit_default_startup_configuration_files[0] = argv[i];
      else
       return print_usage_info ();
      break;
@@ -178,6 +177,13 @@ int main(int argc, char **argv) {
       ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
      else if (!strcmp(argv[i], "--override-init-check"))
       initoverride = 1;
+     else if (!strcmp(argv[i], "--sandbox")) {
+      einit_default_startup_configuration_files[0] = "etc/einit/einit.xml";
+      gmode = EINIT_GMODE_SANDBOX;
+     }
+     else if (!strcmp(argv[i], "--metadaemon")) {
+      gmode = EINIT_GMODE_METADAEMON;
+     }
 
      break;
    }
@@ -291,16 +297,13 @@ int main(int argc, char **argv) {
     ipc_process (ipccommands[rx], STDOUT_FILENO);
    }
 
-#ifdef SANDBOX
-   cleanup ();
-#endif
+   if (gmode == EINIT_GMODE_SANDBOX)
+    cleanup ();
 
    return EXIT_SUCCESS;
-#ifndef SANDBOX
-  } else if (!isinit && !initoverride) {
+  } else if ((gmode == EINIT_GMODE_INIT) && !isinit && !initoverride) {
    printf ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not spcified.\nexiting...\n\n");
    exit (EXIT_FAILURE);
-#endif
   } else {
    uint32_t e = 0;
    sched_init ();
@@ -324,9 +327,8 @@ int main(int argc, char **argv) {
    sched_run_sigchild (NULL);
   }
 
-#ifdef SANDBOX
-  cleanup ();
-#endif
+  if (gmode == EINIT_GMODE_SANDBOX)
+   cleanup ();
 
   return EXIT_SUCCESS;
  }

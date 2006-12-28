@@ -219,9 +219,9 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGTSTP, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGTTIN, &action, NULL) ) bitch (BTCH_ERRNO);
  if ( sigaction (SIGTTOU, &action, NULL) ) bitch (BTCH_ERRNO);
-#ifndef SANDBOX
- if ( sigaction (SIGTERM, &action, NULL) ) bitch (BTCH_ERRNO);
-#endif
+ if (gmode != EINIT_GMODE_SANDBOX) {
+  if ( sigaction (SIGTERM, &action, NULL) ) bitch (BTCH_ERRNO);
+ }
 #ifdef SIGPOLL
  if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BTCH_ERRNO);
 #endif
@@ -343,10 +343,10 @@ void sched_ipc_event_handler(struct einit_event *event) {
 
      notice (1, "scheduler: sync()-ing");
      sync ();
-#ifdef SANDBOX
-     notice (1, "scheduler: cleaning up");
-     cleanup ();
-#endif
+     if (gmode == EINIT_GMODE_SANDBOX) {
+      notice (1, "scheduler: cleaning up");
+      cleanup ();
+     }
      scheduler_cleanup ();
 
      {

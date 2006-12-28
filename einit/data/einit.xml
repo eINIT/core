@@ -3,16 +3,37 @@
  <core>
   <settings>
    <module>
-    <path s="/lib/einit" />
 <!-- use this to disable the compatibility modules -->
 <!--    <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
     <load pattern-allow=".*\.so" />
    </module>
-   <configuration-path s="/etc/einit/" />
   </settings>
   <scheduler>
    <shutdown-function-suffixes s="linux" />
   </scheduler>
+
+<!--  <if match="core-mode:init">
+   <settings>
+    <module-path s="/lib/einit" />
+    <configuration-path s="/etc/einit/" />
+   </settings>
+   <commands-include-file s="local.xml" />
+  </if> -->
+
+  <if match="core-mode:sandbox">
+   <settings>
+    <module-path s="lib/einit" />
+    <configuration-path s="etc/einit/" />
+   </settings>
+   <commands-include-file s="sandbox.xml" />
+   <else>
+    <settings>
+     <module-path s="/lib/einit" />
+     <configuration-path s="/etc/einit/" />
+    </settings>
+    <commands-include-file s="local.xml" />
+   </else>
+  </if>
 <!-- with the current configuration files, this is not required, but you could still use it
   <commands>
    <include>
@@ -20,7 +41,8 @@
     <directory s="local" />
    </include>
   </commands> -->
-  <mode s="init" />
+
+<!--  <mode s="init" /> -->
  </core>
 
  <configuration>
@@ -121,10 +143,7 @@
 
 <!-- not much of this is implemented, yet -->
   <compatibility>
-   <sysv>
-    <forge-utmp b="true" i="3" />
-    <forge-wtmp b="true" />
-
+   <sysv utmp="yes" wtmp="yes">
     <distribution s="auto">
      <gentoo>
       <parse-env.d b="true" />

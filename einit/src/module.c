@@ -85,10 +85,11 @@ int mod_scanmodules ( void ) {
   pthread_mutex_unlock (&modules_update_mutex);
   return -1;
  }
-#ifdef SANDBOX
+
+ if (gmode == EINIT_GMODE_SANDBOX) {
 // override module path in sandbox-mode to be relative
- if (modulepath[0] == '/') modulepath++;
-#endif
+  if (modulepath[0] == '/') modulepath++;
+ }
 
 #ifdef POSIXREGEX
  if (spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL)) {

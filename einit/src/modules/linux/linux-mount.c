@@ -478,18 +478,18 @@ unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mount
    snprintf (command, 4096, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
  }
 
-#ifndef SANDBOX
- if (pexec_v1 (command, NULL, NULL, status) == STATUS_OK)
-  return 0;
- else {
-  if (fse->after_umount)
-   pexec_v1 (fse->after_umount, fse->variables, NULL, status);
-  return 1;
+ if (gmode != EINIT_GMODE_SANDBOX) {
+  if (pexec_v1 (command, NULL, NULL, status) == STATUS_OK)
+   return 0;
+  else {
+   if (fse->after_umount)
+    pexec_v1 (fse->after_umount, fse->variables, NULL, status);
+   return 1;
+  }
+ } else {
+  status->string = command;
+  status_update (status);
  }
-#else
- status->string = command;
- status_update (status);
-#endif
 
  return 0;
 }

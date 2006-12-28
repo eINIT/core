@@ -70,7 +70,6 @@ const struct smodule self = {
     }
 };
 
-#ifndef SANDBOX
 void linux_reboot () {
  reboot (LINUX_REBOOT_CMD_RESTART);
 // reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
@@ -86,7 +85,6 @@ void linux_power_off () {
  notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
 }
-#endif
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
@@ -101,38 +99,38 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-#ifndef SANDBOX
- function_register ("core-power-off-linux", 1, linux_power_off);
- function_register ("core-power-reset-linux", 1, linux_reboot);
-#endif
+ if (gmode == EINIT_GMODE_INIT) {
+  function_register ("core-power-off-linux", 1, linux_power_off);
+  function_register ("core-power-reset-linux", 1, linux_reboot);
+ }
 }
 
 int cleanup (struct lmodule *this) {
-#ifndef SANDBOX
- function_unregister ("core-power-reset-linux", 1, linux_reboot);
- function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-#endif
+ if (gmode == EINIT_GMODE_INIT) {
+  function_unregister ("core-power-reset-linux", 1, linux_reboot);
+  function_unregister ("core-power-off-linux", 1, linux_power_off);
+  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ }
 }
 
 int enable (void *pa, struct einit_event *status) {
  struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
  if (cfg && !cfg->flag) {
-#ifndef SANDBOX
-  if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
-   status->string = strerror(errno);
-   errno = 0;
-   status->flag++;
-   status_update (status);
+  if (gmode != EINIT_GMODE_SANDBOX) {
+   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
+    status->string = strerror(errno);
+    errno = 0;
+    status->flag++;
+    status_update (status);
+   }
+  } else {
+   if (1) {
+    status->string = strerror(errno);
+    errno = 0;
+    status->flag++;
+    status_update (status);
+   }
   }
-#else
-  if (1) {
-   status->string = strerror(errno);
-   errno = 0;
-   status->flag++;
-   status_update (status);
-  }
-#endif
  }
 
  return STATUS_OK;
