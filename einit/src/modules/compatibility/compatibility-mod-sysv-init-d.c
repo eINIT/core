@@ -86,8 +86,8 @@ int configure (struct lmodule *);
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
-  if (!cfg_getnode("configuration-system-shell", NULL)) {
-   fdputs (" * configuration variable \"configuration-compatibility-sysv-init.d\" not found.\n", ev->integer);
+  if (!cfg_getstring("configuration-compatibility-sysv-init.d/path", NULL)) {
+   fdputs (" * configuration variable \"configuration-compatibility-sysv-init.d/path\" not found.\n", ev->integer);
    ev->task++;
   }
 
@@ -100,8 +100,8 @@ int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
-int cleanup (struct lmodule *this) {
- exec_cleanup(this);
+int cleanup (struct lmodule *irr) {
+ exec_cleanup(irr);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
@@ -127,7 +127,7 @@ int scanmodules (struct lmodule *modchain) {
  DIR *dir;
  struct dirent *de;
  char *nrid = NULL,
-      *init_d_path = cfg_getpath ("configuration-compatibility-sysv-init.d"),
+      *init_d_path = cfg_getpath ("configuration-compatibility-sysv-init.d/path"),
       *tmp = NULL;
  uint32_t plen;
  struct smodule *modinfo;

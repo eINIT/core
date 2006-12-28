@@ -639,8 +639,13 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
  if (ev->string) {
   if (strlen(ev->string) < 45)
    printf ("\e[%i;10H%s: %s\e[K\n", line, name, ev->string);
-  else
+  else {
+   char tmp[1024];
    printf ("\e[%i;10H%s: <...>\e[K\n", line, name);
+
+   snprintf (tmp, 1024, "%s: %s", name, ev->string);
+   notice (3, tmp);
+  }
   ev->string = NULL;
  }
 

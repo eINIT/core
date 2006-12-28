@@ -286,22 +286,22 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *cfg_getpath (char *id) {
  int mplen;
- struct cfgnode *svpath = cfg_findnode (id, 0, NULL);
- if (!svpath || !svpath->svalue) return NULL;
- mplen = strlen (svpath->svalue) +1;
- if (svpath->svalue[mplen-2] != '/') {
-  if (svpath->path) return svpath->path;
+ char *svpath = cfg_getstring (id, NULL);
+ if (!svpath) return NULL;
+ mplen = strlen (svpath) +1;
+ if (svpath[mplen-2] != '/') {
+//  if (svpath->path) return svpath->path;
   char *tmpsvpath = (char *)emalloc (mplen+1);
   tmpsvpath[0] = 0;
 
-  strcat (tmpsvpath, svpath->svalue);
+  strcat (tmpsvpath, svpath);
   tmpsvpath[mplen-1] = '/';
   tmpsvpath[mplen] = 0;
 //  svpath->svalue = tmpsvpath;
-  svpath->path = tmpsvpath;
+//  svpath->path = tmpsvpath;
   return tmpsvpath;
  }
- return svpath->svalue;
+ return svpath;
 }
 
 void einit_config_event_handler (struct einit_event *ev) {

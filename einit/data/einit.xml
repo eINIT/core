@@ -138,12 +138,25 @@
    <sysv utmp="yes" wtmp="yes">
     <distribution s="auto">
      <gentoo>
+<!-- in case you wish to use gentoo-ish init.d scripts, use this:
+     NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
+      <init.d path="/etc/init.d/" runlevels="/etc/runlevels" />
       <parse-env.d b="true" />
      </gentoo>
     </distribution>
 <!-- in case you wish to use init.d scripts, use this:
-     NOTE that this does NOT work with gentoo's init.d scripts! -->
-<!--    <init.d s="/etc/init.d/" /> -->
+     NOTE: this does NOT work with gentoo's init.d scripts! -->
+    <init.d path="/etc/init.d/" process-rc.d="yes" />
+
+    <if match="core-mode:sandbox">
+     <initctl s="etc/.initctl" i="0600" />
+     <else>
+      <initctl s="/dev/initctl" i="0600" />
+     </else>
+    </if>
+
+<!-- this variable is used to bind runlevels to einit modes -->
+    <runlevel-mode-relations runlevel0="power-off" runlevel1="single" runlevel2="default" runlevel3="default" runlevel4="default" runlevel5="default" runlevel6="power-reset" runlevelS="single" runlevels="single" />
    </sysv>
 
 <!-- not yet implemented

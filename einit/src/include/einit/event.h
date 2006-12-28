@@ -92,6 +92,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_POWER_RESET_IMMINENT	0x00005004
 /*!< reboot going to happen after this event */
 
+#define EVENT_POWER_FAILING		0x00005005
+/*!< power is failing */
+#define EVENT_POWER_FAILURE_IMMINENT	0x00005006
+/*!< power is failing NOW */
+#define EVENT_POWER_RESTORED		0x00005007
+/*!< power was restored */
 
 #define EVENT_SUBSYSTEM_TIMER		0x00006000
 /*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */

@@ -1,21 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <einit>
  <core>
-  <settings>
-   <module-path s="lib/einit" />
-   <configuration-path s="etc/einit/" />
-  </settings>
   <scheduler>
    <shutdown-function-suffixes s="none" />
   </scheduler>
 
-<!--  <commands>
-   <include>
-    <file s="local.xml" />
-    <directory s="local" />
-   </include>
-  </commands> -->
-  <mode s="metadaemon" />
+<!--  <mode s="metadaemon" /> -->
  </core>
 
  <configuration>

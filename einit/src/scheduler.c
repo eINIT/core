@@ -384,13 +384,13 @@ void sched_ipc_event_handler(struct einit_event *event) {
     ee.string = argv[2];
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
     write (event->integer, "modeswitch queued\n", 19);
-	evstaticdestroy(ee);
+    evstaticdestroy(ee);
    } else {
     struct einit_event ee = evstaticinit(EVE_CHANGE_SERVICE_STATUS);
     ee.set = (void **)setdup ((void **)argv+1, SET_TYPE_STRING);
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
     write (event->integer, "request processed\n", 19);
-	evstaticdestroy(ee);
+    evstaticdestroy(ee);
    }
   }
   bitch (BTCH_ERRNO);

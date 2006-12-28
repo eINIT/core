@@ -3,6 +3,9 @@
  * conditionals in your configuration files (using <if match="" />)
    -> no more hard-coded calls to local.xml/sandbox.xml
    (this also means that the weird "double file semantics" have been fixed)
+ * wrote a new module for generic init.d script support
+ * wrote another new module to provide initctl support (shutdown/halt, etc...)
+   it *should* work...
 
 2006/12/27: mdeininger
  * module to provide "external" services
