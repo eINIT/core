@@ -400,6 +400,30 @@ char **str2set (const char sep, char *input) {
  return ret;
 }
 
+char *set2str (const char sep, char **input) {
+ char *ret = NULL;
+ size_t slen = 0;
+ uint32_t i = 0;
+
+ if (!input) return NULL;
+
+ for (; input[i]; i++) {
+  slen += strlen (input[i])+1;
+ }
+
+ ret = emalloc (slen);
+ *ret = 0;
+
+ for (i = 0; input[i]; i++) {
+  if (i != 0)
+   strcat (ret, ":");
+
+  strcat (ret, input[i]);
+ }
+
+ return ret;
+}
+
 char **strsetdel (char **set, char *item) {
  char **newset = set;
  int x = 0, y = 0, s = 1, p = 0;

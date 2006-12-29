@@ -95,10 +95,8 @@ struct cfgnode {
  unsigned char flag;
  long int value;
  char *svalue;
- char **base;
  char **arbattrs;
  char *idattr;
-// void *custom;
  char *path;
  char *source;
  char *source_file;

@@ -103,7 +103,10 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
 
   struct event_function *cur = event_functions;
   while (cur) {
+//   fprintf (stderr, " >> event %s: considering subsystem id %x (%x) for delivery.\n", event_code_to_string(event->type), cur->type, subsystem);
+
    if ((cur->type == subsystem) && cur->handler) {
+//    fprintf (stderr, " >> match, proceeding.\n");
     if (flags & EINIT_EVENT_FLAG_SPAWN_THREAD) {
      pthread_t threadid;
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {

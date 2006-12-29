@@ -158,6 +158,8 @@ int inset (void **haystack, const void *needle, int32_t esize);
 */
 char **str2set (const char sep, char *input);
 
+char *set2str (const char sep, char **input);
+
 /*!\brief Remove \b string from \b set.
  * \bug This should be combined with setdel() to remove code-duplication.
 */

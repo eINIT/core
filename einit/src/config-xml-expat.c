@@ -50,12 +50,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dirent.h>
 #include <sys/stat.h>
 
-struct cfgnode *curmode = NULL;
-
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
 
+struct cfgnode *curmode = NULL;
 char **xml_configuration_files = NULL;
+time_t xml_configuration_files_highest_mtime = 0;
 
 struct einit_xml_expat_user_data {
  uint32_t options,
@@ -63,6 +63,8 @@ struct einit_xml_expat_user_data {
           if_results;
  char *file, *prefix;
 };
+
+char *xml_source_identifier = "xml-expat";
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int nlen = strlen (name);
@@ -87,7 +89,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 
    for (; atts[i]; i+=2) {
     if (!strcmp (atts[i], "match")) { // condition is a literal string match
-     char **mt = str2set (':', atts[i+1]);
+     char **mt = str2set (':', (char *)(atts[i+1]));
      if (mt && mt[0] && mt[1]) {
       if (!strcmp (mt[0], "core-mode")) { // literal match is against the einit core mode (gmode)
        mt[0] = ((gmode == EINIT_GMODE_INIT) ? "init" :
@@ -137,14 +139,15 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
    newnode->nodetype = EI_NODETYPE_MODE;
    newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
-   newnode->source = "xml-expat";
+   newnode->source = xml_source_identifier;
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    for (; newnode->arbattrs[i] != NULL; i+=2) {
     if (!strcmp (newnode->arbattrs[i], "id")) {
      newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
-    } else if (!strcmp (newnode->arbattrs[i], "base")) {
-     newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
     }
+/*    else if (!strcmp (newnode->arbattrs[i], "base")) {
+     newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
+    }*/
    }
    if (newnode->id) {
     char *id = newnode->id;
@@ -160,7 +163,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->nodetype = EI_NODETYPE_CONFIG;
    newnode->mode = curmode;
    newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
-   newnode->source = "xml-expat";
+   newnode->source = xml_source_identifier;
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    if (newnode->arbattrs)
     for (; newnode->arbattrs[i] != NULL; i+=2) {
@@ -221,6 +224,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  struct cfgnode *node = NULL, *last = NULL;
  char *confpath = NULL;
  XML_Parser par;
+ struct stat st;
 
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
@@ -229,11 +233,17 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   .prefix = NULL
  };
 
- if (!configfile) return 0;
-
- printf (" >> parsing file %s.\n", configfile);
+ if (!configfile || stat (configfile, &st)) return 0;
+ fprintf (stderr, " >> parsing \"%s\".\n", configfile);
 
  if (data = readfile (configfile)) {
+  time_t currenttime = time(NULL);
+  if (st.st_mtime > currenttime) {// sanity check mtime
+   fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile);
+   xml_configuration_files_highest_mtime = currenttime;
+  } else if (st.st_mtime > xml_configuration_files_highest_mtime) // update combined mtime
+   xml_configuration_files_highest_mtime = st.st_mtime;
+
   blen = strlen(data)+1;
   par = XML_ParserCreate (NULL);
   XML_SetUserData (par, (void *)&expatuserdata);
@@ -356,24 +366,30 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
   if (expatuserdata.prefix) free (expatuserdata.prefix);
 
-  {
-   struct einit_event ee = evstaticinit (EVE_CONFIGURATION_UPDATE);
-   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-   evstaticdestroy (ee);
-  }
-
   return hconfiguration != NULL;
  } else {
-  return bitch(BTCH_ERRNO);
+  fprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno));
+  return errno;
+//  return bitch(BTCH_ERRNO);
  }
 }
 
 void einit_config_xml_expat_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
-  if (xml_configuration_files) {
+  if (!ev->string && xml_configuration_files) {
+   struct stat st;
    uint32_t i = 0;
+
+   fputs (" >> global configuration update, checking files\n", stderr);
+
    for (; xml_configuration_files && xml_configuration_files [i]; i++) {
-    einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
+    stat (xml_configuration_files [i], &st); // see if any files were modified
+    if (st.st_mtime > xml_configuration_files_highest_mtime) { // need to update configuration
+     for (i = 0; xml_configuration_files && xml_configuration_files [i]; i++) {
+      einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
+     }
+     break;
+    }
    }
   }
 

@@ -287,7 +287,16 @@ int main(int argc, char **argv) {
    }
   }
 
+// make sure we emit the EVE_CONFIGURATION_UPDATE event TWICE (for bootup)
+  struct einit_event ee = evstaticinit (EVE_CONFIGURATION_UPDATE);
+  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+
+  cev.string = NULL;
+  event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
   evstaticdestroy(cev);
+
+  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (ee);
 
 // this is now obsolete:
 //  mod_scanmodules ();

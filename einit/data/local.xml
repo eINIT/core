@@ -52,6 +52,18 @@
   <storage>
 <!-- fstab -->
    <fstab>
+<!-- This variable defines all the sources for your fstab. you could add
+     "legacy", like in the example below, to make eINIT parse your /etc/fstab
+     file as well as all the internal nodes.
+     If you intend to do that, remove the nodes in this file for / and /boot
+     (NOT all the others in einit.xml, /dev and the others are required!).
+     Do note that the fstab format is rather limited in design, and that some
+     options recognised by linux's mount(8) command will make einit's mounter
+     fail - most notably that's the "loop" and "encryption=" options.
+
+     NEVER remove the configuration fstab-source! -->
+<!--    <source s="configuration:legacy" /> -->
+
     <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
     <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" />
 
@@ -78,6 +90,50 @@
 
    </fstab>
   </storage>
+
+  <compatibility>
+<!-- utmp/wtmp management: you'll need to enable the utmp service
+     BUG: not implemented, yet -->
+   <sysv utmp="yes" wtmp="yes">
+    <distribution s="auto">
+     <gentoo>
+<!-- in case you wish to use gentoo-ish init.d scripts, use this:
+     NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
+<!-- BUG: gentoo's init.d is not implemented yet -->
+<!--      <init.d path="/mnt/etc/init.d/" /> -->
+<!-- use this to make einit parse gentoo's runlevels as einit modes.
+     NOTE: until i add generic aliasing support, you'll get lots of unknown
+     services requested.
+     you also shouldn't set "exclusive" to true. just... don't do it, it'll
+     override all the modes that are defined in the xml configuration with
+     gentoo's runlevel data which means lots of important things will be
+     missing - like mount/critical... -->
+<!--      <runlevels path="/mnt/etc/runlevels" exclusive="false" /> -->
+     </gentoo>
+    </distribution>
+<!-- in case you wish to use init.d scripts, use this:
+     NOTE: this does NOT work with gentoo's init.d scripts! -->
+<!--    <init.d path="/etc/init.d/" process-rc.d="yes" /> -->
+
+<!-- enable the initctl service to make einit try and emulate standard sysv
+     initctl commands, i.e. make the shutdown/reboot/halt commands work - this
+     node is set by default, but the service is not. -->
+<!--    <initctl s="/dev/initctl" i="0600" /> -->
+   </sysv>
+
+<!-- not yet implemented
+   <initng>
+    <i-files s="/etc/initng" />
+    <transformations>
+    </transformations>
+   </initng>
+
+   <upstart />
+   <jinit />
+   <cinit />
+   <launchd />
+   <bsd /> -->
+  </compatibility>
  </configuration>
 
  <services>
@@ -118,7 +174,7 @@
  </services>
 
  <mode id="default" base="boot">
-  <enable mod="audio:portmap:clock:xdm:swap:mount/remote:tts" />
+  <enable services="audio:portmap:clock:xdm:swap:mount/remote:tts" />
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
 </einit>

@@ -641,9 +641,6 @@ struct stree *read_fsspec_file (char *file) {
        case 6: ne.fs_passno = (int) strtol(scur, (char **)NULL, 10); break;
       }
      }
-#ifdef DEBUG
-     printf ("parsed fstab entry: fs_spec=%s, fs_file=%s, fs_vfstype=%s, fs_mntops=%s, fs_freq=%i, fs_passno=%i\n", ne.fs_spec, ne.fs_file, ne.fs_vfstype, ne.fs_mntops, ne.fs_freq, ne.fs_passno);
-#endif
      workstree = streeadd (workstree, ne.fs_file, &ne, sizeof (struct legacy_fstab_entry), ascur);
 //     workstree = streeadd (workstree, ne->fs_file, ne, -1);
     }

@@ -140,7 +140,8 @@
      <gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-<!--      <init.d path="/etc/init.d/" runlevels="/etc/runlevels" /> -->
+<!--      <init.d path="/mnt/etc/init.d/" />
+      <runlevels path="/mnt/etc/runlevels" exclusive="false" /> -->
       <parse-env.d b="true" />
      </gentoo>
     </distribution>
@@ -844,18 +845,18 @@
  </services>
 
  <mode id="feedback">
-  <enable mod="feedback-visual" />
+  <enable services="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable mod="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal" />
+  <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal" critical="mount/critical:tty" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="audio:portmap:clock:xdm:swap:mount/remote" />
+  <enable services="audio:portmap:clock:xdm:swap:mount/remote" />
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-down">
-  <disable mod="all-but-feedback" />
+  <disable services="all-but-feedback" />
   <ttys s="none" />
   <before-switch emit-event="power/mps-down-scheduled" />
 <!--  <after-switch emit-event="power/mps-down-imminent" ipc="exec /etc/init.d/halt.sh;scheduler power-down" /> -->

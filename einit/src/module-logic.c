@@ -86,7 +86,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  char
   **enable = NULL, **aenable = NULL,
   **disable = NULL, **adisable = NULL,
-  **reset = NULL, **areset = NULL;
+  **reset = NULL, **areset = NULL,
+  **critical = NULL;
  struct cfgnode *rmode = mode, *gnode;
  struct mloadplan_node nnode;
  struct stree *ha;
@@ -100,42 +101,84 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  pthread_mutex_lock (&plan->mutex);
 
  if (mode) {
-  enable  = str2set (':', cfg_getstring ("enable/mod", mode)),
-  disable = str2set (':', cfg_getstring ("disable/mod", mode)),
-  reset   = str2set (':', cfg_getstring ("reset/mod", mode));
+  char **base = NULL;
+  uint32_t xi = 0;
+  enable   = str2set (':', cfg_getstring ("enable/services", mode)),
+  disable  = str2set (':', cfg_getstring ("disable/services", mode)),
+  reset    = str2set (':', cfg_getstring ("reset/services", mode)),
+  critical = str2set (':', cfg_getstring ("enable/critical", mode));
 
-  if (mode->base) {
+  if (!enable)
+   enable  = str2set (':', cfg_getstring ("enable/mod", mode));
+  if (!disable)
+   disable = str2set (':', cfg_getstring ("disable/mod", mode));
+  if (!reset)
+   reset   = str2set (':', cfg_getstring ("reset/mod", mode));
+
+  if (mode->arbattrs)
+   for (; mode->arbattrs[xi]; xi+=2) {
+    if (!strcmp(mode->arbattrs[xi], "base")) {
+     base = str2set (':', mode->arbattrs[xi+1]);
+    }
+   }
+
+  if (base) {
    int y = 0;
    struct cfgnode *cno;
-   while (mode->base[y]) {
-    cno = cfg_findnode (mode->base[y], EI_NODETYPE_MODE, NULL);
+   while (base[y]) {
+    cno = cfg_findnode (base[y], EI_NODETYPE_MODE, NULL);
     if (cno) {
      char
-      **denable  = str2set (':', cfg_getstring ("enable/mod", cno)),
-      **ddisable = str2set (':', cfg_getstring ("disable/mod", cno)),
-      **dreset   = str2set (':', cfg_getstring ("reset/mod", cno));
+      **denable   = str2set (':', cfg_getstring ("enable/services", cno)),
+      **ddisable  = str2set (':', cfg_getstring ("disable/services", cno)),
+      **dreset    = str2set (':', cfg_getstring ("reset/services", cno)),
+      **dcritical = str2set (':', cfg_getstring ("enable/critical", cno));
+
+     if (!denable)  denable  = str2set (':', cfg_getstring ("enable/mod", cno));
+     if (!ddisable) ddisable = str2set (':', cfg_getstring ("disable/mod", cno));
+     if (!dreset)   dreset   = str2set (':', cfg_getstring ("reset/mod", cno));
 
      if (denable) {
-      char **t = (char **)setcombine ((void **)denable, (void **)enable, SET_TYPE_STRING);
-      free (denable);
-      free (enable);
-      enable = t;
+      if (enable) {
+       char **t = (char **)setcombine ((void **)denable, (void **)enable, SET_TYPE_STRING);
+       free (denable);
+       free (enable);
+       enable = t;
+      } else
+       enable = denable;
      }
      if (ddisable) {
-      char **t = (char **)setcombine ((void **)ddisable, (void **)disable, SET_TYPE_STRING);
-      free (ddisable);
-      free (disable);
-      disable = t;
+      if (disable) {
+       char **t = (char **)setcombine ((void **)ddisable, (void **)disable, SET_TYPE_STRING);
+       free (ddisable);
+       free (disable);
+       disable = t;
+      } else
+       disable = ddisable;
      }
      if (dreset) {
-      char **t = (char **)setcombine ((void **)dreset, (void **)reset, SET_TYPE_STRING);
-      free (dreset);
-      free (reset);
-      reset = t;
+      if (reset) {
+       char **t = (char **)setcombine ((void **)dreset, (void **)reset, SET_TYPE_STRING);
+       free (dreset);
+       free (reset);
+       reset = t;
+      } else
+       reset = dreset;
      }
+     if (dcritical) {
+      if (critical) {
+       char **t = (char **)setcombine ((void **)dcritical, (void **)critical, SET_TYPE_STRING);
+       free (dcritical);
+       free (critical);
+       critical = t;
+      } else
+       critical = dcritical;
+    }
     }
     y++;
    }
+
+   free (base);
   }
  } else {
   if (task & MOD_ENABLE) enable = atoms;
@@ -344,6 +387,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  else
   plan->disable = disable;
  plan->reset = reset;
+ plan->critical = critical;
  plan->mode = mode;
 
  pthread_mutex_unlock (&plan->mutex);

@@ -127,11 +127,11 @@
  </services>
 
  <mode id="boot">
-  <enable mod="ipc" />
+  <enable services="ipc" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable mod="tty" />
+  <enable services="tty" />
   <ttys s="tty9-regular" />
  </mode>
 </einit>

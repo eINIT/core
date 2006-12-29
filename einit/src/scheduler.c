@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/reboot.h>
 #include <einit/module-logic.h>
 #include <semaphore.h>
 
@@ -68,10 +67,6 @@ struct spidcb *cpids = NULL;
 struct spidcb *sched_deadorphans = NULL;
 
 int cleanup ();
-
-#ifdef LINUX
-#include <linux/reboot.h>
-#endif
 
 int scheduler_cleanup () {
  stack_t curstack;
@@ -322,7 +317,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
     ee.string = "power-down";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
     write (event->integer, "shutting down...\n", 18);
-	evstaticdestroy(ee);
+    evstaticdestroy(ee);
    }
    if (!strcmp (argv[1], "reset")) {
     if (!event->flag) event->flag = 1;
@@ -331,7 +326,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
     ee.string = "power-reset";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
     write (event->integer, "resetting now...\n", 18);
-	evstaticdestroy(ee);
+    evstaticdestroy(ee);
    }
   }
 
@@ -342,6 +337,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
     if (!event->flag) event->flag = 1;
 
      notice (1, "scheduler: sync()-ing");
+
      sync ();
      if (gmode == EINIT_GMODE_SANDBOX) {
       notice (1, "scheduler: cleaning up");

@@ -1,3 +1,12 @@
+2006/12/29: mdeininger
+ * removed "base" from the list of default attributes for nodes
+   (too rare, we'd rather save those 4/8 bytes per node)
+ * {enable|disable|reset}/mod is now deprecated in favour of */services
+ * added enable/critical in preparation of "panic mode"
+ * smarter configuration updates
+ * gentoo compatibility module can now parse gentoo's /etc/runlevels
+   (that means native gentoo rc-update will work, sort of...)
+
 2006/12/28: mdeininger
  * sandbox mode does not require recompilation anymore
  * conditionals in your configuration files (using <if match="" />)

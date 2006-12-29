@@ -56,11 +56,6 @@ int cfg_free () {
  struct cfgnode *node = NULL;
  while (cur) {
   if (node = (struct cfgnode *)cur->value) {
-   if (node->base)
-    free (node->base);
-
-//   if (node->custom)
-//    free (node->custom);
    if (node->id)
     free (node->id);
    if (node->path)
@@ -273,7 +268,7 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
     break;
    }
   }
-  
+
   free (tmpnodename);
  }
 

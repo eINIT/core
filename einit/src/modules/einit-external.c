@@ -91,11 +91,11 @@ int configure (struct lmodule *r) {
 
  this = r;
 
- if (p = cfg_getstring("services-external/provided", NULL)) {
+/* if (p = cfg_getstring("services-external/provided", NULL)) {
   this->module->si.provides = str2set (':', p);
   this = mod_update (this);
   mod (MOD_ENABLE, this);
- }
+ }*/
 }
 
 int cleanup (struct lmodule *irr) {
@@ -120,12 +120,18 @@ int disable (void *pa, struct einit_event *status) {
 }
 
 void einit_event_handler (struct einit_event *ev) {
+// fputs (" >> investigating event\n", stderr);
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
+//  fputs (" >> configuration update\n", stderr);
   char *p;
   if (p = cfg_getstring("services-external/provided", NULL)) {
+//   fputs (" >> enabling external services\n", stderr);
+
    this->module->si.provides = str2set (':', p);
    this = mod_update (this);
    mod (MOD_ENABLE, this);
+  } else {
+//   fputs (" >> not enabling external services\n", stderr);
   }
  }
 }

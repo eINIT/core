@@ -153,11 +153,12 @@ void * initctl_wait (char *fifo) {
 
       ee.string = nmode; // this is where we need to put the mode to switch to
 
-// timeout semantics are different in einit, still we could still use this...
+// timeout semantics are different in einit, still we could use this...
       if (ic.timeout) {
        struct cfgnode tnode;
        memset (&tnode, 0, sizeof(struct cfgnode));
 
+       tnode.nodetype = EI_NODETYPE_CONFIG;
        tnode.source = self.rid;
        tnode.id = "configuration-system-daemon-term-timeout-primary";
        tnode.value = ic.timeout;

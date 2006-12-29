@@ -45,6 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <errno.h>
 #include <string.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define EXPECTED_EIV 1
 
@@ -58,7 +61,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define PA_END_OF_FILE                   0x01
 #define PA_NEW_CONTEXT                   0x02
-
 
 const struct smodule self = {
     .eiversion    = EINIT_VERSION,
@@ -178,8 +180,8 @@ void sh_add_environ_callback (char **data, uint8_t status) {
     nnode.id = estrdup ("configuration-environment-global");
     nnode.arbattrs = (char **)setdup ((void **)&narb, SET_TYPE_STRING);
     nnode.svalue = nnode.arbattrs[3];
-    nnode.source = "compatibility-sysv-gentoo";
-    nnode.source_file = "/etc/profile.env";
+    nnode.source = self.rid;
+//    nnode.source_file = "/etc/profile.env";
 
     cfg_addnode (&nnode);
 
@@ -194,11 +196,153 @@ void sh_add_environ_callback (char **data, uint8_t status) {
  }
 }
 
+void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclusive) {
+ DIR *dir = NULL;
+ struct dirent *de = NULL;
+ uint32_t plen;
+ char *tmp = NULL;
+
+ if (!path) return;
+ plen = strlen (path) +2;
+
+ if (dir = opendir (path)) {
+  struct stat st;
+  char **nservices = NULL;
+
+  while (de = readdir (dir)) {
+   uint32_t xplen = plen + strlen (de->d_name);
+
+   if (de->d_name[0] == '.') continue;
+
+   tmp = (char *)emalloc (xplen);
+   *tmp = 0;
+   strcat (tmp, path);
+   strcat (tmp, de->d_name);
+
+   if (!stat (tmp, &st) && S_ISDIR (st.st_mode)) {
+    struct cfgnode newnode;
+    char **arbattrs = NULL;
+    char **base = NULL;
+
+    if (strcmp (de->d_name, "boot")) 
+     base = (char **)setadd ((void **)base, (void *)"boot", SET_TYPE_STRING);
+
+// if not exclusive, merge current mode base with the new base
+    if (!exclusive) {
+     if ((currentmode = cfg_findnode (de->d_name, EI_NODETYPE_MODE, NULL)) && currentmode->arbattrs) {
+      char **curmodebase = NULL;
+
+//      fprintf (stderr, " >> gentoo runlevels not exclusive, merging with what we have so far...\n");
+
+      uint32_t i = 0;
+      for (; currentmode->arbattrs[i]; i+=2) {
+       if (!strcmp (currentmode->arbattrs[i], "base")) {
+        curmodebase = str2set (':', currentmode->arbattrs[i+1]);
+        break;
+       }
+      }
+
+      if (curmodebase) {
+       if (!base) base = curmodebase;
+       else {
+         for (i = 0; curmodebase[i]; i++) {
+         if (!inset ((void **)base, (void *)curmodebase[i], SET_TYPE_STRING)) {
+          base = (char **)setadd ((void **)base, (void *)curmodebase[i], SET_TYPE_STRING);
+         }
+        }
+        free (curmodebase);
+       }
+      }
+     }
+
+     currentmode = NULL;
+    }
+
+//    fprintf (stderr, " >> new mode: %s\n", de->d_name);
+
+    memset (&newnode, 0, sizeof(struct cfgnode));
+
+    arbattrs = (char **)setadd ((void **)arbattrs, (void *)"id", SET_TYPE_STRING);
+    arbattrs = (char **)setadd ((void **)arbattrs, (void *)de->d_name, SET_TYPE_STRING);
+    if (base) {
+     char *nbase = set2str(':', base);
+     if (nbase) {
+      arbattrs = (char **)setadd ((void **)arbattrs, (void *)"base", SET_TYPE_STRING);
+      arbattrs = (char **)setadd ((void **)arbattrs, (void *)nbase, SET_TYPE_STRING);
+      free (nbase);
+     }
+    }
+
+    newnode.nodetype = EI_NODETYPE_MODE;
+    newnode.id = estrdup(arbattrs[1]);
+    newnode.source   = self.rid;
+    newnode.arbattrs = arbattrs;
+
+    cfg_addnode (&newnode);
+
+    if (currentmode = cfg_findnode (newnode.id, EI_NODETYPE_MODE, NULL)) {
+     tmp[xplen-2] = '/';
+     tmp[xplen-1] = 0;
+     parse_gentoo_runlevels (tmp, currentmode, exclusive);
+     tmp[xplen-2] = 0;
+     currentmode = NULL;
+    }
+   } else {
+//    fprintf (stderr, " >> new service: %s\n", de->d_name);
+    nservices = (char **) setadd ((void **)nservices, (void *)de->d_name, SET_TYPE_STRING);
+   }
+  }
+
+  if (nservices) {
+   if (currentmode) {
+    char **arbattrs = NULL;
+    struct cfgnode newnode;
+
+    if (!exclusive) {
+     uint32_t i = 0;
+     char **curmodeena = str2set (':', cfg_getstring ("enable/services", currentmode));
+
+     if (curmodeena) {
+      for (; curmodeena[i]; i++) {
+       if (!inset ((void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING)) {
+        nservices = (char **)setadd ((void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING);
+       }
+      }
+      free (curmodeena);
+     }
+    }
+
+    memset (&newnode, 0, sizeof(struct cfgnode));
+
+    arbattrs = (char **)setadd ((void **)arbattrs, (void *)"services", SET_TYPE_STRING);
+    arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', nservices), SET_TYPE_STRING);
+
+    newnode.nodetype = EI_NODETYPE_CONFIG;
+    newnode.mode     = currentmode;
+    newnode.id       = estrdup("mode-enable");
+    newnode.source   = self.rid;
+    newnode.arbattrs = arbattrs;
+
+    cfg_addnode (&newnode);
+   }
+
+   free (nservices);
+  }
+
+  closedir (dir);
+ } else {
+  fprintf (stderr, " >> could not open gentoo runlevels directory \"%s\": %s", path, strerror (errno));
+ }
+}
+
 void einit_event_handler (struct einit_event *ev) {
- if ((ev->type == EVE_UPDATE_CONFIGURATION) && ev->string) {
+ if (ev->type == EVE_UPDATE_CONFIGURATION) {
   char *cs = cfg_getstring("configuration-compatibility-sysv-distribution", NULL);
-  if (cs && !strcmp("auto", cs) && !strcmp("gentoo", cs)) {
+  if (cs && (!strcmp("auto", cs) || !strcmp("gentoo", cs))) {
+/* env.d data */
    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-parse-env.d", NULL);
+   char *bpath = NULL;
+
    if (node && node->flag) {
     char *data = readfile ("/etc/profile.env");
 
@@ -208,6 +352,11 @@ void einit_event_handler (struct einit_event *ev) {
 
      free (data);
     }
+   }
+
+/* runlevels */
+   if (bpath = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-runlevels/path")) {
+    parse_gentoo_runlevels (bpath, NULL, parse_boolean (cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-runlevels/exclusive", NULL)));
    }
   }
  }
