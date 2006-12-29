@@ -67,11 +67,21 @@
   <tty>
    <tty9-regular dev="/dev/tty9" command="/sbin/agetty 38400 tty9" restart="yes" />
   </tty>
+
+  <compatibility>
+   <sysv utmp="yes" wtmp="yes">
+    <distribution s="auto">
+     <gentoo>
+      <init.d path="/mnt/etc/init.d/" />
+      <runlevels path="/mnt/etc/runlevels" exclusive="false" />
+     </gentoo>
+    </distribution>
+<!--    <init.d path="/etc/init.d/" process-rc.d="yes" /> -->
+   </sysv>
+  </compatibility>
  </configuration>
 
  <conceptual>
-  <tty-manage-utmp b="true" />
-
   <mount-force-writeable-action s="ram-overlay" />
   <mount-ramdisk-fs s="tmpfs" />
   <mount-union s="unionfs" />
@@ -116,9 +126,11 @@
    <audio group="alsa" seq="any-iop" />
   </alias>
 
+  <alias id="localmount" s="mount/local" />
+
 <!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
      to use quingy and have the terminals controlled using einit-tty, then you will need mount/critical
-	 if /usr is on its own partition (due to libquingy) -->
+     if /usr is on its own partition (due to libquingy) -->
   <override>
    <module id="einit-tty" requires="mount/critical" />
   </override>

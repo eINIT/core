@@ -208,6 +208,7 @@ struct service_usage_item {
  * on which services.
 */
 struct stree *service_usage;
+struct stree *service_aliases;
 
 /*!\brief Scan for modules
  *

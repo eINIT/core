@@ -63,6 +63,7 @@ pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
+struct stree *service_aliases = NULL;
 
 int mod_scanmodules ( void ) {
  DIR *dir;
@@ -264,9 +265,33 @@ struct lmodule *mod_update (struct lmodule *module) {
     else if (!strcmp (lnode->arbattrs[i], "after")) esi->after = str2set (':', lnode->arbattrs[i+1]);
     else if (!strcmp (lnode->arbattrs[i], "before")) esi->before = str2set (':', lnode->arbattrs[i+1]);
    }
+
    module->si = esi;
    break;
   }
+
+  if (module->si->provides) {
+   uint32_t i = 0;
+   char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING), **stmp = module->si->provides;
+   for (; module->si->provides[i]; i++) {
+    struct stree *x = streefind (service_aliases, module->si->provides[i], TREE_FIND_FIRST);
+    while (x) {
+     if (x->value) {
+      if (!inset ((void **)module->si->provides, x->value, SET_TYPE_STRING)) {
+//       fprintf (stderr, " >> adding service %s to module %s\n", (char*)x->value, module->module->rid);
+       np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
+      }/* else {
+       fprintf (stderr, " >> would add service %s to module %s, but that's already in the list\n", (char*)x->value, module->module->rid);
+      }*/
+     }
+     x = streefind (service_aliases, module->si->provides[i], TREE_FIND_NEXT);
+    }
+   }
+
+   module->si->provides = np;
+//   free (stmp);
+  }
+
  return module;
 }
 
@@ -709,7 +734,7 @@ void mod_event_handler(struct einit_event *event) {
     if (!event->flag) event->flag = 1;
 
     while (cur) {
-	 struct service_usage_item *su = (struct service_usage_item *)cur->value;
+     struct service_usage_item *su = (struct service_usage_item *)cur->value;
      snprintf (buffer, 1024, "%s\n", cur->key);
      fdputs (buffer, event->integer);
      if (su->provider) {
@@ -719,11 +744,11 @@ void mod_event_handler(struct einit_event *event) {
         snprintf (buffer, 1024, " >> %s (%s)\n", su->provider[i]->module->rid ? su->provider[i]->module->rid : "unknown", su->provider[i]->module->name ? su->provider[i]->module->name : "unknown");
        } else
         snprintf (buffer, 1024, " >> unknown module\n");
-	  }
+       }
       fdputs (buffer, event->integer);
      }
      cur = streenext (cur);
-	}
+    }
    }
   }
  }
@@ -731,7 +756,22 @@ void mod_event_handler(struct einit_event *event) {
 
 void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-//  notice (2, "should update modules now");
+  struct stree *new_aliases = NULL, *ca;
+  struct cfgnode *node = NULL;
+
+  while (node = cfg_findnode ("services-alias", 0, node)) {
+   if (node->idattr && node->svalue) {
+//    fprintf (stderr, " >> adding alias %s=%s\n", node->idattr, node->svalue);
+    new_aliases = streeadd (new_aliases, node->svalue, node->idattr, SET_TYPE_STRING, NULL);
+   }
+  }
+
+  ca = service_aliases;
+  service_aliases = new_aliases;
+  if (ca)
+   streefree (ca);
+
+// update modules
   mod_scanmodules();
  }
 }

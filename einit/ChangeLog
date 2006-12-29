@@ -6,6 +6,8 @@
  * smarter configuration updates
  * gentoo compatibility module can now parse gentoo's /etc/runlevels
    (that means native gentoo rc-update will work, sort of...)
+ * commented some things in local.xml
+ * added aliasing support
 
 2006/12/28: mdeininger
  * sandbox mode does not require recompilation anymore
