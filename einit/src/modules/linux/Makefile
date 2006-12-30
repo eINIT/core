@@ -7,7 +7,7 @@ depend:
 	${CC} ${INCLUDE} -M *.c > depend.mk
 
 clean:
-	rm -f *.so depend.mk
+	rm -f *.so *.o depend.mk
 
 install: all
 	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
@@ -17,13 +17,17 @@ install: all
 	${INSTALL} ${SOIPARAM} linux-process.so ${DESTDIR}/${MODDIR}
 
 linux-sysconf.so: linux-sysconf.c
-	${CCL} linux-sysconf.c -o linux-sysconf.so
+	${CCL} -c linux-sysconf.c
+	${LLD} linux-sysconf.o -o linux-sysconf.so
 
 linux-mount.so: linux-mount.c
-	${CCL} linux-mount.c -o linux-mount.so
+	${CCL} -c linux-mount.c
+	${LLD} linux-mount.o -o linux-mount.so
 
 linux-network.so: linux-network.c
-	${CCL} linux-network.c -o linux-network.so
+	${CCL} -c linux-network.c
+	${LLD} linux-network.o -o linux-network.so
 
 linux-process.so: linux-process.c
-	${CCL} linux-process.c -o linux-process.so
+	${CCL} -c linux-process.c
+	${LLD} linux-process.o -o linux-process.so

@@ -29,37 +29,49 @@ install: all
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 einit-feedback-visual-textual.so: einit-feedback-visual-textual.c
-	${CCL} einit-feedback-visual-textual.c -o einit-feedback-visual-textual.so
+	${CCL} -c einit-feedback-visual-textual.c
+	${LLD} einit-feedback-visual-textual.o -o einit-feedback-visual-textual.so
 
 einit-feedback-aural.so: einit-feedback-aural.c
-	${CCL} einit-feedback-aural.c -o einit-feedback-aural.so
+	${CCL} -c einit-feedback-aural.c
+	${LLD} einit-feedback-aural.o -o einit-feedback-aural.so
 
 einit-mount.so: einit-mount.c
-	${CCL} einit-mount.c -o einit-mount.so
+	${CCL} -c einit-mount.c
+	${LLD} einit-mount.o -o einit-mount.so
 
 einit-mod-exec.so: einit-mod-exec.c
-	${CCL} einit-mod-exec.c -o einit-mod-exec.so
+	${CCL} -c einit-mod-exec.c
+	${LLD} einit-mod-exec.o -o einit-mod-exec.so
 
 einit-mod-daemon.so: einit-mod-daemon.c
-	${CCL} einit-mod-daemon.c -o einit-mod-daemon.so
+	${CCL} -c einit-mod-daemon.c
+	${LLD} einit-mod-daemon.o -o einit-mod-daemon.so
 
 einit-tty.so: einit-tty.c
-	${CCL} einit-tty.c -o einit-tty.so
+	${CCL} -c einit-tty.c
+	${LLD} einit-tty.o -o einit-tty.so
 
 einit-external.so: einit-external.c
-	${CCL} einit-external.c -o einit-external.so
+	${CCL} -c einit-external.c
+	${LLD} einit-external.o -o einit-external.so
 
 einit-network.so: einit-network.c
-	${CCL} einit-network.c -o einit-network.so
+	${CCL} -c einit-network.c
+	${LLD} einit-network.o -o einit-network.so
 
 einit-process.so: einit-process.c
-	${CCL} einit-process.c -o einit-process.so
+	${CCL} -c einit-process.c
+	${LLD} einit-process.o -o einit-process.so
 
 einit-ipc.so: einit-ipc.c
-	${CCL} einit-ipc.c -o einit-ipc.so
+	${CCL} -c einit-ipc.c
+	${LLD} einit-ipc.o -o einit-ipc.so
 
 einit-exec.so: einit-exec.c
-	${CCL} einit-exec.c -o einit-exec.so
+	${CCL} -c einit-exec.c
+	${LLD} einit-exec.o -o einit-exec.so
 
 einit-hostname.so: einit-hostname.c
-	${CCL} einit-hostname.c -o einit-hostname.so
+	${CCL} -c einit-hostname.c
+	${LLD} einit-hostname.o -o einit-hostname.so

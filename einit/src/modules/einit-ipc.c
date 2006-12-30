@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <einit-modules/ipc.h>
 

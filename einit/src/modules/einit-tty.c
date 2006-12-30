@@ -95,6 +95,8 @@ struct ttyst *ttys = NULL;
 char do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int texec (struct cfgnode *);
+
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
 //  if (!cfg_getnode("configuration-system-shell", NULL)) {

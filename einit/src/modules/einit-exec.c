@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 #include <pthread.h>
 #include <einit-modules/exec.h>
+#include <ctype.h>
 
 #ifdef POSIXREGEX
 #include <regex.h>
