@@ -75,11 +75,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVE_NEW_NODE_MOUNTED		0x00003002
 #define EVE_NEW_MOUNT_LEVEL			0x00003003
 /*!< update mount status */
-#define EVENT_SUBSYSTEM_FEEDBACK	0x00004000
-#define EVE_FEEDBACK_MODULE_STATUS	0x00004001
+
+#define EVENT_SUBSYSTEM_FEEDBACK                0x00004000
+#define EVE_FEEDBACK_MODULE_STATUS              0x00004001
 /*!< the para field specifies a module that caused the feedback */
-#define EVE_FEEDBACK_PLAN_STATUS	0x00004002
-#define EVE_FEEDBACK_NOTICE			0x00004003
+#define EVE_FEEDBACK_PLAN_STATUS                0x00004002
+#define EVE_FEEDBACK_NOTICE                     0x00004003
+#define EVENT_FEEDBACK_REGISTER_FD              0x00004004
+#define EVENT_FEEDBACK_UNREGISTER_FD            0x00004005
 
 #define EVENT_SUBSYSTEM_POWER		0x00005000
 /*!< notify others that the power is failing, has been restored or similar */
@@ -112,6 +115,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EIPC_OUTPUT_XML             0x0001
 #define EIPC_ONLY_RELEVANT          0x1000
 #define EIPC_HELP                   0x0002
+#define EIPC_DETACH                 0x0010
 
 #define evstaticinit(ttype) { .type = ttype, .type_custom = NULL, .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }

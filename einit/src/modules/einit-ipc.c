@@ -99,6 +99,7 @@ int __ipc_process (char *cmd, uint32_t fd) {
    if (!strcmp (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
    else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
    else if (!strcmp (event->set[ic], "--help")) event->status |= EIPC_HELP;
+   else if (!strcmp (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
   }
 
   if (event->status & EIPC_OUTPUT_XML) {

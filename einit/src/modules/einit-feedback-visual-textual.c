@@ -77,18 +77,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char * provides[] = {"feedback-visual", NULL};
 const struct smodule self = {
-	.eiversion    = EINIT_VERSION,
-	.version      = 1,
-	.mode         = EINIT_MOD_FEEDBACK,
-	.options      = 0,
-	.name		  = "visual/text-based feedback module",
-	.rid		  = "einit-feedback-visual-textual",
-    .si           = {
-        .provides = provides,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .version   = 1,
+ .mode      = EINIT_MOD_FEEDBACK,
+ .options   = 0,
+ .name      = "visual/text-based feedback module",
+ .rid       = "einit-feedback-visual-textual",
+ .si        = {
+  .provides = provides,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 struct planref {
@@ -99,6 +99,11 @@ struct planref {
 struct nstring {
  uint32_t seqid;
  char *string;
+};
+
+struct feedback_fd {
+ int fd;
+ unsigned char options;
 };
 
 struct mstat {
@@ -124,9 +129,12 @@ FILE *vofile = NULL;
 
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
+struct feedback_fd **feedback_fds = NULL;
 struct lmodule *me;
 pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t feedback_fdsmutex = PTHREAD_MUTEX_INITIALIZER;
+
 char enableansicodes = 1;
 uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
@@ -321,7 +329,36 @@ void feedback_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
  uint32_t line = 0, olines = 0;
- if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
+
+ if (ev->type == EVENT_FEEDBACK_REGISTER_FD) {
+  struct feedback_fd *newfd = emalloc (sizeof (struct feedback_fd));
+
+  newfd->fd = ev->integer;
+  newfd->options = ev->flag;
+
+  pthread_mutex_lock (&feedback_fdsmutex);
+
+//  fdputs (" >> registering feedback\n", ev->integer);
+
+  feedback_fds = (struct feedback_fd **)setadd ((void **)feedback_fds, (void *)newfd, SET_NOALLOC);
+  pthread_mutex_unlock (&feedback_fdsmutex);
+ } else if (ev->type == EVENT_FEEDBACK_UNREGISTER_FD) {
+   uint32_t i = 0;
+   pthread_mutex_lock (&feedback_fdsmutex);
+
+//   fdputs (" >> unregistering feedback\n", ev->integer);
+
+   if (feedback_fds) for (; feedback_fds[i]; i++) {
+    struct feedback_fd *newfd = (struct feedback_fd *)feedback_fds[i];
+    if (newfd->fd == ev->integer) {
+     feedback_fds = (struct feedback_fd **)setdel ((void **)feedback_fds, (void *)newfd);
+     free (newfd);
+     break;
+    }
+   }
+
+   pthread_mutex_unlock (&feedback_fdsmutex);
+ } else if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
   int i = 0;
   struct planref plan, *cul = NULL;
   uint32_t startedat = 0;
@@ -366,7 +403,7 @@ void feedback_event_handler(struct einit_event *ev) {
     if (vofile)
      fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown"); break;
   }
- } if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
+ } else if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
   time_t lupdate;
   struct mstat *mst = NULL;
   char *name = "unknown/unspecified";
@@ -436,10 +473,17 @@ void feedback_event_handler(struct einit_event *ev) {
   }
 
   if (enableansicodes) update_screen_ansi (ev, mst);
-  else update_screen_noansi (ev, mst);
   if (vofile) update_screen_neat (ev, mst);
+  update_screen_noansi (ev, mst);
 
- } if (ev->type == EVE_FEEDBACK_NOTICE) {
+  if (ev->task & MOD_FEEDBACK_SHOW) {
+   ev->task ^= MOD_FEEDBACK_SHOW;
+  }
+  if (ev->string) {
+   ev->string = NULL;
+  }
+
+ } else if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
    strtrim (ev->string);
    fprintf (stderr, "[time=%i; severity=%i] %s\n", time(NULL), ev->flag, ev->string);
@@ -530,9 +574,8 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
   -------- update screen without ansi codes -----------------------------------
  */
 void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
- if (enableansicodes) update_screen_ansi (ev, mst);
-
- char *name = "unknown/unnamed";
+ char *name = "unknown/unnamed",
+       feedback[2048], tfeedback[256];
 
  if (((struct lmodule *)ev->para)->module) {
   struct smodule *mod = ((struct lmodule *)ev->para)->module;
@@ -543,54 +586,104 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
   }
  }
 
+ *feedback = 0;
+ *tfeedback = 0;
+
  if (ev->task & MOD_FEEDBACK_SHOW) {
-  ev->task ^= MOD_FEEDBACK_SHOW;
-  switch (ev->task) {
-   case MOD_ENABLE:
-    printf ("%s: enabling\n", name);
-    break;
-   case MOD_DISABLE:
-    printf ("%s: disabling\n", name);
-    break;
-   default:
-    printf ("%s:\n", name);
-    break;
+  if (ev->task & MOD_ENABLE) {
+   snprintf (tfeedback, 256, "%s: enabling\n", name);
+  } else if (ev->task & MOD_DISABLE) {
+   snprintf (tfeedback, 256, "%s: disabling\n", name);
+  } else  {
+   snprintf (tfeedback, 256, "%s: unknown status change\n", name);
   }
+ }
+
+ if (tfeedback[0]) {
+  strcat (feedback, tfeedback);
+  *tfeedback = 0;
  }
 
  switch (ev->status) {
   case STATUS_IDLE:
-    printf ("%s: idle\n", name);
+   if (feedback[0])
+    snprintf (tfeedback, 256, " > idle\n");
+   else
+    snprintf (tfeedback, 256, "%s: idle\n", name);
    break;
   case STATUS_ENABLING:
-    printf ("%s: enabling\n", name);
+   if (feedback[0])
+    snprintf (tfeedback, 256, " > enabling\n");
+   else
+    snprintf (tfeedback, 256, "%s: enabling\n", name);
    break;
+ }
+
+ if (tfeedback[0]) {
+  strcat (feedback, tfeedback);
+  *tfeedback = 0;
  }
 
  if (ev->string) {
-  printf ("%s: %s\n", name, ev->string);
-  ev->string = NULL;
+  if (feedback[0])
+   snprintf (tfeedback, 256, " > %s\n", ev->string);
+  else
+   snprintf (tfeedback, 256, "%s: %s\n", name, ev->string);
+ }
+
+ if (tfeedback[0]) {
+  strcat (feedback, tfeedback);
+  *tfeedback = 0;
  }
 
  if ((ev->status & STATUS_OK) && ev->flag) {
-  printf ("%s: success, with %i error(s)\n", name, ev->flag);
+  if (feedback[0])
+   snprintf (tfeedback, 256, " > success, with %i error(s)\n", ev->flag);
+  else
+   snprintf (tfeedback, 256, "%s: success, with %i error(s)\n", name, ev->flag);
   mst->errors = 1;
  } else if (ev->status & STATUS_OK) {
-  printf ("%s: success\n", name);
+  if (feedback[0])
+   snprintf (tfeedback, 256, " > success\n");
+  else
+   snprintf (tfeedback, 256, "%s: success\n", name);
   mst->errors = 0;
  } else if (ev->status & STATUS_FAIL) {
-  printf ("%s: failed\n", name);
+  if (feedback[0])
+   snprintf (tfeedback, 256, " > failed\n");
+  else
+   snprintf (tfeedback, 256, "%s: failed\n", name);
   mst->errors = 1;
  }
-}
 
+ if (tfeedback[0]) {
+  strcat (feedback, tfeedback);
+  *tfeedback = 0;
+ }
+
+ if (feedback[0]) {
+  if (!enableansicodes)
+   printf (feedback);
+
+  if (feedback_fds) {
+   pthread_mutex_lock (&feedback_fdsmutex);
+
+   if (feedback_fds) {
+    uint32_t i = 0;
+    for (; feedback_fds[i]; i++) {
+     fdputs (feedback, feedback_fds[i]->fd);
+    }
+   }
+
+   pthread_mutex_unlock (&feedback_fdsmutex);
+  }
+ }
+}
 
 /*
   -------- update screen with ansi codes --------------------------------------
  */
 void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
- if (!enableansicodes) update_screen_noansi (ev, mst);
-
  char *name = "unknown/unnamed";
  uint32_t line = statusbarlines, lines = 0, i = 0;
 
@@ -613,17 +706,12 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
  }
 
  if (ev->task & MOD_FEEDBACK_SHOW) {
-  ev->task ^= MOD_FEEDBACK_SHOW;
-  switch (ev->task) {
-   case MOD_ENABLE:
-    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
-    break;
-   case MOD_DISABLE:
-    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[K\n", line, name);
-    break;
-   default:
-    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[K\n", line, name);
-    break;
+  if (ev->task & MOD_ENABLE) {
+   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
+  } else if (ev->task & MOD_DISABLE) {
+   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[K\n", line, name);
+  } else  {
+   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[K\n", line, name);
   }
  }
 
@@ -646,7 +734,6 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
    snprintf (tmp, 1024, "%s: %s", name, ev->string);
    notice (3, tmp);
   }
-  ev->string = NULL;
  }
 
  if ((ev->status & STATUS_OK) && ev->flag) {
