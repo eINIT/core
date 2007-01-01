@@ -161,6 +161,7 @@
    <audio group="alsa" seq="any-iop" />
    <avahi group="avahi-dnsconfd" seq="any-iop" />
    <samba group="smbd:nmbd" seq="any-iop" />
+   <printing group="hpiod:hplip:cupsd" seq="any-iop" />
   </alias>
 
 <!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
