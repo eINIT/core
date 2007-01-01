@@ -1,3 +1,6 @@
+2006/01/01: mdeininger
+ * bug in gentoo's compatibility module (SIGSEGV)
+
 2006/12/30: mdeininger
  * cleaned up configure script, added some missing headers
    (thanks for reporting, vapier)

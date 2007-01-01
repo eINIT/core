@@ -156,9 +156,12 @@ int parse_sh (char *data, void (*callback)(char **, uint8_t)) {
 void sh_add_environ_callback (char **data, uint8_t status) {
  char *x, *y;
 
+ if (data)
+  puts (set2str(' ', data));
+
  if (status == PA_NEW_CONTEXT) {
   if (data && (x = data[0])) {
-   if ((strcmp (data[0], "export") || (x = data[1])) && (y = strchr (x, '='))) {
+   if ((!strcmp (data[0], "export") || (x = data[1])) && (y = strchr (x, '='))) {
 // if we get here, we got ourselves a variable definition
     struct cfgnode nnode;
     memset (&nnode, 0, sizeof(struct cfgnode));
@@ -332,7 +335,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
   closedir (dir);
  } else {
-  fprintf (stderr, " >> could not open gentoo runlevels directory \"%s\": %s", path, strerror (errno));
+  fprintf (stderr, " >> could not open gentoo runlevels directory \"%s\": %s\n", path, strerror (errno));
  }
 }
 

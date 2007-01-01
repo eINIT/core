@@ -140,8 +140,8 @@
      <gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-<!--      <init.d path="/mnt/etc/init.d/" />
-      <runlevels path="/mnt/etc/runlevels" exclusive="false" /> -->
+<!--      <init.d path="/etc/init.d/" />
+      <runlevels path="/etc/runlevels" exclusive="false" /> -->
       <parse-env.d b="true" />
      </gentoo>
     </distribution>

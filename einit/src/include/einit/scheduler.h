@@ -51,6 +51,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SCHEDULER_PID_NOTIFY 0x0004
 #define SCHEDULER_MOD_ACTION 0x0005
 
+#define EINIT_NOMINAL 0x00000000
+#define EINIT_EXITING 0x00000001
+
 struct sschedule {
  unsigned int task;
  void *param;
@@ -67,6 +70,7 @@ struct spidcb {
 struct sschedule **schedule;
 struct spidcb *cpids;
 struct spidcb *sched_deadorphans;
+uint32_t gstatus;
 
 int scheduler_cleanup ();
 

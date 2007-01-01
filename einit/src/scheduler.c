@@ -66,6 +66,7 @@ stack_t signalstack;
 
 struct spidcb *cpids = NULL;
 struct spidcb *sched_deadorphans = NULL;
+uint32_t gstatus = EINIT_NOMINAL;
 
 int cleanup ();
 
@@ -341,10 +342,15 @@ void sched_ipc_event_handler(struct einit_event *event) {
      notice (1, "scheduler: sync()-ing");
 
      sync ();
+
+    gstatus = EINIT_EXITING;
+    sem_post (sigchild_semaphore);
+
      if (gmode == EINIT_GMODE_SANDBOX) {
       notice (1, "scheduler: cleaning up");
       cleanup ();
      }
+
      scheduler_cleanup ();
 
      {
@@ -489,6 +495,7 @@ void *sched_run_sigchild (void *p) {
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
    sem_wait (sigchild_semaphore);
+   if (gstatus == EINIT_EXITING) return NULL;
   }
  }
 }
@@ -589,6 +596,7 @@ void *sched_run_sigchild (void *p) {
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
    sem_wait (sigchild_semaphore);
+   if (gstatus == EINIT_EXITING) return NULL;
   }
  }
 }

@@ -404,6 +404,7 @@ char *set2str (const char sep, char **input) {
  char *ret = NULL;
  size_t slen = 0;
  uint32_t i = 0;
+ char nsep[2] = {sep, 0};
 
  if (!input) return NULL;
 
@@ -416,7 +417,7 @@ char *set2str (const char sep, char **input) {
 
  for (i = 0; input[i]; i++) {
   if (i != 0)
-   strcat (ret, ":");
+   strcat (ret, nsep);
 
   strcat (ret, input[i]);
  }

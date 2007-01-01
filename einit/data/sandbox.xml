@@ -72,8 +72,8 @@
    <sysv utmp="yes" wtmp="yes">
     <distribution s="auto">
      <gentoo>
-      <init.d path="/mnt/etc/init.d/" />
-      <runlevels path="/mnt/etc/runlevels" exclusive="false" />
+      <init.d path="/etc/init.d/" />
+      <runlevels path="/etc/runlevels" exclusive="false" />
      </gentoo>
     </distribution>
 <!--    <init.d path="/etc/init.d/" process-rc.d="yes" /> -->
