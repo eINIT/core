@@ -1019,10 +1019,18 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     }
 
     if (gmode != EINIT_GMODE_SANDBOX) {
-     if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1) {
+#ifdef DARWIN
+     if (mount (source, mountpoint, mntflags, fsdata) == -1)
+#else
+     if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1)
+#endif
+     {
+#ifdef MS_REMOUNT
       if (errno == EBUSY) {
        if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
-      } else {
+      } else
+#endif
+	  {
        mount_panic:
        if (errno < sys_nerr)
         status->string = (char *)sys_errlist[errno];
