@@ -156,8 +156,8 @@ int parse_sh (char *data, void (*callback)(char **, uint8_t)) {
 void sh_add_environ_callback (char **data, uint8_t status) {
  char *x, *y;
 
- if (data)
-  puts (set2str(' ', data));
+// if (data)
+//  puts (set2str(' ', data));
 
  if (status == PA_NEW_CONTEXT) {
   if (data && (x = data[0])) {

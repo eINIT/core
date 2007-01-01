@@ -99,18 +99,18 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- if (gmode == EINIT_GMODE_INIT) {
+// if (gmode == EINIT_GMODE_INIT) {
   function_register ("core-power-off-linux", 1, linux_power_off);
   function_register ("core-power-reset-linux", 1, linux_reboot);
- }
+// }
 }
 
 int cleanup (struct lmodule *this) {
- if (gmode == EINIT_GMODE_INIT) {
+// if (gmode == EINIT_GMODE_INIT) {
   function_unregister ("core-power-reset-linux", 1, linux_reboot);
   function_unregister ("core-power-off-linux", 1, linux_power_off);
-  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- }
+// }
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int enable (void *pa, struct einit_event *status) {

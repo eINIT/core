@@ -333,6 +333,7 @@ int main(int argc, char **argv) {
    }
 
 //   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
+   fprintf (stderr, " >> [+%is] running SIGCHLD handler.\n", time(NULL)-stime);
    sched_run_sigchild (NULL);
   }
 

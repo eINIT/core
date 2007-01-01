@@ -745,8 +745,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    char **cmdts = str2set (';', cmdt);
    uint32_t in = 0;
 
-   for (; cmdts[in]; in++)
+   for (; cmdts[in]; in++) {
     ipc_process(cmdts[in], STDERR_FILENO);
+   }
   }
  }
 

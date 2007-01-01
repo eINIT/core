@@ -195,6 +195,11 @@ void **function_find (char *name, uint32_t version, char **sub) {
  void **set = NULL;
  struct stree *ha = exported_functions;
 
+/* if (sub)
+  printf (" >> searching for function: %s (%s)\n", name, set2str (',', sub));
+ else
+  printf (" >> searching for function: %s\n", name);*/
+
 /* char tmp[2048];
  snprintf (tmp, 2048, "looking for %s in %zx", name, ha);
  puts (tmp); */
@@ -220,13 +225,11 @@ void **function_find (char *name, uint32_t version, char **sub) {
   strcat (n, name);
   *(n + k - 1) = '-';
 
-//  printf ("complex lookup ");
-
   for (; sub[i]; i++) {
    *(n + k) = 0;
    n = erealloc (n, k+1+strlen (sub[i]));
    strcat (n, sub[i]);
-//   printf ("%s ", n);
+//   printf ("%s\n", n);
 
    ha = streefind (exported_functions, n, TREE_FIND_FIRST);
 /*   if (!ha) {

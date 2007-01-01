@@ -53,14 +53,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <semaphore.h>
 #include <string.h>
 
-pthread_cond_t schedthreadcond = PTHREAD_COND_INITIALIZER;
-pthread_cond_t schedthreadsigchildcond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t schedthreadmutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t schedthreadsigchildmutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t schedschedulemodmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
-sem_t *sigchild_semaphore;
+sem_t *sigchild_semaphore = NULL;
+
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+sem_t sigchild_semaphore_static;
+#endif
 
 stack_t signalstack;
 
@@ -71,9 +70,9 @@ uint32_t gstatus = EINIT_NOMINAL;
 int cleanup ();
 
 int scheduler_cleanup () {
+ sem_t *sembck = sigchild_semaphore;
  stack_t curstack;
- pthread_cond_destroy (&schedthreadcond);
- pthread_mutex_destroy (&schedthreadmutex);
+ sigchild_semaphore = NULL;
 
  if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
   curstack.ss_size = SIGSTKSZ;
@@ -85,13 +84,13 @@ int scheduler_cleanup () {
  }
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sem_destroy (sigchild_semaphore);
- free (sigchild_semaphore);
+ sem_destroy (sembck);
+// free (sembck);
 #elif defined(DARWIN)
- sem_close (sigchild_semaphore);
+ sem_close (sembck);
 #else
- if (sem_destroy (sigchild_semaphore))
-  sem_close (sigchild_semaphore);
+ if (sem_destroy (sembck))
+  sem_close (sembck);
 #endif
 }
 
@@ -151,11 +150,8 @@ int sched_modaction (char **argv) {
 void sched_init () {
  char tmp[1024];
 
-/* create our sigchld-scheduler-thread right away */
- pthread_mutex_lock (&schedthreadsigchildmutex);
-
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sigchild_semaphore = ecalloc (1, sizeof (sem_t));
+ sigchild_semaphore = &sigchild_semaphore_static;
  sem_init (sigchild_semaphore, 0, 0);
 #elif defined(DARWIN)
  snprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
@@ -248,7 +244,6 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
      cur->next = cpids;
      cpids = cur;
      pthread_mutex_unlock (&schedcpidmutex);
-     pthread_cond_signal (&schedthreadsigchildcond);
      return 0;
     }
     if (start != sched_deadorphans) {
@@ -268,7 +263,8 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
   nele->next = cpids;
  cpids = nele;
  pthread_mutex_unlock (&schedcpidmutex);
- sem_post (sigchild_semaphore);
+ if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
+  sem_post (sigchild_semaphore);
 }
 
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
@@ -292,7 +288,6 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
   event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);
 
-  
  }
  return;
 }
@@ -339,40 +334,40 @@ void sched_ipc_event_handler(struct einit_event *event) {
    if (!strcmp (argv[1], "power-down") || (reset = !strcmp (argv[1], "power-reset"))) {
     if (!event->flag) event->flag = 1;
 
-     notice (1, "scheduler: sync()-ing");
+     notice (1, ">> scheduler: sync()-ing");
 
      sync ();
 
     gstatus = EINIT_EXITING;
-    sem_post (sigchild_semaphore);
+    if (sigchild_semaphore)
+     sem_post (sigchild_semaphore);
 
      if (gmode == EINIT_GMODE_SANDBOX) {
-      notice (1, "scheduler: cleaning up");
-      cleanup ();
+      notice (1, ">> scheduler: cleaning up");
+ //     cleanup ();
+      puts (" >> sandbox mode, now exiting");
+      exit (EXIT_SUCCESS);
      }
 
-     scheduler_cleanup ();
+     char **shutdownfunctionsubnames = str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
 
-     {
-      char **shutdownfunctionsubnames = str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
-      void  ((**reset_functions)()) = (void (**)())
-       (shutdownfunctionsubnames ? function_find((reset ? "core-power-reset" : "core-power-off"), 1, shutdownfunctionsubnames) : NULL);
+     void  ((**reset_functions)()) = (void (**)())
+      (shutdownfunctionsubnames ? function_find((reset ? "core-power-reset" : "core-power-off"), 1, shutdownfunctionsubnames) : NULL);
 
-      fputs ((reset ? "scheduler: reset\n" : "scheduler: power down\n"), stderr);
+     fputs ((reset ? "scheduler: reset\n" : "scheduler: power down\n"), stderr);
 
-      if (reset_functions) {
-       uint32_t xn = 0;
+     if (reset_functions) {
+      uint32_t xn = 0;
 
-       for (; reset_functions[xn]; xn++) {
-        (reset_functions[xn]) ();
-       }
-      } else {
-       fputs ("scheduler: no (accepted) functions found, exiting\n", stderr);
-       exit (EXIT_SUCCESS);
+      for (; reset_functions[xn]; xn++) {
+       (reset_functions[xn]) ();
       }
-
-      if (shutdownfunctionsubnames) free (shutdownfunctionsubnames);
+     } else {
+      fputs ("scheduler: no (accepted) functions found, exiting\n", stderr);
+      exit (EXIT_SUCCESS);
      }
+
+     if (shutdownfunctionsubnames) free (shutdownfunctionsubnames);
 
 // if we still live here, something's twocked
      fputs ("scheduler: failed, exiting\n", stderr);
@@ -495,7 +490,10 @@ void *sched_run_sigchild (void *p) {
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
    sem_wait (sigchild_semaphore);
-   if (gstatus == EINIT_EXITING) return NULL;
+   if (gstatus == EINIT_EXITING) {
+//    fputs (" >> EXITING\n", stderr);
+    return NULL;
+   }
   }
  }
 }
@@ -565,6 +563,7 @@ void *sched_run_sigchild (void *p) {
   pthread_mutex_lock (&schedcpidmutex);
   struct spidcb *start = cpids, *prev = NULL, *cur = start;
   check = 0;
+
   for (; cur; cur = cur->next) {
    pid = cur->pid;
    if ((!cur->dead) && (waitpid (pid, &status, WNOHANG) > 0)) {
@@ -593,16 +592,23 @@ void *sched_run_sigchild (void *p) {
    } else
     prev = cur;
   }
+
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
    sem_wait (sigchild_semaphore);
-   if (gstatus == EINIT_EXITING) return NULL;
+   if (gstatus == EINIT_EXITING) {
+    fputs (" >> scheduler SIGCHLD thread now exiting\n", stderr);
+    exit (EXIT_SUCCESS);
+    scheduler_cleanup ();
+    return NULL;
+   }
   }
  }
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- sem_post (sigchild_semaphore);
+ if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
+  sem_post (sigchild_semaphore);
 
  return;
 }

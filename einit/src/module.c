@@ -235,7 +235,7 @@ void mod_freedesc (struct lmodule *m) {
 // if (m->sohandle)
 //  dlclose (m->sohandle);
 
- free (m);
+// free (m);
 }
 
 int mod_freemodules ( void ) {

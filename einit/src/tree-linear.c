@@ -107,6 +107,7 @@ struct stree *streedel (struct stree *subject) {
   *(subject->lbase) = be;
   if (cur->luggage) free (cur->luggage);
   free (cur);
+
   return be;
  }
 
@@ -126,8 +127,23 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  struct stree *c;
  if (!stree || !key) return NULL;
 
- if (options == TREE_FIND_FIRST) c = *(stree->lbase);
- else c = stree->next;
+// printf (" >> streefind: %s in %x:%x:\n", key, stree, (stree->lbase ? *(stree->lbase) : NULL));
+ if (!stree->lbase) {
+  puts (" >> bad input");
+  return NULL;
+ }
+
+ if (options == TREE_FIND_FIRST) {
+  if (stree->lbase)
+   c = *(stree->lbase);
+  else
+   c = NULL;
+ } else c = stree->next;
+
+/* if (c)
+  printf (" >> %x(%s), c=%x(%s)\n", *(stree->lbase), (*(stree->lbase))->key, c, c->key);
+ else
+  printf (" >> %x(%s), no (further) result(s)\n", *(stree->lbase), (*(stree->lbase))->key);*/
 
  if (!c) return NULL;
 
