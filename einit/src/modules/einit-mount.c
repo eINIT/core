@@ -1055,6 +1055,11 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       startdaemon (fse->manager, status);
     }
 
+    struct einit_event eem = evstaticinit (EVENT_NODE_MOUNTED);
+    eem.string = mountpoint;
+    event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+    evstaticdestroy (eem);
+
     fse->status |= BF_STATUS_MOUNTED;
 
     return STATUS_OK;
@@ -1172,6 +1177,12 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   }
   if (fse && (fse->status & BF_STATUS_MOUNTED))
    fse->status ^= BF_STATUS_MOUNTED;
+
+  struct einit_event eem = evstaticinit (EVENT_NODE_UNMOUNTED);
+  eem.string = mountpoint;
+  event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (eem);
+
 
   return STATUS_OK;
  }

@@ -1,3 +1,6 @@
+2006/01/02: mdeininger
+ * new events: service/module status changes and nodes mounted/unmounted
+
 2006/01/01: mdeininger
  * bug in gentoo's compatibility module (SIGSEGV)
  * some cleanups

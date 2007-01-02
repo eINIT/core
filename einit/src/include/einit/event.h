@@ -45,11 +45,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_SUBSYSTEM_MASK		0xfffff000
 #define EVENT_CODE_MASK				0x00000fff
 
-#define EINIT_EVENT_FLAG_BROADCAST	0x0001
+#define EINIT_EVENT_FLAG_BROADCAST		0x0001
 /*!< this should always be specified, although just now it's being ignored */
 #define EINIT_EVENT_FLAG_SPAWN_THREAD	0x0002
 /*!< use this to tell einit that you don't wish/need to wait for this to return */
-#define EINIT_EVENT_FLAG_DUPLICATE	0x0004
+#define EINIT_EVENT_FLAG_DUPLICATE		0x0004
 /*!< duplicate event data block. important with SPAWN_THREAD */
 
 #define EVENT_SUBSYSTEM_EINIT		0x00001000
@@ -60,20 +60,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVE_SERVICE_UPDATE			0x00001003
 /*!< Service availability changing; use the task and status fields to find out just what happened */
 #define EVE_CONFIGURATION_UPDATE	0x00001004
+/*!< notification of configuration update */
+#define EVE_PLAN_UPDATE				0x00001005
+/*!< Plan status update */
+
 /*!< updated core information: new configuration elements */
 #define EVE_UPDATE_CONFIGURATION	0x00001101
 /*!< update the configuration */
 #define EVE_CHANGE_SERVICE_STATUS	0x00001102
 /*!< change status of a service */
 #define EVE_SWITCH_MODE				0x00001103
-/*!< change status of a service */
+/*!< switch to a different mode */
 
 #define EVENT_SUBSYSTEM_IPC			0x00002000
 /*!< incoming IPC request */
 #define EVENT_SUBSYSTEM_MOUNT		0x00003000
 #define EVE_DO_UPDATE				0x00003001
-#define EVE_NEW_NODE_MOUNTED		0x00003002
+#define EVENT_NODE_MOUNTED			0x00003002
 #define EVE_NEW_MOUNT_LEVEL			0x00003003
+#define EVENT_NODE_UNMOUNTED		0x00003004
 /*!< update mount status */
 
 #define EVENT_SUBSYSTEM_FEEDBACK                0x00004000
@@ -84,22 +89,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_FEEDBACK_REGISTER_FD              0x00004004
 #define EVENT_FEEDBACK_UNREGISTER_FD            0x00004005
 
-#define EVENT_SUBSYSTEM_POWER		0x00005000
+#define EVENT_SUBSYSTEM_POWER			0x00005000
 /*!< notify others that the power is failing, has been restored or similar */
-#define EVENT_POWER_DOWN_SCHEDULED	0x00005001
+#define EVENT_POWER_DOWN_SCHEDULED		0x00005001
 /*!< shutdown scheduled */
-#define EVENT_POWER_DOWN_IMMINENT	0x00005002
+#define EVENT_POWER_DOWN_IMMINENT		0x00005002
 /*!< shutdown going to happen after this event */
-#define EVENT_POWER_RESET_SCHEDULED	0x00005003
+#define EVENT_POWER_RESET_SCHEDULED		0x00005003
 /*!< reboot scheduled */
-#define EVENT_POWER_RESET_IMMINENT	0x00005004
+#define EVENT_POWER_RESET_IMMINENT		0x00005004
 /*!< reboot going to happen after this event */
 
-#define EVENT_POWER_FAILING		0x00005005
+#define EVENT_POWER_FAILING				0x00005005
 /*!< power is failing */
 #define EVENT_POWER_FAILURE_IMMINENT	0x00005006
 /*!< power is failing NOW */
-#define EVENT_POWER_RESTORED		0x00005007
+#define EVENT_POWER_RESTORED			0x00005007
 /*!< power was restored */
 
 #define EVENT_SUBSYSTEM_TIMER		0x00006000

@@ -380,10 +380,31 @@ int mod (unsigned int task, struct lmodule *module) {
  struct stree *ha;
 
  if (!module) return 0;
+/* inform everyone about what's going to happen */
+ else {
+  struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);
+  eem.task = task;
+  eem.status = STATUS_WORKING;
+  eem.para = (void *)module;
+  event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (eem);
+
+/* same for services */
+  if (module->si && module->si->provides) {
+   struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
+   ees.task = task;
+   ees.status = STATUS_WORKING;
+   ees.string = module->si->provides[0];
+   ees.set = (void **)module->si->provides;
+   event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ees);
+  }
+ }
+
 /* wait if the module is already being processed in a different thread */
  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_lock (&module->mutex))) {
   if (errno)
-   perror ("locking mutex");
+   perror (" >> locking mutex");
  }
 
  if (task & MOD_IGNORE_DEPENDENCIES) {
@@ -503,6 +524,28 @@ int mod (unsigned int task, struct lmodule *module) {
   event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
 
   status_update (fb);
+
+/* module status update */
+  if (module) {
+   struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);
+   eem.task = task;
+   eem.status = fb->status;
+   eem.para = (void *)module;
+   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (eem);
+
+/* service status update */
+   if (module->si && module->si->provides) {
+    struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
+    ees.task = task;
+    ees.status = fb->status;
+    ees.string = module->si->provides[0];
+    ees.set = (void **)module->si->provides;
+    event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
+    evstaticdestroy (ees);
+   }
+  }
+
   evdestroy (fb);
 
   service_usage_query(SERVICE_UPDATE, module, NULL);
@@ -510,7 +553,7 @@ int mod (unsigned int task, struct lmodule *module) {
   if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
 //  this is bad...
    if (errno)
-    perror ("unlocking mutex");
+    perror (" >> unlocking mutex");
   }
 
   evstaticdestroy (evmstatupdate);
