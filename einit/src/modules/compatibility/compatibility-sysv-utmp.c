@@ -102,30 +102,7 @@ char update_utmp (unsigned char options, struct utmp *new_entry) {
     fprintf (stderr, " >> checking %i utmp entries.\n", entries);
 #endif
     for (; i < entries; i++) {
-/*     fprintf (stderr, " >> [%c%c%c%c:%i] %i (%s), %s@%s: %i.%i\n", utmpentries[i].ut_id[0], utmpentries[i].ut_id[1], utmpentries[i].ut_id[2], utmpentries[i].ut_id[3], utmpentries[i].ut_pid, utmpentries[i].ut_type, utmpentries[i].ut_line, utmpentries[i].ut_user, utmpentries[i].ut_host, utmpentries[i].ut_tv.tv_sec, utmpentries[i].ut_tv.tv_usec);*/
-
      switch (utmpentries[i].ut_type) {
-/*      case UT_UNKNOWN:
-       break;
-      case RUN_LVL:
-       break;
-      case BOOT_TIME:
-       break;
-      case NEW_TIME:
-       break;
-      case OLD_TIME:
-       break;
-      case INIT_PROCESS:
-       break;
-      case LOGIN_PROCESS:
-       break;
-      case USER_PROCESS:
-       break;
-      case DEAD_PROCESS:
-       break;
-      case ACCOUNTING:
-       break;*/
-
 #ifdef DEAD_PROCESS
       case DEAD_PROCESS:
        break;
@@ -177,7 +154,21 @@ char update_utmp (unsigned char options, struct utmp *new_entry) {
 #ifdef ACCOUNTING
       case ACCOUNTING:
        if (options & UTMP_CLEAN) {
-//        utmpentries[i].ut_type = DEAD_PROCESS;
+#ifdef LINUX
+        struct stat xst;
+        char path[256];
+        snprintf (path, 256, "/proc/%i/", utmpentries[i].ut_pid);
+        if (stat (path, &xst)) { // stat path under proc to see if process exists
+// if not...
+#endif
+// clean utmp record
+         utmpentries[i].ut_type = DEAD_PROCESS;
+         memset (&(utmpentries[i].ut_user), 0, sizeof (utmpentries[i].ut_user));
+         memset (&(utmpentries[i].ut_host), 0, sizeof (utmpentries[i].ut_host));
+         memset (&(utmpentries[i].ut_time), 0, sizeof (utmpentries[i].ut_time));
+#ifdef LINUX
+        }
+#endif
        }
        break;
 #endif

@@ -864,7 +864,7 @@
   <enable services="feedback-visual" />
  </mode>
  <mode id="boot">
-  <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal" critical="mount/critical:tty" />
+  <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal:utmp" critical="mount/critical:tty" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
