@@ -136,6 +136,9 @@
 <!-- not much of this is implemented, yet -->
   <compatibility>
    <sysv utmp="yes" wtmp="yes">
+<!--    <simulate-runlevel before="0" now="3" /> -->
+<!--    <simulate-runlevel before="0" now="e" /> -->
+    <simulate-runlevel now="3" />
     <distribution s="auto">
      <gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:

@@ -40,10 +40,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <utmp.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <errno.h>
 
 #define EXPECTED_EIV 1
 
@@ -68,29 +74,139 @@ const struct smodule self = {
     }
 };
 
+#define UTMP_CLEAN 0x01
+#define UTMP_ADD   0x02
+
+int  enable  (void *, struct einit_event *);
+int  disable (void *, struct einit_event *);
+char update_utmp (unsigned char, struct utmp *);
+
+char update_utmp (unsigned char options, struct utmp *new_entry) {
+ int ufile;
+ struct stat st;
+ if (gmode == EINIT_GMODE_SANDBOX)
+  ufile = open ("var/run/utmp", O_RDWR);
+ else
+  ufile = open ("/var/run/utmp", O_RDWR);
+ if (ufile) {
+  if (!fstat (ufile, &st) && st.st_size) {
+   struct utmp *utmpentries = mmap (NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, ufile, 0);
+
+   if (utmpentries != MAP_FAILED) {
+    uint32_t entries = st.st_size / sizeof(struct utmp),
+    i = 0;
+    close (ufile);
+    ufile = 0;
+
+#ifdef DEBUG
+    fprintf (stderr, " >> checking %i utmp entries.\n", entries);
+#endif
+    for (; i < entries; i++) {
+/*     fprintf (stderr, " >> [%c%c%c%c:%i] %i (%s), %s@%s: %i.%i\n", utmpentries[i].ut_id[0], utmpentries[i].ut_id[1], utmpentries[i].ut_id[2], utmpentries[i].ut_id[3], utmpentries[i].ut_pid, utmpentries[i].ut_type, utmpentries[i].ut_line, utmpentries[i].ut_user, utmpentries[i].ut_host, utmpentries[i].ut_tv.tv_sec, utmpentries[i].ut_tv.tv_usec);*/
+
+     switch (utmpentries[i].ut_type) {
+/*      case UT_UNKNOWN:
+       break;
+      case RUN_LVL:
+       break;
+      case BOOT_TIME:
+       break;
+      case NEW_TIME:
+       break;
+      case OLD_TIME:
+       break;
+      case INIT_PROCESS:
+       break;
+      case LOGIN_PROCESS:
+       break;
+      case USER_PROCESS:
+       break;
+      case DEAD_PROCESS:
+       break;
+      case ACCOUNTING:
+       break;*/
+
+#ifdef DEAD_PROCESS
+      case DEAD_PROCESS:
+       break;
+#endif
+#ifdef RUN_LVL
+      case RUN_LVL:
+       if (options & UTMP_CLEAN) {
+/* the higher 8 bits contain the old runlevel, the lower 8 bits the current one */
+#ifdef DEBUG
+        char previous_runlevel = (utmpentries[i].ut_pid >> 8) ? (utmpentries[i].ut_pid >> 8) : 'N',
+             current_runlevel = utmpentries[i].ut_pid & 0xff;
+        printf(" >> setting runlevel; before: %c %c\n", previous_runlevel, current_runlevel);
+#endif
+
+        char *new_previous_runlevel = cfg_getstring ("configuration-compatibility-sysv-simulate-runlevel/before", NULL),
+            *new_runlevel = cfg_getstring ("configuration-compatibility-sysv-simulate-runlevel/now", NULL);
+
+        if (new_runlevel && new_runlevel[0]) {
+         if (new_previous_runlevel)
+          utmpentries[i].ut_pid = (new_previous_runlevel[0] << 8) | new_runlevel[0];
+         else
+          utmpentries[i].ut_pid = (utmpentries[i].ut_pid << 8) | new_runlevel[0];
+        }
+       }
+       break;
+#endif
+
+#ifdef UT_UNKNOWN
+      case UT_UNKNOWN:
+#endif
+#ifdef BOOT_TIME
+      case BOOT_TIME:
+#endif
+#ifdef NEW_TIME
+      case NEW_TIME:
+#endif
+#ifdef OLD_TIME
+      case OLD_TIME:
+#endif
+#ifdef INIT_PROCESS
+      case INIT_PROCESS:
+#endif
+#ifdef LOGIN_PROCESS
+      case LOGIN_PROCESS:
+#endif
+#ifdef USER_PROCESS
+      case USER_PROCESS:
+#endif
+#ifdef ACCOUNTING
+      case ACCOUNTING:
+       if (options & UTMP_CLEAN) {
+//        utmpentries[i].ut_type = DEAD_PROCESS;
+       }
+       break;
+#endif
+      default:
+       fprintf (stderr, " >> bad UTMP entry: [%c%c%c%c] %i (%s), %s@%s: %i.%i\n", utmpentries[i].ut_id[0], utmpentries[i].ut_id[1], utmpentries[i].ut_id[2], utmpentries[i].ut_id[3], utmpentries[i].ut_type, utmpentries[i].ut_line, utmpentries[i].ut_user, utmpentries[i].ut_host, utmpentries[i].ut_tv.tv_sec, utmpentries[i].ut_tv.tv_usec);
+       break;
+     }
+
+    }
+    munmap (utmpentries, st.st_size);
+   }
+  }
+
+  if (ufile)
+   close (ufile);
+ } else {
+  perror (" >> utmp: mmap()");
+ }
+
+ return 0;
+}
+
 int enable (void *pa, struct einit_event *status) {
- FILE *ufile;
  char utmp_cfg = parse_boolean (cfg_getstring ("configuration-compatibility-sysv/utmp", NULL));
 
  if (utmp_cfg) {
-  ufile = fopen ("/var/run/utmp", "w");
-  if (ufile) {
-   struct utmp *utmpentries = ecalloc (2, sizeof (struct utmp));
-//   int er = fread (utmpentries, sizeof (struct utmp), 30, ufile);
-   int i;
-//   for (i = 0; i < er; i++) {
-//	puts (utmpentries[i].ut_line);
-//   }
-#ifdef LINUX
-   utmpentries[0].ut_type = INIT_PROCESS;
-   utmpentries[0].ut_pid = 1;
-   utmpentries[1].ut_type = RUN_LVL;
-#endif
-//   utmpentries[1].ut_pid = ;
-   fwrite (utmpentries, sizeof (struct utmp), 2, ufile);
-   fclose (ufile);
-   free (utmpentries);
-  }
+  status->string = "cleaning utmp";
+  status_update (status);
+  update_utmp (UTMP_CLEAN, NULL);
  }
 
 /* always return OK, as utmp is pretty much useless to eINIT, so no reason

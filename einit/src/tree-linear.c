@@ -137,7 +137,7 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
   if (stree->lbase)
    c = *(stree->lbase);
   else
-   c = NULL;
+   c = stree;
  } else c = stree->next;
 
 /* if (c)
