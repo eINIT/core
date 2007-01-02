@@ -5,11 +5,12 @@
 DESCRIPTION="Manage /sbin/init symlink"
 MAINTAINER="rmh3093@gmail.com"
 
+init_progs="einit jinit initng sysvinit"
+
 # find a list of init symlink targets
 find_targets() {
-	init_targets=`ls ${ROOT}/usr/sbin/*init`
-	for f in $init_targets ; do
-		[[ -f ${f} ]] && echo $(basename ${f} )
+	for f in $init_progs ; do
+		[[ -f ${ROOT}/sbin/${f} ]] && echo $(basename ${f} )
 	done
 }
 
@@ -27,8 +28,8 @@ set_symlink() {
 	fi
 	if [[ -z ${target} ]] ; then
 		die -q "Target \"${1}\" doesn't appear to be valid!"
-	elif [[ -f "${ROOT}/usr/sbin/${target}" ]] ; then
-		ln -s "${ROOT}/usr/sbin/${target}" "/sbin/init"
+	elif [[ -f "${ROOT}/sbin/${target}" ]] ; then
+		ln -s "${ROOT}/sbin/${target}" "/sbin/init"
 	else
 		die -q "Target \"${1}\" doesn't appear to be valid!"
 	fi
