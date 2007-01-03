@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <einit-modules/utmp.h>
 
 #define EXPECTED_EIV 1
 
@@ -74,14 +75,23 @@ const struct smodule self = {
     }
 };
 
-#define UTMP_CLEAN 0x01
-#define UTMP_ADD   0x02
-
 int  enable  (void *, struct einit_event *);
 int  disable (void *, struct einit_event *);
-char update_utmp (unsigned char, struct utmp *);
+char __updateutmp (unsigned char, struct utmp *);
 
-char update_utmp (unsigned char options, struct utmp *new_entry) {
+int configure (struct lmodule *irr) {
+ utmp_configure (irr);
+ function_register ("einit-utmp-update", 1, __updateutmp);
+// event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+}
+
+int cleanup (struct lmodule *irr) {
+// event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ function_unregister ("einit-utmp-update", 1, __updateutmp);
+ utmp_cleanup (irr);
+}
+
+char __updateutmp (unsigned char options, struct utmp *new_entry) {
  int ufile;
  struct stat st;
  if (gmode == EINIT_GMODE_SANDBOX)
@@ -102,6 +112,7 @@ char update_utmp (unsigned char options, struct utmp *new_entry) {
     fprintf (stderr, " >> checking %i utmp entries.\n", entries);
 #endif
     for (; i < entries; i++) {
+#ifdef LINUX
      switch (utmpentries[i].ut_type) {
 #ifdef DEAD_PROCESS
       case DEAD_PROCESS:
@@ -176,7 +187,7 @@ char update_utmp (unsigned char options, struct utmp *new_entry) {
        fprintf (stderr, " >> bad UTMP entry: [%c%c%c%c] %i (%s), %s@%s: %i.%i\n", utmpentries[i].ut_id[0], utmpentries[i].ut_id[1], utmpentries[i].ut_id[2], utmpentries[i].ut_id[3], utmpentries[i].ut_type, utmpentries[i].ut_line, utmpentries[i].ut_user, utmpentries[i].ut_host, utmpentries[i].ut_tv.tv_sec, utmpentries[i].ut_tv.tv_usec);
        break;
      }
-
+#endif
     }
     munmap (utmpentries, st.st_size);
    }
@@ -197,7 +208,7 @@ int enable (void *pa, struct einit_event *status) {
  if (utmp_cfg) {
   status->string = "cleaning utmp";
   status_update (status);
-  update_utmp (UTMP_CLEAN, NULL);
+  __updateutmp (UTMP_CLEAN, NULL);
  }
 
 /* always return OK, as utmp is pretty much useless to eINIT, so no reason

@@ -1,8 +1,12 @@
-2006/01/02: mdeininger
+2007/01/03: mdeininger
+ * darwin compile fix (utmp)
+ * fixed changelog dates
+
+2007/01/02: mdeininger
  * new events: service/module status changes and nodes mounted/unmounted
  * got the utmp module to do something meaningful
 
-2006/01/01: mdeininger
+2007/01/01: mdeininger
  * bug in gentoo's compatibility module (SIGSEGV)
  * some cleanups
  * traced/fixed some bugs

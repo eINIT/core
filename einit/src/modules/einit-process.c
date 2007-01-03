@@ -173,7 +173,7 @@ int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
-int cleanup (struct lmodule *this) {
+int cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-process-killing-spree", 1, __pekill);
  function_unregister ("einit-process-ekill", 1, __ekill);
