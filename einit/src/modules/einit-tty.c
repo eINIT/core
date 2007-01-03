@@ -132,6 +132,12 @@ void *watcher (struct spidcb *spid) {
  struct cfgnode *node = NULL;
  while (cur) {
   if (cur->pid == pid) {
+   if (do_utmp) {
+    create_utmp_record(utmprecord, DEAD_PROCESS, spid->pid, NULL, NULL, NULL, NULL, 0, 0, spid->pid);
+
+    update_utmp (UTMP_MODIFY,&utmprecord);
+   }
+
    killpg (pid, SIGHUP); // send a SIGHUP to the getty's process group
 
    if (cur->restart)

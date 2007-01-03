@@ -89,7 +89,7 @@ struct mloadplan {
  * Data node for the mloadplan struct.
 */
 struct mloadplan_node {
- char *service;          /*!< Name of this node's service. */
+ char **service;         /*!< Name(s) of this node's service(s). */
  uint32_t status;        /*!< This service's status. */
  uint32_t pos;           /*!< Current position */
  struct lmodule **mod;   /*!< Modules that are to be used. */
@@ -99,6 +99,7 @@ struct mloadplan_node {
  pthread_mutex_t *mutex; /*!< This node's mutex.*/
 
  char **si_after;        /*!< same as a module's si.after, needed to implement before="" .*/
+ char changed;           /*!< indicate whether someone is currently working on this */
 };
 
 /*!\brief Create a plan

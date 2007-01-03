@@ -1540,6 +1540,8 @@ int enable (enum mounttask p, struct einit_event *status) {
  uint32_t i, ret, sc = 0, slc;
  pthread_t **childthreads = NULL;
 
+ if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
+
  switch (p) {
   case MOUNT_LOCAL:
   case MOUNT_REMOTE:
@@ -1660,6 +1662,8 @@ int disable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t i, ret, sc = 0, slc;
  pthread_t **childthreads = NULL;
+
+ if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
 
  switch (p) {
   case MOUNT_LOCAL:

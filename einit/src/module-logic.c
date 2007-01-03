@@ -353,10 +353,25 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }
 
  if (plan->services) {
+// pass 1: find and remove dupes
   struct stree *ha = plan->services;
-
   while (ha) {
-   ((struct mloadplan_node *)(ha->value))->service = ha->key;
+   struct stree *cha = plan->services;
+   while (cha) {
+    if (!memcmp (ha->value, cha->value, sizeof(struct mloadplan_node))) {
+     cha->value = ha->value;
+//     puts (" >> DUP!");
+    }
+
+    cha = streenext (cha);
+   }
+   ha = streenext (ha);
+  }
+
+// pass 2: finalise initialisation
+  ha = plan->services;
+  while (ha) {
+   ((struct mloadplan_node *)(ha->value))->service = (char **)setadd ((void **)(((struct mloadplan_node *)(ha->value))->service), (void *)ha->key, SET_TYPE_STRING);
    ((struct mloadplan_node *)(ha->value))->plan = plan;
    (((struct mloadplan_node *)(ha->value))->mutex) = ecalloc (1, sizeof(pthread_mutex_t));
 
@@ -367,12 +382,12 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
       uint32_t k = 0;
       for (; ((struct mloadplan_node *)(ha->value))->mod[i]->si->before[k]; k++) {
        struct stree *sel = streefind (plan->services, ((struct mloadplan_node *)(ha->value))->mod[i]->si->before[k], TREE_FIND_FIRST);
-	   if (sel && !inset ((void **) (((struct mloadplan_node *)(sel->value))->si_after), ha->key, SET_TYPE_STRING)) {
+       if (sel && !inset ((void **) (((struct mloadplan_node *)(sel->value))->si_after), ha->key, SET_TYPE_STRING)) {
         ((struct mloadplan_node *)(sel->value))->si_after = (char **)setadd ((void **) (((struct mloadplan_node *)(sel->value))->si_after), (void *)ha->key, SET_TYPE_STRING);
        }
-	  }
-	 }
-	}
+      }
+     }
+    }
    }
    pthread_mutex_init ((((struct mloadplan_node *)(ha->value))->mutex), NULL);
 
@@ -400,9 +415,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (set && set[0] && set[1]) { \
   for (u = 0; set[u]; u++) { \
    if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) { \
-    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) \
+    \
+    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) { \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
-    else { \
+    } else { \
      notice (2, "warning: subthread creation failed!"); \
      function ((struct mloadplan_node *)rha->value); \
     } \
@@ -419,9 +435,9 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 {\
  uint32_t u; \
  if (subthreads) {\
-  for (u = 0; subthreads[u]; u++)\
+  for (u = 0; subthreads[u]; u++) {\
    pthread_join (*(subthreads[u]), NULL);\
-\
+  }\
   free (subthreads); subthreads = NULL;\
  }\
 }
@@ -437,15 +453,20 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 // the un-loader function
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
+// see if we've already been here, bail out if so
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+
  if ((node->status & STATUS_DISABLED) || (node->status & STATUS_FAIL)) {
   pthread_mutex_unlock (node->mutex);
   return;
  }
- if (inset ((void **)node->plan->enable, (void *)node->service, SET_TYPE_STRING)) {
-  node->status = STATUS_ENABLED | STATUS_FAIL;
-  pthread_mutex_unlock (node->mutex);
-  return;
- }
+ uint32_t si = 0;
+ for (; node->service[si]; si++)
+  if (inset ((void **)node->plan->enable, (void *)node->service[si], SET_TYPE_STRING)) {
+   node->status = STATUS_ENABLED | STATUS_FAIL;
+   pthread_mutex_unlock (node->mutex);
+   return;
+  }
  node->status |= STATUS_WORKING;
 
  pthread_t **subthreads = NULL;
@@ -487,6 +508,8 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *);
 
 void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
+// see if we've already been here, bail out if so
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
 
  if ((node->group) && (node->group[0])) {
   uint32_t u = 0;
@@ -497,7 +520,9 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
   for (u = 0; node->group; u++) {
    if (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST)) {
     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
-    service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
+    uint32_t si = 0;
+    for (; node->service[si]; si++)
+     service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service[si]);
    }
   }
  }
@@ -509,6 +534,9 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
 // the loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
+// see if we've already been here, bail out if so
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+
  if (node->group && (node->status == STATUS_ENABLING))
   goto resume_group_enable;
  else if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
@@ -553,7 +581,9 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
      mod_plan_commit_recurse_enable (cnode);
 
      if (cnode->status & STATUS_ENABLED) {
-      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
+      uint32_t si = 0;
+      for (; node->service[si]; si++)
+       service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service[si]);
       node->status = STATUS_ENABLED;
       goto exit;
      }
@@ -568,8 +598,10 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 
      if (cnode->status & STATUS_ENABLED) {
       pthread_t th;
+      uint32_t si = 0;
+      for (; node->service[si]; si++)
+       service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service[si]);
 
-      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
       node->status |= STATUS_ENABLED;
 
 /* only real condition is that one of the elements need to be enabled, but the others should
@@ -594,7 +626,9 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
      mod_plan_commit_recurse_enable (cnode);
 
      if (cnode->status & STATUS_ENABLED) {
-      service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service);
+      uint32_t si = 0;
+      for (; node->service[si]; si++)
+       service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service[si]);
       node->status |= STATUS_ENABLED;
      } else {
       node->status = STATUS_FAIL;
@@ -617,6 +651,9 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 // the reset function
 void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
+// see if we've already been here, bail out if so
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+
  node->status |= STATUS_WORKING;
  uint32_t i = 0;
 
@@ -633,6 +670,9 @@ void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
 // the reload function
 void *mod_plan_commit_recurse_reload (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
+// see if we've already been here, bail out if so
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+
  uint32_t i = 0;
 
  if (node->mod) {
@@ -665,8 +705,12 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    char **cmdts = str2set (';', cmdt);
    uint32_t in = 0;
 
-   for (; cmdts[in]; in++)
-    ipc_process(cmdts[in], STDERR_FILENO);
+   if (cmdts) {
+    for (; cmdts[in]; in++)
+     ipc_process(cmdts[in], STDERR_FILENO);
+
+    free (cmdts);
+   }
   }
  }
 
@@ -745,11 +789,12 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    char **cmdts = str2set (';', cmdt);
    uint32_t in = 0;
 
-   for (; cmdts[in]; in++) {
-    ipc_process(cmdts[in], STDERR_FILENO);
+   if (cmdts) {
+    for (; cmdts[in]; in++) {
+     ipc_process(cmdts[in], STDERR_FILENO);
+    }
+    free (cmdts);
    }
-
-   free (cmdts);
   }
  }
 

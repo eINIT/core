@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <utmp.h>
 #include <string.h>
+#include <einit/utility.h>
 
 /* make sure we have these default constants, even on systems that don't have
    ut_type to work around compilation problems */
@@ -75,8 +76,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ACCOUNTING      0xe9
 #endif
 
-#define UTMP_CLEAN 0x01
-#define UTMP_ADD   0x02
+#define UTMP_CLEAN  0x01
+#define UTMP_ADD    0x02
+#define UTMP_MODIFY 0x04
 
 typedef char (*utmp_function) (unsigned char, struct utmp *);
 
@@ -96,8 +98,14 @@ utmp_function __utmp_update_function;
   }, \
   .ut_session = usession \
  }; \
- if (uline) strncpy (record.ut_line, (strstr(uline, "/dev/") == uline ? (uline = uline + 5) : uline), UT_LINESIZE); \
- else memset (record.ut_line, 0, UT_LINESIZE); \
+ if (uline) {\
+  char *tmpstr = estrdup (uline);\
+  if (tmpstr) {\
+   strncpy (record.ut_line, (strstr(tmpstr, "/dev/") == tmpstr ? tmpstr + 5 : tmpstr), UT_LINESIZE); \
+   free (tmpstr);\
+  }\
+ } \
+ else memset (record.ut_line, 0, UT_LINESIZE);\
  if (uid)   strncpy (record.ut_id,   uid,   4);           else memset (record.ut_id, 0, 4); \
  if (uuser) strncpy (record.ut_user, uuser, UT_NAMESIZE); else memset (record.ut_user, 0, UT_NAMESIZE); \
  if (uhost) strncpy (record.ut_host, uhost, UT_HOSTSIZE); else memset (record.ut_host, 0, UT_HOSTSIZE); \
