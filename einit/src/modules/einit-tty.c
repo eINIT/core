@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <einit-modules/process.h>
 #include <einit-modules/exec.h>
+#include <einit-modules/utmp.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -188,7 +189,7 @@ int texec (struct cfgnode *node) {
    struct stat statbuf;
    if (lstat (cmds[0], &statbuf)) {
     char cret [1024];
-	snprintf (cret, 1024, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
+    snprintf (cret, 1024, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else if (!(cpid = fork())) {
     if (device) {
@@ -208,6 +209,13 @@ int texec (struct cfgnode *node) {
    } else if (cpid != -1) {
     int ctty = -1;
     pid_t curpgrp;
+
+    if (do_utmp) {
+//     fputs (" >> creating utmp record\n", stderr);
+     create_utmp_record(utmprecord, INIT_PROCESS, cpid, device, "etty", NULL, NULL, 0, 0, cpid);
+
+     update_utmp (UTMP_ADD, &utmprecord);
+    }
 
     sched_watch_pid (cpid, watcher);
 

@@ -199,7 +199,9 @@ int main(int argc, char **argv) {
    *lp = 0;
    lp++;
 
-   if (!strcmp (ed, "mode")) {
+   if (!strcmp (ed, "softlevel")) {
+    einit_startup_mode_switches = estrdup (lp);
+   } if (!strcmp (ed, "mode")) {
 /* override default mode-switches with the ones in the environment variable mode= */
     einit_startup_mode_switches = str2set (':', lp);
    } else if (!strcmp (ed, "einit")) {

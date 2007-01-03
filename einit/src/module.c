@@ -249,6 +249,8 @@ struct lmodule *mod_update (struct lmodule *module) {
  struct cfgnode *lnode = NULL;
  if (!module->module) return module;
 
+ pthread_mutex_lock (&module->mutex);
+
  while (lnode = cfg_findnode ("services-override-module", 0, lnode))
   if (lnode->idattr && module->module->rid && !strcmp(lnode->idattr, module->module->rid)) {
    struct service_information *esi = emalloc (sizeof (struct service_information));
@@ -291,6 +293,8 @@ struct lmodule *mod_update (struct lmodule *module) {
    module->si->provides = np;
 //   free (stmp);
   }
+
+ pthread_mutex_unlock (&module->mutex);
 
  return module;
 }
@@ -400,6 +404,12 @@ int mod (unsigned int task, struct lmodule *module) {
    evstaticdestroy (ees);
   }
  }
+
+/* if (module->module && module->module->rid) {
+  fprintf (stderr, " >> changing state of module %s\n", module->module->rid);
+ } else {
+  fprintf (stderr, " >> changing state of unknown module\n");
+ }*/
 
 /* wait if the module is already being processed in a different thread */
  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_lock (&module->mutex))) {
@@ -709,7 +719,8 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
     if (((struct service_usage_item *)(ha->value))->users &&
         inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
      for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
-      if (((struct service_usage_item *)(ha->value))->users[i]->module)
+      if (((struct service_usage_item *)(ha->value))->users[i]->si &&
+          ((struct service_usage_item *)(ha->value))->users[i]->si->provides)
        ret = (char **)setcombine ((void **)ret, (void **)((struct service_usage_item *)(ha->value))->users[i]->si->provides, SET_TYPE_STRING);
      }
 //     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);

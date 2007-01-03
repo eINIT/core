@@ -748,6 +748,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    for (; cmdts[in]; in++) {
     ipc_process(cmdts[in], STDERR_FILENO);
    }
+
+   free (cmdts);
   }
  }
 

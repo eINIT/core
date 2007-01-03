@@ -86,16 +86,10 @@ void ipc_event_handler (struct einit_event *ev) {
 int configure (struct lmodule *r) {
  char *p;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
  this = r;
 
-/* if (p = cfg_getstring("services-external/provided", NULL)) {
-  this->module->si.provides = str2set (':', p);
-  this = mod_update (this);
-  mod (MOD_ENABLE, this);
- }*/
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *irr) {
@@ -116,7 +110,7 @@ int enable (void *pa, struct einit_event *status) {
 }
 
 int disable (void *pa, struct einit_event *status) {
- return STATUS_OK;
+ return STATUS_FAIL; // once enabled, this module cannot be disabled
 }
 
 void einit_event_handler (struct einit_event *ev) {
@@ -127,8 +121,14 @@ void einit_event_handler (struct einit_event *ev) {
   if (p = cfg_getstring("services-external/provided", NULL)) {
 //   fputs (" >> enabling external services\n", stderr);
 
+   pthread_mutex_lock (&this->mutex);
+
    this->module->si.provides = str2set (':', p);
+
+   pthread_mutex_unlock (&this->mutex);
+
    this = mod_update (this);
+
    mod (MOD_ENABLE, this);
   } else {
 //   fputs (" >> not enabling external services\n", stderr);

@@ -114,7 +114,7 @@
   </bluetooth>
 
   <tty>
-   <manage-utmp b="1" />
+   <manage-utmp b="true" />
 
 <!-- tty initialisation -->
    <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" />

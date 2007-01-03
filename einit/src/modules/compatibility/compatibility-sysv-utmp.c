@@ -94,6 +94,12 @@ int cleanup (struct lmodule *irr) {
 char __updateutmp (unsigned char options, struct utmp *new_entry) {
  int ufile;
  struct stat st;
+
+// strip the UTMP_ADD action if we don't get a new entry to add along with it
+ if ((options & UTMP_ADD) && !new_entry) options ^= UTMP_ADD;
+// if we don't have anything to do, bail out
+ if (!options) return -1;
+
  if (gmode == EINIT_GMODE_SANDBOX)
   ufile = open ("var/run/utmp", O_RDWR);
  else
@@ -114,11 +120,14 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
     for (; i < entries; i++) {
 #ifdef LINUX
      switch (utmpentries[i].ut_type) {
-#ifdef DEAD_PROCESS
       case DEAD_PROCESS:
+       if (options & UTMP_ADD) {
+        memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
+        options ^= UTMP_ADD;
+//        fprintf (stderr, " >> recycled old entry #%i\n", i);
+       }
+
        break;
-#endif
-#ifdef RUN_LVL
       case RUN_LVL:
        if (options & UTMP_CLEAN) {
 /* the higher 8 bits contain the old runlevel, the lower 8 bits the current one */
@@ -139,30 +148,14 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
         }
        }
        break;
-#endif
 
-#ifdef UT_UNKNOWN
       case UT_UNKNOWN:
-#endif
-#ifdef BOOT_TIME
       case BOOT_TIME:
-#endif
-#ifdef NEW_TIME
       case NEW_TIME:
-#endif
-#ifdef OLD_TIME
       case OLD_TIME:
-#endif
-#ifdef INIT_PROCESS
       case INIT_PROCESS:
-#endif
-#ifdef LOGIN_PROCESS
       case LOGIN_PROCESS:
-#endif
-#ifdef USER_PROCESS
       case USER_PROCESS:
-#endif
-#ifdef ACCOUNTING
       case ACCOUNTING:
        if (options & UTMP_CLEAN) {
 #ifdef LINUX
@@ -173,16 +166,21 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
 // if not...
 #endif
 // clean utmp record
-         utmpentries[i].ut_type = DEAD_PROCESS;
-         memset (&(utmpentries[i].ut_user), 0, sizeof (utmpentries[i].ut_user));
-         memset (&(utmpentries[i].ut_host), 0, sizeof (utmpentries[i].ut_host));
-         memset (&(utmpentries[i].ut_time), 0, sizeof (utmpentries[i].ut_time));
+         if (options & UTMP_ADD) {
+          memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
+          options ^= UTMP_ADD;
+//          fprintf (stderr, " >> recycled old entry #%i\n", i);
+         } else {
+          utmpentries[i].ut_type = DEAD_PROCESS;
+          memset (&(utmpentries[i].ut_user), 0, sizeof (utmpentries[i].ut_user));
+          memset (&(utmpentries[i].ut_host), 0, sizeof (utmpentries[i].ut_host));
+          memset (&(utmpentries[i].ut_time), 0, sizeof (utmpentries[i].ut_time));
+         }
 #ifdef LINUX
         }
 #endif
        }
        break;
-#endif
       default:
        fprintf (stderr, " >> bad UTMP entry: [%c%c%c%c] %i (%s), %s@%s: %i.%i\n", utmpentries[i].ut_id[0], utmpentries[i].ut_id[1], utmpentries[i].ut_id[2], utmpentries[i].ut_id[3], utmpentries[i].ut_type, utmpentries[i].ut_line, utmpentries[i].ut_user, utmpentries[i].ut_host, utmpentries[i].ut_tv.tv_sec, utmpentries[i].ut_tv.tv_usec);
        break;
@@ -197,6 +195,22 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
    close (ufile);
  } else {
   perror (" >> utmp: mmap()");
+ }
+
+ if (options & UTMP_ADD) { // still didn't get to add this.. try to append it to the file
+  if (gmode == EINIT_GMODE_SANDBOX)
+   ufile = open ("var/run/utmp", O_WRONLY | O_APPEND);
+  else
+   ufile = open ("/var/run/utmp", O_WRONLY | O_APPEND);
+
+  if (ufile) {
+   if (write(ufile, new_entry, sizeof (struct utmp)) != sizeof (struct utmp)) {
+    fputs (" >> uh-oh, short write to the utmp file...", stderr);
+   }
+   close (ufile);
+  }
+
+  options ^= UTMP_ADD;
  }
 
  return 0;
