@@ -81,6 +81,7 @@ const struct smodule self = {
 
 char  do_service_tracking = 0,
      *service_tracking_path = NULL;
+time_t profile_env_mtime = 0;
 
 // parse sh-style files and call back for each line
 int parse_sh (char *data, void (*callback)(char **, uint8_t)) {
@@ -354,19 +355,24 @@ void einit_event_handler (struct einit_event *ev) {
    char *bpath = NULL;
 
    if (node && node->flag) {
-    char *data = readfile ("/etc/profile.env");
+    if (!stat ("/etc/profile.env", &st) && (st.st_mtime > profile_env_mtime)) {
+     char *data = readfile ("/etc/profile.env");
+     profile_env_mtime = st.st_mtime;
 
-    if (data) {
-//     puts ("compatibility-sysv-gentoo: updating configuration with env.d");
-     parse_sh (data, sh_add_environ_callback);
+     if (data) {
+//      puts ("compatibility-sysv-gentoo: updating configuration with env.d");
+      parse_sh (data, sh_add_environ_callback);
 
-     free (data);
+      free (data);
+     }
+     ev->chain_type = EVE_CONFIGURATION_UPDATE;
     }
    }
 
 /* runlevels */
    if (bpath = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-runlevels/path")) {
     parse_gentoo_runlevels (bpath, NULL, parse_boolean (cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-runlevels/exclusive", NULL)));
+// need to add checks here for updated configuration
    }
 
 /* service tracker */

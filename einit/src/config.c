@@ -74,7 +74,9 @@ int cfg_addnode (struct cfgnode *node) {
  char doop = 1;
  char *template = NULL;
 
+#ifdef DEBUG
  node->signature = EI_SIGNATURE;
+#endif
 
  if (node->arbattrs) {
   uint32_t r = 0;
@@ -215,11 +217,13 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  while (cur) {
 //  printf ("is %s okay?\n", cur->key);
 //  fputs (" >> testing signature...\n", stderr);
+#ifdef DEBUG
   if ((((struct cfgnode *)cur->value)->signature) != EI_SIGNATURE)
    fputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr);
 
   if (strcmp ((((struct cfgnode *)cur->value)->id), cur->key))
    fputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr);
+#endif
 
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {
    return cur->value;
@@ -331,9 +335,7 @@ char *cfg_getpath (char *id) {
 }
 
 void einit_config_event_handler (struct einit_event *ev) {
-/* if ((ev->type == EVE_UPDATE_CONFIGURATION) && ev->string) {
-
- } else*/ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
 // update global environment here
   char **env = einit_global_environment;
   einit_global_environment = NULL;

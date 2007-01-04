@@ -388,6 +388,8 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
      for (i = 0; xml_configuration_files && xml_configuration_files [i]; i++) {
       einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
      }
+     ev->chain_type = EVE_CONFIGURATION_UPDATE;
+
      break;
     }
    }
@@ -395,6 +397,7 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
 
   if (ev->string) {
    einit_config_xml_expat_parse_configuration_file (ev->string);
+   ev->chain_type = EVE_CONFIGURATION_UPDATE;
   }
  }
 }

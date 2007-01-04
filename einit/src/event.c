@@ -127,8 +127,13 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
    cur = cur->next;
   }
 
-
 // pthread_mutex_unlock (&evf_mutex);
+
+ if (event->chain_type) {
+  event->type = event->chain_type;
+  event->chain_type = 0;
+  event_emit (event, flags);
+ }
 }
 
 void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {

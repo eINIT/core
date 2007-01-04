@@ -817,11 +817,12 @@ void power_event_handler(struct einit_event *ev) {
 
   if (errors)
    while (c) {
-    sleep (1);
     if (enableansicodes)
      printf ("\e[0;0H\e[0m[ \e[31m%04.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
     else
      printf ("[ %04.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
+
+    sleep (1);
     c--;
    }
 
@@ -879,7 +880,7 @@ unsigned char broadcast_message (char *path, char *message) {
     if (S_ISCHR (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0))) {
      FILE *sf = fopen (tmp, "w");
      if (sf) {
-      fprintf (sf, "\n---( BROADCAST MESSAGE )----------------------------------------------------\n >> %s\n---------------------------------------------------------( eINIT-%6.6i )---\n", message, getpid());
+      fprintf (sf, "\n---( BROADCAST MESSAGE )------------------------------------------------------\n >> %s\n-----------------------------------------------------------( eINIT-%6.6i )---\n", message, getpid());
       fclose (sf);
      }
     } else if (S_ISDIR (statbuf.st_mode)) {

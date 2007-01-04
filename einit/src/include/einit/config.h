@@ -84,7 +84,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EI_NODETYPE_CONFIG_CUSTOM 4
 #define EI_NODETYPE_MODE 8
 
+#ifdef DEBUG
 #define EI_SIGNATURE 0xD1E0B666
+#endif
 
 #define EINIT_GMODE_INIT       0x00000001
 #define EINIT_GMODE_METADAEMON 0x00000002
@@ -93,7 +95,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct cfgnode {
  unsigned int nodetype;
  char *id;
- uint32_t signature;
  struct cfgnode *mode;
  unsigned char flag;
  long int value;
@@ -103,6 +104,9 @@ struct cfgnode {
  char *path;
  char *source;
  char *source_file;
+#ifdef DEBUG
+ uint32_t signature;
+#endif
 };
 
 struct stree *hconfiguration;

@@ -122,12 +122,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EIPC_HELP                   0x0002
 #define EIPC_DETACH                 0x0010
 
-#define evstaticinit(ttype) { .type = ttype, .type_custom = NULL, .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
+#define evstaticinit(ttype) { .type = ttype, .chain_type = 0, /* .type_custom = NULL, */ .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
  uint32_t type;                  /*!< the event or subsystem to watch */
- char *type_custom;              /*!< not yet implemented; reserved for custom events */
+// char *type_custom;              /*!< not yet implemented; reserved for custom events */
  void **set;                     /*!< a set that should make sense in combination with the event type */
  char *string;                   /*!< a string */
  int32_t integer, status, task;  /*!< integers */
@@ -135,6 +135,9 @@ struct einit_event {
 
  uint32_t seqid;
  time_t timestamp;
+
+ uint32_t chain_type;            /*!< the event to be called right after this one */
+// char *type_custom;              /*!< not yet implemented; reserved for custom events */
 
  void *para;                     /*!< additional parametres */
  pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */

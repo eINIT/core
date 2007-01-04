@@ -497,7 +497,6 @@ void *sched_run_sigchild (void *p) {
     ee.string = "power-reset";
 
     ee.integer = 0;
-    ee.type_custom = NULL;
 
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);
@@ -620,7 +619,6 @@ void *sched_run_sigchild (void *p) {
     ee.string = "power-reset";
 
     ee.integer = 0;
-    ee.type_custom = NULL;
 
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);

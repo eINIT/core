@@ -1,5 +1,7 @@
 2007/01/04: mdeininger
  * bugbug -- bugger -- think i fixed it
+ * used the wrong order for feedback/sleep
+ * configuration updates are now propagated in a much cleaner way
 
 2007/01/03: mdeininger
  * darwin compile fix (utmp)
