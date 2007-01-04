@@ -163,6 +163,9 @@
    <printing group="hpiod:hplip:cupsd" seq="any-iop" />
   </alias>
 
+<!-- example alias: localmount is the same as mount/local -->
+<!--  <alias id="localmount" s="mount/local" /> -->
+
 <!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
      to use quingy and have the terminals controlled using einit-tty, then you will need mount/critical
      if /usr is on its own partition (due to libquingy) -->
