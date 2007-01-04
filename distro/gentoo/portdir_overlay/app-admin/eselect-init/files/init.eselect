@@ -5,7 +5,7 @@
 DESCRIPTION="Manage /sbin/init symlink"
 MAINTAINER="rmh3093@gmail.com"
 
-init_progs="einit jinit initng sysvinit"
+init_progs="einit jinit initng sysvinit runit"
 
 # find a list of init symlink targets
 find_targets() {
