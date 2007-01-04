@@ -85,7 +85,8 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
 
  n->lbase = stree ? stree->lbase : NULL;
 
- n->next = base;
+// n->next = base;
+ n->next = stree && stree->lbase ? *stree->lbase : base;
  stree = n;
 
  if (!base)
@@ -99,6 +100,8 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
 struct stree *streedel (struct stree *subject) {
  struct stree *cur = (subject ? *(subject->lbase) : NULL),
               *be = cur;
+
+// puts (" >> called streedel");
 
  if (!cur || !subject) return subject;
 

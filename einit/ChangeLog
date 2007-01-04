@@ -1,3 +1,6 @@
+2007/01/04: mdeininger
+ * bugbug -- bugger -- think i fixed it
+
 2007/01/03: mdeininger
  * darwin compile fix (utmp)
  * fixed changelog dates

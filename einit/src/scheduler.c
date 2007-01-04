@@ -67,6 +67,8 @@ struct spidcb *cpids = NULL;
 struct spidcb *sched_deadorphans = NULL;
 uint32_t gstatus = EINIT_NOMINAL;
 
+char sigint_called = 0;
+
 int cleanup ();
 
 int scheduler_cleanup () {
@@ -271,22 +273,16 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #ifdef LINUX
 /* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
- if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid()))) {
+ if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid())))
 #else
 /* only shut down if the SIGINT was sent by process 1 or by the parent process */
 /* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
 // note: this relies on a proper pthreads implementation so... i deactivated it for now.
- {
 #endif
-  struct einit_event ee;
-  ee.type = EVE_SWITCH_MODE;
-  ee.string = "power-reset";
-
-  ee.integer = 0;
-  ee.type_custom = NULL;
-
-  event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
-//  evstaticdestroy(ee);
+ {
+  sigint_called = 1;
+  if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
+   sem_post (sigchild_semaphore);
 
  }
  return;
@@ -494,6 +490,20 @@ void *sched_run_sigchild (void *p) {
 //    fputs (" >> EXITING\n", stderr);
     return NULL;
    }
+
+   if (sigint_called) {
+    struct einit_event ee;
+    ee.type = EVE_SWITCH_MODE;
+    ee.string = "power-reset";
+
+    ee.integer = 0;
+    ee.type_custom = NULL;
+
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+//  evstaticdestroy(ee);
+
+    sigint_called = 0;
+   }
   }
  }
 }
@@ -603,6 +613,19 @@ void *sched_run_sigchild (void *p) {
     }
 //    scheduler_cleanup ();
 //    return NULL;
+   }
+   if (sigint_called) {
+    struct einit_event ee;
+    ee.type = EVE_SWITCH_MODE;
+    ee.string = "power-reset";
+
+    ee.integer = 0;
+    ee.type_custom = NULL;
+
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+//  evstaticdestroy(ee);
+
+    sigint_called = 0;
    }
   }
  }
