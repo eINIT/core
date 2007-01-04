@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -67,7 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const struct smodule self = {
     .eiversion    = EINIT_VERSION,
     .version      = 1,
-    .mode         = 0,
+    .mode         = EINIT_MOD_LOADER,
     .options      = 0,
     .name         = "System-V Compatibility: Gentoo Support",
     .rid          = "compatibility-sysv-gentoo",
@@ -80,8 +81,38 @@ const struct smodule self = {
 };
 
 char  do_service_tracking = 0,
-     *service_tracking_path = NULL;
+     *service_tracking_path = NULL,
+      is_gentoo_system = 0,
+     *init_d_dependency_scriptlet = NULL,
+     *init_d_exec_scriptlet = NULL;
 time_t profile_env_mtime = 0;
+
+int scanmodules (struct lmodule *);
+int init_d_enable (char *, struct einit_event *);
+int init_d_disable (char *, struct einit_event *);
+int init_d_reset (char *, struct einit_event *);
+int init_d_reload (char *, struct einit_event *);
+int configure (struct lmodule *);
+int cleanup (struct lmodule *);
+int parse_sh (char *, void (*)(char **, uint8_t));
+void sh_add_environ_callback (char **, uint8_t);
+void parse_gentoo_runlevels (char *, struct cfgnode *, char);
+void einit_event_handler (struct einit_event *);
+void ipc_event_handler (struct einit_event *);
+int cleanup_after_module (struct lmodule *);
+
+/* functions that module tend to need */
+int configure (struct lmodule *irr) {
+ exec_configure (irr);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+}
+
+int cleanup (struct lmodule *irr) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ exec_cleanup(irr);
+}
 
 // parse sh-style files and call back for each line
 int parse_sh (char *data, void (*callback)(char **, uint8_t)) {
@@ -205,6 +236,7 @@ void sh_add_environ_callback (char **data, uint8_t status) {
  }
 }
 
+/* parse gentoo runlevels and add them as nodes to the main configuration */
 void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclusive) {
  DIR *dir = NULL;
  struct dirent *de = NULL;
@@ -347,9 +379,16 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
   struct stat st;
+
+  init_d_dependency_scriptlet = cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/list-dependencies", NULL);
+  init_d_exec_scriptlet = cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/execute", NULL);
+
   char *cs = cfg_getstring("configuration-compatibility-sysv-distribution", NULL);
-  if (cs && (!strcmp("gentoo", cs)) || ((!strcmp("auto", cs) && !stat("/etc/gentoo-release", &st)))) {
-   fputs (" >> gentoo system detected\n", stderr);
+  if (is_gentoo_system || (cs && (!strcmp("gentoo", cs)) || ((!strcmp("auto", cs) && !stat("/etc/gentoo-release", &st))))) {
+   if (!is_gentoo_system) {
+    is_gentoo_system = 1;
+    fputs (" >> gentoo system detected\n", stderr);
+   }
 /* env.d data */
    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-parse-env.d", NULL);
    char *bpath = NULL;
@@ -462,7 +501,8 @@ void einit_event_handler (struct einit_event *ev) {
    char tmp[256];
    int slfile;
 
-   fprintf (stderr, " >> updating softlevel to %s\n", ev->string);
+   snprintf (tmp, 256, "updating softlevel to %s\n", ev->string);
+   notice (4, tmp);
 
    snprintf (tmp, 256, "%ssoftlevel", service_tracking_path);
 
@@ -477,12 +517,225 @@ void einit_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+void ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+  if (!cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d/path", NULL)) {
+   fdputs ("NOTICE: CV \"configuration-compatibility-sysv-distribution-gentoo-init.d/path\":\n  Not found: Gentoo Init Scripts will not be processed. (not a problem)\n", ev->integer);
+   ev->task++;
+  }
+
+  ev->flag = 1;
+ }
 }
 
-int cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+/* gentoo init.d support functions */
+
+int cleanup_after_module (struct lmodule *this) {
+#if 0
+ if (this->module) {
+ if (this->module->provides)
+ free (this->module->provides);
+ if (this->module->requires)
+ free (this->module->requires);
+ if (this->module->notwith)
+ free (this->module->notwith);
+ free (this->module);
+}
+
+ if (this->param) {
+ free (this->param);
+}
+#endif
+}
+
+int scanmodules (struct lmodule *modchain) {
+ DIR *dir;
+ struct dirent *de;
+ char *nrid = NULL,
+ *init_d_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-init.d/path"),
+ *tmp = NULL;
+ uint32_t plen;
+ struct smodule *modinfo;
+
+ if (!init_d_path || !init_d_dependency_scriptlet || !is_gentoo_system) return -1;
+
+ plen = strlen (init_d_path) +1;
+
+ if (dir = opendir (init_d_path)) {
+  while (de = readdir (dir)) {
+   char doop = 1;
+
+// filter .-files
+   if (de->d_name[0] == '.') continue;
+// filter *.sh
+   uint32_t xl = strlen(de->d_name);
+   if ((xl > 3) && (de->d_name[xl-3] == '.') &&
+       (de->d_name[xl-2] == 's') && (de->d_name[xl-1] == 'h')) continue;
+
+   tmp = (char *)emalloc (plen + strlen (de->d_name));
+   struct stat sbuf;
+   struct lmodule *lm;
+   *tmp = 0;
+   strcat (tmp, init_d_path);
+   strcat (tmp, de->d_name);
+   if (!stat (tmp, &sbuf) && S_ISREG (sbuf.st_mode)) {
+    char  tmpx[1024];
+
+    modinfo = emalloc (sizeof (struct smodule));
+    memset (modinfo, 0, sizeof(struct smodule));
+
+    nrid = emalloc (8 + strlen(de->d_name));
+    *nrid = 0;
+    strcat (nrid, "gentoo-");
+    strcat (nrid, de->d_name);
+
+    snprintf (tmpx, 1024, "Gentoo-Style init.d Script (%s)", de->d_name);
+    modinfo->name = estrdup (tmpx);
+    modinfo->rid = estrdup(nrid);
+
+    char *variables[5] = { "script-path", tmp,
+                           "script-name", (nrid + 7), NULL};
+
+    if (variables) {
+     char *depscript = apply_variables (init_d_dependency_scriptlet, variables),
+// meh, gentoo's init scripts are always parsed via bash -- should work anyway
+//          *pcommand[4] = { "/bin/bash", "-c", depscript, NULL },
+          pbuffer[1024];
+     FILE *datapipe = popen (depscript, "r");
+
+     while (fgets(pbuffer, 1024, datapipe)) {
+      strtrim (pbuffer);
+//      puts(pbuffer);
+      char *val = strchr (pbuffer, '=');
+      if (val) {
+       *val = 0;
+       val++;
+
+       if (!strcmp (pbuffer, "need")) // need == requires
+        modinfo->si.requires = str2set (' ', val);
+       else if (!strcmp (pbuffer, "provide")) // provide == provides
+        modinfo->si.provides = str2set (' ', val);
+       else if (!strcmp (pbuffer, "before")) // before == before
+        modinfo->si.before = str2set (' ', val);
+       else if (!strcmp (pbuffer, "use") || !strcmp (pbuffer, "after")) { // use & after == after
+        char **new = str2set (' ', val);
+        modinfo->si.before = (char **)setcombine ((void **)modinfo->si.before, (void **)new, SET_TYPE_STRING);
+       } else fputs (" >> gentoo init scripts: invalid input (unknown token)\n", stderr);
+      }
+      else fputs (" >> gentoo init scripts: invalid input\n", stderr);
+     }
+
+     pclose (datapipe);
+    }
+
+    modinfo->si.provides = (char **)setadd ((void **)modinfo->si.provides, (void *)(nrid + 7), SET_TYPE_STRING);
+
+    struct lmodule *lm = modchain;
+    while (lm) {
+     if (lm->source && !strcmp(lm->source, tmp)) {
+      lm->param = (void *)estrdup (tmp);
+      lm->enable = (int (*)(void *, struct einit_event *))init_d_enable;
+      lm->disable = (int (*)(void *, struct einit_event *))init_d_disable;
+      lm->reset = (int (*)(void *, struct einit_event *))init_d_reset;
+      lm->reload = (int (*)(void *, struct einit_event *))init_d_reload;
+      lm->cleanup = cleanup_after_module;
+      lm->module = modinfo;
+
+      lm = mod_update (lm);
+      doop = 0;
+      break;
+     }
+     lm = lm->next;
+    }
+
+    if (doop) {
+     struct lmodule *new = mod_add (NULL, modinfo);
+     if (new) {
+      new->source = estrdup (tmp);
+      new->param = (void *)estrdup (tmp);
+      new->enable = (int (*)(void *, struct einit_event *))init_d_enable;
+      new->disable = (int (*)(void *, struct einit_event *))init_d_disable;
+      new->reset = (int (*)(void *, struct einit_event *))init_d_reset;
+      new->reload = (int (*)(void *, struct einit_event *))init_d_reload;
+      new->cleanup = cleanup_after_module;
+     }
+    }
+
+   }
+   if (nrid) free (nrid);
+   if (tmp) free (tmp);
+  }
+
+  closedir (dir);
+ } else {
+  fprintf (stderr, "couldn't open init.d directory \"%s\"\n", init_d_path);
+ }
+}
+
+// int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
+
+int init_d_enable (char *init_script, struct einit_event *status) {
+ char *variables[7] = {
+  "script-path", init_script,
+  "script-name", init_script,
+  "action", "start", NULL },
+  *cmdscript = NULL,
+  *xrev = NULL;
+
+ if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+ if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+
+ cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+
+ return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+}
+
+int init_d_disable (char *init_script, struct einit_event *status) {
+ char *variables[7] = {
+  "script-path", init_script,
+  "script-name", init_script,
+  "action", "stop", NULL },
+  *cmdscript = NULL,
+  *xrev = NULL;
+
+  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+
+  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+
+  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+}
+
+int init_d_reset (char *init_script, struct einit_event *status) {
+ char *variables[7] = {
+  "script-path", init_script,
+  "script-name", init_script,
+  "action", "restart", NULL },
+  *cmdscript = NULL,
+  *xrev = NULL;
+
+  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+
+  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+
+  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+}
+
+int init_d_reload (char *init_script, struct einit_event *status) {
+ char *variables[7] = {
+  "script-path", init_script,
+  "script-name", init_script,
+  "action", "reload", NULL },
+  *cmdscript = NULL,
+  *xrev = NULL;
+
+  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+
+  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+
+  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
 // no enable/disable functions: this is a passive module

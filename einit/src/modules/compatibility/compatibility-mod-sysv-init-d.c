@@ -83,11 +83,12 @@ int init_d_disable (char *, struct einit_event *);
 int init_d_reset (char *, struct einit_event *);
 int init_d_reload (char *, struct einit_event *);
 int configure (struct lmodule *);
+int cleanup (struct lmodule *);
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getstring("configuration-compatibility-sysv-init.d/path", NULL)) {
-   fdputs (" * configuration variable \"configuration-compatibility-sysv-init.d/path\" not found.\n", ev->integer);
+   fdputs ("NOTICE: CV \"configuration-compatibility-sysv-init.d/path\":\n  Not found: Regular Init Scripts will not be processed. (not a problem)\n", ev->integer);
    ev->task++;
   }
 
@@ -159,7 +160,7 @@ int scanmodules (struct lmodule *modchain) {
     strcat (nrid, "init-d-");
     strcat (nrid, de->d_name);
 
-    snprintf (tmpx, 1024, "System-V init.d script (%s)", de->d_name);
+    snprintf (tmpx, 1024, "System-V-Style init.d Script (%s)", de->d_name);
     modinfo->name = estrdup (tmpx);
     modinfo->rid = estrdup(nrid);
 
@@ -208,8 +209,6 @@ int scanmodules (struct lmodule *modchain) {
   fprintf (stderr, "couldn't open init.d directory \"%s\"\n", init_d_path);
  }
 }
-
-// int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 
 int init_d_enable (char *init_script, struct einit_event *status) {
  char *cmd;

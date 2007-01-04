@@ -380,7 +380,7 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
    struct stat st;
    uint32_t i = 0;
 
-   fputs (" >> global configuration update, checking files\n", stderr);
+//   fputs (" >> global configuration update, checking files\n", stderr);
 
    for (; xml_configuration_files && xml_configuration_files [i]; i++) {
     stat (xml_configuration_files [i], &st); // see if any files were modified

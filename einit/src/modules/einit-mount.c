@@ -1213,17 +1213,6 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  uint32_t i = 0;
  if (!mountpoint) return;
 
- if (gmode == EINIT_GMODE_SANDBOX) {
-  char **ign = str2set (':', cfg_getstring("configuration-storage-fstab-sandbox-ignore/nodes", NULL));
-
-  if (ign) {
-   char dr = 0;
-   dr = inset ((void **)ign, (void *)mountpoint, SET_TYPE_STRING);
-   free (ign);
-   if (dr) return;
-  }
- }
-
  memset (&fse, 0, sizeof (struct fstab_entry));
 
  fse.mountpoint = mountpoint;

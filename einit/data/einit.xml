@@ -147,6 +147,27 @@
       <runlevels path="/etc/runlevels" exclusive="false" /> -->
       <parse-env.d b="true" />
       <service-tracker b="true" path="/var/lib/init.d" />
+
+<!-- scriptlets to process gentoo's init.d scripts
+     ( i don't particularly feel like re-implementing a complete sh right now )
+     arguments: script-path, script-name, action -->
+      <init.d-scriptlets
+       list-dependencies='
+        need () { echo "need="$@; };
+        use () { echo "use="$@; };
+        provide () { echo "provide="$@; };
+        before () { echo "before="$@; };
+        after () { echo "after="$@; };
+        depend () { echo "need=mount/local"; };
+
+        if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
+        source ${script-path};
+
+        depend;'
+       execute='
+        if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
+        source ${script-path};
+        ${action};' />
      </gentoo>
     </distribution>
 <!-- in case you wish to use init.d scripts, use this:
@@ -188,7 +209,7 @@
    </filesystem>
    <critical-mountpoints s="/usr:/var" />
 <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
-   <fsck-command s="/sbin/fsck -a -T -t %s %s" />
+   <fsck-command s="/sbin/fsck -a -T -t %1$s %2$s" />
 
    <block-devices>
     <dev-constraints s="/dev/([shm]d[a-z]?[0-9]*)" />
@@ -196,9 +217,6 @@
    </block-devices>
 
    <fstab>
-<!--
-    <sandbox-ignore nodes="/:/boot:/proc:/proc/bus/usb:/dev/shm:/dev/pts:/dev:/sys" /> -->
-
 <!-- NEVER remove the configuration fstab-source! -->
     <source s="configuration" />
 

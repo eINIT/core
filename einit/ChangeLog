@@ -2,6 +2,8 @@
  * bugbug -- bugger -- think i fixed it
  * used the wrong order for feedback/sleep
  * configuration updates are now propagated in a much cleaner way
+ * added support for importing gentoo's init.d script dependencies
+ * added support for executing gentoo's init.d scripts
 
 2007/01/03: mdeininger
  * darwin compile fix (utmp)
