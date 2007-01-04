@@ -146,6 +146,7 @@
 <!--      <init.d path="/etc/init.d/" />
       <runlevels path="/etc/runlevels" exclusive="false" /> -->
       <parse-env.d b="true" />
+      <service-tracker b="true" path="/var/lib/init.d" />
      </gentoo>
     </distribution>
 <!-- in case you wish to use init.d scripts, use this:

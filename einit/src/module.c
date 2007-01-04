@@ -272,26 +272,23 @@ struct lmodule *mod_update (struct lmodule *module) {
    break;
   }
 
-  if (module->si->provides) {
+  if (service_aliases && module->si->provides) {
    uint32_t i = 0;
-   char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING), **stmp = module->si->provides;
+   char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING);
    for (; module->si->provides[i]; i++) {
     struct stree *x = streefind (service_aliases, module->si->provides[i], TREE_FIND_FIRST);
+
     while (x) {
      if (x->value) {
-      if (!inset ((void **)module->si->provides, x->value, SET_TYPE_STRING)) {
-//       fprintf (stderr, " >> adding service %s to module %s\n", (char*)x->value, module->module->rid);
+      if (!inset ((void **)np, x->value, SET_TYPE_STRING)) {
        np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
-      }/* else {
-       fprintf (stderr, " >> would add service %s to module %s, but that's already in the list\n", (char*)x->value, module->module->rid);
-      }*/
+      }
      }
      x = streefind (service_aliases, module->si->provides[i], TREE_FIND_NEXT);
     }
    }
 
    module->si->provides = np;
-//   free (stmp);
   }
 
  pthread_mutex_unlock (&module->mutex);
@@ -384,27 +381,6 @@ int mod (unsigned int task, struct lmodule *module) {
  struct stree *ha;
 
  if (!module) return 0;
-/* inform everyone about what's going to happen */
- else {
-  struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);
-  eem.task = task;
-  eem.status = STATUS_WORKING;
-  eem.para = (void *)module;
-  event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
-  evstaticdestroy (eem);
-
-/* same for services */
-  if (module->si && module->si->provides) {
-   struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
-   ees.task = task;
-   ees.status = STATUS_WORKING;
-   ees.string = module->si->provides[0];
-   ees.set = (void **)module->si->provides;
-   event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
-   evstaticdestroy (ees);
-  }
- }
-
 /* if (module->module && module->module->rid) {
   fprintf (stderr, " >> changing state of module %s\n", module->module->rid);
  } else {
@@ -469,6 +445,27 @@ int mod (unsigned int task, struct lmodule *module) {
  }
 
  skipdependencies:
+
+/* inform everyone about what's going to happen */
+ {
+  struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);
+  eem.task = task;
+  eem.status = STATUS_WORKING;
+  eem.para = (void *)module;
+  event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (eem);
+
+  /* same for services */
+  if (module->si && module->si->provides) {
+   struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
+   ees.task = task;
+   ees.status = STATUS_WORKING;
+   ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
+   ees.set = (void **)module->si->provides;
+   event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ees);
+  }
+ }
 
 /* actual loading bit */
  {
@@ -549,7 +546,7 @@ int mod (unsigned int task, struct lmodule *module) {
     struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
     ees.task = task;
     ees.status = fb->status;
-    ees.string = module->si->provides[0];
+    ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
     ees.set = (void **)module->si->provides;
     event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
     evstaticdestroy (ees);
@@ -810,7 +807,7 @@ void mod_event_handler(struct einit_event *event) {
 
 void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  struct stree *new_aliases = NULL, *ca;
+  struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
 
   while (node = cfg_findnode ("services-alias", 0, node)) {

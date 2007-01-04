@@ -71,7 +71,10 @@ int cfg_free () {
 int cfg_addnode (struct cfgnode *node) {
  if (!node || !node->id) return;
  struct stree *cur = hconfiguration;
- char doop = 1, *template = NULL;
+ char doop = 1;
+ char *template = NULL;
+
+ node->signature = EI_SIGNATURE;
 
  if (node->arbattrs) {
   uint32_t r = 0;
@@ -152,7 +155,7 @@ int cfg_addnode (struct cfgnode *node) {
     void *bsl = cur->luggage;
     ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
     cur->luggage = node->arbattrs;
-    if (bsl) free (bsl);
+//    if (bsl) free (bsl);
 
     ((struct cfgnode *)cur->value)->nodetype    = node->nodetype;
     ((struct cfgnode *)cur->value)->mode        = node->mode;
@@ -162,7 +165,7 @@ int cfg_addnode (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->idattr      = node->idattr;
     bsl = (void *)((struct cfgnode *)cur->value)->path;
     ((struct cfgnode *)cur->value)->path        = node->path;
-    if (bsl) free (bsl);
+//    if (bsl) free (bsl);
     bsl = (void *)((struct cfgnode *)cur->value)->source;
     ((struct cfgnode *)cur->value)->source      = node->source;
 //    if (bsl) free (bsl);
@@ -188,7 +191,7 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  struct stree *cur = hconfiguration;
  if (!id) return;
 
-// printf ("supposed to find id=%s, base=%x\n", id, base);
+// printf ("supposed to find id=%s, base=%x in 0x%x(0x%x)\n", id, base, cur, hconfiguration);
 
  if (base) {
 //  if (!cur) puts ("searching for entry node");
@@ -204,13 +207,28 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  } else
   cur = streefind (cur, id, TREE_FIND_FIRST);
 
-// if (!cur) puts ("no node found!");
+/* if (!cur) puts ("no node found!");
+ else {
+  puts ("have entry node");
+ }*/
 
  while (cur) {
-  if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type)))
+//  printf ("is %s okay?\n", cur->key);
+//  fputs (" >> testing signature...\n", stderr);
+  if ((((struct cfgnode *)cur->value)->signature) != EI_SIGNATURE)
+   fputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr);
+
+  if (strcmp ((((struct cfgnode *)cur->value)->id), cur->key))
+   fputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr);
+
+  if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {
    return cur->value;
+  }/* else {
+   printf ("rejecting node %s\n", cur->key);
+  }*/
   cur = streefind (cur, id, TREE_FIND_NEXT);
  }
+
  return NULL;
 }
 
@@ -226,9 +244,22 @@ char *cfg_getstring (char *id, struct cfgnode *mode) {
  if (strchr (id, '/')) {
   char f = 0;
   sub = str2set ('/', id);
+  if (!sub[1]) {
+   node = cfg_getnode (id, mode);
+   if (node)
+    ret = node->svalue;
+
+   return ret;
+  }
+
   node = cfg_getnode (sub[0], mode);
   if (node && node->arbattrs && node->arbattrs[0]) {
+//   printf ("node %s\n", node->id);
+   if (node->arbattrs)
+//    printf ("arbitrary attributes: %s\n", set2str(':', node->arbattrs));
+
    for (i = 0; node->arbattrs[i]; i+=2) {
+//    printf (" >> comparing %s==%s\n", node->arbattrs[i], sub[1]);
     if (f = (!strcmp(node->arbattrs[i], sub[1]))) {
      ret = node->arbattrs[i+1];
      break;

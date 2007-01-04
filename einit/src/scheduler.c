@@ -595,12 +595,14 @@ void *sched_run_sigchild (void *p) {
 
   pthread_mutex_unlock (&schedcpidmutex);
   if (!check) {
-   sem_wait (sigchild_semaphore);
-   if (gstatus == EINIT_EXITING) {
-    fputs (" >> scheduler SIGCHLD thread now exiting\n", stderr);
-    exit (EXIT_SUCCESS);
-    scheduler_cleanup ();
-    return NULL;
+   if (gstatus != EINIT_EXITING) sem_wait (sigchild_semaphore);
+   else {
+    fputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr);
+    while (sleep (255)) {
+     fputs (" >> still not dead...", stderr);
+    }
+//    scheduler_cleanup ();
+//    return NULL;
    }
   }
  }

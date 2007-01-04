@@ -114,12 +114,9 @@ int disable (void *pa, struct einit_event *status) {
 }
 
 void einit_event_handler (struct einit_event *ev) {
-// fputs (" >> investigating event\n", stderr);
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-//  fputs (" >> configuration update\n", stderr);
   char *p;
   if (p = cfg_getstring("services-external/provided", NULL)) {
-//   fputs (" >> enabling external services\n", stderr);
 
    pthread_mutex_lock (&this->mutex);
 
@@ -130,8 +127,6 @@ void einit_event_handler (struct einit_event *ev) {
    this = mod_update (this);
 
    mod (MOD_ENABLE, this);
-  } else {
-//   fputs (" >> not enabling external services\n", stderr);
   }
  }
 }

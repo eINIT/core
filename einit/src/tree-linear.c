@@ -147,7 +147,16 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
 
  if (!c) return NULL;
 
- while (strcmp (key, c->key) && c->next) c = c->next;
+ while (c) {
+/*  if (!c->key) c = c->next;
+  printf (" >> streefind: testing %s==%s in %x:%x@%x\n", key, c->key, stree, (stree->lbase ? *(stree->lbase) : NULL), c);*/
+  if (!strcmp (key, c->key)) {
+//   printf (" >> streefind: found %s in %x:%x@%x\n", key, stree, (stree->lbase ? *(stree->lbase) : NULL), c);
+
+   return c;
+  }
+  c = c->next;
+ }
  if (c && (!c->next) && strcmp (key, c->key)) return NULL;
 
  return c;

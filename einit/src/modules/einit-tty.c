@@ -110,17 +110,20 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *this) {
+ utmp_configure(this);
+ exec_configure(this);
+
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
   do_utmp = utmpnode->flag;
 
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- exec_configure(this);
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  exec_cleanup(this);
+ utmp_cleanup(this);
 }
 
 void *watcher (struct spidcb *spid) {

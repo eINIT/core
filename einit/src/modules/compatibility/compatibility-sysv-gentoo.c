@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <fcntl.h>
 
 #define EXPECTED_EIV 1
 
@@ -77,6 +78,9 @@ const struct smodule self = {
         .before   = NULL
     }
 };
+
+char  do_service_tracking = 0,
+     *service_tracking_path = NULL;
 
 // parse sh-style files and call back for each line
 int parse_sh (char *data, void (*callback)(char **, uint8_t)) {
@@ -341,8 +345,10 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
+  struct stat st;
   char *cs = cfg_getstring("configuration-compatibility-sysv-distribution", NULL);
-  if (cs && (!strcmp("auto", cs) || !strcmp("gentoo", cs))) {
+  if (cs && (!strcmp("gentoo", cs)) || ((!strcmp("auto", cs) && !stat("/etc/gentoo-release", &st)))) {
+   fputs (" >> gentoo system detected\n", stderr);
 /* env.d data */
    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-parse-env.d", NULL);
    char *bpath = NULL;
@@ -361,6 +367,105 @@ void einit_event_handler (struct einit_event *ev) {
 /* runlevels */
    if (bpath = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-runlevels/path")) {
     parse_gentoo_runlevels (bpath, NULL, parse_boolean (cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-runlevels/exclusive", NULL)));
+   }
+
+/* service tracker */
+   node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-service-tracker", NULL);
+   if (do_service_tracking = (node && node->flag)) {
+    service_tracking_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-service-tracker/path");
+    if (!service_tracking_path) do_service_tracking = 0;
+   }
+  }
+ } else if (ev->type == EVE_SERVICE_UPDATE) { // service tracking
+  if (do_service_tracking && ev->set) {
+   struct stat st;
+   char tmp[256], tmpd[256], *base = NULL, *dbase = NULL,
+// service is a daemon if providing module's rid begins with daemon-
+        isdaemon = ev->string && (strstr (ev->string, "daemon-") == ev->string);
+   uint32_t i = 0;
+
+   if (ev->status & STATUS_OK) { // tried to do that, succeeded
+    if (ev->task & MOD_ENABLE) {
+     base = "started";
+     dbase = "starting";
+    }
+   } else if (ev->status & STATUS_FAIL) { // tried to do that, but failed
+    if (ev->task & MOD_ENABLE) {
+     base = "failed";
+     dbase = "starting";
+    } else if (ev->task & MOD_DISABLE) {
+     base = "started";
+     dbase = "stopping";
+    }
+   } else { // trying to do something right now
+    if (ev->task & MOD_ENABLE) {
+     base = "starting";
+     dbase = "failed";
+    } else if (ev->task & MOD_DISABLE) {
+     base = "stopping";
+     dbase = "started";
+    }
+   }
+
+   if (base || dbase) {
+    for (; ev->set[i]; i++) {
+     snprintf (tmp, 256, "%ssoftscripts/%s", service_tracking_path, ev->set[i]);
+     if (lstat (tmp, &st)) {
+      snprintf (tmpd, 256, "%ssoftscripts", service_tracking_path);
+      if (stat (tmpd, &st)) {
+       if (mkdir (tmpd, 0755)) perror (" >> could not create softscripts directory");
+      }
+
+      symlink ("/sbin/einit-control", tmp);
+     }
+
+     if (isdaemon) {
+      snprintf (tmp, 256, "%sdaemons/%s", service_tracking_path, ev->set[i]);
+      if (lstat (tmp, &st)) {
+       snprintf (tmpd, 256, "%sdaemons", service_tracking_path);
+       if (stat (tmpd, &st)) {
+        if (mkdir (tmpd, 0755)) perror (" >> could not create daemons directory");
+       }
+
+       symlink ("/sbin/einit-control", tmp);
+      }
+     }
+
+     if (base) {
+      snprintf (tmp, 256, "%s%s/%s", service_tracking_path, base, ev->set[i]);
+      if (lstat (tmp, &st)) {
+       snprintf (tmpd, 256, "%s%s", service_tracking_path, base);
+       if (stat (tmpd, &st)) {
+        if (mkdir (tmpd, 0755)) perror (" >> could not create softscripts directory");
+       }
+
+       symlink ("/sbin/einit-control", tmp);
+      }
+     }
+
+     if (dbase) {
+      snprintf (tmp, 256, "%s%s/%s", service_tracking_path, dbase, ev->set[i]);
+      unlink (tmp);
+     }
+
+    }
+   }
+  }
+ } else if (ev->type == EVE_PLAN_UPDATE) { // set active "soft mode"
+  if (do_service_tracking && ev->string) {
+   char tmp[256];
+   int slfile;
+
+   fprintf (stderr, " >> updating softlevel to %s\n", ev->string);
+
+   snprintf (tmp, 256, "%ssoftlevel", service_tracking_path);
+
+   if ((slfile = open (tmp, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > 0) {
+    write (slfile, amode->id, strlen(ev->string));
+    write (slfile, "\n", 1);
+    close (slfile);
+   } else {
+    perror (" >> creating softlevel file");
    }
   }
  }

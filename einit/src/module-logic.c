@@ -740,26 +740,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (plan->reset)
   run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,plan->subthreads,0);
 
- pthread_mutex_unlock (&(plan->st_mutex));
-
-#if 0
- while (plan->subthreads) {
-  pthread_mutex_lock (&(plan->st_mutex));
-  {
-   for (u = 0; plan->subthreads[u]; u++)
-    pthread_join (*(plan->subthreads[u]), NULL);
-
-   free (plan->subthreads); plan->subthreads = NULL;
-  }
-
-  pthread_mutex_unlock (&(plan->st_mutex));
-  sleep (1);
- }
-#else
- pthread_mutex_lock (&(plan->st_mutex));
  wait_on_subthreads (plan->subthreads);
- pthread_mutex_unlock (&(plan->st_mutex));
-#endif
 
  if (plan->unavailable) {
   char tmp[2048], tmp2[2048];
@@ -779,11 +760,29 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   char *cmdt;
   amode = plan->mode;
 
+//  if (amode->arbattrs)
+//   printf ("mode %s's arbitrary attributes: %s\n", amode->id, set2str(':', amode->arbattrs));
+
+  if (amode->id) {
+   struct einit_event eema = evstaticinit (EVE_PLAN_UPDATE);
+   eema.string = estrdup(amode->id);
+   eema.para   = (void *)amode;
+   event_emit (&eema, EINIT_EVENT_FLAG_BROADCAST);
+   free (eema.string);
+   evstaticdestroy (eema);
+  }
+
+//  if (amode->arbattrs)
+//   printf ("mode %s's arbitrary attributes: %s\n", amode->id, set2str(':', amode->arbattrs));
+
   if (cmdt = cfg_getstring ("after-switch/emit-event", amode)) {
    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
    evstaticdestroy (ee);
   }
+
+//  if (amode->arbattrs)
+//   printf ("mode %s's arbitrary attributes: %s\n", amode->id, set2str(':', amode->arbattrs));
 
   if (cmdt = cfg_getstring ("after-switch/ipc", amode)) {
    char **cmdts = str2set (';', cmdt);

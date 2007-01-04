@@ -124,7 +124,7 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
        if (options & UTMP_ADD) {
         memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
         options ^= UTMP_ADD;
-        fprintf (stderr, " >> recycled old entry #%i\n", i);
+//        fprintf (stderr, " >> recycled old entry #%i\n", i);
        }
 
        break;
@@ -189,7 +189,7 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
      if ((options & UTMP_MODIFY) && (utmpentries[i].ut_pid == new_entry->ut_pid)) {
       memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
       options ^= UTMP_MODIFY;
-        fprintf (stderr, " >> modified old entry #%i\n", i);
+//      fprintf (stderr, " >> modified old entry #%i\n", i);
      }
 #endif
      if (!options) break;

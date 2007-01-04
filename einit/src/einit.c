@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
    lp++;
 
    if (!strcmp (ed, "softlevel")) {
-    einit_startup_mode_switches = estrdup (lp);
+    einit_startup_mode_switches = str2set (':', lp);
    } if (!strcmp (ed, "mode")) {
 /* override default mode-switches with the ones in the environment variable mode= */
     einit_startup_mode_switches = str2set (':', lp);
@@ -338,9 +338,6 @@ int main(int argc, char **argv) {
    fprintf (stderr, " >> [+%is] running SIGCHLD handler.\n", time(NULL)-stime);
    sched_run_sigchild (NULL);
   }
-
-  if (gmode == EINIT_GMODE_SANDBOX)
-   cleanup ();
 
   return EXIT_SUCCESS;
  }
