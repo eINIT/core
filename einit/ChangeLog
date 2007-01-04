@@ -4,6 +4,9 @@
  * configuration updates are now propagated in a much cleaner way
  * added support for importing gentoo's init.d script dependencies
  * added support for executing gentoo's init.d scripts
+ * fixed configuration files' mode
+ * added mount/system mount/root node reversal example
+ * better output of "list modules"
 
 2007/01/03: mdeininger
  * darwin compile fix (utmp)

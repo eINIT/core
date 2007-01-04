@@ -767,12 +767,52 @@ void mod_event_handler(struct einit_event *event) {
 
     while (cur) {
      if (cur->module && !(options & EIPC_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
-      if (options & EIPC_OUTPUT_XML)
-       snprintf (buffer, 2048, " <module id=\"%s\" name=\"%s\" status=\"%s\" />\n",
+      if (options & EIPC_OUTPUT_XML) {
+       snprintf (buffer, 2048, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
          (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
-      else
-       snprintf (buffer, 1024, "[%s] %s (%s)\n",
+      } else {
+       snprintf (buffer, 1024, "[%s] %s (%s)",
         STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
+      }
+
+      if (cur->si) {
+       char tmpx[1024];
+       if (cur->si->provides) {
+        if (options & EIPC_OUTPUT_XML)
+         snprintf (tmpx, 1024, "%s\n  provides=\"%s\"", buffer, set2str(':', cur->si->provides));
+        else
+         snprintf (tmpx, 1024, "%s\n > provides: %s", buffer, set2str(' ', cur->si->provides));
+        strcpy (buffer, tmpx);
+       }
+       if (cur->si->requires) {
+        if (options & EIPC_OUTPUT_XML)
+         snprintf (tmpx, 1024, "%s\n  requires=\"%s\"", buffer, set2str(':', cur->si->requires));
+        else
+         snprintf (tmpx, 1024, "%s\n > requires: %s", buffer, set2str(' ', cur->si->requires));
+        strcpy (buffer, tmpx);
+       }
+       if (cur->si->after) {
+        if (options & EIPC_OUTPUT_XML)
+         snprintf (tmpx, 1024, "%s\n  after=\"%s\"", buffer, set2str(':', cur->si->after));
+        else
+         snprintf (tmpx, 1024, "%s\n > after: %s", buffer, set2str(' ', cur->si->after));
+        strcpy (buffer, tmpx);
+       }
+       if (cur->si->before) {
+        if (options & EIPC_OUTPUT_XML)
+         snprintf (tmpx, 1024, "%s\n  before=\"%s\"", buffer, set2str(':', cur->si->before));
+        else
+         snprintf (tmpx, 1024, "%s\n > before: %s", buffer, set2str(' ', cur->si->before));
+        strcpy (buffer, tmpx);
+       }
+      }
+
+      char tmpx[1024];
+      if (options & EIPC_OUTPUT_XML)
+       snprintf (tmpx, 1024, "%s />\n", buffer);
+      else
+       snprintf (tmpx, 1024, "%s\n", buffer);
+      strcpy (buffer, tmpx);
 
       write (event->integer, buffer, strlen (buffer));
      }
