@@ -20,7 +20,7 @@ disable() {
         if [[ -z ${module} ]] ; then
                 die -q "Module \"${2}\" doesn't appear to be valid!"
         elif [[ -f "${ROOT}/etc/einit/modules/${1}/${module}" ]] ; then
-           rm "${ROOT}/etc/einit/modules/_used/${1}/${module}"
+		rm "${ROOT}/etc/einit/modules/_used/${1}/${module}"
         else
                 die -q "Module \"${2}\" doesn't appear to be valid!"
    fi
@@ -61,6 +61,37 @@ enable() {
                 die -q "Module \"${2}\" doesn't appear to be valid!"
         elif [[ -f "${ROOT}/etc/einit/modules/${1}/${module}" ]] ; then
                 ln -s "${ROOT}/etc/einit/modules/${1}/${module}" "${ROOT}/etc/einit/modules/_used/${1}/${module}"
+		if [[ "${3}" == "-r" ]] ; then
+			reqs=`cat ${ROOT}/etc/einit/modules/${1}/${module} | awk '/requires/' | sed -e 's/.*requires=//' | awk '{gsub(/:/," ");gsub(/\"/,"");print}' | sed -e 's/sysconf //' | sed -e 's/mount\/local //' | sed -e 's/mount\/critical //' | sed -e 's/hostname //' | sed -e 's/tty //' | sed -e 's/ipc //'`
+			check="daemon shell"
+			for r in ${reqs} ; do
+				for c in ${check} ; do
+			                modules=( $(find_modules ${c}) )
+     					if [[ -n ${modules[@]} ]] ; then
+	        		        	local i
+                				for (( i = 0 ; i < ${#modules[@]} ; i = i + 1 )) ; do
+							module=`cat ${ROOT}/etc/einit/modules/${c}/${modules[i]} | awk '/provides=/' | grep ${r}`
+							if [[ -n ${module} ]] ; then
+					                        if [[ -L "${ROOT}/etc/einit/modules/_used/${c}/${modules[${i}]}" ]] ; then
+					                                # existing symlink
+					                                if ! disable "${c}" "${modules[${i}]}" ; then
+					                                        die -q "Couldn't remove existing symlink"
+					                                elif ! enable "${c}" "${modules[${i}]}" ; then
+					                                        die -q "Couldn't set a new symlink"
+					                                fi
+					
+					                        elif [[ -e "${ROOT}/etc/einit/modules/_used/${c}/${modules[${i}]}" ]] ; then
+					                                # we have something strange
+					                                die -q "Sorry, ${ROOT}/etc/einit/modules/_used/${c}/${modules[${i}]} confuses me"
+					                        else
+				        	                        enable "${c}" "${modules[${i}]}" || die -q "Couldn't set a new symlink"
+								fi
+							fi
+						done
+					fi
+				done
+			done
+		fi
         else
                 die -q "Module \"${2}\" doesn't appear to be valid!"
         fi
@@ -115,6 +146,15 @@ describe_enable_options() {
 }
 
 do_enable() {
+        local r= module=${2}
+        if is_number "${module}" ; then
+                modules=( $(find_modules ${1}) )
+                module=${modules[$(( ${module} - 1 ))]}
+        fi
+        if [[ "${3}" == "-r"  ]] ; then
+		r="-r"
+		echo "this dont work yet"
+	fi
         if [[ -z ${1} ]] ; then
                 # no parameter
                 die -q "You didn't tell me what type of module to enable"
@@ -126,11 +166,11 @@ do_enable() {
         elif [[ "${2}" == "--all"  ]] ; then
 		enable_all ${1}
 
-        elif [[ -L "${ROOT}/etc/einit/modules/_used/${1}/${2}" ]] ; then
+        elif [[ -L "${ROOT}/etc/einit/modules/_used/${1}/${module}" ]] ; then
                 # existing symlink
-                if ! disable "${1} ${2}" ; then
+                if ! disable "${1}" "${2}" ; then
                         die -q "Couldn't remove existing symlink"
-                elif ! enable "${1} ${2}" ; then
+                elif ! enable "${1}" "${2}" "${3}"; then
                         die -q "Couldn't set a new symlink"
                 fi
 
@@ -139,7 +179,7 @@ do_enable() {
                 die -q "Sorry, ${ROOT}/etc/einit/modules/_used/${1}/${2} confuses me"
 
         else
-                enable "${1}" "${2}" || die -q "Couldn't set a new symlink"
+                enable "${1}" "${2}" "${3}" || die -q "Couldn't set a new symlink"
         fi
 }
 
