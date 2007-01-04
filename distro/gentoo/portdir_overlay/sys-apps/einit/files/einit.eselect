@@ -1,0 +1,145 @@
+DESCRIPTION="Enable/Disable eInit shell/daemon modules"
+MAINTAINER="rmh3093@gmail.com"
+
+# find a list of modules
+find_modules() {
+   modules=`ls ${ROOT}/etc/einit/modules/${1}`
+        for module in $modules ; do
+                [[ -f ${ROOT}/etc/einit/modules/${1}/${module} ]] && echo $(basename ${module} )
+        done
+
+}
+
+# disable module by removing the symlink in the _used folder
+remove_symlink() {
+        module=${2}
+        if is_number "${module}" ; then
+                modules=( $(find_modules ${1}) )
+                module=${modules[$(( ${module} - 1 ))]}
+        fi
+        if [[ -z ${module} ]] ; then
+                die -q "Module \"${2}\" doesn't appear to be valid!"
+        elif [[ -f "${ROOT}/etc/einit/modules/${1}/${module}" ]] ; then
+           rm "${ROOT}/etc/einit/modules/_used/${1}/${module}"
+        else
+                die -q "Module \"${2}\" doesn't appear to be valid!"
+   fi
+}
+
+# enable module by creating a symlink in the _used folder
+set_symlink() {
+        module=${2}
+        if is_number "${module}" ; then
+                modules=( $(find_modules ${1}) )
+                module=${modules[$(( ${module} - 1 ))]}
+        fi
+        if [[ -z ${module} ]] ; then
+                die -q "Module \"${2}\" doesn't appear to be valid!"
+        elif [[ -f "${ROOT}/etc/einit/modules/${1}/${module}" ]] ; then
+                ln -s "${ROOT}/etc/einit/modules/${1}/${module}" "${ROOT}/etc/einit/modules/_used/${1}/${module}"
+        else
+                die -q "Module \"${2}\" doesn't appear to be valid!"
+        fi
+}
+
+### list action ###
+describe_list() {
+   echo "List available modules"
+}
+
+describe_list_parameters() {
+        echo "<type>"
+}
+
+describe_list_options() {
+        echo "type : Module type (either 'shell' or 'daemon')"
+}
+
+do_list() {
+        if [[ -z ${1} ]] ; then
+                # no parameter
+                die -q "You didn't tell me what type of module to list"
+   else
+           modules=( $(find_modules ${1} ) )
+      write_list_start "Available ${1} modules:"
+           if [[ -n ${modules[@]} ]] ; then
+                   local i
+                   for (( i = 0 ; i < ${#modules[@]} ; i = i + 1 )) ; do
+                           [[ -L ${ROOT}/etc/einit/modules/_used/${1}/${modules[${i}]} ]] && \
+                                   modules[${i}]="${modules[${i}]} $(highlight '*' )"
+                   done
+                   write_numbered_list "${modules[@]}"
+           else
+                   write_kv_list_entry "(none found)" ""
+           fi
+   fi
+}
+
+### enable action ###
+describe_disable() {
+        echo "Enable a module"
+}
+
+describe_enable_parameters() {
+        echo "<type> <module>"
+}
+
+describe_enable_options() {
+        echo "type : Module type (either 'shell' or 'daemon')"
+        echo "module : Module name or number (from 'list' action)"
+}
+
+do_enable() {
+        if [[ -z ${1} ]] ; then
+                # no parameter
+                die -q "You didn't tell me what type of module to enable"
+
+        elif [[ -z ${2} ]] ; then
+                # no parameter
+                die -q "You didn't tell me what module to enable"
+
+        elif [[ -L "${ROOT}/etc/einit/modules/_used/${1}/${2}" ]] ; then
+                # existing symlink
+                if ! remove_symlink "${1} ${2}" ; then
+                        die -q "Couldn't remove existing symlink"
+                elif ! set_symlink "${1} ${2}" ; then
+                        die -q "Couldn't set a new symlink"
+                fi
+
+        elif [[ -e "${ROOT}/etc/einit/modules/_used/${1}/${2}" ]] ; then
+                # we have something strange
+                die -q "Sorry, ${ROOT}/etc/einit/modules/_used/${1}/${2} confuses me"
+
+        else
+                set_symlink "${1}" "${2}" || die -q "Couldn't set a new symlink"
+        fi
+}
+
+### disable action ###
+describe_enable() {
+        echo "Disable a module"
+}
+
+describe_disable_parameters() {
+        echo "<type> <module>"
+}
+
+describe_disable_options() {
+        echo "type : Module type (either 'shell' or 'daemon')"
+        echo "module : Module name or number (from 'list' action)"
+}
+
+do_disable() {
+        if [[ -z ${1} ]] ; then
+                # no parameter
+                die -q "You didn't tell me what type of module to disable"
+
+        elif [[ -z ${2} ]] ; then
+                # no parameter
+                die -q "You didn't tell me what module to disable"
+   else
+                remove_symlink "${1}" "${2}" || die -q "Couldn't disable module"
+        fi
+}
+
+# vim: set ft=eselect :
