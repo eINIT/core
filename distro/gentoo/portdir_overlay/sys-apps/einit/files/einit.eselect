@@ -11,7 +11,7 @@ find_modules() {
 }
 
 # disable module by removing the symlink in the _used folder
-remove_symlink() {
+disable() {
         module=${2}
         if is_number "${module}" ; then
                 modules=( $(find_modules ${1}) )
@@ -26,8 +26,32 @@ remove_symlink() {
    fi
 }
 
+enable_all() {
+	modules=( $(find_modules ${1} ) )
+	if [[ -n ${modules[@]} ]] ; then
+        	local i
+		for (( i = 0 ; i < ${#modules[@]} ; i = i + 1 )) ; do
+		        if [[ -L "${ROOT}/etc/einit/modules/_used/${1}/${modules[${i}]}" ]] ; then
+                		# existing symlink
+		                if ! disable "${1}" "${modules[${i}]}" ; then
+                		        die -q "Couldn't remove existing symlink"
+		                elif ! enable "${1}" "${modules[${i}]}" ; then
+                		        die -q "Couldn't set a new symlink"
+		                fi
+
+		        elif [[ -e "${ROOT}/etc/einit/modules/_used/${1}/${modules[${i}]}" ]] ; then
+                		# we have something strange
+		                die -q "Sorry, ${ROOT}/etc/einit/modules/_used/${1}/${modules[${i}]} confuses me"
+
+		        else
+		                enable "${1}" "${modules[${i}]}" || die -q "Couldn't set a new symlink"
+		        fi	
+		done
+	fi
+}
+
 # enable module by creating a symlink in the _used folder
-set_symlink() {
+enable() {
         module=${2}
         if is_number "${module}" ; then
                 modules=( $(find_modules ${1}) )
@@ -59,20 +83,20 @@ do_list() {
         if [[ -z ${1} ]] ; then
                 # no parameter
                 die -q "You didn't tell me what type of module to list"
-   else
-           modules=( $(find_modules ${1} ) )
-      write_list_start "Available ${1} modules:"
-           if [[ -n ${modules[@]} ]] ; then
-                   local i
-                   for (( i = 0 ; i < ${#modules[@]} ; i = i + 1 )) ; do
-                           [[ -L ${ROOT}/etc/einit/modules/_used/${1}/${modules[${i}]} ]] && \
-                                   modules[${i}]="${modules[${i}]} $(highlight '*' )"
-                   done
-                   write_numbered_list "${modules[@]}"
-           else
-                   write_kv_list_entry "(none found)" ""
-           fi
-   fi
+	else
+        	modules=( $(find_modules ${1} ) )
+      		write_list_start "Available ${1} modules:"
+		if [[ -n ${modules[@]} ]] ; then
+        		local i
+			for (( i = 0 ; i < ${#modules[@]} ; i = i + 1 )) ; do
+				[[ -L ${ROOT}/etc/einit/modules/_used/${1}/${modules[${i}]} ]] && \
+				modules[${i}]="${modules[${i}]} $(highlight '*' )"
+			done
+        	        write_numbered_list "${modules[@]}"
+		else
+			write_kv_list_entry "(none found)" ""
+		fi
+	fi
 }
 
 ### enable action ###
@@ -87,6 +111,7 @@ describe_enable_parameters() {
 describe_enable_options() {
         echo "type : Module type (either 'shell' or 'daemon')"
         echo "module : Module name or number (from 'list' action)"
+        echo " : or type '--all' to enable all modules"
 }
 
 do_enable() {
@@ -98,11 +123,14 @@ do_enable() {
                 # no parameter
                 die -q "You didn't tell me what module to enable"
 
+        elif [[ "${2}" == "--all"  ]] ; then
+		enable_all ${1}
+
         elif [[ -L "${ROOT}/etc/einit/modules/_used/${1}/${2}" ]] ; then
                 # existing symlink
-                if ! remove_symlink "${1} ${2}" ; then
+                if ! disable "${1} ${2}" ; then
                         die -q "Couldn't remove existing symlink"
-                elif ! set_symlink "${1} ${2}" ; then
+                elif ! enable "${1} ${2}" ; then
                         die -q "Couldn't set a new symlink"
                 fi
 
@@ -111,12 +139,12 @@ do_enable() {
                 die -q "Sorry, ${ROOT}/etc/einit/modules/_used/${1}/${2} confuses me"
 
         else
-                set_symlink "${1}" "${2}" || die -q "Couldn't set a new symlink"
+                enable "${1}" "${2}" || die -q "Couldn't set a new symlink"
         fi
 }
 
 ### disable action ###
-describe_enable() {
+describe_disable() {
         echo "Disable a module"
 }
 
@@ -127,6 +155,7 @@ describe_disable_parameters() {
 describe_disable_options() {
         echo "type : Module type (either 'shell' or 'daemon')"
         echo "module : Module name or number (from 'list' action)"
+        echo " : or type '--all' to disable all modules"
 }
 
 do_disable() {
@@ -137,8 +166,12 @@ do_disable() {
         elif [[ -z ${2} ]] ; then
                 # no parameter
                 die -q "You didn't tell me what module to disable"
-   else
-                remove_symlink "${1}" "${2}" || die -q "Couldn't disable module"
+
+        elif [[ "${2}" == "--all" ]] ; then
+		rm -rf ${ROOT}/etc/einit/modules/_used/${1}/* || die -q "Couldn't disable modules"
+
+	else
+                disable "${1}" "${2}" || die -q "Couldn't disable module"
         fi
 }
 
