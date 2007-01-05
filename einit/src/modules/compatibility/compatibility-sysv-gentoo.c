@@ -388,6 +388,7 @@ void einit_event_handler (struct einit_event *ev) {
    if (!is_gentoo_system) {
     is_gentoo_system = 1;
     fputs (" >> gentoo system detected\n", stderr);
+    ev->chain_type = EVE_CONFIGURATION_UPDATE;
    }
 /* env.d data */
    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-parse-env.d", NULL);
@@ -557,13 +558,21 @@ int scanmodules (struct lmodule *modchain) {
  uint32_t plen;
  struct smodule *modinfo;
 
- if (!init_d_path || !init_d_dependency_scriptlet || !is_gentoo_system) return -1;
+ if (!init_d_path || !init_d_dependency_scriptlet || !is_gentoo_system) {
+//  fprintf (stderr, " >> not parsing gentoo scripts: 0x%x, 0x%x, 0x%x\n", init_d_path, init_d_dependency_scriptlet, is_gentoo_system);
+  return 0;
+ }/* else {
+  fprintf (stderr, " >> parsing gentoo scripts\n");
+ }*/
 
  plen = strlen (init_d_path) +1;
 
  if (dir = opendir (init_d_path)) {
+  puts (" >> reading directory");
   while (de = readdir (dir)) {
    char doop = 1;
+
+//   puts (de->d_name);
 
 // filter .-files
    if (de->d_name[0] == '.') continue;
@@ -668,7 +677,7 @@ int scanmodules (struct lmodule *modchain) {
 
   closedir (dir);
  } else {
-  fprintf (stderr, "couldn't open init.d directory \"%s\"\n", init_d_path);
+  fprintf (stderr, " >> couldn't open init.d directory \"%s\"\n", init_d_path);
  }
 }
 

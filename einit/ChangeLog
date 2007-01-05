@@ -1,3 +1,6 @@
+2007/01/05: mdeininger
+ * tended to that "lock bug"
+
 2007/01/04: mdeininger
  * bugbug -- bugger -- think i fixed it
  * used the wrong order for feedback/sleep

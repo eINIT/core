@@ -637,7 +637,8 @@ struct einit_event *evdup (struct einit_event *ev) {
   nev->string = np;
  }
 
- pthread_mutex_init (&nev->mutex, NULL);
+ if (pthread_mutex_init (&nev->mutex, NULL))
+  perror (" >> evdup(): pthread_mutex_init()");
 
  return nev;
 }
@@ -646,7 +647,8 @@ struct einit_event *evinit (uint32_t type) {
  struct einit_event *nev = ecalloc (1, sizeof (struct einit_event));
 
  nev->type = type;
- pthread_mutex_init (&nev->mutex, NULL);
+ if (pthread_mutex_init (&nev->mutex, NULL))
+  perror (" >> evinit(): pthread_mutex_init()");
 
  return nev;
 }

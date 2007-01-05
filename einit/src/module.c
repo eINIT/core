@@ -79,7 +79,9 @@ int mod_scanmodules ( void ) {
  char *spattern = NULL;
 #endif
 
- pthread_mutex_lock (&modules_update_mutex);
+ if (pthread_mutex_lock (&modules_update_mutex)) {
+  perror ("mod_scanmodules(): locking mutex");
+ }
 
  char *modulepath = cfg_getpath ("core-settings-module-path");
  if (!modulepath) {
@@ -249,7 +251,10 @@ struct lmodule *mod_update (struct lmodule *module) {
  struct cfgnode *lnode = NULL;
  if (!module->module) return module;
 
- pthread_mutex_lock (&module->mutex);
+ if (pthread_mutex_trylock (&module->mutex)) {
+  perror ("mod_update(): locking mutex");
+  return module;
+ }
 
  while (lnode = cfg_findnode ("services-override-module", 0, lnode))
   if (lnode->idattr && module->module->rid && !strcmp(lnode->idattr, module->module->rid)) {
@@ -304,7 +309,9 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
 
  nmod = ecalloc (1, sizeof (struct lmodule));
 
- pthread_mutex_lock (&mlist_mutex);
+ if (pthread_mutex_lock (&mlist_mutex)) {
+  perror ("mod_add(): locking mutex");
+ }
  nmod->next = mlist;
  mlist = nmod;
  pthread_mutex_unlock (&mlist_mutex);
@@ -381,16 +388,16 @@ int mod (unsigned int task, struct lmodule *module) {
  struct stree *ha;
 
  if (!module) return 0;
-/* if (module->module && module->module->rid) {
+ if (module->module && module->module->rid) {
   fprintf (stderr, " >> changing state of module %s\n", module->module->rid);
  } else {
   fprintf (stderr, " >> changing state of unknown module\n");
- }*/
+ }
 
 /* wait if the module is already being processed in a different thread */
  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_lock (&module->mutex))) {
   if (errno)
-   perror (" >> locking mutex");
+   perror ("mod(): locking mutex");
  }
 
  if (task & MOD_IGNORE_DEPENDENCIES) {
@@ -578,7 +585,10 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
 
  if ((!module || !module->module) && !service) return 0;
 
- pthread_mutex_lock (&service_usage_mutex);
+ if (pthread_mutex_lock (&service_usage_mutex)) {
+  perror ("service_usage_query(): locking mutex");
+ }
+
  if (task & SERVICE_NOT_IN_USE) {
   ret |= SERVICE_NOT_IN_USE;
 /*  if (t = module->provides) {
@@ -683,7 +693,9 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
 
  if ((!module || !module->module) && !service) return 0;
 
- pthread_mutex_lock (&service_usage_mutex);
+ if (pthread_mutex_lock (&service_usage_mutex)) {
+  perror ("service_usage_query_group(): locking mutex");
+ }
  if (task & SERVICE_ADD_GROUP_PROVIDER) {
   if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
    struct service_usage_item nitem;
@@ -698,7 +710,9 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
 }
 
 char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service) {
- pthread_mutex_lock (&service_usage_mutex);
+ if (pthread_mutex_lock (&service_usage_mutex)) {
+  perror ("service_usage_query_cr(): locking mutex");
+ }
 
  struct stree *ha = service_usage;
  char **ret = NULL;

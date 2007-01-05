@@ -1030,7 +1030,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
        if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
       } else
 #endif
-	  {
+      {
        mount_panic:
        if (errno < sys_nerr)
         status->string = (char *)sys_errlist[errno];
@@ -1152,6 +1152,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      goto umount_fail;
 #endif
     }
+   } else {
+    goto umount_ok;
    }
 
    umount_fail:
@@ -1529,8 +1531,6 @@ int enable (enum mounttask p, struct einit_event *status) {
  uint32_t i, ret, sc = 0, slc;
  pthread_t **childthreads = NULL;
 
- if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
-
  switch (p) {
   case MOUNT_LOCAL:
   case MOUNT_REMOTE:
@@ -1638,7 +1638,7 @@ int enable (enum mounttask p, struct einit_event *status) {
  evstaticdestroy (rev);
 
 // scan for new modules after mounting all critical filesystems
- if (p == MOUNT_CRITICAL) mod_scanmodules();
+// if (p == MOUNT_CRITICAL) mod_scanmodules();
 
  return STATUS_OK;
 }
@@ -1651,8 +1651,6 @@ int disable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t i, ret, sc = 0, slc;
  pthread_t **childthreads = NULL;
-
- if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
 
  switch (p) {
   case MOUNT_LOCAL:

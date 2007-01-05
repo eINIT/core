@@ -75,7 +75,7 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
   new_logbuffer_node = emalloc (sizeof(struct event_ringbuffer_node));
 
   new_logbuffer_node->type = event->type;
-  new_logbuffer_node->type_custom = (event->type_custom ? estrdup (event->type_custom) : NULL);
+//  new_logbuffer_node->type_custom = (event->type_custom ? estrdup (event->type_custom) : NULL);
   new_logbuffer_node->set = event->set;
   new_logbuffer_node->string = (event->string ? estrdup (event->string) : NULL);
   new_logbuffer_node->integer = event->integer;

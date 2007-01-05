@@ -354,7 +354,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
  if (plan->services) {
 // pass 1: find and remove dupes
-  struct stree *ha = plan->services;
+/*  struct stree *ha = plan->services;
   while (ha) {
    struct stree *cha = plan->services;
    while (cha) {
@@ -366,7 +366,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     cha = streenext (cha);
    }
    ha = streenext (ha);
-  }
+  }*/
 
 // pass 2: finalise initialisation
   ha = plan->services;
@@ -454,18 +454,18 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
- if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
  if ((node->status & STATUS_DISABLED) || (node->status & STATUS_FAIL)) {
   pthread_mutex_unlock (node->mutex);
-  return;
+  return &(node->status);
  }
  uint32_t si = 0;
  for (; node->service[si]; si++)
   if (inset ((void **)node->plan->enable, (void *)node->service[si], SET_TYPE_STRING)) {
    node->status = STATUS_ENABLED | STATUS_FAIL;
    pthread_mutex_unlock (node->mutex);
-   return;
+   return &(node->status);
   }
  node->status |= STATUS_WORKING;
 
@@ -509,7 +509,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *);
 void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
- if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
  if ((node->group) && (node->group[0])) {
   uint32_t u = 0;
@@ -528,20 +528,20 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
  }
 
  pthread_mutex_unlock (node->mutex);
- return NULL;
+ return &(node->status);
 }
 
 // the loader function
 void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
- if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
  if (node->group && (node->status == STATUS_ENABLING))
   goto resume_group_enable;
  else if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
   pthread_mutex_unlock (node->mutex);
-  return;
+  return &(node->status);
  }
  node->status |= STATUS_WORKING;
 
@@ -652,7 +652,7 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
- if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
  node->status |= STATUS_WORKING;
  uint32_t i = 0;
@@ -671,7 +671,7 @@ void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
 void *mod_plan_commit_recurse_reload (struct mloadplan_node *node) {
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
- if (node->changed) { pthread_mutex_unlock (node->mutex); return NULL; } node->changed = 1;
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
  uint32_t i = 0;
 
@@ -729,7 +729,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   }
  }*/
 
- pthread_mutex_lock (&(plan->st_mutex));
+// pthread_mutex_lock (&(plan->st_mutex));
+
+// fputs (" >> spawning threads\n", stderr);
 
  if (plan->disable)
   run_or_spawn_subthreads (plan->disable,mod_plan_commit_recurse_disable,plan,plan->subthreads,STATUS_DISABLED);
@@ -740,7 +742,10 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (plan->reset)
   run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,plan->subthreads,0);
 
+// fputs (" >> threads spawned\n", stderr);
  wait_on_subthreads (plan->subthreads);
+
+// fputs (" >> done\n", stderr);
 
  if (plan->unavailable) {
   char tmp[2048], tmp2[2048];
