@@ -1,5 +1,7 @@
 2007/01/05: mdeininger
  * tended to that "lock bug"
+ * protection against circular dependencies (theoretically...)
+   (well, started on that code anyway)
 
 2007/01/04: mdeininger
  * bugbug -- bugger -- think i fixed it

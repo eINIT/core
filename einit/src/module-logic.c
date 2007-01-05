@@ -53,6 +53,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module-logic.h>
 #include <einit-modules/ipc.h>
 
+struct ml_call_context {
+ struct mloadplan_node *node;
+// struct mloadplan_node **trace;
+};
+
 struct lmodule *mlist;
 
 #define mod_plan_searchgroup(nnode,service) if (service) {\
@@ -78,7 +83,6 @@ struct lmodule *mlist;
  }\
  if (tnodeid) free (tnodeid);\
 }
-
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
@@ -409,24 +413,54 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  return plan;
 }
 
-#define run_or_spawn_subthreads(set,function,plan,subthreads,tstatus) \
+#define run_or_spawn_subthreads(set,function,plan,subthreads,tstatus,ocontext) \
 { \
  uint32_t u; struct stree *rha; pthread_t th; \
  if (set && set[0] && set[1]) { \
   for (u = 0; set[u]; u++) { \
-   if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) { \
-    \
-    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)rha->value)) { \
+   if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) {\
+    struct ml_call_context *scontext;\
+/*    fprintf(stderr, " >> initialising context, ocontext=0x%x\n", ocontext);\
+    if (ocontext) {\
+     if (inset ((void **)((struct ml_call_context *)ocontext)->trace, rha->value, SET_NOALLOC))\
+      { fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", set[u]); continue; }\
+     scontext = ecalloc (1, sizeof(struct ml_call_context));\
+     scontext->node = (struct mloadplan_node *)rha->value;\
+     scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)((struct ml_call_context *)ocontext)->trace, SET_NOALLOC), rha->value, SET_NOALLOC);\
+    } else {*/\
+     scontext = ecalloc (1, sizeof(struct ml_call_context));\
+     scontext->node = (struct mloadplan_node *)rha->value;\
+/*     scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);\
+    }*/\
+/*    fprintf(stderr, " >> context=0x%x\n", scontext);*/\
+    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)scontext)) { \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
     } else { \
      notice (2, "warning: subthread creation failed!"); \
-     function ((struct mloadplan_node *)rha->value); \
-    } \
+     function (scontext); \
+    }\
    } \
   } \
- } else { \
+ } else if (set && set[0]) { \
   if ((rha = streefind (plan->services, set[0], TREE_FIND_FIRST)) && rha->value) { \
-   function ((struct mloadplan_node *)rha->value); \
+   struct ml_call_context *scontext = NULL;\
+/*   if (ocontext) {\
+    if (inset ((void **)((struct ml_call_context *)ocontext)->trace, rha->value, SET_NOALLOC))\
+     { fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", set[0]); }\
+    else {\
+     scontext = ecalloc (1, sizeof(struct ml_call_context));\
+     scontext->node = (struct mloadplan_node *)rha->value;\
+     scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)((struct ml_call_context *)ocontext)->trace, SET_NOALLOC), rha->value, SET_NOALLOC);\
+    }\
+   } else {*/\
+    scontext = ecalloc (1, sizeof(struct ml_call_context));\
+    scontext->node = (struct mloadplan_node *)rha->value;\
+/*    scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);\
+   }\
+   if (scontext) {*/\
+    function (scontext); \
+/*    free (scontext);*/\
+/*   }*/\
   } \
  } \
 }
@@ -442,16 +476,21 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }\
 }
 
-#define run_or_spawn_subthreads_and_wait(set,function,plan,tstatus)\
+#define run_or_spawn_subthreads_and_wait(set,function,plan,tstatus,ocontext)\
 {\
  pthread_t **subthreads = NULL;\
 \
- run_or_spawn_subthreads(set, function, plan, subthreads, tstatus);\
+ run_or_spawn_subthreads(set, function, plan, subthreads, tstatus, ocontext);\
  wait_on_subthreads (subthreads);\
 }
 
 // the un-loader function
-void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
+void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
+// fprintf (stderr, " >> XX context=0x%x", context);
+ struct mloadplan_node *node = context->node;
+
+// if (node->changed) { return &(node->status); }
+
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
@@ -479,7 +518,7 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
     pthread_t th;
     char **t;
     if (t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, node->mod[i], NULL)) {
-     run_or_spawn_subthreads (t,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED);
+     run_or_spawn_subthreads (t,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED,context);
      free (t);
      t = NULL;
     }
@@ -494,7 +533,7 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
    }
   }
  } else if (node->group) {
-  run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED);
+  run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED,context);
 
   wait_on_subthreads (subthreads);
   node->status |= STATUS_DISABLED;
@@ -504,9 +543,14 @@ void *mod_plan_commit_recurse_disable (struct mloadplan_node *node) {
  return &(node->status);
 }
 
-void *mod_plan_commit_recurse_enable (struct mloadplan_node *);
+void *mod_plan_commit_recurse_enable (struct ml_call_context *);
 
-void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *node) {
+void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *context) {
+// fprintf (stderr, " >> XX context=0x%x", context);
+ struct mloadplan_node *node = context->node;
+
+// if (node->changed) { return &(node->status); }
+
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
@@ -515,7 +559,7 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
   uint32_t u = 0;
   struct stree *ha;
 
-  run_or_spawn_subthreads_and_wait (node->group, mod_plan_commit_recurse_enable, node->plan, STATUS_ENABLED);
+  run_or_spawn_subthreads_and_wait (node->group, mod_plan_commit_recurse_enable, node->plan, STATUS_ENABLED,context);
 
   for (u = 0; node->group; u++) {
    if (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST)) {
@@ -532,7 +576,12 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct mloadplan_node *nod
 }
 
 // the loader function
-void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
+void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
+// fprintf (stderr, " >> XX context=0x%x", context);
+ struct mloadplan_node *node = context->node;
+
+// if (node->changed) { return &(node->status); }
+
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
@@ -551,17 +600,27 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 
  if (node->mod) {
 //  fprintf (stderr, "enabling node 0x%zx\n", node);
-
   for (i = 0; node->mod[i]; i++) {
    char **services = node->mod[i]->si->requires,
         **after = node->mod[i]->si->after;
 
+/*   char *servic = set2str (' ', node->service);
+   fprintf (stderr, " >> %s\n", servic);*/
+
+/*   char **xsu = (char **)setcombine ((void **)services, (void **)after, SET_TYPE_STRING);
+   xsu = (char **)setcombine ((void **)xsu, (void **)node->si_after, SET_TYPE_STRING);*/
+
    if (services)
-    run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
+    run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
    if (after)
-    run_or_spawn_subthreads_and_wait (after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
+    run_or_spawn_subthreads_and_wait (after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
    if (node->si_after)
-    run_or_spawn_subthreads_and_wait (node->si_after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED);
+    run_or_spawn_subthreads_and_wait (node->si_after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
+
+/*   if (xsu) {
+    run_or_spawn_subthreads_and_wait (xsu,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
+    free (xsu);
+   }*/
 
    if (
     ((node->status = node->mod[i]->status) & STATUS_ENABLED) ||
@@ -577,8 +636,19 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
+     struct ml_call_context *ncontext = NULL;
 
-     mod_plan_commit_recurse_enable (cnode);
+/*     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
+      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
+     } else {*/
+      ncontext = ecalloc (1, sizeof(struct ml_call_context));
+      ncontext->node = cnode;
+/*      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
+     }
+     if (ncontext) {*/
+      mod_plan_commit_recurse_enable (ncontext);
+/*      free (ncontext);
+     }*/
 
      if (cnode->status & STATUS_ENABLED) {
       uint32_t si = 0;
@@ -593,8 +663,19 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
+     struct ml_call_context *ncontext = NULL;
 
-     mod_plan_commit_recurse_enable (cnode);
+/*     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
+     fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
+    } else {*/
+     ncontext = ecalloc (1, sizeof(struct ml_call_context));
+     ncontext->node = cnode;
+/*      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
+    }
+     if (ncontext) {*/
+     mod_plan_commit_recurse_enable (ncontext);
+/*      free (ncontext);
+    }*/
 
      if (cnode->status & STATUS_ENABLED) {
       pthread_t th;
@@ -622,8 +703,19 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
+     struct ml_call_context *ncontext = NULL;
 
-     mod_plan_commit_recurse_enable (cnode);
+/*     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
+     fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
+    } else {*/
+     ncontext = ecalloc (1, sizeof(struct ml_call_context));
+     ncontext->node = cnode;
+/*      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
+    }
+     if (ncontext) {*/
+     mod_plan_commit_recurse_enable (ncontext);
+/*      free (ncontext);
+    }*/
 
      if (cnode->status & STATUS_ENABLED) {
       uint32_t si = 0;
@@ -649,7 +741,12 @@ void *mod_plan_commit_recurse_enable (struct mloadplan_node *node) {
 }
 
 // the reset function
-void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
+void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
+// fprintf (stderr, " >> XX context=0x%x", context);
+ struct mloadplan_node *node = context->node;
+
+// if (node->changed) { return &(node->status); }
+
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
@@ -668,7 +765,12 @@ void *mod_plan_commit_recurse_reset (struct mloadplan_node *node) {
 }
 
 // the reload function
-void *mod_plan_commit_recurse_reload (struct mloadplan_node *node) {
+void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
+// fprintf (stderr, " >> XX context=0x%x", context);
+ struct mloadplan_node *node = context->node;
+
+// if (node->changed) { return &(node->status); }
+
  pthread_mutex_lock (node->mutex);
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
@@ -734,13 +836,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 // fputs (" >> spawning threads\n", stderr);
 
  if (plan->disable)
-  run_or_spawn_subthreads (plan->disable,mod_plan_commit_recurse_disable,plan,plan->subthreads,STATUS_DISABLED);
+  run_or_spawn_subthreads (plan->disable,mod_plan_commit_recurse_disable,plan,plan->subthreads,STATUS_DISABLED,NULL);
 
  if (plan->enable)
-  run_or_spawn_subthreads (plan->enable,mod_plan_commit_recurse_enable,plan,plan->subthreads,STATUS_ENABLED);
+  run_or_spawn_subthreads (plan->enable,mod_plan_commit_recurse_enable,plan,plan->subthreads,STATUS_ENABLED,NULL);
 
  if (plan->reset)
-  run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,plan->subthreads,0);
+  run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,plan->subthreads,0,NULL);
 
 // fputs (" >> threads spawned\n", stderr);
  wait_on_subthreads (plan->subthreads);

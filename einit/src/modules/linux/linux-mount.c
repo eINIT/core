@@ -164,6 +164,8 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  char c_uuid[38];
  char tmp[1024];
 
+ if (gmode == EINIT_GMODE_SANDBOX) return 0;
+
  if (!element) return 1;
 
  while (element) {
