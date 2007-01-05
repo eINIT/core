@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct ml_call_context {
  struct mloadplan_node *node;
-// struct mloadplan_node **trace;
+ struct mloadplan_node **trace;
 };
 
 struct lmodule *mlist;
@@ -420,18 +420,18 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   for (u = 0; set[u]; u++) { \
    if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) {\
     struct ml_call_context *scontext;\
-/*    fprintf(stderr, " >> initialising context, ocontext=0x%x\n", ocontext);\
+/*    fprintf(stderr, " >> initialising context, ocontext=0x%x\n", ocontext);*/\
     if (ocontext) {\
      if (inset ((void **)((struct ml_call_context *)ocontext)->trace, rha->value, SET_NOALLOC))\
       { fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", set[u]); continue; }\
      scontext = ecalloc (1, sizeof(struct ml_call_context));\
      scontext->node = (struct mloadplan_node *)rha->value;\
      scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)((struct ml_call_context *)ocontext)->trace, SET_NOALLOC), rha->value, SET_NOALLOC);\
-    } else {*/\
+    } else {\
      scontext = ecalloc (1, sizeof(struct ml_call_context));\
      scontext->node = (struct mloadplan_node *)rha->value;\
-/*     scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);\
-    }*/\
+     scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);\
+    }\
 /*    fprintf(stderr, " >> context=0x%x\n", scontext);*/\
     if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)scontext)) { \
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t)); \
@@ -444,7 +444,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  } else if (set && set[0]) { \
   if ((rha = streefind (plan->services, set[0], TREE_FIND_FIRST)) && rha->value) { \
    struct ml_call_context *scontext = NULL;\
-/*   if (ocontext) {\
+   if (ocontext) {\
     if (inset ((void **)((struct ml_call_context *)ocontext)->trace, rha->value, SET_NOALLOC))\
      { fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", set[0]); }\
     else {\
@@ -452,15 +452,15 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      scontext->node = (struct mloadplan_node *)rha->value;\
      scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)((struct ml_call_context *)ocontext)->trace, SET_NOALLOC), rha->value, SET_NOALLOC);\
     }\
-   } else {*/\
+   } else {\
     scontext = ecalloc (1, sizeof(struct ml_call_context));\
     scontext->node = (struct mloadplan_node *)rha->value;\
-/*    scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);\
+    scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);\
    }\
-   if (scontext) {*/\
+   if (scontext) {\
     function (scontext); \
 /*    free (scontext);*/\
-/*   }*/\
+   }\
   } \
  } \
 }
@@ -638,17 +638,17 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
      struct ml_call_context *ncontext = NULL;
 
-/*     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
+     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
       fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
-     } else {*/
+     } else {
       ncontext = ecalloc (1, sizeof(struct ml_call_context));
       ncontext->node = cnode;
-/*      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
+      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
      }
-     if (ncontext) {*/
+     if (ncontext) {
       mod_plan_commit_recurse_enable (ncontext);
-/*      free (ncontext);
-     }*/
+      free (ncontext);
+     }
 
      if (cnode->status & STATUS_ENABLED) {
       uint32_t si = 0;
@@ -665,17 +665,17 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
      struct ml_call_context *ncontext = NULL;
 
-/*     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
+    if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
-    } else {*/
+    } else {
      ncontext = ecalloc (1, sizeof(struct ml_call_context));
      ncontext->node = cnode;
-/*      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
+      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
     }
-     if (ncontext) {*/
+     if (ncontext) {
      mod_plan_commit_recurse_enable (ncontext);
-/*      free (ncontext);
-    }*/
+      free (ncontext);
+    }
 
      if (cnode->status & STATUS_ENABLED) {
       pthread_t th;
@@ -705,17 +705,17 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
      struct ml_call_context *ncontext = NULL;
 
-/*     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
+     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
-    } else {*/
+    } else {
      ncontext = ecalloc (1, sizeof(struct ml_call_context));
      ncontext->node = cnode;
-/*      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
+      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
     }
-     if (ncontext) {*/
+     if (ncontext) {
      mod_plan_commit_recurse_enable (ncontext);
-/*      free (ncontext);
-    }*/
+      free (ncontext);
+    }
 
      if (cnode->status & STATUS_ENABLED) {
       uint32_t si = 0;
