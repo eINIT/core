@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 03/05/2006.
  *  Renamed from einit-mod-daemon.c on 11/10/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

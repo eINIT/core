@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 25/06/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -111,10 +111,12 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
      pthread_t threadid;
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
       struct einit_event *ev = evdup(event);
-      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
+//      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
+      pthread_create (&threadid, NULL, (void *(*)(void *))cur->handler, ev);
 //      evdestroy (ev);
      } else
-      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
+//      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
+      pthread_create (&threadid, NULL, (void *(*)(void *))cur->handler, event);
     } else {
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
       struct einit_event *ev = evdup(event);

@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 03/05/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -53,7 +53,7 @@ int ipc (char *);
 char *ctrlsocket = "/etc/einit-control";
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] [--] command\n [function] [-s control-socket] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n down   tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
+ fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, 2007, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] [--] command\n [function] [-s control-socket] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n down   tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
  return -1;
 }
 
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
      return print_usage_info ();
      break;
     case 'v':
-     puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger");
+     puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger");
      return 0;
     case '-':
      i++;

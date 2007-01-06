@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -388,11 +388,14 @@ int mod (unsigned int task, struct lmodule *module) {
  struct stree *ha;
 
  if (!module) return 0;
+
+#ifdef DEBUG
  if (module->module && module->module->rid) {
   fprintf (stderr, " >> changing state of module %s\n", module->module->rid);
  } else {
   fprintf (stderr, " >> changing state of unknown module\n");
  }
+#endif
 
 /* wait if the module is already being processed in a different thread */
  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_lock (&module->mutex))) {

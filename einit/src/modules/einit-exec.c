@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 23/11/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -81,8 +81,10 @@ struct daemonst * running = NULL;
 char **shell = NULL;
 char *dshell[] = {"/bin/sh", "-c", NULL};
 
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 struct execst * pexec_running = NULL;
 pthread_mutex_t pexec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
@@ -286,11 +288,10 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  cmdsetdup = str2set ('\0', command);
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
 
- struct execst *new = ecalloc (1, sizeof (struct execst));
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
+ struct execst *new = ecalloc (1, sizeof (struct execst));
  pthread_mutex_init (&(new->mutex), NULL);
  pthread_mutex_lock (&(new->mutex));
-#endif
  pthread_mutex_lock (&pexec_running_mutex);
   if (!pexec_running) pexec_running = new;
   else {
@@ -298,6 +299,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    pexec_running = new;
   }
  pthread_mutex_unlock (&pexec_running_mutex);
+#endif
 
 // sigemptyset (&newmask);
 // sigaddset (&newmask, SIGCHLD);
@@ -311,6 +313,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
   pthread_mutex_unlock (&(new->mutex));
   pthread_mutex_destroy (&(new->mutex));
   if (new == pexec_running) {
@@ -325,6 +328,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    }
   }
   free (new);
+#endif
   return STATUS_FAIL;
  } else if (child == 0) {
   char **exec_environment;
@@ -359,10 +363,10 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   ssize_t br;
   ssize_t ic = 0;
   ssize_t i;
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
   new->pid = child;
 // this loop can be used to create a race-condition
 //  while (sleep (5));
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
   sched_watch_pid (child, pexec_watcher);
 #endif
 
@@ -489,6 +493,7 @@ void *dexec_watcher (struct spidcb *spid) {
    pthread_mutex_unlock (&cur->mutex);
   } else if (dx->restart) {
 /* don't try to restart if the daemon died too swiftly */
+   pthread_mutex_unlock (&cur->mutex);
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb;
     fb.task = MOD_ENABLE;
@@ -505,6 +510,7 @@ void *dexec_watcher (struct spidcb *spid) {
      mod (MOD_DISABLE, module);
    }
   } else {
+   pthread_mutex_unlock (&cur->mutex);
    dx->cb = NULL;
    snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
    notice (5, stmp);

@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -84,7 +84,7 @@ char ** environ;
 #endif
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, Magnus Deininger\n"
+ fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
   "Usage:\n"
   " einit [-c <filename>] [options]\n"
   "\n"
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
      puts("eINIT " EINIT_VERSION_LITERAL
           "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
           "--------------------------------------------------------------------------------\n"
-          "Copyright (c) 2006, Magnus Deininger\n"
+          "Copyright (c) 2006, 2007, Magnus Deininger\n"
           BSDLICENSE);
      return 0;
     case '-':
@@ -319,21 +319,41 @@ int main(int argc, char **argv) {
 /* queue default mode-switches */
    if (einit_do_feedback_switch) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+#ifdef DEBUG
+    fprintf (stderr, " >> [+%is] scheduling startup feedback switch.\n", time(NULL)-stime);
+#endif
+
     ee.string = "feedback";
-    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST || EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE);
+//    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
     evstaticdestroy(ee);
    }
+
+   fprintf (stderr, " >> [+%is] scheduling startup switches.\n", time(NULL)-stime);
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+#ifdef DEBUG
+    fprintf (stderr, " >> [+%is] scheduling switch %i: %s.\n", time(NULL)-stime, e, einit_startup_mode_switches[e]);
+#endif
+
     ee.string = einit_startup_mode_switches[e];
-    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST || EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE);
+    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
     evstaticdestroy(ee);
+
+#ifdef DEBUG
+    fprintf (stderr, " >> [+%is] switch %i (%s) scheduled.\n", time(NULL)-stime, e, einit_startup_mode_switches[e]);
+#endif
    }
 
 //   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
+#ifdef DEBUG
    fprintf (stderr, " >> [+%is] running SIGCHLD handler.\n", time(NULL)-stime);
+#endif
    sched_run_sigchild (NULL);
+#ifdef DEBUG
+   fprintf (stderr, " >> [+%is] SIGCHLD handler returned\n", time(NULL)-stime);
+#endif
   }
 
   return EXIT_SUCCESS;

@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 02/05/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -309,7 +309,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-down";
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
     fdputs (" >> shutdown queued\n", event->integer);
     evstaticdestroy(ee);
    }
@@ -318,7 +318,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-reset";
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
     fdputs (" >> reset queued\n", event->integer);
     evstaticdestroy(ee);
    }
@@ -378,7 +378,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = argv[2];
     if (event->status & EIPC_DETACH) {
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
      fdputs (" >> modeswitch queued\n", event->integer);
     } else {
      ee.integer = event->integer;
@@ -389,7 +389,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
     struct einit_event ee = evstaticinit(EVE_CHANGE_SERVICE_STATUS);
     ee.set = (void **)setdup ((void **)argv+1, SET_TYPE_STRING);
     if (event->status & EIPC_DETACH) {
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
      fdputs (" >> status change queued\n", event->integer);
     } else {
      ee.integer = event->integer;
@@ -498,7 +498,7 @@ void *sched_run_sigchild (void *p) {
 
     ee.integer = 0;
 
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);
 
     sigint_called = 0;
@@ -607,23 +607,25 @@ void *sched_run_sigchild (void *p) {
    if (gstatus != EINIT_EXITING) sem_wait (sigchild_semaphore);
    else {
     fputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr);
-    while (sleep (255)) {
+    while (sleep (1)) {
      fputs (" >> still not dead...", stderr);
     }
 //    scheduler_cleanup ();
 //    return NULL;
    }
    if (sigint_called) {
-    struct einit_event ee;
-    ee.type = EVE_SWITCH_MODE;
+    fputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr);
+
+    struct einit_event ee = evstaticinit (EVE_SWITCH_MODE);
     ee.string = "power-reset";
 
     ee.integer = 0;
 
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);
 
     sigint_called = 0;
+    evstaticdestroy (ee);
    }
   }
  }

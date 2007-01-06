@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 23/11/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -70,12 +70,14 @@ struct daemonst {
  pthread_mutex_t mutex;
 };
 
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 struct execst {
  pid_t pid;
  pthread_mutex_t mutex;
  int status;
  struct execst *next;
 };
+#endif
 
 /* function types */
 typedef int (*pexec_function)(char *, char **,  uid_t, gid_t, char *, char *, char **, struct einit_event *);

@@ -166,7 +166,7 @@ void * initctl_wait (char *fifo) {
        cfg_addnode (&tnode);
       }
 
-      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
       evstaticdestroy(ee);
      } else {
       snprintf (tmp, 256, "initctl: told to switch to runlevel %c, which did not resolve to a valid mode", ic.runlevel);
@@ -176,19 +176,19 @@ void * initctl_wait (char *fifo) {
      struct einit_event ee = evstaticinit(EVENT_POWER_FAILING);
      notice (4, "initctl: power is failing");
 
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     } else if (ic.command == INITCTL_CMD_POWERFAILNOW) {
      struct einit_event ee = evstaticinit(EVENT_POWER_FAILURE_IMMINENT);
      notice (4, "initctl: power failure is imminent");
 
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     } else if (ic.command == INITCTL_CMD_POWEROK) {
      struct einit_event ee = evstaticinit(EVENT_POWER_RESTORED);
      notice (4, "initctl: power was restored");
 
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     } else if (ic.command == INITCTL_CMD_SETENV) { // padding contains the new environment string
      char **cx = str2set (':', ic.padding);
@@ -198,7 +198,7 @@ void * initctl_wait (char *fifo) {
         if (!strcmp (cx[1], "HALT") || !strcmp (cx[1], "POWERDOWN")) {
          struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
          ee.string = "power-down";
-         event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD || EINIT_EVENT_FLAG_DUPLICATE || EINIT_EVENT_FLAG_BROADCAST);
+         event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
          evstaticdestroy(ee);
         }
        }

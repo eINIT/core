@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 11/09/2006.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006, 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -100,6 +100,7 @@ struct mloadplan_node {
 
  char **si_after;        /*!< same as a module's si.after, needed to implement before="" .*/
  char changed;           /*!< indicate whether someone is currently working on this */
+// pthread_t thread;       /*!< the thread ID that node got */
 };
 
 /*!\brief Create a plan
