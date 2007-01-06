@@ -440,12 +440,12 @@ pthread_t **run_or_spawn_subthreads(char **set, void *(*function)(struct ml_call
      scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);
     }
 /*    fprintf(stderr, " >> context=0x%x\n", scontext);*/
-    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)scontext)) {
+/*    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)scontext)) {
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-    } else {
+    } else {*/
      notice (2, "warning: subthread creation failed!");
      function (scontext); 
-    }
+/*    }*/
    }
   }
  } else if (set && set[0]) {
