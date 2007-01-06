@@ -358,7 +358,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
  if (plan->services) {
 // pass 1: find and remove dupes
-/*  struct stree *ha = plan->services;
+  struct stree *ha = plan->services;
   while (ha) {
    struct stree *cha = plan->services;
    while (cha) {
@@ -370,7 +370,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     cha = streenext (cha);
    }
    ha = streenext (ha);
-  }*/
+  }
 
 // pass 2: finalise initialisation
   ha = plan->services;
@@ -413,77 +413,76 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  return plan;
 }
 
+int call_add_context(void *(*)(struct ml_call_context *), pthread_t *, struct mloadplan_node *, struct ml_call_context *);
+
 pthread_t **run_or_spawn_subthreads(char **set, void *(*function)(struct ml_call_context *), struct mloadplan *plan, pthread_t **subthreads, int tstatus, struct ml_call_context *ocontext) {
  uint32_t u; struct stree *rha; pthread_t th;
  if (set && set[0] && set[1]) {
   for (u = 0; set[u]; u++) {
-   if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) && rha->value && !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) && !(((struct mloadplan_node *)rha->value)->status & tstatus)) {
-    struct ml_call_context *scontext;
-/*    fprintf(stderr, " >> initialising context, ocontext=0x%x\n", ocontext);*/
-    if (ocontext) {
-     if (inset ((void **)((struct ml_call_context *)ocontext)->trace, rha->value, SET_NOALLOC)) {
-      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", set[u]);
-      continue;
-     }
-     else if (pthread_mutex_trylock(((struct mloadplan_node *)rha->value)->mutex)) {
-      pthread_mutex_lock(((struct mloadplan_node *)rha->value)->mutex);
-      pthread_mutex_unlock(((struct mloadplan_node *)rha->value)->mutex);
-      continue;
-     }
-     pthread_mutex_unlock(((struct mloadplan_node *)rha->value)->mutex);
-     scontext = ecalloc (1, sizeof(struct ml_call_context));
-     scontext->node = (struct mloadplan_node *)rha->value;
-     scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)ocontext->trace, SET_NOALLOC), rha->value, SET_NOALLOC);
-    } else {
-     scontext = ecalloc (1, sizeof(struct ml_call_context));
-     scontext->node = (struct mloadplan_node *)rha->value;
-     scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);
-    }
-/*    fprintf(stderr, " >> context=0x%x\n", scontext);*/
-/*    if (!pthread_create (&th, NULL, (void *(*)(void *))function, (void *)scontext)) {
+   if ((rha = streefind (plan->services, set[u], TREE_FIND_FIRST)) &&
+        rha->value &&
+        !(((struct mloadplan_node *)rha->value)->status & STATUS_FAIL) &&
+        !(((struct mloadplan_node *)rha->value)->status & tstatus)) {
+    if (call_add_context (function, &th, rha->value, ocontext) == 1) {
      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-    } else {*/
-     notice (2, "warning: subthread creation failed!");
-     function (scontext); 
-/*    }*/
+    }
    }
   }
  } else if (set && set[0]) {
   if ((rha = streefind (plan->services, set[0], TREE_FIND_FIRST)) && rha->value) {
-   struct ml_call_context *scontext = NULL;
-   if (ocontext) {
-    if (inset ((void **)((struct ml_call_context *)ocontext)->trace, rha->value, SET_NOALLOC)) {
-     fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", set[0]);
-    }
-    else if (pthread_mutex_trylock(((struct mloadplan_node *)rha->value)->mutex)) {
-     pthread_mutex_lock(((struct mloadplan_node *)rha->value)->mutex);
-     pthread_mutex_unlock(((struct mloadplan_node *)rha->value)->mutex);
-    } else {
-     pthread_mutex_unlock(((struct mloadplan_node *)rha->value)->mutex);
-     scontext = ecalloc (1, sizeof(struct ml_call_context));
-     scontext->node = (struct mloadplan_node *)rha->value;
-     scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)ocontext->trace, SET_NOALLOC), rha->value, SET_NOALLOC);
-    }
-   } else {
-    scontext = ecalloc (1, sizeof(struct ml_call_context));
-    scontext->node = (struct mloadplan_node *)rha->value;
-    scontext->trace = (struct mloadplan_node **)setadd(NULL, rha->value, SET_NOALLOC);
-   }
-   if (scontext) {
-    function (scontext); 
-/*    free (scontext);*/
-   }
+   call_add_context (function, NULL, rha->value, ocontext);
   }
  }
 
  return subthreads;
 }
 
+int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th, struct mloadplan_node *node, struct ml_call_context *ocontext) {
+ struct ml_call_context *scontext;
+ if (ocontext) {
+  if (inset ((void **)ocontext->trace, node, SET_NOALLOC)) {
+   fprintf (stderr, " >> WARNING: circular dependency, not calling\n");
+   return -1;
+  }
+  else if (pthread_mutex_trylock(node->mutex)) {
+   notice (2, "module-logic: already processing, hopping on...");
+   pthread_mutex_lock(node->mutex);
+   pthread_mutex_unlock(node->mutex);
+   notice (2, "module-logic: done, next");
+   return 0;
+  }
+  pthread_mutex_unlock(node->mutex);
+  scontext = ecalloc (1, sizeof(struct ml_call_context));
+  scontext->node = (struct mloadplan_node *)node;
+  scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)ocontext->trace, SET_NOALLOC), node, SET_NOALLOC);
+ } else {
+  scontext = ecalloc (1, sizeof(struct ml_call_context));
+  scontext->node = (struct mloadplan_node *)node;
+  scontext->trace = (struct mloadplan_node **)setadd(NULL, node, SET_NOALLOC);
+ }
+
+ if (scontext) {
+  if (th) {
+   if (!pthread_create (th, NULL, (void *(*)(void *))function, (void *)scontext)) {
+    return 1;
+   } else {
+    notice (2, "warning: subthread creation failed!");
+    function (scontext); 
+    return 0;
+   }
+  } else {
+   function (scontext); 
+   return 0;
+  }
+ }
+}
+
 void wait_on_subthreads (pthread_t **subthreads) {
+ void *ret = NULL;
  uint32_t u;
  if (subthreads) {
   for (u = 0; subthreads[u]; u++) {
-   pthread_join (*(subthreads[u]), NULL);
+   pthread_join (*(subthreads[u]), &ret);
   }
   free (subthreads); subthreads = NULL;
  }
@@ -503,7 +502,13 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
 
 // if (node->changed) { return &(node->status); }
 
- if (pthread_mutex_lock (node->mutex)) perror ("mod_plan_commit_recurse_disable(): locking mutex");
+ if (pthread_mutex_trylock(node->mutex)) {
+  pthread_mutex_lock (node->mutex);
+  pthread_mutex_unlock (node->mutex);
+
+  return &(node->status);
+ }
+
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
@@ -563,7 +568,13 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *co
 
 // if (node->changed) { return &(node->status); }
 
- if (pthread_mutex_lock (node->mutex)) perror ("mod_plan_commit_recurse_enable_group_remaining(): locking mutex");
+ if (pthread_mutex_trylock(node->mutex)) {
+  pthread_mutex_lock (node->mutex);
+  pthread_mutex_unlock (node->mutex);
+
+  return &(node->status);
+ }
+
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
@@ -594,7 +605,13 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
 
 // if (node->changed) { return &(node->status); }
 
- if (pthread_mutex_lock (node->mutex)) perror ("mod_plan_commit_recurse_enable(): locking mutex");
+ if (pthread_mutex_trylock(node->mutex)) {
+  pthread_mutex_lock (node->mutex);
+  pthread_mutex_unlock (node->mutex);
+
+  return &(node->status);
+ }
+
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
@@ -613,22 +630,9 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
  if (node->mod) {
 //  fprintf (stderr, "enabling node 0x%zx\n", node);
   for (i = 0; node->mod[i]; i++) {
-/*   char **services = node->mod[i]->si->requires,
-        **after = node->mod[i]->si->after;
-
-/*   char *servic = set2str (' ', node->service);
-   fprintf (stderr, " >> %s\n", servic);*/
-
    char **xsu = (char **)setcombine ((void **)node->mod[i]->si->requires, (void **)node->mod[i]->si->after, SET_TYPE_STRING);
 
    xsu = (char **)setcombine ((void **)xsu, (void **)node->si_after, SET_TYPE_STRING);
-
-/*   if (services)
-    run_or_spawn_subthreads_and_wait (services,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
-   if (after)
-    run_or_spawn_subthreads_and_wait (after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
-   if (node->si_after)
-    run_or_spawn_subthreads_and_wait (node->si_after,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);*/
 
    if (xsu) {
     run_or_spawn_subthreads_and_wait (xsu,mod_plan_commit_recurse_enable,node->plan,STATUS_ENABLED,context);
@@ -649,23 +653,7 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
-     struct ml_call_context *ncontext = NULL;
-
-     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
-      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
-     } else if (pthread_mutex_trylock(((struct mloadplan_node *)ha->value)->mutex)) {
-      pthread_mutex_lock(((struct mloadplan_node *)ha->value)->mutex);
-      pthread_mutex_unlock(((struct mloadplan_node *)ha->value)->mutex);
-     } else {
-      pthread_mutex_unlock(((struct mloadplan_node *)ha->value)->mutex);
-      ncontext = ecalloc (1, sizeof(struct ml_call_context));
-      ncontext->node = cnode;
-      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
-     }
-     if (ncontext) {
-      mod_plan_commit_recurse_enable (ncontext);
-      free (ncontext);
-     }
+     call_add_context (mod_plan_commit_recurse_enable, NULL, ha->value, context);
 
      if (cnode->status & STATUS_ENABLED) {
       uint32_t si = 0;
@@ -680,23 +668,7 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
-     struct ml_call_context *ncontext = NULL;
-
-     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
-      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
-     } else if (pthread_mutex_trylock(((struct mloadplan_node *)ha->value)->mutex)) {
-      pthread_mutex_lock(((struct mloadplan_node *)ha->value)->mutex);
-      pthread_mutex_unlock(((struct mloadplan_node *)ha->value)->mutex);
-     } else {
-      pthread_mutex_unlock(((struct mloadplan_node *)ha->value)->mutex);
-      ncontext = ecalloc (1, sizeof(struct ml_call_context));
-      ncontext->node = cnode;
-      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
-     }
-     if (ncontext) {
-     mod_plan_commit_recurse_enable (ncontext);
-      free (ncontext);
-    }
+     call_add_context (mod_plan_commit_recurse_enable, NULL, ha->value, context);
 
      if (cnode->status & STATUS_ENABLED) {
       pthread_t th;
@@ -724,23 +696,7 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
    for (u = 0; node->group[u]; u++) {
     if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, node->group[u]) && (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
      struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
-     struct ml_call_context *ncontext = NULL;
-
-     if (inset ((void **)context->trace, cnode, SET_NOALLOC)) {
-      fprintf (stderr, " >> WARNING: circular dependency, not calling (%s)\n", node->group[u]);
-     } else if (pthread_mutex_trylock(((struct mloadplan_node *)ha->value)->mutex)) {
-      pthread_mutex_lock(((struct mloadplan_node *)ha->value)->mutex);
-      pthread_mutex_unlock(((struct mloadplan_node *)ha->value)->mutex);
-     } else {
-      pthread_mutex_unlock(((struct mloadplan_node *)ha->value)->mutex);
-      ncontext = ecalloc (1, sizeof(struct ml_call_context));
-      ncontext->node = cnode;
-      ncontext->trace = (struct mloadplan_node **)setadd(setdup((void **)context->trace, SET_NOALLOC), cnode, SET_NOALLOC);
-     }
-     if (ncontext) {
-     mod_plan_commit_recurse_enable (ncontext);
-     free (ncontext);
-    }
+     call_add_context (mod_plan_commit_recurse_enable, NULL, ha->value, context);
 
      if (cnode->status & STATUS_ENABLED) {
       uint32_t si = 0;
@@ -772,7 +728,13 @@ void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
 
 // if (node->changed) { return &(node->status); }
 
- if (pthread_mutex_lock (node->mutex)) perror ("mod_plan_commit_recurse_reset(): locking mutex");
+ if (pthread_mutex_trylock(node->mutex)) {
+  pthread_mutex_lock (node->mutex);
+  pthread_mutex_unlock (node->mutex);
+
+  return &(node->status);
+ }
+
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
@@ -796,7 +758,13 @@ void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
 
 // if (node->changed) { return &(node->status); }
 
- if (pthread_mutex_lock (node->mutex)) perror ("mod_plan_commit_recurse_reload(): locking mutex");
+ if (pthread_mutex_trylock(node->mutex)) {
+  pthread_mutex_lock (node->mutex);
+  pthread_mutex_unlock (node->mutex);
+
+  return &(node->status);
+ }
+
 // see if we've already been here, bail out if so
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 

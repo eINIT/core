@@ -2,6 +2,9 @@
  * updated copyright notice
  * fixed some incorrect flags while building
  * eww, friggen stupid mistake causing lockups...
+ * traced the weird lockup bugs to circular dependencies created by gentoo's
+   "after"-dependencies... disabled them until this can be resolved
+ * cleanups in pexec()
 
 2007/01/05: mdeininger
  * tended to that "lock bug"

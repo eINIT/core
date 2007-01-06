@@ -568,7 +568,9 @@ int scanmodules (struct lmodule *modchain) {
  plen = strlen (init_d_path) +1;
 
  if (dir = opendir (init_d_path)) {
+#ifdef DEBUG
   puts (" >> reading directory");
+#endif
   while (de = readdir (dir)) {
    char doop = 1;
 
@@ -626,9 +628,11 @@ int scanmodules (struct lmodule *modchain) {
         modinfo->si.provides = str2set (' ', val);
        else if (!strcmp (pbuffer, "before")) // before == before
         modinfo->si.before = str2set (' ', val);
-       else if (!strcmp (pbuffer, "use") || !strcmp (pbuffer, "after")) { // use & after == after
+       else if (!strcmp (pbuffer, "use")/* || !strcmp (pbuffer, "after")*/) { // use & after == after
         char **new = str2set (' ', val);
         modinfo->si.before = (char **)setcombine ((void **)modinfo->si.before, (void **)new, SET_TYPE_STRING);
+// gentoo's "after"-attribute seems to cause unresolved circular dependencies...
+       } else if (!strcmp (pbuffer, "after")) {
        } else fputs (" >> gentoo init scripts: invalid input (unknown token)\n", stderr);
       }
       else fputs (" >> gentoo init scripts: invalid input\n", stderr);

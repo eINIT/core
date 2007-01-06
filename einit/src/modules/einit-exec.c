@@ -263,6 +263,110 @@ char **__create_environment (char **environment, char **variables) {
  return environment;
 }
 
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
+// less features and verbosity in this one -- we only want it to work *somehow*
+
+int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
+ pid_t child;
+ int pidstatus = 0;
+ char **cmd;
+ char **cmdsetdup;
+ lookupuidgid (&uid, &gid, user, group);
+
+ cmdsetdup = str2set ('\0', command);
+ cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
+
+ struct execst *new = ecalloc (1, sizeof (struct execst));
+ pthread_mutex_init (&(new->mutex), NULL);
+ pthread_mutex_lock (&(new->mutex));
+ pthread_mutex_lock (&pexec_running_mutex);
+ if (!pexec_running) pexec_running = new;
+ else {
+  new->next = pexec_running;
+  pexec_running = new;
+ }
+ pthread_mutex_unlock (&pexec_running_mutex);
+
+ if (status) {
+  status->string = command;
+  status_update (status);
+ }
+
+ if ((child = fork()) < 0) {
+  if (status)
+   status->string = strerror (errno);
+  pthread_mutex_unlock (&(new->mutex));
+  pthread_mutex_destroy (&(new->mutex));
+  if (new == pexec_running) {
+   pexec_running = new->next;
+  } else {
+   struct execst *cur = pexec_running;
+   while (cur) {
+    if (cur->next == new) {
+     cur->next = new->next;
+    }
+    cur = cur->next;
+   }
+  }
+  free (new);
+  return STATUS_FAIL;
+ } else if (child == 0) {
+  char **exec_environment;
+
+  if (gid && (setgid (gid) == -1))
+   perror ("setting gid");
+  if (uid && (setuid (uid) == -1))
+   perror ("setting uid");
+
+  close (1);
+  dup2 (2, 1);
+// we can safely play with the global environment here, since we fork()-ed earlier
+  exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
+  exec_environment = __create_environment (exec_environment, variables);
+
+  execve (cmd[0], cmd, exec_environment);
+  perror (cmd[0]);
+  free (cmd);
+  free (cmdsetdup);
+  exit (EXIT_FAILURE);
+ } else {
+  ssize_t br;
+  ssize_t ic = 0;
+  ssize_t i;
+  new->pid = child;
+// this loop can be used to create a race-condition
+  sched_watch_pid (child, pexec_watcher);
+
+  char buf[BUFFERSIZE+1];
+  char lbuf[BUFFERSIZE+1];
+
+  pthread_mutex_lock (&(new->mutex));
+  pthread_mutex_unlock (&(new->mutex));
+  pthread_mutex_destroy (&(new->mutex));
+  pidstatus = new->status;
+
+  pthread_mutex_lock (&pexec_running_mutex);
+  if (new == pexec_running) {
+   pexec_running = new->next;
+  } else {
+   struct execst *cur = pexec_running;
+   while (cur) {
+    if (cur->next == new) {
+     cur->next = new->next;
+    }
+    cur = cur->next;
+   }
+  }
+  pthread_mutex_unlock (&pexec_running_mutex);
+  free (new);
+ }
+
+ if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return STATUS_OK;
+ return STATUS_FAIL;
+}
+
+#else
+
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
 // int pipefderr [2];
  pid_t child;
@@ -288,19 +392,6 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  cmdsetdup = str2set ('\0', command);
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
 
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
- struct execst *new = ecalloc (1, sizeof (struct execst));
- pthread_mutex_init (&(new->mutex), NULL);
- pthread_mutex_lock (&(new->mutex));
- pthread_mutex_lock (&pexec_running_mutex);
-  if (!pexec_running) pexec_running = new;
-  else {
-   new->next = pexec_running;
-   pexec_running = new;
-  }
- pthread_mutex_unlock (&pexec_running_mutex);
-#endif
-
 // sigemptyset (&newmask);
 // sigaddset (&newmask, SIGCHLD);
 // pthread_sigmask (SIG_BLOCK, &newmask, &oldmask);
@@ -313,22 +404,6 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-  pthread_mutex_unlock (&(new->mutex));
-  pthread_mutex_destroy (&(new->mutex));
-  if (new == pexec_running) {
-   pexec_running = new->next;
-  } else {
-   struct execst *cur = pexec_running;
-   while (cur) {
-    if (cur->next == new) {
-     cur->next = new->next;
-    }
-    cur = cur->next;
-   }
-  }
-  free (new);
-#endif
   return STATUS_FAIL;
  } else if (child == 0) {
   char **exec_environment;
@@ -363,12 +438,6 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   ssize_t br;
   ssize_t ic = 0;
   ssize_t i;
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-  new->pid = child;
-// this loop can be used to create a race-condition
-//  while (sleep (5));
-  sched_watch_pid (child, pexec_watcher);
-#endif
 
 //  close (pipefderr[1]);
   char buf[BUFFERSIZE+1];
@@ -413,35 +482,9 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }*/
 //  close (pipefderr[0]);
 //  fprintf (stderr, "\e[35m;%i: going to sleep\e[0m;\n", (pid_t)child);
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-  pthread_mutex_lock (&(new->mutex));
-  pthread_mutex_unlock (&(new->mutex));
-  pthread_mutex_destroy (&(new->mutex));
-//  waitpid (child, &pidstatus, 0);
-//  fprintf (stderr, "\e[36m;%i: waking up\e[0m;\n", (pid_t)child);
-//  close (pipefderr[0]);
-  pidstatus = new->status;
-
-  pthread_mutex_lock (&pexec_running_mutex);
-//   puts ("            -------- removing from list");
-   if (new == pexec_running) {
-    pexec_running = new->next;
-   } else {
-    struct execst *cur = pexec_running;
-    while (cur) {
-     if (cur->next == new) {
-      cur->next = new->next;
-     }
-     cur = cur->next;
-    }
-   }
-  pthread_mutex_unlock (&pexec_running_mutex);
-  free (new);
-#else
   do {
    waitpid (child, &pidstatus, 0);
   } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
-#endif
  }
 
 // pthread_sigmask (SIG_SETMASK, &oldmask, NULL);
@@ -451,6 +494,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return STATUS_OK;
  return STATUS_FAIL;
 }
+#endif
 
 void *dexec_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
