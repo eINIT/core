@@ -45,7 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PEXEC_OPTION_NOPIPE 0x01
+#define PEXEC_OPTION_NOPIPE          0x01
+#define PEXEC_OPTION_SAFEENVIRONMENT 0x02
 
 /* structures */
 struct dexecinfo {

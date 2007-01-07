@@ -55,6 +55,7 @@
   <environment>
    <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin" />
    <global id="TERM" s="linux" />
+   <safe PATH="/bin:/sbin:/usr/bin:/usr/sbin" TERM="dumb" />
   </environment>
 
   <network>
@@ -231,7 +232,7 @@
     <source s="configuration" />
 
 <!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
-    <node mountpoint="/dev" fs="tmpfs" after-mount="pexec-options no-pipe; /sbin/udevstart" manager="/sbin/udevd" />
+    <node mountpoint="/dev" fs="tmpfs" after-mount="pexec-options no-pipe safe-environment; /sbin/udevstart" manager="/sbin/udevd" />
     <node mountpoint="/sys" fs="sysfs" />
     <node mountpoint="/proc" fs="proc" />
 

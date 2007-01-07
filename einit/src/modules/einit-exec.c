@@ -81,6 +81,8 @@ struct daemonst * running = NULL;
 char **shell = NULL;
 char *dshell[] = {"/bin/sh", "-c", NULL};
 
+char *safe_environment[] = { "PATH=/bin:/sbin:/usr/bin:/usr/sbin", "TERM=dumb", NULL };
+
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 struct execst * pexec_running = NULL;
 pthread_mutex_t pexec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -292,6 +294,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    for (; optx[x]; x++) {
     if (!strcmp (optx[x], "no-pipe")) {
      options |= PEXEC_OPTION_NOPIPE;
+    } else if (!strcmp (optx[x], "safe-environment")) {
+     options |= PEXEC_OPTION_SAFEENVIRONMENT;
     }
    }
 
@@ -351,7 +355,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
 
-  execve (cmd[0], cmd, exec_environment);
+  if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
+   fprintf (stderr, " >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
+   execve (cmd[0], cmd, safe_environment);
+  } else {
+   execve (cmd[0], cmd, exec_environment);
+  }
   perror (cmd[0]);
   free (cmd);
   free (cmdsetdup);
