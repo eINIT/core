@@ -1,60 +1,67 @@
-Only in .: baselayout-runscript-alternate-init.patch
-diff -r ./src/runscript.c ../../baselayout-1.12.6/src/runscript.c
-245a246,302
-> #if defined(__linux__)
-> 		/* extra code to figure out what init system is currently
-> 		 * active and maybe run an alternate runscript.sh.
-> 		 * only do this on linux since i'm not sure if/how other /proc
-> 		 * directories are supposed to look like. */
-> 		char readlink_buffer[512], link_buffer[512];
-> 		ssize_t readlink_length = 0;
-> 
-> 		/* first: read the symbolic link at /proc/1/exe until we either
-> 		 * get a component that is unusually large or a real binary */
-> 		memcpy(link_buffer, "/proc/1/exe", 12);
-> 		while ((readlink_length = readlink(link_buffer, readlink_buffer, 512)) > 0) {
-> 			if (readlink_length >= 512) goto bad_path;
-> 
-> 			readlink_buffer[readlink_length] = 0;
-> 			if (readlink_buffer[0] == '/') {
-> 				memcpy (link_buffer, readlink_buffer, readlink_length+1);
-> 			/* gotta take special care of relative links */
-> 			} else {
-> 				char *t;
-> 				if ((t = strrchr (link_buffer, '/'))) {
-> 					t += 1;
-> 					*t = 0;
-> 				}
-> 				if ((strlen (link_buffer) + strlen (readlink_buffer)) >= 512)
-> 					goto bad_path;
-> 
-> 				strcat (link_buffer, readlink_buffer);
-> 			}
-> 		}
-> 
-> 		/* according to the readlink(2) man page, EINVAL indicates that
-> 		 * either the third parameter of readlink is <= 0 (which it is
-> 		 * not), or that the path we gave readlink was not in fact a
-> 		 * symbolic link. */
-> 		if (errno == EINVAL) {
-> 			/* try to call /sbin/runscript-${initsystem}.sh */
-> 			char *runscriptname,
-> 			     *initbase = strrchr (link_buffer, '/');
-> 			ssize_t runscriptname_length;
-> 			if (!initbase) initbase = link_buffer;
-> 			else initbase++; /* skip the /, get the basename */
-> 
-> 			runscriptname = malloc (runscriptname_length = (strlen (initbase) + 20));
-> 			if (!runscriptname) goto bad_path;
-> 			snprintf (runscriptname, runscriptname_length,
-> 			          "/sbin/runscript-%s.sh", initbase);
-> 
-> 			/* if this returns, then there is no special
-> 			 * runscript.sh for this init system */
-> 			execve(runscriptname, myargs, myenv);
-> 			free (runscriptname);
-> 		}
-> 
-> 		/* give up, call regular runscript.sh */
-> 		bad_path:
-> #endif
+diff -Naur src/runscript.c src.new/runscript.c
+--- src/runscript.c	2006-11-02 11:21:50.000000000 +0100
++++ src.new/runscript.c	2007-01-07 23:46:42.000000000 +0100
+@@ -243,6 +243,63 @@
+ 	setup_selinux(argc, argv);
+ 
+ 	if (!IS_SBIN_RC()) {
++#if defined(__linux__)
++		/* extra code to figure out what init system is currently
++		 * active and maybe run an alternate runscript.sh.
++		 * only do this on linux since i'm not sure if/how other /proc
++		 * directories are supposed to look like. */
++		char readlink_buffer[512], link_buffer[512];
++		ssize_t readlink_length = 0;
++
++		/* first: read the symbolic link at /proc/1/exe until we either
++		 * get a component that is unusually large or a real binary */
++		memcpy(link_buffer, "/proc/1/exe", 12);
++		while ((readlink_length = readlink(link_buffer, readlink_buffer, 512)) > 0) {
++			if (readlink_length >= 512) goto bad_path;
++
++			readlink_buffer[readlink_length] = 0;
++			if (readlink_buffer[0] == '/') {
++				memcpy (link_buffer, readlink_buffer, readlink_length+1);
++			/* gotta take special care of relative links */
++			} else {
++				char *t;
++				if ((t = strrchr (link_buffer, '/'))) {
++					t += 1;
++					*t = 0;
++				}
++				if ((strlen (link_buffer) + strlen (readlink_buffer)) >= 512)
++					goto bad_path;
++
++				strcat (link_buffer, readlink_buffer);
++			}
++		}
++
++		/* according to the readlink(2) man page, EINVAL indicates that
++		 * either the third parameter of readlink is <= 0 (which it is
++		 * not), or that the path we gave readlink was not in fact a
++		 * symbolic link. */
++		if (errno == EINVAL) {
++			/* try to call /sbin/runscript-${initsystem}.sh */
++			char *runscriptname,
++			     *initbase = strrchr (link_buffer, '/');
++			ssize_t runscriptname_length;
++			if (!initbase) initbase = link_buffer;
++			else initbase++; /* skip the /, get the basename */
++
++			runscriptname = malloc (runscriptname_length = (strlen (initbase) + 20));
++			if (!runscriptname) goto bad_path;
++			snprintf (runscriptname, runscriptname_length,
++			          "/sbin/runscript-%s.sh", initbase);
++
++			/* if this returns, then there is no special
++			 * runscript.sh for this init system */
++			execve(runscriptname, myargs, myenv);
++			free (runscriptname);
++		}
++
++		/* give up, call regular runscript.sh */
++		bad_path:
++#endif
+ 		if (execve("/sbin/runscript.sh", myargs, myenv) < 0)
+ 			exit(1);
+ 	} else {
