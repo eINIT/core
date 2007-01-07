@@ -1,7 +1,8 @@
 2007/01/07: mdeininger
  * cut out mount/root in favour of mount/system
  * some fixes and tweaks for pexec()
- * udevstart is being a bitch...
+ * udevstart is being a bitch... trying to fix udev in general (at least the
+   order in which things are started should fit now...)
 
 2007/01/06: mdeininger
  * updated copyright notice

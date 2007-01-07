@@ -114,8 +114,9 @@ struct smodule sm_mountlocal = {
     }
 };
 
-char *provides_mountremote[] = {"mount/remote", NULL};
-char *requires_mountremote[] = {"mount/system", "network", "portmap", NULL};
+char *provides_mountremote[] = { "mount/remote", NULL};
+char *requires_mountremote[] = { "mount/system", "network", NULL};
+char *after_mountremote[] = { "portmap", NULL};
 struct smodule sm_mountremote = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -126,7 +127,7 @@ struct smodule sm_mountremote = {
     .si           = {
         .provides = provides_mountremote,
         .requires = requires_mountremote,
-        .after    = NULL,
+        .after    = after_mountremote,
         .before   = NULL
     }
 };
@@ -1545,12 +1546,6 @@ int enable (enum mounttask p, struct einit_event *status) {
   case MOUNT_SYSTEM:
 #ifdef LINUX
    ret = mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
-/* link /etc/mtab to /proc/mounts */
-   unlink ("/etc/mtab");
-   symlink ("/proc/mounts", "/etc/mtab");
-/* discard errors, they are irrelevant. */
-   errno = 0;
-
    ret = mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
 #endif
    ret = mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
@@ -1559,9 +1554,17 @@ int enable (enum mounttask p, struct einit_event *status) {
     status_update (status);
     update (UPDATE_BLOCK_DEVICES);
    }
-   return mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
 
-//   return ret;
+   ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+#ifdef LINUX
+/* link /etc/mtab to /proc/mounts */
+   unlink ("/etc/mtab");
+   symlink ("/proc/mounts", "/etc/mtab");
+/* discard errors, they are irrelevant. */
+   errno = 0;
+#endif
+
+   return ret;
    break;
   case MOUNT_CRITICAL:
    while (ha) {

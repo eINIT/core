@@ -232,13 +232,32 @@
     <source s="configuration" />
 
 <!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
-    <node mountpoint="/dev" fs="tmpfs" after-mount="pexec-options no-pipe safe-environment; /sbin/udevstart" manager="/sbin/udevd" />
+<!-- things got a little more complicated with udev lately... -->
+    <node mountpoint="/dev" fs="tmpfs"
+     after-mount='
+      echo "feedback|notice|seeding /dev";
+      if test -d /lib/udev/devices; then cp -a /lib/udev/devices/* /dev; fi;
+      ln -snf /proc/self/fd /dev/fd;
+      ln -snf fd/0 /dev/stdin;
+      ln -snf fd/1 /dev/stdout;
+      ln -snf fd/2 /dev/stderr;
+      if test -e /proc/kcore then ln -snf /proc/kcore /dev/core; fi;
+
+      echo "feedback|notice|creating device nodes";
+      /sbin/udevstart;
+      /sbin/udevtrigger --attr-match=dev;
+      /sbin/udevtrigger;
+
+      echo "feedback|notice|spawning udev daemon";
+      /sbin/udevd --daemon;
+      echo "feedback|notice|calling udevsettle";
+      /sbin/udevsettle --timeout=60;' />
     <node mountpoint="/sys" fs="sysfs" />
     <node mountpoint="/proc" fs="proc" />
 
     <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
-    <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir /dev/shm" options="critical" />
-    <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir /dev/pts" options="critical" />
+    <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir -p /dev/shm" options="critical" />
+    <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir -p /dev/pts" options="critical" />
    </fstab>
   </storage>
 
