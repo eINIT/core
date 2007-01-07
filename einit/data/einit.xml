@@ -243,6 +243,9 @@
       ln -snf fd/2 /dev/stderr;
       if test -e /proc/kcore then ln -snf /proc/kcore /dev/core; fi;
 
+      echo "feedback|notice|seeding /dev via MAKEDEV";
+      cd /dev; MAKEDEV all;
+
       echo "feedback|notice|spawning udev daemon";
       /sbin/udevd --daemon;
 
