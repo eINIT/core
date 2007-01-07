@@ -244,6 +244,8 @@
       ln -snf fd/2 /dev/stderr;
       if test -e /proc/kcore; then ln -snf /proc/kcore /dev/core; fi;
 
+      if test ! -e /dev/console; then mknod /dev/console c 5 1 -m 0600; fi;
+
       echo "feedback|notice|creating device nodes";
       /sbin/udevstart&lt;/dev/console;' />
     <node mountpoint="/sys" fs="sysfs" />
