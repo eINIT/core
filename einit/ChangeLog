@@ -5,6 +5,8 @@
  * traced the weird lockup bugs to circular dependencies created by gentoo's
    "after"-dependencies... disabled them until this can be resolved
  * cleanups in pexec()
+ * i think i got feedback from pexec() working...
+ * better support for gentoo-ish scripts
 
 2007/01/05: mdeininger
  * tended to that "lock bug"

@@ -365,12 +365,12 @@ void feedback_event_handler(struct einit_event *ev) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (enableansicodes)
-     printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", (cmode && cmode->id) ? cmode->id : "unknown");
+     printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown");
     else
      printf ("switching to mode %s.\n", (cmode && cmode->id) ? cmode->id : "unknown");
 
     if (vofile)
-     fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", (cmode && cmode->id) ? cmode->id : "unknown");
+     fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown");
     pthread_mutex_lock (&plansmutex);
      plan.plan = (struct mloadplan *)ev->para;
      plan.startedat = time (NULL);
@@ -396,12 +396,12 @@ void feedback_event_handler(struct einit_event *ev) {
       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
     pthread_mutex_unlock (&plansmutex);
     if (enableansicodes)
-     printf ("\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown");
+     printf ("\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown");
     else
      printf ("new mode %s is now in effect.\n", (amode && amode->id) ? amode->id : "unknown");
 
     if (vofile)
-     fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown"); break;
+     fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown"); break;
   }
  } else if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
   time_t lupdate;
@@ -426,12 +426,12 @@ void feedback_event_handler(struct einit_event *ev) {
 
      if (((struct mstat *)(modules[i]))->seqid > ev->seqid) {
 /* discard older messages that came in after newer ones (happens frequently in multi-threaded situations) */
-      pthread_mutex_unlock (&me->imutex);
       pthread_mutex_unlock (&modulesmutex);
+      pthread_mutex_unlock (&me->imutex);
       return;
+     } else {
+      ((struct mstat *)(modules[i]))->seqid = ev->seqid;
      }
-
-     ((struct mstat *)(modules[i]))->seqid = ev->seqid;
      break;
     }
   }
@@ -507,7 +507,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
 // statusbarlines = 4;
 
  if (plans) {
-  fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[K\n", (cmode && cmode->id) ? cmode->id : "unknown");
+  fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown");
  }
 
  pthread_mutex_lock (&modulesmutex);
@@ -528,7 +528,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
     }
    }
   }
-  fputs (" )\e[K\n", vofile);
+  fputs (" )\e[0K\n", vofile);
 
   fputs ("\e[3;0H( \e[32mdisabled\e[0m |", vofile);
   for (i = 0; modules[i]; i++) {
@@ -545,7 +545,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
     }
    }
   }
-  fputs (" )\e[K\n", vofile);
+  fputs (" )\e[0K\n", vofile);
  }
 
  for (i = 0; modules[i]; i++) {
@@ -554,10 +554,10 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
       (((struct mstat *)(modules[i]))->mod->module)) {
    char *name = (((struct mstat *)(modules[i]))->mod->module->name ? ((struct mstat *)(modules[i]))->mod->module->name : "unknown");
 
-   fprintf (vofile, "\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[K\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
+   fprintf (vofile, "\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[0K\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
    for (j = 0; ((struct mstat *)(modules[i]))->textbuffer[j] && ((j +1) < ((struct mstat *)(modules[i]))->lines); j++) {
     if (((struct mstat *)(modules[i]))->textbuffer[j]->string && (strlen (((struct mstat *)(modules[i]))->textbuffer[j]->string) < 76)) {
-     fprintf (vofile, " \e[33m>>\e[0m %s\e[K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
+     fprintf (vofile, " \e[33m>>\e[0m %s\e[0K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
     } else {
      fprintf (vofile, " \e[33m>>\e[0m \e[31m...\e[0m");
     }
@@ -707,29 +707,31 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
 
  if (ev->task & MOD_FEEDBACK_SHOW) {
   if (ev->task & MOD_ENABLE) {
-   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
+   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
   } else if (ev->task & MOD_DISABLE) {
-   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[K\n", line, name);
+   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[0K\n", line, name);
   } else  {
-   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[K\n", line, name);
+   printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[0K\n", line, name);
   }
  }
 
  switch (ev->status) {
   case STATUS_IDLE:
-    printf ("\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[K\n", line, name);
+    printf ("\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[0K\n", line, name);
    break;
   case STATUS_ENABLING:
-    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[K\n", line, name);
+    printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
    break;
  }
 
  if (ev->string) {
+  strtrim (ev->string);
+
   if (strlen(ev->string) < 45)
-   printf ("\e[%i;10H%s: %s\e[K\n", line, name, ev->string);
+   printf ("\e[%i;10H%s: %s\e[0K\n", line, name, ev->string);
   else {
    char tmp[1024];
-   printf ("\e[%i;10H%s: <...>\e[K\n", line, name);
+   printf ("\e[%i;10H%s: <...>\e[0K\n", line, name);
 
    snprintf (tmp, 1024, "%s: %s", name, ev->string);
    notice (3, tmp);

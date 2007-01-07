@@ -165,6 +165,16 @@
 
         depend;'
        execute='
+        ewarn () { echo "feedback|warning|"$@; };
+        eerror () { echo "feedback|warning|"$@; };
+        ebegin () { echo "feedback|notice|"$@; };
+        einfo () { echo "feedback|notice|"$@; };
+        eend () {
+         if test $1 = 0; then
+          echo "feedback|success|$2";
+         else
+          echo "feedback|failure|$2";
+         fi; };
         if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
         source ${script-path};
         ${action};' />

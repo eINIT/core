@@ -368,33 +368,22 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 #else
 
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
-// int pipefderr [2];
+ int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
  char **cmd;
-// char *cmddup;
  char **cmdsetdup;
-// sigset_t oldmask, newmask;
+ uint32_t cs = STATUS_OK;
 
-// if (pipe (pipefderr)) {
-//  status->verbose = strerror (errno);
-//  return STATUS_FAIL;
-// }
-
-// cmddup = ecalloc (1, sizeof(char)*(strlen(command)+/*termlen*/+1));
-// cmddup = strcat (cmddup, command);
-// cmddup = estrdup (shellcmd->enable);
-
-// cmddup = strcat (cmddup, termcmd);
+ if (pipe (pipefderr)) {
+  status->string = strerror (errno);
+  return STATUS_FAIL;
+ }
 
  lookupuidgid (&uid, &gid, user, group);
 
  cmdsetdup = str2set ('\0', command);
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
-
-// sigemptyset (&newmask);
-// sigaddset (&newmask, SIGCHLD);
-// pthread_sigmask (SIG_BLOCK, &newmask, &oldmask);
 
  if (status) {
   status->string = command;
@@ -413,16 +402,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   if (uid && (setuid (uid) == -1))
    perror ("setting uid");
 
-//  char **environment = NULL
-//  close (0);
-//  close (1);
+  close (0);
   close (1);
-  dup2 (2, 1);
-//  close (pipefderr [0]);
-//  dup2 (pipefderr [1], 1);
-//  dup2 (pipefderr [1], 2);
-//  close (pipefderr [1]);
-//  printf ("%i\n", getpid());
+  close (2);
+  close (pipefderr [0]);
+  dup2 (pipefderr [1], 1);
+  dup2 (pipefderr [1], 2);
 
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
@@ -432,65 +417,63 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   perror (cmd[0]);
   free (cmd);
   free (cmdsetdup);
-//  free (cmddup);
   exit (EXIT_FAILURE);
  } else {
   ssize_t br;
   ssize_t ic = 0;
   ssize_t i;
+  FILE *fx;
 
-//  close (pipefderr[1]);
+  close (pipefderr[1]);
   char buf[BUFFERSIZE+1];
   char lbuf[BUFFERSIZE+1];
-//  fprintf (stderr, "\e[37m;%i: reading pipe\e[0m;\n", (pid_t)child);
-/*  while (br = read (pipefderr[0], buf, BUFFERSIZE)) {
-//   fprintf (stderr, "\e[38m;%i: read %i bytes\e[0m;\n", (pid_t)child, br);
-   if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
-    bitch (BTCH_ERRNO);
-    break;
-   }
-   for (i = 0; i < br; i++) {
-    if ((buf[i] == '\n') || (buf[i] == '\0')) {
-     lbuf[ic] = 0;
-     if (lbuf[0] && (lbuf[0] != '\n')) {
-      if (!strcmp(".terminate.", lbuf)) break;
-      status->verbose = lbuf;
-      status_update (status);
-     }
-     ic = -1;
-     lbuf[0] = 0;
-    } else {
-     if (ic >= BUFFERSIZE) {
-      lbuf[ic] = 0;
-      if (lbuf[0] && (lbuf[0] != '\n')) {
-       if (!strcmp(".terminate.", lbuf)) break;
-       status->verbose = lbuf;
+
+  if (fx = fdopen(pipefderr[0], "r")) {
+   char rxbuffer[1024];
+
+   while (fgets(rxbuffer, 1024, fx) > 0) {
+    char **fbc = str2set ('|', rxbuffer);
+    strtrim (rxbuffer);
+
+    if (fbc) {
+     if (!strcmp (fbc[0], "feedback")) {
+// suppose things are going fine until proven otherwise
+      cs = STATUS_OK;
+
+      if (!strcmp (fbc[1], "notice")) {
+       status->string = fbc[2];
+       status_update (status);
+      } else if (!strcmp (fbc[1], "warning")) {
+       status->string = fbc[2];
+       status->flag++;
+       status_update (status);
+      } else if (!strcmp (fbc[1], "success")) {
+       cs = STATUS_OK;
+       status->string = fbc[2];
+       status_update (status);
+      } else if (!strcmp (fbc[1], "failure")) {
+       cs = STATUS_FAIL;
+       status->string = fbc[2];
+       status->flag++;
        status_update (status);
       }
-      ic = 0;
      }
-     lbuf[ic] = buf[i];
+
+     free (fbc);
     }
-    ic++;
    }
+
+   fclose (fx);
+  } else {
+   perror ("pexec(): open pipe");
   }
-//  fprintf (stderr, "\e[35m;%i: pipe closed\e[0m;\n", (pid_t)child);
-  lbuf[ic] = 0;
-  if (lbuf[0] && (lbuf[0] != '\n') && strcmp(".terminate.", lbuf)) {
-   status->verbose = lbuf;
-   status_update (status);
-  }*/
-//  close (pipefderr[0]);
-//  fprintf (stderr, "\e[35m;%i: going to sleep\e[0m;\n", (pid_t)child);
+
   do {
    waitpid (child, &pidstatus, 0);
   } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
  }
 
-// pthread_sigmask (SIG_SETMASK, &oldmask, NULL);
-
-// puts ("returning");
-
+ if (cs == STATUS_FAIL) return STATUS_FAIL;
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return STATUS_OK;
  return STATUS_FAIL;
 }
