@@ -3,6 +3,7 @@
  * some fixes and tweaks for pexec()
  * udevstart is being a bitch... trying to fix udev in general (at least the
    order in which things are started should fit now...)
+ * found the bug: udevstart needs a stdin to work properly
 
 2007/01/06: mdeininger
  * updated copyright notice

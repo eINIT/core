@@ -234,6 +234,7 @@
 <!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
 <!-- things got a little more complicated with udev lately... -->
     <node mountpoint="/dev" fs="tmpfs"
+     manager="/sbin/udevd"
      after-mount='
       echo "feedback|notice|seeding /dev";
       if test -d /lib/udev/devices; then cp -a /lib/udev/devices/* /dev; fi;
@@ -243,16 +244,8 @@
       ln -snf fd/2 /dev/stderr;
       if test -e /proc/kcore; then ln -snf /proc/kcore /dev/core; fi;
 
-      echo "feedback|notice|spawning udev daemon";
-      /sbin/udevd --daemon;
-
       echo "feedback|notice|creating device nodes";
-      echo "not using" /sbin/udevstart;
-      /sbin/udevtrigger --attr-match=dev;
-      echo "not using" /sbin/udevtrigger;
-
-      echo "feedback|notice|calling udevsettle";
-      /sbin/udevsettle --timeout=60;' />
+      /sbin/udevstart&lt;/dev/console;' />
     <node mountpoint="/sys" fs="sysfs" />
     <node mountpoint="/proc" fs="proc" />
 
