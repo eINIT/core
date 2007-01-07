@@ -231,7 +231,7 @@
     <source s="configuration" />
 
 <!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
-    <node mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" />
+    <node mountpoint="/dev" fs="tmpfs" after-mount="pexec-options no-pipe; /sbin/udevstart" manager="/sbin/udevd" />
     <node mountpoint="/sys" fs="sysfs" />
     <node mountpoint="/proc" fs="proc" />
 
@@ -386,7 +386,7 @@
     <daemon id="daemon-portmap"
      name="Portmap Daemon"
      provides="portmap"
-     requires="mount/critical:/"
+     requires="mount/critical"
      command="/sbin/portmap -d"
      restart="yes" />
 
@@ -618,7 +618,7 @@
      name="Network (Wireless, Atheros)"
      requires="mount/system"
      provides="net-ath0"
-     enable="rm -f /var/run/dhcpcd-ath0.pid ;
+     enable="pexec-options no-pipe; rm -f /var/run/dhcpcd-ath0.pid ;
              /sbin/modprobe ${configuration_kernel_module_ath0} ;
              /sbin/wlanconfig ath0 create wlandev wifi0 wlanmode sta ;
              /sbin/iwconfig ath0 essid ${configuration_network_wireless_ssid} ;
@@ -644,7 +644,7 @@
      name="Network (${interface}, using DHCP)"
      provides="net-${interface}"
      requires="kern-ethernet:mount/critical"
-     enable="rm -f /var/run/dhcpcd-${interface}.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
+     enable="pexec-options no-pipe; rm -f /var/run/dhcpcd-${interface}.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
      disable="killall dhcpcd; rm -f /var/run/dhcpcd-${interface}.pid;"
      variables="configuration-network-dhcp-timeout" />
 

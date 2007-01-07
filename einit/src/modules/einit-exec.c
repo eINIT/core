@@ -269,9 +269,36 @@ char **__create_environment (char **environment, char **variables) {
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
  pid_t child;
  int pidstatus = 0;
- char **cmd;
- char **cmdsetdup;
+ char **cmd, **cmdsetdup, options = (status ? PEXEC_OPTION_NOPIPE : 0);
+
  lookupuidgid (&uid, &gid, user, group);
+
+ if (!command) return STATUS_FAIL;
+// if the first command is pexec-options, then set some special options
+ if (strstr (command, "pexec-options") == command) {
+  char *ocmds = command,
+       *rcmds = strchr (ocmds, ';'),
+       **optx = NULL;
+  if (!rcmds) return STATUS_FAIL;
+
+  *rcmds = 0;
+  optx = str2set (' ', ocmds);
+  *rcmds = ';';
+
+  command = rcmds+1;
+
+  if (optx) {
+   unsigned int x = 0;
+   for (; optx[x]; x++) {
+    if (!strcmp (optx[x], "no-pipe")) {
+     options |= PEXEC_OPTION_NOPIPE;
+    }
+   }
+
+   free (optx);
+  }
+ }
+ if (!command || !command[0]) return STATUS_FAIL;
 
  cmdsetdup = str2set ('\0', command);
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
@@ -371,16 +398,44 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
- char **cmd;
- char **cmdsetdup;
+ char **cmd, **cmdsetdup, options = (status ? PEXEC_OPTION_NOPIPE : 0);
  uint32_t cs = STATUS_OK;
 
- if (pipe (pipefderr)) {
-  status->string = strerror (errno);
-  return STATUS_FAIL;
- }
-
  lookupuidgid (&uid, &gid, user, group);
+
+ if (!command) return STATUS_FAIL;
+// if the first command is pexec-options, then set some special options
+ if (strstr (command, "pexec-options") == command) {
+  char *ocmds = command,
+  *rcmds = strchr (ocmds, ';'),
+  **optx = NULL;
+  if (!rcmds) return STATUS_FAIL;
+
+  *rcmds = 0;
+  optx = str2set (' ', ocmds);
+  *rcmds = ';';
+
+  command = rcmds+1;
+
+  if (optx) {
+   unsigned int x = 0;
+   for (; optx[x]; x++) {
+    if (!strcmp (optx[x], "no-pipe")) {
+     options |= PEXEC_OPTION_NOPIPE;
+    }
+   }
+
+   free (optx);
+  }
+ }
+ if (!command || !command[0]) return STATUS_FAIL;
+
+ if (!(options & PEXEC_OPTION_NOPIPE)) {
+  if (pipe (pipefderr)) {
+   status->string = strerror (errno);
+   return STATUS_FAIL;
+  }
+ }
 
  cmdsetdup = str2set ('\0', command);
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
@@ -404,10 +459,14 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
   close (0);
   close (1);
-  close (2);
-  close (pipefderr [0]);
-  dup2 (pipefderr [1], 1);
-  dup2 (pipefderr [1], 2);
+  if (!(options & PEXEC_OPTION_NOPIPE)) {
+   close (2);
+   close (pipefderr [0]);
+   dup2 (pipefderr [1], 1);
+   dup2 (pipefderr [1], 2);
+  } else {
+   dup2 (2, 1);
+  }
 
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
@@ -424,48 +483,50 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   ssize_t i;
   FILE *fx;
 
-  close (pipefderr[1]);
-  char buf[BUFFERSIZE+1];
-  char lbuf[BUFFERSIZE+1];
+  if (!(options & PEXEC_OPTION_NOPIPE)) {
+   close (pipefderr[1]);
+   char buf[BUFFERSIZE+1];
+   char lbuf[BUFFERSIZE+1];
 
-  if (fx = fdopen(pipefderr[0], "r")) {
-   char rxbuffer[1024];
+   if (fx = fdopen(pipefderr[0], "r")) {
+    char rxbuffer[1024];
 
-   while (fgets(rxbuffer, 1024, fx) > 0) {
-    char **fbc = str2set ('|', rxbuffer);
-    strtrim (rxbuffer);
+    while (fgets(rxbuffer, 1024, fx) > 0) {
+     char **fbc = str2set ('|', rxbuffer);
+     strtrim (rxbuffer);
 
-    if (fbc) {
-     if (!strcmp (fbc[0], "feedback")) {
+     if (fbc) {
+      if (!strcmp (fbc[0], "feedback")) {
 // suppose things are going fine until proven otherwise
-      cs = STATUS_OK;
-
-      if (!strcmp (fbc[1], "notice")) {
-       status->string = fbc[2];
-       status_update (status);
-      } else if (!strcmp (fbc[1], "warning")) {
-       status->string = fbc[2];
-       status->flag++;
-       status_update (status);
-      } else if (!strcmp (fbc[1], "success")) {
        cs = STATUS_OK;
-       status->string = fbc[2];
-       status_update (status);
-      } else if (!strcmp (fbc[1], "failure")) {
-       cs = STATUS_FAIL;
-       status->string = fbc[2];
-       status->flag++;
-       status_update (status);
+
+       if (!strcmp (fbc[1], "notice")) {
+        status->string = fbc[2];
+        status_update (status);
+       } else if (!strcmp (fbc[1], "warning")) {
+        status->string = fbc[2];
+        status->flag++;
+        status_update (status);
+       } else if (!strcmp (fbc[1], "success")) {
+        cs = STATUS_OK;
+        status->string = fbc[2];
+        status_update (status);
+       } else if (!strcmp (fbc[1], "failure")) {
+        cs = STATUS_FAIL;
+        status->string = fbc[2];
+        status->flag++;
+        status_update (status);
+       }
       }
+
+      free (fbc);
      }
-
-     free (fbc);
     }
-   }
 
-   fclose (fx);
-  } else {
-   perror ("pexec(): open pipe");
+    fclose (fx);
+   } else {
+    perror ("pexec(): open pipe");
+   }
   }
 
   do {

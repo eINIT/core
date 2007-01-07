@@ -98,7 +98,7 @@ const struct smodule self = {
 };
 
 char *provides_mountlocal[] = {"mount/local", NULL};
-char *requires_mountlocal[] = {"/", "mount/system", "mount/critical", NULL};
+char *requires_mountlocal[] = {"mount/system", "mount/critical", NULL};
 struct smodule sm_mountlocal = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -115,7 +115,7 @@ struct smodule sm_mountlocal = {
 };
 
 char *provides_mountremote[] = {"mount/remote", NULL};
-char *requires_mountremote[] = {"/", "mount/system", "network", "portmap", NULL};
+char *requires_mountremote[] = {"mount/system", "network", "portmap", NULL};
 struct smodule sm_mountremote = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -132,7 +132,6 @@ struct smodule sm_mountremote = {
 };
 
 char *provides_system[] = {"mount/system", NULL};
-char *requires_system[] = {"/", NULL};
 struct smodule sm_system = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -142,14 +141,14 @@ struct smodule sm_system = {
 	.rid		= "einit-mount-system",
     .si           = {
         .provides = provides_system,
-        .requires = requires_system,
+        .requires = NULL,
         .after    = NULL,
         .before   = NULL
     }
 };
 
 char *provides_critical[] = {"mount/critical", NULL};
-char *requires_critical[] = {"/", "mount/system", NULL};
+char *requires_critical[] = {"mount/system", NULL};
 struct smodule sm_critical = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -160,22 +159,6 @@ struct smodule sm_critical = {
     .si           = {
         .provides = provides_critical,
         .requires = requires_critical,
-        .after    = NULL,
-        .before   = NULL
-    }
-};
-
-char *provides_root[] = {"/", NULL};
-struct smodule sm_root = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= EINIT_MOD_EXEC,
-	.options	= 0,
-	.name		= "mount (/)",
-	.rid		= "einit-mount-root",
-    .si           = {
-        .provides = provides_root,
-        .requires = NULL,
         .after    = NULL,
         .before   = NULL
     }
@@ -749,16 +732,6 @@ int scanmodules (struct lmodule *modchain) {
                 *lm = modchain;
  char doop = 1;
 
- while (lm) { if (lm->source && !strcmp(lm->source, sm_root.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
- if (doop && (new = mod_add (NULL, &sm_root))) {
-   new->source = new->module->rid;
-   new->enable = (int (*)(void *, struct einit_event *))enable;
-   new->disable = (int (*)(void *, struct einit_event *))disable;
-   new->param = (void *)MOUNT_ROOT;
-  }
-
- doop = 1;
- lm = modchain;
  while (lm) { if (lm->source && !strcmp(lm->source, sm_mountlocal.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountlocal))) {
    new->source = new->module->rid;
@@ -1019,6 +992,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     }
 
     if (gmode != EINIT_GMODE_SANDBOX) {
+// root node should only be remounted...
+     if (!strcmp ("/", mountpoint)) goto attempt_remount;
 #ifdef DARWIN
      if (mount (source, mountpoint, mntflags, fsdata) == -1)
 #else
@@ -1027,8 +1002,17 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      {
 #ifdef MS_REMOUNT
       if (errno == EBUSY) {
-       if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
+       attempt_remount:
+       if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) {
+        status->string = "remounting node failed...";
+        status_update (status);
+        goto mount_panic;
+       }
       } else
+#else
+      attempt_remount:
+      status->string = "should now try to remount node, but OS does not support this";
+      status_update (status);
 #endif
       {
        mount_panic:
@@ -1558,9 +1542,6 @@ int enable (enum mounttask p, struct einit_event *status) {
     ha = streenext (ha);
    }
    break;
-  case MOUNT_ROOT:
-   return mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
-   break;
   case MOUNT_SYSTEM:
 #ifdef LINUX
    ret = mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
@@ -1578,7 +1559,9 @@ int enable (enum mounttask p, struct einit_event *status) {
     status_update (status);
     update (UPDATE_BLOCK_DEVICES);
    }
-   return ret;
+   return mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+
+//   return ret;
    break;
   case MOUNT_CRITICAL:
    while (ha) {
@@ -1674,10 +1657,6 @@ int disable (enum mounttask p, struct einit_event *status) {
     ha = streenext (ha);
    }
    break;
-  case MOUNT_ROOT:
-   return mountwrapper ("/", status, MOUNT_TF_UMOUNT);
-   STATUS_OK;
-   break;
   case MOUNT_SYSTEM:
    {
     mountwrapper ("/dev", status, MOUNT_TF_UMOUNT);
@@ -1693,7 +1672,9 @@ int disable (enum mounttask p, struct einit_event *status) {
 //     update (UPDATE_BLOCK_DEVICES);
     }
    }
-   return STATUS_OK;
+
+   return mountwrapper ("/", status, MOUNT_TF_UMOUNT);
+//   return STATUS_OK;
   case MOUNT_CRITICAL:
    while (ha) {
     if (inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))

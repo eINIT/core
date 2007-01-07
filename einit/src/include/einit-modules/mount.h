@@ -120,7 +120,6 @@ enum update_task {
 /*!\name Mount module parametres
  \{*/
 enum mounttask {
- MOUNT_ROOT = 1,
  MOUNT_SYSTEM = 4,
  MOUNT_LOCAL = 5,
  MOUNT_REMOTE = 6,

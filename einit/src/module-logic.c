@@ -457,10 +457,14 @@ int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th,
    return -1;
   }
   else if (pthread_mutex_trylock(node->mutex)) {
+#ifdef DEBUG
    notice (2, "module-logic: already processing, hopping on...");
+#endif
    pthread_mutex_lock(node->mutex);
    pthread_mutex_unlock(node->mutex);
+#ifdef DEBUG
    notice (2, "module-logic: done, next");
+#endif
    return 0;
   }
   pthread_mutex_unlock(node->mutex);
