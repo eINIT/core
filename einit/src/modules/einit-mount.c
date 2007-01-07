@@ -1002,7 +1002,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 #endif
      {
 #ifdef MS_REMOUNT
-//      if (errno == EBUSY) {
+      if (errno == EBUSY) {
        attempt_remount:
        status->string = "attempting to remount node instead of mounting";
        status_update (status);
@@ -1013,7 +1013,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
         status_update (status);
         goto mount_panic;
        }
-//      } else
+      } else
 #else
       attempt_remount:
       status->string = "should now try to remount node, but OS does not support this";
@@ -1559,7 +1559,7 @@ int enable (enum mounttask p, struct einit_event *status) {
     update (UPDATE_BLOCK_DEVICES);
    }
 
-//   ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+   ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
 #ifdef LINUX
 /* link /etc/mtab to /proc/mounts */
    unlink ("/etc/mtab");

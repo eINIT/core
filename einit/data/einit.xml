@@ -247,9 +247,9 @@
       /sbin/udevd --daemon;
 
       echo "feedback|notice|creating device nodes";
-      /sbin/udevstart;
+      echo "not using" /sbin/udevstart;
       /sbin/udevtrigger --attr-match=dev;
-      /sbin/udevtrigger;
+      echo "not using" /sbin/udevtrigger;
 
       echo "feedback|notice|calling udevsettle";
       /sbin/udevsettle --timeout=60;' />
