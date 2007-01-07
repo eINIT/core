@@ -310,6 +310,18 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      uint32_t mpx, mpy, mpz = 0;
      char *pnode = NULL, **preference = NULL;
 
+/* first make sure all modules marked as "deprecated" are last */
+     for (mpx = 0; nnode.mod[mpx]; mpx++); mpx--;
+     for (mpy = 0; mpy < mpx; mpy++) {
+      if (nnode.mod[mpy]->module && (nnode.mod[mpy]->module->options & EINIT_MOD_DEPRECATED)) {
+       struct lmodule *t = nnode.mod[mpx];
+       nnode.mod[mpx] = nnode.mod[mpy];
+       nnode.mod[mpy] = t;
+       mpx--;
+      }
+     }
+
+/* now to the sorting bit... */
      pnode = emalloc (strlen (current[a])+18);
      pnode[0] = 0;
      strcat (pnode, "services-prefer-");

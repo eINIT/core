@@ -154,6 +154,7 @@ int scanmodules (struct lmodule *modchain) {
 
     modinfo = emalloc (sizeof (struct smodule));
     memset (modinfo, 0, sizeof(struct smodule));
+    modinfo->options |= EINIT_MOD_DEPRECATED;
 
     nrid = emalloc (8 + strlen(de->d_name));
     *nrid = 0;

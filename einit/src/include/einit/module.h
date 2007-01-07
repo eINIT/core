@@ -87,9 +87,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*!\ingroup modulemdefinition
  * \{ */
-#define EINIT_MOD_LOADER 1    /*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
-#define EINIT_MOD_FEEDBACK 2  /*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
-#define EINIT_MOD_EXEC 4      /*!< Module-type: Regular modules, i.e. those that provide services. */
+#define EINIT_MOD_LOADER 1     /*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
+#define EINIT_MOD_FEEDBACK 2   /*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
+#define EINIT_MOD_EXEC 4       /*!< Module-type: Regular modules, i.e. those that provide services. */
+#define EINIT_MOD_DEPRECATED 8 /*!< Module-type: Deprecated module: only try if nothing else worked */
 /*!\} */
 
 /*!\ingroup modulemanipulation
