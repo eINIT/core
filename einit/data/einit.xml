@@ -838,7 +838,7 @@
       name="dhcdbd"
       provides="dhcdbd"
       requires="dbus"
-      command="rm -f /var/run/dhcdbd.pid; dhcdbd -sn"
+      command="rm -f /var/run/dhcdbd.pid; dbus-launch dhcdbd -sn"
       restart="yes" />
 
      <daemon id="daemon-NetworkManager"
