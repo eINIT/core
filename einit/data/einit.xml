@@ -852,7 +852,7 @@
       name="atieventsd - ATI external events daemon"
       provides="atieventsd"
       requires="acpi"
-      command="atieventsd --nodaemon"
+      command="/opt/ati/sbin/atieventsd --nodaemon"
       restart="yes" />
 
      <daemon id="daemon-ipw3945d"
