@@ -331,14 +331,6 @@
      restart="yes"
      vairables="configuration-peripherals-pointing-device-gpm/.*" />
 
-<!-- old DBUS module 
-    <shell id="shell-dbus"
-     name="D-BUS system messagebus"
-     provides="dbus"
-     requires="mount/critical"
-     enable="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; /usr/bin/dbus-daemon --system"
-     disable="killall dbus-daemon; rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid" /> -->
-
 <!-- new DBUS module -->
     <daemon id="daemon-dbus"
      name="D-BUS system messagebus"
@@ -611,7 +603,7 @@
 <!-- Clock -->
     <shell id="shell-clock-ntpdate"
      name="Set the system clock using ntpdate"
-     provides="clock:ntpc"
+     provides="ntpdate"
      requires="mount/critical:network"
      enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock};
      ntpdate -b pool.ntp.org"
