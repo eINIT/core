@@ -41,7 +41,7 @@ else
 fi
 
 # this is on by default for now
-PMODULES="compatibility"
+PMODULES="compatibility configuration"
 
 TREETYPE="linear"
 
