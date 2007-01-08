@@ -427,17 +427,7 @@
      provides="xdm:x11"
      requires="net-lo:video:mount/critical"
      command="/usr/sbin/gdm -nodaemon"
-     restart="yes"
-     DISPLAY=":0.0"
-     HOME="/root" />
-
-<!-- rmh3093 wrote this module definition for gdm which resolved his beryl issues -->
-    <shell id="shell-gdm"
-     name="GDM"
-     provides="xdm:x11"
-     requires="net-lo:video:mount/local:dbus:hal"
-     enable="gdm"
-     disable="gdm-stop" />
+     restart="yes" />
 
     <daemon id="daemon-kdm"
      name="XDM (KDM)"
@@ -445,9 +435,7 @@
      requires="net-lo:video:mount/critical"
      prepare="rm -f /var/run/kdm.pid"
      command="/usr/kde/3.5/bin/kdm -nodaemon"
-     restart="yes"
-     DISPLAY=":0.0"
-     HOME="/root" />
+     restart="yes" />
 
 <!-- credits to haader from the gentoo forums for this one -->
     <daemon id="daemon-xdm"
