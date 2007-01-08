@@ -7,6 +7,7 @@ MD5 50b8711060b2033037a8668e795901d6 files/baselayout-runscript-alternate-init.p
 RMD160 d86080cb975e865cc181d10412e5a0a2950d0480 files/baselayout-runscript-alternate-init.patch 2371
 SHA256 a56c4874c2025727c242f214311593a3debbdb57e815021c5006c4e40de30334 files/baselayout-runscript-alternate-init.patch 2371
 DIST baselayout-1.12.6.tar.bz2 221279 RMD160 4a9b6a0b3855e36a4b0214615d578e8d17dcabae SHA1 8164fe1923ccdf9d9e38ac0884e2bdd2061681e7 SHA256 c244469fa582c7733d2cf1b51865fac818beb8b2af60ec452ad147cb50eb8862
+DIST baselayout-1.12.8.tar.bz2 218298 RMD160 2a47bf00db9c1e15ad2dd90e02dc55a896e3e01f SHA1 5d7274e64b8d17a77519e73303390f4d63f958ee SHA256 c05e126ee1b5bd63462db133c4e39ca45b0a999696f637f2a80d9c7b616eeeea
 EBUILD baselayout-1.12.6-r1.ebuild 19726 RMD160 6795accf3bbad02dc86ec0ce0084f0763507f9a5 SHA1 5b62dea010eefcefe4320d4d9781e91814e74b7e SHA256 d26d1b2e3994bd10a5d1f749483dd17beb09b48c95ade015dba624f9ef0b119b
 MD5 bfc4afb9ee2d5daf1a825432ad7210eb baselayout-1.12.6-r1.ebuild 19726
 RMD160 6795accf3bbad02dc86ec0ce0084f0763507f9a5 baselayout-1.12.6-r1.ebuild 19726
@@ -15,9 +16,16 @@ EBUILD baselayout-1.12.6-r2.ebuild 19728 RMD160 7ce9ab6fe377ad0bdebc4d2208b43fc2
 MD5 89d485f01585b248bb4bac7119d81930 baselayout-1.12.6-r2.ebuild 19728
 RMD160 7ce9ab6fe377ad0bdebc4d2208b43fc2ca12f2ca baselayout-1.12.6-r2.ebuild 19728
 SHA256 ceaed25f3fb47cc0271678f0c8a368ef8324ac36a6d5f7020da2a39aae9ef4cf baselayout-1.12.6-r2.ebuild 19728
+EBUILD baselayout-1.12.8-r2.ebuild 19728 RMD160 7ce9ab6fe377ad0bdebc4d2208b43fc2ca12f2ca SHA1 b4eae138b08b1e83a6711e2552f62ba65024f012 SHA256 ceaed25f3fb47cc0271678f0c8a368ef8324ac36a6d5f7020da2a39aae9ef4cf
+MD5 89d485f01585b248bb4bac7119d81930 baselayout-1.12.8-r2.ebuild 19728
+RMD160 7ce9ab6fe377ad0bdebc4d2208b43fc2ca12f2ca baselayout-1.12.8-r2.ebuild 19728
+SHA256 ceaed25f3fb47cc0271678f0c8a368ef8324ac36a6d5f7020da2a39aae9ef4cf baselayout-1.12.8-r2.ebuild 19728
 MD5 646df4c5861a383867d4188f27d8b7d0 files/digest-baselayout-1.12.6-r1 256
 RMD160 19fbf407d2819bb6917b330252c1ed71cc0322bb files/digest-baselayout-1.12.6-r1 256
 SHA256 7d0ed81c4a5f1131c77c84febb52dcb9949dcfd9ce3bbc18ad4299780c92c74b files/digest-baselayout-1.12.6-r1 256
 MD5 646df4c5861a383867d4188f27d8b7d0 files/digest-baselayout-1.12.6-r2 256
 RMD160 19fbf407d2819bb6917b330252c1ed71cc0322bb files/digest-baselayout-1.12.6-r2 256
 SHA256 7d0ed81c4a5f1131c77c84febb52dcb9949dcfd9ce3bbc18ad4299780c92c74b files/digest-baselayout-1.12.6-r2 256
+MD5 cc3850f4547f7dda6cb6da09e200b7a5 files/digest-baselayout-1.12.8-r2 256
+RMD160 ee4d86476675e157d2237a3611970af21d27450f files/digest-baselayout-1.12.8-r2 256
+SHA256 d5d0b95861bb7a1549bf4ac58d623bc24aa07e6887ecc31d1210c92b66901765 files/digest-baselayout-1.12.8-r2 256
