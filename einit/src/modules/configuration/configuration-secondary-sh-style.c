@@ -110,8 +110,8 @@ void einit_event_handler (struct einit_event *ev) {
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
-  if (!cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d/path", NULL)) {
-   fdputs ("NOTICE: CV \"configuration-compatibility-sysv-distribution-gentoo-init.d/path\":\n  Not found: Gentoo Init Scripts will not be processed. (not a problem)\n", ev->integer);
+  if (!cfg_getnode("configuration-secondary-file-sh", NULL)) {
+   fdputs ("NOTICE: No configuration variables at \"configuration-secondary-file-sh\":\n  Nothing to import.\n", ev->integer);
    ev->task++;
   }
 

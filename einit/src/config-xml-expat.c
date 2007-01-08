@@ -102,6 +102,11 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
      }
 
      if (mt) free (mt);
+    } else if (!strcmp (atts[i], "file-exists")) { // does this file exist?
+     struct stat stbuf;
+
+     if (!stat (atts[i+1], &stbuf))
+      (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
     }
    }
   }

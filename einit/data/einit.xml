@@ -210,6 +210,12 @@
    <bsd /> -->
   </compatibility>
 
+  <secondary>
+   <if file-exists="/etc/gentoo-release">
+    <file-sh id="/etc/conf.d/hostname" configuration-network-hostname="HOSTNAME:s" />
+   </if>
+  </secondary>
+
 <!-- mount settings -->
   <storage>
    <update-steps s="block-devices:metadata" />

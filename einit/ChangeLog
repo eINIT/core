@@ -4,8 +4,9 @@
  * modified the gentoo-compatibility module to use /sbin/runscript-einit.sh
    instead of /sbin/einit-control
  * moved sh-parser to its own file
- * added template for a module secondary configuration module that will parse
-   settings from sh-style configuration files
+ * added template for a secondary configuration module that will parse settings
+   from sh-style configuration files
+ * new conditional for xml configuration files: file-exists=""
 
 2007/01/07: mdeininger
  * cut out mount/root in favour of mount/system
