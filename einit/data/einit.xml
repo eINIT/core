@@ -331,13 +331,21 @@
      restart="yes"
      vairables="configuration-peripherals-pointing-device-gpm/.*" />
 
-<!-- DBUS -->
+<!-- old DBUS module 
     <shell id="shell-dbus"
      name="D-BUS system messagebus"
      provides="dbus"
      requires="mount/critical"
      enable="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; /usr/bin/dbus-daemon --system"
-     disable="killall dbus-daemon; rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid" />
+     disable="killall dbus-daemon; rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid" /> -->
+
+<!-- new DBUS module -->
+    <daemon id="daemon-dbus"
+     name="D-BUS system messagebus"
+     provides="dbus"
+     requires="mount/critical"
+     command="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; dbus-uuidgen --ensure; /usr/bin/dbus-daemon --system --nofork"
+     restart="yes" />
 
 <!-- HALD -->
 <!-- credits to KKtm from the Gentoo Forums... -->
