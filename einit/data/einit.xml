@@ -813,6 +813,14 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+     <shell id="shell-irqbalance"
+      name="irqbalance"
+      provides="irqbalance"
+      requires="mount/critical"
+      enable="irqbalance"
+      disable="/bin/true"
+      restart="no" />
+
      <daemon id="daemon-hplip"
       name="HP Linux Imaging and Printing System"
       provides="hplip"
