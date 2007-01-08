@@ -30,21 +30,27 @@
 #
 
 if ! test -n "$1"; then
-	echo " * do not call this script directly, this is supposed to run other scripts!";
-	exit 1;
+ echo " * do not call this script directly, this is supposed to run other scripts!";
+ exit 1;
 fi
 
-if ! test -n "$2"; then
-        echo " * you must specify an action";
-        exit 1;
+script=$1
+action=$2
+
+if ! test -n "${action}"; then
+ if ! test "$0" != "/sbin/runscript-einit.sh"; then
+  action=$1;
+  script=$0;
+ else
+  echo " * you did not specify an action";
+  exit 1;
+ fi
 fi
 
-action="$2"
-
-if test "$2" = "start"; then
-	action="enable";
-elif test "$2" = "stop"; then
-	action="disable"
+if test "${action}" = "start"; then
+ action="enable";
+elif test "${action}" = "stop"; then
+ action="disable"
 fi
 
-/sbin/einit-control rc $(basename $1) ${action}
+/sbin/einit-control rc $(basename ${script}) ${action}

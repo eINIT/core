@@ -1,6 +1,9 @@
 2007/01/08: mdeininger
  * created a runscript-einit.sh script that translates init.d calls into einit
    "einit-control rc x y" calls.
+ * modified the gentoo-compatibility module to use /sbin/runscript-einit.sh
+   instead of /sbin/einit-control
+ * moved sh-parser to its own file
 
 2007/01/07: mdeininger
  * cut out mount/root in favour of mount/system

@@ -51,19 +51,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <fcntl.h>
 #include <einit-modules/exec.h>
+#include <einit-modules/parse-sh.h>
 
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
-
-#define SH_PARSER_STATUS_LW              0
-#define SH_PARSER_STATUS_READ            1
-#define SH_PARSER_STATUS_IGNORE_TILL_EOL 2
-
-#define PA_END_OF_FILE                   0x01
-#define PA_NEW_CONTEXT                   0x02
 
 const struct smodule self = {
     .eiversion    = EINIT_VERSION,
@@ -94,7 +88,6 @@ int init_d_reset (char *, struct einit_event *);
 int init_d_reload (char *, struct einit_event *);
 int configure (struct lmodule *);
 int cleanup (struct lmodule *);
-int parse_sh (char *, void (*)(char **, uint8_t));
 void sh_add_environ_callback (char **, uint8_t);
 void parse_gentoo_runlevels (char *, struct cfgnode *, char);
 void einit_event_handler (struct einit_event *);
@@ -104,6 +97,8 @@ int cleanup_after_module (struct lmodule *);
 /* functions that module tend to need */
 int configure (struct lmodule *irr) {
  exec_configure (irr);
+ parse_sh_configure (irr);
+
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
@@ -111,82 +106,9 @@ int configure (struct lmodule *irr) {
 int cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+
+ parse_sh_cleanup (irr);
  exec_cleanup(irr);
-}
-
-// parse sh-style files and call back for each line
-int parse_sh (char *data, void (*callback)(char **, uint8_t)) {
- if (!data) return -1;
-
- char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp,
-      *cur = data-1,
-      stat = SH_PARSER_STATUS_LW, squote = 0, dquote = 0, lit = 0,
-      **command = NULL;
-
- while (*(cur +1)) {
-  cur++;
-
-  if (stat == SH_PARSER_STATUS_IGNORE_TILL_EOL) {
-   if (*cur == '\n')
-    stat = SH_PARSER_STATUS_LW;
-
-   continue;
-  }
-//  putchar (*cur);
-
-  if (lit) {
-   lit = 0;
-   *cdp = *cur;
-   cdp++;
-  } else switch (*cur) {
-   case '#': stat = SH_PARSER_STATUS_IGNORE_TILL_EOL; break;
-   case '\'': squote = !squote; break;
-   case '\"': dquote = !dquote; break;
-   case '\\': lit = 1; break;
-   case '\n':
-    if ((stat != SH_PARSER_STATUS_LW) && (cdp != sdp)) {
-     *cdp = 0;
-     command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
-      cdp++;
-      sdp = cdp;
-    }
-
-    stat = SH_PARSER_STATUS_LW;
-
-    if (command) {
-     callback (command, PA_NEW_CONTEXT);
-
-     free (command);
-     command = NULL;
-    }
-
-    break;
-   default:
-    if (dquote || squote) {
-     *cdp = *cur;
-     cdp++;
-    } else if (isspace(*cur)) {
-    if ((stat != SH_PARSER_STATUS_LW) && (cdp != sdp)) {
-      *cdp = 0;
-      command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
-      cdp++;
-      sdp = cdp;
-     }
-     stat = SH_PARSER_STATUS_LW;
-    } else {
-     *cdp = *cur;
-     cdp++;
-     stat = SH_PARSER_STATUS_READ;
-    }
-
-    break;
-  }
- }
-
- callback (NULL, PA_END_OF_FILE);
- free (ndp);
-
- return 0;
 }
 
 void sh_add_environ_callback (char **data, uint8_t status) {
@@ -462,7 +384,7 @@ void einit_event_handler (struct einit_event *ev) {
        if (mkdir (tmpd, 0755)) perror (" >> could not create softscripts directory");
       }
 
-      symlink ("/sbin/einit-control", tmp);
+      symlink ("/sbin/runscript-einit.sh", tmp);
      }
 
      if (isdaemon) {
@@ -473,7 +395,7 @@ void einit_event_handler (struct einit_event *ev) {
         if (mkdir (tmpd, 0755)) perror (" >> could not create daemons directory");
        }
 
-       symlink ("/sbin/einit-control", tmp);
+       symlink ("/sbin/runscript-einit.sh", tmp);
       }
      }
 
@@ -485,7 +407,7 @@ void einit_event_handler (struct einit_event *ev) {
         if (mkdir (tmpd, 0755)) perror (" >> could not create softscripts directory");
        }
 
-       symlink ("/sbin/einit-control", tmp);
+       symlink ("/sbin/runscript-einit.sh", tmp);
       }
      }
 
