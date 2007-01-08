@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
+#include <einit/utility.h>
 #include <errno.h>
 #include <string.h>
 #include <dirent.h>
@@ -76,6 +77,8 @@ const struct smodule self = {
 void einit_event_handler (struct einit_event *);
 void ipc_event_handler (struct einit_event *);
 
+char **curvars = NULL;
+
 /* functions that module tend to need */
 int configure (struct lmodule *irr) {
  parse_sh_configure (irr);
@@ -92,18 +95,55 @@ int cleanup (struct lmodule *irr) {
 }
 
 void sh_configuration_callback (char **data, uint8_t status) {
+ char *n = NULL;
+ if (data && data[0] && (n = strchr (data[0],'='))) {
+  char *xn;
+  *n = 0;
+  n++;
 
+  xn = apply_variables (n, curvars);
+
+  curvars = (char **)setadd ((void **)curvars, (void *)data[0], SET_TYPE_STRING);
+  curvars = (char **)setadd ((void **)curvars, (void *)xn, SET_TYPE_STRING);
+
+  n--;
+  *n = '=';
+ }
 }
 
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
 //  char *data = readfile ("/etc/profile.env");
   char *data = NULL;
+  struct cfgnode *node = NULL;
+  char **files = NULL;
 
-  if (data) {
-   parse_sh (data, sh_configuration_callback);
+  while (node = cfg_findnode ("configuration-secondary-file-sh", 0, node)) {
+   if (node->idattr)
+    files = (char **)setadd ((void **)files, (void *)node->idattr, SET_TYPE_STRING);
+  }
 
-   free (data);
+  if (files) {
+   curvars = NULL;
+   uint32_t x = 0;
+
+   for (x = 0; files[x]; x++) {
+    data = readfile (files[x]);
+
+    if (data) {
+     parse_sh (data, sh_configuration_callback);
+
+     if (curvars) {
+//      puts (set2str (' ', curvars));
+
+      free (curvars);
+      curvars = NULL;
+     }
+
+     free (data);
+    }
+   }
+
   }
  }
 }
@@ -111,7 +151,7 @@ void einit_event_handler (struct einit_event *ev) {
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-secondary-file-sh", NULL)) {
-   fdputs ("NOTICE: No configuration variables at \"configuration-secondary-file-sh\":\n  Nothing to import.\n", ev->integer);
+   fdputs ("NOTICE: No configuration variables at \"configuration-secondary-file-sh\":\n  Nothing to import. (not a problem)\n", ev->integer);
    ev->task++;
   }
 

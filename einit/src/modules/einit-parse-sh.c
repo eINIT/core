@@ -161,6 +161,24 @@ int __parse_sh (char *data, void (*callback)(char **, uint8_t)) {
   }
  }
 
+/* commit last line */
+
+ if ((stat != SH_PARSER_STATUS_LW) && (cdp != sdp)) {
+  *cdp = 0;
+  command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
+  cdp++;
+  sdp = cdp;
+ }
+
+ stat = SH_PARSER_STATUS_LW;
+
+ if (command) {
+  callback (command, PA_NEW_CONTEXT);
+
+  free (command);
+  command = NULL;
+ }
+
  callback (NULL, PA_END_OF_FILE);
  free (ndp);
 

@@ -1,3 +1,8 @@
+2007/01/08: rmh3093
+ * lots of cleanups in einit.xml, new modules
+ * version bump (0.15.1)
+ * updated ebuilds
+
 2007/01/08: mdeininger
  * created a runscript-einit.sh script that translates init.d calls into einit
    "einit-control rc x y" calls.
@@ -7,6 +12,8 @@
  * added template for a secondary configuration module that will parse settings
    from sh-style configuration files
  * new conditional for xml configuration files: file-exists=""
+ * almost got the importer working, i'll finish that tomorrow. configuration.*
+   modules are thus disabled by default
 
 2007/01/07: mdeininger
  * cut out mount/root in favour of mount/system

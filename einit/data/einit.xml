@@ -4,8 +4,9 @@
   <settings>
    <module>
 <!-- use this to disable the compatibility modules -->
-<!--    <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
-    <load pattern-allow=".*\.so" />
+<!-- <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
+    <load pattern-allow=".*\.so" pattern-disallow="^configuration.*" />
+<!--    <load pattern-allow=".*\.so" /> -->
    </module>
   </settings>
   <scheduler>
