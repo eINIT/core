@@ -1,6 +1,5 @@
 # Copyright 1999-2006 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/sys-apps/baselayout/baselayout-1.12.6.ebuild,v 1.1 2006/11/02 10:29:25 uberlord Exp $
 
 inherit flag-o-matic eutils toolchain-funcs multilib
 

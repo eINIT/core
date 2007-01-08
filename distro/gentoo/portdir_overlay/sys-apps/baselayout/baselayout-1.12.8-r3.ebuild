@@ -1,6 +1,5 @@
-# Copyright 1999-2006 Gentoo Foundation
+# Copyright 1999-2007 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/sys-apps/baselayout/baselayout-1.12.6.ebuild,v 1.1 2006/11/02 10:29:25 uberlord Exp $
 
 inherit flag-o-matic eutils toolchain-funcs multilib
 
@@ -13,7 +12,7 @@ SRC_URI="mirror://gentoo/${P}.tar.bz2
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
 IUSE="bootstrap build static unicode"
 
 # This version of baselayout needs gawk in /bin, but as we do not have
@@ -21,7 +20,7 @@ IUSE="bootstrap build static unicode"
 # or "build" are in USE.
 # We need to block old dhcpcd versions as they are no longer in system
 # but may not be in users world file either. See bug #143885
-RDEPEND=">=sys-apps/sysvinit-2.86-r3
+RDEPEND="virtual/init
 	!build? ( !bootstrap? (
 		>=sys-libs/readline-5.0-r1
 		>=app-shells/bash-3.1_p7
@@ -30,11 +29,15 @@ RDEPEND=">=sys-apps/sysvinit-2.86-r3
 	!<net-misc/dhcpcd-2.0.0"
 DEPEND="virtual/os-headers
 	>=sys-apps/portage-2.0.51"
+PDEPEND="!build? ( !bootstrap? ( >=sys-apps/module-init-tools-3.2.2-r2 ) )"
 PROVIDE="virtual/baselayout"
 
 src_unpack() {
 	unpack ${A}
 	cd "${S}"
+
+	epatch "${FILESDIR}/${P}-r2440.patch"
+	epatch "${FILESDIR}/${P}-checkfs.patch"
 
 	# Setup unicode defaults for silly unicode users
 	if use unicode ; then
@@ -57,6 +60,7 @@ src_unpack() {
 		${S}/src/awk/{cachedepends,genenviron}.awk || die
 
 	epatch "${FILESDIR}"/baselayout-runscript-alternate-init-2.patch
+
 }
 
 src_compile() {
@@ -71,33 +75,6 @@ src_compile() {
 		LD="$(tc-getCC) ${LDFLAGS}" \
 		CFLAGS="${CFLAGS}" \
 		LIBDIR="${libdir}" || die
-}
-
-# ${PATH} should include where to get MAKEDEV when calling this
-# function
-create_dev_nodes() {
-	case $(tc-arch) in
-		# amd64 must use generic-i386 because amd64/x86_64 does not have
-		# a generic option at this time, and the default 'generic' ends
-		# up erroring out, because MAKEDEV internally doesn't know what
-		# to use
-		arm*)    suffix=-arm ;;
-		alpha)   suffix=-alpha ;;
-		amd64)   suffix=-i386 ;;
-		hppa)    suffix=-hppa ;;
-		ia64)    suffix=-ia64 ;;
-		m68k)    suffix=-m68k ;;
-		mips*)   suffix=-mips ;;
-		ppc*)    suffix=-powerpc ;;
-		s390*)   suffix=-s390 ;;
-		sh*)     suffix=-sh ;;
-		sparc*)  suffix=-sparc ;;
-		x86)     suffix=-i386 ;;
-	esac
-
-	einfo "Using generic${suffix} to make $(tc-arch) device nodes..."
-	MAKEDEV generic${suffix}
-	MAKEDEV sg scd rtc hde hdf hdg hdh input audio video
 }
 
 # This is a temporary workaround until bug 9849 is completely solved
@@ -252,9 +229,6 @@ src_install() {
 		ksym $(get_abi_LIBDIR ${DEFAULT_ABI}) /usr/local/lib
 	fi
 
-	kdir /lib/dev-state
-	kdir /lib/udev-state
-
 	# FHS compatibility symlinks stuff
 	ksym /var/tmp /usr/tmp
 	ksym share/man /usr/local/man
@@ -294,7 +268,8 @@ src_install() {
 	# List all the multilib libdirs in /etc/env/04multilib (only if they're
 	# actually different from the normal
 	if has_multilib_profile || [[ $(get_libdir) != "lib" || -n ${CONF_MULTILIBDIR} ]]; then
-		echo "LDPATH=\"${libdirs_env}\"" > ${D}/etc/env.d/04multilib
+		echo "LDPATH=\"${libdirs_env}\"" > 04multilib
+		doenvd 04multilib
 	fi
 
 	# As of baselayout-1.10-1-r1, sysvinit is its own package again, and
@@ -327,12 +302,6 @@ src_install() {
 	cd "${S}"/sbin
 	into /
 	dosbin rc rc-update
-	# Need this in /sbin, as it could be run before
-	# /usr is mounted.
-	dosbin modules-update
-	# Compat symlinks until I can get things synced.
-	dosym modules-update /sbin/update-modules
-	dosym ../../sbin/modules-update /usr/sbin/update-modules
 	# These moved from /etc/init.d/ to /sbin to help newb systems
 	# from breaking
 	dosbin runscript.sh functions.sh
@@ -412,6 +381,16 @@ remap_dns_vars() {
 }
 
 pkg_preinst() {
+	# Reincarnate dirs from kdir/unkdir (hack for bug 9849)
+	# This needs to be in pkg_preinst() rather than pkg_postinst() as
+	# portage may create some dirs/files that'll screw us up (like /usr/lib/debug)
+	einfo "Creating directories and .keep files."
+	einfo "Some of these might fail if they're read-only mounted"
+	einfo "filesystems, for example /dev or /proc.  That's okay!"
+	source "${D}"/usr/share/baselayout/mkdirs.sh
+	source "${D}"/usr/share/baselayout/mklinks.sh
+	echo
+
 	if [[ -f ${ROOT}/etc/modules.autoload && \
 			! -d ${ROOT}/etc/modules.autoload.d ]]; then
 		mkdir -p ${ROOT}/etc/modules.autoload.d
@@ -429,51 +408,6 @@ pkg_preinst() {
 
 pkg_postinst() {
 	local x y
-
-	# Reincarnate dirs from kdir/unkdir (hack for bug 9849)
-	einfo "Creating directories and .keep files."
-	einfo "Some of these might fail if they're read-only mounted"
-	einfo "filesystems, for example /dev or /proc.  That's okay!"
-	source "${ROOT}"/usr/share/baselayout/mkdirs.sh
-	source "${ROOT}"/usr/share/baselayout/mklinks.sh
-	echo
-
-	# This could be done in src_install, which would have the benefit of
-	# (1) devices.tar.bz2 would show up in CONTENTS
-	# (2) binary installations would be faster... just untar the devices tarball
-	#     instead of needing to run MAKEDEV
-	# However the most common cases are that people are either updating
-	# baselayout or installing from scratch.  In the installation case, it's no
-	# different to have here instead of src_install.  In the update case, we
-	# save a couple minutes time by refraining from building the unnecessary
-	# tarball.
-	if [[ ! -f "${ROOT}/lib/udev-state/devices.tar.bz2" ]]; then
-		# Create a directory in which to work
-		x=$(emktemp -d ${ROOT}/tmp/devnodes.XXXXXXXXX) \
-			&& cd "${x}" || die 'mktemp failed'
-
-		# Create temp device nodes
-		echo
-		einfo "Making device node tarball (this could take a couple minutes)"
-		PATH=${ROOT}/sbin:${PATH} create_dev_nodes
-
-		# Now create tarball that can also be used for udev.
-		# Need GNU tar for -j so call it by absolute path.
-		/bin/tar --one-file-system -cjpf "${ROOT}/lib/udev-state/devices.tar.bz2" *
-		rm -r *
-		cd ..
-		rmdir "${x}"
-	fi
-
-	# We don't want to create devices if this is not a bootstrap and devfs
-	# is used, as this was the cause for all the devfs problems we had
-	if use build || use bootstrap; then
-		if [[ ! -e "${ROOT}/dev/.devfsd" && ! -e "${ROOT}/dev/.udev" ]]; then
-			einfo "Populating /dev with device nodes..."
-			cd ${ROOT}/dev || die
-			tar xjpf "${ROOT}/lib/udev-state/devices.tar.bz2" || die
-		fi
-	fi
 
 	# Create /boot/boot symlink in pkg_postinst because sometimes
 	# /boot is a FAT filesystem.  When that is the case, then the
@@ -543,10 +477,6 @@ pkg_postinst() {
 	if [[ ${ROOT} == / ]] && ! use build && ! use bootstrap; then
 		# Regenerate init.d dependency tree
 		/sbin/depscan.sh --update &>/dev/null
-
-		# Regenerate /etc/modules.conf, else it will fail at next boot
-		einfo "Updating module dependencies..."
-		/sbin/modules-update force &>/dev/null
 	else
 		rm -f ${ROOT}/etc/modules.conf
 	fi
