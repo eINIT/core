@@ -1,0 +1,109 @@
+diff -Naur src/runscript.c src.new/runscript.c
+--- src/runscript.c	2007-01-09 19:16:01.000000000 +0100
++++ src.new/runscript.c	2007-01-09 19:31:51.000000000 +0100
+@@ -18,6 +18,12 @@
+ #include "core/debug.h"
+ #include "core/misc.h"
+ 
++#if defined(__linux__)
++/* extra includes for the "alternate-init" code */
++#include <libgen.h>
++#include <sys/stat.h>
++#endif
++
+ #ifndef LIBDIR
+ # define LIBDIR		"lib"
+ #endif
+@@ -243,8 +249,92 @@
+ 	setup_selinux(argc, argv);
+ 
+ 	if (!IS_SBIN_RC()) {
++#if defined(__linux__)
++		/* extra code to figure out what init system is currently
++		 * active to find the appropriate runscript.sh
++		 * only do this on linux since i'm not sure if/how other /proc
++		 * directories are supposed to look like. */
++		char cmdline_buffer[512], *initname;
++		FILE *init_cmdline_file;
++		struct stat stat_buffer;
++		ssize_t x = 0;
++
++		/* step 1: read init's cmdline */
++		if ((init_cmdline_file = fopen ("/proc/1/cmdline", "r"))) {
++			if (fgets (cmdline_buffer, 512, init_cmdline_file) == NULL) {
++				perror ("/sbin/runscript: reading /proc/1/cmdline");
++				fclose (init_cmdline_file);
++				exit (EXIT_FAILURE);
++			}
++			fclose (init_cmdline_file);
++		} else {
++			perror ("/sbin/runscript: opening /proc/1/cmdline");
++			exit (EXIT_FAILURE);
++		}
++
++		/* step 2: get first space-delimited token */
++		for (x = 0; cmdline_buffer[x]; x++) {
++			if (cmdline_buffer[x] == ' ') {
++				cmdline_buffer[x] = 0;
++				break;
++			}
++		}
++
++		if (cmdline_buffer[0] == '/') {
++			/* see if cmdline_buffer points to a symbolic link */
++			if ((lstat (cmdline_buffer, &stat_buffer) == 0) && S_ISLNK(stat_buffer.st_mode)) {
++				char basenametmp[512];
++				ssize_t readlink_length = readlink (cmdline_buffer, basenametmp, 512);
++
++				if (readlink_length >= 512) {
++					fprintf (stderr, "/sbin/runscript: symbolic link too long: %s\n", cmdline_buffer);
++					exit (EXIT_FAILURE);
++				} else if (readlink_length == -1) {
++					perror ("/sbin/runscript: reading init's symlink");
++					exit (EXIT_FAILURE);
++				}
++
++				basenametmp[readlink_length] = 0; /* \0-terminate the string */
++				strncpy (cmdline_buffer, basenametmp, readlink_length+1);
++			}
++		}
++
++		initname = basename (cmdline_buffer);
++
++		/* run default script if this is sysvinit
++		 * assume the file exists */
++		if ((strcmp (initname, "init") == 0) || (strcmp (initname, "sysvinit") == 0)) {
++			execve("/sbin/runscript.sh", myargs, myenv);
++
++			perror ("/sbin/runscript: calling /sbin/runscript.sh failed");
++			exit(EXIT_FAILURE);
++		} else {
++			ssize_t runscriptname_length;
++			char *runscriptname = malloc (runscriptname_length = (strlen (initname) + 20));
++			if (!runscriptname) {
++				perror ("/sbin/runscript: allocating buffer for runscript name failed");
++				exit (EXIT_FAILURE);
++			}
++
++			snprintf (runscriptname, runscriptname_length,
++			          "/sbin/runscript-%s.sh", initname);
++
++			/* bail out if file does not exist */
++			if (stat (runscriptname, &stat_buffer) != 0) {
++				perror (runscriptname);
++				exit(EXIT_FAILURE);
++			}
++
++			execve(runscriptname, myargs, myenv);
++
++			fprintf (stderr, "/sbin/runscript: calling %s failed: %s\n", runscriptname, strerror (errno));
++			exit(EXIT_FAILURE);
++		}
++#else
++		/* call default script if we're not on linux */
+ 		if (execve("/sbin/runscript.sh", myargs, myenv) < 0)
+ 			exit(1);
++#endif
+ 	} else {
+ 		if (execve("/bin/bash", myargs, myenv) < 0)
+ 			exit(1);
