@@ -77,7 +77,9 @@ const struct smodule self = {
 void einit_event_handler (struct einit_event *);
 void ipc_event_handler (struct einit_event *);
 
-char **curvars = NULL;
+char **curvars = NULL,
+     **files = NULL;
+time_t *mtimes = NULL;
 
 /* functions that module tend to need */
 int configure (struct lmodule *irr) {
@@ -113,28 +115,112 @@ void sh_configuration_callback (char **data, uint8_t status) {
 
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
-//  char *data = readfile ("/etc/profile.env");
+  uint32_t x = 0;
   char *data = NULL;
   struct cfgnode *node = NULL;
-  char **files = NULL;
+  struct stat st;
 
   while (node = cfg_findnode ("configuration-secondary-file-sh", 0, node)) {
-   if (node->idattr)
-    files = (char **)setadd ((void **)files, (void *)node->idattr, SET_TYPE_STRING);
-  }
+   if (node->idattr && node->arbattrs) {
+    if (stat (node->idattr, &st)) {
+#ifdef DEBUG
+     fputs (" >> file not found/readable, skipping\n", stderr);
+#endif
+     continue;
+    }
 
-  if (files) {
-   curvars = NULL;
-   uint32_t x = 0;
+    if (files) {
+     for (x = 0; files[x]; x++) {
+      if (!strcmp (files[x], node->idattr))
+       break;
+     }
+    }
 
-   for (x = 0; files[x]; x++) {
-    data = readfile (files[x]);
+    if (!files || !files[x]) {
+#ifdef DEBUG
+     fputs (" >> file not recorded, adding\n", stderr);
+#endif
+
+     files = (char **)setadd ((void **)files, (void *)node->idattr, SET_TYPE_STRING);
+     mtimes = (time_t *)setadd ((void **)mtimes, (void *)st.st_mtime, SET_NOALLOC);
+    } else {
+     if (mtimes[x] < st.st_mtime) {
+#ifdef DEBUG
+      fputs (" >> file updated\n", stderr);
+#endif
+      mtimes[x] = st.st_mtime;
+     } else {
+#ifdef DEBUG
+      fputs (" >> file not updated since last parse, skipping\n", stderr);
+#endif
+      continue;
+     }
+    }
+
+    curvars = NULL;
+
+    data = readfile (node->idattr);
 
     if (data) {
      parse_sh (data, sh_configuration_callback);
 
      if (curvars) {
-//      puts (set2str (' ', curvars));
+      uint32_t y = 0, z = 0;
+
+      for (y = 0; node->arbattrs[y]; y+=2) {
+       if (!strcmp (node->arbattrs[y], "id")) continue;
+
+       char **nk = NULL, **nn = NULL, **nt = str2set(',', node->arbattrs[y+1]);
+       int32_t sindex = -1, iindex = -1, bindex = -1;
+
+       for (x = 0; nt[x]; x++) {
+        char **xt = str2set (':', nt[x]);
+
+        if (xt[0] && xt[1]) {
+         nk = (char **)setadd ((void **)nk, (void *)xt[0], SET_TYPE_STRING);
+         nn = (char **)setadd ((void **)nn, (void *)xt[1], SET_TYPE_STRING);
+        }
+       }
+
+       if (nk && nn) {
+        struct cfgnode newnode;
+        char **arbattrs = NULL;
+
+        memset (&newnode, 0, sizeof(struct cfgnode));
+
+        for (x = 0; curvars[x] && curvars[x+1]; x+=2) {
+         for (z = 0; nk[z]; z++) {
+          if (!strcmp(curvars[x], nk[z])) {
+           arbattrs = (char **)setadd ((void **)arbattrs, (void *)nn[z], SET_TYPE_STRING);
+           arbattrs = (char **)setadd ((void **)arbattrs, (void *)curvars[x+1], SET_TYPE_STRING);
+
+           if (!strcmp(nn[z], "s")) sindex = z*2;
+           else if (!strcmp(nn[z], "i")) iindex = z*2;
+           else if (!strcmp(nn[z], "b")) bindex = z*2;
+
+           continue;
+          }
+         }
+        }
+
+        if (arbattrs) {
+#ifdef DEBUG
+         fprintf (stderr, "configuration-secondary-sh: %s: %s, %i %i %i\n", node->arbattrs[y], set2str (' ', arbattrs), sindex, iindex, bindex);
+#endif
+
+         newnode.id       = estrdup(node->arbattrs[y]);
+         newnode.nodetype = EI_NODETYPE_CONFIG;
+         newnode.source   = self.rid;
+         newnode.arbattrs = arbattrs;
+
+         if (sindex != -1) newnode.svalue = arbattrs[z];
+         if (iindex != -1) newnode.value = parse_integer(arbattrs[z]);
+         if (bindex != -1) newnode.flag = parse_boolean(arbattrs[z]);
+
+         cfg_addnode (&newnode);
+        }
+       }
+      }
 
       free (curvars);
       curvars = NULL;
@@ -142,8 +228,8 @@ void einit_event_handler (struct einit_event *ev) {
 
      free (data);
     }
-   }
 
+   }
   }
  }
 }

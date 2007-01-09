@@ -5,8 +5,7 @@
    <module>
 <!-- use this to disable the compatibility modules -->
 <!-- <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
-    <load pattern-allow=".*\.so" pattern-disallow="^configuration.*" />
-<!--    <load pattern-allow=".*\.so" /> -->
+    <load pattern-allow=".*\.so" />
    </module>
   </settings>
   <scheduler>
@@ -212,8 +211,13 @@
   </compatibility>
 
   <secondary>
+   <!-- sh-imports for gentoo systems -->
+
    <if file-exists="/etc/gentoo-release">
     <file-sh id="/etc/conf.d/hostname" configuration-network-hostname="HOSTNAME:s" />
+    <file-sh id="/etc/conf.d/keymaps" configuration-peripherals-keyboard="KEYMAP:layout" />
+<!-- this does not (yet) work as expected:
+    <file-sh id="/etc/conf.d/clock" configuration-program-options-hwclock="CLOCK:s" /> -->
    </if>
   </secondary>
 
@@ -590,10 +594,20 @@
      disable="/bin/loadkeys us"
      variables="configuration-peripherals-keyboard/layout" />
 
-    <shell-template id="template-shell-net-static"
+<!--    <shell-template id="template-shell-net-static"
      name="Network (${interface}, static)"
      provides="net-${interface}"
      enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
+     disable="ifconfig ${interface} down"
+     variables="configuration-network-interfaces-${interface}/.*" /> -->
+
+<!-- revised version of the template - thanks lonn! ;) -->
+    <shell-template id="template-shell-net-static"
+     name="Network (${interface}, static)"
+     provides="net-${interface}"
+     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address};
+      route add -net ${configuration_network_interfaces_${interface}_network};
+      route add default gw ${configuration_network_interfaces_${interface}_gateway}"
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
 

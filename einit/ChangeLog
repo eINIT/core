@@ -1,3 +1,9 @@
+2007/01/09: mdeininger
+ * minor documentation update (really need to tackle that :-/)
+ * updated sh-style variable import module (should work, no longer disabled by
+   default)
+ * keymap and hostname are now imported from gentoo'S configuration by default
+
 2007/01/08: rmh3093
  * lots of cleanups in einit.xml, new modules
  * version bump (0.15.1)
