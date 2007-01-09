@@ -42,7 +42,7 @@
    </para>
   </legalnotice>
   <abstract>
-   <para>This Documentation was written with eINIT version 0.11 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
+   <para>This Documentation was written with eINIT version 0.16 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
   </abstract>
  </bookinfo>
 
@@ -51,18 +51,9 @@
   <sect1 id="introduction-what-is-einit">
    <title>What is eINIT?</title>
    <titleabbrev>About</titleabbrev>
-   <para>eINIT is an "Init-System" for Unix operating systems. To figure out what this means, I'll explain some things about how unices boot, and we'll use Linux on an x86 as an example.</para>
-   <para>Whenever you turn on your computer, the following happens:
-    <itemizedlist>
-     <listitem><para>The CPU loads your BIOS</para></listitem>
-     <listitem><para>Your BIOS sets up some devices and loads some bootloader off your HD (or whatever you're booting from)</para></listitem>
-     <listitem><para>The bootloader loads Linux</para></listitem>
-     <listitem><para>Linux mounts your root-filesystem and executes /sbin/init</para></listitem>
-     <listitem><para>/sbin/init will start up all sorts of services, check and mount filesystems, run your X-Server, etc... </para></listitem>
-     <listitem><para>Upon completion of all this, you can log in.</para></listitem>
-    </itemizedlist>
-   </para>
-   <para>The /sbin/init part is what eINIT does.</para>
+   <para>eINIT is an "Init-System" for Unix operating systems. "Init" is the first program to be run by most Unix kernels after the kernel finishes initialisation. Most Unices these days use a package called "System V Init" for that purpose -- as the name suggests, this system was derived from how things were handled on System V Unix.</para>
+   <para>On *BSD, the actual initialisation is done by a script located at /sbin/rc, and on Linux, the initialisation is performed using scripts located at /etc/init.d. Both of these "regular" systems have their pros and cons -- BSD's single script approach puts relatively little strain on the system and is rather straightforward, the init.d approach is nice and could allow for parallelisation, but that's hardly ever implemented and the use of a large number of scripts is quite a large overhead.</para>
+   <para>"eINIT" seeks to fix this overhead by integrating module management into the init system itself and make init.d scripts obsolete, and also to increase overall boot time by using aggressive paralellisation.</para>
   </sect1>
   <sect1 id="introduction-advantages">
    <title>Didn't we have sysvinit for that?</title>
@@ -91,9 +82,9 @@
    <para>
     Since just recently the Ubuntu crowd started hacking on their own init-replacement, called "Upstart", I thought that it might be a good time to point out the key differences between Upstart's and eINIT's design.
     <itemizedlist>
-     <listitem><para>Upstart is designed to be completely event based -- eINIT will be partially event-based.</para></listitem>
+     <listitem><para>Upstart is designed to be "event-based" -- eINIT uses events too, but eINIT events are used for different things and the events provide less overhead.</para></listitem>
      <listitem><para>eINIT is designed for embedded devices and things like headless servers.</para></listitem>
-     <listitem><para>Upstart is designed with backwards-compatibility to sysv in mind, eINIT is not.</para></listitem>
+     <listitem><para>Upstart is designed with backwards-compatibility to sysv in mind, eINIT is not. That doesn't mean you can't use init.d scripts with eINIT (as of -svn-550, you can), it just means that's not the primary focus. Whenever compatibility would get in the way, it's dropped.</para></listitem>
     </itemizedlist>
    </para>
   </sect1>
@@ -105,10 +96,10 @@
     <listitem><para>Highly modular</para></listitem>
     <listitem><para>Dependency calculations based on abstract "services".</para></listitem>
     <listitem><para>Parallel processing of modules</para></listitem>
-    <listitem><para>Configuration files in XML</para></listitem>
+    <listitem><para>Configuration files in XML -- or XML+SH style configuration files provided with your distribution.</para></listitem>
     <listitem><para>"Modes": no cheap runlevels (see "Concepts")</para></listitem>
     <listitem><para>A module to start daemoni and make sure they keep running by restarting them in case they get killed</para></listitem>
-    <listitem><para>No init-scripts required: no need to parse scripts on startup (comes in handy on embedded devices)</para></listitem>
+    <listitem><para>No init-scripts required: no need to parse scripts on startup (comes in handy on embedded devices). You can still use them if you like, though.</para></listitem>
     <listitem><para>BSD-License: Probably handy for corporate users that wish to modify eINIT without providing sources. (the module-interface would also allow for precompiled binary-only modules)</para></listitem>
    </itemizedlist>
   </sect1>
@@ -118,15 +109,36 @@
   <title>Installation</title>
   <sect1 id="installation-gentoo">
    <title>Installing eINIT on Gentoo/Linux</title>
-   <titleabbrev>Gentoo/Linux</titleabbrev>
+   <titleabbrev>Gentoo/Linux and derivatives (e.g. Sabayon Linux, etc...)</titleabbrev>
    <para>
     Since my main/favourite Linux distribution is Gentoo/Linux, I wrote some ebuilds for eINIT to faciliate testing and installation.
-    <itemizedlist>
-     <listitem><para>Step 1: Download this <ulink url="http://jyujin.de/~mdeininger/projects/einit-cvs-portage-overlay.tar.bz2">portage overlay</ulink> and unpack it into your portage overlay.</para></listitem>
-     <listitem><para>Step 2: emerge eINIT:<synopsis>emerge -aNDv einit</synopsis> Note the "doc"-flag in this ebuild: if it is disabled, the user's guide and the API documentation will not be generated.</para></listitem>
-    </itemizedlist>
+
     <note><para>THIS IS VERY IMPORTANT! If you have a separate /usr partition, you will have to make sure that expat is accessible before your /usr partition is mounted. Expat is usually installed in /usr/lib/ (and sometimes even in /usr/local/lib/), so you will need to copy /usr/lib/libexpat.* to /lib/.</para></note>
+	<note><para>Note the "doc"-flag in this ebuild: if it is disabled, the user's guide and the API documentation will not be generated.</para></note>
+	<note><para>I used to provide a .tbz2 portage overlay, but I don't do that anymore -- using layman is a lot more convenient, as is simply browsing the SVN repository.</para></note>
    </para>
+	<sect2>
+	 <title>Portage</title>
+	 <para>
+      <itemizedlist>
+       <listitem><para>Emerge Layman and configure as instructed by the ebuild.</para></listitem>
+       <listitem><para>Use <synopsis>layman -a einit</synopsis>.</para></listitem>
+       <listitem><para>unmask sys-apps/einit (it's ~x86/~amd64 for the regular ebuilds and -* for the live svn ebuilds): for example, add <synopsis>sys-apps/einit ~x86</synopsis> to /etc/portage/package.keywords</para></listitem>
+       <listitem><para>emerge eINIT:<synopsis>emerge -aNDv einit</synopsis></para></listitem>
+      </itemizedlist>
+	 </para>
+	</sect2>
+	<sect2>
+	 <title>Paludis</title>
+	 <para>
+      <itemizedlist>
+       <listitem><para>Add paludis repository configuration file.</para></listitem>
+       <listitem><para>Synchronise repositories</para></listitem>
+       <listitem><para>unmask sys-apps/einit (it's ~x86/~amd64 for the regular ebuilds and -* for the live svn ebuilds)</para></listitem>
+       <listitem><para>emerge eINIT:<synopsis>emerge -aNDv einit</synopsis></para></listitem>
+      </itemizedlist>
+	 </para>
+	</sect2>
   </sect1>
   <sect1 id="installation-manual">
    <title>Installing eINIT on other Linux distributions or other unices.</title>
@@ -160,7 +172,7 @@
    <title>Configuring eINIT</title>
    <titleabbrev>Configuring</titleabbrev>
    <para>
-    The main (default) configuration file is <filename>/etc/einit/default.xml</filename>, the file you should modify is <filename>/etc/einit/rc.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward. For details, see the chapter on configuring eINIT.
+    The main (default) configuration file is <filename>/etc/einit/einit.xml</filename>, the file you should modify is <filename>/etc/einit/local.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward. For details, see the chapter on configuring eINIT.
    </para>
   </sect1>
   <sect1 id="installation-configuration-boot">
@@ -192,6 +204,16 @@
      Modify your /etc/lilo.conf. Search for your current kernel entry, duplicate the whole section and add "init=/sbin/einit" to the kernel command line, then issue the command
      <synopsis>lilo</synopsis>
      on a root-console.
+    </para>
+   </sect2>
+   <sect2 id="installation-configuration-gentoo-eselect">
+    <title>[Gentoo] eselect init</title>
+    <titleabbrev>eselect-init</titleabbrev>
+    <para>
+	 Ryan wrote an eselect script to select the active init system by symlinking /sbin/init to whatever the user wishes to use.
+     <itemizedlist>
+      <listitem><para>emerge eselect-init:<synopsis>emerge eselect-init</synopsis></para></listitem>
+     </itemizedlist>
     </para>
    </sect2>
   </sect1>

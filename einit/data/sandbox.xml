@@ -74,6 +74,7 @@
      <gentoo>
 <!--      <init.d path="/etc/init.d/" />
       <runlevels path="/etc/runlevels" exclusive="false" /> -->
+      <service-tracker b="true" path="var/lib/init.d" />
      </gentoo>
     </distribution>
 <!--    <init.d path="/etc/init.d/" process-rc.d="yes" /> -->

@@ -68,7 +68,7 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
 
   n->key = (((char *)n) + sizeof (struct stree));
   n->value = value;
- } else  {
+ } else {
   if (!value) return stree;
   if (vlen == 0)
    vlen = strlen (value)+1;
