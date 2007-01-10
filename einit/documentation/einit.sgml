@@ -212,8 +212,10 @@
     <para>
 	 Ryan wrote an eselect script to select the active init system by symlinking /sbin/init to whatever the user wishes to use.
      <itemizedlist>
+      <listitem><para>add einit's repository as pointed out above</para></listitem>
       <listitem><para>emerge eselect-init:<synopsis>emerge eselect-init</synopsis></para></listitem>
      </itemizedlist>
+	 <note><para>Heed the same warning as with replacing /sbin/init: It does work, but maybe it's not the best idea just yet...</para></note>
     </para>
    </sect2>
   </sect1>
@@ -224,11 +226,8 @@
   <titleabbrev>/etc/einit</titleabbrev>
   <para>eINIT uses XML files to store its configuration. These files are located in /etc/einit, the default files are:
    <itemizedlist>
-    <listitem><para><filename>default.xml</filename>: This is the "entry point" for eINIT. Whenever it starts, it will load and process this file.</para></listitem>
-    <listitem><para><filename>sandbox.xml</filename>: This is the "entry point" for eINIT if it was compiled in "sandbox-mode".</para></listitem>
-    <listitem><para><filename>daemon.xml</filename>: daemon definitions (sshd, xdm, ...)</para></listitem>
-    <listitem><para><filename>shell.xml</filename>: command-based module definitions (keyboard setup, clock synchronisation, ...)</para></listitem>
-    <listitem><para><filename>rc.xml</filename>: all configuration details that are specific to the host that einit is run on go into this file; this is the file you should modify.</para></listitem>
+    <listitem><para><filename>einit.xml</filename>: This is the "entry point" for eINIT. Whenever it starts, it will load and process this file.</para></listitem>
+    <listitem><para><filename>local.xml</filename>: all configuration details that are specific to the host that einit is run on go into this file; this is the file you should modify.</para></listitem>
    </itemizedlist>
   </para>
   <sect1 id="configuration-syntax">
@@ -239,6 +238,9 @@
    <synopsis label="run this after you modify the configuration">
     /sbin/einit --check-configuration
    </synopsis>
+   <note><para>
+    The flags <synopsis>--checkup</synopsis> and <synopsis>--wtf</synopsis> have the exact same effect.
+   </para></note>
    <para>
     You should always run this command after you modify the configuration, it'll verbosely display any XML syntax errors, and all the modules get their chance at checking the configuration for sanity too. You should be able to run it as a regular user, too, but then maybe one or the other check will not be performed.
    </para>
@@ -579,6 +581,14 @@
      This is the default feedback-module. It comments on certain events, like modules being enabled or disabled; verbose output from the modules is also put on-screen. Developers could use the source file of this module to create other, more complex feedback modules.
     </para>
    </sect2>
+
+   <sect2 id="usage-modules-einit-feedback-aural">
+    <title>[einit-feedback-aural] Status Feedback</title>
+    <para>
+	 This is a different feedback module, it provides feedback using a text-to-speech synthesizer such as festival.
+    </para>
+   </sect2>
+
   </sect1>
 
   <sect1 id="configuration-modules-einit-mod">
@@ -883,8 +893,8 @@
 
      &lt;!-- [...] --&gt;
 
-     &lt;fstab-entry mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" /&gt;
-     &lt;fstab-entry mountpoint="/sys" fs="sysfs" /&gt;
+     &lt;fstab-node mountpoint="/dev" fs="tmpfs" after-mount="/sbin/udevstart" manager="/sbin/udevd" /&gt;
+     &lt;fstab-node mountpoint="/sys" fs="sysfs" /&gt;
 
      &lt;!-- [...] --&gt;
     &lt;/einit&gt;
@@ -1219,7 +1229,7 @@
    <para>
     This is the main command to control eINIT: it connects to socket <varname>control-socket</varname> and submits <varname>function</varname> and <varname>command</varname> for eINIT to interpret.
    </para>
-   <note><para>The "power", "erc" and "rc" commands are usually (sym-)linked to the einit-control binary. For example, calling <userinput>einit-control power off</userinput> is the same as calling <userinput>power off</userinput>, if the proper links are in place.</para></note>
+   <note><para>The "power", "erc" and "rc" commands are usually (sym-)linked to the einit-control binary. For example, calling <userinput>einit-control power down</userinput> is the same as calling <userinput>power down</userinput>, if the proper links are in place.</para></note>
    <sect2 id="usage-einit-control-power">
     <title>The "power"-command</title>
     <titleabbrev>power</titleabbrev>
@@ -1227,7 +1237,7 @@
     <synopsis>power [-s control-socket] command</synopsis>
     <synopsis>einit-control [-s control-socket] power command</synopsis>
     <para>
-     This command is used to tell eINIT that you wish to shut down or reboot your computer. The <varname>command</varname> must bei either of <userinput>off</userinput> or <userinput>reset</userinput>, which will tell eINIT to power off or reset, respectively.
+     This command is used to tell eINIT that you wish to shut down or reboot your computer. The <varname>command</varname> must bei either of <userinput>off</userinput> or <userinput>reset</userinput>, which will tell eINIT to power down or reset, respectively.
     </para>
    </sect2>
    <sect2 id="usage-einit-control-erc">
