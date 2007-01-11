@@ -157,7 +157,7 @@
 <!-- service groups -->
    <network group="net-lo:net-eth0" seq="most" />
    <video group="kern-nvidia" seq="any-iop" />
-   <audio group="alsa" seq="any-iop" />
+   <audio group="alsa:kern-sound" seq="most" />
    <avahi group="avahi-dnsconfd" seq="any-iop" />
    <samba group="smbd:nmbd" seq="any-iop" />
    <printing group="hpiod:hplip:cupsd" seq="any-iop" />
