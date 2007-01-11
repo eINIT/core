@@ -1,3 +1,7 @@
+2007/01/11: mdeininger
+ * need to write proper man pages...
+ * should stop using sys_errlist and the like
+
 2007/01/09: mdeininger
  * minor documentation update (really need to tackle that :-/)
  * updated sh-style variable import module (should work, no longer disabled by

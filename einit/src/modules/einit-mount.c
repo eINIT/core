@@ -74,12 +74,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
-#ifdef UC_LIBC
-extern int sys_nerr;
-extern char *sys_errlist[];
-extern int errno;
-#endif
-
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -1027,10 +1021,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 #endif
       {
        mount_panic:
-       if (errno < sys_nerr)
-        status->string = (char *)sys_errlist[errno];
-       else
-        status->string = "an unknown error occured while trying to mount the filesystem";
+
+       status->string = (char *)strerror(errno);
        status_update (status);
        if (fse->after_umount)
         pexec_v1 (fse->after_umount, fse->variables, NULL, status);
