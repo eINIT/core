@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry>
+ <refentryinfo>
+  <date>11 January 2007</date>
+ </refentryinfo>
+
+ <refmeta>
+  <refentrytitle>eINIT</refentrytitle>
+  <manvolnum>8</manvolnum>
+ </refmeta>
+  
+ <refnamediv>
+  <refname>eINIT</refname>
+  <refpurpose>Boot system -- fast</refpurpose>
+ </refnamediv>
+  
+ <refsect1>
+  <title>Calling</title>
+ </refsect1>
+</refentry>

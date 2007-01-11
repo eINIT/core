@@ -9,7 +9,7 @@ documentation-html:
 
 documentation-man:
 	mkdir -p ../build/documentation/man
-	docbook2man einit.sgml --output ../build/documentation/man
+#	docbook2man manual-einit.xml --output ../build/documentation/man
 
 documentation-pdf:
 	mkdir -p ../build/documentation
