@@ -52,6 +52,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module-logic.h>
 #include <semaphore.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 

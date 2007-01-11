@@ -74,6 +74,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
+#ifdef UC_LIBC
+extern int sys_nerr;
+extern char *sys_errlist[];
+extern int errno;
+#endif
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
