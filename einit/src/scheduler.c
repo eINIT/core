@@ -456,7 +456,6 @@ void sched_core_event_handler(struct einit_event *event) {
 void *sched_run_sigchild (void *p) {
  int i, l, status;
  pid_t pid;
- pthread_detach (schedthreadsigchild);
  int check;
  while (1) {
   pthread_mutex_lock (&schedcpidmutex);

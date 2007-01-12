@@ -1,3 +1,6 @@
+2007/01/12: mdeininger
+ * compile fixes (pthread bug code and man pages)
+
 2007/01/11: mdeininger
  * need to write proper man pages...
  * should stop using sys_errlist and the like
