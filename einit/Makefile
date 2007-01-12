@@ -18,7 +18,7 @@ documentation-api:
 	rm -Rf build/documentation/hacking-einit
 	doxygen Doxyfile
 
-documentation: documentation-html documentation-api
+documentation: documentation-man documentation-html documentation-api
 
 install: all
 	cd src && ${MAKE} install

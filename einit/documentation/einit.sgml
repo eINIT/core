@@ -1219,48 +1219,32 @@
   </sect1>
  </chapter>
 
- <chapter id="usage">
-  <title>Usage</title>
-  <sect1 id="usage-einit-control">
-   <title>Interfacing with eINIT: einit-control</title>
-   <titleabbrev>einit-control</titleabbrev>
-   <synopsis>einit-control [-h]</synopsis>
-   <synopsis>einit-control [-s control-socket] [function] command</synopsis>
-   <para>
-    This is the main command to control eINIT: it connects to socket <varname>control-socket</varname> and submits <varname>function</varname> and <varname>command</varname> for eINIT to interpret.
-   </para>
-   <note><para>The "power", "erc" and "rc" commands are usually (sym-)linked to the einit-control binary. For example, calling <userinput>einit-control power down</userinput> is the same as calling <userinput>power down</userinput>, if the proper links are in place.</para></note>
-   <sect2 id="usage-einit-control-power">
-    <title>The "power"-command</title>
-    <titleabbrev>power</titleabbrev>
-    <synopsis>power [-h]</synopsis>
-    <synopsis>power [-s control-socket] command</synopsis>
-    <synopsis>einit-control [-s control-socket] power command</synopsis>
-    <para>
-     This command is used to tell eINIT that you wish to shut down or reboot your computer. The <varname>command</varname> must bei either of <userinput>off</userinput> or <userinput>reset</userinput>, which will tell eINIT to power down or reset, respectively.
-    </para>
-   </sect2>
-   <sect2 id="usage-einit-control-erc">
-    <title>The "erc" and "rc"-commands</title>
-    <titleabbrev>erc</titleabbrev>
-    <synopsis>[e]rc [-h]</synopsis>
-    <synopsis>[e]rc [-s control-socket] command</synopsis>
-    <synopsis>einit-control [-s control-socket] rc command</synopsis>
-    <para>
-     This command is used to tell eINIT that you wish to change modes or enable/disable a module.
-    </para>
-    <synopsis>[e]rc [-s control-socket] switch-mode mode</synopsis>
-    <para>
-     Make eINIT switch to the specified <varname>mode</varname>
-    </para>
-    <synopsis>[e]rc [-s control-socket] module (enable|disable)</synopsis>
-    <para>
-     Make eINIT enable or disable the specified <varname>module</varname>.
-    </para>
-    <note><para>Whether the command is/should be named rc or erc depends on the environment: if you only set up a test-environment, you would want the command to be called "erc", because sysvinit usually depends on an /sbin/rc command to do some of the dirty work.</para></note>
-   </sect2>
-  </sect1>
- </chapter>
+ <appendix id="other-documentation">
+  <title>Other Documentation (Man Pages, etc...)</title>
+  <variablelist>
+   <varlistentry>
+    <term>HTML Man Pages</term>
+    <listitem>
+     <para>
+      <itemizedlist>
+       <listitem><para><ulink url="reference/manual-einit.html">einit</ulink></para></listitem>
+       <listitem><para><ulink url="reference/manual-einit-control.html">einit-control</ulink></para></listitem>
+      </itemizedlist>
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>API Documentation</term>
+    <listitem>
+     <para>
+      <itemizedlist>
+       <listitem><para><ulink url="hacking-einit/index.html">Doxygen output</ulink></para></listitem>
+      </itemizedlist>
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </appendix>
 
  <appendix id="concepts">
   <title>Concepts</title>
@@ -1336,6 +1320,13 @@
    <para>_best_distribution_ever_. Need I say more?</para>
    <itemizedlist>
     <listitem><para><ulink url="http://www.gentoo.org/">Gentoo Homepage</ulink></para></listitem>
+   </itemizedlist>
+  </sect1>
+  <sect1 id="acknowledgements-cokehabit">
+   <title>Cokehabit and the Gentoo Forums</title>
+   <para>How could I POSSIBLY forget this? ;)</para>
+   <itemizedlist>
+    <listitem><para><ulink url="http://forums.gentoo.org/">Gentoo Forums</ulink></para></listitem>
    </itemizedlist>
   </sect1>
   <sect1 id="acknowledgements-enlightenment">
