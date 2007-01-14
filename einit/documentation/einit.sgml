@@ -114,12 +114,12 @@
     Since my main/favourite Linux distribution is Gentoo/Linux, I wrote some ebuilds for eINIT to faciliate testing and installation.
 
     <note><para>THIS IS VERY IMPORTANT! If you have a separate /usr partition, you will have to make sure that expat is accessible before your /usr partition is mounted. Expat is usually installed in /usr/lib/ (and sometimes even in /usr/local/lib/), so you will need to copy /usr/lib/libexpat.* to /lib/.</para></note>
-	<note><para>Note the "doc"-flag in this ebuild: if it is disabled, the user's guide and the API documentation will not be generated.</para></note>
-	<note><para>I used to provide a .tbz2 portage overlay, but I don't do that anymore -- using layman is a lot more convenient, as is simply browsing the SVN repository.</para></note>
+    <note><para>Note the "doc"-flag in this ebuild: if it is disabled, the user's guide and the API documentation will not be generated.</para></note>
+    <note><para>I used to provide a .tbz2 portage overlay, but I don't do that anymore -- using layman is a lot more convenient, as is simply browsing the SVN repository.</para></note>
    </para>
-	<sect2>
-	 <title>Portage</title>
-	 <para>
+   <sect2>
+    <title>Portage</title>
+     <para>
       <itemizedlist>
        <listitem><para>Emerge Layman and configure as instructed by the ebuild.</para></listitem>
        <listitem><para>Use <synopsis>layman -a einit</synopsis>.</para></listitem>
@@ -135,7 +135,7 @@
        <listitem><para>Add paludis repository configuration file.</para></listitem>
        <listitem><para>Synchronise repositories</para></listitem>
        <listitem><para>unmask sys-apps/einit (it's ~x86/~amd64 for the regular ebuilds and -* for the live svn ebuilds)</para></listitem>
-       <listitem><para>emerge eINIT:<synopsis>emerge -aNDv einit</synopsis></para></listitem>
+       <listitem><para>emerge eINIT:<synopsis>paludis -i einit --dl-reinstall if-use-changed</synopsis></para></listitem>
       </itemizedlist>
 	 </para>
 	</sect2>

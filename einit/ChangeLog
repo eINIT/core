@@ -1,3 +1,6 @@
+2007/01/14: mdeininger
+ * minor documentation fix (paludis)
+
 2007/01/12: mdeininger
  * compile fixes (pthread bug code and man pages)
 
