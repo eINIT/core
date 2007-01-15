@@ -64,7 +64,7 @@ const struct smodule self = {
 	.rid		= "linux-sysconf",
     .si           = {
         .provides = provides,
-        .requires = "udev",
+        .requires = NULL",
         .after    = NULL,
         .before   = NULL
     }
