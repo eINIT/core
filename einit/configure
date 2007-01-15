@@ -102,6 +102,9 @@ for param in $@; do
         elif test "$param" = "--svn"; then
                 echo -n " SVN";
                 ISSVN=1;
+        elif test "$param" = "--static"; then
+                echo -n " STATIC";
+                STATIC=1;
         elif test "$param" = "--ebuild"; then
                 echo -n " EBUILD";
                 EBUILD="1";
@@ -128,6 +131,7 @@ Options:
  --external-modules     the modules to compile as loadable .so-files
  --tree-type=           define the type of tree-structures einit should use.
  --debug                will #define DEBUG.
+ --static               build with static libs
  --help                 display this text and exit.
  --svn                  indicate that this is a build off SVN.
  --ebuild               indicate that this script was called from portage/e.a.";
@@ -218,6 +222,11 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
+	if test "$STATIC" == "1"; then
+		STATIC="-static"
+	else
+		STATIC=""
+	fi
 else
 	echo "(guess) generic posix-ish unix";
 	XCFLAGS="$XCFLAGS -DPOSIX";
@@ -256,6 +265,7 @@ CCL = $CCL -DBUILDNUMBER=\"\\\"\${BUILDNUMBER}\\\"\" -DISSVN=\${ISSVN}
 CLD = \${CC} \${LDFLAGS}
 LLD = \${CC} \${LDFLAGS} $LLD
 XLLD = $LLD
+STATIC = $STATIC
 LPA = $LPA" > config.mk
 
 echo "creating module-configuration.c"
