@@ -216,6 +216,7 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
 	LLD="-bundle -Wl,-bundle_loader,`pwd`/src/einit";
+	STATIC="";
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
 	XCFLAGS="$XCFLAGS -DPOSIX -DLINUX";
@@ -233,6 +234,7 @@ else
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
+	STATIC="";
 fi
 
 echo "creating config.mk..."
