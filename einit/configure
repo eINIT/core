@@ -224,7 +224,9 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
 	if test "$STATIC" == "1"; then
-		STATIC="-static"
+# static linking doesn't work like this, it messes up .so modules :/
+#		STATIC="-static"
+		STATIC=""
 	else
 		STATIC=""
 	fi

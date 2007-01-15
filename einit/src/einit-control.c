@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
@@ -45,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/un.h>
 #include <string.h>
 #include <libgen.h>
+#include <errno.h>
 
 int main(int, char **);
 int print_usage_info ();
@@ -62,6 +64,7 @@ int ipc (char *cmd) {
  char buffer[1024];
  struct sockaddr_un saddr;
  int len;
+ FILE *esocket;
  if (sock == -1)
   return bitch (BTCH_ERRNO);
 
@@ -73,18 +76,39 @@ int ipc (char *cmd) {
   return bitch (BTCH_ERRNO);
  }
 
- while ((len = write (sock, cmd, strlen(cmd)+1)) != -1) {
+/* while ((len = write (sock, cmd, strlen(cmd)+1)) != -1) {
   if (len < strlen (cmd)) cmd += len;
   else break;
  }
  if (len == -1) bitch (BTCH_ERRNO);
+
  while ((len = read (sock, buffer, 1023)) > 0) {
   buffer[len] = 0;
   fputs (buffer, stdout);
  }
- if (len == -1) bitch (BTCH_ERRNO);
+*/
 
- close (sock);
+
+ if (!(esocket = fdopen (sock, "w+"))) {
+  fputs (" >> opening socket failed.", stderr);
+  bitch(BTCH_ERRNO);
+  close (sock);
+  return 0;
+ }
+
+ if (fputs(cmd, esocket) == EOF) {
+  fputs (" >> sending command failed.", stderr);
+  bitch(BTCH_ERRNO);
+ }
+
+
+ while (fgets (buffer, 1024, esocket)) {
+  fputs (buffer, stdout);
+ }
+
+ errno = 0;
+
+ fclose (esocket);
  return 0;
 }
 

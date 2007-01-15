@@ -1,3 +1,6 @@
+2007/01/15: mdeininger
+ * (hopefully) fixed random problems with einit-control getting "stuck"
+
 2007/01/14: mdeininger
  * minor documentation fix (paludis)
 
