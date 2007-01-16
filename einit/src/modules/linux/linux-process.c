@@ -79,8 +79,24 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
  DIR *dir;
  char *path = cfg_getpath ("configuration-system-proc-path");
  struct dirent *entry;
+ struct process_status **npstat = NULL;
 
  time_t starttime = time(NULL);
+
+ if (pstat) {
+  uint32_t i = 0;
+  char buffer[128];
+  struct stat st;
+
+  for (; pstat[i]; i++) {
+   snprintf (buffer, 128, "%s%i", path, pstat[i]->pid);
+   if (!stat (buffer, &st)) {
+    npstat = (struct process_status **)setadd ((void **)npstat, (void *)pstat[i], sizeof (struct process_status));
+   } else {
+    fprintf (stderr, " >> omitting stale pstat entry for pid=%i\n", pstat[i]->pid);
+   }
+  }
+ }
 
  if (path) {
   size_t plength = strlen (path) +1;
@@ -90,7 +106,8 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
    txf = memcpy (txf, path, plength);
 
    while (entry = readdir (dir)) {
-    uint32_t cl = 0, cont = 1;
+    uint32_t cl = 0;
+    char cont = 1, recycled = 0;
     if (entry->d_name[0] == '.') continue;
 
     for (; entry->d_name[cl]; cl++) if (!isdigit (entry->d_name[cl])) { cont = 0; break; }
@@ -114,7 +131,22 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 //      puts (tmppse.cwd);
      }
 
-     pstat = (struct process_status **)setadd ((void **)pstat, (void *)&tmppse, sizeof (struct process_status));
+     if (npstat) {
+      uint32_t i = 0;
+      for (; npstat[i]; i++) {
+       if (npstat[i]->pid == tmppse.pid) {
+        recycled = 1;
+
+        if (npstat[i]->cwd) free (npstat[i]->cwd);
+        if (npstat[i]->cmd) free (npstat[i]->cmd);
+        memcpy (npstat[i], &tmppse, sizeof(struct process_status));
+       }
+      }
+     }
+
+     if (!recycled) {
+      npstat = (struct process_status **)setadd ((void **)npstat, (void *)&tmppse, sizeof (struct process_status));
+     }
 
 //     puts (entry->d_name);
     }
@@ -125,7 +157,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
   closedir (dir);
  }
 
- return pstat;
+ return npstat;
 }
 
 int configure (struct lmodule *irr) {

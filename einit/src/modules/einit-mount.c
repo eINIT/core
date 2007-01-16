@@ -1066,22 +1066,23 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   errno = 0;
   uint32_t retry = 0;
 
+  if (he = streefind (he, mountpoint, TREE_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
+
+  if (fse && !(fse->status & BF_STATUS_MOUNTED))
+   snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
+  else
+   snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
+
+  if (fse && fse->manager)
+   stopdaemon (fse->manager, status);
+
+  status->string = textbuffer;
+  status_update (status);
+
   while (1) {
    retry++;
-   if (he = streefind (he, mountpoint, TREE_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
 
-   if (fse && !(fse->status & BF_STATUS_MOUNTED))
-    snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
-   else
-    snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
-
-   if (fse && fse->manager)
-    stopdaemon (fse->manager, status);
-
-   status->string = textbuffer;
-   status_update (status);
-
-   if (gmode != EINIT_GMODE_SANDBOX) {
+//   if (gmode != EINIT_GMODE_SANDBOX) {
 #ifdef DARWIN
     if (unmount (mountpoint, 0))
 #else
@@ -1091,16 +1092,18 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
                           *pcl[2] = { &pcc, NULL };
 
-     snprintf (textbuffer, 1024, "%s: umount() failed: %s", mountpoint, strerror(errno));
+     snprintf (textbuffer, 1024, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
      status->string = textbuffer;
      status_update (status);
 
      pekill (pcl);
 #ifdef LINUX
-     if ((retry >= 2) && umount2 (mountpoint, MNT_FORCE)) {
-      snprintf (textbuffer, 1024, "%s: umount2() failed: %s", mountpoint, strerror(errno));
-      status->string = textbuffer;
-      status_update (status);
+     if (retry >= 2) {
+      if (umount2 (mountpoint, MNT_FORCE)) {
+       snprintf (textbuffer, 1024, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
+       status->string = textbuffer;
+       status_update (status);
+      }
 
       struct stree *hav = streefind (mcb.mtab, mountpoint, TREE_FIND_FIRST);
       if (!hav) {
@@ -1110,26 +1113,28 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       }
       struct legacy_fstab_entry *lfse = (struct legacy_fstab_entry *)hav->value;
       if (lfse) {
-       if ((retry >= 3) && mount (lfse->fs_spec, lfse->fs_file, NULL, MS_REMOUNT | MS_RDONLY, NULL)) {
-        snprintf (textbuffer, 1024, "%s: remounting r/o failed: %s", mountpoint, strerror(errno));
-        status->string = textbuffer;
-        status_update (status);
-        goto umount_fail;
-       } else {
-        if (umount2 (mountpoint, MNT_DETACH)) {
-         snprintf (textbuffer, 1024, "%s: remounted r/o but detaching failed: %s", mountpoint, strerror(errno));
+       if (retry >= 3) {
+        if (mount (lfse->fs_spec, lfse->fs_file, lfse->fs_vfstype, MS_REMOUNT | MS_RDONLY, NULL)) {
+         snprintf (textbuffer, 1024, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
          status->string = textbuffer;
          status_update (status);
-         goto umount_ok;
+         goto umount_fail;
         } else {
-         snprintf (textbuffer, 1024, "%s: remounted r/o and detached", mountpoint);
-         status->string = textbuffer;
-         status_update (status);
-         goto umount_ok;
+         if (umount2 (mountpoint, MNT_DETACH)) {
+          snprintf (textbuffer, 1024, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
+          status->string = textbuffer;
+          status_update (status);
+          goto umount_ok;
+         } else {
+          snprintf (textbuffer, 1024, "%s#%i: remounted r/o and detached", mountpoint, retry);
+          status->string = textbuffer;
+          status_update (status);
+          goto umount_ok;
+         }
         }
        }
       } else {
-       snprintf (textbuffer, 1024, "%s: device mounted but I don't know anything more; bailing out", mountpoint);
+       snprintf (textbuffer, 1024, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
        status->string = textbuffer;
        status_update (status);
        goto umount_fail;
@@ -1139,18 +1144,14 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      goto umount_fail;
 #endif
     }
-   } else {
+/*   } else {
     goto umount_ok;
-   }
+   }*/
 
    umount_fail:
 
    status->flag++;
-   if (retry < 3) {
-    snprintf (textbuffer, 1024, "%s: attempt %i: device still mounted...", mountpoint, retry);
-    status->string = textbuffer;
-    status_update (status);
-   } else {
+   if (retry >= 3) {
     snprintf (textbuffer, 1024, "%s: attempt %i: failed, not retrying.", mountpoint, retry);
     status->string = textbuffer;
     status_update (status);
@@ -1633,12 +1634,15 @@ int enable (enum mounttask p, struct einit_event *status) {
 
 int disable (enum mounttask p, struct einit_event *status) {
 // return STATUS_OK;
- struct stree *ha = mcb.mtab;
+ struct stree *ha;
  struct stree *fsi;
  struct legacy_fstab_entry *lfse = NULL;
  char **candidates = NULL;
  uint32_t i, ret, sc = 0, slc;
  pthread_t **childthreads = NULL;
+
+ update (UPDATE_MTAB);
+ ha = mcb.mtab;
 
  switch (p) {
   case MOUNT_LOCAL:
@@ -1727,6 +1731,8 @@ int disable (enum mounttask p, struct einit_event *status) {
   free (acand);
   sc--;
  }
+
+ update (UPDATE_MTAB);
 
  return STATUS_OK;
 }

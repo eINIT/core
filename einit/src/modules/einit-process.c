@@ -78,8 +78,11 @@ pid_t **collect_processes(struct pc_conditional **pcc) {
 
  if (!pcc) return;
 
- if (pse)
-  ps = pse (ps);
+ if (pse) {
+  struct process_status **nps = pse (ps);
+  free (ps);
+  ps = nps;
+ }
 
  if (ps) for (i = 0; pcc[i]; i++) {
   process_filter pf = NULL;
@@ -129,7 +132,10 @@ void ipc_event_handler (struct einit_event *ev) {
    if (process_list) {
     for (i = 0; process_list[i]; i++) {
      char buffer [1024];
-     snprintf (buffer, 1024, "pid=%i\n", process_list[i]);
+     if (ev->status & EIPC_OUTPUT_XML)
+      snprintf (buffer, 1024, " <process pid=\"%i\" />\n", process_list[i]);
+     else
+      snprintf (buffer, 1024, "process [pid=%i]\n", process_list[i]);
      fdputs (buffer, ev->integer);
     }
     free (process_list);
@@ -148,9 +154,11 @@ int __ekill (struct pc_conditional **pcc, int sign) {
 
  if (!pl) return -1;
 
- for (; pl[i]; i++) if ((pl[i] != 1) && (pl[i] != getpid())){
-  fprintf (stderr, "sending signal %i to process %i", sign, pl[i]);
-  kill ((pid_t)pl[i], sign);
+ for (; pl[i]; i++) if ((pl[i] != 1) && (pl[i] != getpid())) {
+  if (gmode != EINIT_GMODE_SANDBOX) {
+   fprintf (stderr, " >> sending signal %i to process %i\n", sign, pl[i]);
+   kill ((pid_t)pl[i], sign);
+  }
  }
 
  free (pl);
