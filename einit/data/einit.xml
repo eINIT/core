@@ -857,6 +857,24 @@
       command="rm -f /var/run/ipw3945d.pid; ipw3945d --foreground"
       restart="yes" />
 
+<!-- this handles the modprobing so if dont load the ipw3945 module anywhere else -->
+     <shell id="shell-ipw3945"
+      name="ipw3945/ipw3945d"
+      provides="ipw3945"
+      requires="mount/critical"
+      enable="modprobe ipw3945; rm -f /var/run/ipw3945d.pid; ipw3945d;
+              STATE=$(cat /proc/modules | grep ipw3945 | awk '{print $3}');
+              while [ '${STATE}' == '0' ]; do
+               modprobe -r ipw3945;
+               modprobe ipw3945;
+               rm -f /var/run/ipw3945d.pid;
+               ipw3945d;
+               sleep 1;
+               STATE=$(cat /proc/modules | grep ipw3945 | awk '{print $3}');
+              done"
+      disable="ipw3945d --kill; rmmod ipw3945"
+      restart="yes" />
+
 <!--     <daemon id="daemon-cupsd"
       name="cupsd - common unix printing system daemon"
       provides="cupsd"
