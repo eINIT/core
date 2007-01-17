@@ -180,6 +180,7 @@ struct mount_control_block {
  void (*add_filesystem) (char *, char *);
  uint32_t update_options;
  char **critical;
+ char **noumount;
 };
 
 /* variable declarations */

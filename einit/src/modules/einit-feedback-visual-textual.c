@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
+#include <einit/module-logic.h>
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
@@ -94,6 +95,8 @@ const struct smodule self = {
 struct planref {
  struct mloadplan *plan;
  time_t startedat;
+ uint32_t max_changes;
+ uint32_t min_changes;
 };
 
 struct nstring {
@@ -124,6 +127,8 @@ void update_screen_ansi (struct einit_event *, struct mstat *);
 
 int nstringsetsort (struct nstring *, struct nstring *);
 unsigned char broadcast_message (char *, char *);
+
+double get_plan_progress (struct planref *);
 
 FILE *vofile = NULL;
 
@@ -374,6 +379,8 @@ void feedback_event_handler(struct einit_event *ev) {
     pthread_mutex_lock (&plansmutex);
      plan.plan = (struct mloadplan *)ev->para;
      plan.startedat = time (NULL);
+     plan.max_changes = 0;
+     plan.min_changes = 0;
      plans = (struct planref **)setadd ((void **)plans, (void *)&plan, sizeof (struct planref));
     pthread_mutex_unlock (&plansmutex);
     break;
@@ -470,6 +477,35 @@ void feedback_event_handler(struct einit_event *ev) {
   if ((ev->status & STATUS_FAIL) || ev->flag) {
    mst->lines = 4;
    mst->errors = 1 + ev->flag;
+  }
+
+  if (plans) {
+   uint32_t i = 0;
+   pthread_mutex_lock (&plansmutex);
+
+   if (enableansicodes) {
+
+    printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34m");
+
+    for (; plans[i]; i++) {
+     if (plans[i]->plan) {
+      printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100);
+     }
+    }
+
+    printf ("\e[0m\e[0K\n");
+   } else {
+    for (; plans[i]; i++) {
+     if (plans[i]->plan) {
+      if (plans[i]->plan) {
+       printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100);
+      }
+     }
+    }
+    puts ("");
+   }
+
+   pthread_mutex_unlock (&plansmutex);
   }
 
   if (enableansicodes) update_screen_ansi (ev, mst);
@@ -909,3 +945,36 @@ unsigned char broadcast_message (char *path, char *message) {
 #endif
  return 0;
 }
+
+double get_plan_progress (struct planref *planr) {
+ if (!planr || !planr->plan) return -1;
+
+ struct mloadplan *plan = planr->plan;
+ struct stree *scur = plan->services;
+
+ uint32_t changes = 0;
+
+ if (!planr->min_changes)
+  planr->min_changes = setcount ((void **)plan->enable) + setcount ((void **)plan->disable) + setcount ((void **)plan->reset);
+ if (!planr->max_changes) {
+  while (scur) {
+   planr->max_changes++;
+   scur = streenext(scur);
+  }
+  scur = plan->services;
+ }
+
+ while (scur) {
+  struct mloadplan_node *n = scur->value;
+
+  if (n->changed >= 2)
+   changes++;
+
+  scur = streenext(scur);
+ }
+
+ if (!changes) return 0;
+ if (!planr->max_changes) return -1;
+ return (double)changes / (double)planr->max_changes;
+}
+

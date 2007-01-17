@@ -529,6 +529,7 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
  if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
 
  if ((node->status & STATUS_DISABLED) || (node->status & STATUS_FAIL)) {
+  node->changed = 2;
   pthread_mutex_unlock (node->mutex);
   return &(node->status);
  }
@@ -536,6 +537,7 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
  for (; node->service[si]; si++)
   if (inset ((void **)node->plan->enable, (void *)node->service[si], SET_TYPE_STRING)) {
    node->status = STATUS_ENABLED | STATUS_FAIL;
+   node->changed = 2;
    pthread_mutex_unlock (node->mutex);
    return &(node->status);
   }
@@ -572,6 +574,7 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
   node->status |= STATUS_DISABLED;
  }
 
+ node->changed = 2;
  pthread_mutex_unlock (node->mutex);
  return &(node->status);
 }
@@ -610,6 +613,7 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *co
   }
  }
 
+ node->changed = 2;
  pthread_mutex_unlock (node->mutex);
  return &(node->status);
 }
@@ -634,6 +638,7 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
  if (node->group && (node->status == STATUS_ENABLING))
   goto resume_group_enable;
  else if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
+  node->changed = 2;
   pthread_mutex_unlock (node->mutex);
   return &(node->status);
  }
@@ -732,6 +737,7 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
 
  if (node->status & STATUS_WORKING) node->status ^= STATUS_WORKING;
 
+ node->changed = 2;
  pthread_mutex_unlock (node->mutex);
 // pthread_exit (NULL);
  return &(node->status);
@@ -763,6 +769,7 @@ void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
   }
  }
 
+ node->changed = 2;
  pthread_mutex_unlock (node->mutex);
  return &(node->status);
 }
@@ -792,6 +799,7 @@ void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
   }
  }
 
+ node->changed = 2;
  pthread_mutex_unlock (node->mutex);
  return &(node->status);
 }

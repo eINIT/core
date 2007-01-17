@@ -1,6 +1,8 @@
 2007/01/16: mdeininger
  * some umount logics
  * fixups to the process-collector
+ * name for critical mount points has changed
+ * (cheap) code to guess how far into a plan we are right now
 
 2007/01/15: mdeininger
  * (hopefully) fixed random problems with einit-control getting "stuck"

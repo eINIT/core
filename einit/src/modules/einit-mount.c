@@ -196,7 +196,8 @@ struct mount_control_block mcb = {
 	 .add_mtab_entry	= add_mtab_entry,
 	 .add_filesystem	= add_filesystem,
 	 .update_options	= EVENT_UPDATE_METADATA + EVENT_UPDATE_BLOCK_DEVICES + EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB,
-	 .critical		= NULL
+	 .critical		= NULL,
+	 .noumount		= NULL
 };
 
 /* function declarations */
@@ -243,8 +244,11 @@ int configure (struct lmodule *this) {
   free (tmp);
  }
 
- if ((node = cfg_findnode ("configuration-storage-critical-mountpoints",0,NULL)) && node->svalue)
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue)
   mcb.critical = str2set(':', node->svalue);
+
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue)
+  mcb.noumount = str2set(':', node->svalue);
 
  if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
   fsck_command = estrdup(node->svalue);
@@ -1065,6 +1069,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   char textbuffer[1024];
   errno = 0;
   uint32_t retry = 0;
+
+  if (inset ((void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
 
   if (he = streefind (he, mountpoint, TREE_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
 
