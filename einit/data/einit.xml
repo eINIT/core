@@ -811,6 +811,13 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+     <daemon id="daemon-boinc"
+      name="BOINC client"
+      provides="boinc"
+      requires="mount/critical"
+      command="boinc_client"
+      restart="yes" />
+
      <shell id="shell-irqbalance"
       name="irqbalance"
       provides="irqbalance"
