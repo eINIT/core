@@ -150,6 +150,7 @@
 
   <prefer>
    <xdm s="daemon-kdm:daemon-entrance" />
+   <syslog s="daemon-metalog" />
    <kern-alsa s="shell-kern-audio-alsa" />
   </prefer>
 

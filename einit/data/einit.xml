@@ -381,6 +381,14 @@
      command="/usr/sbin/syslog-ng -F"
      restart="yes" />
 
+<!-- this is for the syslog in busybox -->
+    <daemon id="daemon-syslog"
+     name="Syslogger (syslog)"
+     provides="syslog"
+     requires="mount/critical"
+     command="/sbin/syslogd -n"
+     restart="yes" />
+
 <!-- festival -->
     <daemon id="daemon-tts-festival"
      name="TTS (festival)"
