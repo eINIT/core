@@ -479,35 +479,6 @@ void feedback_event_handler(struct einit_event *ev) {
    mst->errors = 1 + ev->flag;
   }
 
-  if (plans) {
-   uint32_t i = 0;
-   pthread_mutex_lock (&plansmutex);
-
-   if (enableansicodes) {
-
-    printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34m");
-
-    for (; plans[i]; i++) {
-     if (plans[i]->plan) {
-      printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100);
-     }
-    }
-
-    printf ("\e[0m\e[0K\n");
-   } else {
-    for (; plans[i]; i++) {
-     if (plans[i]->plan) {
-      if (plans[i]->plan) {
-       printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100);
-      }
-     }
-    }
-    puts ("");
-   }
-
-   pthread_mutex_unlock (&plansmutex);
-  }
-
   if (enableansicodes) update_screen_ansi (ev, mst);
   if (vofile) update_screen_neat (ev, mst);
   update_screen_noansi (ev, mst);
@@ -820,6 +791,37 @@ void einit_event_handler(struct einit_event *ev) {
 
   if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
    shutdownfailuretimeout = node->value;
+ } else if (ev->type == EVE_MODULE_UPDATE) {
+  if (!(ev->status & STATUS_WORKING)) {
+   if (plans) {
+    uint32_t i = 0;
+    pthread_mutex_lock (&plansmutex);
+
+    if (enableansicodes) {
+
+     printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34m");
+
+     for (; plans[i]; i++) {
+      if (plans[i]->plan) {
+       printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100);
+      }
+     }
+
+     printf ("\e[0m\e[0K\n");
+    } else {
+     for (; plans[i]; i++) {
+      if (plans[i]->plan) {
+       if (plans[i]->plan) {
+        printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100);
+       }
+      }
+     }
+     puts ("");
+    }
+
+    pthread_mutex_unlock (&plansmutex);
+   }
+  }
  }
 
  pthread_mutex_unlock (&me->imutex);

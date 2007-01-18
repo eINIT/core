@@ -74,11 +74,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_SUBSYSTEM_IPC            0x00002000
 /*!< incoming IPC request */
-#define EVENT_SUBSYSTEM_MOUNT		0x00003000
-#define EVE_DO_UPDATE				0x00003001
-#define EVENT_NODE_MOUNTED			0x00003002
-#define EVE_NEW_MOUNT_LEVEL			0x00003003
-#define EVENT_NODE_UNMOUNTED		0x00003004
+#define EVENT_SUBSYSTEM_MOUNT                   0x00003000
+#define EVE_DO_UPDATE                           0x00003001
+#define EVENT_NODE_MOUNTED                      0x00003002
+#define EVE_NEW_MOUNT_LEVEL                     0x00003003
+#define EVENT_NODE_UNMOUNTED                    0x00003004
 /*!< update mount status */
 
 #define EVENT_SUBSYSTEM_FEEDBACK                0x00004000
