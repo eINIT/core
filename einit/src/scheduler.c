@@ -339,16 +339,16 @@ void sched_ipc_event_handler(struct einit_event *event) {
 
      sync ();
 
-    gstatus = EINIT_EXITING;
-    if (sigchild_semaphore)
-     sem_post (sigchild_semaphore);
-
      if (gmode == EINIT_GMODE_SANDBOX) {
       notice (1, ">> scheduler: cleaning up");
  //     cleanup ();
       puts (" >> sandbox mode, now exiting");
       exit (EXIT_SUCCESS);
      }
+
+     gstatus = EINIT_EXITING;
+     if (sigchild_semaphore)
+      sem_post (sigchild_semaphore);
 
      char **shutdownfunctionsubnames = str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
 

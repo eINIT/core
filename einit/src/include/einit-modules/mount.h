@@ -178,7 +178,6 @@ struct legacy_fstab_entry {
 struct mount_control_block {
  struct stree *blockdevices;
  struct stree *fstab;
- struct stree *mtab;
  struct stree *filesystems;
  void (*add_block_device) (char *, uint32_t, uint32_t);
  void (*add_fstab_entry) (char *, char *, char *, char **, uint32_t, char *, char *, char *, char *, char *, uint32_t, char **);
