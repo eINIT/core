@@ -2,6 +2,7 @@
  * fixed a visualiser SIGBUS
  * added code to maintain mtab
  * removed separate mtab structure
+ * fbsplash support (well, started on the module, anyway)
 
 2007/01/16: mdeininger
  * some umount logics

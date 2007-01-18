@@ -76,7 +76,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-char * provides[] = {"feedback-visual", NULL};
+char * provides[] = {"feedback-visual", "feedback-textual", NULL};
 const struct smodule self = {
  .eiversion = EINIT_VERSION,
  .version   = 1,

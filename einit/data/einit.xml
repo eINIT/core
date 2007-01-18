@@ -86,6 +86,10 @@
     <shutdown-failure-timeout i="15" />
     <broadcast-constraints s="/dev/(tty[1-9][12]?|pts/.*)" />
     <reset-shutdown-broadcast-messages b="true" />
+
+    <fbsplash>
+     <splash-util s="/sbin/splash_util" />
+    </fbsplash>
    </visual>
 
    <visual-edje>
@@ -960,7 +964,7 @@
  </services>
 
  <mode id="feedback">
-  <enable services="feedback-visual" />
+  <enable services="feedback-textual:feedback-graphical" />
  </mode>
  <mode id="boot">
   <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal:utmp" critical="mount/critical:tty" />

@@ -271,12 +271,12 @@ int cleanup (struct lmodule *this) {
  ucur = mcb.fstab;
  while (ucur) {
   if (ucur->value) {
-   if (((struct fstab_entry *)(ucur->value))->mountpoint)
+/*   if (((struct fstab_entry *)(ucur->value))->mountpoint)
     free (((struct fstab_entry *)(ucur->value))->mountpoint);
    if (((struct fstab_entry *)(ucur->value))->device)
     free (((struct fstab_entry *)(ucur->value))->device);
    if (((struct fstab_entry *)(ucur->value))->fs)
-    free (((struct fstab_entry *)(ucur->value))->fs);
+    free (((struct fstab_entry *)(ucur->value))->fs);*/
    if (((struct fstab_entry *)(ucur->value))->before_mount)
     free (((struct fstab_entry *)(ucur->value))->before_mount);
    if (((struct fstab_entry *)(ucur->value))->after_mount)
