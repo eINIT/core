@@ -546,7 +546,7 @@ unsigned char read_fstab (void *na) {
 }
 
 unsigned char read_mtab (void *na) {
- struct stree *workstree = read_fsspec_file ("/etc/mtab");
+ struct stree *workstree = read_fsspec_file ("/proc/mounts");
  struct stree *cur = workstree;
 
  if (workstree) {
@@ -1662,6 +1662,7 @@ int enable (enum mounttask p, struct einit_event *status) {
   case MOUNT_SYSTEM:
 #ifdef LINUX
    ret = mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
+   update (UPDATE_MTAB);
    ret = mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
 #endif
    ret = mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
@@ -1853,7 +1854,6 @@ int disable (enum mounttask p, struct einit_event *status) {
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node = NULL;
-  fputs (" >>> checking for mtab node\n", stderr);
   if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
    mcb.options |= OPTION_MAINTAIN_MTAB;
    mcb.mtab_file = node->svalue;
