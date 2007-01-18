@@ -115,6 +115,7 @@ int sched_switchmode (char *mode) {
   if (!plan) {
    notice (1, "scheduler: scheduled mode defined but nothing to be done");
   } else {
+   pthread_t th;
    if (plan->mode) cmode = plan->mode;
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
    fb->para = (void *)plan;
@@ -122,7 +123,8 @@ int sched_switchmode (char *mode) {
    mod_plan_commit (plan);
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
    status_update (fb);
-   mod_plan_free (plan);
+/* make it so that the erase operaation will not disturb the flow of the program */
+   pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
   }
 
  evdestroy (fb);
@@ -161,7 +163,7 @@ void sched_init () {
 #elif defined(DARWIN)
  snprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
 
- if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+ if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
   perror ("scheduler: semaphore setup");
   exit (EXIT_FAILURE);
  }

@@ -954,6 +954,8 @@ double get_plan_progress (struct planref *planr) {
 
  uint32_t changes = 0;
 
+ pthread_mutex_lock (&(plan->vizmutex));
+
  if (!planr->min_changes)
   planr->min_changes = setcount ((void **)plan->enable) + setcount ((void **)plan->disable) + setcount ((void **)plan->reset);
  if (!planr->max_changes) {
@@ -967,11 +969,12 @@ double get_plan_progress (struct planref *planr) {
  while (scur) {
   struct mloadplan_node *n = scur->value;
 
-  if (n->changed >= 2)
-   changes++;
+  if (n && (n->changed >= 2)) changes++;
 
   scur = streenext(scur);
  }
+
+ pthread_mutex_unlock (&(plan->vizmutex));
 
  if (!changes) return 0;
  if (!planr->max_changes) return -1;

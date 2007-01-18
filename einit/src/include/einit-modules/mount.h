@@ -108,6 +108,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_UPDATE_FSTAB              0x04
 #define EVENT_UPDATE_MTAB               0x08
 
+#define OPTION_MAINTAIN_MTAB            0x10
+
 /* definitions */
 enum update_task {
  UPDATE_METADATA      = 0x01,
@@ -179,6 +181,8 @@ struct mount_control_block {
  void (*add_mtab_entry) (char *, char *, char *, char *, uint32_t, uint32_t);
  void (*add_filesystem) (char *, char *);
  uint32_t update_options;
+ unsigned char options;
+
  char **critical;
  char **noumount;
 };

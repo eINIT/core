@@ -79,6 +79,7 @@ struct mloadplan {
  uint32_t options;         /*!< Plan-options; reserved */
  struct cfgnode *mode;     /*!< Pointer to the mode that was used to construct this plan, if applicable. */
  pthread_mutex_t mutex;    /*!< Mutex for this plan. */
+ pthread_mutex_t vizmutex; /*!< Mutex for this plan. */
 
  pthread_t **subthreads;   /*!< Subthreads of this plan that need to be joined. */
  pthread_mutex_t st_mutex; /*!< Mutex for subthread-modifications. */

@@ -100,6 +100,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (!plan) {
   plan = ecalloc (1, sizeof (struct mloadplan));
   pthread_mutex_init (&plan->mutex, NULL);
+  pthread_mutex_init (&plan->vizmutex, NULL);
   pthread_mutex_init (&plan->st_mutex, NULL);
  }
  pthread_mutex_lock (&plan->mutex);
@@ -928,6 +929,10 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *plan) {
  pthread_mutex_lock (&plan->mutex);
+ do {
+  sleep(1);
+ } while (pthread_mutex_trylock (&plan->vizmutex));
+
  if (plan->enable) free (plan->enable);
  if (plan->disable) free (plan->disable);
  if (plan->reset) free (plan->reset);
@@ -948,6 +953,8 @@ int mod_plan_free (struct mloadplan *plan) {
   streefree (plan->services);
  }
 
+ pthread_mutex_unlock (&plan->vizmutex);
+ pthread_mutex_destroy (&plan->vizmutex);
  pthread_mutex_unlock (&plan->mutex);
  pthread_mutex_destroy (&plan->mutex);
 

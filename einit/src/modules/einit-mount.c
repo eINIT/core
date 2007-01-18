@@ -210,6 +210,8 @@ int mountwrapper (char *, struct einit_event *, uint32_t);
 char *__options_string_to_mountflags (char **, unsigned long *, char *);
 void einit_event_handler (struct einit_event *);
 
+char *generate_legacy_mtab (struct mount_control_block *);
+
 /* function definitions */
 
 /* the actual module */
@@ -252,6 +254,11 @@ int configure (struct lmodule *this) {
 
  if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
   fsck_command = estrdup(node->svalue);
+
+ if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->value) {
+  fputs ("going to maintain mtab", stderr);
+  mcb.options |= OPTION_MAINTAIN_MTAB;
+ }
 
  if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
   update (UPDATE_BLOCK_DEVICES);
@@ -1046,6 +1053,15 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       startdaemon (fse->manager, status);
     }
 
+    if (mcb.options & OPTION_MAINTAIN_MTAB) {
+     char *tmpmtab = generate_legacy_mtab (&mcb);
+
+     if (tmpmtab) {
+      puts (tmpmtab);
+	  free (tmpmtab);
+     }
+    }
+
     struct einit_event eem = evstaticinit (EVENT_NODE_MOUNTED);
     eem.string = mountpoint;
     event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
@@ -1178,7 +1194,6 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   eem.string = mountpoint;
   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
   evstaticdestroy (eem);
-
 
   return STATUS_OK;
  }
@@ -1515,6 +1530,13 @@ void mount_update_handler(struct einit_event *event) {
  }
 }
 
+char *generate_legacy_mtab (struct mount_control_block *cb) {
+ char *ret = emalloc (1024);
+
+ snprintf (ret, 1024, " >> futile");
+
+ return ret;
+}
 
 /* --------- enabling and disabling --------------------------------------- */
 int enable (enum mounttask p, struct einit_event *status) {
@@ -1745,8 +1767,12 @@ int disable (enum mounttask p, struct einit_event *status) {
 
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-//  notice (6, "einit-mount: updating fstab");
-//  fputs ("einit-mount: updating fstab\n", stdout);
+  struct cfgnode *node = NULL;
+  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->value) {
+   fputs ("going to maintain mtab", stderr);
+   mcb.options |= OPTION_MAINTAIN_MTAB;
+  }
+
   update_fstab();
  }
 }
