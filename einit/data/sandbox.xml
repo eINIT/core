@@ -51,6 +51,7 @@
   </kernel>
 
   <storage>
+   <maintain-mtab b="yes" s="etc/mtab" />
    <fstab>
     <source s="configuration:legacy" />
 <!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime" />

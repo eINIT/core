@@ -255,11 +255,6 @@ int configure (struct lmodule *this) {
  if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
   fsck_command = estrdup(node->svalue);
 
- if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->value) {
-  fputs ("going to maintain mtab", stderr);
-  mcb.options |= OPTION_MAINTAIN_MTAB;
- }
-
  if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
   update (UPDATE_BLOCK_DEVICES);
   if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
@@ -1045,6 +1040,10 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
     mount_success:
 
+    fse->afs = fstype;
+    fse->adevice = source;
+    fse->aflags = mntflags;
+
     if (gmode != EINIT_GMODE_SANDBOX) {
      if (fse->after_mount)
       pexec_v1 (fse->after_mount, fse->variables, NULL, status);
@@ -1053,21 +1052,28 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       startdaemon (fse->manager, status);
     }
 
-    if (mcb.options & OPTION_MAINTAIN_MTAB) {
-     char *tmpmtab = generate_legacy_mtab (&mcb);
-
-     if (tmpmtab) {
-      puts (tmpmtab);
-	  free (tmpmtab);
-     }
-    }
-
     struct einit_event eem = evstaticinit (EVENT_NODE_MOUNTED);
     eem.string = mountpoint;
     event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
     evstaticdestroy (eem);
 
     fse->status |= BF_STATUS_MOUNTED;
+
+
+    if (mcb.options & OPTION_MAINTAIN_MTAB) {
+     char *tmpmtab = generate_legacy_mtab (&mcb);
+
+     if (tmpmtab) {
+      FILE *mtabfile = fopen (mcb.mtab_file, "w");
+
+      if (mtabfile) {
+       fputs (tmpmtab, mtabfile);
+       fclose (mtabfile);
+      }
+
+      free (tmpmtab);
+     }
+    }
 
     return STATUS_OK;
    }
@@ -1194,6 +1200,21 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   eem.string = mountpoint;
   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
   evstaticdestroy (eem);
+
+  if (mcb.options & OPTION_MAINTAIN_MTAB) {
+   char *tmpmtab = generate_legacy_mtab (&mcb);
+
+   if (tmpmtab) {
+    FILE *mtabfile = fopen (mcb.mtab_file, "w");
+
+    if (mtabfile) {
+     fputs (tmpmtab, mtabfile);
+     fclose (mtabfile);
+    }
+
+    free (tmpmtab);
+   }
+  }
 
   return STATUS_OK;
  }
@@ -1531,9 +1552,49 @@ void mount_update_handler(struct einit_event *event) {
 }
 
 char *generate_legacy_mtab (struct mount_control_block *cb) {
- char *ret = emalloc (1024);
+ char *ret = NULL;
+ ssize_t retlen = 0;
 
- snprintf (ret, 1024, " >> futile");
+ if (!cb) return NULL;
+
+ struct stree *cur = cb->fstab;
+
+ while (cur) {
+  struct fstab_entry *fse = cur->value;
+
+  if (fse) {
+   if (fse->status & BF_STATUS_MOUNTED) {
+    char tmp[1024];
+    char *tset = set2str (',', fse->options); 
+
+    if (tset)
+     snprintf (tmp, 1024, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
+               fse->aflags & MS_RDONLY ? "ro" : "rw", tset);
+    else
+     snprintf (tmp, 1024, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
+               fse->aflags & MS_RDONLY ? "ro" : "rw");
+
+    ssize_t nlen = strlen(tmp);
+
+    if (retlen == 0) {
+     ret = emalloc (nlen +1);
+     *ret = 0;
+
+     retlen += 1;
+    } else {
+     ret = erealloc (ret, retlen + nlen);
+    }
+
+    retlen += nlen;
+
+    strcat (ret, tmp);
+
+    if (tset) free (tset);
+   }
+  }
+
+  cur = streenext (cur);
+ }
 
  return ret;
 }
@@ -1587,13 +1648,6 @@ int enable (enum mounttask p, struct einit_event *status) {
    }
 
    ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
-#ifdef LINUX
-/* link /etc/mtab to /proc/mounts */
-   unlink ("/etc/mtab");
-   symlink ("/proc/mounts", "/etc/mtab");
-/* discard errors, they are irrelevant. */
-   errno = 0;
-#endif
 
    return ret;
    break;
@@ -1699,7 +1753,6 @@ int disable (enum mounttask p, struct einit_event *status) {
     mountwrapper ("/dev", status, MOUNT_TF_UMOUNT);
 #ifdef LINUX
     mountwrapper ("/sys", status, MOUNT_TF_UMOUNT);
-    unlink ("/etc/mtab");
     mountwrapper ("/proc", status, MOUNT_TF_UMOUNT);
 #endif
     if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
@@ -1709,6 +1762,14 @@ int disable (enum mounttask p, struct einit_event *status) {
 //     update (UPDATE_BLOCK_DEVICES);
     }
    }
+
+#ifdef LINUX
+   /* link /etc/mtab to /proc/mounts so that after / is r/o things are still up to date*/
+   unlink ("/etc/mtab");
+   symlink ("/proc/mounts", "/etc/mtab");
+   /* discard errors, they are irrelevant. */
+   errno = 0;
+#endif
 
    return mountwrapper ("/", status, MOUNT_TF_UMOUNT);
 //   return STATUS_OK;
@@ -1768,9 +1829,10 @@ int disable (enum mounttask p, struct einit_event *status) {
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node = NULL;
-  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->value) {
-   fputs ("going to maintain mtab", stderr);
+  fputs (" >>> checking for mtab node\n", stderr);
+  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
    mcb.options |= OPTION_MAINTAIN_MTAB;
+   mcb.mtab_file = node->svalue;
   }
 
   update_fstab();

@@ -225,7 +225,7 @@
   <storage>
    <update-steps s="block-devices:metadata" />
    <mtab-source s="legacy" />
-   <maintain-mtab b="yes" />
+   <maintain-mtab b="yes" s="/etc/mtab" />
    <filesystem>
     <label-readers s="linux" />
     <guessing-order s="ext4:ext3:ext2:reiser4:reiserfs:xfs:jfs:ufs:udf" />

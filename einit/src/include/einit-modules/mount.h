@@ -160,6 +160,10 @@ struct fstab_entry {
  struct dexecinfo *manager;
  char **variables;
  uint32_t status;
+
+ char *afs;
+ char *adevice;
+ uint32_t aflags;
 };
 
 struct legacy_fstab_entry {
@@ -185,6 +189,7 @@ struct mount_control_block {
 
  char **critical;
  char **noumount;
+ char *mtab_file;
 };
 
 /* variable declarations */
