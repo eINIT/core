@@ -1100,7 +1100,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   while (1) {
    retry++;
 
-//   if (gmode != EINIT_GMODE_SANDBOX) {
+   if (gmode != EINIT_GMODE_SANDBOX) {
 #ifdef DARWIN
     if (unmount (mountpoint, 0))
 #else
@@ -1155,9 +1155,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      goto umount_fail;
 #endif
     }
-/*   } else {
+   } else {
     goto umount_ok;
-   }*/
+   }
 
    umount_fail:
 

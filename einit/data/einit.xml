@@ -94,10 +94,13 @@
                   RUNLEVEL='S';
                   SOFTLEVEL='${new-mode}';
 
-                  splash rc_init sysinit;"
+                  splash rc_init sysinit;
+                  splash rc_init boot;"
 
                  action="
                   source ${splash-functions-file};
+                  RUNLEVEL='3';
+                  SOFTLEVEL='${new-mode}';
 
                   splash_svclist_get() {
                    if [[ '$1' == 'start' ]]; then
@@ -106,7 +109,7 @@
                   };
 
                   splash_svclist_update() {
-                   echo ${finished-services};
+                   echo ${active-services};
                   };
 
                   splash_setup;
