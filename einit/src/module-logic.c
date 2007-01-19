@@ -880,6 +880,22 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   notice (2, tmp);
  }
 
+// see if we need to pronounce a panic
+ if (plan->critical) {
+  for (u = 1; plan->critical[u]; u++) {
+   if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, plan->critical[u])) {
+    fprintf (stderr, " >>> EINIT PANIC <<<\n >> service %s marked as critical but it's not enabled.\n", plan->critical[u]);
+
+    struct einit_event eema = evstaticinit (EVE_PANIC);
+    eema.para = (void *)amode;
+    event_emit (&eema, EINIT_EVENT_FLAG_BROADCAST);
+    evstaticdestroy (eema);
+
+    break;
+   }
+  }
+ }
+
 // do some more extra work if the plan was derived from a mode
  if (plan->mode) {
   char *cmdt;

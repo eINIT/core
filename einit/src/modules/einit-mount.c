@@ -1609,6 +1609,8 @@ int enable (enum mounttask p, struct einit_event *status) {
          strcmp (ha->key, "/") && strcmp (ha->key, "/dev") &&
          strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if (fse = (struct fstab_entry *)ha->value) {
+      if (fse->status & BF_STATUS_MOUNTED)
+       goto mount_skip;
       if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
        goto mount_skip;
 

@@ -1,5 +1,7 @@
 2007/01/19: mdeininger
  * fixed deadlock in shutdown (mounter)
+ * fixed clock-skew infinite loop
+ * added panic check to mode-switches
 
 2007/01/18: mdeininger
  * fixed a visualiser SIGBUS
