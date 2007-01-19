@@ -118,6 +118,8 @@
                   SOFTLEVEL='${new-mode}';
 
                   splash rc_exit;"/>
+     <ttys s="1 2 3 4 5 6" />
+     <theme s="gentoo" />
     </fbsplash>
    </visual>
 
@@ -857,15 +859,13 @@
       name="fbsplash"
       provides="fbsplash"
       requires="mount/critical"
-      enable="SPLASH_TTYS='1 2 3 4 5 6' ;
-              SPLASH_THEME='gentoo' ;
-              for TTY in ${SPLASH_TTYS} ; do
-               splash_util --tty=${TTY} -m v -t ${SPLASH_THEME} -c setcfg ;
-               splash_util --tty=${TTY} -m v -t ${SPLASH_THEME} -c setpic 2&gt;/dev/null ;
+      enable="for TTY in ${configuration_feedback_fbsplash_ttys} ; do
+               splash_util --tty=${TTY} -m v -t ${configuration_feedback_fbsplash_theme} -c setcfg ;
+               splash_util --tty=${TTY} -m v -t ${configuration_feedback_fbsplash_theme} -c setpic 2&gt;/dev/null ;
                splash_util --tty=${TTY} -c on ;
               done"
       disable="/bin/true"
-      restart="no" />
+      variables="configuration-feedback-fbsplash-ttys:configuration-feedback-fbsplash-theme" />
 
 <!-- this program saves its data the pwd so we must cd to the folder we want to saved data reside -->
      <daemon id="daemon-boinc"
