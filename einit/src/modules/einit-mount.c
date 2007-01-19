@@ -1644,6 +1644,22 @@ int enable (enum mounttask p, struct einit_event *status) {
    }
 
    ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+   if (mcb.options & OPTION_MAINTAIN_MTAB) {
+    char *tmpmtab = generate_legacy_mtab (&mcb);
+
+    if (tmpmtab) {
+     unlink ("/etc/mtab");
+
+     FILE *mtabfile = fopen (mcb.mtab_file, "w");
+
+     if (mtabfile) {
+      fputs (tmpmtab, mtabfile);
+      fclose (mtabfile);
+     }
+
+     free (tmpmtab);
+    }
+   }
 
    return ret;
    break;
