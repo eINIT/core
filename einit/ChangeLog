@@ -2,6 +2,8 @@
  * fixed deadlock in shutdown (mounter)
  * fixed clock-skew infinite loop
  * added panic check to mode-switches
+ * some work on the fbsplash feedback (+ ryan made a nice module to set console
+   backgrounds)
 
 2007/01/18: mdeininger
  * fixed a visualiser SIGBUS

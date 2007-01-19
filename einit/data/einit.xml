@@ -88,7 +88,27 @@
     <reset-shutdown-broadcast-messages b="true" />
 
     <fbsplash>
-     <splash-util s="/sbin/splash_util" />
+     <splash-functions s="/sbin/splash-functions.sh" />
+     <scriptlets init="
+                  source ${splash-functions-file};
+
+                  splash_init;
+                  splash_setup;"
+                 action="
+                  source ${splash-functions-file};
+
+                  splash_svclist_get() {
+                   if [[ '$1' == 'start' ]]; then
+                    echo ${all-services};
+                   fi
+                  };
+
+                  splash_svclist_update() {
+                   echo ${finished-services};
+                  };
+
+                  splash_setup;
+                  ${action};" />
     </fbsplash>
    </visual>
 
@@ -979,7 +999,7 @@
  </services>
 
  <mode id="feedback">
-  <enable services="feedback-textual:feedback-graphical" />
+  <enable services="feedback-textual" />
  </mode>
  <mode id="boot">
   <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:sensors:dbus:hal:utmp" critical="mount/critical:tty" />

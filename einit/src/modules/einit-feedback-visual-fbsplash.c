@@ -78,7 +78,8 @@ struct lmodule *self_l = NULL;
 
 void feedback_event_handler(struct einit_event *);
 
-char *splash_util = "/sbin/splash_util";
+char *splash_functions = "/sbin/splash-functions.sh";
+char *scriptlet_action = NULL;
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
@@ -97,8 +98,8 @@ int configure (struct lmodule *this) {
 
  struct cfgnode *node;
 
- if (s = cfg_getstring("configuration-feedback-visual-fbsplash-splash-util", NULL))
-  splash_util = s;
+ if (s = cfg_getstring("configuration-feedback-visual-fbsplash-splash-functions", NULL))
+  splash_functions = s;
 
  self_l = this;
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
@@ -111,11 +112,32 @@ int cleanup (struct lmodule *this) {
 
 int enable (void *pa, struct einit_event *status) {
  pthread_mutex_lock (&self_l->imutex);
-
- return STATUS_FAIL;
+ char *s = NULL;
 
  struct stat st;
- if (stat (splash_util, &st)) return STATUS_FAIL;
+ if (stat (splash_functions, &st)) return STATUS_FAIL;
+
+ if (s = cfg_getstring("configuration-feedback-visual-fbsplash-splash-scriptlets/action", NULL)) {
+  scriptlet_action = s;
+ } else
+  return STATUS_FAIL;
+
+// remember: pexec(command, variables, uid, gid, user, group, local_environment, status)
+
+  if (s = cfg_getstring("configuration-feedback-visual-fbsplash-splash-scriptlets/init", NULL)) {
+   char *vars[] = { "splash-functions-file", splash_functions, NULL },
+        *subs = apply_variables (s, vars);
+   int ret = STATUS_FAIL;
+
+   if (subs) {
+    ret = pexec(subs, NULL, 0, 0, NULL, NULL, NULL, status);
+
+    free (subs);
+   }
+
+   return ret;
+  } else
+   return STATUS_FAIL;
 
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
  pthread_mutex_unlock (&self_l->imutex);
