@@ -245,7 +245,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   time_t currenttime = time(NULL);
   if (st.st_mtime > currenttime) {// sanity check mtime
    fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile);
-   xml_configuration_files_highest_mtime = currenttime;
+   xml_configuration_files_highest_mtime = st.st_mtime;
   } else if (st.st_mtime > xml_configuration_files_highest_mtime) // update combined mtime
    xml_configuration_files_highest_mtime = st.st_mtime;
 
