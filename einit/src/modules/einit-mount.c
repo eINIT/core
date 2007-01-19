@@ -1336,37 +1336,6 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
  }
 
  pthread_mutex_unlock (&fstab_mutex);
-
-/* if (!fs_file) return;
- dset = (char **)setadd ((void **)dset, (void *)fs_file, SET_TYPE_STRING);
-
- if (!fs_spec) dset = (char **)setadd ((void **)dset, (void *)"nodevice", SET_TYPE_STRING);
- else dset = (char **)setadd ((void **)dset, (void *)fs_spec, SET_TYPE_STRING);
-
- if (!fs_vfstype) dset = (char **)setadd ((void **)dset, (void *)"auto", SET_TYPE_STRING);
- else dset = (char **)setadd ((void **)dset, (void *)fs_vfstype, SET_TYPE_STRING);
-
- if (!fs_mntops) dset = (char **)setadd ((void **)dset, (void *)"rw", SET_TYPE_STRING);
- else dset = (char **)setadd ((void **)dset, (void *)fs_mntops, SET_TYPE_STRING);
-
- memset (&lfse, 0, sizeof (struct legacy_fstab_entry));
-
- lfse.fs_spec = dset[1];
- lfse.fs_file = dset[0];
- lfse.fs_vfstype = dset[2];
- lfse.fs_mntops = dset[3];
- lfse.fs_freq = fs_freq;
- lfse.fs_passno = fs_passno;
-
- pthread_mutex_lock (&ftab_mutex);
- if (streefind (mcb.mtab, fs_file, TREE_FIND_FIRST)) {
-  free (dset);
-  pthread_mutex_unlock (&ftab_mutex);
-  return;
- }
-
- mcb.mtab = streeadd (mcb.mtab, fs_file, &lfse, sizeof (struct legacy_fstab_entry), dset);
- pthread_mutex_unlock (&mtab_mutex);*/
 }
 
 void add_filesystem (char *name, char *options) {
@@ -1752,12 +1721,12 @@ int disable (enum mounttask p, struct einit_event *status) {
  ha = mcb.fstab;
 
  switch (p) {
-  case MOUNT_LOCAL:
   case MOUNT_REMOTE:
+  case MOUNT_LOCAL:
    while (ha) {
     if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) && strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if (fse = (struct fstab_entry *)ha->value) {
-      if (!(fse->status & BF_STATUS_MOUNTED)) continue;
+      if (!(fse->status & BF_STATUS_MOUNTED)) goto mount_skip;
 
       if (p == MOUNT_LOCAL) {
        if (fse->afs) {

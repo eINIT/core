@@ -618,7 +618,7 @@ void *sched_run_sigchild (void *p) {
 //    return NULL;
    }
    if (sigint_called) {
-    fputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr);
+    fputs (" >> scheduler SIGCHLD thread: making eINIT shut down\n", stderr);
 
     struct einit_event ee = evstaticinit (EVE_SWITCH_MODE);
     ee.string = "power-reset";
