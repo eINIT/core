@@ -91,9 +91,11 @@
      <splash-functions s="/sbin/splash-functions.sh" />
      <scriptlets init="
                   source ${splash-functions-file};
+                  RUNLEVEL='S';
+                  SOFTLEVEL='${new-mode}';
 
-                  splash_init;
-                  splash_setup;"
+                  splash rc_init sysinit;"
+
                  action="
                   source ${splash-functions-file};
 
@@ -108,7 +110,14 @@
                   };
 
                   splash_setup;
-                  ${action};" />
+                  ${action};"
+
+                 quit="
+                  source ${splash-functions-file};
+                  RUNLEVEL='3';
+                  SOFTLEVEL='${new-mode}';
+
+                  splash rc_exit;"/>
     </fbsplash>
    </visual>
 

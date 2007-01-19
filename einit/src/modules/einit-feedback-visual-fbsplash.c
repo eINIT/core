@@ -111,7 +111,6 @@ int cleanup (struct lmodule *this) {
 }
 
 int enable (void *pa, struct einit_event *status) {
- pthread_mutex_lock (&self_l->imutex);
  char *s = NULL;
 
  struct stat st;
@@ -125,7 +124,7 @@ int enable (void *pa, struct einit_event *status) {
 // remember: pexec(command, variables, uid, gid, user, group, local_environment, status)
 
   if (s = cfg_getstring("configuration-feedback-visual-fbsplash-splash-scriptlets/init", NULL)) {
-   char *vars[] = { "splash-functions-file", splash_functions, NULL },
+   char *vars[] = { "splash-functions-file", splash_functions, "new-mode", "default", NULL },
         *subs = apply_variables (s, vars);
    int ret = STATUS_FAIL;
 
@@ -135,20 +134,42 @@ int enable (void *pa, struct einit_event *status) {
     free (subs);
    }
 
-   return ret;
-  } else
-   return STATUS_FAIL;
+   if (ret & STATUS_OK)
+    event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
 
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- pthread_mutex_unlock (&self_l->imutex);
- return STATUS_OK;
+   return ret;
+  }
+
+  return STATUS_FAIL;
 }
 
 int disable (void *pa, struct einit_event *status) {
+ char *s = NULL;
+
  pthread_mutex_lock (&self_l->imutex);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
+
+ if (s = cfg_getstring("configuration-feedback-visual-fbsplash-splash-scriptlets/quit", NULL)) {
+  char *vars[] = { "splash-functions-file", splash_functions, "new-mode", "default", NULL },
+  *subs = apply_variables (s, vars);
+  int ret = STATUS_FAIL;
+
+  if (subs) {
+   ret = pexec(subs, NULL, 0, 0, NULL, NULL, NULL, status);
+
+   free (subs);
+  }
+
+  if (ret & STATUS_OK)
+   event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
+
+  pthread_mutex_unlock (&self_l->imutex);
+
+  return ret;
+ }
+
  pthread_mutex_unlock (&self_l->imutex);
- return STATUS_OK;
+ return STATUS_FAIL;
 }
 
 void feedback_event_handler(struct einit_event *ev) {
