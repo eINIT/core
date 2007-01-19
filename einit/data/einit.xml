@@ -824,11 +824,12 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+<!-- this program saves its data the pwd so we must cd to the folder we want to saved data reside -->
      <daemon id="daemon-boinc"
       name="BOINC client"
       provides="boinc"
       requires="mount/critical"
-      command="boinc_client"
+      command="cd /var/lib/boinc; boinc_client"
       restart="yes" />
 
      <shell id="shell-irqbalance"
