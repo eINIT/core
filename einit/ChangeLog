@@ -1,5 +1,6 @@
 2007/01/20: mdeininger
  * split set functions from utility.[ch]
+ * split gentoo-only modules from the main source tree
 
 2007/01/19: mdeininger
  * fixed deadlock in shutdown (mounter)
