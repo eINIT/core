@@ -15,7 +15,7 @@ SLOT="0"
 KEYWORDS="-*"
 IUSE="doc static"
 
-RDEPEND="dev-libs/expat
+RDEPEND="=sys-apps/einit-9999
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
 DEPEND="${RDEPEND}"
 
