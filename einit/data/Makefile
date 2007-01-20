@@ -6,5 +6,5 @@ all:
 install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${ETCDIR}
-	${INSTALL} ${IPARAM} -m 0644  local.xml ${DESTDIR}/${ETCDIR}
+	if test -e ${DESTDIR}/${ETCDIR}/local.xml; then ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}/local.xml.example; else ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}; fi
 	if test -n "`echo ${PMODULES}|grep efl`"; then cd einit.edje && ${MAKE} install; fi
