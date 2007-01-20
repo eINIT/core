@@ -46,6 +46,7 @@ PMODULES="compatibility configuration"
 TREETYPE="linear"
 SETTYPE="lowmem"
 
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
@@ -243,6 +244,9 @@ else
 	STATIC="";
 fi
 
+if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
+if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
@@ -250,6 +254,7 @@ LIBDIR = ${PREFIX}/lib
 MODDIR = ${PREFIX}/lib/einit
 BINDIR = ${PREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
+INCLUDEDIR = ${UPREFIX}/include
 
 INSTALL = install
 IPARAM =

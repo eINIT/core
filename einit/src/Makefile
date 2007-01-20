@@ -25,6 +25,10 @@ install: all
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${INCLUDEDIR}/einit
+	${INSTALL} ${IPARAM} -m 0644 include/einit/*.h ${DESTDIR}/${INCLUDEDIR}/einit
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${INCLUDEDIR}/einit-modules
+	${INSTALL} ${IPARAM} -m 0644 include/einit-modules/*.h ${DESTDIR}/${INCLUDEDIR}/einit-modules
 	ln -sf einit-control ${DESTDIR}/${SBINDIR}/power
 	ln -sf einit-control ${DESTDIR}/${SBINDIR}/erc
 	cd modules && ${MAKE} install
