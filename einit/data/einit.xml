@@ -862,13 +862,13 @@
       name="fbsplash"
       provides="fbsplash"
       requires="mount/critical"
-      enable="for TTY in ${configuration_feedback_fbsplash_ttys} ; do
-               splash_util --tty=${TTY} -m v -t ${configuration_feedback_fbsplash_theme} -c setcfg ;
-               splash_util --tty=${TTY} -m v -t ${configuration_feedback_fbsplash_theme} -c setpic 2&gt;/dev/null ;
+      enable="for TTY in ${configuration_feedback_visual_fbsplash_ttys} ; do
+               splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setcfg ;
+               splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setpic 2&gt;/dev/null ;
                splash_util --tty=${TTY} -c on ;
               done"
       disable="/bin/true"
-      variables="configuration-feedback-fbsplash-ttys:configuration-feedback-fbsplash-theme" />
+      variables="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
 
 <!-- this program saves its data the pwd so we must cd to the folder we want to saved data reside -->
      <daemon id="daemon-boinc"
