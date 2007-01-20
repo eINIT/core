@@ -312,7 +312,7 @@
 
   <command>
 <!-- the command to run to remove a module from the kernel -->
-   <rmmod s="/sbin/rmmod" />
+   <rmmod s="/sbin/modprobe -r" />
   </command>
 
   <program-options>
