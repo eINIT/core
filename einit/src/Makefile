@@ -12,14 +12,14 @@ clean:
 	rm -f *.o einit-xml einit-control einit depend.mk
 	cd modules && ${MAKE} clean
 
-einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o
-	$(CLD) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o $(XDYNAMIC) -o einit-xml $(STATIC) -ldl -lexpat $(LPA)
+einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o set.o
+	$(CLD) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o set.o $(XDYNAMIC) -o einit-xml $(STATIC) -ldl -lexpat $(LPA)
 
 einit: einit-xml
 	ln -sf einit-xml einit
 
-einit-control: einit-control.o bitch.o utility.o event.o tree.o
-	$(CLD) einit-control.o bitch.o utility.o event.o tree.o $(XDYNAMIC) -o einit-control $(STATIC) -ldl $(LPA)
+einit-control: einit-control.o bitch.o utility.o event.o tree.o set.o
+	$(CLD) einit-control.o bitch.o utility.o event.o tree.o set.o $(XDYNAMIC) -o einit-control $(STATIC) -ldl $(LPA)
 
 install: all
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
@@ -43,6 +43,9 @@ config.o: config.c
 
 tree.o: tree-linear.c tree-bst-splay.c
 	$(CCC) -c tree-${TREETYPE}.c -o tree.o
+
+set.o: set-lowmem.c
+	$(CCC) -c set-${SETTYPE}.c -o set.o
 
 event.o: event.c
 	$(CCC) -c event.c

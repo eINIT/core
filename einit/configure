@@ -44,6 +44,7 @@ fi
 PMODULES="compatibility configuration"
 
 TREETYPE="linear"
+SETTYPE="lowmem"
 
 echo -n "checking options [";
 for param in $@; do
@@ -60,6 +61,9 @@ for param in $@; do
 	elif test "$short" = "--tree-type"; then
 		echo -n " TREETYPE";
 		TREETYPE=${param#*=};
+	elif test "$short" = "--set-type"; then
+		echo -n " SETTYPE";
+		SETTYPE=${param#*=};
 	elif test "$short" = "--with-include"; then
 		echo -n " INCLUDE";
 		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";
@@ -260,6 +264,7 @@ XDYNAMIC = $XDYNAMIC
 BUILDNUMBER = $BUILDNUMBER
 ISSVN = $ISSVN
 TREETYPE = ${TREETYPE}
+SETTYPE = ${SETTYPE}
 
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS

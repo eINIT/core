@@ -68,6 +68,7 @@ char isinit = 1, initoverride = 0;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 uint32_t gmode = EINIT_GMODE_INIT;
+unsigned char *gdebug = 0;
 
 /* some more variables that are only of relevance to main() */
 char **einit_startup_mode_switches = NULL;

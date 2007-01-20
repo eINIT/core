@@ -1,3 +1,6 @@
+2007/01/20: mdeininger
+ * split set functions from utility.[ch]
+
 2007/01/19: mdeininger
  * fixed deadlock in shutdown (mounter)
  * fixed clock-skew infinite loop
