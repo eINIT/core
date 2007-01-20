@@ -44,7 +44,7 @@ PMODULES="compatibility configuration"
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
-	elif test "$short" = "--prefix"; then
+	if test "$short" = "--prefix"; then
 		echo -n " PREFIX";
 		PREFIX=${param#*=};
 	elif test "$short" = "--tree-type"; then
@@ -185,7 +185,7 @@ else
 fi
 
 echo "finding absolute include directory..."
-INCLUDE="-I`pwd`/src/include ${INCLUDE}";
+INCLUDE="";
 
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
@@ -264,7 +264,6 @@ fi
 
 echo -n "creating dependency information... "
 touch src/depend.mk
-touch src/modules/depend.mk
 
 if make depend > /dev/null; then
 	echo "done";

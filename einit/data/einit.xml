@@ -26,13 +26,12 @@
     <commands-include-file s="local.xml" />
    </else>
   </if>
-<!-- with the current configuration files, this is not required, but you could still use it
   <commands>
    <include>
-    <file s="local.xml" />
     <directory s="local" />
+    <directory s="modules" />
    </include>
-  </commands> -->
+  </commands>
 
 <!--  <mode s="init" /> -->
  </core>
@@ -179,45 +178,6 @@
 <!--    <simulate-runlevel before="0" now="e" /> -->
     <simulate-runlevel now="3" />
     <distribution s="auto">
-     <gentoo>
-<!-- in case you wish to use gentoo-ish init.d scripts, use this:
-     NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-<!--      <init.d path="/etc/init.d/" />
-      <runlevels path="/etc/runlevels" exclusive="false" /> -->
-      <parse-env.d b="true" />
-      <service-tracker b="true" path="/var/lib/init.d" />
-
-<!-- scriptlets to process gentoo's init.d scripts
-     ( i don't particularly feel like re-implementing a complete sh right now )
-     arguments: script-path, script-name, action -->
-      <init.d-scriptlets
-       list-dependencies='
-        need () { echo "need="$@; };
-        use () { echo "use="$@; };
-        provide () { echo "provide="$@; };
-        before () { echo "before="$@; };
-        after () { echo "after="$@; };
-        depend () { echo "need=mount/local"; };
-
-        if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
-        source ${script-path};
-
-        depend;'
-       execute='
-        ewarn () { echo "feedback|warning|"$@; };
-        eerror () { echo "feedback|warning|"$@; };
-        ebegin () { echo "feedback|notice|"$@; };
-        einfo () { echo "feedback|notice|"$@; };
-        eend () {
-         if test $1 = 0; then
-          echo "feedback|success|$2";
-         else
-          echo "feedback|failure|$2";
-         fi; };
-        if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
-        source ${script-path};
-        ${action};' />
-     </gentoo>
     </distribution>
 <!-- in case you wish to use init.d scripts, use this:
      NOTE: this does NOT work with gentoo's init.d scripts! -->
@@ -247,17 +207,6 @@
    <launchd />
    <bsd /> -->
   </compatibility>
-
-  <secondary>
-   <!-- sh-imports for gentoo systems -->
-
-   <if file-exists="/etc/gentoo-release">
-    <file-sh id="/etc/conf.d/hostname" configuration-network-hostname="HOSTNAME:s" />
-    <file-sh id="/etc/conf.d/keymaps" configuration-peripherals-keyboard="KEYMAP:layout" />
-<!-- this does not (yet) work as expected:
-    <file-sh id="/etc/conf.d/clock" configuration-program-options-hwclock="CLOCK:s" /> -->
-   </if>
-  </secondary>
 
 <!-- mount settings -->
   <storage>
