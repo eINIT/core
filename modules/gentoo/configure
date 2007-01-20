@@ -1,6 +1,6 @@
 #!/bin/sh
 # -----------------
-# einit configure script
+# einit module-configure script
 # -----------------
 # tiny configure script... i might consider adding more on this some other time...
 # (i'm just trying to make sure I don't violate any licenses by specifically not using any non-LGPL GPL tools)
@@ -28,8 +28,6 @@
 # -----------------
 
 INCLUDEPATH="/usr/local/include"
-INTERNALMODULES="einit-config-xml-expat"
-EXTERNALMODULES=""
 
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
@@ -43,19 +41,9 @@ fi
 # this is on by default for now
 PMODULES="compatibility configuration"
 
-TREETYPE="linear"
-SETTYPE="lowmem"
-
-
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
-	if test "$short" = "--internal-modules"; then
-		echo -n " INTERNAL";
-		INTERNALMODULES=${param#*=};
-	elif test "$short" = "--external-modules"; then
-		echo -n " EXTERNAL";
-		EXTERNALMODULES=${param#*=};
 	elif test "$short" = "--prefix"; then
 		echo -n " PREFIX";
 		PREFIX=${param#*=};
@@ -132,8 +120,6 @@ Options:
  --use-posix-regex      use posix.2 regular expressions
  --pthread-wait-bug     some pthreads implementations don't allow all threads
                         in one process to wait on other processes' children
- --internal-modules     the modules to compile-in
- --external-modules     the modules to compile as loadable .so-files
  --tree-type=           define the type of tree-structures einit should use.
  --debug                will #define DEBUG.
  --static               build with static libs
@@ -200,19 +186,6 @@ fi
 
 echo "finding absolute include directory..."
 INCLUDE="-I`pwd`/src/include ${INCLUDE}";
-echo -n "searching for expat.h..."
-EXPAT=`find -d ${INCLUDEPATH} -iname expat.h 2>/dev/null`
-if test -n {EXPAT}; then
-	for x in ${EXPAT}; do
-		x=${x%/*};
-		echo -n " ${x}";
-		INCLUDE="${INCLUDE} -I${x}";
-	done;
-	echo "";
-else
-	echo "not found";
-	echo "expat is currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or go to http://expat.sf.net/.";
-fi
 
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
@@ -268,8 +241,6 @@ INCLUDE = $INCLUDE
 XDYNAMIC = $XDYNAMIC
 BUILDNUMBER = $BUILDNUMBER
 ISSVN = $ISSVN
-TREETYPE = ${TREETYPE}
-SETTYPE = ${SETTYPE}
 
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS
@@ -281,25 +252,6 @@ LLD = \${CC} \${LDFLAGS} $LLD
 XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA" > config.mk
-
-echo "creating module-configuration.c"
-echo "/* created by the configure-script, you shouldn't modify this */
-
-#ifndef _EINIT_MODULES_CONFIGURATION_H
-#define _EINIT_MODULES_CONFIGURATION_H
-
-" > src/include/einit-modules/configuration.h
-
-if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
- echo "#define EINIT_MODULES_XML_EXPAT 'y'" >> src/include/einit-modules/configuration.h;
-elif test -n "`echo ${EXTERNALMODULES}|grep einit-config-xml-expat`"; then
- echo "#define EINIT_MODULES_XML_EXPAT 'm'" >> src/include/einit-modules/configuration.h;
-else
- echo "#define EINIT_MODULES_XML_EXPAT 'n'" >> src/include/einit-modules/configuration.h;
-fi;
-
-echo "#endif
-" >> src/include/einit-modules/configuration.h
 
 if test -e src/einit; then
 	echo -n "cleaning the environment... "
