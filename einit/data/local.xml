@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <einit>
 <!-- you will need to modify this file -->
-<!-- <core>
-  <commands>
-   <include>
-    <directory s="local" />
-   </include>
-  </commands>
- </core> -->
-
  <configuration>
   <system>
    <swap device="/dev/sdb3" affinity="0" />

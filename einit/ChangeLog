@@ -1,6 +1,7 @@
 2007/01/21: mdeininger
  * split experimental modules from the main source tree
  * split out less useful sysv compatibility modules
+ * configuration file cleanups
 
 2007/01/20: mdeininger
  * split set functions from utility.[ch]
