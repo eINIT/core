@@ -62,10 +62,6 @@ einit-external.so: einit-external.c
 	${CCL} -c einit-external.c
 	${LLD} einit-external.o -o einit-external.so
 
-einit-network.so: einit-network.c
-	${CCL} -c einit-network.c
-	${LLD} einit-network.o -o einit-network.so
-
 einit-process.so: einit-process.c
 	${CCL} -c einit-process.c
 	${LLD} einit-process.o -o einit-process.so

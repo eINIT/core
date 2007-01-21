@@ -1,3 +1,6 @@
+2007/01/21: mdeininger
+ * split experimental modules from the main source tree
+
 2007/01/20: mdeininger
  * split set functions from utility.[ch]
  * split gentoo-only modules from the main source tree

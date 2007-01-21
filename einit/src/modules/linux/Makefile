@@ -24,10 +24,6 @@ linux-mount.so: linux-mount.c
 	${CCL} -c linux-mount.c
 	${LLD} linux-mount.o -o linux-mount.so
 
-linux-network.so: linux-network.c
-	${CCL} -c linux-network.c
-	${LLD} linux-network.o -o linux-network.so
-
 linux-process.so: linux-process.c
 	${CCL} -c linux-process.c
 	${LLD} linux-process.o -o linux-process.so
