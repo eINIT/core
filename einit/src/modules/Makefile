@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-network.so einit-process.so einit-exec.so einit-external.so einit-parse-sh.so einit-feedback-visual-fbsplash.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-process.so einit-exec.so einit-external.so einit-parse-sh.so einit-feedback-visual-fbsplash.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -24,7 +24,6 @@ install: all
 	${INSTALL} ${SOIPARAM} einit-hostname.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-mount.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-process.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} einit-network.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-exec.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-external.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-parse-sh.so ${DESTDIR}/${MODDIR}
