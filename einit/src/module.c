@@ -177,10 +177,15 @@ int mod_scanmodules ( void ) {
 //   printf ("checking for self-identifier in module %s.\n", tmp);
    modinfo = (struct smodule *)dlsym (sohandle, "self");
    if (modinfo != NULL) {
-    struct lmodule *new = mod_add (sohandle, modinfo);
-    if (new) {
-//     fprintf (stderr, "einit-module-loader: module added: %s\n", tmp);
-     new->source = estrdup(tmp);
+    if (modinfo->eibuild == BUILDNUMBER) {
+     struct lmodule *new = mod_add (sohandle, modinfo);
+     if (new) {
+//      fprintf (stderr, "einit-module-loader: module added: %s\n", tmp);
+      new->source = estrdup(tmp);
+     }
+    } else {
+     fprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, modinfo->eibuild);
+     dlclose (sohandle);
     }
    } else
     dlclose (sohandle);

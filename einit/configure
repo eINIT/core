@@ -274,15 +274,15 @@ SETTYPE = ${SETTYPE}
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
-CCC = \${CC} \${INCLUDE} \${CFLAGS} -DBUILDNUMBER=\"\\\"\${BUILDNUMBER}\\\"\" -DISSVN=\${ISSVN}
-CCL = $CCL -DBUILDNUMBER=\"\\\"\${BUILDNUMBER}\\\"\" -DISSVN=\${ISSVN}
+CCC = \${CC} \${INCLUDE} \${CFLAGS}
+CCL = $CCL
 CLD = \${CC} \${LDFLAGS}
 LLD = \${CC} \${LDFLAGS} $LLD
 XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA" > config.mk
 
-echo "creating module-configuration.c"
+echo "creating module-configuration.h"
 echo "/* created by the configure-script, you shouldn't modify this */
 
 #ifndef _EINIT_MODULES_CONFIGURATION_H
@@ -300,6 +300,26 @@ fi;
 
 echo "#endif
 " >> src/include/einit-modules/configuration.h
+
+echo "creating configuration.h"
+echo "/* created by the configure-script, you shouldn't modify this */
+
+#ifndef _EINIT_CONFIGURATION_H
+#define _EINIT_CONFIGURATION_H
+
+#define BUILDNUMBER ${BUILDNUMBER}
+#define ISSVN ${ISSVN}
+
+" > src/include/einit/configuration.h
+
+if test "${ISSVN}" = "1"; then
+ echo "#define EINIT_VERSION_LITERAL_SUFFIX \"-svn-${BUILDNUMBER}\" " >> src/include/einit/configuration.h;
+else
+ echo "#define EINIT_VERSION_LITERAL_SUFFIX \"#${BUILDNUMBER}\" " >> src/include/einit/configuration.h;
+fi;
+
+echo "#endif
+" >> src/include/einit/configuration.h
 
 if test -e src/einit; then
 	echo -n "cleaning the environment... "

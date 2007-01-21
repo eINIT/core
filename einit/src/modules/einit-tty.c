@@ -78,18 +78,19 @@ struct ttyst {
 char * provides[] = {"tty", NULL};
 char * requires[] = {"mount/system", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= 0,
-	.options	= 0,
-	.name		= "TTY-Configuration",
-	.rid		= "einit-tty",
-    .si           = {
-        .provides = provides,
-        .requires = requires,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "TTY-Configuration",
+ .rid       = "einit-tty",
+ .si        = {
+  .provides = provides,
+  .requires = requires,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 struct ttyst *ttys = NULL;

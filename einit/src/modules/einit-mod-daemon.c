@@ -66,18 +66,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= EINIT_MOD_LOADER,
-	.options	= 0,
-	.name		= "daemon-pseudo-module support",
-	.rid		= "einit-mod-daemon",
-    .si           = {
-        .provides = NULL,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = EINIT_MOD_LOADER,
+ .options   = 0,
+ .name      = "daemon-pseudo-module support",
+ .rid       = "einit-mod-daemon",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 

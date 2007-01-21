@@ -160,8 +160,9 @@ struct service_information {
  * The static module definition that is kept in the module's .so-file.
 */
 struct smodule {
- int eiversion;         /*!< The version of eINIT that the module was compiled with. */
- int version;           /*!< The module's version; this is currently ignored by eINIT. */
+ uint32_t eiversion;    /*!< The API version of eINIT that the module was compiled with. */
+ uint32_t eibuild;      /*!< The build number of eINIT that the module was compiled with. */
+ uint32_t version;      /*!< The module's version; this is currently ignored by eINIT. */
  int mode;              /*!< The module type; should be EINIT_MOD_EXEC for most modules. */
  uint32_t options;      /*!< Module options; this is currently ignored. */
  char *name;            /*!< The real name of the module. */

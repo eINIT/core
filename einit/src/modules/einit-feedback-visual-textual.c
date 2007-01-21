@@ -79,6 +79,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char * provides[] = {"feedback-visual", "feedback-textual", NULL};
 const struct smodule self = {
  .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = EINIT_MOD_FEEDBACK,
  .options   = 0,

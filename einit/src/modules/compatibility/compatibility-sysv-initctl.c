@@ -80,18 +80,19 @@ struct init_command {
 char * provides[] = {"initctl", NULL};
 char * requires[] = {"mount/system", NULL};
 const struct smodule self = {
-    .eiversion    = EINIT_VERSION,
-    .version      = 1,
-    .mode         = 0,
-    .options      = 0,
-    .name         = "System-V Compatibility: initctl",
-    .rid          = "compatibility-sysv-initctl",
-    .si           = {
-        .provides = provides,
-        .requires = requires,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "System-V Compatibility: initctl",
+ .rid       = "compatibility-sysv-initctl",
+ .si        = {
+  .provides = provides,
+  .requires = requires,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 pthread_t initctl_thread;

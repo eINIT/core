@@ -2,6 +2,8 @@
  * split experimental modules from the main source tree
  * split out less useful sysv compatibility modules
  * configuration file cleanups
+ * added module build-number checks
+ * added different system for getting the build-number straight in modules
 
 2007/01/20: mdeininger
  * split set functions from utility.[ch]

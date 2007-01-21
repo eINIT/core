@@ -75,18 +75,19 @@ struct mexecinfo {
 };
 
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= EINIT_MOD_LOADER,
-	.options	= 0,
-	.name		= "shell-command-pseudo-module support",
-	.rid		= "einit-mod-exec",
-    .si           = {
-        .provides = NULL,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = EINIT_MOD_LOADER,
+ .options   = 0,
+ .name      = "shell-command-pseudo-module support",
+ .rid       = "einit-mod-exec",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 int scanmodules (struct lmodule *);

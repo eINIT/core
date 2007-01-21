@@ -58,18 +58,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char *provides[] = {"feedback-aural", NULL};
 char *requires[] = {"audio", "mount/critical", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= EINIT_MOD_FEEDBACK,
-	.options	= 0,
-	.name		= "aural/tts feedback module",
-	.rid		= "einit-feedback-aural",
-    .si           = {
-        .provides = provides,
-        .requires = requires,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = EINIT_MOD_FEEDBACK,
+ .options   = 0,
+ .name      = "aural/tts feedback module",
+ .rid       = "einit-feedback-aural",
+ .si        = {
+  .provides = provides,
+  .requires = requires,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 struct lmodule *self_l = NULL;

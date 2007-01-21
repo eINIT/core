@@ -61,18 +61,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char * provides[] = {"utmp", NULL};
 char * requires[] = {"mount/critical", NULL};
 const struct smodule self = {
-    .eiversion    = EINIT_VERSION,
-    .version      = 1,
-    .mode         = 0,
-    .options      = 0,
-    .name         = "System-V Compatibility: {U|W}TMP",
-    .rid          = "compatibility-sysv-utmp",
-    .si           = {
-        .provides = provides,
-        .requires = requires,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "System-V Compatibility: {U|W}TMP",
+ .rid       = "compatibility-sysv-utmp",
+ .si        = {
+  .provides = provides,
+  .requires = requires,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 int  enable  (void *, struct einit_event *);

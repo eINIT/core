@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/utsname.h>
 #include <einit/tree.h>
 
+#include <einit/configuration.h>
+
 #define BSDLICENSE "All rights reserved.\n"\
  "\n"\
  "Redistribution and use in source and binary forms, with or without modification,\n"\
@@ -73,11 +75,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EINIT_VERSION 1
 #define EINIT_VERSION_LITERAL_NUMBER "0.15.2"
-#if ( ISSVN == 1 )
-#define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER "-svn-" BUILDNUMBER
-#else
-#define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER
-#endif
+#define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER EINIT_VERSION_LITERAL_SUFFIX
 
 #define EI_NODETYPE_BASENODE 1
 #define EI_NODETYPE_CONFIG 2

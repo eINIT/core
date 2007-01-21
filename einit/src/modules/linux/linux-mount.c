@@ -130,18 +130,19 @@ struct ext2_super_block {
 /* module definitions */
 char *provides[] = {"mount", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= 0,
-	.options	= 0,
-	.name		= "Linux-specific Filesystem-Mounter Functions",
-	.rid		= "linux-mount",
-    .si           = {
-        .provides = provides,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Linux-specific Filesystem-Mounter Functions",
+ .rid       = "linux-mount",
+ .si        = {
+  .provides = provides,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 /* function declarations */
