@@ -1,4 +1,4 @@
-include ../../../config.mk
+include ../../config.mk
 include depend.mk
 
 all: linux-network.so

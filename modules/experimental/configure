@@ -38,8 +38,7 @@ else
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
-# this is on by default for now
-PMODULES="compatibility configuration"
+PMODULES=""
 
 echo -n "checking options [";
 for param in $@; do
