@@ -7,7 +7,7 @@ inherit subversion
 ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/modules/sysv"
 SRC_URI=""
 
-DESCRIPTION="Experimental modules for eINIT"
+DESCRIPTION="Less useful sysv-only modules for eINIT"
 HOMEPAGE="http://einit.sourceforge.net/"
 
 LICENSE="BSD"
