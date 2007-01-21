@@ -94,29 +94,7 @@
   <compatibility>
 <!-- utmp/wtmp management: you'll need to enable the utmp service
      BUG: not implemented, yet -->
-   <sysv utmp="yes" wtmp="yes">
-<!-- in case you wish to use init.d scripts, use this:
-     NOTE: this does NOT work with gentoo's init.d scripts! -->
-<!--    <init.d path="/etc/init.d/" process-rc.d="yes" /> -->
-
-<!-- enable the initctl service to make einit try and emulate standard sysv
-     initctl commands, i.e. make the shutdown/reboot/halt commands work - this
-     node is set by default, but the service is not. -->
-<!--    <initctl s="/dev/initctl" i="0600" /> -->
-   </sysv>
-
-<!-- not yet implemented
-   <initng>
-    <i-files s="/etc/initng" />
-    <transformations>
-    </transformations>
-   </initng>
-
-   <upstart />
-   <jinit />
-   <cinit />
-   <launchd />
-   <bsd /> -->
+   <sysv utmp="yes" wtmp="yes" />
   </compatibility>
  </configuration>
 

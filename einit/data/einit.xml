@@ -12,6 +12,11 @@
    <shutdown-function-suffixes s="linux" />
   </scheduler>
 
+  <commands-include>
+   <directory s="local" />
+   <directory s="modules" />
+  </commands-include>
+
   <if match="core-mode:sandbox">
    <settings>
     <module-path s="lib/einit" />
@@ -26,12 +31,6 @@
     <commands-include-file s="local.xml" />
    </else>
   </if>
-  <commands>
-   <include>
-    <directory s="local" />
-    <directory s="modules" />
-   </include>
-  </commands>
 
 <!--  <mode s="init" /> -->
  </core>
@@ -174,15 +173,7 @@
 <!-- not much of this is implemented, yet -->
   <compatibility>
    <sysv utmp="yes" wtmp="yes">
-<!--    <simulate-runlevel before="0" now="3" /> -->
-<!--    <simulate-runlevel before="0" now="e" /> -->
     <simulate-runlevel now="3" />
-    <distribution s="auto">
-    </distribution>
-<!-- in case you wish to use init.d scripts, use this:
-     NOTE: this does NOT work with gentoo's init.d scripts! -->
-<!--    <init.d path="/etc/init.d/" process-rc.d="yes" /> -->
-
     <if match="core-mode:sandbox">
      <initctl s="etc/.initctl" i="0600" />
      <else>
