@@ -7,7 +7,7 @@ SRC_URI="mirror://sourceforge/einit/${P}.tar.bz2"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~x86 ~amd64 ~ppc ~arm"
-IUSE="doc efl"
+IUSE="doc efl static"
 
 RDEPEND="dev-libs/expat
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
