@@ -1,30 +1,21 @@
-# Copyright 1999-2006 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: $
-
-inherit subversion
-
-ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/${PN}"
-SRC_URI=""
+inherit eutils toolchain-funcs flag-o-matic
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.sourceforge.net/"
+SRC_URI="mirror://sourceforge/einit/${P}.tar.bz2"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="-*"
-IUSE="doc efl static"
+KEYWORDS="~x86 ~amd64 ~ppc ~arm"
+IUSE="doc efl"
 
 RDEPEND="dev-libs/expat
-	doc? ( app-text/docbook-sgml app-doc/doxygen )
-	efl? ( media-libs/edje x11-libs/evas x11-libs/ecore )"
+	doc? ( app-text/docbook-sgml app-doc/doxygen )"
 DEPEND="${RDEPEND}"
-
-S=${WORKDIR}/${PN}
+PDEPEND=""
 
 src_unpack() {
-	subversion_src_unpack
-	cd "${S}"
+	unpack ${P}.tar.bz2
 }
 
 src_compile() {
@@ -33,12 +24,12 @@ src_compile() {
 	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=${ROOT}"
 
 	if use efl ; then
-		local myconf="${myconf} --enable-efl"
+		myconf="${myconf} --enable-efl"
 	fi
 	if use static ; then
-		local myconf="${myconf} --static"
+		myconf="${myconf} --static"
 	fi
-	echo ${myconf}
+
 	econf ${myconf} || die
 	emake || die
 
