@@ -84,44 +84,6 @@
     <shutdown-failure-timeout i="15" />
     <broadcast-constraints s="/dev/(tty[1-9][12]?|pts/.*)" />
     <reset-shutdown-broadcast-messages b="true" />
-
-    <fbsplash>
-     <splash-functions s="/sbin/splash-functions.sh" />
-     <scriptlets init="
-                  source ${splash-functions-file};
-                  RUNLEVEL='S';
-                  SOFTLEVEL='${new-mode}';
-
-                  splash rc_init sysinit;
-                  splash rc_init boot;"
-
-                 action="
-                  source ${splash-functions-file};
-                  RUNLEVEL='3';
-                  SOFTLEVEL='${new-mode}';
-
-                  splash_svclist_get() {
-                   if [[ '$1' == 'start' ]]; then
-                    echo ${all-services};
-                   fi
-                  };
-
-                  splash_svclist_update() {
-                   echo ${active-services};
-                  };
-
-                  splash_setup;
-                  ${action};"
-
-                 quit="
-                  source ${splash-functions-file};
-                  RUNLEVEL='3';
-                  SOFTLEVEL='${new-mode}';
-
-                  splash rc_exit;"/>
-     <ttys s="1 2 3 4 5 6" />
-     <theme s="gentoo" />
-    </fbsplash>
    </visual>
 
    <visual-edje>
