@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-process.so einit-exec.so einit-external.so einit-parse-sh.so einit-feedback-visual-fbsplash.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-process.so einit-exec.so einit-external.so einit-parse-sh.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -15,7 +15,6 @@ clean:
 install: all
 	${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-feedback-visual-textual.so ${DESTDIR}/${MODDIR}
-	${INSTALL} ${SOIPARAM} einit-feedback-visual-fbsplash.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-feedback-aural.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-mod-exec.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-tty.so ${DESTDIR}/${MODDIR}
@@ -32,10 +31,6 @@ install: all
 einit-feedback-visual-textual.so: einit-feedback-visual-textual.c
 	${CCL} -c einit-feedback-visual-textual.c
 	${LLD} einit-feedback-visual-textual.o -o einit-feedback-visual-textual.so
-
-einit-feedback-visual-fbsplash.so: einit-feedback-visual-fbsplash.c
-	${CCL} -c einit-feedback-visual-fbsplash.c
-	${LLD} einit-feedback-visual-fbsplash.o -o einit-feedback-visual-fbsplash.so
 
 einit-feedback-aural.so: einit-feedback-aural.c
 	${CCL} -c einit-feedback-aural.c
