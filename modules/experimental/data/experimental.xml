@@ -40,7 +40,7 @@
      <ttys s="1 2 3 4 5 6" />
      <theme s="gentoo" />
     </fbsplash>
-   </feedback>
-  </visual>
+   </visual>
+  </feedback>
  </configuration>
 </einit>
