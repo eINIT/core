@@ -307,7 +307,7 @@ void einit_event_handler (struct einit_event *ev) {
   init_d_exec_scriptlet = cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/execute", NULL);
 
   char *cs = cfg_getstring("configuration-compatibility-sysv-distribution", NULL);
-  if (is_gentoo_system || (cs && (!strcmp("gentoo", cs)) || ((!strcmp("auto", cs) && !stat("/etc/gentoo-release", &st))))) {
+  if (is_gentoo_system || (cs && ((!strcmp("gentoo", cs)) || ((!strcmp("auto", cs) && !stat("/etc/gentoo-release", &st)))))) {
    if (!is_gentoo_system) {
     is_gentoo_system = 1;
     fputs (" >> gentoo system detected\n", stderr);
