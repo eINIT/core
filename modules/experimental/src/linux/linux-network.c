@@ -60,18 +60,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char * provides[] = {"linux-network", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= 0,
-	.options	= 0,
-	.name		= "Network Configuration (Linux-specific Parts)",
-	.rid		= "linux-network-experimental",
-    .si           = {
-        .provides = provides,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Network Configuration (Linux-specific Parts)",
+ .rid       = "linux-network-experimental",
+ .si        = {
+  .provides = provides,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 void find_network_interfaces_proc (struct network_control_block *cb) {

@@ -61,13 +61,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char *provides[] = {"feedback-visual", "feedback-graphical", NULL};
 const struct smodule self = {
- .eiversion	= EINIT_VERSION,
- .version	= 1,
- .mode		= EINIT_MOD_FEEDBACK,
- .options	= 0,
- .name		= "visual/fbsplash-based feedback module",
- .rid		= "einit-feedback-visual-fbsplash",
- .si           = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = EINIT_MOD_FEEDBACK,
+ .options   = 0,
+ .name      = "visual/fbsplash-based feedback module",
+ .rid       = "einit-feedback-visual-fbsplash",
+ .si        = {
   .provides = provides,
   .requires = NULL,
   .after    = NULL,

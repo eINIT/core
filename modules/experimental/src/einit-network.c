@@ -56,18 +56,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char * provides[] = {"network/experimental", NULL};
 char * requires[] = {"mount/critical", NULL};
 const struct smodule self = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= 0,
-	.options	= 0,
-	.name		= "Network Configuration",
-	.rid		= "einit-network-experimental",
-    .si           = {
-        .provides = provides,
-        .requires = requires,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Network Configuration",
+ .rid       = "einit-network-experimental",
+ .si        = {
+  .provides = provides,
+  .requires = requires,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 struct network_control_block mncb = {

@@ -60,18 +60,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 const struct smodule self = {
-    .eiversion    = EINIT_VERSION,
-    .version      = 1,
-    .mode         = 0,
-    .options      = 0,
-    .name         = "Secondary Configuration Module: SH-Style Files",
-    .rid          = "configuration-secondary-sh-style",
-    .si           = {
-        .provides = NULL,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Secondary Configuration Module: SH-Style Files",
+ .rid       = "configuration-secondary-sh-style",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 void einit_event_handler (struct einit_event *);
