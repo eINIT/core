@@ -142,6 +142,7 @@ pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t feedback_fdsmutex = PTHREAD_MUTEX_INITIALIZER;
 
 char enableansicodes = 1;
+char show_progress = 1;
 uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
 void ipc_event_handler (struct einit_event *ev) {
@@ -156,6 +157,10 @@ void ipc_event_handler (struct einit_event *ev) {
   }
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
    fdputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", ev->integer);
+   ev->task++;
+  }
+  if (!cfg_getnode("configuration-feedback-visual-calculate-switch-status", NULL)) {
+   fdputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", ev->integer);
    ev->task++;
   }
 
@@ -206,6 +211,9 @@ int enable (void *pa, struct einit_event *status) {
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
+
+ if (node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL))
+  show_progress = node->flag;
 
  if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
   shutdownfailuretimeout = node->value;
@@ -793,7 +801,7 @@ void einit_event_handler(struct einit_event *ev) {
   if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
    shutdownfailuretimeout = node->value;
  } else if (ev->type == EVE_MODULE_UPDATE) {
-  if (!(ev->status & STATUS_WORKING)) {
+  if (show_progress && !(ev->status & STATUS_WORKING)) {
    if (plans) {
     uint32_t i = 0;
     pthread_mutex_lock (&plansmutex);

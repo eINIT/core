@@ -300,11 +300,11 @@ void sched_ipc_event_handler(struct einit_event *event) {
   char **argv = (char **)event->set;
   int argc = setcount ((void **)argv);
   if (!argv) {
-   bitch (BTCH_ERRNO);
+   perror ("sched_ipc_event_handler: counting argv");
    return;
   } else if (!argv[0]) {
    free (argv);
-   bitch (BTCH_ERRNO);
+   perror ("sched_ipc_event_handler: basic sanity check");
    return;
   }
 
@@ -341,9 +341,9 @@ void sched_ipc_event_handler(struct einit_event *event) {
 
      if (gmode == EINIT_GMODE_SANDBOX) {
       notice (1, ">> scheduler: cleaning up");
- //     cleanup ();
-      puts (" >> sandbox mode, now exiting");
-      exit (EXIT_SUCCESS);
+//      cleanup ();
+//      puts (" >> sandbox mode, now exiting");
+//      exit (EXIT_SUCCESS);
      }
 
      gstatus = EINIT_EXITING;
@@ -403,7 +403,13 @@ void sched_ipc_event_handler(struct einit_event *event) {
     evstaticdestroy(ee);
    }
   }
-  bitch (BTCH_ERRNO);
+
+  if (errno) {
+#ifdef DEBUG
+   perror ("sched_ipc_event_handler: cleanup sanity check");
+#endif
+   errno = 0;
+  }
  }
 }
 
@@ -429,6 +435,7 @@ void sched_core_event_handler(struct einit_event *event) {
      evstaticdestroy(ee);
     }
    }
+   return;
   case EVE_CHANGE_SERVICE_STATUS:
    if (!event->set) return;
    else {
@@ -448,6 +455,7 @@ void sched_core_event_handler(struct einit_event *event) {
      evstaticdestroy(ee);
     }
    }
+   return;
  }
 }
 

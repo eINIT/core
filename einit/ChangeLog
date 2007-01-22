@@ -1,3 +1,10 @@
+2007/01/22: mdeininger
+ * wonder what's with umount lately...
+ * hopefully fixed "Invalid Argument" error with mode-switches
+ * problems with a... kernel panic on shutdown...?
+ * slightly improved verbosity
+ * verbose output on tty10 and progress indicator are now disabled by default
+
 2007/01/21: mdeininger
  * split experimental modules from the main source tree
  * split out less useful sysv compatibility modules

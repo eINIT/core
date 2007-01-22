@@ -79,11 +79,15 @@
 
   <feedback>
    <visual>
-    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" />
+    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
+<!-- better verbosity on tty10: -->
+<!--    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" /> -->
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="3" />
     <broadcast-constraints s="/dev/(tty[1-9][12]?|pts/.*)" />
     <reset-shutdown-broadcast-messages b="true" />
+<!-- set to true to get feedback on the current switch's status -->
+    <calculate-switch-status b="false" />
    </visual>
 
    <visual-edje>

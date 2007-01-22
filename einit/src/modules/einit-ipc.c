@@ -39,7 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <unistd.h>
-#include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
@@ -172,7 +171,7 @@ int ipc_read (int *nfd) {
 
  while (br = read (*nfd, buf, BUFFERSIZE)) {
   if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
-   bitch (BTCH_ERRNO);
+   perror ("einit-ipc: reading from socket");
    break;
   }
   for (i = 0; i < br; i++) {
@@ -208,7 +207,7 @@ void * ipc_wait (void *unused_parameter) {
  mode_t socketmode = (node && node->value ? node->value : 0600);
  struct sockaddr_un saddr;
  if (sock == -1) {
-  bitch (BTCH_ERRNO);
+  perror ("einit-ipc: initialising socket");
   return NULL;
  }
 
@@ -219,18 +218,18 @@ void * ipc_wait (void *unused_parameter) {
   unlink (saddr.sun_path);
   if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
    close (sock);
-   bitch (BTCH_ERRNO);
+   perror ("einit-ipc: binding socket");
    return NULL;
   }
  }
 
  if (chmod (saddr.sun_path, socketmode)) {
-  bitch (BTCH_ERRNO);
+  perror ("einit-ipc: chmod on socket");
  }
 
  if (listen (sock, 5)) {
   close (sock);
-  bitch (BTCH_ERRNO);
+  perror ("einit-ipc: listening on socket");
   return NULL;
  }
 
@@ -248,10 +247,10 @@ void * ipc_wait (void *unused_parameter) {
  }
 
  if (nfd == -1)
-  bitch (BTCH_ERRNO);
+  perror ("einit-ipc: accepting connections");
 
  close (sock);
- if (unlink (saddr.sun_path)) bitch (BTCH_ERRNO);
+ if (unlink (saddr.sun_path)) perror ("einit-ipc: removing socket");
  return NULL;
 }
 

@@ -211,6 +211,27 @@ void einit_event_handler (struct einit_event *);
 
 char *generate_legacy_mtab (struct mount_control_block *);
 
+/* macro definitions */
+#define update_real_mtab() {\
+ if (mcb.options & OPTION_MAINTAIN_MTAB) {\
+  char *tmpmtab = generate_legacy_mtab (&mcb);\
+\
+  if (tmpmtab) {\
+   unlink (mcb.mtab_file);\
+\
+   FILE *mtabfile = fopen (mcb.mtab_file, "w");\
+\
+   if (mtabfile) {\
+    fputs (tmpmtab, mtabfile);\
+    fclose (mtabfile);\
+   }\
+\
+   free (tmpmtab);\
+  }\
+ }\
+}
+
+
 /* function definitions */
 
 /* the actual module */
@@ -1050,22 +1071,6 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
     fse->status |= BF_STATUS_MOUNTED;
 
-
-    if (mcb.options & OPTION_MAINTAIN_MTAB) {
-     char *tmpmtab = generate_legacy_mtab (&mcb);
-
-     if (tmpmtab) {
-      FILE *mtabfile = fopen (mcb.mtab_file, "w");
-
-      if (mtabfile) {
-       fputs (tmpmtab, mtabfile);
-       fclose (mtabfile);
-      }
-
-      free (tmpmtab);
-     }
-    }
-
     return STATUS_OK;
    }
 
@@ -1101,39 +1106,43 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   while (1) {
    retry++;
 
-   if (gmode != EINIT_GMODE_SANDBOX) {
+//   if (gmode != EINIT_GMODE_SANDBOX) {
 #ifdef DARWIN
-    if (unmount (mountpoint, 0))
+    if (unmount (mountpoint, 0) == -1)
 #else
-    if (umount (mountpoint))
+    if (umount (mountpoint) == -1)
 #endif
     {
      struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
                           *pcl[2] = { &pcc, NULL };
 
      snprintf (textbuffer, 1024, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
+     errno = 0;
      status->string = textbuffer;
      status_update (status);
 
      pekill (pcl);
 #ifdef LINUX
      if (retry >= 2) {
-      if (umount2 (mountpoint, MNT_FORCE)) {
+      if (umount2 (mountpoint, MNT_FORCE) == -1) {
        snprintf (textbuffer, 1024, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
+       errno = 0;
        status->string = textbuffer;
        status_update (status);
       }
 
       if (fse) {
        if (retry >= 3) {
-        if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL)) {
+        if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
          snprintf (textbuffer, 1024, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+         errno = 0;
          status->string = textbuffer;
          status_update (status);
          goto umount_fail;
         } else {
-         if (umount2 (mountpoint, MNT_DETACH)) {
+         if (umount2 (mountpoint, MNT_DETACH) == -1) {
           snprintf (textbuffer, 1024, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
+          errno = 0;
           status->string = textbuffer;
           status_update (status);
           goto umount_ok;
@@ -1156,17 +1165,17 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      goto umount_fail;
 #endif
     }
-   } else {
+/*   } else {
     goto umount_ok;
-   }
+   }*/
 
    umount_fail:
 
    status->flag++;
-   if (retry >= 3) {
-    snprintf (textbuffer, 1024, "%s: attempt %i: failed, not retrying.", mountpoint, retry);
+   if (retry > 3) {
+/*    snprintf (textbuffer, 1024, "%s: attempt %i: failed, not retrying.", mountpoint, retry);
     status->string = textbuffer;
-    status_update (status);
+    status_update (status);*/
     return STATUS_FAIL;
    }
    sleep (1);
@@ -1184,21 +1193,6 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   eem.string = mountpoint;
   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
   evstaticdestroy (eem);
-
-  if (mcb.options & OPTION_MAINTAIN_MTAB) {
-   char *tmpmtab = generate_legacy_mtab (&mcb);
-
-   if (tmpmtab) {
-    FILE *mtabfile = fopen (mcb.mtab_file, "w");
-
-    if (mtabfile) {
-     fputs (tmpmtab, mtabfile);
-     fclose (mtabfile);
-    }
-
-    free (tmpmtab);
-   }
-  }
 
   return STATUS_OK;
  }
@@ -1645,22 +1639,8 @@ int enable (enum mounttask p, struct einit_event *status) {
    }
 
    ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
-   if (mcb.options & OPTION_MAINTAIN_MTAB) {
-    char *tmpmtab = generate_legacy_mtab (&mcb);
-
-    if (tmpmtab) {
-     unlink ("/etc/mtab");
-
-     FILE *mtabfile = fopen (mcb.mtab_file, "w");
-
-     if (mtabfile) {
-      fputs (tmpmtab, mtabfile);
-      fclose (mtabfile);
-     }
-
-     free (tmpmtab);
-    }
-   }
+   unlink ("/etc/mtab");
+   update_real_mtab();
 
    return ret;
    break;
@@ -1723,6 +1703,8 @@ int enable (enum mounttask p, struct einit_event *status) {
 
 // scan for new modules after mounting all critical filesystems
 // if (p == MOUNT_CRITICAL) mod_scanmodules();
+
+ update_real_mtab();
 
  return STATUS_OK;
 }
@@ -1835,6 +1817,8 @@ int disable (enum mounttask p, struct einit_event *status) {
   free (acand);
   sc--;
  }
+
+ update_real_mtab();
 
  return STATUS_OK;
 }
