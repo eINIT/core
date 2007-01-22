@@ -275,6 +275,11 @@ int configure (struct lmodule *this) {
  if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
   fsck_command = estrdup(node->svalue);
 
+ if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
+  mcb.options |= OPTION_MAINTAIN_MTAB;
+  mcb.mtab_file = node->svalue;
+ }
+
  if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
   update (UPDATE_BLOCK_DEVICES);
   if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
