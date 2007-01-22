@@ -1131,7 +1131,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      pekill (pcl);
 #ifdef LINUX
      if (retry >= 2) {
-      if (umount2 (mountpoint, MNT_FORCE) == -1) {
+      if (umount2 (mountpoint, MNT_FORCE) != -1) {
+       goto umount_ok;
+      } else {
        snprintf (textbuffer, 1024, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
        errno = 0;
        status->string = textbuffer;
