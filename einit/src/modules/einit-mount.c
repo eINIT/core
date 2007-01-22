@@ -1113,11 +1113,13 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
 //   if (gmode != EINIT_GMODE_SANDBOX) {
 #ifdef DARWIN
-    if (unmount (mountpoint, 0) == -1)
+    if (unmount (mountpoint, 0) != -1)
 #else
-    if (umount (mountpoint) == -1)
+    if (umount (mountpoint) != -1)
 #endif
     {
+     goto umount_ok;
+    } else {
      struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
                           *pcl[2] = { &pcc, NULL };
 
