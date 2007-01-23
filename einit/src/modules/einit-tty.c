@@ -62,6 +62,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utmp.h>
 #include <fcntl.h>
 
+#ifdef LINUX
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+/* okay, i think i found the proper file now */
+#include <asm/ioctls.h>
+#include <linux/vt.h>
+#endif
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -300,6 +309,17 @@ int enable (void *pa, struct einit_event *status) {
 int disable (void *pa, struct einit_event *status) {
  struct ttyst *cur = ttys;
  pthread_mutex_lock (&ttys_mutex);
+#ifdef LINUX
+ uint32_t vtn = parse_number(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
+ int tfd = 0;
+ errno = 0;
+ if (tfd = open ("/dev/tty1", O_RDWR, 0))
+  ioctl (tfd, VT_ACTIVATE, vtn);
+ if (errno)
+  perror ("einit-tty: activate terminal");
+ if (tfd > 0) close (tfd);
+#endif
+
  while (cur) {
   cur->restart = 0;
   killpg (cur->pid, SIGHUP); // send a SIGHUP to the getty's process group

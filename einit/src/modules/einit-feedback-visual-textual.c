@@ -290,9 +290,9 @@ int enable (void *pa, struct einit_event *status) {
 
      ioctl(0, TIOCLINUX, &arg);
      if (errno)
-      perror ("einit-tty: redirecting kernel messages");
+      perror ("einit-feedback-visual-textual: redirecting kernel messages");
 #else
-     fputs ("einit-tty: kernel message redirection support currently only available on LINUX\n", stderr);
+     fputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
 #endif
     } else if (!strcmp (filenode->arbattrs[i], "activate-vt")) {
 #ifdef LINUX
@@ -302,10 +302,10 @@ int enable (void *pa, struct einit_event *status) {
      if (tfd = open ("/dev/tty1", O_RDWR, 0))
       ioctl (tfd, VT_ACTIVATE, vtn);
      if (errno)
-      perror ("einit-tty: activate terminal");
+      perror ("einit-feedback-visual-textual: activate terminal");
      if (tfd > 0) close (tfd);
 #else
-     fputs ("einit-tty: terminal activation support currently only available on LINUX\n", stderr);
+     fputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr);
 #endif
     }
   }

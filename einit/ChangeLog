@@ -1,3 +1,6 @@
+2007/01/23: mdeininger
+ * made einit-tty switch to feedback-vt when being disabled
+
 2007/01/22: mdeininger
  * wonder what's with umount lately...
  * hopefully fixed "Invalid Argument" error with mode-switches
