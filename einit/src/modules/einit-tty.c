@@ -310,7 +310,7 @@ int disable (void *pa, struct einit_event *status) {
  struct ttyst *cur = ttys;
  pthread_mutex_lock (&ttys_mutex);
 #ifdef LINUX
- uint32_t vtn = parse_number(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
+ uint32_t vtn = parse_integer(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
  int tfd = 0;
  errno = 0;
  if (tfd = open ("/dev/tty1", O_RDWR, 0))
