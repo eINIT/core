@@ -1,5 +1,6 @@
 2007/01/23: mdeininger
  * made einit-tty switch to feedback-vt when being disabled
+ * prepare/cleanup commands are now immune to the set user/group
 
 2007/01/22: mdeininger
  * wonder what's with umount lately...

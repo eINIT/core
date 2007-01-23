@@ -629,7 +629,8 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
  if (!shellcmd) return STATUS_FAIL;
 
  if (shellcmd->prepare) {
-  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
+//  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
+  if (pexec (shellcmd->prepare, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
  }
 
 // if ((status->task & MOD_ENABLE) && (!shellcmd || !shellcmd->command)) return STATUS_FAIL;
@@ -743,7 +744,8 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  }
 
  shellcmd->cb = NULL; if (shellcmd->cleanup) {
-  if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
+ // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
+  if (pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
  }
 
  return STATUS_OK;
