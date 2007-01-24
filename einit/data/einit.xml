@@ -435,7 +435,7 @@
     <shell-template id="template-shell-kern-module-loader"
      name="Kernel Modules (${system})"
      provides="kern-${system}"
-     requires="mount/system"
+     requires="mount/system:ipc"
      enable="
       for x in ${configuration_kernel_modules_${system}};
        do echo $x; modprobe $x;
