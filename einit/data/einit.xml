@@ -766,6 +766,17 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+     <shell id="shell-firestarter"
+      name="firestarter"
+      provides="firestarter"
+      requires="mount/critical:net-lo"
+      prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
+                firestarter --generate-scripts;
+               fi"
+      enable="firestarter --start"
+      disable="firestarter --stop"
+      restart="yes" />
+
      <daemon id="daemon-netplugd"
       name="netplugd -- network cable hotplug management daemon"
       provides="netplugd"
