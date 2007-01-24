@@ -766,6 +766,13 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+     <daemon id="daemon-netplugd"
+      name="netplugd -- network cable hotplug management daemon"
+      provides="netplugd"
+      requires="ipc"
+      command="netplugd -F"
+      restart="yes" />
+
      <shell id="shell-fbsplash"
       name="fbsplash"
       provides="fbsplash"
