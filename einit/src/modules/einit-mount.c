@@ -1320,7 +1320,9 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
   struct fstab_entry *node = cur->value;
 
   node->adevice = dset[1];
+#ifdef MS_RDONLY
   node->aflags = inset ((void**)dset, (void*)"ro", SET_TYPE_STRING) ? MS_RDONLY : 0;
+#endif
   node->afs = dset[2];
 
   node->status |= BF_STATUS_MOUNTED;
@@ -1331,7 +1333,9 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
   fse.device = dset[1];
   fse.adevice = dset[1];
   fse.mountpoint = dset[0];
+#ifdef MS_RDONLY
   fse.aflags = inset ((void**)dset, (void*)"ro", SET_TYPE_STRING) ? MS_RDONLY : 0;
+#endif
   fse.options = str2set (',', dset[3]);
   fse.afs = dset[2];
   fse.fs = dset[2];
@@ -1566,10 +1570,20 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
 
     if (tset)
      snprintf (tmp, 1024, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
-               fse->aflags & MS_RDONLY ? "ro" : "rw", tset);
+#ifdef MS_RDONLY
+               fse->aflags & MS_RDONLY
+#else
+               0
+#endif
+			   ? "ro" : "rw", tset);
     else
      snprintf (tmp, 1024, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
-               fse->aflags & MS_RDONLY ? "ro" : "rw");
+#ifdef MS_RDONLY
+               fse->aflags & MS_RDONLY
+#else
+               0
+#endif
+			   ? "ro" : "rw");
 
     ssize_t nlen = strlen(tmp);
 
