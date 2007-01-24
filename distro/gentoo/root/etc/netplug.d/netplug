@@ -17,6 +17,7 @@ then
     INITNG="yes"
     EINIT="no"
 elif grep -q einit /proc/1/cmdline
+then
     EXEC="/sbin/einit-control"
     INITNG="no"
     EINIT="yes"
