@@ -828,7 +828,7 @@
 
 <!-- super friendly gentoo module, works with modified etc/modules.d/ipw3945d -->
      <daemon id="daemon-ipw3945d"
-      name="ipw3945d"
+      name="ipw3945d - regulatory daemon"
       provides="ipw3945d"
       requires="mount/critical"
       group="ipw3945d"
