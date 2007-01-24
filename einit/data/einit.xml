@@ -289,7 +289,9 @@
      name="D-BUS system messagebus"
      provides="dbus"
      requires="mount/critical"
-     command="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; dbus-uuidgen --ensure; /usr/bin/dbus-daemon --system --nofork"
+     prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; dbus-uuidgen --ensure"
+     command="dbus-daemon --system --nofork"
+     cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
      restart="yes" />
 
 <!-- HALD -->
