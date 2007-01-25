@@ -408,7 +408,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
- char **cmd, **cmdsetdup, options = (status ? PEXEC_OPTION_NOPIPE : 0);
+ char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
  uint32_t cs = STATUS_OK;
 
  lookupuidgid (&uid, &gid, user, group);
@@ -548,6 +548,9 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    } else {
     perror ("pexec(): open pipe");
    }
+  } else {
+   status->string = "NOT piping, see stderr for program output";
+   status_update (status);
   }
 
   do {
