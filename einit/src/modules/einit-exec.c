@@ -272,7 +272,7 @@ char **__create_environment (char **environment, char **variables) {
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
  pid_t child;
  int pidstatus = 0;
- char **cmd, **cmdsetdup, options = (status ? PEXEC_OPTION_NOPIPE : 0);
+ char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
 
  lookupuidgid (&uid, &gid, user, group);
 
@@ -549,7 +549,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
     perror ("pexec(): open pipe");
    }
   } else {
-   status->string = "NOT piping, see stderr for program output";
+   status->string = "NOT piping, check stderr for program output";
    status_update (status);
   }
 

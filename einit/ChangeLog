@@ -1,6 +1,7 @@
 2007/01/25: mdeininger
  * made pexec() output things that are not in the feedback| form
  * fixed logic flaw in default pexec options
+ * added prepare/cleanup attributes to shell-modules
 
 2007/01/23: mdeininger
  * made einit-tty switch to feedback-vt when being disabled

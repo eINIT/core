@@ -67,6 +67,8 @@ struct mexecinfo {
  char *disable;
  char *reset;
  char *reload;
+ char *prepare;
+ char *cleanup;
  char **variables;
  char **environment;
  uid_t uid;
@@ -165,6 +167,10 @@ int scanmodules (struct lmodule *modchain) {
     mexec->reset = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "reload"))
     mexec->reload = node->arbattrs[i+1];
+   else if (!strcmp (node->arbattrs[i], "prepare"))
+    mexec->prepare = node->arbattrs[i+1];
+   else if (!strcmp (node->arbattrs[i], "cleanup"))
+    mexec->cleanup = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "uid"))
     mexec->uid = atoi(node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "gid"))
@@ -227,22 +233,36 @@ int scanmodules (struct lmodule *modchain) {
 }
 
 int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
- char *command;
+ int retval = STATUS_FAIL;
 
- if (!shellcmd) return STATUS_FAIL;
+ if (shellcmd) {
 
- if (status->task & MOD_ENABLE) {
-  command = shellcmd->enable;
- } else if (status->task & MOD_DISABLE) {
-  command = shellcmd->disable;
- } else if (status->task & MOD_RESET) {
-  command = shellcmd->disable;
- } else if (status->task & MOD_RELOAD) {
-  command = shellcmd->disable;
- } else return STATUS_FAIL;
+  if (status->task & MOD_ENABLE) {
+   if (shellcmd->enable) {
+    if (shellcmd->prepare)
+     pexec (shellcmd->prepare, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
 
- if (!command) return STATUS_FAIL;
+    retval = pexec (shellcmd->enable, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
- return pexec (command, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+    if ((retval == STATUS_FAIL) && shellcmd->cleanup)
+     pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+   }
+  } else if (status->task & MOD_DISABLE) {
+   if (shellcmd->disable) {
+    retval = pexec (shellcmd->disable, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+    if ((retval == STATUS_OK) && shellcmd->cleanup)
+     pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+   }
+  } else if (status->task & MOD_RESET) {
+   if (shellcmd->reset)
+    retval = pexec (shellcmd->reset, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+  } else if (status->task & MOD_RELOAD) {
+   if (shellcmd->reload)
+    retval = pexec (shellcmd->reload, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+  }
+ }
+
+ return retval;
 }
 
