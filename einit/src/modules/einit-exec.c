@@ -432,6 +432,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    for (; optx[x]; x++) {
     if (!strcmp (optx[x], "no-pipe")) {
      options |= PEXEC_OPTION_NOPIPE;
+    } else if (!strcmp (optx[x], "safe-environment")) {
+     options |= PEXEC_OPTION_SAFEENVIRONMENT;
     }
    }
 
@@ -502,7 +504,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
     char rxbuffer[1024];
 
     while (fgets(rxbuffer, 1024, fx) > 0) {
-     char **fbc = str2set ('|', rxbuffer);
+     char **fbc = str2set ('|', rxbuffer), orest = 1;
      strtrim (rxbuffer);
 
      if (fbc) {
@@ -511,17 +513,21 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
        cs = STATUS_OK;
 
        if (!strcmp (fbc[1], "notice")) {
+        orest = 0;
         status->string = fbc[2];
         status_update (status);
        } else if (!strcmp (fbc[1], "warning")) {
+        orest = 0;
         status->string = fbc[2];
         status->flag++;
         status_update (status);
        } else if (!strcmp (fbc[1], "success")) {
+        orest = 0;
         cs = STATUS_OK;
         status->string = fbc[2];
         status_update (status);
        } else if (!strcmp (fbc[1], "failure")) {
+        orest = 0;
         cs = STATUS_FAIL;
         status->string = fbc[2];
         status->flag++;
@@ -530,6 +536,11 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
       }
 
       free (fbc);
+     }
+
+     if (orest) {
+      status->string = rxbuffer;
+      status_update (status);
      }
     }
 

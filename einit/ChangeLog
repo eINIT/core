@@ -1,3 +1,6 @@
+2007/01/25: mdeininger
+ * made pexec() output things that are not in the feedback| form
+
 2007/01/23: mdeininger
  * made einit-tty switch to feedback-vt when being disabled
  * prepare/cleanup commands are now immune to the set user/group
