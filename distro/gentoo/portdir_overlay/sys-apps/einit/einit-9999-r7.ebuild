@@ -56,6 +56,4 @@ src_install() {
 	fi
         insinto /usr/share/eselect/modules
         doins ${FILESDIR}/einit.eselect
-        dodir /etc/einit/modules
-        dodir /etc/einit/local
 }
