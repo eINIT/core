@@ -81,72 +81,66 @@ const struct smodule self = {
 
 pthread_t ipc_thread;
 
-int __ipc_process (char *cmd, uint32_t fd) {
+int __ipc_process (char *cmd, FILE *f) {
  if (!cmd) return 0;
- else if (!strcmp (cmd, "IPC//out")) {
-  return 1;
- } else {
-  struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
-  uint32_t ic, ec;
 
-  event->string = cmd;
-  event->set = (void **)str2set (' ', cmd);
-  event->integer = fd;
-  event->flag = 0;
+// puts (cmd);
 
-  ec = setcount (event->set);
+ struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
+ uint32_t ic, ec;
 
-  for (ic = 0; ic < ec; ic++) {
-   if (!strcmp (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
-   else if (!strcmp (event->set[ic], "--ansi")) event->status |= EIPC_OUTPUT_ANSI;
-   else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
-   else if (!strcmp (event->set[ic], "--help")) event->status |= EIPC_HELP;
-   else if (!strcmp (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
-  }
+ event->string = cmd;
+ event->set = (void **)str2set (' ', cmd);
+ event->para = (void *)f;
+ event->flag = 0;
 
-  if (event->status & EIPC_OUTPUT_XML) {
-   write (fd, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", 52);
-   event->set = (void**)strsetdel ((char**)event->set, "--xml");
-  }
-  if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
-  if (event->status & EIPC_OUTPUT_ANSI) event->set = (void**)strsetdel ((char**)event->set, "--ansi");
-  if (event->status & EIPC_HELP) {
-   char buffer[2048];
+ ec = setcount (event->set);
 
-   if (event->status & EIPC_OUTPUT_XML)
-    snprintf (buffer, 2048, " <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n");
-   else
-    snprintf (buffer, 2048, "eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n");
-   write (fd, buffer, strlen (buffer));
-
-   event->set = (void**)strsetdel ((char**)event->set, "--help");
-  }
-
-  event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
-
-  if (event->set) free (event->set);
-
-  if (!event->flag) {
-   char buffer[2048];
-   if (event->status & EIPC_OUTPUT_XML)
-    snprintf (buffer, 2048, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
-   else
-    snprintf (buffer, 2048, "einit-ipc: %s: command not implemented.\n", cmd);
-   write (fd, buffer, strlen (buffer));
-  }
-  if (event->status & EIPC_OUTPUT_XML) {
-   write (fd, "</einit-ipc>\n", 13);
-  }
-
-  evdestroy (event);
-  return 0;
+ for (ic = 0; ic < ec; ic++) {
+  if (!strcmp (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
+  else if (!strcmp (event->set[ic], "--ansi")) event->status |= EIPC_OUTPUT_ANSI;
+  else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
+  else if (!strcmp (event->set[ic], "--help")) event->status |= EIPC_HELP;
+  else if (!strcmp (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
  }
+
+ if (event->status & EIPC_OUTPUT_XML) {
+  fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
+  event->set = (void**)strsetdel ((char**)event->set, "--xml");
+ }
+ if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
+ if (event->status & EIPC_OUTPUT_ANSI) event->set = (void**)strsetdel ((char**)event->set, "--ansi");
+ if (event->status & EIPC_HELP) {
+  if (event->status & EIPC_OUTPUT_XML)
+   fprintf (f, " <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n");
+  else
+   fprintf (f, "eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n");
+
+  event->set = (void**)strsetdel ((char**)event->set, "--help");
+ }
+
+ event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
+
+ if (event->set) free (event->set);
+
+ if (!event->flag) {
+  if (event->status & EIPC_OUTPUT_XML)
+   fprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
+  else
+   fprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
+ }
+ if (event->status & EIPC_OUTPUT_XML) {
+  fputs ("</einit-ipc>\n", f);
+ }
+
+ evdestroy (event);
+ return 0;
 }
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
-   fdputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
@@ -171,34 +165,31 @@ int ipc_read (int *nfd) {
  char buf[BUFFERSIZE+1];
  char lbuf[BUFFERSIZE+1];
 
- while (br = read (*nfd, buf, BUFFERSIZE)) {
-  if ((br < 0) && (errno != EAGAIN) && (errno != EINTR)) {
-   perror ("einit-ipc: reading from socket");
-   break;
-  }
-  for (i = 0; i < br; i++) {
-   if ((buf[i] == '\n') || (buf[i] == '\0')) {
-    lbuf[ic] = 0;
-    if (lbuf[0] && __ipc_process (lbuf, *nfd)) goto close_connection;
-    ic = -1;
-    lbuf[0] = 0;
-   } else {
-    if (ic >= BUFFERSIZE) {
-     lbuf[ic] = 0;
-     if (lbuf[0] && __ipc_process (lbuf, *nfd)) goto close_connection;
-     ic = 0;
-    }
-    lbuf[ic] = buf[i];
-   }
-   ic++;
-  }
- }
- lbuf[ic] = 0;
- if (lbuf[0])
-  __ipc_process (lbuf, *nfd);
+ FILE *f, *r;
 
- close_connection:
+ int nfdc = dup(*nfd);
+
+ if (r = fdopen (nfdc, "r")) {
+  if (f = fdopen (*nfd, "w"))  {
+   char buffer[1024];
+
+   while (fgets (buffer, 1024, r)) {
+    strtrim(buffer);
+
+    if (!strcmp (buffer, "IPC//out")) break;
+    __ipc_process (buffer, f);
+   }
+
+//   puts ("closing 'f'.");
+
+   fclose (f);
+  }
+  fclose (r);
+  return 0;
+ }
+
  close (*nfd);
+ return 0;
 }
 
 void * ipc_wait (void *unused_parameter) {

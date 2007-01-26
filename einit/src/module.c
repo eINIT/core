@@ -773,82 +773,68 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
  (status & STATUS_WORKING ? "W" : \
  (status & STATUS_ENABLED ? "E" : "D")))
 
-void mod_event_handler(struct einit_event *event) {
- if (!event || !event->set) return;
- char **argv = (char **) event->set;
- int argc = setcount (event->set);
- uint32_t options = event->status;
+void mod_event_handler(struct einit_event *ev) {
+ if (!ev || !ev->set) return;
+ char **argv = (char **) ev->set;
+ int argc = setcount (ev->set);
+ uint32_t options = ev->status;
 
  if (argc >= 2) {
   if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "modules")) {
-    char buffer[1024];
     struct lmodule *cur = mlist;
 
-    if (!event->flag) event->flag = 1;
+    if (!ev->flag) ev->flag = 1;
 
     while (cur) {
      if (cur->module && !(options & EIPC_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
       if (options & EIPC_OUTPUT_XML) {
-       snprintf (buffer, 2048, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
+       fprintf ((FILE *)ev->para, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
          (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
       } else {
-       snprintf (buffer, 1024, "[%s] %s (%s)",
+       fprintf ((FILE *)ev->para, "[%s] %s (%s)",
         STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
       }
 
       if (cur->si) {
-       char tmpx[1024];
        if (cur->si->provides) {
         if (options & EIPC_OUTPUT_XML)
-         snprintf (tmpx, 1024, "%s\n  provides=\"%s\"", buffer, set2str(':', cur->si->provides));
+         fprintf ((FILE *)ev->para, "\n  provides=\"%s\"", set2str(':', cur->si->provides));
         else
-         snprintf (tmpx, 1024, "%s\n > provides: %s", buffer, set2str(' ', cur->si->provides));
-        strcpy (buffer, tmpx);
+         fprintf ((FILE *)ev->para, "\n > provides: %s", set2str(' ', cur->si->provides));
        }
        if (cur->si->requires) {
         if (options & EIPC_OUTPUT_XML)
-         snprintf (tmpx, 1024, "%s\n  requires=\"%s\"", buffer, set2str(':', cur->si->requires));
+         fprintf ((FILE *)ev->para, "\n  requires=\"%s\"", set2str(':', cur->si->requires));
         else
-         snprintf (tmpx, 1024, "%s\n > requires: %s", buffer, set2str(' ', cur->si->requires));
-        strcpy (buffer, tmpx);
+         fprintf ((FILE *)ev->para, "\n > requires: %s", set2str(' ', cur->si->requires));
        }
        if (cur->si->after) {
         if (options & EIPC_OUTPUT_XML)
-         snprintf (tmpx, 1024, "%s\n  after=\"%s\"", buffer, set2str(':', cur->si->after));
+         fprintf ((FILE *)ev->para, "\n  after=\"%s\"", set2str(':', cur->si->after));
         else
-         snprintf (tmpx, 1024, "%s\n > after: %s", buffer, set2str(' ', cur->si->after));
-        strcpy (buffer, tmpx);
+         fprintf ((FILE *)ev->para, "\n > after: %s", set2str(' ', cur->si->after));
        }
        if (cur->si->before) {
         if (options & EIPC_OUTPUT_XML)
-         snprintf (tmpx, 1024, "%s\n  before=\"%s\"", buffer, set2str(':', cur->si->before));
+         fprintf ((FILE *)ev->para, "\n  before=\"%s\"", set2str(':', cur->si->before));
         else
-         snprintf (tmpx, 1024, "%s\n > before: %s", buffer, set2str(' ', cur->si->before));
-        strcpy (buffer, tmpx);
+         fprintf ((FILE *)ev->para, "\n > before: %s", set2str(' ', cur->si->before));
        }
       }
 
-      char tmpx[1024];
       if (options & EIPC_OUTPUT_XML)
-       snprintf (tmpx, 1024, "%s />\n", buffer);
+       fprintf ((FILE *)ev->para, " />\n");
       else
-       snprintf (tmpx, 1024, "%s\n", buffer);
-      strcpy (buffer, tmpx);
-
-      write (event->integer, buffer, strlen (buffer));
+       fprintf ((FILE *)ev->para, "\n");
      }
      cur = cur->next;
     }
    } else if (!strcmp (argv[1], "services")) {
-    char buffer[1024];
-
     struct lmodule *cur = mlist;
     struct stree *serv = NULL;
     struct stree *modes = NULL;
     struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
-
-    *buffer = 0;
 
     pthread_mutex_lock (&modules_update_mutex);
 
@@ -905,10 +891,10 @@ void mod_event_handler(struct einit_event *event) {
        char *modestr;
        if (options & EIPC_OUTPUT_XML) {
         modestr = set2str (':', inmodes);
-        snprintf (buffer, 1024, " <service id=\"%s\" used-in=\"%s\">\n", scur->key, modestr);
+        fprintf ((FILE *)ev->para, " <service id=\"%s\" used-in=\"%s\">\n", scur->key, modestr);
        } else {
         modestr = set2str (' ', inmodes);
-        snprintf (buffer, 1024, (options & EIPC_OUTPUT_ANSI) ?
+        fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
                                 "\e[1mservice \"%s\" (%s)\n\e[0m" :
                                 "service \"%s\" (%s)\n",
                                 scur->key, modestr);
@@ -917,48 +903,42 @@ void mod_event_handler(struct einit_event *event) {
        free (inmodes);
       } else if (!(options & EIPC_ONLY_RELEVANT)) {
        if (options & EIPC_OUTPUT_XML)
-        snprintf (buffer, 1024, " <service id=\"%s\">\n", scur->key);
+        fprintf ((FILE *)ev->para, " <service id=\"%s\">\n", scur->key);
        else
-        snprintf (buffer, 1024, (options & EIPC_OUTPUT_ANSI) ?
+        fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
                                 "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
                                 "service \"%s\" (not in any mode)\n",
                                 scur->key);
       }
 
-      if (*buffer) {
-       fdputs (buffer, event->integer);
-
+      if (inmodes || (!(options & EIPC_ONLY_RELEVANT))) {
        if (options & EIPC_OUTPUT_XML) {
         if (scur->value) {
          struct lmodule **xs = scur->value;
          uint32_t u = 0;
          for (u = 0; xs[u]; u++) {
-          snprintf (buffer, 1024, "  <module id=\"%s\" name=\"%s\" />\n",
+          fprintf ((FILE *)ev->para, "  <module id=\"%s\" name=\"%s\" />\n",
                     xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
                     xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
-          fdputs (buffer, event->integer);
          }
         }
 
-        snprintf (buffer, 1024, " </service>\n", scur->key);
-        fdputs (buffer, event->integer);
+        fprintf ((FILE *)ev->para, " </service>\n", scur->key);
        } else {
         if (scur->value) {
          struct lmodule **xs = scur->value;
          uint32_t u = 0;
          for (u = 0; xs[u]; u++) {
-          snprintf (buffer, 1024, (options & EIPC_OUTPUT_ANSI) ?
-                                  " \e[33m* \e[0mcandidate \"%s\" (%s)\n" :
-                                  " * candidate \"%s\" (%s)\n",
-                    xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
-                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
-          fdputs (buffer, event->integer);
+          fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
+                                 " \e[33m* \e[0mcandidate \"%s\" (%s)\n" :
+                                 " * candidate \"%s\" (%s)\n",
+                   xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
+                   xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
          }
         }
        }
       }
 
-      *buffer = 0;
       scur = streenext (scur);
      }
 
@@ -968,7 +948,7 @@ void mod_event_handler(struct einit_event *event) {
 
     pthread_mutex_unlock (&modules_update_mutex);
 
-    if (!event->flag) event->flag = 1;
+    if (!ev->flag) ev->flag = 1;
    }
   }
  }

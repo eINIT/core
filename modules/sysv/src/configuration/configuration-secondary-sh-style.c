@@ -238,7 +238,7 @@ void einit_event_handler (struct einit_event *ev) {
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-secondary-file-sh", NULL)) {
-   fdputs ("NOTICE: No configuration variables at \"configuration-secondary-file-sh\":\n  Nothing to import. (not a problem)\n", ev->integer);
+   fputs ("NOTICE: No configuration variables at \"configuration-secondary-file-sh\":\n  Nothing to import. (not a problem)\n", (FILE *)ev->para);
    ev->task++;
   }
 

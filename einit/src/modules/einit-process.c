@@ -132,16 +132,14 @@ void ipc_event_handler (struct einit_event *ev) {
 
    if (process_list) {
     for (i = 0; process_list[i]; i++) {
-     char buffer [1024];
      if (ev->status & EIPC_OUTPUT_XML)
-      snprintf (buffer, 1024, " <process pid=\"%i\" />\n", process_list[i]);
+      fprintf ((FILE *)ev->para, " <process pid=\"%i\" />\n", process_list[i]);
      else
-      snprintf (buffer, 1024, "process [pid=%i]\n", process_list[i]);
-     fdputs (buffer, ev->integer);
+      fprintf ((FILE *)ev->para, "process [pid=%i]\n", process_list[i]);
     }
     free (process_list);
    } else {
-    fdputs ("einit-process: ipc-event-handler: your query has matched no processes\n", ev->integer);
+    fputs ("einit-process: ipc-event-handler: your query has matched no processes\n", (FILE *)ev->para);
    }
 
    ev->flag ++;

@@ -827,7 +827,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
    if (cmdts) {
     for (; cmdts[in]; in++)
-     ipc_process(cmdts[in], STDERR_FILENO);
+     ipc_process(cmdts[in], stderr);
 
     free (cmdts);
    }
@@ -931,7 +931,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
    if (cmdts) {
     for (; cmdts[in]; in++) {
-     ipc_process(cmdts[in], STDERR_FILENO);
+     ipc_process(cmdts[in], stderr);
     }
     free (cmdts);
    }

@@ -106,7 +106,7 @@ struct nstring {
 };
 
 struct feedback_fd {
- int fd;
+ FILE *fd;
  unsigned char options;
 };
 
@@ -148,19 +148,19 @@ uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-calculate-switch-status", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
@@ -347,7 +347,7 @@ void feedback_event_handler(struct einit_event *ev) {
  if (ev->type == EVENT_FEEDBACK_REGISTER_FD) {
   struct feedback_fd *newfd = emalloc (sizeof (struct feedback_fd));
 
-  newfd->fd = ev->integer;
+  newfd->fd = ev->para;
   newfd->options = ev->flag;
 
   pthread_mutex_lock (&feedback_fdsmutex);
@@ -364,7 +364,7 @@ void feedback_event_handler(struct einit_event *ev) {
 
    if (feedback_fds) for (; feedback_fds[i]; i++) {
     struct feedback_fd *newfd = (struct feedback_fd *)feedback_fds[i];
-    if (newfd->fd == ev->integer) {
+    if (newfd->fd == ev->para) {
      feedback_fds = (struct feedback_fd **)setdel ((void **)feedback_fds, (void *)newfd);
      free (newfd);
      break;
@@ -687,7 +687,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
    if (feedback_fds) {
     uint32_t i = 0;
     for (; feedback_fds[i]; i++) {
-     fdputs (feedback, feedback_fds[i]->fd);
+     fputs (feedback, feedback_fds[i]->fd);
     }
    }
 

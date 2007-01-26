@@ -293,11 +293,11 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
-void sched_ipc_event_handler(struct einit_event *event) {
+void sched_ipc_event_handler(struct einit_event *ev) {
  errno = 0;
- if (!event) return;
+ if (!ev) return;
  else {
-  char **argv = (char **)event->set;
+  char **argv = (char **)ev->set;
   int argc = setcount ((void **)argv);
   if (!argv) {
    perror ("sched_ipc_event_handler: counting argv");
@@ -310,21 +310,21 @@ void sched_ipc_event_handler(struct einit_event *event) {
 
   if (!strcmp (argv[0], "power") && (argc > 1)) {
    if (!strcmp (argv[1], "down") || !strcmp (argv[1], "off")) {
-    if (!event->flag) event->flag = 1;
+    if (!ev->flag) ev->flag = 1;
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-down";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-    fdputs (" >> shutdown queued\n", event->integer);
+    fputs (" >> shutdown queued\n", (FILE *)ev->para);
     evstaticdestroy(ee);
    }
    if (!strcmp (argv[1], "reset")) {
-    if (!event->flag) event->flag = 1;
+    if (!ev->flag) ev->flag = 1;
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-reset";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-    fdputs (" >> reset queued\n", event->integer);
+    fputs (" >> reset queued\n", (FILE *)ev->para);
     evstaticdestroy(ee);
    }
   }
@@ -333,7 +333,7 @@ void sched_ipc_event_handler(struct einit_event *event) {
   if (!strcmp (argv[0], "scheduler") && (argc > 1)) {
    char reset = 0;
    if (!strcmp (argv[1], "power-down") || (reset = !strcmp (argv[1], "power-reset"))) {
-    if (!event->flag) event->flag = 1;
+    if (!ev->flag) ev->flag = 1;
 
      notice (1, ">> scheduler: sync()-ing");
 
@@ -377,27 +377,27 @@ void sched_ipc_event_handler(struct einit_event *event) {
   }
 
   if (!strcmp (argv[0], "rc") && (argc > 2)) {
-   if (!event->flag) event->flag = 1;
+   if (!ev->flag) ev->flag = 1;
 
    if (!strcmp (argv[1], "switch-mode")) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = argv[2];
-    if (event->status & EIPC_DETACH) {
+    if (ev->status & EIPC_DETACH) {
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-     fdputs (" >> modeswitch queued\n", event->integer);
+     fputs (" >> modeswitch queued\n", (FILE *)ev->para);
     } else {
-     ee.integer = event->integer;
+     ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
     }
     evstaticdestroy(ee);
    } else {
     struct einit_event ee = evstaticinit(EVE_CHANGE_SERVICE_STATUS);
     ee.set = (void **)setdup ((void **)argv+1, SET_TYPE_STRING);
-    if (event->status & EIPC_DETACH) {
+    if (ev->status & EIPC_DETACH) {
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-     fdputs (" >> status change queued\n", event->integer);
+     fputs (" >> status change queued\n", (FILE *)ev->para);
     } else {
-     ee.integer = event->integer;
+     ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
     }
     evstaticdestroy(ee);
@@ -413,44 +413,44 @@ void sched_ipc_event_handler(struct einit_event *event) {
  }
 }
 
-void sched_core_event_handler(struct einit_event *event) {
- if (!event) return;
- switch (event->type) {
+void sched_core_event_handler(struct einit_event *ev) {
+ if (!ev) return;
+ switch (ev->type) {
   case EVE_SWITCH_MODE:
-   if (!event->string) return;
+   if (!ev->string) return;
    else {
-    if (event->integer) {
+    if (ev->para) {
      struct einit_event ee = evstaticinit(EVENT_FEEDBACK_REGISTER_FD);
-     ee.integer = event->integer;
+     ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     }
 
-    sched_switchmode (event->string);
+    sched_switchmode (ev->string);
 
-    if (event->integer) {
+    if (ev->para) {
      struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
-     ee.integer = event->integer;
+     ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     }
    }
    return;
   case EVE_CHANGE_SERVICE_STATUS:
-   if (!event->set) return;
+   if (!ev->set) return;
    else {
-    if (event->integer) {
+    if (ev->para) {
      struct einit_event ee = evstaticinit(EVENT_FEEDBACK_REGISTER_FD);
-     ee.integer = event->integer;
+     ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     }
 
-    sched_modaction ((char **)event->set);
+    sched_modaction ((char **)ev->set);
 
-    if (event->integer) {
+    if (ev->para) {
      struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
-     ee.integer = event->integer;
+     ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
      evstaticdestroy(ee);
     }
@@ -508,7 +508,7 @@ void *sched_run_sigchild (void *p) {
     ee.type = EVE_SWITCH_MODE;
     ee.string = "power-reset";
 
-    ee.integer = 0;
+//    ee.para = stdout;
 
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);
@@ -631,7 +631,7 @@ void *sched_run_sigchild (void *p) {
     struct einit_event ee = evstaticinit (EVE_SWITCH_MODE);
     ee.string = "power-reset";
 
-    ee.integer = 0;
+//    ee.para = stdout;
 
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
 //  evstaticdestroy(ee);

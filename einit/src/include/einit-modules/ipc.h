@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 
 
-typedef int (*ipc_processor) (char *, uint32_t);
+typedef int (*ipc_processor) (char *, FILE *);
 
 ipc_processor __ipc_string_process;
 

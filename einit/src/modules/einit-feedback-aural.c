@@ -83,11 +83,11 @@ int sev_threshold = 2;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 

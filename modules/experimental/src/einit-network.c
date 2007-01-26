@@ -133,7 +133,7 @@ void network_ipc_handler(struct einit_event *event) {
      snprintf (buffer, 1024, "%s (%s) [options=%x]\n", cur->key, cval->name, cval->options);
     else
      snprintf (buffer, 1024, "%s [options=%x]\n", cur->key, cval->options);
-    write (event->integer, buffer, strlen(buffer));
+    fputs (buffer, (FILE *)event->para);
 
     cur = streenext (cur);
    }

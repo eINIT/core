@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
   if (ipccommands) {
    uint32_t rx = 0;
    for (; ipccommands[rx]; rx++) {
-    ipc_process (ipccommands[rx], STDOUT_FILENO);
+    ipc_process (ipccommands[rx], stdout);
    }
 
    if (gmode == EINIT_GMODE_SANDBOX)

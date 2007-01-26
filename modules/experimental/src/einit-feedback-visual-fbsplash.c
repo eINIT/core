@@ -97,11 +97,11 @@ pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getstring("configuration-feedback-visual-fbsplash-splash-functions", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-visual-fbsplash-splash-functions\" not found : fbsplash support disabled.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-visual-fbsplash-splash-functions\" not found : fbsplash support disabled.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-fbsplash-scriptlets", NULL)) {
-   fdputs (" * configuration variable \"configuration-feedback-visual-fbsplash-scriptlets\" not found : fbsplash support disabled.\n", ev->integer);
+   fputs (" * configuration variable \"configuration-feedback-visual-fbsplash-scriptlets\" not found : fbsplash support disabled.\n", (FILE *)ev->para);
    ev->task++;
   }
 

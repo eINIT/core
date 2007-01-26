@@ -1380,7 +1380,6 @@ void mount_ipc_handler(struct einit_event *ev) {
 #ifdef DEBUG
   if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "fstab")) {
-    char buffer[1024];
     struct stree *cur = ( mcb.fstab ? *(mcb.fstab->lbase) : NULL );
     struct fstab_entry *val = NULL;
 
@@ -1389,13 +1388,11 @@ void mount_ipc_handler(struct einit_event *ev) {
     while (cur) {
      val = (struct fstab_entry *) cur->value;
      if (val) {
-      snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status);
-      fdputs (buffer, ev->integer);
+      fprintf ((FILE *)ev->para, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status);
      }
      cur = streenext (cur);
     }
    } else if (!strcmp (argv[1], "block-devices")) {
-    char buffer[1024];
     struct stree *cur = mcb.blockdevices;
     struct bd_info *val = NULL;
 
@@ -1404,8 +1401,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     while (cur) {
      val = (struct bd_info *) cur->value;
      if (val) {
-      snprintf (buffer, 1023, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status);
-      fdputs (buffer, ev->integer);
+      fprintf ((FILE *)ev->para, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status);
      }
      cur = streenext (cur);
     }
@@ -1419,8 +1415,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     while (cur) {
      val = (struct legacy_fstab_entry *) cur->value;
      if (val) {
-      snprintf (buffer, 1023, "%s [spec=%s;vfstype=%s;mntops=%s;freq=%i;passno=%i]\n", val->fs_file, val->fs_spec, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
-      fdputs (buffer, ev->integer);
+      fprintf ((FILE *)ev->para, "%s [spec=%s;vfstype=%s;mntops=%s;freq=%i;passno=%i]\n", val->fs_file, val->fs_spec, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
      }
      cur = streenext (cur);
     }
@@ -1434,29 +1429,29 @@ void mount_ipc_handler(struct einit_event *ev) {
    ev->flag = 1;
 
    if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
-    fdputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", ev->integer);
+    fputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", (FILE *)ev->para);
     ev->task++;
    } else {
     tmpset = str2set(':', tmpstring);
 
     if (inset ((void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
      if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
-      fdputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", ev->integer);
+      fputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", (FILE *)ev->para);
       ev->task++;
      }
      if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
-      fdputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", ev->integer);
+      fputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", (FILE *)ev->para);
       ev->task++;
      }
     }
 
     if (!inset ((void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
-     fdputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", ev->integer);
+     fputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", (FILE *)ev->para);
      ev->task++;
     }
 
     if (inset ((void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
-     fdputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", ev->integer);
+     fputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", (FILE *)ev->para);
      ev->task++;
     }
 
@@ -1465,26 +1460,26 @@ void mount_ipc_handler(struct einit_event *ev) {
 
    if (mcb.update_options & EVENT_UPDATE_METADATA) {
     if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
-     fdputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", ev->integer);
+     fputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", (FILE *)ev->para);
      ev->task++;
     }
    } else {
-    fdputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", ev->integer);
+    fputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", (FILE *)ev->para);
    }
 
    if (!mcb.fstab) {
-    fdputs (" * your fstab is empty.\n", ev->integer);
+    fputs (" * your fstab is empty.\n", (FILE *)ev->para);
     ev->task++;
    } else {
     struct stree *tstree, *fstree;
     if (!(tstree = streefind (mcb.fstab, "/", TREE_FIND_FIRST))) {
-     fdputs (" * your fstab does not contain an entry for \"/\".\n", ev->integer);
+     fputs (" * your fstab does not contain an entry for \"/\".\n", (FILE *)ev->para);
      ev->task++;
     } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
-     fdputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", ev->integer);
+     fputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", (FILE *)ev->para);
      ev->task++;
     } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
-     fdputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", ev->integer);
+     fputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", (FILE *)ev->para);
      ev->task++;
     }
 
@@ -1501,22 +1496,18 @@ void mount_ipc_handler(struct einit_event *ev) {
 #else
        snprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
 #endif
-       fdputs (tmpstr, ev->integer);
+       fputs (tmpstr, (FILE *)ev->para);
        ev->task++;
       }
      }
 
      if (!(((struct fstab_entry *)(tstree->value))->device)) {
       if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
-       char tmpstr[1024];
-       snprintf (tmpstr, 1024, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
-       fdputs (tmpstr, ev->integer);
+       fprintf ((FILE *)ev->para, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
        ev->task++;
       }
      } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || ((fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)))) {
-      char tmpstr[1024];
-      snprintf (tmpstr, 1024, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
-      fdputs (tmpstr, ev->integer);
+      fprintf ((FILE *)ev->para, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
       ev->task++;
      }
 
@@ -1525,9 +1516,7 @@ void mount_ipc_handler(struct einit_event *ev) {
       char *xtmp = __options_string_to_mountflags ((((struct fstab_entry *)(tstree->value))->options), &tmpmnt, (((struct fstab_entry *)(tstree->value))->mountpoint));
 
       if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && !strcmp (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
-       char tmp[1024];
-       snprintf (tmp, 1024, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
-       fdputs (tmp, ev->integer);
+       fprintf ((FILE *)ev->para, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
       }
 
       if (xtmp) {

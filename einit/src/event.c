@@ -414,15 +414,13 @@ void event_ipc_handler(struct einit_event *event) {
        if (!(options & EIPC_ONLY_RELEVANT)) print++;
       }
 
-      snprintf (textbuffer, 2048, "[%6i] %s: %s\n", cnode->seqid, event_code_to_string(cnode->type), vstring);
-
       if (print)
-       write (event->integer, textbuffer, strlen(textbuffer));
+       fprintf ((FILE *)event->para, "[%6i] %s: %s\n", cnode->seqid, event_code_to_string(cnode->type), vstring);
 
       cnode = cnode->next;
      } while (cnode != event_logbuffer);
     } else {
-     write (event->integer, " - log buffer empty -\n", 23);
+     fputs (" - log buffer empty -\n", (FILE *)event->para);
     }
 
     if (!event->flag) event->flag = 1;
