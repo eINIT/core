@@ -13,7 +13,7 @@ HOMEPAGE="http://einit.sourceforge.net/"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
-IUSE="doc efl"
+IUSE="doc efl static"
 
 RDEPEND="dev-libs/expat
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
@@ -30,14 +30,15 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn"
+	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=${ROOT}"
 
 	if use efl ; then
-		myconf="${myconf} --enable-linux --use-posix-regex --prefix=${ROOT} --enable-efl"
-	else
-		myconf="${myconf} --enable-linux --use-posix-regex --prefix=${ROOT}"
+		local myconf="${myconf} --enable-efl"
 	fi
-
+	if use static ; then
+		local myconf="${myconf} --static"
+	fi
+	echo ${myconf}
 	econf ${myconf} || die
 	emake || die
 
@@ -55,4 +56,6 @@ src_install() {
 	fi
         insinto /usr/share/eselect/modules
         doins ${FILESDIR}/einit.eselect
+        dodir /etc/einit/modules
+        dodir /etc/einit/local
 }
