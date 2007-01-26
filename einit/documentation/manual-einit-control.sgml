@@ -199,6 +199,15 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term>list services</term>
+     <listitem>
+      <para>
+       Display a list of services that are currently available. The parameter --ansi will make this
+       output colourful, --only-relevant will only display services that are used in one mode or another.
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </refsect2>
 

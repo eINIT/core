@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "EINIT-CONTROL" "8" "12 January 2007" "einit-0.15.1-svn" ""
+.TH "EINIT-CONTROL" "8" "26 January 2007" "einit-0.15.1-svn" ""
 
 .SH NAME
 einit-control \- chat with einit using IPC commands
@@ -78,6 +78,10 @@ commands to list certain program stats
 \fBlist modules\fR
 Display a list of modules, including their current status, the services they provide and
 require and before and after which services they request to be enabled.
+.TP
+\fBlist services\fR
+Display a list of services that are currently available. The parameter --ansi will make this
+output colourful, --only-relevant will only display services that are used in one mode or another.
 .SS "UPDATE"
 commands to update the system status
 .TP

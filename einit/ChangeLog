@@ -1,5 +1,6 @@
 2007/01/26: mdeininger
  * fixed some things about aliasing
+ * got the command to list services, "list services" to do it properly.
 
 2007/01/25: mdeininger
  * made pexec() output things that are not in the feedback| form
