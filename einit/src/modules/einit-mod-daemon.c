@@ -161,6 +161,10 @@ int scanmodules (struct lmodule *modchain) {
     dexec->group = node->arbattrs[i+1];
    else if (!strcmp("restart", node->arbattrs[i]))
     dexec->restart = parse_boolean(node->arbattrs[i+1]);
+   else if (!strcmp (node->arbattrs[i], "pid")) {
+    dexec->environment = straddtoenviron (dexec->environment, "pidfile", node->arbattrs[i+1]);
+    dexec->pidfile = node->arbattrs[i+1];
+   }
 
    else if (!strcmp (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);

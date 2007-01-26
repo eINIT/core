@@ -61,6 +61,7 @@ struct dexecinfo {
  int restart;
  struct daemonst *cb;
  char **environment;
+ char *pidfile;
 };
 
 struct daemonst {

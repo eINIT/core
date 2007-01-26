@@ -711,6 +711,12 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   daemon_environment = (char **)setcombine ((void **)einit_global_environment, (void **)shellcmd->environment, SET_TYPE_STRING);
   daemon_environment = __create_environment (daemon_environment, shellcmd->variables);
 
+  if (shellcmd->pidfile) {
+//   fprintf (stderr, " >> unlinking %s\n", shellcmd->pidfile);
+   unlink (shellcmd->pidfile);
+   errno = 0;
+  }
+
   execve (cmd[0], cmd, daemon_environment);
   free (cmd);
   free (cmdsetdup);
@@ -764,7 +770,15 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
   pthread_mutex_destroy (&shellcmd->cb->mutex);
  }
 
- shellcmd->cb = NULL; if (shellcmd->cleanup) {
+ shellcmd->cb = NULL;
+
+ if (shellcmd->pidfile) {
+//  fprintf (stderr, " >> unlinking %s\n", shellcmd->pidfile);
+  unlink (shellcmd->pidfile);
+  errno = 0;
+ }
+
+ if (shellcmd->cleanup) {
  // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
   if (pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
  }

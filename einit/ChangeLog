@@ -3,6 +3,9 @@
  * got the command to list services, "list services" to do it properly.
  * changed internal handling of IPC I/O
  * added pexec-option dont-close-stdin
+ * added a pid= attribute to daemon and shell modules that will automatically
+   erase the file specified with it when the module goes down makes sure it's
+   not there when getting it up (good idea ryan!)
 
 2007/01/25: mdeininger
  * made pexec() output things that are not in the feedback| form

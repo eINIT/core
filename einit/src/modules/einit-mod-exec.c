@@ -74,6 +74,7 @@ struct mexecinfo {
  uid_t uid;
  gid_t gid;
  char *user, *group;
+ char *pidfile;
 };
 
 const struct smodule self = {
@@ -179,6 +180,10 @@ int scanmodules (struct lmodule *modchain) {
     mexec->user = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "group"))
     mexec->group = node->arbattrs[i+1];
+   else if (!strcmp (node->arbattrs[i], "pid")) {
+    mexec->environment = straddtoenviron (mexec->environment, "pidfile", node->arbattrs[i+1]);
+    mexec->pidfile = node->arbattrs[i+1];
+   }
 
    else if (!strcmp (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
@@ -239,8 +244,14 @@ int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
 
   if (status->task & MOD_ENABLE) {
    if (shellcmd->enable) {
-    if (shellcmd->prepare)
+    if (shellcmd->pidfile) {
+     unlink (shellcmd->pidfile);
+     errno = 0;
+    }
+
+    if (shellcmd->prepare) {
      pexec (shellcmd->prepare, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+    }
 
     retval = pexec (shellcmd->enable, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
@@ -251,8 +262,16 @@ int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
    if (shellcmd->disable) {
     retval = pexec (shellcmd->disable, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
-    if ((retval == STATUS_OK) && shellcmd->cleanup)
-     pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+    if (retval & STATUS_OK) {
+     if (shellcmd->cleanup) {
+      pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+     }
+
+     if (shellcmd->pidfile) {
+      unlink (shellcmd->pidfile);
+      errno = 0;
+     }
+    }
    }
   } else if (status->task & MOD_RESET) {
    if (shellcmd->reset)
