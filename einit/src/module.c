@@ -905,22 +905,59 @@ void mod_event_handler(struct einit_event *event) {
        char *modestr;
        if (options & EIPC_OUTPUT_XML) {
         modestr = set2str (':', inmodes);
-        snprintf (buffer, 1024, " <service id=\"%s\" used-in=\"%s\" />\n", scur->key, modestr);
+        snprintf (buffer, 1024, " <service id=\"%s\" used-in=\"%s\">\n", scur->key, modestr);
        } else {
         modestr = set2str (' ', inmodes);
-        snprintf (buffer, 1024, "service \"%s\" (%s)\n", scur->key, modestr);
+        snprintf (buffer, 1024, (options & EIPC_OUTPUT_ANSI) ?
+                                "\e[1mservice \"%s\" (%s)\n\e[0m" :
+                                "service \"%s\" (%s)\n",
+                                scur->key, modestr);
        }
        free (modestr);
        free (inmodes);
       } else if (!(options & EIPC_ONLY_RELEVANT)) {
        if (options & EIPC_OUTPUT_XML)
-        snprintf (buffer, 1024, " <service id=\"%s\" />\n", scur->key);
+        snprintf (buffer, 1024, " <service id=\"%s\">\n", scur->key);
        else
-        snprintf (buffer, 1024, "service \"%s\" (not in any mode)\n", scur->key);
+        snprintf (buffer, 1024, (options & EIPC_OUTPUT_ANSI) ?
+                                "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
+                                "service \"%s\" (not in any mode)\n",
+                                scur->key);
       }
 
-      if (*buffer)
+      if (*buffer) {
        fdputs (buffer, event->integer);
+
+       if (options & EIPC_OUTPUT_XML) {
+        if (scur->value) {
+         struct lmodule **xs = scur->value;
+         uint32_t u = 0;
+         for (u = 0; xs[u]; u++) {
+          snprintf (buffer, 1024, "  <module id=\"%s\" name=\"%s\" />\n",
+                    xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
+                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+          fdputs (buffer, event->integer);
+         }
+        }
+
+        snprintf (buffer, 1024, " </service>\n", scur->key);
+        fdputs (buffer, event->integer);
+       } else {
+        if (scur->value) {
+         struct lmodule **xs = scur->value;
+         uint32_t u = 0;
+         for (u = 0; xs[u]; u++) {
+          snprintf (buffer, 1024, (options & EIPC_OUTPUT_ANSI) ?
+                                  " \e[33m* \e[0mcandidate \"%s\" (%s)\n" :
+                                  " * candidate \"%s\" (%s)\n",
+                    xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
+                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+          fdputs (buffer, event->integer);
+         }
+        }
+       }
+      }
+
       *buffer = 0;
       scur = streenext (scur);
      }

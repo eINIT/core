@@ -118,6 +118,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* (generic) IPC-event flags */
 #define EIPC_OUTPUT_XML             0x0001
+#define EIPC_OUTPUT_ANSI            0x0004
 #define EIPC_ONLY_RELEVANT          0x1000
 #define EIPC_HELP                   0x0002
 #define EIPC_DETACH                 0x0010

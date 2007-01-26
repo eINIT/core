@@ -98,6 +98,7 @@ int __ipc_process (char *cmd, uint32_t fd) {
 
   for (ic = 0; ic < ec; ic++) {
    if (!strcmp (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
+   else if (!strcmp (event->set[ic], "--ansi")) event->status |= EIPC_OUTPUT_ANSI;
    else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
    else if (!strcmp (event->set[ic], "--help")) event->status |= EIPC_HELP;
    else if (!strcmp (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
@@ -108,6 +109,7 @@ int __ipc_process (char *cmd, uint32_t fd) {
    event->set = (void**)strsetdel ((char**)event->set, "--xml");
   }
   if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
+  if (event->status & EIPC_OUTPUT_ANSI) event->set = (void**)strsetdel ((char**)event->set, "--ansi");
   if (event->status & EIPC_HELP) {
    char buffer[2048];
 
