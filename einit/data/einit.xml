@@ -861,13 +861,6 @@
       command="ipw3945d --foreground"
       restart="yes" />
 
-<!--     <daemon id="daemon-cupsd"
-      name="cupsd - common unix printing system daemon"
-      provides="cupsd"
-      requires="mount/critical:net-lo"
-      command="cupsd -f"
-      restart="yes" /> -->
-
      <daemon id="daemon-ntpd"
       name="ntpd"
       provides="ntpd"
@@ -894,6 +887,7 @@
       name="CUPS (Common Unix Printing System)"
       provides="cupsd"
       requires="network:syslog:mount/critical"
+      prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups"
       command="/usr/sbin/cupsd -F"
       restart="yes" />
 
