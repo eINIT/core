@@ -836,7 +836,8 @@
       name="NetworkManager"
       provides="NM"
       requires="dhcdbd"
-      prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager"
+      prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager;
+               [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console"
       command="NetworkManager --no-daemon"
       restart="yes" />
 
