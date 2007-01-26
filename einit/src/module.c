@@ -294,7 +294,7 @@ struct lmodule *mod_update (struct lmodule *module) {
        np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
       }
      }
-     x = streefind (service_aliases, module->si->provides[i], TREE_FIND_NEXT);
+     x = streefind (x, module->si->provides[i], TREE_FIND_NEXT);
     }
    }
 
@@ -842,26 +842,96 @@ void mod_event_handler(struct einit_event *event) {
     }
    } else if (!strcmp (argv[1], "services")) {
     char buffer[1024];
-    struct stree *cur = service_usage;
 
-    if (!event->flag) event->flag = 1;
+    struct lmodule *cur = mlist;
+    struct stree *serv = NULL;
+    struct stree *modes = NULL;
+    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
+
+    *buffer = 0;
+
+    pthread_mutex_lock (&modules_update_mutex);
 
     while (cur) {
-     struct service_usage_item *su = (struct service_usage_item *)cur->value;
-     snprintf (buffer, 1024, "%s\n", cur->key);
-     fdputs (buffer, event->integer);
-     if (su->provider) {
-      uint32_t i = 0;
-      for (; su->provider[i]; i++) {
-       if (su->provider[i]->module) {
-        snprintf (buffer, 1024, " >> %s (%s)\n", su->provider[i]->module->rid ? su->provider[i]->module->rid : "unknown", su->provider[i]->module->name ? su->provider[i]->module->name : "unknown");
-       } else
-        snprintf (buffer, 1024, " >> unknown module\n");
+     uint32_t i = 0;
+     if (cur->si->provides) {
+      for (i = 0; cur->si->provides[i]; i++) {
+       struct stree *curserv = streefind (serv, cur->si->provides[i], TREE_FIND_FIRST);
+       if (curserv) {
+        curserv->value = (void *)setadd ((void **)curserv->value, (void *)cur, SET_NOALLOC);
+        curserv->luggage = curserv->value;
+       } else {
+        void **nvalue = setadd ((void **)NULL, (void *)cur, SET_NOALLOC);
+        serv = streeadd (serv, cur->si->provides[i], nvalue, SET_NOALLOC, nvalue);
        }
-      fdputs (buffer, event->integer);
+      }
      }
-     cur = streenext (cur);
+
+     cur = cur->next;
     }
+
+    while (cfgn) {
+     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && !streefind (modes, cfgn->mode->id, TREE_FIND_FIRST)) {
+      uint32_t i = 0;
+      for (i = 0; cfgn->arbattrs[i]; i+=2) {
+       if (!strcmp(cfgn->arbattrs[i], "services")) {
+        char **tmps = str2set (':', cfgn->arbattrs[i+1]);
+
+        modes = streeadd (modes, cfgn->mode->id, tmps, SET_NOALLOC, tmps);
+
+        break;
+       }
+      }
+     }
+
+     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
+    }
+
+    if (serv) {
+     struct stree *scur = serv;
+     while (scur) {
+      char **inmodes = NULL;
+      struct stree *mcur = modes;
+
+      while (mcur) {
+       if (inset ((void **)mcur->value, (void *)scur->key, SET_TYPE_STRING)) {
+        inmodes = (char **)setadd((void **)inmodes, (void *)mcur->key, SET_TYPE_STRING);
+       }
+
+       mcur = streenext(mcur);
+      }
+
+      if (inmodes) {
+       char *modestr;
+       if (options & EIPC_OUTPUT_XML) {
+        modestr = set2str (':', inmodes);
+        snprintf (buffer, 1024, " <service id=\"%s\" used-in=\"%s\" />\n", scur->key, modestr);
+       } else {
+        modestr = set2str (' ', inmodes);
+        snprintf (buffer, 1024, "service \"%s\" (%s)\n", scur->key, modestr);
+       }
+       free (modestr);
+       free (inmodes);
+      } else if (!(options & EIPC_ONLY_RELEVANT)) {
+       if (options & EIPC_OUTPUT_XML)
+        snprintf (buffer, 1024, " <service id=\"%s\" />\n", scur->key);
+       else
+        snprintf (buffer, 1024, "service \"%s\" (not in any mode)\n", scur->key);
+      }
+
+      if (*buffer)
+       fdputs (buffer, event->integer);
+      *buffer = 0;
+      scur = streenext (scur);
+     }
+
+     streefree (serv);
+    }
+    if (modes) streefree (modes);
+
+    pthread_mutex_unlock (&modules_update_mutex);
+
+    if (!event->flag) event->flag = 1;
    }
   }
  }
@@ -874,8 +944,8 @@ void module_loader_einit_event_handler (struct einit_event *ev) {
 
   while (node = cfg_findnode ("services-alias", 0, node)) {
    if (node->idattr && node->svalue) {
-//    fprintf (stderr, " >> adding alias %s=%s\n", node->idattr, node->svalue);
     new_aliases = streeadd (new_aliases, node->svalue, node->idattr, SET_TYPE_STRING, NULL);
+    new_aliases = streeadd (new_aliases, node->idattr, node->svalue, SET_TYPE_STRING, NULL);
    }
   }
 
