@@ -297,6 +297,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
      options |= PEXEC_OPTION_NOPIPE;
     } else if (!strcmp (optx[x], "safe-environment")) {
      options |= PEXEC_OPTION_SAFEENVIRONMENT;
+    } else if (!strcmp (optx[x], "dont-close-stdin")) {
+     options |= PEXEC_OPTION_DONTCLOSESTDIN;
     }
    }
 
@@ -351,6 +353,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    perror ("setting uid");
 
   close (1);
+
   dup2 (2, 1);
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
@@ -434,6 +437,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
      options |= PEXEC_OPTION_NOPIPE;
     } else if (!strcmp (optx[x], "safe-environment")) {
      options |= PEXEC_OPTION_SAFEENVIRONMENT;
+    } else if (!strcmp (optx[x], "dont-close-stdin")) {
+     options |= PEXEC_OPTION_DONTCLOSESTDIN;
     }
    }
 
@@ -469,7 +474,9 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   if (uid && (setuid (uid) == -1))
    perror ("setting uid");
 
-  close (0);
+  if (!(options & PEXEC_OPTION_DONTCLOSESTDIN))
+   close (0);
+
   close (1);
   if (!(options & PEXEC_OPTION_NOPIPE)) {
    close (2);
