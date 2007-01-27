@@ -245,6 +245,7 @@ int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
   if (status->task & MOD_ENABLE) {
    if (shellcmd->enable) {
     if (shellcmd->pidfile) {
+     fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
      unlink (shellcmd->pidfile);
      errno = 0;
     }
@@ -268,6 +269,7 @@ int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
      }
 
      if (shellcmd->pidfile) {
+      fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
       unlink (shellcmd->pidfile);
       errno = 0;
      }

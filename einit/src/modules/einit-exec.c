@@ -718,7 +718,8 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   daemon_environment = __create_environment (daemon_environment, shellcmd->variables);
 
   if (shellcmd->pidfile) {
-//   fprintf (stderr, " >> unlinking %s\n", shellcmd->pidfile);
+   fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
+   fprintf (stderr, " >> unlinking %s\n", shellcmd->pidfile);
    unlink (shellcmd->pidfile);
    errno = 0;
   }
@@ -779,7 +780,7 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  shellcmd->cb = NULL;
 
  if (shellcmd->pidfile) {
-//  fprintf (stderr, " >> unlinking %s\n", shellcmd->pidfile);
+  fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
   unlink (shellcmd->pidfile);
   errno = 0;
  }
