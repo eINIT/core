@@ -614,13 +614,19 @@ void *dexec_watcher (struct spidcb *spid) {
 /* don't try to restart if the daemon died too swiftly */
    pthread_mutex_unlock (&cur->mutex);
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
-    struct einit_event fb;
-    fb.task = MOD_ENABLE;
+    struct einit_event fb = evstaticinit(EVE_FEEDBACK_MODULE_STATUS);
     fb.para = (void *)module;
+    fb.task = MOD_ENABLE | MOD_FEEDBACK_SHOW;
+    fb.status = STATUS_WORKING;
+    fb.flag = 0;
+
     snprintf (stmp, 1024, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
-    notice (5, stmp);
+    fb.string = stmp;
+    fb.integer = module->fbseq+1;
+    status_update ((&fb));
+
     dx->cb = NULL;
-    startdaemon (dx, &fb);
+    __start_daemon_function (dx, &fb);
    } else {
     dx->cb = NULL;
     snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
