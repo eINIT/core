@@ -179,7 +179,7 @@
     <critical s="/usr:/var" />
    </mountpoints>
 <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
-   <fsck-command s="pexec-options dont-close-stdin no-pipe; /sbin/fsck -a -T -t %1$s %2$s" />
+   <fsck-command s="pexec-options no-pipe; /sbin/fsck -a -T -t %1$s %2$s" />
 
    <block-devices>
     <dev-constraints s="/dev/([shm]d[a-z]?[0-9]*)" />
