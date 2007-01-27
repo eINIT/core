@@ -115,7 +115,7 @@ int disable (void *pa, struct einit_event *status) {
 }
 
 void einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if ((ev->type == EVE_CONFIGURATION_UPDATE) || (ev->type == EVE_UPDATE_CONFIGURATION)){
   char *p;
   if (p = cfg_getstring("services-external/provided", NULL)) {
 

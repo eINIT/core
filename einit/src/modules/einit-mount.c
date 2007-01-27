@@ -1405,7 +1405,7 @@ void mount_ipc_handler(struct einit_event *ev) {
      }
      cur = streenext (cur);
     }
-   } else if (!strcmp (argv[1], "mtab")) {
+   } /* else if (!strcmp (argv[1], "mtab")) {
     char buffer[1024];
     struct stree *cur = mcb.mtab;
     struct legacy_fstab_entry *val = NULL;
@@ -1419,7 +1419,7 @@ void mount_ipc_handler(struct einit_event *ev) {
      }
      cur = streenext (cur);
     }
-   }
+   }*/
   } else
 #endif
   if (!strcmp (argv[0], "examine") && !strcmp (argv[1], "configuration")) {
