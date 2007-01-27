@@ -561,6 +561,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }
 
   do {
+//   puts (" >> calling a wait()");
    waitpid (child, &pidstatus, 0);
   } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
  }
