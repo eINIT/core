@@ -213,6 +213,8 @@
     <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
     <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir -p /dev/shm" options="critical" />
     <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir -p /dev/pts" options="critical" />
+    <node mountpoint="/var/run" fs="tmpfs" options="critical" />
+<!--    <node mountpoint="/var/log" fs="tmpfs" options="critical" />    -->
    </fstab>
   </storage>
 
@@ -375,19 +377,21 @@
      command="/sbin/portmap -d"
      restart="yes" />
 
-<!-- X11 -->
-<!-- credits to KKtm from the gentoo forums for this one -->
-    <daemon id="daemon-gdm"
-     name="XDM (GDM)"
-     provides="xdm:x11"
-     requires="net-lo:video:mount/critical"
-     command="/usr/sbin/gdm -nodaemon"
+<!-- Display Managers -->
+    <shell id="shell-gdm"
+     name="GDM - The GNOME Display Manager"
+     provides="gdm"
+     requires="mount/critical:net-lo:kern-x11"
+     pid="/var/run/gdm.pid"
+     prepare="mkdir /var/log/gdm"
+     enable="gdm"
+     disable="gdm-stop"
      restart="yes" />
 
     <daemon id="daemon-kdm"
-     name="XDM (KDM)"
-     provides="xdm:x11"
-     requires="net-lo:video:mount/critical"
+     name="KDM - The KDE Display Manager"
+     provides="kdm"
+     requires="mount/critical:net-lo:kern-x11"
      prepare="rm -f /var/run/kdm.pid"
      command="/usr/kde/3.5/bin/kdm -nodaemon"
      restart="yes" />
@@ -454,7 +458,6 @@
      system="ethernet" />
     <shell id="shell-kern-sound"
      based-on-template="template-shell-kern-module-loader"
-     provides="kern-sound:kern-alsa"
      disable="/bin/true"
      system="sound" />
     <shell id="shell-kern-dvb"
@@ -473,66 +476,20 @@
     <shell id="shell-kern-bluetooth"
      based-on-template="template-shell-kern-module-loader"
      system="bluetooth" />
-
-    <shell id="shell-kern-audio-alsa"
-     name="Kernel Modules (ALSA)"
-     provides="kern-alsa"
-     requires="mount/system"
-     enable="
-      kernel_modules_alsa=`/sbin/modprobe -c|grep -E '(snd-card|sound-service)-[0-9]'|awk '{print $3}'`;
-      for x in ${kernel_modules_alsa};
-       do echo $x; modprobe $x;
-      done; /bin/true"
-     disable="
-      kernel_modules_alsa=`cat /proc/asound/modules|awk '{print $2}'`;
-      for x in ${kernel_modules_alsa}; do
-       ${configuration_command_rmmod} $x;
-      done;
-      /bin/true"
-     variables="configuration-command-rmmod" />
+    <shell id="shell-kern-x11"
+     based-on-template="template-shell-kern-module-loader"
+     system="x11" />
+    <shell id="shell-kern-hwmon"
+     based-on-template="template-shell-kern-module-loader"
+     system="hwmon" />
 
     <shell id="shell-sensors"
      name="LM-Sensors"
      provides="sensors"
-     requires="mount/critical"
-     enable="
-      for x in ${configuration_kernel_modules_sensors};
-       do echo $x; modprobe $x;
-      done;
-      /usr/bin/sensors -s"
-     disable="
-      for x in ${configuration_kernel_modules_sensors}; do
-       ${configuration_command_rmmod} $x;
-      done; /bin/true"
+     requires="mount/critical:kern-hwmon"
+     enable="/usr/bin/sensors -s"
+     disable="/bin/true"
      variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
-
-<!-- nvidia -->
-<!-- this would normally only load the module, but somehow uevents seem not to work properly
- with this one... *shrugs* might be an old driver of mine -->
-    <shell id="shell-kern-nvidia"
-     name="Proprietary NVIDIA X11 Drivers"
-     provides="kern-nvidia"
-     requires="mount/system"
-     enable="modprobe nvidia;
-      for i in 0 1 2 3 4 5 6 7; do
-       mknod /dev/nvidia$i c 195 $i;
-      done;
-      mknod /dev/nvidiactl c 195 255;
-      chgrp video /dev/nvidia*;
-      chmod 0660 /dev/nvidia*;
-      /bin/true;"
-     disable="${configuration_command_rmmod} nvidia;
-      rm /dev/nvidia*"
-     variables="configuration-command-rmmod" />
-
-<!-- no guarantee on this one, just wrote what i remember should be working -->
-    <shell id="shell-kern-ati"
-     name="Proprietary ATI X11 Drivers"
-     provides="kern-ati"
-     requires="mount/system"
-     enable="modprobe fglrx"
-     disable="${configuration_command_rmmod} fglrx"
-     variables="configuration-command-rmmod" />
 
 <!-- olof from the gentoo forums made a draft for this one -->
     <shell id="shell-915resolution"
@@ -898,6 +855,7 @@
       requires="network:mount/critical:mysqld"
       enable="/usr/sbin/dovecot"
       disable="/usr/bin/killall dovecot" />
+
      <shell id="shell-postfix"
       name="postfix"
       uid="postfix"
@@ -906,6 +864,7 @@
       enable="/usr/sbin/postfix start"
       disable="/usr/sbin/postfix stop"
       reload="/usr/sbin/postfix reload" />
+
      <shell id="shell-lisa"
       name="LAN Information Server (LISA)"
       provides="lisa"
