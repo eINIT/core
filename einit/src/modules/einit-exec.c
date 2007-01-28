@@ -509,8 +509,9 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
    if (fx = fdopen(pipefderr[0], "r")) {
     char rxbuffer[1024];
+    setvbuf (fx, NULL, _IONBF, 0);
 
-    while ((!feof(fx)) && (fgets(rxbuffer, 1024, fx) > 0)) {
+    while ((!feof(fx)) && fgets(rxbuffer, 1024, fx)) {
      char **fbc = str2set ('|', rxbuffer), orest = 1;
      strtrim (rxbuffer);
 
@@ -656,6 +657,12 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 
  if (!shellcmd) return STATUS_FAIL;
 
+ if (shellcmd->pidfile) {
+  fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
+  unlink (shellcmd->pidfile);
+  errno = 0;
+ }
+
  if (shellcmd->prepare) {
 //  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
   if (pexec (shellcmd->prepare, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
@@ -717,13 +724,6 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 
   daemon_environment = (char **)setcombine ((void **)einit_global_environment, (void **)shellcmd->environment, SET_TYPE_STRING);
   daemon_environment = __create_environment (daemon_environment, shellcmd->variables);
-
-  if (shellcmd->pidfile) {
-   fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
-   fprintf (stderr, " >> unlinking %s\n", shellcmd->pidfile);
-   unlink (shellcmd->pidfile);
-   errno = 0;
-  }
 
   execve (cmd[0], cmd, daemon_environment);
   free (cmd);

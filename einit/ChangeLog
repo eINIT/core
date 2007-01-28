@@ -1,5 +1,7 @@
 2007/01/28: mdeininger
  * fixed einit-control hangs
+ * might've fixed the piping issue
+ * hopefully got the pid="" attribute to work properly with daemons
 
 2007/01/27: mdeininger
  * fixed einit-external
