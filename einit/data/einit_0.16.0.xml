@@ -267,7 +267,7 @@
  <services>
   <virtual>
    <module>
-<!-- you can define daemoni like this -->
+<!-- Power Management Services -->
     <daemon id="daemon-apmd"
      name="APMd"
      provides="apmd"
@@ -275,18 +275,33 @@
      command="/usr/sbin/apmd"
      restart="yes" />
 
-<!-- modified version of the gpm module by teppic from the wiki -->
-<!-- as has been suggested by him, i have modified this to use variables, hope it works... -->
-    <shell id="shell-gpm"
-     name="Console mouse services (GPM)"
-     provides="gpm"
-     requires="tty"
-     enable="/usr/sbin/gpm -m ${configuration_peripherals_pointing_device_gpm_device} -t ${configuration_peripherals_pointing_device_gpm_type}"
-     disable="killall gpm"
-     restart="yes"
-     vairables="configuration-peripherals-pointing-device-gpm/.*" />
+    <daemon id="daemon-acpi"
+     name="Advanced Configuration and Power Interface daemon"
+     provides="acpi"
+     requires="mount/critical"
+     command="/usr/sbin/acpid --foreground"
+     restart="yes" />
 
-<!-- new DBUS module -->
+    <shell id="shell-cpufreq"
+     name="Cpufreq Governor"
+     provides="cpufreq"
+     requires="mount/critical:acpi"
+     enable="for i in ${configuration_program_options_cpufreq_cpus};
+      do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
+      done; /bin/true"
+     disable="for i in ${configuration_program_options_cpufreq_cpus} ;
+      do /usr/bin/cpufreq-set --cpu $i --governor performance ;
+      done; /bin/true"
+     variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufreq-cpus" />
+
+    <daemon id="daemon-atieventsd"
+     name="atieventsd - ATI external events daemon"
+     provides="atieventsd"
+     requires="acpi"
+     command="/opt/ati/sbin/atieventsd --nodaemon"
+     restart="yes" />
+
+<!-- Desktop Services -->
     <daemon id="daemon-dbus"
      name="D-BUS system messagebus"
      provides="dbus"
@@ -296,8 +311,6 @@
      cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
      restart="yes" />
 
-<!-- HALD -->
-<!-- credits to KKtm from the Gentoo Forums... -->
     <daemon id="daemon-hald"
      name="Hardware Abstraction Layer Daemon"
      provides="hal"
@@ -305,16 +318,7 @@
      command="/usr/sbin/hald --daemon=no --use-syslog"
      restart="yes" />
 
-<!-- ACPI --> 
-<!-- ... and more credits to KKtm from the Gentoo Forums :) -->
-    <daemon id="daemon-acpi"
-     name="Advanced Configuration and Power Interface daemon"
-     provides="acpi"
-     requires="mount/critical"
-     command="/usr/sbin/acpid --foreground"
-     restart="yes" />
-
-<!-- Syslog -->
+<!-- Logger Services -->
     <daemon id="daemon-metalog"
      name="Syslogger (metalog)"
      provides="syslog"
@@ -322,7 +326,6 @@
      command="/usr/sbin/metalog"
      restart="yes" />
 
-<!-- haader uses syslog-ng - thanks haader! ;) -->
     <daemon id="daemon-syslog-ng"
      name="Syslogger (syslog-ng)"
      provides="syslog"
@@ -330,7 +333,6 @@
      command="/usr/sbin/syslog-ng -F"
      restart="yes" />
 
-<!-- this is for the syslog in busybox -->
     <daemon id="daemon-syslog"
      name="Syslogger (syslog)"
      provides="syslog"
@@ -338,7 +340,7 @@
      command="/sbin/syslogd -n"
      restart="yes" />
 
-<!-- festival -->
+<!-- Misc Services -->
     <daemon id="daemon-tts-festival"
      name="TTS (festival)"
      provides="festival:speechd:tts"
@@ -346,7 +348,22 @@
      command="/usr/bin/festival --server -b /etc/festival/server.scm"
      restart="yes" />
 
-<!-- network daemoni -->
+    <daemon id="daemon-xcompmgr"
+     name="X11 (xcompmgr)"
+     provides="x11-composite"
+     requires="x11"
+     command="/usr/bin/xcompmgr -c"
+     DISPLAY=":0.0"
+     restart="yes" />
+
+    <daemon id="daemon-boinc"
+     name="BOINC client"
+     provides="boinc"
+     requires="mount/critical"
+     command="cd /var/lib/boinc; boinc_client"
+     restart="yes" />
+
+<!-- Network Services -->
     <daemon id="daemon-sshd"
      name="SSHd"
      provides="sshd"
@@ -354,13 +371,13 @@
      command="/usr/sbin/sshd -D"
      restart="yes" />
 
-<!-- proxies -->
     <daemon id="daemon-privoxy"
      name="Privoxy Daemon"
      provides="privoxy"
      requires="network:mount/critical"
      command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
      restart="yes" />
+
     <daemon id="daemon-tor"
      name="TOR Daemon"
      provides="tor"
@@ -368,8 +385,6 @@
      command="/usr/bin/tor"
      restart="yes" />
 
-<!-- portmap -->
-<!-- you need this for NFS -->
     <daemon id="daemon-portmap"
      name="Portmap Daemon"
      provides="portmap"
@@ -377,7 +392,136 @@
      command="/sbin/portmap -d"
      restart="yes" />
 
-<!-- Display Managers -->
+    <shell id="shell-clock-ntpdate"
+     name="Set the system clock using ntpdate"
+     provides="ntpdate"
+     requires="mount/critical:network"
+     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock};
+     ntpdate -b pool.ntp.org"
+     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
+              /bin/true"
+     variables="configuration-program-options-hwclock" />
+
+    <daemon id="daemon-smbd"
+     name="Samba-daemon"
+     provides="smbd"
+     requires="mount/local:net-lo:nmbd"
+     command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
+     restart="yes" />
+
+    <daemon id="daemon-nmbd"
+     name="NetBIOS name server"
+     provides="nmbd"
+     requires="mount/local:net-lo"
+     command="/usr/sbin/nmbd -F"
+     restart="yes" />
+
+    <shell id="shell-firestarter"
+     name="firestarter"
+     provides="firestarter"
+     requires="mount/critical:net-lo"
+     prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
+               firestarter --generate-scripts;
+              fi"
+     enable="firestarter --start"
+     disable="firestarter --stop"
+     restart="yes" />
+
+    <daemon id="daemon-netplugd"
+     name="netplugd -- network cable hotplug management daemon"
+     provides="netplugd"
+     requires="ipc"
+     command="netplugd -F"
+     restart="yes" />
+
+    <daemon id="deamon-dhcdbd"
+     name="dhcdbd"
+     provides="dhcdbd"
+     requires="dbus"
+     command="rm -f /var/run/dhcdbd.pid; dbus-launch dhcdbd -sn"
+     restart="yes" />
+
+    <daemon id="daemon-NetworkManager"
+     name="NetworkManager"
+     provides="NM"
+     requires="dhcdbd"
+     prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager;
+              [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console"
+     command="NetworkManager --no-daemon"
+     restart="yes" />
+
+    <shell id="shell-cpufreq"
+     name="Cpufreq Governor"
+     provides="cpufreq"
+     requires="mount/critical:acpi"
+     enable="for i in ${configuration_program_options_cpufreq_cpus};
+      do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
+      done; /bin/true"
+     disable="for i in ${configuration_program_options_cpufreq_cpus} ;
+      do /usr/bin/cpufreq-set --cpu $i --governor performance ;
+      done; /bin/true"
+     variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufr
+
+    <daemon id="daemon-ntpd"
+     name="ntpd"
+     provides="ntpd"
+     requires="mount/critical:net-lo"
+     command="ntpd -n"
+     restart="yes" />
+
+    <daemon id="daemon-avahi-dnsconfd"
+     name="avahi-dnsconfd"
+     provides="avahi-dnsconfd"
+     requires="avahi-daemon"
+     command="avahi-dnsconfd"
+     restart="yes" />
+
+    <daemon id="deamon-avahi-daemon"
+     name="avahi-daemon"
+     provides="avahi-daemon"
+     requires="net-lo:mount/critical"
+     command="avahi-daemon"
+     restart="yes" />
+
+    <shell id="shell-lisa"
+     name="LAN Information Server (LISA)"
+     provides="lisa"
+     requires="network:mount/critical"
+     enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
+     disable="/usr/bin/killall lisa" />
+
+<!-- Server Services -->
+    <daemon id="daemon-lighttpd"
+     name="HTTPd (Lighty)"
+     provides="httpd"
+     requires="mount/local:net-lo"
+     command="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf"
+     restart="yes" />
+
+    <shell id="shell-dovecot"
+     name="IMAP/POP3 server (Dovecot)"
+     provides="dovecot"
+     requires="network:mount/critical:mysqld"
+     enable="/usr/sbin/dovecot"
+     disable="/usr/bin/killall dovecot" />
+
+    <shell id="shell-postfix"
+     name="postfix"
+     uid="postfix"
+     provides="mta"
+     requires="network:mount/critical"
+     enable="/usr/sbin/postfix start"
+     disable="/usr/sbin/postfix stop"
+     reload="/usr/sbin/postfix reload" />
+
+    <daemon id="daemon-mysqld"
+     name="Database (MySQL)"
+     provides="mysqld"
+     requires="mount/local:net-lo"
+     command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
+     restart="yes" />
+
+<!-- Display Manager Services -->
     <shell id="shell-gdm"
      name="GDM - The GNOME Display Manager"
      provides="x11:gdm"
@@ -403,14 +547,6 @@
      command="/usr/bin/xdm -nodaemon"
      restart="yes" />
 
-    <daemon id="daemon-xcompmgr"
-     name="X11 (xcompmgr)"
-     provides="x11-composite"
-     requires="x11"
-     command="/usr/bin/xcompmgr -c"
-     DISPLAY=":0.0"
-     restart="yes" />
-
     <daemon id="daemon-entrance"
      name="XDM (Entrance)"
      provides="x11:entrance"
@@ -419,7 +555,16 @@
      DISPLAY=":0.0"
      HOME="/root" />
 
-<!-- swap -->
+<!-- System Services -->
+    <shell id="shell-clock-hwclock"
+     name="Set the system clock using the hardware clock"
+     provides="clock"
+     requires="mount/system"
+     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock}"
+     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
+              /bin/true"
+     variables="configuration-program-options-hwclock" />
+
     <shell id="shell-swap"
      name="Swap-Device(s)"
      provides="swap"
@@ -428,7 +573,86 @@
      disable="swapoff ${configuration_system_swap_device}"
      variables="configuration-system-swap/device" />
 
-<!-- modules -->
+    <shell id="shell-keyboard"
+     name="Console (Keyboard Layout)"
+     provides="keyboard"
+     requires="mount/local"
+     enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout}"
+     disable="/bin/loadkeys us"
+     variables="configuration-peripherals-keyboard/layout" />
+
+    <shell id="shell-sensors"
+     name="LM-Sensors"
+     provides="sensors"
+     requires="mount/critical:kern-hwmon"
+     enable="/usr/bin/sensors -s"
+     disable="/bin/true"
+     variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
+
+    <shell id="shell-915resolution"
+     name="Resolution (Intel)"
+     provides="video-intel-resolution"
+     requires="mount/critical"
+     enable="915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true"
+     disable="/bin/true"
+     variables="configuration-video-intel-resolution/x:configuration-video-intel-resolution/y:configuration-video-intel-resolution/bpp:configuration-video-intel-resolution/mode" />
+
+    <daemon id="daemon-ivman"
+     name="Ikke's Volume Manager (IVMAN)"
+     uid="ivman"
+     gid="plugdev"
+     provides="ivman"
+     requires="hald"
+     prepare="rm -f /var/run/ivman.pid"
+     cleanup="rm -f /var/run/ivman.pid"
+     command="/usr/bin/ivman --system --nofork"
+     restart="yes" />
+
+    <shell id="shell-irqbalance"
+     name="irqbalance"
+     provides="irqbalance"
+     requires="mount/critical"
+     enable="irqbalance"
+     disable="/bin/true"
+     restart="no" />
+
+    <shell id="shell-fbsplash"
+     name="fbsplash"
+     provides="fbsplash"
+     requires="mount/critical"
+     enable="for TTY in ${configuration_feedback_visual_fbsplash_ttys} ; do
+              splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setcfg ;
+              splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setpic 2&gt;/dev/null ;
+              splash_util --tty=${TTY} -c on ;
+             done"
+     disable="/bin/true"
+     variables="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
+
+<!-- Multimedia Services -->
+    <shell id="shell-mythtv-backend"
+     name="MythTV Backend"
+     provides="mythtv"
+     requires="network:mount/critical:kern-dvb"
+     enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
+     disable="killall mythbackend; /bin/true"
+     HOME="/etc/mythtv"/>
+
+    <shell id="shell-alsa"
+     name="Advanced Linux Sound Architecture"
+     provides="alsa"
+     requires="mount/critical"
+     enable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} restore;"
+     disable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} store; /bin/true"
+     variables="configuration-audio-alsa-mixer/file" />
+
+    <daemon id="daemon-mpd"
+     name="Music Player Daemon"
+     provides="mpd"
+     requires="mount/local"
+     command="/usr/bin/mpd --no-create-db --no-daemon"
+     restart="yes" />
+
+<!-- Kernel Module Services -->
     <shell-template id="template-shell-kern-module-loader"
      name="Kernel Modules (${system})"
      provides="kern-${system}"
@@ -474,40 +698,13 @@
      based-on-template="template-shell-kern-module-loader"
      system="hwmon" />
 
-    <shell id="shell-sensors"
-     name="LM-Sensors"
-     provides="sensors"
-     requires="mount/critical:kern-hwmon"
-     enable="/usr/bin/sensors -s"
-     disable="/bin/true"
-     variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
+<!-- Network Device Services -->
+    <shell id="shell-net-loopback"
+     name="Network (loopback)"
+     provides="net-lo"
+     enable="/sbin/ifconfig lo up 127.0.0.1/8"
+     disable="ifconfig lo down" />
 
-<!-- olof from the gentoo forums made a draft for this one -->
-    <shell id="shell-915resolution"
-     name="Resolution (Intel)"
-     provides="video-intel-resolution"
-     requires="mount/critical"
-     enable="915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true"
-     disable="/bin/true"
-     variables="configuration-video-intel-resolution/x:configuration-video-intel-resolution/y:configuration-video-intel-resolution/bpp:configuration-video-intel-resolution/mode" />
-
-<!-- some things that people tend to like :twisted: -->
-    <shell id="shell-keyboard"
-     name="Console (Keyboard Layout)"
-     provides="keyboard"
-     requires="mount/local"
-     enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout}"
-     disable="/bin/loadkeys us"
-     variables="configuration-peripherals-keyboard/layout" />
-
-<!--    <shell-template id="template-shell-net-static"
-     name="Network (${interface}, static)"
-     provides="net-${interface}"
-     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
-     disable="ifconfig ${interface} down"
-     variables="configuration-network-interfaces-${interface}/.*" /> -->
-
-<!-- revised version of the template - thanks lonn! ;) -->
     <shell-template id="template-shell-net-static"
      name="Network (${interface}, static)"
      provides="net-${interface}"
@@ -517,62 +714,6 @@
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
 
-    <shell id="shell-net-loopback"
-     name="Network (loopback)"
-     provides="net-lo"
-     enable="/sbin/ifconfig lo up 127.0.0.1/8"
-     disable="ifconfig lo down" />
-
-<!-- Clock -->
-    <shell id="shell-clock-ntpdate"
-     name="Set the system clock using ntpdate"
-     provides="ntpdate"
-     requires="mount/critical:network"
-     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock};
-     ntpdate -b pool.ntp.org"
-     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
-              /bin/true"
-     variables="configuration-program-options-hwclock" />
-
-<!-- I modified what KKtm wrote as a mod-daemon -->
-    <shell id="shell-clock-hwclock"
-     name="Set the system clock using the hardware clock"
-     provides="clock"
-     requires="mount/system"
-     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock}"
-     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
-              /bin/true"
-     variables="configuration-program-options-hwclock" />
-
-<!-- another hooray for haader, who contributed this module definition.
-    this should (in theory) work for his Atheros WLAN NIC. I slightly modified it to pass the SSID
-    as a varialble, just like he wanted. -->
-    <shell id="shell-net-ath0"
-     name="Network (Wireless, Atheros)"
-     requires="mount/system"
-     provides="net-ath0"
-     enable="pexec-options no-pipe; rm -f /var/run/dhcpcd-ath0.pid ;
-             /sbin/modprobe ${configuration_kernel_module_ath0} ;
-             /sbin/wlanconfig ath0 create wlandev wifi0 wlanmode sta ;
-             /sbin/iwconfig ath0 essid ${configuration_network_wireless_ssid} ;
-             /sbin/iwpriv ath0 mode 3 ;
-             /sbin/wpa_supplicant -Dmadwifi -c/etc/wpa_supplicant.conf -W -B -iath0 -P/var/run/wpa_supplicant-ath0.pid ;
-             /bin/wpa_cli -iath0 -B ;
-             dhcpcd ath0 ;
-             /sbin/ifconfig ath0 ; "
-     disable="${configuration_command_rmmod} ${configuration_kernel_module_ath0}"
-     variables="configuration-kernel-module-ath0:configuration-network-wireless-ssid:configuration-command-rmmod" />
-
-<!-- ALSA -->
-    <shell id="shell-audio-alsa"
-     name="Audio (ALSA)"
-     provides="alsa"
-     requires="kern-alsa:mount/critical"
-     enable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} restore;"
-     disable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} store; /bin/true"
-     variables="configuration-audio-alsa-mixer/file" />
-
-<!-- DHCPcd -->
     <shell-template id="template-shell-net-dhcp"
      name="Network (${interface}, using DHCP)"
      provides="net-${interface}"
@@ -585,33 +726,7 @@
      based-on-template="template-shell-net-dhcp"
      interface="eth0" />
 
-<!-- mythtv -->
-<!-- damn this thing's a bitch -->
-    <shell id="shell-mythtv-backend"
-     name="MythTV Backend"
-     provides="mythtv"
-     requires="network:mount/critical:kern-dvb"
-     enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
-     disable="killall mythbackend; /bin/true"
-     HOME="/etc/mythtv"/>
-
-<!-- CpuFrequtils -->
-<!-- original credits to yoyo for this one, and to Lloeki for enhancing it to work with multi-CPU/-core systems -->
-    <shell id="shell-cpufreq"
-     name="Cpufreq Governor"
-     provides="cpufreq"
-     requires="mount/critical:acpi"
-     enable="for i in ${configuration_program_options_cpufreq_cpus};
-      do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
-      done; /bin/true"
-     disable="for i in ${configuration_program_options_cpufreq_cpus} ;
-      do /usr/bin/cpufreq-set --cpu $i --governor performance ;
-      done; /bin/true"
-     variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufreq-cpus" />
-
-
-<!-- fcron -->
-<!-- this one was written by Janax@Gentoo Forums -->
+<!-- Cron Services -->
     <daemon id="daemon-fcron"
      name="Cron (fcron)"
      provides="cron"
@@ -619,258 +734,75 @@
      command="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf"
      restart="yes" />
 
-<!-- Bluetooth modules, thanks Lloeki!
-    err, i modified one variable ;) -->
-     <shell id="shell-bluez-hid2hci"
-      name="Bluetooth (HID2HCI)"
-      provides="bluetooth-hid2hci"
-      requires="mount/local:kern-bluetooth"
-      enable="/usr/sbin/hid2hci -0 -q"
-      disable="/bin/true" />
+    <daemon id="daemon-vixie-cron"
+     name="Cron (Vixie)"
+     provides="cron"
+     requires="mount/local:net-lo"
+     command="/usr/sbin/cron -n"
+     restart="yes" />
 
-     <shell id="shell-bluez-rfcomm"
-      name="Bluetooth (RFCOMM)"
-      provides="bluetooth-rfcomm"
-      requires="mount/local:kern-bluetooth:bluetooth-hci"
-      enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
-      disable="/usr/bin/rfcomm release all" />
+<!-- Bluetooth Services -->
+    <shell id="shell-bluez-hid2hci"
+     name="Bluetooth (HID2HCI)"
+     provides="bluetooth-hid2hci"
+     requires="mount/local:kern-bluetooth"
+     enable="/usr/sbin/hid2hci -0 -q"
+     disable="/bin/true" />
 
-     <daemon id="daemon-bluez-hcid"
-      name="Bluetooth (HCId)"
-      provides="bluetooth-hci"
-      requires="mount/critical:kern-bluetooth"
-      command="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf"
-      restart="yes" /> 
+    <shell id="shell-bluez-rfcomm"
+     name="Bluetooth (RFCOMM)"
+     provides="bluetooth-rfcomm"
+     requires="mount/local:kern-bluetooth:bluetooth-hci"
+     enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
+     disable="/usr/bin/rfcomm release all" />
 
-     <daemon id="daemon-bluez-sdpd"
-      name="Bluetooth (SDPd)"
-      provides="bluetooth-sdp"
-      requires="mount/critical:kern-bluetooth:bluetooth-hci"
-      command="/usr/sbin/sdpd -n"
-      restart="yes" />
+    <daemon id="daemon-bluez-hcid"
+     name="Bluetooth (HCId)"
+     provides="bluetooth-hci"
+     requires="mount/critical:kern-bluetooth"
+     command="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf"
+     restart="yes" /> 
 
-     <daemon id="shell-bluez-hidd"
-      name="Bluetooth (HIDd)"
-      provides="bluetooth-hid"
-      requires="mount/critical:kern-bluetooth:bluetooth-hci"
-      command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
-      restart="yes"
-      variables="configuration-bluetooth-hidd/options" />
+    <daemon id="daemon-bluez-sdpd"
+     name="Bluetooth (SDPd)"
+     provides="bluetooth-sdp"
+     requires="mount/critical:kern-bluetooth:bluetooth-hci"
+     command="/usr/sbin/sdpd -n"
+     restart="yes" />
 
-<!-- Credits to DieselPower for these :) -->
-<!-- slightly modified by rmh3093 (presumably so that they don't fork(?)) -->
-     <daemon id="daemon-smbd"
-      name="Samba-daemon"
-      provides="smbd"
-      requires="mount/local:net-lo:nmbd"
-      command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
-      restart="yes" />
+    <daemon id="shell-bluez-hidd"
+     name="Bluetooth (HIDd)"
+     provides="bluetooth-hid"
+     requires="mount/critical:kern-bluetooth:bluetooth-hci"
+     command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
+     restart="yes"
+     variables="configuration-bluetooth-hidd/options" />
 
-     <daemon id="daemon-nmbd"
-      name="NetBIOS name server"
-      provides="nmbd"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/nmbd -F"
-      restart="yes" />
+<!-- Printing Services -->
+    <daemon id="daemon-cupsd"
+     name="CUPS (Common Unix Printing System)"
+     provides="cupsd"
+     requires="network:syslog:mount/critical"
+     prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups"
+     command="/usr/sbin/cupsd -F"
+     restart="yes" />
 
-<!-- creds to lloeki for the next three :) -->
-     <daemon id="daemon-lighttpd"
-      name="HTTPd (Lighty)"
-      provides="httpd"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf"
-      restart="yes" />
+    <daemon id="daemon-hplip"
+     name="HP Linux Imaging and Printing System"
+     provides="hplip"
+     command="python /usr/share/hplip/hpssd.py -x"
+     restart="yes" />
 
-     <daemon id="daemon-vixie-cron"
-      name="Cron (Vixie)"
-      provides="cron"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/cron -n"
-      restart="yes" />
-
-     <daemon id="daemon-mysqld"
-      name="Database (MySQL)"
-      provides="mysqld"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
-      restart="yes" />
-
-<!-- w00t haader! :) -->
-     <daemon id="daemon-mpd"
-      name="Music Player Daemon"
-      provides="mpd"
-      requires="mount/local"
-      command="/usr/bin/mpd --no-create-db --no-daemon"
-      restart="yes" />
-
-<!-- modified version of the ivman module by teppic from the wiki -->
-     <daemon id="daemon-ivman"
-      name="Ikke's Volume Manager (IVMAN)"
-      uid="ivman"
-      gid="plugdev"
-      provides="ivman"
-      requires="hald"
-      prepare="rm -f /var/run/ivman.pid"
-      cleanup="rm -f /var/run/ivman.pid"
-      command="/usr/bin/ivman --system --nofork"
-      restart="yes" />
-
-<!-- thanks, rmh3093! -->
-     <shell id="shell-firestarter"
-      name="firestarter"
-      provides="firestarter"
-      requires="mount/critical:net-lo"
-      prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
-                firestarter --generate-scripts;
-               fi"
-      enable="firestarter --start"
-      disable="firestarter --stop"
-      restart="yes" />
-
-     <daemon id="daemon-netplugd"
-      name="netplugd -- network cable hotplug management daemon"
-      provides="netplugd"
-      requires="ipc"
-      command="netplugd -F"
-      restart="yes" />
-
-     <shell id="shell-fbsplash"
-      name="fbsplash"
-      provides="fbsplash"
-      requires="mount/critical"
-      enable="for TTY in ${configuration_feedback_visual_fbsplash_ttys} ; do
-               splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setcfg ;
-               splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setpic 2&gt;/dev/null ;
-               splash_util --tty=${TTY} -c on ;
-              done"
-      disable="/bin/true"
-      variables="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
-
-<!-- this program saves its data the pwd so we must cd to the folder we want to saved data reside -->
-     <daemon id="daemon-boinc"
-      name="BOINC client"
-      provides="boinc"
-      requires="mount/critical"
-      command="cd /var/lib/boinc; boinc_client"
-      restart="yes" />
-
-     <shell id="shell-irqbalance"
-      name="irqbalance"
-      provides="irqbalance"
-      requires="mount/critical"
-      enable="irqbalance"
-      disable="/bin/true"
-      restart="no" />
-
-     <daemon id="daemon-hplip"
-      name="HP Linux Imaging and Printing System"
-      provides="hplip"
-      command="python /usr/share/hplip/hpssd.py -x"
-      restart="yes" />
-
-     <shell id="shell-hpiod"
-      name="HP I/O Backend Daemon"
-      provides="hpiod"
-      enable="hpiod"
-      disable="killall hpiod"
-      restart="yes" />
-
-     <daemon id="deamon-dhcdbd"
-      name="dhcdbd"
-      provides="dhcdbd"
-      requires="dbus"
-      command="rm -f /var/run/dhcdbd.pid; dbus-launch dhcdbd -sn"
-      restart="yes" />
-
-     <daemon id="daemon-NetworkManager"
-      name="NetworkManager"
-      provides="NM"
-      requires="dhcdbd"
-      prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager;
-               [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console"
-      command="NetworkManager --no-daemon"
-      restart="yes" />
-
-     <daemon id="daemon-atieventsd"
-      name="atieventsd - ATI external events daemon"
-      provides="atieventsd"
-      requires="acpi"
-      command="/opt/ati/sbin/atieventsd --nodaemon"
-      restart="yes" />
-
-<!-- super friendly gentoo module, works with modified etc/modules.d/ipw3945d -->
-     <daemon id="daemon-ipw3945d"
-      name="ipw3945d - regulatory daemon"
-      provides="ipw3945d"
-      requires="mount/critical"
-      group="ipw3945d"
-      prepare="if [ -f /var/run/ipw3945d.pid ]; then
-                rm -rf /var/run/ipw3945d.pid;
-               fi;
-               chown ipw3945d /sys/bus/pci/drivers/ipw3945/00*/cmd;
-               chmod a-w,u+rw /sys/bus/pci/drivers/ipw3945/00*/cmd"
-      command="ipw3945d --foreground"
-      restart="yes" />
-
-     <daemon id="daemon-ntpd"
-      name="ntpd"
-      provides="ntpd"
-      requires="mount/critical:net-lo"
-      command="ntpd -n"
-      restart="yes" />
-
-     <daemon id="daemon-avahi-dnsconfd"
-      name="avahi-dnsconfd"
-      provides="avahi-dnsconfd"
-      requires="avahi-daemon"
-      command="avahi-dnsconfd"
-      restart="yes" />
-
-     <daemon id="deamon-avahi-daemon"
-      name="avahi-daemon"
-      provides="avahi-daemon"
-      requires="net-lo:mount/critical"
-      command="avahi-daemon"
-      restart="yes" />
-
-<!-- modules by teppic from the wiki -->
-     <daemon id="daemon-cupsd"
-      name="CUPS (Common Unix Printing System)"
-      provides="cupsd"
-      requires="network:syslog:mount/critical"
-      prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups"
-      command="/usr/sbin/cupsd -F"
-      restart="yes" />
-
-     <shell id="shell-dovecot"
-      name="IMAP/POP3 server (Dovecot)"
-      provides="dovecot"
-      requires="network:mount/critical:mysqld"
-      enable="/usr/sbin/dovecot"
-      disable="/usr/bin/killall dovecot" />
-
-     <shell id="shell-postfix"
-      name="postfix"
-      uid="postfix"
-      provides="mta"
-      requires="network:mount/critical"
-      enable="/usr/sbin/postfix start"
-      disable="/usr/sbin/postfix stop"
-      reload="/usr/sbin/postfix reload" />
-
-     <shell id="shell-lisa"
-      name="LAN Information Server (LISA)"
-      provides="lisa"
-      requires="network:mount/critical"
-      enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
-      disable="/usr/bin/killall lisa" />
+    <shell id="shell-hpiod"
+     name="HP I/O Backend Daemon"
+     provides="hpiod"
+     enable="hpiod"
+     disable="killall hpiod"
+     restart="yes" />
 
    </module>
   </virtual>
 
-  <prefer>
-   <kern-alsa s="shell-kern-audio-alsa" />
-  </prefer>
  </services>
 
  <mode id="feedback">
