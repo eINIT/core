@@ -173,11 +173,14 @@ int ipc_read (int *nfd) {
   if (f = fdopen (*nfd, "w"))  {
    char buffer[1024];
 
-   while (fgets (buffer, 1024, r)) {
+   while ((!feof(r)) && fgets (buffer, 1024, r)) {
     strtrim(buffer);
 
-    if (!strcmp (buffer, "IPC//out")) break;
+//    if (!strcmp (buffer, "IPC//out")) break;
     __ipc_process (buffer, f);
+
+    fputs ("\nIPC//processed.\n", f);
+    fflush (f);
    }
 
 //   puts ("closing 'f'.");

@@ -1,3 +1,6 @@
+2007/01/28: mdeininger
+ * fixed einit-control hangs
+
 2007/01/27: mdeininger
  * fixed einit-external
 

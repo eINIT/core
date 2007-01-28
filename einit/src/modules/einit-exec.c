@@ -510,7 +510,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    if (fx = fdopen(pipefderr[0], "r")) {
     char rxbuffer[1024];
 
-    while (fgets(rxbuffer, 1024, fx) > 0) {
+    while ((!feof(fx)) && (fgets(rxbuffer, 1024, fx) > 0)) {
      char **fbc = str2set ('|', rxbuffer), orest = 1;
      strtrim (rxbuffer);
 

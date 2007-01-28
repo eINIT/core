@@ -63,7 +63,8 @@ int ipc (char *cmd) {
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
  char buffer[1024];
  struct sockaddr_un saddr;
- int len;
+ int len = strlen (cmd);
+ char *c;
  FILE *esocket;
  if (sock == -1)
   return bitch (BTCH_ERRNO);
@@ -88,6 +89,9 @@ int ipc (char *cmd) {
  }
 */
 
+ len = strlen(cmd);
+ c = emalloc ((len+2)*sizeof (char));
+ snprintf (c, (len+2), "%s\n", cmd);
 
  if (!(esocket = fdopen (sock, "w+"))) {
   fputs (" >> opening socket failed.", stderr);
@@ -96,13 +100,18 @@ int ipc (char *cmd) {
   return 0;
  }
 
- if (fputs(cmd, esocket) == EOF) {
+ if (fputs(c, esocket) == EOF) {
   fputs (" >> sending command failed.", stderr);
   bitch(BTCH_ERRNO);
  }
 
+ fflush (esocket);
 
- while (fgets (buffer, 1024, esocket)) {
+ while ((!feof(esocket)) && fgets (buffer, 1024, esocket)) {
+  if (!strcmp("IPC//processed.\n", buffer)) {
+   break;
+  }
+
   fputs (buffer, stdout);
  }
 
@@ -161,9 +170,11 @@ int main(int argc, char **argv) {
   }
  }
 
- l = strlen(c);
- c = erealloc (c, (l+11)*sizeof (char));
- c = strcat (c, "\nIPC//out\n\0");
+// l = strlen(c);
+// c = erealloc (c, (l+2)*sizeof (char));
+// c = strcat (c, "\n\0");
+// c = erealloc (c, (l+11)*sizeof (char));
+// c = strcat (c, "\nIPC//out\n\0");
 
  ipc(c);
 
