@@ -380,35 +380,27 @@
 <!-- Display Managers -->
     <shell id="shell-gdm"
      name="GDM - The GNOME Display Manager"
-     provides="gdm"
+     provides="x11:gdm"
      requires="mount/critical:net-lo:kern-x11"
      pid="/var/run/gdm.pid"
      prepare="mkdir /var/log/gdm"
-     enable="gdm"
+     enable="pexec-options no-pipe; gdm&amp;"
      disable="gdm-stop"
      restart="yes" />
 
     <daemon id="daemon-kdm"
      name="KDM - The KDE Display Manager"
-     provides="kdm"
+     provides="x11:kdm"
      requires="mount/critical:net-lo:kern-x11"
      prepare="rm -f /var/run/kdm.pid"
      command="/usr/kde/3.5/bin/kdm -nodaemon"
      restart="yes" />
 
-<!-- credits to haader from the gentoo forums for this one -->
     <daemon id="daemon-xdm"
-     name="XDM (xdm)"
-     provides="xdm:x11"
+     name="XDM - The X Display Manager"
+     provides="x11:xdm"
      requires="net-lo:video:mount/critical"
      command="/usr/bin/xdm -nodaemon"
-     restart="yes" />
-
-    <daemon id="daemon-xorg"
-     name="X11 (Xorg)"
-     provides="x11"
-     requires="net-lo:video:mount/critical"
-     command="/usr/X11R6/bin/Xorg :0"
      restart="yes" />
 
     <daemon id="daemon-xcompmgr"
@@ -421,8 +413,7 @@
 
     <daemon id="daemon-entrance"
      name="XDM (Entrance)"
-     provides="xdm"
-     requires="x11"
+     provides="x11:entrance"
      command="/usr/bin/entrance"
      restart="yes"
      DISPLAY=":0.0"
@@ -522,7 +513,7 @@
      provides="net-${interface}"
      enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address};
       route add -net ${configuration_network_interfaces_${interface}_network};
-      route add default gw ${configuration_network_interfaces_${interface}_gateway}"
+      [ "${interface}" != "lo" ] &amp;&amp; route add default gw ${configuration_network_interfaces_${interface}_gateway}"
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
 

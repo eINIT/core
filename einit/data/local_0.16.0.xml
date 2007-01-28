@@ -30,10 +30,11 @@
     <bluetooth s="" />
     <hid s="" />
     <sound s="" />
-    <sensors s="i2c-isa eeprom w83627ehf" />
+    <hwmon s="i2c-isa eeprom w83627ehf" />
     <dvb s="b2c2-flexcop-pci" />
     <ethernet s="uli526x" />
     <arbitrary s="evdev psmouse" />
+    <x11 s="fglrx" />
    </modules>
 
    <module>
