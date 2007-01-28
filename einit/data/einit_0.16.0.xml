@@ -513,13 +513,15 @@
      provides="net-${interface}"
      enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address};
       route add -net ${configuration_network_interfaces_${interface}_network};
-      [ "${interface}" != "lo" ] &amp;&amp; route add default gw ${configuration_network_interfaces_${interface}_gateway}"
+      route add default gw ${configuration_network_interfaces_${interface}_gateway}"
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
 
-    <shell id="shell-net-static-loopback"
-     based-on-template="template-shell-net-static"
-     interface="lo" />
+    <shell id="shell-net-loopback"
+     name="Network (loopback)"
+     provides="net-lo"
+     enable="/sbin/ifconfig lo up 127.0.0.1/8"
+     disable="ifconfig lo down" />
 
 <!-- Clock -->
     <shell id="shell-clock-ntpdate"
