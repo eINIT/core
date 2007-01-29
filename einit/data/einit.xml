@@ -716,11 +716,15 @@
       command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
       restart="yes" />
 
-     <daemon id="daemon-nmbd"
+     <shell id="shell-nmbd"
       name="NetBIOS name server"
       provides="nmbd"
       requires="mount/local:net-lo"
-      command="/usr/sbin/nmbd -F"
+      pid="/var/run/samba/nmbd.pid"
+      prepare="[ ! -e /var/run/samba ] &amp;&amp; mkdir /var/run/samba ];
+               [ -f /var/run/samba/nmbd.pid ] &amp;&amp; rm -rf /var/run/samba/nmbd.pid"
+      enable="nmbd -D"
+      disable="killall -9 nmbd"
       restart="yes" />
 
 <!-- creds to lloeki for the next three :) -->
