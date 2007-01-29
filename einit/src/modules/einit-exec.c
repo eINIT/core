@@ -571,10 +571,10 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    status_update (status);
   }
 
-  while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus)) {
+  do {
 //   puts (" >> calling a wait()");
    waitpid (child, &pidstatus, 0);
-  }
+  } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
  }
 
  if (cs == STATUS_FAIL) return STATUS_FAIL;
