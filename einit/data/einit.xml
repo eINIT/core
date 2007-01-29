@@ -766,6 +766,20 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+    <shell id="shell-apache2"
+     name="httpd - Apache Hypertext Transfer Protocol Server"
+     provides="apache2"
+     requires="mount/critical:net-lo"
+     pid="/var/run/apache2.pid"
+     opts="-D DEFAULT_VHOST"
+     root="/usr/lib/apache2"
+     config="/etc/apache2/httpd.conf"
+     prepare="[ ! -e /var/log/apache2 ] &amp;&amp; mkdir /var/log/apache2;
+              [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache"
+     enable="pexec-options no-pipe; apache2 ${opts} -d ${root} -f ${config} -k start&amp;"
+     disable="killall -9 -q apache2"
+     restart="yes" />
+
      <shell id="shell-firestarter"
       name="firestarter"
       provides="firestarter"
