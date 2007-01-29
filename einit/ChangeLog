@@ -1,3 +1,6 @@
+2007/01/29: mdeininger
+ * well, this really oughta fix the piping thing now...
+
 2007/01/28: mdeininger
  * fixed einit-control hangs
  * might've fixed the piping issue

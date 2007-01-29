@@ -511,7 +511,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
     char rxbuffer[1024];
     setvbuf (fx, NULL, _IONBF, 0);
 
-    while ((!feof(fx)) && fgets(rxbuffer, 1024, fx)) {
+    while (!feof(fx)) {
+     if (!fgets(rxbuffer, 1024, fx)) {
+      if (errno == EAGAIN) continue;
+      break;
+     }
+
      char **fbc = str2set ('|', rxbuffer), orest = 1;
      strtrim (rxbuffer);
 
@@ -550,6 +555,10 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
       status->string = rxbuffer;
       status_update (status);
      }
+
+     waitpid (child, &pidstatus, WNOHANG);
+     if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))
+      break;
     }
 
     fclose (fx);
@@ -561,10 +570,10 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    status_update (status);
   }
 
-  do {
+  while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus)) {
 //   puts (" >> calling a wait()");
    waitpid (child, &pidstatus, 0);
-  } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
+  }
  }
 
  if (cs == STATUS_FAIL) return STATUS_FAIL;

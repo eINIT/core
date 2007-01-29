@@ -199,7 +199,8 @@ void sched_reset_event_handlers () {
 
 /* signal handlers */
  action.sa_sigaction = sched_signal_sigchld;
- action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
+// action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
+ action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
 // SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
  if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
 
