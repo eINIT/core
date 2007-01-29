@@ -556,9 +556,10 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
       status_update (status);
      }
 
-     waitpid (child, &pidstatus, WNOHANG);
-     if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))
-      break;
+     if (waitpid (child, &pidstatus, WNOHANG) == child) {
+      if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))
+       break;
+     }
     }
 
     fclose (fx);
