@@ -176,6 +176,8 @@ char **__check_variables (char *id, char **variables, FILE *output) {
  for (u = 0; variables[u]; u++) {
   char *e = estrdup (variables[u]), *ep = strchr (e, '/');
   char *x[] = { e, NULL, NULL };
+  char node_found = 1;
+  uint32_t variable_matches = 0;
 
   if (ep) {
    *ep = 0;
@@ -188,17 +190,43 @@ char **__check_variables (char *id, char **variables, FILE *output) {
 
 #ifndef POSIXREGEX
   if (!cfg_getnode (x[0], NULL)) {
-   fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
-  } else if (!cfg_getstring (e, NULL)) {
-   fprintf (output, " * module: %s: undefined variable: %s\n", id, e);
+   node_found = 0;
+  } else if (cfg_getstring (e, NULL)) {
+   variable_matches++;
   }
 #else
-  if (!cfg_getnode (x[0], NULL)) {
-   fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
-  } else if (!cfg_getstring (e, NULL)) {
-   fprintf (output, " * module: %s: undefined variable: %s\n", id, e);
+  struct cfgnode *n;
+
+  if (!(n = cfg_getnode (x[0], NULL))) {
+   node_found = 0;
+  } else if (x[1] && n->arbattrs) {
+   regex_t pattern;
+   uint32_t err = regcomp (&pattern, x[1], REG_EXTENDED);
+
+   if (err) {
+    char errorcode [1024];
+    regerror (err, &pattern, errorcode, 1024);
+    fprintf (output, " >> module: %s: %s: bad regex: %s\n", x[0], x[1]);
+   } else {
+    uint32_t v = 0;
+    for (v = 0; n->arbattrs[v]; v+=2) {
+     if (!regexec (&pattern, n->arbattrs[v], 0, NULL, 0)) {
+      variable_matches++;
+     }
+    }
+
+    regfree (&pattern);
+   }
+  } else if (cfg_getstring (x[0], NULL)) {
+   variable_matches++;
   }
 #endif
+
+  if (!node_found) {
+   fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
+  } else if (!variable_matches) {
+   fprintf (output, " * module: %s: undefined variable: %s\n", id, e);
+  }
 
   if (x[0] != e) free (x[0]);
   free (e);
