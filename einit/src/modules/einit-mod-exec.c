@@ -211,7 +211,20 @@ int scanmodules (struct lmodule *modchain) {
     mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
 
-  mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
+  if (mxdata) {
+   uint32_t u = 0;
+   char add = 1;
+   for (u = 0; mxdata[u]; u++) {
+    if (!strcmp (mxdata[u]->id, mexec->id)) {
+     add = 0;
+     mxdata[u] = mexec;
+     break;
+    }
+   }
+   if (add)
+    mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
+  } else
+   mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 

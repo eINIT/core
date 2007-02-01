@@ -193,7 +193,20 @@ int scanmodules (struct lmodule *modchain) {
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
 
-  dxdata = (struct dexecinfo **)setadd ((void **)dxdata, (void *)dexec, SET_NOALLOC);
+  if (dxdata) {
+   uint32_t u = 0;
+   char add = 1;
+   for (u = 0; dxdata[u]; u++) {
+    if (!strcmp (dxdata[u]->id, dexec->id)) {
+     add = 0;
+     dxdata[u] = dexec;
+     break;
+    }
+   }
+   if (add)
+    dxdata = (struct dexecinfo **)setadd ((void **)dxdata, (void *)dexec, SET_NOALLOC);
+  } else
+   dxdata = (struct dexecinfo **)setadd ((void **)dxdata, (void *)dexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 

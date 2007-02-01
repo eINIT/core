@@ -1,6 +1,10 @@
 2007/02/01: mdeininger
  * made einit-mod-exec and einit-mod-daemon check variables with --wtf
  * minor cleanups
+ * added ipc command-chaining code -- run other commands if a certain one has
+   been run... like, run "examine configuration" right after "update
+   configuration" has been called
+ * fixed mod-daemon and mod-exec to only record their module-structs *once*
 
 2007/01/29: mdeininger
  * well, this really oughta fix the piping thing now...
