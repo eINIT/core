@@ -574,6 +574,14 @@
      HOME="/root" />
 
 <!-- System Services -->
+    <shell id="shell-sysctl"
+     name="sysctl - configure kernel parameters at runtime"
+     provides="sysctl"
+     requires="sysconf"
+     enable="sysctl -q -p /etc/sysctl.conf"
+     disable="/bin/true"
+     restart="no" />
+
     <shell id="shell-clock-hwclock"
      name="Set the system clock using the hardware clock"
      provides="clock"

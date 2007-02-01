@@ -770,6 +770,14 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+     <shell id="shell-sysctl"
+      name="sysctl - configure kernel parameters at runtime"
+      provides="sysctl"
+      requires="sysconf"
+      enable="sysctl -q -p /etc/sysctl.conf"
+      disable="/bin/true"
+      restart="no" />
+
     <shell id="shell-apache2"
      name="httpd - Apache Hypertext Transfer Protocol Server"
      provides="apache2"
