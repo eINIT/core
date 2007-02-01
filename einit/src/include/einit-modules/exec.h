@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* structures */
 struct dexecinfo {
+ char *id;
  char *command;
  char *prepare;
  char *cleanup;
@@ -89,13 +90,16 @@ typedef int (*pexec_function)(char *, char **,  uid_t, gid_t, char *, char *, ch
 typedef int (*daemon_function)(struct dexecinfo *, struct einit_event *);
 typedef char **(*environment_function)(char **, char **);
 
+typedef void (*variable_checkup_function)(char *, char **, FILE *);
+
 /* functions */
 pexec_function __f_pxe;
 daemon_function __f_start_daemon, __f_stop_daemon;
 environment_function __f_create_environment;
+variable_checkup_function __f_check_variables;
 
-#define exec_configure(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL;
-#define exec_cleanup(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL;
+#define exec_configure(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL; __f_check_variables = NULL;
+#define exec_cleanup(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL; __f_check_variables = NULL;
 
 #define pexec(command, variables, uid, gid, user, group, local_environment, status) ((__f_pxe || (__f_pxe = function_find_one("einit-execute-command", 1, NULL)))? __f_pxe(command, variables, uid, gid, user, group, local_environment, status) : STATUS_FAIL)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
@@ -104,5 +108,7 @@ environment_function __f_create_environment;
 #define stopdaemon(execheader, status) ((__f_stop_daemon || (__f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? __f_stop_daemon(execheader, status) : STATUS_FAIL)
 
 #define create_environment(environment, variables) ((__f_create_environment || (__f_create_environment = function_find_one("einit-create-environment", 1, NULL)))? __f_create_environment(environment, variables) : environment)
+
+#define check_variables(output_id, variables, target) ((__f_check_variables || (__f_check_variables = function_find_one("einit-check-variables", 1, NULL)))? __f_check_variables(output_id, variables, target) : NULL)
 
 #endif

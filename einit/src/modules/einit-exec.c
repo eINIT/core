@@ -92,6 +92,7 @@ pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 
+char **__check_variables (char *, char **, FILE *);
 int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
@@ -119,6 +120,7 @@ int configure (struct lmodule *irr) {
  function_register ("einit-execute-daemon", 1, __start_daemon_function);
  function_register ("einit-stop-daemon", 1, __stop_daemon_function);
  function_register ("einit-create-environment", 1, __create_environment);
+ function_register ("einit-check-variables", 1, __check_variables);
 }
 
 int cleanup (struct lmodule *irr) {
@@ -129,6 +131,7 @@ int cleanup (struct lmodule *irr) {
  function_unregister ("einit-execute-daemon", 1, __start_daemon_function);
  function_unregister ("einit-stop-daemon", 1, __stop_daemon_function);
  function_unregister ("einit-create-environment", 1, __create_environment);
+ function_unregister ("einit-check-variables", 1, __check_variables);
 
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
@@ -166,6 +169,41 @@ void *pexec_watcher (struct spidcb *spid) {
  pthread_mutex_unlock (&pexec_running_mutex);
 }
 #endif
+
+char **__check_variables (char *id, char **variables, FILE *output) {
+ uint32_t u = 0;
+ if (!variables) return;
+ for (u = 0; variables[u]; u++) {
+  char *e = estrdup (variables[u]), *ep = strchr (e, '/');
+  char *x[] = { e, NULL, NULL };
+
+  if (ep) {
+   *ep = 0;
+   x[0] = estrdup (e);
+   *ep = '/';
+
+   ep++;
+   x[1] = ep;
+  }
+
+#ifndef POSIXREGEX
+  if (!cfg_getnode (x[0], NULL)) {
+   fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
+  } else if (!cfg_getstring (e, NULL)) {
+   fprintf (output, " * module: %s: undefined variable: %s\n", id, e);
+  }
+#else
+  if (!cfg_getnode (x[0], NULL)) {
+   fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
+  } else if (!cfg_getstring (e, NULL)) {
+   fprintf (output, " * module: %s: undefined variable: %s\n", id, e);
+  }
+#endif
+
+  if (x[0] != e) free (x[0]);
+  free (e);
+ }
+}
 
 char **__create_environment (char **environment, char **variables) {
  int i = 0;

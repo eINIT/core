@@ -87,11 +87,22 @@ int configure (struct lmodule *);
 int enable (struct dexecinfo *dexec, struct einit_event *status);
 int disable (struct dexecinfo *dexec, struct einit_event *status);
 
+struct dexecinfo **dxdata = NULL;
+
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    fputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
+  }
+
+  if (dxdata) {
+   uint32_t i = 0;
+   for (i = 0; dxdata[i]; i++) {
+    if (dxdata[i]->variables) {
+	 check_variables (dxdata[i]->id, dxdata[i]->variables, (FILE*)ev->para);
+	}
+   }
   }
 
   ev->flag = 1;
@@ -141,9 +152,10 @@ int scanmodules (struct lmodule *modchain) {
   char doop = 1;
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
-   if (!strcmp (node->arbattrs[i], "id"))
+   if (!strcmp (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "name"))
+    dexec->id = node->arbattrs[i+1];
+   } else if (!strcmp (node->arbattrs[i], "name"))
     modinfo->name = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "command"))
     dexec->command = node->arbattrs[i+1];
@@ -180,21 +192,15 @@ int scanmodules (struct lmodule *modchain) {
    else
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
-/*  new = mod_add (NULL, (int (*)(void *, struct einit_event *))startdaemon,
-           (int (*)(void *, struct einit_event *))stopdaemon, NULL, NULL,
-           cleanup_after_module,
-           (void *)dexec, modinfo);*/
+
+  dxdata = (struct dexecinfo **)setadd ((void **)dxdata, (void *)dexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 
   struct lmodule *lm = modchain;
   while (lm) {
    if (lm->source && !strcmp(lm->source, modinfo->rid)) {
-/*    char tnotice[512];
-    snprintf (tnotice, 512, "einit-mod-daemon: module already loaded: %s: updating\n", modinfo->rid);
-    notice (5, tnotice);*/
 
-//    free (modinfo->rid);
     lm->param = (void *)dexec;
     lm->enable = (int (*)(void *, struct einit_event *))enable;
     lm->disable = (int (*)(void *, struct einit_event *))disable;

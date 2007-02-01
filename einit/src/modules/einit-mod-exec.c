@@ -63,6 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 struct mexecinfo {
+ char *id;
  char *enable;
  char *disable;
  char *reset;
@@ -104,6 +105,15 @@ void ipc_event_handler (struct einit_event *ev) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    fputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
+  }
+
+  if (mxdata) {
+   uint32_t i = 0;
+   for (i = 0; mxdata[i]; i++) {
+    if (mxdata[i]->variables) {
+	 check_variables (mxdata[i]->id, mxdata[i]->variables, (FILE*)ev->para);
+	}
+   }
   }
 
   ev->flag = 1;
@@ -156,9 +166,10 @@ int scanmodules (struct lmodule *modchain) {
 
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
-   if (!strcmp (node->arbattrs[i], "id"))
+   if (!strcmp (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "name"))
+	mexec->id = node->arbattrs[i+1];
+   } else if (!strcmp (node->arbattrs[i], "name"))
     modinfo->name = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "enable"))
     mexec->enable = node->arbattrs[i+1];
