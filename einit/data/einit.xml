@@ -110,6 +110,7 @@
 
   <ipc>
    <control-socket s="/etc/einit-control" i="0600" />
+   <chain-command for="^update configuration.*" do="examine configuration" />
   </ipc>
 
   <audio>

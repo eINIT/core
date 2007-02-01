@@ -206,7 +206,7 @@ char **__check_variables (char *id, char **variables, FILE *output) {
    if (err) {
     char errorcode [1024];
     regerror (err, &pattern, errorcode, 1024);
-    fprintf (output, " >> module: %s: %s: bad regex: %s\n", x[0], x[1]);
+    fprintf (output, " >> module: %s: %s: bad regex: %s: %s\n", id, x[0], x[1], errorcode);
    } else {
     uint32_t v = 0;
     for (v = 0; n->arbattrs[v]; v+=2) {
