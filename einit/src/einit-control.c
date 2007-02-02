@@ -179,8 +179,7 @@ int main(int argc, char **argv) {
  }
 
  if (ansi) {
-  l = strlen(c);
-  c = erealloc (c, (l+8)*sizeof (char));
+  c = erealloc (c, (strlen(c)+8)*sizeof (char));
   c = strcat (c, " --ansi");
  }
 
