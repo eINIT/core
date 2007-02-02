@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "EINIT-CONTROL" "8" "26 January 2007" "einit-0.15.1-svn" ""
+.TH "EINIT-CONTROL" "8" "02 February 2007" "einit-0.15.1-svn" ""
 
 .SH NAME
 einit-control \- chat with einit using IPC commands
@@ -60,7 +60,10 @@ Bring down \fIservice\fR\&.
 Reset \fIservice\fR\&. Not implemented by many modules.
 .TP
 \fBrc \fIservice\fB reload\fR
-Tell \fIservice\fR to re-load itself. Not really implemented.
+Tell \fIservice\fR to re-load itself. Not implemented by many modules.
+.TP
+\fBrc \fIservice\fB zap\fR
+Tell eINIT that \fIservice\fR is no longer provided.
 .TP
 \fBrc switch-mode \fImode\fB\fR
 Tell einit to switch to \fImode\fR\&.

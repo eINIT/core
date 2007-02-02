@@ -548,7 +548,9 @@ int mod (unsigned int task, struct lmodule *module) {
   evmstatupdate.status = fb->status;
   event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
 
-  status_update (fb);
+//  status_update (fb);
+  event_emit(fb, EINIT_EVENT_FLAG_BROADCAST);
+  if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
 
 /* module status update */
   if (module) {

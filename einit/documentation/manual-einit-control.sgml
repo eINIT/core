@@ -146,7 +146,15 @@
      <term>rc <replaceable>service</replaceable> reload</term>
      <listitem>
       <para>
-       Tell <replaceable>service</replaceable> to re-load itself. Not really implemented.
+       Tell <replaceable>service</replaceable> to re-load itself. Not implemented by many modules.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>rc <replaceable>service</replaceable> zap</term>
+     <listitem>
+      <para>
+       Tell eINIT that <replaceable>service</replaceable> is no longer provided.
       </para>
      </listitem>
     </varlistentry>
