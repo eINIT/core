@@ -48,6 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <libgen.h>
 #include <errno.h>
 
+#include <sys/ioctl.h>
+
 int main(int, char **);
 int print_usage_info ();
 int ipc (char *);
@@ -125,6 +127,7 @@ int main(int argc, char **argv) {
  int i, l;
  char *c = emalloc (1*sizeof (char));
  char *name = estrdup ((char *)basename(argv[0]));
+ char ansi = 0;
  c[0] = 0;
  if (!strcmp (name, "erc")) {
   c = (char *)erealloc (c, 3*sizeof (char));
@@ -132,6 +135,11 @@ int main(int argc, char **argv) {
  } else if (strcmp (name, "einit-control")) {
   c = (char *)erealloc (c, (1+strlen(name))*sizeof (char));
   c = strcat (c, name);
+ }
+
+ struct winsize ws;
+ if (!ioctl (1, TIOCGWINSZ, &ws) || !(errno == ENOTTY)) {
+  ansi = 1;
  }
 
  for (i = 1; i < argc; i++) {
@@ -170,11 +178,11 @@ int main(int argc, char **argv) {
   }
  }
 
-// l = strlen(c);
-// c = erealloc (c, (l+2)*sizeof (char));
-// c = strcat (c, "\n\0");
-// c = erealloc (c, (l+11)*sizeof (char));
-// c = strcat (c, "\nIPC//out\n\0");
+ if (ansi) {
+  l = strlen(c);
+  c = erealloc (c, (l+8)*sizeof (char));
+  c = strcat (c, " --ansi");
+ }
 
  ipc(c);
 
