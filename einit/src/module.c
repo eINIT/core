@@ -408,7 +408,7 @@ int mod (unsigned int task, struct lmodule *module) {
    perror ("mod(): locking mutex");
  }
 
- if (task & MOD_IGNORE_DEPENDENCIES) {
+ if ((task & MOD_IGNORE_DEPENDENCIES) || (task & MOD_ZAP)) {
   notice (2, "module: skipping dependency-checks");
   task ^= MOD_IGNORE_DEPENDENCIES;
   goto skipdependencies;
@@ -500,7 +500,10 @@ int mod (unsigned int task, struct lmodule *module) {
   fb->integer = module->fbseq+1;
   status_update (fb);
 
-  if (task & MOD_ENABLE) {
+  if (task & MOD_ZAP) {
+   module->status = STATUS_IDLE;
+   fb->status = STATUS_OK | STATUS_IDLE;
+  } else if (task & MOD_ENABLE) {
     ret = module->enable (module->param, fb);
     if (ret & STATUS_OK) {
      module->status = STATUS_ENABLED;

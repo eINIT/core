@@ -91,6 +91,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   **enable = NULL, **aenable = NULL,
   **disable = NULL, **adisable = NULL,
   **reset = NULL, **areset = NULL,
+  **reload = NULL, **areload = NULL,
+  **zap = NULL, **azap = NULL,
   **critical = NULL;
  struct cfgnode *rmode = mode, *gnode;
  struct mloadplan_node nnode;
@@ -111,6 +113,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   enable   = str2set (':', cfg_getstring ("enable/services", mode)),
   disable  = str2set (':', cfg_getstring ("disable/services", mode)),
   reset    = str2set (':', cfg_getstring ("reset/services", mode)),
+  reload   = str2set (':', cfg_getstring ("reload/services", mode)),
+  zap      = str2set (':', cfg_getstring ("zap/services", mode)),
   critical = str2set (':', cfg_getstring ("enable/critical", mode));
 
   if (!enable)
@@ -137,6 +141,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
       **denable   = str2set (':', cfg_getstring ("enable/services", cno)),
       **ddisable  = str2set (':', cfg_getstring ("disable/services", cno)),
       **dreset    = str2set (':', cfg_getstring ("reset/services", cno)),
+      **dreload   = str2set (':', cfg_getstring ("reload/services", cno)),
+      **dzap      = str2set (':', cfg_getstring ("zap/services", cno)),
       **dcritical = str2set (':', cfg_getstring ("enable/critical", cno));
 
      if (!denable)  denable  = str2set (':', cfg_getstring ("enable/mod", cno));
@@ -170,6 +176,24 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
       } else
        reset = dreset;
      }
+     if (dreload) {
+      if (reload) {
+       char **t = (char **)setcombine ((void **)dreload, (void **)reload, SET_TYPE_STRING);
+       free (dreload);
+       free (reload);
+       reload = t;
+      } else
+       reload = dreload;
+     }
+     if (dzap) {
+      if (zap) {
+       char **t = (char **)setcombine ((void **)dzap, (void **)zap, SET_TYPE_STRING);
+       free (dzap);
+       free (zap);
+       zap = t;
+      } else
+       zap = dzap;
+     }
      if (dcritical) {
       if (critical) {
        char **t = (char **)setcombine ((void **)dcritical, (void **)critical, SET_TYPE_STRING);
@@ -189,6 +213,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   if (task & MOD_ENABLE) enable = atoms;
   else if (task & MOD_DISABLE) disable = atoms;
   else if (task & MOD_RESET) reset = atoms;
+  else if (task & MOD_RELOAD) reload = atoms;
+  else if (task & MOD_ZAP) zap = atoms;
  }
 
 /* find services that should be disabled */
@@ -362,11 +388,113 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 // modules to be reset
  if (reset) {
   char **current = (char **)setdup ((void **)reset, SET_TYPE_STRING);
-//  puts ("reset:");
-  for (a = 0; current[a]; a++) {
-//   puts (current[a]);
+  char **recurse = NULL;
+  while (current) {
+   for (a = 0; current[a]; a++) {
+//    puts (current[a]);
+    struct lmodule *cur = mlist;
+    memset (&nnode, 0, sizeof (struct mloadplan_node));
+
+    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+     continue;
+
+    while (cur) {
+     struct smodule *mo = cur->module;
+     if (inset ((void **)cur->si->provides, (void *)current[a], SET_TYPE_STRING)) {
+      if ((cur->status & STATUS_ENABLED) && mo) {
+       nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+      }
+     }
+
+     cur = cur->next;
+    }
+
+    mod_plan_searchgroup(nnode, current[a]);
+
+    if (nnode.mod || nnode.group) {
+     plan->services = streeadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     areset = (char **)setadd ((void **)areset, (void *)current[a], SET_TYPE_STRING);
+    } else {
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
+    }
+   }
+
+   free (current); current = NULL;
   }
-  if (current) free (current);
+ }
+// modules to be reloaded
+ if (reload) {
+  char **current = (char **)setdup ((void **)reload, SET_TYPE_STRING);
+  char **recurse = NULL;
+  while (current) {
+   for (a = 0; current[a]; a++) {
+//    puts (current[a]);
+    struct lmodule *cur = mlist;
+    memset (&nnode, 0, sizeof (struct mloadplan_node));
+
+    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+     continue;
+
+    while (cur) {
+     struct smodule *mo = cur->module;
+     if (inset ((void **)cur->si->provides, (void *)current[a], SET_TYPE_STRING)) {
+      if ((cur->status & STATUS_ENABLED) && mo) {
+       nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+      }
+     }
+
+     cur = cur->next;
+    }
+
+    mod_plan_searchgroup(nnode, current[a]);
+
+    if (nnode.mod || nnode.group) {
+     plan->services = streeadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     areload = (char **)setadd ((void **)areload, (void *)current[a], SET_TYPE_STRING);
+    } else {
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
+    }
+   }
+
+   free (current); current = NULL;
+  }
+ }
+// modules to be zapped
+ if (zap) {
+  char **current = (char **)setdup ((void **)zap, SET_TYPE_STRING);
+  char **recurse = NULL;
+  while (current) {
+   for (a = 0; current[a]; a++) {
+//    puts (current[a]);
+    struct lmodule *cur = mlist;
+    memset (&nnode, 0, sizeof (struct mloadplan_node));
+
+    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+     continue;
+
+    while (cur) {
+     struct smodule *mo = cur->module;
+     if (inset ((void **)cur->si->provides, (void *)current[a], SET_TYPE_STRING)) {
+      if ((cur->status & STATUS_ENABLED) && mo) {
+       nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
+      }
+     }
+
+     cur = cur->next;
+    }
+
+    mod_plan_searchgroup(nnode, current[a]);
+
+    if (nnode.mod || nnode.group) {
+     plan->services = streeadd (plan->services, current[a], (void *)&nnode, sizeof(struct mloadplan_node), nnode.group);
+     azap = (char **)setadd ((void **)areload, (void *)current[a], SET_TYPE_STRING);
+    } else {
+     plan->unavailable = (char **)setadd ((void **)plan->unavailable, (void *)current[a], SET_TYPE_STRING);
+    }
+   }
+
+   free (current); current = NULL;
+  }
  }
 
  if (plan->services) {
@@ -419,6 +547,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  else
   plan->disable = disable;
  plan->reset = reset;
+ plan->reload = reload;
+ plan->zap = zap;
  plan->critical = critical;
  plan->mode = mode;
 
@@ -768,6 +898,11 @@ void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
   for (i = 0; node->mod[i]; i++) {
    node->status = mod (MOD_RESET, node->mod[i]);
   }
+ } else if (node->group) {
+  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_reset,node->plan,subthreads,STATUS_ENABLED,context);
+
+  wait_on_subthreads (subthreads);
+  node->status |= STATUS_ENABLED;
  }
 
  node->changed = 2;
@@ -798,6 +933,46 @@ void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
   for (i = 0; node->mod[i]; i++) {
    node->status = mod (MOD_RELOAD, node->mod[i]);
   }
+ } else if (node->group) {
+  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_reload,node->plan,subthreads,STATUS_ENABLED,context);
+
+  wait_on_subthreads (subthreads);
+  node->status |= STATUS_ENABLED;
+ }
+
+ node->changed = 2;
+ pthread_mutex_unlock (node->mutex);
+ return &(node->status);
+}
+
+// the zap function
+void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
+// fprintf (stderr, " >> XX context=0x%x", context);
+ struct mloadplan_node *node = context->node;
+
+// if (node->changed) { return &(node->status); }
+
+ if (pthread_mutex_trylock(node->mutex)) {
+  pthread_mutex_lock (node->mutex);
+  pthread_mutex_unlock (node->mutex);
+
+  return &(node->status);
+ }
+
+// see if we've already been here, bail out if so
+ if (node->changed) { pthread_mutex_unlock (node->mutex); return &(node->status); } node->changed = 1;
+
+ uint32_t i = 0;
+
+ if (node->mod) {
+  for (i = 0; node->mod[i]; i++) {
+   node->status = mod (MOD_ZAP, node->mod[i]);
+  }
+ } else if (node->group) {
+  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_zap,node->plan,subthreads,STATUS_DISABLED,context);
+
+  wait_on_subthreads (subthreads);
+  node->status |= STATUS_DISABLED;
  }
 
  node->changed = 2;
@@ -861,6 +1036,12 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (plan->reset)
   plan->subthreads = run_or_spawn_subthreads (plan->reset,mod_plan_commit_recurse_reset,plan,plan->subthreads,0,NULL);
+
+ if (plan->reload)
+  plan->subthreads = run_or_spawn_subthreads (plan->reload,mod_plan_commit_recurse_reload,plan,plan->subthreads,0,NULL);
+
+ if (plan->zap)
+  plan->subthreads = run_or_spawn_subthreads (plan->zap,mod_plan_commit_recurse_zap,plan,plan->subthreads,0,NULL);
 
 // fputs (" >> threads spawned\n", stderr);
  wait_on_subthreads (plan->subthreads);
@@ -952,6 +1133,8 @@ int mod_plan_free (struct mloadplan *plan) {
  if (plan->enable) free (plan->enable);
  if (plan->disable) free (plan->disable);
  if (plan->reset) free (plan->reset);
+ if (plan->reload) free (plan->reload);
+ if (plan->zap) free (plan->zap);
  if (plan->unavailable) free (plan->unavailable);
 
  if (plan->services) {

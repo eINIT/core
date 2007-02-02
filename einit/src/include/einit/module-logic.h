@@ -73,6 +73,8 @@ struct mloadplan {
  char **enable;            /*!< Set of all services that are to be enabled. */
  char **disable;           /*!< Set of all services that are to be disabled. */
  char **reset;             /*!< Set of all services that are to be reset. */
+ char **reload;            /*!< Set of all services that are to be reloaded. */
+ char **zap;               /*!< Set of all services that are to be zapped. */
  char **critical;          /*!< Set of critical services: If one of these is not up after the switch, a panic event is emitted */
  char **unavailable;       /*!< Set of services that were to be changed but were not available. */
  char **locked;            /*!< Set of services that were to be changed, but it's not possible to do so. */

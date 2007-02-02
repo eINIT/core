@@ -141,6 +141,7 @@ int sched_modaction (char **argv) {
  else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
  else if (!strcmp (argv[1], "reset")) task = MOD_RESET;
  else if (!strcmp (argv[1], "reload")) task = MOD_RELOAD;
+ else if (!strcmp (argv[1], "zap")) task = MOD_ZAP;
 
  argv[1] = NULL;
 
