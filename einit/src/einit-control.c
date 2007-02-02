@@ -62,7 +62,7 @@ int print_usage_info () {
 }
 
 int ipc (char *cmd) {
- int sock = socket (AF_UNIX, SOCK_STREAM, 0);
+ int sock = socket (AF_UNIX, SOCK_STREAM, 0), ret = 0;
  char buffer[1024];
  struct sockaddr_un saddr;
  int len = strlen (cmd);
@@ -111,6 +111,13 @@ int ipc (char *cmd) {
 
  while ((!feof(esocket)) && fgets (buffer, 1024, esocket)) {
   if (!strcmp("IPC//processed.\n", buffer)) {
+   char retval[512];
+   *retval = 0;
+
+   fgets (retval, 512, esocket);
+
+   ret = atoi(retval);
+
    break;
   }
 
@@ -120,11 +127,11 @@ int ipc (char *cmd) {
  errno = 0;
 
  fclose (esocket);
- return 0;
+ return ret;
 }
 
 int main(int argc, char **argv) {
- int i, l;
+ int i, l, ret = 0;
  char *c = emalloc (1*sizeof (char));
  char *name = estrdup ((char *)basename(argv[0]));
  char ansi = 0;
@@ -183,8 +190,8 @@ int main(int argc, char **argv) {
   c = strcat (c, " --ansi");
  }
 
- ipc(c);
+ ret = ipc(c);
 
  bitch (BTCH_DL + BTCH_ERRNO);
- return 0;
+ return ret;
 }

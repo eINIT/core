@@ -134,9 +134,12 @@ int __ipc_process (char *cmd, FILE *f) {
   else
    fprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
 
-  ret = 0;
- } else
   ret = 1;
+ } else
+  ret = (int)event->integer;
+
+// if (ret)
+//  fputs (" >> failed", f);
 
  if (event->status & EIPC_OUTPUT_XML) {
   fputs ("</einit-ipc>\n", f);
@@ -216,12 +219,15 @@ int ipc_read (int *nfd) {
    char buffer[1024];
 
    while ((!feof(r)) && fgets (buffer, 1024, r)) {
+    int ret = 0;
     strtrim(buffer);
 
 //    if (!strcmp (buffer, "IPC//out")) break;
-    __ipc_process (buffer, f);
+    ret = __ipc_process (buffer, f);
 
-    fputs ("\nIPC//processed.\n", f);
+//    fputs ("\nIPC//processed.\n", f);
+//    fputs ("\nIPC//processed.\n", f);
+    fprintf (f, "\nIPC//processed.\n%i\n", ret);
     fflush (f);
    }
 

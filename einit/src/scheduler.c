@@ -153,7 +153,7 @@ int sched_modaction (char **argv) {
   if (plan->services) {
    struct mloadplan_node *node = (struct mloadplan_node *)streefind (plan->services, argv[0], TREE_FIND_FIRST);
 
-   switch (task) {
+   if (node) switch (task) {
     case MOD_ENABLE:
 	 ret = !(node->status & STATUS_ENABLED); break;
     case MOD_DISABLE:
@@ -171,7 +171,7 @@ int sched_modaction (char **argv) {
  }
 
 // free (argv[0]);
- free (argv);
+// free (argv);
 
  return ret;
 }
@@ -411,6 +411,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     } else {
      ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+	 ev->integer = ee.integer;
     }
     evstaticdestroy(ee);
    } else {
@@ -422,6 +423,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     } else {
      ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+	 ev->integer = ee.integer;
     }
     evstaticdestroy(ee);
    }
@@ -470,7 +472,8 @@ void sched_core_event_handler(struct einit_event *ev) {
     }
 
     if (sched_modaction ((char **)ev->set)) {
-	 fputs (" >> failed", (FILE *)ev->para);
+//	 fputs (" >> failed", (FILE *)ev->para);
+     ev->integer = 1;
 	}
 
     if (ev->para) {

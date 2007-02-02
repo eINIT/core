@@ -133,7 +133,7 @@ int main(int argc, char **argv, char **environ) {
 #else
 int main(int argc, char **argv) {
 #endif
- int i, stime;
+ int i, stime, ret = EXIT_SUCCESS;
  pid_t pid = getpid(), wpid = 0;
  char **ipccommands = NULL;
 
@@ -303,13 +303,13 @@ int main(int argc, char **argv) {
   if (ipccommands) {
    uint32_t rx = 0;
    for (; ipccommands[rx]; rx++) {
-    ipc_process (ipccommands[rx], stdout);
+    ret = ipc_process (ipccommands[rx], stdout);
    }
 
    if (gmode == EINIT_GMODE_SANDBOX)
     cleanup ();
 
-   return EXIT_SUCCESS;
+   return ret;
   } else if ((gmode == EINIT_GMODE_INIT) && !isinit && !initoverride) {
    printf ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not spcified.\nexiting...\n\n");
    exit (EXIT_FAILURE);
@@ -357,6 +357,6 @@ int main(int argc, char **argv) {
 #endif
   }
 
-  return EXIT_SUCCESS;
+  return ret;
  }
 }
