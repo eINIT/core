@@ -92,6 +92,7 @@ int __ipc_process (char *cmd, FILE *f) {
 
  struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
  uint32_t ic, ec;
+ int ret = 0;
 
  event->string = cmd;
  event->set = (void **)str2set (' ', cmd);
@@ -132,7 +133,11 @@ int __ipc_process (char *cmd, FILE *f) {
    fprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
   else
    fprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
- }
+
+  ret = 0;
+ } else
+  ret = 1;
+
  if (event->status & EIPC_OUTPUT_XML) {
   fputs ("</einit-ipc>\n", f);
  }
@@ -171,7 +176,7 @@ int __ipc_process (char *cmd, FILE *f) {
  }
 #endif
 
- return 0;
+ return ret;
 }
 
 void ipc_event_handler (struct einit_event *ev) {

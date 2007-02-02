@@ -972,7 +972,7 @@ void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
   pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_zap,node->plan,subthreads,STATUS_DISABLED,context);
 
   wait_on_subthreads (subthreads);
-  node->status |= STATUS_DISABLED;
+  node->status = STATUS_IDLE;
  }
 
  node->changed = 2;

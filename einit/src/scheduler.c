@@ -132,7 +132,7 @@ int sched_switchmode (char *mode) {
 }
 
 int sched_modaction (char **argv) {
- int argc = setcount ((void **)argv);
+ int argc = setcount ((void **)argv), ret = 1;
  int32_t task;
  struct mloadplan *plan;
  if (!argv || (argc != 2)) return -1;
@@ -146,13 +146,34 @@ int sched_modaction (char **argv) {
  argv[1] = NULL;
 
  if (plan = mod_plan (NULL, argv, task, NULL)) {
+  pthread_t th;
+
   mod_plan_commit (plan);
+
+  if (plan->services) {
+   struct mloadplan_node *node = (struct mloadplan_node *)streefind (plan->services, argv[0], TREE_FIND_FIRST);
+
+   switch (task) {
+    case MOD_ENABLE:
+	 ret = !(node->status & STATUS_ENABLED); break;
+    case MOD_DISABLE:
+	 ret = !(node->status & STATUS_DISABLED); break;
+    case MOD_RESET:
+	 ret = !(node->status & STATUS_ENABLED); break;
+    case MOD_RELOAD:
+	 ret = !(node->status & STATUS_ENABLED); break;
+    case MOD_ZAP:
+	 ret = !(node->status == STATUS_IDLE); break;
+   }
+  }
+
+  pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
  }
 
 // free (argv[0]);
  free (argv);
 
- return 0;
+ return ret;
 }
 
 void sched_init () {
@@ -448,7 +469,9 @@ void sched_core_event_handler(struct einit_event *ev) {
      evstaticdestroy(ee);
     }
 
-    sched_modaction ((char **)ev->set);
+    if (sched_modaction ((char **)ev->set)) {
+	 fputs (" >> failed", (FILE *)ev->para);
+	}
 
     if (ev->para) {
      struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
