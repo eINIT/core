@@ -658,7 +658,7 @@
      provides="net-${interface}"
      requires="kern-ethernet:mount/critical"
      enable="pexec-options no-pipe; rm -f /var/run/dhcpcd-${interface}.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
-     disable="killall dhcpcd; rm -f /var/run/dhcpcd-${interface}.pid;"
+     disable="killall dhcpcd; ifconfig ${interface} down; rm -f /var/run/dhcpcd-${interface}.pid;"
      variables="configuration-network-dhcp-timeout" />
 
     <shell id="shell-net-eth0-dhcp"
