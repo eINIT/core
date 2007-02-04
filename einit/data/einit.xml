@@ -570,7 +570,32 @@
      provides="net-${interface}"
      enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address};
       route add -net ${configuration_network_interfaces_${interface}_network};
-      route add default gw ${configuration_network_interfaces_${interface}_gateway}"
+      if [ ! -z ${configuration_network_interfaces_${interface}_gateway} ]; then
+       route add default gw ${configuration_network_interfaces_${interface}_gateway};
+      fi"
+     disable="ifconfig ${interface} down"
+     variables="configuration-network-interfaces-${interface}/.*" />
+
+<!-- new template using iproute2; creds to truc -->
+    <shell-template id="template-shell-net-static-iproute2"
+     name="Network (${interface}, static)"
+     provides="net-${interface}"
+     enable="/sbin/ip addr add ${configuration_network_interfaces_${interface}_address} dev ${interface} ;
+      /sbin/ip link set ${interface} up ;
+      /sbin/ip route add ${configuration_network_interfaces_${interface}_network} dev ${interface} ;
+      if [ ! -z ${configuration_network_interfaces_${interface}_gateway} ]; then
+       /sbin/ip route add via ${configuration_network_interfaces_${interface}_gateway};
+      fi"
+     disable="/sbin/ip link set ${interface} down"
+     variables="configuration-network-interfaces-${interface}/.*" />
+
+<!-- new template for wpa_supplicant - go ryan! :D -->
+    <shell-template id="template-shell-net-wpasupplicant"
+     name="Network (${interface}, wpa_supplicant)"
+     provides="net-${interface}"
+     requires="modules"
+     enable="wpa_supplicant -D ${configuration_network_interfaces_${interface}_driver} -i ${interface} -c ${configuration_network_interfaces_${interface}_config} -Bw;
+      wpa_cli -B -i ${interface}"
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
 
