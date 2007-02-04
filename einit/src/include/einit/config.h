@@ -131,8 +131,10 @@ struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
 char *cfg_getstring (char *, struct cfgnode *);          // get string (by id)
 struct cfgnode *cfg_getnode (char *, struct cfgnode *);  // get node (by id)
 
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
+// return a new stree with the filter applied
+struct stree *cfg_filter (char *);
 
+/* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *cfg_getpath (char *);
 
 #endif /* _CONFIG_H */

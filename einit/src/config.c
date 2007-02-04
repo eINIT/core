@@ -48,6 +48,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <einit/event.h>
 
+#ifdef POSIXREGEX
+#include <regex.h>
+#endif
+
 struct stree *hconfiguration = NULL;
 char **einit_global_environment = NULL;
 
@@ -311,6 +315,34 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
   ret = node;
 
  return ret;
+}
+
+// return a new stree with the filter applied
+struct stree *cfg_filter (char *filter) {
+ struct stree *retval = NULL;
+
+#ifdef POSIXREGEX
+ if (filter) {
+  struct stree *cur = hconfiguration;
+  regex_t pattern;
+  uint32_t err = regcomp (&pattern, filter, REG_EXTENDED);
+
+  if (err) {
+   char errorcode [1024];
+   regerror (err, &pattern, errorcode, 1024);
+//   fprintf (stderr, " >> module: %s: %s: bad regex: %s: %s\n", id, x[0], x[1], errorcode);
+  } else {
+   while (cur) {
+    if (!regexec (&pattern, cur->key, 0, NULL, 0)) {
+	 retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
+    }
+    cur = streenext (cur);
+   }
+  }
+ }
+#endif
+
+ return retval;
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
