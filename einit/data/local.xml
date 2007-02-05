@@ -14,12 +14,12 @@
     <ssid s="default" />
    </wireless>
 
-<!--   <interfaces>
+   <interfaces>
 <!-- example for a static network configuration, use with the commented module using the shell-net-eth1-static template from below -->
     <eth1 address="10.6.0.2/16" network="10.6.0.0/16" gateway="10.6.0.1" />
 <!-- example for a wpa_supplicant configuration, use with the commented module using the shell-net-eth2-wpasupplicant template from below -->
     <eth2 driver="wext" config="/etc/wpa_supplicant/wpa_supplicant.conf" />
-   </interfaces> -->
+   </interfaces>
   </network>
 
   <peripherals>
