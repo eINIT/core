@@ -4,6 +4,7 @@
  <configuration>
   <system>
    <swap device="/dev/sdb3" affinity="0" />
+   <font s="lat2-12" />
   </system>
 
   <network>

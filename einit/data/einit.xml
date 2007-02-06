@@ -800,6 +800,14 @@
       restart="yes" />
 
 <!-- thanks, rmh3093! -->
+     <shell id="shell-setfont"
+      name="setfont (${configuration_system_font})"
+      provides="consolefont"
+      requires="mount/critical"
+      enable="setfont ${configuration_system_font}"
+      disable="/bin/true"
+      variables="configuration-system-font" /> 
+
      <shell id="shell-sysctl"
       name="sysctl - configure kernel parameters at runtime"
       provides="sysctl"
