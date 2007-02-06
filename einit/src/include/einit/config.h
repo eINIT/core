@@ -137,4 +137,7 @@ struct stree *cfg_filter (char *);
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *cfg_getpath (char *);
 
+/* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
+typedef char *(*cfg_string_converter) (struct stree *);
+
 #endif /* _CONFIG_H */
