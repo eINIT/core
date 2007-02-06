@@ -801,12 +801,14 @@
 
 <!-- thanks, rmh3093! -->
      <shell id="shell-setfont"
-      name="setfont (${configuration_system_font})"
-      provides="consolefont"
+      name="setfont (${configuration_system_setfont_font})"
+      provides="setfont"
       requires="mount/critical"
-      enable="setfont ${configuration_system_font}"
+      enable="for t in ${configuration_system_setfont_ttys}; do
+               setfont ${configuration_system_setfont_font} -C /dev/tty${t};
+              done"
       disable="/bin/true"
-      variables="configuration-system-font" /> 
+      variables="configuration-system-setfont/.*" />
 
      <shell id="shell-sysctl"
       name="sysctl - configure kernel parameters at runtime"
