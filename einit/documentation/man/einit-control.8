@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "EINIT-CONTROL" "8" "02 February 2007" "einit-0.15.1-svn" ""
+.TH "EINIT-CONTROL" "8" "07 February 2007" "einit-0.15.1-svn" ""
 
 .SH NAME
 einit-control \- chat with einit using IPC commands
@@ -85,6 +85,13 @@ require and before and after which services they request to be enabled.
 \fBlist services\fR
 Display a list of services that are currently available. The parameter --ansi will make this
 output colourful, --only-relevant will only display services that are used in one mode or another.
+.TP
+\fBlist configuration\fR
+Query eINIT for a list of all the configuration entries.
+.TP
+\fBlist configuration \fIregex\fB\fR
+Query eINIT for a list of all the configuration entries where the variable name matches the regular
+expression \fIregex\fR\&.
 .SS "UPDATE"
 commands to update the system status
 .TP

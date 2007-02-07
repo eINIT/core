@@ -216,6 +216,23 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term>list configuration</term>
+     <listitem>
+      <para>
+       Query eINIT for a list of all the configuration entries.
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>list configuration <replaceable>regex</replaceable></term>
+     <listitem>
+      <para>
+       Query eINIT for a list of all the configuration entries where the variable name matches the regular
+       expression <replaceable>regex</replaceable>.
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </refsect2>
 
