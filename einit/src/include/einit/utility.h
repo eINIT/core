@@ -172,4 +172,6 @@ char parse_boolean (char *);
 
 char *apply_variables (char *string, char **env);
 
+char *escape_xml (char *input);
+
 #endif /* _UTILITY_H */

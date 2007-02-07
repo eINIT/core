@@ -374,3 +374,64 @@ char *apply_variables (char *string, char **env) {
 
  return ret;
 }
+
+char *escape_xml (char *input) {
+ char *retval = NULL;
+ if (input) {
+  ssize_t olen = strlen (input)+1,
+   blen = olen + 1024,
+   cpos = 0, tpos = 0;
+
+  retval = emalloc (blen);
+
+  for (cpos = 0; input[cpos]; cpos++) {
+   if (tpos < (blen -7)) {
+    blen += 1024;
+    retval = erealloc (retval, blen);
+   }
+
+   switch (input[cpos]) {
+    case '&':
+     retval[tpos] = '&';
+     retval[tpos+1] = 'a';
+     retval[tpos+2] = 'm';
+     retval[tpos+3] = 'p';
+     retval[tpos+4] = ';';
+     tpos += 5;
+     break;
+    case '<':
+     retval[tpos] = '&';
+     retval[tpos+1] = 'l';
+     retval[tpos+2] = 't';
+     retval[tpos+3] = ';';
+     tpos += 4;
+     break;
+    case '>':
+     retval[tpos] = '&';
+     retval[tpos+1] = 'g';
+     retval[tpos+2] = 't';
+     retval[tpos+3] = ';';
+     tpos += 4;
+     break;
+    case '"':
+     retval[tpos] = '&';
+     retval[tpos+1] = 'q';
+     retval[tpos+2] = 'u';
+     retval[tpos+3] = 'o';
+     retval[tpos+4] = 't';
+     retval[tpos+5] = ';';
+     tpos += 6;
+     break;
+    default:
+     retval[tpos] = input[cpos];
+     tpos++;
+     break;
+   }
+  }
+
+  retval[tpos] = 0;
+ }
+
+ return retval;
+}
+

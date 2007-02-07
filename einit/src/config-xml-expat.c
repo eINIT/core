@@ -410,7 +410,7 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
 char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
  char *ret = NULL;
  char *retval = NULL;
- char *xtemplate = "<?xml version=\"1.1\" encoding=\"utf-8\" ?>\n<einit>\n%s</einit>\n";
+ char *xtemplate = "<?xml version=\"1.1\" encoding=\"UTF-8\" ?>\n<einit>\n%s</einit>\n";
  ssize_t sxlen;
  struct stree *cur = configuration;
 
@@ -424,7 +424,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
     ssize_t x = 0;
     for (x = 0; node->arbattrs[x]; x+=2) {
      char *key = node->arbattrs[x],
-          *value = node->arbattrs[x+1];
+          *value = escape_xml(node->arbattrs[x+1]);
      ssize_t clen = strlen (key) + strlen(value) + 5;
      char *ytmp = emalloc (clen);
 
@@ -439,15 +439,17 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
      xattributes = strcat (xattributes, ytmp);
 
      free (ytmp);
+     free (value);
     }
    }
   }
 
-  if (cur->key && xattributes) {
-   ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
-   xtmp = emalloc (rxlen);
-   snprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
-
+  if (xattributes) {
+   if (cur->key && xattributes) {
+    ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
+    xtmp = emalloc (rxlen);
+    snprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
+   }
    free (xattributes);
   }
 
