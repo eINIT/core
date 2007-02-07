@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/tree.h>
 
-struct stree *exported_functions = NULL;
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 

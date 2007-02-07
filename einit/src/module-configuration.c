@@ -39,10 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 
 #define EVENT_FUNCTIONS_PTR NULL
+#define EXPORTED_FUNCTIONS_PTR NULL
 
 /* event handler for the expat-based XML parser */
 #if ( EINIT_MODULES_XML_EXPAT == 'y' )
 void einit_config_xml_expat_event_handler (struct einit_event *);
+char *einit_config_xml_cfg_to_xml (struct stree *);
 
 struct event_function einit_config_xml_expat_event_handler_ef = {
  .type = EVENT_SUBSYSTEM_EINIT,
@@ -50,8 +52,27 @@ struct event_function einit_config_xml_expat_event_handler_ef = {
  .next = EVENT_FUNCTIONS_PTR
 };
 
+struct exported_function einit_config_xml_expat_cfg2xml_function_header = {
+ .version = 1,
+ .function = einit_config_xml_cfg_to_xml
+};
+
+struct stree *exported_functions_rootnode;
+
+struct stree einit_config_xml_expat_cfg2xml_function = {
+ .key = "einit-configuration-converter-xml",
+ .value = &einit_config_xml_expat_cfg2xml_function_header,
+ .luggage = NULL,
+ .next = EXPORTED_FUNCTIONS_PTR,
+ .lbase = &exported_functions_rootnode
+};
+
+struct stree *exported_functions_rootnode = &einit_config_xml_expat_cfg2xml_function;
+
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_config_xml_expat_event_handler_ef
+#undef EXPORTED_FUNCTIONS_PTR NULL
+#define EXPORTED_FUNCTIONS_PTR &einit_config_xml_expat_cfg2xml_function
 
 #endif
 
@@ -120,3 +141,4 @@ struct event_function einit_event_ipc_handler_ef = {
 #define EVENT_FUNCTIONS_PTR &einit_event_ipc_handler_ef
 
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;
+struct stree *exported_functions = EXPORTED_FUNCTIONS_PTR;

@@ -406,3 +406,54 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
   }
  }
 }
+
+char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
+ char *ret = NULL;
+ char *retval = NULL;
+ char *xtemplate = "<?xml version=\"1.1\" encoding=\"utf-8\" ?>\n<einit>\n%s</einit>\n";
+ ssize_t sxlen;
+ struct stree *cur = configuration;
+
+ while (cur) {
+  char *xtmp = NULL, *xattributes = NULL;
+
+  if (cur->value) {
+   struct cfgnode *node = cur->value;
+
+   if (node->arbattrs) {
+   }
+  }
+
+  if (cur->key) {
+   if (xattributes) {
+    ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
+    xtmp = emalloc (rxlen);
+    snprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
+   } else {
+    ssize_t rxlen = strlen (cur->key) +7;
+    xtmp = emalloc (rxlen);
+    snprintf (xtmp, rxlen, " <%s />\n", cur->key);
+   }
+  }
+
+  if (xtmp) {
+   if (retval) retval = erealloc (retval, strlen (retval) + strlen (xtmp) +1);
+   else retval = emalloc (strlen (xtmp) +1);
+
+   retval = strcat (retval, xtmp);
+
+   free (xtmp);
+  }
+
+  cur = streenext(cur);
+ }
+
+ if (!retval)
+  retval = "";
+
+ sxlen = strlen (retval) + strlen (xtemplate) +1;
+ ret = emalloc (sxlen);
+ snprintf (ret, sxlen, xtemplate, retval);
+
+ return ret;
+}
