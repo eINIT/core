@@ -421,24 +421,42 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
    struct cfgnode *node = cur->value;
 
    if (node->arbattrs) {
+    ssize_t x = 0;
+    for (x = 0; node->arbattrs[x]; x+=2) {
+     char *key = node->arbattrs[x],
+          *value = node->arbattrs[x+1];
+     ssize_t clen = strlen (key) + strlen(value) + 5;
+     char *ytmp = emalloc (clen);
+
+     snprintf (ytmp, clen, "%s=\"%s\" ", key, value);
+
+     if (xattributes) xattributes = erealloc (xattributes, strlen (xattributes) + strlen (ytmp) +1);
+     else {
+      xattributes = emalloc (strlen (ytmp) +1);
+      *xattributes = 0;
+     }
+
+     xattributes = strcat (xattributes, ytmp);
+
+     free (ytmp);
+    }
    }
   }
 
-  if (cur->key) {
-   if (xattributes) {
-    ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
-    xtmp = emalloc (rxlen);
-    snprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
-   } else {
-    ssize_t rxlen = strlen (cur->key) +7;
-    xtmp = emalloc (rxlen);
-    snprintf (xtmp, rxlen, " <%s />\n", cur->key);
-   }
+  if (cur->key && xattributes) {
+   ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
+   xtmp = emalloc (rxlen);
+   snprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
+
+   free (xattributes);
   }
 
   if (xtmp) {
    if (retval) retval = erealloc (retval, strlen (retval) + strlen (xtmp) +1);
-   else retval = emalloc (strlen (xtmp) +1);
+   else {
+    retval = emalloc (strlen (xtmp) +1);
+    *retval = 0;
+   }
 
    retval = strcat (retval, xtmp);
 
