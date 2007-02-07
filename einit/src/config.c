@@ -390,22 +390,27 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
    if (!strcmp ("list", ev->set[0]) && !strcmp ("configuration", ev->set[1])) {
     struct stree *otree = NULL;
     char *buffer = NULL;
-	cfg_string_converter conv;
+    cfg_string_converter conv;
 
     if (ev->set[2]) {
-	 char *x = set2str (' ', (char **) (ev->set +2));
-	 if (x) {
+     char *x = set2str (' ', (char **) (ev->set +2));
+     if (x) {
       otree = cfg_filter (x);
 
-	  free (x);
-	 }
+      free (x);
+     }
     } else {
-	 otree = hconfiguration;
+     otree = hconfiguration;
     }
 
-    if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) {
-     buffer = conv(otree);
-	}
+    if (ev->status & EIPC_OUTPUT_ANSI) {
+     if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-human-readable-ansi", 1, NULL)) buffer = conv(otree);
+     else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-human-readable", 1, NULL)) buffer = conv(otree);
+     else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
+    } else if (ev->status & EIPC_OUTPUT_XML) {
+     if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
+    } else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-human-readable", 1, NULL)) buffer = conv(otree);
+    else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
 
     if (buffer) {
      fputs (buffer, (FILE *)ev->para);
