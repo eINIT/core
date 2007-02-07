@@ -385,7 +385,7 @@ char *escape_xml (char *input) {
   retval = emalloc (blen);
 
   for (cpos = 0; input[cpos]; cpos++) {
-   if (tpos < (blen -7)) {
+   if (tpos > (blen -7)) {
     blen += 1024;
     retval = erealloc (retval, blen);
    }
