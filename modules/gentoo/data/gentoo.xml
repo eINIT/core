@@ -46,6 +46,6 @@
   <alias id="checkroot" s="mount/system" />
   <alias id="nfsmount" s="mount/remote" />
   <alias id="lm_sensors" s="sensors" />
-  <alias id="net" s="network" />
+<!--  <alias id="net" s="network" /> -->
  </services>
 </einit>
