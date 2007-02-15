@@ -1,5 +1,7 @@
 2007/02/15: mdeininger
  * extra module for entranceD (additional to the entrance module from earlier)
+ * "list services" will now list deprecated modules with a red "-" instead of
+   the usual *
 
 2007/02/08: mdeininger
  * new module for ipc commands that modify the configuration

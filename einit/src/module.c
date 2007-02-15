@@ -935,7 +935,9 @@ void mod_event_handler(struct einit_event *ev) {
          uint32_t u = 0;
          for (u = 0; xs[u]; u++) {
           fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
-                                 " \e[33m* \e[0mcandidate \"%s\" (%s)\n" :
+                                 ((xs[u]->module && (xs[u]->module->options & EINIT_MOD_DEPRECATED)) ?
+                                  " \e[31m- \e[0mcandidate \"%s\" (%s)\n" :
+                                  " \e[33m* \e[0mcandidate \"%s\" (%s)\n") :
                                  " * candidate \"%s\" (%s)\n",
                    xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
