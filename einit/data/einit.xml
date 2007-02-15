@@ -62,7 +62,7 @@
 
    <interfaces>
     <source s="sys:proc" />
-    <lo address="127.0.0.1/8" network="127.0.0.0/8" gateway="127.0.0.1" />
+    <lo address="127.0.0.1/8" network="127.0.0.0/8" />
    </interfaces>
 
    <dhcp>
