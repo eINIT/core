@@ -238,7 +238,7 @@ int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group) {
 
  if (user) {
   struct passwd pwd, *pwdptr;
-  char *buffer = malloc (_getpw_r_size_max);
+  char *buffer = emalloc (_getpw_r_size_max);
   errno = 0;
   while (getpwnam_r(user, &pwd, buffer, _getpw_r_size_max, &pwdptr)) {
    switch (errno) {
