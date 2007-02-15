@@ -510,7 +510,7 @@ int scanmodules (struct lmodule *modchain) {
   fprintf (stderr, " >> parsing gentoo scripts\n");
  }*/
 
- if (!svcdir_init_done) {
+ if (!svcdir_init_done && (gmode != EINIT_GMODE_IPCONLY)) {
   char *cmd = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/svcdir-init", NULL);
 
   if (cmd) pexec(cmd, NULL, 0, 0, NULL, NULL, NULL, NULL);
