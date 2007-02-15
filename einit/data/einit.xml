@@ -420,6 +420,14 @@
      DISPLAY=":0.0"
      restart="yes" />
 
+    <daemon id="daemon-entranced"
+     name="XDM (EntranceD)"
+     provides="xdm:x11"
+     command="/usr/sbin/entranced -nofork"
+     restart="yes"
+     DISPLAY=":0.0"
+     HOME="/root" />
+
     <daemon id="daemon-entrance"
      name="XDM (Entrance)"
      provides="xdm"
