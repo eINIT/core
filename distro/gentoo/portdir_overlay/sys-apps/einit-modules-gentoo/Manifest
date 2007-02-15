@@ -2,13 +2,20 @@ EBUILD einit-modules-gentoo-9999-r1.ebuild 1011 RMD160 d5ce20d625fd8e17317377aca
 MD5 cb412fc31f5d397f8ec074a22d99269b einit-modules-gentoo-9999-r1.ebuild 1011
 RMD160 d5ce20d625fd8e17317377aca0c2b311dfc62137 einit-modules-gentoo-9999-r1.ebuild 1011
 SHA256 e75e4e363fabb9db27cf1b9f523f5aa576e9cb7b78c6abc96d93cc8fda0e7f78 einit-modules-gentoo-9999-r1.ebuild 1011
+EBUILD einit-modules-gentoo-9999-r2.ebuild 1613 RMD160 130d81256e9462b7c2a088d441d23ab94c3963f9 SHA1 07439fa2d4062338b66aca47468d52fc1b816f51 SHA256 a3c4fac6d0302a772828c6614b7eb697a6da5145583d4e8aa2952cef24ae84c8
+MD5 2155aafd2fe2107186e55a5b79473efd einit-modules-gentoo-9999-r2.ebuild 1613
+RMD160 130d81256e9462b7c2a088d441d23ab94c3963f9 einit-modules-gentoo-9999-r2.ebuild 1613
+SHA256 a3c4fac6d0302a772828c6614b7eb697a6da5145583d4e8aa2952cef24ae84c8 einit-modules-gentoo-9999-r2.ebuild 1613
 EBUILD einit-modules-gentoo-9999.ebuild 1009 RMD160 0e0bf27b512a7769356871e48d0e91eb40f6fee9 SHA1 cd86520751802e2a99260dff3fb514b5968c5e6b SHA256 8c034cb51a25e5bd3fac9bf7233087ec855762628a768d6fb05c140740fca168
 MD5 4c0fb18a063e4ee7cd64780728efe70d einit-modules-gentoo-9999.ebuild 1009
 RMD160 0e0bf27b512a7769356871e48d0e91eb40f6fee9 einit-modules-gentoo-9999.ebuild 1009
 SHA256 8c034cb51a25e5bd3fac9bf7233087ec855762628a768d6fb05c140740fca168 einit-modules-gentoo-9999.ebuild 1009
-MD5 68b329da9893e34099c7d8ad5cb9c940 files/digest-einit-modules-gentoo-9999 1
-RMD160 c0da025038ed83c687ddc430da9846ecb97f3998 files/digest-einit-modules-gentoo-9999 1
-SHA256 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b files/digest-einit-modules-gentoo-9999 1
-MD5 68b329da9893e34099c7d8ad5cb9c940 files/digest-einit-modules-gentoo-9999-r1 1
-RMD160 c0da025038ed83c687ddc430da9846ecb97f3998 files/digest-einit-modules-gentoo-9999-r1 1
-SHA256 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b files/digest-einit-modules-gentoo-9999-r1 1
+MD5 d41d8cd98f00b204e9800998ecf8427e files/digest-einit-modules-gentoo-9999 0
+RMD160 9c1185a5c5e9fc54612808977ee8f548b2258d31 files/digest-einit-modules-gentoo-9999 0
+SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 files/digest-einit-modules-gentoo-9999 0
+MD5 d41d8cd98f00b204e9800998ecf8427e files/digest-einit-modules-gentoo-9999-r1 0
+RMD160 9c1185a5c5e9fc54612808977ee8f548b2258d31 files/digest-einit-modules-gentoo-9999-r1 0
+SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 files/digest-einit-modules-gentoo-9999-r1 0
+MD5 d41d8cd98f00b204e9800998ecf8427e files/digest-einit-modules-gentoo-9999-r2 0
+RMD160 9c1185a5c5e9fc54612808977ee8f548b2258d31 files/digest-einit-modules-gentoo-9999-r2 0
+SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 files/digest-einit-modules-gentoo-9999-r2 0

@@ -53,6 +53,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/exec.h>
 #include <einit-modules/parse-sh.h>
 
+#include "../gentoo-baselayout-1.13.0-alpha13/rc.h"
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -78,7 +80,6 @@ const struct smodule self = {
 char  do_service_tracking = 0,
      *service_tracking_path = NULL,
       is_gentoo_system = 0,
-     *init_d_dependency_scriptlet = NULL,
      *init_d_exec_scriptlet = NULL;
 time_t profile_env_mtime = 0;
 
@@ -303,7 +304,6 @@ void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
   struct stat st;
 
-  init_d_dependency_scriptlet = cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/list-dependencies", NULL);
   init_d_exec_scriptlet = cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/execute", NULL);
 
   char *cs = cfg_getstring("configuration-compatibility-sysv-distribution", NULL);
@@ -345,7 +345,12 @@ void einit_event_handler (struct einit_event *ev) {
     if (!service_tracking_path) do_service_tracking = 0;
    }
   }
- } else if (ev->type == EVE_SERVICE_UPDATE) { // service tracking
+ }
+/* originally, this seemed like a good idea, however due to some of the things
+   UberLord showed me it's probably better not to mess with this since it really
+   isn't necessary */
+#if 0
+ else if (ev->type == EVE_SERVICE_UPDATE) { // service tracking
   if (do_service_tracking && ev->set) {
    struct stat st;
    char tmp[256], tmpd[256], *base = NULL, *dbase = NULL,
@@ -439,6 +444,7 @@ void einit_event_handler (struct einit_event *ev) {
    }
   }
  }
+#endif
 }
 
 void ipc_event_handler (struct einit_event *ev) {
@@ -481,7 +487,7 @@ int scanmodules (struct lmodule *modchain) {
  uint32_t plen;
  struct smodule *modinfo;
 
- if (!init_d_path || !init_d_dependency_scriptlet || !is_gentoo_system) {
+ if (!init_d_path || !is_gentoo_system) {
 //  fprintf (stderr, " >> not parsing gentoo scripts: 0x%x, 0x%x, 0x%x\n", init_d_path, init_d_dependency_scriptlet, is_gentoo_system);
   return 0;
  }/* else {
@@ -491,11 +497,18 @@ int scanmodules (struct lmodule *modchain) {
  plen = strlen (init_d_path) +1;
 
  if (dir = opendir (init_d_path)) {
+// load gentoo's default dependency information using librc.so's functions
+  rc_depinfo_t *gentoo_deptree = rc_load_deptree(NULL);
+  if (!gentoo_deptree) {
+   fputs (" >> unable to load gentoo's dependency information.\n", stderr);
+  }
+
 #ifdef DEBUG
   puts (" >> reading directory");
 #endif
   while (de = readdir (dir)) {
    char doop = 1;
+   rc_depinfo_t *depinfo;
 
 //   puts (de->d_name);
 
@@ -529,41 +542,25 @@ int scanmodules (struct lmodule *modchain) {
     modinfo->name = estrdup (tmpx);
     modinfo->rid = estrdup(nrid);
 
-    char *variables[5] = { "script-path", tmp,
-                           "script-name", (nrid + 7), NULL};
-
-    if (variables) {
-     char *depscript = apply_variables (init_d_dependency_scriptlet, variables),
-// meh, gentoo's init scripts are always parsed via bash -- should work anyway
-//          *pcommand[4] = { "/bin/bash", "-c", depscript, NULL },
-          pbuffer[1024];
-     FILE *datapipe = popen (depscript, "r");
-
-     while (fgets(pbuffer, 1024, datapipe)) {
-      strtrim (pbuffer);
-//      puts(pbuffer);
-      char *val = strchr (pbuffer, '=');
-      if (val) {
-       *val = 0;
-       val++;
-
-       if (!strcmp (pbuffer, "need")) // need == requires
-        modinfo->si.requires = str2set (' ', val);
-       else if (!strcmp (pbuffer, "provide")) // provide == provides
-        modinfo->si.provides = str2set (' ', val);
-       else if (!strcmp (pbuffer, "before")) // before == before
-        modinfo->si.before = str2set (' ', val);
-       else if (!strcmp (pbuffer, "use")/* || !strcmp (pbuffer, "after")*/) { // use & after == after
-        char **new = str2set (' ', val);
-        modinfo->si.before = (char **)setcombine ((void **)modinfo->si.before, (void **)new, SET_TYPE_STRING);
-// gentoo's "after"-attribute seems to cause unresolved circular dependencies...
-       } else if (!strcmp (pbuffer, "after")) {
-       } else fputs (" >> gentoo init scripts: invalid input (unknown token)\n", stderr);
-      }
-      else fputs (" >> gentoo init scripts: invalid input\n", stderr);
+    if (depinfo = get_depinfo (gentoo_deptree, de->d_name)) {
+     rc_deptype_t *dependencies;
+     if (dependencies = get_deptype(depinfo, "ineed")) {
+      modinfo->si.requires = str2set (' ', dependencies->services);
      }
-
-     pclose (datapipe);
+     if (dependencies = get_deptype(depinfo, "iprovide")) {
+      modinfo->si.provides = str2set (' ', dependencies->services);
+     }
+     if (dependencies = get_deptype(depinfo, "ibefore")) {
+      modinfo->si.before = str2set (' ', dependencies->services);
+     }
+     if (dependencies = get_deptype(depinfo, "iuse")) {
+      modinfo->si.after = str2set (' ', dependencies->services);
+     }
+/*     if (dependencies = get_deptype(depinfo, "iafter")) {
+      dependencies->services;
+     }*/
+    } else {
+     fprintf (stderr, " >> no dependency information for service \"%s\".\n", de->d_name);
     }
 
     modinfo->si.provides = (char **)setadd ((void **)modinfo->si.provides, (void *)(nrid + 7), SET_TYPE_STRING);
@@ -603,6 +600,8 @@ int scanmodules (struct lmodule *modchain) {
    if (nrid) free (nrid);
    if (tmp) free (tmp);
   }
+
+  rc_free_deptree (gentoo_deptree);
 
   closedir (dir);
  } else {

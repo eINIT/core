@@ -1,2 +1,5 @@
+2007/02/15: mdeininger
+ * made use of gentoo's new baselayout (more precisely their latest librc.so)
+
 2007/01/20: mdeininger
  * initial split of gentoo-related modules

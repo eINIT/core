@@ -1,6 +1,6 @@
 include config.mk
 
-all:
+all: librc-objects
 	cd src && ${MAKE} all
 	cd data && ${MAKE} all
 	cd scripts && ${MAKE} all
@@ -32,3 +32,7 @@ depend:
 clean:
 	rm -f einit
 	cd src && ${MAKE} clean
+
+librc-objects:
+	cd gentoo-baselayout-1.13.0-alpha13 && ${MAKE}
+	cp -a gentoo-baselayout-1.13.0-alpha13/*.o src/

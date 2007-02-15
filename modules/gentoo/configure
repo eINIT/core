@@ -29,13 +29,12 @@
 
 INCLUDEPATH="/usr/local/include"
 
-BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
 	ISSVN=1
-	echo "configuring eINIT-svn-${BUILDNUMBER}..."
+	echo "configuring eINIT-svn module..."
 else
 	ISSVN=0
-	echo "configuring eINIT-${BUILDNUMBER}..."
+	echo "configuring eINIT module..."
 fi
 
 # this is on by default for now

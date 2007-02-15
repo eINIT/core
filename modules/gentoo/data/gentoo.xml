@@ -16,38 +16,15 @@
      missing - like mount/critical... -->
 <!--      <runlevels path="/etc/runlevels" exclusive="false" /> -->
       <parse-env.d b="true" />
-      <service-tracker b="true" path="/var/lib/init.d" />
+<!-- this does not work anymore, nor is it really required -->
+<!--      <service-tracker b="true" path="/var/lib/init.d" /> -->
 
 <!-- scriptlets to process gentoo's init.d scripts
      ( i don't particularly feel like re-implementing a complete sh right now )
      arguments: script-path, script-name, action -->
       <init.d-scriptlets
-       list-dependencies='
-        need () { echo "need="$@; };
-        use () { echo "use="$@; };
-        provide () { echo "provide="$@; };
-        before () { echo "before="$@; };
-        after () { echo "after="$@; };
-        depend () { echo "need=mount/local"; };
+       execute='/sbin/runscript.sh ${script-path} --quiet --nodeps ${action};' />
 
-        if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
-        source ${script-path};
-
-        depend;'
-       execute='
-        ewarn () { echo "feedback|warning|"$@; };
-        eerror () { echo "feedback|warning|"$@; };
-        ebegin () { echo "feedback|notice|"$@; };
-        einfo () { echo "feedback|notice|"$@; };
-        eend () {
-         if test $1 = 0; then
-          echo "feedback|success|$2";
-         else
-          echo "feedback|failure|$2";
-         fi; };
-        if test -e /etc/conf.d/${script-name}; then source /etc/conf.d/${script-name}; fi;
-        source ${script-path};
-        ${action};' />
     </sysv-distribution-gentoo>
   </compatibility>
 
