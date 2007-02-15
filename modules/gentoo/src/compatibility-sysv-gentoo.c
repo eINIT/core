@@ -100,6 +100,10 @@ void einit_event_handler (struct einit_event *);
 void ipc_event_handler (struct einit_event *);
 int cleanup_after_module (struct lmodule *);
 
+#define SVCDIR "/lib/rcscripts/init.d"
+
+char svcdir_init_done = 0;
+
 /* functions that module tend to need */
 int configure (struct lmodule *irr) {
  exec_configure (irr);
@@ -456,6 +460,9 @@ void ipc_event_handler (struct einit_event *ev) {
   if (!cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d/path", NULL)) {
    fputs ("NOTICE: CV \"configuration-compatibility-sysv-distribution-gentoo-init.d/path\":\n  Not found: Gentoo Init Scripts will not be processed. (not a problem)\n", (FILE *)ev->para);
    ev->task++;
+  } else if (!cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/svcdir-init", NULL)) {
+   fputs ("NOTICE: CV \"configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/svcdir-init\":\n  Not found: Things might go haywire.\n", (FILE *)ev->para);
+   ev->task++;
   }
 
   ev->flag = 1;
@@ -502,6 +509,13 @@ int scanmodules (struct lmodule *modchain) {
  }/* else {
   fprintf (stderr, " >> parsing gentoo scripts\n");
  }*/
+
+ if (!svcdir_init_done) {
+  char *cmd = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/svcdir-init", NULL);
+
+  if (cmd) pexec(cmd, NULL, 0, 0, NULL, NULL, NULL, NULL);
+  svcdir_init_done = 1;
+ }
 
 #ifdef POSIXREGEX
  if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL)) {

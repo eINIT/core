@@ -25,6 +25,7 @@
      ( i don't particularly feel like re-implementing a complete sh right now )
      arguments: script-path, script-name, action -->
       <init.d-scriptlets
+       svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d; /sbin/depscan.sh;"
        execute='/sbin/runscript.sh ${script-path} --quiet --nodeps ${action};' />
 
     </sysv-distribution-gentoo>
