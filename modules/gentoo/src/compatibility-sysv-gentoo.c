@@ -564,6 +564,8 @@ int scanmodules (struct lmodule *modchain) {
     }
 
     modinfo->si.provides = (char **)setadd ((void **)modinfo->si.provides, (void *)(nrid + 7), SET_TYPE_STRING);
+    modinfo->si.requires = (char **)setadd ((void **)modinfo->si.requires, (void *)"utmp", SET_TYPE_STRING);
+    modinfo->si.requires = (char **)setadd ((void **)modinfo->si.requires, (void *)"initctl", SET_TYPE_STRING);
 
     struct lmodule *lm = modchain;
     while (lm) {
