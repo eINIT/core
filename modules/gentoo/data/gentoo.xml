@@ -6,7 +6,9 @@
    <sysv-distribution-gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-<!--      <init.d path="/etc/init.d/" /> -->
+<!--      <init.d path="/etc/init.d/"
+              pattern-allow=".*"
+              pattern-disallow=".*\.sh" /> -->
 <!-- use this to make einit parse gentoo's runlevels as einit modes.
      NOTE: until someone defines a list with gentoo<>einit aliases, you'll
       get lots of unknown dependencies

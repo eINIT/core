@@ -55,6 +55,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../gentoo-baselayout-1.13.0-alpha13/rc.h"
 
+#ifdef POSIXREGEX
+#include <regex.h>
+#endif
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -482,10 +486,15 @@ int scanmodules (struct lmodule *modchain) {
  DIR *dir;
  struct dirent *de;
  char *nrid = NULL,
- *init_d_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-init.d/path"),
- *tmp = NULL;
+      *init_d_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-init.d/path"),
+      *tmp = NULL;
  uint32_t plen;
  struct smodule *modinfo;
+#ifdef POSIXREGEX
+ char *spattern;
+ regex_t allowpattern, disallowpattern;
+ unsigned char haveallowpattern = 0, havedisallowpattern = 0;
+#endif
 
  if (!init_d_path || !is_gentoo_system) {
 //  fprintf (stderr, " >> not parsing gentoo scripts: 0x%x, 0x%x, 0x%x\n", init_d_path, init_d_dependency_scriptlet, is_gentoo_system);
@@ -493,6 +502,32 @@ int scanmodules (struct lmodule *modchain) {
  }/* else {
   fprintf (stderr, " >> parsing gentoo scripts\n");
  }*/
+
+#ifdef POSIXREGEX
+ if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL)) {
+  uint32_t err;
+
+  if (!(err = regcomp (&allowpattern, spattern, REG_EXTENDED)))
+   haveallowpattern = 1;
+  else {
+   char errorcode [1024];
+   regerror (err, &allowpattern, errorcode, 1024);
+   fputs (errorcode, stderr);
+  }
+ }
+
+ if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-disallow", NULL)) {
+  uint32_t err;
+
+  if (!(err = regcomp (&disallowpattern, spattern, REG_EXTENDED)))
+   havedisallowpattern = 1;
+  else {
+   char errorcode [1024];
+   regerror (err, &disallowpattern, errorcode, 1024);
+   fputs (errorcode, stderr);
+  }
+ }
+#endif
 
  plen = strlen (init_d_path) +1;
 
@@ -512,12 +547,17 @@ int scanmodules (struct lmodule *modchain) {
 
 //   puts (de->d_name);
 
-// filter .-files
+// filter .- and *.sh-files (or apply regex patterns)
+#ifdef POSIXREGEX
+   if (haveallowpattern && regexec (&allowpattern, de->d_name, 0, NULL, 0)) continue;
+   if (havedisallowpattern && !regexec (&disallowpattern, de->d_name, 0, NULL, 0)) continue;
+#else
    if (de->d_name[0] == '.') continue;
-// filter *.sh
+
    uint32_t xl = strlen(de->d_name);
    if ((xl > 3) && (de->d_name[xl-3] == '.') &&
-       (de->d_name[xl-2] == 's') && (de->d_name[xl-1] == 'h')) continue;
+        (de->d_name[xl-2] == 's') && (de->d_name[xl-1] == 'h')) continue;
+#endif
 
    tmp = (char *)emalloc (plen + strlen (de->d_name));
    struct stat sbuf;
@@ -609,6 +649,11 @@ int scanmodules (struct lmodule *modchain) {
  } else {
   fprintf (stderr, " >> couldn't open init.d directory \"%s\"\n", init_d_path);
  }
+
+#ifdef POSIXREGEX
+ if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
+ if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
+#endif
 }
 
 // int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
