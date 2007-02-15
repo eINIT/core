@@ -515,7 +515,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
  if (!(options & PEXEC_OPTION_NOPIPE)) {
   if (pipe (pipefderr)) {
-   status->string = strerror (errno);
+   if (status)
+    status->string = strerror (errno);
    return STATUS_FAIL;
   }
  }
@@ -568,7 +569,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   ssize_t i;
   FILE *fx;
 
-  if (!(options & PEXEC_OPTION_NOPIPE)) {
+  if (!(options & PEXEC_OPTION_NOPIPE) && status) {
    close (pipefderr[1]);
    char buf[BUFFERSIZE+1];
    char lbuf[BUFFERSIZE+1];
@@ -632,7 +633,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    } else {
     perror ("pexec(): open pipe");
    }
-  } else {
+  } else if (status) {
    status->string = "NOT piping, check stderr for program output";
    status_update (status);
   }
