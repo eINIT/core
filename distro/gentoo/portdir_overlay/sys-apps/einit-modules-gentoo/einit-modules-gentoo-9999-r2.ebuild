@@ -59,9 +59,9 @@ pkg_postinst() {
 	einfo "need to enable the functionality you need."
 	einfo "Edit /etc/einit/modules/gentoo.xml and uncomment the functionality you want."
 	einfo
-	ewarning
-	ewarning "This module currently bundles GPL'd prerelease code from Gentoo's baselayout,"
-	ewarning "which will be removed once baselayout-2 goes stable and hits the portage tree."
-	ewarning "The license of the module itself is and always will be BSD if at all possible."
-	ewarning
+	ewarn
+	ewarn "This module currently bundles GPL'd prerelease code from Gentoo's baselayout,"
+	ewarn "which will be removed once baselayout-2 goes stable and hits the portage tree."
+	ewarn "The license of the module itself is and always will be BSD if at all possible."
+	ewarn
 }
