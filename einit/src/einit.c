@@ -268,6 +268,8 @@ int main(int argc, char **argv) {
 /* actual system initialisation */
   struct einit_event cev = evstaticinit(EVE_UPDATE_CONFIGURATION);
 
+  if (ipccommands) gmode = EINIT_GMODE_IPCONLY;
+
   stime = time(NULL);
   printf ("eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 

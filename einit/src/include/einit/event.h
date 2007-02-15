@@ -128,7 +128,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct einit_event {
  uint32_t type;                  /*!< the event or subsystem to watch */
-// char *type_custom;              /*!< not yet implemented; reserved for custom events */
+// char *type_custom;
+ /*!< not yet implemented; reserved for custom events */
  void **set;                     /*!< a set that should make sense in combination with the event type */
  char *string;                   /*!< a string */
  int32_t integer, status, task;  /*!< integers */
@@ -138,7 +139,8 @@ struct einit_event {
  time_t timestamp;
 
  uint32_t chain_type;            /*!< the event to be called right after this one */
-// char *type_custom;              /*!< not yet implemented; reserved for custom events */
+// char *chain_type_custom;
+ /*!< not yet implemented; reserved for custom events */
 
  void *para;                     /*!< additional parametres */
  pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */
