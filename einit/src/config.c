@@ -403,14 +403,15 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
      otree = hconfiguration;
     }
 
-    if (ev->status & EIPC_OUTPUT_ANSI) {
-     if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-human-readable-ansi", 1, NULL)) buffer = conv(otree);
-     else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-human-readable", 1, NULL)) buffer = conv(otree);
-     else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
-    } else if (ev->status & EIPC_OUTPUT_XML) {
+    if (ev->status & EIPC_OUTPUT_XML) {
      if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
-    } else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-human-readable", 1, NULL)) buffer = conv(otree);
-    else if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
+    } else {
+	 char *rtset[] = 
+	   { (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable-ansi" : "human-readable",
+	     (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable" : "xml",
+		 (ev->status & EIPC_OUTPUT_ANSI) ? "xml" : "human-readable-ansi", NULL };
+	 if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, rtset)) buffer = conv(otree);
+	}
 
     if (buffer) {
      fputs (buffer, (FILE *)ev->para);
