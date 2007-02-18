@@ -107,11 +107,11 @@ int configure (struct lmodule *irr) {
   shell = dshell;
  exec_configure (irr);
 
- if (node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL))
+ if ((node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL)))
   spawn_timeout = node->value;
- if (node = cfg_findnode ("configuration-system-daemon-term-timeout-primary", 0, NULL))
+ if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-primary", 0, NULL)))
   kill_timeout_primary = node->value;
- if (node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL))
+ if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
 
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
@@ -121,6 +121,8 @@ int configure (struct lmodule *irr) {
  function_register ("einit-stop-daemon", 1, __stop_daemon_function);
  function_register ("einit-create-environment", 1, __create_environment);
  function_register ("einit-check-variables", 1, __check_variables);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *irr) {
@@ -134,6 +136,8 @@ int cleanup (struct lmodule *irr) {
  function_unregister ("einit-check-variables", 1, __check_variables);
 
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 void ipc_event_handler (struct einit_event *ev) {
@@ -172,7 +176,7 @@ void *pexec_watcher (struct spidcb *spid) {
 
 char **__check_variables (char *id, char **variables, FILE *output) {
  uint32_t u = 0;
- if (!variables) return;
+ if (!variables) return variables;
  for (u = 0; variables[u]; u++) {
   char *e = estrdup (variables[u]), *ep = strchr (e, '/');
   char *x[] = { e, NULL, NULL };
@@ -231,6 +235,8 @@ char **__check_variables (char *id, char **variables, FILE *output) {
   if (x[0] != e) free (x[0]);
   free (e);
  }
+
+ return variables;
 }
 
 char **__create_environment (char **environment, char **variables) {
@@ -238,7 +244,7 @@ char **__create_environment (char **environment, char **variables) {
  char *variablevalue = NULL;
  if (variables) for (i = 0; variables[i]; i++) {
 #ifdef POSIXREGEX
-  if (variablevalue = strchr (variables[i], '/')) {
+  if ((variablevalue = strchr (variables[i], '/'))) {
 /* special treatment if we have an attribue specifier in the variable name */
    char *name = NULL, *filter = variablevalue+1;
    struct cfgnode *node;
@@ -294,7 +300,6 @@ char **__create_environment (char **environment, char **variables) {
     }
 
     if (pvalue)  {
-     uint32_t len = strlen (pvalue), i = 0;
      for (; pvalue[i]; i++) {
       if (!isalnum (pvalue[i]) && (pvalue[i] != ' ')) pvalue[i] = '_';
      }
@@ -564,17 +569,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   free (cmdsetdup);
   exit (EXIT_FAILURE);
  } else {
-  ssize_t br;
-  ssize_t ic = 0;
-  ssize_t i;
   FILE *fx;
 
   if (!(options & PEXEC_OPTION_NOPIPE) && status) {
    close (pipefderr[1]);
-   char buf[BUFFERSIZE+1];
-   char lbuf[BUFFERSIZE+1];
 
-   if (fx = fdopen(pipefderr[0], "r")) {
+   if ((fx = fdopen(pipefderr[0], "r"))) {
     char rxbuffer[1024];
     setvbuf (fx, NULL, _IONBF, 0);
 
@@ -652,7 +652,6 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
 void *dexec_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
- int status = spid->status;
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
  struct lmodule *module = NULL;
@@ -723,7 +722,7 @@ void *dexec_watcher (struct spidcb *spid) {
   }
  }
 
-// free (cur);
+ return NULL;
 }
 
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status) {

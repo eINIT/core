@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <einit-modules/parse-sh.h>
 
 #include <einit-modules/ipc.h>
@@ -83,14 +84,16 @@ int __parse_sh (char *, void (*)(char **, uint8_t));
 
 int configure (struct lmodule *irr) {
  parse_sh_configure (irr);
-// event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_register ("einit-parse-sh", 1, __parse_sh);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *irr) {
-// event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-parse-sh", 1, __parse_sh);
  parse_sh_cleanup (irr);
+
+ return 0;
 }
 
 // parse sh-style files and call back for each line

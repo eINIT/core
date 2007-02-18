@@ -81,14 +81,12 @@ void ipc_event_handler (struct einit_event *ev) {
    fprintf ((FILE *)ev->para, " >> setting variable \"%s\".\n", t);
    ev->flag = 1;
 
-   if (x = strchr (t, '/')) {
+   if ((x = strchr (t, '/'))) {
     *x = 0;
-	subattr = x+1;
+    subattr = x+1;
    }
 
    memset (&newnode, 0, sizeof (struct cfgnode));
-
-//   newnode->id = ev->set
 
    free (t);
   }
@@ -96,15 +94,17 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *r) {
- char *p;
-
  this = r;
 
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
-/* passive module, no enable/disable/* */
+/* passive module, no enable/disable/etc */

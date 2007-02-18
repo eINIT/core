@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
 
 #define EXPECTED_EIV 1
 
@@ -87,21 +88,22 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int configure (struct lmodule *r) {
- char *p;
-
  this = r;
 
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+
+ return 0;
 }
 
 int enable (void *pa, struct einit_event *status) {
- char *p;
  if (!cfg_getstring ("services-external/provided", NULL)) {
   status->string = "no external services configured, not enabling";
   status->flag++;
@@ -117,15 +119,19 @@ int disable (void *pa, struct einit_event *status) {
 }
 
 void einit_event_handler (struct einit_event *ev) {
- if ((ev->type == EVE_CONFIGURATION_UPDATE) || (ev->type == EVE_UPDATE_CONFIGURATION)){
+ if ((ev->type == EVE_CONFIGURATION_UPDATE) || (ev->type == EVE_UPDATE_CONFIGURATION)) {
   char *p;
-  if (p = cfg_getstring("services-external/provided", NULL)) {
+  if ((p = cfg_getstring("services-external/provided", NULL))) {
 
-   pthread_mutex_lock (&this->mutex);
+   if (pthread_mutex_lock (&this->mutex)) {
+    bitch2(BITCH_EPTHREADS, "einit-external:einit_event_handler()", 0, "locking mutex failed.");
+   }
 
    this->module->si.provides = str2set (':', p);
 
-   pthread_mutex_unlock (&this->mutex);
+   if (pthread_mutex_unlock (&this->mutex)) {
+    bitch2(BITCH_EPTHREADS, "einit-external:einit_event_handler()", 0, "unlocking mutex failed.");
+   }
 
    this = mod_update (this);
 
