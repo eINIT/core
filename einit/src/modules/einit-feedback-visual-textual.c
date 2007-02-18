@@ -171,6 +171,8 @@ void ipc_event_handler (struct einit_event *ev) {
 int configure (struct lmodule *this) {
  me = this;
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
@@ -200,6 +202,8 @@ int cleanup (struct lmodule *this) {
   modules = NULL;
   pthread_mutex_unlock (&modulesmutex);
  }
+
+ return 0;
 }
 
 /*
@@ -212,10 +216,10 @@ int enable (void *pa, struct einit_event *status) {
  if (node)
   enableansicodes = node->flag;
 
- if (node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL))
+ if ((node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL)))
   show_progress = node->flag;
 
- if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
+ if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
   shutdownfailuretimeout = node->value;
 
  struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
@@ -228,7 +232,7 @@ int enable (void *pa, struct einit_event *status) {
   for (; filenode->arbattrs[i]; i+=2) {
    errno = 0;
 
-   if (filenode->arbattrs[i])
+   if (filenode->arbattrs[i]) {
     if (!strcmp (filenode->arbattrs[i], "stdin")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
@@ -252,7 +256,7 @@ int enable (void *pa, struct einit_event *status) {
       if (!tmp)
        tmp = freopen ("einit-panic-stdout", "a", stderr);
       if (tmp)
-       fprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", time(NULL));
+       fprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL));
      } else {
       perror ("einit-feedback-visual-textual: opening stderr");
       enableansicodes = 0;
@@ -268,21 +272,16 @@ int enable (void *pa, struct einit_event *status) {
      }
     } else if (!strcmp (filenode->arbattrs[i], "console")) {
 #ifdef LINUX
-     int tfd = 0, tioarg = (12 << 8) | 11;
-     signed long int arg = 1;
+     int tfd = 0;
      errno = 0;
-     if (tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0))
+     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0)))
       ioctl (tfd, TIOCCONS, 0);
      if (errno)
-//      perror ("einit-tty: redirecting console");
       perror (filenode->arbattrs[i+1]);
 
 #else
      fputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
 #endif
-/*     stderr = freopen (filenode->arbattrs[i+1], "w", stderr);
-     if (!stdin)
-      stderr = freopen ("einit-panic-stdout", "w", stderr);*/
     } else if (!strcmp (filenode->arbattrs[i], "kernel-vt")) {
 #ifdef LINUX
      int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
@@ -299,7 +298,7 @@ int enable (void *pa, struct einit_event *status) {
      uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
      int tfd = 0;
      errno = 0;
-     if (tfd = open ("/dev/tty1", O_RDWR, 0))
+     if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
       ioctl (tfd, VT_ACTIVATE, vtn);
      if (errno)
       perror ("einit-feedback-visual-textual: activate terminal");
@@ -308,6 +307,7 @@ int enable (void *pa, struct einit_event *status) {
      fputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr);
 #endif
     }
+   }
   }
  }
 
@@ -342,7 +342,7 @@ int disable (void *pa, struct einit_event *status) {
 void feedback_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
- uint32_t line = 0, olines = 0;
+ uint32_t line = 0;
 
  if (ev->type == EVENT_FEEDBACK_REGISTER_FD) {
   struct feedback_fd *newfd = emalloc (sizeof (struct feedback_fd));
@@ -412,17 +412,15 @@ void feedback_event_handler(struct einit_event *ev) {
       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
     pthread_mutex_unlock (&plansmutex);
     if (enableansicodes)
-     printf ("\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown");
+     printf ("\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown");
     else
      printf ("new mode %s is now in effect.\n", (amode && amode->id) ? amode->id : "unknown");
 
     if (vofile)
-     fprintf (vofile, "\e[0;0H[ \e[33m%04.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", time(NULL) - startedat, (amode && amode->id) ? amode->id : "unknown"); break;
+     fprintf (vofile, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown"); break;
   }
  } else if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
-  time_t lupdate;
   struct mstat *mst = NULL;
-  char *name = "unknown/unspecified";
   uint32_t i = 0;
 
   pthread_mutex_lock (&modulesmutex);
@@ -502,7 +500,7 @@ void feedback_event_handler(struct einit_event *ev) {
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
    strtrim (ev->string);
-   fprintf (stderr, "[time=%i; severity=%i] %s\n", time(NULL), ev->flag, ev->string);
+   fprintf (stderr, "[time=%i; severity=%i] %s\n", (int)time(NULL), ev->flag, ev->string);
   }
  }
 
@@ -701,7 +699,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
  */
 void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
  char *name = "unknown/unnamed";
- uint32_t line = statusbarlines, lines = 0, i = 0;
+ uint32_t line = statusbarlines, i = 0;
 
  for (i = 0; modules[i]; i++) {
   if (((struct mstat *)(modules[i]))->mod == ev->para) {
@@ -792,13 +790,11 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
 void einit_event_handler(struct einit_event *ev) {
  pthread_mutex_lock (&me->imutex);
 
- struct cfgnode *n;
-
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node;
   fprintf (stderr, "[[ updating configuration ]]\n");
 
-  if (node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL))
+  if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
    shutdownfailuretimeout = node->value;
  } else if (ev->type == EVE_MODULE_UPDATE) {
   if (show_progress && !(ev->status & STATUS_WORKING)) {
@@ -867,9 +863,9 @@ void power_event_handler(struct einit_event *ev) {
   if (errors)
    while (c) {
     if (enableansicodes)
-     printf ("\e[0;0H\e[0m[ \e[31m%04.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
+     printf ("\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
     else
-     printf ("[ %04.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
+     printf ("[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
 
     sleep (1);
     c--;
@@ -913,7 +909,7 @@ unsigned char broadcast_message (char *path, char *message) {
 
  dir = opendir (path);
  if (dir != NULL) {
-  while (entry = readdir (dir)) {
+  while ((entry = readdir (dir))) {
    if (entry->d_name[0] == '.') continue;
    struct stat statbuf;
    char *tmp = emalloc (strlen(path) + entry->d_reclen);

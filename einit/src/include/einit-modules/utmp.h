@@ -106,9 +106,27 @@ utmp_function __utmp_update_function;
   }\
  } \
  else memset (record.ut_line, 0, UT_LINESIZE);\
- if (uid)   strncpy (record.ut_id,   uid,   4);           else memset (record.ut_id, 0, 4); \
- if (uuser) strncpy (record.ut_user, uuser, UT_NAMESIZE); else memset (record.ut_user, 0, UT_NAMESIZE); \
- if (uhost) strncpy (record.ut_host, uhost, UT_HOSTSIZE); else memset (record.ut_host, 0, UT_HOSTSIZE); \
+ if (uid) {\
+  char *tmpstr = estrdup (uid);\
+  if (tmpstr) {\
+   strncpy (record.ut_id, tmpstr, 4); \
+   free (tmpstr);\
+  }\
+ } else memset (record.ut_id, 0, 4);\
+ if (uuser) {\
+  char *tmpstr = estrdup (uuser);\
+  if (tmpstr) {\
+   strncpy (record.ut_user, tmpstr, UT_NAMESIZE); \
+   free (tmpstr);\
+  }\
+ } else memset (record.ut_user, 0, UT_NAMESIZE);\
+ if (uhost) {\
+  char *tmpstr = estrdup (uhost);\
+  if (tmpstr) {\
+   strncpy (record.ut_host, tmpstr, UT_HOSTSIZE); \
+   free (tmpstr);\
+  }\
+ } else memset (record.ut_host, 0, UT_HOSTSIZE);\
  { struct timeval tv; \
    gettimeofday(&tv, NULL); \
    record.ut_tv.tv_sec = tv.tv_sec; \

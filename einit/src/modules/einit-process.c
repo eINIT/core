@@ -72,12 +72,12 @@ const struct smodule self = {
 
 struct process_status **ps = NULL;
 
-pid_t **collect_processes(struct pc_conditional **pcc) {
- pid_t **ret = NULL;
+pid_t *collect_processes(struct pc_conditional **pcc) {
+ pid_t *ret = NULL;
  process_status_updater pse = function_find_one("einit-process-status-updater", 1, NULL);
  uint32_t i;
 
- if (!pcc) return;
+ if (!pcc) return NULL;
 
  if (pse) {
   struct process_status **nps = pse (ps);
@@ -99,23 +99,27 @@ pid_t **collect_processes(struct pc_conditional **pcc) {
 }
 
 
-pid_t **filter_processes_cwd_below (struct pc_conditional * cond, pid_t ** ret, struct process_status ** stat) {
+pid_t *filter_processes_cwd_below (struct pc_conditional * cond, pid_t * ret, struct process_status ** stat) {
  uint32_t i = 0;
  if (stat && cond && cond->para)
   for (; stat[i]; i++) {
-   if (stat[i]->cwd && (strstr (stat[i]->cwd, (char *)cond->para) == stat[i]->cwd))
-    ret = (pid_t **)setadd ((void **)ret, (void *)(stat[i]->pid), SET_NOALLOC);
+   if (stat[i]->cwd && (strstr (stat[i]->cwd, (char *)cond->para) == stat[i]->cwd)) {
+    uintptr_t tmp = (stat[i]->pid);
+    ret = (pid_t *)setadd ((void **)ret, (void *)tmp, SET_NOALLOC);
+   }
   }
 
  return ret;
 }
 
-pid_t **filter_processes_cwd (struct pc_conditional * cond, pid_t ** ret, struct process_status ** stat) {
+pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct process_status ** stat) {
  uint32_t i = 0;
  if (stat && cond && cond->para)
   for (; stat[i]; i++) {
-   if (stat[i]->cwd && !strcmp ((char *)cond->para, stat[i]->cwd))
-    ret = (pid_t **)setadd ((void **)ret, (void *)(stat[i]->pid), SET_NOALLOC);
+   if (stat[i]->cwd && !strcmp ((char *)cond->para, stat[i]->cwd)) {
+    uintptr_t tmp = (stat[i]->pid);
+    ret = (pid_t *)setadd ((void **)ret, (void *)tmp, SET_NOALLOC);
+   }
   }
 
  return ret;
@@ -124,9 +128,15 @@ pid_t **filter_processes_cwd (struct pc_conditional * cond, pid_t ** ret, struct
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && !strcmp (ev->set[0], "list")) {
   if (ev->set[1] && !strcmp (ev->set[1], "processes") && ev->set[2]) {
-   struct pc_conditional pcc = {.match = ev->set[2], .para = (ev->set[3] ? ((!strcmp (ev->set[2], "cwd") || !strcmp (ev->set[2], "cwd-below")) ? (void *)ev->set[3] : (void *)atoi (ev->set[3])) : NULL), .match_options = PC_COLLECT_ADDITIVE},
-                         *pcl[2] = { &pcc, NULL };
-   pid_t **process_list = NULL, i;
+   uintptr_t tnum = atoi (ev->set[3]);
+   struct pc_conditional pcc = {
+    .match = ev->set[2],
+    .para = (ev->set[3] ?
+      ((!strcmp (ev->set[2], "cwd") || !strcmp (ev->set[2], "cwd-below")) ?
+      (void *)ev->set[3] : (void *)tnum) : NULL),
+    .match_options = PC_COLLECT_ADDITIVE },
+    *pcl[2] = { &pcc, NULL };
+   pid_t *process_list = NULL, i;
 
    process_list = pcollect ( pcl );
 
@@ -148,7 +158,7 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int __ekill (struct pc_conditional **pcc, int sign) {
- pid_t **pl = pcollect (pcc);
+ pid_t *pl = pcollect (pcc);
  uint32_t i = 0;
 
  if (!pl) return -1;
@@ -161,13 +171,15 @@ int __ekill (struct pc_conditional **pcc, int sign) {
  }
 
  free (pl);
+
+ return i;
 }
 
 int __pekill (struct pc_conditional **pcc) {
 /* pid **pl = pcollect (pcc);
 
  free (pl);*/
- ekill (pcc, SIGKILL);
+ return ekill (pcc, SIGKILL);
 }
 
 int configure (struct lmodule *irr) {
@@ -178,6 +190,8 @@ int configure (struct lmodule *irr) {
  function_register ("einit-process-ekill", 1, __ekill);
  function_register ("einit-process-killing-spree", 1, __pekill);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *irr) {
@@ -188,6 +202,8 @@ int cleanup (struct lmodule *irr) {
  function_unregister ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
  function_unregister ("einit-process-filter-cwd", 1, filter_processes_cwd);
  process_cleanup (irr);
+
+ return 0;
 }
 
 /* passive module, no enable/disable */

@@ -100,9 +100,9 @@ struct process_status {
  uint32_t policy;*/
 };
 
-typedef pid_t **(*process_collector)(struct pc_conditional **);
+typedef pid_t *(*process_collector)(struct pc_conditional **);
 typedef int (*process_signal_function)(struct pc_conditional **, int);
-typedef pid_t **(*process_filter)(struct pc_conditional *, pid_t **, struct process_status **);
+typedef pid_t *(*process_filter)(struct pc_conditional *, pid_t *, struct process_status **);
 typedef struct process_status **(*process_status_updater)(struct process_status **);
 
 process_collector __f_process_collector, __f_p_jktdb;

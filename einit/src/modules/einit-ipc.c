@@ -150,7 +150,7 @@ int __ipc_process (char *cmd, FILE *f) {
 #ifdef POSIXREGEX
  struct cfgnode *n = NULL;
 
- while (n = cfg_findnode ("configuration-ipc-chain-command", 0, n)) {
+ while ((n = cfg_findnode ("configuration-ipc-chain-command", 0, n))) {
   if (n->arbattrs) {
    uint32_t u = 0, err;
    regex_t pattern;
@@ -158,7 +158,7 @@ int __ipc_process (char *cmd, FILE *f) {
 
    for (u = 0; n->arbattrs[u]; u+=2) {
     if (!strcmp(n->arbattrs[u], "for")) {
-     if (err = regcomp (&pattern, n->arbattrs[u+1], REG_EXTENDED)) {
+     if ((err = regcomp (&pattern, n->arbattrs[u+1], REG_EXTENDED))) {
       char errorcode [1024];
       regerror (err, &pattern, errorcode, 1024);
       fprintf (f, " >> ipc: bad regex: %s: %s\n", n->arbattrs[u+1], errorcode);
@@ -196,42 +196,35 @@ void ipc_event_handler (struct einit_event *ev) {
 int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_register ("einit-ipc-process-string", 1, __ipc_process);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-ipc-process-string", 1, __ipc_process);
+
+ return 0;
 }
 
 int ipc_read (int *nfd) {
- ssize_t br;
- ssize_t ic = 0;
- ssize_t i;
- char buf[BUFFERSIZE+1];
- char lbuf[BUFFERSIZE+1];
-
  FILE *f, *r;
 
  int nfdc = dup(*nfd);
 
- if (r = fdopen (nfdc, "r")) {
-  if (f = fdopen (*nfd, "w"))  {
+ if ((r = fdopen (nfdc, "r"))) {
+  if ((f = fdopen (*nfd, "w")))  {
    char buffer[1024];
 
    while ((!feof(r)) && fgets (buffer, 1024, r)) {
     int ret = 0;
     strtrim(buffer);
 
-//    if (!strcmp (buffer, "IPC//out")) break;
     ret = __ipc_process (buffer, f);
 
-//    fputs ("\nIPC//processed.\n", f);
-//    fputs ("\nIPC//processed.\n", f);
     fprintf (f, "\nIPC//processed.\n%i\n", ret);
     fflush (f);
    }
-
-//   puts ("closing 'f'.");
 
    fclose (f);
   }
@@ -246,7 +239,6 @@ int ipc_read (int *nfd) {
 void * ipc_wait (void *unused_parameter) {
  struct cfgnode *node = cfg_getnode ("configuration-ipc-control-socket", NULL);
  int nfd;
- pthread_t **cthreads;
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
  mode_t socketmode = (node && node->value ? node->value : 0600);
  struct sockaddr_un saddr;
@@ -278,7 +270,7 @@ void * ipc_wait (void *unused_parameter) {
  }
 
 /* accept connections and spawn (detached) subthreads. */
- while (nfd = accept (sock, NULL, NULL)) {
+ while ((nfd = accept (sock, NULL, NULL))) {
   if (nfd == -1) {
    if (errno == EAGAIN) continue;
    if (errno == EINTR) continue;

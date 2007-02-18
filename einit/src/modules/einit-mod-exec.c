@@ -124,12 +124,16 @@ int configure (struct lmodule *irr) {
 // pexec_configure (irr);
  exec_configure (irr);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
 // pexec_cleanup(this);
  exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup_after_module (struct lmodule *this) {
@@ -151,13 +155,15 @@ int cleanup_after_module (struct lmodule *this) {
    free (((struct mexecinfo *)(this->param))->environment);
   free (this->param);
  }
+
+ return 0;
 }
 
 int scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
 
  node = NULL;
- while (node = cfg_findnode ("services-virtual-module-shell", 0, node)) {
+ while ((node = cfg_findnode ("services-virtual-module-shell", 0, node))) {
   struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
   struct mexecinfo *mexec = ecalloc (1, sizeof (struct mexecinfo));
   struct lmodule *new;
@@ -259,6 +265,8 @@ int scanmodules (struct lmodule *modchain) {
    }
   }
  }
+
+ return 0;
 }
 
 int pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {

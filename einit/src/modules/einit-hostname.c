@@ -93,16 +93,20 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 
 int enable (void *pa, struct einit_event *status) {
  char *name;
- if (name = cfg_getstring ("configuration-network-hostname", NULL)) {
+ if ((name = cfg_getstring ("configuration-network-hostname", NULL))) {
   status->string = "setting hostname";
   status_update (status);
   if (sethostname (name, strlen (name))) {
@@ -117,7 +121,7 @@ int enable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- if (name = cfg_getstring ("configuration-network-domainname", NULL)) {
+ if ((name = cfg_getstring ("configuration-network-domainname", NULL))) {
   status->string = "setting domainname";
   status_update (status);
   if (setdomainname (name, strlen (name))) {

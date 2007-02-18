@@ -128,17 +128,20 @@ int configure (struct lmodule *this) {
   do_utmp = utmpnode->flag;
 
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  exec_cleanup(this);
  utmp_cleanup(this);
+
+ return 0;
 }
 
 void *watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
- int status = spid->status;
  pthread_mutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
  struct ttyst *prev = NULL;
@@ -176,11 +179,13 @@ void *watcher (struct spidcb *spid) {
   }
   texec (node);
  }
+
+ return 0;
 }
 
 int texec (struct cfgnode *node) {
  int i = 0, restart = 0;
- char *device, *command;
+ char *device = NULL, *command = NULL;
  char **environment = (char **)setdup((void **)einit_global_environment, SET_TYPE_STRING);
  char **variables = NULL;
 
@@ -263,6 +268,8 @@ int texec (struct cfgnode *node) {
   free (variables);
   variables = NULL;
  }
+
+ return 0;
 }
 
 int enable (void *pa, struct einit_event *status) {
@@ -313,7 +320,7 @@ int disable (void *pa, struct einit_event *status) {
  uint32_t vtn = parse_integer(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
  int tfd = 0;
  errno = 0;
- if (tfd = open ("/dev/tty1", O_RDWR, 0))
+ if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
   ioctl (tfd, VT_ACTIVATE, vtn);
  if (errno)
   perror ("einit-tty: activate terminal");

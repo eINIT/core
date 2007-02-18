@@ -100,8 +100,8 @@ void ipc_event_handler (struct einit_event *ev) {
    uint32_t i = 0;
    for (i = 0; dxdata[i]; i++) {
     if (dxdata[i]->variables) {
-	 check_variables (dxdata[i]->id, dxdata[i]->variables, (FILE*)ev->para);
-	}
+     check_variables (dxdata[i]->id, dxdata[i]->variables, (FILE*)ev->para);
+    }
    }
   }
 
@@ -112,11 +112,15 @@ void ipc_event_handler (struct einit_event *ev) {
 int configure (struct lmodule *irr) {
  exec_configure (irr);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup_after_module (struct lmodule *this) {
@@ -138,13 +142,15 @@ int cleanup_after_module (struct lmodule *this) {
   free (this->param);
  }
 #endif
+
+ return 0;
 }
 
 int scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
 
  node = NULL;
- while (node = cfg_findnode ("services-virtual-module-daemon", 0, node)) {
+ while ((node = cfg_findnode ("services-virtual-module-daemon", 0, node))) {
   struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
   struct dexecinfo *dexec = ecalloc (1, sizeof (struct dexecinfo));
   struct lmodule *new;
@@ -239,6 +245,8 @@ int scanmodules (struct lmodule *modchain) {
    }
   }
  }
+
+ return 0;
 }
 
 int enable (struct dexecinfo *dexec, struct einit_event *status) {

@@ -102,16 +102,20 @@ int configure (struct lmodule *this) {
 
  synthesizer = cfg_getstring ("configuration-feedback-aural-tts-synthesizer-command", NULL);
 
- if (node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL))
+ if ((node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL)))
   sev_threshold = node->value;
 
  self_l = this;
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int enable (void *pa, struct einit_event *status) {

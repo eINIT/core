@@ -352,6 +352,8 @@ int cleanup (struct lmodule *this) {
  }
 
  exec_cleanup(this);
+
+ return 0;
 }
 
 unsigned char find_block_devices_recurse_path (char *path) {
@@ -383,7 +385,7 @@ unsigned char find_block_devices_recurse_path (char *path) {
 
  dir = opendir (path);
  if (dir != NULL) {
-  while (entry = readdir (dir)) {
+  while ((entry = readdir (dir))) {
    if (entry->d_name[0] == '.') continue;
    struct stat statbuf;
    char *tmp = emalloc (strlen(path) + entry->d_reclen);
@@ -435,9 +437,9 @@ unsigned char forge_fstab_by_label (void *na) {
  struct cfgnode *node = NULL;
  char *hostname = NULL;
  uint32_t hnl = 0;
- if (node = cfg_findnode ("hostname", 0, node)) {
+ if ((node = cfg_findnode ("hostname", 0, node))) {
   hostname = node->svalue;
- } else if (node = cfg_findnode ("conf_hostname", 0, node)) {
+ } else if ((node = cfg_findnode ("conf_hostname", 0, node))) {
   hostname = node->svalue;
  } else {
   hostname = "einit";
@@ -522,8 +524,17 @@ unsigned char read_fstab_from_configuration (void *na) {
  struct cfgnode *node = NULL;
  uint32_t i;
 // puts ("adding fstab node");
- while (node = cfg_findnode ("configuration-storage-fstab-node", 0, node)) {
-  char *mountpoint = NULL, *device = NULL, *fs = NULL, **options = NULL, *before_mount = NULL, *after_mount = NULL, *before_umount = NULL, *after_umount = NULL, *manager = NULL, **variables = NULL;
+ while ((node = cfg_findnode ("configuration-storage-fstab-node", 0, node))) {
+  char *mountpoint = NULL,
+       *device = NULL,
+       *fs = NULL,
+       **options = NULL,
+       *before_mount = NULL,
+       *after_mount = NULL,
+       *before_umount = NULL,
+       *after_umount = NULL,
+       *manager = NULL,
+       **variables = NULL;
   uint32_t mountflags = 0;
 
   if (node->arbattrs) {
@@ -594,7 +605,7 @@ struct stree *read_fsspec_file (char *file) {
  FILE *fp;
  if (!file) return NULL;
 
- if (fp = fopen (file, "r")) {
+ if ((fp = fopen (file, "r"))) {
   char buffer[1024];
   errno = 0;
   while (!errno) {
@@ -662,9 +673,9 @@ struct stree *read_fsspec_file (char *file) {
 
 unsigned char read_filesystem_flags_from_configuration (void *na) {
  struct cfgnode *node = NULL;
- uint32_t i, j;
+ uint32_t i;
  char *id, *flags;
- while (node = cfg_findnode ("information-filesystem-type", 0, node)) {
+ while ((node = cfg_findnode ("information-filesystem-type", 0, node))) {
   if (node->arbattrs) {
    id = NULL;
    flags = 0;
@@ -793,6 +804,8 @@ int scanmodules (struct lmodule *modchain) {
   new->disable = (int (*)(void *, struct einit_event *))disable;
   new->param = (void *)MOUNT_CRITICAL;
  }
+
+ return 0;
 }
 
 char *__options_string_to_mountflags (char **options, unsigned long *mntflags, char *mountpoint) {
@@ -1095,7 +1108,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
   if (inset ((void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
 
-  if (he = streefind (he, mountpoint, TREE_FIND_FIRST)) fse = (struct fstab_entry *)he->value;
+  if ((he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
 
   if (fse && !(fse->status & BF_STATUS_MOUNTED))
    snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
@@ -1205,6 +1218,8 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
   return STATUS_OK;
  }
+
+ return STATUS_OK;
 }
 
 void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
@@ -1316,7 +1331,7 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
 
  pthread_mutex_lock (&fstab_mutex);
 
- if (cur = streefind (mcb.fstab, fs_file, TREE_FIND_FIRST)) {
+ if ((cur = streefind (mcb.fstab, fs_file, TREE_FIND_FIRST))) {
   struct fstab_entry *node = cur->value;
 
   node->adevice = dset[1];
@@ -1605,8 +1620,7 @@ int enable (enum mounttask p, struct einit_event *status) {
  struct stree *ha = mcb.fstab, *fsi = NULL;
  struct fstab_entry *fse;
  char **candidates = NULL;
- uint32_t i, ret, sc = 0, slc;
- pthread_t **childthreads = NULL;
+ uint32_t ret, sc = 0, slc;
 
  switch (p) {
   case MOUNT_LOCAL:
@@ -1615,7 +1629,7 @@ int enable (enum mounttask p, struct einit_event *status) {
     if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) &&
          strcmp (ha->key, "/") && strcmp (ha->key, "/dev") &&
          strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
-     if (fse = (struct fstab_entry *)ha->value) {
+     if ((fse = (struct fstab_entry *)ha->value)) {
       if (fse->status & BF_STATUS_MOUNTED)
        goto mount_skip;
       if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
@@ -1727,8 +1741,7 @@ int disable (enum mounttask p, struct einit_event *status) {
  struct stree *fsi;
  struct fstab_entry *fse = NULL;
  char **candidates = NULL;
- uint32_t i, ret, sc = 0, slc;
- pthread_t **childthreads = NULL;
+ uint32_t sc = 0, slc;
 
  update (UPDATE_MTAB);
  ha = mcb.fstab;
@@ -1738,7 +1751,7 @@ int disable (enum mounttask p, struct einit_event *status) {
   case MOUNT_LOCAL:
    while (ha) {
     if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) && strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
-     if (fse = (struct fstab_entry *)ha->value) {
+     if ((fse = (struct fstab_entry *)ha->value)) {
       if (!(fse->status & BF_STATUS_MOUNTED)) goto mount_skip;
 
       if (p == MOUNT_LOCAL) {
