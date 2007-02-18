@@ -653,8 +653,14 @@ int scanmodules (struct lmodule *modchain) {
     }
 
    }
-   if (nrid) free (nrid);
-   if (tmp) free (tmp);
+   if (nrid) {
+    free (nrid);
+    nrid = NULL;
+   }
+   if (tmp) {
+    free (tmp);
+    tmp = NULL;
+   }
   }
 
   rc_free_deptree (gentoo_deptree);
