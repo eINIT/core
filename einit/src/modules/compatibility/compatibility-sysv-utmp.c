@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/bitch.h>
 #include <utmp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -84,12 +85,16 @@ int configure (struct lmodule *irr) {
  utmp_configure (irr);
  function_register ("einit-utmp-update", 1, __updateutmp);
 // event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *irr) {
 // event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-utmp-update", 1, __updateutmp);
  utmp_cleanup (irr);
+
+ return 0;
 }
 
 char __updateutmp (unsigned char options, struct utmp *new_entry) {
@@ -115,9 +120,6 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
     close (ufile);
     ufile = 0;
 
-#ifdef DEBUG
-    fprintf (stderr, " >> checking %i utmp entries.\n", entries);
-#endif
     for (i = 0; i < entries; i++) {
 #ifdef LINUX
      switch (utmpentries[i].ut_type) {
@@ -125,19 +127,12 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
        if (options & UTMP_ADD) {
         memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
         options ^= UTMP_ADD;
-//        fprintf (stderr, " >> recycled old entry #%i\n", i);
        }
 
        break;
       case RUN_LVL:
        if (options & UTMP_CLEAN) {
 /* the higher 8 bits contain the old runlevel, the lower 8 bits the current one */
-#ifdef DEBUG
-        char previous_runlevel = (utmpentries[i].ut_pid >> 8) ? (utmpentries[i].ut_pid >> 8) : 'N',
-             current_runlevel = utmpentries[i].ut_pid & 0xff;
-        printf(" >> setting runlevel; before: %c %c\n", previous_runlevel, current_runlevel);
-#endif
-
         char *new_previous_runlevel = cfg_getstring ("configuration-compatibility-sysv-simulate-runlevel/before", NULL),
             *new_runlevel = cfg_getstring ("configuration-compatibility-sysv-simulate-runlevel/now", NULL);
 
@@ -197,13 +192,15 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
     }
 
     munmap (utmpentries, st.st_size);
+   } else {
+    bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "mmap() failed");
    }
   }
 
   if (ufile)
    close (ufile);
  } else {
-  perror (" >> utmp: mmap()");
+  bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "open() failed");
  }
 
  if (options & UTMP_ADD) { // still didn't get to add this.. try to append it to the file
@@ -214,9 +211,12 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
 
   if (ufile) {
    if (write(ufile, new_entry, sizeof (struct utmp)) != sizeof (struct utmp)) {
-    fputs (" >> uh-oh, short write to the utmp file...", stderr);
+    bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "short write to utmp file");
    }
    close (ufile);
+
+  } else {
+   bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "mmap() failed");
   }
 
   options ^= UTMP_ADD;

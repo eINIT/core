@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dlfcn.h>
 #include <string.h>
 
-#define BITCH2_ERROR_TEMPLATE "%s: %s (System Error #%i [%s])\n"
+#define BITCH2_ERROR_TEMPLATE " >> %s: %s (System Error #%i [%s])\n"
 unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
 int bitch (unsigned int opt) {
@@ -65,10 +65,10 @@ int bitch (unsigned int opt) {
 }
 
 int bitch2 (unsigned char sauce, const char *location, int error, const char *reason) {
- char *llocation      = location ? location : "unknown";
- char *lreason        = reason ? reason : "unknown";
- int lerror         = error ? error : errno;
- unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : BITCH_BAD_SAUCE;
+ const char *llocation      = location ? location : "unknown";
+ const char *lreason        = reason ? reason : "unknown";
+ const int lerror           = error ? error : errno;
+ const unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : BITCH_BAD_SAUCE;
 
  switch (mortality[lsauce]) {
   case 0: // 0: ignore the problem
@@ -90,25 +90,25 @@ int bitch2 (unsigned char sauce, const char *location, int error, const char *re
 void bitchin_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node;
-  if (node = cfg_getnode ("core-mortality-bad-malloc", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
    mortality[BITCH_EMALLOC] = node->value;
 
-  if (node = cfg_getnode ("core-mortality-bad-stdio", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
    mortality[BITCH_STDIO] = node->value;
 
-  if (node = cfg_getnode ("core-mortality-bad-regex", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
    mortality[BITCH_REGEX] = node->value;
 
-  if (node = cfg_getnode ("core-mortality-bad-expat", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
    mortality[BITCH_EXPAT] = node->value;
 
-  if (node = cfg_getnode ("core-mortality-bad-dl", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
    mortality[BITCH_DL] = node->value;
 
-  if (node = cfg_getnode ("core-mortality-bad-lookup", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
    mortality[BITCH_LOOKUP] = node->value;
 
-  if (node = cfg_getnode ("core-mortality-bad-pthreads", NULL))
+  if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
    mortality[BITCH_EPTHREADS] = node->value;
  }
 }
