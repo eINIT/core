@@ -109,6 +109,6 @@ void bitchin_einit_event_handler (struct einit_event *ev) {
    mortality[BITCH_LOOKUP] = node->value;
 
   if (node = cfg_getnode ("core-mortality-bad-pthreads", NULL))
-   mortality[BITCH_PTHREADS] = node->value;
+   mortality[BITCH_EPTHREADS] = node->value;
  }
 }

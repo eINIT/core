@@ -328,7 +328,6 @@ char *apply_variables (char *string, char **env) {
  ret = emalloc (len = (strlen (string) + 1));
  *ret = 0;
 
-// puts (string);
  for (spos = 0, rpos = 0; string[spos]; spos++) {
   if ((string[spos] == '$') && (string[spos+1] == '{')) {
    for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
@@ -374,7 +373,6 @@ char *apply_variables (char *string, char **env) {
   }
  }
  ret[rpos] = 0;
-// puts (ret);
 
  return ret;
 }

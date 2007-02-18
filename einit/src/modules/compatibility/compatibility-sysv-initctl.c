@@ -45,9 +45,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
+#include <einit/bitch.h>
 #include <pthread.h>
 #include <sys/param.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -114,17 +116,21 @@ int configure (struct lmodule *r) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  this = r;
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 void * initctl_wait (char *fifo) {
  int nfd;
 
- while (nfd = open (fifo, O_RDONLY)) {
+ while ((nfd = open (fifo, O_RDONLY))) {
   struct init_command ic;
 
   if (nfd == -1) { /* open returning -1 is very bad, terminate the thread and disable the module */
@@ -223,7 +229,6 @@ void * initctl_wait (char *fifo) {
 int enable (void *pa, struct einit_event *status) {
  char tmp[256];
  struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
- pthread_t **cthreads;
  char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
  mode_t fifomode = (node && node->value ? node->value : 0600);
 
@@ -249,7 +254,9 @@ int enable (void *pa, struct einit_event *status) {
   }
  }
 
- pthread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
+ if (pthread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo) != 0) {
+  bitch2(BITCH_EPTHREADS, "compatibility-sysv-initctl:enable()", 0, "pthread_create() failed.");
+ }
  return STATUS_OK;
 }
 
@@ -257,7 +264,9 @@ int disable (void *pa, struct einit_event *status) {
  char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
  if (!fifo) fifo =  "/dev/initctl";
 
- pthread_cancel (initctl_thread);
+ if (pthread_cancel (initctl_thread) != 0) {
+  bitch2(BITCH_EPTHREADS, "compatibility-sysv-initctl:disable()", 0, "pthread_cancel() failed.");
+ }
 
  if (unlink (fifo)) {
   char tmp[256];
