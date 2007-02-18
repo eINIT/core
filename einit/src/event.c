@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <einit/utility.h>
 #include <einit/tree.h>
+#include <einit/bitch.h>
 
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -104,9 +105,13 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
      pthread_t threadid;
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
       struct einit_event *ev = evdup(event);
-      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
+      if (pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev)) {
+       bitch2(BITCH_EPTHREADS, "event_emit()", 0, "pthread_create() failed.");
+      }
      } else
-      pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
+      if (pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event)) {
+       bitch2(BITCH_EPTHREADS, "event_emit()", 0, "pthread_create() failed.");
+      }
     } else {
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
       struct einit_event *ev = evdup(event);
@@ -133,12 +138,16 @@ void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {
  fstruct->type = type & EVENT_SUBSYSTEM_MASK;
  fstruct->handler = handler;
 
- pthread_mutex_lock (&evf_mutex);
+ if (pthread_mutex_lock (&evf_mutex)) {
+  bitch2(BITCH_EPTHREADS, "event_listen()", 0, "pthread_mutex_lock() failed.");
+ }
   if (event_functions)
    fstruct->next = event_functions;
 
   event_functions = fstruct;
- pthread_mutex_unlock (&evf_mutex);
+ if (pthread_mutex_unlock (&evf_mutex)) {
+  bitch2(BITCH_EPTHREADS, "event_listen()", 0, "pthread_mutex_unlock() failed.");
+ }
 }
 
 void event_ignore (uint32_t type, void (*handler)(struct einit_event *)) {
@@ -146,7 +155,9 @@ void event_ignore (uint32_t type, void (*handler)(struct einit_event *)) {
 
  type &= EVENT_SUBSYSTEM_MASK;
 
- pthread_mutex_lock (&evf_mutex);
+ if (pthread_mutex_lock (&evf_mutex)) {
+  bitch2(BITCH_EPTHREADS, "event_ignore()", 0, "pthread_mutex_lock() failed.");
+ }
   struct event_function *cur = event_functions;
   struct event_function *prev = NULL;
   while (cur) {
@@ -165,7 +176,9 @@ void event_ignore (uint32_t type, void (*handler)(struct einit_event *)) {
     cur = cur->next;
    }
   }
- pthread_mutex_unlock (&evf_mutex);
+ if (pthread_mutex_unlock (&evf_mutex)) {
+  bitch2(BITCH_EPTHREADS, "event_ignore()", 0, "pthread_mutex_unlock() failed.");
+ }
 
  return;
 }
@@ -177,9 +190,13 @@ void function_register (char *name, uint32_t version, void *function) {
  fstruct->version = version;
  fstruct->function = function;
 
- pthread_mutex_lock (&pof_mutex);
+ if (pthread_mutex_lock (&pof_mutex)) {
+  bitch2(BITCH_EPTHREADS, "function_register()", 0, "pthread_mutex_lock() failed.");
+ }
   exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
- pthread_mutex_unlock (&pof_mutex);
+ if (pthread_mutex_unlock (&pof_mutex)) {
+  bitch2(BITCH_EPTHREADS, "function_register()", 0, "pthread_mutex_unlock() failed.");
+ }
 
  free (fstruct);
 }
@@ -189,7 +206,9 @@ void **function_find (char *name, uint32_t version, char **sub) {
  void **set = NULL;
  struct stree *ha = exported_functions;
 
- pthread_mutex_lock (&pof_mutex);
+ if (pthread_mutex_lock (&pof_mutex)) {
+  bitch2(BITCH_EPTHREADS, "function_find()", 0, "pthread_mutex_lock() failed.");
+ }
  if (!sub) {
   ha = streefind (exported_functions, name, TREE_FIND_FIRST);
   while (ha) {
@@ -222,7 +241,9 @@ void **function_find (char *name, uint32_t version, char **sub) {
 
   if (n) free (n);
  }
- pthread_mutex_unlock (&pof_mutex);
+ if (pthread_mutex_unlock (&pof_mutex)) {
+  bitch2(BITCH_EPTHREADS, "function_find()", 0, "pthread_mutex_unlock() failed.");
+ }
 
  return set;
 }
@@ -240,7 +261,9 @@ void function_unregister (char *name, uint32_t version, void *function) {
  if (!exported_functions) return;
  struct stree *ha = exported_functions;
 
- pthread_mutex_lock (&pof_mutex);
+ if (pthread_mutex_lock (&pof_mutex)) {
+  bitch2(BITCH_EPTHREADS, "function_unregister()", 0, "pthread_mutex_lock() failed.");
+ }
  ha = streefind (exported_functions, name, TREE_FIND_FIRST);
  while (ha) {
   struct exported_function *ef = ha->value;
@@ -250,7 +273,9 @@ void function_unregister (char *name, uint32_t version, void *function) {
   } else
    ha = streefind (exported_functions, name, TREE_FIND_NEXT);
  }
- pthread_mutex_unlock (&pof_mutex);
+ if (pthread_mutex_unlock (&pof_mutex)) {
+  bitch2(BITCH_EPTHREADS, "function_unregister()", 0, "pthread_mutex_unlock() failed.");
+ }
 
  return;
 }
