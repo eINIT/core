@@ -147,8 +147,6 @@ const struct smodule self = {
 
 /* function declarations */
 unsigned char read_metadata_linux (struct mount_control_block *);
-unsigned char mount_linux_ext2 (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
-//unsigned char mount_linux_nfs (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 unsigned char mount_linux_real_mount (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 unsigned char find_block_devices_proc (struct mount_control_block *);
 int configure (struct lmodule *);
@@ -174,25 +172,13 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
   bdi = (struct bd_info *)element->value;
   cdev++;
 
-//  printf ("\e[K\e[sscanning device #%i: %s\e[u", cdev, element->key);
-//  printf ("\e[255D\e[Kscanning device #%i: %s... ", cdev, element->key);
-//  printf ("scanning device #%i: %s", cdev, element->key);
   device = fopen (element->key, "r");
   if (device) {
    c_uuid[0] = 0;
    if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 0)) {
-//    perror (element->key);
     bdi->status = BF_STATUS_ERROR_IO;
    } else {
     if (ext2_sb.s_magic == EXT2_SUPER_MAGIC) {
-#if 0
-/* this doesn't work properly with actual ext2 devices (as opposed to ext3 ones) */
-
-      if (fseek (device, (uintmax_t)((uintmax_t)(ext2_sb.s_blocks_count -1) * (uintmax_t)ext2_sb.s_log_block_size), SEEK_SET) || fread (&tmp, (ext2_sb.s_log_block_size < 1024 ? ext2_sb.s_log_block_size : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
-       fprintf (stderr, "%s: EXT2/3 superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, ext2_sb.s_blocks_count, ext2_sb.s_log_block_size);
-       bdi->status = BF_STATUS_ERROR_IO;
-      } else
-#endif
       {
        bdi->fs_type = FILESYSTEM_EXT2;
        bdi->status = BF_STATUS_HAS_MEDIUM;
@@ -215,11 +201,12 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
      }
     } else {
      if (fseek (device, 64*1024, SEEK_SET) || (fread (&reiser_sb, sizeof(struct reiserfs_super_block), 1, device) < 0)) {
-//    perror (element->key);
       bdi->status = BF_STATUS_ERROR_IO;
      } else if (!strcmp (reiser_sb.s_magic, "ReIsErFs") || !strcmp (reiser_sb.s_magic, "ReIsEr2Fs") || !strcmp (reiser_sb.s_magic, "ReIsEr3Fs")) {
       if (fseek (device, (uintmax_t)((uintmax_t)(reiser_sb.s_block_count -1) * (uintmax_t)reiser_sb.s_blocksize), SEEK_SET) || fread (&tmp, (reiser_sb.s_blocksize < 1024 ? reiser_sb.s_blocksize : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
+#ifdef DEBUG
        fprintf (stderr, "%s: ReiserFS superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, reiser_sb.s_block_count, reiser_sb.s_blocksize);
+#endif
        bdi->status = BF_STATUS_ERROR_IO;
       } else {
        bdi->fs_type = FILESYSTEM_REISERFS;
@@ -235,7 +222,6 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
       }
      }
     }
-//    if (bdi->label) fputs (bdi->label, stdout);
    }
 
    if (bdi->fs_type) {
@@ -245,13 +231,11 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
    fclose (device);
   } else {
    bdi->status = BF_STATUS_ERROR_IO;
-//   perror (element->key);
   }
   errno = 0;
   element = streenext (element);
  }
 
-// puts ("done");
  return 0;
 }
 
@@ -283,7 +267,6 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
    if (tmp[0]) {
     char *cur = estrdup (tmp);
     char *scur = cur;
-    uint32_t icur = 0;
     field = 0;
     strtrim (cur);
     for (; *cur; cur++) {
@@ -309,10 +292,8 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
       case 4: device_name = scur; break;
      }
     }
-//    puts (tmp);
     strcpy (tmp, "/dev/");
     strcat (tmp, device_name);
-//    printf ("parsed: device=%s (%i/%i) [%i blocks]\n", tmp, device_major, device_minor, device_size);
     mcb->add_block_device (tmp, device_major, device_minor);
    }
   }
@@ -320,130 +301,6 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
 
  return 0;
 }
-
-// this function is currently completely useless
-/*
-unsigned char mount_linux_ext2 (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
- char *fsdata = NULL;
-// unsigned long mntflags = MS_MANDLOCK;
- unsigned long mntflags = 0;
-
- if (fse->options) {
-  int fi = 0;
-  for (; fse->options[fi]; fi++) {
-   if (!strcmp (fse->options[fi], "noatime")) mntflags |= MS_NOATIME;
-   else if (!strcmp (fse->options[fi], "nodev")) mntflags |= MS_NODEV;
-   else if (!strcmp (fse->options[fi], "nodiratime")) mntflags |= MS_NODIRATIME;
-   else if (!strcmp (fse->options[fi], "ro")) mntflags |= MS_RDONLY;
-   else if (!strcmp (fse->options[fi], "nomand")) mntflags ^= MS_MANDLOCK;
-   else if (!strcmp (fse->options[fi], "nosuid")) mntflags |= MS_NOSUID;
-   else if (!strcmp (fse->options[fi], "bind")) mntflags |= MS_BIND;
-   else if (!strcmp (fse->options[fi], "remount")) mntflags |= MS_REMOUNT;
-   else if (!fsdata) {
-    uint32_t slen = strlen (fse->options[fi])+1;
-    fsdata = ecalloc (1, slen);
-    memcpy (fsdata, fse->options[fi], slen);
-   } else {
-    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (fse->options[fi])+1;
-    fsdata = erealloc (fsdata, fsdl+slen);
-    *(fsdata + fsdl -1) = ',';
-    memcpy (fsdata+fsdl, fse->options[fi], slen);
-   }
-  }
- }
-
-#ifndef SANDBOX
- if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1) {
-  if (errno == EBUSY) {
-   if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) goto mount_panic;
-  } else {
-   mount_panic:
-   if (errno < sys_nerr)
-    status->string = (char *)sys_errlist[errno];
-   else
-    status->string = "an unknown error occured while trying to mount the filesystem";
-   status_update (status);
-   if (fse->after_umount)
-    pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
-   return 1;
-  }
- }
-#endif
-
- return 0;
-}
-*/
-
-#if 0
-unsigned char mount_linux_nfs (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
-/* this doesn't really work just now, so we'll delegate it to a real mount command for the time being */
- char **hnrd;
- struct nfs_mount_data *data = ecalloc (1, sizeof(struct nfs_mount_data));
- struct sockaddr_in server;
- struct addrinfo *lres = NULL;
-/* struct addrinfo reshints = {
-  reshints.ai_family = AF_INET
- };*/
-
- hnrd = str2set (':', source);
- if (!hnrd || !hnrd[0] || !hnrd[1] || hnrd[2]) {
-  status->string = "mount_linux_nfs: there's something wrong with your source specification";
-  status_update (status);
-  return 1;
- }
- status->string = hnrd[0];
- status_update (status);
-
- if (getaddrinfo(hnrd[0], NULL, NULL, &lres)) {
-  status->string = "mount_linux_nfs: can't resolve host";
-  status_update (status);
-  return 1;
- }
-
-// puts (lres->ai_family);
-
-/* if (fse->options) {
-  int fi = 0;
-  for (; fse->options[fi]; fi++) {
-   if (!fsdata) {
-    uint32_t slen = strlen (fse->options[fi])+1;
-    fsdata = ecalloc (1, slen);
-    memcpy (fsdata, fse->options[fi], slen);
-   } else {
-    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (fse->options[fi])+1;
-    fsdata = erealloc (fsdata, fsdl+slen);
-    *(fsdata + fsdl -1) = ',';
-    memcpy (fsdata+fsdl, fse->options[fi], slen);
-   }
-  }
- }*/
-
- freeaddrinfo (lres);
-
-/* vers=3,rsize=32768,wsize=32768,hard,proto=udp,timeo=7,retrans=3,sec=sys,addr=chronos */
-#ifndef SANDBOX
- if (mount (source, mountpoint, fstype, 0, data) == -1) {
-  if (errno == EBUSY) {
-   if (mount (source, mountpoint, fstype, MS_REMOUNT, data) == -1) goto mount_panic;
-  } else {
-   mount_panic:
-   if (errno < sys_nerr)
-    status->string = (char *)sys_errlist[errno];
-   else
-    status->string = "an unknown error occured while trying to mount the filesystem";
-   status_update (status);
-//   if (fse->after_umount)
-//    pexec (fse->after_umount, fse->variables, 0, 0, NULL, status);
-   return 1;
-  }
- }
-#endif
-
- free (hnrd);
-
- return 0;
-}
-#endif
 
 unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
  char *fsdata = NULL;
@@ -505,22 +362,22 @@ int configure (struct lmodule *this) {
 
  function_register ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
-// function_register ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
-// function_register ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 // function_register ("fs-mount-nfs", 1, (void *)mount_linux_nfs);
 /* nfs mounting is a real, royal PITA. we'll use the regular /bin/mount command for the time being */
  function_register ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
 
  event_emit (ev, EINIT_EVENT_FLAG_BROADCAST);
  evdestroy (ev);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
-// function_unregister ("fs-mount-ext2", 1, (void *)mount_linux_ext2);
-// function_unregister ("fs-mount-ext3", 1, (void *)mount_linux_ext2);
 
  exec_cleanup(this);
+
+ return 0;
 }

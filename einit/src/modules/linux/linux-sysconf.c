@@ -73,16 +73,12 @@ const struct smodule self = {
 
 void linux_reboot () {
  reboot (LINUX_REBOOT_CMD_RESTART);
-// reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL);
-// bitch (BTCH_ERRNO);
  notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
 }
 
 void linux_power_off () {
  reboot (LINUX_REBOOT_CMD_POWER_OFF);
-// reboot (LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_POWER_OFF, NULL);
-// bitch (BTCH_ERRNO);
  notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
 }
@@ -100,18 +96,18 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int configure (struct lmodule *irr) {
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-// if (gmode == EINIT_GMODE_INIT) {
-  function_register ("core-power-off-linux", 1, linux_power_off);
-  function_register ("core-power-reset-linux", 1, linux_reboot);
-// }
+ function_register ("core-power-off-linux", 1, linux_power_off);
+ function_register ("core-power-reset-linux", 1, linux_reboot);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
-// if (gmode == EINIT_GMODE_INIT) {
-  function_unregister ("core-power-reset-linux", 1, linux_reboot);
-  function_unregister ("core-power-off-linux", 1, linux_power_off);
-// }
+ function_unregister ("core-power-reset-linux", 1, linux_reboot);
+ function_unregister ("core-power-off-linux", 1, linux_power_off);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }
 
 int enable (void *pa, struct einit_event *status) {

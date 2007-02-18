@@ -101,12 +101,11 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 
  if (path) {
   size_t plength = strlen (path) +1;
-  dir = opendir (path);
-  if (dir != NULL) {
+  if ((dir = opendir (path))) {
    char *txf = emalloc (plength);
    txf = memcpy (txf, path, plength);
 
-   while (entry = readdir (dir)) {
+   while ((entry = readdir (dir))) {
     uint32_t cl = 0;
     char cont = 1, recycled = 0;
     if (entry->d_name[0] == '.') continue;
@@ -128,8 +127,6 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 
       tmppse.cwd = emalloc (linklen+1);
       memcpy (tmppse.cwd, linkbuffer, linklen+1);
-
-//      puts (tmppse.cwd);
      }
 
      if (npstat) {
@@ -148,14 +145,15 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
      if (!recycled) {
       npstat = (struct process_status **)setadd ((void **)npstat, (void *)&tmppse, sizeof (struct process_status));
      }
-
-//     puts (entry->d_name);
     }
 
    }
    if (txf) free (txf);
+
+   closedir (dir);
+  } else {
+   bitch2 (BITCH_STDIO, "update_processes_proc_linux()", errno, "opening /proc");
   }
-  closedir (dir);
  }
 
  return npstat;
@@ -164,11 +162,15 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 int configure (struct lmodule *irr) {
  process_configure (irr);
  function_register ("einit-process-status-updater", 1, update_processes_proc_linux);
+
+ return 0;
 }
 
 int cleanup (struct lmodule *this) {
  function_unregister ("einit-process-status-updater", 1, update_processes_proc_linux);
  process_cleanup (irr);
+
+ return 0;
 }
 
 /* passive module... */
