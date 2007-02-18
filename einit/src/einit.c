@@ -278,8 +278,11 @@ int main(int argc, char **argv) {
   if (pthread_attr_init (&thread_attribute_detached)) {
    fputs ("pthread initialisation failed.\n", stderr);
    return -1;
-  } else
-   pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED);
+  } else {
+   if (pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED)) {
+    bitch2(BITCH_EPTHREADS, "main()", 0, "pthread_attr_setdetachstate() failed.");
+   }
+  }
 
 /* emit events to read configuration files */
   if (einit_startup_configuration_files) {

@@ -125,8 +125,10 @@ int sched_switchmode (char *mode) {
    mod_plan_commit (plan);
    fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
    status_update (fb);
-/* make it so that the erase operaation will not disturb the flow of the program */
-   pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+/* make it so that the erase operation will not disturb the flow of the program */
+   if (pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan)) {
+    bitch2(BITCH_EPTHREADS, "sched_switchmode()", 0, "pthread_create() failed.");
+   }
   }
 
  evdestroy (fb);
@@ -169,7 +171,9 @@ int sched_modaction (char **argv) {
    }
   }
 
-  pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+  if (pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan)) {
+   bitch2(BITCH_EPTHREADS, "sched_modaction()", 0, "pthread_create() failed.");
+  }
  }
 
 // free (argv[0]);
@@ -264,7 +268,9 @@ void sched_reset_event_handlers () {
 
 int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  struct spidcb *nele;
- pthread_mutex_lock (&schedcpidmutex);
+ if (pthread_mutex_lock (&schedcpidmutex)) {
+  bitch2(BITCH_EPTHREADS, "sched_watch_pid()", 0, "pthread_mutex_lock() failed.");
+ }
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
   if (sched_deadorphans) {
    struct spidcb *start = sched_deadorphans, *prev = NULL, *cur = start;
@@ -277,7 +283,9 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
       sched_deadorphans = cur->next;
      cur->next = cpids;
      cpids = cur;
-     pthread_mutex_unlock (&schedcpidmutex);
+     if (pthread_mutex_unlock (&schedcpidmutex)) {
+      bitch2(BITCH_EPTHREADS, "sched_watch_pid()", 0, "pthread_mutex_unlock() failed.");
+     }
      return 0;
     }
     if (start != sched_deadorphans) {
@@ -296,7 +304,9 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
   nele->status = 0;
   nele->next = cpids;
  cpids = nele;
- pthread_mutex_unlock (&schedcpidmutex);
+ if (pthread_mutex_unlock (&schedcpidmutex)) {
+  bitch2(BITCH_EPTHREADS, "sched_watch_pid()", 0, "pthread_mutex_unlock() failed.");
+ }
  if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
   sem_post (sigchild_semaphore);
 
@@ -503,7 +513,9 @@ void *sched_run_sigchild (void *p) {
  pid_t pid;
  int check;
  while (1) {
-  pthread_mutex_lock (&schedcpidmutex);
+  if (pthread_mutex_lock (&schedcpidmutex)) {
+   bitch2(BITCH_EPTHREADS, "sched_run_sigchild()", 0, "pthread_mutex_lock() failed.");
+  }
   struct spidcb *start = cpids, *prev = NULL, *cur = start;
   check = 0;
   for (; cur; cur = cur->next) {
@@ -513,7 +525,9 @@ void *sched_run_sigchild (void *p) {
 
     if (cur->cfunc) {
      pthread_t th;
-     pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
+     if (pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur)) {
+      bitch2(BITCH_EPTHREADS, "sched_run_sigchild()", 0, "pthread_create() failed.");
+     }
     }
 
     if (prev)
@@ -530,7 +544,9 @@ void *sched_run_sigchild (void *p) {
    } else
     prev = cur;
   }
-  pthread_mutex_unlock (&schedcpidmutex);
+  if (pthread_mutex_unlock (&schedcpidmutex)) {
+   bitch2(BITCH_EPTHREADS, "sched_run_sigchild()", 0, "pthread_mutex_unlock() failed.");
+  }
   if (!check) {
    sem_wait (sigchild_semaphore);
    if (gstatus == EINIT_EXITING) {
@@ -562,7 +578,9 @@ void *sched_run_sigchild (void *p) {
 /* I came up with this pretty cheap solution to prevent deadlocks while still being able to use mutexes */
 void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
  char known = 0;
- pthread_mutex_lock (&schedcpidmutex);
+ if (pthread_mutex_lock (&schedcpidmutex)) {
+  bitch2(BITCH_EPTHREADS, "sched_signal_sigchld_addentrythreadfunction()", 0, "pthread_mutex_lock() failed.");
+ }
  struct spidcb *cur = cpids;
   for (; cur; cur = cur->next) {
    if (cur->pid == (pid_t)nele->pid) {
@@ -581,7 +599,9 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
    nele->next = sched_deadorphans;
    sched_deadorphans = nele;
   }
- pthread_mutex_unlock (&schedcpidmutex);
+ if (pthread_mutex_unlock (&schedcpidmutex)) {
+  bitch2(BITCH_EPTHREADS, "sched_signal_sigchld_addentrythreadfunction()", 0, "pthread_mutex_unlock() failed.");
+ }
 
  sem_post (sigchild_semaphore);
 }
@@ -604,7 +624,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
   nele->status = status;
 
   if (pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))sched_signal_sigchld_addentrythreadfunction, (void *)nele)) {
-   fprintf (stdout, "couldn't create sigchld thread: %s\n", strerror (errno));
+   bitch2(BITCH_EPTHREADS, "sched_signal_sigchld()", 0, "pthread_create() failed.");
   }
  }
 
@@ -616,7 +636,9 @@ void *sched_run_sigchild (void *p) {
  int status, check;
  pid_t pid;
  while (1) {
-  pthread_mutex_lock (&schedcpidmutex);
+  if (pthread_mutex_lock (&schedcpidmutex)) {
+   bitch2(BITCH_EPTHREADS, "sched_run_sigchild()", 0, "pthread_mutex_lock() failed.");
+  }
   struct spidcb *start = cpids, *prev = NULL, *cur = start;
   check = 0;
 
@@ -630,7 +652,9 @@ void *sched_run_sigchild (void *p) {
     check++;
     if (cur->cfunc) {
      pthread_t th;
-     pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
+     if (pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur)) {
+      bitch2(BITCH_EPTHREADS, "sched_run_sigchild()", 0, "pthread_create() failed.");
+     }
     }
 
     if (prev)
@@ -649,7 +673,9 @@ void *sched_run_sigchild (void *p) {
     prev = cur;
   }
 
-  pthread_mutex_unlock (&schedcpidmutex);
+  if (pthread_mutex_unlock (&schedcpidmutex)) {
+   bitch2(BITCH_EPTHREADS, "sched_run_sigchild()", 0, "pthread_mutex_unlock() failed.");
+  }
   if (!check) {
    if (gstatus != EINIT_EXITING) sem_wait (sigchild_semaphore);
    else {

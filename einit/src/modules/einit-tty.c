@@ -142,7 +142,9 @@ int cleanup (struct lmodule *this) {
 
 void *watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
- pthread_mutex_lock (&ttys_mutex);
+ if (pthread_mutex_lock (&ttys_mutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-tty:watcher()", 0, "pthread_mutex_lock() failed.");
+ }
  struct ttyst *cur = ttys;
  struct ttyst *prev = NULL;
  struct cfgnode *node = NULL;
@@ -169,7 +171,9 @@ void *watcher (struct spidcb *spid) {
   prev = cur;
   cur = cur->next;
  }
- pthread_mutex_unlock (&ttys_mutex);
+ if (pthread_mutex_unlock (&ttys_mutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-tty:watcher()", 0, "pthread_mutex_unlock() failed.");
+ }
 
  if (node) {
   if (node->id) {
@@ -252,10 +256,14 @@ int texec (struct cfgnode *node) {
     new->pid = cpid;
     new->node = node;
     new->restart = restart;
-    pthread_mutex_lock (&ttys_mutex);
+    if (pthread_mutex_lock (&ttys_mutex)) {
+     bitch2(BITCH_EPTHREADS, "einit-tty:texec()", 0, "pthread_mutex_lock() failed.");
+    }
     new->next = ttys;
     ttys = new;
-    pthread_mutex_unlock (&ttys_mutex);
+    if (pthread_mutex_unlock (&ttys_mutex)) {
+     bitch2(BITCH_EPTHREADS, "einit-tty:texec()", 0, "pthread_mutex_unlock() failed.");
+    }
    }
   }
  }
@@ -315,7 +323,9 @@ int enable (void *pa, struct einit_event *status) {
 
 int disable (void *pa, struct einit_event *status) {
  struct ttyst *cur = ttys;
- pthread_mutex_lock (&ttys_mutex);
+ if (pthread_mutex_lock (&ttys_mutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-tty:disable()", 0, "pthread_mutex_lock() failed.");
+ }
 #ifdef LINUX
  uint32_t vtn = parse_integer(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
  int tfd = 0;
@@ -333,7 +343,9 @@ int disable (void *pa, struct einit_event *status) {
   kill (cur->pid, SIGTERM);
   cur = cur->next;
  }
- pthread_mutex_unlock (&ttys_mutex);
+ if (pthread_mutex_unlock (&ttys_mutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-tty:disable()", 0, "pthread_mutex_unlock() failed.");
+ }
  return STATUS_OK;
 }
 

@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <string.h>
 #include <einit-modules/exec.h>
+#include <einit/bitch.h>
 
 #define EXPECTED_EIV 1
 
@@ -119,21 +120,31 @@ int cleanup (struct lmodule *this) {
 }
 
 int enable (void *pa, struct einit_event *status) {
- pthread_mutex_lock (&self_l->imutex);
+ if (pthread_mutex_lock (&self_l->imutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-aural:enable()", 0, "pthread_mutex_lock() failed.");
+ }
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- pthread_mutex_unlock (&self_l->imutex);
+ if (pthread_mutex_unlock (&self_l->imutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-aural:enable()", 0, "pthread_mutex_unlock() failed.");
+ }
  return STATUS_OK;
 }
 
 int disable (void *pa, struct einit_event *status) {
- pthread_mutex_lock (&self_l->imutex);
+ if (pthread_mutex_lock (&self_l->imutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-aural:disable()", 0, "pthread_mutex_lock() failed.");
+ }
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- pthread_mutex_unlock (&self_l->imutex);
+ if (pthread_mutex_unlock (&self_l->imutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-aural:disable()", 0, "pthread_mutex_unlock() failed.");
+ }
  return STATUS_OK;
 }
 
 void feedback_event_handler(struct einit_event *ev) {
- pthread_mutex_lock (&self_l->imutex);
+ if (pthread_mutex_lock (&self_l->imutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-aural:feedback_event_handler()", 0, "pthread_mutex_lock() failed.");
+ }
 
  char phrase[2048], hostname[128];
  phrase[0] = 0;
@@ -163,7 +174,9 @@ void feedback_event_handler(struct einit_event *ev) {
 
  if (phrase[0]) synthesize (phrase);
 
- pthread_mutex_unlock (&self_l->imutex);
+ if (pthread_mutex_unlock (&self_l->imutex)) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-aural:feedback_event_handler()", 0, "pthread_mutex_unlock() failed.");
+ }
  return;
 }
 

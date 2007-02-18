@@ -213,8 +213,9 @@ struct einit_event *evdup (struct einit_event *ev) {
   nev->string = np;
  }
 
- if (pthread_mutex_init (&nev->mutex, NULL))
-  perror (" >> evdup(): pthread_mutex_init()");
+ if (pthread_mutex_init (&nev->mutex, NULL)) {
+  bitch2(BITCH_EPTHREADS, "evdup()", 0, "pthread_mutex_init() failed.");
+ }
 
  return nev;
 }
@@ -223,14 +224,17 @@ struct einit_event *evinit (uint32_t type) {
  struct einit_event *nev = ecalloc (1, sizeof (struct einit_event));
 
  nev->type = type;
- if (pthread_mutex_init (&nev->mutex, NULL))
-  perror (" >> evinit(): pthread_mutex_init()");
+ if (pthread_mutex_init (&nev->mutex, NULL)) {
+  bitch2(BITCH_EPTHREADS, "evinit()", 0, "pthread_mutex_init() failed.");
+ }
 
  return nev;
 }
 
 void evdestroy (struct einit_event *ev) {
- pthread_mutex_destroy (&ev->mutex);
+ if (pthread_mutex_destroy (&ev->mutex)) {
+  bitch2(BITCH_EPTHREADS, "evdestroy()", 0, "pthread_mutex_destroy() failed.");
+ }
  free (ev);
 }
 
