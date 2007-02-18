@@ -136,8 +136,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   }
   strcat (((struct einit_xml_expat_user_data *)userData)->prefix, name);
 
-//  puts (((struct einit_xml_expat_user_data *)userData)->prefix);
-
   int i = 0;
   if (!strcmp (name, "mode")) {
 /* parse the information presented in the element as a mode-definition */
@@ -222,11 +220,10 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
 
 int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  static char recursion = 0;
- int e, blen, cfgplen;
- char * data;
+ int blen, cfgplen;
+ char *data;
  struct stree *hnode;
- ssize_t rn;
- struct cfgnode *node = NULL, *last = NULL;
+ struct cfgnode *node = NULL;
  char *confpath = NULL;
  XML_Parser par;
  struct stat st;
@@ -241,7 +238,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  if (!configfile || stat (configfile, &st)) return 0;
  fprintf (stderr, " >> parsing \"%s\".\n", configfile);
 
- if (data = readfile (configfile)) {
+ if ((data = readfile (configfile))) {
   time_t currenttime = time(NULL);
   if (st.st_mtime > currenttime) {// sanity check mtime
    fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile);
@@ -258,21 +255,22 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 
-    fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse() failed: %s\n", XML_ErrorString (XML_GetErrorCode (par)));
-    fprintf (stderr, " * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
+    fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
 
     if (tx) {
      if (setcount ((void **)tx) >= line)
       fprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
      free (tx);
     }
+
+    bitch2 (BITCH_EXPAT, "einit_config_xml_expat_parse_configuration_file(): XML_Parse()", 0, XML_ErrorString (XML_GetErrorCode (par)));
    }
    if (!inset ((void **)xml_configuration_files, (void *)configfile, SET_TYPE_STRING))
     xml_configuration_files = (char **)setadd ((void **)xml_configuration_files,
                                                (void *)configfile, SET_TYPE_STRING);
    XML_ParserFree (par);
   } else {
-   fputs ("einit_config_xml_expat_parse_configuration_file(): XML Parser could not be created\n", stderr);
+   bitch2 (BITCH_EXPAT, "einit_config_xml_expat_parse_configuration_file()", 0, "XML Parser could not be created");
   }
   free (data);
 
@@ -283,7 +281,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    rescan_node:
    hnode = hconfiguration;
 
-   while (hnode = streefind (hconfiguration, "core-commands-include-file", TREE_FIND_FIRST)) {
+   while ((hnode = streefind (hconfiguration, "core-commands-include-file", TREE_FIND_FIRST))) {
     node = (struct cfgnode *)hnode->value;
     if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
@@ -301,7 +299,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     }
    }
 
-   while (hnode = streefind (hconfiguration, "core-commands-include-directory", TREE_FIND_FIRST)) {
+   while ((hnode = streefind (hconfiguration, "core-commands-include-directory", TREE_FIND_FIRST))) {
     node = (struct cfgnode *)hnode->value;
 
     if (node->svalue) {
@@ -322,7 +320,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       }
      } else {
       char tb = 1;
-      if (tb = (node->svalue[bdlen-2] == '/'))
+      if ((tb = (node->svalue[bdlen-2] == '/')))
        bdlen += cfgplen - 1;
       else
        bdlen += cfgplen;
@@ -337,13 +335,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       }
      }
 
-     dir = opendir (includedir);
-     if (dir != NULL) {
+     if ((dir = opendir (includedir))) {
       char *includefile = (char *)emalloc (bdlen);
       memcpy (includefile, includedir, bdlen-1);
       struct stat statres;
 
-      while (entry = readdir (dir)) {
+      while ((entry = readdir (dir))) {
        includefile[bdlen-1] = 0;
 
        includefile = erealloc (includefile, bdlen+strlen(entry->d_name));
@@ -357,7 +354,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       }
       closedir (dir);
      } else {
-      printf ("einit_config_xml_expat_parse_configuration_file(): cannot open directory \"%s\": %s\n", includedir, strerror(errno));
+      bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
      }
 
      free (includedir);
@@ -384,8 +381,6 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
   if (!ev->string && xml_configuration_files) {
    struct stat st;
    uint32_t i = 0;
-
-//   fputs (" >> global configuration update, checking files\n", stderr);
 
    for (; xml_configuration_files && xml_configuration_files [i]; i++) {
     stat (xml_configuration_files [i], &st); // see if any files were modified

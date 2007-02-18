@@ -40,8 +40,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define BITCH_EXPAT     0x04
 #define BITCH_DL        0x05
 #define BITCH_LOOKUP    0x06
+#define BITCH_PTHREADS  0x07
 
-#define BITCH_SAUCES (BITCH_LOOKUP + 1)
+#define BITCH_SAUCES (BITCH_PTHREADS + 1)
 
 unsigned char mortality[BITCH_SAUCES];
 
@@ -64,6 +65,6 @@ int bitch (unsigned int opt);
  * Depending on the sauce you pass, it may or may not make the program
  * terminate. (Configurable this is)
  */
-int bitch2 (unsigned char sauce, char *location, int error, char *reason);
+int bitch2 (unsigned char sauce, const char *location, int error, const char *reason);
 
 #endif /* _BITCH_H */

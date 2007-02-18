@@ -48,6 +48,7 @@
    <bad-expat i="1" />
    <bad-dl i="1" />
    <bad-lookup i="1" />
+   <bad-pthreads i="1" />
   </mortality>
 <!--  <mode s="init" /> -->
  </core>

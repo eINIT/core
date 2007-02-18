@@ -1,5 +1,7 @@
 2007/02/18: mdeininger
  * new function for error reporting (and optional hara-kiri)
+ * workover using -Wall
+ * added some code to check for errors (that normally need not be checked)
 
 2007/02/16: mdeininger
  * fixed some minor things

@@ -66,7 +66,7 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  newitem = emalloc (sizeof(char)*len);
  newitem[0] = 0;
  {
-  uint32_t len = strlen (key), i = 0;
+  uint32_t i = 0;
 
   newitem = strcat (newitem, key);
   for (; newitem[i]; i++) {
@@ -118,7 +118,7 @@ void *emalloc (size_t s) {
  void *p = NULL;
 
  while (!(p = malloc (s))) {
-  bitch2(BITCH_EMALLOC, "emalloc", 0, "allocating memory failed");
+  bitch2(BITCH_EMALLOC, "emalloc", 0, "call to malloc() failed.");
   sleep (1);
  }
 
@@ -129,7 +129,7 @@ void *ecalloc (size_t c, size_t s) {
  void *p = NULL;
 
  while (!(p = calloc (c, s))) {
-  bitch2(BITCH_EMALLOC, "ecalloc", 0, "allocating memory failed");
+  bitch2(BITCH_EMALLOC, "ecalloc", 0, "call to calloc() failed.");
   sleep (1);
  }
 
@@ -140,7 +140,7 @@ void *erealloc (void *c, size_t s) {
  void *p = NULL;
 
  while (!(p = realloc (c, s))) {
-  bitch2(BITCH_EMALLOC, "erealloc", 0, "allocating memory failed");
+  bitch2(BITCH_EMALLOC, "erealloc", 0, "call to realloc() failed.");
   sleep (1);
  }
 
@@ -151,7 +151,7 @@ char *estrdup (char *s) {
  char *p = NULL;
 
  while (!(p = strdup (s))) {
-  bitch2(BITCH_EMALLOC, "estrdup", 0, "copying string failed");
+  bitch2(BITCH_EMALLOC, "estrdup", 0, "call to strdup() failed.");
   sleep (1);
  }
 
@@ -319,7 +319,7 @@ char parse_boolean (char *s) {
 }
 
 char *apply_variables (char *string, char **env) {
- char *ret, *vst, tsin = 0;
+ char *ret = NULL, *vst = NULL, tsin = 0;
  uint32_t len = 0, rpos = 0, spos = 0, rspos = 0;
 
  if (!string) return NULL;

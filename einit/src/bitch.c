@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #define BITCH2_ERROR_TEMPLATE "%s: %s (System Error #%i [%s])\n"
-unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1 };
+unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
 int bitch (unsigned int opt) {
  if (opt & BTCH_ERRNO) {
@@ -64,7 +64,7 @@ int bitch (unsigned int opt) {
  return -1;
 }
 
-int bitch2 (unsigned char sauce, char *location, int error, char *reason) {
+int bitch2 (unsigned char sauce, const char *location, int error, const char *reason) {
  char *llocation      = location ? location : "unknown";
  char *lreason        = reason ? reason : "unknown";
  int lerror         = error ? error : errno;
@@ -107,5 +107,8 @@ void bitchin_einit_event_handler (struct einit_event *ev) {
 
   if (node = cfg_getnode ("core-mortality-bad-lookup", NULL))
    mortality[BITCH_LOOKUP] = node->value;
+
+  if (node = cfg_getnode ("core-mortality-bad-pthreads", NULL))
+   mortality[BITCH_PTHREADS] = node->value;
  }
 }
