@@ -121,6 +121,8 @@ int cleanup () {
  if (einit_startup_mode_switches != einit_default_startup_mode_switches) {
   free (einit_startup_mode_switches);
  }
+
+ return 0;
 }
 
 void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
@@ -332,12 +334,12 @@ int main(int argc, char **argv) {
     evstaticdestroy(ee);
    }
 
-   fprintf (stderr, " >> [+%is] scheduling startup switches.\n", time(NULL)-stime);
+   fprintf (stderr, " >> [+%is] scheduling startup switches.\n", (int)(time(NULL)-stime));
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
 #ifdef DEBUG
-    fprintf (stderr, " >> [+%is] scheduling switch %i: %s.\n", time(NULL)-stime, e, einit_startup_mode_switches[e]);
+    fprintf (stderr, " >> [+%is] scheduling switch %i: %s.\n", (int)(time(NULL)-stime), e, einit_startup_mode_switches[e]);
 #endif
 
     ee.string = einit_startup_mode_switches[e];

@@ -1,3 +1,9 @@
+2007/02/18: mdeininger
+ * new function for error reporting (and optional hara-kiri)
+
+2007/02/16: mdeininger
+ * fixed some minor things
+
 2007/02/15: mdeininger
  * extra module for entranceD (additional to the entrance module from earlier)
  * "list services" will now list deprecated modules with a red "-" instead of

@@ -36,10 +36,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <einit/bitch.h>
+#include <einit/event.h>
+#include <einit/config.h>
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <dlfcn.h>
 #include <string.h>
+
+#define BITCH2_ERROR_TEMPLATE "%s: %s (System Error #%i [%s])\n"
+unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1 };
 
 int bitch (unsigned int opt) {
  if (opt & BTCH_ERRNO) {
@@ -55,4 +62,50 @@ int bitch (unsigned int opt) {
    puts (dlerr);
  }
  return -1;
+}
+
+int bitch2 (unsigned char sauce, char *location, int error, char *reason) {
+ char *llocation      = location ? location : "unknown";
+ char *lreason        = reason ? reason : "unknown";
+ int lerror         = error ? error : errno;
+ unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : BITCH_BAD_SAUCE;
+
+ switch (mortality[lsauce]) {
+  case 0: // 0: ignore the problem
+   return error;
+  case 1: // 1: print error or stderr
+   if ((fprintf(stderr, BITCH2_ERROR_TEMPLATE, llocation, lreason, lerror, strerror(lerror)) < 0))
+    perror ("bitch2: writing error message");
+   return error;
+  case 255: // 255: just die
+   if ((fprintf(stderr, BITCH2_ERROR_TEMPLATE, llocation, lreason, lerror, strerror(lerror)) < 0))
+    perror ("bitch2: writing error message");
+
+   exit(error);
+ }
+
+ return error;
+}
+
+void bitchin_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  struct cfgnode *node;
+  if (node = cfg_getnode ("core-mortality-bad-malloc", NULL))
+   mortality[BITCH_EMALLOC] = node->value;
+
+  if (node = cfg_getnode ("core-mortality-bad-stdio", NULL))
+   mortality[BITCH_STDIO] = node->value;
+
+  if (node = cfg_getnode ("core-mortality-bad-regex", NULL))
+   mortality[BITCH_REGEX] = node->value;
+
+  if (node = cfg_getnode ("core-mortality-bad-expat", NULL))
+   mortality[BITCH_EXPAT] = node->value;
+
+  if (node = cfg_getnode ("core-mortality-bad-dl", NULL))
+   mortality[BITCH_DL] = node->value;
+
+  if (node = cfg_getnode ("core-mortality-bad-lookup", NULL))
+   mortality[BITCH_LOOKUP] = node->value;
+ }
 }

@@ -100,6 +100,10 @@ char *readfile (char *filename) {
    rn = read (fd, (char *)(buf + blen), BUFFERSIZE);
    blen = blen + rn;
   } while (rn > 0);
+
+  if (errno && (errno != EAGAIN))
+   bitch2(BITCH_STDIO, "readfile()", errno, "reading file failed.");
+
   close (fd);
   data = erealloc (buf, blen);
   *(data+blen-1) = 0;
@@ -114,7 +118,7 @@ void *emalloc (size_t s) {
  void *p = NULL;
 
  while (!(p = malloc (s))) {
-  bitch (BTCH_ERRNO);
+  bitch2(BITCH_EMALLOC, "emalloc", 0, "allocating memory failed");
   sleep (1);
  }
 
@@ -125,7 +129,7 @@ void *ecalloc (size_t c, size_t s) {
  void *p = NULL;
 
  while (!(p = calloc (c, s))) {
-  bitch (BTCH_ERRNO);
+  bitch2(BITCH_EMALLOC, "ecalloc", 0, "allocating memory failed");
   sleep (1);
  }
 
@@ -136,7 +140,7 @@ void *erealloc (void *c, size_t s) {
  void *p = NULL;
 
  while (!(p = realloc (c, s))) {
-  bitch (BTCH_ERRNO);
+  bitch2(BITCH_EMALLOC, "erealloc", 0, "allocating memory failed");
   sleep (1);
  }
 
@@ -147,7 +151,7 @@ char *estrdup (char *s) {
  char *p = NULL;
 
  while (!(p = strdup (s))) {
-  bitch (BTCH_ERRNO);
+  bitch2(BITCH_EMALLOC, "estrdup", 0, "copying string failed");
   sleep (1);
  }
 

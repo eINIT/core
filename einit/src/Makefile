@@ -18,8 +18,8 @@ einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o eve
 einit: einit-xml
 	ln -sf einit-xml einit
 
-einit-control: einit-control.o bitch.o utility.o event.o tree.o set.o
-	$(CLD) einit-control.o bitch.o utility.o event.o tree.o set.o $(XDYNAMIC) -o einit-control $(STATIC) -ldl $(LPA)
+einit-control: einit-control.o bitch.o utility.o event.o tree.o set.o config.o
+	$(CLD) einit-control.o bitch.o utility.o event.o tree.o set.o config.o $(XDYNAMIC) -o einit-control $(STATIC) -ldl $(LPA)
 
 install: all
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}

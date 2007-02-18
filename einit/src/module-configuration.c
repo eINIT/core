@@ -71,7 +71,7 @@ struct stree *exported_functions_rootnode = &einit_config_xml_expat_cfg2xml_func
 
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_config_xml_expat_event_handler_ef
-#undef EXPORTED_FUNCTIONS_PTR NULL
+#undef EXPORTED_FUNCTIONS_PTR
 #define EXPORTED_FUNCTIONS_PTR &einit_config_xml_expat_cfg2xml_function
 
 #endif
@@ -139,6 +139,18 @@ struct event_function einit_event_ipc_handler_ef = {
 
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_event_ipc_handler_ef
+
+/* einit event handler for the bitchin' library */
+void bitchin_einit_event_handler(struct einit_event *);
+
+struct event_function bitchin_einit_event_handler_ef = {
+ .type = EVENT_SUBSYSTEM_EINIT,
+ .handler = bitchin_einit_event_handler,
+ .next = EVENT_FUNCTIONS_PTR
+};
+
+#undef EVENT_FUNCTIONS_PTR
+#define EVENT_FUNCTIONS_PTR &bitchin_einit_event_handler_ef
 
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;
 struct stree *exported_functions = EXPORTED_FUNCTIONS_PTR;
