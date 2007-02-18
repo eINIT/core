@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <einit/bitch.h>
 
 #include <einit-modules/ipc.h>
 
@@ -277,7 +278,9 @@ void * ipc_wait (void *unused_parameter) {
    if (errno == ECONNABORTED) continue;
   } else {
    pthread_t thread;
-   pthread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd);
+   if (pthread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd)) {
+    bitch2(BITCH_EPTHREADS, "einit-ipc:ipc_wait()", 0, "pthread_create() failed.");
+   }
 //   puts ("new thread created.");
   }
  }
@@ -291,11 +294,15 @@ void * ipc_wait (void *unused_parameter) {
 }
 
 int enable (void *pa, struct einit_event *status) {
- pthread_create (&ipc_thread, NULL, ipc_wait, NULL);
+ if (pthread_create (&ipc_thread, NULL, ipc_wait, NULL)) {
+  bitch2(BITCH_EPTHREADS, "einit-ipc:enable()", 0, "pthread_create() failed.");
+ }
  return STATUS_OK;
 }
 
 int disable (void *pa, struct einit_event *status) {
- pthread_cancel (ipc_thread);
+ if (pthread_cancel (ipc_thread)) {
+  bitch2(BITCH_EPTHREADS, "einit-ipc:disable()", 0, "pthread_cancel() failed.");
+ }
  return STATUS_OK;
 }
