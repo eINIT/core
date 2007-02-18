@@ -51,10 +51,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* some common functions to work with null-terminated arrays */
 
 void **setcombine (void **set1, void **set2, int32_t esize) {
- void **newset;
- int x = 0, y = 0, s = 1, p = 0;
+ void **newset = NULL;
+ int x = 0, y = 0;
  uint32_t count = 0, size = 0;
- char *strbuffer = NULL;
+
  if (!set1) return setdup(set2, esize);
  if (!set1[0]) {
   free (set1);
@@ -147,10 +147,10 @@ void **setcombine (void **set1, void **set2, int32_t esize) {
 }
 
 void **setadd (void **set, void *item, int32_t esize) {
- void **newset;
- int x = 0, y = 0, s = 1, p = 0;
- char *strbuffer = NULL;
+ void **newset = NULL;
+ int x = 0;
  uint32_t count = 0, size = 0;
+
  if (!item) return NULL;
 // if (!set) set = ecalloc (1, sizeof (void *));
 
@@ -291,7 +291,8 @@ void **setdup (void **set, int32_t esize) {
 
 void **setdel (void **set, void *item) {
  void **newset = set;
- int x = 0, y = 0, s = 1, p = 0;
+ int x = 0, y = 0;
+
  if (!item || !set) return NULL;
 
  while (set[y]) {
@@ -421,7 +422,8 @@ char *set2str (const char sep, char **input) {
 
 char **strsetdel (char **set, char *item) {
  char **newset = set;
- int x = 0, y = 0, s = 1, p = 0;
+ int x = 0, y = 0;
+
  if (!item || !set) return NULL;
  if (!set[0]) {
   free (set);
@@ -451,7 +453,8 @@ char **strsetdel (char **set, char *item) {
 
 char **strsetdeldupes (char **set) {
  char **newset = set;
- int x = 0, y = 0, s = 1, p = 0;
+ int x = 0, y = 0;
+
  if (!set) return NULL;
 
  while (set[y]) {

@@ -71,9 +71,7 @@ int mod_scanmodules ( void ) {
  char *tmp;
  int mplen;
  void *sohandle;
- struct lmodule *cmod = NULL, *nmod;
 #ifdef POSIXREGEX
- unsigned char freeallow = 0, freedisallow = 0;
  regex_t allowpattern, disallowpattern;
  unsigned char haveallowpattern = 0, havedisallowpattern = 0;
  char *spattern = NULL;
@@ -95,7 +93,7 @@ int mod_scanmodules ( void ) {
  }
 
 #ifdef POSIXREGEX
- if (spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL)) {
+ if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {
   uint32_t err;
 
   if (!(err = regcomp (&allowpattern, spattern, REG_EXTENDED)))
@@ -107,7 +105,7 @@ int mod_scanmodules ( void ) {
   }
  }
 
- if (spattern = cfg_getstring ("core-settings-module-load/pattern-disallow", NULL)) {
+ if ((spattern = cfg_getstring ("core-settings-module-load/pattern-disallow", NULL))) {
   uint32_t err;
 
   if (!(err = regcomp (&disallowpattern, spattern, REG_EXTENDED)))
@@ -123,7 +121,7 @@ int mod_scanmodules ( void ) {
  mplen = strlen (modulepath) +4;
  dir = opendir (modulepath);
  if (dir != NULL) {
-  while (entry = readdir (dir)) {
+  while ((entry = readdir (dir))) {
 //   uint32_t el = 0;
 // if we have posix regular expressions, match them against the filename, if not, exclude '.'-files
 #ifdef POSIXREGEX
@@ -261,7 +259,7 @@ struct lmodule *mod_update (struct lmodule *module) {
   return module;
  }
 
- while (lnode = cfg_findnode ("services-override-module", 0, lnode))
+ while ((lnode = cfg_findnode ("services-override-module", 0, lnode)))
   if (lnode->idattr && module->module->rid && !strcmp(lnode->idattr, module->module->rid)) {
    struct service_information *esi = emalloc (sizeof (struct service_information));
    uint32_t i = 0;
@@ -307,7 +305,7 @@ struct lmodule *mod_update (struct lmodule *module) {
 }
 
 struct lmodule *mod_add (void *sohandle, struct smodule *module) {
- struct lmodule *nmod, *cur;
+ struct lmodule *nmod;
  int (*scanfunc)(struct lmodule *);
  int (*ftload)  (void *, struct einit_event *);
  int (*configfunc)(struct lmodule *);
@@ -386,11 +384,8 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
 
 int mod (unsigned int task, struct lmodule *module) {
  struct einit_event *fb;
- char providefeedback;
- struct smodule *t;
- int ti, errc;
+ int errc;
  unsigned int ret;
- struct stree *ha;
 
  if (!module) return 0;
 
@@ -604,15 +599,6 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
 
  if (task & SERVICE_NOT_IN_USE) {
   ret |= SERVICE_NOT_IN_USE;
-/*  if (t = module->provides) {
-   for (i = 0; t[i]; i++) {
-    if ((ha = streefind (service_usage, t[i])) &&
-        ((struct service_usage_item *)(ha->value))->users) {
-     ret ^= SERVICE_NOT_IN_USE;
-     break;
-    }
-   }
-  }*/
   struct stree *ha = service_usage;
 
   while (ha) {
@@ -636,7 +622,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   }
  } else if (task & SERVICE_REQUIREMENTS_MET) {
   ret |= SERVICE_REQUIREMENTS_MET;
-  if (t = module->si->requires) {
+  if ((t = module->si->requires)) {
    for (i = 0; t[i]; i++) {
     if (!(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
@@ -647,14 +633,14 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
   }
  } else if (task & SERVICE_UPDATE) {
   if (module->status & STATUS_ENABLED) {
-   if (t = module->si->requires) {
+   if ((t = module->si->requires)) {
     for (i = 0; t[i]; i++) {
      if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
-   if (t = module->si->provides) {
+   if ((t = module->si->provides)) {
     for (i = 0; t[i]; i++) {
      if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
@@ -700,9 +686,6 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
 uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service) {
  uint16_t ret = 0;
  struct stree *ha;
- char **t;
- uint32_t i;
- struct service_usage_item *item;
 
  if ((!module || !module->module) && !service) return 0;
 
@@ -733,7 +716,6 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
 
  if (task & SERVICE_GET_ALL_PROVIDED) {
   while (ha) {
-//   puts (ha->key);
    ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
    ha = streenext (ha);
   }
@@ -747,7 +729,6 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
           ((struct service_usage_item *)(ha->value))->users[i]->si->provides)
        ret = (char **)setcombine ((void **)ret, (void **)((struct service_usage_item *)(ha->value))->users[i]->si->provides, SET_TYPE_STRING);
      }
-//     ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }
     ha = streenext (ha);
    }
@@ -792,7 +773,7 @@ void mod_event_handler(struct einit_event *ev) {
     if (!ev->flag) ev->flag = 1;
 
     while (cur) {
-     if (cur->module && !(options & EIPC_ONLY_RELEVANT) || (cur->status != STATUS_IDLE)) {
+     if ((cur->module && !(options & EIPC_ONLY_RELEVANT)) || (cur->status != STATUS_IDLE)) {
       if (options & EIPC_OUTPUT_XML) {
        fprintf ((FILE *)ev->para, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
          (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
@@ -928,7 +909,7 @@ void mod_event_handler(struct einit_event *ev) {
          }
         }
 
-        fprintf ((FILE *)ev->para, " </service>\n", scur->key);
+        fprintf ((FILE *)ev->para, " </service>\n");
        } else {
         if (scur->value) {
          struct lmodule **xs = scur->value;
@@ -966,7 +947,7 @@ void module_loader_einit_event_handler (struct einit_event *ev) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
 
-  while (node = cfg_findnode ("services-alias", 0, node)) {
+  while ((node = cfg_findnode ("services-alias", 0, node))) {
    if (node->idattr && node->svalue) {
     new_aliases = streeadd (new_aliases, node->svalue, node->idattr, SET_TYPE_STRING, NULL);
     new_aliases = streeadd (new_aliases, node->idattr, node->svalue, SET_TYPE_STRING, NULL);

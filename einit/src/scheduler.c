@@ -97,6 +97,8 @@ int scheduler_cleanup () {
  if (sem_destroy (sembck))
   sem_close (sembck);
 #endif
+
+ return 0;
 }
 
 int sched_switchmode (char *mode) {
@@ -133,7 +135,7 @@ int sched_switchmode (char *mode) {
 
 int sched_modaction (char **argv) {
  int argc = setcount ((void **)argv), ret = 1;
- int32_t task;
+ int32_t task = 0;
  struct mloadplan *plan;
  if (!argv || (argc != 2)) return -1;
 
@@ -145,7 +147,7 @@ int sched_modaction (char **argv) {
 
  argv[1] = NULL;
 
- if (plan = mod_plan (NULL, argv, task, NULL)) {
+ if ((plan = mod_plan (NULL, argv, task, NULL))) {
   pthread_t th;
 
   mod_plan_commit (plan);
@@ -177,12 +179,12 @@ int sched_modaction (char **argv) {
 }
 
 void sched_init () {
- char tmp[1024];
-
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
  sigchild_semaphore = &sigchild_semaphore_static;
  sem_init (sigchild_semaphore, 0, 0);
 #elif defined(DARWIN)
+ char tmp[1024];
+
  snprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
 
  if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
@@ -192,6 +194,8 @@ void sched_init () {
 #else
 #warning no proper or recognised semaphores implementation, i can't promise this code will work.
 /* let's just hope for the best... */
+ char tmp[1024];
+
  sigchild_semaphore = ecalloc (1, sizeof (sem_t));
  if (sem_init (sigchild_semaphore, 0, 0) == -1) {
   free (sigchild_semaphore);
@@ -295,13 +299,16 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  pthread_mutex_unlock (&schedcpidmutex);
  if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
   sem_post (sigchild_semaphore);
+
+ return 0;
 }
 
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #ifdef LINUX
 /* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
- if ((siginfo->si_code == SI_KERNEL) || ((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1) || (siginfo->si_pid == getppid())))
+ if ((siginfo->si_code == SI_KERNEL) ||
+     (((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1)) || (siginfo->si_pid == getppid())))
 #else
 /* only shut down if the SIGINT was sent by process 1 or by the parent process */
 /* if ((siginfo->si_pid == 1) || (siginfo->si_pid == getppid())) */
@@ -606,7 +613,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 
 #else
 void *sched_run_sigchild (void *p) {
- int i, l, status, check;
+ int status, check;
  pid_t pid;
  while (1) {
   pthread_mutex_lock (&schedcpidmutex);

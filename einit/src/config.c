@@ -59,7 +59,7 @@ int cfg_free () {
  struct stree *cur = hconfiguration;
  struct cfgnode *node = NULL;
  while (cur) {
-  if (node = (struct cfgnode *)cur->value) {
+  if ((node = (struct cfgnode *)cur->value)) {
    if (node->id)
     free (node->id);
    if (node->path)
@@ -73,7 +73,7 @@ int cfg_free () {
 }
 
 int cfg_addnode (struct cfgnode *node) {
- if (!node || !node->id) return;
+ if (!node || !node->id) return -1;
  struct stree *cur = hconfiguration;
  char doop = 1;
  char *template = NULL;
@@ -100,7 +100,7 @@ int cfg_addnode (struct cfgnode *node) {
   strcat (nodename, node->id);
   strcat (nodename, "-template");
 
-  while (tnode = cfg_findnode (nodename, 0, tnode)) {
+  while ((tnode = cfg_findnode (nodename, 0, tnode))) {
    if (tnode->idattr && !strcmp (tnode->idattr, template)) break; // found a matching template
   }
   if (!tnode || !tnode->arbattrs) goto no_template;
@@ -191,11 +191,13 @@ int cfg_addnode (struct cfgnode *node) {
 
  if (doop)
   hconfiguration = streeadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
+
+ return 0;
 }
 
 struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
  struct stree *cur = hconfiguration;
- if (!id) return;
+ if (!id) return NULL;
 
 // printf ("supposed to find id=%s, base=%x in 0x%x(0x%x)\n", id, base, cur, hconfiguration);
 
@@ -268,7 +270,7 @@ char *cfg_getstring (char *id, struct cfgnode *mode) {
 
    for (i = 0; node->arbattrs[i]; i+=2) {
 //    printf (" >> comparing %s==%s\n", node->arbattrs[i], sub[1]);
-    if (f = (!strcmp(node->arbattrs[i], sub[1]))) {
+    if ((f = (!strcmp(node->arbattrs[i], sub[1])))) {
      ret = node->arbattrs[i+1];
      break;
     }
@@ -301,7 +303,7 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
   strcat (tmpnodename, "mode-");
   strcat (tmpnodename, id);
 
-  while (node = cfg_findnode (tmpnodename, 0, node)) {
+  while ((node = cfg_findnode (tmpnodename, 0, node))) {
    if (node->mode == mode) {
     ret = node;
     break;
@@ -375,7 +377,7 @@ void einit_config_event_handler (struct einit_event *ev) {
   free (env);
 
   env = NULL;
-  while (node = cfg_findnode ("configuration-environment-global", 0, node)) {
+  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
    if (node->idattr && node->svalue) {
     env = straddtoenviron (env, node->idattr, node->svalue);
    }
@@ -404,14 +406,14 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
     }
 
     if (ev->status & EIPC_OUTPUT_XML) {
-     if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)) buffer = conv(otree);
+     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL))) buffer = conv(otree);
     } else {
-	 char *rtset[] = 
-	   { (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable-ansi" : "human-readable",
-	     (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable" : "xml",
-		 (ev->status & EIPC_OUTPUT_ANSI) ? "xml" : "human-readable-ansi", NULL };
-	 if (conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, rtset)) buffer = conv(otree);
-	}
+     char *rtset[] =
+       { (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable-ansi" : "human-readable",
+         (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable" : "xml",
+         (ev->status & EIPC_OUTPUT_ANSI) ? "xml" : "human-readable-ansi", NULL };
+     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, rtset))) buffer = conv(otree);
+    }
 
     if (buffer) {
      fputs (buffer, (FILE *)ev->para);

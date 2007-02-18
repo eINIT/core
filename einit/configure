@@ -94,7 +94,7 @@ for param in $@; do
 		HELP="1";
 	elif test "$param" = "--bitch-a-lot"; then
 		echo -n " BITCHY";
-		XCFLAGS="$XCFLAGS -Wall -DBITCHY";
+		XCFLAGS="$XCFLAGS -DBITCHY";
 	elif test "$param" = "--use-posix-regex"; then
 		echo -n " REGEX";
 		XCFLAGS="$XCFLAGS -DPOSIXREGEX";
@@ -272,7 +272,7 @@ TREETYPE = ${TREETYPE}
 SETTYPE = ${SETTYPE}
 
 CC = $CC
-CFLAGS = $CFLAGS$XCFLAGS
+CFLAGS = $CFLAGS$XCFLAGS -Wall
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL

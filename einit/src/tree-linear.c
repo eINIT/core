@@ -55,7 +55,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vlen, void *luggage) {
  struct stree *n, *base = (stree ? *(stree->lbase) : NULL);
- struct stree *c = stree;
  uint32_t hklen;
 
  if (!key) return stree;

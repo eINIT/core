@@ -58,13 +58,13 @@ uint32_t cseqid = 0;
 
 void *event_emit (struct einit_event *event, uint16_t flags) {
  uint32_t subsystem;
+#ifdef DEBUG
  struct event_ringbuffer_node *new_logbuffer_node;
+#endif
 
- if (!event || !event->type) return;
+ if (!event || !event->type) return NULL;
  subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
-// pthread_mutex_lock (&evf_mutex);
-// pthread_mutex_lock (&event_logbuffer_mutex);
 /* initialise sequence id and timestamp of the event */
   event->seqid = cseqid++;
   event->timestamp = time(NULL);
@@ -74,7 +74,6 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
   new_logbuffer_node = emalloc (sizeof(struct event_ringbuffer_node));
 
   new_logbuffer_node->type = event->type;
-//  new_logbuffer_node->type_custom = (event->type_custom ? estrdup (event->type_custom) : NULL);
   new_logbuffer_node->set = event->set;
   new_logbuffer_node->string = (event->string ? estrdup (event->string) : NULL);
   new_logbuffer_node->integer = event->integer;
@@ -98,27 +97,20 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
   event_logbuffer = new_logbuffer_node;
 #endif
 
-// pthread_mutex_unlock (&event_logbuffer_mutex);
-
   struct event_function *cur = event_functions;
   while (cur) {
-//   fprintf (stderr, " >> event %s: considering subsystem id %x (%x) for delivery.\n", event_code_to_string(event->type), cur->type, subsystem);
-
    if ((cur->type == subsystem) && cur->handler) {
-//    fprintf (stderr, " >> match, proceeding.\n");
     if (flags & EINIT_EVENT_FLAG_SPAWN_THREAD) {
      pthread_t threadid;
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
       struct einit_event *ev = evdup(event);
       pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
-//      evdestroy (ev);
      } else
       pthread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
     } else {
      if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
       struct einit_event *ev = evdup(event);
       cur->handler (ev);
-//      evdestroy (ev);
      } else
       cur->handler (event);
     }
@@ -126,13 +118,13 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
    cur = cur->next;
   }
 
-// pthread_mutex_unlock (&evf_mutex);
-
  if (event->chain_type) {
   event->type = event->chain_type;
   event->chain_type = 0;
   event_emit (event, flags);
  }
+
+ return NULL;
 }
 
 void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {
@@ -185,8 +177,6 @@ void function_register (char *name, uint32_t version, void *function) {
  fstruct->version = version;
  fstruct->function = function;
 
-// printf ("adding %s to %zx\n", name, exported_functions);
-
  pthread_mutex_lock (&pof_mutex);
   exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
  pthread_mutex_unlock (&pof_mutex);
@@ -199,25 +189,10 @@ void **function_find (char *name, uint32_t version, char **sub) {
  void **set = NULL;
  struct stree *ha = exported_functions;
 
-/* if (sub)
-  printf (" >> searching for function: %s (%s)\n", name, set2str (',', sub));
- else
-  printf (" >> searching for function: %s\n", name);*/
-
-/* char tmp[2048];
- snprintf (tmp, 2048, "looking for %s in %zx", name, ha);
- puts (tmp); */
-
-// printf ("looking for %s in %zx->%s\n", name, ha, ha->key);
-
  pthread_mutex_lock (&pof_mutex);
  if (!sub) {
-//  printf ("simple lookup ");
   ha = streefind (exported_functions, name, TREE_FIND_FIRST);
   while (ha) {
-/*   char tmp[2048];
-   snprintf (tmp, 2048, "returned with %zx", ha);
-   puts (tmp);*/
    struct exported_function *ef = ha->value;
    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
    ha = streefind (ha, name, TREE_FIND_NEXT);
@@ -233,17 +208,10 @@ void **function_find (char *name, uint32_t version, char **sub) {
    *(n + k) = 0;
    n = erealloc (n, k+1+strlen (sub[i]));
    strcat (n, sub[i]);
-//   printf ("%s\n", n);
 
    ha = streefind (exported_functions, n, TREE_FIND_FIRST);
-/*   if (!ha) {
-    puts ("no initial result");
-   }*/
 
    while (ha) {
-/*    char tmp[2048];
-    snprintf (tmp, 2048, "returned with %zx", ha);
-    puts (tmp);*/
 
     struct exported_function *ef = ha->value;
     if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
@@ -255,8 +223,6 @@ void **function_find (char *name, uint32_t version, char **sub) {
   if (n) free (n);
  }
  pthread_mutex_unlock (&pof_mutex);
-
-// printf ("returning %x\n", set);
 
  return set;
 }
@@ -279,11 +245,8 @@ void function_unregister (char *name, uint32_t version, void *function) {
  while (ha) {
   struct exported_function *ef = ha->value;
   if (ef && (ef->version == version)) {
-//   exported_functions = streedel (exported_functions, ha);
    exported_functions = streedel (ha);
    ha = streefind (exported_functions, name, TREE_FIND_FIRST);
-//   ha = exported_functions;
-//   if (!ha) break;
   } else
    ha = streefind (exported_functions, name, TREE_FIND_NEXT);
  }
@@ -366,7 +329,6 @@ void event_ipc_handler(struct einit_event *event) {
  if (!event || !event->set) return;
  char **argv = (char **) event->set;
  int argc = setcount (event->set);
- uint32_t options = event->status;
 
  if (argc >= 2) {
   if (!strcmp (argv[0], "update") && !strcmp (argv[1], "configuration")) {
@@ -376,7 +338,7 @@ void event_ipc_handler(struct einit_event *event) {
    if (nev.string)
     fprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
    else
-    fprintf (stderr, "event-subsystem: updating configuration\n", argv[2]);
+    fprintf (stderr, "event-subsystem: updating configuration\n");
    event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
 
    evstaticdestroy(nev);

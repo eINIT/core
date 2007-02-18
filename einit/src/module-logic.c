@@ -67,7 +67,7 @@ struct lmodule *mlist;
  if (!nnode.mod && (gnode = cfg_getnode (tnodeid, mode)) && gnode->arbattrs) {\
   for (r = 0; gnode->arbattrs[r]; r+=2) {\
    if (!strcmp (gnode->arbattrs[r], "group")) {\
-    if (nnode.group = str2set (':', gnode->arbattrs[r+1]))\
+    if ((nnode.group = str2set (':', gnode->arbattrs[r+1])))\
      recurse = (char **)setcombine ((void **)recurse, (void **)nnode.group, SET_NOALLOC);\
    } else if (!strcmp (gnode->arbattrs[r], "seq")) {\
     if (!strcmp (gnode->arbattrs[r+1], "any"))\
@@ -86,7 +86,7 @@ struct lmodule *mlist;
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- uint32_t a = 0, b = 0, r = 0;
+ uint32_t a = 0, r = 0;
  char
   **enable = NULL, **aenable = NULL,
   **disable = NULL, **adisable = NULL,
@@ -94,7 +94,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   **reload = NULL, **areload = NULL,
   **zap = NULL, **azap = NULL,
   **critical = NULL;
- struct cfgnode *rmode = mode, *gnode;
+ struct cfgnode *gnode;
  struct mloadplan_node nnode;
  struct stree *ha;
  char da = 0, dabf = 0;
@@ -221,7 +221,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (disable) {
   char **current = (char **)setdup ((void **)disable, SET_TYPE_STRING), **recurse = NULL;
   disa_rescan:
-//  puts ("disable");
 
   if (current)
   for (a = 0; current[a]; a++) {
@@ -234,7 +233,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
 
    memset (&nnode, 0, sizeof (struct mloadplan_node));
-   if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+   if ((ha = streefind (plan->services, current[a], TREE_FIND_FIRST)))
     continue;
 
    while (cur) {
@@ -248,8 +247,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
       recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
       free (t);
      }
-
-     skip_disable: ;
     }
 
     cur = cur->next;
@@ -269,11 +266,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   while (current) {
    for (a = 0; current[a]; a++) {
-//    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+    if ((ha = streefind (plan->services, current[a], TREE_FIND_FIRST)))
      continue;
 
     while (cur) {
@@ -281,7 +277,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      if (inset ((void **)cur->si->provides, (void *)current[a], SET_TYPE_STRING)) {
       if ((cur->status & STATUS_ENABLED) && mo) {
        nnode.mod = (struct lmodule **)setadd ((void **)nnode.mod, (void *)cur, SET_NOALLOC);
-//       recurse = (char **)setcombine ((void **)recurse, (void **)cur->requires, SET_TYPE_STRING);
        char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, cur, NULL);
        if (t) {
         recurse = (char **)setcombine ((void **)recurse, (void **)t, SET_TYPE_STRING);
@@ -353,7 +348,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      pnode[0] = 0;
      strcat (pnode, "services-prefer-");
      strcat (pnode, current[a]);
-     if (preference = str2set (':', cfg_getstring (pnode, mode))) {
+     if ((preference = str2set (':', cfg_getstring (pnode, mode)))) {
       for (mpx = 0; preference[mpx]; mpx++) {
        for (mpy = 0; nnode.mod[mpy]; mpy++) {
         if (nnode.mod[mpy]->module && nnode.mod[mpy]->module->rid && !strcmp(nnode.mod[mpy]->module->rid, preference[mpx])) {
@@ -391,11 +386,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **recurse = NULL;
   while (current) {
    for (a = 0; current[a]; a++) {
-//    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+    if ((ha = streefind (plan->services, current[a], TREE_FIND_FIRST)))
      continue;
 
     while (cur) {
@@ -432,7 +426,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+    if ((ha = streefind (plan->services, current[a], TREE_FIND_FIRST)))
      continue;
 
     while (cur) {
@@ -469,7 +463,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
-    if (ha = streefind (plan->services, current[a], TREE_FIND_FIRST))
+    if ((ha = streefind (plan->services, current[a], TREE_FIND_FIRST)))
      continue;
 
     while (cur) {
@@ -505,7 +499,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    while (cha) {
     if (!memcmp (ha->value, cha->value, sizeof(struct mloadplan_node))) {
      cha->value = ha->value;
-//     puts (" >> DUP!");
     }
 
     cha = streenext (cha);
@@ -622,6 +615,8 @@ int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th,
    return 0;
   }
  }
+
+ return 0;
 }
 
 void wait_on_subthreads (pthread_t **subthreads) {
@@ -644,10 +639,7 @@ void run_or_spawn_subthreads_and_wait(char **set, void *(*function)(struct ml_ca
 
 // the un-loader function
 void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
-// fprintf (stderr, " >> XX context=0x%x", context);
  struct mloadplan_node *node = context->node;
-
-// if (node->changed) { return &(node->status); }
 
  if (pthread_mutex_trylock(node->mutex)) {
   pthread_mutex_lock (node->mutex);
@@ -675,15 +667,13 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
  node->status |= STATUS_WORKING;
 
  pthread_t **subthreads = NULL;
- struct stree *ha, *rha = NULL;
- uint32_t i = 0, u = 0, j = 0;
+ uint32_t i = 0;
 
  if (node->mod) {
   for (i = 0; node->mod[i]; i++) {
    if (!service_usage_query (SERVICE_NOT_IN_USE, node->mod[i], NULL)) {
-    pthread_t th;
     char **t;
-    if (t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, node->mod[i], NULL)) {
+    if ((t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, node->mod[i], NULL))) {
      subthreads = run_or_spawn_subthreads (t,mod_plan_commit_recurse_disable,node->plan,subthreads,STATUS_DISABLED,context);
      free (t);
      t = NULL;
@@ -713,10 +703,7 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
 void *mod_plan_commit_recurse_enable (struct ml_call_context *);
 
 void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *context) {
-// fprintf (stderr, " >> XX context=0x%x", context);
  struct mloadplan_node *node = context->node;
-
-// if (node->changed) { return &(node->status); }
 
  if (pthread_mutex_trylock(node->mutex)) {
   pthread_mutex_lock (node->mutex);
@@ -735,7 +722,7 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *co
   run_or_spawn_subthreads_and_wait (node->group, mod_plan_commit_recurse_enable, node->plan, STATUS_ENABLED,context);
 
   for (u = 0; node->group; u++) {
-   if (ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST)) {
+   if ((ha = streefind (node->plan->services, node->group[u], TREE_FIND_FIRST))) {
     struct mloadplan_node *cnode = (struct mloadplan_node  *)ha->value;
     uint32_t si = 0;
     for (; node->service[si]; si++)
@@ -751,10 +738,7 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *co
 
 // the loader function
 void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
-// fprintf (stderr, " >> XX context=0x%x", context);
  struct mloadplan_node *node = context->node;
-
-// if (node->changed) { return &(node->status); }
 
  if (pthread_mutex_trylock(node->mutex)) {
   pthread_mutex_lock (node->mutex);
@@ -775,12 +759,10 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
  }
  node->status |= STATUS_WORKING;
 
- pthread_t **subthreads = NULL;
  struct stree *ha;
  uint32_t i = 0, u = 0;
 
  if (node->mod) {
-//  fprintf (stderr, "enabling node 0x%zx\n", node);
   for (i = 0; node->mod[i]; i++) {
    char **xsu = (char **)setcombine ((void **)node->mod[i]->si->requires, (void **)node->mod[i]->si->after, SET_TYPE_STRING);
 
@@ -823,24 +805,11 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
      call_add_context (mod_plan_commit_recurse_enable, NULL, ha->value, context);
 
      if (cnode->status & STATUS_ENABLED) {
-      pthread_t th;
       uint32_t si = 0;
       for (; node->service[si]; si++)
        service_usage_query_group (SERVICE_ADD_GROUP_PROVIDER, cnode->mod[cnode->pos], node->service[si]);
 
       node->status |= STATUS_ENABLED;
-
-/* only real condition is that one of the elements need to be enabled, but the others should
-   be enabled too; call subthread with function to enable remaining elements of the group */
-#if 0
-      pthread_create (&th, NULL, (void *(*)(void *))mod_plan_commit_recurse_enable_group_remaining, node);
-
-      pthread_mutex_lock (&(node->plan->st_mutex));
-      node->plan->subthreads = (pthread_t **)setadd ((void **)node->plan->subthreads, (void *)&th, sizeof (pthread_t));
-      pthread_mutex_unlock (&(node->plan->st_mutex));
-
-      goto exit;
-#endif
      }
     }
    }
@@ -870,16 +839,12 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
 
  node->changed = 2;
  pthread_mutex_unlock (node->mutex);
-// pthread_exit (NULL);
  return &(node->status);
 }
 
 // the reset function
 void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
-// fprintf (stderr, " >> XX context=0x%x", context);
  struct mloadplan_node *node = context->node;
-
-// if (node->changed) { return &(node->status); }
 
  if (pthread_mutex_trylock(node->mutex)) {
   pthread_mutex_lock (node->mutex);
@@ -899,7 +864,7 @@ void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
    node->status = mod (MOD_RESET, node->mod[i]);
   }
  } else if (node->group) {
-  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_reset,node->plan,subthreads,STATUS_ENABLED,context);
+  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_reset,node->plan,NULL,STATUS_ENABLED,context);
 
   wait_on_subthreads (subthreads);
   node->status |= STATUS_ENABLED;
@@ -912,10 +877,7 @@ void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
 
 // the reload function
 void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
-// fprintf (stderr, " >> XX context=0x%x", context);
  struct mloadplan_node *node = context->node;
-
-// if (node->changed) { return &(node->status); }
 
  if (pthread_mutex_trylock(node->mutex)) {
   pthread_mutex_lock (node->mutex);
@@ -934,7 +896,7 @@ void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
    node->status = mod (MOD_RELOAD, node->mod[i]);
   }
  } else if (node->group) {
-  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_reload,node->plan,subthreads,STATUS_ENABLED,context);
+  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_reload,node->plan,NULL,STATUS_ENABLED,context);
 
   wait_on_subthreads (subthreads);
   node->status |= STATUS_ENABLED;
@@ -947,10 +909,7 @@ void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
 
 // the zap function
 void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
-// fprintf (stderr, " >> XX context=0x%x", context);
  struct mloadplan_node *node = context->node;
-
-// if (node->changed) { return &(node->status); }
 
  if (pthread_mutex_trylock(node->mutex)) {
   pthread_mutex_lock (node->mutex);
@@ -969,7 +928,7 @@ void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
    node->status = mod (MOD_ZAP, node->mod[i]);
   }
  } else if (node->group) {
-  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_zap,node->plan,subthreads,STATUS_DISABLED,context);
+  pthread_t **subthreads = run_or_spawn_subthreads (node->group,mod_plan_commit_recurse_zap,node->plan,NULL,STATUS_DISABLED,context);
 
   wait_on_subthreads (subthreads);
   node->status = STATUS_IDLE;
@@ -982,7 +941,7 @@ void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
 
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- if (!plan) return;
+ if (!plan) return -1;
  pthread_mutex_lock (&plan->mutex);
 
 // do some extra work if the plan was derived from a mode
@@ -990,13 +949,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   char *cmdt;
   cmode = plan->mode;
 
-  if (cmdt = cfg_getstring ("before-switch/emit-event", cmode)) {
+  if ((cmdt = cfg_getstring ("before-switch/emit-event", cmode))) {
    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
    evstaticdestroy (ee);
   }
 
-  if (cmdt = cfg_getstring ("before-switch/ipc", cmode)) {
+  if ((cmdt = cfg_getstring ("before-switch/ipc", cmode))) {
    char **cmdts = str2set (';', cmdt);
    uint32_t in = 0;
 
@@ -1009,24 +968,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   }
  }
 
- struct stree *ha;
  uint32_t u = 0;
-// char *switchevent = cfg_getstring ("emit-event/on-switch", cmode);
-/* if (switchevent) {
-  if (!strcmp(switchevent, "einit/reboot-scheduled")) {
-   struct einit_event ee = evstaticinit (EVE_REBOOT_SCHEDULED);
-   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-   evstaticdestroy (ee);
-  } else if (!strcmp(switchevent, "einit/shutdown-scheduled")) {
-   struct einit_event ee = evstaticinit (EVE_SHUTDOWN_SCHEDULED);
-   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-   evstaticdestroy (ee);
-  }
- }*/
-
-// pthread_mutex_lock (&(plan->st_mutex));
-
-// fputs (" >> spawning threads\n", stderr);
 
  if (plan->disable)
   plan->subthreads = run_or_spawn_subthreads (plan->disable,mod_plan_commit_recurse_disable,plan,plan->subthreads,STATUS_DISABLED,NULL);
@@ -1043,10 +985,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (plan->zap)
   plan->subthreads = run_or_spawn_subthreads (plan->zap,mod_plan_commit_recurse_zap,plan,plan->subthreads,0,NULL);
 
-// fputs (" >> threads spawned\n", stderr);
  wait_on_subthreads (plan->subthreads);
-
-// fputs (" >> done\n", stderr);
 
  if (plan->unavailable) {
   char tmp[2048], tmp2[2048];
@@ -1057,7 +996,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    snprintf (tmp, 2048, "%s, %s", tmp2, plan->unavailable[u]);
   }
 
-//  puts (tmp);
   notice (2, tmp);
  }
 
@@ -1082,9 +1020,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   char *cmdt;
   amode = plan->mode;
 
-//  if (amode->arbattrs)
-//   printf ("mode %s's arbitrary attributes: %s\n", amode->id, set2str(':', amode->arbattrs));
-
   if (amode->id) {
    struct einit_event eema = evstaticinit (EVE_PLAN_UPDATE);
    eema.string = estrdup(amode->id);
@@ -1094,19 +1029,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    evstaticdestroy (eema);
   }
 
-//  if (amode->arbattrs)
-//   printf ("mode %s's arbitrary attributes: %s\n", amode->id, set2str(':', amode->arbattrs));
-
-  if (cmdt = cfg_getstring ("after-switch/emit-event", amode)) {
+  if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
    evstaticdestroy (ee);
   }
 
-//  if (amode->arbattrs)
-//   printf ("mode %s's arbitrary attributes: %s\n", amode->id, set2str(':', amode->arbattrs));
-
-  if (cmdt = cfg_getstring ("after-switch/ipc", amode)) {
+  if ((cmdt = cfg_getstring ("after-switch/ipc", amode))) {
    char **cmdts = str2set (';', cmdt);
    uint32_t in = 0;
 
@@ -1142,7 +1071,7 @@ int mod_plan_free (struct mloadplan *plan) {
   struct mloadplan_node *no = NULL;
 
   while (ha) {
-   if (no = (struct mloadplan_node *)ha->value) {
+   if ((no = (struct mloadplan_node *)ha->value)) {
     pthread_mutex_destroy (no->mutex);
     free (no->mutex);
    }
