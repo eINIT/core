@@ -363,7 +363,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
        if (mkdir (includedir, 0777)) {
         bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): mkdir()", errno, (char *)includedir);
        } else {
-        fprintf (stderr, " >> created missing directory \"%s\"", includedir);
+        fprintf (stderr, " >> created missing directory \"%s\"\n", includedir);
        }
       } else {
        bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
