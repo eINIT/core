@@ -547,19 +547,28 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
  if (!(options & PEXEC_OPTION_NOPIPE)) {
   if (pipe (pipefderr)) {
-   if (status)
+   if (status) {
+    status->string = "failed to create pipe";
     status->string = strerror (errno);
+    status_update (status);
+   }
    return STATUS_FAIL;
   }
  }
 
  cmdsetdup = str2set ('\0', command);
+ fprintf (stderr, " >> forking\n");
+
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
+
+ fprintf (stderr, " >> command created\n");
 
  if (status) {
   status->string = command;
   status_update (status);
  }
+
+ fprintf (stderr, " >> forking\n");
 
  if ((child = fork()) < 0) {
   if (status)
@@ -587,8 +596,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }
 
 // we can safely play with the global environment here, since we fork()-ed earlier
+  fprintf (stderr, " >> joining environment.\n");
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
+  fprintf (stderr, " >> calling create_environment()\n");
   exec_environment = __create_environment (exec_environment, variables);
+
+  fprintf (stderr, " >> calling program\n");
 
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);
