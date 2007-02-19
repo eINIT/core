@@ -138,6 +138,7 @@ int main(int argc, char **argv) {
  int i, stime, ret = EXIT_SUCCESS;
  pid_t pid = getpid(), wpid = 0;
  char **ipccommands = NULL;
+ int pthread_errno;
 
  uname (&osinfo);
 
@@ -277,12 +278,12 @@ int main(int argc, char **argv) {
   stime = time(NULL);
   printf ("eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 
-  if (pthread_attr_init (&thread_attribute_detached)) {
+  if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
    fputs ("pthread initialisation failed.\n", stderr);
    return -1;
   } else {
-   if (pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED)) {
-    bitch2(BITCH_EPTHREADS, "main()", 0, "pthread_attr_setdetachstate() failed.");
+   if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
+    bitch2(BITCH_EPTHREADS, "main()", pthread_errno, "pthread_attr_setdetachstate() failed.");
    }
   }
 

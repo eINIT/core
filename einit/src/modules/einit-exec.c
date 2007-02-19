@@ -156,8 +156,8 @@ void *pexec_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
  int status = spid->status;
 // fprintf (stderr, "%i: called\n", (pid_t)pid);
- if (pthread_mutex_lock (&pexec_running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&pexec_running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  struct execst *cur = pexec_running;
 // puts ("callback()");
@@ -165,19 +165,19 @@ void *pexec_watcher (struct spidcb *spid) {
   if (cur->pid == pid) {
 /* save status and resume pexec() */
    cur->status = status;
-   if (pthread_mutex_unlock (&pexec_running_mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+   if ((pthread_errno = pthread_mutex_unlock (&pexec_running_mutex))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
    }
-   if (pthread_mutex_unlock (&(cur->mutex))) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+   if ((pthread_errno = pthread_mutex_unlock (&(cur->mutex)))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
    }
 //   fprintf (stderr, "%i: resuming\n", (pid_t)pid);
    return NULL;
   }
   cur = cur->next;
  }
- if (pthread_mutex_unlock (&pexec_running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&pexec_running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 }
 #endif
@@ -388,22 +388,22 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
 
  struct execst *new = ecalloc (1, sizeof (struct execst));
- if (pthread_mutex_init (&(new->mutex), NULL)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_init() failed.");
+ if ((pthread_errno = pthread_mutex_init (&(new->mutex), NULL))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_init() failed.");
  }
- if (pthread_mutex_lock (&(new->mutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&(new->mutex)))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_lock() failed.");
  }
- if (pthread_mutex_lock (&pexec_running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&pexec_running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  if (!pexec_running) pexec_running = new;
  else {
   new->next = pexec_running;
   pexec_running = new;
  }
- if (pthread_mutex_unlock (&pexec_running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&pexec_running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 
  if (status) {
@@ -414,11 +414,11 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
-  if (pthread_mutex_unlock (&(new->mutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&(new->mutex)))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
-  if (pthread_mutex_destroy (&(new->mutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_destroy() failed.");
+  if ((pthread_errno = pthread_mutex_destroy (&(new->mutex)))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_destroy() failed.");
   }
   if (new == pexec_running) {
    pexec_running = new->next;
@@ -469,19 +469,19 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   char buf[BUFFERSIZE+1];
   char lbuf[BUFFERSIZE+1];
 
-  if (pthread_mutex_lock (&(new->mutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_lock() failed.");
+  if ((pthread_errno = pthread_mutex_lock (&(new->mutex)))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_lock() failed.");
   }
-  if (pthread_mutex_unlock (&(new->mutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&(new->mutex)))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
-  if (pthread_mutex_destroy (&(new->mutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_destroy() failed.");
+  if ((pthread_errno = pthread_mutex_destroy (&(new->mutex)))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_destroy() failed.");
   }
   pidstatus = new->status;
 
-  if (pthread_mutex_lock (&pexec_running_mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_lock() failed.");
+  if ((pthread_errno = pthread_mutex_lock (&pexec_running_mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_lock() failed.");
   }
   if (new == pexec_running) {
    pexec_running = new->next;
@@ -494,8 +494,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
     cur = cur->next;
    }
   }
-  if (pthread_mutex_unlock (&pexec_running_mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&pexec_running_mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:pexec()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
   free (new);
  }
@@ -692,12 +692,13 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 #endif
 
 void *dexec_watcher (struct spidcb *spid) {
+ int pthread_errno;
  pid_t pid = spid->pid;
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
  struct lmodule *module = NULL;
- if (pthread_mutex_lock (&running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  struct daemonst *cur = running;
  char stmp[1024];
@@ -720,8 +721,8 @@ void *dexec_watcher (struct spidcb *spid) {
   prev = cur;
   cur = cur->next;
  }
- if (pthread_mutex_unlock (&running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 
 //   fprintf (stderr, "einit-mod-daemon: eliminated.\n");
@@ -732,13 +733,13 @@ void *dexec_watcher (struct spidcb *spid) {
   if (pthread_mutex_trylock (&cur->mutex)) {
    snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
    notice (8, stmp);
-   if (pthread_mutex_unlock (&cur->mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+   if ((pthread_errno = pthread_mutex_unlock (&cur->mutex))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
    }
   } else if (dx->restart) {
 /* don't try to restart if the daemon died too swiftly */
-   if (pthread_mutex_unlock (&cur->mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+   if ((pthread_errno = pthread_mutex_unlock (&cur->mutex))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
    }
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb = evstaticinit(EVE_FEEDBACK_MODULE_STATUS);
@@ -762,8 +763,8 @@ void *dexec_watcher (struct spidcb *spid) {
      mod (MOD_DISABLE, module);
    }
   } else {
-   if (pthread_mutex_unlock (&cur->mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", 0, "pthread_mutex_unlock() failed.");
+   if ((pthread_errno = pthread_mutex_unlock (&cur->mutex))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
    }
    dx->cb = NULL;
    snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
@@ -777,6 +778,7 @@ void *dexec_watcher (struct spidcb *spid) {
 }
 
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status) {
+ int pthread_errno;
  pid_t child;
  uid_t uid;
  gid_t gid;
@@ -814,11 +816,11 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   new->module = (struct lmodule*)status->para;
  else
   new->module = NULL;
- if (pthread_mutex_init (&new->mutex, NULL)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:startdaemon()", 0, "pthread_mutex_init() failed.");
+ if ((pthread_errno = pthread_mutex_init (&new->mutex, NULL))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:startdaemon()", pthread_errno, "pthread_mutex_init() failed.");
  }
- if (pthread_mutex_lock (&running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:startdaemon()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:startdaemon()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  new->next = running;
  running = new;
@@ -864,14 +866,15 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   new->pid = child;
   sched_watch_pid (child, dexec_watcher);
  }
- if (pthread_mutex_unlock (&running_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-exec:startdaemon()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&running_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-exec:startdaemon()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 
  return STATUS_OK;
 }
 
 void dexec_resume_timer (struct dexecinfo *dx) {
+ int pthread_errno;
  time_t timer = ((dx && dx->cb) ? dx->cb->timer : 1);
  while (dx && dx->cb && (timer = sleep(timer)));
 
@@ -879,13 +882,14 @@ void dexec_resume_timer (struct dexecinfo *dx) {
   dx->cb->timer = timer;
   pthread_mutex_trylock (&dx->cb->mutex); // make sure the thing is locked
 
-  if (pthread_mutex_unlock (&dx->cb->mutex)) {  // unlock it
-   bitch2(BITCH_EPTHREADS, "einit-exec:dexec_resume_timer()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&dx->cb->mutex))) {  // unlock it
+   bitch2(BITCH_EPTHREADS, "einit-exec:dexec_resume_timer()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
  }
 }
 
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status) {
+ int pthread_errno;
  if (shellcmd->cb) {
   pthread_t th;
 //  puts ("control-block intact, trying to kill the daemon");
@@ -893,40 +897,40 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
   shellcmd->cb->timer = kill_timeout_primary;
   kill (shellcmd->cb->pid, SIGTERM);
 
-  if (pthread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd)) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_create() failed.");
+  if ((pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_create() failed.");
   }
-  if (pthread_mutex_lock (&shellcmd->cb->mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_mutex_lock() failed.");
+  if ((pthread_errno = pthread_mutex_lock (&shellcmd->cb->mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_mutex_lock() failed.");
   }
 
   if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
    status->string = "SIGTERM timer ran out, killing...";
    status_update (status);
 
-   if (pthread_cancel (th)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_cancel() failed.");
+   if ((pthread_errno = pthread_cancel (th))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_cancel() failed.");
    }
    pthread_mutex_trylock (&shellcmd->cb->mutex);
    shellcmd->cb->timer = kill_timeout_secondary;
    kill (shellcmd->cb->pid, SIGKILL);
 
-   if (pthread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_create() failed.");
+   if ((pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_create() failed.");
    }
-   if (pthread_mutex_lock (&shellcmd->cb->mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_mutex_lock() failed.");
+   if ((pthread_errno = pthread_mutex_lock (&shellcmd->cb->mutex))) {
+    bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_mutex_lock() failed.");
    }
   }
-  if (pthread_cancel (th)) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_cancel() failed.");
+  if ((pthread_errno = pthread_cancel (th))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_cancel() failed.");
   }
 
-  if (pthread_mutex_unlock (&shellcmd->cb->mutex)) { // just in case
-   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&shellcmd->cb->mutex))) { // just in case
+   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
-  if (pthread_mutex_destroy (&shellcmd->cb->mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", 0, "pthread_mutex_destroy() failed.");
+  if ((pthread_errno = pthread_mutex_destroy (&shellcmd->cb->mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-exec:stopdaemon()", pthread_errno, "pthread_mutex_destroy() failed.");
   }
  }
 

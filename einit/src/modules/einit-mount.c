@@ -1223,6 +1223,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 }
 
 void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
+ int pthread_errno;
  struct bd_info bdi;
 
  memset (&bdi, 0, sizeof (struct bd_info));
@@ -1230,12 +1231,12 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
  bdi.major = major;
  bdi.minor = minor;
  bdi.status = BF_STATUS_HAS_MEDIUM | BF_STATUS_ERROR_NOTINIT;
- if (pthread_mutex_lock (&blockdevices_mutex) != 0) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_block_device()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&blockdevices_mutex) != 0)) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_block_device()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  if (streefind (mcb.blockdevices, devicefile, TREE_FIND_FIRST)) {
-  if (pthread_mutex_unlock (&blockdevices_mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-mount:add_block_device()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&blockdevices_mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-mount:add_block_device()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
   return;
  }
@@ -1243,12 +1244,13 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
  mcb.blockdevices = streeadd (mcb.blockdevices, devicefile, &bdi, sizeof (struct bd_info), NULL);
 // mcb.blockdevices = streeadd (mcb.blockdevices, devicefile, bdi, -1);
 
- if (pthread_mutex_unlock (&blockdevices_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_block_device()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&blockdevices_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_block_device()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 }
 
 void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, uint32_t mountflags, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, uint32_t manager_restart, char **variables) {
+ int pthread_errno;
  struct fstab_entry fse;
  uint32_t i = 0;
  if (!mountpoint) return;
@@ -1281,8 +1283,8 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  }
  fse.variables = variables;
 
- if (pthread_mutex_lock (&fstab_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_fstab_entry()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&fstab_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_fstab_entry()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  if (streefind (mcb.fstab, mountpoint, TREE_FIND_FIRST)) {
   if (fse.mountpoint)
@@ -1310,20 +1312,21 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
    free (fse.manager);
   }
 
-  if (pthread_mutex_unlock (&fstab_mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-mount:add_fstab_entry()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&fstab_mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-mount:add_fstab_entry()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
   return;
  }
 
  mcb.fstab = streeadd (mcb.fstab, mountpoint, &fse, sizeof (struct fstab_entry), fse.options);
- if (pthread_mutex_unlock (&fstab_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_fstab_entry()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&fstab_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_fstab_entry()", pthread_errno, "pthread_mutex_lock() failed.");
  }
 // mcb.fstab = streeadd (mcb.fstab, mountpoint, fse, -1);
 }
 
 void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mntops, uint32_t fs_freq, uint32_t fs_passno) {
+ int pthread_errno;
  struct fstab_entry fse;
  char **dset = NULL;
  struct stree *cur;
@@ -1341,8 +1344,8 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
  if (!fs_mntops) dset = (char **)setadd ((void **)dset, (void *)"rw", SET_TYPE_STRING);
  else dset = (char **)setadd ((void **)dset, (void *)fs_mntops, SET_TYPE_STRING);
 
- if (pthread_mutex_lock (&fstab_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_mtab_entry()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&fstab_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_mtab_entry()", pthread_errno, "pthread_mutex_lock() failed.");
  }
 
  if ((cur = streefind (mcb.fstab, fs_file, TREE_FIND_FIRST))) {
@@ -1372,12 +1375,13 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
   mcb.fstab = streeadd (mcb.fstab, fs_file, &fse, sizeof (struct fstab_entry), dset);
  }
 
- if (pthread_mutex_unlock (&fstab_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_mtab_entry()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&fstab_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_mtab_entry()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 }
 
 void add_filesystem (char *name, char *options) {
+ int pthread_errno;
  char **t = str2set (':', options);
  uintptr_t flags = 0, i = 0;
  if (t) {
@@ -1392,19 +1396,19 @@ void add_filesystem (char *name, char *options) {
   free (t);
  }
 
- if (pthread_mutex_lock (&fs_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_filesystem()", 0, "pthread_mutex_lock() failed.");
+ if ((pthread_errno = pthread_mutex_lock (&fs_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_filesystem()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  if (streefind (mcb.filesystems, name, TREE_FIND_FIRST)) {
-  if (pthread_mutex_unlock (&fs_mutex)) {
-   bitch2(BITCH_EPTHREADS, "einit-mount:add_filesystem()", 0, "pthread_mutex_unlock() failed.");
+  if ((pthread_errno = pthread_mutex_unlock (&fs_mutex))) {
+   bitch2(BITCH_EPTHREADS, "einit-mount:add_filesystem()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
   return;
  }
 
  mcb.filesystems = streeadd (mcb.filesystems, name, (void *)flags, -1, NULL);
- if (pthread_mutex_unlock (&fs_mutex)) {
-  bitch2(BITCH_EPTHREADS, "einit-mount:add_filesystem()", 0, "pthread_mutex_unlock() failed.");
+ if ((pthread_errno = pthread_mutex_unlock (&fs_mutex))) {
+  bitch2(BITCH_EPTHREADS, "einit-mount:add_filesystem()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 }
 
