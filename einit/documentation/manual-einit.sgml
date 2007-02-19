@@ -73,7 +73,7 @@
     <term>-c <replaceable class="parameter">file</replaceable></term>
     <listitem>
      <para>
-      Will make einit parse <filename>file</filename> instead of /etc/einit/einit.xml.
+      Will make einit parse <filename>file</filename> instead of /lib/einit/einit.xml.
      </para>
     </listitem>
    </varlistentry>
@@ -177,7 +177,7 @@
      </para>
      <para>
       Omitting this variable is equivalent to specifying
-      <emphasis>einit=file:/etc/einit/einit.xml,mode:default</emphasis>
+      <emphasis>einit=file:/lib/einit/einit.xml,mode:default</emphasis>
      </para>
     </listitem>
    </varlistentry>
@@ -207,7 +207,7 @@
   <title>FILES</title>
   <variablelist>
    <varlistentry>
-    <term>/etc/einit/einit.xml</term>
+    <term>/lib/einit/einit.xml</term>
     <listitem>
      <para>
       The default configuration file. You should keep it in sync with the one provided with einit when

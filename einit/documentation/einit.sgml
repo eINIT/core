@@ -42,7 +42,7 @@
    </para>
   </legalnotice>
   <abstract>
-   <para>This Documentation was written with eINIT version 0.16 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
+   <para>This Documentation was written with eINIT version 0.17 in mind. It was written to help new users find out how to use eINIT, and to help interested persons figure out what eINIT is all about.</para>
   </abstract>
  </bookinfo>
 
@@ -172,7 +172,7 @@
    <title>Configuring eINIT</title>
    <titleabbrev>Configuring</titleabbrev>
    <para>
-    The main (default) configuration file is <filename>/etc/einit/einit.xml</filename>, the file you should modify is <filename>/etc/einit/local.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward. For details, see the chapter on configuring eINIT.
+    The main (default) configuration file is <filename>/lib/einit/einit.xml</filename>, the file you should modify is <filename>/etc/einit/local.xml</filename>. It's an ordinary XML file, so any editor will do, and the file format should be fairly straightforward. For details, see the chapter on configuring eINIT.
    </para>
   </sect1>
   <sect1 id="installation-configuration-boot">

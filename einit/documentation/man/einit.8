@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "EINIT" "8" "07 February 2007" "einit-0.15.1-svn" ""
+.TH "EINIT" "8" "19 February 2007" "einit-0.15.1-svn" ""
 
 .SH NAME
 einit \- boots your computer. fast.
@@ -28,7 +28,7 @@ configuration, then exit. It is recommended you do this checkup after each and e
 to your configuration file(s).
 .TP
 \fB-c \fIfile\fB\fR
-Will make einit parse \fIfile\fR instead of /etc/einit/einit.xml.
+Will make einit parse \fIfile\fR instead of /lib/einit/einit.xml.
 .TP
 \fB-v\fR
 Display version and license strings, then exit.
@@ -80,7 +80,7 @@ to make einit switch to different modes than "default". If you specify more than
 these are processed in sequence. Only specified option strings change the default behaviour.
 
 Omitting this variable is equivalent to specifying
-\fBeinit=file:/etc/einit/einit.xml,mode:default\fR
+\fBeinit=file:/lib/einit/einit.xml,mode:default\fR
 .TP
 \fBsoftmode=\fImode\fB\fR
 Will make einit switch to the specified mode instead of "default". Provided for Gentoo compatibility.
@@ -92,7 +92,7 @@ it as a meta-daemon or to \fBcheck the configuration\fR:
 \fBeinit\fR --wtf
 .SH "FILES"
 .TP
-\fB/etc/einit/einit.xml\fR
+\fB/lib/einit/einit.xml\fR
 The default configuration file. You should keep it in sync with the one provided with einit when
 installing.
 .TP
