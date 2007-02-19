@@ -170,7 +170,7 @@ void **setadd (void **set, void *item, int32_t esize) {
     newset [x] = set[x];
     x++;
    }
-   free (set);
+//   free (set);
   }
 
   newset[x] = item;

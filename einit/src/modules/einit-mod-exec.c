@@ -167,9 +167,6 @@ int cleanup_after_module (struct lmodule *pa) {
 
 int scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
- if (pthread_mutex_lock (&(this->imutex))) {
-  bitch2(BITCH_EPTHREADS, "scanmodules()", 0, "pthread_mutex_lock() failed.");
- }
 
  node = NULL;
  while ((node = cfg_findnode ("services-virtual-module-shell", 0, node))) {
@@ -233,8 +230,9 @@ int scanmodules (struct lmodule *modchain) {
      break;
     }
    }
-   if (add)
+   if (add) {
     mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
+   }
   } else
    mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
 
@@ -270,10 +268,6 @@ int scanmodules (struct lmodule *modchain) {
     new->cleanup = cleanup_after_module;
    }
   }
- }
-
- if (pthread_mutex_unlock (&(this->imutex))) {
-  bitch2(BITCH_EPTHREADS, "scanmodules()", 0, "pthread_mutex_unlock() failed.");
  }
 
  return 0;
