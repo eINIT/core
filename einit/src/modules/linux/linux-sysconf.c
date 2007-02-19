@@ -139,6 +139,47 @@ int enable (void *pa, struct einit_event *status) {
  }
 
  if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL)) && (sfile = fopen (sfilename, "r"))) {
+  char buffer[2048], *cptr;
+  while (fgets (buffer, 2048, sfile)) {
+   switch (buffer[0]) {
+    case ';':
+    case '#':
+    case 0:
+     break;
+    default:
+     strtrim (buffer);
+
+     if (buffer[0]) {
+      if ((cptr = strchr(buffer, '='))) {
+       ssize_t ci = 0;
+       FILE *ofile;
+       char tarbuffer[2048];
+
+       strcpy (tarbuffer, "/proc/sys/");
+
+       *cptr = 0;
+       cptr++;
+
+       strtrim (buffer);
+       strtrim (cptr);
+
+       for (; buffer[ci]; ci++) {
+        if (buffer[ci] == '.') buffer[ci] = '/';
+       }
+
+       strncat (tarbuffer, buffer, 2047);
+
+       if ((ofile = fopen(tarbuffer, "w"))) {
+        fputs (cptr, ofile);
+        fclose (ofile);
+       }
+      }
+     }
+
+     break;
+   }
+  }
+
   fclose (sfile);
  }
 
