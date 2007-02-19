@@ -6,6 +6,7 @@
  * ha, found the bloody bugger
  * the xml configuration parser may now create missing include directories
    itself
+ * new ipc command "set variable"
 
 2007/02/18: mdeininger
  * new function for error reporting (and optional hara-kiri)

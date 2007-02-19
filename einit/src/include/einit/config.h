@@ -82,6 +82,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EI_NODETYPE_CONFIG_CUSTOM 4
 #define EI_NODETYPE_MODE 8
 
+#define EINIT_CFGNODE_ONLINE_MODIFICATION 0x00000001
+
 #ifdef DEBUG
 #define EI_SIGNATURE 0xD1E0B666
 #endif
@@ -106,6 +108,7 @@ struct cfgnode {
 #ifdef DEBUG
  uint32_t signature;
 #endif
+ uint32_t options;
 };
 
 struct stree *hconfiguration;

@@ -73,10 +73,18 @@ void einit_ipc_handler (struct einit_event *);
 struct lmodule *this;
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && ev->set[2] && ev->set[3] && ev->para) {
-  if (!strcmp (ev->set[0], "set") && !strcmp (ev->set[1], "variable")) {
-   char *t = estrdup (ev->set[2]), *x, *subattr;
-   struct cfgnode newnode;
+ char **argv = NULL;
+ ssize_t argc = 0;
+
+ if (ev && ev->para) {
+  argv = (char **)ev->set;
+  argc = setcount ((void **)argv);
+ }
+
+ if (argc > 3) {
+  if (!strcmp (argv[0], "set") && !strcmp (argv[1], "variable")) {
+   char *t = estrdup (argv[2]), *x, *subattr = NULL;
+   struct cfgnode newnode, *onode = NULL;
 
    fprintf ((FILE *)ev->para, " >> setting variable \"%s\".\n", t);
    ev->flag = 1;
@@ -86,7 +94,83 @@ void ipc_event_handler (struct einit_event *ev) {
     subattr = x+1;
    }
 
+   onode = cfg_getnode (t, NULL);
    memset (&newnode, 0, sizeof (struct cfgnode));
+
+   newnode.nodetype =
+     onode && onode->nodetype ? onode->nodetype : EI_NODETYPE_CONFIG;
+   newnode.id =
+     onode && onode->id ? onode->id : t;
+   newnode.mode =
+     onode && onode->mode ? onode->mode : NULL;
+   newnode.flag =
+     onode && onode->flag ? onode->flag : 0;
+   newnode.value =
+     onode && onode->value ? onode->value : 0;
+   newnode.svalue =
+     onode && onode->svalue ? onode->svalue : NULL;
+   newnode.arbattrs =
+     onode && onode->arbattrs ? onode->arbattrs : NULL;
+   newnode.path =
+     onode && onode->path ? onode->path : NULL;
+   newnode.source = self.rid;
+   newnode.source_file = NULL;
+   newnode.options =
+     (onode && onode->options ? onode->options : 0) | EINIT_CFGNODE_ONLINE_MODIFICATION;
+
+   char tflag = parse_boolean (argv[3]);
+   long int tvalue = parse_integer (argv[3]);
+
+   if (!subattr) {
+    if (tflag || !strcmp (argv[3], "false") || !strcmp (argv[3], "disabled") || !strcmp (argv[3], "no")) {
+     subattr = "b";
+     newnode.flag = tflag;
+    } else if (tvalue || !strcmp (argv[3], "0")) {
+     subattr = "i";
+     newnode.value = tvalue;
+    } else
+     subattr = "s";
+   }
+
+   if (subattr) {
+    char match = 0;
+    char **attrs = (char **)setdup ((void **)newnode.arbattrs, SET_TYPE_STRING);
+
+    if (attrs) {
+     uint32_t ind = 0;
+     for (; attrs[ind]; ind += 2) {
+      if (!strcmp (subattr, attrs[ind])) {
+       char **tmpadup = attrs;
+
+       attrs[ind+1] = argv[3];
+       attrs = (char **)setdup ((void **)attrs, SET_TYPE_STRING);
+       newnode.arbattrs = attrs;
+       match = 1;
+
+       free (tmpadup);
+
+       if (!strcmp ("s", subattr)) {
+        newnode.svalue = attrs[ind+1];
+       }
+
+       break;
+      }
+     }
+    }
+
+    if (!match) {
+     attrs = (char **)setadd ((void **)attrs, (void *)subattr, SET_TYPE_STRING);
+     attrs = (char **)setadd ((void **)attrs, (void *)argv[3], SET_TYPE_STRING);
+
+     if (!strcmp ("s", subattr)) {
+      newnode.svalue = attrs[setcount((void **)attrs)-1];
+     }
+
+     newnode.arbattrs = attrs;
+    }
+   }
+
+   cfg_addnode (&newnode);
 
    free (t);
   }
