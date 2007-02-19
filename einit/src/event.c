@@ -383,8 +383,6 @@ void event_ipc_handler(struct einit_event *event) {
 #ifdef DEBUG
    else if (!strcmp (argv[0], "list")) {
    if (!strcmp (argv[1], "event-log")) {
-    char textbuffer[2048];
-
     if (event_logbuffer) {
      struct event_ringbuffer_node *cnode = event_logbuffer;
 
@@ -397,7 +395,7 @@ void event_ipc_handler(struct einit_event *event) {
        print++;
       } else {
        vstring = "- no verbose message -";
-       if (!(options & EIPC_ONLY_RELEVANT)) print++;
+       if (!(event->status & EIPC_ONLY_RELEVANT)) print++;
       }
 
       if (print)

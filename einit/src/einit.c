@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
    if (einit_do_feedback_switch) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
 #ifdef DEBUG
-    fprintf (stderr, " >> [+%is] scheduling startup feedback switch.\n", time(NULL)-stime);
+    fprintf (stderr, " >> [+%is] scheduling startup feedback switch.\n", (int)(time(NULL)-stime));
 #endif
 
     ee.string = "feedback";
@@ -350,17 +350,17 @@ int main(int argc, char **argv) {
     evstaticdestroy(ee);
 
 #ifdef DEBUG
-    fprintf (stderr, " >> [+%is] switch %i (%s) scheduled.\n", time(NULL)-stime, e, einit_startup_mode_switches[e]);
+    fprintf (stderr, " >> [+%is] switch %i (%s) scheduled.\n", (int)(time(NULL)-stime), e, einit_startup_mode_switches[e]);
 #endif
    }
 
 //   printf ("[+%is] Done. The scheduler will now take over.\n", time(NULL)-stime);
 #ifdef DEBUG
-   fprintf (stderr, " >> [+%is] running SIGCHLD handler.\n", time(NULL)-stime);
+   fprintf (stderr, " >> [+%is] running SIGCHLD handler.\n", (int)(time(NULL)-stime));
 #endif
    sched_run_sigchild (NULL);
 #ifdef DEBUG
-   fprintf (stderr, " >> [+%is] SIGCHLD handler returned\n", time(NULL)-stime);
+   fprintf (stderr, " >> [+%is] SIGCHLD handler returned\n", (int)(time(NULL)-stime));
 #endif
   }
 
