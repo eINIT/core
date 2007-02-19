@@ -124,10 +124,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
  if (!(((struct einit_xml_expat_user_data *)userData)->if_level) ||
       ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
 
-/*  if ((((struct einit_xml_expat_user_data *)userData)->if_level) && ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
-   printf ("in node %s:%s, with positive <if>\n", ((struct einit_xml_expat_user_data *)userData)->file, name);
-  }*/
-
   if (!((struct einit_xml_expat_user_data *)userData)->prefix) {
    ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (nlen+1);
    *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
@@ -249,12 +245,14 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     EINIT_CFGNODE_ONLINE_MODIFICATION : 0
  };
 
- fprintf (stderr, " >> parsing \"%s\".\n", configfile);
+ if (fprintf (stderr, " >> parsing \"%s\".\n", configfile) < 0)
+  bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
 
  if ((data = readfile (configfile))) {
   time_t currenttime = time(NULL);
   if (st.st_mtime > currenttime) {// sanity check mtime
-   fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile);
+   if (fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile) < 0)
+    bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
    xml_configuration_files_highest_mtime = st.st_mtime;
   } else if (st.st_mtime > xml_configuration_files_highest_mtime) // update combined mtime
    xml_configuration_files_highest_mtime = st.st_mtime;
@@ -268,11 +266,14 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 
-    fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
+    if (fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par)) < 0)
+     bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
 
     if (tx) {
-     if (setcount ((void **)tx) >= line)
-      fprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
+     if (setcount ((void **)tx) >= line) {
+      if (fprintf (stderr, " * offending line:\n%s\n", tx[line-1]) < 0)
+       bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+     }
      free (tx);
     }
 
@@ -374,7 +375,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
        if (mkdir (includedir, 0777)) {
         bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): mkdir()", errno, (char *)includedir);
        } else {
-        fprintf (stderr, " >> created missing directory \"%s\"\n", includedir);
+        if (fprintf (stderr, " >> created missing directory \"%s\"\n", includedir) < 0)
+         bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
        }
       } else {
        bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
@@ -394,7 +396,9 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
   return hconfiguration != NULL;
  } else {
-  fprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno));
+  if (fprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno)) < 0)
+   bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+
   return errno;
 //  return bitch(BTCH_ERRNO);
  }

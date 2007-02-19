@@ -89,8 +89,6 @@ pthread_t ipc_thread;
 int __ipc_process (char *cmd, FILE *f) {
  if (!cmd) return 0;
 
-// puts (cmd);
-
  struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
  uint32_t ic, ec;
  int ret = 0;
@@ -111,16 +109,20 @@ int __ipc_process (char *cmd, FILE *f) {
  }
 
  if (event->status & EIPC_OUTPUT_XML) {
-  fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
+  if (fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f) < 0)
+   bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fputs() failed.");
   event->set = (void**)strsetdel ((char**)event->set, "--xml");
  }
  if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
  if (event->status & EIPC_OUTPUT_ANSI) event->set = (void**)strsetdel ((char**)event->set, "--ansi");
  if (event->status & EIPC_HELP) {
-  if (event->status & EIPC_OUTPUT_XML)
-   fprintf (f, " <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n");
-  else
-   fprintf (f, "eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n");
+  if (event->status & EIPC_OUTPUT_XML) {
+   if (fprintf (f, " <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n") < 0)
+    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+  } else {
+   if (fprintf (f, "eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n") < 0)
+    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+  }
 
   event->set = (void**)strsetdel ((char**)event->set, "--help");
  }
@@ -130,20 +132,21 @@ int __ipc_process (char *cmd, FILE *f) {
  if (event->set) free (event->set);
 
  if (!event->flag) {
-  if (event->status & EIPC_OUTPUT_XML)
-   fprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
-  else
-   fprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
+  if (event->status & EIPC_OUTPUT_XML) {
+   if (fprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd) < 0)
+    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+  } else {
+   if (fprintf (f, "einit-ipc: %s: command not implemented.\n", cmd) < 0)
+    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+  }
 
   ret = 1;
  } else
   ret = (int)event->integer;
 
-// if (ret)
-//  fputs (" >> failed", f);
-
  if (event->status & EIPC_OUTPUT_XML) {
-  fputs ("</einit-ipc>\n", f);
+  if (fputs ("</einit-ipc>\n", f) < 0)
+   bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fputs() failed.");
  }
 
  evdestroy (event);
@@ -186,7 +189,8 @@ int __ipc_process (char *cmd, FILE *f) {
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
-   fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-ipc:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
 
@@ -282,7 +286,6 @@ void * ipc_wait (void *unused_parameter) {
    if ((pthread_errno = pthread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd))) {
     bitch2(BITCH_EPTHREADS, "einit-ipc:ipc_wait()", pthread_errno, "pthread_create() failed.");
    }
-//   puts ("new thread created.");
   }
  }
 

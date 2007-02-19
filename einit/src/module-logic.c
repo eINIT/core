@@ -432,7 +432,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **recurse = NULL;
   while (current) {
    for (a = 0; current[a]; a++) {
-//    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
@@ -469,7 +468,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **recurse = NULL;
   while (current) {
    for (a = 0; current[a]; a++) {
-//    puts (current[a]);
     struct lmodule *cur = mlist;
     memset (&nnode, 0, sizeof (struct mloadplan_node));
 
@@ -592,7 +590,8 @@ int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th,
  struct ml_call_context *scontext;
  if (ocontext) {
   if (inset ((void **)ocontext->trace, node, SET_NOALLOC)) {
-   fprintf (stderr, " >> WARNING: circular dependency, not calling\n");
+   if (fprintf (stderr, " >> WARNING: circular dependency, not calling\n") < 0)
+    bitch2(BITCH_STDIO, "module-logic:call_add_context", 0, "fprintf() failed.");
    return -1;
   }
   else if (pthread_mutex_trylock(node->mutex)) {
@@ -1110,7 +1109,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (plan->critical) {
   for (u = 1; plan->critical[u]; u++) {
    if (!service_usage_query(SERVICE_IS_PROVIDED, NULL, plan->critical[u])) {
-    fprintf (stderr, " >>> EINIT PANIC <<<\n >> service %s marked as critical but it's not enabled.\n", plan->critical[u]);
+    if (fprintf (stderr, " >>> EINIT PANIC <<<\n >> service %s marked as critical but it's not enabled.\n", plan->critical[u]) < 0)
+     bitch2(BITCH_STDIO, "module-logic:mod_plan_commit", 0, "fprintf() failed.");
 
     struct einit_event eema = evstaticinit (EVE_PANIC);
     eema.para = (void *)amode;

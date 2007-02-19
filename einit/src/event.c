@@ -367,10 +367,13 @@ void event_ipc_handler(struct einit_event *event) {
    struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
    nev.string = argv[2];
 
-   if (nev.string)
-    fprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
-   else
-    fprintf (stderr, "event-subsystem: updating configuration\n");
+   if (nev.string) {
+    if (fprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]) < 0)
+     bitch2(BITCH_STDIO, "event:event_ipc_handler", 0, "fprintf() failed.");
+   } else {
+    if (fprintf (stderr, "event-subsystem: updating configuration\n") < 0)
+     bitch2(BITCH_STDIO, "event:event_ipc_handler", 0, "fprintf() failed.");
+   }
    event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
 
    evstaticdestroy(nev);
@@ -405,13 +408,16 @@ void event_ipc_handler(struct einit_event *event) {
        if (!(event->status & EIPC_ONLY_RELEVANT)) print++;
       }
 
-      if (print)
-       fprintf ((FILE *)event->para, "[%6i] %s: %s\n", cnode->seqid, event_code_to_string(cnode->type), vstring);
+      if (print) {
+       if (fprintf ((FILE *)event->para, "[%6i] %s: %s\n", cnode->seqid, event_code_to_string(cnode->type), vstring) < 0)
+        bitch2(BITCH_STDIO, "event:event_ipc_handler", 0, "fprintf() failed.");
+      }
 
       cnode = cnode->next;
      } while (cnode != event_logbuffer);
     } else {
-     fputs (" - log buffer empty -\n", (FILE *)event->para);
+     if (fputs (" - log buffer empty -\n", (FILE *)event->para) < 0)
+      bitch2(BITCH_STDIO, "event:event_ipc_handler", 0, "fputs() failed.");
     }
 
     if (!event->flag) event->flag = 1;

@@ -177,7 +177,6 @@ void **setadd (void **set, void *item, int32_t esize) {
  } else if (esize == SET_TYPE_STRING) {
   char *cpnt;
 
-//  puts ("adding object to string-set");
   if (set) for (; set[count]; count++) {
    size += sizeof(void*) + 1 + strlen(set[count]);
   }
@@ -204,8 +203,6 @@ void **setadd (void **set, void *item, int32_t esize) {
   esize = 1+strlen(item);
   memcpy (cpnt, item, esize);
   newset [x] = cpnt;
-//  puts(item);
-//  cpnt += 1+strlen(item);
  } else {
   char *cpnt;
 

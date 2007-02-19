@@ -103,7 +103,8 @@ struct lmodule *this = NULL;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-compatibility-sysv-initctl", NULL)) {
-   fputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "compatiblity-sysv-initctl:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
 

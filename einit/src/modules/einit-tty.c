@@ -108,17 +108,6 @@ pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int texec (struct cfgnode *);
 
-void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
-//  if (!cfg_getnode("configuration-system-shell", NULL)) {
-//   fdputs (" * configuration variable \"configuration-system-shell\" not found.\n", ev->integer);
-//   ev->task++;
-//  }
-
-  ev->flag = 1;
- }
-}
-
 int configure (struct lmodule *this) {
  utmp_configure(this);
  exec_configure(this);
@@ -127,13 +116,10 @@ int configure (struct lmodule *this) {
  if (utmpnode)
   do_utmp = utmpnode->flag;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
  return 0;
 }
 
 int cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  exec_cleanup(this);
  utmp_cleanup(this);
 

@@ -133,8 +133,6 @@ void strtrim (char *s);
 */
 void notice (unsigned char severity, char *message);
 
-#define fdputs(string,fd) write (fd, string, strlen(string))
-
 /*!\brief Duplicate event structure \b ev
  * \param[in] ev the event structure to be modified
  * \return This function will return a duplicate of the event structure that it was passed, or NULL on error.

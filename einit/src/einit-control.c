@@ -57,7 +57,8 @@ int ipc (char *);
 char *ctrlsocket = "/etc/einit-control";
 
 int print_usage_info () {
- fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, 2007, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] [--] command\n [function] [-s control-socket] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n down   tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
+ if (fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, 2007, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] [--] command\n [function] [-s control-socket] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n down   tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr) < 0)
+  bitch2(BITCH_STDIO, "print_usage_info", 0, "fputs() failed.");
  return -1;
 }
 
@@ -78,18 +79,6 @@ int ipc (char *cmd) {
   close (sock);
   return bitch (BTCH_ERRNO);
  }
-
-/* while ((len = write (sock, cmd, strlen(cmd)+1)) != -1) {
-  if (len < strlen (cmd)) cmd += len;
-  else break;
- }
- if (len == -1) bitch (BTCH_ERRNO);
-
- while ((len = read (sock, buffer, 1023)) > 0) {
-  buffer[len] = 0;
-  fputs (buffer, stdout);
- }
-*/
 
  len = strlen(cmd);
  c = emalloc ((len+2)*sizeof (char));
@@ -121,7 +110,8 @@ int ipc (char *cmd) {
    break;
   }
 
-  fputs (buffer, stdout);
+  if (fputs (buffer, stdout) < 0)
+   bitch2(BITCH_STDIO, "ipc", 0, "fputs() failed.");
  }
 
  errno = 0;
@@ -162,7 +152,8 @@ int main(int argc, char **argv) {
      return print_usage_info ();
      break;
     case 'v':
-     puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger");
+     if (puts("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger") < 0)
+      bitch2(BITCH_STDIO, "main", 0, "puts() failed.");
      return 0;
     case '-':
      i++;

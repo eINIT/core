@@ -165,7 +165,6 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
          if (options & UTMP_ADD) {
           memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
           options ^= UTMP_ADD;
-//          fprintf (stderr, " >> recycled old entry #%i\n", i);
          } else {
           utmpentries[i].ut_type = DEAD_PROCESS;
           memset (&(utmpentries[i].ut_user), 0, sizeof (utmpentries[i].ut_user));
@@ -177,15 +176,16 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
 #endif
        }
        break;
+#ifdef DEBUG
       default:
        fprintf (stderr, " >> bad UTMP entry: [%c%c%c%c] %i (%s), %s@%s: %i.%i\n", utmpentries[i].ut_id[0], utmpentries[i].ut_id[1], utmpentries[i].ut_id[2], utmpentries[i].ut_id[3], utmpentries[i].ut_type, utmpentries[i].ut_line, utmpentries[i].ut_user, utmpentries[i].ut_host, utmpentries[i].ut_tv.tv_sec, utmpentries[i].ut_tv.tv_usec);
        break;
+#endif
      }
 
      if ((options & UTMP_MODIFY) && (utmpentries[i].ut_pid == new_entry->ut_pid)) {
       memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
       options ^= UTMP_MODIFY;
-//      fprintf (stderr, " >> modified old entry #%i\n", i);
      }
 #endif
      if (!options) break;

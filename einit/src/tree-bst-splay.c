@@ -59,18 +59,8 @@ void streesplay (struct stree *current, struct stree *parent, struct stree *gran
  if (!parent) parent = current->parent;
  if (!grandparent && parent) grandparent = parent->parent;
 
-/* puts ((*(current->root))->key);
- if (current->left) *(current->root) = current->left;
- else if (current->right) *(current->root) = current->right;
-
- puts ((*(current->root))->key);*/
-
-// return;
-
  while (grandparent) {
   struct stree **gppsp;
-
-//  printf ("splaying: root=%s(%x), node=%s(%x), parent=%s(%x), grandparent=%s(%x)\n", (*(current->root))->key, *(current->root), current->key, current, parent->key, parent, grandparent->key, grandparent);
 
   if (grandparent->parent) { // find pointer to modify for the root
    if (grandparent->parent->left == grandparent)
@@ -257,18 +247,15 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
   while (current) {
    parent = current;
    if ((cres = strcmp (key, current->key)) < 0) { // to the left... (<)
-//    printf ("%s < %s\n", key, current->key);
     current = current->left;
    } else if (cres > 0) { // to the right... (>)
-//    printf ("%s > %s\n", key, current->key);
     current = current->right;
    } else { // insert as right subnode if keys are identical
-//    printf ("keys identical: %s adding to the right\n", key);
     stree->right = current->right;
-	stree->parent = current;
-	if (stree->right) stree->right->parent = stree;
+    stree->parent = current;
+    if (stree->right) stree->right->parent = stree;
     current->right = stree;
-	goto insert_done;
+    goto insert_done;
    }
   }
 
@@ -288,7 +275,6 @@ struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vle
  insert_done:
 
  return stree;
-// return *(stree->lbase);
 }
 
 struct stree *streedel (struct stree *subject) {
@@ -296,10 +282,6 @@ struct stree *streedel (struct stree *subject) {
               *be = cur;
 
  if (!cur || !subject) return subject;
-
-/* char tmp[2048];
- snprintf (tmp, 2048, "streedel(): need to remove 0x%zx from 0x%zx", subject, cur);
- puts (tmp);*/
 
  if (cur == subject) {
   be = cur->next;
@@ -348,10 +330,6 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  struct stree *c;
  signed char cmp = 0;
  if (!stree || !key) return NULL;
-
-/* char tmp[2048];
- snprintf (tmp, 2048, "streefind(): need to find %s in 0x%zx", key, stree);
- puts (tmp); */
 
  if (options == TREE_FIND_FIRST) c = *(stree->root);
  else if (options == TREE_FIND_NEXT) {

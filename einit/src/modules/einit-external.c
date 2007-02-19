@@ -78,7 +78,8 @@ void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
 #ifdef BITCHY
   if (!cfg_getnode("services-external", NULL)) {
-   fputs ("NOTICE: configuration variable \"services-external\" not found. (not a problem)\n", (FILE *)ev->para);
+   if (fputs ("NOTICE: configuration variable \"services-external\" not found. (not a problem)\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-external:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
 #endif

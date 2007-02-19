@@ -155,12 +155,10 @@ void ipc_event_handler (struct einit_event *ev) {
 void *pexec_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
  int status = spid->status;
-// fprintf (stderr, "%i: called\n", (pid_t)pid);
  if ((pthread_errno = pthread_mutex_lock (&pexec_running_mutex))) {
   bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  struct execst *cur = pexec_running;
-// puts ("callback()");
  while (cur) {
   if (cur->pid == pid) {
 /* save status and resume pexec() */
@@ -171,7 +169,6 @@ void *pexec_watcher (struct spidcb *spid) {
    if ((pthread_errno = pthread_mutex_unlock (&(cur->mutex)))) {
     bitch2(BITCH_EPTHREADS, "einit-exec:pexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
    }
-//   fprintf (stderr, "%i: resuming\n", (pid_t)pid);
    return NULL;
   }
   cur = cur->next;
@@ -235,9 +232,11 @@ char **__check_variables (char *id, char **variables, FILE *output) {
 #endif
 
   if (!node_found) {
-   fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
+   if (fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]) < 0)
+    bitch2(BITCH_STDIO, "einit-exec:check_variables", 0, "fprintf() failed.");
   } else if (!variable_matches) {
-   fprintf (output, " * module: %s: undefined variable: %s\n", id, e);
+   if (fprintf (output, " * module: %s: undefined variable: %s\n", id, e) < 0)
+    bitch2(BITCH_STDIO, "einit-exec:check_variables", 0, "fprintf() failed.");
   }
 
   if (x[0] != e) free (x[0]);
@@ -449,7 +448,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   exec_environment = __create_environment (exec_environment, variables);
 
   if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
-   fprintf (stderr, " >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
+   if (fprintf (stderr, " >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment)) < 0)
+    bitch2(BITCH_STDIO, "einit-exec:pexec", 0, "fprintf() failed.");
    execve (cmd[0], cmd, safe_environment);
   } else {
    execve (cmd[0], cmd, exec_environment);
@@ -591,18 +591,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }
 
 // we can safely play with the global environment here, since we fork()-ed earlier
-#ifdef DEBUG
-  fprintf (stderr, " >> joining environment.\n");
-#endif
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
-#ifdef DEBUG
-  fprintf (stderr, " >> calling create_environment()\n");
-#endif
   exec_environment = __create_environment (exec_environment, variables);
-
-#ifdef DEBUG
-  fprintf (stderr, " >> calling program\n");
-#endif
 
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);
@@ -680,7 +670,6 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }
 
   do {
-//   puts (" >> calling a wait()");
    waitpid (child, &pidstatus, 0);
   } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
  }
@@ -703,10 +692,8 @@ void *dexec_watcher (struct spidcb *spid) {
  struct daemonst *cur = running;
  char stmp[1024];
 
-// puts (" ++ dexec_watcher() called");
  while (cur) {
   dx = cur->dx;
-//  printf ("pid=%i,cap=%i;\n", pid, cur->pid);
   if (cur->pid == pid) {
 /* check whether to restart, and do so if the answer is yes... */
    module = cur->module;
@@ -725,9 +712,7 @@ void *dexec_watcher (struct spidcb *spid) {
   bitch2(BITCH_EPTHREADS, "einit-exec:dexec_watcher()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
 
-//   fprintf (stderr, "einit-mod-daemon: eliminated.\n");
  if (dx) {
-//  puts ("match++");
   char *rid = (module && module->module && module->module->rid ? module->module->rid : "unknown");
 /* if we're already deactivating this daemon, resume the original function */
   if (pthread_mutex_trylock (&cur->mutex)) {
@@ -787,7 +772,6 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
  if (!shellcmd) return STATUS_FAIL;
 
  if (shellcmd->pidfile) {
-  fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
   unlink (shellcmd->pidfile);
   errno = 0;
  }
@@ -892,7 +876,6 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  int pthread_errno;
  if (shellcmd->cb) {
   pthread_t th;
-//  puts ("control-block intact, trying to kill the daemon");
   pthread_mutex_trylock (&shellcmd->cb->mutex);
   shellcmd->cb->timer = kill_timeout_primary;
   kill (shellcmd->cb->pid, SIGTERM);
@@ -937,7 +920,6 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  shellcmd->cb = NULL;
 
  if (shellcmd->pidfile) {
-  fprintf (stderr, " >> unlinking file \"%s\"\n.", shellcmd->pidfile);
   unlink (shellcmd->pidfile);
   errno = 0;
  }

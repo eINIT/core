@@ -74,17 +74,21 @@ void ipc_event_handler (struct einit_event *ev) {
   char *s;
 
   if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
-   fputs (" * configuration variable \"configuration-network-hostname\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-network-hostname\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-hostname:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   } else if (!strcmp ("localhost", s)) {
-   fputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", (FILE *)ev->para);
+   if (fputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-hostname:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
   if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
-   fputs (" * configuration variable \"configuration-network-domainname\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-network-domainname\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-hostname:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   } else if (!strcmp ("local", s)) {
-   fputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", (FILE *)ev->para);
+   if (fputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-hostname:ipc_event_handler", 0, "fputs() failed.");
   }
 
   ev->flag = 1;

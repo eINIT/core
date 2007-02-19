@@ -86,7 +86,8 @@ void ipc_event_handler (struct einit_event *ev) {
    char *t = estrdup (argv[2]), *x, *subattr = NULL;
    struct cfgnode newnode, *onode = NULL;
 
-   fprintf ((FILE *)ev->para, " >> setting variable \"%s\".\n", t);
+   if (fprintf ((FILE *)ev->para, " >> setting variable \"%s\".\n", t) < 0)
+    bitch2(BITCH_STDIO, "einit-ipc-configuration:ipc_event_handler", 0, "fprintf() failed.");
    ev->flag = 1;
 
    if ((x = strchr (t, '/'))) {
@@ -188,17 +189,21 @@ void ipc_event_handler (struct einit_event *ev) {
      if (buffer) {
       FILE *target;
 
-      fprintf ((FILE *)ev->para, " >> configuration changed on-line, saving modifications to %s.\n", targetfile);
+      if (fprintf ((FILE *)ev->para, " >> configuration changed on-line, saving modifications to %s.\n", targetfile) < 0)
+       bitch2(BITCH_STDIO, "einit-ipc-configuration:ipc_event_handler", 0, "fprintf() failed.");
 
       if ((target = fopen(targetfile, "w+"))) {
-       fputs (buffer, target);
+       if (fputs (buffer, target) < 0)
+        bitch2(BITCH_STDIO, "einit-ipc-configuration:ipc_event_handler", 0, "fputs() failed.");
        fclose (target);
       } else {
-       fprintf ((FILE *)ev->para, " >> could not open \"%s\".\n", targetfile);
+       if (fprintf ((FILE *)ev->para, " >> could not open \"%s\".\n", targetfile) < 0)
+        bitch2(BITCH_STDIO, "einit-ipc-configuration:ipc_event_handler", 0, "fprintf() failed.");
       }
      }
     } else {
-     fputs (" >> where should i save to?\n", (FILE *)ev->para);
+     if (fputs (" >> where should i save to?\n", (FILE *)ev->para) < 0)
+      bitch2(BITCH_STDIO, "einit-ipc-configuration:ipc_event_handler", 0, "fputs() failed.");
     }
    }
 

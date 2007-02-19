@@ -180,7 +180,6 @@ int cfg_addnode (struct cfgnode *node) {
 //    if (bsl) free (bsl);
 
     doop = 0;
-//    fprintf (stderr, "configuration: found match for %s\n", node->id);
 
     break;
    }
@@ -199,10 +198,7 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  struct stree *cur = hconfiguration;
  if (!id) return NULL;
 
-// printf ("supposed to find id=%s, base=%x in 0x%x(0x%x)\n", id, base, cur, hconfiguration);
-
  if (base) {
-//  if (!cur) puts ("searching for entry node");
   cur = streefind (cur, id, TREE_FIND_FIRST);
   while (cur) {
    if (cur->value == base) {
@@ -215,27 +211,20 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  } else
   cur = streefind (cur, id, TREE_FIND_FIRST);
 
-/* if (!cur) puts ("no node found!");
- else {
-  puts ("have entry node");
- }*/
-
  while (cur) {
-//  printf ("is %s okay?\n", cur->key);
-//  fputs (" >> testing signature...\n", stderr);
 #ifdef DEBUG
   if ((((struct cfgnode *)cur->value)->signature) != EI_SIGNATURE)
-   fputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr);
+   if (fputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr) < 0)
+    bitch2(BITCH_STDIO, "config:cfg_findnode", 0, "fputs() failed.");
 
   if (strcmp ((((struct cfgnode *)cur->value)->id), cur->key))
-   fputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr);
+   if (fputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr) < 0)
+    bitch2(BITCH_STDIO, "config:cfg_findnode", 0, "fputs() failed.");
 #endif
 
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {
    return cur->value;
-  }/* else {
-   printf ("rejecting node %s\n", cur->key);
-  }*/
+  }
   cur = streefind (cur, id, TREE_FIND_NEXT);
  }
 
@@ -264,12 +253,9 @@ char *cfg_getstring (char *id, struct cfgnode *mode) {
 
   node = cfg_getnode (sub[0], mode);
   if (node && node->arbattrs && node->arbattrs[0]) {
-//   printf ("node %s\n", node->id);
    if (node->arbattrs)
-//    printf ("arbitrary attributes: %s\n", set2str(':', node->arbattrs));
 
    for (i = 0; node->arbattrs[i]; i+=2) {
-//    printf (" >> comparing %s==%s\n", node->arbattrs[i], sub[1]);
     if ((f = (!strcmp(node->arbattrs[i], sub[1])))) {
      ret = node->arbattrs[i+1];
      break;
@@ -332,7 +318,6 @@ struct stree *cfg_filter (char *filter, uint32_t node_options) {
   if (err) {
    char errorcode [1024];
    regerror (err, &pattern, errorcode, 1024);
-//   fprintf (stderr, " >> module: %s: %s: bad regex: %s: %s\n", id, x[0], x[1], errorcode);
   } else {
    while (cur) {
     if (!regexec (&pattern, cur->key, 0, NULL, 0) &&
@@ -417,7 +402,8 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
     }
 
     if (buffer) {
-     fputs (buffer, (FILE *)ev->para);
+     if (fputs (buffer, (FILE *)ev->para) < 0)
+      bitch2(BITCH_STDIO, "config:einit_config_ipc_event_handler", 0, "fputs() failed.");
     }
     ev->flag = 1;
    }

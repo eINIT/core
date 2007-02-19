@@ -142,14 +142,18 @@ void ipc_event_handler (struct einit_event *ev) {
 
    if (process_list) {
     for (i = 0; process_list[i]; i++) {
-     if (ev->status & EIPC_OUTPUT_XML)
-      fprintf ((FILE *)ev->para, " <process pid=\"%i\" />\n", process_list[i]);
-     else
-      fprintf ((FILE *)ev->para, "process [pid=%i]\n", process_list[i]);
+     if (ev->status & EIPC_OUTPUT_XML) {
+      if (fprintf ((FILE *)ev->para, " <process pid=\"%i\" />\n", process_list[i]) < 0)
+       bitch2(BITCH_STDIO, "einit-process:ipc_event_handler", 0, "fprintf() failed.");
+     } else {
+      if (fprintf ((FILE *)ev->para, "process [pid=%i]\n", process_list[i]) < 0)
+       bitch2(BITCH_STDIO, "einit-process:ipc_event_handler", 0, "fprintf() failed.");
+     }
     }
     free (process_list);
    } else {
-    fputs ("einit-process: ipc-event-handler: your query has matched no processes\n", (FILE *)ev->para);
+    if (fputs ("einit-process: ipc-event-handler: your query has matched no processes\n", (FILE *)ev->para) < 0)
+     bitch2(BITCH_STDIO, "einit-process:ipc_event_handler", 0, "fputs() failed.");
    }
 
    ev->flag ++;
@@ -165,7 +169,8 @@ int __ekill (struct pc_conditional **pcc, int sign) {
 
  for (; pl[i]; i++) if ((pl[i] != 1) && (pl[i] != getpid())) {
   if (gmode != EINIT_GMODE_SANDBOX) {
-   fprintf (stderr, " >> sending signal %i to process %i\n", sign, pl[i]);
+   if (fprintf (stderr, " >> sending signal %i to process %i\n", sign, pl[i]) < 0)
+    bitch2(BITCH_STDIO, "einit-process:ekill", 0, "fprintf() failed.");
    kill ((pid_t)pl[i], sign);
   }
  }

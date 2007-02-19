@@ -100,8 +100,6 @@ struct stree *streedel (struct stree *subject) {
  struct stree *cur = (subject ? *(subject->lbase) : NULL),
               *be = cur;
 
-// puts (" >> called streedel");
-
  if (!cur || !subject) return subject;
 
  if (cur == subject) {
@@ -129,9 +127,7 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  struct stree *c;
  if (!stree || !key) return NULL;
 
-// printf (" >> streefind: %s in %x:%x:\n", key, stree, (stree->lbase ? *(stree->lbase) : NULL));
  if (!stree->lbase) {
-  puts (" >> bad input");
   return NULL;
  }
 
@@ -142,19 +138,10 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
    c = stree;
  } else c = stree->next;
 
-/* if (c)
-  printf (" >> %x(%s), c=%x(%s)\n", *(stree->lbase), (*(stree->lbase))->key, c, c->key);
- else
-  printf (" >> %x(%s), no (further) result(s)\n", *(stree->lbase), (*(stree->lbase))->key);*/
-
  if (!c) return NULL;
 
  while (c) {
-/*  if (!c->key) c = c->next;
-  printf (" >> streefind: testing %s==%s in %x:%x@%x\n", key, c->key, stree, (stree->lbase ? *(stree->lbase) : NULL), c);*/
   if (!strcmp (key, c->key)) {
-//   printf (" >> streefind: found %s in %x:%x@%x\n", key, stree, (stree->lbase ? *(stree->lbase) : NULL), c);
-
    return c;
   }
   c = c->next;

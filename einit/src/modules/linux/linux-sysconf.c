@@ -87,11 +87,13 @@ void linux_power_off () {
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
-   fputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "linux-sysconf:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
   if (!cfg_getstring ("configuration-system-sysctl-file", NULL)) {
-   fputs (" * configuration variable \"configuration-system-sysctl-file\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-system-sysctl-file\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "linux-sysconf:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
 
@@ -171,7 +173,8 @@ int enable (void *pa, struct einit_event *status) {
         strncat (tarbuffer, buffer, 2047);
 
         if ((ofile = fopen(tarbuffer, "w"))) {
-         fputs (cptr, ofile);
+         if (fputs (cptr, ofile) < 0)
+          bitch2(BITCH_STDIO, "linux-sysconf:enable", 0, "fputs() failed.");
          fclose (ofile);
         } else {
          bitch2(BITCH_STDIO, "linux-sysconf:fopen(, w)", 0, tarbuffer);

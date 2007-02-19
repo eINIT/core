@@ -85,11 +85,13 @@ int sev_threshold = 2;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
-   fputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-feedback-aural:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
-   fputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", (FILE *)ev->para);
+   if (fputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", (FILE *)ev->para) < 0)
+    bitch2(BITCH_STDIO, "einit-feedback-aural:ipc_event_handler", 0, "fputs() failed.");
    ev->task++;
   }
 
@@ -190,7 +192,8 @@ void synthesize (char *string) {
  FILE *px = popen (synthesizer, "w");
 
  if (px) {
-  fputs (string, px);
+  if (fputs (string, px) < 0)
+   bitch2(BITCH_STDIO, "einit-feedback-aural:synthesize", 0, "fputs() failed.");
 
   if (pclose (px) == -1)
    perror ("tts: pclose");
