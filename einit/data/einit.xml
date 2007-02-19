@@ -1020,6 +1020,20 @@
       enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
       disable="/usr/bin/killall lisa" />
 
+<!-- creds to RedIpS@gentoo-forums for this one -->
+<!-- (may be superseded by reworked setfont and keyboard modules) -->
+     <shell id="shell-unicode"
+      name="Unicode"
+      provides="unicode"
+      requires="keyboard:setfont"
+      enable="for t in ${configuration_system_setfont_ttys}; do
+        echo -ne '\033%G' &gt; /dev/tty${t};
+       done;
+       kbd_mode -u;
+       loadkeys -u ${configuration_peripherals_keyboard_layout};"
+      disable="/bin/true"
+      variables="configuration-system-setfont/ttys:configuration-peripherals-keyboard/layout" /> 
+
    </module>
   </virtual>
 
