@@ -83,7 +83,7 @@ int mod_scanmodules ( void ) {
 
  char *modulepath = cfg_getpath ("core-settings-module-path");
  if (!modulepath) {
-  bitch2(BITCH_EPTHREADS, "mod_scanmodules()", 0, "pthread_mutex_unlock() failed.");
+  bitch2(BITCH_STDIO, "mod_scanmodules()", 0, "no path to load modules from.");
   return -1;
  }
 
