@@ -25,7 +25,7 @@
    <commands-include-file s="sandbox.xml" />
    <else>
     <settings>
-     <module-path s="/lib/einit" />
+     <module-path s="/lib/einit/modules" />
      <configuration-path s="/etc/einit/" />
     </settings>
     <commands-include-file s="local.xml" />
