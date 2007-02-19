@@ -19,7 +19,7 @@
 
   <if match="core-mode:sandbox">
    <settings>
-    <module-path s="lib/einit" />
+    <module-path s="lib/einit/modules" />
     <configuration-path s="etc/einit/" />
    </settings>
    <commands-include-file s="sandbox.xml" />

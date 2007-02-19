@@ -1,3 +1,8 @@
+2007/02/19: mdeininger
+ * etc/einit/einit.xml has been moved to lib/einit/einit.xml
+   (einit.xml should not be modified by users)
+ * lib/einit/*.so have been moved to lib/einit/modules
+
 2007/02/18: mdeininger
  * new function for error reporting (and optional hara-kiri)
  * workover using -Wall

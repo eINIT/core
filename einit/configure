@@ -250,8 +250,8 @@ if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
-LIBDIR = ${PREFIX}/lib
-MODDIR = ${PREFIX}/lib/einit
+LIBDIR = ${PREFIX}/lib/einit
+MODDIR = ${PREFIX}/lib/einit/modules
 BINDIR = ${PREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include

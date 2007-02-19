@@ -78,7 +78,7 @@ char einit_do_feedback_switch = 1; // whether or not to initalise the feedback m
 char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list of modes to activate by default
 
 // the list of files to  parse by default
-char *einit_default_startup_configuration_files[] = { "/etc/einit/einit.xml", NULL };
+char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NULL };
 
 #ifdef NONIXENVIRON
 char ** environ;
@@ -90,7 +90,7 @@ int print_usage_info () {
   " einit [-c <filename>] [options]\n"
   "\n"
   "Options:\n"
-  "-c <filename>         load <filename> instead of/etc/einit/einit.xml\n"
+  "-c <filename>         load <filename> instead of/lib/einit/einit.xml\n"
   "-h, --help            display this text\n"
   "-v                    print version and copyright notice, then exit\n"
   "--no-feedback-switch  disable the first switch to the feedback mode\n"
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
      else if (!strcmp(argv[i], "--override-init-check"))
       initoverride = 1;
      else if (!strcmp(argv[i], "--sandbox")) {
-      einit_default_startup_configuration_files[0] = "etc/einit/einit.xml";
+      einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       gmode = EINIT_GMODE_SANDBOX;
      }
      else if (!strcmp(argv[i], "--metadaemon")) {
