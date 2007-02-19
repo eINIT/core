@@ -138,49 +138,55 @@ int enable (void *pa, struct einit_event *status) {
   }
  }
 
- if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL)) && (sfile = fopen (sfilename, "r"))) {
-  char buffer[2048], *cptr;
-  while (fgets (buffer, 2048, sfile)) {
-   switch (buffer[0]) {
-    case ';':
-    case '#':
-    case 0:
-     break;
-    default:
-     strtrim (buffer);
+ if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL))) {
+  if ((sfile = fopen (sfilename, "r"))) {
+   char buffer[2048], *cptr;
+   while (fgets (buffer, 2048, sfile)) {
+    switch (buffer[0]) {
+     case ';':
+     case '#':
+     case 0:
+      break;
+     default:
+      strtrim (buffer);
 
-     if (buffer[0]) {
-      if ((cptr = strchr(buffer, '='))) {
-       ssize_t ci = 0;
-       FILE *ofile;
-       char tarbuffer[2048];
+      if (buffer[0]) {
+       if ((cptr = strchr(buffer, '='))) {
+        ssize_t ci = 0;
+        FILE *ofile;
+        char tarbuffer[2048];
 
-       strcpy (tarbuffer, "/proc/sys/");
+        strcpy (tarbuffer, "/proc/sys/");
 
-       *cptr = 0;
-       cptr++;
+        *cptr = 0;
+        cptr++;
 
-       strtrim (buffer);
-       strtrim (cptr);
+        strtrim (buffer);
+        strtrim (cptr);
 
-       for (; buffer[ci]; ci++) {
-        if (buffer[ci] == '.') buffer[ci] = '/';
-       }
+        for (; buffer[ci]; ci++) {
+         if (buffer[ci] == '.') buffer[ci] = '/';
+        }
 
-       strncat (tarbuffer, buffer, 2047);
+        strncat (tarbuffer, buffer, 2047);
 
-       if ((ofile = fopen(tarbuffer, "w"))) {
-        fputs (cptr, ofile);
-        fclose (ofile);
+        if ((ofile = fopen(tarbuffer, "w"))) {
+         fputs (cptr, ofile);
+         fclose (ofile);
+        } else {
+         bitch2(BITCH_STDIO, "linux-sysconf:fopen(, w)", 0, tarbuffer);
+        }
        }
       }
-     }
 
-     break;
+      break;
+    }
    }
-  }
 
-  fclose (sfile);
+   fclose (sfile);
+  } else {
+   bitch2(BITCH_STDIO, "linux-sysconf:fopen(, r)", 0, sfilename);
+  }
  }
 
  return STATUS_OK;
