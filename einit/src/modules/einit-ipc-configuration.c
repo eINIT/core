@@ -100,7 +100,7 @@ void ipc_event_handler (struct einit_event *ev) {
    newnode.nodetype =
      onode && onode->nodetype ? onode->nodetype : EI_NODETYPE_CONFIG;
    newnode.id =
-     onode && onode->id ? onode->id : t;
+     estrdup (onode && onode->id ? onode->id : t);
    newnode.mode =
      onode && onode->mode ? onode->mode : NULL;
    newnode.flag =
@@ -172,7 +172,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
    cfg_addnode (&newnode);
 
-   if (newnode.id != t) free (t);
+   free (t);
   } else if (!strcmp (argv[0], "save") && !strcmp (argv[1], "configuration")) {
    struct stree *tmptree = cfg_filter (".*", EINIT_CFGNODE_ONLINE_MODIFICATION);
    char *buffer = NULL;
