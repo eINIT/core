@@ -305,8 +305,9 @@ char **__create_environment (char **environment, char **variables) {
     }
 
     if (pvalue)  {
-     for (; pvalue[i]; i++) {
-      if (!isalnum (pvalue[i]) && (pvalue[i] != ' ')) pvalue[i] = '_';
+     uint32_t txi = 0;
+     for (; pvalue[txi]; txi++) {
+      if (!isalnum (pvalue[txi]) && (pvalue[txi] != ' ')) pvalue[txi] = '_';
      }
      *(key+bkeylen-2) = 0;
      environment = straddtoenviron (environment, key, pvalue);
@@ -549,26 +550,20 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   if (pipe (pipefderr)) {
    if (status) {
     status->string = "failed to create pipe";
-    status->string = strerror (errno);
     status_update (status);
+    status->string = strerror (errno);
    }
    return STATUS_FAIL;
   }
  }
 
  cmdsetdup = str2set ('\0', command);
- fprintf (stderr, " >> forking\n");
-
  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
-
- fprintf (stderr, " >> command created\n");
 
  if (status) {
   status->string = command;
   status_update (status);
  }
-
- fprintf (stderr, " >> forking\n");
 
  if ((child = fork()) < 0) {
   if (status)
@@ -596,12 +591,18 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }
 
 // we can safely play with the global environment here, since we fork()-ed earlier
+#ifdef DEBUG
   fprintf (stderr, " >> joining environment.\n");
+#endif
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
+#ifdef DEBUG
   fprintf (stderr, " >> calling create_environment()\n");
+#endif
   exec_environment = __create_environment (exec_environment, variables);
 
+#ifdef DEBUG
   fprintf (stderr, " >> calling program\n");
+#endif
 
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);

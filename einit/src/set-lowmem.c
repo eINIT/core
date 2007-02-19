@@ -170,7 +170,7 @@ void **setadd (void **set, void *item, int32_t esize) {
     newset [x] = set[x];
     x++;
    }
-//   free (set);
+   free (set);
   }
 
   newset[x] = item;
@@ -381,7 +381,7 @@ char **str2set (const char sep, char *input) {
 //   input[i] = 0;
   }
  }
- ret = ecalloc (1, ((sc+1)*sizeof(char *)) + 2 + l);
+ ret = ecalloc (1, ((sc+1)*sizeof(char *)) + 3 + l);
  memcpy ((((char *)ret) + ((sc+1)*sizeof(char *))), input, 2 + l);
  input = (char *)(((char *)ret) + ((sc+1)*sizeof(char *)));
  ret[0] = input;
