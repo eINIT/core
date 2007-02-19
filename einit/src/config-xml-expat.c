@@ -62,6 +62,7 @@ struct einit_xml_expat_user_data {
           if_level,
           if_results;
  char *file, *prefix;
+ uint32_t target_options;
 };
 
 char xml_parser_auto_create_missing_directories = 0;
@@ -142,6 +143,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (!strcmp (name, "mode")) {
 /* parse the information presented in the element as a mode-definition */
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
+   newnode->options = ((struct einit_xml_expat_user_data *)userData)->target_options;
+
    newnode->nodetype = EI_NODETYPE_MODE;
    newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
    newnode->source = xml_source_identifier;
@@ -164,6 +167,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   } else {
 /* parse the information presented in the element as a variable */
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
+   newnode->options = ((struct einit_xml_expat_user_data *)userData)->target_options;
+
    newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
    newnode->nodetype = EI_NODETYPE_CONFIG;
    newnode->mode = curmode;
@@ -229,15 +234,21 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  char *confpath = NULL;
  XML_Parser par;
  struct stat st;
+ char *tmps = NULL;
+
+ if (!configfile || stat (configfile, &st)) return 0;
 
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
   .if_level = 0,
   .file = configfile,
-  .prefix = NULL
+  .prefix = NULL,
+  .target_options =
+    (tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&
+    !strcmp (configfile, tmps) ?
+    EINIT_CFGNODE_ONLINE_MODIFICATION : 0
  };
 
- if (!configfile || stat (configfile, &st)) return 0;
  fprintf (stderr, " >> parsing \"%s\".\n", configfile);
 
  if ((data = readfile (configfile))) {
