@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char * provides[] = {"sysconf", NULL};
+char * requires[] = {"mount/system", NULL};
 const struct smodule self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -89,6 +90,10 @@ void ipc_event_handler (struct einit_event *ev) {
    fputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
+  if (!cfg_getstring ("configuration-system-sysctl-file", NULL)) {
+   fputs (" * configuration variable \"configuration-system-sysctl-file\" not found.\n", (FILE *)ev->para);
+   ev->task++;
+  }
 
   ev->flag = 1;
  }
@@ -112,6 +117,9 @@ int cleanup (struct lmodule *this) {
 
 int enable (void *pa, struct einit_event *status) {
  struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
+ FILE *sfile;
+ char *sfilename;
+
  if (cfg && !cfg->flag) {
   if (gmode != EINIT_GMODE_SANDBOX) {
    if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
@@ -128,6 +136,10 @@ int enable (void *pa, struct einit_event *status) {
     status_update (status);
    }
   }
+ }
+
+ if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL)) && (sfile = fopen (sfilename, "r"))) {
+  fclose (sfile);
  }
 
  return STATUS_OK;

@@ -66,6 +66,10 @@
    <shell s="/bin/sh -c" />
    <shell-exec-timeout i="20" />
    <proc-path s="/proc" />
+
+   <sysctl>
+    <file s="/etc/sysctl.conf" />
+   </sysctl>
   </system>
 
   <environment>
