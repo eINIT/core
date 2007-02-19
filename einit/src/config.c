@@ -320,7 +320,7 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
 }
 
 // return a new stree with the filter applied
-struct stree *cfg_filter (char *filter) {
+struct stree *cfg_filter (char *filter, uint32_t node_options) {
  struct stree *retval = NULL;
 
 #ifdef POSIXREGEX
@@ -335,8 +335,9 @@ struct stree *cfg_filter (char *filter) {
 //   fprintf (stderr, " >> module: %s: %s: bad regex: %s: %s\n", id, x[0], x[1], errorcode);
   } else {
    while (cur) {
-    if (!regexec (&pattern, cur->key, 0, NULL, 0)) {
-	 retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
+    if (!regexec (&pattern, cur->key, 0, NULL, 0) &&
+        (!node_options || (((struct cfgnode *)(cur->value))->options & node_options))) {
+     retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
     }
     cur = streenext (cur);
    }
@@ -397,7 +398,7 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
     if (ev->set[2]) {
      char *x = set2str (' ', (char **) (ev->set +2));
      if (x) {
-      otree = cfg_filter (x);
+      otree = cfg_filter (x, 0);
 
       free (x);
      }

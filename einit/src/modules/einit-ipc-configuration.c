@@ -81,8 +81,8 @@ void ipc_event_handler (struct einit_event *ev) {
   argc = setcount ((void **)argv);
  }
 
- if (argc > 3) {
-  if (!strcmp (argv[0], "set") && !strcmp (argv[1], "variable")) {
+ if (argc > 1) {
+  if ((argc > 3) && (!strcmp (argv[0], "set") && !strcmp (argv[1], "variable"))) {
    char *t = estrdup (argv[2]), *x, *subattr = NULL;
    struct cfgnode newnode, *onode = NULL;
 
@@ -172,7 +172,37 @@ void ipc_event_handler (struct einit_event *ev) {
 
    cfg_addnode (&newnode);
 
-   free (t);
+   if (newnode.id != t) free (t);
+  } else if (!strcmp (argv[0], "save") && !strcmp (argv[1], "configuration")) {
+   struct stree *tmptree = cfg_filter (".*", EINIT_CFGNODE_ONLINE_MODIFICATION);
+   char *buffer = NULL;
+   cfg_string_converter conv;
+   char *targetfile = argv[2] ? argv[2] :
+     cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL);
+
+   if (tmptree) {
+    if (targetfile) {
+     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL)))
+      buffer = conv(tmptree);
+
+     if (buffer) {
+      FILE *target;
+
+      fprintf ((FILE *)ev->para, " >> configuration changed on-line, saving modifications to %s.\n", targetfile);
+
+      if ((target = fopen(targetfile, "w+"))) {
+       fputs (buffer, target);
+       fclose (target);
+      } else {
+       fprintf ((FILE *)ev->para, " >> could not open \"%s\".\n", targetfile);
+      }
+     }
+    } else {
+     fputs (" >> where should i save to?\n", (FILE *)ev->para);
+    }
+   }
+
+   ev->flag = 1;
   }
  }
 }

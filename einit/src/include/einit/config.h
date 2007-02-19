@@ -136,7 +136,7 @@ char *cfg_getstring (char *, struct cfgnode *);          // get string (by id)
 struct cfgnode *cfg_getnode (char *, struct cfgnode *);  // get node (by id)
 
 // return a new stree with the filter applied
-struct stree *cfg_filter (char *);
+struct stree *cfg_filter (char *, uint32_t);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *cfg_getpath (char *);
