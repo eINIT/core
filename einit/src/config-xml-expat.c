@@ -64,6 +64,8 @@ struct einit_xml_expat_user_data {
  char *file, *prefix;
 };
 
+char xml_parser_auto_create_missing_directories = 0;
+
 char *xml_source_identifier = "xml-expat";
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
@@ -274,6 +276,9 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   }
   free (data);
 
+  xml_parser_auto_create_missing_directories =
+    (node = cfg_getnode("core-settings-xml-parser-auto-create-missing-directories", NULL)) && node->flag;
+
   if (!recursion) {
    confpath = cfg_getpath ("core-settings-configuration-path");
    if (!confpath) confpath = "/etc/einit/";
@@ -354,7 +359,15 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       }
       closedir (dir);
      } else {
-      bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
+      if (xml_parser_auto_create_missing_directories) {
+       if (mkdir (includedir, 0777)) {
+        bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): mkdir()", errno, (char *)includedir);
+       } else {
+        fprintf (stderr, " >> created missing directory \"%s\"", includedir);
+       }
+      } else {
+       bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
+      }
      }
 
      free (includedir);

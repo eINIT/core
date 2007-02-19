@@ -7,6 +7,9 @@
 <!-- <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
     <load pattern-allow=".*\.so" />
    </module>
+   <xml-parser>
+    <auto-create-missing-directories b="true" />
+   </xml-parser>
   </settings>
   <scheduler>
    <shutdown-function-suffixes s="linux" />

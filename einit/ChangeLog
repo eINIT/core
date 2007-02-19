@@ -4,6 +4,8 @@
  * lib/einit/*.so have been moved to lib/einit/modules
  * added code to read and use the sysctl.conf file
  * ha, found the bloody bugger
+ * the xml configuration parser may now create missing include directories
+   itself
 
 2007/02/18: mdeininger
  * new function for error reporting (and optional hara-kiri)
