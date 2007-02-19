@@ -99,6 +99,7 @@ int pexec_wrapper (struct mexecinfo *, struct einit_event *);
 int configure (struct lmodule *);
 
 struct mexecinfo **mxdata = NULL;
+struct lmodule *this = NULL;
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
@@ -111,8 +112,8 @@ void ipc_event_handler (struct einit_event *ev) {
    uint32_t i = 0;
    for (i = 0; mxdata[i]; i++) {
     if (mxdata[i]->variables) {
-	 check_variables (mxdata[i]->id, mxdata[i]->variables, (FILE*)ev->para);
-	}
+     check_variables (mxdata[i]->id, mxdata[i]->variables, (FILE*)ev->para);
+    }
    }
   }
 
@@ -120,23 +121,28 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
+int configure (struct lmodule *pa) {
 // pexec_configure (irr);
- exec_configure (irr);
+ this = pa;
+
+ exec_configure (pa);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }
 
-int cleanup (struct lmodule *this) {
+int cleanup (struct lmodule *pa) {
 // pexec_cleanup(this);
- exec_cleanup(this);
+ this = pa;
+
+ exec_cleanup(pa);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }
 
-int cleanup_after_module (struct lmodule *this) {
+int cleanup_after_module (struct lmodule *pa) {
+ this = pa;
 #if 0
  if (this->module) {
   if (this->module->provides)
@@ -161,6 +167,9 @@ int cleanup_after_module (struct lmodule *this) {
 
 int scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
+ if (pthread_mutex_lock (&(this->imutex))) {
+  bitch2(BITCH_EPTHREADS, "scanmodules()", 0, "pthread_mutex_lock() failed.");
+ }
 
  node = NULL;
  while ((node = cfg_findnode ("services-virtual-module-shell", 0, node))) {
@@ -174,7 +183,7 @@ int scanmodules (struct lmodule *modchain) {
   for (; node->arbattrs[i]; i+=2 ) {
    if (!strcmp (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
-	mexec->id = node->arbattrs[i+1];
+    mexec->id = node->arbattrs[i+1];
    } else if (!strcmp (node->arbattrs[i], "name"))
     modinfo->name = node->arbattrs[i+1];
    else if (!strcmp (node->arbattrs[i], "enable"))
@@ -200,16 +209,13 @@ int scanmodules (struct lmodule *modchain) {
    else if (!strcmp (node->arbattrs[i], "pid")) {
     mexec->environment = straddtoenviron (mexec->environment, "pidfile", node->arbattrs[i+1]);
     mexec->pidfile = node->arbattrs[i+1];
-   }
-
-   else if (!strcmp (node->arbattrs[i], "requires"))
+   } else if (!strcmp (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "provides"))
     modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "after"))
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "before"))
-
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
    else if (!strcmp (node->arbattrs[i], "variables"))
     mexec->variables = str2set (':', node->arbattrs[i+1]);
@@ -264,6 +270,10 @@ int scanmodules (struct lmodule *modchain) {
     new->cleanup = cleanup_after_module;
    }
   }
+ }
+
+ if (pthread_mutex_unlock (&(this->imutex))) {
+  bitch2(BITCH_EPTHREADS, "scanmodules()", 0, "pthread_mutex_unlock() failed.");
  }
 
  return 0;

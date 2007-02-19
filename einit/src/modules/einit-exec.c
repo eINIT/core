@@ -284,9 +284,6 @@ char **__create_environment (char **environment, char **variables) {
       *subkey = 0;
       strcat (subkey, key);
       strcat (subkey, node->arbattrs[y]);
-//      *(subkey+bkeylen+attrlen-1) = 0;
-//      printf ("%s:%s:%s:%i:%i\n", subkey, key, node->arbattrs[y], attrlen, bkeylen + attrlen);
-//      puts (node->arbattrs[y]);
       environment = straddtoenviron (environment, subkey, node->arbattrs[y+1]);
       free (subkey);
 

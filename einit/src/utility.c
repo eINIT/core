@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/config.h>
 #include <einit/utility.h>
+#include <einit/set.h>
 #include <einit/event.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -54,9 +55,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
-
 char **straddtoenviron (char **environment, char *key, char *value) {
- char **ret;
+ char **ret = NULL;
  char *newitem;
  int len = 2;
  if (!key) return environment;

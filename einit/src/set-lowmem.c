@@ -154,7 +154,7 @@ void **setadd (void **set, void *item, int32_t esize) {
  if (!item) return NULL;
 // if (!set) set = ecalloc (1, sizeof (void *));
 
- if (esize == -1) {
+ if (esize == SET_NOALLOC) {
   if (set) for (; set[count]; count++);
   else count = 1;
   size = (count+2)*sizeof(void*);
@@ -174,7 +174,7 @@ void **setadd (void **set, void *item, int32_t esize) {
   }
 
   newset[x] = item;
- } else if (esize == 0) {
+ } else if (esize == SET_TYPE_STRING) {
   char *cpnt;
 
 //  puts ("adding object to string-set");
