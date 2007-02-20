@@ -599,16 +599,28 @@ int scanmodules (struct lmodule *modchain) {
     if (depinfo = get_depinfo (gentoo_deptree, de->d_name)) {
      rc_deptype_t *dependencies;
      if (dependencies = get_deptype(depinfo, "ineed")) {
-      modinfo->si.requires = str2set (' ', dependencies->services);
+      char *serv = estrdup (dependencies->services);
+      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
+      modinfo->si.requires = str2set (' ', serv);
+      free (serv);
      }
      if (dependencies = get_deptype(depinfo, "iprovide")) {
-      modinfo->si.provides = str2set (' ', dependencies->services);
+      char *serv = estrdup (dependencies->services);
+      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
+      modinfo->si.provides = str2set (' ', serv);
+      free (serv);
      }
      if (dependencies = get_deptype(depinfo, "ibefore")) {
-      modinfo->si.before = str2set (' ', dependencies->services);
+      char *serv = estrdup (dependencies->services);
+      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
+      modinfo->si.before = str2set (' ', serv);
+      free (serv);
      }
      if (dependencies = get_deptype(depinfo, "iuse")) {
-      modinfo->si.after = str2set (' ', dependencies->services);
+      char *serv = estrdup (dependencies->services);
+      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
+      modinfo->si.after = str2set (' ', serv);
+      free (serv);
      }
 /*     if (dependencies = get_deptype(depinfo, "iafter")) {
       dependencies->services;
@@ -617,7 +629,12 @@ int scanmodules (struct lmodule *modchain) {
      fprintf (stderr, " >> no dependency information for service \"%s\".\n", de->d_name);
     }
 
-    modinfo->si.provides = (char **)setadd ((void **)modinfo->si.provides, (void *)(nrid + 7), SET_TYPE_STRING);
+    char *serv = estrdup (nrid + 7);
+    ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
+    modinfo->si.after = str2set (' ', serv);
+    modinfo->si.provides = (char **)setadd ((void **)modinfo->si.provides, (void *)serv, SET_TYPE_STRING);
+    free (serv);
+
     modinfo->si.requires = (char **)setadd ((void **)modinfo->si.requires, (void *)"utmp", SET_TYPE_STRING);
     modinfo->si.requires = (char **)setadd ((void **)modinfo->si.requires, (void *)"initctl", SET_TYPE_STRING);
 
