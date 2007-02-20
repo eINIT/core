@@ -52,6 +52,6 @@
   <alias id="lm_sensors" s="sensors" />
 <!--  <alias id="net" s="network" /> -->
 
-  <transform id="gentoo-net" module-id="gentoo-.*" in="net" out="network" strip-from="provide" />
+  <transform id="gentoo-net" module-id="gentoo-.*" in="net" out="network" strip-from="provides" />
  </services>
 </einit>
