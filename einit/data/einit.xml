@@ -422,6 +422,16 @@
      command="/usr/sbin/gdm -nodaemon"
      restart="yes" />
 
+    <shell id="shell-gdm"
+     name="GDM - The GNOME Display Manager"
+     provides="x11:gdm"
+     requires="mount/critical:net-lo"
+     pid="/var/run/gdm.pid"
+     prepare="[ ! -e /var/log/gdm ] &amp;&amp; mkdir /var/log/gdm"
+     enable="gdm"
+     disable="gdm-stop"
+     restart="no" />
+
     <daemon id="daemon-kdm"
      name="XDM (KDM)"
      provides="xdm:x11"
