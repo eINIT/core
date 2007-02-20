@@ -371,6 +371,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
    if (nservices && currentmode) {
     char **arbattrs = NULL;
+    char **critical;
     struct cfgnode newnode;
     uint32_t y = 0;
 
@@ -392,7 +393,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        }
       }
 
-      fprintf (stderr, " >> DEBUG: mode \"%s\": before merge: %s;\n    now: %s\n", currentmode->id, set2str(' ', curmodeena), set2str(' ', nservices));
+//      fprintf (stderr, " >> DEBUG: mode \"%s\": before merge: %s;\n    now: %s\n", currentmode->id, set2str(' ', curmodeena), set2str(' ', nservices));
 
       free (curmodeena);
      }
@@ -402,6 +403,11 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)"services", SET_TYPE_STRING);
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', nservices), SET_TYPE_STRING);
+
+    if (critical = str2set (':', cfg_getstring ("enable/critical", currentmode))) {
+     arbattrs = (char **)setadd ((void **)arbattrs, (void *)"critical", SET_TYPE_STRING);
+     arbattrs = (char **)setadd ((void **)arbattrs, (void *)critical, SET_TYPE_STRING);
+    }
 
     newnode.nodetype = EI_NODETYPE_CONFIG;
     newnode.mode     = currentmode;
