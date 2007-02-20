@@ -391,6 +391,9 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
         nservices = (char **)setadd ((void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING);
        }
       }
+
+      fprintf (stderr, " >> DEBUG: mode \"%s\": before merge: %s;\n    now: %s\n", currentmode->id, set2str(' ', curmodeena), set2str(' ', nservices));
+
       free (curmodeena);
      }
     }
@@ -407,9 +410,12 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     newnode.arbattrs = arbattrs;
 
     cfg_addnode (&newnode);
+   } else {
+    fputs (" >> wtf?.\n", stderr);
    }
 
-   free (nservices);
+   if (nservices)
+    free (nservices);
   }
 
   closedir (dir);
