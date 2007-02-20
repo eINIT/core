@@ -4,6 +4,9 @@ include depend.mk
 all: einit einit-control default-modules
 
 depend:
+	ln -sf module-logic-${MODULELOGICTYPE}.h include/einit/module-logic.h
+	ln -sf set-${SETTYPE}.h include/einit/set.h
+	ln -sf tree-${TREETYPE}.h include/einit/tree.h
 	${CC} ${INCLUDE} -M *.c > depend.mk
 	touch modules/depend.mk
 	cd modules && ${MAKE} depend
@@ -60,8 +63,8 @@ scheduler.o: scheduler.c
 module.o: module.c
 	$(CCC) -c module.c
 
-module-logic.o: module-logic.c
-	$(CCC) -c module-logic.c
+module-logic.o: module-logic-v2.c module-logic-v3.c
+	$(CCC) -c module-logic-${MODULELOGICTYPE}.c -o module-logic.o
 
 module-configuration.o: module-configuration.c
 	$(CCC) -c module-configuration.c

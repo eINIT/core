@@ -1,8 +1,9 @@
 /*
- *  set.h
+ *  set-lowmem.h
  *  einit
  *
  *  Split out from utility.h on 20/01/2007.
+ *  Moved from set.h on 20/02/2007
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */

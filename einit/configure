@@ -45,7 +45,7 @@ PMODULES="compatibility"
 
 TREETYPE="linear"
 SETTYPE="lowmem"
-
+MODULELOGICTYPE="v2"
 
 echo -n "checking options [";
 for param in $@; do
@@ -270,6 +270,7 @@ BUILDNUMBER = $BUILDNUMBER
 ISSVN = $ISSVN
 TREETYPE = ${TREETYPE}
 SETTYPE = ${SETTYPE}
+MODULELOGICTYPE = ${MODULELOGICTYPE}
 
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS -Wall

@@ -1,8 +1,8 @@
 /*
- *  tree.h
+ *  tree-bst-splay.h
  *  einit
  *
- *  Created by Magnus Deininger on 14/11/2006.
+ *  Created by Magnus Deininger on 20/02/2007.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */

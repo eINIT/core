@@ -1,8 +1,9 @@
 /*
- *  module-logic.c
+ *  module-logic-v2.c
  *  einit
  *
  *  Created by Magnus Deininger on 05/09/2006.
+ *  Moved from module-logic.c on 20/02/2007
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
