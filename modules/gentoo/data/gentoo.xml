@@ -6,9 +6,9 @@
    <sysv-distribution-gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-<!--      <init.d path="/etc/init.d/"
+      <init.d path="/etc/init.d/"
               pattern-allow=".*"
-              pattern-disallow=".*\.sh" /> -->
+              pattern-disallow=".*\.sh" />
 <!-- use this to make einit parse gentoo's runlevels as einit modes.
      NOTE: until someone defines a list with gentoo<>einit aliases, you'll
       get lots of unknown dependencies
@@ -16,7 +16,7 @@
      override all the modes that are defined in the xml configuration with
      gentoo's runlevel data which means lots of important things will be
      missing - like mount/critical... -->
-<!--      <runlevels path="/etc/runlevels" exclusive="false" /> -->
+      <runlevels path="/etc/runlevels" exclusive="false" />
       <parse-env.d b="true" />
 <!-- this does not work anymore, nor is it really required -->
 <!--      <service-tracker b="true" path="/var/lib/init.d" /> -->
@@ -51,5 +51,7 @@
   <alias id="nfsmount" s="mount/remote" />
   <alias id="lm_sensors" s="sensors" />
 <!--  <alias id="net" s="network" /> -->
+
+  <transform id="gentoo-net" module-id="gentoo-.*" in="net" out="network" strip-from="provide" />
  </services>
 </einit>

@@ -54,7 +54,7 @@ for param in $@; do
 		SETTYPE=${param#*=};
 	elif test "$short" = "--with-include"; then
 		echo -n " INCLUDE";
-		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";
+		XCFLAGS="${XCFLAGS} -I${param#*=}";
 	elif test "$short" = "--host"; then
 		echo -n " HOST";
 		RCHOST="${param#*=}";
@@ -222,8 +222,8 @@ if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
-LIBDIR = ${PREFIX}/lib
-MODDIR = ${PREFIX}/lib/einit
+LIBDIR = ${PREFIX}/lib/einit
+MODDIR = ${PREFIX}/lib/einit/modules
 BINDIR = ${PREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
@@ -252,7 +252,7 @@ XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA" > config.mk
 
-if test -e src/einit; then
+if test -e src/*.so; then
 	echo -n "cleaning the environment... "
 	if make clean >/dev/null 2>&1; then
 		echo "done";
