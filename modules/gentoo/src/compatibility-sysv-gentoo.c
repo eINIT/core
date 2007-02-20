@@ -347,90 +347,10 @@ void einit_event_handler (struct einit_event *ev) {
    }
 
 /* service tracker */
-   node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-service-tracker", NULL);
+   node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-softlevel-tracker", NULL);
    if (do_service_tracking = (node && node->flag)) {
-    service_tracking_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-service-tracker/path");
+    service_tracking_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-softlevel-tracker/path");
     if (!service_tracking_path) do_service_tracking = 0;
-   }
-  }
- }
-/* originally, this seemed like a good idea, however due to some of the things
-   UberLord showed me it's probably better not to mess with this since it really
-   isn't necessary */
-#if 0
- else if (ev->type == EVE_SERVICE_UPDATE) { // service tracking
-  if (do_service_tracking && ev->set) {
-   struct stat st;
-   char tmp[256], tmpd[256], *base = NULL, *dbase = NULL,
-// service is a daemon if providing module's rid begins with daemon-
-        isdaemon = ev->string && (strstr (ev->string, "daemon-") == ev->string);
-   uint32_t i = 0;
-
-   if (ev->status & STATUS_OK) { // tried to do that, succeeded
-    if (ev->task & MOD_ENABLE) {
-     base = "started";
-     dbase = "starting";
-    }
-   } else if (ev->status & STATUS_FAIL) { // tried to do that, but failed
-    if (ev->task & MOD_ENABLE) {
-     base = "failed";
-     dbase = "starting";
-    } else if (ev->task & MOD_DISABLE) {
-     base = "started";
-     dbase = "stopping";
-    }
-   } else { // trying to do something right now
-    if (ev->task & MOD_ENABLE) {
-     base = "starting";
-     dbase = "failed";
-    } else if (ev->task & MOD_DISABLE) {
-     base = "stopping";
-     dbase = "started";
-    }
-   }
-
-   if (base || dbase) {
-    for (; ev->set[i]; i++) {
-     snprintf (tmp, 256, "%ssoftscripts/%s", service_tracking_path, ev->set[i]);
-     if (lstat (tmp, &st)) {
-      snprintf (tmpd, 256, "%ssoftscripts", service_tracking_path);
-      if (stat (tmpd, &st)) {
-       if (mkdir (tmpd, 0755)) perror (" >> could not create softscripts directory");
-      }
-
-      symlink ("/sbin/runscript-einit.sh", tmp);
-     }
-
-     if (isdaemon) {
-      snprintf (tmp, 256, "%sdaemons/%s", service_tracking_path, ev->set[i]);
-      if (lstat (tmp, &st)) {
-       snprintf (tmpd, 256, "%sdaemons", service_tracking_path);
-       if (stat (tmpd, &st)) {
-        if (mkdir (tmpd, 0755)) perror (" >> could not create daemons directory");
-       }
-
-       symlink ("/sbin/runscript-einit.sh", tmp);
-      }
-     }
-
-     if (base) {
-      snprintf (tmp, 256, "%s%s/%s", service_tracking_path, base, ev->set[i]);
-      if (lstat (tmp, &st)) {
-       snprintf (tmpd, 256, "%s%s", service_tracking_path, base);
-       if (stat (tmpd, &st)) {
-        if (mkdir (tmpd, 0755)) perror (" >> could not create softscripts directory");
-       }
-
-       symlink ("/sbin/runscript-einit.sh", tmp);
-      }
-     }
-
-     if (dbase) {
-      snprintf (tmp, 256, "%s%s/%s", service_tracking_path, dbase, ev->set[i]);
-      unlink (tmp);
-     }
-
-    }
    }
   }
  } else if (ev->type == EVE_PLAN_UPDATE) { // set active "soft mode"
@@ -452,7 +372,6 @@ void einit_event_handler (struct einit_event *ev) {
    }
   }
  }
-#endif
 }
 
 void ipc_event_handler (struct einit_event *ev) {

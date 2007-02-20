@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <einit>
  <configuration>
+  <environment>
+   <global id="SOFTLEVEL" s="default" />
+   <global id="BOOTLEVEL" s="boot" />
+  </environment>
+
   <compatibility>
    <sysv-distribution s="auto" />
    <sysv-distribution-gentoo>
@@ -18,15 +23,15 @@
      missing - like mount/critical... -->
       <runlevels path="/etc/runlevels" exclusive="false" />
       <parse-env.d b="true" />
-<!-- this does not work anymore, nor is it really required -->
-<!--      <service-tracker b="true" path="/var/lib/init.d" /> -->
+      <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
 
 <!-- scriptlets to process gentoo's init.d scripts
      ( i don't particularly feel like re-implementing a complete sh right now )
      arguments: script-path, script-name, action -->
       <init.d-scriptlets
        svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d; /sbin/depscan.sh;
-        ln -s /sbin/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;"
+        ln -s /sbin/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
+        echo default>/lib/rcscripts/init.d/softlevel;"
        execute='/sbin/runscript.sh ${script-path} --quiet --nodeps ${action};' />
 
     </sysv-distribution-gentoo>
