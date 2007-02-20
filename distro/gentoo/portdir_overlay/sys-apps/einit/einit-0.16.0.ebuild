@@ -35,8 +35,6 @@ src_install() {
 	emake -j1 install DESTDIR="${D}" || die
 	dodoc AUTHORS ChangeLog COPYING
         doman documentation/man/*.8
-        keepdir /etc/einit/local
-        keepdir /etc/einit/modules
 	if use doc ; then
 		dohtml build/documentation/html/*.html
 	fi
