@@ -1212,3 +1212,45 @@ int mod_plan_free (struct mloadplan *plan) {
  free (plan);
  return 0;
 }
+
+double get_plan_progress (struct mloadplan *plan) {
+ int pthread_errno;
+ if (!plan) return -1;
+
+ int min_changes = 0, max_changes = 0;
+
+ struct stree *scur = plan->services;
+
+ uint32_t changes = 0;
+
+ if ((pthread_errno = pthread_mutex_lock (&(plan->vizmutex)))) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:get_plan_progress()", pthread_errno, "pthread_mutex_lock() failed.");
+ }
+
+ if (!min_changes)
+  min_changes = setcount ((void **)plan->enable) + setcount ((void **)plan->disable) + setcount ((void **)plan->reset);
+ if (!max_changes) {
+  while (scur) {
+   max_changes++;
+   scur = streenext(scur);
+  }
+  scur = plan->services;
+ }
+
+ while (scur) {
+  struct mloadplan_node *n = scur->value;
+
+  if (n && (n->changed >= 2)) changes++;
+
+  scur = streenext(scur);
+ }
+
+ if ((pthread_errno = pthread_mutex_unlock (&(plan->vizmutex)))) {
+  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:get_plan_progress()", pthread_errno, "pthread_mutex_unlock() failed.");
+ }
+
+ if (!changes) return 0;
+ if (!max_changes) return -1;
+ return (double)changes / (double)max_changes;
+}
+

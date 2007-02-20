@@ -130,8 +130,6 @@ void update_screen_ansi (struct einit_event *, struct mstat *);
 int nstringsetsort (struct nstring *, struct nstring *);
 unsigned char broadcast_message (char *, char *);
 
-double get_plan_progress (struct planref *);
-
 FILE *vofile = NULL;
 
 struct planref **plans = NULL;
@@ -932,7 +930,7 @@ void einit_event_handler(struct einit_event *ev) {
 
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
-       if (printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100) < 0)
+       if (printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]->plan) * 100) < 0)
         bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
       }
      }
@@ -943,7 +941,7 @@ void einit_event_handler(struct einit_event *ev) {
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
        if (plans[i]->plan) {
-        if (printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]) * 100) < 0)
+        if (printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]->plan) * 100) < 0)
          bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
        }
       }
@@ -1095,45 +1093,5 @@ unsigned char broadcast_message (char *path, char *message) {
  }
 #endif
  return 0;
-}
-
-double get_plan_progress (struct planref *planr) {
- int pthread_errno;
- if (!planr || !planr->plan) return -1;
-
- struct mloadplan *plan = planr->plan;
- struct stree *scur = plan->services;
-
- uint32_t changes = 0;
-
- if ((pthread_errno = pthread_mutex_lock (&(plan->vizmutex)))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:get_plan_progress()", pthread_errno, "pthread_mutex_lock() failed.");
- }
-
- if (!planr->min_changes)
-  planr->min_changes = setcount ((void **)plan->enable) + setcount ((void **)plan->disable) + setcount ((void **)plan->reset);
- if (!planr->max_changes) {
-  while (scur) {
-   planr->max_changes++;
-   scur = streenext(scur);
-  }
-  scur = plan->services;
- }
-
- while (scur) {
-  struct mloadplan_node *n = scur->value;
-
-  if (n && (n->changed >= 2)) changes++;
-
-  scur = streenext(scur);
- }
-
- if ((pthread_errno = pthread_mutex_unlock (&(plan->vizmutex)))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:get_plan_progress()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
-
- if (!changes) return 0;
- if (!planr->max_changes) return -1;
- return (double)changes / (double)planr->max_changes;
 }
 

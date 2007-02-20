@@ -1,8 +1,9 @@
 /*
- *  module-logic.h
+ *  module-logic-v2.h
  *  einit
  *
  *  Created by Magnus Deininger on 11/09/2006.
+ *  Moved from module-logic.h on 20/02/2007
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -123,5 +124,7 @@ unsigned int mod_plan_commit (struct mloadplan *);
  * Free all of the resources that had been associated with a plan.
 */
 int mod_plan_free (struct mloadplan *);
+
+double get_plan_progress (struct mloadplan *plan);
 
 #endif
