@@ -128,7 +128,6 @@ struct ext2_super_block {
 #endif
 
 /* module definitions */
-char *provides[] = {"mount", NULL};
 const struct smodule self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -138,7 +137,7 @@ const struct smodule self = {
  .name      = "Linux-specific Filesystem-Mounter Functions",
  .rid       = "linux-mount",
  .si        = {
-  .provides = provides,
+  .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
