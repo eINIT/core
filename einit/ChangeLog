@@ -1,3 +1,6 @@
+2007/02/20: mdeininger
+ * added service transformations
+
 2007/02/19: mdeininger
  * etc/einit/einit.xml has been moved to lib/einit/einit.xml
    (einit.xml should not be modified by users)

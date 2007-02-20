@@ -63,7 +63,23 @@ pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 struct stree *service_aliases = NULL;
+
+#ifdef POSIXREGEX
+struct stree *service_transformations = NULL;
+
+#define SVT_STRIP_PROVIDES 0x00000001
+#define SVT_STRIP_REQUIRES 0x00000002
+#define SVT_STRIP_AFTER    0x00000004
+#define SVT_STRIP_BEFORE   0x00000008
+
+struct service_transformation {
+ char *in, *out;
+ regex_t *id_pattern;
+ uint32_t options;
+};
+#endif
 
 int mod_scanmodules ( void ) {
  int pthread_errno;
@@ -302,28 +318,158 @@ struct lmodule *mod_update (struct lmodule *module) {
    break;
   }
 
-  if (service_aliases && module->si->provides) {
-   uint32_t i = 0;
-   char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING);
-   for (; module->si->provides[i]; i++) {
-    struct stree *x = streefind (service_aliases, module->si->provides[i], TREE_FIND_FIRST);
+ if (service_aliases && module->si->provides) {
+  uint32_t i = 0;
+  char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING);
+  for (; module->si->provides[i]; i++) {
+   struct stree *x = streefind (service_aliases, module->si->provides[i], TREE_FIND_FIRST);
+
+   while (x) {
+    if (x->value) {
+     if (!inset ((void **)np, x->value, SET_TYPE_STRING)) {
+      np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
+     }
+    }
+    x = streefind (x, module->si->provides[i], TREE_FIND_NEXT);
+   }
+  }
+
+  module->si->provides = np;
+ }
+
+ if ((pthread_errno = pthread_mutex_unlock (&module->mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_update()", pthread_errno, "pthread_mutex_unlock() failed.");
+ }
+
+#ifdef POSIXREGEX
+ if (service_transformations) {
+  uint32_t i;
+
+  if (module->si->provides) {
+   char **np = NULL;
+
+   for (i = 0; module->si->provides[i]; i++) {
+    char hit = 0;
+    struct stree *x = streefind (service_transformations, module->si->provides[i], TREE_FIND_FIRST);
 
     while (x) {
-     if (x->value) {
-      if (!inset ((void **)np, x->value, SET_TYPE_STRING)) {
-       np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
-      }
+     struct service_transformation *trans =
+       (struct service_transformation *)x->value;
+
+     if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
+      x = streefind (x, module->si->provides[i], TREE_FIND_NEXT);
+      continue;
      }
-     x = streefind (x, module->si->provides[i], TREE_FIND_NEXT);
+
+     hit = 1;
+
+     if (trans->options & SVT_STRIP_PROVIDES) break;
+
+     np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+     break;
     }
+
+    if (hit == 0)
+     np = (char **)setadd ((void **)np, module->si->provides[i], SET_TYPE_STRING);
    }
 
    module->si->provides = np;
   }
 
- if ((pthread_errno = pthread_mutex_unlock (&module->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_update()", pthread_errno, "pthread_mutex_unlock() failed.");
+  if (module->si->requires) {
+   char **np = NULL;
+
+   for (i = 0; module->si->requires[i]; i++) {
+    char hit = 0;
+    struct stree *x = streefind (service_transformations, module->si->requires[i], TREE_FIND_FIRST);
+
+    while (x) {
+     struct service_transformation *trans =
+       (struct service_transformation *)x->value;
+
+     if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
+      x = streefind (x, module->si->requires[i], TREE_FIND_NEXT);
+      continue;
+     }
+
+     hit = 1;
+
+     if (trans->options & SVT_STRIP_REQUIRES) break;
+
+     np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+     break;
+    }
+
+    if (hit == 0)
+     np = (char **)setadd ((void **)np, module->si->requires[i], SET_TYPE_STRING);
+   }
+
+   module->si->requires = np;
+  }
+
+  if (module->si->after) {
+   char **np = NULL;
+
+   for (i = 0; module->si->after[i]; i++) {
+    char hit = 0;
+    struct stree *x = streefind (service_transformations, module->si->after[i], TREE_FIND_FIRST);
+
+    while (x) {
+     struct service_transformation *trans =
+       (struct service_transformation *)x->value;
+
+     if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
+      x = streefind (x, module->si->after[i], TREE_FIND_NEXT);
+      continue;
+     }
+
+     hit = 1;
+
+     if (trans->options & SVT_STRIP_AFTER) break;
+
+     np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+     break;
+    }
+
+    if (hit == 0)
+     np = (char **)setadd ((void **)np, module->si->after[i], SET_TYPE_STRING);
+   }
+
+   module->si->after = np;
+  }
+
+  if (module->si->before) {
+   char **np = NULL;
+
+   for (i = 0; module->si->before[i]; i++) {
+    char hit = 0;
+    struct stree *x = streefind (service_transformations, module->si->before[i], TREE_FIND_FIRST);
+
+    while (x) {
+     struct service_transformation *trans =
+       (struct service_transformation *)x->value;
+
+     if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
+      x = streefind (x, module->si->before[i], TREE_FIND_NEXT);
+      continue;
+     }
+
+     hit = 1;
+
+     if (trans->options & SVT_STRIP_BEFORE) break;
+
+     np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+     break;
+    }
+
+    if (hit == 0)
+     np = (char **)setadd ((void **)np, module->si->before[i], SET_TYPE_STRING);
+   }
+
+   module->si->before = np;
+  }
  }
+#endif
 
  return module;
 }
@@ -992,6 +1138,9 @@ void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
+#ifdef POSIXREGEX
+  struct stree *new_transformations = NULL;
+#endif
 
   while ((node = cfg_findnode ("services-alias", 0, node))) {
    if (node->idattr && node->svalue) {
@@ -1005,7 +1154,66 @@ void module_loader_einit_event_handler (struct einit_event *ev) {
   if (ca)
    streefree (ca);
 
-// update modules
+  node = NULL;
+
+#ifdef POSIXREGEX
+  while ((node = cfg_findnode ("services-transform", 0, node))) {
+   if (node->arbattrs) {
+    struct service_transformation new_transformation;
+    ssize_t sti = 0;
+    char have_pattern = 0;
+
+    memset (&new_transformation, 0, sizeof(struct service_transformation));
+
+    for (; node->arbattrs[sti]; sti+=2) {
+     if (!strcmp (node->arbattrs[sti], "in")) {
+      new_transformation.in = node->arbattrs[sti+1];
+     } else if (!strcmp (node->arbattrs[sti], "out")) {
+      new_transformation.out = node->arbattrs[sti+1];
+     } else if (!strcmp (node->arbattrs[sti], "strip-from")) {
+      char **tmp = str2set (':', node->arbattrs[sti+1]);
+
+      if (tmp) {
+       if (inset ((void **)tmp, (void *)"provides", SET_TYPE_STRING))
+        new_transformation.options |= SVT_STRIP_PROVIDES;
+       if (inset ((void **)tmp, (void *)"requires", SET_TYPE_STRING))
+        new_transformation.options |= SVT_STRIP_REQUIRES;
+       if (inset ((void **)tmp, (void *)"after", SET_TYPE_STRING))
+        new_transformation.options |= SVT_STRIP_AFTER;
+       if (inset ((void **)tmp, (void *)"before", SET_TYPE_STRING))
+        new_transformation.options |= SVT_STRIP_BEFORE;
+
+       free (tmp);
+      }
+     } else if (!strcmp (node->arbattrs[sti], "module-id")) {
+      uint32_t err;
+      regex_t *buffer = emalloc (sizeof (regex_t));
+
+      if (!(err = regcomp (buffer, node->arbattrs[sti+1], REG_EXTENDED))) {
+       new_transformation.id_pattern = buffer;
+       have_pattern = 1;
+      } else {
+       char errorcode [1024];
+       regerror (err, buffer, errorcode, 1024);
+       fputs (errorcode, stderr);
+      }
+     }
+    }
+
+    if (have_pattern && new_transformation.in) {
+     new_transformations =
+       streeadd (new_transformations, new_transformation.in, (void *)(&new_transformation), sizeof(new_transformation), new_transformation.id_pattern);
+    }
+   }
+  }
+
+  ca = service_transformations;
+  service_transformations = new_transformations;
+  if (ca)
+   streefree (ca);
+#endif
+
+//  update modules()
   mod_scanmodules();
  }
 }
