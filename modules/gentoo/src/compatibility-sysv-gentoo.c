@@ -81,6 +81,16 @@ const struct smodule self = {
  }
 };
 
+#ifdef POSIXREGEX
+struct stree *service_group_transformations = NULL;
+
+struct service_group_transformation {
+ char *out;
+ regex_t *pattern;
+};
+#endif
+
+
 char  do_service_tracking = 0,
      *service_tracking_path = NULL,
       is_gentoo_system = 0,
@@ -197,15 +207,13 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     char **arbattrs = NULL;
     char **base = NULL;
 
-    if (strcmp (de->d_name, "boot")) 
+    if (strcmp (de->d_name, "boot"))
      base = (char **)setadd ((void **)base, (void *)"boot", SET_TYPE_STRING);
 
 // if not exclusive, merge current mode base with the new base
     if (!exclusive) {
      if ((currentmode = cfg_findnode (de->d_name, EI_NODETYPE_MODE, NULL)) && currentmode->arbattrs) {
       char **curmodebase = NULL;
-
-//      fprintf (stderr, " >> gentoo runlevels not exclusive, merging with what we have so far...\n");
 
       uint32_t i = 0;
       for (; currentmode->arbattrs[i]; i+=2) {
@@ -261,15 +269,117 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      currentmode = NULL;
     }
    } else {
-//    fprintf (stderr, " >> new service: %s\n", de->d_name);
     nservices = (char **) setadd ((void **)nservices, (void *)de->d_name, SET_TYPE_STRING);
    }
   }
 
   if (nservices) {
-   if (currentmode) {
+#ifdef POSIXREGEX
+   if (service_group_transformations) {
+    struct stree *cur = service_group_transformations;
+
+    while (cur) {
+     struct service_group_transformation *trans =
+       (struct service_group_transformation *)cur->value;
+
+     if (trans) {
+      char **workingset = (char **)setdup ((void **)nservices, SET_TYPE_STRING);
+      char **new_services_for_group = NULL;
+
+      if (workingset) {
+       ssize_t ci = 0;
+       for (; workingset[ci]; ci++) {
+        if (!regexec (trans->pattern, workingset[ci], 0, NULL, 0)) {
+         ssize_t ip = 0;
+         nservices = strsetdel(nservices, workingset[ci]);
+         for (; workingset[ci][ip]; ip++) {
+          if (workingset[ci][ip] == '.') workingset[ci][ip] = '-';
+         }
+
+         new_services_for_group = (char **)setadd((void **)new_services_for_group, (void *)workingset[ci], SET_TYPE_STRING);
+        }
+       }
+       free (workingset);
+      }
+
+      if (new_services_for_group) {
+       char *cfgid = emalloc (strlen(cur->key) + 16);
+       char curgroup_has_seq_attribute = 0;
+       char **arbattrs = NULL;
+       struct cfgnode *curgroup = NULL;
+       struct cfgnode newnode;
+
+       *cfgid = 0;
+       strcat (cfgid, "services-alias-");
+       strcat (cfgid, cur->key);
+
+       curgroup = cfg_getnode (cfgid, NULL);
+       if (curgroup && curgroup->arbattrs) {
+        uint32_t y = 0;
+        for (; curgroup->arbattrs[y]; y+= 2) {
+         if (!strcmp (curgroup->arbattrs[y], "group")) {
+          uint32_t z = 0;
+          char **groupmembers = str2set (':', curgroup->arbattrs[y+1]);
+
+          if (groupmembers) {
+           for (; groupmembers[z]; z++) {
+            if (!inset ((void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING)) {
+             new_services_for_group = (char **)setadd ((void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING);
+            }
+           }
+           free (groupmembers);
+          }
+
+         } else if (!strcmp (curgroup->arbattrs[y], "seq")) {
+          curgroup_has_seq_attribute = 1;
+          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y], SET_TYPE_STRING);
+          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y+1], SET_TYPE_STRING);
+         } else {
+          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y], SET_TYPE_STRING);
+          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y+1], SET_TYPE_STRING);
+         }
+        }
+       }
+
+       arbattrs = (char **)setadd ((void **)arbattrs, (void *)"group", SET_TYPE_STRING);
+       arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', new_services_for_group), SET_TYPE_STRING);
+
+       if (!curgroup_has_seq_attribute) {
+        arbattrs = (char **)setadd ((void **)arbattrs, (void *)"seq", SET_TYPE_STRING);
+        arbattrs = (char **)setadd ((void **)arbattrs, (void *)"most", SET_TYPE_STRING);
+       }
+
+       memset (&newnode, 0, sizeof(struct cfgnode));
+
+       newnode.nodetype = EI_NODETYPE_CONFIG;
+//       newnode.mode     = currentmode;
+       newnode.id       = cfgid;
+       newnode.source   = self.rid;
+       newnode.arbattrs = arbattrs;
+
+       cfg_addnode (&newnode);
+
+       if (!inset ((void **)nservices, (void *)cur->key, SET_TYPE_STRING))
+        nservices = (char **)setadd((void **)nservices, (void *)cur->key, SET_TYPE_STRING);
+      }
+     }
+
+     cur = streenext(cur);
+    }
+   }
+#endif
+
+   if (nservices && currentmode) {
     char **arbattrs = NULL;
     struct cfgnode newnode;
+    uint32_t y = 0;
+
+    for (; nservices[y]; y++) {
+     uint32_t x = 0;
+     for (; nservices[y][x]; x++) {
+      if (nservices[y][x] == '.') nservices[y][x] = '-';
+     }
+    }
 
     if (!exclusive) {
      uint32_t i = 0;
@@ -353,6 +463,49 @@ void einit_event_handler (struct einit_event *ev) {
     if (!service_tracking_path) do_service_tracking = 0;
    }
   }
+#ifdef POSIXREGEX
+ } else if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  struct cfgnode *node = NULL;
+  struct stree *new_transformations = NULL, *ca;
+
+  while ((node = cfg_findnode ("configuration-compatibility-sysv-distribution-gentoo-service-group", 0, node))) {
+   if (node->arbattrs) {
+    struct service_group_transformation new_transformation;
+    ssize_t sti = 0;
+    char have_pattern = 0;
+
+    memset (&new_transformation, 0, sizeof(struct service_group_transformation));
+
+    for (; node->arbattrs[sti]; sti+=2) {
+     if (!strcmp (node->arbattrs[sti], "put-into")) {
+      new_transformation.out = node->arbattrs[sti+1];
+     } else if (!strcmp (node->arbattrs[sti], "service")) {
+      uint32_t err;
+      regex_t *buffer = emalloc (sizeof (regex_t));
+
+      if (!(err = regcomp (buffer, node->arbattrs[sti+1], REG_EXTENDED))) {
+       new_transformation.pattern = buffer;
+       have_pattern = 1;
+      } else {
+       char errorcode [1024];
+       regerror (err, buffer, errorcode, 1024);
+       fputs (errorcode, stderr);
+      }
+     }
+    }
+
+    if (have_pattern && new_transformation.out) {
+     new_transformations =
+       streeadd (new_transformations, new_transformation.out, (void *)(&new_transformation), sizeof(new_transformation), new_transformation.pattern);
+    }
+   }
+  }
+
+  ca = service_group_transformations;
+  service_group_transformations = new_transformations;
+  if (ca)
+   streefree (ca);
+#endif
  } else if (ev->type == EVE_PLAN_UPDATE) { // set active "soft mode"
   if (do_service_tracking && ev->string) {
    char tmp[256];

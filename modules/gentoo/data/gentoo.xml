@@ -11,9 +11,9 @@
    <sysv-distribution-gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-      <init.d path="/etc/init.d/"
-              pattern-allow=".*"
-              pattern-disallow=".*\.sh" />
+    <init.d path="/etc/init.d/"
+            pattern-allow=".*"
+            pattern-disallow=".*\.sh" />
 <!-- use this to make einit parse gentoo's runlevels as einit modes.
      NOTE: until someone defines a list with gentoo<>einit aliases, you'll
       get lots of unknown dependencies
@@ -21,20 +21,22 @@
      override all the modes that are defined in the xml configuration with
      gentoo's runlevel data which means lots of important things will be
      missing - like mount/critical... -->
-      <runlevels path="/etc/runlevels" exclusive="false" />
-      <parse-env.d b="true" />
-      <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
+    <runlevels path="/etc/runlevels" exclusive="false" />
+    <parse-env.d b="true" />
+    <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
 
 <!-- scriptlets to process gentoo's init.d scripts
      ( i don't particularly feel like re-implementing a complete sh right now )
      arguments: script-path, script-name, action -->
-      <init.d-scriptlets
-       svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d; /sbin/depscan.sh;
-        ln -s /sbin/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
-        echo default>/lib/rcscripts/init.d/softlevel;"
-       execute='/sbin/runscript.sh ${script-path} --quiet --nodeps ${action};' />
+    <init.d-scriptlets
+     svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d; /sbin/depscan.sh;
+      ln -s /sbin/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
+      echo default>/lib/rcscripts/init.d/softlevel;"
+     execute='/sbin/runscript.sh ${script-path} --quiet --nodeps ${action};' />
 
-    </sysv-distribution-gentoo>
+    <service-group id="gentoo-network-group" service="net\..*" put-into="network" />
+    <service-group id="gentoo-audio-group" service=".*sound.*" put-into="audio" />
+   </sysv-distribution-gentoo>
   </compatibility>
 
   <secondary>
