@@ -502,7 +502,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (plan->services) {
 // pass 1: find and remove dupes
   struct stree *ha = plan->services;
-  while (ha) {
+/*  while (ha) {
    struct stree *cha = plan->services;
    while (cha) {
     if (!memcmp (ha->value, cha->value, sizeof(struct mloadplan_node))) {
@@ -512,7 +512,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     cha = streenext (cha);
    }
    ha = streenext (ha);
-  }
+  }*/
 
 // pass 2: finalise initialisation
   ha = plan->services;
