@@ -2,6 +2,7 @@
  * added service transformations
  * build system changes
  * moved get_plan_progress from the visualiser to the module-logic.c file
+ * new sobexsrv module by RedIpS -- nice man ;)
 
 2007/02/19: mdeininger
  * etc/einit/einit.xml has been moved to lib/einit/einit.xml

@@ -45,7 +45,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 
 struct mloadplan {
- char **services;
+ char **enable;
+ char **disable;
+ char **reset;
+ char **reload;
+ char **critical;
 };
 
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);
