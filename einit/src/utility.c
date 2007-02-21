@@ -105,8 +105,9 @@ char *readfile (char *filename) {
    bitch2(BITCH_STDIO, "readfile()", errno, "reading file failed.");
 
   close (fd);
-  data = erealloc (buf, blen);
-  *(data+blen-1) = 0;
+  data = erealloc (buf, blen+1);
+  data[blen] = 0;
+  if (blen > 0) *(data+blen-1) = 0;
  }
 
  return data;
