@@ -152,5 +152,21 @@ struct event_function bitchin_einit_event_handler_ef = {
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &bitchin_einit_event_handler_ef
 
+#include <einit/module-logic.h>
+
+#ifdef MODULE_LOGIC_V3
+/* einit event handler for the v3 module logics core */
+void module_logic_einit_event_handler(struct einit_event *);
+
+struct event_function module_logic_einit_event_handler_ef = {
+ .type = EVENT_SUBSYSTEM_EINIT,
+ .handler = module_logic_einit_event_handler,
+ .next = EVENT_FUNCTIONS_PTR
+};
+
+#undef EVENT_FUNCTIONS_PTR
+#define EVENT_FUNCTIONS_PTR &module_logic_einit_event_handler_ef
+#endif
+
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;
 struct stree *exported_functions = EXPORTED_FUNCTIONS_PTR;

@@ -46,12 +46,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/tree.h>
 
-struct mloadplan {
+struct module_taskblock {
  char **enable;
  char **disable;
  char **reset;
  char **reload;
+ char **zap;
  char **critical;
+};
+
+struct mloadplan {
+ struct module_taskblock changes;
+ struct cfgnode *mode;
 };
 
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);

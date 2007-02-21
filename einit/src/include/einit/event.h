@@ -63,6 +63,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< notification of configuration update */
 #define EVE_PLAN_UPDATE                0x00001005
 /*!< Plan status update */
+#define EVE_MODULE_LIST_UPDATE         0x00001006
+/*!< notification of module-list updates */
 
 /*!< updated core information: new configuration elements */
 #define EVE_UPDATE_CONFIGURATION       0x00001101

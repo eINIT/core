@@ -227,9 +227,15 @@ int mod_scanmodules ( void ) {
  if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
 #endif
 
+/* give the module-logic code and others a chance at processing the current list */
+ struct einit_event update_event = evstaticinit(EVE_MODULE_LIST_UPDATE);
+ event_emit (&update_event, EINIT_EVENT_FLAG_BROADCAST);
+ evstaticdestroy(update_event);
+
  if ((pthread_errno = pthread_mutex_unlock (&modules_update_mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_scanmodules()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
+
  return 1;
 }
 
