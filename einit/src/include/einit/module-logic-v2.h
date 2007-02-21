@@ -48,6 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _MODULE_LOGIC_H
 #define _MODULE_LOGIC_H
 
+#define MODULE_LOGIC_V2
+
 #include <pthread.h>
 #include <unistd.h>
 #include <einit/module.h>

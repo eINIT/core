@@ -930,7 +930,13 @@ void einit_event_handler(struct einit_event *ev) {
 
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
-       if (printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]->plan) * 100) < 0)
+       if (printf (" ( %s | %f%% )",
+#ifdef MODULE_LOGIC_V2
+           (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown",
+#else
+           "unknown",
+#endif
+           get_plan_progress (plans[i]->plan) * 100) < 0)
         bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
       }
      }
@@ -941,7 +947,13 @@ void einit_event_handler(struct einit_event *ev) {
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
        if (plans[i]->plan) {
-        if (printf (" ( %s | %f%% )", (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown", get_plan_progress (plans[i]->plan) * 100) < 0)
+        if (printf (" ( %s | %f%% )",
+#ifdef MODULE_LOGIC_V2
+            (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown",
+#else
+            "unknown",
+#endif
+            get_plan_progress (plans[i]->plan) * 100) < 0)
          bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
        }
       }

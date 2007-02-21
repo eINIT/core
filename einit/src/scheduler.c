@@ -104,13 +104,11 @@ int scheduler_cleanup () {
 int sched_switchmode (char *mode) {
  int pthread_errno;
  if (!mode) return -1;
- struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
  struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
  struct mloadplan *plan = NULL;
 
   if (!cur) {
    notice (1, "scheduler: scheduled mode not defined, aborting");
-   free (fb);
    return -1;
   }
 
@@ -119,20 +117,13 @@ int sched_switchmode (char *mode) {
    notice (1, "scheduler: scheduled mode defined but nothing to be done");
   } else {
    pthread_t th;
-   if (plan->mode) cmode = plan->mode;
-   fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
-   fb->para = (void *)plan;
-   status_update (fb);
    mod_plan_commit (plan);
-   fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
-   status_update (fb);
 /* make it so that the erase operation will not disturb the flow of the program */
    if ((pthread_errno = pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan))) {
     bitch2(BITCH_EPTHREADS, "sched_switchmode()", pthread_errno, "pthread_create() failed.");
    }
   }
 
- evdestroy (fb);
  return 0;
 }
 
@@ -154,24 +145,28 @@ int sched_modaction (char **argv) {
  if ((plan = mod_plan (NULL, argv, task, NULL))) {
   pthread_t th;
 
-  mod_plan_commit (plan);
+  ret = mod_plan_commit (plan);
+
+#ifdef MODULE_LOGIC_V2
+/* extra code needed for v2 logic */
 
   if (plan->services) {
    struct mloadplan_node *node = (struct mloadplan_node *)streefind (plan->services, argv[0], TREE_FIND_FIRST);
 
    if (node) switch (task) {
     case MOD_ENABLE:
-	 ret = !(node->status & STATUS_ENABLED); break;
+     ret = !(node->status & STATUS_ENABLED); break;
     case MOD_DISABLE:
-	 ret = !(node->status & STATUS_DISABLED); break;
+     ret = !(node->status & STATUS_DISABLED); break;
     case MOD_RESET:
-	 ret = !(node->status & STATUS_ENABLED); break;
+     ret = !(node->status & STATUS_ENABLED); break;
     case MOD_RELOAD:
-	 ret = !(node->status & STATUS_ENABLED); break;
+     ret = !(node->status & STATUS_ENABLED); break;
     case MOD_ZAP:
-	 ret = !(node->status == STATUS_IDLE); break;
+     ret = !(node->status == STATUS_IDLE); break;
    }
   }
+#endif
 
   if ((pthread_errno = pthread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan))) {
    bitch2(BITCH_EPTHREADS, "sched_modaction()", pthread_errno, "pthread_create() failed.");

@@ -35,3 +35,21 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <einit/config.h>
+#include <einit/module-logic.h>
+
+struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
+}
+
+unsigned int mod_plan_commit (struct mloadplan *plan) {
+}
+
+int mod_plan_free (struct mloadplan *plan) {
+ if (plan) free (plan);
+}
+
+double get_plan_progress (struct mloadplan *plan) {
+}

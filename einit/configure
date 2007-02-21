@@ -65,6 +65,9 @@ for param in $@; do
 	elif test "$short" = "--set-type"; then
 		echo -n " SETTYPE";
 		SETTYPE=${param#*=};
+	elif test "$short" = "--module-logic-type"; then
+		echo -n " MODULELOGICTYPE";
+		MODULELOGICTYPE=${param#*=};
 	elif test "$short" = "--with-include"; then
 		echo -n " INCLUDE";
 		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";

@@ -1046,6 +1046,8 @@ void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
  int pthread_errno;
+ struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
+
  if (!plan) return -1;
  if ((pthread_errno = pthread_mutex_lock (&plan->mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
@@ -1074,6 +1076,10 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    }
   }
  }
+
+ fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
+ fb->para = (void *)plan;
+ status_update (fb);
 
  uint32_t u = 0;
 
@@ -1123,6 +1129,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   }
  }
 
+ fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
+ status_update (fb);
+
 // do some more extra work if the plan was derived from a mode
  if (plan->mode) {
   char *cmdt;
@@ -1155,6 +1164,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    }
   }
  }
+
+ evdestroy (fb);
 
  if ((pthread_errno = pthread_mutex_unlock (&plan->mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
