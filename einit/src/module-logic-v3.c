@@ -45,7 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <einit/bitch.h>
 
-struct module_taskblock current, target_state;
+struct module_taskblock
+  current = { NULL, NULL, NULL, NULL, NULL, NULL },
+  target_state = { NULL, NULL, NULL, NULL, NULL, NULL };
 
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
 struct stree *module_logics_mode_data = NULL;
@@ -66,6 +68,37 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   memset (plan, 0, sizeof (struct mloadplan));
  }
 
+ if (mode) {
+  plan->mode = mode;
+
+ } else {
+  if (ev->task & MOD_ENABLE) {
+   char **tmp = (char **)setcombine (plan->changes->enable, atoms, SET_TYPE_STRING);
+   if (plan->changes->enable) free (plan->changes->enable);
+   plan->changes->enable = tmp;
+  }
+  if (ev->task & MOD_DISABLE) {
+   char **tmp = (char **)setcombine (plan->changes->disable, atoms, SET_TYPE_STRING);
+   if (plan->changes->disable) free (plan->changes->disable);
+   plan->changes->disable = tmp;
+  }
+  if (ev->task & MOD_RESET) {
+   char **tmp = (char **)setcombine (plan->changes->reset, atoms, SET_TYPE_STRING);
+   if (plan->changes->reset) free (plan->changes->reset);
+   plan->changes->reset = tmp;
+  }
+  if (ev->task & MOD_RELOAD) {
+   char **tmp = (char **)setcombine (plan->changes->reload, atoms, SET_TYPE_STRING);
+   if (plan->changes->reload) free (plan->changes->reload);
+   plan->changes->reload = tmp;
+  }
+  if (ev->task & MOD_ZAP) {
+   char **tmp = (char **)setcombine (plan->changes->zap, atoms, SET_TYPE_STRING);
+   if (plan->changes->zap) free (plan->changes->zap);
+   plan->changes->zap = tmp;
+  }
+ }
+
  if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
  }
@@ -78,6 +111,47 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (!plan) return 0;
+
+ if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
+ }
+
+ if (plan->changes->enable) {
+  char **tmp = (char **)setcombine (target_state.enable, plan->changes->enable, SET_TYPE_STRING);
+  if (target_state.enable) free (target_state.enable);
+  target_state.enable = tmp;
+ }
+ if (plan->changes->disable) {
+  char **tmp = (char **)setcombine (target_state.disable, plan->changes->disable, SET_TYPE_STRING);
+  if (target_state.disable) free (target_state.disable);
+  target_state.disable = tmp;
+ }
+ if (plan->changes->reset) {
+  char **tmp = (char **)setcombine (target_state.reset, plan->changes->reset, SET_TYPE_STRING);
+  if (target_state.reset) free (target_state.reset);
+  target_state.reset = tmp;
+ }
+ if (plan->changes->reload) {
+  char **tmp = (char **)setcombine (target_state.reload, plan->changes->reload, SET_TYPE_STRING);
+  if (target_state.reload) free (target_state.reload);
+  target_state.reload = tmp;
+ }
+ if (plan->changes->zap) {
+  char **tmp = (char **)setcombine (target_state.zap, plan->changes->zap, SET_TYPE_STRING);
+  if (target_state.zap) free (target_state.zap);
+  target_state.zap = tmp;
+ }
+ if (plan->changes->critical) {
+  char **tmp = (char **)setcombine (target_state.critical, plan->changes->critical, SET_TYPE_STRING);
+  if (target_state.critical) free (target_state.critical);
+  target_state.critical = tmp;
+ }
+
+ if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
+ }
+
+ if (plan->mode) return 0; // always return "OK" if it's based on a mode
 
  return 0;
 }
