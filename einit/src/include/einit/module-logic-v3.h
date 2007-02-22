@@ -58,6 +58,7 @@ struct module_taskblock {
 struct mloadplan {
  struct module_taskblock changes;
  struct cfgnode *mode;
+ char **used_modes;
 };
 
 struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);

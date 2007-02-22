@@ -72,6 +72,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 void **setcombine (void **set1, void **set2, int32_t esize);
 
+void **setslice (void **set1, void **set2, int32_t esize);
+
 /*!\brief Add \b item to \b set.
  * \param[in,out] set   the set
  * \param[in]     item  the item to be added

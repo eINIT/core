@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <string.h>
 #include <einit/bitch.h>
+#include <einit-modules/ipc.h>
 
 struct module_taskblock
   current = { NULL, NULL, NULL, NULL, NULL, NULL },
@@ -60,8 +61,84 @@ pthread_mutex_t
   ml_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_mode_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void mod_get_and_apply () {
+ int pthread_errno;
+
+ if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
+ }
+
+ fprintf (stderr, "enable: %s\n", set2str(' ', current.enable));
+ fprintf (stderr, "disable: %s\n", set2str(' ', current.disable));
+ fprintf (stderr, "reset: %s\n", set2str(' ', current.reset));
+ fprintf (stderr, "reload: %s\n", set2str(' ', current.reload));
+ fprintf (stderr, "zap: %s\n", set2str(' ', current.zap));
+ fprintf (stderr, "critical: %s\n", set2str(' ', current.critical));
+
+ if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
+ }
+}
+
+void cross_taskblock (struct module_taskblock *source, struct module_taskblock *target) {
+ if (source->enable) {
+  char **tmp = (char **)setcombine ((void **)target->enable, (void **)source->enable, SET_TYPE_STRING);
+  if (target->enable) free (target->enable);
+  target->enable = tmp;
+
+  tmp = (char **)setslice ((void **)target->disable, (void **)source->enable, SET_TYPE_STRING);
+  if (target->disable) free (target->disable);
+  target->disable = tmp;
+ }
+ if (source->reset) {
+  char **tmp = (char **)setcombine ((void **)target->reset, (void **)source->reset, SET_TYPE_STRING);
+  if (target->reset) free (target->reset);
+  target->reset = tmp;
+ }
+ if (source->reload) {
+  char **tmp = (char **)setcombine ((void **)target->reload, (void **)source->reload, SET_TYPE_STRING);
+  if (target->reload) free (target->reload);
+  target->reload = tmp;
+ }
+ if (source->critical) {
+  char **tmp = (char **)setcombine ((void **)target->critical, (void **)source->critical, SET_TYPE_STRING);
+  if (target->critical) free (target->critical);
+  target->critical = tmp;
+ }
+
+ if (source->disable) {
+  char **tmp = (char **)setcombine ((void **)target->disable, (void **)source->disable, SET_TYPE_STRING);
+  if (target->disable) free (target->disable);
+  target->disable = tmp;
+
+  tmp = (char **)setslice ((void **)target->enable, (void **)source->disable, SET_TYPE_STRING);
+  if (target->enable) free (target->enable);
+  target->enable = tmp;
+
+  tmp = (char **)setslice ((void **)target->critical, (void **)source->disable, SET_TYPE_STRING);
+  if (target->critical) free (target->critical);
+  target->critical = tmp;
+ }
+
+ if (source->zap) {
+  char **tmp = (char **)setcombine ((void **)target->zap, (void **)source->zap, SET_TYPE_STRING);
+  if (target->zap) free (target->zap);
+  target->zap = tmp;
+
+  tmp = (char **)setslice ((void **)target->enable, (void **)source->zap, SET_TYPE_STRING);
+  if (target->enable) free (target->enable);
+  target->enable = tmp;
+
+  tmp = (char **)setslice ((void **)target->critical, (void **)source->zap, SET_TYPE_STRING);
+  if (target->critical) free (target->critical);
+  target->critical = tmp;
+ }
+}
+
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
  int pthread_errno;
+
+ char disable_all_but_feedback = 0, disable_all = 0;
 
  if (!plan) {
   plan = emalloc (sizeof (struct mloadplan));
@@ -69,87 +146,255 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  }
 
  if (mode) {
+  char **base = NULL;
+  uint32_t xi = 0;
+  char **enable   = str2set (':', cfg_getstring ("enable/services", mode));
+  char **disable  = str2set (':', cfg_getstring ("disable/services", mode));
+  char **reset    = str2set (':', cfg_getstring ("reset/services", mode));
+  char **reload   = str2set (':', cfg_getstring ("reload/services", mode));
+  char **zap      = str2set (':', cfg_getstring ("zap/services", mode));
+  char **critical = str2set (':', cfg_getstring ("enable/critical", mode));
+
+  if (!enable)
+   enable  = str2set (':', cfg_getstring ("enable/mod", mode));
+  if (!disable)
+   disable = str2set (':', cfg_getstring ("disable/mod", mode));
+  if (!reset)
+   reset   = str2set (':', cfg_getstring ("reset/mod", mode));
+
+  if (mode->arbattrs) for (; mode->arbattrs[xi]; xi+=2) {
+   if (!strcmp(mode->arbattrs[xi], "base")) {
+    base = str2set (':', mode->arbattrs[xi+1]);
+   }
+  }
+
+  if (base) {
+   int y = 0;
+   struct cfgnode *cno;
+   while (base[y]) {
+    if (!inset ((void **)plan->used_modes, (void *)base[y], SET_TYPE_STRING)) {
+     cno = cfg_findnode (base[y], EI_NODETYPE_MODE, NULL);
+     if (cno) {
+      plan = mod_plan (plan, NULL, 0, cno);
+     }
+    }
+
+    y++;
+   }
+
+   free (base);
+  }
+
+  if (enable) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.enable, (void **)enable, SET_TYPE_STRING);
+   if (plan->changes.enable) free (plan->changes.enable);
+   plan->changes.enable = tmp;
+  }
+  if (disable) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.disable, (void **)disable, SET_TYPE_STRING);
+   if (plan->changes.disable) free (plan->changes.disable);
+   plan->changes.disable = tmp;
+  }
+  if (reset) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.reset, (void **)reset, SET_TYPE_STRING);
+   if (plan->changes.reset) free (plan->changes.reset);
+   plan->changes.reset = tmp;
+  }
+  if (reload) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.reload, (void **)reload, SET_TYPE_STRING);
+   if (plan->changes.reload) free (plan->changes.reload);
+   plan->changes.reload = tmp;
+  }
+  if (zap) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.zap, (void **)zap, SET_TYPE_STRING);
+   if (plan->changes.zap) free (plan->changes.zap);
+   plan->changes.zap = tmp;
+  }
+  if (critical) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.critical, (void **)critical, SET_TYPE_STRING);
+   if (plan->changes.critical) free (plan->changes.critical);
+   plan->changes.critical = tmp;
+  }
+
+  if (mode->id) {
+   plan->used_modes = (char **)setadd ((void **)plan->used_modes, mode->id, SET_TYPE_STRING);
+  }
+
   plan->mode = mode;
-
  } else {
-  if (ev->task & MOD_ENABLE) {
-   char **tmp = (char **)setcombine (plan->changes->enable, atoms, SET_TYPE_STRING);
-   if (plan->changes->enable) free (plan->changes->enable);
-   plan->changes->enable = tmp;
+  if (task & MOD_ENABLE) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.enable, (void **)atoms, SET_TYPE_STRING);
+   if (plan->changes.enable) free (plan->changes.enable);
+   plan->changes.enable = tmp;
   }
-  if (ev->task & MOD_DISABLE) {
-   char **tmp = (char **)setcombine (plan->changes->disable, atoms, SET_TYPE_STRING);
-   if (plan->changes->disable) free (plan->changes->disable);
-   plan->changes->disable = tmp;
+  if (task & MOD_DISABLE) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.disable, (void **)atoms, SET_TYPE_STRING);
+   if (plan->changes.disable) free (plan->changes.disable);
+   plan->changes.disable = tmp;
   }
-  if (ev->task & MOD_RESET) {
-   char **tmp = (char **)setcombine (plan->changes->reset, atoms, SET_TYPE_STRING);
-   if (plan->changes->reset) free (plan->changes->reset);
-   plan->changes->reset = tmp;
+  if (task & MOD_RESET) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.reset, (void **)atoms, SET_TYPE_STRING);
+   if (plan->changes.reset) free (plan->changes.reset);
+   plan->changes.reset = tmp;
   }
-  if (ev->task & MOD_RELOAD) {
-   char **tmp = (char **)setcombine (plan->changes->reload, atoms, SET_TYPE_STRING);
-   if (plan->changes->reload) free (plan->changes->reload);
-   plan->changes->reload = tmp;
+  if (task & MOD_RELOAD) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.reload, (void **)atoms, SET_TYPE_STRING);
+   if (plan->changes.reload) free (plan->changes.reload);
+   plan->changes.reload = tmp;
   }
-  if (ev->task & MOD_ZAP) {
-   char **tmp = (char **)setcombine (plan->changes->zap, atoms, SET_TYPE_STRING);
-   if (plan->changes->zap) free (plan->changes->zap);
-   plan->changes->zap = tmp;
+  if (task & MOD_ZAP) {
+   char **tmp = (char **)setcombine ((void **)plan->changes.zap, (void **)atoms, SET_TYPE_STRING);
+   if (plan->changes.zap) free (plan->changes.zap);
+   plan->changes.zap = tmp;
   }
  }
 
- if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
+
+ disable_all = inset ((void **)plan->changes.disable, (void *)"all", SET_TYPE_STRING);
+ disable_all_but_feedback = inset ((void **)plan->changes.disable, (void *)"all-but-feedback", SET_TYPE_STRING);
+
+ if (disable_all || disable_all_but_feedback) {
+  if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
+   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
+  }
+
+  struct stree *cur = module_logics_service_list;
+  while (cur) {
+   if (cur->value) {
+    struct lmodule **lm = (struct lmodule **)cur->value;
+    ssize_t i = 0;
+    char tbe = 0;
+
+    if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
+     bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
+    }
+
+    tbe = inset ((void **)target_state.enable, (void *)cur->key, SET_TYPE_STRING);
+
+    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
+     bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
+    }
+
+    for (; lm[i]; i++) {
+     if ((lm[i]->status & STATUS_ENABLED) || tbe) {
+      if (!disable_all_but_feedback || (!(lm[i]->module->mode & EINIT_MOD_FEEDBACK))) {
+       plan->changes.disable = (char **)setadd ((void **)plan->changes.disable, (void *)cur->key, SET_TYPE_STRING);
+
+       break;
+      }
+     }
+    }
+   }
+
+   cur = streenext (cur);
+  }
+
+  if (disable_all)
+   plan->changes.disable = strsetdel (plan->changes.disable, "all");
+  if (disable_all_but_feedback)
+   plan->changes.disable = strsetdel (plan->changes.disable, "all-but-feedback");
+
+  if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
+   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
+  }
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
  return plan;
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
+ int pthread_errno;
+ struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
+
  if (!plan) return 0;
+
+// do some extra work if the plan was derived from a mode
+ if (plan->mode) {
+  char *cmdt;
+  cmode = plan->mode;
+
+  if ((cmdt = cfg_getstring ("before-switch/emit-event", cmode))) {
+   struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  }
+
+  if ((cmdt = cfg_getstring ("before-switch/ipc", cmode))) {
+   char **cmdts = str2set (';', cmdt);
+   uint32_t in = 0;
+
+   if (cmdts) {
+    for (; cmdts[in]; in++)
+     ipc_process(cmdts[in], stderr);
+
+    free (cmdts);
+   }
+  }
+ }
+
+ fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
+ fb->para = (void *)plan;
+ status_update (fb);
+
+ if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
+ }
+
+ cross_taskblock (&(plan->changes), &target_state);
+
+ if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
+ }
 
  if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
  }
 
- if (plan->changes->enable) {
-  char **tmp = (char **)setcombine (target_state.enable, plan->changes->enable, SET_TYPE_STRING);
-  if (target_state.enable) free (target_state.enable);
-  target_state.enable = tmp;
- }
- if (plan->changes->disable) {
-  char **tmp = (char **)setcombine (target_state.disable, plan->changes->disable, SET_TYPE_STRING);
-  if (target_state.disable) free (target_state.disable);
-  target_state.disable = tmp;
- }
- if (plan->changes->reset) {
-  char **tmp = (char **)setcombine (target_state.reset, plan->changes->reset, SET_TYPE_STRING);
-  if (target_state.reset) free (target_state.reset);
-  target_state.reset = tmp;
- }
- if (plan->changes->reload) {
-  char **tmp = (char **)setcombine (target_state.reload, plan->changes->reload, SET_TYPE_STRING);
-  if (target_state.reload) free (target_state.reload);
-  target_state.reload = tmp;
- }
- if (plan->changes->zap) {
-  char **tmp = (char **)setcombine (target_state.zap, plan->changes->zap, SET_TYPE_STRING);
-  if (target_state.zap) free (target_state.zap);
-  target_state.zap = tmp;
- }
- if (plan->changes->critical) {
-  char **tmp = (char **)setcombine (target_state.critical, plan->changes->critical, SET_TYPE_STRING);
-  if (target_state.critical) free (target_state.critical);
-  target_state.critical = tmp;
- }
+ cross_taskblock (&target_state, &current);
 
  if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
  }
+
+ mod_get_and_apply ();
+
+ fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
+ status_update (fb);
+
+// do some more extra work if the plan was derived from a mode
+ if (plan->mode) {
+  char *cmdt;
+  amode = plan->mode;
+
+  if (amode->id) {
+   struct einit_event eema = evstaticinit (EVE_PLAN_UPDATE);
+   eema.string = estrdup(amode->id);
+   eema.para   = (void *)amode;
+   event_emit (&eema, EINIT_EVENT_FLAG_BROADCAST);
+   free (eema.string);
+   evstaticdestroy (eema);
+  }
+
+  if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
+   struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (ee);
+  }
+
+  if ((cmdt = cfg_getstring ("after-switch/ipc", amode))) {
+   char **cmdts = str2set (';', cmdt);
+   uint32_t in = 0;
+
+   if (cmdts) {
+    for (; cmdts[in]; in++) {
+     ipc_process(cmdts[in], stderr);
+    }
+    free (cmdts);
+   }
+  }
+ }
+
+ evdestroy (fb);
 
  if (plan->mode) return 0; // always return "OK" if it's based on a mode
 
