@@ -107,7 +107,12 @@ char *readfile (char *filename) {
   close (fd);
   data = erealloc (buf, blen+1);
   data[blen] = 0;
-  if (blen > 0) *(data+blen-1) = 0;
+  if (blen > 0) {
+   *(data+blen-1) = 0;
+  } else {
+   free (data);
+   data = NULL;
+  }
  }
 
  return data;

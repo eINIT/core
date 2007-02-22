@@ -245,10 +245,10 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     EINIT_CFGNODE_ONLINE_MODIFICATION : 0
  };
 
- if (fprintf (stderr, " >> parsing \"%s\".\n", configfile) < 0)
-  bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
-
  if ((data = readfile (configfile))) {
+  if (fprintf (stderr, " >> parsing \"%s\".\n", configfile) < 0)
+   bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+
   time_t currenttime = time(NULL);
   if (st.st_mtime > currenttime) {// sanity check mtime
    if (fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile) < 0)
@@ -395,13 +395,14 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   if (expatuserdata.prefix) free (expatuserdata.prefix);
 
   return hconfiguration != NULL;
- } else {
+ } else if (errno) {
   if (fprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno)) < 0)
    bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
 
   return errno;
-//  return bitch(BTCH_ERRNO);
  }
+
+ return hconfiguration != NULL;
 }
 
 void einit_config_xml_expat_event_handler (struct einit_event *ev) {
