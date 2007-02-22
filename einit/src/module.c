@@ -863,6 +863,14 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
    service_usage = streeadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
+  } else {
+   struct service_usage_item *citem = (struct service_usage_item *)ha->value;
+
+   if (citem) {
+    if (!inset ((void **)citem->provider, (void *)module, SET_NOALLOC)) {
+     citem->provider = (struct lmodule **)setadd ((void **)citem->provider, (void *)module, SET_NOALLOC);
+    }
+   }
   }
  }
 
