@@ -641,6 +641,7 @@ int mod (unsigned int task, struct lmodule *module) {
    ees.status = STATUS_WORKING;
    ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
    ees.set = (void **)module->si->provides;
+   ees.para = (void *)module;
    event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
    evstaticdestroy (ees);
   }
@@ -732,6 +733,7 @@ int mod (unsigned int task, struct lmodule *module) {
     ees.status = fb->status;
     ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
     ees.set = (void **)module->si->provides;
+    ees.para = (void *)module;
     event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
     evstaticdestroy (ees);
    }

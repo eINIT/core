@@ -1644,6 +1644,8 @@ int enable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t ret, sc = 0, slc;
 
+ if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
+
  switch (p) {
   case MOUNT_LOCAL:
   case MOUNT_REMOTE:
@@ -1764,6 +1766,8 @@ int disable (enum mounttask p, struct einit_event *status) {
  struct fstab_entry *fse = NULL;
  char **candidates = NULL;
  uint32_t sc = 0, slc;
+
+ if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
 
  update (UPDATE_MTAB);
  ha = mcb.fstab;
