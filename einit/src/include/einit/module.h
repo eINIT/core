@@ -143,6 +143,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SERVICE_GET_SERVICES_USED_BY    0x0040 /*!< Service-usage-query: "What services are used by this?" */
 
 #define SERVICE_ADD_GROUP_PROVIDER      0x0200 /*!< Service-usage-query: "This module provides this service" */
+#define SERVICE_SET_GROUP_PROVIDERS     0x0400 /*!< Service-usage-query: "These modules provide this service" */
 /*!\} */
 
 struct service_information {

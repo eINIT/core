@@ -610,7 +610,9 @@ int mod (unsigned int task, struct lmodule *module) {
   }
   return STATUS_IDLE;
  }
- if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED)))
+ if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED) || (module->status == STATUS_IDLE)))
+  goto wontload;
+ if ((task & MOD_RESET) && (module->status & STATUS_DISABLED))
   goto wontload;
  if ((task & MOD_RELOAD) && (module->status & STATUS_DISABLED))
   goto wontload;
@@ -870,6 +872,21 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
     if (!inset ((void **)citem->provider, (void *)module, SET_NOALLOC)) {
      citem->provider = (struct lmodule **)setadd ((void **)citem->provider, (void *)module, SET_NOALLOC);
     }
+   }
+  }
+ }
+ if (task & SERVICE_SET_GROUP_PROVIDERS) {
+  if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
+   struct service_usage_item nitem;
+   memset (&nitem, 0, sizeof (struct service_usage_item));
+   nitem.provider = (struct lmodule **)setdup ((void **)module, SET_NOALLOC);
+   service_usage = streeadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
+  } else {
+   struct service_usage_item *citem = (struct service_usage_item *)ha->value;
+
+   if (citem) {
+    free (citem->provider);
+    citem->provider = (struct lmodule **)setdup ((void **)module, SET_NOALLOC);
    }
   }
  }
