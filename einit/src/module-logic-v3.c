@@ -951,34 +951,39 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **tmp = (char **)setcombine ((void **)tmpx, (void **)plan->changes.disable, SET_TYPE_STRING);  
 
   free (tmpx);
-  tmpx = (char **)setdup((void **)tmp, SET_TYPE_STRING);
+ 
+  if (plan->changes.disable) {
+   free (plan->changes.disable);
+   plan->changes.disable = NULL;
+  }
 
-  if (tmpx) {
-   for (; tmpx[i]; i++) {
-	if ((cur = streefind (module_logics_service_list, tmpx[i], TREE_FIND_FIRST))) {
+  if (tmp) {
+   for (; tmp[i]; i++) {
+    char add = 1;
+
+	if ((cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
      if (lm) {
 	  ssize_t y = 0;
 	  for (; lm[y]; y++) {
        if (disable_all_but_feedback && (lm[y]->module->mode & EINIT_MOD_FEEDBACK)) {
-        tmp = strsetdel (tmp, cur->key);
+	    add = 0;
 
         break;
        }
 	  }
 	 }
-    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, tmpx[i])) {
-     tmp = strsetdel (tmp, tmpx[i]);
+    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, tmp[i])) {
+	 add = 0;
     }
+
+    if (add) {
+     plan->changes.disable = (char **)setadd((void **)plan->changes.disable, (void *)tmp[i], SET_TYPE_STRING);
+	}
    }
 
-   free (tmpx);
+   free (tmp);
   }
-
-  if (plan->changes.disable)
-   free (plan->changes.disable);
-
-  plan->changes.disable = tmp;
 
 /*  cur = module_logics_service_list;
 
