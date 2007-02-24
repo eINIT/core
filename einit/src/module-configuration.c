@@ -157,15 +157,21 @@ struct event_function bitchin_einit_event_handler_ef = {
 #ifdef MODULE_LOGIC_V3
 /* einit event handler for the v3 module logics core */
 void module_logic_einit_event_handler(struct einit_event *);
+void module_logic_ipc_event_handler(struct einit_event *);
 
 struct event_function module_logic_einit_event_handler_ef = {
  .type = EVENT_SUBSYSTEM_EINIT,
  .handler = module_logic_einit_event_handler,
  .next = EVENT_FUNCTIONS_PTR
 };
+struct event_function module_logic_ipc_event_handler_ef = {
+ .type = EVENT_SUBSYSTEM_IPC,
+ .handler = module_logic_ipc_event_handler,
+ .next = &module_logic_einit_event_handler_ef
+};
 
 #undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &module_logic_einit_event_handler_ef
+#define EVENT_FUNCTIONS_PTR &module_logic_ipc_event_handler_ef
 #endif
 
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;

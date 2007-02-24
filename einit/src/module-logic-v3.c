@@ -464,6 +464,9 @@ void mod_apply (struct ma_task *task) {
    do {
     struct lmodule *current = lm[0];
 
+    if ((task->task & MOD_DISABLE) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)))
+	 goto skip_module;
+
     if (task->task & MOD_ENABLE) if (mod_enable_requirements (current)) {
      free (task);
      return;
@@ -482,6 +485,7 @@ void mod_apply (struct ma_task *task) {
      }
     }
 
+    skip_module:
 /* next module */
     if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
      bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
@@ -498,6 +502,22 @@ void mod_apply (struct ma_task *task) {
    } while (lm[0] != first);
 /* if we tried to enable something and end up here, it means we did a complete
    round-trip and nothing worked */
+
+   if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
+    bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
+   }
+
+   switch (task->task) {
+    case MOD_ENABLE: current.enable = strsetdel(current.enable, des->key); break;
+    case MOD_DISABLE: current.disable = strsetdel(current.disable, des->key); break;
+    case MOD_RESET: current.reset = strsetdel(current.reset, des->key); break;
+    case MOD_RELOAD: current.reload = strsetdel(current.reload, des->key); break;
+    case MOD_ZAP: current.zap = strsetdel(current.zap, des->key); break;
+   }
+
+   if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
+    bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
+   }
 
    if (task->task & (MOD_ENABLE | MOD_RESET | MOD_RELOAD)) {
     if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
@@ -935,16 +955,58 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   }
  }
 
-
  disable_all = inset ((void **)plan->changes.disable, (void *)"all", SET_TYPE_STRING);
  disable_all_but_feedback = inset ((void **)plan->changes.disable, (void *)"all-but-feedback", SET_TYPE_STRING);
 
  if (disable_all || disable_all_but_feedback) {
+  struct stree *cur;
+  ssize_t i = 0;
+
   if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
    bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
   }
 
-  struct stree *cur = module_logics_service_list;
+  if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
+   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
+  }
+
+  char **tmpx = (char **)setcombine ((void **)plan->changes.enable, (void **)target_state.enable, SET_TYPE_STRING);
+
+  if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
+   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
+  }
+
+  char **tmp = (char **)setcombine ((void **)tmpx, (void **)plan->changes.disable, SET_TYPE_STRING);  
+
+  free (tmpx);
+  tmpx = (char **)setdup((void **)tmp, SET_TYPE_STRING);
+
+  if (tmpx) {
+   for (; tmpx[i]; i++) {
+    if ((cur = streefind (module_logics_service_list, tmpx[i], TREE_FIND_FIRST))) {
+     struct lmodule **lm = (struct lmodule **)cur->value;
+	 if (lm) {
+	  ssize_t y = 0;
+	  for (; lm[y]; y++) {
+       if (disable_all_but_feedback && (lm[y]->module->mode & EINIT_MOD_FEEDBACK)) {
+        tmp = strsetdel (tmp, cur->key);
+
+        break;
+       }
+	  }
+	 }
+    }
+   }
+
+   free (tmpx);
+  }
+
+  if (plan->changes.disable)
+   free (plan->changes.disable);
+
+  plan->changes.disable = tmp;
+
+/*  cur = module_logics_service_list;
 
   while (cur) {
    if (cur->value) {
@@ -974,7 +1036,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    }
 
    cur = streenext (cur);
-  }
+  }*/
 
   if (disable_all)
    plan->changes.disable = strsetdel (plan->changes.disable, "all");
@@ -1034,6 +1096,59 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
 
  cross_taskblock (&target_state, &current);
+
+ uint32_t i = 0;
+
+ if (current.enable) {
+  char **tmp = NULL;
+  for (; current.enable[i]; i++) {
+   if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, current.enable[i])) {
+    tmp = (char **)setadd ((void **)tmp, (void *)current.enable[i], SET_TYPE_STRING);
+   }
+  }
+  free (current.enable);
+  current.enable = tmp;
+ }
+ if (current.disable) {
+  char **tmp = NULL;
+  for (; current.disable[i]; i++) {
+   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.disable[i])) {
+    tmp = (char **)setadd ((void **)tmp, (void *)current.disable[i], SET_TYPE_STRING);
+   }
+  }
+  free (current.disable);
+  current.disable = tmp;
+ }
+ if (current.zap) {
+  char **tmp = NULL;
+  for (; current.zap[i]; i++) {
+   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.zap[i])) {
+    tmp = (char **)setadd ((void **)tmp, (void *)current.zap[i], SET_TYPE_STRING);
+   }
+  }
+  free (current.zap);
+  current.zap = tmp;
+ }
+ if (current.reset) {
+  char **tmp = NULL;
+  for (; current.reset[i]; i++) {
+   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.reset[i])) {
+    tmp = (char **)setadd ((void **)tmp, (void *)current.reset[i], SET_TYPE_STRING);
+   }
+  }
+  free (current.reset);
+  current.reset = tmp;
+ }
+ if (current.reload) {
+  char **tmp = NULL;
+  for (; current.reload[i]; i++) {
+   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.reload[i])) {
+    tmp = (char **)setadd ((void **)tmp, (void *)current.reload[i], SET_TYPE_STRING);
+   }
+  }
+  free (current.reload);
+  current.reload = tmp;
+ }
 
  if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
   bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
@@ -1111,6 +1226,67 @@ double get_plan_progress (struct mloadplan *plan) {
  return 0.0;
 }
 
+void mod_sort_service_list_items_by_preference() {
+ int pthread_errno = 0;
+ struct stree *cur;
+
+ if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_sort_service_list_items_by_preference()", pthread_errno, "pthread_mutex_lock() failed.");
+ }
+
+ cur = module_logics_service_list;
+
+ while (cur) {
+  struct lmodule **lm = (struct lmodule **)cur->value;
+
+  if (lm) {
+/* order modules that should be enabled according to the user's preference */
+    uint32_t mpx, mpy, mpz = 0;
+    char *pnode = NULL, **preference = NULL;
+
+/* first make sure all modules marked as "deprecated" are last */
+    for (mpx = 0; lm[mpx]; mpx++); mpx--;
+    for (mpy = 0; mpy < mpx; mpy++) {
+     if (lm[mpy]->module && (lm[mpy]->module->options & EINIT_MOD_DEPRECATED)) {
+      struct lmodule *t = lm[mpx];
+      lm[mpx] = lm[mpy];
+      lm[mpy] = t;
+      mpx--;
+     }
+    }
+
+/* now to the sorting bit... */
+    pnode = emalloc (strlen (cur->key)+18);
+    pnode[0] = 0;
+    strcat (pnode, "services-prefer-");
+    strcat (pnode, cur->key);
+    if ((preference = str2set (':', cfg_getstring (pnode, NULL)))) {
+     for (mpx = 0; preference[mpx]; mpx++) {
+      for (mpy = 0; lm[mpy]; mpy++) {
+       if (lm[mpy]->module && lm[mpy]->module->rid && !strcmp(lm[mpy]->module->rid, preference[mpx])) {
+        struct lmodule *tm = lm[mpy];
+
+        lm[mpy] = lm[mpz];
+        lm[mpz] = tm;
+
+        mpz++;
+       }
+      }
+     }
+     free (preference);
+    }
+
+    free (pnode);
+  }
+
+  cur = streenext(cur);
+ }
+
+ if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
+  bitch2(BITCH_EPTHREADS, "mod_sort_service_list_items_by_preference()", pthread_errno, "pthread_mutex_unlock() failed.");
+ }
+}
+
 void module_logic_einit_event_handler(struct einit_event *ev) {
  int pthread_errno;
 
@@ -1151,6 +1327,8 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
   }
 
+  mod_sort_service_list_items_by_preference();
+
   if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
    bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
   }
@@ -1184,5 +1362,116 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 /* something's done now, update our lists */
 
   mod_done ((struct lmodule *)ev->para, ev->task);
+ }
+}
+
+void module_logic_ipc_event_handler (struct einit_event *ev) {
+ if (ev->set && ev->set[0] && ev->set[1] && ev->para) {
+  if (!strcmp (ev->set[0], "list") && !strcmp (ev->set[1], "control-blocks")) {
+   int pthread_errno = 0;
+   if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
+    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
+   }
+
+   if (target_state.enable) {
+    char *r = set2str (' ', target_state.enable);
+	if (r) {
+     fprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (target_state.disable) {
+    char *r = set2str (' ', target_state.disable);
+	if (r) {
+     fprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (target_state.reset) {
+    char *r = set2str (' ', target_state.reset);
+	if (r) {
+     fprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (target_state.reload) {
+    char *r = set2str (' ', target_state.reload);
+	if (r) {
+     fprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (target_state.zap) {
+    char *r = set2str (' ', target_state.zap);
+	if (r) {
+     fprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (target_state.critical) {
+    char *r = set2str (' ', target_state.critical);
+	if (r) {
+     fprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
+     free (r);
+	}
+   }
+
+   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
+    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
+   }
+
+   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
+    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
+   }
+
+   if (current.enable) {
+    char *r = set2str (' ', current.enable);
+	if (r) {
+     fprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (current.disable) {
+    char *r = set2str (' ', current.disable);
+	if (r) {
+     fprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (current.reset) {
+    char *r = set2str (' ', current.reset);
+	if (r) {
+     fprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (current.reload) {
+    char *r = set2str (' ', current.reload);
+	if (r) {
+     fprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (current.zap) {
+    char *r = set2str (' ', current.zap);
+	if (r) {
+     fprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
+     free (r);
+	}
+   }
+   if (current.critical) {
+    char *r = set2str (' ', current.critical);
+	if (r) {
+     fprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
+     free (r);
+	}
+   }
+
+   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
+    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
+   }
+
+   ev->flag = 1;
+  }
  }
 }

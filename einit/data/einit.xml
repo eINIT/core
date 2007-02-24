@@ -467,6 +467,7 @@
     <daemon id="daemon-entranced"
      name="XDM (EntranceD)"
      provides="xdm:x11"
+     requires="net-lo:video:mount/critical"
      command="/usr/sbin/entranced -nofork"
      restart="yes"
      DISPLAY=":0.0"
