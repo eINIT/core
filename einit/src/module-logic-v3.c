@@ -242,34 +242,6 @@ struct group_data *mod_group_get_data (char *group) {
  return ret;
 }
 
-char mod_is_in_group (char *service) {
- int pthread_errno;
- char retval = 0;
-
- if (!service) return;
-
- if ((pthread_errno = pthread_mutex_lock (&ml_group_data_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_is_in_group()", pthread_errno, "pthread_mutex_lock() failed.");
- }
-
- struct stree *cur = module_logics_group_data;
-
- while (cur) {
-  struct group_data *gd = (struct group_data *)cur->value;
-
-  if (gd) {
-  }
-
-  cur = streenext (cur);
- }
-
- if ((pthread_errno = pthread_mutex_unlock (&ml_group_data_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_is_in_group()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
-
- return retval;
-}
-
 void mod_update_group (struct lmodule *lmx) {
  int pthread_errno;
  char retval = 0;
@@ -341,7 +313,7 @@ void mod_update_group (struct lmodule *lmx) {
      bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
     }
 
-    fprintf (stderr, " >> broken service: %s\n", cur->key);
+    fprintf (stderr, " >> broken service (all group members failed): %s\n", cur->key);
 
     broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
 
@@ -983,9 +955,9 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   if (tmpx) {
    for (; tmpx[i]; i++) {
-    if ((cur = streefind (module_logics_service_list, tmpx[i], TREE_FIND_FIRST))) {
+	if ((cur = streefind (module_logics_service_list, tmpx[i], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
-	 if (lm) {
+     if (lm) {
 	  ssize_t y = 0;
 	  for (; lm[y]; y++) {
        if (disable_all_but_feedback && (lm[y]->module->mode & EINIT_MOD_FEEDBACK)) {
@@ -995,6 +967,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
        }
 	  }
 	 }
+    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, tmpx[i])) {
+     tmp = strsetdel (tmp, tmpx[i]);
     }
    }
 
