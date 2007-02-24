@@ -489,6 +489,8 @@ void mod_apply (struct ma_task *task) {
 
     lm = (struct lmodule **)setdel ((void **)lm, current);
     lm = (struct lmodule **)setadd ((void **)lm, current, SET_NOALLOC);
+	des->value = (struct lmodule **)lm;
+	des->luggage = (struct lmodule **)lm;
 
     if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
      bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
@@ -943,6 +945,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   }
 
   struct stree *cur = module_logics_service_list;
+
   while (cur) {
    if (cur->value) {
     struct lmodule **lm = (struct lmodule **)cur->value;
