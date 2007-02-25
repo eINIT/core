@@ -429,7 +429,7 @@ void mod_apply (struct ma_task *task) {
   struct stree *des = task->st;
   struct lmodule **lm = (struct lmodule **)des->value;
 
-  if (lm) {
+  if (lm && lm[0]) {
    int pthread_errno;
    struct lmodule *first = lm[0];
 
@@ -463,10 +463,15 @@ void mod_apply (struct ma_task *task) {
      bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
     }
 
-    lm = (struct lmodule **)setdel ((void **)lm, current);
-    lm = (struct lmodule **)setadd ((void **)lm, current, SET_NOALLOC);
-	des->value = (struct lmodule **)lm;
-	des->luggage = (struct lmodule **)lm;
+    if (lm[1]) {
+     ssize_t rx = 1;
+
+     for (; lm[rx]; rx++) {
+	  lm[rx-1] = lm[rx];
+     }
+
+     lm[rx-1] = current;
+	}
 
     if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
      bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
