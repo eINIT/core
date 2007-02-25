@@ -966,7 +966,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    for (; tmp[i]; i++) {
     char add = 1;
 
-	if ((cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
+    if ((disable_all && !strcmp(tmp[i], "all")) ||
+        (disable_all_but_feedback && !strcmp(tmp[i], "all-but-feedback"))) {
+	 add = 0;
+    } else if ((cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
      if (lm) {
 	  ssize_t y = 0;
@@ -1021,11 +1024,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
    cur = streenext (cur);
   }*/
-
-  if (disable_all)
-   plan->changes.disable = strsetdel (plan->changes.disable, "all");
-  if (disable_all_but_feedback)
-   plan->changes.disable = strsetdel (plan->changes.disable, "all-but-feedback");
 
   if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
    bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
