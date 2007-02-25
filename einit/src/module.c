@@ -854,12 +854,20 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
  uint16_t ret = 0;
  struct stree *ha;
 
- if ((!module || !module->module) && !service) return 0;
+ if (!service) return 0;
 
  if ((pthread_errno = pthread_mutex_lock (&service_usage_mutex))) {
   bitch2(BITCH_EPTHREADS, "service_usage_query_group()", pthread_errno, "pthread_mutex_lock() failed.");
  }
  if (task & SERVICE_ADD_GROUP_PROVIDER) {
+  if (!module || !module->module) {
+   if ((pthread_errno = pthread_mutex_unlock (&service_usage_mutex))) {
+    bitch2(BITCH_EPTHREADS, "service_usage_query_group()", pthread_errno, "pthread_mutex_unlock() failed.");
+   }
+
+   return 0;
+  }
+
   if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));

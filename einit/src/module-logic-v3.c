@@ -260,6 +260,7 @@ void mod_update_group (struct lmodule *lmx) {
   if (gd && gd->members) {
    ssize_t x = 0, mem = setcount ((void **)gd->members), failed = 0, on = 0;
    struct lmodule **providers = NULL;
+   char group_failed = 0;
 
    for (; gd->members[x]; x++) {
     if (mod_isbroken (gd->members[x])) {
@@ -294,33 +295,41 @@ void mod_update_group (struct lmodule *lmx) {
     }
    }
 
-   if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
-    if (on > 0) {
-     service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, cur->key);
-    }
-   } else if (gd->options & MOD_PLAN_GROUP_SEQ_MOST) {
-    if ((on + failed) >= mem) {
-     service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, cur->key);
-    }
-   } else if (gd->options & MOD_PLAN_GROUP_SEQ_ALL) {
-    if (on >= mem) {
-     service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, cur->key);
-    }
-   } else {
-    if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+   if (providers) {
+    if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
+     if (on > 0) {
+      service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, cur->key);
+     } else if (failed >= mem) {
+      group_failed = 1;
+     }
+    } else if (gd->options & MOD_PLAN_GROUP_SEQ_MOST) {
+     if (on && ((on + failed) >= mem)) {
+      service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, cur->key);
+     } else if (failed >= mem) {
+      group_failed = 1;
+     }
+    } else if (gd->options & MOD_PLAN_GROUP_SEQ_ALL) {
+     if (on >= mem) {
+      service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, cur->key);
+     } else if (failed) {
+      group_failed = 1;
+     }
+    } else {
+     if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
+      bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
+     }
 
-    fprintf (stderr, " >> broken service (bad group): %s\n", cur->key);
+     fprintf (stderr, " >> broken service (bad group): %s\n", cur->key);
 
-    broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
+     broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_unlock() failed.");
+     if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
+      bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_unlock() failed.");
+     }
     }
    }
 
-   if (failed >= mem) {
+   if (group_failed) {
     if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
      bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
     }
@@ -1430,45 +1439,45 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
    if (target_state.enable) {
     char *r = set2str (' ', target_state.enable);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (target_state.disable) {
     char *r = set2str (' ', target_state.disable);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (target_state.reset) {
     char *r = set2str (' ', target_state.reset);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (target_state.reload) {
     char *r = set2str (' ', target_state.reload);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (target_state.zap) {
     char *r = set2str (' ', target_state.zap);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (target_state.critical) {
     char *r = set2str (' ', target_state.critical);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
      free (r);
-	}
+    }
    }
 
    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
@@ -1481,45 +1490,45 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
    if (current.enable) {
     char *r = set2str (' ', current.enable);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (current.disable) {
     char *r = set2str (' ', current.disable);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (current.reset) {
     char *r = set2str (' ', current.reset);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (current.reload) {
     char *r = set2str (' ', current.reload);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (current.zap) {
     char *r = set2str (' ', current.zap);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
      free (r);
-	}
+    }
    }
    if (current.critical) {
     char *r = set2str (' ', current.critical);
-	if (r) {
+    if (r) {
      fprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
      free (r);
-	}
+    }
    }
 
    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
