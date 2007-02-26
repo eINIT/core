@@ -1,30 +1,22 @@
-inherit eutils toolchain-funcs flag-o-matic subversion versionator
-
-ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/${PN}"
-SRC_URI=""
+inherit eutils toolchain-funcs flag-o-matic
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.sourceforge.net/"
-
-ESVN_REVISION=$(get_version_component_range 4 ${PV})
-ESVN_FETCH_CMD="svn co -r ${ESVN_REVISION}"
-ESVN_UPDATE_CMD="svn up -r ${ESVN_REVISION}"
+SRC_URI="mirror://sourceforge/einit/${P}.tar.bz2"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~x86 ~amd64 ~ppc ~arm"
-IUSE="doc efl"
+KEYWORDS="~x86 ~amd64 ~ppc"
+IUSE="doc"
 
 RDEPEND="dev-libs/expat
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
-DEPEND="${RDEPEND}"
+DEPEND="${RDEPEND}
+	>=sys-apps/portage-2.1.2-r11"
 PDEPEND=""
 
-S=${WORKDIR}/einit
-
 src_unpack() {
-        subversion_src_unpack
-        cd "${S}"
+	unpack ${P}.tar.bz2
 }
 
 src_compile() {
@@ -32,9 +24,6 @@ src_compile() {
 
 	myconf="--ebuild --enable-linux --use-posix-regex --prefix=${ROOT}"
 
-	if use efl ; then
-		myconf="${myconf} --enable-efl"
-	fi
 	econf ${myconf} || die
 	emake || die
 
@@ -46,10 +35,12 @@ src_compile() {
 src_install() {
 	emake -j1 install DESTDIR="${D}" || die
 	dodoc AUTHORS ChangeLog COPYING
+        doman documentation/man/*.8
 	if use doc ; then
 		dohtml build/documentation/html/*.html
 	fi
-
+        insinto /usr/share/eselect/modules
+        doins ${FILESDIR}/einit.eselect
 }
 
 pkg_postinst() {

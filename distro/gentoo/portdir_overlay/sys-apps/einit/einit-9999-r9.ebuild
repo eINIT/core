@@ -18,7 +18,8 @@ IUSE="doc efl static"
 RDEPEND="dev-libs/expat
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	efl? ( media-libs/edje x11-libs/evas x11-libs/ecore )"
-DEPEND="${RDEPEND}"
+DEPEND="${RDEPEND}
+	>=sys-apps/portage-2.1.2-r11"
 
 S=${WORKDIR}/${PN}
 
@@ -51,8 +52,8 @@ src_install() {
 	emake -j1 install DESTDIR="${D}" || die
 	dodoc AUTHORS ChangeLog COPYING
 	doman documentation/man/*.8
-	dodir /etc/einit/local
-	dodir /etc/einit/modules
+	keepdir /etc/einit/local
+	keepdir /etc/einit/modules
 	if use doc ; then
 		dohtml build/documentation/html/*
 	fi
