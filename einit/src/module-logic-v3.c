@@ -307,8 +307,8 @@ char mod_disable_users (struct lmodule *module) {
   if (t) {
    for (; t[i]; i++) {
     if (mod_isbroken (t[i])) {
-	 if (need) free (need);
-	 return 0;
+     if (need) free (need);
+      return 0;
     } else {
      emutex_lock (&ml_tb_current_mutex);
 
@@ -406,13 +406,13 @@ void mod_apply (struct ma_task *task) {
 
   if (lm && lm[0]) {
    struct lmodule *first = lm[0];
-   int any_ok;
+   int any_ok = 0;
 
    do {
     struct lmodule *current = lm[0];
 
     if ((task->task & MOD_DISABLE) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)))
-	 goto skip_module;
+     goto skip_module;
 
     if (task->task & MOD_ENABLE) if (mod_enable_requirements (current)) {
      free (task);
@@ -425,24 +425,21 @@ void mod_apply (struct ma_task *task) {
 
     int retval = mod (task->task, current);
 
-    if (task->task & (MOD_ENABLE | MOD_DISABLE)) {
-     if (retval & STATUS_OK) {
-	  any_ok = 1;
-	 }
- 	}
+    if (retval & STATUS_OK) {
+     any_ok = 1;
+    }
 
-	if (task->task & MOD_ENABLE) {
-     if (any_ok) {
-      free (task);
-      return;
-     }
+    if (any_ok && (task->task & MOD_ENABLE)) {
+     free (task);
+     return;
     }
 
     skip_module:
 /* next module */
     emutex_lock (&ml_service_list_mutex);
 
-    if (lm[1]) {
+/* make sure there's not been a different thread that did what we want to do */
+    if ((lm[0] == current) && lm[1]) {
      ssize_t rx = 1;
 
      for (; lm[rx]; rx++) {
@@ -457,12 +454,7 @@ void mod_apply (struct ma_task *task) {
 /* if we tried to enable something and end up here, it means we did a complete
    round-trip and nothing worked */
 
-   if (any_ok) {
-    free (task);
-    return;
-   }
-
-   emutex_lock (&ml_unresolved_mutex);
+   emutex_lock (&ml_tb_current_mutex);
 
    switch (task->task) {
     case MOD_ENABLE: current.enable = strsetdel(current.enable, des->key); break;
@@ -472,8 +464,14 @@ void mod_apply (struct ma_task *task) {
     case MOD_ZAP: current.zap = strsetdel(current.zap, des->key); break;
    }
 
-   emutex_unlock (&ml_unresolved_mutex);
+   emutex_unlock (&ml_tb_current_mutex);
 
+   if (any_ok) {
+    free (task);
+    return;
+   }
+
+/* mark service broken with certain requests */
    if (task->task & (MOD_ENABLE | MOD_RESET | MOD_RELOAD)) {
     mod_mark (des->key, MARK_BROKEN);
    }
