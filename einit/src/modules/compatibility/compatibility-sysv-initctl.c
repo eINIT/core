@@ -255,9 +255,7 @@ int enable (void *pa, struct einit_event *status) {
   }
  }
 
- if (pthread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo) != 0) {
-  bitch2(BITCH_EPTHREADS, "compatibility-sysv-initctl:enable()", 0, "pthread_create() failed.");
- }
+ ethread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
  return STATUS_OK;
 }
 
@@ -265,9 +263,7 @@ int disable (void *pa, struct einit_event *status) {
  char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
  if (!fifo) fifo =  "/dev/initctl";
 
- if (pthread_cancel (initctl_thread) != 0) {
-  bitch2(BITCH_EPTHREADS, "compatibility-sysv-initctl:disable()", 0, "pthread_cancel() failed.");
- }
+ ethread_cancel (initctl_thread);
 
  if (unlink (fifo)) {
   char tmp[256];

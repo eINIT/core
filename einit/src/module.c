@@ -547,7 +547,7 @@ int mod (unsigned int task, struct lmodule *module) {
 
  if (module->status & MOD_LOCKED) { // this means the module is locked. maybe we're shutting down just now.
   if (!(task & MOD_NOMUTEX))
-   pthread_mutex_unlock (&module->mutex);
+   emutex_unlock (&module->mutex);
 
   if (task & MOD_ENABLE)
    return STATUS_FAIL;

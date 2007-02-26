@@ -124,15 +124,11 @@ void einit_event_handler (struct einit_event *ev) {
   char *p;
   if ((p = cfg_getstring("services-external/provided", NULL))) {
 
-   if (pthread_mutex_lock (&this->mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-external:einit_event_handler()", 0, "locking mutex failed.");
-   }
+   emutex_lock (&this->mutex);
 
    this->module->si.provides = str2set (':', p);
 
-   if (pthread_mutex_unlock (&this->mutex)) {
-    bitch2(BITCH_EPTHREADS, "einit-external:einit_event_handler()", 0, "unlocking mutex failed.");
-   }
+   emutex_unlock (&this->mutex);
 
    this = mod_update (this);
 
