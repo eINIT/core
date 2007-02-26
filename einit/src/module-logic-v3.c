@@ -80,8 +80,12 @@ struct group_data {
 #define MOD_PLAN_GROUP_SEQ_ANY_IOP 0x00000004
 #define MOD_PLAN_GROUP_SEQ_MOST    0x00000008
 
+#define MARK_BROKEN                0x01
+#define MARK_UNRESOLVED            0x02
+
 void mod_update_group (struct lmodule *lm);
 char mod_isbroken (char *service);
+char mod_mark (char *service, char task);
 
 char mod_done (struct lmodule *module, int task) {
  if (!module) return 0;
@@ -216,10 +220,6 @@ struct group_data *mod_group_get_data (char *group) {
 }
 
 void mod_update_group (struct lmodule *lmx) {
- char retval = 0;
-
-// if (!lm || !lm->si || !lm->si->provides) return;
-
  emutex_lock (&ml_group_data_mutex);
 
  struct stree *cur = module_logics_group_data;
@@ -281,24 +281,12 @@ void mod_update_group (struct lmodule *lmx) {
       group_failed = 1;
      }
     } else {
-     emutex_lock (&ml_unresolved_mutex);
-
-     fprintf (stderr, " >> broken service (bad group): %s\n", cur->key);
-
-     broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
-
-     emutex_unlock (&ml_unresolved_mutex);
+     mod_mark (cur->key, MARK_BROKEN);
     }
    }
 
    if (group_failed) {
-    emutex_lock (&ml_unresolved_mutex);
-
-    fprintf (stderr, " >> broken service (all group members failed): %s\n", cur->key);
-
-    broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
-
-    emutex_unlock (&ml_unresolved_mutex);
+    mod_mark (cur->key, MARK_BROKEN);
    }
 
    if (providers) free (providers);
@@ -308,8 +296,6 @@ void mod_update_group (struct lmodule *lmx) {
  }
 
  emutex_unlock (&ml_group_data_mutex);
-
- return retval;
 }
 
 char mod_disable_users (struct lmodule *module) {
@@ -324,7 +310,12 @@ char mod_disable_users (struct lmodule *module) {
 	 if (need) free (need);
 	 return 0;
     } else {
-     need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+     emutex_lock (&ml_tb_current_mutex);
+
+     if (!inset ((void **)current.disable, (void *)t[i], SET_TYPE_STRING))
+      need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+
+     emutex_unlock (&ml_tb_current_mutex);
 	}
    }
 
@@ -354,7 +345,12 @@ char mod_enable_requirements (struct lmodule *module) {
      if (need) free (need);
      return 0;
     } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, module->si->requires[i])) {
-     need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
+     emutex_lock (&ml_tb_current_mutex);
+
+     if (!inset ((void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING))
+      need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
+
+     emutex_unlock (&ml_tb_current_mutex);
     }
    }
 
@@ -378,7 +374,25 @@ char mod_isbroken (char *service) {
 
  emutex_lock (&ml_unresolved_mutex);
 
- retval = inset ((void **)broken_services, (void *)service, SET_TYPE_STRING);
+ retval = inset ((void **)broken_services, (void *)service, SET_TYPE_STRING) ||
+          inset ((void **)unresolved_services, (void *)service, SET_TYPE_STRING);
+
+ emutex_unlock (&ml_unresolved_mutex);
+
+ return retval;
+}
+
+char mod_mark (char *service, char task) {
+ char retval = 0;
+
+ emutex_lock (&ml_unresolved_mutex);
+
+ if ((task & MARK_BROKEN) && !inset ((void **)broken_services, (void *)service, SET_TYPE_STRING)) {
+  broken_services = (char **)setadd ((void **)broken_services, (void *)service, SET_TYPE_STRING);
+ }
+ if ((task & MARK_BROKEN) && !inset ((void **)unresolved_services, (void *)service, SET_TYPE_STRING)) {
+  unresolved_services = (char **)setadd ((void **)unresolved_services, (void *)service, SET_TYPE_STRING);  
+ }
 
  emutex_unlock (&ml_unresolved_mutex);
 
@@ -392,6 +406,7 @@ void mod_apply (struct ma_task *task) {
 
   if (lm && lm[0]) {
    struct lmodule *first = lm[0];
+   int any_ok;
 
    do {
     struct lmodule *current = lm[0];
@@ -410,8 +425,14 @@ void mod_apply (struct ma_task *task) {
 
     int retval = mod (task->task, current);
 
-    if (task->task & MOD_ENABLE) {
+    if (task->task & (MOD_ENABLE | MOD_DISABLE)) {
      if (retval & STATUS_OK) {
+	  any_ok = 1;
+	 }
+ 	}
+
+	if (task->task & MOD_ENABLE) {
+     if (any_ok) {
       free (task);
       return;
      }
@@ -436,6 +457,11 @@ void mod_apply (struct ma_task *task) {
 /* if we tried to enable something and end up here, it means we did a complete
    round-trip and nothing worked */
 
+   if (any_ok) {
+    free (task);
+    return;
+   }
+
    emutex_lock (&ml_unresolved_mutex);
 
    switch (task->task) {
@@ -449,13 +475,7 @@ void mod_apply (struct ma_task *task) {
    emutex_unlock (&ml_unresolved_mutex);
 
    if (task->task & (MOD_ENABLE | MOD_RESET | MOD_RELOAD)) {
-    emutex_lock (&ml_unresolved_mutex);
-
-    fprintf (stderr, " >> broken service: %s\n", des->key);
-
-    broken_services = (char **)setadd ((void **)broken_services, (void *)des->key, SET_TYPE_STRING);
-
-    emutex_unlock (&ml_unresolved_mutex);
+    mod_mark (des->key, MARK_BROKEN);
    }
   }
 
@@ -467,7 +487,7 @@ void mod_apply (struct ma_task *task) {
 void mod_get_and_apply_recurse (int task) {
  ssize_t x = 0, nservices;
  char **services = NULL;
- char **do_later = NULL;
+ char **now = NULL, **defer = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
 
@@ -494,19 +514,17 @@ void mod_get_and_apply_recurse (int task) {
 
   if ((task & MOD_ENABLE) && is_provided) {
    emutex_lock (&ml_tb_current_mutex);
-
    current.enable = strsetdel(current.enable, services[x]);
-   skip = 1;
-
    emutex_unlock (&ml_tb_current_mutex);
+
+   skip = 1;
   }
   if ((task & MOD_DISABLE) && !is_provided) {
    emutex_lock (&ml_tb_current_mutex);
-
    current.disable = strsetdel(current.disable, services[x]);
-   skip = 1;
-
    emutex_unlock (&ml_tb_current_mutex);
+
+   skip = 1;
   }
 
   if (skip) continue;
@@ -534,7 +552,7 @@ void mod_get_and_apply_recurse (int task) {
    if (!des) {
     struct group_data *gd = mod_group_get_data(services[x]);
     if (gd && gd->members) {
-     fprintf (stderr, " >> %s is actually a group!\n", services[x]);
+//     fprintf (stderr, " >> %s is actually a group!\n", services[x]);
 
      emutex_lock (&ml_tb_current_mutex);
 
@@ -550,13 +568,7 @@ void mod_get_and_apply_recurse (int task) {
        }
 
        if (!gd->members[r]) {
-        emutex_lock (&ml_unresolved_mutex);
-
-        fprintf (stderr, " >> broken service (all group members marked as broken): %s\n", services[x]);
-
-        broken_services = (char **)setadd ((void **)broken_services, (void *)services[x], SET_TYPE_STRING);
-
-        emutex_unlock (&ml_unresolved_mutex);
+	    mod_mark (services[x], MARK_BROKEN);
        }
       } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST)) {
        char **tmp = (char **)setcombine ((void **)current.enable, (void **)gd->members, SET_TYPE_STRING);
@@ -592,15 +604,7 @@ void mod_get_and_apply_recurse (int task) {
 
      emutex_unlock (&ml_tb_current_mutex);
     } else {
-     emutex_lock (&ml_unresolved_mutex);
-
-     unresolved_services = (char **)setadd ((void **)unresolved_services, (void *)services[x], SET_TYPE_STRING);
-
-     fprintf (stderr, " >> broken service (service not resolveable): %s\n", services[x]);
-
-     broken_services = (char **)setadd ((void **)broken_services, (void *)services[x], SET_TYPE_STRING);
-
-     emutex_unlock (&ml_unresolved_mutex);
+     mod_mark (services[x], MARK_UNRESOLVED);
     }
    } else if (lm) {
     char isdone = 0;
@@ -614,30 +618,42 @@ void mod_get_and_apply_recurse (int task) {
     }
 
     if (!isdone) {
-     struct ma_task *subtask_data = ecalloc (1, sizeof (struct ma_task));
-     subtask_data->st = des;
-     subtask_data->task = task;
-
-     if ((nservices - x) == 1) {
-      mod_apply (subtask_data);
-     } else {
-      if (!ethread_create (&th, NULL, (void *(*)(void *))mod_apply, (void *)subtask_data)) {
-       subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-      } else {
-       mod_apply (subtask_data);
-      }
-     }
+	 now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
     }
    } else {
-    emutex_lock (&ml_unresolved_mutex);
-
-    fprintf (stderr, " >> broken service (service not a group and n/a): %s\n", services[x]);
-
-    broken_services = (char **)setadd ((void **)broken_services, (void *)services[x], SET_TYPE_STRING);
-
-    emutex_unlock (&ml_unresolved_mutex);
+    mod_mark (services[x], MARK_BROKEN);
    }
   }
+ }
+
+ if (now) {
+  nservices = setcount ((void **)now);
+  for (x = 0; now[x]; x++) {
+   emutex_lock (&ml_service_list_mutex);
+
+   struct stree *des = streefind (module_logics_service_list, services[x], TREE_FIND_FIRST);
+   struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
+
+   emutex_unlock (&ml_service_list_mutex);
+
+   if (lm) {
+    struct ma_task *subtask_data = ecalloc (1, sizeof (struct ma_task));
+    subtask_data->st = des;
+    subtask_data->task = task;
+
+    if ((nservices - x) == 1) {
+     mod_apply (subtask_data);
+    } else {
+     if (!ethread_create (&th, NULL, (void *(*)(void *))mod_apply, (void *)subtask_data)) {
+      subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
+     } else {
+      mod_apply (subtask_data);
+     }
+    }
+   }
+  }
+
+  free (now);
  }
 
  if (subthreads) {
@@ -712,8 +728,24 @@ void mod_get_and_apply () {
  emutex_lock (&ml_unresolved_mutex);
 
  if (broken_services) {
+  struct einit_event ee = evstaticinit(EVENT_FEEDBACK_BROKEN_SERVICES);
+  ee.set = (void **)broken_services;
+
+  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (ee);
+
   free (broken_services);
   broken_services = NULL;
+ }
+ if (unresolved_services) {
+  struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNRESOLVED_SERVICES);
+  ee.set = (void **)unresolved_services;
+
+  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (ee);
+
+  free (unresolved_services);
+  unresolved_services = NULL;
  }
 
  emutex_unlock (&ml_unresolved_mutex);

@@ -355,7 +355,21 @@ void feedback_event_handler(struct einit_event *ev) {
 
  uint32_t line = 0;
 
- if (ev->type == EVENT_FEEDBACK_REGISTER_FD) {
+ if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES) {
+  char *tmp = set2str (' ', (char **)ev->set);
+  if (tmp) {
+   fprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
+
+   free (tmp);
+  }
+ } else if (ev->type == EVENT_FEEDBACK_UNRESOLVED_SERVICES) {
+  char *tmp = set2str (' ', (char **)ev->set);
+  if (tmp) {
+   fprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
+
+   free (tmp);
+  }
+ } else if (ev->type == EVENT_FEEDBACK_REGISTER_FD) {
   struct feedback_fd *newfd = emalloc (sizeof (struct feedback_fd));
 
   newfd->fd = ev->para;
