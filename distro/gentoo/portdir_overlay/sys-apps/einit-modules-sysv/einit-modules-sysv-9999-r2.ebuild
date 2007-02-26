@@ -17,7 +17,8 @@ IUSE="doc static"
 
 RDEPEND=">=sys-apps/einit-0.16.0
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
-DEPEND="${RDEPEND}"
+DEPEND="${RDEPEND}
+	>=sys-apps/portage-2.1.2-r11"
 
 S=${WORKDIR}/sysv
 

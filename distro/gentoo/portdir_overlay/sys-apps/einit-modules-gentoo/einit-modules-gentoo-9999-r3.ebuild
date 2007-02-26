@@ -10,14 +10,16 @@ SRC_URI=""
 DESCRIPTION="Optional Gentoo compatibility modules for eINIT"
 HOMEPAGE="http://einit.sourceforge.net/"
 
-LICENSE="BSD"
+LICENSE="BSD GPL-2"
 SLOT="0"
 KEYWORDS="-*"
 IUSE="doc static"
 
 RDEPEND=">=sys-apps/einit-0.16.0
+         >=sys-apps/baselayout-1.13.0_alpha12
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
-DEPEND="${RDEPEND}"
+DEPEND="${RDEPEND}
+	>=sys-apps/portage-2.1.2-r11"
 
 S=${WORKDIR}/gentoo
 
@@ -50,4 +52,17 @@ src_install() {
 	if use doc ; then
 		dohtml build/documentation/html/*
 	fi
+}
+
+pkg_postinst() {
+	einfo
+	einfo "The eINIT Gentoo compatibility modules are now installed, but you will still"
+	einfo "need to enable the functionality you need."
+	einfo "Edit /etc/einit/modules/gentoo.xml and uncomment the functionality you want."
+	einfo
+	ewarn
+	ewarn "This module currently bundles GPL'd prerelease code from Gentoo's baselayout,"
+	ewarn "which will be removed once baselayout-2 goes stable and hits the portage tree."
+	ewarn "The license of the module itself is and always will be BSD if at all possible."
+	ewarn
 }
