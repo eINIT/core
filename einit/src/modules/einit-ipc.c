@@ -242,7 +242,6 @@ int ipc_read (int *nfd) {
 }
 
 void * ipc_wait (void *unused_parameter) {
- int pthread_errno;
  struct cfgnode *node = cfg_getnode ("configuration-ipc-control-socket", NULL);
  int nfd;
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
@@ -283,9 +282,7 @@ void * ipc_wait (void *unused_parameter) {
    if (errno == ECONNABORTED) continue;
   } else {
    pthread_t thread;
-   if ((pthread_errno = pthread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd))) {
-    bitch2(BITCH_EPTHREADS, "einit-ipc:ipc_wait()", pthread_errno, "pthread_create() failed.");
-   }
+   ethread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd);
   }
  }
 
@@ -298,17 +295,11 @@ void * ipc_wait (void *unused_parameter) {
 }
 
 int enable (void *pa, struct einit_event *status) {
- int pthread_errno;
- if ((pthread_errno = pthread_create (&ipc_thread, NULL, ipc_wait, NULL))) {
-  bitch2(BITCH_EPTHREADS, "einit-ipc:enable()", pthread_errno, "pthread_create() failed.");
- }
+ ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
  return STATUS_OK;
 }
 
 int disable (void *pa, struct einit_event *status) {
- int pthread_errno;
- if ((pthread_errno = pthread_cancel (ipc_thread))) {
-  bitch2(BITCH_EPTHREADS, "einit-ipc:disable()", pthread_errno, "pthread_cancel() failed.");
- }
+ ethread_cancel (ipc_thread);
  return STATUS_OK;
 }

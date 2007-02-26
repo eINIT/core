@@ -88,7 +88,6 @@ struct lmodule *mlist;
 
 // create a plan for loading a set of atoms
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- int pthread_errno;
  uint32_t a = 0, r = 0;
  char
   **enable = NULL, **aenable = NULL,
@@ -104,19 +103,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
  if (!plan) {
   plan = ecalloc (1, sizeof (struct mloadplan));
-  if ((pthread_errno = pthread_mutex_init (&plan->mutex, NULL))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_init() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_init (&plan->vizmutex, NULL))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_init() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_init (&plan->st_mutex, NULL))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_init() failed.");
-  }
+  emutex_init (&plan->mutex, NULL);
+  emutex_init (&plan->vizmutex, NULL);
+  emutex_init (&plan->st_mutex, NULL);
  }
- if ((pthread_errno = pthread_mutex_lock (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&plan->mutex);
 
  if (mode) {
   char **base = NULL;
@@ -536,9 +527,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      }
     }
    }
-   if ((pthread_errno = pthread_mutex_init ((((struct mloadplan_node *)(ha->value))->mutex), NULL))) {
-    bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_init() failed.");
-   }
+   emutex_init ((((struct mloadplan_node *)(ha->value))->mutex), NULL);
 
    ha = streenext (ha);
   }
@@ -556,9 +545,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  plan->critical = critical;
  plan->mode = mode;
 
- if ((pthread_errno = pthread_mutex_unlock (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&plan->mutex);
  return plan;
 }
 
@@ -587,7 +574,6 @@ pthread_t **run_or_spawn_subthreads(char **set, void *(*function)(struct ml_call
 }
 
 int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th, struct mloadplan_node *node, struct ml_call_context *ocontext) {
- int pthread_errno;
  struct ml_call_context *scontext;
  if (ocontext) {
   if (inset ((void **)ocontext->trace, node, SET_NOALLOC)) {
@@ -599,20 +585,14 @@ int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th,
 #ifdef DEBUG
    notice (2, "module-logic: already processing, hopping on...");
 #endif
-   if ((pthread_errno = pthread_mutex_lock(node->mutex))) {
-    bitch2(BITCH_EPTHREADS, "call_add_context()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
-   if ((pthread_errno = pthread_mutex_unlock(node->mutex))) {
-    bitch2(BITCH_EPTHREADS, "call_add_context()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_lock(node->mutex);
+   emutex_unlock(node->mutex);
 #ifdef DEBUG
    notice (2, "module-logic: done, next");
 #endif
    return 0;
   }
-  if ((pthread_errno = pthread_mutex_unlock(node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "call_add_context()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock(node->mutex);
   scontext = ecalloc (1, sizeof(struct ml_call_context));
   scontext->node = (struct mloadplan_node *)node;
   scontext->trace = (struct mloadplan_node **)setadd(setdup((void **)ocontext->trace, SET_NOALLOC), node, SET_NOALLOC);
@@ -624,10 +604,9 @@ int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th,
 
  if (scontext) {
   if (th) {
-   if (!(pthread_errno = pthread_create (th, NULL, (void *(*)(void *))function, (void *)scontext))) {
+   if (!ethread_create (th, NULL, (void *(*)(void *))function, (void *)scontext)) {
     return 1;
    } else {
-    bitch2(BITCH_EPTHREADS, "call_add_context()", pthread_errno, "pthread_create() failed.");
     function (scontext); 
     return 0;
    }
@@ -641,14 +620,11 @@ int call_add_context(void *(*function)(struct ml_call_context *), pthread_t *th,
 }
 
 void wait_on_subthreads (pthread_t **subthreads) {
- int pthread_errno;
  void *ret = NULL;
  uint32_t u;
  if (subthreads) {
   for (u = 0; subthreads[u]; u++) {
-   if ((pthread_errno = pthread_join (*(subthreads[u]), &ret))) {
-    bitch2(BITCH_EPTHREADS, "wait_on_subthreads()", pthread_errno, "pthread_join() failed.");
-   }
+   ethread_join (*(subthreads[u]), &ret);
   }
   free (subthreads); subthreads = NULL;
  }
@@ -663,33 +639,24 @@ void run_or_spawn_subthreads_and_wait(char **set, void *(*function)(struct ml_ca
 
 // the un-loader function
 void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
- int pthread_errno;
  struct mloadplan_node *node = context->node;
 
  if (pthread_mutex_trylock(node->mutex)) {
-  if ((pthread_errno = pthread_mutex_lock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_disable()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_disable()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_lock (node->mutex);
+  emutex_unlock (node->mutex);
 
   return &(node->status);
  }
 
 // see if we've already been here, bail out if so
  if (node->changed) {
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_disable()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  } node->changed = 1;
 
  if ((node->status & STATUS_DISABLED) || (node->status & STATUS_FAIL)) {
   node->changed = 2;
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_disable()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  }
  uint32_t si = 0;
@@ -697,9 +664,7 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
   if (inset ((void **)node->plan->enable, (void *)node->service[si], SET_TYPE_STRING)) {
    node->status = STATUS_ENABLED | STATUS_FAIL;
    node->changed = 2;
-   if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_disable()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (node->mutex);
    return &(node->status);
   }
  node->status |= STATUS_WORKING;
@@ -734,34 +699,25 @@ void *mod_plan_commit_recurse_disable (struct ml_call_context *context) {
  }
 
  node->changed = 2;
- if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_disable()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (node->mutex);
  return &(node->status);
 }
 
 void *mod_plan_commit_recurse_enable (struct ml_call_context *);
 
 void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *context) {
- int pthread_errno;
  struct mloadplan_node *node = context->node;
 
  if (pthread_mutex_trylock(node->mutex)) {
-  if ((pthread_errno = pthread_mutex_lock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable_group_remaining()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable_group_remaining()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_lock (node->mutex);
+  emutex_unlock (node->mutex);
 
   return &(node->status);
  }
 
 // see if we've already been here, bail out if so
  if (node->changed) {
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable_group_remaining()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  } node->changed = 1;
 
@@ -782,33 +738,24 @@ void *mod_plan_commit_recurse_enable_group_remaining (struct ml_call_context *co
  }
 
  node->changed = 2;
- if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable_group_remaining()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (node->mutex);
  return &(node->status);
 }
 
 // the loader function
 void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
- int pthread_errno;
  struct mloadplan_node *node = context->node;
 
  if (pthread_mutex_trylock(node->mutex)) {
-  if ((pthread_errno = pthread_mutex_lock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_lock (node->mutex);
+  emutex_unlock (node->mutex);
 
   return &(node->status);
  }
 
 // see if we've already been here, bail out if so
  if (node->changed) {
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  } node->changed = 1;
 
@@ -816,9 +763,7 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
   goto resume_group_enable;
  else if ((node->status & STATUS_ENABLED) || (node->status & STATUS_FAIL)) {
   node->changed = 2;
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  }
  node->status |= STATUS_WORKING;
@@ -902,33 +847,24 @@ void *mod_plan_commit_recurse_enable (struct ml_call_context *context) {
  if (node->status & STATUS_WORKING) node->status ^= STATUS_WORKING;
 
  node->changed = 2;
- if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_enable()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (node->mutex);
  return &(node->status);
 }
 
 // the reset function
 void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
- int pthread_errno;
  struct mloadplan_node *node = context->node;
 
  if (pthread_mutex_trylock(node->mutex)) {
-  if ((pthread_errno = pthread_mutex_lock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reset()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reset()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_lock (node->mutex);
+  emutex_unlock (node->mutex);
 
   return &(node->status);
  }
 
 // see if we've already been here, bail out if so
  if (node->changed) {
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reset()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  } node->changed = 1;
 
@@ -947,33 +883,24 @@ void *mod_plan_commit_recurse_reset (struct ml_call_context *context) {
  }
 
  node->changed = 2;
- if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reset()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (node->mutex);
  return &(node->status);
 }
 
 // the reload function
 void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
- int pthread_errno;
  struct mloadplan_node *node = context->node;
 
  if (pthread_mutex_trylock(node->mutex)) {
-  if ((pthread_errno = pthread_mutex_lock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reload()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reload()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_lock (node->mutex);
+  emutex_unlock (node->mutex);
 
   return &(node->status);
  }
 
 // see if we've already been here, bail out if so
  if (node->changed) {
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reload()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  }
  node->changed = 1;
@@ -992,33 +919,24 @@ void *mod_plan_commit_recurse_reload (struct ml_call_context *context) {
  }
 
  node->changed = 2;
- if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_reload()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (node->mutex);
  return &(node->status);
 }
 
 // the zap function
 void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
- int pthread_errno;
  struct mloadplan_node *node = context->node;
 
  if (pthread_mutex_trylock(node->mutex)) {
-  if ((pthread_errno = pthread_mutex_lock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_zap()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_zap()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_lock (node->mutex);
+  emutex_unlock (node->mutex);
 
   return &(node->status);
  }
 
 // see if we've already been here, bail out if so
  if (node->changed) {
-  if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_zap()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (node->mutex);
   return &(node->status);
  }
  node->changed = 1;
@@ -1037,21 +955,16 @@ void *mod_plan_commit_recurse_zap (struct ml_call_context *context) {
  }
 
  node->changed = 2;
- if ((pthread_errno = pthread_mutex_unlock (node->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit_recurse_zap()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (node->mutex);
  return &(node->status);
 }
 
 // actually do what the plan says
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- int pthread_errno;
  struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
 
  if (!plan) return -1;
- if ((pthread_errno = pthread_mutex_lock (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&plan->mutex);
 
 // do some extra work if the plan was derived from a mode
  if (plan->mode) {
@@ -1167,18 +1080,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  evdestroy (fb);
 
- if ((pthread_errno = pthread_mutex_unlock (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&plan->mutex);
  return 0;
 }
 
 // free all of the resources of the plan
 int mod_plan_free (struct mloadplan *plan) {
- int pthread_errno;
- if ((pthread_errno = pthread_mutex_lock (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_free()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+  emutex_lock (&plan->mutex);
  do {
   sleep(1);
  } while (pthread_mutex_trylock (&plan->vizmutex));
@@ -1196,9 +1104,7 @@ int mod_plan_free (struct mloadplan *plan) {
 
   while (ha) {
    if ((no = (struct mloadplan_node *)ha->value)) {
-    if ((pthread_errno = pthread_mutex_destroy (no->mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_plan_free()", pthread_errno, "pthread_mutex_destroy() failed.");
-    }
+    emutex_destroy (no->mutex);
     free (no->mutex);
    }
 
@@ -1207,25 +1113,16 @@ int mod_plan_free (struct mloadplan *plan) {
   streefree (plan->services);
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&plan->vizmutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_free()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
- if ((pthread_errno = pthread_mutex_destroy (&plan->vizmutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_free()", pthread_errno, "pthread_mutex_destroy() failed.");
- }
- if ((pthread_errno = pthread_mutex_unlock (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_free()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
- if ((pthread_errno = pthread_mutex_destroy (&plan->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_free()", pthread_errno, "pthread_mutex_destroy() failed.");
- }
+ emutex_unlock (&plan->vizmutex);
+ emutex_destroy (&plan->vizmutex);
+ emutex_unlock (&plan->mutex);
+ emutex_destroy (&plan->mutex);
 
  free (plan);
  return 0;
 }
 
 double get_plan_progress (struct mloadplan *plan) {
- int pthread_errno;
  if (!plan) return -1;
 
  int min_changes = 0, max_changes = 0;
@@ -1234,9 +1131,7 @@ double get_plan_progress (struct mloadplan *plan) {
 
  uint32_t changes = 0;
 
- if ((pthread_errno = pthread_mutex_lock (&(plan->vizmutex)))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:get_plan_progress()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&(plan->vizmutex));
 
  if (!min_changes)
   min_changes = setcount ((void **)plan->enable) + setcount ((void **)plan->disable) + setcount ((void **)plan->reset);
@@ -1256,9 +1151,7 @@ double get_plan_progress (struct mloadplan *plan) {
   scur = streenext(scur);
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&(plan->vizmutex)))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:get_plan_progress()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&(plan->vizmutex));
 
  if (!changes) return 0;
  if (!max_changes) return -1;

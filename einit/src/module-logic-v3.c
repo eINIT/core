@@ -84,8 +84,6 @@ void mod_update_group (struct lmodule *lm);
 char mod_isbroken (char *service);
 
 char mod_done (struct lmodule *module, int task) {
- int pthread_errno;
-
  if (!module) return 0;
 
  mod_update_group (module);
@@ -94,15 +92,11 @@ char mod_done (struct lmodule *module, int task) {
   if (module->si && module->si->provides) {
    uint32_t x = 0;
    for (; module->si->provides[x]; x++) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock(&ml_tb_current_mutex);
 
     current.enable = strsetdel (current.enable, module->si->provides[x]);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock(&ml_tb_current_mutex);
    }
   }
 
@@ -113,15 +107,11 @@ char mod_done (struct lmodule *module, int task) {
   if (module->si && module->si->provides) {
    uint32_t x = 0;
    for (; module->si->provides[x]; x++) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock(&ml_tb_current_mutex);
 
     current.disable = strsetdel (current.disable, module->si->provides[x]);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock(&ml_tb_current_mutex);
    }
   }
 
@@ -132,15 +122,11 @@ char mod_done (struct lmodule *module, int task) {
   if (module->si && module->si->provides) {
    uint32_t x = 0;
    for (; module->si->provides[x]; x++) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock(&ml_tb_current_mutex);
 
     current.reset = strsetdel (current.reset, module->si->provides[x]);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock(&ml_tb_current_mutex);
    }
   }
 
@@ -151,15 +137,11 @@ char mod_done (struct lmodule *module, int task) {
   if (module->si && module->si->provides) {
    uint32_t x = 0;
    for (; module->si->provides[x]; x++) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock(&ml_tb_current_mutex);
 
     current.reload = strsetdel (current.reload, module->si->provides[x]);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock(&ml_tb_current_mutex);
    }
   }
 
@@ -170,15 +152,11 @@ char mod_done (struct lmodule *module, int task) {
   if (module->si && module->si->provides) {
    uint32_t x = 0;
    for (; module->si->provides[x]; x++) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock(&ml_tb_current_mutex);
 
     current.zap = strsetdel (current.zap, module->si->provides[x]);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_done()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock(&ml_tb_current_mutex);
    }
   }
 
@@ -190,11 +168,8 @@ char mod_done (struct lmodule *module, int task) {
 
 struct group_data *mod_group_get_data (char *group) {
  struct group_data *ret = NULL;
- int pthread_errno = 0;
 
- if ((pthread_errno = pthread_mutex_lock (&ml_group_data_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_group_get_data()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_group_data_mutex);
 
  struct stree *cur = streefind (module_logics_group_data, group, TREE_FIND_FIRST);
  if (cur) { ret = (struct group_data *)cur->value; }
@@ -235,22 +210,17 @@ struct group_data *mod_group_get_data (char *group) {
   }
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_group_data_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_group_get_data()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_group_data_mutex);
 
  return ret;
 }
 
 void mod_update_group (struct lmodule *lmx) {
- int pthread_errno;
  char retval = 0;
 
 // if (!lm || !lm->si || !lm->si->provides) return;
 
- if ((pthread_errno = pthread_mutex_lock (&ml_group_data_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_group_data_mutex);
 
  struct stree *cur = module_logics_group_data;
 
@@ -268,9 +238,7 @@ void mod_update_group (struct lmodule *lmx) {
     } else {
      struct stree *serv = NULL;
 
-     if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
-     }
+     emutex_lock (&ml_service_list_mutex);
 
      if ((serv = streefind(module_logics_service_list, gd->members[x], TREE_FIND_FIRST))) {
       struct lmodule **lm = (struct lmodule **)serv->value;
@@ -290,9 +258,7 @@ void mod_update_group (struct lmodule *lmx) {
      }
     }
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&ml_service_list_mutex);
    }
 
    if (providers) {
@@ -315,32 +281,24 @@ void mod_update_group (struct lmodule *lmx) {
       group_failed = 1;
      }
     } else {
-     if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
-     }
+     emutex_lock (&ml_unresolved_mutex);
 
      fprintf (stderr, " >> broken service (bad group): %s\n", cur->key);
 
      broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
 
-     if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_unlock() failed.");
-     }
+     emutex_unlock (&ml_unresolved_mutex);
     }
    }
 
    if (group_failed) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&ml_unresolved_mutex);
 
     fprintf (stderr, " >> broken service (all group members failed): %s\n", cur->key);
 
     broken_services = (char **)setadd ((void **)broken_services, (void *)cur->key, SET_TYPE_STRING);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&ml_unresolved_mutex);
    }
 
    if (providers) free (providers);
@@ -349,16 +307,12 @@ void mod_update_group (struct lmodule *lmx) {
   cur = streenext (cur);
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_group_data_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_update_group()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_group_data_mutex);
 
  return retval;
 }
 
 char mod_disable_users (struct lmodule *module) {
- int pthread_errno = 0;
-
  if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL)) {
   ssize_t i = 0;
   char **need = NULL;
@@ -374,17 +328,13 @@ char mod_disable_users (struct lmodule *module) {
 	}
    }
 
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_disable_users()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_tb_current_mutex);
 
    char **tmp = (char **)setcombine ((void **)current.disable, (void **)need, SET_TYPE_STRING);
    if (current.disable) free (current.disable);
    current.disable = tmp;
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_disable_users()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_tb_current_mutex);
   }
 
   return 1;
@@ -394,8 +344,6 @@ char mod_disable_users (struct lmodule *module) {
 }
 
 char mod_enable_requirements (struct lmodule *module) {
- int pthread_errno = 0;
-
  if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL)) {
   if (module->si && module->si->requires) {
    ssize_t i = 0;
@@ -410,17 +358,13 @@ char mod_enable_requirements (struct lmodule *module) {
     }
    }
 
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_enable_requirements()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_tb_current_mutex);
 
    char **tmp = (char **)setcombine ((void **)current.enable, (void **)need, SET_TYPE_STRING);
    if (current.enable) free (current.enable);
    current.enable = tmp;
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_enable_requirements()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_tb_current_mutex);
   }
 
   return 1;
@@ -430,17 +374,13 @@ char mod_enable_requirements (struct lmodule *module) {
 }
 
 char mod_isbroken (char *service) {
- int retval = 0, pthread_errno;
+ int retval = 0;
 
- if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_isbroken()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_unresolved_mutex);
 
  retval = inset ((void **)broken_services, (void *)service, SET_TYPE_STRING);
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_isbroken()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_unresolved_mutex);
 
  return retval;
 }
@@ -451,7 +391,6 @@ void mod_apply (struct ma_task *task) {
   struct lmodule **lm = (struct lmodule **)des->value;
 
   if (lm && lm[0]) {
-   int pthread_errno;
    struct lmodule *first = lm[0];
 
    do {
@@ -480,9 +419,7 @@ void mod_apply (struct ma_task *task) {
 
     skip_module:
 /* next module */
-    if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&ml_service_list_mutex);
 
     if (lm[1]) {
      ssize_t rx = 1;
@@ -494,16 +431,12 @@ void mod_apply (struct ma_task *task) {
      lm[rx-1] = current;
     }
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&ml_service_list_mutex);
    } while (lm[0] != first);
 /* if we tried to enable something and end up here, it means we did a complete
    round-trip and nothing worked */
 
-   if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_unresolved_mutex);
 
    switch (task->task) {
     case MOD_ENABLE: current.enable = strsetdel(current.enable, des->key); break;
@@ -513,22 +446,16 @@ void mod_apply (struct ma_task *task) {
     case MOD_ZAP: current.zap = strsetdel(current.zap, des->key); break;
    }
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_unresolved_mutex);
 
    if (task->task & (MOD_ENABLE | MOD_RESET | MOD_RELOAD)) {
-    if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&ml_unresolved_mutex);
 
     fprintf (stderr, " >> broken service: %s\n", des->key);
 
     broken_services = (char **)setadd ((void **)broken_services, (void *)des->key, SET_TYPE_STRING);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&ml_unresolved_mutex);
    }
   }
 
@@ -538,16 +465,13 @@ void mod_apply (struct ma_task *task) {
 }
 
 void mod_get_and_apply_recurse (int task) {
- int pthread_errno;
  ssize_t x = 0, nservices;
  char **services = NULL;
  char **do_later = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
 
- if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_tb_current_mutex);
 
  switch (task) {
   case MOD_ENABLE: services = (char **)setdup((void **)current.enable, SET_TYPE_STRING); break;
@@ -557,9 +481,7 @@ void mod_get_and_apply_recurse (int task) {
   case MOD_ZAP: services = (char **)setdup((void **)current.zap, SET_TYPE_STRING); break;
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_tb_current_mutex);
 
  if (!services) return;
  nservices = setcount ((void **)services);
@@ -571,36 +493,26 @@ void mod_get_and_apply_recurse (int task) {
   char skip = 0;
 
   if ((task & MOD_ENABLE) && is_provided) {
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_tb_current_mutex);
 
    current.enable = strsetdel(current.enable, services[x]);
    skip = 1;
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_tb_current_mutex);
   }
   if ((task & MOD_DISABLE) && !is_provided) {
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_tb_current_mutex);
 
    current.disable = strsetdel(current.disable, services[x]);
    skip = 1;
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_tb_current_mutex);
   }
 
   if (skip) continue;
 
   if (mod_isbroken (services[x])) {
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_tb_current_mutex);
 
    switch (task) {
     case MOD_ENABLE: current.enable = strsetdel(current.enable, services[x]); break;
@@ -610,29 +522,21 @@ void mod_get_and_apply_recurse (int task) {
     case MOD_ZAP: current.zap = strsetdel(current.zap, services[x]); break;
    }
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_tb_current_mutex);
   } else {
-   if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_service_list_mutex);
 
    struct stree *des = streefind (module_logics_service_list, services[x], TREE_FIND_FIRST);
    struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_service_list_mutex);
 
    if (!des) {
     struct group_data *gd = mod_group_get_data(services[x]);
     if (gd && gd->members) {
      fprintf (stderr, " >> %s is actually a group!\n", services[x]);
 
-     if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-     }
+     emutex_lock (&ml_tb_current_mutex);
 
      if (task & MOD_ENABLE) {
       if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
@@ -646,17 +550,13 @@ void mod_get_and_apply_recurse (int task) {
        }
 
        if (!gd->members[r]) {
-        if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-         bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-        }
+        emutex_lock (&ml_unresolved_mutex);
 
         fprintf (stderr, " >> broken service (all group members marked as broken): %s\n", services[x]);
 
         broken_services = (char **)setadd ((void **)broken_services, (void *)services[x], SET_TYPE_STRING);
 
-        if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-         bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-        }
+        emutex_unlock (&ml_unresolved_mutex);
        }
       } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST)) {
        char **tmp = (char **)setcombine ((void **)current.enable, (void **)gd->members, SET_TYPE_STRING);
@@ -690,13 +590,9 @@ void mod_get_and_apply_recurse (int task) {
       current.zap = tmp;
      }
 
-     if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-     }
+     emutex_unlock (&ml_tb_current_mutex);
     } else {
-     if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_lock() failed.");
-     }
+     emutex_lock (&ml_unresolved_mutex);
 
      unresolved_services = (char **)setadd ((void **)unresolved_services, (void *)services[x], SET_TYPE_STRING);
 
@@ -704,9 +600,7 @@ void mod_get_and_apply_recurse (int task) {
 
      broken_services = (char **)setadd ((void **)broken_services, (void *)services[x], SET_TYPE_STRING);
 
-     if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-      bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_mutex_unlock() failed.");
-     }
+     emutex_unlock (&ml_unresolved_mutex);
     }
    } else if (lm) {
     char isdone = 0;
@@ -727,26 +621,21 @@ void mod_get_and_apply_recurse (int task) {
      if ((nservices - x) == 1) {
       mod_apply (subtask_data);
      } else {
-      if (!(pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))mod_apply, (void *)subtask_data))) {
+      if (!ethread_create (&th, NULL, (void *(*)(void *))mod_apply, (void *)subtask_data)) {
        subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
       } else {
-       bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_create() failed.");
        mod_apply (subtask_data);
       }
      }
     }
    } else {
-    if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&ml_unresolved_mutex);
 
     fprintf (stderr, " >> broken service (service not a group and n/a): %s\n", services[x]);
 
     broken_services = (char **)setadd ((void **)broken_services, (void *)services[x], SET_TYPE_STRING);
 
-    if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_apply()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&ml_unresolved_mutex);
    }
   }
  }
@@ -756,9 +645,7 @@ void mod_get_and_apply_recurse (int task) {
   uintptr_t ret;
 
   for (u = 0; subthreads[u]; u++) {
-   if ((pthread_errno = pthread_join (*(subthreads[u]), (void *)&ret))) {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply_recurse()", pthread_errno, "pthread_join() failed.");
-   }
+   ethread_join (*(subthreads[u]), (void *)&ret);
   }
   free (subthreads); subthreads = NULL;
  }
@@ -767,53 +654,46 @@ void mod_get_and_apply_recurse (int task) {
 }
 
 void mod_get_and_apply () {
- int pthread_errno = 0;
-
  while (current.zap || current.disable || current.reset || current.reload || current.enable) {
   pthread_t **subthreads = NULL;
   pthread_t th;
 
   if (current.zap) {
-   if (!(pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_ZAP))) {
+   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_ZAP)) {
     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
    } else {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_create() failed.");
     mod_get_and_apply_recurse (MOD_ZAP);
    }
   }
 
   if (current.disable) {
-   if (!(pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_DISABLE))) {
+   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_DISABLE)) {
     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
    } else {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_create() failed.");
     mod_get_and_apply_recurse (MOD_DISABLE);
    }
   }
 
   if (current.reset) {
-   if (!(pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_RESET))) {
+   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_RESET)) {
     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
    } else {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_create() failed.");
     mod_get_and_apply_recurse (MOD_RESET);
    }
   }
 
   if (current.reload) {
-   if (!(pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_RELOAD))) {
+   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_RELOAD)) {
     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
    } else {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_create() failed.");
     mod_get_and_apply_recurse (MOD_RELOAD);
    }
   }
 
   if (current.enable) {
-   if (!(pthread_errno = pthread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_ENABLE))) {
+   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_ENABLE)) {
     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
    } else {
-    bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_create() failed.");
     mod_get_and_apply_recurse (MOD_ENABLE);
    }
   }
@@ -823,26 +703,20 @@ void mod_get_and_apply () {
    uintptr_t ret;
 
    for (u = 0; subthreads[u]; u++) {
-    if ((pthread_errno = pthread_join (*(subthreads[u]), (void *)&ret))) {
-     bitch2(BITCH_EPTHREADS, "mod_get_and_apply()", pthread_errno, "pthread_join() failed.");
-    }
+    ethread_join (*(subthreads[u]), (void *)&ret);
    }
    free (subthreads); subthreads = NULL;
   }
  }
 
- if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-  bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_unresolved_mutex);
 
  if (broken_services) {
   free (broken_services);
   broken_services = NULL;
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-  bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_unresolved_mutex);
 }
 
 void cross_taskblock (struct module_taskblock *source, struct module_taskblock *target) {
@@ -901,8 +775,6 @@ void cross_taskblock (struct module_taskblock *source, struct module_taskblock *
 }
 
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- int pthread_errno;
-
  char disable_all_but_feedback = 0, disable_all = 0;
 
  if (!plan) {
@@ -1021,24 +893,17 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   struct stree *cur;
   ssize_t i = 0;
 
-  if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
-
-  if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&ml_service_list_mutex);
+  emutex_lock (&ml_tb_target_state_mutex);
 
   char **tmpx = (char **)setcombine ((void **)plan->changes.enable, (void **)target_state.enable, SET_TYPE_STRING);
 
-  if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&ml_tb_target_state_mutex);
 
   char **tmp = (char **)setcombine ((void **)tmpx, (void **)plan->changes.disable, SET_TYPE_STRING);  
 
   free (tmpx);
- 
+
   if (plan->changes.disable) {
    free (plan->changes.disable);
    plan->changes.disable = NULL;
@@ -1069,54 +934,19 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     if (add) {
      plan->changes.disable = (char **)setadd((void **)plan->changes.disable, (void *)tmp[i], SET_TYPE_STRING);
-	}
+    }
    }
 
    free (tmp);
   }
 
-/*  cur = module_logics_service_list;
-
-  while (cur) {
-   if (cur->value) {
-    struct lmodule **lm = (struct lmodule **)cur->value;
-    ssize_t i = 0;
-    char tbe = 0;
-
-    if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
-
-    tbe = inset ((void **)target_state.enable, (void *)cur->key, SET_TYPE_STRING);
-
-    if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
-
-    for (; lm[i]; i++) {
-     if ((lm[i]->status & STATUS_ENABLED) || tbe) {
-      if (!disable_all_but_feedback || (!(lm[i]->module->mode & EINIT_MOD_FEEDBACK))) {
-       plan->changes.disable = (char **)setadd ((void **)plan->changes.disable, (void *)cur->key, SET_TYPE_STRING);
-
-       break;
-      }
-     }
-    }
-   }
-
-   cur = streenext (cur);
-  }*/
-
-  if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_plan()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&ml_service_list_mutex);
  }
 
  return plan;
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- int pthread_errno;
  struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
 
  if (!plan) return 0;
@@ -1149,15 +979,11 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  fb->para = (void *)plan;
  status_update (fb);
 
- if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_tb_target_state_mutex);
 
  cross_taskblock (&(plan->changes), &target_state);
 
- if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_tb_current_mutex);
 
  cross_taskblock (&target_state, &current);
 
@@ -1214,13 +1040,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   current.reload = tmp;
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
-
- if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_plan_commit()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_tb_current_mutex);
+ emutex_unlock (&ml_tb_target_state_mutex);
 
  mod_get_and_apply ();
 
@@ -1291,12 +1112,9 @@ double get_plan_progress (struct mloadplan *plan) {
 }
 
 void mod_sort_service_list_items_by_preference() {
- int pthread_errno = 0;
  struct stree *cur;
 
- if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_sort_service_list_items_by_preference()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&ml_service_list_mutex);
 
  cur = module_logics_service_list;
 
@@ -1346,22 +1164,16 @@ void mod_sort_service_list_items_by_preference() {
   cur = streenext(cur);
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_sort_service_list_items_by_preference()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&ml_service_list_mutex);
 }
 
 void module_logic_einit_event_handler(struct einit_event *ev) {
- int pthread_errno;
-
  if (ev->type == EVE_MODULE_LIST_UPDATE) {
 /* update list with services */
   struct stree *new_service_list = NULL;
   struct lmodule *cur = mlist;
 
-  if ((pthread_errno = pthread_mutex_lock (&ml_service_list_mutex))) {
-   bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&ml_service_list_mutex);
 
   while (cur) {
    if (cur->si && cur->si->provides) {
@@ -1387,15 +1199,11 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   if (module_logics_service_list) streefree (module_logics_service_list);
   module_logics_service_list = new_service_list;
 
-  if ((pthread_errno = pthread_mutex_unlock (&ml_service_list_mutex))) {
-   bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&ml_service_list_mutex);
 
   mod_sort_service_list_items_by_preference();
 
-  if ((pthread_errno = pthread_mutex_lock (&ml_unresolved_mutex))) {
-   bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&ml_unresolved_mutex);
 
   if (unresolved_services) {
    free (unresolved_services);
@@ -1406,22 +1214,15 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    broken_services = NULL;
   }
 
-  if ((pthread_errno = pthread_mutex_unlock (&ml_unresolved_mutex))) {
-   bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
-
-  if ((pthread_errno = pthread_mutex_lock (&ml_group_data_mutex))) {
-   bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_unlock (&ml_unresolved_mutex);
+  emutex_lock (&ml_group_data_mutex);
 
   if (module_logics_group_data) {
    streefree (module_logics_group_data);
    module_logics_group_data = NULL;
   }
 
-  if ((pthread_errno = pthread_mutex_unlock (&ml_group_data_mutex))) {
-   bitch2(BITCH_EPTHREADS, "module_logic_einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&ml_group_data_mutex);
  } else if ((ev->type == EVE_SERVICE_UPDATE) && (!(ev->status & STATUS_WORKING))) {
 /* something's done now, update our lists */
 
@@ -1432,10 +1233,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 void module_logic_ipc_event_handler (struct einit_event *ev) {
  if (ev->set && ev->set[0] && ev->set[1] && ev->para) {
   if (!strcmp (ev->set[0], "list") && !strcmp (ev->set[1], "control-blocks")) {
-   int pthread_errno = 0;
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_target_state_mutex))) {
-    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&ml_tb_target_state_mutex);
 
    if (target_state.enable) {
     char *r = set2str (' ', target_state.enable);
@@ -1480,13 +1278,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     }
    }
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_target_state_mutex))) {
-    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
-
-   if ((pthread_errno = pthread_mutex_lock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_unlock (&ml_tb_target_state_mutex);
+   emutex_lock (&ml_tb_current_mutex);
 
    if (current.enable) {
     char *r = set2str (' ', current.enable);
@@ -1531,9 +1324,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     }
    }
 
-   if ((pthread_errno = pthread_mutex_unlock (&ml_tb_current_mutex))) {
-    bitch2(BITCH_EPTHREADS, "module_logic_ipc_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&ml_tb_current_mutex);
 
    ev->flag = 1;
   }

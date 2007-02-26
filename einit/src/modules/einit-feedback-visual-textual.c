@@ -179,24 +179,16 @@ int configure (struct lmodule *this) {
 }
 
 int cleanup (struct lmodule *this) {
- int pthread_errno;
-
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  if (plans) {
-  if ((pthread_errno = pthread_mutex_lock (&plansmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:cleanup()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&plansmutex);
   free (plans);
   plans = NULL;
-  if ((pthread_errno = pthread_mutex_unlock (&plansmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:cleanup()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&plansmutex);
  }
  if (modules) {
   uint32_t y = 0, x = 0;
-  if ((pthread_errno = pthread_mutex_lock (&modulesmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:cleanup()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&modulesmutex);
 
   for (y = 0; modules[y]; y++) {
    if (modules[y]->textbuffer) {
@@ -211,9 +203,7 @@ int cleanup (struct lmodule *this) {
 
   free (modules);
   modules = NULL;
-  if ((pthread_errno = pthread_mutex_unlock (&modulesmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:cleanup()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&modulesmutex);
  }
 
  return 0;
@@ -223,11 +213,7 @@ int cleanup (struct lmodule *this) {
   -------- function to enable and configure this module -----------------------
  */
 int enable (void *pa, struct einit_event *status) {
- int pthread_errno;
-
- if ((pthread_errno = pthread_mutex_lock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:enable()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&me->imutex);
 
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
@@ -345,9 +331,7 @@ int enable (void *pa, struct einit_event *status) {
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_listen (EVENT_SUBSYSTEM_POWER, power_event_handler);
 
- if ((pthread_errno = pthread_mutex_unlock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:enable()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&me->imutex);
  return STATUS_OK;
 }
 
@@ -355,17 +339,11 @@ int enable (void *pa, struct einit_event *status) {
   -------- function to disable this module ------------------------------------
  */
 int disable (void *pa, struct einit_event *status) {
- int pthread_errno;
-
- if ((pthread_errno = pthread_mutex_lock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:disable()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&me->imutex);
  event_ignore (EVENT_SUBSYSTEM_POWER, power_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- if ((pthread_errno = pthread_mutex_unlock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:disable()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&me->imutex);
  return STATUS_OK;
 }
 
@@ -373,11 +351,7 @@ int disable (void *pa, struct einit_event *status) {
   -------- feedback event-handler ---------------------------------------------
  */
 void feedback_event_handler(struct einit_event *ev) {
- int pthread_errno;
-
- if ((pthread_errno = pthread_mutex_lock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&me->imutex);
 
  uint32_t line = 0;
 
@@ -387,19 +361,13 @@ void feedback_event_handler(struct einit_event *ev) {
   newfd->fd = ev->para;
   newfd->options = ev->flag;
 
-  if ((pthread_errno = pthread_mutex_lock (&feedback_fdsmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&feedback_fdsmutex);
 
   feedback_fds = (struct feedback_fd **)setadd ((void **)feedback_fds, (void *)newfd, SET_NOALLOC);
-  if ((pthread_errno = pthread_mutex_unlock (&feedback_fdsmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&feedback_fdsmutex);
  } else if (ev->type == EVENT_FEEDBACK_UNREGISTER_FD) {
    uint32_t i = 0;
-   if ((pthread_errno = pthread_mutex_lock (&feedback_fdsmutex))) {
-    bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&feedback_fdsmutex);
 
    if (feedback_fds) for (; feedback_fds[i]; i++) {
     struct feedback_fd *newfd = (struct feedback_fd *)feedback_fds[i];
@@ -410,9 +378,7 @@ void feedback_event_handler(struct einit_event *ev) {
     }
    }
 
-   if ((pthread_errno = pthread_mutex_unlock (&feedback_fdsmutex))) {
-    bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&feedback_fdsmutex);
  } else if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
   int i = 0;
   struct planref plan, *cul = NULL;
@@ -430,33 +396,24 @@ void feedback_event_handler(struct einit_event *ev) {
     if (vofile) {
      if (fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown") < 0)
       bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
-    } if ((pthread_errno = pthread_mutex_lock (&plansmutex))) {
-     bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
     }
+     emutex_lock (&plansmutex);
      plan.plan = (struct mloadplan *)ev->para;
      plan.startedat = time (NULL);
      plan.max_changes = 0;
      plan.min_changes = 0;
      plans = (struct planref **)setadd ((void **)plans, (void *)&plan, sizeof (struct planref));
-    if ((pthread_errno = pthread_mutex_unlock (&plansmutex))) {
-     bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&plansmutex);
     break;
    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
     if (enableansicodes) {
-     if ((pthread_errno = pthread_mutex_lock (&modulesmutex))) {
-      bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-     }
+     emutex_lock (&modulesmutex);
      line = setcount ((void **)modules) +1;
-     if ((pthread_errno = pthread_mutex_unlock (&modulesmutex))) {
-      bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-     }
+     emutex_unlock (&modulesmutex);
     }
 
     if (!plans) break;
-    if ((pthread_errno = pthread_mutex_lock (&plansmutex))) {
-     bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&plansmutex);
      for (; plans[i]; i++)
       if (plans[i]->plan == (struct mloadplan *)ev->para) {
        cul = plans[i];
@@ -465,9 +422,7 @@ void feedback_event_handler(struct einit_event *ev) {
       }
      if (cul)
       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
-    if ((pthread_errno = pthread_mutex_unlock (&plansmutex))) {
-     bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&plansmutex);
     if (enableansicodes) {
      if (printf ("\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown") < 0)
       bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
@@ -485,9 +440,7 @@ void feedback_event_handler(struct einit_event *ev) {
   struct mstat *mst = NULL;
   uint32_t i = 0;
 
-  if ((pthread_errno = pthread_mutex_lock (&modulesmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&modulesmutex);
   if (modules) {
    for (i = 0; modules[i]; i++)
     if (((struct mstat *)(modules[i]))->mod == ev->para) {
@@ -504,12 +457,8 @@ void feedback_event_handler(struct einit_event *ev) {
 
      if (((struct mstat *)(modules[i]))->seqid > ev->seqid) {
 /* discard older messages that came in after newer ones (happens frequently in multi-threaded situations) */
-      if ((pthread_errno = pthread_mutex_unlock (&modulesmutex))) {
-       bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-      }
-      if ((pthread_errno = pthread_mutex_unlock (&me->imutex))) {
-       bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-      }
+      emutex_unlock (&modulesmutex);
+      emutex_unlock (&me->imutex);
       return;
      } else {
       ((struct mstat *)(modules[i]))->seqid = ev->seqid;
@@ -538,9 +487,7 @@ void feedback_event_handler(struct einit_event *ev) {
    modules = (struct mstat **)setadd ((void **)modules, (void *)&m, sizeof (struct mstat));
   }
 
-  if ((pthread_errno = pthread_mutex_unlock (&modulesmutex))) {
-   bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&modulesmutex);
 
   for (i = 0; modules[i]; i++) {
    if (((struct mstat *)(modules[i]))->mod == ev->para) {
@@ -577,9 +524,7 @@ void feedback_event_handler(struct einit_event *ev) {
 
  fsync(STDOUT_FILENO);
 
- if ((pthread_errno = pthread_mutex_unlock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:feedback_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&me->imutex);
  return;
 }
 
@@ -587,7 +532,6 @@ void feedback_event_handler(struct einit_event *ev) {
   -------- update screen the complicated way ----------------------------------
  */
 void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
- int pthread_errno;
  uint32_t i, line = 4, j;
 
  if (!vofile) return;
@@ -599,9 +543,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "printf() failed.");
  }
 
- if ((pthread_errno = pthread_mutex_lock (&modulesmutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:update_screen_neat()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&modulesmutex);
 
  if (modules) {
   if (fputs ("\e[2;0H( \e[32menabled\e[0m  |", vofile) < 0)
@@ -670,16 +612,13 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
 //  line ++;
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&modulesmutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:update_screen_neat()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&modulesmutex);
 }
 
 /*
   -------- update screen without ansi codes -----------------------------------
  */
 void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
- int pthread_errno;
  char *name = "unknown/unnamed",
        feedback[2048], tfeedback[256];
 
@@ -774,9 +713,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
   }
 
   if (feedback_fds) {
-   if ((pthread_errno = pthread_mutex_lock (&feedback_fdsmutex))) {
-    bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:update_screen_noansi()", pthread_errno, "pthread_mutex_lock() failed.");
-   }
+   emutex_lock (&feedback_fdsmutex);
 
    if (feedback_fds) {
     uint32_t i = 0;
@@ -786,9 +723,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
     }
    }
 
-   if ((pthread_errno = pthread_mutex_unlock (&feedback_fdsmutex))) {
-    bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:update_screen_noansi()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&feedback_fdsmutex);
   }
  }
 }
@@ -902,11 +837,7 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
   -------- core event-handler -------------------------------------------------
  */
 void einit_event_handler(struct einit_event *ev) {
- int pthread_errno;
-
- if ((pthread_errno = pthread_mutex_lock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&me->imutex);
 
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node;
@@ -919,9 +850,7 @@ void einit_event_handler(struct einit_event *ev) {
   if (show_progress && !(ev->status & STATUS_WORKING)) {
    if (plans) {
     uint32_t i = 0;
-    if ((pthread_errno = pthread_mutex_lock (&plansmutex))) {
-     bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:einit_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&plansmutex);
 
     if (enableansicodes) {
 
@@ -962,16 +891,12 @@ void einit_event_handler(struct einit_event *ev) {
       bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "puts() failed.");
     }
 
-    if ((pthread_errno = pthread_mutex_unlock (&plansmutex))) {
-     bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&plansmutex);
    }
   }
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:einit_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&me->imutex);
  return;
 }
 
@@ -979,11 +904,7 @@ void einit_event_handler(struct einit_event *ev) {
   -------- power event-handler -------------------------------------------------
  */
 void power_event_handler(struct einit_event *ev) {
- int pthread_errno;
-
- if ((pthread_errno = pthread_mutex_lock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:power_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&me->imutex);
 
  struct cfgnode *n;
 
@@ -1026,9 +947,7 @@ void power_event_handler(struct einit_event *ev) {
    broadcast_message ("/dev/", "rebooting NOW!");
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&me->imutex))) {
-  bitch2(BITCH_EPTHREADS, "einit-feedback-visual-textual:power_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&me->imutex);
  return;
 }
 

@@ -82,7 +82,6 @@ struct service_transformation {
 #endif
 
 int mod_scanmodules ( void ) {
- int pthread_errno;
  DIR *dir;
  struct dirent *entry;
  char *tmp;
@@ -94,9 +93,7 @@ int mod_scanmodules ( void ) {
  char *spattern = NULL;
 #endif
 
- if ((pthread_errno = pthread_mutex_lock (&modules_update_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_scanmodules()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&modules_update_mutex);
 
  char *modulepath = cfg_getpath ("core-settings-module-path");
  if (!modulepath) {
@@ -216,9 +213,7 @@ int mod_scanmodules ( void ) {
   if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
 #endif
 
-  if ((pthread_errno = pthread_mutex_unlock (&modules_update_mutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_scanmodules()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&modules_update_mutex);
   return bitch(BTCH_ERRNO);
  }
 
@@ -232,34 +227,23 @@ int mod_scanmodules ( void ) {
  event_emit (&update_event, EINIT_EVENT_FLAG_BROADCAST);
  evstaticdestroy(update_event);
 
- if ((pthread_errno = pthread_mutex_unlock (&modules_update_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_scanmodules()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&modules_update_mutex);
 
  return 1;
 }
 
 void mod_freedesc (struct lmodule *m) {
- int pthread_errno;
- if ((pthread_errno = pthread_mutex_lock (&m->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_lock() failed.");
- }
- if ((pthread_errno = pthread_mutex_lock (&m->imutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&m->mutex);
+ emutex_lock (&m->imutex);
 
  if (m->next != NULL)
   mod_freedesc (m->next);
 
  m->next = NULL;
  if (m->status & STATUS_ENABLED) {
-  if ((pthread_errno = pthread_mutex_unlock (&m->imutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  emutex_unlock (&m->imutex);
   mod (MOD_DISABLE | MOD_IGNORE_DEPENDENCIES | MOD_NOMUTEX, m);
-  if ((pthread_errno = pthread_mutex_lock (&m->imutex))) {
-   bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  emutex_lock (&m->imutex);
  }
 
  if (m->cleanup)
@@ -267,18 +251,10 @@ void mod_freedesc (struct lmodule *m) {
 
  m->status |= MOD_LOCKED;
 
- if ((pthread_errno = pthread_mutex_unlock (&m->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
- if ((pthread_errno = pthread_mutex_destroy (&m->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_destroy() failed.");
- }
- if ((pthread_errno = pthread_mutex_unlock (&m->imutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
- if ((pthread_errno = pthread_mutex_destroy (&m->imutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_freedesc()", pthread_errno, "pthread_mutex_destroy() failed.");
- }
+ emutex_unlock (&m->mutex);
+ emutex_destroy (&m->mutex);
+ emutex_unlock (&m->imutex);
+ emutex_destroy (&m->imutex);
 
 // if (m->sohandle)
 //  dlclose (m->sohandle);
@@ -294,7 +270,6 @@ int mod_freemodules ( void ) {
 }
 
 struct lmodule *mod_update (struct lmodule *module) {
- int pthread_errno;
  struct cfgnode *lnode = NULL;
  if (!module->module) return module;
 
@@ -343,9 +318,7 @@ struct lmodule *mod_update (struct lmodule *module) {
   module->si->provides = np;
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&module->mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_update()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&module->mutex);
 
 #ifdef POSIXREGEX
  if (service_transformations) {
@@ -481,7 +454,6 @@ struct lmodule *mod_update (struct lmodule *module) {
 }
 
 struct lmodule *mod_add (void *sohandle, struct smodule *module) {
- int pthread_errno;
  struct lmodule *nmod;
  int (*scanfunc)(struct lmodule *);
  int (*ftload)  (void *, struct einit_event *);
@@ -489,23 +461,15 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
 
  nmod = ecalloc (1, sizeof (struct lmodule));
 
- if ((pthread_errno = pthread_mutex_lock (&mlist_mutex))) {
-  perror ("mod_add(): locking mutex");
- }
+ emutex_lock (&mlist_mutex);
  nmod->next = mlist;
  mlist = nmod;
- if ((pthread_errno = pthread_mutex_unlock (&mlist_mutex))) {
-  bitch2(BITCH_EPTHREADS, "mod_add()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&mlist_mutex);
 
  nmod->sohandle = sohandle;
  nmod->module = module;
- if ((pthread_errno = pthread_mutex_init (&nmod->mutex, NULL))) {
-  bitch2(BITCH_EPTHREADS, "mod_add()", pthread_errno, "pthread_mutex_init() failed.");
- }
- if ((pthread_errno = pthread_mutex_init (&nmod->imutex, NULL))) {
-  bitch2(BITCH_EPTHREADS, "mod_add()", pthread_errno, "pthread_mutex_init() failed.");
- }
+ emutex_init (&nmod->mutex, NULL);
+ emutex_init (&nmod->imutex, NULL);
 
  nmod->si = &module->si;
 
@@ -566,18 +530,14 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
 }
 
 int mod (unsigned int task, struct lmodule *module) {
- int pthread_errno = 0;
  struct einit_event *fb;
- int errc;
  unsigned int ret;
 
  if (!module) return 0;
 
 /* wait if the module is already being processed in a different thread */
- if ((task & MOD_NOMUTEX) || (pthread_errno = pthread_mutex_lock (&module->mutex))) {
-  if (pthread_errno)
-   bitch2(BITCH_EPTHREADS, "mod()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ if (!(task & MOD_NOMUTEX))
+  emutex_lock (&module->mutex);
 
  if ((task & MOD_IGNORE_DEPENDENCIES) || (task & MOD_ZAP)) {
   notice (2, "module: skipping dependency-checks");
@@ -586,10 +546,9 @@ int mod (unsigned int task, struct lmodule *module) {
  }
 
  if (module->status & MOD_LOCKED) { // this means the module is locked. maybe we're shutting down just now.
-  if ((task & MOD_NOMUTEX) || (pthread_errno = pthread_mutex_unlock (&module->mutex))) {
-   if (pthread_errno)
-    bitch2(BITCH_EPTHREADS, "mod()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  if (!(task & MOD_NOMUTEX))
+   pthread_mutex_unlock (&module->mutex);
+
   if (task & MOD_ENABLE)
    return STATUS_FAIL;
   else if (task & MOD_DISABLE)
@@ -604,10 +563,8 @@ int mod (unsigned int task, struct lmodule *module) {
  if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
   wontload:
   module->status ^= STATUS_WORKING;
-  if ((task & MOD_NOMUTEX) || (errc = pthread_mutex_unlock (&module->mutex))) {
-   if (errno)
-    bitch2(BITCH_EPTHREADS, "mod()", pthread_errno, "pthread_mutex_lock() failed.");
-  }
+  if (!(task & MOD_NOMUTEX))
+   emutex_unlock (&module->mutex);
   return STATUS_IDLE;
  }
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED) || (module->status == STATUS_IDLE)))
@@ -745,11 +702,8 @@ int mod (unsigned int task, struct lmodule *module) {
 
   service_usage_query(SERVICE_UPDATE, module, NULL);
 
-  if ((task & MOD_NOMUTEX) || (pthread_errno = pthread_mutex_unlock (&module->mutex))) {
-//  this is bad...
-   if (pthread_errno)
-    bitch2(BITCH_EPTHREADS, "mod()", pthread_errno, "pthread_mutex_unlock() failed.");
-  }
+  if (!(task & MOD_NOMUTEX))
+   emutex_unlock (&module->mutex);
 
   evstaticdestroy (evmstatupdate);
 
@@ -758,7 +712,6 @@ int mod (unsigned int task, struct lmodule *module) {
 }
 
 uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service) {
- int pthread_errno;
  uint16_t ret = 0;
  struct stree *ha;
  char **t;
@@ -767,9 +720,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
 
  if ((!module || !module->module) && !service) return 0;
 
- if ((pthread_errno = pthread_mutex_lock (&service_usage_mutex))) {
-  bitch2(BITCH_EPTHREADS, "service_usage_query()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&service_usage_mutex);
 
  if (task & SERVICE_NOT_IN_USE) {
   ret |= SERVICE_NOT_IN_USE;
@@ -843,27 +794,20 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
    ret |= SERVICE_IS_PROVIDED;
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&service_usage_mutex))) {
-  bitch2(BITCH_EPTHREADS, "service_usage_query()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&service_usage_mutex);
  return ret;
 }
 
 uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service) {
- int pthread_errno;
  uint16_t ret = 0;
  struct stree *ha;
 
  if (!service) return 0;
 
- if ((pthread_errno = pthread_mutex_lock (&service_usage_mutex))) {
-  bitch2(BITCH_EPTHREADS, "service_usage_query_group()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&service_usage_mutex);
  if (task & SERVICE_ADD_GROUP_PROVIDER) {
   if (!module || !module->module) {
-   if ((pthread_errno = pthread_mutex_unlock (&service_usage_mutex))) {
-    bitch2(BITCH_EPTHREADS, "service_usage_query_group()", pthread_errno, "pthread_mutex_unlock() failed.");
-   }
+   emutex_unlock (&service_usage_mutex);
 
    return 0;
   }
@@ -899,17 +843,12 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
   }
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&service_usage_mutex))) {
-  bitch2(BITCH_EPTHREADS, "service_usage_query_group()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&service_usage_mutex);
  return ret;
 }
 
 char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service) {
- int pthread_errno;
- if ((pthread_errno = pthread_mutex_lock (&service_usage_mutex))) {
-  bitch2(BITCH_EPTHREADS, "service_usage_query_cr()", pthread_errno, "pthread_mutex_lock() failed.");
- }
+ emutex_lock (&service_usage_mutex);
 
  struct stree *ha = service_usage;
  char **ret = NULL;
@@ -945,9 +884,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
   }
  }
 
- if ((pthread_errno = pthread_mutex_unlock (&service_usage_mutex))) {
-  bitch2(BITCH_EPTHREADS, "service_usage_query_cr()", pthread_errno, "pthread_mutex_unlock() failed.");
- }
+ emutex_unlock (&service_usage_mutex);
  return ret;
 }
 
@@ -963,7 +900,6 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
  (status & STATUS_ENABLED ? "E" : "D")))
 
 void mod_event_handler(struct einit_event *ev) {
- int pthread_errno;
  if (!ev || !ev->set) return;
  char **argv = (char **) ev->set;
  int argc = setcount (ev->set);
@@ -1043,9 +979,7 @@ void mod_event_handler(struct einit_event *ev) {
     struct stree *modes = NULL;
     struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
 
-    if ((pthread_errno = pthread_mutex_lock (&modules_update_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_event_handler()", pthread_errno, "pthread_mutex_lock() failed.");
-    }
+    emutex_lock (&modules_update_mutex);
 
     while (cur) {
      uint32_t i = 0;
@@ -1165,9 +1099,7 @@ void mod_event_handler(struct einit_event *ev) {
     }
     if (modes) streefree (modes);
 
-    if ((pthread_errno = pthread_mutex_unlock (&modules_update_mutex))) {
-     bitch2(BITCH_EPTHREADS, "mod_event_handler()", pthread_errno, "pthread_mutex_unlock() failed.");
-    }
+    emutex_unlock (&modules_update_mutex);
 
     if (!ev->flag) ev->flag = 1;
    }

@@ -204,7 +204,6 @@ void notice (unsigned char severity, char *message) {
 }
 
 struct einit_event *evdup (struct einit_event *ev) {
- int pthread_errno;
  struct einit_event *nev = emalloc (sizeof (struct einit_event));
 
  memcpy (nev, ev, sizeof (struct einit_event));
@@ -220,30 +219,22 @@ struct einit_event *evdup (struct einit_event *ev) {
   nev->string = np;
  }
 
- if ((pthread_errno = pthread_mutex_init (&nev->mutex, NULL))) {
-  bitch2(BITCH_EPTHREADS, "evdup()", pthread_errno, "pthread_mutex_init() failed.");
- }
+ emutex_init (&nev->mutex, NULL);
 
  return nev;
 }
 
 struct einit_event *evinit (uint32_t type) {
- int pthread_errno;
  struct einit_event *nev = ecalloc (1, sizeof (struct einit_event));
 
  nev->type = type;
- if ((pthread_errno = pthread_mutex_init (&nev->mutex, NULL))) {
-  bitch2(BITCH_EPTHREADS, "evinit()", pthread_errno, "pthread_mutex_init() failed.");
- }
+ emutex_init (&nev->mutex, NULL);
 
  return nev;
 }
 
 void evdestroy (struct einit_event *ev) {
- int pthread_errno;
- if ((pthread_errno = pthread_mutex_destroy (&ev->mutex))) {
-  bitch2(BITCH_EPTHREADS, "evdestroy()", pthread_errno, "pthread_mutex_destroy() failed.");
- }
+ emutex_destroy (&ev->mutex);
  free (ev);
 }
 

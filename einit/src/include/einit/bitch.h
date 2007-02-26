@@ -30,6 +30,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef _BITCH_H
 #define _BITCH_H
 
+#include <errno.h>
+
 #define BTCH_ERRNO 1 /*!< report error from the errno variable */
 #define BTCH_DL 2    /*!< report dynamic linker error */
 
@@ -66,5 +68,28 @@ int bitch (unsigned int opt);
  * terminate. (Configurable this is)
  */
 int bitch2 (unsigned char sauce, const char *location, int error, const char *reason);
+
+int bitch_macro (unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
+
+#define emutex_lock(mutex)\
+ ((errno = pthread_mutex_lock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno)
+
+#define emutex_unlock(mutex)\
+ ((errno = pthread_mutex_unlock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_unlock() failed."), errno) : errno)
+
+#define emutex_init(mutex, mattr)\
+ ((errno = pthread_mutex_init(mutex, mattr)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_init() failed."), errno) : errno)
+
+#define emutex_destroy(mutex)\
+ ((errno = pthread_mutex_destroy(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_destroy() failed."), errno) : errno)
+
+#define ethread_create(th, tattr, function, fattr)\
+ ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
+
+#define ethread_cancel(th)\
+ ((errno = pthread_cancel(th)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_cancel() failed."), errno) : errno)
+
+#define ethread_join(th, ret)\
+ ((errno = pthread_join(th, ret)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_join() failed."), errno) : errno)
 
 #endif /* _BITCH_H */
