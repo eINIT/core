@@ -179,6 +179,7 @@ int configure (struct lmodule *this) {
 }
 
 int cleanup (struct lmodule *this) {
+ emutex_lock (&me->imutex);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  if (plans) {
   emutex_lock (&plansmutex);
@@ -206,6 +207,7 @@ int cleanup (struct lmodule *this) {
   emutex_unlock (&modulesmutex);
  }
 
+ emutex_unlock (&me->imutex);
  return 0;
 }
 
@@ -213,6 +215,7 @@ int cleanup (struct lmodule *this) {
   -------- function to enable and configure this module -----------------------
  */
 int enable (void *pa, struct einit_event *status) {
+ emutex_lock (&me->imutex);
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
@@ -329,6 +332,7 @@ int enable (void *pa, struct einit_event *status) {
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_listen (EVENT_SUBSYSTEM_POWER, power_event_handler);
 
+ emutex_unlock (&me->imutex);
  return STATUS_OK;
 }
 
@@ -336,9 +340,11 @@ int enable (void *pa, struct einit_event *status) {
   -------- function to disable this module ------------------------------------
  */
 int disable (void *pa, struct einit_event *status) {
+ emutex_lock (&me->imutex);
  event_ignore (EVENT_SUBSYSTEM_POWER, power_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
+ emutex_unlock (&me->imutex);
  return STATUS_OK;
 }
 
@@ -347,6 +353,7 @@ int disable (void *pa, struct einit_event *status) {
  */
 void feedback_event_handler(struct einit_event *ev) {
  uint32_t line = 0;
+ emutex_lock (&me->imutex);
 
  if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES) {
   char *tmp = set2str (' ', (char **)ev->set);
@@ -510,8 +517,6 @@ void feedback_event_handler(struct einit_event *ev) {
    mst->errors = 1 + ev->flag;
   }
 
-  emutex_lock (&modulesmutex);
-
   if (enableansicodes) update_screen_ansi (ev, mst);
   if (vofile) update_screen_neat (ev, mst);
 
@@ -520,7 +525,6 @@ void feedback_event_handler(struct einit_event *ev) {
    update_screen_noansi (ev, mst);
   }
   emutex_unlock (&feedback_fdsmutex);
-  emutex_unlock (&modulesmutex);
 
   if (ev->task & MOD_FEEDBACK_SHOW) {
    ev->task ^= MOD_FEEDBACK_SHOW;
@@ -541,6 +545,7 @@ void feedback_event_handler(struct einit_event *ev) {
 
  stop_doing_stuff:
 
+ emutex_unlock (&me->imutex);
  return;
 }
 
@@ -846,6 +851,8 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
   -------- core event-handler -------------------------------------------------
  */
 void einit_event_handler(struct einit_event *ev) {
+ emutex_lock (&me->imutex);
+
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node;
   if (fprintf (stderr, "[[ updating configuration ]]\n") < 0)
@@ -905,6 +912,7 @@ void einit_event_handler(struct einit_event *ev) {
 #endif
  }
 
+ emutex_unlock (&me->imutex);
  return;
 }
 
@@ -913,6 +921,7 @@ void einit_event_handler(struct einit_event *ev) {
  */
 void power_event_handler(struct einit_event *ev) {
  struct cfgnode *n;
+ emutex_lock (&me->imutex);
 
  if ((ev->type == EVENT_POWER_DOWN_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
   broadcast_message ("/dev/", "a shutdown has been scheduled, commencing...");
@@ -953,6 +962,7 @@ void power_event_handler(struct einit_event *ev) {
    broadcast_message ("/dev/", "rebooting NOW!");
  }
 
+ emutex_unlock (&me->imutex);
  return;
 }
 
