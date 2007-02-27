@@ -124,7 +124,7 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
 
 #ifdef POSIXREGEX
 #define eregcomp(target, pattern)\
- ((errno = regcomp(target, pattern, REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+ ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
 #endif
 
 #endif /* _BITCH_H */

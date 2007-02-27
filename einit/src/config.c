@@ -311,12 +311,7 @@ struct stree *cfg_filter (char *filter, uint32_t node_options) {
  if (filter) {
   struct stree *cur = hconfiguration;
   regex_t pattern;
-  uint32_t err = regcomp (&pattern, filter, REG_EXTENDED);
-
-  if (err) {
-   char errorcode [1024];
-   regerror (err, &pattern, errorcode, 1024);
-  } else {
+  if (!eregcomp(&pattern, filter)) {
    while (cur) {
     if (!regexec (&pattern, cur->key, 0, NULL, 0) &&
         (!node_options || (((struct cfgnode *)(cur->value))->options & node_options))) {

@@ -202,13 +202,7 @@ char **__check_variables (char *id, char **variables, FILE *output) {
    node_found = 0;
   } else if (x[1] && n->arbattrs) {
    regex_t pattern;
-   uint32_t err = regcomp (&pattern, x[1], REG_EXTENDED);
-
-   if (err) {
-    char errorcode [1024];
-    regerror (err, &pattern, errorcode, 1024);
-    fprintf (output, " >> module: %s: %s: bad regex: %s: %s\n", id, x[0], x[1], errorcode);
-   } else {
+   if (!eregcomp(&pattern, x[1])) {
     uint32_t v = 0;
     for (v = 0; n->arbattrs[v]; v+=2) {
      if (!regexec (&pattern, n->arbattrs[v], 0, NULL, 0)) {
@@ -254,13 +248,8 @@ char **__create_environment (char **environment, char **variables) {
     char *key = emalloc (bkeylen);
     char *pvalue = NULL;
     regex_t pattern;
-    uint32_t err = regcomp (&pattern, filter, REG_EXTENDED);
 
-    if (err) {
-     char errorcode [1024];
-     regerror (err, &pattern, errorcode, 1024);
-     fputs (errorcode, stderr);
-    } else {
+    if (!eregcomp(&pattern, filter)) {
      int y = 0;
      *key = 0;
      strcat (key, name);
