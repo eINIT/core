@@ -425,7 +425,7 @@
 
     <shell id="shell-gdm"
      name="GDM - The GNOME Display Manager"
-     provides="x11:gdm"
+     provides="x11:gdm:xdm"
      requires="mount/critical:net-lo"
      pid="/var/run/gdm.pid"
      prepare="[ ! -e /var/log/gdm ] &amp;&amp; mkdir /var/log/gdm"

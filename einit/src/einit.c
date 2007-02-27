@@ -321,8 +321,8 @@ int main(int argc, char **argv) {
     ret = ipc_process (ipccommands[rx], stdout);
    }
 
-   if (gmode == EINIT_GMODE_SANDBOX)
-    cleanup ();
+//   if (gmode == EINIT_GMODE_SANDBOX)
+//    cleanup ();
 
    return ret;
   } else if ((gmode == EINIT_GMODE_INIT) && !isinit && !initoverride) {

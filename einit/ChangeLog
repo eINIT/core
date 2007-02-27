@@ -1,4 +1,6 @@
 2007/02/27: mdeininger
+ * shell-gdm should also provide "xdm"
+ * the v3 core is now the default
  * fixed some deadlocks in the v3 module-logics core
  * pexec() seems to be less flakey now
 

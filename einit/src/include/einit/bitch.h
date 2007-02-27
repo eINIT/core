@@ -112,4 +112,5 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
 #define ethread_join(th, ret)\
  ((errno = pthread_join(th, ret)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_join() failed."), errno) : errno)
 
+
 #endif /* _BITCH_H */
