@@ -662,9 +662,9 @@ int mod (unsigned int task, struct lmodule *module) {
 
   module->fbseq = fb->integer + 1;
 
-//  status_update (fb);
-  event_emit(fb, EINIT_EVENT_FLAG_BROADCAST);
-  if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
+  status_update (fb);
+//  event_emit(fb, EINIT_EVENT_FLAG_BROADCAST);
+//  if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
 
 /* module status update */
   if (module) {
