@@ -492,16 +492,10 @@ void einit_event_handler (struct einit_event *ev) {
      if (!strcmp (node->arbattrs[sti], "put-into")) {
       new_transformation.out = node->arbattrs[sti+1];
      } else if (!strcmp (node->arbattrs[sti], "service")) {
-      uint32_t err;
       regex_t *buffer = emalloc (sizeof (regex_t));
 
-      if (!(err = regcomp (buffer, node->arbattrs[sti+1], REG_EXTENDED))) {
+      if ((have_pattern = !(eregcomp (buffer, node->arbattrs[sti+1])))) {
        new_transformation.pattern = buffer;
-       have_pattern = 1;
-      } else {
-       char errorcode [1024];
-       regerror (err, buffer, errorcode, 1024);
-       fputs (errorcode, stderr);
       }
      }
     }
@@ -603,27 +597,11 @@ int scanmodules (struct lmodule *modchain) {
 
 #ifdef POSIXREGEX
  if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL)) {
-  uint32_t err;
-
-  if (!(err = regcomp (&allowpattern, spattern, REG_EXTENDED)))
-   haveallowpattern = 1;
-  else {
-   char errorcode [1024];
-   regerror (err, &allowpattern, errorcode, 1024);
-   fputs (errorcode, stderr);
-  }
+  haveallowpattern = !eregcomp (&allowpattern, spattern);
  }
 
  if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-disallow", NULL)) {
-  uint32_t err;
-
-  if (!(err = regcomp (&disallowpattern, spattern, REG_EXTENDED)))
-   havedisallowpattern = 1;
-  else {
-   char errorcode [1024];
-   regerror (err, &disallowpattern, errorcode, 1024);
-   fputs (errorcode, stderr);
-  }
+  havedisallowpattern = !eregcomp (&disallowpattern, spattern);
  }
 #endif
 
