@@ -414,7 +414,7 @@ void mod_apply (struct ma_task *task) {
   struct stree *des = task->st;
   struct lmodule **lm = (struct lmodule **)des->value;
 
-  fprintf (stderr, "mod_apply(%s)\n", des->key);
+//  fprintf (stderr, "mod_apply(%s)\n", des->key);
 
   if (lm && lm[0]) {
    struct lmodule *first = lm[0];
@@ -513,13 +513,18 @@ void mod_get_and_apply_recurse (int task) {
  char **now = NULL, **defer = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
- char dm = 2, recurse = 0;
+ char dm = 2;
+#ifdef DEBUG
+ char recurse = 0;
+#endif
 
  while (dm & 2) {
+#ifdef DEBUG
   if (recurse) {
    fprintf (stderr, "recursing");
   } else
    recurse = 1;
+#endif
   dm = 0;
 
   if (now) { free (now); now = NULL; }
@@ -541,7 +546,7 @@ void mod_get_and_apply_recurse (int task) {
   if (!services) return;
   nservices = setcount ((void **)services);
 
-  fprintf (stderr, " >> %i (%s)\n", task, set2str (' ', services));
+//  fprintf (stderr, " >> %i (%s)\n", task, set2str (' ', services));
 
   for (x = 0; services[x]; x++) {
    char is_provided = service_usage_query (SERVICE_IS_PROVIDED, NULL, services[x]);

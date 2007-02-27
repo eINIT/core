@@ -45,7 +45,7 @@ PMODULES="compatibility"
 
 TREETYPE="linear"
 SETTYPE="lowmem"
-MODULELOGICTYPE="v2"
+MODULELOGICTYPE="v3"
 
 echo -n "checking options [";
 for param in $@; do
