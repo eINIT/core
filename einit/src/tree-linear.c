@@ -140,6 +140,8 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
 
  if (!c) return NULL;
 
+// fprintf (stderr, "!! %s:%s\n", key, c->key);
+
  while (c) {
   if (!strcmp (key, c->key)) {
    return c;

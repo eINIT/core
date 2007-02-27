@@ -593,7 +593,7 @@ int mod (unsigned int task, struct lmodule *module) {
   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
   evstaticdestroy (eem);
 
-  /* same for services */
+/* same for services */
   if (module->si && module->si->provides) {
    struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
    ees.task = task;
@@ -608,13 +608,6 @@ int mod (unsigned int task, struct lmodule *module) {
 
 /* actual loading bit */
  {
-  struct einit_event evmstatupdate = evstaticinit(EVE_MODULE_UPDATE);
-
-  evmstatupdate.task = task;
-  evmstatupdate.para = (void *)module;
-  evmstatupdate.status = STATUS_WORKING;
-  event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
-
   fb = evinit (EVE_FEEDBACK_MODULE_STATUS);
   fb->para = (void *)module;
   fb->task = task | MOD_FEEDBACK_SHOW;
@@ -669,9 +662,6 @@ int mod (unsigned int task, struct lmodule *module) {
 
   module->fbseq = fb->integer + 1;
 
-  evmstatupdate.status = fb->status;
-  event_emit (&evmstatupdate, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
-
 //  status_update (fb);
   event_emit(fb, EINIT_EVENT_FLAG_BROADCAST);
   if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
@@ -704,8 +694,6 @@ int mod (unsigned int task, struct lmodule *module) {
 
   if (!(task & MOD_NOMUTEX))
    emutex_unlock (&module->mutex);
-
-  evstaticdestroy (evmstatupdate);
 
  }
  return module->status;

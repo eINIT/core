@@ -71,6 +71,26 @@ int bitch2 (unsigned char sauce, const char *location, int error, const char *re
 
 int bitch_macro (unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
 
+#ifdef DEBUG
+
+#define debug(message)\
+ fprintf(stderr, "DEBUG: %s:%i(%s): %s\n", __FILE__, __LINE__, __func__, message), fflush (stderr)
+
+#if 0
+#define emutex_lock(mutex)\
+ ((debug("pthread_mutex_lock() called."), (errno = pthread_mutex_lock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno), debug("pthread_mutex_lock() done."), errno)
+
+#define emutex_unlock(mutex)\
+ ((debug("pthread_mutex_unlock() called."), (errno = pthread_mutex_unlock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno), debug("pthread_mutex_unlock() done."), errno)
+#endif
+
+#else
+
+#define debug(message)\
+ 0
+
+#endif
+
 #define emutex_lock(mutex)\
  ((errno = pthread_mutex_lock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno)
 

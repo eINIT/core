@@ -565,6 +565,8 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
 
+  fprintf (stderr, " >> now executing %s.\n", command);
+
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);
   free (cmd);

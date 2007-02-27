@@ -97,6 +97,8 @@ const struct smodule self = {
  }
 };
 
+char running = 0;
+
 pthread_t initctl_thread;
 struct lmodule *this = NULL;
 
@@ -130,6 +132,7 @@ int cleanup (struct lmodule *this) {
 
 void * initctl_wait (char *fifo) {
  int nfd;
+ running = 1;
 
  while ((nfd = open (fifo, O_RDONLY))) {
   struct init_command ic;
@@ -139,6 +142,7 @@ void * initctl_wait (char *fifo) {
    snprintf (tmp, 256, "initctl: opening FIFO failed: %s", strerror (errno));
    notice (4, tmp);
    mod (MOD_DISABLE, this);
+   running = 0;
    return NULL;
   }
 
@@ -224,6 +228,7 @@ void * initctl_wait (char *fifo) {
   close (nfd);
  }
 
+ running = 0;
  return NULL;
 }
 
@@ -263,7 +268,8 @@ int disable (void *pa, struct einit_event *status) {
  char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
  if (!fifo) fifo =  "/dev/initctl";
 
- ethread_cancel (initctl_thread);
+ if (running)
+  ethread_cancel (initctl_thread);
 
  if (unlink (fifo)) {
   char tmp[256];

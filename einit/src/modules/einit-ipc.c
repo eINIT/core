@@ -85,6 +85,7 @@ const struct smodule self = {
 };
 
 pthread_t ipc_thread;
+char running = 0;
 
 int __ipc_process (char *cmd, FILE *f) {
  if (!cmd) return 0;
@@ -247,8 +248,13 @@ void * ipc_wait (void *unused_parameter) {
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
  mode_t socketmode = (node && node->value ? node->value : 0600);
  struct sockaddr_un saddr;
+
+ running = 1;
+
  if (sock == -1) {
   perror ("einit-ipc: initialising socket");
+
+  running = 0;
   return NULL;
  }
 
@@ -260,6 +266,8 @@ void * ipc_wait (void *unused_parameter) {
   if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
    close (sock);
    perror ("einit-ipc: binding socket");
+
+   running = 0;
    return NULL;
   }
  }
@@ -271,6 +279,8 @@ void * ipc_wait (void *unused_parameter) {
  if (listen (sock, 5)) {
   close (sock);
   perror ("einit-ipc: listening on socket");
+
+  running = 0;
   return NULL;
  }
 
@@ -291,6 +301,8 @@ void * ipc_wait (void *unused_parameter) {
 
  close (sock);
  if (unlink (saddr.sun_path)) perror ("einit-ipc: removing socket");
+
+ running = 0;
  return NULL;
 }
 
@@ -300,6 +312,8 @@ int enable (void *pa, struct einit_event *status) {
 }
 
 int disable (void *pa, struct einit_event *status) {
- ethread_cancel (ipc_thread);
+ if (running)
+  ethread_cancel (ipc_thread);
+
  return STATUS_OK;
 }
