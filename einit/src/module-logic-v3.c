@@ -515,13 +515,12 @@ void mod_get_and_apply_recurse (int task) {
  pthread_t th;
  char dm = 2, recurse = 0;
 
-/* while (dm & 2) {
+ while (dm & 2) {
   if (recurse) {
-   fprintf (stderr, "now recursing");
+   fprintf (stderr, " !! now recursing\n");
   }
   dm = 0;
-  recurse = 1;*/
- {
+  recurse = 1;
 
   if (now) { free (now); now = NULL; }
   if (defer) { free (defer); defer = NULL; }
@@ -728,13 +727,39 @@ void mod_get_and_apply_recurse (int task) {
      }
 
      if (!isdone) {
-      now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
+      if (task & MOD_ENABLE) {
+       if (lm[0]->si && lm[0]->si->before) {
+        ssize_t ix = 0;
+        for (ix = 0; lm[0]->si->before[ix]; ix++) {
+         if (inset ((void **)now, (void *)lm[0]->si->before[ix], SET_TYPE_STRING)) {
+          now = strsetdel (now, lm[0]->si->before[ix]);
+          defer = (char **)setadd ((void **)defer, (void *)lm[0]->si->before[ix], SET_TYPE_STRING);
+         }
+        }
+       }
+       if (lm[0]->si && lm[0]->si->after) {
+        ssize_t ix = 0;
+        for (ix = 0; lm[0]->si->after[ix]; ix++) {
+         if (inset ((void **)services, (void *)lm[0]->si->after[ix], SET_TYPE_STRING)) {
+          defer = (char **)setadd ((void **)defer, (void *)services[x], SET_TYPE_STRING);
+         }
+        }
+       }
+      }
+
+      if (!inset ((void **)defer, (void *)services[x], SET_TYPE_STRING))
+       now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
      }
     } else {
      mod_mark (services[x], MARK_BROKEN);
     }
    }
   }
+ }
+
+ if (!now && defer) {
+  now = defer;
+  defer = NULL;
  }
 
  if (now) {
