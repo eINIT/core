@@ -400,7 +400,7 @@ char mod_mark (char *service, char task) {
  if ((task & MARK_BROKEN) && !inset ((void **)broken_services, (void *)service, SET_TYPE_STRING)) {
   broken_services = (char **)setadd ((void **)broken_services, (void *)service, SET_TYPE_STRING);
  }
- if ((task & MARK_BROKEN) && !inset ((void **)unresolved_services, (void *)service, SET_TYPE_STRING)) {
+ if ((task & MARK_UNRESOLVED) && !inset ((void **)unresolved_services, (void *)service, SET_TYPE_STRING)) {
   unresolved_services = (char **)setadd ((void **)unresolved_services, (void *)service, SET_TYPE_STRING);  
  }
 
@@ -420,8 +420,6 @@ void mod_apply (struct ma_task *task) {
 
    do {
     struct lmodule *current = lm[0];
-
-    fprintf (stderr, " >> mod_apply(%s)\n", des->key);
 
     if ((task->task & (MOD_RESET | MOD_RELOAD | MOD_ZAP)) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) {
      /* well, if nothing needs to be done, then it's ok */
@@ -513,14 +511,10 @@ void mod_get_and_apply_recurse (int task) {
  char **now = NULL, **defer = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
- char dm = 2, recurse = 0;
+ char dm = 2;
 
  while (dm & 2) {
-  if (recurse) {
-   fprintf (stderr, " !! now recursing\n");
-  }
   dm = 0;
-  recurse = 1;
 
   if (now) { free (now); now = NULL; }
   if (defer) { free (defer); defer = NULL; }
