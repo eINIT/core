@@ -55,7 +55,9 @@
  <services>
   <alias id="localmount" s="mount/local" />
   <alias id="checkroot" s="mount/system" />
+  <alias id="checkfs" s="mount/local" />
   <alias id="nfsmount" s="mount/remote" />
+  <alias id="netmount" s="mount/remote" />
   <alias id="lm_sensors" s="sensors" />
   <alias id="alsasound" s="alsa" />
   <alias id="logger" s="syslog" />

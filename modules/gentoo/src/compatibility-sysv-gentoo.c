@@ -700,10 +700,28 @@ int scanmodules (struct lmodule *modchain) {
       modinfo->si.before = str2set (' ', serv);
       free (serv);
      }
+     if (dependencies = get_deptype(depinfo, "after")) {
+      char *serv = estrdup (dependencies->services);
+      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
+      char **tmp = str2set (' ', serv);
+      if (tmp) {
+       char **bef = modinfo->si.after;
+       modinfo->si.after = (char **)setcombine((void **)bef, (void **)tmp, SET_TYPE_STRING);
+       if (bef) free (bef);
+       free (tmp);
+      }
+      free (serv);
+     }
      if (dependencies = get_deptype(depinfo, "iuse")) {
       char *serv = estrdup (dependencies->services);
       ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-      modinfo->si.after = str2set (' ', serv);
+      char **tmp = str2set (' ', serv);
+      if (tmp) {
+       char **bef = modinfo->si.after;
+       modinfo->si.after = (char **)setcombine((void **)bef, (void **)tmp, SET_TYPE_STRING);
+       if (bef) free (bef);
+       free (tmp);
+      }
       free (serv);
      }
 /*     if (dependencies = get_deptype(depinfo, "iafter")) {
