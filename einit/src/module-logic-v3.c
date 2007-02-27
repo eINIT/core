@@ -303,6 +303,7 @@ char mod_disable_users (struct lmodule *module) {
   ssize_t i = 0;
   char **need = NULL;
   char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, module, NULL);
+  char retval = 1;
 
   if (t) {
    for (; t[i]; i++) {
@@ -312,23 +313,27 @@ char mod_disable_users (struct lmodule *module) {
     } else {
      emutex_lock (&ml_tb_current_mutex);
 
-     if (!inset ((void **)current.disable, (void *)t[i], SET_TYPE_STRING))
+     if (!inset ((void **)current.disable, (void *)t[i], SET_TYPE_STRING)) {
+      retval = 2;
       need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+     }
 
      emutex_unlock (&ml_tb_current_mutex);
-	}
+    }
    }
 
-   emutex_lock (&ml_tb_current_mutex);
+   if (retval == 2) {
+    emutex_lock (&ml_tb_current_mutex);
 
-   char **tmp = (char **)setcombine ((void **)current.disable, (void **)need, SET_TYPE_STRING);
-   if (current.disable) free (current.disable);
-   current.disable = tmp;
+    char **tmp = (char **)setcombine ((void **)current.disable, (void **)need, SET_TYPE_STRING);
+    if (current.disable) free (current.disable);
+    current.disable = tmp;
 
-   emutex_unlock (&ml_tb_current_mutex);
+    emutex_unlock (&ml_tb_current_mutex);
+   }
   }
 
-  return 1;
+  return retval;
  }
 
  return 0;
@@ -336,6 +341,7 @@ char mod_disable_users (struct lmodule *module) {
 
 char mod_enable_requirements (struct lmodule *module) {
  if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL)) {
+  char retval = 1;
   if (module->si && module->si->requires) {
    ssize_t i = 0;
    char **need = NULL;
@@ -347,23 +353,27 @@ char mod_enable_requirements (struct lmodule *module) {
     } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, module->si->requires[i])) {
      emutex_lock (&ml_tb_current_mutex);
 
-     if (!inset ((void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING))
+     if (!inset ((void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
+      retval = 2;
       need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
+     }
 
      emutex_unlock (&ml_tb_current_mutex);
     }
    }
 
-   emutex_lock (&ml_tb_current_mutex);
+   if (retval == 2) {
+    emutex_lock (&ml_tb_current_mutex);
 
-   char **tmp = (char **)setcombine ((void **)current.enable, (void **)need, SET_TYPE_STRING);
-   if (current.enable) free (current.enable);
-   current.enable = tmp;
+    char **tmp = (char **)setcombine ((void **)current.enable, (void **)need, SET_TYPE_STRING);
+    if (current.enable) free (current.enable);
+    current.enable = tmp;
 
-   emutex_unlock (&ml_tb_current_mutex);
+    emutex_unlock (&ml_tb_current_mutex);
+   }
   }
 
-  return 1;
+  return retval;
  }
 
  return 0;
@@ -411,8 +421,20 @@ void mod_apply (struct ma_task *task) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((task->task & MOD_DISABLE) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)))
+    fprintf (stderr, " >> mod_apply(%s)\n", des->key);
+
+    if ((task->task & (MOD_RESET | MOD_RELOAD | MOD_ZAP)) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) {
+     /* well, if nothing needs to be done, then it's ok */
+     any_ok = 1;
      goto skip_module;
+    }
+    if ((task->task & MOD_DISABLE) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) {
+     goto skip_module;
+    }
+    if ((task->task & MOD_ENABLE) && (lm[0]->status & STATUS_ENABLED)) {
+     any_ok = 1;
+     goto skip_module;
+    }
 
     if (task->task & MOD_ENABLE) if (mod_enable_requirements (current)) {
      free (task);
@@ -425,9 +447,14 @@ void mod_apply (struct ma_task *task) {
 
     int retval = mod (task->task, current);
 
-    if (retval & STATUS_OK) {
+/* check module status or return value to find out if it's appropriate for the task */
+    if (((task->task & (MOD_DISABLE | MOD_ZAP)) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) ||
+        ((task->task & MOD_ENABLE) && (lm[0]->status & STATUS_ENABLED)) ||
+        ((task->task & (MOD_RESET | MOD_RELOAD)) && (retval & STATUS_OK))) {
      any_ok = 1;
-    }
+    }/* else {
+     fprintf (stderr, "no good: %s\n", des->key);
+    }*/
 
     if (any_ok && (task->task & MOD_ENABLE)) {
      free (task);
@@ -471,10 +498,8 @@ void mod_apply (struct ma_task *task) {
     return;
    }
 
-/* mark service broken with certain requests */
-   if (task->task & (MOD_ENABLE | MOD_RESET | MOD_RELOAD)) {
-    mod_mark (des->key, MARK_BROKEN);
-   }
+/* mark service broken if stuff went completely wrong */
+   mod_mark (des->key, MARK_BROKEN);
   }
 
   free (task);
@@ -488,138 +513,226 @@ void mod_get_and_apply_recurse (int task) {
  char **now = NULL, **defer = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
+ char dm = 2, recurse = 0;
 
- emutex_lock (&ml_tb_current_mutex);
-
- switch (task) {
-  case MOD_ENABLE: services = (char **)setdup((void **)current.enable, SET_TYPE_STRING); break;
-  case MOD_DISABLE: services = (char **)setdup((void **)current.disable, SET_TYPE_STRING); break;
-  case MOD_RESET: services = (char **)setdup((void **)current.reset, SET_TYPE_STRING); break;
-  case MOD_RELOAD: services = (char **)setdup((void **)current.reload, SET_TYPE_STRING); break;
-  case MOD_ZAP: services = (char **)setdup((void **)current.zap, SET_TYPE_STRING); break;
- }
-
- emutex_unlock (&ml_tb_current_mutex);
-
- if (!services) return;
- nservices = setcount ((void **)services);
-
- fprintf (stderr, " >> %i (%s)\n", task, set2str (' ', services));
-
- for (; services[x]; x++) {
-  char is_provided = service_usage_query (SERVICE_IS_PROVIDED, NULL, services[x]);
-  char skip = 0;
-
-  if ((task & MOD_ENABLE) && is_provided) {
-   emutex_lock (&ml_tb_current_mutex);
-   current.enable = strsetdel(current.enable, services[x]);
-   emutex_unlock (&ml_tb_current_mutex);
-
-   skip = 1;
+/* while (dm & 2) {
+  if (recurse) {
+   fprintf (stderr, "now recursing");
   }
-  if ((task & MOD_DISABLE) && !is_provided) {
-   emutex_lock (&ml_tb_current_mutex);
-   current.disable = strsetdel(current.disable, services[x]);
-   emutex_unlock (&ml_tb_current_mutex);
+  dm = 0;
+  recurse = 1;*/
+ {
 
-   skip = 1;
+  if (now) { free (now); now = NULL; }
+  if (defer) { free (defer); defer = NULL; }
+  if (services) { free (services); services = NULL; }
+
+  emutex_lock (&ml_tb_current_mutex);
+
+  switch (task) {
+   case MOD_ENABLE: services = (char **)setdup((void **)current.enable, SET_TYPE_STRING); break;
+   case MOD_DISABLE: services = (char **)setdup((void **)current.disable, SET_TYPE_STRING); break;
+   case MOD_RESET: services = (char **)setdup((void **)current.reset, SET_TYPE_STRING); break;
+   case MOD_RELOAD: services = (char **)setdup((void **)current.reload, SET_TYPE_STRING); break;
+   case MOD_ZAP: services = (char **)setdup((void **)current.zap, SET_TYPE_STRING); break;
   }
 
-  if (skip) continue;
+  emutex_unlock (&ml_tb_current_mutex);
 
-  if (mod_isbroken (services[x])) {
-   emutex_lock (&ml_tb_current_mutex);
+  if (!services) return;
+  nservices = setcount ((void **)services);
 
-   switch (task) {
-    case MOD_ENABLE: current.enable = strsetdel(current.enable, services[x]); break;
-    case MOD_DISABLE: current.disable = strsetdel(current.disable, services[x]); break;
-    case MOD_RESET: current.reset = strsetdel(current.reset, services[x]); break;
-    case MOD_RELOAD: current.reload = strsetdel(current.reload, services[x]); break;
-    case MOD_ZAP: current.zap = strsetdel(current.zap, services[x]); break;
+  fprintf (stderr, " >> %i (%s)\n", task, set2str (' ', services));
+
+  for (; services[x]; x++) {
+   char is_provided = service_usage_query (SERVICE_IS_PROVIDED, NULL, services[x]);
+   char skip = 0;
+
+   if ((task & MOD_ENABLE) && is_provided) {
+    emutex_lock (&ml_tb_current_mutex);
+    current.enable = strsetdel(current.enable, services[x]);
+    emutex_unlock (&ml_tb_current_mutex);
+
+    skip = 1;
+   }
+   if ((task & MOD_DISABLE) && !is_provided) {
+    emutex_lock (&ml_tb_current_mutex);
+    current.disable = strsetdel(current.disable, services[x]);
+    emutex_unlock (&ml_tb_current_mutex);
+
+    skip = 1;
    }
 
-   emutex_unlock (&ml_tb_current_mutex);
-  } else {
-   emutex_lock (&ml_service_list_mutex);
+   if (skip) continue;
 
-   struct stree *des = streefind (module_logics_service_list, services[x], TREE_FIND_FIRST);
-   struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
+   if (mod_isbroken (services[x])) {
+    emutex_lock (&ml_tb_current_mutex);
 
-   emutex_unlock (&ml_service_list_mutex);
+    switch (task) {
+     case MOD_ENABLE: current.enable = strsetdel(current.enable, services[x]); break;
+     case MOD_DISABLE: current.disable = strsetdel(current.disable, services[x]); break;
+     case MOD_RESET: current.reset = strsetdel(current.reset, services[x]); break;
+     case MOD_RELOAD: current.reload = strsetdel(current.reload, services[x]); break;
+     case MOD_ZAP: current.zap = strsetdel(current.zap, services[x]); break;
+    }
 
-   if (!des) {
-    struct group_data *gd = mod_group_get_data(services[x]);
-    if (gd && gd->members) {
-//     fprintf (stderr, " >> %s is actually a group!\n", services[x]);
+    emutex_unlock (&ml_tb_current_mutex);
+   } else {
+    emutex_lock (&ml_service_list_mutex);
 
-     emutex_lock (&ml_tb_current_mutex);
+    struct stree *des = streefind (module_logics_service_list, services[x], TREE_FIND_FIRST);
+    struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
 
-     if (task & MOD_ENABLE) {
-      if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
-       ssize_t r = 0;
+    emutex_unlock (&ml_service_list_mutex);
+
+    if (!des) {
+     struct group_data *gd = mod_group_get_data(services[x]);
+     if (gd && gd->members) {
+//      fprintf (stderr, " >> %s is actually a group!\n", services[x]);
+
+      emutex_lock (&ml_tb_current_mutex);
+
+      if (task & MOD_ENABLE) {
+       if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
+        ssize_t r = 0;
+
+        for (; gd->members[r]; r++) {
+         if (!mod_isbroken (gd->members[r])) {
+          if (!inset ((void **)current.enable, (void *)gd->members[r], SET_TYPE_STRING)) {
+           current.enable = (char **)setadd ((void **)current.enable, (void *)gd->members[r], SET_TYPE_STRING);
+           dm |= 2;
+          }
+          break;
+         }
+        }
+
+        if (!gd->members[r]) {
+         mod_mark (services[x], MARK_BROKEN);
+        }
+       } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST)) {
+        ssize_t r = 0;
+
+        for (; gd->members[r]; r++) {
+         if (!mod_isbroken (gd->members[r])) {
+          if (!inset ((void **)current.enable, (void *)gd->members[r], SET_TYPE_STRING)) {
+           current.enable = (char **)setadd ((void **)current.enable, (void *)gd->members[r], SET_TYPE_STRING);
+           dm |= 2;
+          }
+         } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL)) {
+/* all required: any broken modules mean we're screwed */
+          mod_mark (services[x], MARK_BROKEN);
+          dm |= 2;
+          break;
+         }
+        }
+       }
+      }
+      if (task & MOD_DISABLE) {
+       ssize_t r = 0, broken = 0;
 
        for (; gd->members[r]; r++) {
         if (!mod_isbroken (gd->members[r])) {
-         current.enable = (char **)setadd ((void **)current.enable, (void *)gd->members[r], SET_TYPE_STRING);
-         break;
-        }
+         if (!inset ((void **)current.disable, (void *)gd->members[r], SET_TYPE_STRING)) {
+          current.disable = (char **)setadd ((void **)current.disable, (void *)gd->members[r], SET_TYPE_STRING);
+          dm |= 2;
+         }
+        } else
+         broken++;
        }
 
-       if (!gd->members[r]) {
-	    mod_mark (services[x], MARK_BROKEN);
+       if (broken == r) {
+        mod_mark (services[x], MARK_BROKEN);
        }
-      } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST)) {
-       char **tmp = (char **)setcombine ((void **)current.enable, (void **)gd->members, SET_TYPE_STRING);
-       tmp = strsetdel(tmp, services[x]);
-       if (current.enable) free (current.enable);
-       current.enable = tmp;
+      }
+      if (task & MOD_RESET) {
+       ssize_t r = 0, broken = 0;
+
+       for (; gd->members[r]; r++) {
+        if (!mod_isbroken (gd->members[r])) {
+         if (!inset ((void **)current.reset, (void *)gd->members[r], SET_TYPE_STRING)) {
+          current.reset = (char **)setadd ((void **)current.reset, (void *)gd->members[r], SET_TYPE_STRING);
+          dm |= 2;
+         }
+        } else
+         broken++;
+       }
+
+       if (broken == r) {
+        mod_mark (services[x], MARK_BROKEN);
+       }
+      }
+      if (task & MOD_RELOAD) {
+       ssize_t r = 0, broken = 0;
+
+       for (; gd->members[r]; r++) {
+        if (!mod_isbroken (gd->members[r])) {
+         if (!inset ((void **)current.reload, (void *)gd->members[r], SET_TYPE_STRING)) {
+          current.reload = (char **)setadd ((void **)current.reload, (void *)gd->members[r], SET_TYPE_STRING);
+          dm |= 2;
+         }
+        } else
+         broken++;
+       }
+
+       if (broken == r) {
+        mod_mark (services[x], MARK_BROKEN);
+       }
+      }
+      if (task & MOD_ZAP) {
+       ssize_t r = 0, broken = 0;
+
+       for (; gd->members[r]; r++) {
+        if (!mod_isbroken (gd->members[r])) {
+         if (!inset ((void **)current.zap, (void *)gd->members[r], SET_TYPE_STRING)) {
+          current.zap = (char **)setadd ((void **)current.zap, (void *)gd->members[r], SET_TYPE_STRING);
+          dm |= 2;
+         }
+        } else
+         broken++;
+       }
+
+       if (broken == r) {
+        mod_mark (services[x], MARK_BROKEN);
+       }
+      }
+
+      emutex_unlock (&ml_tb_current_mutex);
+     } else {
+      mod_mark (services[x], MARK_UNRESOLVED);
+     }
+    } else if (lm) {
+     char isdone = 0;
+     ssize_t i = 0;
+
+/* see if we're going to need to recurse further, repeat this if so */
+     if (task & MOD_ENABLE) {
+      char rec = mod_enable_requirements (lm[0]);
+      if (rec == 2) {
+       dm |= 2;
+       continue;
       }
      }
      if (task & MOD_DISABLE) {
-      char **tmp = (char **)setcombine ((void **)current.disable, (void **)gd->members, SET_TYPE_STRING);
-      tmp = strsetdel(tmp, services[x]);
-      if (current.disable) free (current.disable);
-      current.disable = tmp;
+      char rec = mod_disable_users (lm[0]);
+      if (rec == 2) {
+       dm |= 2;
+       continue;
+      }
      }
-     if (task & MOD_RESET) {
-      char **tmp = (char **)setcombine ((void **)current.reset, (void **)gd->members, SET_TYPE_STRING);
-      tmp = strsetdel(tmp, services[x]);
-      if (current.reset) free (current.reset);
-      current.reset = tmp;
-     }
-     if (task & MOD_RELOAD) {
-      char **tmp = (char **)setcombine ((void **)current.reload, (void **)gd->members, SET_TYPE_STRING);
-      tmp = strsetdel(tmp, services[x]);
-      if (current.reload) free (current.reload);
-      current.reload = tmp;
-     }
-     if (task & MOD_ZAP) {
-      char **tmp = (char **)setcombine ((void **)current.zap, (void **)gd->members, SET_TYPE_STRING);
-      tmp = strsetdel(tmp, services[x]);
-      if (current.zap) free (current.zap);
-      current.zap = tmp;
-     }
-
-     emutex_unlock (&ml_tb_current_mutex);
-    } else {
-     mod_mark (services[x], MARK_UNRESOLVED);
-    }
-   } else if (lm) {
-    char isdone = 0;
-    ssize_t i = 0;
 
 /* always do resets/reloads/zaps */
-    if ((task & MOD_ENABLE) || (task & MOD_DISABLE)) {
-     for (; lm[i]; i++) {
-      isdone |= mod_done(lm[i], task);
+     if ((task & MOD_ENABLE) || (task & MOD_DISABLE)) {
+      for (; lm[i]; i++) {
+       isdone |= mod_done(lm[i], task);
+      }
      }
-    }
 
-    if (!isdone) {
-	 now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
+     if (!isdone) {
+      now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
+     }
+    } else {
+     mod_mark (services[x], MARK_BROKEN);
     }
-   } else {
-    mod_mark (services[x], MARK_BROKEN);
    }
   }
  }
@@ -629,7 +742,7 @@ void mod_get_and_apply_recurse (int task) {
   for (x = 0; now[x]; x++) {
    emutex_lock (&ml_service_list_mutex);
 
-   struct stree *des = streefind (module_logics_service_list, services[x], TREE_FIND_FIRST);
+   struct stree *des = streefind (module_logics_service_list, now[x], TREE_FIND_FIRST);
    struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
 
    emutex_unlock (&ml_service_list_mutex);
@@ -922,17 +1035,19 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (disable_all || disable_all_but_feedback) {
   struct stree *cur;
   ssize_t i = 0;
+  char **tmpy = service_usage_query_cr (SERVICE_GET_ALL_PROVIDED, NULL, NULL);
 
   emutex_lock (&ml_service_list_mutex);
   emutex_lock (&ml_tb_target_state_mutex);
-
-  char **tmpx = (char **)setcombine ((void **)plan->changes.enable, (void **)target_state.enable, SET_TYPE_STRING);
+//  char **tmpx = (char **)setcombine ((void **)plan->changes.enable, (void **)target_state.enable, SET_TYPE_STRING);
+  char **tmpx = (char **)setcombine ((void **)tmpy, (void **)target_state.enable, SET_TYPE_STRING);
 
   emutex_unlock (&ml_tb_target_state_mutex);
 
-  char **tmp = (char **)setcombine ((void **)tmpx, (void **)plan->changes.disable, SET_TYPE_STRING);  
+  char **tmp = (char **)setcombine ((void **)tmpx, (void **)plan->changes.disable, SET_TYPE_STRING);
 
   free (tmpx);
+  free (tmpy);
 
   if (plan->changes.disable) {
    free (plan->changes.disable);
@@ -943,23 +1058,25 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    for (; tmp[i]; i++) {
     char add = 1;
 
-    if ((disable_all && !strcmp(tmp[i], "all")) ||
-        (disable_all_but_feedback && !strcmp(tmp[i], "all-but-feedback"))) {
-	 add = 0;
+    if (inset ((void **)plan->changes.disable, (void *)tmp[i], SET_TYPE_STRING)) {
+     add = 0;
+    } else if ((disable_all && !strcmp(tmp[i], "all")) ||
+               (disable_all_but_feedback && !strcmp(tmp[i], "all-but-feedback"))) {
+     add = 0;
     } else if ((cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
      if (lm) {
-	  ssize_t y = 0;
-	  for (; lm[y]; y++) {
+      ssize_t y = 0;
+      for (; lm[y]; y++) {
        if (disable_all_but_feedback && (lm[y]->module->mode & EINIT_MOD_FEEDBACK)) {
-	    add = 0;
+        add = 0;
 
         break;
        }
-	  }
-	 }
+      }
+     }
     } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, tmp[i])) {
-	 add = 0;
+     add = 0;
     }
 
     if (add) {
