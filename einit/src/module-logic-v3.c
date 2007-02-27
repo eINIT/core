@@ -401,7 +401,7 @@ char mod_mark (char *service, char task) {
   broken_services = (char **)setadd ((void **)broken_services, (void *)service, SET_TYPE_STRING);
  }
  if ((task & MARK_UNRESOLVED) && !inset ((void **)unresolved_services, (void *)service, SET_TYPE_STRING)) {
-  unresolved_services = (char **)setadd ((void **)unresolved_services, (void *)service, SET_TYPE_STRING);  
+  unresolved_services = (char **)setadd ((void **)unresolved_services, (void *)service, SET_TYPE_STRING);
  }
 
  emutex_unlock (&ml_unresolved_mutex);
@@ -413,6 +413,8 @@ void mod_apply (struct ma_task *task) {
  if (task && task->st) {
   struct stree *des = task->st;
   struct lmodule **lm = (struct lmodule **)des->value;
+
+  fprintf (stderr, "mod_apply(%s)\n", des->key);
 
   if (lm && lm[0]) {
    struct lmodule *first = lm[0];
@@ -511,9 +513,13 @@ void mod_get_and_apply_recurse (int task) {
  char **now = NULL, **defer = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
- char dm = 2;
+ char dm = 2, recurse = 0;
 
  while (dm & 2) {
+  if (recurse) {
+   fprintf (stderr, "recursing");
+  } else
+   recurse = 1;
   dm = 0;
 
   if (now) { free (now); now = NULL; }
@@ -620,74 +626,35 @@ void mod_get_and_apply_recurse (int task) {
         }
        }
       }
-      if (task & MOD_DISABLE) {
-       ssize_t r = 0, broken = 0;
-
-       for (; gd->members[r]; r++) {
-        if (!mod_isbroken (gd->members[r])) {
-         if (!inset ((void **)current.disable, (void *)gd->members[r], SET_TYPE_STRING)) {
-          current.disable = (char **)setadd ((void **)current.disable, (void *)gd->members[r], SET_TYPE_STRING);
-          dm |= 2;
-         }
-        } else
-         broken++;
-       }
-
-       if (broken == r) {
-        mod_mark (services[x], MARK_BROKEN);
-       }
+#define mod_apply_recurse_group_rec_add(CONSTANT, variable)\
+      if (task & CONSTANT) {\
+       ssize_t r = 0, broken = 0, nprov = 0;\
+\
+       for (; gd->members[r]; r++) {\
+        if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, gd->members[r])) {\
+         nprov++;\
+        } else {\
+         if (!mod_isbroken (gd->members[r])) {\
+          if (!inset ((void **)current.variable, (void *)gd->members[r], SET_TYPE_STRING)) {\
+           current.variable = (char **)setadd ((void **)current.variable, (void *)gd->members[r], SET_TYPE_STRING);\
+           dm |= 2;\
+          }\
+         } else\
+          broken++;\
+        }\
+       }\
+\
+       if ((nprov + broken) == r) {\
+        current.variable = strsetdel (current.variable, services[x]);\
+       }\
+       if (broken == r) {\
+        mod_mark (services[x], MARK_BROKEN);\
+       }\
       }
-      if (task & MOD_RESET) {
-       ssize_t r = 0, broken = 0;
-
-       for (; gd->members[r]; r++) {
-        if (!mod_isbroken (gd->members[r])) {
-         if (!inset ((void **)current.reset, (void *)gd->members[r], SET_TYPE_STRING)) {
-          current.reset = (char **)setadd ((void **)current.reset, (void *)gd->members[r], SET_TYPE_STRING);
-          dm |= 2;
-         }
-        } else
-         broken++;
-       }
-
-       if (broken == r) {
-        mod_mark (services[x], MARK_BROKEN);
-       }
-      }
-      if (task & MOD_RELOAD) {
-       ssize_t r = 0, broken = 0;
-
-       for (; gd->members[r]; r++) {
-        if (!mod_isbroken (gd->members[r])) {
-         if (!inset ((void **)current.reload, (void *)gd->members[r], SET_TYPE_STRING)) {
-          current.reload = (char **)setadd ((void **)current.reload, (void *)gd->members[r], SET_TYPE_STRING);
-          dm |= 2;
-         }
-        } else
-         broken++;
-       }
-
-       if (broken == r) {
-        mod_mark (services[x], MARK_BROKEN);
-       }
-      }
-      if (task & MOD_ZAP) {
-       ssize_t r = 0, broken = 0;
-
-       for (; gd->members[r]; r++) {
-        if (!mod_isbroken (gd->members[r])) {
-         if (!inset ((void **)current.zap, (void *)gd->members[r], SET_TYPE_STRING)) {
-          current.zap = (char **)setadd ((void **)current.zap, (void *)gd->members[r], SET_TYPE_STRING);
-          dm |= 2;
-         }
-        } else
-         broken++;
-       }
-
-       if (broken == r) {
-        mod_mark (services[x], MARK_BROKEN);
-       }
-      }
+      mod_apply_recurse_group_rec_add(MOD_DISABLE, disable);
+      mod_apply_recurse_group_rec_add(MOD_ZAP, zap);
+      mod_apply_recurse_group_rec_add(MOD_RESET, reset);
+      mod_apply_recurse_group_rec_add(MOD_RELOAD, reload);
 
       emutex_unlock (&ml_tb_current_mutex);
      } else {
