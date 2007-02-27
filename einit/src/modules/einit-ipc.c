@@ -151,19 +151,13 @@ int __ipc_process (char *cmd, FILE *f) {
 
  while ((n = cfg_findnode ("configuration-ipc-chain-command", 0, n))) {
   if (n->arbattrs) {
-   uint32_t u = 0, err;
+   uint32_t u = 0;
    regex_t pattern;
    char have_pattern = 0, *new_command = NULL;
 
    for (u = 0; n->arbattrs[u]; u+=2) {
     if (!strcmp(n->arbattrs[u], "for")) {
-     if ((err = regcomp (&pattern, n->arbattrs[u+1], REG_EXTENDED))) {
-      char errorcode [1024];
-      regerror (err, &pattern, errorcode, 1024);
-      fprintf (f, " >> ipc: bad regex: %s: %s\n", n->arbattrs[u+1], errorcode);
-     } else {
-      have_pattern = 1;
-     }
+     have_pattern = !eregcomp (&pattern, n->arbattrs[u+1]);
     } else if (!strcmp(n->arbattrs[u], "do")) {
      new_command = n->arbattrs[u+1];
     }
@@ -221,7 +215,7 @@ int ipc_read (int *nfd) {
 
     ret = __ipc_process (buffer, f);
 
-    efprintf (f, "\nIPC//processed.\n%i\n", ret);
+    eprintf (f, "\nIPC//processed.\n%i\n", ret);
     fflush (f);
    }
 

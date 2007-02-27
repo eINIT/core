@@ -371,14 +371,7 @@ unsigned char find_block_devices_recurse_path (char *path) {
   nfitfc = 1;
   npattern = cfg_getstring ("configuration-storage-block-devices-dev-constraints", NULL);
   if (npattern) {
-   uint32_t err;
-   if (!(err = regcomp (&devpattern, npattern, REG_EXTENDED)))
-    havedevpattern = 1;
-   else {
-    char errorcode [1024];
-    regerror (err, &devpattern, errorcode, 1024);
-    fputs (errorcode, stdout);
-   }
+   havedevpattern = !eregcomp (&devpattern, npattern);
   }
  }
 #endif

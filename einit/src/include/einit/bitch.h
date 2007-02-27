@@ -122,4 +122,9 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
 #define eputs(text, file)\
  (fputs(text, file) < 0 ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "fputs() failed."), errno) : 0)
 
+#ifdef POSIXREGEX
+#define eregcomp(target, pattern)\
+ ((errno = regcomp(target, pattern, REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+#endif
+
 #endif /* _BITCH_H */

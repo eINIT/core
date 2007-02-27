@@ -944,14 +944,7 @@ unsigned char broadcast_message (char *path, char *message) {
   nfitfc = 1;
   npattern = cfg_getstring ("configuration-feedback-visual-broadcast-constraints", NULL);
   if (npattern) {
-   uint32_t err;
-   if (!(err = regcomp (&devpattern, npattern, REG_EXTENDED)))
-    havedevpattern = 1;
-   else {
-    char errorcode [1024];
-    regerror (err, &devpattern, errorcode, 1024);
-    fputs (errorcode, stdout);
-   }
+   havedevpattern = !eregcomp (&devpattern, npattern);
   }
  }
 
