@@ -543,7 +543,7 @@ void mod_get_and_apply_recurse (int task) {
 
   fprintf (stderr, " >> %i (%s)\n", task, set2str (' ', services));
 
-  for (; services[x]; x++) {
+  for (x = 0; services[x]; x++) {
    char is_provided = service_usage_query (SERVICE_IS_PROVIDED, NULL, services[x]);
    char skip = 0;
 
