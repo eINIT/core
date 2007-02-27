@@ -482,6 +482,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  int pidstatus = 0;
  char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
  uint32_t cs = STATUS_OK;
+ char have_waited = 0;
 
  lookupuidgid (&uid, &gid, user, group);
 
@@ -581,7 +582,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
     while (!feof(fx)) {
      if (!fgets(rxbuffer, 1024, fx)) {
-      if (errno == EAGAIN) continue;
+      if (errno == EAGAIN) goto skip_read;
       break;
      }
 
@@ -624,9 +625,14 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
       status_update (status);
      }
 
+     skip_read:
+
      if (waitpid (child, &pidstatus, WNOHANG) == child) {
-      if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))
+      if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus)) {
+//       fputs (" >> process dead, bailing out\n", stderr);
+       have_waited = 1;
        break;
+      }
      }
     }
 
@@ -639,9 +645,11 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    status_update (status);
   }
 
-  do {
-   waitpid (child, &pidstatus, 0);
-  } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
+  if (!have_waited) {
+   do {
+    waitpid (child, &pidstatus, 0);
+   } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
+  }
  }
 
  if (cs == STATUS_FAIL) return STATUS_FAIL;
