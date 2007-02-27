@@ -85,13 +85,11 @@ int sev_threshold = 2;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
-   if (fputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-aural:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
-   if (fputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-aural:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
@@ -147,10 +145,10 @@ void feedback_event_handler(struct einit_event *ev) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (gethostname (hostname, 128)) strcpy (hostname, "localhost");
     hostname[127] = 0;
-    snprintf (phrase, 2048, "Host \"%s\" now switching to mode \"%s\".", hostname, (cmode && cmode->id) ? cmode->id : "unknown");
+    esprintf (phrase, 2048, "Host \"%s\" now switching to mode \"%s\".", hostname, (cmode && cmode->id) ? cmode->id : "unknown");
     break;
    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
-    snprintf (phrase, 2048, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
+    esprintf (phrase, 2048, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
     break;
   }
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
@@ -177,8 +175,7 @@ void synthesize (char *string) {
  FILE *px = popen (synthesizer, "w");
 
  if (px) {
-  if (fputs (string, px) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-aural:synthesize", 0, "fputs() failed.");
+  eputs (string, px);
 
   if (pclose (px) == -1)
    perror ("tts: pclose");

@@ -160,7 +160,7 @@ void *watcher (struct spidcb *spid) {
  if (node) {
   if (node->id) {
    char tmp[2048];
-   snprintf (tmp, 2048, "einit-tty: restarting: %s\n", node->id);
+   esprintf (tmp, 2048, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
   texec (node);
@@ -199,7 +199,7 @@ int texec (struct cfgnode *node) {
    struct stat statbuf;
    if (lstat (cmds[0], &statbuf)) {
     char cret [1024];
-    snprintf (cret, 1024, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
+    esprintf (cret, 1024, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else if (!(cpid = fork())) {
     if (device) {
@@ -221,7 +221,6 @@ int texec (struct cfgnode *node) {
     pid_t curpgrp;
 
     if (do_utmp) {
-//     fputs (" >> creating utmp record\n", stderr);
      create_utmp_record(utmprecord, INIT_PROCESS, cpid, device, "etty", NULL, NULL, 0, 0, cpid);
 
      update_utmp (UTMP_ADD, &utmprecord);
@@ -286,7 +285,7 @@ int enable (void *pa, struct einit_event *status) {
    texec (node);
   } else {
    char warning[1024];
-   snprintf (warning, 1024, "einit-tty: node %s not found", tmpnodeid);
+   esprintf (warning, 1024, "einit-tty: node %s not found", tmpnodeid);
    notice (3, warning);
   }
 

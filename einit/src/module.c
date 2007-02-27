@@ -179,8 +179,7 @@ int mod_scanmodules ( void ) {
 
    sohandle = dlopen (tmp, RTLD_NOW);
    if (sohandle == NULL) {
-    if (puts (dlerror ()) < 0)
-     bitch2(BITCH_STDIO, "modules:mod_scanmodules", 0, "fputs() failed.");
+    eputs (dlerror (), stdout);
     goto cleanup_continue;
    }
 
@@ -192,8 +191,7 @@ int mod_scanmodules ( void ) {
       new->source = estrdup(tmp);
      }
     } else {
-     if (fprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, modinfo->eibuild) < 0)
-      bitch2(BITCH_STDIO, "module:mod_scanmodules", 0, "fprintf() failed.");
+     eprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, modinfo->eibuild);
 
      dlclose (sohandle);
     }
@@ -205,8 +203,7 @@ int mod_scanmodules ( void ) {
   }
   closedir (dir);
  } else {
-  if (fputs ("couldn't open module directory\n", stderr) < 0)
-   bitch2(BITCH_STDIO, "modules:mod_scanmodules", 0, "fputs() failed.");
+  eputs ("couldn't open module directory\n", stderr);
 
 #ifdef POSIXREGEX
   if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
@@ -903,60 +900,48 @@ void mod_event_handler(struct einit_event *ev) {
     while (cur) {
      if ((cur->module && !(options & EIPC_ONLY_RELEVANT)) || (cur->status != STATUS_IDLE)) {
       if (options & EIPC_OUTPUT_XML) {
-       if (fprintf ((FILE *)ev->para, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
-           (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status)) < 0)
-        bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+       eprintf ((FILE *)ev->para, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
+           (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
       } else {
-       if (fprintf ((FILE *)ev->para, "[%s] %s (%s)",
-           STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown")) < 0)
-        bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+       eprintf ((FILE *)ev->para, "[%s] %s (%s)",
+           STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
       }
 
       if (cur->si) {
        if (cur->si->provides) {
         if (options & EIPC_OUTPUT_XML) {
-         if (fprintf ((FILE *)ev->para, "\n  provides=\"%s\"", set2str(':', cur->si->provides)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n  provides=\"%s\"", set2str(':', cur->si->provides));
         } else {
-         if (fprintf ((FILE *)ev->para, "\n > provides: %s", set2str(' ', cur->si->provides)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n > provides: %s", set2str(' ', cur->si->provides));
         }
        }
        if (cur->si->requires) {
         if (options & EIPC_OUTPUT_XML) {
-         if (fprintf ((FILE *)ev->para, "\n  requires=\"%s\"", set2str(':', cur->si->requires)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n  requires=\"%s\"", set2str(':', cur->si->requires));
         } else {
-         if (fprintf ((FILE *)ev->para, "\n > requires: %s", set2str(' ', cur->si->requires)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n > requires: %s", set2str(' ', cur->si->requires));
         }
        }
        if (cur->si->after) {
         if (options & EIPC_OUTPUT_XML) {
-         if (fprintf ((FILE *)ev->para, "\n  after=\"%s\"", set2str(':', cur->si->after)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n  after=\"%s\"", set2str(':', cur->si->after));
         } else {
-         if (fprintf ((FILE *)ev->para, "\n > after: %s", set2str(' ', cur->si->after)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n > after: %s", set2str(' ', cur->si->after));
         }
        }
        if (cur->si->before) {
         if (options & EIPC_OUTPUT_XML) {
-         if (fprintf ((FILE *)ev->para, "\n  before=\"%s\"", set2str(':', cur->si->before)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n  before=\"%s\"", set2str(':', cur->si->before));
         } else {
-         if (fprintf ((FILE *)ev->para, "\n > before: %s", set2str(' ', cur->si->before)) < 0)
-          bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+         eprintf ((FILE *)ev->para, "\n > before: %s", set2str(' ', cur->si->before));
         }
        }
       }
 
       if (options & EIPC_OUTPUT_XML) {
-       if (fprintf ((FILE *)ev->para, " />\n") < 0)
-        bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+       eputs (" />\n", (FILE *)ev->para);
       } else {
-       if (fprintf ((FILE *)ev->para, "\n") < 0)
-        bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+       eputs ("\n", (FILE *)ev->para);
       }
      }
      cur = cur->next;
@@ -1022,28 +1007,24 @@ void mod_event_handler(struct einit_event *ev) {
        char *modestr;
        if (options & EIPC_OUTPUT_XML) {
         modestr = set2str (':', inmodes);
-        if (fprintf ((FILE *)ev->para, " <service id=\"%s\" used-in=\"%s\">\n", scur->key, modestr) < 0)
-         bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+        eprintf ((FILE *)ev->para, " <service id=\"%s\" used-in=\"%s\">\n", scur->key, modestr);
        } else {
         modestr = set2str (' ', inmodes);
-        if (fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
+        eprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
                                 "\e[1mservice \"%s\" (%s)\n\e[0m" :
                                 "service \"%s\" (%s)\n",
-                                scur->key, modestr) < 0)
-         bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+                                scur->key, modestr);
        }
        free (modestr);
        free (inmodes);
       } else if (!(options & EIPC_ONLY_RELEVANT)) {
        if (options & EIPC_OUTPUT_XML) {
-        if (fprintf ((FILE *)ev->para, " <service id=\"%s\">\n", scur->key) < 0)
-         bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+        eprintf ((FILE *)ev->para, " <service id=\"%s\">\n", scur->key);
        } else {
-        if (fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
+        eprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
                                 "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
                                 "service \"%s\" (not in any mode)\n",
-                                scur->key) < 0)
-         bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+                                scur->key);
        }
       }
 
@@ -1053,28 +1034,25 @@ void mod_event_handler(struct einit_event *ev) {
          struct lmodule **xs = scur->value;
          uint32_t u = 0;
          for (u = 0; xs[u]; u++) {
-          if (fprintf ((FILE *)ev->para, "  <module id=\"%s\" name=\"%s\" />\n",
+          eprintf ((FILE *)ev->para, "  <module id=\"%s\" name=\"%s\" />\n",
                     xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
-                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown") < 0)
-           bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
          }
         }
 
-        if (fprintf ((FILE *)ev->para, " </service>\n") < 0)
-         bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+        eputs (" </service>\n", (FILE*)ev->para);
        } else {
         if (scur->value) {
          struct lmodule **xs = scur->value;
          uint32_t u = 0;
          for (u = 0; xs[u]; u++) {
-          if (fprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
+          eprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
                                  ((xs[u]->module && (xs[u]->module->options & EINIT_MOD_DEPRECATED)) ?
                                   " \e[31m- \e[0mcandidate \"%s\" (%s)\n" :
                                   " \e[33m* \e[0mcandidate \"%s\" (%s)\n") :
                                  " * candidate \"%s\" (%s)\n",
                    xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
-                   xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown") < 0)
-           bitch2(BITCH_STDIO, "module:mod_event_handler", 0, "fprintf() failed.");
+                   xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
          }
         }
        }

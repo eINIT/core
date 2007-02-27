@@ -246,13 +246,11 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  };
 
  if ((data = readfile (configfile))) {
-  if (fprintf (stderr, " >> parsing \"%s\".\n", configfile) < 0)
-   bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+  eprintf (stderr, " >> parsing \"%s\".\n", configfile);
 
   time_t currenttime = time(NULL);
   if (st.st_mtime > currenttime) {// sanity check mtime
-   if (fprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile) < 0)
-    bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+   eprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile);
    xml_configuration_files_highest_mtime = st.st_mtime;
   } else if (st.st_mtime > xml_configuration_files_highest_mtime) // update combined mtime
    xml_configuration_files_highest_mtime = st.st_mtime;
@@ -266,13 +264,11 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 
-    if (fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par)) < 0)
-     bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+    eprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
 
     if (tx) {
      if (setcount ((void **)tx) >= line) {
-      if (fprintf (stderr, " * offending line:\n%s\n", tx[line-1]) < 0)
-       bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+      eprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
      }
      free (tx);
     }
@@ -375,8 +371,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
        if (mkdir (includedir, 0777)) {
         bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): mkdir()", errno, (char *)includedir);
        } else {
-        if (fprintf (stderr, " >> created missing directory \"%s\"\n", includedir) < 0)
-         bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+        eprintf (stderr, " >> created missing directory \"%s\"\n", includedir);
        }
       } else {
        bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
@@ -396,8 +391,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
   return hconfiguration != NULL;
  } else if (errno) {
-  if (fprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno)) < 0)
-   bitch2(BITCH_STDIO, "config-xml-expat:einit_config_exml_expat_parse_configuration", 0, "fprintf() failed.");
+  eprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno));
 
   return errno;
  }
@@ -452,7 +446,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
      ssize_t clen = strlen (key) + strlen(value) + 5;
      char *ytmp = emalloc (clen);
 
-     snprintf (ytmp, clen, "%s=\"%s\" ", key, value);
+     esprintf (ytmp, clen, "%s=\"%s\" ", key, value);
 
      if (xattributes) xattributes = erealloc (xattributes, strlen (xattributes) + strlen (ytmp) +1);
      else {
@@ -472,7 +466,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
    if (cur->key && xattributes) {
     ssize_t rxlen = strlen (cur->key) + strlen (xattributes) +7;
     xtmp = emalloc (rxlen);
-    snprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
+    esprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
    }
    free (xattributes);
   }
@@ -497,7 +491,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
 
  sxlen = strlen (retval) + strlen (xtemplate) +1;
  ret = emalloc (sxlen);
- snprintf (ret, sxlen, xtemplate, retval);
+ esprintf (ret, sxlen, xtemplate, retval);
 
  return ret;
 }

@@ -180,7 +180,7 @@ void sched_init () {
 #elif defined(DARWIN)
  char tmp[1024];
 
- snprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
+ esprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
 
  if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
   perror ("scheduler: semaphore setup");
@@ -194,7 +194,7 @@ void sched_init () {
  sigchild_semaphore = ecalloc (1, sizeof (sem_t));
  if (sem_init (sigchild_semaphore, 0, 0) == -1) {
   free (sigchild_semaphore);
-  snprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
+  esprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
 
   if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
    perror ("scheduler: semaphore setup");
@@ -341,8 +341,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-down";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-    if (fputs (" >> shutdown queued\n", (FILE *)ev->para) < 0)
-     bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+    eputs (" >> shutdown queued\n", (FILE *)ev->para);
     evstaticdestroy(ee);
    }
    if (!strcmp (argv[1], "reset")) {
@@ -351,8 +350,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-reset";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-    if (fputs (" >> reset queued\n", (FILE *)ev->para) < 0)
-     bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+    eputs (" >> reset queued\n", (FILE *)ev->para);
     evstaticdestroy(ee);
    }
   }
@@ -380,8 +378,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      void  ((**reset_functions)()) = (void (**)())
       (shutdownfunctionsubnames ? function_find((reset ? "core-power-reset" : "core-power-off"), 1, shutdownfunctionsubnames) : NULL);
 
-     if (fputs ((reset ? "scheduler: reset\n" : "scheduler: power down\n"), stderr) < 0)
-      bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+     eputs ((reset ? "scheduler: reset\n" : "scheduler: power down\n"), stderr);
 
      if (reset_functions) {
       uint32_t xn = 0;
@@ -390,16 +387,14 @@ void sched_ipc_event_handler(struct einit_event *ev) {
        (reset_functions[xn]) ();
       }
      } else {
-      if (fputs ("scheduler: no (accepted) functions found, exiting\n", stderr) < 0)
-       bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+      eputs ("scheduler: no (accepted) functions found, exiting\n", stderr);
       exit (EXIT_SUCCESS);
      }
 
      if (shutdownfunctionsubnames) free (shutdownfunctionsubnames);
 
 // if we still live here, something's twocked
-     if (fputs ("scheduler: failed, exiting\n", stderr) < 0)
-      bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+     eputs ("scheduler: failed, exiting\n", stderr);
      exit (EXIT_FAILURE);
    }
   }
@@ -412,8 +407,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     ee.string = argv[2];
     if (ev->status & EIPC_DETACH) {
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-     if (fputs (" >> modeswitch queued\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+     eputs (" >> modeswitch queued\n", (FILE *)ev->para);
     } else {
      ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
@@ -425,8 +419,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     ee.set = (void **)setdup ((void **)argv+1, SET_TYPE_STRING);
     if (ev->status & EIPC_DETACH) {
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-     if (fputs (" >> status change queued\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "scheduler:sched_ipc_event_handler", 0, "fputs() failed.");
+     eputs (" >> status change queued\n", (FILE *)ev->para);
     } else {
      ee.para = ev->para;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
@@ -648,16 +641,13 @@ void *sched_run_sigchild (void *p) {
   if (!check) {
    if (gstatus != EINIT_EXITING) sem_wait (sigchild_semaphore);
    else {
-    if (fputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr) < 0)
-     bitch2(BITCH_STDIO, "scheduler:sched_run_sigchild", 0, "fputs() failed.");
+    eputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr);
     while (sleep (1)) {
-     if (fputs (" >> still not dead...", stderr) < 0)
-      bitch2(BITCH_STDIO, "scheduler:sched_run_sigchld", 0, "fputs() failed.");
+     eputs (" >> still not dead...", stderr);
     }
    }
    if (sigint_called) {
-    if (fputs (" >> scheduler SIGCHLD thread: making eINIT shut down\n", stderr) < 0)
-     bitch2(BITCH_STDIO, "scheduler:sched_run_sigchld", 0, "fputs() failed.");
+    eputs (" >> scheduler SIGCHLD thread: making eINIT shut down\n", stderr);
 
     struct einit_event ee = evstaticinit (EVE_SWITCH_MODE);
     ee.string = "power-reset";

@@ -204,8 +204,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
      } else if (!strcmp (reiser_sb.s_magic, "ReIsErFs") || !strcmp (reiser_sb.s_magic, "ReIsEr2Fs") || !strcmp (reiser_sb.s_magic, "ReIsEr3Fs")) {
       if (fseek (device, (uintmax_t)((uintmax_t)(reiser_sb.s_block_count -1) * (uintmax_t)reiser_sb.s_blocksize), SEEK_SET) || fread (&tmp, (reiser_sb.s_blocksize < 1024 ? reiser_sb.s_blocksize : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
 #ifdef DEBUG
-       if (fprintf (stderr, "%s: ReiserFS superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, reiser_sb.s_block_count, reiser_sb.s_blocksize) < 0)
-        bitch2(BITCH_STDIO, "linux-mount:read_metadata_linux", 0, "fprintf() failed.");
+       eprintf (stderr, "%s: ReiserFS superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, reiser_sb.s_block_count, reiser_sb.s_blocksize);
 #endif
        bdi->status = BF_STATUS_ERROR_IO;
       } else {
@@ -225,7 +224,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
    }
 
    if (bdi->fs_type) {
-    snprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+    esprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
     bdi->uuid = estrdup (c_uuid);
    }
    fclose (device);
@@ -324,18 +323,18 @@ unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mount
 
  if (fsdata) {
   if (tflags & MOUNT_TF_FORCE_RW)
-   snprintf (command, 4096, "/bin/mount %s %s -t %s -o \"rw,%s\"", source, mountpoint, fstype, fsdata);
+   esprintf (command, 4096, "/bin/mount %s %s -t %s -o \"rw,%s\"", source, mountpoint, fstype, fsdata);
   else if (tflags & MOUNT_TF_FORCE_RO)
-   snprintf (command, 4096, "/bin/mount %s %s -t %s -o \"ro,%s\"", source, mountpoint, fstype, fsdata);
+   esprintf (command, 4096, "/bin/mount %s %s -t %s -o \"ro,%s\"", source, mountpoint, fstype, fsdata);
   else
-   snprintf (command, 4096, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
+   esprintf (command, 4096, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
  } else {
   if (tflags & MOUNT_TF_FORCE_RW)
-   snprintf (command, 4096, "/bin/mount %s %s -t %s -o rw", source, mountpoint, fstype);
+   esprintf (command, 4096, "/bin/mount %s %s -t %s -o rw", source, mountpoint, fstype);
   else if (tflags & MOUNT_TF_FORCE_RO)
-   snprintf (command, 4096, "/bin/mount %s %s -t %s -o ro", source, mountpoint, fstype);
+   esprintf (command, 4096, "/bin/mount %s %s -t %s -o ro", source, mountpoint, fstype);
   else
-   snprintf (command, 4096, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
+   esprintf (command, 4096, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
  }
 
  if (gmode != EINIT_GMODE_SANDBOX) {

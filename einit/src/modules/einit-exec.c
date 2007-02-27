@@ -224,11 +224,9 @@ char **__check_variables (char *id, char **variables, FILE *output) {
 #endif
 
   if (!node_found) {
-   if (fprintf (output, " * module: %s: undefined node: %s\n", id, x[0]) < 0)
-    bitch2(BITCH_STDIO, "einit-exec:check_variables", 0, "fprintf() failed.");
+   eprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
   } else if (!variable_matches) {
-   if (fprintf (output, " * module: %s: undefined variable: %s\n", id, e) < 0)
-    bitch2(BITCH_STDIO, "einit-exec:check_variables", 0, "fprintf() failed.");
+   eprintf (output, " * module: %s: undefined variable: %s\n", id, e);
   }
 
   if (x[0] != e) free (x[0]);
@@ -428,8 +426,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   exec_environment = __create_environment (exec_environment, variables);
 
   if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
-   if (fprintf (stderr, " >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment)) < 0)
-    bitch2(BITCH_STDIO, "einit-exec:pexec", 0, "fprintf() failed.");
+   eprintf (stderr, " >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
    execve (cmd[0], cmd, safe_environment);
   } else {
    execve (cmd[0], cmd, exec_environment);
@@ -565,7 +562,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
 
-  fprintf (stderr, " >> now executing %s.\n", command);
+  eprintf (stderr, " >> now executing %s.\n", command);
 
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);
@@ -631,7 +628,6 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
      if (waitpid (child, &pidstatus, WNOHANG) == child) {
       if (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus)) {
-//       fputs (" >> process dead, bailing out\n", stderr);
        have_waited = 1;
        break;
       }
@@ -691,7 +687,7 @@ void *dexec_watcher (struct spidcb *spid) {
   char *rid = (module && module->module && module->module->rid ? module->module->rid : "unknown");
 /* if we're already deactivating this daemon, resume the original function */
   if (pthread_mutex_trylock (&cur->mutex)) {
-   snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
+   esprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
    notice (8, stmp);
    emutex_unlock (&cur->mutex);
   } else if (dx->restart) {
@@ -704,7 +700,7 @@ void *dexec_watcher (struct spidcb *spid) {
     fb.status = STATUS_WORKING;
     fb.flag = 0;
 
-    snprintf (stmp, 1024, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
+    esprintf (stmp, 1024, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
     fb.string = stmp;
     fb.integer = module->fbseq+1;
     status_update ((&fb));
@@ -713,7 +709,7 @@ void *dexec_watcher (struct spidcb *spid) {
     __start_daemon_function (dx, &fb);
    } else {
     dx->cb = NULL;
-    snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
+    esprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
     notice (5, stmp);
     if (module)
      mod (MOD_DISABLE, module);
@@ -721,7 +717,7 @@ void *dexec_watcher (struct spidcb *spid) {
   } else {
    emutex_unlock (&cur->mutex);
    dx->cb = NULL;
-   snprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
+   esprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
    notice (5, stmp);
    if (module)
     mod (MOD_DISABLE, module);

@@ -222,8 +222,7 @@ char *generate_legacy_mtab (struct mount_control_block *);
    FILE *mtabfile = fopen (mcb.mtab_file, "w");\
 \
    if (mtabfile) {\
-    if (fputs (tmpmtab, mtabfile) < 0)\
-     bitch2(BITCH_STDIO, "einit-mount:update_real_mtab", 0, "fputs() failed.");\
+    eputs (tmpmtab, mtabfile);\
     fclose (mtabfile);\
    }\
 \
@@ -417,8 +416,7 @@ unsigned char find_block_devices_recurse_path (char *path) {
   }
   closedir (dir);
  } else {
-  if (fprintf (stdout, "einit-mount: could not open %s\n", path) < 0)
-   bitch2(BITCH_STDIO, "einit-mount:fint_block_devices_recurse", 0, "fprintf() failed.");
+  eprintf (stdout, "einit-mount: could not open %s\n", path);
   errno = 0;
   return 1;
  }
@@ -807,8 +805,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
  for (; options[fi]; fi++) {
 #ifdef LINUX
   if (!strcmp (options[fi], "user") || !strcmp (options[fi], "users")) {
-   if (fprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]) < 0)
-    bitch2(BITCH_STDIO, "einit-mount:__options_string_to_mountflags", 0, "fprintf() failed.");
+   eprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
 #ifdef MS_NOEXEC
    (*mntflags) |= MS_NOEXEC;
@@ -820,8 +817,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
    (*mntflags) |= MS_NOSUID;
 #endif
   } else if (!strcmp (options[fi], "owner")) {
-   if (fprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]) < 0)
-    bitch2(BITCH_STDIO, "einit-mount:__options_string_to_mountflags", 0, "fprintf() failed.");
+   eprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
 #ifdef MS_NODEV
    (*mntflags) |= MS_NODEV;
@@ -830,11 +826,9 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
    (*mntflags) |= MS_NOSUID;
 #endif
   } else if (!strcmp (options[fi], "nouser") || !strcmp (options[fi], "group") || !strcmp (options[fi], "auto") || !strcmp (options[fi], "defaults")) {
-   if (fprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]) < 0)
-    bitch2(BITCH_STDIO, "einit-mount:__options_string_to_mountflags", 0, "fprintf() failed.");
+   eprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
   } else if (!strcmp (options[fi], "_netdev")) {
-   if (fprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint) < 0)
-    bitch2(BITCH_STDIO, "einit-mount:__options_string_to_mountflags", 0, "fprintf() failed.");
+   eprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
   } else
 #endif
 
@@ -962,7 +956,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      status->string = "filesystem dirty; running fsck";
      status_update (status);
 
-     snprintf (tmp, 1024, fsck_command, fstype, de->key);
+     esprintf (tmp, 1024, fsck_command, fstype, de->key);
      if (gmode != EINIT_GMODE_SANDBOX) {
       pexec_v1 (tmp, NULL, NULL, status);
      } else {
@@ -996,9 +990,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     fstype = fstype_s[fsts_i];
 
     if (bdi && bdi->label)
-     snprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
+     esprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
     else
-     snprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
+     esprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
     status->string = verbosebuffer;
     status_update (status);
 
@@ -1107,9 +1101,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   if ((he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
 
   if (fse && !(fse->status & BF_STATUS_MOUNTED))
-   snprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
+   esprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
   else
-   snprintf (textbuffer, 1024, "unmounting %s", mountpoint);
+   esprintf (textbuffer, 1024, "unmounting %s", mountpoint);
 
   if (fse && fse->manager)
    stopdaemon (fse->manager, status);
@@ -1132,7 +1126,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
                           *pcl[2] = { &pcc, NULL };
 
-     snprintf (textbuffer, 1024, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
+     esprintf (textbuffer, 1024, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
      errno = 0;
      status->string = textbuffer;
      status_update (status);
@@ -1143,7 +1137,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       if (umount2 (mountpoint, MNT_FORCE) != -1) {
        goto umount_ok;
       } else {
-       snprintf (textbuffer, 1024, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
+       esprintf (textbuffer, 1024, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
        errno = 0;
        status->string = textbuffer;
        status_update (status);
@@ -1152,20 +1146,20 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       if (fse) {
        if (retry >= 3) {
         if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-         snprintf (textbuffer, 1024, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+         esprintf (textbuffer, 1024, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
          errno = 0;
          status->string = textbuffer;
          status_update (status);
          goto umount_fail;
         } else {
          if (umount2 (mountpoint, MNT_DETACH) == -1) {
-          snprintf (textbuffer, 1024, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
+          esprintf (textbuffer, 1024, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
           errno = 0;
           status->string = textbuffer;
           status_update (status);
           goto umount_ok;
          } else {
-          snprintf (textbuffer, 1024, "%s#%i: remounted r/o and detached", mountpoint, retry);
+          esprintf (textbuffer, 1024, "%s#%i: remounted r/o and detached", mountpoint, retry);
           status->string = textbuffer;
           status_update (status);
           goto umount_ok;
@@ -1173,7 +1167,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
         }
        }
       } else {
-       snprintf (textbuffer, 1024, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
+       esprintf (textbuffer, 1024, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
        status->string = textbuffer;
        status_update (status);
        goto umount_fail;
@@ -1396,8 +1390,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     while (cur) {
      val = (struct fstab_entry *) cur->value;
      if (val) {
-      if (fprintf ((FILE *)ev->para, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status) < 0)
-       bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fprintf() failed.");
+      eprintf ((FILE *)ev->para, "%s [spec=%s;vfstype=%s;flags=%i;before-mount=%s;after-mount=%s;before-umount=%s;after-umount=%s;status=%i]\n", val->mountpoint, val->device, val->fs, val->mountflags, val->before_mount, val->after_mount, val->before_umount, val->after_umount, val->status);
      }
      cur = streenext (cur);
     }
@@ -1410,8 +1403,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     while (cur) {
      val = (struct bd_info *) cur->value;
      if (val) {
-      if (fprintf ((FILE *)ev->para, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status) < 0)
-       bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fprintf() failed.");
+      eprintf ((FILE *)ev->para, "%s [fs=%s;type=%i;label=%s;uuid=%s;flags=%i]\n", cur->key, val->fs, val->fs_type, val->label, val->uuid, val->status);
      }
      cur = streenext (cur);
     }
@@ -1425,34 +1417,29 @@ void mount_ipc_handler(struct einit_event *ev) {
    ev->flag = 1;
 
    if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
-    if (fputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", (FILE *)ev->para) < 0)
-     bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+    eputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", (FILE *)ev->para);
     ev->task++;
    } else {
     tmpset = str2set(':', tmpstring);
 
     if (inset ((void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
      if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
-      if (fputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", (FILE *)ev->para) < 0)
-       bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+      eputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", (FILE *)ev->para);
       ev->task++;
      }
      if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
-      if (fputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", (FILE *)ev->para) < 0)
-       bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+      eputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", (FILE *)ev->para);
       ev->task++;
      }
     }
 
     if (!inset ((void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
-     if (fputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+     eputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", (FILE *)ev->para);
      ev->task++;
     }
 
     if (inset ((void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
-     if (fputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+     eputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", (FILE *)ev->para);
      ev->task++;
     }
 
@@ -1461,32 +1448,26 @@ void mount_ipc_handler(struct einit_event *ev) {
 
    if (mcb.update_options & EVENT_UPDATE_METADATA) {
     if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
-     if (fputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+     eputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", (FILE *)ev->para);
      ev->task++;
     }
    } else {
-    if (fputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", (FILE *)ev->para) < 0)
-     bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+    eputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", (FILE *)ev->para);
    }
 
    if (!mcb.fstab) {
-    if (fputs (" * your fstab is empty.\n", (FILE *)ev->para) < 0)
-     bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+    eputs (" * your fstab is empty.\n", (FILE *)ev->para);
     ev->task++;
    } else {
     struct stree *tstree, *fstree;
     if (!(tstree = streefind (mcb.fstab, "/", TREE_FIND_FIRST))) {
-     if (fputs (" * your fstab does not contain an entry for \"/\".\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+     eputs (" * your fstab does not contain an entry for \"/\".\n", (FILE *)ev->para);
      ev->task++;
     } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
-     if (fputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+     eputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", (FILE *)ev->para);
      ev->task++;
     } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
-     if (fputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+     eputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", (FILE *)ev->para);
      ev->task++;
     }
 
@@ -1501,23 +1482,20 @@ void mount_ipc_handler(struct einit_event *ev) {
        tstree = streenext (tstree);
        continue;
 #else
-       snprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
+       esprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
 #endif
-       if (fputs (tmpstr, (FILE *)ev->para) < 0)
-        bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fputs() failed.");
+       eputs (tmpstr, (FILE *)ev->para);
        ev->task++;
       }
      }
 
      if (!(((struct fstab_entry *)(tstree->value))->device)) {
       if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
-       if (fprintf ((FILE *)ev->para, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key) < 0)
-        bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fprintf() failed.");
+       eprintf ((FILE *)ev->para, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
        ev->task++;
       }
      } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || ((fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE) && !((uintptr_t)fstree->value & FS_CAPA_NETWORK)))) {
-      if (fprintf ((FILE *)ev->para, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno)) < 0)
-       bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fprintf() failed.");
+      eprintf ((FILE *)ev->para, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
       ev->task++;
      }
 
@@ -1526,8 +1504,7 @@ void mount_ipc_handler(struct einit_event *ev) {
       char *xtmp = __options_string_to_mountflags ((((struct fstab_entry *)(tstree->value))->options), &tmpmnt, (((struct fstab_entry *)(tstree->value))->mountpoint));
 
       if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && !strcmp (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
-       if (fprintf ((FILE *)ev->para, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp) < 0)
-        bitch2(BITCH_STDIO, "einit-mount:mount_ipc_handler", 0, "fprintf() failed.");
+       eprintf ((FILE *)ev->para, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
       }
 
       if (xtmp) {
@@ -1569,15 +1546,15 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
     char *tset = set2str (',', fse->options); 
 
     if (tset)
-     snprintf (tmp, 1024, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
+     esprintf (tmp, 1024, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
 #ifdef MS_RDONLY
                fse->aflags & MS_RDONLY
 #else
                0
 #endif
-			   ? "ro" : "rw", tset);
+               ? "ro" : "rw", tset);
     else
-     snprintf (tmp, 1024, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
+     esprintf (tmp, 1024, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
 #ifdef MS_RDONLY
                fse->aflags & MS_RDONLY
 #else

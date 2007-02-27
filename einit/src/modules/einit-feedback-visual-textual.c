@@ -147,23 +147,19 @@ uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   if (fputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
-   if (fputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   if (fputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!cfg_getnode("configuration-feedback-visual-calculate-switch-status", NULL)) {
-   if (fputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
@@ -260,8 +256,7 @@ int enable (void *pa, struct einit_event *status) {
       if (!tmp)
        tmp = freopen ("einit-panic-stdout", "a", stderr);
       if (tmp)
-       if (fprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL)) < 0)
-        bitch2(BITCH_STDIO, "einit-feedback-visual-textual:enable", 0, "fprintf() failed.");
+       eprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL));
      } else {
       perror ("einit-feedback-visual-textual: opening stderr");
       enableansicodes = 0;
@@ -285,8 +280,7 @@ int enable (void *pa, struct einit_event *status) {
       perror (filenode->arbattrs[i+1]);
 
 #else
-     if (fputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:enable", 0, "fputs() failed.");
+     eputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
 #endif
     } else if (!strcmp (filenode->arbattrs[i], "kernel-vt")) {
 #ifdef LINUX
@@ -297,8 +291,7 @@ int enable (void *pa, struct einit_event *status) {
      if (errno)
       perror ("einit-feedback-visual-textual: redirecting kernel messages");
 #else
-     if (fputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:enable", 0, "fputs() failed.");
+     eputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
 #endif
     } else if (!strcmp (filenode->arbattrs[i], "activate-vt")) {
 #ifdef LINUX
@@ -311,8 +304,7 @@ int enable (void *pa, struct einit_event *status) {
       perror ("einit-feedback-visual-textual: activate terminal");
      if (tfd > 0) close (tfd);
 #else
-     if (fputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:enable", 0, "fputs() failed.");
+     eputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr);
 #endif
     }
    }
@@ -320,12 +312,10 @@ int enable (void *pa, struct einit_event *status) {
  }
 
  if (enableansicodes) {
-  if (fputs ("\e[2J\e[0;0H", stdout) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:enable", 0, "fputs() failed.");
+  eputs ("\e[2J\e[0;0H", stdout);
  }
  if (vofile) {
-  if (fputs ("\e[2J\e[0;0H", vofile) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:enable", 0, "fputs() failed.");
+  eputs ("\e[2J\e[0;0H", vofile);
  }
 
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
@@ -357,14 +347,14 @@ void feedback_event_handler(struct einit_event *ev) {
  if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES) {
   char *tmp = set2str (' ', (char **)ev->set);
   if (tmp) {
-   fprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
+   eprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
 
    free (tmp);
   }
  } else if (ev->type == EVENT_FEEDBACK_UNRESOLVED_SERVICES) {
   char *tmp = set2str (' ', (char **)ev->set);
   if (tmp) {
-   fprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
+   eprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
 
    free (tmp);
   }
@@ -409,16 +399,13 @@ void feedback_event_handler(struct einit_event *ev) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (enableansicodes) {
-     if (printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown");
     } else {
-     if (printf ("switching to mode %s.\n", (cmode && cmode->id) ? cmode->id : "unknown") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "switching to mode %s.\n", (cmode && cmode->id) ? cmode->id : "unknown");
     }
 
     if (vofile) {
-     if (fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+     eprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown");
     }
     emutex_lock (&plansmutex);
      plan.plan = (struct mloadplan *)ev->para;
@@ -447,16 +434,13 @@ void feedback_event_handler(struct einit_event *ev) {
       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
     emutex_unlock (&plansmutex);
     if (enableansicodes) {
-     if (printf ("\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown");
     } else {
-     if (printf ("new mode %s is now in effect.\n", (amode && amode->id) ? amode->id : "unknown") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "new mode %s is now in effect.\n", (amode && amode->id) ? amode->id : "unknown");
     }
 
     if (vofile)
-     if (fprintf (vofile, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+     eprintf (vofile, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown");
     break;
   }
 
@@ -551,8 +535,7 @@ void feedback_event_handler(struct einit_event *ev) {
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
    strtrim (ev->string);
-   if (fprintf (stderr, "[time=%i; severity=%i] %s\n", (int)time(NULL), ev->flag, ev->string) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:feedback_event_handler", 0, "printf() failed.");
+   eprintf (stderr, "[time=%i; severity=%i] %s\n", (int)time(NULL), ev->flag, ev->string);
   }
  }
 
@@ -572,13 +555,11 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
 // statusbarlines = 4;
 
  if (plans) {
-  if (fprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown") < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "printf() failed.");
+  eprintf (vofile, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode \"%s\".\e[0m\e[0K\n", (cmode && cmode->id) ? cmode->id : "unknown");
  }
 
  if (modules) {
-  if (fputs ("\e[2;0H( \e[32menabled\e[0m  |", vofile) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
+  eputs ("\e[2;0H( \e[32menabled\e[0m  |", vofile);
   for (i = 0; modules[i]; i++) {
    if ((!((struct mstat *)(modules[i]))->errors) &&
        (((struct mstat *)(modules[i]))->mod) &&
@@ -586,20 +567,16 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
        (((struct mstat *)(modules[i]))->mod->si->provides) &&
        (((struct mstat *)(modules[i]))->mod->si->provides[0])) {
     if (((struct mstat *)(modules[i]))->mod->status & STATUS_ENABLED) {
-     if (fputs (" ", vofile) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
-     if (fputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
+     eputs (" ", vofile);
+     eputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
      ((struct mstat *)(modules[i]))->lines = 0;
     }
    }
   }
-  if (fputs (" )\e[0K\n", vofile) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
+  eputs (" )\e[0K\n", vofile);
 
-  if (fputs ("\e[3;0H( \e[32mdisabled\e[0m |", vofile) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
+  eputs ("\e[3;0H( \e[32mdisabled\e[0m |", vofile);
   for (i = 0; modules[i]; i++) {
    if ((!((struct mstat *)(modules[i]))->errors) &&
        (((struct mstat *)(modules[i]))->mod) &&
@@ -607,17 +584,14 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
        (((struct mstat *)(modules[i]))->mod->si->provides) &&
        (((struct mstat *)(modules[i]))->mod->si->provides[0])) {
     if (((struct mstat *)(modules[i]))->mod->status & STATUS_DISABLED) {
-     if (fputs (" ", vofile) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
-     if (fputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
+     eputs (" ", vofile);
+     eputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
      ((struct mstat *)(modules[i]))->lines = 0;
     }
    }
   }
-  if (fputs (" )\e[0K\n", vofile) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "fputs() failed.");
+  eputs (" )\e[0K\n", vofile);
  }
 
  for (i = 0; modules[i]; i++) {
@@ -626,16 +600,13 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
       (((struct mstat *)(modules[i]))->mod->module)) {
    char *name = (((struct mstat *)(modules[i]))->mod->module->name ? ((struct mstat *)(modules[i]))->mod->module->name : "unknown");
 
-   if (fprintf (vofile, "\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[0K\n", line, (((struct mstat *)(modules[i]))->errors -1), name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "printf() failed.");
+   eprintf (vofile, "\e[%i;0H[ \e[33m..%2.2i\e[0m ] %s:\e[0K\n", line, (((struct mstat *)(modules[i]))->errors -1), name);
 
    for (j = 0; ((struct mstat *)(modules[i]))->textbuffer[j] && ((j +1) < ((struct mstat *)(modules[i]))->lines); j++) {
     if (((struct mstat *)(modules[i]))->textbuffer[j]->string && (strlen (((struct mstat *)(modules[i]))->textbuffer[j]->string) < 76)) {
-     if (fprintf (vofile, " \e[33m>>\e[0m %s\e[0K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "printf() failed.");
+     eprintf (vofile, " \e[33m>>\e[0m %s\e[0K\n", ((struct mstat *)(modules[i]))->textbuffer[j]->string);
     } else {
-     if (fprintf (vofile, " \e[33m>>\e[0m \e[31m...\e[0m") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_neat", 0, "printf() failed.");
+     fputs (" \e[33m>>\e[0m \e[31m...\e[0m", vofile);
     }
    }
   }
@@ -665,11 +636,11 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if (ev->task & MOD_FEEDBACK_SHOW) {
   if (ev->task & MOD_ENABLE) {
-   snprintf (tfeedback, 256, "%s: enabling\n", name);
+   esprintf (tfeedback, 256, "%s: enabling\n", name);
   } else if (ev->task & MOD_DISABLE) {
-   snprintf (tfeedback, 256, "%s: disabling\n", name);
+   esprintf (tfeedback, 256, "%s: disabling\n", name);
   } else  {
-   snprintf (tfeedback, 256, "%s: unknown status change\n", name);
+   esprintf (tfeedback, 256, "%s: unknown status change\n", name);
   }
  }
 
@@ -681,15 +652,15 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
  switch (ev->status) {
   case STATUS_IDLE:
    if (feedback[0])
-    snprintf (tfeedback, 256, " > idle\n");
+    strncpy (tfeedback, " > idle\n", 256);
    else
-    snprintf (tfeedback, 256, "%s: idle\n", name);
+    esprintf (tfeedback, 256, "%s: idle\n", name);
    break;
   case STATUS_ENABLING:
    if (feedback[0])
-    snprintf (tfeedback, 256, " > enabling\n");
+    strncpy (tfeedback, " > enabling\n", 256);
    else
-    snprintf (tfeedback, 256, "%s: enabling\n", name);
+    esprintf (tfeedback, 256, "%s: enabling\n", name);
    break;
  }
 
@@ -700,9 +671,9 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if (ev->string) {
   if (feedback[0])
-   snprintf (tfeedback, 256, " > %s\n", ev->string);
+   esprintf (tfeedback, 256, " > %s\n", ev->string);
   else
-   snprintf (tfeedback, 256, "%s: %s\n", name, ev->string);
+   esprintf (tfeedback, 256, "%s: %s\n", name, ev->string);
  }
 
  if (tfeedback[0]) {
@@ -712,21 +683,21 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if ((ev->status & STATUS_OK) && ev->flag) {
   if (feedback[0])
-   snprintf (tfeedback, 256, " > success, with %i error(s)\n", ev->flag);
+   esprintf (tfeedback, 256, " > success, with %i error(s)\n", ev->flag);
   else
-   snprintf (tfeedback, 256, "%s: success, with %i error(s)\n", name, ev->flag);
+   esprintf (tfeedback, 256, "%s: success, with %i error(s)\n", name, ev->flag);
   mst->errors = 1;
  } else if (ev->status & STATUS_OK) {
   if (feedback[0])
-   snprintf (tfeedback, 256, " > success\n");
+   strncpy (tfeedback, " > success\n", 256);
   else
-   snprintf (tfeedback, 256, "%s: success\n", name);
+   esprintf (tfeedback, 256, "%s: success\n", name);
   mst->errors = 0;
  } else if (ev->status & STATUS_FAIL) {
   if (feedback[0])
-   snprintf (tfeedback, 256, " > failed\n");
+   strncpy (tfeedback, " > failed\n", 256);
   else
-   snprintf (tfeedback, 256, "%s: failed\n", name);
+   esprintf (tfeedback, 256, "%s: failed\n", name);
   mst->errors = 1;
  }
 
@@ -737,15 +708,13 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if (feedback[0]) {
   if (!enableansicodes) {
-   if (printf (feedback) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_noansi", 0, "printf() failed.");
+   eputs (feedback, stdout);
   }
 
   if (feedback_fds) {
    uint32_t i = 0;
    for (; feedback_fds[i]; i++) {
-    if (fputs (feedback, feedback_fds[i]->fd) < 0)
-     bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_noansi", 0, "fputs() failed.");
+    eputs (feedback, feedback_fds[i]->fd);
    }
   }
  }
@@ -780,25 +749,20 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
 
  if (ev->task & MOD_FEEDBACK_SHOW) {
   if (ev->task & MOD_ENABLE) {
-   if (printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
   } else if (ev->task & MOD_DISABLE) {
-   if (printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[0K\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[0K\n", line, name);
   } else  {
-   if (printf ("\e[%i;0H[ \e[31m....\e[0m ] %s\e[0K\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s\e[0K\n", line, name);
   }
  }
 
  switch (ev->status) {
   case STATUS_IDLE:
-   if (printf ("\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[0K\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[0K\n", line, name);
    break;
   case STATUS_ENABLING:
-   if (printf ("\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
    break;
  }
 
@@ -806,44 +770,35 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   strtrim (ev->string);
 
   if (strlen(ev->string) < 45) {
-   if (printf ("\e[%i;10H%s: %s\e[0K\n", line, name, ev->string) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;10H%s: %s\e[0K\n", line, name, ev->string);
   } else {
    char tmp[1024];
-   if (printf ("\e[%i;10H%s: <...>\e[0K\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;10H%s: <...>\e[0K\n", line, name);
 
-   snprintf (tmp, 1024, "%s: %s", name, ev->string);
+   esprintf (tmp, 1024, "%s: %s", name, ev->string);
    notice (3, tmp);
   }
  }
 
  if ((ev->status & STATUS_OK) && ev->flag) {
-  if (printf ("\e[%i;0H[ \e[33mWA%2.2i\e[0m ] %s\n", line, ev->flag, name) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+  eprintf (stdout, "\e[%i;0H[ \e[33mWA%2.2i\e[0m ] %s\n", line, ev->flag, name);
   mst->errors = 1;
  } else if (ev->status & STATUS_OK) {
   if (ev->task & MOD_ENABLE) {
-   if (printf ("\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name);
   } else if (ev->task & MOD_DISABLE) {
-   if (printf ("\e[%i;0H[ \e[32mDISA\e[0m ] %s\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[32mDISA\e[0m ] %s\n", line, name);
   } else if (ev->task & MOD_RESET) {
-   if (printf ("\e[%i;0H[ \e[32mRSET\e[0m ] %s\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[32mRSET\e[0m ] %s\n", line, name);
   } else if (ev->task & MOD_RELOAD) {
-   if (printf ("\e[%i;0H[ \e[32mRELO\e[0m ] %s\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[32mRELO\e[0m ] %s\n", line, name);
   } else {
-   if (printf ("\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name) < 0)
-    bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+   eprintf (stdout, "\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name);
   }
 
   mst->errors = 0;
  } else if (ev->status & STATUS_FAIL) {
-  if (printf ("\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:update_screen_ansi", 0, "printf() failed.");
+  eprintf (stdout, "\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
   mst->errors = 1;
  }
 
@@ -868,8 +823,6 @@ void einit_event_handler(struct einit_event *ev) {
   emutex_lock (&me->imutex);
 
   struct cfgnode *node;
-  if (fprintf (stderr, "[[ updating configuration ]]\n") < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
 
   if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
    shutdownfailuretimeout = node->value;
@@ -884,40 +837,36 @@ void einit_event_handler(struct einit_event *ev) {
 
     if (enableansicodes) {
 
-     if (printf ("\e[0;0H[ \e[31m....\e[0m ] \e[34m") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "\e[0;0H[ \e[31m....\e[0m ] \e[34m");
 
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
-       if (printf (" ( %s | %f%% )",
+       eprintf (stdout, " ( %s | %f%% )",
 #ifdef MODULE_LOGIC_V2
            (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown",
 #else
            "unknown",
 #endif
-           get_plan_progress (plans[i]->plan) * 100) < 0)
-        bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
+           get_plan_progress (plans[i]->plan) * 100);
       }
      }
 
-     if (printf ("\e[0m\e[0K\n") < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "\e[0m\e[0K\n");
     } else {
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
        if (plans[i]->plan) {
-        if (printf (" ( %s | %f%% )",
+        eprintf (stdout, " ( %s | %f%% )",
 #ifdef MODULE_LOGIC_V2
             (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown",
 #else
             "unknown",
 #endif
-            get_plan_progress (plans[i]->plan) * 100) < 0)
-         bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
+            get_plan_progress (plans[i]->plan) * 100);
        }
       }
      }
-     if (puts ("") < 0)
+     if (eputs ("", stderr) < 0)
       bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "puts() failed.");
     }
 
@@ -960,11 +909,9 @@ void power_event_handler(struct einit_event *ev) {
   if (errors)
    while (c) {
     if (enableansicodes) {
-     if (printf ("\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
     } else {
-     if (printf ("[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c) < 0)
-      bitch2(BITCH_STDIO, "einit-feedback-visual-textual:einit_event_handler", 0, "printf() failed.");
+     eprintf (stdout, "[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
     }
 
     sleep (1);
@@ -1026,8 +973,7 @@ unsigned char broadcast_message (char *path, char *message) {
     if (S_ISCHR (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0))) {
      FILE *sf = fopen (tmp, "w");
      if (sf) {
-      if (fprintf (sf, "\n---( BROADCAST MESSAGE )------------------------------------------------------\n >> %s\n-----------------------------------------------------------( eINIT-%6.6i )---\n", message, getpid()) < 0)
-       bitch2(BITCH_STDIO, "einit-feedback-visual-textual:broadcast_message", 0, "fprintf() failed.");
+      eprintf (sf, "\n---( BROADCAST MESSAGE )------------------------------------------------------\n >> %s\n-----------------------------------------------------------( eINIT-%6.6i )---\n", message, getpid());
 
       fclose (sf);
      }
@@ -1041,8 +987,7 @@ unsigned char broadcast_message (char *path, char *message) {
   }
   closedir (dir);
  } else {
-  if (fprintf (stdout, "einit-feedback-visual-textual: could not open %s\n", path) < 0)
-   bitch2(BITCH_STDIO, "einit-feedback-visual-textual:broadcast_message", 0, "fprintf() failed.");
+  eprintf (stdout, "einit-feedback-visual-textual: could not open %s\n", path);
   errno = 0;
   return 1;
  }

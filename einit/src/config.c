@@ -214,12 +214,10 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
  while (cur) {
 #ifdef DEBUG
   if ((((struct cfgnode *)cur->value)->signature) != EI_SIGNATURE)
-   if (fputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr) < 0)
-    bitch2(BITCH_STDIO, "config:cfg_findnode", 0, "fputs() failed.");
+   eputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr);
 
   if (strcmp ((((struct cfgnode *)cur->value)->id), cur->key))
-   if (fputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr) < 0)
-    bitch2(BITCH_STDIO, "config:cfg_findnode", 0, "fputs() failed.");
+   eputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr);
 #endif
 
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {
@@ -402,8 +400,7 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
     }
 
     if (buffer) {
-     if (fputs (buffer, (FILE *)ev->para) < 0)
-      bitch2(BITCH_STDIO, "config:einit_config_ipc_event_handler", 0, "fputs() failed.");
+     eputs (buffer, (FILE *)ev->para);
     }
     ev->flag = 1;
    }

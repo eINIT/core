@@ -110,19 +110,16 @@ int __ipc_process (char *cmd, FILE *f) {
  }
 
  if (event->status & EIPC_OUTPUT_XML) {
-  if (fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f) < 0)
-   bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fputs() failed.");
+  eputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
   event->set = (void**)strsetdel ((char**)event->set, "--xml");
  }
  if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
  if (event->status & EIPC_OUTPUT_ANSI) event->set = (void**)strsetdel ((char**)event->set, "--ansi");
  if (event->status & EIPC_HELP) {
   if (event->status & EIPC_OUTPUT_XML) {
-   if (fprintf (f, " <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n") < 0)
-    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+   eputs (" <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n", f);
   } else {
-   if (fprintf (f, "eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n") < 0)
-    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+   eputs ("eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n", f);
   }
 
   event->set = (void**)strsetdel ((char**)event->set, "--help");
@@ -134,11 +131,9 @@ int __ipc_process (char *cmd, FILE *f) {
 
  if (!event->flag) {
   if (event->status & EIPC_OUTPUT_XML) {
-   if (fprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd) < 0)
-    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+   eprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
   } else {
-   if (fprintf (f, "einit-ipc: %s: command not implemented.\n", cmd) < 0)
-    bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fprintf() failed.");
+   eprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
   }
 
   ret = 1;
@@ -146,8 +141,7 @@ int __ipc_process (char *cmd, FILE *f) {
   ret = (int)event->integer;
 
  if (event->status & EIPC_OUTPUT_XML) {
-  if (fputs ("</einit-ipc>\n", f) < 0)
-   bitch2(BITCH_STDIO, "einit-ipc:ipc_process", 0, "fputs() failed.");
+  eputs ("</einit-ipc>\n", f);
  }
 
  evdestroy (event);
@@ -190,8 +184,7 @@ int __ipc_process (char *cmd, FILE *f) {
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
-   if (fputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-ipc:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
@@ -228,7 +221,7 @@ int ipc_read (int *nfd) {
 
     ret = __ipc_process (buffer, f);
 
-    fprintf (f, "\nIPC//processed.\n%i\n", ret);
+    efprintf (f, "\nIPC//processed.\n%i\n", ret);
     fflush (f);
    }
 

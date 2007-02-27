@@ -414,8 +414,6 @@ void mod_apply (struct ma_task *task) {
   struct stree *des = task->st;
   struct lmodule **lm = (struct lmodule **)des->value;
 
-//  fprintf (stderr, "mod_apply(%s)\n", des->key);
-
   if (lm && lm[0]) {
    struct lmodule *first = lm[0];
    int any_ok = 0;
@@ -452,9 +450,7 @@ void mod_apply (struct ma_task *task) {
         ((task->task & MOD_ENABLE) && (lm[0]->status & STATUS_ENABLED)) ||
         ((task->task & (MOD_RESET | MOD_RELOAD)) && (retval & STATUS_OK))) {
      any_ok = 1;
-    }/* else {
-     fprintf (stderr, "no good: %s\n", des->key);
-    }*/
+    }
 
     if (any_ok && (task->task & MOD_ENABLE)) {
      free (task);
@@ -521,7 +517,7 @@ void mod_get_and_apply_recurse (int task) {
  while (dm & 2) {
 #ifdef DEBUG
   if (recurse) {
-   fprintf (stderr, "recursing");
+   eputs ("recursing", stderr);
   } else
    recurse = 1;
 #endif
@@ -545,8 +541,6 @@ void mod_get_and_apply_recurse (int task) {
 
   if (!services) return;
   nservices = setcount ((void **)services);
-
-//  fprintf (stderr, " >> %i (%s)\n", task, set2str (' ', services));
 
   for (x = 0; services[x]; x++) {
    char is_provided = service_usage_query (SERVICE_IS_PROVIDED, NULL, services[x]);
@@ -592,7 +586,6 @@ void mod_get_and_apply_recurse (int task) {
     if (!des) {
      struct group_data *gd = mod_group_get_data(services[x]);
      if (gd && gd->members) {
-//      fprintf (stderr, " >> %s is actually a group!\n", services[x]);
 
       emutex_lock (&ml_tb_current_mutex);
 
@@ -1186,8 +1179,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
  status_update (fb);
 
-// fputs (">> DONE WITH THAT SWITCH <<", stderr);
-
 // do some more extra work if the plan was derived from a mode
  if (plan->mode) {
   char *cmdt;
@@ -1376,42 +1367,42 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
    if (target_state.enable) {
     char *r = set2str (' ', target_state.enable);
     if (r) {
-     fprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
      free (r);
     }
    }
    if (target_state.disable) {
     char *r = set2str (' ', target_state.disable);
     if (r) {
-     fprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
      free (r);
     }
    }
    if (target_state.reset) {
     char *r = set2str (' ', target_state.reset);
     if (r) {
-     fprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
      free (r);
     }
    }
    if (target_state.reload) {
     char *r = set2str (' ', target_state.reload);
     if (r) {
-     fprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
      free (r);
     }
    }
    if (target_state.zap) {
     char *r = set2str (' ', target_state.zap);
     if (r) {
-     fprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
      free (r);
     }
    }
    if (target_state.critical) {
     char *r = set2str (' ', target_state.critical);
     if (r) {
-     fprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
      free (r);
     }
    }
@@ -1422,42 +1413,42 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
    if (current.enable) {
     char *r = set2str (' ', current.enable);
     if (r) {
-     fprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
      free (r);
     }
    }
    if (current.disable) {
     char *r = set2str (' ', current.disable);
     if (r) {
-     fprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
      free (r);
     }
    }
    if (current.reset) {
     char *r = set2str (' ', current.reset);
     if (r) {
-     fprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
      free (r);
     }
    }
    if (current.reload) {
     char *r = set2str (' ', current.reload);
     if (r) {
-     fprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
      free (r);
     }
    }
    if (current.zap) {
     char *r = set2str (' ', current.zap);
     if (r) {
-     fprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
      free (r);
     }
    }
    if (current.critical) {
     char *r = set2str (' ', current.critical);
     if (r) {
-     fprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
+     eprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
      free (r);
     }
    }

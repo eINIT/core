@@ -73,6 +73,7 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
 
 #ifdef DEBUG
 
+/* debug messages... don't care if those can't be written */
 #define debug(message)\
  fprintf(stderr, "DEBUG: %s:%i(%s): %s\n", __FILE__, __LINE__, __func__, message), fflush (stderr)
 
@@ -112,5 +113,13 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
 #define ethread_join(th, ret)\
  ((errno = pthread_join(th, ret)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_join() failed."), errno) : errno)
 
+#define eprintf(file, format, ...)\
+ ((fprintf(file, format, __VA_ARGS__) < 0) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "fprintf() failed."), errno) : 0)
+
+#define esprintf(buffer, size, format, ...)\
+ (snprintf(buffer, size, format, __VA_ARGS__) < 0 ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "snprintf() failed."), errno) : 0)
+
+#define eputs(text, file)\
+ (fputs(text, file) < 0 ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "fputs() failed."), errno) : 0)
 
 #endif /* _BITCH_H */

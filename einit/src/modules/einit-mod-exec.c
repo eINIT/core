@@ -104,8 +104,7 @@ struct lmodule *this = NULL;
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
-   if (fputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para) < 0)
-    bitch2(BITCH_STDIO, "einit-mod-exec:ipc_event_handler", 0, "fputs() failed.");
+   eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 

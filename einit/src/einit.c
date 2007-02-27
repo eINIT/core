@@ -85,7 +85,7 @@ char ** environ;
 #endif
 
 int print_usage_info () {
- if (fputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
+ eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
   "Usage:\n"
   " einit [-c <filename>] [options]\n"
   "\n"
@@ -105,8 +105,7 @@ int print_usage_info () {
   "--metadaemon          run einit in \"metadaemon mode\"\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
-  "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr) < 0)
-  bitch2(BITCH_STDIO, "einit:print_usage_info", 0, "fputs() failed.");
+  "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
  return -1;
 }
 
@@ -163,12 +162,11 @@ int main(int argc, char **argv) {
      return print_usage_info ();
      break;
     case 'v':
-     if (puts("eINIT " EINIT_VERSION_LITERAL
+     eputs("eINIT " EINIT_VERSION_LITERAL
           "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
           "--------------------------------------------------------------------------------\n"
           "Copyright (c) 2006, 2007, Magnus Deininger\n"
-          BSDLICENSE) < 0)
-      bitch2(BITCH_STDIO, "einit:main", 0, "puts() failed.");
+          BSDLICENSE "\n", stdout);
      return 0;
     case '-':
      if (!strcmp(argv[i], "--check-configuration") || !strcmp(argv[i], "--checkup") || !strcmp(argv[i], "--wtf")) {
@@ -264,8 +262,7 @@ int main(int argc, char **argv) {
     if (WIFEXITED(rstatus))
      exit (EXIT_SUCCESS);
     if (WIFSIGNALED(rstatus)) {
-     if (puts ("eINIT terminated by a signal...") < 0)
-      bitch2(BITCH_STDIO, "einit:main", 0, "puts() failed.");
+     eputs ("eINIT terminated by a signal...\n", stdout);
      exit (EXIT_FAILURE);
     }
    }
@@ -279,12 +276,10 @@ int main(int argc, char **argv) {
   }
 
   stime = time(NULL);
-  if (printf ("eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname) < 0)
-   bitch2(BITCH_STDIO, "einit:main", 0, "printf() failed.");
+  eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
-   if (fputs ("pthread initialisation failed.\n", stderr) < 0)
-    bitch2(BITCH_STDIO, "einit:main", 0, "fputs() failed.");
+   eputs ("pthread initialisation failed.\n", stderr);
    return -1;
   } else {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
@@ -326,8 +321,7 @@ int main(int argc, char **argv) {
 
    return ret;
   } else if ((gmode == EINIT_GMODE_INIT) && !isinit && !initoverride) {
-   if (printf ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not spcified.\nexiting...\n\n") < 0)
-    bitch2(BITCH_STDIO, "einit:main", 0, "printf() failed.");
+   eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not spcified.\nexiting...\n\n", stdout);
    exit (EXIT_FAILURE);
   } else {
    uint32_t e = 0;
@@ -343,8 +337,7 @@ int main(int argc, char **argv) {
     evstaticdestroy(ee);
    }
 
-   if (fprintf (stderr, " >> [+%is] scheduling startup switches.\n", (int)(time(NULL)-stime)) < 0)
-    bitch2(BITCH_STDIO, "einit:main", 0, "fprintf() failed.");
+   eprintf (stderr, " >> [+%is] scheduling startup switches.\n", (int)(time(NULL)-stime));
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);

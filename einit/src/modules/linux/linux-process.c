@@ -90,7 +90,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
   struct stat st;
 
   for (; pstat[i]; i++) {
-   snprintf (buffer, 128, "%s%i", path, pstat[i]->pid);
+   esprintf (buffer, 128, "%s%i", path, pstat[i]->pid);
    if (!stat (buffer, &st)) {
     npstat = (struct process_status **)setadd ((void **)npstat, (void *)pstat[i], sizeof (struct process_status));
    }
