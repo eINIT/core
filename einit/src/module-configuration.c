@@ -78,7 +78,6 @@ struct stree *exported_functions_rootnode = &einit_config_xml_expat_cfg2xml_func
 
 /* event handler for the default scheduler */
 void sched_ipc_event_handler(struct einit_event *);
-void sched_core_event_handler(struct einit_event *);
 
 struct event_function einit_sched_ipc_event_handler_handler_ef = {
  .type = EVENT_SUBSYSTEM_IPC,
@@ -86,14 +85,21 @@ struct event_function einit_sched_ipc_event_handler_handler_ef = {
  .next = EVENT_FUNCTIONS_PTR
 };
 
+#undef EVENT_FUNCTIONS_PTR
+#define EVENT_FUNCTIONS_PTR &einit_sched_ipc_event_handler_handler_ef
+
+#ifdef EINIT_MODULES_MODULE_LOGIC_V2
+void sched_core_event_handler(struct einit_event *);
+
 struct event_function einit_sched_core_event_handler_handler_ef = {
  .type = EVENT_SUBSYSTEM_EINIT,
  .handler = sched_core_event_handler,
- .next = &einit_sched_ipc_event_handler_handler_ef
+ .next = EVENT_FUNCTIONS_PTR
 };
 
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_sched_core_event_handler_handler_ef
+#endif
 
 /* event handlers for the default module loader and configuration system */
 void mod_event_handler(struct einit_event *);
@@ -154,6 +160,8 @@ struct event_function bitchin_einit_event_handler_ef = {
 
 #include <einit/module-logic.h>
 
+#if ( EINIT_MODULES_MODULE_LOGIC_V3 == 'y' )
+
 #ifdef MODULE_LOGIC_V3
 /* einit event handler for the v3 module logics core */
 void module_logic_einit_event_handler(struct einit_event *);
@@ -172,6 +180,8 @@ struct event_function module_logic_ipc_event_handler_ef = {
 
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &module_logic_ipc_event_handler_ef
+#endif
+
 #endif
 
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;

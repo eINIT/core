@@ -74,9 +74,6 @@ uint32_t gstatus;
 
 int scheduler_cleanup ();
 
-int sched_switchmode (char *);
-int sched_modaction (char **);
-
 void sched_init ();
 void sched_reset_event_handlers ();
 int sched_queue (unsigned int, void *);

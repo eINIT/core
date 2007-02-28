@@ -28,15 +28,17 @@
    <directory s="modules" />
   </commands-include>
 
+  <settings>
+   <module-path s="/lib/einit/modules" />
+  </settings>
+
   <if match="core-mode:sandbox">
    <settings>
-    <module-path s="lib/einit/modules" />
     <configuration-path s="etc/einit/" />
    </settings>
    <commands-include-file s="sandbox.xml" />
    <else>
     <settings>
-     <module-path s="/lib/einit/modules" />
      <configuration-path s="/etc/einit/" />
     </settings>
     <commands-include-file s="local.xml" />

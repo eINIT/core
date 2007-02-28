@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/tree.h>
+#include <einit/event.h>
 
 struct module_taskblock {
  char **enable;
@@ -61,12 +62,14 @@ struct mloadplan {
  char **used_modes;
 };
 
-struct mloadplan *mod_plan (struct mloadplan *, char **, unsigned int, struct cfgnode *);
+typedef double (*plan_progress_fetcher)(struct mloadplan *);
 
-unsigned int mod_plan_commit (struct mloadplan *);
+plan_progress_fetcher *_get_plan_progress_function;
 
-int mod_plan_free (struct mloadplan *);
-
-double get_plan_progress (struct mloadplan *plan);
+#define get_plan_progress(plan)\
+ ((_get_plan_progress_function || (_get_plan_progress_function = function_find ("module-logic-get-plan-progress", 1))) ? _get_plan_progress_function(plan) : 0.0)
+ 
+#define module_logic_configure(x)\
+ _get_plan_progress_function = NULL
 
 #endif

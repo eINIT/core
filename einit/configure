@@ -28,7 +28,7 @@
 # -----------------
 
 INCLUDEPATH="/usr/local/include"
-INTERNALMODULES="einit-config-xml-expat"
+INTERNALMODULES="einit-config-xml-expat einit-module-logic-v3"
 EXTERNALMODULES=""
 
 BUILDNUMBER=`cat buildnumber`
@@ -46,6 +46,7 @@ PMODULES="compatibility"
 TREETYPE="linear"
 SETTYPE="lowmem"
 MODULELOGICTYPE="v3"
+BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
 echo -n "checking options [";
 for param in $@; do
@@ -68,6 +69,9 @@ for param in $@; do
 	elif test "$short" = "--module-logic-type"; then
 		echo -n " MODULELOGICTYPE";
 		MODULELOGICTYPE=${param#*=};
+	elif test "$short" = "--bootstrap-module-path"; then
+		echo -n " BOOTSTRAPMODULEPATH";
+		BOOTSTRAP_MODULE_PATH=${param#*=};
 	elif test "$short" = "--with-include"; then
 		echo -n " INCLUDE";
 		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";
@@ -275,6 +279,11 @@ TREETYPE = ${TREETYPE}
 SETTYPE = ${SETTYPE}
 MODULELOGICTYPE = ${MODULELOGICTYPE}
 
+INTERNALMODULES = ${INTERNALMODULES}
+EXTERNALMODULES = ${EXTERNALMODULES}
+
+BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
+
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS -Wall
 LDFLAGS = $LDFLAGS
@@ -292,6 +301,8 @@ echo "/* created by the configure-script, you shouldn't modify this */
 #ifndef _EINIT_MODULES_CONFIGURATION_H
 #define _EINIT_MODULES_CONFIGURATION_H
 
+#define BOOTSTRAP_MODULE_PATH \"${BOOTSTRAP_MODULE_PATH}\"
+
 " > src/include/einit-modules/configuration.h
 
 if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
@@ -300,6 +311,14 @@ elif test -n "`echo ${EXTERNALMODULES}|grep einit-config-xml-expat`"; then
  echo "#define EINIT_MODULES_XML_EXPAT 'm'" >> src/include/einit-modules/configuration.h;
 else
  echo "#define EINIT_MODULES_XML_EXPAT 'n'" >> src/include/einit-modules/configuration.h;
+fi;
+
+if test -n "`echo ${INTERNALMODULES}|grep einit-module-logic-v3`"; then
+ echo "#define EINIT_MODULES_MODULE_LOGIC_V3 'y'" >> src/include/einit-modules/configuration.h;
+elif test -n "`echo ${EXTERNALMODULES}|grep einit-module-logic-v3`"; then
+ echo "#define EINIT_MODULES_MODULE_LOGIC_V3 'm'" >> src/include/einit-modules/configuration.h;
+else
+ echo "#define EINIT_MODULES_MODULE_LOGIC_V3 'n'" >> src/include/einit-modules/configuration.h;
 fi;
 
 echo "#endif

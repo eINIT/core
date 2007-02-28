@@ -97,6 +97,9 @@ int mod_scanmodules ( void ) {
 
  char *modulepath = cfg_getpath ("core-settings-module-path");
  if (!modulepath) {
+  modulepath = bootstrapmodulepath;
+ }
+ if (!modulepath) {
   bitch2(BITCH_STDIO, "mod_scanmodules()", 0, "no path to load modules from.");
   return -1;
  }
@@ -105,6 +108,8 @@ int mod_scanmodules ( void ) {
 // override module path in sandbox-mode to be relative
   if (modulepath[0] == '/') modulepath++;
  }
+
+ eprintf (stderr, " >> loading modules from %s.\n", modulepath);
 
 #ifdef POSIXREGEX
  if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {

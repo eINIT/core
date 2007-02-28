@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <einit-modules/ipc.h>
+#include <einit-modules/configuration.h>
 
 #ifndef NONIXENVIRON
 int main(int, char **, char **);
@@ -84,6 +85,8 @@ char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NU
 char ** environ;
 #endif
 
+char *bootstrapmodulepath = BOOTSTRAP_MODULE_PATH;
+
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
   "Usage:\n"
@@ -95,6 +98,7 @@ int print_usage_info () {
   "-v                    print version and copyright notice, then exit\n"
   "--no-feedback-switch  disable the first switch to the feedback mode\n"
   "--feedback-switch     enable the mode-switch to the feedback mode (default)\n"
+  "--bootstrap-modules   use this path to load bootstrap-modules\n"
   "--ipc-command         don't boot, only run specified ipc-command\n"
   "                      (you can use this more than once)\n"
   "--override-init-check einit will check if it's pid=1, override with this flag\n"
@@ -184,9 +188,10 @@ int main(int argc, char **argv) {
      else if (!strcmp(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       gmode = EINIT_GMODE_SANDBOX;
-     }
-     else if (!strcmp(argv[i], "--metadaemon")) {
+     } else if (!strcmp(argv[i], "--metadaemon")) {
       gmode = EINIT_GMODE_METADAEMON;
+     } else if (!strcmp(argv[i], "--bootstrap-modules")) {
+      bootstrapmodulepath = argv[i+1];
      }
 
      break;

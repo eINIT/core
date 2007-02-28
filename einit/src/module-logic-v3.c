@@ -83,6 +83,8 @@ struct group_data {
 #define MARK_BROKEN                0x01
 #define MARK_UNRESOLVED            0x02
 
+char initdone = 0;
+
 void mod_update_group (struct lmodule *lm);
 char mod_isbroken (char *service);
 char mod_mark (char *service, char task);
@@ -1236,7 +1238,7 @@ int mod_plan_free (struct mloadplan *plan) {
  return 0;
 }
 
-double get_plan_progress (struct mloadplan *plan) {
+double __mod_get_plan_progress_f (struct mloadplan *plan) {
  return 0.0;
 }
 
@@ -1296,8 +1298,64 @@ void mod_sort_service_list_items_by_preference() {
  emutex_unlock (&ml_service_list_mutex);
 }
 
+
+int mod_switchmode (char *mode) {
+ if (!mode) return -1;
+ struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
+ struct mloadplan *plan = NULL;
+
+  if (!cur) {
+   notice (1, "scheduler: scheduled mode not defined, aborting");
+   return -1;
+  }
+
+  plan = mod_plan (NULL, NULL, 0, cur);
+  if (!plan) {
+   notice (1, "scheduler: scheduled mode defined but nothing to be done");
+  } else {
+   pthread_t th;
+   mod_plan_commit (plan);
+/* make it so that the erase operation will not disturb the flow of the program */
+   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+  }
+
+ return 0;
+}
+
+int mod_modaction (char **argv) {
+ int argc = setcount ((void **)argv), ret = 1;
+ int32_t task = 0;
+ struct mloadplan *plan;
+ if (!argv || (argc != 2)) return -1;
+
+ if (!strcmp (argv[1], "enable")) task = MOD_ENABLE;
+ else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
+ else if (!strcmp (argv[1], "reset")) task = MOD_RESET;
+ else if (!strcmp (argv[1], "reload")) task = MOD_RELOAD;
+ else if (!strcmp (argv[1], "zap")) task = MOD_ZAP;
+
+ argv[1] = NULL;
+
+ if ((plan = mod_plan (NULL, argv, task, NULL))) {
+  pthread_t th;
+
+  ret = mod_plan_commit (plan);
+
+  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+ }
+
+// free (argv[0]);
+// free (argv);
+
+ return ret;
+}
+
 void module_logic_einit_event_handler(struct einit_event *ev) {
- if (ev->type == EVE_MODULE_LIST_UPDATE) {
+ if ((ev->type == EVE_UPDATE_CONFIGURATION) && !initdone) {
+  initdone = 1;
+
+  function_register("module-logic-get-plan-progress", 1, (void (*)(void *))__mod_get_plan_progress_f);
+ } else if (ev->type == EVE_MODULE_LIST_UPDATE) {
 /* update list with services */
   struct stree *new_service_list = NULL;
   struct lmodule *cur = mlist;
@@ -1356,6 +1414,49 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 /* something's done now, update our lists */
 
   mod_done ((struct lmodule *)ev->para, ev->task);
+ } else switch (ev->type) {
+  case EVE_SWITCH_MODE:
+   if (!ev->string) return;
+   else {
+    if (ev->para) {
+     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_REGISTER_FD);
+     ee.para = ev->para;
+     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     evstaticdestroy(ee);
+    }
+
+    mod_switchmode (ev->string);
+
+    if (ev->para) {
+     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
+     ee.para = ev->para;
+     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     evstaticdestroy(ee);
+    }
+   }
+   return;
+  case EVE_CHANGE_SERVICE_STATUS:
+   if (!ev->set) return;
+   else {
+    if (ev->para) {
+     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_REGISTER_FD);
+     ee.para = ev->para;
+     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     evstaticdestroy(ee);
+    }
+
+    if (mod_modaction ((char **)ev->set)) {
+     ev->integer = 1;
+    }
+
+    if (ev->para) {
+     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
+     ee.para = ev->para;
+     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     evstaticdestroy(ee);
+    }
+   }
+   return;
  }
 }
 

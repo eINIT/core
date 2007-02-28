@@ -67,11 +67,7 @@ struct stree {
  void *luggage;       /*!< a pointer to an area of memory that is references by the value (will be free()d) */
  struct stree *next;  /*!< next element (for sequential tree traversal) */
 
- struct stree **root;  /*!< double-pointer to the root-element */
  struct stree **lbase; /*!< double-pointer to the linear base-node */
- struct stree *left;   /*!< left element */
- struct stree *right;  /*!< right element */
- struct stree *parent; /*!< ancestor element */
 };
 
 /*!\brief Add the \b key with \b value to \b stree.

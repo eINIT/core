@@ -101,78 +101,6 @@ int scheduler_cleanup () {
  return 0;
 }
 
-int sched_switchmode (char *mode) {
- if (!mode) return -1;
- struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
- struct mloadplan *plan = NULL;
-
-  if (!cur) {
-   notice (1, "scheduler: scheduled mode not defined, aborting");
-   return -1;
-  }
-
-  plan = mod_plan (NULL, NULL, 0, cur);
-  if (!plan) {
-   notice (1, "scheduler: scheduled mode defined but nothing to be done");
-  } else {
-   pthread_t th;
-   mod_plan_commit (plan);
-/* make it so that the erase operation will not disturb the flow of the program */
-   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
-  }
-
- return 0;
-}
-
-int sched_modaction (char **argv) {
- int argc = setcount ((void **)argv), ret = 1;
- int32_t task = 0;
- struct mloadplan *plan;
- if (!argv || (argc != 2)) return -1;
-
- if (!strcmp (argv[1], "enable")) task = MOD_ENABLE;
- else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
- else if (!strcmp (argv[1], "reset")) task = MOD_RESET;
- else if (!strcmp (argv[1], "reload")) task = MOD_RELOAD;
- else if (!strcmp (argv[1], "zap")) task = MOD_ZAP;
-
- argv[1] = NULL;
-
- if ((plan = mod_plan (NULL, argv, task, NULL))) {
-  pthread_t th;
-
-  ret = mod_plan_commit (plan);
-
-#ifdef MODULE_LOGIC_V2
-/* extra code needed for v2 logic */
-
-  if (plan->services) {
-   struct mloadplan_node *node = (struct mloadplan_node *)streefind (plan->services, argv[0], TREE_FIND_FIRST);
-
-   if (node) switch (task) {
-    case MOD_ENABLE:
-     ret = !(node->status & STATUS_ENABLED); break;
-    case MOD_DISABLE:
-     ret = !(node->status & STATUS_DISABLED); break;
-    case MOD_RESET:
-     ret = !(node->status & STATUS_ENABLED); break;
-    case MOD_RELOAD:
-     ret = !(node->status & STATUS_ENABLED); break;
-    case MOD_ZAP:
-     ret = !(node->status == STATUS_IDLE); break;
-   }
-  }
-#endif
-
-  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
- }
-
-// free (argv[0]);
-// free (argv);
-
- return ret;
-}
-
 void sched_init () {
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
  sigchild_semaphore = &sigchild_semaphore_static;
@@ -438,6 +366,79 @@ void sched_ipc_event_handler(struct einit_event *ev) {
  }
 }
 
+#ifdef EINIT_MODULES_MODULE_LOGIC_V2
+int sched_switchmode (char *mode) {
+ if (!mode) return -1;
+ struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
+ struct mloadplan *plan = NULL;
+
+  if (!cur) {
+   notice (1, "scheduler: scheduled mode not defined, aborting");
+   return -1;
+  }
+
+  plan = mod_plan (NULL, NULL, 0, cur);
+  if (!plan) {
+   notice (1, "scheduler: scheduled mode defined but nothing to be done");
+  } else {
+   pthread_t th;
+   mod_plan_commit (plan);
+/* make it so that the erase operation will not disturb the flow of the program */
+   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+  }
+
+ return 0;
+}
+
+int sched_modaction (char **argv) {
+ int argc = setcount ((void **)argv), ret = 1;
+ int32_t task = 0;
+ struct mloadplan *plan;
+ if (!argv || (argc != 2)) return -1;
+
+ if (!strcmp (argv[1], "enable")) task = MOD_ENABLE;
+ else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
+ else if (!strcmp (argv[1], "reset")) task = MOD_RESET;
+ else if (!strcmp (argv[1], "reload")) task = MOD_RELOAD;
+ else if (!strcmp (argv[1], "zap")) task = MOD_ZAP;
+
+ argv[1] = NULL;
+
+ if ((plan = mod_plan (NULL, argv, task, NULL))) {
+  pthread_t th;
+
+  ret = mod_plan_commit (plan);
+
+#ifdef MODULE_LOGIC_V2
+/* extra code needed for v2 logic */
+
+  if (plan->services) {
+   struct mloadplan_node *node = (struct mloadplan_node *)streefind (plan->services, argv[0], TREE_FIND_FIRST);
+
+   if (node) switch (task) {
+    case MOD_ENABLE:
+     ret = !(node->status & STATUS_ENABLED); break;
+    case MOD_DISABLE:
+     ret = !(node->status & STATUS_DISABLED); break;
+    case MOD_RESET:
+     ret = !(node->status & STATUS_ENABLED); break;
+    case MOD_RELOAD:
+     ret = !(node->status & STATUS_ENABLED); break;
+    case MOD_ZAP:
+     ret = !(node->status == STATUS_IDLE); break;
+   }
+  }
+#endif
+
+  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+ }
+
+// free (argv[0]);
+// free (argv);
+
+ return ret;
+}
+
 void sched_core_event_handler(struct einit_event *ev) {
  if (!ev) return;
  switch (ev->type) {
@@ -485,6 +486,7 @@ void sched_core_event_handler(struct einit_event *ev) {
    return;
  }
 }
+#endif
 
 /* BUG: linux pthread-libraries on kernel <= 2.4 can not wait on other threads' children, thus
         when doing a ./configure, you have to specify the option --pthread-wait-bug. these functions

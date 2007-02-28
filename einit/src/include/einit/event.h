@@ -73,6 +73,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< change status of a service */
 #define EVE_SWITCH_MODE                0x00001103
 /*!< switch to a different mode */
+#define EVE_UPDATE_MODULES             0x00001104
+/*!< update the modules */
 
 #define EVENT_SUBSYSTEM_IPC            0x00002000
 /*!< incoming IPC request */
