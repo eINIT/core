@@ -139,7 +139,7 @@ int enable (void *pa, struct einit_event *status) {
  }
 
  if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL))) {
-  if ((sfile = fopen (sfilename, "r"))) {
+  if ((sfile = efopen (sfilename, "r"))) {
    char buffer[2048], *cptr;
    while (fgets (buffer, 2048, sfile)) {
     switch (buffer[0]) {
@@ -170,11 +170,9 @@ int enable (void *pa, struct einit_event *status) {
 
         strncat (tarbuffer, buffer, 2047);
 
-        if ((ofile = fopen(tarbuffer, "w"))) {
+        if ((ofile = efopen(tarbuffer, "w"))) {
          eputs (cptr, ofile);
-         fclose (ofile);
-        } else {
-         bitch2(BITCH_STDIO, "linux-sysconf:fopen(, w)", 0, tarbuffer);
+         efclose (ofile);
         }
        }
       }
@@ -183,9 +181,7 @@ int enable (void *pa, struct einit_event *status) {
     }
    }
 
-   fclose (sfile);
-  } else {
-   bitch2(BITCH_STDIO, "linux-sysconf:fopen(, r)", 0, sfilename);
+   efclose (sfile);
   }
  }
 

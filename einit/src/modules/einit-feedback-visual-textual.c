@@ -265,8 +265,9 @@ int enable (void *pa, struct einit_event *status) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       if (vofile)
        vofile = freopen (filenode->arbattrs[i+1], "w", vofile);
-      else
-       vofile = fopen (filenode->arbattrs[i+1], "w");
+
+      if (!vofile);
+       vofile = efopen (filenode->arbattrs[i+1], "w");
      } else {
       perror ("einit-feedback-visual-textual: opening verbose-output file");
      }
@@ -964,11 +965,11 @@ unsigned char broadcast_message (char *path, char *message) {
    }
    if (!S_ISLNK(statbuf.st_mode)) {
     if (S_ISCHR (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0))) {
-     FILE *sf = fopen (tmp, "w");
+     FILE *sf = efopen (tmp, "w");
      if (sf) {
       eprintf (sf, "\n---( BROADCAST MESSAGE )------------------------------------------------------\n >> %s\n-----------------------------------------------------------( eINIT-%6.6i )---\n", message, getpid());
 
-      fclose (sf);
+      efclose (sf);
      }
     } else if (S_ISDIR (statbuf.st_mode)) {
      tmp = strcat (tmp, "/");

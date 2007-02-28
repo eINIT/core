@@ -1,3 +1,6 @@
+2007/02/28: mdeininger
+ * more preparations to get more stuff out of the core.
+
 2007/02/27: mdeininger
  * shell-gdm should also provide "xdm"
  * the v3 core is now the default

@@ -171,7 +171,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
   bdi = (struct bd_info *)element->value;
   cdev++;
 
-  device = fopen (element->key, "r");
+  device = efopen (element->key, "r");
   if (device) {
    c_uuid[0] = 0;
    if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 0)) {
@@ -227,7 +227,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
     esprintf (c_uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", /*((char)ext2_sb.s_uuid)*/ uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
     bdi->uuid = estrdup (c_uuid);
    }
-   fclose (device);
+   efclose (device);
   } else {
    bdi->status = BF_STATUS_ERROR_IO;
   }
@@ -239,7 +239,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
 }
 
 unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
- FILE *f = fopen ("/proc/partitions", "r");
+ FILE *f = efopen ("/proc/partitions", "r");
  char tmp[1024];
  uint32_t line = 0, device_major = 0, device_minor = 0, device_size = 0, field = 0;
  char *device_name = NULL;
@@ -254,9 +254,11 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
      errno = 0;
      break;
     case 0:
+     efclose (f);
      return 1;
     default:
      bitch(BTCH_ERRNO);
+     efclose (f);
      return 1;
    }
   } else {
@@ -298,6 +300,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
   }
  }
 
+ efclose (f);
  return 0;
 }
 

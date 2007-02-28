@@ -190,11 +190,9 @@ void ipc_event_handler (struct einit_event *ev) {
 
       eprintf ((FILE *)ev->para, " >> configuration changed on-line, saving modifications to %s.\n", targetfile);
 
-      if ((target = fopen(targetfile, "w+"))) {
+      if ((target = efopen(targetfile, "w+"))) {
        eputs (buffer, target);
-       fclose (target);
-      } else {
-       eprintf ((FILE *)ev->para, " >> could not open \"%s\".\n", targetfile);
+       efclose (target);
       }
      }
     } else {

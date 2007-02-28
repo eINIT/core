@@ -219,11 +219,11 @@ char *generate_legacy_mtab (struct mount_control_block *);
   if (tmpmtab) {\
    unlink (mcb.mtab_file);\
 \
-   FILE *mtabfile = fopen (mcb.mtab_file, "w");\
+   FILE *mtabfile = efopen (mcb.mtab_file, "w");\
 \
    if (mtabfile) {\
     eputs (tmpmtab, mtabfile);\
-    fclose (mtabfile);\
+    efclose (mtabfile);\
    }\
 \
    free (tmpmtab);\
@@ -594,7 +594,7 @@ struct stree *read_fsspec_file (char *file) {
  FILE *fp;
  if (!file) return NULL;
 
- if ((fp = fopen (file, "r"))) {
+ if ((fp = efopen (file, "r"))) {
   char buffer[1024];
   errno = 0;
   while (!errno) {
@@ -654,7 +654,7 @@ struct stree *read_fsspec_file (char *file) {
    }
   }
   done_parsing_file:
-  fclose (fp);
+  efclose (fp);
  }
 
  return workstree;
