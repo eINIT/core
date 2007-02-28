@@ -521,9 +521,16 @@ void einit_event_handler (struct einit_event *ev) {
    snprintf (tmp, 256, "%ssoftlevel", service_tracking_path);
 
    if ((slfile = open (tmp, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > 0) {
+    errno = 0;
+
     write (slfile, amode->id, strlen(ev->string));
     write (slfile, "\n", 1);
-    close (slfile);
+    eclose (slfile);
+
+    if (errno) {
+     perror (" >> error writing to softlevel file");
+     errno = 0;
+    }
    } else {
     perror (" >> creating softlevel file");
    }
