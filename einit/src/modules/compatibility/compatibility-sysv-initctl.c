@@ -133,7 +133,7 @@ void * initctl_wait (char *fifo) {
  int nfd;
  running = 1;
 
- while ((nfd = open (fifo, O_RDONLY))) {
+ while ((nfd = eopen (fifo, O_RDONLY))) {
   struct init_command ic;
 
   if (nfd == -1) { /* open returning -1 is very bad, terminate the thread and disable the module */
@@ -224,7 +224,7 @@ void * initctl_wait (char *fifo) {
    }
   }
 
-  close (nfd);
+  eclose (nfd);
  }
 
  running = 0;

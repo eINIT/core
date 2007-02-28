@@ -333,6 +333,8 @@ echo "/* created by the configure-script, you shouldn't modify this */
 #define BUILDNUMBER ${BUILDNUMBER}
 #define ISSVN ${ISSVN}
 
+#define BUFFERSIZE 1024
+
 " > src/include/einit/configuration.h
 
 if test "${ISSVN}" = "1"; then

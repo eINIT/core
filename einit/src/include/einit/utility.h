@@ -185,8 +185,13 @@ char *escape_xml (char *input);
 #define ereaddir(dir)\
  exreaddir(dir, __FILE__, __LINE__, __func__)
 
+#define eopen(filename, mode)\
+ exopen(filename, mode, __FILE__, __LINE__, __func__)
+
 FILE *exfopen (const char *filename, const char *mode, const char *file, const int line, const char *function);
 DIR *exopendir (const char *name, const char *file, const int line, const char *function);
 struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char *function);
+
+int exopen(const char *pathname, int mode, const char *file, const int line, const char *function);
 
 #endif /* _UTILITY_H */

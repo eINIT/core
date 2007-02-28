@@ -294,7 +294,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
      }
     }
     strcpy (tmp, "/dev/");
-    strcat (tmp, device_name);
+    strncat (tmp, device_name, sizeof(tmp) - strlen (tmp) + 1);
     mcb->add_block_device (tmp, device_major, device_minor);
    }
   }

@@ -133,4 +133,7 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
 #define eclosedir(dir)\
  (closedir(dir) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "closedir() failed"), -1): 0)
 
+#define eclose(fd)\
+ (close(fd) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "close() failed"), -1): 0)
+
 #endif /* _BITCH_H */

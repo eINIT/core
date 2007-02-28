@@ -203,11 +203,11 @@ int texec (struct cfgnode *node) {
     notice (2, cret);
    } else if (!(cpid = fork())) {
     if (device) {
-     int newfd = open(device, O_RDWR, 0);
+     int newfd = eopen(device, O_RDWR);
      if (newfd) {
-      close(0);
-      close(1);
-      close(2);
+      eclose(0);
+      eclose(1);
+      eclose(2);
       dup2 (newfd, 0);
       dup2 (newfd, 1);
       dup2 (newfd, 2);
@@ -305,11 +305,11 @@ int disable (void *pa, struct einit_event *status) {
  uint32_t vtn = parse_integer(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
  int tfd = 0;
  errno = 0;
- if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
+ if ((tfd = eopen ("/dev/tty1", O_RDWR)))
   ioctl (tfd, VT_ACTIVATE, vtn);
  if (errno)
   perror ("einit-tty: activate terminal");
- if (tfd > 0) close (tfd);
+ if (tfd > 0) eclose (tfd);
 #endif
 
  while (cur) {

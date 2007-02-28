@@ -407,7 +407,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   if (uid && (setuid (uid) == -1))
    perror ("setting uid");
 
-  close (1);
+  eclose (1);
 
   dup2 (2, 1);
 // we can safely play with the global environment here, since we fork()-ed earlier
@@ -535,12 +535,12 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    perror ("setting uid");
 
   if (!(options & PEXEC_OPTION_DONTCLOSESTDIN))
-   close (0);
+   eclose (0);
 
-  close (1);
+  eclose (1);
   if (!(options & PEXEC_OPTION_NOPIPE)) {
-   close (2);
-   close (pipefderr [0]);
+   eclose (2);
+   eclose (pipefderr [0]);
    dup2 (pipefderr [1], 1);
    dup2 (pipefderr [1], 2);
   } else {
@@ -562,7 +562,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   FILE *fx;
 
   if (!(options & PEXEC_OPTION_NOPIPE) && status) {
-   close (pipefderr[1]);
+   eclose (pipefderr[1]);
 
    if ((fx = fdopen(pipefderr[0], "r"))) {
     char rxbuffer[1024];
@@ -623,7 +623,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
      }
     }
 
-    fclose (fx);
+    efclose (fx);
    } else {
     perror ("pexec(): open pipe");
    }
@@ -785,7 +785,7 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 //  close (0);
 //  close (1);
 //  close (2);
-  close (1);
+  eclose (1);
   dup2 (2, 1);
 
   daemon_environment = (char **)setcombine ((void **)einit_global_environment, (void **)shellcmd->environment, SET_TYPE_STRING);

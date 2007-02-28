@@ -219,13 +219,13 @@ int ipc_read (int *nfd) {
     fflush (f);
    }
 
-   fclose (f);
+   efclose (f);
   }
-  fclose (r);
+  efclose (r);
   return 0;
  }
 
- close (*nfd);
+ eclose (*nfd);
  return 0;
 }
 
@@ -251,7 +251,7 @@ void * ipc_wait (void *unused_parameter) {
  if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
   unlink (saddr.sun_path);
   if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
-   close (sock);
+   eclose (sock);
    perror ("einit-ipc: binding socket");
 
    running = 0;
@@ -264,7 +264,7 @@ void * ipc_wait (void *unused_parameter) {
  }
 
  if (listen (sock, 5)) {
-  close (sock);
+  eclose (sock);
   perror ("einit-ipc: listening on socket");
 
   running = 0;
@@ -286,7 +286,7 @@ void * ipc_wait (void *unused_parameter) {
  if (nfd == -1)
   perror ("einit-ipc: accepting connections");
 
- close (sock);
+ eclose (sock);
  if (unlink (saddr.sun_path)) perror ("einit-ipc: removing socket");
 
  running = 0;

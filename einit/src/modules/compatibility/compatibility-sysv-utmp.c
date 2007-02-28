@@ -107,9 +107,9 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
  if (!options) return -1;
 
  if (gmode == EINIT_GMODE_SANDBOX)
-  ufile = open ("var/run/utmp", O_RDWR);
+  ufile = eopen ("var/run/utmp", O_RDWR);
  else
-  ufile = open ("/var/run/utmp", O_RDWR);
+  ufile = eopen ("/var/run/utmp", O_RDWR);
  if (ufile) {
   if (!fstat (ufile, &st) && st.st_size) {
    struct utmp *utmpentries = mmap (NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, ufile, 0);
@@ -117,7 +117,7 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
    if (utmpentries != MAP_FAILED) {
     uint32_t entries = st.st_size / sizeof(struct utmp),
     i = 0;
-    close (ufile);
+    eclose (ufile);
     ufile = 0;
 
     for (i = 0; i < entries; i++) {
@@ -198,7 +198,7 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
   }
 
   if (ufile)
-   close (ufile);
+   eclose (ufile);
  } else {
   bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "open() failed");
  }
@@ -213,7 +213,7 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
    if (write(ufile, new_entry, sizeof (struct utmp)) != sizeof (struct utmp)) {
     bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "short write to utmp file");
    }
-   close (ufile);
+   eclose (ufile);
 
   } else {
    bitch2(BITCH_STDIO, "compatibility-sysv-utmp:updateutmp()", 0, "mmap() failed");

@@ -89,7 +89,7 @@ char *readfile (char *filename) {
  uint32_t blen = 0;
 
  if (!filename) return NULL;
- fd = open (filename, O_RDONLY);
+ fd = eopen (filename, O_RDONLY);
 
  if (fd != -1) {
   buf = emalloc (BUFFERSIZE*sizeof(char));
@@ -104,7 +104,7 @@ char *readfile (char *filename) {
   if (errno && (errno != EAGAIN))
    bitch2(BITCH_STDIO, "readfile()", errno, "reading file failed.");
 
-  close (fd);
+  eclose (fd);
   data = erealloc (buf, blen+1);
   data[blen] = 0;
   if (blen > 0) {
@@ -483,4 +483,17 @@ struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char
   bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "readdir() failed.");
  }
  return NULL;
+}
+
+int exopen(const char *pathname, int mode, const char *file, const int line, const char *function) {
+ const char *lfile          = file ? file : "unknown";
+ const char *lfunction      = function ? function : "unknown";
+ const int lline            = line ? line : 0;
+
+ int retval = open (pathname, mode);
+
+ if (retval != -1) return retval;
+
+ bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "open() failed.");
+ return -1;
 }

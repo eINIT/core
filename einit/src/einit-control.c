@@ -75,7 +75,7 @@ int ipc (char *cmd) {
  strncpy (saddr.sun_path, ctrlsocket, sizeof(saddr.sun_path) - 1);
 
  if (connect(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
-  close (sock);
+  eclose (sock);
   return bitch (BTCH_ERRNO);
  }
 
@@ -86,7 +86,7 @@ int ipc (char *cmd) {
  if (!(esocket = fdopen (sock, "w+"))) {
   eputs (" >> opening socket failed.", stderr);
   bitch(BTCH_ERRNO);
-  close (sock);
+  eclose (sock);
   return 0;
  }
 
@@ -114,7 +114,7 @@ int ipc (char *cmd) {
 
  errno = 0;
 
- fclose (esocket);
+ efclose (esocket);
  return ret;
 }
 
