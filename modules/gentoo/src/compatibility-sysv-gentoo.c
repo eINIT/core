@@ -188,11 +188,11 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
  if (!path) return;
  plen = strlen (path) +2;
 
- if (dir = opendir (path)) {
+ if (dir = eopendir (path)) {
   struct stat st;
   char **nservices = NULL;
 
-  while (de = readdir (dir)) {
+  while (de = ereaddir (dir)) {
    uint32_t xplen = plen + strlen (de->d_name);
 
    if (de->d_name[0] == '.') continue;
@@ -424,9 +424,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     free (nservices);
   }
 
-  closedir (dir);
- } else {
-  fprintf (stderr, " >> could not open gentoo runlevels directory \"%s\": %s\n", path, strerror (errno));
+  eclosedir (dir);
  }
 }
 
@@ -607,7 +605,7 @@ int scanmodules (struct lmodule *modchain) {
 
  plen = strlen (init_d_path) +1;
 
- if (dir = opendir (init_d_path)) {
+ if (dir = eopendir (init_d_path)) {
 // load gentoo's default dependency information using librc.so's functions
   rc_depinfo_t *gentoo_deptree = rc_load_deptree(NULL);
   if (!gentoo_deptree) {
@@ -617,7 +615,7 @@ int scanmodules (struct lmodule *modchain) {
 #ifdef DEBUG
   puts (" >> reading directory");
 #endif
-  while (de = readdir (dir)) {
+  while (de = ereaddir (dir)) {
    char doop = 1;
    rc_depinfo_t *depinfo;
 
@@ -762,9 +760,7 @@ int scanmodules (struct lmodule *modchain) {
 
   rc_free_deptree (gentoo_deptree);
 
-  closedir (dir);
- } else {
-  fprintf (stderr, " >> couldn't open init.d directory \"%s\"\n", init_d_path);
+  eclosedir (dir);
  }
 
 #ifdef POSIXREGEX
