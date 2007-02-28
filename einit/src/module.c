@@ -109,7 +109,7 @@ int mod_scanmodules ( void ) {
   if (modulepath[0] == '/') modulepath++;
  }
 
- eprintf (stderr, " >> loading modules from %s.\n", modulepath);
+ eprintf (stderr, " >> updating modules in \"%s\".\n", modulepath);
 
 #ifdef POSIXREGEX
  if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {
@@ -122,9 +122,9 @@ int mod_scanmodules ( void ) {
 #endif
 
  mplen = strlen (modulepath) +4;
- dir = opendir (modulepath);
+ dir = eopendir (modulepath);
  if (dir != NULL) {
-  while ((entry = readdir (dir))) {
+  while ((entry = ereaddir (dir))) {
 //   uint32_t el = 0;
 // if we have posix regular expressions, match them against the filename, if not, exclude '.'-files
 #ifdef POSIXREGEX
@@ -190,22 +190,12 @@ int mod_scanmodules ( void ) {
    cleanup_continue:
    free (tmp);
   }
-  closedir (dir);
- } else {
-  eputs ("couldn't open module directory\n", stderr);
+  eclosedir (dir);
+ }
 
 #ifdef POSIXREGEX
   if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
   if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
-#endif
-
-  emutex_unlock (&modules_update_mutex);
-  return bitch(BTCH_ERRNO);
- }
-
-#ifdef POSIXREGEX
- if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
- if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
 #endif
 
 /* give the module-logic code and others a chance at processing the current list */

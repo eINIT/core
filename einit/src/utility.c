@@ -441,3 +441,46 @@ char *escape_xml (char *input) {
  return retval;
 }
 
+/* some stdio wrappers with error reporting */
+FILE *exfopen (const char *filename, const char *mode, const char *file, const int line, const char *function) {
+ const char *lfile          = file ? file : "unknown";
+ const char *lfunction      = function ? function : "unknown";
+ const int lline            = line ? line : 0;
+
+ FILE *retval = fopen (filename, mode);
+
+ if (retval) return retval;
+
+ bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "fopen() failed.");
+ return NULL;
+}
+
+DIR *exopendir (const char *name, const char *file, const int line, const char *function) {
+ const char *lfile          = file ? file : "unknown";
+ const char *lfunction      = function ? function : "unknown";
+ const int lline            = line ? line : 0;
+
+ DIR *retval = opendir (name);
+
+ if (retval) return retval;
+
+ bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "opendir() failed.");
+ return NULL;
+}
+
+struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char *function) {
+ const char *lfile          = file ? file : "unknown";
+ const char *lfunction      = function ? function : "unknown";
+ const int lline            = line ? line : 0;
+
+ errno = 0;
+
+ struct dirent *retval = readdir (dir);
+
+ if (retval) return retval;
+
+ if (errno) {
+  bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "readdir() failed.");
+ }
+ return NULL;
+}

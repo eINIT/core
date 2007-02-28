@@ -99,11 +99,11 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 
  if (path) {
   size_t plength = strlen (path) +1;
-  if ((dir = opendir (path))) {
+  if ((dir = eopendir (path))) {
    char *txf = emalloc (plength);
    txf = memcpy (txf, path, plength);
 
-   while ((entry = readdir (dir))) {
+   while ((entry = ereaddir (dir))) {
     uint32_t cl = 0;
     char cont = 1, recycled = 0;
     if (entry->d_name[0] == '.') continue;
@@ -148,9 +148,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
    }
    if (txf) free (txf);
 
-   closedir (dir);
-  } else {
-   bitch2 (BITCH_STDIO, "update_processes_proc_linux()", errno, "opening /proc");
+   eclosedir (dir);
   }
  }
 

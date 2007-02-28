@@ -948,9 +948,9 @@ unsigned char broadcast_message (char *path, char *message) {
   }
  }
 
- dir = opendir (path);
+ dir = eopendir (path);
  if (dir != NULL) {
-  while ((entry = readdir (dir))) {
+  while ((entry = ereaddir (dir))) {
    if (entry->d_name[0] == '.') continue;
    struct stat statbuf;
    char *tmp = emalloc (strlen(path) + entry->d_reclen);
@@ -978,9 +978,8 @@ unsigned char broadcast_message (char *path, char *message) {
 
    free (tmp);
   }
-  closedir (dir);
+  eclosedir (dir);
  } else {
-  eprintf (stdout, "einit-feedback-visual-textual: could not open %s\n", path);
   errno = 0;
   return 1;
  }

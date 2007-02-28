@@ -376,9 +376,9 @@ unsigned char find_block_devices_recurse_path (char *path) {
  }
 #endif
 
- dir = opendir (path);
+ dir = eopendir (path);
  if (dir != NULL) {
-  while ((entry = readdir (dir))) {
+  while ((entry = ereaddir (dir))) {
    if (entry->d_name[0] == '.') continue;
    struct stat statbuf;
    char *tmp = emalloc (strlen(path) + entry->d_reclen);
@@ -392,10 +392,11 @@ unsigned char find_block_devices_recurse_path (char *path) {
    }
    if (!S_ISLNK(statbuf.st_mode)) {
 #ifdef POSIXREGEX
-    if (S_ISBLK (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0))) {
+    if (S_ISBLK (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0)))
 #else
-    if (S_ISBLK (statbuf.st_mode)) {
+    if (S_ISBLK (statbuf.st_mode))
 #endif
+    {
      add_block_device (tmp, 0, 0);
 // what was i thinking with this one?
 //    } else if (S_ISSOCK (statbuf.st_mode) && S_ISDIR (statbuf.st_mode)) {
@@ -407,9 +408,8 @@ unsigned char find_block_devices_recurse_path (char *path) {
 
    free (tmp);
   }
-  closedir (dir);
+  eclosedir (dir);
  } else {
-  eprintf (stdout, "einit-mount: could not open %s\n", path);
   errno = 0;
   return 1;
  }

@@ -127,4 +127,10 @@ int bitch_macro (unsigned char sauce, const char *file, const int line, const ch
  ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
 #endif
 
+#define efclose(stream)\
+ ((fclose(stream) == EOF) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "fclose() failed"), EOF): 0)
+
+#define eclosedir(dir)\
+ (closedir(dir) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "closedir() failed"), -1): 0)
+
 #endif /* _BITCH_H */

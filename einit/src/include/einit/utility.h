@@ -53,6 +53,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <sys/types.h>
 #include <einit/set.h>
+#include <dirent.h>
+#include <stdio.h>
+
 
 /*!\brief Add the variable \b key with \b value to \b environment.
  * \param[in,out] environment the environment to be manipulated
@@ -171,5 +174,19 @@ char parse_boolean (char *);
 char *apply_variables (char *string, char **env);
 
 char *escape_xml (char *input);
+
+/* some stdio wrappers with error reporting */
+#define efopen(filename, mode)\
+ exfopen(filename, mode, __FILE__, __LINE__, __func__)
+
+#define eopendir(name)\
+ exopendir(name, __FILE__, __LINE__, __func__)
+
+#define ereaddir(dir)\
+ exreaddir(dir, __FILE__, __LINE__, __func__)
+
+FILE *exfopen (const char *filename, const char *mode, const char *file, const int line, const char *function);
+DIR *exopendir (const char *name, const char *file, const int line, const char *function);
+struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char *function);
 
 #endif /* _UTILITY_H */

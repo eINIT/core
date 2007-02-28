@@ -348,12 +348,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       }
      }
 
-     if ((dir = opendir (includedir))) {
+     if ((dir = eopendir (includedir))) {
       char *includefile = (char *)emalloc (bdlen);
       memcpy (includefile, includedir, bdlen-1);
       struct stat statres;
 
-      while ((entry = readdir (dir))) {
+      while ((entry = ereaddir (dir))) {
        includefile[bdlen-1] = 0;
 
        includefile = erealloc (includefile, bdlen+strlen(entry->d_name));
@@ -365,7 +365,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
         recursion--;
        }
       }
-      closedir (dir);
+      eclosedir (dir);
      } else {
       if (xml_parser_auto_create_missing_directories) {
        if (mkdir (includedir, 0777)) {
@@ -373,8 +373,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
        } else {
         eprintf (stderr, " >> created missing directory \"%s\"\n", includedir);
        }
-      } else {
-       bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): opendir()", errno, (char *)includedir);
       }
      }
 
