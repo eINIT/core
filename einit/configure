@@ -28,8 +28,8 @@
 # -----------------
 
 INCLUDEPATH="/usr/local/include"
-INTERNALMODULES=""
-EXTERNALMODULES="einit-module-logic-v3 einit-config-xml-expat"
+INTERNALMODULES="einit-module-logic-v3 einit-config-xml-expat"
+EXTERNALMODULES=""
 
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
