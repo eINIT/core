@@ -292,6 +292,14 @@ int main(int argc, char **argv) {
    }
   }
 
+#ifdef DO_BOOTSTRAP
+   cev.type = EVE_CONFIGURATION_UPDATE;
+   cev.string = NULL;
+   event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+
+   cev.type = EVE_UPDATE_CONFIGURATION;
+#endif
+
 /* emit events to read configuration files */
   if (einit_startup_configuration_files) {
    uint32_t rx = 0;

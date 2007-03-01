@@ -28,8 +28,8 @@
 # -----------------
 
 INCLUDEPATH="/usr/local/include"
-INTERNALMODULES="einit-config-xml-expat"
-EXTERNALMODULES="einit-module-logic-v3"
+INTERNALMODULES=""
+EXTERNALMODULES="einit-module-logic-v3 einit-config-xml-expat"
 
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
@@ -48,6 +48,7 @@ SETTYPE="lowmem"
 MODULELOGICTYPE="v3"
 
 CORELINK="einit.o module.o bitch.o utility.o scheduler.o event.o config.o tree.o set.o module-configuration.o"
+BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
 echo -n "checking options [";
 for param in $@; do
@@ -238,6 +239,14 @@ fi;
 
 echo " done"
 
+echo -n "figuring out what libs need to be linked into the core..."
+if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
+ echo -n " -lexpat"
+ CORELIBS="${CORELIBS} -lexpat"
+fi;
+
+echo " done"
+
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
@@ -271,8 +280,6 @@ fi
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 
-BOOTSTRAP_MODULE_PATH="${PREFIX}/lib/einit/bootstrap/"
-
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
@@ -281,6 +288,7 @@ MODDIR = ${PREFIX}/lib/einit/modules
 BINDIR = ${PREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
+BOOTSTRAPDIR = ${UPREFIX}/${BOOTSTRAP_MODULE_PATH}
 
 INSTALL = install
 IPARAM =
@@ -302,6 +310,7 @@ INTERNALMODULES = ${INTERNALMODULES}
 EXTERNALMODULES = ${EXTERNALMODULES}
 
 CORELINK = ${CORELINK}
+CORELIBS = ${CORELIBS}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 
@@ -329,9 +338,13 @@ echo "/* created by the configure-script, you shouldn't modify this */
 if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
  echo "#define EINIT_MODULES_XML_EXPAT 'y'" >> src/include/einit-modules/configuration.h;
 elif test -n "`echo ${EXTERNALMODULES}|grep einit-config-xml-expat`"; then
- echo "#define EINIT_MODULES_XML_EXPAT 'm'" >> src/include/einit-modules/configuration.h;
+ echo "#define EINIT_MODULES_XML_EXPAT 'm'
+#define DO_BOOTSTRAP
+" >> src/include/einit-modules/configuration.h;
 else
- echo "#define EINIT_MODULES_XML_EXPAT 'n'" >> src/include/einit-modules/configuration.h;
+ echo "#define EINIT_MODULES_XML_EXPAT 'n'
+#define DO_BOOTSTRAP
+" >> src/include/einit-modules/configuration.h;
 fi;
 
 if test -n "`echo ${INTERNALMODULES}|grep einit-module-logic-v3`"; then

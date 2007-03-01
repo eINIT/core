@@ -184,8 +184,11 @@ int mod_scanmodules ( void ) {
 
      dlclose (sohandle);
     }
-   } else
+   } else {
+    eprintf (stderr, " >> module %s: not loading: missing header.\n", tmp);
+
     dlclose (sohandle);
+   }
 
    cleanup_continue:
    free (tmp);

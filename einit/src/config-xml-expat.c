@@ -49,9 +49,47 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <einit-modules/configuration.h>
 
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
+
+#if ( EINIT_MODULES_XML_EXPAT == 'm' )
+void einit_config_xml_expat_event_handler (struct einit_event *);
+char *einit_config_xml_cfg_to_xml (struct stree *);
+
+const struct smodule self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Configuration Parser (XML, Expat)",
+ .rid       = "einit-configuration-xml-expat",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
+};
+
+int configure (struct lmodule *this) {
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_config_xml_expat_event_handler);
+
+ function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
+
+ return 0;
+}
+
+int cleanup (struct lmodule *this) {
+ function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
+
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_config_xml_expat_event_handler);
+
+ return 0;
+}
+#endif
 
 struct cfgnode *curmode = NULL;
 char **xml_configuration_files = NULL;

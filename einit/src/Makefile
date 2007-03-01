@@ -16,7 +16,7 @@ clean:
 	cd modules && ${MAKE} clean
 
 einit-xml: $(CORELINK)
-	$(CLD) $(CORELINK) $(XDYNAMIC) -o einit-xml $(STATIC) -ldl -lexpat $(LPA)
+	$(CLD) $(CORELINK) $(XDYNAMIC) -o einit-xml $(STATIC) -ldl $(CORELIBS) $(LPA)
 
 einit: einit-xml
 	ln -sf einit-xml einit
@@ -32,8 +32,9 @@ install: all
 	${INSTALL} ${IPARAM} -m 0644 include/einit/*.h ${DESTDIR}/${INCLUDEDIR}/einit
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${INCLUDEDIR}/einit-modules
 	${INSTALL} ${IPARAM} -m 0644 include/einit-modules/*.h ${DESTDIR}/${INCLUDEDIR}/einit-modules
-	if test -n "${EXTERNALMODULES}"; then ${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}; ${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${BOOTSTRAP_MODULE_PATH}; fi
+	if test -n "${EXTERNALMODULES}"; then ${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}; ${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${BOOTSTRAPDIR}; fi
 	if test -n "`echo ${EXTERNALMODULES}|grep einit-module-logic-v3`"; then ${INSTALL} ${SOIPARAM} einit-module-logic-v3.so ${DESTDIR}/${MODDIR}; fi
+	if test -n "`echo ${EXTERNALMODULES}|grep einit-config-xml-expat`"; then ${INSTALL} ${SOIPARAM} einit-configuration-xml-expat.so ${DESTDIR}/${BOOTSTRAPDIR}; fi
 	ln -sf einit-control ${DESTDIR}/${SBINDIR}/power
 	ln -sf einit-control ${DESTDIR}/${SBINDIR}/erc
 	cd modules && ${MAKE} install
@@ -73,6 +74,12 @@ einit-module-logic-v3: einit-module-logic-v3.so
 einit-module-logic-v3.so: module-logic-v3.c
 	${CCL} -c module-logic-v3.c
 	${LLD} module-logic-v3.o -o einit-module-logic-v3.so;
+
+einit-config-xml-expat: einit-configuration-xml-expat.so
+
+einit-configuration-xml-expat.so: config-xml-expat.c
+	${CCL} -c config-xml-expat.c
+	${LLD} config-xml-expat.o -o einit-configuration-xml-expat.so -lexpat
 
 module-configuration.o: module-configuration.c
 	$(CCC) -c module-configuration.c
