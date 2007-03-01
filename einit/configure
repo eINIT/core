@@ -28,8 +28,8 @@
 # -----------------
 
 INCLUDEPATH="/usr/local/include"
-INTERNALMODULES="einit-config-xml-expat einit-module-logic-v3"
-EXTERNALMODULES=""
+INTERNALMODULES="einit-config-xml-expat"
+EXTERNALMODULES="einit-module-logic-v3"
 
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
@@ -46,7 +46,8 @@ PMODULES="compatibility"
 TREETYPE="linear"
 SETTYPE="lowmem"
 MODULELOGICTYPE="v3"
-BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
+
+CORELINK="einit.o module.o bitch.o utility.o scheduler.o event.o config.o tree.o set.o module-configuration.o"
 
 echo -n "checking options [";
 for param in $@; do
@@ -221,6 +222,22 @@ else
 	echo "expat is currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or go to http://expat.sf.net/.";
 fi
 
+echo -n "figuring out what files to link right into the core..."
+if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
+ echo -n " config-xml-expat.o"
+ CORELINK="${CORELINK} config-xml-expat.o"
+fi;
+
+if test -n "`echo ${INTERNALMODULES}|grep einit-module-logic-v3`"; then
+ echo -n " module-logic.o"
+ CORELINK="${CORELINK} module-logic.o"
+elif test "${MODULELOGICTYPE}" != "v3"; then
+ echo -n "module-logic.o"
+ CORELINK="${CORELINK} module-logic.o"
+fi;
+
+echo " done"
+
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
@@ -254,6 +271,8 @@ fi
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 
+BOOTSTRAP_MODULE_PATH="${PREFIX}/lib/einit/bootstrap/"
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
@@ -281,6 +300,8 @@ MODULELOGICTYPE = ${MODULELOGICTYPE}
 
 INTERNALMODULES = ${INTERNALMODULES}
 EXTERNALMODULES = ${EXTERNALMODULES}
+
+CORELINK = ${CORELINK}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 

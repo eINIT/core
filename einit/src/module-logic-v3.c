@@ -40,11 +40,53 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <einit/config.h>
 #include <einit/module-logic.h>
+#include <einit/module.h>
 #include <einit/tree.h>
 #include <pthread.h>
 #include <string.h>
 #include <einit/bitch.h>
 #include <einit-modules/ipc.h>
+#include <einit-modules/configuration.h>
+
+void module_logic_ipc_event_handler (struct einit_event *);
+void module_logic_einit_event_handler (struct einit_event *);
+double __mod_get_plan_progress_f (struct mloadplan *);
+
+#if ( EINIT_MODULES_MODULE_LOGIC_V3 == 'm' )
+const struct smodule self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Module Logic Core (V3)",
+ .rid       = "einit-module-logic-v3",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
+};
+
+int configure (struct lmodule *this) {
+ event_listen (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
+
+ function_register ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
+
+ return 0;
+}
+
+int cleanup (struct lmodule *this) {
+ function_unregister ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
+
+ event_ignore (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
+
+ return 0;
+}
+#endif
 
 struct module_taskblock
   current = { NULL, NULL, NULL, NULL, NULL, NULL },

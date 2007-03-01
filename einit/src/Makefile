@@ -15,8 +15,8 @@ clean:
 	rm -f *.o einit-xml einit-control einit depend.mk
 	cd modules && ${MAKE} clean
 
-einit-xml: einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o set.o
-	$(CLD) einit.o module.o bitch.o config-xml-expat.o utility.o scheduler.o event.o module-logic.o config.o module-configuration.o tree.o set.o $(XDYNAMIC) -o einit-xml $(STATIC) -ldl -lexpat $(LPA)
+einit-xml: $(CORELINK)
+	$(CLD) $(CORELINK) $(XDYNAMIC) -o einit-xml $(STATIC) -ldl -lexpat $(LPA)
 
 einit: einit-xml
 	ln -sf einit-xml einit
@@ -32,11 +32,13 @@ install: all
 	${INSTALL} ${IPARAM} -m 0644 include/einit/*.h ${DESTDIR}/${INCLUDEDIR}/einit
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${INCLUDEDIR}/einit-modules
 	${INSTALL} ${IPARAM} -m 0644 include/einit-modules/*.h ${DESTDIR}/${INCLUDEDIR}/einit-modules
+	if test -n "${EXTERNALMODULES}"; then ${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${MODDIR}; ${INSTALL} ${SOIPARAM} -d ${DESTDIR}/${BOOTSTRAP_MODULE_PATH}; fi
+	if test -n "`echo ${EXTERNALMODULES}|grep einit-module-logic-v3`"; then ${INSTALL} ${SOIPARAM} einit-module-logic-v3.so ${DESTDIR}/${MODDIR}; fi
 	ln -sf einit-control ${DESTDIR}/${SBINDIR}/power
 	ln -sf einit-control ${DESTDIR}/${SBINDIR}/erc
 	cd modules && ${MAKE} install
 
-default-modules: einit
+default-modules: einit $(EXTERNALMODULES)
 	cd modules && ${MAKE} all
 
 einit-control.o: einit-control.c
@@ -65,6 +67,12 @@ module.o: module.c
 
 module-logic.o: module-logic-v2.c module-logic-v3.c
 	$(CCC) -c module-logic-${MODULELOGICTYPE}.c -o module-logic.o
+
+einit-module-logic-v3: einit-module-logic-v3.so
+
+einit-module-logic-v3.so: module-logic-v3.c
+	${CCL} -c module-logic-v3.c
+	${LLD} module-logic-v3.o -o einit-module-logic-v3.so;
 
 module-configuration.o: module-configuration.c
 	$(CCC) -c module-configuration.c

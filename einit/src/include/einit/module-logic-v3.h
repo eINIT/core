@@ -67,7 +67,7 @@ typedef double (*plan_progress_fetcher)(struct mloadplan *);
 plan_progress_fetcher *_get_plan_progress_function;
 
 #define get_plan_progress(plan)\
- ((_get_plan_progress_function || (_get_plan_progress_function = function_find ("module-logic-get-plan-progress", 1))) ? _get_plan_progress_function(plan) : 0.0)
+ ((_get_plan_progress_function || (_get_plan_progress_function = function_find_one ("module-logic-get-plan-progress", 1))) ? _get_plan_progress_function(plan) : 0.0)
  
 #define module_logic_configure(x)\
  _get_plan_progress_function = NULL

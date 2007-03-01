@@ -187,13 +187,14 @@ struct lmodule {
  int (*reload) (void *, struct einit_event *);  /*!< Pointer to the module's reload()-function */
  int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
  uint32_t status;                               /*!< Current module status (enabled, disabled, ...) */
- void *param;                                   /*!< Parametre for state-changing functions */
+ void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
  pthread_mutex_t imutex;                        /*!< Internal module-mutex; to be used by the module */
  struct smodule *module;                        /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  uint32_t fbseq;                                /*!< Feedback sequence-number */
  struct service_information *si;
+ void *resumedata;
 };
 
 /*!\brief Service-usage information.
