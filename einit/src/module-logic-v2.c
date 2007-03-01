@@ -1013,12 +1013,12 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  wait_on_subthreads (plan->subthreads);
 
  if (plan->unavailable) {
-  char tmp[2048], tmp2[2048];
-  esprintf (tmp, 2048, "WARNING: unavailable services - %s", plan->unavailable[0]);
+  char tmp[BUFFERSIZE], tmp2[BUFFERSIZE];
+  esprintf (tmp, BUFFERSIZE, "WARNING: unavailable services - %s", plan->unavailable[0]);
 
   for (u = 1; plan->unavailable[u]; u++) {
    strcpy (tmp2, tmp);
-   esprintf (tmp, 2048, "%s, %s", tmp2, plan->unavailable[u]);
+   esprintf (tmp, BUFFERSIZE, "%s, %s", tmp2, plan->unavailable[u]);
   }
 
   notice (2, tmp);

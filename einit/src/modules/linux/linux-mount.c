@@ -160,7 +160,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  uint32_t cdev = 0;
  uint8_t uuid[16];
  char c_uuid[38];
- char tmp[1024];
+ char tmp[BUFFERSIZE];
 
  if (gmode == EINIT_GMODE_SANDBOX) return 0;
 
@@ -240,14 +240,14 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
 
 unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
  FILE *f = efopen ("/proc/partitions", "r");
- char tmp[1024];
+ char tmp[BUFFERSIZE];
  uint32_t line = 0, device_major = 0, device_minor = 0, device_size = 0, field = 0;
  char *device_name = NULL;
  if (!f) return 1;
 
  errno = 0;
  while (!errno) {
-  if (!fgets (tmp, 1024, f)) {
+  if (!fgets (tmp, BUFFERSIZE, f)) {
    switch (errno) {
     case EINTR:
     case EAGAIN:
@@ -306,7 +306,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
 
 unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
  char *fsdata = NULL;
- char command[4096];
+ char command[BUFFERSIZE];
 
  if (fse->options) {
   int fi = 0;
@@ -326,18 +326,18 @@ unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mount
 
  if (fsdata) {
   if (tflags & MOUNT_TF_FORCE_RW)
-   esprintf (command, 4096, "/bin/mount %s %s -t %s -o \"rw,%s\"", source, mountpoint, fstype, fsdata);
+   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"rw,%s\"", source, mountpoint, fstype, fsdata);
   else if (tflags & MOUNT_TF_FORCE_RO)
-   esprintf (command, 4096, "/bin/mount %s %s -t %s -o \"ro,%s\"", source, mountpoint, fstype, fsdata);
+   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"ro,%s\"", source, mountpoint, fstype, fsdata);
   else
-   esprintf (command, 4096, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
+   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
  } else {
   if (tflags & MOUNT_TF_FORCE_RW)
-   esprintf (command, 4096, "/bin/mount %s %s -t %s -o rw", source, mountpoint, fstype);
+   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o rw", source, mountpoint, fstype);
   else if (tflags & MOUNT_TF_FORCE_RO)
-   esprintf (command, 4096, "/bin/mount %s %s -t %s -o ro", source, mountpoint, fstype);
+   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o ro", source, mountpoint, fstype);
   else
-   esprintf (command, 4096, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
+   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
  }
 
  if (gmode != EINIT_GMODE_SANDBOX) {

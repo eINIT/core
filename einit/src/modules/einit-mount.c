@@ -491,13 +491,13 @@ unsigned char forge_fstab_by_label (void *na) {
       }
      }
      if (!mpoint) {
-      char tmp[1024] = "/media/";
-      strcat (tmp, bdi->label);
+      char tmp[BUFFERSIZE] = "/media/";
+      strncat (tmp, bdi->label, sizeof(tmp) - strlen (tmp) + 1);
       mpoint = estrdup (tmp);
      }
     } else {
-     char tmp[1024] = "/media";
-     strcat (tmp, element->key);
+     char tmp[BUFFERSIZE] = "/media";
+     strncat (tmp, element->key, sizeof(tmp) - strlen (tmp) + 1);
      mpoint = estrdup (tmp);
     }
 
@@ -595,10 +595,10 @@ struct stree *read_fsspec_file (char *file) {
  if (!file) return NULL;
 
  if ((fp = efopen (file, "r"))) {
-  char buffer[1024];
+  char buffer[BUFFERSIZE];
   errno = 0;
   while (!errno) {
-   if (!fgets (buffer, 1024, fp)) {
+   if (!fgets (buffer, BUFFERSIZE, fp)) {
     switch (errno) {
      case EINTR:
      case EAGAIN:
@@ -914,7 +914,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  char *fstype = NULL;
  char *fsdata = NULL;
  uint32_t fsntype;
- char verbosebuffer [1024];
+ char verbosebuffer [BUFFERSIZE];
  void **fs_mount_functions = NULL;
  char *fs_mount_function_name;
  unsigned char (*mount_function)(uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
@@ -945,11 +945,11 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
    if (bdi && (bdi->status & BF_STATUS_DIRTY)) {
     if (fsck_command) {
-     char tmp[1024];
+     char tmp[BUFFERSIZE];
      status->string = "filesystem dirty; running fsck";
      status_update (status);
 
-     esprintf (tmp, 1024, fsck_command, fstype, de->key);
+     esprintf (tmp, BUFFERSIZE, fsck_command, fstype, de->key);
      if (gmode != EINIT_GMODE_SANDBOX) {
       pexec_v1 (tmp, NULL, NULL, status);
      } else {
@@ -983,9 +983,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     fstype = fstype_s[fsts_i];
 
     if (bdi && bdi->label)
-     esprintf (verbosebuffer, 1023, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
+     esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
     else
-     esprintf (verbosebuffer, 1023, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
+     esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
     status->string = verbosebuffer;
     status_update (status);
 
@@ -1085,7 +1085,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   }
  }
  if (tflags & MOUNT_TF_UMOUNT) {
-  char textbuffer[1024];
+  char textbuffer[BUFFERSIZE];
   errno = 0;
   uint32_t retry = 0;
 
@@ -1094,9 +1094,9 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   if ((he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
 
   if (fse && !(fse->status & BF_STATUS_MOUNTED))
-   esprintf (textbuffer, 1024, "unmounting %s: seems not to be mounted", mountpoint);
+   esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
   else
-   esprintf (textbuffer, 1024, "unmounting %s", mountpoint);
+   esprintf (textbuffer, BUFFERSIZE, "unmounting %s", mountpoint);
 
   if (fse && fse->manager)
    stopdaemon (fse->manager, status);
@@ -1119,7 +1119,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
      struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
                           *pcl[2] = { &pcc, NULL };
 
-     esprintf (textbuffer, 1024, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
+     esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
      errno = 0;
      status->string = textbuffer;
      status_update (status);
@@ -1130,7 +1130,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       if (umount2 (mountpoint, MNT_FORCE) != -1) {
        goto umount_ok;
       } else {
-       esprintf (textbuffer, 1024, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
+       esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
        errno = 0;
        status->string = textbuffer;
        status_update (status);
@@ -1139,20 +1139,20 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
       if (fse) {
        if (retry >= 3) {
         if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-         esprintf (textbuffer, 1024, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+         esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
          errno = 0;
          status->string = textbuffer;
          status_update (status);
          goto umount_fail;
         } else {
          if (umount2 (mountpoint, MNT_DETACH) == -1) {
-          esprintf (textbuffer, 1024, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
+          esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
           errno = 0;
           status->string = textbuffer;
           status_update (status);
           goto umount_ok;
          } else {
-          esprintf (textbuffer, 1024, "%s#%i: remounted r/o and detached", mountpoint, retry);
+          esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o and detached", mountpoint, retry);
           status->string = textbuffer;
           status_update (status);
           goto umount_ok;
@@ -1160,7 +1160,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
         }
        }
       } else {
-       esprintf (textbuffer, 1024, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
+       esprintf (textbuffer, BUFFERSIZE, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
        status->string = textbuffer;
        status_update (status);
        goto umount_fail;
@@ -1469,13 +1469,13 @@ void mount_ipc_handler(struct einit_event *ev) {
      struct stat stbuf;
 
      if (!(((struct fstab_entry *)(tstree->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
-      char tmpstr[1024];
+      char tmpstr[BUFFERSIZE];
       if (inset ((void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
 #ifdef LINUX
        tstree = streenext (tstree);
        continue;
 #else
-       esprintf (tmpstr, 1024, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
+       esprintf (tmpstr, BUFFERSIZE, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
 #endif
        eputs (tmpstr, (FILE *)ev->para);
        ev->task++;
@@ -1535,11 +1535,11 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
 
   if (fse) {
    if (fse->status & BF_STATUS_MOUNTED) {
-    char tmp[1024];
+    char tmp[BUFFERSIZE];
     char *tset = set2str (',', fse->options); 
 
     if (tset)
-     esprintf (tmp, 1024, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
+     esprintf (tmp, BUFFERSIZE, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
 #ifdef MS_RDONLY
                fse->aflags & MS_RDONLY
 #else
@@ -1547,7 +1547,7 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
 #endif
                ? "ro" : "rw", tset);
     else
-     esprintf (tmp, 1024, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
+     esprintf (tmp, BUFFERSIZE, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
 #ifdef MS_RDONLY
                fse->aflags & MS_RDONLY
 #else

@@ -565,11 +565,11 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
    eclose (pipefderr[1]);
 
    if ((fx = fdopen(pipefderr[0], "r"))) {
-    char rxbuffer[1024];
+    char rxbuffer[BUFFERSIZE];
     setvbuf (fx, NULL, _IONBF, 0);
 
     while (!feof(fx)) {
-     if (!fgets(rxbuffer, 1024, fx)) {
+     if (!fgets(rxbuffer, BUFFERSIZE, fx)) {
       if (errno == EAGAIN) goto skip_read;
       break;
      }
@@ -652,7 +652,7 @@ void *dexec_watcher (struct spidcb *spid) {
  struct lmodule *module = NULL;
  emutex_lock (&running_mutex);
  struct daemonst *cur = running;
- char stmp[1024];
+ char stmp[BUFFERSIZE];
 
  while (cur) {
   dx = cur->dx;
@@ -676,7 +676,7 @@ void *dexec_watcher (struct spidcb *spid) {
   char *rid = (module && module->module && module->module->rid ? module->module->rid : "unknown");
 /* if we're already deactivating this daemon, resume the original function */
   if (pthread_mutex_trylock (&cur->mutex)) {
-   esprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
+   esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
    notice (8, stmp);
    emutex_unlock (&cur->mutex);
   } else if (dx->restart) {
@@ -689,7 +689,7 @@ void *dexec_watcher (struct spidcb *spid) {
     fb.status = STATUS_WORKING;
     fb.flag = 0;
 
-    esprintf (stmp, 1024, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
+    esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
     fb.string = stmp;
     fb.integer = module->fbseq+1;
     status_update ((&fb));
@@ -698,7 +698,7 @@ void *dexec_watcher (struct spidcb *spid) {
     __start_daemon_function (dx, &fb);
    } else {
     dx->cb = NULL;
-    esprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
+    esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
     notice (5, stmp);
     if (module)
      mod (MOD_DISABLE, module);
@@ -706,7 +706,7 @@ void *dexec_watcher (struct spidcb *spid) {
   } else {
    emutex_unlock (&cur->mutex);
    dx->cb = NULL;
-   esprintf (stmp, 1024, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
+   esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
    notice (5, stmp);
    if (module)
     mod (MOD_DISABLE, module);

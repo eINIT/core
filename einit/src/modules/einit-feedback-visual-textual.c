@@ -621,7 +621,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
  */
 void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
  char *name = "unknown/unnamed",
-       feedback[2048], tfeedback[256];
+  feedback[BUFFERSIZE], tfeedback[BUFFERSIZE];
 
  if (((struct lmodule *)ev->para)->module) {
   struct smodule *mod = ((struct lmodule *)ev->para)->module;
@@ -637,11 +637,11 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if (ev->task & MOD_FEEDBACK_SHOW) {
   if (ev->task & MOD_ENABLE) {
-   esprintf (tfeedback, 256, "%s: enabling\n", name);
+   esprintf (tfeedback, BUFFERSIZE, "%s: enabling\n", name);
   } else if (ev->task & MOD_DISABLE) {
-   esprintf (tfeedback, 256, "%s: disabling\n", name);
+   esprintf (tfeedback, BUFFERSIZE, "%s: disabling\n", name);
   } else  {
-   esprintf (tfeedback, 256, "%s: unknown status change\n", name);
+   esprintf (tfeedback, BUFFERSIZE, "%s: unknown status change\n", name);
   }
  }
 
@@ -653,15 +653,15 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
  switch (ev->status) {
   case STATUS_IDLE:
    if (feedback[0])
-    strncpy (tfeedback, " > idle\n", 256);
+    strncpy (tfeedback, " > idle\n", BUFFERSIZE);
    else
-    esprintf (tfeedback, 256, "%s: idle\n", name);
+    esprintf (tfeedback, BUFFERSIZE, "%s: idle\n", name);
    break;
   case STATUS_ENABLING:
    if (feedback[0])
-    strncpy (tfeedback, " > enabling\n", 256);
+    strncpy (tfeedback, " > enabling\n", BUFFERSIZE);
    else
-    esprintf (tfeedback, 256, "%s: enabling\n", name);
+    esprintf (tfeedback, BUFFERSIZE, "%s: enabling\n", name);
    break;
  }
 
@@ -672,9 +672,9 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if (ev->string) {
   if (feedback[0])
-   esprintf (tfeedback, 256, " > %s\n", ev->string);
+   esprintf (tfeedback, BUFFERSIZE, " > %s\n", ev->string);
   else
-   esprintf (tfeedback, 256, "%s: %s\n", name, ev->string);
+   esprintf (tfeedback, BUFFERSIZE, "%s: %s\n", name, ev->string);
  }
 
  if (tfeedback[0]) {
@@ -684,21 +684,21 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
 
  if ((ev->status & STATUS_OK) && ev->flag) {
   if (feedback[0])
-   esprintf (tfeedback, 256, " > success, with %i error(s)\n", ev->flag);
+   esprintf (tfeedback, BUFFERSIZE, " > success, with %i error(s)\n", ev->flag);
   else
-   esprintf (tfeedback, 256, "%s: success, with %i error(s)\n", name, ev->flag);
+   esprintf (tfeedback, BUFFERSIZE, "%s: success, with %i error(s)\n", name, ev->flag);
   mst->errors = 1;
  } else if (ev->status & STATUS_OK) {
   if (feedback[0])
-   strncpy (tfeedback, " > success\n", 256);
+   strncpy (tfeedback, " > success\n", BUFFERSIZE);
   else
-   esprintf (tfeedback, 256, "%s: success\n", name);
+   esprintf (tfeedback, BUFFERSIZE, "%s: success\n", name);
   mst->errors = 0;
  } else if (ev->status & STATUS_FAIL) {
   if (feedback[0])
-   strncpy (tfeedback, " > failed\n", 256);
+   strncpy (tfeedback, " > failed\n", BUFFERSIZE);
   else
-   esprintf (tfeedback, 256, "%s: failed\n", name);
+   esprintf (tfeedback, BUFFERSIZE, "%s: failed\n", name);
   mst->errors = 1;
  }
 
@@ -773,10 +773,10 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   if (strlen(ev->string) < 45) {
    eprintf (stdout, "\e[%i;10H%s: %s\e[0K\n", line, name, ev->string);
   } else {
-   char tmp[1024];
+   char tmp[BUFFERSIZE];
    eprintf (stdout, "\e[%i;10H%s: <...>\e[0K\n", line, name);
 
-   esprintf (tmp, 1024, "%s: %s", name, ev->string);
+   esprintf (tmp, BUFFERSIZE, "%s: %s", name, ev->string);
    notice (3, tmp);
   }
  }

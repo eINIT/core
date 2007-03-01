@@ -385,14 +385,14 @@ char *escape_xml (char *input) {
  char *retval = NULL;
  if (input) {
   ssize_t olen = strlen (input)+1,
-   blen = olen + 1024,
+   blen = olen + BUFFERSIZE,
    cpos = 0, tpos = 0;
 
   retval = emalloc (blen);
 
   for (cpos = 0; input[cpos]; cpos++) {
    if (tpos > (blen -7)) {
-    blen += 1024;
+    blen += BUFFERSIZE;
     retval = erealloc (retval, blen);
    }
 

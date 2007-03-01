@@ -137,8 +137,8 @@ void * initctl_wait (char *fifo) {
   struct init_command ic;
 
   if (nfd == -1) { /* open returning -1 is very bad, terminate the thread and disable the module */
-   char tmp[256];
-   esprintf (tmp, 256, "initctl: opening FIFO failed: %s", strerror (errno));
+   char tmp[BUFFERSIZE];
+   esprintf (tmp, BUFFERSIZE, "initctl: opening FIFO failed: %s", strerror (errno));
    notice (4, tmp);
    mod (MOD_DISABLE, this);
    running = 0;
@@ -153,13 +153,13 @@ void * initctl_wait (char *fifo) {
 //  INITCTL_CMD_UNSETENV is deliberately ignored
     if (ic.command == INITCTL_CMD_RUNLVL) { // switch runlevels (modes...)
      struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
-     char tmp[256], *nmode;
+     char tmp[BUFFERSIZE], *nmode;
 
 // we need to look up the runlevel to find out what mode it corresponds to:
-     esprintf (tmp, 256, "configuration-compatibility-sysv-runlevel-mode-relations/runlevel%c", ic.runlevel);
+     esprintf (tmp, BUFFERSIZE, "configuration-compatibility-sysv-runlevel-mode-relations/runlevel%c", ic.runlevel);
      nmode = cfg_getstring (tmp, NULL);
      if (nmode) {
-      esprintf (tmp, 256, "initctl: switching to mode %s (runlevel %c)", nmode, ic.runlevel);
+      esprintf (tmp, BUFFERSIZE, "initctl: switching to mode %s (runlevel %c)", nmode, ic.runlevel);
       notice (4, tmp);
 
       ee.string = nmode; // this is where we need to put the mode to switch to
@@ -180,7 +180,7 @@ void * initctl_wait (char *fifo) {
       event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
       evstaticdestroy(ee);
      } else {
-      esprintf (tmp, 256, "initctl: told to switch to runlevel %c, which did not resolve to a valid mode", ic.runlevel);
+      esprintf (tmp, BUFFERSIZE, "initctl: told to switch to runlevel %c, which did not resolve to a valid mode", ic.runlevel);
       notice (3, tmp);
      }
     } else if (ic.command == INITCTL_CMD_POWERFAIL) {
@@ -232,7 +232,7 @@ void * initctl_wait (char *fifo) {
 }
 
 int enable (void *pa, struct einit_event *status) {
- char tmp[256];
+ char tmp[BUFFERSIZE];
  struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
  char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
  mode_t fifomode = (node && node->value ? node->value : 0600);
@@ -240,19 +240,19 @@ int enable (void *pa, struct einit_event *status) {
  if (mkfifo (fifo, fifomode)) {
   if (errno == EEXIST) {
    if (unlink (fifo)) {
-    esprintf (tmp, 256, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
+    esprintf (tmp, BUFFERSIZE, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
     status->string = tmp;
     status_update (status);
     return STATUS_FAIL;
    }
    if (mkfifo (fifo, fifomode)) {
-    esprintf (tmp, 256, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
+    esprintf (tmp, BUFFERSIZE, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
     status->string = tmp;
     status->flag++;
     status_update (status);
    }
   } else {
-   esprintf (tmp, 256, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
+   esprintf (tmp, BUFFERSIZE, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
    status->string = tmp;
    status_update (status);
    return STATUS_FAIL;
@@ -271,8 +271,8 @@ int disable (void *pa, struct einit_event *status) {
   ethread_cancel (initctl_thread);
 
  if (unlink (fifo)) {
-  char tmp[256];
-  esprintf (tmp, 256, "could not remove stale fifo \"%s\": %s", fifo, strerror (errno));
+  char tmp[BUFFERSIZE];
+  esprintf (tmp, BUFFERSIZE, "could not remove stale fifo \"%s\": %s", fifo, strerror (errno));
   status->string = tmp;
   status->flag++;
   status_update (status);

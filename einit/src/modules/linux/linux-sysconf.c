@@ -140,8 +140,8 @@ int enable (void *pa, struct einit_event *status) {
 
  if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL))) {
   if ((sfile = efopen (sfilename, "r"))) {
-   char buffer[2048], *cptr;
-   while (fgets (buffer, 2048, sfile)) {
+   char buffer[BUFFERSIZE], *cptr;
+   while (fgets (buffer, BUFFERSIZE, sfile)) {
     switch (buffer[0]) {
      case ';':
      case '#':
@@ -154,7 +154,7 @@ int enable (void *pa, struct einit_event *status) {
        if ((cptr = strchr(buffer, '='))) {
         ssize_t ci = 0;
         FILE *ofile;
-        char tarbuffer[2048];
+        char tarbuffer[BUFFERSIZE];
 
         strcpy (tarbuffer, "/proc/sys/");
 
@@ -168,7 +168,7 @@ int enable (void *pa, struct einit_event *status) {
          if (buffer[ci] == '.') buffer[ci] = '/';
         }
 
-        strncat (tarbuffer, buffer, 2047);
+        strncat (tarbuffer, buffer, sizeof(tarbuffer) - strlen (tarbuffer) + 1);
 
         if ((ofile = efopen(tarbuffer, "w"))) {
          eputs (cptr, ofile);

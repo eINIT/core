@@ -86,11 +86,11 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 
  if (pstat) {
   uint32_t i = 0;
-  char buffer[128];
+  char buffer[BUFFERSIZE];
   struct stat st;
 
   for (; pstat[i]; i++) {
-   esprintf (buffer, 128, "%s%i", path, pstat[i]->pid);
+   esprintf (buffer, BUFFERSIZE, "%s%i", path, pstat[i]->pid);
    if (!stat (buffer, &st)) {
     npstat = (struct process_status **)setadd ((void **)npstat, (void *)pstat[i], sizeof (struct process_status));
    }
@@ -112,7 +112,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
 
     if (cont) {
      struct process_status tmppse = {.update = starttime, .pid = atoi (entry->d_name), .cwd = NULL, .cmd = NULL};
-     char linkbuffer[1024];
+     char linkbuffer[BUFFERSIZE];
      size_t linklen;
      txf = erealloc (txf, strlen (entry->d_name) + plength + 4);
      *(txf+plength-1) = 0;
@@ -120,7 +120,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
      strcat (txf, entry->d_name);
      strcat (txf, "/cwd");
 
-     if ((linklen = readlink (txf, linkbuffer, 1023)) != -1) {
+     if ((linklen = readlink (txf, linkbuffer, BUFFERSIZE-1)) != -1) {
       *(linkbuffer+linklen) = 0;
 
       tmppse.cwd = emalloc (linklen+1);

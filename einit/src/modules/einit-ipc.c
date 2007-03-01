@@ -207,9 +207,9 @@ int ipc_read (int *nfd) {
 
  if ((r = fdopen (nfdc, "r"))) {
   if ((f = fdopen (*nfd, "w")))  {
-   char buffer[1024];
+   char buffer[BUFFERSIZE];
 
-   while ((!feof(r)) && fgets (buffer, 1024, r)) {
+   while ((!feof(r)) && fgets (buffer, BUFFERSIZE, r)) {
     int ret = 0;
     strtrim(buffer);
 

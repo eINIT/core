@@ -156,8 +156,8 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
        if (options & UTMP_CLEAN) {
 #ifdef LINUX
         struct stat xst;
-        char path[256];
-        esprintf (path, 256, "/proc/%i/", utmpentries[i].ut_pid);
+        char path[BUFFERSIZE];
+        esprintf (path, BUFFERSIZE, "/proc/%i/", utmpentries[i].ut_pid);
         if (stat (path, &xst)) { // stat path under proc to see if process exists
 // if not...
 #endif

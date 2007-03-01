@@ -63,7 +63,7 @@ int print_usage_info () {
 
 int ipc (char *cmd) {
  int sock = socket (AF_UNIX, SOCK_STREAM, 0), ret = 0;
- char buffer[1024];
+ char buffer[BUFFERSIZE];
  struct sockaddr_un saddr;
  int len = strlen (cmd);
  char *c;
@@ -97,12 +97,12 @@ int ipc (char *cmd) {
 
  fflush (esocket);
 
- while ((!feof(esocket)) && fgets (buffer, 1024, esocket)) {
+ while ((!feof(esocket)) && fgets (buffer, BUFFERSIZE, esocket)) {
   if (!strcmp("IPC//processed.\n", buffer)) {
-   char retval[512];
+   char retval[BUFFERSIZE];
    *retval = 0;
 
-   fgets (retval, 512, esocket);
+   fgets (retval, BUFFERSIZE, esocket);
 
    ret = atoi(retval);
 

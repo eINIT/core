@@ -106,9 +106,9 @@ void sched_init () {
  sigchild_semaphore = &sigchild_semaphore_static;
  sem_init (sigchild_semaphore, 0, 0);
 #elif defined(DARWIN)
- char tmp[1024];
+ char tmp[BUFFERSIZE];
 
- esprintf (tmp, 1024, "/einit-sgchld-sem-%i", getpid());
+ esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());
 
  if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
   perror ("scheduler: semaphore setup");
@@ -117,12 +117,12 @@ void sched_init () {
 #else
 #warning no proper or recognised semaphores implementation, i can't promise this code will work.
 /* let's just hope for the best... */
- char tmp[1024];
+ char tmp[BUFFERSIZE];
 
  sigchild_semaphore = ecalloc (1, sizeof (sem_t));
  if (sem_init (sigchild_semaphore, 0, 0) == -1) {
   free (sigchild_semaphore);
-  esprintf (tmp, 1024, "/einit-sigchild-semaphore-%i", getpid());
+  esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
 
   if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
    perror ("scheduler: semaphore setup");

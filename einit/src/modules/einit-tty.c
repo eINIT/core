@@ -159,8 +159,8 @@ void *watcher (struct spidcb *spid) {
 
  if (node) {
   if (node->id) {
-   char tmp[2048];
-   esprintf (tmp, 2048, "einit-tty: restarting: %s\n", node->id);
+   char tmp[BUFFERSIZE];
+   esprintf (tmp, BUFFERSIZE, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
   texec (node);
@@ -198,8 +198,8 @@ int texec (struct cfgnode *node) {
   if (cmds && cmds[0]) {
    struct stat statbuf;
    if (lstat (cmds[0], &statbuf)) {
-    char cret [1024];
-    esprintf (cret, 1024, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
+    char cret [BUFFERSIZE];
+    esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else if (!(cpid = fork())) {
     if (device) {
@@ -284,8 +284,8 @@ int enable (void *pa, struct einit_event *status) {
   if (node && node->arbattrs) {
    texec (node);
   } else {
-   char warning[1024];
-   esprintf (warning, 1024, "einit-tty: node %s not found", tmpnodeid);
+   char warning[BUFFERSIZE];
+   esprintf (warning, BUFFERSIZE, "einit-tty: node %s not found", tmpnodeid);
    notice (3, warning);
   }
 

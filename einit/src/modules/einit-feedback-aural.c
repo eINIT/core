@@ -137,18 +137,18 @@ int disable (void *pa, struct einit_event *status) {
 void feedback_event_handler(struct einit_event *ev) {
  emutex_lock (&self_l->imutex);
 
- char phrase[2048], hostname[128];
+ char phrase[BUFFERSIZE], hostname[BUFFERSIZE];
  phrase[0] = 0;
 
  if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
-    if (gethostname (hostname, 128)) strcpy (hostname, "localhost");
-    hostname[127] = 0;
-    esprintf (phrase, 2048, "Host \"%s\" now switching to mode \"%s\".", hostname, (cmode && cmode->id) ? cmode->id : "unknown");
+    if (gethostname (hostname, BUFFERSIZE)) strcpy (hostname, "localhost");
+    hostname[BUFFERSIZE] = 0;
+    esprintf (phrase, BUFFERSIZE, "Host \"%s\" now switching to mode \"%s\".", hostname, (cmode && cmode->id) ? cmode->id : "unknown");
     break;
    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
-    esprintf (phrase, 2048, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
+    esprintf (phrase, BUFFERSIZE, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
     break;
   }
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
@@ -159,7 +159,7 @@ void feedback_event_handler(struct einit_event *ev) {
    if (!(tx = strrchr (ev->string, ':'))) tx = ev->string;
    else tx ++;
 
-   if (tx) strncat (phrase, tx, 2047);
+   if (tx) strncat (phrase, tx, BUFFERSIZE);
   }
  }
 
