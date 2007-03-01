@@ -512,13 +512,13 @@ void einit_event_handler (struct einit_event *ev) {
 #endif
  } else if (ev->type == EVE_PLAN_UPDATE) { // set active "soft mode"
   if (do_service_tracking && ev->string) {
-   char tmp[256];
+   char tmp[BUFFERSIZE];
    int slfile;
 
-   snprintf (tmp, 256, "updating softlevel to %s\n", ev->string);
+   snprintf (tmp, BUFFERSIZE, "updating softlevel to %s\n", ev->string);
    notice (4, tmp);
 
-   snprintf (tmp, 256, "%ssoftlevel", service_tracking_path);
+   snprintf (tmp, BUFFERSIZE, "%ssoftlevel", service_tracking_path);
 
    if ((slfile = open (tmp, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > 0) {
     errno = 0;
@@ -647,7 +647,7 @@ int scanmodules (struct lmodule *modchain) {
    strcat (tmp, init_d_path);
    strcat (tmp, de->d_name);
    if (!stat (tmp, &sbuf) && S_ISREG (sbuf.st_mode)) {
-    char  tmpx[1024];
+    char  tmpx[BUFFERSIZE];
 
     modinfo = emalloc (sizeof (struct smodule));
     memset (modinfo, 0, sizeof(struct smodule));
@@ -659,7 +659,7 @@ int scanmodules (struct lmodule *modchain) {
     strcat (nrid, "gentoo-");
     strcat (nrid, de->d_name);
 
-    snprintf (tmpx, 1024, "Gentoo-Style init.d Script (%s)", de->d_name);
+    snprintf (tmpx, BUFFERSIZE, "Gentoo-Style init.d Script (%s)", de->d_name);
     modinfo->name = estrdup (tmpx);
     modinfo->rid = estrdup(nrid);
 
