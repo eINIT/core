@@ -83,10 +83,10 @@ void find_network_interfaces_sys (struct network_control_block *cb) {
  DIR *dir;
  struct dirent *entry;
 
- dir = opendir ("/sys/class/net");
+ dir = eopendir ("/sys/class/net");
  if (dir != NULL) {
-  while (entry = readdir (dir)) {
-   char tmp[2048];
+  while (entry = ereaddir (dir)) {
+   char tmp[BUFFERSIZE];
    if (entry->d_name[0] == '.') continue;
 
 #if 0
@@ -99,9 +99,7 @@ void find_network_interfaces_sys (struct network_control_block *cb) {
    cb->add_network_interface (entry->d_name, "Generic Network Interface", 0x00000001);
 #endif
   }
-  closedir (dir);
- } else {
-  notice (3, "couldn't open directory in /sys, is it mounted?");
+  eclosedir (dir);
  }
 }
 

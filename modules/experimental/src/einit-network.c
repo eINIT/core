@@ -122,7 +122,7 @@ void network_ipc_handler(struct einit_event *event) {
 
  if ((argc >= 2) && !strcmp (argv[0], "list")) {
   if (!strcmp (argv[1], "network-interfaces")) {
-   char buffer[1024];
+   char buffer[BUFFERSIZE];
    struct interface_parametres *cval;
    struct stree *cur = mncb.interfaces;
 
@@ -130,9 +130,9 @@ void network_ipc_handler(struct einit_event *event) {
     cval = cur->value;
 
     if (cval->name)
-     snprintf (buffer, 1024, "%s (%s) [options=%x]\n", cur->key, cval->name, cval->options);
+     snprintf (buffer, BUFFERSIZE, "%s (%s) [options=%x]\n", cur->key, cval->name, cval->options);
     else
-     snprintf (buffer, 1024, "%s [options=%x]\n", cur->key, cval->options);
+     snprintf (buffer, BUFFERSIZE, "%s [options=%x]\n", cur->key, cval->options);
     fputs (buffer, (FILE *)event->para);
 
     cur = streenext (cur);

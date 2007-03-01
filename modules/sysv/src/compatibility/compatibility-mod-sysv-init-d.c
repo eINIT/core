@@ -138,8 +138,8 @@ int scanmodules (struct lmodule *modchain) {
 
  plen = strlen (init_d_path) +1;
 
- if (dir = opendir (init_d_path)) {
-  while (de = readdir (dir)) {
+ if (dir = eopendir (init_d_path)) {
+  while (de = ereaddir (dir)) {
    if (de->d_name[0] == '.') continue;
    char doop = 1;
 //   puts (de->d_name);
@@ -151,7 +151,7 @@ int scanmodules (struct lmodule *modchain) {
    strcat (tmp, init_d_path);
    strcat (tmp, de->d_name);
    if (!stat (tmp, &sbuf) && S_ISREG (sbuf.st_mode)) {
-    char tmpx[1024];
+    char tmpx[BUFFERSIZE];
 
     modinfo = emalloc (sizeof (struct smodule));
     memset (modinfo, 0, sizeof(struct smodule));
@@ -162,7 +162,7 @@ int scanmodules (struct lmodule *modchain) {
     strcat (nrid, "init-d-");
     strcat (nrid, de->d_name);
 
-    snprintf (tmpx, 1024, "System-V-Style init.d Script (%s)", de->d_name);
+    snprintf (tmpx, BUFFERSIZE, "System-V-Style init.d Script (%s)", de->d_name);
     modinfo->name = estrdup (tmpx);
     modinfo->rid = estrdup(nrid);
 
@@ -206,9 +206,7 @@ int scanmodules (struct lmodule *modchain) {
    if (tmp) free (tmp);
   }
 
-  closedir (dir);
- } else {
-  fprintf (stderr, "couldn't open init.d directory \"%s\"\n", init_d_path);
+  eclosedir (dir);
  }
 }
 
