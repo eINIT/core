@@ -1166,7 +1166,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (current.enable) {
   char **tmp = NULL;
-  for (; current.enable[i]; i++) {
+  for (i = 0; current.enable[i]; i++) {
    if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, current.enable[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.enable[i], SET_TYPE_STRING);
    }
@@ -1176,7 +1176,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
  if (current.disable) {
   char **tmp = NULL;
-  for (; current.disable[i]; i++) {
+  for (i = 0; current.disable[i]; i++) {
    if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.disable[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.disable[i], SET_TYPE_STRING);
    }
@@ -1186,7 +1186,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
  if (current.zap) {
   char **tmp = NULL;
-  for (; current.zap[i]; i++) {
+  for (i = 0; current.zap[i]; i++) {
    if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.zap[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.zap[i], SET_TYPE_STRING);
    }
@@ -1196,7 +1196,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
  if (current.reset) {
   char **tmp = NULL;
-  for (; current.reset[i]; i++) {
+  for (i = 0; current.reset[i]; i++) {
    if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.reset[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.reset[i], SET_TYPE_STRING);
    }
@@ -1206,7 +1206,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  }
  if (current.reload) {
   char **tmp = NULL;
-  for (; current.reload[i]; i++) {
+  for (i = 0; current.reload[i]; i++) {
    if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.reload[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.reload[i], SET_TYPE_STRING);
    }

@@ -151,15 +151,7 @@ void **setslice (void **set1, void **set2, int32_t esize) {
  int x = 0;
 
  if (!set1) return NULL;
- if (!set1[0]) {
-  free (set1);
-  return NULL;
- }
  if (!set2) return setdup(set1, esize);
- if (!set2[0]) {
-  free (set2);
-  return setdup(set1, esize);
- }
 
  for (; set1[x]; x++) {
   if (!inset (set2, set1[x], esize)) {
