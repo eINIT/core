@@ -12,7 +12,7 @@ depend:
 	cd modules && ${MAKE} depend
 
 clean:
-	rm -f *.o einit-xml einit-control einit depend.mk
+	rm -f *.o einit-xml einit-control einit depend.mk *.so
 	cd modules && ${MAKE} clean
 
 einit-xml: $(CORELINK)
