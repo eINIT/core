@@ -128,19 +128,19 @@ int cfg_free ();
 int cfg_addnode (struct cfgnode *);
 
 // find a node (by id)
-struct cfgnode *cfg_findnode (char *, unsigned int, struct cfgnode *);
+struct cfgnode *cfg_findnode (const char *, const unsigned int, const struct cfgnode *);
 
 /* these functions take the current mode into consideration */
-char *cfg_getstring (char *, struct cfgnode *);          // get string (by id)
-struct cfgnode *cfg_getnode (char *, struct cfgnode *);  // get node (by id)
+char *cfg_getstring (const char *, const struct cfgnode *);          // get string (by id)
+struct cfgnode *cfg_getnode (const char *, const struct cfgnode *);  // get node (by id)
 
 // return a new stree with the filter applied
-struct stree *cfg_filter (char *, uint32_t);
+struct stree *cfg_filter (const char *, const uint32_t);
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
-char *cfg_getpath (char *);
+char *cfg_getpath (const char *);
 
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
-typedef char *(*cfg_string_converter) (struct stree *);
+typedef char *(*cfg_string_converter) (const struct stree *);
 
 #endif /* _CONFIG_H */

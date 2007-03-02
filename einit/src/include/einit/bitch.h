@@ -54,7 +54,7 @@ unsigned char mortality[BITCH_SAUCES];
  *
  * Bitch about whatever happened just now, i.e. report the last error.
 */
-int bitch (unsigned int opt);
+int bitch (const unsigned int opt);
 
 /*!\brief Bitch about whatever happened just now
  * \param[in] sauce a source for whatever happened
@@ -67,9 +67,9 @@ int bitch (unsigned int opt);
  * Depending on the sauce you pass, it may or may not make the program
  * terminate. (Configurable this is)
  */
-int bitch2 (unsigned char sauce, const char *location, int error, const char *reason);
+int bitch2 (const unsigned char sauce, const char *location, int error, const char *reason);
 
-int bitch_macro (unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
+int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
 
 #ifdef DEBUG
 

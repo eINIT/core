@@ -194,7 +194,7 @@ int cfg_addnode (struct cfgnode *node) {
  return 0;
 }
 
-struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base) {
+struct cfgnode *cfg_findnode (const char *id, const unsigned int type, const struct cfgnode *base) {
  struct stree *cur = hconfiguration;
  if (!id) return NULL;
 
@@ -230,7 +230,7 @@ struct cfgnode *cfg_findnode (char *id, unsigned int type, struct cfgnode *base)
 }
 
 // get string (by id)
-char *cfg_getstring (char *id, struct cfgnode *mode) {
+char *cfg_getstring (const char *id, const struct cfgnode *mode) {
  struct cfgnode *node = NULL;
  char *ret = NULL, **sub;
  uint32_t i;
@@ -272,7 +272,7 @@ char *cfg_getstring (char *id, struct cfgnode *mode) {
 }
 
 // get node (by id)
-struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
+struct cfgnode *cfg_getnode (const char *id, const struct cfgnode *mode) {
  struct cfgnode *node = NULL;
  struct cfgnode *ret = NULL;
 
@@ -304,7 +304,7 @@ struct cfgnode *cfg_getnode (char *id, struct cfgnode *mode) {
 }
 
 // return a new stree with the filter applied
-struct stree *cfg_filter (char *filter, uint32_t node_options) {
+struct stree *cfg_filter (const char *filter, const uint32_t node_options) {
  struct stree *retval = NULL;
 
 #ifdef POSIXREGEX
@@ -327,7 +327,7 @@ struct stree *cfg_filter (char *filter, uint32_t node_options) {
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
-char *cfg_getpath (char *id) {
+char *cfg_getpath (const char *id) {
  int mplen;
  char *svpath = cfg_getstring (id, NULL);
  if (!svpath) return NULL;

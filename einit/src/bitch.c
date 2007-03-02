@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
-int bitch (unsigned int opt) {
+int bitch (const unsigned int opt) {
  if (opt & BTCH_ERRNO) {
   if (errno) {
    fputs (strerror (errno), stderr);
@@ -69,7 +69,7 @@ int bitch (unsigned int opt) {
  return -1;
 }
 
-int bitch2 (unsigned char sauce, const char *location, int error, const char *reason) {
+int bitch2 (const unsigned char sauce, const char *location, int error, const char *reason) {
  const char *llocation      = location ? location : "unknown";
  const char *lreason        = reason ? reason : "unknown";
  const int lerror           = error ? error : errno;
@@ -92,7 +92,7 @@ int bitch2 (unsigned char sauce, const char *location, int error, const char *re
  return error;
 }
 
-int bitch_macro (unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason) {
+int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason) {
  const char *lfile          = file ? file : "unknown";
  const char *lfunction      = function ? function : "unknown";
  const char *lreason        = reason ? reason : "unknown";
