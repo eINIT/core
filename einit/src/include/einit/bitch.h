@@ -32,9 +32,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <errno.h>
 
-#define BTCH_ERRNO 1 /*!< report error from the errno variable */
-#define BTCH_DL 2    /*!< report dynamic linker error */
-
 #define BITCH_BAD_SAUCE 0x00
 #define BITCH_EMALLOC   0x01
 #define BITCH_STDIO     0x02
@@ -54,20 +51,8 @@ unsigned char mortality[BITCH_SAUCES];
  *
  * Bitch about whatever happened just now, i.e. report the last error.
 */
-int bitch (const unsigned int opt);
-
-/*!\brief Bitch about whatever happened just now
- * \param[in] sauce a source for whatever happened
- * \param[in] location a string indicating where the error happened (like perror)
- * \param[in] error the value of errno at the time of the error
- * \param[in] reason a string to print as an alternative to the error number
- * \return error. Don't ask. May also not return at all.
- *
- * Bitch about whatever happened just now, i.e. report the last error.
- * Depending on the sauce you pass, it may or may not make the program
- * terminate. (Configurable this is)
- */
-int bitch2 (const unsigned char sauce, const char *location, int error, const char *reason);
+#define bitch(sauce, code, reason)\
+ bitch_macro (sauce, __FILE__, __LINE__, __func__ , code, reason)
 
 int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
 

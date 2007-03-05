@@ -151,36 +151,36 @@ void sched_reset_event_handlers () {
 // action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
 // SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
- if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 
  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
- if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGINT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 
 /* ignore most signals */
  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
 
- if ( sigaction (SIGQUIT, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGABRT, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGPIPE, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGQUIT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGPIPE, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 // if ( sigaction (SIGALRM, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGUSR1, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGUSR2, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGTSTP, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGTTIN, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGTTOU, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGUSR1, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR2, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTSTP, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTTIN, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTTOU, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
  if (gmode != EINIT_GMODE_SANDBOX) {
-  if ( sigaction (SIGTERM, &action, NULL) ) bitch (BTCH_ERRNO);
+  if ( sigaction (SIGTERM, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
  }
 #ifdef SIGPOLL
- if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 #endif
- if ( sigaction (SIGPROF, &action, NULL) ) bitch (BTCH_ERRNO);
-// if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGXCPU, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGPROF, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+// if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXCPU, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 #ifdef SIGIO
- if ( sigaction (SIGIO, &action, NULL) ) bitch (BTCH_ERRNO);
+ if ( sigaction (SIGIO, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 #endif
 
 }

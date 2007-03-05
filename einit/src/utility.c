@@ -102,7 +102,7 @@ char *readfile (char *filename) {
   } while (rn > 0);
 
   if (errno && (errno != EAGAIN))
-   bitch2(BITCH_STDIO, "readfile()", errno, "reading file failed.");
+   bitch(BITCH_STDIO, errno, "reading file failed.");
 
   eclose (fd);
   data = erealloc (buf, blen+1);
@@ -124,7 +124,7 @@ void *emalloc (size_t s) {
  void *p = NULL;
 
  while (!(p = malloc (s))) {
-  bitch2(BITCH_EMALLOC, "emalloc", 0, "call to malloc() failed.");
+  bitch(BITCH_EMALLOC, 0, "call to malloc() failed.");
   sleep (1);
  }
 
@@ -135,7 +135,7 @@ void *ecalloc (size_t c, size_t s) {
  void *p = NULL;
 
  while (!(p = calloc (c, s))) {
-  bitch2(BITCH_EMALLOC, "ecalloc", 0, "call to calloc() failed.");
+  bitch(BITCH_EMALLOC, 0, "call to calloc() failed.");
   sleep (1);
  }
 
@@ -146,7 +146,7 @@ void *erealloc (void *c, size_t s) {
  void *p = NULL;
 
  while (!(p = realloc (c, s))) {
-  bitch2(BITCH_EMALLOC, "erealloc", 0, "call to realloc() failed.");
+  bitch(BITCH_EMALLOC, 0, "call to realloc() failed.");
   sleep (1);
  }
 
@@ -157,7 +157,7 @@ char *estrdup (char *s) {
  char *p = NULL;
 
  while (!(p = strdup (s))) {
-  bitch2(BITCH_EMALLOC, "estrdup", 0, "call to strdup() failed.");
+  bitch(BITCH_EMALLOC, 0, "call to strdup() failed.");
   sleep (1);
  }
 

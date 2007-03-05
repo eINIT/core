@@ -311,14 +311,14 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      free (tx);
     }
 
-    bitch2 (BITCH_EXPAT, "einit_config_xml_expat_parse_configuration_file(): XML_Parse()", 0, XML_ErrorString (XML_GetErrorCode (par)));
+    bitch (BITCH_EXPAT, 0, XML_ErrorString (XML_GetErrorCode (par)));
    }
    if (!inset ((void **)xml_configuration_files, (void *)configfile, SET_TYPE_STRING))
     xml_configuration_files = (char **)setadd ((void **)xml_configuration_files,
                                                (void *)configfile, SET_TYPE_STRING);
    XML_ParserFree (par);
   } else {
-   bitch2 (BITCH_EXPAT, "einit_config_xml_expat_parse_configuration_file()", 0, "XML Parser could not be created");
+   bitch (BITCH_EXPAT, 0, "XML Parser could not be created");
   }
   free (data);
 
@@ -407,7 +407,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      } else {
       if (xml_parser_auto_create_missing_directories) {
        if (mkdir (includedir, 0777)) {
-        bitch2(BITCH_STDIO, "einit_config_xml_expat_parse_configuration_file(): mkdir()", errno, (char *)includedir);
+        bitch(BITCH_STDIO, errno, (char *)includedir);
        } else {
         eprintf (stderr, " >> created missing directory \"%s\"\n", includedir);
        }

@@ -69,14 +69,14 @@ int ipc (char *cmd) {
  char *c;
  FILE *esocket;
  if (sock == -1)
-  return bitch (BTCH_ERRNO);
+  return bitch (BITCH_STDIO, 0, "socket not open");
 
  saddr.sun_family = AF_UNIX;
  strncpy (saddr.sun_path, ctrlsocket, sizeof(saddr.sun_path) - 1);
 
  if (connect(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
   eclose (sock);
-  return bitch (BTCH_ERRNO);
+  return bitch (BITCH_STDIO, 0, "connect() failed.");
  }
 
  len = strlen(cmd);
@@ -85,14 +85,14 @@ int ipc (char *cmd) {
 
  if (!(esocket = fdopen (sock, "w+"))) {
   eputs (" >> opening socket failed.", stderr);
-  bitch(BTCH_ERRNO);
+  bitch(BITCH_STDIO, 0, "fdopen() failed.");
   eclose (sock);
   return 0;
  }
 
  if (fputs(c, esocket) == EOF) {
   eputs (" >> sending command failed.", stderr);
-  bitch(BTCH_ERRNO);
+  bitch(BITCH_STDIO, 0, "fputs() failed.");
  }
 
  fflush (esocket);
@@ -180,6 +180,5 @@ int main(int argc, char **argv) {
 
  ret = ipc(c);
 
- bitch (BTCH_DL + BTCH_ERRNO);
  return ret;
 }

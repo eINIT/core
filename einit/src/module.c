@@ -100,7 +100,7 @@ int mod_scanmodules ( void ) {
   modulepath = bootstrapmodulepath;
  }
  if (!modulepath) {
-  bitch2(BITCH_STDIO, "mod_scanmodules()", 0, "no path to load modules from.");
+  bitch(BITCH_STDIO, 0, "no path to load modules from.");
   return -1;
  }
 
@@ -158,7 +158,7 @@ int mod_scanmodules ( void ) {
       if (scanfunc != NULL) {
        scanfunc (mlist);
       }
-      else bitch(BTCH_ERRNO + BTCH_DL);
+      else bitch(BITCH_DL, 0, "searching for scanmodules()");
      }
 
      goto cleanup_continue;
@@ -474,7 +474,7 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
    if (scanfunc != NULL) {
     scanfunc (mlist);
    }
-   else bitch(BTCH_ERRNO + BTCH_DL);
+   else bitch(BITCH_DL, 0, "searching for scanmodules()");
   }
 // we need to scan for load and unload functions if NULL was supplied for these
   if (!nmod->enable) {

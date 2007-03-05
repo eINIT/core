@@ -877,7 +877,7 @@
       uid="ivman"
       gid="plugdev"
       provides="ivman"
-      requires="hald"
+      requires="hal"
       prepare="rm -f /var/run/ivman.pid"
       cleanup="rm -f /var/run/ivman.pid"
       command="/usr/bin/ivman --system --nofork"

@@ -48,49 +48,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
-#define BITCH2_ERROR_TEMPLATE " >> %s: %s (System Error #%i [%s])\n"
 #define BITCHM_ERROR_TEMPLATE " >> %s:%i(%s): %s"
 
 unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1, 1 };
-
-int bitch (const unsigned int opt) {
- if (opt & BTCH_ERRNO) {
-  if (errno) {
-   fputs (strerror (errno), stderr);
-   fputs ("\n", stderr);
-   errno = 0;
-  }
- }
- if (opt & BTCH_DL) {
-  char *dlerr = dlerror();
-  if (dlerr)
-   puts (dlerr);
- }
- return -1;
-}
-
-int bitch2 (const unsigned char sauce, const char *location, int error, const char *reason) {
- const char *llocation      = location ? location : "unknown";
- const char *lreason        = reason ? reason : "unknown";
- const int lerror           = error ? error : errno;
- const unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : BITCH_BAD_SAUCE;
-
- switch (mortality[lsauce]) {
-  case 0: // 0: ignore the problem
-   return error;
-  case 1: // 1: print error or stderr
-   if ((fprintf(stderr, BITCH2_ERROR_TEMPLATE, llocation, lreason, lerror, strerror(lerror)) < 0))
-    perror ("bitch2: writing error message");
-   return error;
-  case 255: // 255: just die
-   if ((fprintf(stderr, BITCH2_ERROR_TEMPLATE, llocation, lreason, lerror, strerror(lerror)) < 0))
-    perror ("bitch2: writing error message");
-
-   exit(error);
- }
-
- return error;
-}
 
 int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason) {
  const char *lfile          = file ? file : "unknown";

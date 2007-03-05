@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
   action.sa_sigaction = einit_sigint;
   sigemptyset(&(action.sa_mask));
   action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER;
-  if ( sigaction (SIGINT, &action, NULL) ) bitch (BTCH_ERRNO);
+  if ( sigaction (SIGINT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
 
   while (1) {
    wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
    return -1;
   } else {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
-    bitch2(BITCH_EPTHREADS, "main()", pthread_errno, "pthread_attr_setdetachstate() failed.");
+    bitch(BITCH_EPTHREADS, pthread_errno, "pthread_attr_setdetachstate() failed.");
    }
   }
 

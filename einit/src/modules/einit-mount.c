@@ -607,7 +607,7 @@ struct stree *read_fsspec_file (char *file) {
      case 0:
       goto done_parsing_file;
      default:
-      bitch(BTCH_ERRNO);
+      bitch(BITCH_STDIO, 0, "fgets() failed.");
       goto done_parsing_file;
     }
    } else if (buffer[0] != '#') {

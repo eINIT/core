@@ -214,7 +214,7 @@ int texec (struct cfgnode *node) {
      }
     }
     execve (cmds[0], cmds, environment);
-    bitch (BTCH_ERRNO);
+    bitch (BITCH_STDIO, 0, "execve() failed.");
     exit(-1);
    } else if (cpid != -1) {
     int ctty = -1;
