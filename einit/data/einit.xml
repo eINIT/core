@@ -79,6 +79,9 @@
    <shell-exec-timeout i="20" />
    <proc-path s="/proc" />
 
+   <swap device="" affinity="-1" />
+   <setfont font="lat2-12" ttys="1 2 3 4 5 6" />
+
    <sysctl>
     <file s="/etc/sysctl.conf" />
    </sysctl>
