@@ -1,3 +1,6 @@
+2007/03/05: mdeininger
+ * some new modules, random fixes
+
 2007/03/01: mdeininger
  * the v3 module logics core is now by default external
  * the default expat configuration parser is now external as well.
