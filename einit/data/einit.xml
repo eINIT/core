@@ -79,7 +79,7 @@
    <shell-exec-timeout i="20" />
    <proc-path s="/proc" />
 
-   <swap device="" affinity="-1" />
+   <swap device="-a" affinity="-1" />
    <setfont font="lat2-12" ttys="1 2 3 4 5 6" />
 
    <sysctl>
@@ -438,7 +438,7 @@
      provides="x11:gdm:xdm"
      requires="mount/critical:net-lo"
      pid="/var/run/gdm.pid"
-     prepare="[ ! -e /var/log/gdm ] &amp;&amp; mkdir /var/log/gdm"
+     prepare="mkdir -p /var/log/gdm"
      enable="gdm"
      disable="gdm-stop"
      restart="no" />
@@ -839,7 +839,8 @@
       requires="mount/local:net-lo"
       pid="/var/run/samba/nmbd.pid"
       prepare="[ ! -e /var/run/samba ] &amp;&amp; mkdir /var/run/samba ];
-               [ -f /var/run/samba/nmbd.pid ] &amp;&amp; rm -rf /var/run/samba/nmbd.pid"
+               [ -f /var/run/samba/nmbd.pid ] &amp;&amp; rm -rf /var/run/samba/nmbd.pid;
+               /bin/true;"
       enable="nmbd -D"
       disable="killall -9 nmbd"
       restart="yes" />
@@ -914,7 +915,8 @@
      root="/usr/lib/apache2"
      config="/etc/apache2/httpd.conf"
      prepare="[ ! -e /var/log/apache2 ] &amp;&amp; mkdir /var/log/apache2;
-              [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache"
+              [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;
+              /bin/true;"
      enable="pexec-options no-pipe; apache2 ${opts} -d ${root} -f ${config} -k start&amp;"
      disable="killall -9 -q apache2"
      restart="yes" />
@@ -990,7 +992,8 @@
       provides="NM"
       requires="dhcdbd"
       prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager;
-               [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console"
+               [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console;
+               /bin/true"
       command="NetworkManager --no-daemon"
       restart="yes" />
 
@@ -1041,7 +1044,7 @@
       name="CUPS (Common Unix Printing System)"
       provides="cupsd"
       requires="network:syslog:mount/critical"
-      prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups"
+      prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups; /bin/true"
       command="/usr/sbin/cupsd -F"
       restart="yes" />
 
