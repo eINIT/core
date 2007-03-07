@@ -478,7 +478,7 @@
      name="XDM (EntranceD)"
      provides="xdm:x11"
      requires="net-lo:video:mount/critical"
-     command="/usr/sbin/entranced -nofork"
+     command="/usr/sbin/entranced -nodaemon"
      restart="yes"
      DISPLAY=":0.0"
      HOME="/root" />
