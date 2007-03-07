@@ -718,7 +718,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   }
  } else if (task & SERVICE_REQUIREMENTS_MET) {
   ret |= SERVICE_REQUIREMENTS_MET;
-  if ((t = module->si->requires)) {
+  if (module->si && (t = module->si->requires)) {
    for (i = 0; t[i]; i++) {
     if (!(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
@@ -729,14 +729,14 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   }
  } else if (task & SERVICE_UPDATE) {
   if (module->status & STATUS_ENABLED) {
-   if ((t = module->si->requires)) {
+   if (module->si && (t = module->si->requires)) {
     for (i = 0; t[i]; i++) {
      if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
-   if ((t = module->si->provides)) {
+   if (module->si && (t = module->si->provides)) {
     for (i = 0; t[i]; i++) {
      if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
@@ -952,7 +952,7 @@ void mod_event_handler(struct einit_event *ev) {
 
     while (cur) {
      uint32_t i = 0;
-     if (cur->si->provides) {
+     if (cur->si && cur->si->provides) {
       for (i = 0; cur->si->provides[i]; i++) {
        struct stree *curserv = streefind (serv, cur->si->provides[i], TREE_FIND_FIRST);
        if (curserv) {
