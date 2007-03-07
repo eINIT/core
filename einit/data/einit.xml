@@ -921,13 +921,29 @@
      disable="killall -9 -q apache2"
      restart="yes" />
 
+<!-- this one's the version as modified by jvale to suit gentoo's environment -->
+    <shell id="shell-apache2-gentoo"
+     name="httpd - Apache Hypertext Transfer Protocol Server"
+     provides="apache2"
+     requires="mount/critical:net-lo"
+     pid="/var/run/apache2.pid"
+     envfile="/etc/conf.d/apache2"
+     root="/usr/lib/apache2"
+     config="/etc/apache2/httpd.conf"
+     prepare="[ ! -e /var/log/apache2 ] &amp;&amp; mkdir /var/log/apache2;
+              [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;
+              /bin/true"
+     enable="pexec-options no-pipe; source ${envfile}; apache2 $APACHE2_OPTS -d ${root} -f ${config} -k start&amp;"
+     disable="killall -9 -q apache2"
+     restart="yes" />
+
      <shell id="shell-firestarter"
       name="firestarter"
       provides="firestarter"
       requires="mount/critical:net-lo"
       prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
                 firestarter --generate-scripts;
-               fi"
+               fi; /bin/true"
       enable="firestarter --start"
       disable="firestarter --stop"
       restart="yes" />
