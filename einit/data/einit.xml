@@ -338,7 +338,8 @@
      name="D-BUS system messagebus"
      provides="dbus"
      requires="mount/critical"
-     prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; rm -f /var/run/dbus.pid; dbus-uuidgen --ensure"
+     pid="/var/run/dbus.pid"
+     prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
      command="dbus-daemon --system --nofork"
      cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
      restart="yes" />
@@ -447,7 +448,7 @@
      name="XDM (KDM)"
      provides="xdm:x11"
      requires="net-lo:video:mount/critical"
-     prepare="rm -f /var/run/kdm.pid"
+     pid="/var/run/kdm.pid"
      command="/usr/kde/3.5/bin/kdm -nodaemon"
      restart="yes" />
 
@@ -718,7 +719,8 @@
      name="Network (Wireless, Atheros)"
      requires="mount/system"
      provides="net-ath0"
-     enable="pexec-options no-pipe; rm -f /var/run/dhcpcd-ath0.pid ;
+     pid="/var/run/dhcpcd-ath0.pid"
+     enable="pexec-options no-pipe;
              /sbin/modprobe ${configuration_kernel_module_ath0} ;
              /sbin/wlanconfig ath0 create wlandev wifi0 wlanmode sta ;
              /sbin/iwconfig ath0 essid ${configuration_network_wireless_ssid} ;
@@ -744,8 +746,9 @@
      name="Network (${interface}, using DHCP)"
      provides="net-${interface}"
      requires="kern-ethernet:mount/critical"
-     enable="pexec-options no-pipe; rm -f /var/run/dhcpcd-${interface}.pid; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
-     disable="killall dhcpcd; ifconfig ${interface} down; rm -f /var/run/dhcpcd-${interface}.pid;"
+     pid="/var/run/dhcpcd-${interface}.pid"
+     enable="pexec-options no-pipe; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
+     disable="killall dhcpcd; ifconfig ${interface} down"
      variables="configuration-network-dhcp-timeout" />
 
     <shell id="shell-net-eth0-dhcp"
@@ -839,7 +842,6 @@
       requires="mount/local:net-lo"
       pid="/var/run/samba/nmbd.pid"
       prepare="[ ! -e /var/run/samba ] &amp;&amp; mkdir /var/run/samba ];
-               [ -f /var/run/samba/nmbd.pid ] &amp;&amp; rm -rf /var/run/samba/nmbd.pid;
                /bin/true;"
       enable="nmbd -D"
       disable="killall -9 nmbd"
@@ -882,8 +884,7 @@
       gid="plugdev"
       provides="ivman"
       requires="hal"
-      prepare="rm -f /var/run/ivman.pid"
-      cleanup="rm -f /var/run/ivman.pid"
+      pid="/var/run/ivman.pid"
       command="/usr/bin/ivman --system --nofork"
       restart="yes" />
 
@@ -1000,7 +1001,8 @@
       name="dhcdbd"
       provides="dhcdbd"
       requires="dbus"
-      command="rm -f /var/run/dhcdbd.pid; dbus-launch dhcdbd -sn"
+      pid="/var/run/dhcdbd.pid"
+      command="dbus-launch dhcdbd -sn"
       restart="yes" />
 
      <daemon id="daemon-NetworkManager"
@@ -1026,10 +1028,8 @@
       provides="ipw3945d"
       requires="mount/critical"
       group="ipw3945d"
-      prepare="if [ -f /var/run/ipw3945d.pid ]; then
-                rm -rf /var/run/ipw3945d.pid;
-               fi;
-               chown ipw3945d /sys/bus/pci/drivers/ipw3945/00*/cmd;
+      pid="/var/run/ipw3945d.pid"
+      prepare="chown ipw3945d /sys/bus/pci/drivers/ipw3945/00*/cmd;
                chmod a-w,u+rw /sys/bus/pci/drivers/ipw3945/00*/cmd"
       command="ipw3945d --foreground"
       restart="yes" />
