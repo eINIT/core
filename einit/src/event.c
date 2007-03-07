@@ -58,7 +58,7 @@ struct event_ringbuffer_node *event_logbuffer = NULL;
 
 uint32_t cseqid = 0;
 
-void *event_emit (struct einit_event *event, uint16_t flags) {
+void *event_emit (struct einit_event *event, const uint16_t flags) {
  uint32_t subsystem;
 #ifdef DEBUG
  struct event_ringbuffer_node *new_logbuffer_node;
@@ -129,7 +129,7 @@ void *event_emit (struct einit_event *event, uint16_t flags) {
  return NULL;
 }
 
-void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {
+void event_listen (const uint32_t type, void (* handler)(struct einit_event *)) {
  struct event_function *fstruct = ecalloc (1, sizeof (struct event_function));
 
  fstruct->type = type & EVENT_SUBSYSTEM_MASK;
@@ -143,16 +143,16 @@ void event_listen (uint32_t type, void (*handler)(struct einit_event *)) {
  emutex_unlock (&evf_mutex);
 }
 
-void event_ignore (uint32_t type, void (*handler)(struct einit_event *)) {
+void event_ignore (const uint32_t type, void (* handler)(struct einit_event *)) {
  if (!event_functions) return;
 
- type &= EVENT_SUBSYSTEM_MASK;
+ uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
 
  emutex_lock (&evf_mutex);
   struct event_function *cur = event_functions;
   struct event_function *prev = NULL;
   while (cur) {
-   if ((cur->type==type) && (cur->handler==handler)) {
+   if ((cur->type==ltype) && (cur->handler==handler)) {
     if (prev == NULL) {
      event_functions = cur->next;
      free (cur);
@@ -172,7 +172,7 @@ void event_ignore (uint32_t type, void (*handler)(struct einit_event *)) {
  return;
 }
 
-void function_register (char *name, uint32_t version, void *function) {
+void function_register (const char *name, uint32_t version, void const *function) {
  if (!name || !function) return;
  struct exported_function *fstruct = ecalloc (1, sizeof (struct exported_function));
 
@@ -186,7 +186,7 @@ void function_register (char *name, uint32_t version, void *function) {
  free (fstruct);
 }
 
-void **function_find (char *name, uint32_t version, char **sub) {
+void **function_find (const char *name, const uint32_t version, const char ** sub) {
  if (!exported_functions || !name) return NULL;
  void **set = NULL;
  struct stree *ha = exported_functions;
@@ -229,7 +229,7 @@ void **function_find (char *name, uint32_t version, char **sub) {
  return set;
 }
 
-void *function_find_one (char *name, uint32_t version, char **sub) {
+void *function_find_one (const char *name, const uint32_t version, const char ** sub) {
  void **t = function_find(name, version, sub);
  void *f = (t? t[0] : NULL);
 
@@ -238,7 +238,7 @@ void *function_find_one (char *name, uint32_t version, char **sub) {
  return f;
 }
 
-void function_unregister (char *name, uint32_t version, void *function) {
+void function_unregister (const char *name, uint32_t version, void const *function) {
  if (!exported_functions) return;
  struct stree *ha = exported_functions;
 
@@ -257,7 +257,7 @@ void function_unregister (char *name, uint32_t version, void *function) {
  return;
 }
 
-char *event_code_to_string (uint32_t code) {
+char *event_code_to_string (const uint32_t code) {
  switch (code) {
   case EVE_UPDATE_CONFIGURATION:   return "core/update-configuration";
   case EVE_MODULE_UPDATE:          return "core/module-status-update";
@@ -284,7 +284,7 @@ char *event_code_to_string (uint32_t code) {
  return "unknown/custom";
 }
 
-uint32_t event_string_to_code (char *code) {
+uint32_t event_string_to_code (const char *code) {
  char **tcode = str2set ('/', code);
  uint32_t ret = EVENT_SUBSYSTEM_CUSTOM;
 

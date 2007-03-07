@@ -50,103 +50,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
-void **setcombine (void **set1, void **set2, int32_t esize) {
+void **setcombine (const void **set1, const void **set2, const int32_t esize) {
  void **newset = NULL;
- int x = 0, y = 0;
- uint32_t count = 0, size = 0;
+ int x = 0;
 
  if (!set1) return setdup(set2, esize);
- if (!set1[0]) {
-  free (set1);
-  return setdup(set2, esize);
- }
  if (!set2) return setdup(set1, esize);
- if (!set2[0]) {
-  free (set2);
-  return setdup(set1, esize);
+
+ for (x = 0; set1[x]; x++) {
+  if (!inset (newset, set1[x], esize)) {
+   newset = setadd (newset, set1[x], esize);
+  }
  }
-
- if (esize == -1) {
-  for (; set1[count]; count++);
-  size = count+1;
-
-  for (x = 0; set2[x]; x++);
-  size += x;
-  count += x;
-  size *= sizeof (void*);
-
-  newset = ecalloc (1, size);
-
-  x = 0;
-  while (set1[x])
-   { newset [x] = set1[x]; x++; }
-  y = x; x = 0;
-  while (set2[x])
-   { newset [y] = set2[x]; x++; y++; }
- } else if (esize == 0) {
-  char *cpnt;
-
-  for (; set1[count]; count++)
-   size += sizeof(void*) + 1 + strlen(set1[count]);
-  size += sizeof(void*);
-  for (x = 0; set2[x]; x++)
-   size += sizeof(void*) + 1 + strlen(set2[x]);
-  count += x;
-
-  newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
-
-  x = 0;
-  while (set1[x]) {
-   esize = 1+strlen(set1[x]);
-   memcpy (cpnt, set1[x], esize);
-   newset [x] = cpnt;
-   cpnt += esize;
-   x++;
-  }
-  y = x; x = 0;
-  while (set2[x]) {
-   esize = 1+strlen(set2[x]);
-   memcpy (cpnt, set2[x], esize);
-   newset [y] = cpnt;
-   cpnt += esize;
-   x++;
-   y++;
-  }
- } else {
-  char *cpnt;
-
-  for (; set1[count]; count++)
-   size += sizeof(void*) + 1 + esize;;
-  size += sizeof(void*);
-  for (x = 0; set2[x]; x++)
-   size += sizeof(void*) + 1 + esize;
-  count += x;
-
-  newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+1)*sizeof(void*);
-
-  x = 0;
-  while (set1[x]) {
-   memcpy (cpnt, set1[x], esize);
-   newset [x] = cpnt;
-   cpnt += esize;
-   x++;
-  }
-  y = x; x = 0;
-  while (set2[x]) {
-   memcpy (cpnt, set2[x], esize);
-   newset [y] = cpnt;
-   cpnt += esize;
-   x++;
-   y++;
+ for (x = 0; set2[x]; x++) {
+  if (!inset (newset, set2[x], esize)) {
+   newset = setadd (newset, set2[x], esize);
   }
  }
 
  return newset;
 }
 
-void **setslice (void **set1, void **set2, int32_t esize) {
+void **setslice (const void **set1, const void **set2, const int32_t esize) {
  void **newset = NULL;
  int x = 0;
 
@@ -162,7 +87,7 @@ void **setslice (void **set1, void **set2, int32_t esize) {
  return newset;
 }
 
-void **setadd (void **set, void *item, int32_t esize) {
+void **setadd (void **set, const void *item, int32_t esize) {
  void **newset = NULL;
  int x = 0;
  uint32_t count = 0, size = 0;
@@ -252,7 +177,7 @@ void **setadd (void **set, void *item, int32_t esize) {
  return newset;
 }
 
-void **setdup (void **set, int32_t esize) {
+void **setdup (const void **set, int32_t esize) {
  void **newset;
  uint32_t y = 0, count = 0, size = 0;
  if (!set) return NULL;
@@ -302,7 +227,7 @@ void **setdup (void **set, int32_t esize) {
  return newset;
 }
 
-void **setdel (void **set, void *item) {
+void **setdel (void **set, const void *item) {
  void **newset = set;
  int x = 0, y = 0;
 
@@ -329,7 +254,7 @@ void **setdel (void **set, void *item) {
  return newset;
 }
 
-int setcount (void **set) {
+int setcount (const void **set) {
  int i = 0;
  if (!set) return 0;
  if (!set[0]) return 0;
@@ -339,7 +264,7 @@ int setcount (void **set) {
  return i;
 }
 
-void setsort (void **set, char task, signed int(*sortfunction)(void *, void*)) {
+void setsort (void **set, const char task, signed int(*sortfunction)(const void *, const void*)) {
  uint32_t c = 0, c2 = 0, x = 0, dc = 1;
  void *tmp;
  if (!set) return;
@@ -363,7 +288,7 @@ void setsort (void **set, char task, signed int(*sortfunction)(void *, void*)) {
  return;
 }
 
-int inset (void **haystack, const void *needle, int32_t esize) {
+int inset (const void **haystack, const void *needle, int32_t esize) {
  int c = 0;
 
  if (!haystack) return 0;

@@ -190,7 +190,7 @@ struct lmodule {
  void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
  pthread_mutex_t imutex;                        /*!< Internal module-mutex; to be used by the module */
- struct smodule *module;                        /*!< Pointer to the static module definition */
+ const struct smodule *module;                  /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  uint32_t fbseq;                                /*!< Feedback sequence-number */
  struct service_information *si;
@@ -239,7 +239,7 @@ struct lmodule *mod_update (struct lmodule *);
  * This functions adds a module to the main chain of modules, so that it can be used in dependency
  * calculations.
 */
-struct lmodule *mod_add (void *sohandle, struct smodule *module);
+struct lmodule *mod_add (void *sohandle, const struct smodule *module);
 
 /*!\brief Change module's state
  * \param[in]     task   What state the module should be put in.
@@ -260,7 +260,7 @@ int mod (unsigned int task, struct lmodule *module);
  * This function can be used to query/update certain service-usage information where the result can be
  * expressed as an integer.
 */
-uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service);
+uint16_t service_usage_query (const uint16_t task, const struct lmodule *module, const char *service);
 
 /*!\brief Query service-usage information.
  * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
@@ -270,7 +270,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
  * This function can be used to query certain service-usage information where the result can be expressed
  * as a set of strings.
 */
-char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service);
+char **service_usage_query_cr (const uint16_t task, const struct lmodule *module, const char *service);
 
 /*!\brief Query service-usage information.
  * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
@@ -280,7 +280,7 @@ char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *serv
  * This function can be used to query/update certain service-group information where the result can be
  * expressed as an integer.
 */
-uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service);
+uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *module, const char *service);
 /*! \} */
 
 /*!\brief The module loader's event-handler.

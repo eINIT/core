@@ -432,7 +432,7 @@ struct lmodule *mod_update (struct lmodule *module) {
  return module;
 }
 
-struct lmodule *mod_add (void *sohandle, struct smodule *module) {
+struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
  int (*scanfunc)(struct lmodule *);
  int (*ftload)  (void *, struct einit_event *);
@@ -450,7 +450,18 @@ struct lmodule *mod_add (void *sohandle, struct smodule *module) {
  emutex_init (&nmod->mutex, NULL);
  emutex_init (&nmod->imutex, NULL);
 
- nmod->si = &module->si;
+ if (module->si.provides || module->si.requires || module->si.after || module->si.before) {
+  nmod->si = ecalloc (1, sizeof (struct service_information));
+
+  if (module->si.provides)
+   nmod->si->provides = (char **)setdup((void **)module->si.provides, SET_TYPE_STRING);
+  if (module->si.requires)
+   nmod->si->requires = (char **)setdup((void **)module->si.requires, SET_TYPE_STRING);
+  if (module->si.after)
+   nmod->si->after = (char **)setdup((void **)module->si.after, SET_TYPE_STRING);
+  if (module->si.before)
+   nmod->si->before = (char **)setdup((void **)module->si.before, SET_TYPE_STRING);
+ }
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
@@ -678,7 +689,7 @@ int mod (unsigned int task, struct lmodule *module) {
  return module->status;
 }
 
-uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *service) {
+uint16_t service_usage_query (const uint16_t task, const struct lmodule *module, const char *service) {
  uint16_t ret = 0;
  struct stree *ha;
  char **t;
@@ -765,7 +776,7 @@ uint16_t service_usage_query (uint16_t task, struct lmodule *module, char *servi
  return ret;
 }
 
-uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char *service) {
+uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *module, const char *service) {
  uint16_t ret = 0;
  struct stree *ha;
 
@@ -814,7 +825,7 @@ uint16_t service_usage_query_group (uint16_t task, struct lmodule *module, char 
  return ret;
 }
 
-char **service_usage_query_cr (uint16_t task, struct lmodule *module, char *service) {
+char **service_usage_query_cr (const uint16_t task, const struct lmodule *module, const char *service) {
  emutex_lock (&service_usage_mutex);
 
  struct stree *ha = service_usage;

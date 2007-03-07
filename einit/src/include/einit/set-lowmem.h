@@ -70,9 +70,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Combine \b set1 and \b set2 into a new set which is the returned.
 */
-void **setcombine (void **set1, void **set2, int32_t esize);
+void **setcombine (const void **set1, const void **set2, const int32_t esize);
 
-void **setslice (void **set1, void **set2, int32_t esize);
+void **setslice (const void **set1, const void **set2, const int32_t esize);
 
 /*!\brief Add \b item to \b set.
  * \param[in,out] set   the set
@@ -86,7 +86,7 @@ void **setslice (void **set1, void **set2, int32_t esize);
  *
  * Add \b item to \b set and return the resulting new set. 
 */
-void **setadd (void **set, void *item, int32_t esize);
+void **setadd (void **set, const void *item, int32_t esize);
 
 /*!\brief Duplicate \b set.
  * \param[in] set   the set
@@ -98,7 +98,7 @@ void **setadd (void **set, void *item, int32_t esize);
  *
  * Duplicate \b set and return the resulting new set. 
 */
-void **setdup (void **set, int32_t esize);
+void **setdup (const void **set, int32_t esize);
 
 /*!\brief Remove \b item from \b set.
  * \param[in,out] set   the set
@@ -110,7 +110,7 @@ void **setdup (void **set, int32_t esize);
  *
  * Remove \b item from \b set and return the resulting new set. 
 */
-void **setdel (void **set, void *item);
+void **setdel (void **set, const void *item);
 
 /*!\brief Count elements in \b set.
  * \param[in] set the set
@@ -118,7 +118,7 @@ void **setdel (void **set, void *item);
  *
  * Counts the number of elements in \b set and returns this number. 
 */
-int setcount (void **set);
+int setcount (const void **set);
 
 /*!\brief Sort elements in \b set.
  * \param[in,out] set          the set
@@ -132,7 +132,7 @@ int setcount (void **set);
  * Sorts the \b set you pass to it, either using the function specified with \b sortfunction, or by what you
  * pass to the function in \b task.
 */
-void setsort (void **set, char task, signed int(*sortfunction)(void *, void*));
+void setsort (void **set, const char task, signed int(*sortfunction)(const void *, const void*));
 
 /*!\brief Find out if element \b needle is in set \b haystack.
  * \param[in] haystack the set
@@ -143,7 +143,7 @@ void setsort (void **set, char task, signed int(*sortfunction)(void *, void*));
  *
  * Find out if element \b needle is in set \b haystack. Returns 1 if yes, 0 otherwise.
 */
-int inset (void **haystack, const void *needle, int32_t esize);
+int inset (const void **haystack, const void *needle, int32_t esize);
 
 /*!\brief Convert \b input into a set of strings, using the separator \b sep.
  * \param[in] sep   the separator

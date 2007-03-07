@@ -54,11 +54,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EINIT_NOMINAL 0x00000000
 #define EINIT_EXITING 0x00000001
 
-struct sschedule {
- unsigned int task;
- void *param;
-};
-
 struct spidcb {
  pid_t pid;
  int status;
@@ -67,7 +62,6 @@ struct spidcb {
  struct spidcb *next;
 };
 
-struct sschedule **schedule;
 struct spidcb *cpids;
 struct spidcb *sched_deadorphans;
 uint32_t gstatus;
@@ -76,7 +70,6 @@ int scheduler_cleanup ();
 
 void sched_init ();
 void sched_reset_event_handlers ();
-int sched_queue (unsigned int, void *);
 int sched_watch_pid (pid_t, void *(*)(struct spidcb *));
 void *sched_run_sigchild (void *);
 

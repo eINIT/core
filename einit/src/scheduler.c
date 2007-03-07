@@ -301,7 +301,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      if (sigchild_semaphore)
       sem_post (sigchild_semaphore);
 
-     char **shutdownfunctionsubnames = str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
+     const char **shutdownfunctionsubnames = (const char **)str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
 
      void  ((**reset_functions)()) = (void (**)())
       (shutdownfunctionsubnames ? function_find((reset ? "core-power-reset" : "core-power-off"), 1, shutdownfunctionsubnames) : NULL);

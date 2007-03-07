@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // linear implementation
 
-struct stree *streeadd (struct stree *stree, char *key, void *value, int32_t vlen, void *luggage) {
+struct stree *streeadd (struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  struct stree *n, *base = (stree ? *(stree->lbase) : NULL);
  uint32_t hklen;
 
@@ -123,7 +123,7 @@ struct stree *streedel (struct stree *subject) {
  return be;
 }
 
-struct stree *streefind (struct stree *stree, char *key, char options) {
+struct stree *streefind (const struct stree *stree, const char *key, const char options) {
  struct stree *c;
  if (!stree || !key) return NULL;
 

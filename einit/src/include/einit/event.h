@@ -161,7 +161,7 @@ struct event_function {
 
 struct exported_function {
  uint32_t version;                       /*!< API version (for internal use) */
- void *function;                         /*!< pointer to the function */
+ void const *function;                   /*!< pointer to the function */
 };
 
 #ifdef DEBUG
@@ -186,19 +186,19 @@ struct event_ringbuffer_node *event_logbuffer;
 pthread_mutex_t event_logbuffer_mutex;
 #endif
 
-void *event_emit (struct einit_event *, uint16_t);
-void event_listen (uint32_t, void (*)(struct einit_event *));
-void event_ignore (uint32_t, void (*)(struct einit_event *));
+void *event_emit (struct einit_event *, const uint16_t);
+void event_listen (const uint32_t, void (*)(struct einit_event *));
+void event_ignore (const uint32_t, void (*)(struct einit_event *));
 
-void function_register (char *, uint32_t, void *);
-void function_unregister (char *, uint32_t, void *);
-void **function_find (char *, uint32_t, char **);
-void *function_find_one (char *, uint32_t, char **);
+void function_register (const char *, uint32_t, void const *);
+void function_unregister (const char *, uint32_t, void const *);
+void **function_find (const char *, const uint32_t, const char **);
+void *function_find_one (const char *, const uint32_t, const char **);
 
 struct event_function *event_functions;
 struct stree *exported_functions;
 
-char *event_code_to_string (uint32_t);
-uint32_t event_string_to_code (char *);
+char *event_code_to_string (const uint32_t);
+uint32_t event_string_to_code (const char *);
 
 #endif

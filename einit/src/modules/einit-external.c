@@ -125,7 +125,12 @@ void einit_event_handler (struct einit_event *ev) {
 
    emutex_lock (&this->mutex);
 
-   this->module->si.provides = str2set (':', p);
+   if (this->si) {
+    this->si->provides = str2set (':', p);
+   } else {
+    this->si = ecalloc (1, sizeof (struct service_information));
+    this->si->provides = str2set (':', p);
+   }
 
    emutex_unlock (&this->mutex);
 
