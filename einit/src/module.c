@@ -259,13 +259,15 @@ struct lmodule *mod_update (struct lmodule *module) {
 
  while ((lnode = cfg_findnode ("services-override-module", 0, lnode)))
   if (lnode->idattr && module->module->rid && !strcmp(lnode->idattr, module->module->rid)) {
-   struct service_information *esi = emalloc (sizeof (struct service_information));
+   struct service_information *esi = ecalloc (1, sizeof (struct service_information));
    uint32_t i = 0;
 
-   esi->requires = module->si->requires;
-   esi->provides = module->si->provides;
-   esi->after = module->si->after;
-   esi->before = module->si->before;
+   if (module->si) {
+    esi->requires = module->si->requires;
+    esi->provides = module->si->provides;
+    esi->after = module->si->after;
+    esi->before = module->si->before;
+   }
 
    for (; lnode->arbattrs[i]; i+=2) {
     if (!strcmp (lnode->arbattrs[i], "requires")) esi->requires = str2set (':', lnode->arbattrs[i+1]);
@@ -278,7 +280,7 @@ struct lmodule *mod_update (struct lmodule *module) {
    break;
   }
 
- if (service_aliases && module->si->provides) {
+ if (service_aliases && module->si &&module->si->provides) {
   uint32_t i = 0;
   char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING);
   for (; module->si->provides[i]; i++) {
@@ -300,7 +302,7 @@ struct lmodule *mod_update (struct lmodule *module) {
  emutex_unlock (&module->mutex);
 
 #ifdef POSIXREGEX
- if (service_transformations) {
+ if (service_transformations && module->si) {
   uint32_t i;
 
   if (module->si->provides) {
@@ -461,7 +463,8 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
    nmod->si->after = (char **)setdup((void **)module->si.after, SET_TYPE_STRING);
   if (module->si.before)
    nmod->si->before = (char **)setdup((void **)module->si.before, SET_TYPE_STRING);
- }
+ } else
+  nmod->si = NULL;
 
 // this will do additional initialisation functions for certain module-types
  if (module && sohandle) {
