@@ -172,10 +172,8 @@ void einit_event_handler (struct einit_event *ev) {
 
      if (ev->task & MOD_ENABLE) {
       if (ev->status == STATUS_WORKING) {
-       if (sd->before_enable) {
-        fprintf (stderr, " >> got something to do for service %s\n", cur->key);
+       if (sd->before_enable)
         pexec (sd->before_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-       }
       } else if (ev->status & STATUS_ENABLED) {
        if (sd->after_enable)
         pexec (sd->after_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
