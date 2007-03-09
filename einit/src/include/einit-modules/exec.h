@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _EINIT_MODULES_EXEC_H
 #define _EINIT_MODULES_EXEC_H
 
@@ -111,4 +115,8 @@ variable_checkup_function __f_check_variables;
 
 #define check_variables(output_id, variables, target) ((__f_check_variables || (__f_check_variables = function_find_one("einit-check-variables", 1, NULL)))? __f_check_variables(output_id, variables, target) : NULL)
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

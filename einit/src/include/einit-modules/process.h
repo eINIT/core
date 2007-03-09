@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _EINIT_MODULES_PROCESS_H
 #define _EINIT_MODULES_PROCESS_H
 
@@ -116,4 +120,8 @@ process_signal_function __f_e_kill;
 #define process_configure(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
 #define process_cleanup(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

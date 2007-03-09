@@ -36,6 +36,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!\file einit/tree.h
  * \brief Utility-Functions
  * \author Magnus Deininger
@@ -125,3 +129,7 @@ void streefree (struct stree *stree);
 /*!\}*/
 
 #endif /* _TREE_H */
+
+#ifdef __cplusplus
+}
+#endif

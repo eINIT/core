@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _EINIT_EVENT_H
 #define _EINIT_EVENT_H
 
@@ -207,4 +211,8 @@ struct stree *exported_functions;
 char *event_code_to_string (const uint32_t);
 uint32_t event_string_to_code (const char *);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

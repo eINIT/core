@@ -35,6 +35,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef _SCHEDULER_H
 #define _SCHEDULER_H
@@ -80,4 +83,8 @@ void sched_signal_sigint (int, siginfo_t *, void *);
 
 void sched_event_handler(struct einit_event *);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

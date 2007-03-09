@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _MODULE_LOGIC_H
 #define _MODULE_LOGIC_H
 
@@ -72,4 +76,8 @@ plan_progress_fetcher *_get_plan_progress_function;
 #define module_logic_configure(x)\
  _get_plan_progress_function = NULL
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

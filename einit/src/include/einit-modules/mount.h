@@ -36,6 +36,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!\file einit/common-mount.h
  * \brief Header file used by the *-mount modules.
  * \author Magnus Deininger
@@ -221,4 +225,8 @@ void add_filesystem (char *, char *);
 
 struct stree *read_fsspec_file (char *);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _EINIT_MODULES_UTMP_H
 #define _EINIT_MODULES_UTMP_H
 
@@ -136,4 +140,8 @@ utmp_function __utmp_update_function;
 #define create_utmp_record(record, utype, upid, uline, uid, uuser, uhost, ueterm, ueexit, usession) struct utmp record = {  };
 #endif
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

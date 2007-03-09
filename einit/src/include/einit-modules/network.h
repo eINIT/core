@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _EINIT_MODULES_NETWORK_H
 #define _EINIT_MODULES_NETWORK_H
 
@@ -60,4 +64,8 @@ struct network_control_block {
 
 void add_network_interface (char *, char *, uint32_t);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _EINIT_MODULES_IPC_H
 #define _EINIT_MODULES_IPC_H
 
@@ -59,4 +63,8 @@ sh_parser __f_parse_sh;
 #define parse_sh_configure(mod) __f_parse_sh = NULL;
 #define parse_sh_cleanup(mod) __f_parse_sh = NULL;
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

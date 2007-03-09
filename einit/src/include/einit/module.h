@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!\file einit/module.h
  * \brief Module-functions and structs.
  * \author Magnus Deininger
@@ -308,4 +312,8 @@ void mod_event_handler(struct einit_event *event);
 
 char *bootstrapmodulepath;
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

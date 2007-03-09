@@ -35,6 +35,10 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
@@ -144,3 +148,7 @@ char *cfg_getpath (const char *);
 typedef char *(*cfg_string_converter) (const struct stree *);
 
 #endif /* _CONFIG_H */
+
+#ifdef __cplusplus
+}
+#endif
