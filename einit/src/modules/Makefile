@@ -1,7 +1,7 @@
 include ../../config.mk
 include depend.mk
 
-all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-process.so einit-exec.so einit-external.so einit-parse-sh.so einit-ipc-configuration.so einit-shadow-exec.so
+all: einit-feedback-visual-textual.so einit-mod-exec.so einit-tty.so einit-mod-daemon.so einit-ipc.so einit-mount.so einit-hostname.so einit-feedback-aural.so einit-process.so einit-exec.so einit-external.so einit-parse-sh.so einit-ipc-configuration.so einit-shadow-exec.so einit-module-transformations.so
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;
 
 depend:
@@ -28,6 +28,7 @@ install: all
 	${INSTALL} ${SOIPARAM} einit-parse-sh.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-ipc-configuration.so ${DESTDIR}/${MODDIR}
 	${INSTALL} ${SOIPARAM} einit-shadow-exec.so ${DESTDIR}/${MODDIR}
+	${INSTALL} ${SOIPARAM} einit-module-transformations.so ${DESTDIR}/${MODDIR}
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do touch "$$module/depend.mk"; cd "$$module" && ${MAKE} install && cd ..; done; fi;
 
 einit-feedback-visual-textual.so: einit-feedback-visual-textual.c
@@ -85,3 +86,7 @@ einit-ipc-configuration.so: einit-ipc-configuration.c
 einit-shadow-exec.so: einit-shadow-exec.c
 	${CCL} -c einit-shadow-exec.c
 	${LLD} einit-shadow-exec.o -o einit-shadow-exec.so
+
+einit-module-transformations.so: einit-module-transformations.c
+	${CCL} -c einit-module-transformations.c
+	${LLD} einit-module-transformations.o -o einit-module-transformations.so

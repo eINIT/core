@@ -75,6 +75,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*!< switch to a different mode */
 #define EVE_UPDATE_MODULES             0x00001104
 /*!< update the modules */
+#define EVE_UPDATE_MODULE              0x00001105
+/*!< update this module (in ->para) */
+
 
 #define EVE_SWITCHING_MODE             0x00001201
 #define EVE_MODE_SWITCHED              0x00001202
