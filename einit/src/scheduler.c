@@ -221,8 +221,11 @@ int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  cpids = nele;
 
  emutex_unlock (&schedcpidmutex);
- if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
-  sem_post (sigchild_semaphore);
+ if ((gstatus != EINIT_EXITING) && sigchild_semaphore) {
+  if (sem_post (sigchild_semaphore)) {
+   bitch(BITCH_STDIO, 0, "sem_post() failed.");
+  }
+ }
 
  return 0;
 }
@@ -298,8 +301,11 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      }
 
      gstatus = EINIT_EXITING;
-     if (sigchild_semaphore)
-      sem_post (sigchild_semaphore);
+     if (sigchild_semaphore) {
+      if (sem_post (sigchild_semaphore)) {
+       bitch(BITCH_STDIO, 0, "sem_post() failed.");
+      }
+     }
 
      const char **shutdownfunctionsubnames = (const char **)str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
 
@@ -454,7 +460,9 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
   }
  emutex_unlock (&schedcpidmutex);
 
- sem_post (sigchild_semaphore);
+ if (sem_post (sigchild_semaphore)) {
+  bitch(BITCH_STDIO, 0, "sem_post() failed.");
+ }
 }
 
 /* this should prevent any zombies from being created */
@@ -545,8 +553,11 @@ void *sched_run_sigchild (void *p) {
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
-  sem_post (sigchild_semaphore);
+ if ((gstatus != EINIT_EXITING) && sigchild_semaphore) {
+  if (sem_post (sigchild_semaphore)) {
+   bitch(BITCH_STDIO, 0, "sem_post() failed.");
+  }
+ }
 
  return;
 }
