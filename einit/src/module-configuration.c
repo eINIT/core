@@ -88,19 +88,6 @@ struct event_function einit_sched_ipc_event_handler_handler_ef = {
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &einit_sched_ipc_event_handler_handler_ef
 
-#ifdef EINIT_MODULES_MODULE_LOGIC_V2
-void sched_core_event_handler(struct einit_event *);
-
-struct event_function einit_sched_core_event_handler_handler_ef = {
- .type = EVENT_SUBSYSTEM_EINIT,
- .handler = sched_core_event_handler,
- .next = EVENT_FUNCTIONS_PTR
-};
-
-#undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_sched_core_event_handler_handler_ef
-#endif
-
 /* event handlers for the default module loader and configuration system */
 void mod_event_handler(struct einit_event *);
 void module_loader_einit_event_handler (struct einit_event *);

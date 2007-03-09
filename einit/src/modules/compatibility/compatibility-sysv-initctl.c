@@ -147,7 +147,7 @@ void * initctl_wait (char *fifo) {
 
   memset (&ic, 0, sizeof (struct init_command)); // clear this struct, just in case
 
-  if (read (nfd, &ic, 384) > 12) { // enough bytrs to process were read
+  if (read (nfd, &ic, sizeof(struct init_command)) > 12) { // enough bytrs to process were read
    if (ic.signature == INITCTL_MAGIC) {
 //  INITCTL_CMD_START: what's that do?
 //  INITCTL_CMD_UNSETENV is deliberately ignored

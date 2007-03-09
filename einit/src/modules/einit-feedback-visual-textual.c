@@ -843,11 +843,7 @@ void einit_event_handler(struct einit_event *ev) {
      for (; plans[i]; i++) {
       if (plans[i]->plan) {
        eprintf (stdout, " ( %s | %f%% )",
-#ifdef MODULE_LOGIC_V2
-           (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown",
-#else
            "unknown",
-#endif
            get_plan_progress (plans[i]->plan) * 100);
       }
      }
@@ -858,11 +854,7 @@ void einit_event_handler(struct einit_event *ev) {
       if (plans[i]->plan) {
        if (plans[i]->plan) {
         eprintf (stdout, " ( %s | %f%% )",
-#ifdef MODULE_LOGIC_V2
-            (plans[i]->plan->mode && plans[i]->plan->mode->id) ? plans[i]->plan->mode->id : "unknown",
-#else
             "unknown",
-#endif
             get_plan_progress (plans[i]->plan) * 100);
        }
       }
