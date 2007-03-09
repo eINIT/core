@@ -183,11 +183,31 @@ else
 	fi;
 fi
 
+echo -n "checking for a C++ compiler... "
+if test -n "$CXX"; then
+	echo "got one! ($CXX)";
+else
+	if test -x "$(which ${CTARGET}-g++-${RCVERSION} 2>/dev/null)"; then CXX="${CTARGET}-g++-${RCVERSION}";
+	elif test -x "$(which ${CTARGET}-g++ 2>/dev/null)"; then CXX="${CTARGET}-g++";
+	elif test -x "$(which ${CTARGET}-cc 2>/dev/null)"; then CXX="${CTARGET}-cc";
+	elif test -x "$(which ${CHOST}-g++-${RCVERSION} 2>/dev/null)"; then CXX="${CHOST}-g++-${RCVERSION}";
+	elif test -x "$(which ${CHOST}-g++ 2>/dev/null)"; then CXX="${CHOST}-g++";
+	elif test -x "$(which ${CHOST}-cc 2>/dev/null)"; then CXX="${CHOST}-cc";
+	elif test -x "$(which g++ 2>/dev/null)"; then CXX=g++;
+	elif test -x "$(which cc 2>/dev/null)"; then CXX=cc; fi;
+	if test -n "$CXX"; then
+		echo "$CXX";
+	else
+		echo "no C++ compiler found, bailing out!"; exit;
+	fi;
+fi
+
 echo "finding absolute include directory..."
-INCLUDE="";
+INCLUDE=" -I`pwd`/src/include";
 
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
+XXL="\${CXX} \${INCLUDE} \${CXXFLAGS} -fPIC"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
@@ -244,6 +264,7 @@ ISSVN = $ISSVN
 
 CC = $CC
 CFLAGS = $CFLAGS$XCFLAGS
+CXXFLAGS = $CXXFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS} -DISSVN=\${ISSVN}
 CCL = $CCL -DISSVN=\${ISSVN}
@@ -251,7 +272,15 @@ CLD = \${CC} \${LDFLAGS}
 LLD = \${CC} \${LDFLAGS} $LLD
 XLLD = $LLD
 STATIC = $STATIC
-LPA = $LPA" > config.mk
+LPA = $LPA
+
+CXX = $CXX
+CXXC = \${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}
+XXL = $XXL -DISSVN=\${ISSVN}
+CXXLD = \${CXX} \${LDFLAGS}
+CXXLD = \${CXXC} \${LDFLAGS}
+LXXLD = \${CXXC} \${LDFLAGS} $LLD
+" > config.mk
 
 if test -e src/*.la; then
 	echo -n "cleaning the environment... "
