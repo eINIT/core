@@ -1131,6 +1131,11 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   char *cmdt;
   cmode = plan->mode;
 
+  struct einit_event eex = evstaticinit (EVE_SWITCHING_MODE);
+  eex.para = (void *)plan->mode;
+  event_emit (&eex, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (eex);
+
   if ((cmdt = cfg_getstring ("before-switch/emit-event", cmode))) {
    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
@@ -1228,6 +1233,11 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   char *cmdt;
   cmode = plan->mode;
   amode = plan->mode;
+
+  struct einit_event eex = evstaticinit (EVE_MODE_SWITCHED);
+  eex.para = (void *)plan->mode;
+  event_emit (&eex, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (eex);
 
   if (amode->id) {
    struct einit_event eema = evstaticinit (EVE_PLAN_UPDATE);

@@ -76,6 +76,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVE_UPDATE_MODULES             0x00001104
 /*!< update the modules */
 
+#define EVE_SWITCHING_MODE             0x00001201
+#define EVE_MODE_SWITCHED              0x00001202
+
 #define EVENT_SUBSYSTEM_IPC            0x00002000
 /*!< incoming IPC request */
 #define EVENT_SUBSYSTEM_MOUNT                   0x00003000

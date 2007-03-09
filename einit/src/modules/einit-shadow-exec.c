@@ -90,11 +90,11 @@ struct stree *shadows = NULL;
 
 pthread_mutex_t shadow_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void update_shadows() {
+void update_shadows(struct cfgnode *xmode) {
  emutex_lock(&shadow_mutex);
 
- if (ecmode != cmode) {
-  char *tmp = cfg_getstring("shadows", NULL);
+ if (ecmode != xmode) {
+  char *tmp = cfg_getstring("shadows", xmode);
 
   if (shadows) {
 //   streefree (shadows);
@@ -107,25 +107,49 @@ void update_shadows() {
    if (tmps) {
     struct cfgnode *cur = NULL;
 
-     while ((cur = cfg_findnode ("services-shadow", 0, cur))) {
-     if (cur->idattr && inset ((void **)tmps, (void *)cur->idattr, SET_TYPE_STRING)) {
+    while ((cur = cfg_findnode ("services-shadow", 0, cur))) {
+     if (cur->idattr && inset ((const void **)tmps, (void *)cur->idattr, SET_TYPE_STRING)) {
       ssize_t i = 0;
-      char *nserv = NULL;
+      char **nserv = NULL;
       struct shadow_descriptor nshadow;
 
       memset (&nshadow, 0, sizeof(struct shadow_descriptor));
       for (; cur->arbattrs[i]; i+=2) {
        if (!strcmp (cur->arbattrs[i], "service"))
-        nserv = cur->arbattrs[i+1];
+        nserv = str2set(':', cur->arbattrs[i+1]);
        else if (!strcmp (cur->arbattrs[i], "before-enable"))
         nshadow.before_enable = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "before-disable"))
+        nshadow.before_disable = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "before-reset"))
+        nshadow.before_reset = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "before-reload"))
+        nshadow.before_reload = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "after-enable"))
+        nshadow.after_enable = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "after-disable"))
+        nshadow.after_disable = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "after-reset"))
+        nshadow.after_reset = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "after-reload"))
+        nshadow.after_reload = cur->arbattrs[i+1];
+      }
+
+      if (nserv) {
+       for (i = 0; nserv[i]; i++) {
+        shadows = streeadd (shadows, nserv[i], &nshadow, sizeof(struct shadow_descriptor), NULL);
+       }
+
+       free (nserv);
       }
      }
     }
+
+    free (tmps);
    }
   }
 
-  ecmode = cmode;
+  ecmode = xmode;
  }
 
  emutex_unlock(&shadow_mutex);
@@ -133,15 +157,58 @@ void update_shadows() {
 
 void einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
-  update_shadows();
- }
+  update_shadows(cmode);
+ } else if (ev->type == EVE_SWITCHING_MODE) {
+  update_shadows(ev->para);
+ } else if (ev->type == EVE_SERVICE_UPDATE) {
+  if (shadows && ev->set) {
+   ssize_t i = 0;
 
- if (ev->type == EVE_SERVICE_UPDATE) {
-  if (ecmode != cmode) {
-   update_shadows();
-  }
+   for (; ev->set[i]; i++) {
+    struct stree *cur = streefind(shadows, (char *)ev->set[i], TREE_FIND_FIRST);
 
-  if (shadows) {
+    while (cur) {
+     struct shadow_descriptor *sd = cur->value;
+
+     if (ev->task & MOD_ENABLE) {
+      if (ev->status == STATUS_WORKING) {
+       if (sd->before_enable) {
+        fprintf (stderr, " >> got something to do for service %s\n", cur->key);
+        pexec (sd->before_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+       }
+      } else if (ev->status & STATUS_ENABLED) {
+       if (sd->after_enable)
+        pexec (sd->after_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      }
+     } else if (ev->task & MOD_DISABLE) {
+      if (ev->status == STATUS_WORKING) {
+       if (sd->before_disable)
+        pexec (sd->before_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      } else if (ev->status & STATUS_DISABLED) {
+       if (sd->after_disable)
+        pexec (sd->after_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      }
+     } else if (ev->task & MOD_RESET) {
+      if (ev->status == STATUS_WORKING) {
+       if (sd->before_reset)
+        pexec (sd->before_reset, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      } else if (ev->status & STATUS_ENABLED) {
+       if (sd->after_reset)
+        pexec (sd->after_reset, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      }
+     } else if (ev->task & MOD_RELOAD) {
+      if (ev->status == STATUS_WORKING) {
+       if (sd->before_reload)
+        pexec (sd->before_reload, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      } else if (ev->status & STATUS_ENABLED) {
+       if (sd->after_reload)
+        pexec (sd->after_reload, NULL, 0, 0, NULL, NULL, NULL, NULL);
+      }
+     }
+
+     cur = streefind(cur, (char *)ev->set[i], TREE_FIND_NEXT);
+    }
+   }
   }
  }
 }
