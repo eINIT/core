@@ -50,6 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit-modules/exec.h>
 
+#include <string.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -72,6 +74,17 @@ const struct smodule self = {
  }
 };
 
+struct shadow_descriptor {
+ char *before_enable,
+      *after_enable,
+      *before_disable,
+      *after_disable,
+      *before_reset,
+      *after_reset,
+      *before_reload,
+      *after_reload;
+};
+
 struct cfgnode *ecmode = NULL;
 struct stree *shadows = NULL;
 
@@ -84,8 +97,32 @@ void update_shadows() {
   char *tmp = cfg_getstring("shadows", NULL);
 
   if (shadows) {
-   streefree (shadows);
+//   streefree (shadows);
    shadows = NULL;
+  }
+
+  if (tmp) {
+   char **tmps = str2set (':', tmp);
+
+   if (tmps) {
+    struct cfgnode *cur = NULL;
+
+     while ((cur = cfg_findnode ("services-shadow", 0, cur))) {
+     if (cur->idattr && inset ((void **)tmps, (void *)cur->idattr, SET_TYPE_STRING)) {
+      ssize_t i = 0;
+      char *nserv = NULL;
+      struct shadow_descriptor nshadow;
+
+      memset (&nshadow, 0, sizeof(struct shadow_descriptor));
+      for (; cur->arbattrs[i]; i+=2) {
+       if (!strcmp (cur->arbattrs[i], "service"))
+        nserv = cur->arbattrs[i+1];
+       else if (!strcmp (cur->arbattrs[i], "before-enable"))
+        nshadow.before_enable = cur->arbattrs[i+1];
+      }
+     }
+    }
+   }
   }
 
   ecmode = cmode;
@@ -95,6 +132,10 @@ void update_shadows() {
 }
 
 void einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_UPDATE_CONFIGURATION) {
+  update_shadows();
+ }
+
  if (ev->type == EVE_SERVICE_UPDATE) {
   if (ecmode != cmode) {
    update_shadows();
