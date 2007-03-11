@@ -275,6 +275,8 @@
    <cpufreq-cpus s="0 1" />
    <hwclock s="--utc" />
   </program-options>
+
+  <distccd listen="0.0.0.0" allow="192.168.0.0/24" port="3632" nice="15" />
  </configuration>
 
  <information>
@@ -937,6 +939,16 @@
      enable="pexec-options no-pipe; source ${envfile}; apache2 $APACHE2_OPTS -d ${root} -f ${config} -k start&amp;"
      disable="killall -9 -q apache2"
      restart="yes" />
+
+<!-- well done, jvale -->
+    <daemon id="daemon-distccd" 
+     name="Distributed compiling daemon" 
+     provides="distccd" 
+     requires="mount/system:net-lo" 
+     command="/usr/bin/distccd --daemon --no-detach -N ${configuration_distccd_nice} --pid-file /var/run/distccd/distccd.pid --port ${configuration_distccd_port} --allow ${configuration_distccd_allow} --listen ${configuration_distccd_listen}" 
+     restart="yes" 
+     variables="configuration-distccd/.*" /> 
+
 
      <shell id="shell-firestarter"
       name="firestarter"
