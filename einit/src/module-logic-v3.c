@@ -234,16 +234,16 @@ struct group_data *mod_group_get_data (char *group) {
    ssize_t r = 0;
 
    for (r = 0; gnode->arbattrs[r]; r+=2) {
-    if (!strcmp (gnode->arbattrs[r], "group")) {
+    if (strmatch (gnode->arbattrs[r], "group")) {
      ret->members = str2set (':', gnode->arbattrs[r+1]);
-    } else if (!strcmp (gnode->arbattrs[r], "seq")) {
-     if (!strcmp (gnode->arbattrs[r+1], "any"))
+    } else if (strmatch (gnode->arbattrs[r], "seq")) {
+     if (strmatch (gnode->arbattrs[r+1], "any"))
       ret->options |=  MOD_PLAN_GROUP_SEQ_ANY;
-     else if (!strcmp (gnode->arbattrs[r+1], "all"))
+     else if (strmatch (gnode->arbattrs[r+1], "all"))
       ret->options |=  MOD_PLAN_GROUP_SEQ_ALL;
-     else if (!strcmp (gnode->arbattrs[r+1], "any-iop"))
+     else if (strmatch (gnode->arbattrs[r+1], "any-iop"))
       ret->options |=  MOD_PLAN_GROUP_SEQ_ANY_IOP;
-     else if (!strcmp (gnode->arbattrs[r+1], "most"))
+     else if (strmatch (gnode->arbattrs[r+1], "most"))
       ret->options |=  MOD_PLAN_GROUP_SEQ_MOST;
     }
    }
@@ -971,7 +971,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    reset   = str2set (':', cfg_getstring ("reset/mod", mode));
 
   if (mode->arbattrs) for (; mode->arbattrs[xi]; xi+=2) {
-   if (!strcmp(mode->arbattrs[xi], "base")) {
+   if (strmatch(mode->arbattrs[xi], "base")) {
     base = str2set (':', mode->arbattrs[xi+1]);
    }
   }
@@ -1088,8 +1088,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
     if (inset ((void **)plan->changes.disable, (void *)tmp[i], SET_TYPE_STRING)) {
      add = 0;
-    } else if ((disable_all && !strcmp(tmp[i], "all")) ||
-               (disable_all_but_feedback && !strcmp(tmp[i], "all-but-feedback"))) {
+    } else if ((disable_all && strmatch(tmp[i], "all")) ||
+               (disable_all_but_feedback && strmatch(tmp[i], "all-but-feedback"))) {
      add = 0;
     } else if ((cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
@@ -1328,7 +1328,7 @@ void mod_sort_service_list_items_by_preference() {
     if ((preference = str2set (':', cfg_getstring (pnode, NULL)))) {
      for (mpx = 0; preference[mpx]; mpx++) {
       for (mpy = 0; lm[mpy]; mpy++) {
-       if (lm[mpy]->module && lm[mpy]->module->rid && !strcmp(lm[mpy]->module->rid, preference[mpx])) {
+       if (lm[mpy]->module && lm[mpy]->module->rid && strmatch(lm[mpy]->module->rid, preference[mpx])) {
         struct lmodule *tm = lm[mpy];
 
         lm[mpy] = lm[mpz];
@@ -1380,11 +1380,11 @@ int mod_modaction (char **argv) {
  struct mloadplan *plan;
  if (!argv || (argc != 2)) return -1;
 
- if (!strcmp (argv[1], "enable")) task = MOD_ENABLE;
- else if (!strcmp (argv[1], "disable")) task = MOD_DISABLE;
- else if (!strcmp (argv[1], "reset")) task = MOD_RESET;
- else if (!strcmp (argv[1], "reload")) task = MOD_RELOAD;
- else if (!strcmp (argv[1], "zap")) task = MOD_ZAP;
+ if (strmatch (argv[1], "enable")) task = MOD_ENABLE;
+ else if (strmatch (argv[1], "disable")) task = MOD_DISABLE;
+ else if (strmatch (argv[1], "reset")) task = MOD_RESET;
+ else if (strmatch (argv[1], "reload")) task = MOD_RELOAD;
+ else if (strmatch (argv[1], "zap")) task = MOD_ZAP;
 
  argv[1] = NULL;
 
@@ -1514,7 +1514,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
 void module_logic_ipc_event_handler (struct einit_event *ev) {
  if (ev->set && ev->set[0] && ev->set[1] && ev->para) {
-  if (!strcmp (ev->set[0], "list") && !strcmp (ev->set[1], "control-blocks")) {
+  if (strmatch (ev->set[0], "list") && strmatch (ev->set[1], "control-blocks")) {
    emutex_lock (&ml_tb_target_state_mutex);
 
    if (target_state.enable) {

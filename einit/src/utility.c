@@ -319,7 +319,7 @@ signed int parse_integer (char *s) {
 }
 
 char parse_boolean (char *s) {
- return s && (!strcmp (s, "true") || !strcmp (s, "enabled") || !strcmp (s, "yes"));
+ return s && (strmatch (s, "true") || strmatch (s, "enabled") || strmatch (s, "yes"));
 }
 
 char *apply_variables (char *string, char **env) {
@@ -347,7 +347,7 @@ char *apply_variables (char *string, char **env) {
     uint32_t i = 0, xi = 0;
     string[spos] = 0;
     for (; env[i]; i+=2) {
-     if (!strcmp (env[i], vst)) {
+     if (strmatch (env[i], vst)) {
       xi = i+1; break;
      }
     }
@@ -496,4 +496,14 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
 
  bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "open() failed.");
  return -1;
+}
+
+char strmatch (const char *str1, const char *str2) {
+ while (*str1 == *str2) {
+  if (!*str1) return 1;
+
+  str1++, str2++;
+ }
+
+ return 0;
 }

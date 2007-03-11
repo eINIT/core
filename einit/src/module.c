@@ -132,7 +132,7 @@ int mod_scanmodules ( void ) {
 
    lm = mlist;
    while (lm) {
-    if (lm->source && !strcmp(lm->source, tmp)) {
+    if (lm->source && strmatch(lm->source, tmp)) {
      lm = mod_update (lm);
 
 // tell module to scan for changes if it's a module-loader
@@ -702,8 +702,8 @@ void mod_event_handler(struct einit_event *ev) {
  uint32_t options = ev->status;
 
  if (argc >= 2) {
-  if (!strcmp (argv[0], "list")) {
-   if (!strcmp (argv[1], "modules")) {
+  if (strmatch (argv[0], "list")) {
+   if (strmatch (argv[1], "modules")) {
     struct lmodule *cur = mlist;
 
     if (!ev->flag) ev->flag = 1;
@@ -757,7 +757,7 @@ void mod_event_handler(struct einit_event *ev) {
      }
      cur = cur->next;
     }
-   } else if (!strcmp (argv[1], "services")) {
+   } else if (strmatch (argv[1], "services")) {
     struct lmodule *cur = mlist;
     struct stree *serv = NULL;
     struct stree *modes = NULL;
@@ -787,7 +787,7 @@ void mod_event_handler(struct einit_event *ev) {
      if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && !streefind (modes, cfgn->mode->id, TREE_FIND_FIRST)) {
       uint32_t i = 0;
       for (i = 0; cfgn->arbattrs[i]; i+=2) {
-       if (!strcmp(cfgn->arbattrs[i], "services")) {
+       if (strmatch(cfgn->arbattrs[i], "services")) {
         char **tmps = str2set (':', cfgn->arbattrs[i+1]);
 
         modes = streeadd (modes, cfgn->mode->id, tmps, SET_NOALLOC, tmps);

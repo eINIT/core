@@ -123,11 +123,11 @@ void einit_event_handler (struct einit_event *ev) {
     memset (&new_transformation, 0, sizeof(struct service_transformation));
 
     for (; node->arbattrs[sti]; sti+=2) {
-     if (!strcmp (node->arbattrs[sti], "in")) {
+     if (strmatch (node->arbattrs[sti], "in")) {
       new_transformation.in = node->arbattrs[sti+1];
-     } else if (!strcmp (node->arbattrs[sti], "out")) {
+     } else if (strmatch (node->arbattrs[sti], "out")) {
       new_transformation.out = node->arbattrs[sti+1];
-     } else if (!strcmp (node->arbattrs[sti], "strip-from")) {
+     } else if (strmatch (node->arbattrs[sti], "strip-from")) {
       char **tmp = str2set (':', node->arbattrs[sti+1]);
 
       if (tmp) {
@@ -142,7 +142,7 @@ void einit_event_handler (struct einit_event *ev) {
 
        free (tmp);
       }
-     } else if (!strcmp (node->arbattrs[sti], "module-id")) {
+     } else if (strmatch (node->arbattrs[sti], "module-id")) {
       regex_t *buffer = emalloc (sizeof (regex_t));
 
       if ((have_pattern = !eregcomp (buffer, node->arbattrs[sti+1]))) {
@@ -168,7 +168,7 @@ void einit_event_handler (struct einit_event *ev) {
   struct cfgnode *lnode = NULL;
 
   while ((lnode = cfg_findnode ("services-override-module", 0, lnode)))
-   if (lnode->idattr && module->module->rid && !strcmp(lnode->idattr, module->module->rid)) {
+   if (lnode->idattr && module->module->rid && strmatch(lnode->idattr, module->module->rid)) {
    struct service_information *esi = ecalloc (1, sizeof (struct service_information));
    uint32_t i = 0;
 
@@ -180,10 +180,10 @@ void einit_event_handler (struct einit_event *ev) {
    }
 
    for (; lnode->arbattrs[i]; i+=2) {
-    if (!strcmp (lnode->arbattrs[i], "requires")) esi->requires = str2set (':', lnode->arbattrs[i+1]);
-    else if (!strcmp (lnode->arbattrs[i], "provides")) esi->provides = str2set (':', lnode->arbattrs[i+1]);
-    else if (!strcmp (lnode->arbattrs[i], "after")) esi->after = str2set (':', lnode->arbattrs[i+1]);
-    else if (!strcmp (lnode->arbattrs[i], "before")) esi->before = str2set (':', lnode->arbattrs[i+1]);
+    if (strmatch (lnode->arbattrs[i], "requires")) esi->requires = str2set (':', lnode->arbattrs[i+1]);
+    else if (strmatch (lnode->arbattrs[i], "provides")) esi->provides = str2set (':', lnode->arbattrs[i+1]);
+    else if (strmatch (lnode->arbattrs[i], "after")) esi->after = str2set (':', lnode->arbattrs[i+1]);
+    else if (strmatch (lnode->arbattrs[i], "before")) esi->before = str2set (':', lnode->arbattrs[i+1]);
    }
 
    module->si = esi;

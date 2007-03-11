@@ -173,24 +173,24 @@ int main(int argc, char **argv) {
           BSDLICENSE "\n", stdout);
      return 0;
     case '-':
-     if (!strcmp(argv[i], "--check-configuration") || !strcmp(argv[i], "--checkup") || !strcmp(argv[i], "--wtf")) {
+     if (strmatch(argv[i], "--check-configuration") || strmatch(argv[i], "--checkup") || strmatch(argv[i], "--wtf")) {
       ipccommands = (char **)setadd ((void **)ipccommands, "examine configuration", SET_TYPE_STRING);
-     } else if (!strcmp(argv[i], "--no-feedback-switch"))
+     } else if (strmatch(argv[i], "--no-feedback-switch"))
       einit_do_feedback_switch = 0;
-     else if (!strcmp(argv[i], "--feedback-switch"))
+     else if (strmatch(argv[i], "--feedback-switch"))
       einit_do_feedback_switch = 1;
-     else if (!strcmp(argv[i], "--help"))
+     else if (strmatch(argv[i], "--help"))
       return print_usage_info ();
-     else if (!strcmp(argv[i], "--ipc-command") && argv[i+1])
+     else if (strmatch(argv[i], "--ipc-command") && argv[i+1])
       ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
-     else if (!strcmp(argv[i], "--override-init-check"))
+     else if (strmatch(argv[i], "--override-init-check"))
       initoverride = 1;
-     else if (!strcmp(argv[i], "--sandbox")) {
+     else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       gmode = EINIT_GMODE_SANDBOX;
-     } else if (!strcmp(argv[i], "--metadaemon")) {
+     } else if (strmatch(argv[i], "--metadaemon")) {
       gmode = EINIT_GMODE_METADAEMON;
-     } else if (!strcmp(argv[i], "--bootstrap-modules")) {
+     } else if (strmatch(argv[i], "--bootstrap-modules")) {
       bootstrapmodulepath = argv[i+1];
      }
 
@@ -208,12 +208,12 @@ int main(int argc, char **argv) {
    *lp = 0;
    lp++;
 
-   if (!strcmp (ed, "softlevel")) {
+   if (strmatch (ed, "softlevel")) {
     einit_startup_mode_switches = str2set (':', lp);
-   } if (!strcmp (ed, "mode")) {
+   } if (strmatch (ed, "mode")) {
 /* override default mode-switches with the ones in the environment variable mode= */
     einit_startup_mode_switches = str2set (':', lp);
-   } else if (!strcmp (ed, "einit")) {
+   } else if (strmatch (ed, "einit")) {
 /* override default configuration files and/or mode-switches with the ones in the variable einit= */
     char **tmpstrset = str2set (',', lp);
     uint32_t rx = 0;
@@ -221,11 +221,11 @@ int main(int argc, char **argv) {
     for (rx = 0; tmpstrset[rx]; rx++) {
      char **atom = str2set (':', tmpstrset[rx]);
 
-     if (!strcmp (atom[0], "file")) {
+     if (strmatch (atom[0], "file")) {
 /* specify configuration files */
       einit_startup_configuration_files = (char **)setdup ((void **)atom, SET_TYPE_STRING);
       einit_startup_configuration_files = (char **)strsetdel (einit_startup_configuration_files, (void *)"file");
-     } else if (!strcmp (atom[0], "mode")) {
+     } else if (strmatch (atom[0], "mode")) {
 /* specify mode-switches */
       einit_startup_mode_switches = (char **)setdup ((void **)atom, SET_TYPE_STRING);
       einit_startup_mode_switches = (char **)strsetdel (einit_startup_mode_switches, (void *)"mode");

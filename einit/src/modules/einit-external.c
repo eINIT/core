@@ -75,7 +75,7 @@ void einit_event_handler (struct einit_event *);
 struct lmodule *this;
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
 #ifdef BITCHY
   if (!cfg_getnode("services-external", NULL)) {
    eputs ("NOTICE: configuration variable \"services-external\" not found. (not a problem)\n", (FILE *)ev->para);

@@ -260,8 +260,8 @@ int configure (struct lmodule *this) {
   uint32_t c = 0;
   mcb.update_options = EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB;
   for (; tmp[c]; c++) {
-   if (!strcmp (tmp[c], "metadata")) mcb.update_options |= EVENT_UPDATE_METADATA;
-   else if (!strcmp (tmp[c], "block-devices")) mcb.update_options |= EVENT_UPDATE_BLOCK_DEVICES;
+   if (strmatch (tmp[c], "metadata")) mcb.update_options |= EVENT_UPDATE_METADATA;
+   else if (strmatch (tmp[c], "block-devices")) mcb.update_options |= EVENT_UPDATE_BLOCK_DEVICES;
   }
   free (tmp);
  }
@@ -463,7 +463,7 @@ unsigned char forge_fstab_by_label (void *na) {
       if (i == hnl) {
        uint32_t sc = 0;
        if (*cur == 0) cur = "/";
-       else if (!strcmp (cur, "-root")) cur = "/";
+       else if (strmatch (cur, "-root")) cur = "/";
 //       else if (*cur == '-') cur++;
        mpoint = estrdup (cur);
        for (i = 0; mpoint[i]; i++) {
@@ -528,25 +528,25 @@ unsigned char read_fstab_from_configuration (void *na) {
 
   if (node->arbattrs) {
    for (i = 0; node->arbattrs[i]; i+=2) {
-    if (!strcmp(node->arbattrs[i], "mountpoint"))
+    if (strmatch(node->arbattrs[i], "mountpoint"))
      mountpoint = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "device"))
+    else if (strmatch(node->arbattrs[i], "device"))
      device = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "fs"))
+    else if (strmatch(node->arbattrs[i], "fs"))
      fs = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "options"))
+    else if (strmatch(node->arbattrs[i], "options"))
      options = str2set (':', node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "before-mount"))
+    else if (strmatch(node->arbattrs[i], "before-mount"))
      before_mount = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "after-mount"))
+    else if (strmatch(node->arbattrs[i], "after-mount"))
      after_mount = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "before-umount"))
+    else if (strmatch(node->arbattrs[i], "before-umount"))
      before_umount = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "after-umount"))
+    else if (strmatch(node->arbattrs[i], "after-umount"))
      after_umount = estrdup (node->arbattrs[i+1]);
-    else if (!strcmp(node->arbattrs[i], "manager")) {
+    else if (strmatch(node->arbattrs[i], "manager")) {
      manager = estrdup (node->arbattrs[i+1]);
-    } else if (!strcmp(node->arbattrs[i], "variables"))
+    } else if (strmatch(node->arbattrs[i], "variables"))
      variables = str2set (':', node->arbattrs[i+1]);
    }
 
@@ -669,9 +669,9 @@ unsigned char read_filesystem_flags_from_configuration (void *na) {
    id = NULL;
    flags = 0;
    for (i = 0; node->arbattrs[i]; i+=2) {
-    if (!strcmp (node->arbattrs[i], "id"))
+    if (strmatch (node->arbattrs[i], "id"))
      id = node->arbattrs[i+1];
-    else if (!strcmp (node->arbattrs[i], "flags"))
+    else if (strmatch (node->arbattrs[i], "flags"))
      flags = node->arbattrs[i+1];
    }
    add_filesystem (id, flags);
@@ -750,7 +750,7 @@ int scanmodules (struct lmodule *modchain) {
                 *lm = modchain;
  char doop = 1;
 
- while (lm) { if (lm->source && !strcmp(lm->source, sm_mountlocal.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ while (lm) { if (lm->source && strmatch(lm->source, sm_mountlocal.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountlocal))) {
    new->source = new->module->rid;
    new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -760,7 +760,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_mountremote.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ while (lm) { if (lm->source && strmatch(lm->source, sm_mountremote.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountremote))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -770,7 +770,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_system.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ while (lm) { if (lm->source && strmatch(lm->source, sm_system.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_system))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -780,7 +780,7 @@ int scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
- while (lm) { if (lm->source && !strcmp(lm->source, sm_critical.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ while (lm) { if (lm->source && strmatch(lm->source, sm_critical.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_critical))) {
   new->source = new->module->rid;
   new->enable = (int (*)(void *, struct einit_event *))enable;
@@ -797,7 +797,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
 
  for (; options[fi]; fi++) {
 #ifdef LINUX
-  if (!strcmp (options[fi], "user") || !strcmp (options[fi], "users")) {
+  if (strmatch (options[fi], "user") || strmatch (options[fi], "users")) {
    eprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
 #ifdef MS_NOEXEC
@@ -809,7 +809,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
 #ifdef MS_NOSUID
    (*mntflags) |= MS_NOSUID;
 #endif
-  } else if (!strcmp (options[fi], "owner")) {
+  } else if (strmatch (options[fi], "owner")) {
    eprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
 #ifdef MS_NODEV
@@ -818,74 +818,74 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
 #ifdef MS_NOSUID
    (*mntflags) |= MS_NOSUID;
 #endif
-  } else if (!strcmp (options[fi], "nouser") || !strcmp (options[fi], "group") || !strcmp (options[fi], "auto") || !strcmp (options[fi], "defaults")) {
+  } else if (strmatch (options[fi], "nouser") || strmatch (options[fi], "group") || strmatch (options[fi], "auto") || strmatch (options[fi], "defaults")) {
    eprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
-  } else if (!strcmp (options[fi], "_netdev")) {
+  } else if (strmatch (options[fi], "_netdev")) {
    eprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
   } else
 #endif
 
 #ifdef MS_NOATIME
-  if (!strcmp (options[fi], "noatime")) (*mntflags) |= MS_NOATIME;
-  else if (!strcmp (options[fi], "atime")) (*mntflags) = ((*mntflags) & MS_NOATIME) ? (*mntflags) ^ MS_NOATIME : (*mntflags);
+  if (strmatch (options[fi], "noatime")) (*mntflags) |= MS_NOATIME;
+  else if (strmatch (options[fi], "atime")) (*mntflags) = ((*mntflags) & MS_NOATIME) ? (*mntflags) ^ MS_NOATIME : (*mntflags);
   else
 #endif
 
 #ifdef MS_NODEV
-  if (!strcmp (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
-  else if (!strcmp (options[fi], "dev")) (*mntflags) = ((*mntflags) & MS_NODEV) ? (*mntflags) ^ MS_NODEV : (*mntflags);
+  if (strmatch (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
+  else if (strmatch (options[fi], "dev")) (*mntflags) = ((*mntflags) & MS_NODEV) ? (*mntflags) ^ MS_NODEV : (*mntflags);
   else
 #endif
 
 #ifdef MS_NODIRATIME
-  if (!strcmp (options[fi], "nodiratime")) (*mntflags) |= MS_NODIRATIME;
-  else if (!strcmp (options[fi], "diratime")) (*mntflags) = ((*mntflags) & MS_NODIRATIME) ? (*mntflags) ^ MS_NODIRATIME : (*mntflags);
+  if (strmatch (options[fi], "nodiratime")) (*mntflags) |= MS_NODIRATIME;
+  else if (strmatch (options[fi], "diratime")) (*mntflags) = ((*mntflags) & MS_NODIRATIME) ? (*mntflags) ^ MS_NODIRATIME : (*mntflags);
   else
 #endif
 
 #ifdef MS_NOEXEC
-  if (!strcmp (options[fi], "noexec")) (*mntflags) |= MS_NOEXEC;
-  else if (!strcmp (options[fi], "exec")) (*mntflags) = ((*mntflags) & MS_NOEXEC) ? (*mntflags) ^ MS_NOEXEC : (*mntflags);
+  if (strmatch (options[fi], "noexec")) (*mntflags) |= MS_NOEXEC;
+  else if (strmatch (options[fi], "exec")) (*mntflags) = ((*mntflags) & MS_NOEXEC) ? (*mntflags) ^ MS_NOEXEC : (*mntflags);
   else
 #endif
 
 #ifdef MS_NOSUID
-  if (!strcmp (options[fi], "nosuid")) (*mntflags) |= MS_NOSUID;
-  else if (!strcmp (options[fi], "suid")) (*mntflags) = ((*mntflags) & MS_NOSUID) ? (*mntflags) ^ MS_NOSUID : (*mntflags);
+  if (strmatch (options[fi], "nosuid")) (*mntflags) |= MS_NOSUID;
+  else if (strmatch (options[fi], "suid")) (*mntflags) = ((*mntflags) & MS_NOSUID) ? (*mntflags) ^ MS_NOSUID : (*mntflags);
   else
 #endif
 
 #ifdef MS_DIRSYNC
-  if (!strcmp (options[fi], "dirsync")) (*mntflags) |= MS_DIRSYNC;
-  else if (!strcmp (options[fi], "nodirsync")) (*mntflags) = ((*mntflags) & MS_DIRSYNC) ? (*mntflags) ^ MS_DIRSYNC : (*mntflags);
+  if (strmatch (options[fi], "dirsync")) (*mntflags) |= MS_DIRSYNC;
+  else if (strmatch (options[fi], "nodirsync")) (*mntflags) = ((*mntflags) & MS_DIRSYNC) ? (*mntflags) ^ MS_DIRSYNC : (*mntflags);
   else
 #endif
 
 #ifdef MS_SYNCHRONOUS
-  if (!strcmp (options[fi], "sync")) (*mntflags) |= MS_SYNCHRONOUS;
-  else if (!strcmp (options[fi], "nosync")) (*mntflags) = ((*mntflags) & MS_SYNCHRONOUS) ? (*mntflags) ^ MS_SYNCHRONOUS : (*mntflags);
+  if (strmatch (options[fi], "sync")) (*mntflags) |= MS_SYNCHRONOUS;
+  else if (strmatch (options[fi], "nosync")) (*mntflags) = ((*mntflags) & MS_SYNCHRONOUS) ? (*mntflags) ^ MS_SYNCHRONOUS : (*mntflags);
   else
 #endif
 
 #ifdef MS_MANDLOCK
-  if (!strcmp (options[fi], "mand")) (*mntflags) |= MS_MANDLOCK;
-  else if (!strcmp (options[fi], "nomand")) (*mntflags) = ((*mntflags) & MS_MANDLOCK) ? (*mntflags) ^ MS_MANDLOCK : (*mntflags);
+  if (strmatch (options[fi], "mand")) (*mntflags) |= MS_MANDLOCK;
+  else if (strmatch (options[fi], "nomand")) (*mntflags) = ((*mntflags) & MS_MANDLOCK) ? (*mntflags) ^ MS_MANDLOCK : (*mntflags);
   else
 #endif
 
 #ifdef MS_RDONLY
-  if (!strcmp (options[fi], "ro")) (*mntflags) |= MS_RDONLY;
-  else if (!strcmp (options[fi], "rw")) (*mntflags) = ((*mntflags) & MS_RDONLY) ? (*mntflags) ^ MS_RDONLY : (*mntflags);
+  if (strmatch (options[fi], "ro")) (*mntflags) |= MS_RDONLY;
+  else if (strmatch (options[fi], "rw")) (*mntflags) = ((*mntflags) & MS_RDONLY) ? (*mntflags) ^ MS_RDONLY : (*mntflags);
   else
 #endif
 
 #ifdef MS_BIND
-  if (!strcmp (options[fi], "bind")) (*mntflags) |= MS_BIND;
+  if (strmatch (options[fi], "bind")) (*mntflags) |= MS_BIND;
   else
 #endif
 
 #ifdef MS_REMOUNT
-  if (!strcmp (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
+  if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
   else
 #endif
 
@@ -965,7 +965,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
    if (!source)
     source = fstype;
 
-   if (!strcmp (fstype, "auto"))
+   if (strmatch (fstype, "auto"))
     fstype = cfg_getstring ("configuration-storage-filesystem-guessing-order", NULL);
 
    fstype_s = str2set (':', fstype);
@@ -1013,7 +1013,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
     if (gmode != EINIT_GMODE_SANDBOX) {
 // root node should only be remounted...
-     if (!strcmp ("/", mountpoint)) goto attempt_remount;
+     if (strmatch ("/", mountpoint)) goto attempt_remount;
 #ifdef DARWIN
      if (mount (source, mountpoint, mntflags, fsdata) == -1)
 #else
@@ -1235,8 +1235,8 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  if (options) {
   char **noptions = NULL;
   for (i = 0; options[i]; i++) {
-   if (!strcmp (options[i], "noauto")) mountflags |= MOUNT_FSTAB_NOAUTO;
-   else if (!strcmp (options[i], "critical")) mountflags |= MOUNT_FSTAB_CRITICAL;
+   if (strmatch (options[i], "noauto")) mountflags |= MOUNT_FSTAB_NOAUTO;
+   else if (strmatch (options[i], "critical")) mountflags |= MOUNT_FSTAB_CRITICAL;
    else noptions = (char **)setadd ((void **)noptions, (void *)(options[i]), SET_TYPE_STRING);
   }
   free (options);
@@ -1346,11 +1346,11 @@ void add_filesystem (char *name, char *options) {
  uintptr_t flags = 0, i = 0;
  if (t) {
   for (; t[i]; i++) {
-   if (!strcmp (t[i], "rw"))
+   if (strmatch (t[i], "rw"))
     flags |= FS_CAPA_RW;
-   else if (!strcmp (t[i], "volatile"))
+   else if (strmatch (t[i], "volatile"))
     flags |= FS_CAPA_VOLATILE;
-   else if (!strcmp (t[i], "network"))
+   else if (strmatch (t[i], "network"))
     flags |= FS_CAPA_NETWORK;
    }
   free (t);
@@ -1373,8 +1373,8 @@ void mount_ipc_handler(struct einit_event *ev) {
  char **argv = (char **) ev->set;
  if (argv[0] && argv[1]) {
 #ifdef DEBUG
-  if (!strcmp (argv[0], "list")) {
-   if (!strcmp (argv[1], "fstab")) {
+  if (strmatch (argv[0], "list")) {
+   if (strmatch (argv[1], "fstab")) {
     struct stree *cur = ( mcb.fstab ? *(mcb.fstab->lbase) : NULL );
     struct fstab_entry *val = NULL;
 
@@ -1387,7 +1387,7 @@ void mount_ipc_handler(struct einit_event *ev) {
      }
      cur = streenext (cur);
     }
-   } else if (!strcmp (argv[1], "block-devices")) {
+   } else if (strmatch (argv[1], "block-devices")) {
     struct stree *cur = mcb.blockdevices;
     struct bd_info *val = NULL;
 
@@ -1403,7 +1403,7 @@ void mount_ipc_handler(struct einit_event *ev) {
    }
   } else
 #endif
-  if (!strcmp (argv[0], "examine") && !strcmp (argv[1], "configuration")) {
+  if (strmatch (argv[0], "examine") && strmatch (argv[1], "configuration")) {
 /* error checking... */
    char **tmpset, *tmpstring;
 
@@ -1459,7 +1459,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
      eputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", (FILE *)ev->para);
      ev->task++;
-    } else if (!strcmp ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
+    } else if (strmatch ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
      eputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", (FILE *)ev->para);
      ev->task++;
     }
@@ -1468,7 +1468,7 @@ void mount_ipc_handler(struct einit_event *ev) {
     while (tstree) {
      struct stat stbuf;
 
-     if (!(((struct fstab_entry *)(tstree->value))->fs) || !strcmp ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
+     if (!(((struct fstab_entry *)(tstree->value))->fs) || strmatch ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
       char tmpstr[BUFFERSIZE];
       if (inset ((void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
 #ifdef LINUX
@@ -1496,7 +1496,7 @@ void mount_ipc_handler(struct einit_event *ev) {
       unsigned long tmpmnt = 0;
       char *xtmp = __options_string_to_mountflags ((((struct fstab_entry *)(tstree->value))->options), &tmpmnt, (((struct fstab_entry *)(tstree->value))->mountpoint));
 
-      if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && !strcmp (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
+      if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && strmatch (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
        eprintf ((FILE *)ev->para, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
       }
 

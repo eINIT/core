@@ -141,7 +141,7 @@ struct stree *streefind (const struct stree *stree, const char *key, const char 
  if (!c) return NULL;
 
  while (c) {
-  if (!strcmp (key, c->key)) {
+  if (strmatch (key, c->key)) {
    return c;
   }
   c = c->next;

@@ -90,7 +90,7 @@ int disable (struct dexecinfo *dexec, struct einit_event *status);
 struct dexecinfo **dxdata = NULL;
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
@@ -158,42 +158,42 @@ int scanmodules (struct lmodule *modchain) {
   char doop = 1;
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
-   if (!strcmp (node->arbattrs[i], "id")) {
+   if (strmatch (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
     dexec->id = node->arbattrs[i+1];
-   } else if (!strcmp (node->arbattrs[i], "name"))
+   } else if (strmatch (node->arbattrs[i], "name"))
     modinfo->name = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "command"))
+   else if (strmatch (node->arbattrs[i], "command"))
     dexec->command = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "prepare"))
+   else if (strmatch (node->arbattrs[i], "prepare"))
     dexec->prepare = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "cleanup"))
+   else if (strmatch (node->arbattrs[i], "cleanup"))
     dexec->cleanup = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "uid"))
+   else if (strmatch (node->arbattrs[i], "uid"))
     dexec->uid = atoi(node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "gid"))
+   else if (strmatch (node->arbattrs[i], "gid"))
     dexec->gid = atoi(node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "user"))
+   else if (strmatch (node->arbattrs[i], "user"))
     dexec->user = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "group"))
+   else if (strmatch (node->arbattrs[i], "group"))
     dexec->group = node->arbattrs[i+1];
-   else if (!strcmp("restart", node->arbattrs[i]))
+   else if (strmatch("restart", node->arbattrs[i]))
     dexec->restart = parse_boolean(node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "pid")) {
+   else if (strmatch (node->arbattrs[i], "pid")) {
     dexec->environment = straddtoenviron (dexec->environment, "pidfile", node->arbattrs[i+1]);
     dexec->pidfile = node->arbattrs[i+1];
    }
 
-   else if (!strcmp (node->arbattrs[i], "requires"))
+   else if (strmatch (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "provides"))
+   else if (strmatch (node->arbattrs[i], "provides"))
     modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "after"))
+   else if (strmatch (node->arbattrs[i], "after"))
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "before"))
+   else if (strmatch (node->arbattrs[i], "before"))
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
 
-   else if (!strcmp (node->arbattrs[i], "variables"))
+   else if (strmatch (node->arbattrs[i], "variables"))
     dexec->variables = str2set (':', node->arbattrs[i+1]);
    else
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
@@ -203,7 +203,7 @@ int scanmodules (struct lmodule *modchain) {
    uint32_t u = 0;
    char add = 1;
    for (u = 0; dxdata[u]; u++) {
-    if (!strcmp (dxdata[u]->id, dexec->id)) {
+    if (strmatch (dxdata[u]->id, dexec->id)) {
      add = 0;
      dxdata[u] = dexec;
      break;
@@ -218,7 +218,7 @@ int scanmodules (struct lmodule *modchain) {
 
   struct lmodule *lm = modchain;
   while (lm) {
-   if (lm->source && !strcmp(lm->source, modinfo->rid)) {
+   if (lm->source && strmatch(lm->source, modinfo->rid)) {
 
     lm->param = (void *)dexec;
     lm->enable = (int (*)(void *, struct einit_event *))enable;

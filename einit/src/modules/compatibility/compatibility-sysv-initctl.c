@@ -103,7 +103,7 @@ pthread_t initctl_thread;
 struct lmodule *this = NULL;
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-compatibility-sysv-initctl", NULL)) {
    eputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", (FILE *)ev->para);
    ev->task++;
@@ -205,8 +205,8 @@ void * initctl_wait (char *fifo) {
      char **cx = str2set (':', ic.padding);
      if (cx) {
       if (cx[0] && cx[1]) {
-       if (!strcmp (cx[0], "INIT_HALT")) {
-        if (!strcmp (cx[1], "HALT") || !strcmp (cx[1], "POWERDOWN")) {
+       if (strmatch (cx[0], "INIT_HALT")) {
+        if (strmatch (cx[1], "HALT") || strmatch (cx[1], "POWERDOWN")) {
          struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
          ee.string = "power-down";
          event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);

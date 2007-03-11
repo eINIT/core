@@ -141,7 +141,7 @@ int cleanup (struct lmodule *irr) {
 }
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "exec")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "exec")) {
   struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
   ev->flag = 1;
   ee.para = (void *)me;
@@ -348,11 +348,11 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   if (optx) {
    unsigned int x = 0;
    for (; optx[x]; x++) {
-    if (!strcmp (optx[x], "no-pipe")) {
+    if (strmatch (optx[x], "no-pipe")) {
      options |= PEXEC_OPTION_NOPIPE;
-    } else if (!strcmp (optx[x], "safe-environment")) {
+    } else if (strmatch (optx[x], "safe-environment")) {
      options |= PEXEC_OPTION_SAFEENVIRONMENT;
-    } else if (!strcmp (optx[x], "dont-close-stdin")) {
+    } else if (strmatch (optx[x], "dont-close-stdin")) {
      options |= PEXEC_OPTION_DONTCLOSESTDIN;
     }
    }
@@ -489,11 +489,11 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   if (optx) {
    unsigned int x = 0;
    for (; optx[x]; x++) {
-    if (!strcmp (optx[x], "no-pipe")) {
+    if (strmatch (optx[x], "no-pipe")) {
      options |= PEXEC_OPTION_NOPIPE;
-    } else if (!strcmp (optx[x], "safe-environment")) {
+    } else if (strmatch (optx[x], "safe-environment")) {
      options |= PEXEC_OPTION_SAFEENVIRONMENT;
-    } else if (!strcmp (optx[x], "dont-close-stdin")) {
+    } else if (strmatch (optx[x], "dont-close-stdin")) {
      options |= PEXEC_OPTION_DONTCLOSESTDIN;
     }
    }
@@ -578,25 +578,25 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
      strtrim (rxbuffer);
 
      if (fbc) {
-      if (!strcmp (fbc[0], "feedback")) {
+      if (strmatch (fbc[0], "feedback")) {
 // suppose things are going fine until proven otherwise
        cs = STATUS_OK;
 
-       if (!strcmp (fbc[1], "notice")) {
+       if (strmatch (fbc[1], "notice")) {
         orest = 0;
         status->string = fbc[2];
         status_update (status);
-       } else if (!strcmp (fbc[1], "warning")) {
+       } else if (strmatch (fbc[1], "warning")) {
         orest = 0;
         status->string = fbc[2];
         status->flag++;
         status_update (status);
-       } else if (!strcmp (fbc[1], "success")) {
+       } else if (strmatch (fbc[1], "success")) {
         orest = 0;
         cs = STATUS_OK;
         status->string = fbc[2];
         status_update (status);
-       } else if (!strcmp (fbc[1], "failure")) {
+       } else if (strmatch (fbc[1], "failure")) {
         orest = 0;
         cs = STATUS_FAIL;
         status->string = fbc[2];

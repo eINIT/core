@@ -98,7 +98,7 @@ int ipc (char *cmd) {
  fflush (esocket);
 
  while ((!feof(esocket)) && fgets (buffer, BUFFERSIZE, esocket)) {
-  if (!strcmp("IPC//processed.\n", buffer)) {
+  if (strmatch("IPC//processed.\n", buffer)) {
    char retval[BUFFERSIZE];
    *retval = 0;
 
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
  char *name = estrdup ((char *)basename(argv[0]));
  char ansi = 0;
  c[0] = 0;
- if (!strcmp (name, "erc")) {
+ if (strmatch (name, "erc")) {
   c = (char *)erealloc (c, 3*sizeof (char));
   c = strcat (c, "rc");
  } else if (strcmp (name, "einit-control")) {

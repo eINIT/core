@@ -207,7 +207,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
      } else {
       if (fseek (device, 64*1024, SEEK_SET) || (fread (&reiser_sb, sizeof(struct reiserfs_super_block), 1, device) < 0)) {
        bdi->status = BF_STATUS_ERROR_IO;
-      } else if (!strcmp (reiser_sb.s_magic, "ReIsErFs") || !strcmp (reiser_sb.s_magic, "ReIsEr2Fs") || !strcmp (reiser_sb.s_magic, "ReIsEr3Fs")) {
+      } else if (strmatch (reiser_sb.s_magic, "ReIsErFs") || strmatch (reiser_sb.s_magic, "ReIsEr2Fs") || strmatch (reiser_sb.s_magic, "ReIsEr3Fs")) {
        if (fseek (device, (uintmax_t)((uintmax_t)(reiser_sb.s_block_count -1) * (uintmax_t)reiser_sb.s_blocksize), SEEK_SET) || fread (&tmp, (reiser_sb.s_blocksize < 1024 ? reiser_sb.s_blocksize : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
 #ifdef DEBUG
         eprintf (stderr, "%s: ReiserFS superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, reiser_sb.s_block_count, reiser_sb.s_blocksize);

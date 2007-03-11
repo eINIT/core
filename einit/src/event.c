@@ -289,34 +289,34 @@ uint32_t event_string_to_code (const char *code) {
  uint32_t ret = EVENT_SUBSYSTEM_CUSTOM;
 
  if (tcode) {
-  if (!strcmp (tcode[0], "core"))          ret = EVENT_SUBSYSTEM_EINIT;
-  else if (!strcmp (tcode[0], "ipc"))      ret = EVENT_SUBSYSTEM_IPC;
-  else if (!strcmp (tcode[0], "mount"))    ret = EVENT_SUBSYSTEM_MOUNT;
-  else if (!strcmp (tcode[0], "feedback")) ret = EVENT_SUBSYSTEM_FEEDBACK;
-  else if (!strcmp (tcode[0], "power"))    ret = EVENT_SUBSYSTEM_POWER;
-  else if (!strcmp (tcode[0], "timer"))    ret = EVENT_SUBSYSTEM_TIMER;
+  if (strmatch (tcode[0], "core"))          ret = EVENT_SUBSYSTEM_EINIT;
+  else if (strmatch (tcode[0], "ipc"))      ret = EVENT_SUBSYSTEM_IPC;
+  else if (strmatch (tcode[0], "mount"))    ret = EVENT_SUBSYSTEM_MOUNT;
+  else if (strmatch (tcode[0], "feedback")) ret = EVENT_SUBSYSTEM_FEEDBACK;
+  else if (strmatch (tcode[0], "power"))    ret = EVENT_SUBSYSTEM_POWER;
+  else if (strmatch (tcode[0], "timer"))    ret = EVENT_SUBSYSTEM_TIMER;
 
   if (tcode[1])
    switch (ret) {
     case EVENT_SUBSYSTEM_EINIT:
-     if (!strcmp (tcode[1], "update-configuration")) ret = EVE_UPDATE_CONFIGURATION;
-     else if (!strcmp (tcode[1], "module-status-update")) ret = EVE_MODULE_UPDATE;
-     else if (!strcmp (tcode[1], "service-status-update")) ret = EVE_SERVICE_UPDATE;
-     else if (!strcmp (tcode[1], "configuration-status-update")) ret = EVE_CONFIGURATION_UPDATE;
+     if (strmatch (tcode[1], "update-configuration")) ret = EVE_UPDATE_CONFIGURATION;
+     else if (strmatch (tcode[1], "module-status-update")) ret = EVE_MODULE_UPDATE;
+     else if (strmatch (tcode[1], "service-status-update")) ret = EVE_SERVICE_UPDATE;
+     else if (strmatch (tcode[1], "configuration-status-update")) ret = EVE_CONFIGURATION_UPDATE;
      break;
     case EVENT_SUBSYSTEM_MOUNT:
-     if (!strcmp (tcode[1], "update")) ret = EVE_DO_UPDATE;
+     if (strmatch (tcode[1], "update")) ret = EVE_DO_UPDATE;
      break;
     case EVENT_SUBSYSTEM_FEEDBACK:
-     if (!strcmp (tcode[1], "module")) ret = EVE_FEEDBACK_MODULE_STATUS;
-     else if (!strcmp (tcode[1], "plan")) ret = EVE_FEEDBACK_PLAN_STATUS;
-     else if (!strcmp (tcode[1], "notice")) ret = EVE_FEEDBACK_NOTICE;
+     if (strmatch (tcode[1], "module")) ret = EVE_FEEDBACK_MODULE_STATUS;
+     else if (strmatch (tcode[1], "plan")) ret = EVE_FEEDBACK_PLAN_STATUS;
+     else if (strmatch (tcode[1], "notice")) ret = EVE_FEEDBACK_NOTICE;
      break;
     case EVENT_SUBSYSTEM_POWER:
-     if (!strcmp (tcode[1], "reset-scheduled")) ret = EVENT_POWER_RESET_SCHEDULED;
-     else if (!strcmp (tcode[1], "reset-imminent")) ret = EVENT_POWER_RESET_IMMINENT;
-     else if (!strcmp (tcode[1], "mps-down-scheduled")) ret = EVENT_POWER_DOWN_SCHEDULED;
-     else if (!strcmp (tcode[1], "mps-down-imminent")) ret = EVENT_POWER_DOWN_IMMINENT;
+     if (strmatch (tcode[1], "reset-scheduled")) ret = EVENT_POWER_RESET_SCHEDULED;
+     else if (strmatch (tcode[1], "reset-imminent")) ret = EVENT_POWER_RESET_IMMINENT;
+     else if (strmatch (tcode[1], "mps-down-scheduled")) ret = EVENT_POWER_DOWN_SCHEDULED;
+     else if (strmatch (tcode[1], "mps-down-imminent")) ret = EVENT_POWER_DOWN_IMMINENT;
      break;
    }
 
@@ -333,7 +333,7 @@ void event_ipc_handler(struct einit_event *event) {
  int argc = setcount (event->set);
 
  if (argc >= 2) {
-  if (!strcmp (argv[0], "update") && !strcmp (argv[1], "configuration")) {
+  if (strmatch (argv[0], "update") && strmatch (argv[1], "configuration")) {
    struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
    nev.string = argv[2];
 
@@ -347,7 +347,7 @@ void event_ipc_handler(struct einit_event *event) {
    evstaticdestroy(nev);
 
    if (!event->flag) event->flag = 1;
-  } else if (!strcmp (argv[0], "emit-event")) {
+  } else if (strmatch (argv[0], "emit-event")) {
    struct einit_event nev = evstaticinit(event_string_to_code(argv[1]));
    nev.string = argv[2];
    nev.set = (void **)(argv+2);
@@ -359,8 +359,8 @@ void event_ipc_handler(struct einit_event *event) {
    if (!event->flag) event->flag = 1;
   }
 #ifdef DEBUG
-   else if (!strcmp (argv[0], "list")) {
-   if (!strcmp (argv[1], "event-log")) {
+   else if (strmatch (argv[0], "list")) {
+   if (strmatch (argv[1], "event-log")) {
     if (event_logbuffer) {
      struct event_ringbuffer_node *cnode = event_logbuffer;
 

@@ -198,6 +198,8 @@ struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char
 
 int exopen(const char *pathname, int mode, const char *file, const int line, const char *function);
 
+char strmatch (const char *, const char *);
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus

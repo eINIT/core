@@ -70,20 +70,20 @@ const struct smodule self = {
 };
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   char *s;
 
   if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
    eputs (" * configuration variable \"configuration-network-hostname\" not found.\n", (FILE *)ev->para);
    ev->task++;
-  } else if (!strcmp ("localhost", s)) {
+  } else if (strmatch ("localhost", s)) {
    eputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", (FILE *)ev->para);
    ev->task++;
   }
   if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
    eputs (" * configuration variable \"configuration-network-domainname\" not found.\n", (FILE *)ev->para);
    ev->task++;
-  } else if (!strcmp ("local", s)) {
+  } else if (strmatch ("local", s)) {
    eputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", (FILE *)ev->para);
   }
 

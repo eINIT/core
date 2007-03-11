@@ -109,14 +109,14 @@ char *xml_source_identifier = "xml-expat";
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int nlen = strlen (name);
- if (!strcmp (name, "einit")) {
+ if (strmatch (name, "einit")) {
   ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG;
   return;
  }
 
  if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
 
- if (!strcmp (name, "if")) {
+ if (strmatch (name, "if")) {
   (((struct einit_xml_expat_user_data *)userData)->if_level)++;
 /* shift results to the left -- make room for another result */
   (((struct einit_xml_expat_user_data *)userData)->if_results) <<= 1;
@@ -129,21 +129,21 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    uint32_t i = 0;
 
    for (; atts[i]; i+=2) {
-    if (!strcmp (atts[i], "match")) { // condition is a literal string match
+    if (strmatch (atts[i], "match")) { // condition is a literal string match
      char **mt = str2set (':', (char *)(atts[i+1]));
      if (mt && mt[0] && mt[1]) {
-      if (!strcmp (mt[0], "core-mode")) { // literal match is against the einit core mode (gmode)
+      if (strmatch (mt[0], "core-mode")) { // literal match is against the einit core mode (gmode)
        mt[0] = ((gmode == EINIT_GMODE_INIT) ? "init" :
                ((gmode == EINIT_GMODE_METADAEMON) ? "metadaemon" :
                ((gmode == EINIT_GMODE_SANDBOX) ? "sandbox" : "undefined")));
       }
 
-      if (!strcmp (mt[0], mt[1]))
+      if (strmatch (mt[0], mt[1]))
        (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
      }
 
      if (mt) free (mt);
-    } else if (!strcmp (atts[i], "file-exists")) { // does this file exist?
+    } else if (strmatch (atts[i], "file-exists")) { // does this file exist?
      struct stat stbuf;
 
      if (!stat (atts[i+1], &stbuf))
@@ -153,7 +153,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   }
 
   return;
- } else if (!strcmp (name, "else") && (((struct einit_xml_expat_user_data *)userData)->if_level)) {
+ } else if (strmatch (name, "else") && (((struct einit_xml_expat_user_data *)userData)->if_level)) {
   (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
 
   return;
@@ -174,7 +174,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   strcat (((struct einit_xml_expat_user_data *)userData)->prefix, name);
 
   int i = 0;
-  if (!strcmp (name, "mode")) {
+  if (strmatch (name, "mode")) {
 /* parse the information presented in the element as a mode-definition */
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
    newnode->options = ((struct einit_xml_expat_user_data *)userData)->target_options;
@@ -184,10 +184,10 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->source = xml_source_identifier;
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    for (; newnode->arbattrs[i] != NULL; i+=2) {
-    if (!strcmp (newnode->arbattrs[i], "id")) {
+    if (strmatch (newnode->arbattrs[i], "id")) {
      newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
     }
-/*    else if (!strcmp (newnode->arbattrs[i], "base")) {
+/*    else if (strmatch (newnode->arbattrs[i], "base")) {
      newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
     }*/
    }
@@ -211,11 +211,11 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    if (newnode->arbattrs)
     for (; newnode->arbattrs[i] != NULL; i+=2) {
-     if (!strcmp (newnode->arbattrs[i], "s"))
+     if (strmatch (newnode->arbattrs[i], "s"))
       newnode->svalue = (char *)newnode->arbattrs[i+1];
-     else if (!strcmp (newnode->arbattrs[i], "i"))
+     else if (strmatch (newnode->arbattrs[i], "i"))
       newnode->value = parse_integer (newnode->arbattrs[i+1]);
-     else if (!strcmp (newnode->arbattrs[i], "b")) {
+     else if (strmatch (newnode->arbattrs[i], "b")) {
       newnode->flag = parse_boolean (newnode->arbattrs[i+1]);
      }
     }
@@ -228,14 +228,14 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
  if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
 
- if (!strcmp (name, "einit")) {
+ if (strmatch (name, "einit")) {
   ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG;
   return;
- } else if (!strcmp (name, "if")) {
+ } else if (strmatch (name, "if")) {
   (((struct einit_xml_expat_user_data *)userData)->if_level)--;
   (((struct einit_xml_expat_user_data *)userData)->if_results) >>= 1;
   return;
- } else if (!strcmp (name, "else")) {
+ } else if (strmatch (name, "else")) {
   if  (((struct einit_xml_expat_user_data *)userData)->if_level)
    (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
 
@@ -254,7 +254,7 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
    }
   }
 
-  if (!strcmp (name, "mode"))
+  if (strmatch (name, "mode"))
    curmode = NULL;
  }
 }
@@ -279,7 +279,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   .prefix = NULL,
   .target_options =
     (tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&
-    !strcmp (configfile, tmps) ?
+    strmatch (configfile, tmps) ?
     EINIT_CFGNODE_ONLINE_MODIFICATION : 0
  };
 

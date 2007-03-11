@@ -145,7 +145,7 @@ char show_progress = 1;
 uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
    eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", (FILE *)ev->para);
    ev->task++;
@@ -233,7 +233,7 @@ int enable (void *pa, struct einit_event *status) {
    errno = 0;
 
    if (filenode->arbattrs[i]) {
-    if (!strcmp (filenode->arbattrs[i], "stdin")) {
+    if (strmatch (filenode->arbattrs[i], "stdin")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
       if (!tmp)
@@ -241,7 +241,7 @@ int enable (void *pa, struct einit_event *status) {
      } else {
       perror ("einit-feedback-visual-textual: opening stdin");
      }
-    } else if (!strcmp (filenode->arbattrs[i], "stdout")) {
+    } else if (strmatch (filenode->arbattrs[i], "stdout")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
       if (!tmp)
@@ -250,7 +250,7 @@ int enable (void *pa, struct einit_event *status) {
       perror ("einit-feedback-visual-textual: opening stdout");
       enableansicodes = 0;
      }
-    } else if (!strcmp (filenode->arbattrs[i], "stderr")) {
+    } else if (strmatch (filenode->arbattrs[i], "stderr")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
       if (!tmp)
@@ -261,7 +261,7 @@ int enable (void *pa, struct einit_event *status) {
       perror ("einit-feedback-visual-textual: opening stderr");
       enableansicodes = 0;
      }
-    } else if (!strcmp (filenode->arbattrs[i], "verbose-output")) {
+    } else if (strmatch (filenode->arbattrs[i], "verbose-output")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       if (vofile)
        vofile = freopen (filenode->arbattrs[i+1], "w", vofile);
@@ -271,7 +271,7 @@ int enable (void *pa, struct einit_event *status) {
      } else {
       perror ("einit-feedback-visual-textual: opening verbose-output file");
      }
-    } else if (!strcmp (filenode->arbattrs[i], "console")) {
+    } else if (strmatch (filenode->arbattrs[i], "console")) {
 #ifdef LINUX
      int tfd = 0;
      errno = 0;
@@ -283,7 +283,7 @@ int enable (void *pa, struct einit_event *status) {
 #else
      eputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
 #endif
-    } else if (!strcmp (filenode->arbattrs[i], "kernel-vt")) {
+    } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
 #ifdef LINUX
      int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
      errno = 0;
@@ -294,7 +294,7 @@ int enable (void *pa, struct einit_event *status) {
 #else
      eputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
 #endif
-    } else if (!strcmp (filenode->arbattrs[i], "activate-vt")) {
+    } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
 #ifdef LINUX
      uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
      int tfd = 0;

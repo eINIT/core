@@ -1,3 +1,6 @@
+2007/03/11: mdeininger
+ * introduced a new function to check for string matches (strmatch())
+
 2007/03/09: mdeininger
  * added support for ryan's shadow modules
 

@@ -116,7 +116,7 @@ pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct p
  uint32_t i = 0;
  if (stat && cond && cond->para)
   for (; stat[i]; i++) {
-   if (stat[i]->cwd && !strcmp ((char *)cond->para, stat[i]->cwd)) {
+   if (stat[i]->cwd && strmatch ((char *)cond->para, stat[i]->cwd)) {
     uintptr_t tmp = (stat[i]->pid);
     ret = (pid_t *)setadd ((void **)ret, (void *)tmp, SET_NOALLOC);
    }
@@ -126,13 +126,13 @@ pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct p
 }
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && !strcmp (ev->set[0], "list")) {
-  if (ev->set[1] && !strcmp (ev->set[1], "processes") && ev->set[2]) {
+ if (ev && ev->set && ev->set[0] && strmatch (ev->set[0], "list")) {
+  if (ev->set[1] && strmatch (ev->set[1], "processes") && ev->set[2]) {
    uintptr_t tnum = atoi (ev->set[3]);
    struct pc_conditional pcc = {
     .match = ev->set[2],
     .para = (ev->set[3] ?
-      ((!strcmp (ev->set[2], "cwd") || !strcmp (ev->set[2], "cwd-below")) ?
+      ((strmatch (ev->set[2], "cwd") || strmatch (ev->set[2], "cwd-below")) ?
       (void *)ev->set[3] : (void *)tnum) : NULL),
     .match_options = PC_COLLECT_ADDITIVE },
     *pcl[2] = { &pcc, NULL };

@@ -265,8 +265,8 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    return;
   }
 
-  if (!strcmp (argv[0], "power") && (argc > 1)) {
-   if (!strcmp (argv[1], "down") || !strcmp (argv[1], "off")) {
+  if (strmatch (argv[0], "power") && (argc > 1)) {
+   if (strmatch (argv[1], "down") || strmatch (argv[1], "off")) {
     if (!ev->flag) ev->flag = 1;
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
@@ -275,7 +275,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     eputs (" >> shutdown queued\n", (FILE *)ev->para);
     evstaticdestroy(ee);
    }
-   if (!strcmp (argv[1], "reset")) {
+   if (strmatch (argv[1], "reset")) {
     if (!ev->flag) ev->flag = 1;
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
@@ -287,9 +287,9 @@ void sched_ipc_event_handler(struct einit_event *ev) {
   }
 
 /* actual power-down/power-reset IPC commands */
-  if (!strcmp (argv[0], "scheduler") && (argc > 1)) {
+  if (strmatch (argv[0], "scheduler") && (argc > 1)) {
    char reset = 0;
-   if (!strcmp (argv[1], "power-down") || (reset = !strcmp (argv[1], "power-reset"))) {
+   if (strmatch (argv[1], "power-down") || (reset = strmatch (argv[1], "power-reset"))) {
     if (!ev->flag) ev->flag = 1;
 
      notice (1, ">> scheduler: sync()-ing");
@@ -333,10 +333,10 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    }
   }
 
-  if (!strcmp (argv[0], "rc") && (argc > 2)) {
+  if (strmatch (argv[0], "rc") && (argc > 2)) {
    if (!ev->flag) ev->flag = 1;
 
-   if (!strcmp (argv[1], "switch-mode")) {
+   if (strmatch (argv[1], "switch-mode")) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = argv[2];
     if (ev->status & EIPC_DETACH) {

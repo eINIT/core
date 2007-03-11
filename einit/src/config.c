@@ -85,8 +85,8 @@ int cfg_addnode (struct cfgnode *node) {
  if (node->arbattrs) {
   uint32_t r = 0;
   for (; node->arbattrs[r]; r+=2) {
-   if (!strcmp ("id", node->arbattrs[r])) node->idattr = node->arbattrs[r+1];
-   else if (!strcmp ("based-on-template", node->arbattrs[r])) template = node->arbattrs[r+1];
+   if (strmatch ("id", node->arbattrs[r])) node->idattr = node->arbattrs[r+1];
+   else if (strmatch ("based-on-template", node->arbattrs[r])) template = node->arbattrs[r+1];
   }
  }
 
@@ -101,20 +101,20 @@ int cfg_addnode (struct cfgnode *node) {
   strcat (nodename, "-template");
 
   while ((tnode = cfg_findnode (nodename, 0, tnode))) {
-   if (tnode->idattr && !strcmp (tnode->idattr, template)) break; // found a matching template
+   if (tnode->idattr && strmatch (tnode->idattr, template)) break; // found a matching template
   }
   if (!tnode || !tnode->arbattrs) goto no_template;
 
   for (ii = 0; node->arbattrs[ii]; ii+=2) {
    attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii], SET_TYPE_STRING);
    attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii+1], SET_TYPE_STRING);
-   if (!strcmp (node->arbattrs[ii], "id")) idn = ii+1;
+   if (strmatch (node->arbattrs[ii], "id")) idn = ii+1;
   }
   for (ii = 0; tnode->arbattrs[ii]; ii+=2) if (!inset ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING)) {
    char *tmp = apply_variables (tnode->arbattrs[ii+1], node->arbattrs);
    attrs = (char **)setadd ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING);
    attrs = (char **)setadd ((void **)attrs, (void *)tmp, SET_TYPE_STRING);
-   if (!strcmp (tnode->arbattrs[ii], "id")) idn = ii+1;
+   if (strmatch (tnode->arbattrs[ii], "id")) idn = ii+1;
    free (tmp);
   }
 
@@ -154,7 +154,7 @@ int cfg_addnode (struct cfgnode *node) {
   while (cur) {
 // this means we found a node wit the same path
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
-       !strcmp (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
+       strmatch (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
 // NTS: implement checks to figure out if the node is similar
 
 // this means we found something that looks like it
@@ -254,7 +254,7 @@ char *cfg_getstring (const char *id, const struct cfgnode *mode) {
    if (node->arbattrs)
 
    for (i = 0; node->arbattrs[i]; i+=2) {
-    if ((f = (!strcmp(node->arbattrs[i], sub[1])))) {
+    if ((f = (strmatch(node->arbattrs[i], sub[1])))) {
      ret = node->arbattrs[i+1];
      break;
     }
@@ -368,7 +368,7 @@ void einit_config_event_handler (struct einit_event *ev) {
 void einit_config_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->para && ev->set) {
   if (ev->set[0] && ev->set[1]) {
-   if (!strcmp ("list", ev->set[0]) && !strcmp ("configuration", ev->set[1])) {
+   if (strmatch ("list", ev->set[0]) && strmatch ("configuration", ev->set[1])) {
     struct stree *otree = NULL;
     char *buffer = NULL;
     cfg_string_converter conv;

@@ -333,7 +333,7 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
 
  if (options == TREE_FIND_FIRST) c = *(stree->root);
  else if (options == TREE_FIND_NEXT) {
-  if (!strcmp (key, stree->key))
+  if (strmatch (key, stree->key))
    c = stree->right;
   else
    c = stree;

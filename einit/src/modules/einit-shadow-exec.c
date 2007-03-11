@@ -115,23 +115,23 @@ void update_shadows(struct cfgnode *xmode) {
 
       memset (&nshadow, 0, sizeof(struct shadow_descriptor));
       for (; cur->arbattrs[i]; i+=2) {
-       if (!strcmp (cur->arbattrs[i], "service"))
+       if (strmatch (cur->arbattrs[i], "service"))
         nserv = str2set(':', cur->arbattrs[i+1]);
-       else if (!strcmp (cur->arbattrs[i], "before-enable"))
+       else if (strmatch (cur->arbattrs[i], "before-enable"))
         nshadow.before_enable = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "before-disable"))
+       else if (strmatch (cur->arbattrs[i], "before-disable"))
         nshadow.before_disable = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "before-reset"))
+       else if (strmatch (cur->arbattrs[i], "before-reset"))
         nshadow.before_reset = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "before-reload"))
+       else if (strmatch (cur->arbattrs[i], "before-reload"))
         nshadow.before_reload = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "after-enable"))
+       else if (strmatch (cur->arbattrs[i], "after-enable"))
         nshadow.after_enable = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "after-disable"))
+       else if (strmatch (cur->arbattrs[i], "after-disable"))
         nshadow.after_disable = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "after-reset"))
+       else if (strmatch (cur->arbattrs[i], "after-reset"))
         nshadow.after_reset = cur->arbattrs[i+1];
-       else if (!strcmp (cur->arbattrs[i], "after-reload"))
+       else if (strmatch (cur->arbattrs[i], "after-reload"))
         nshadow.after_reload = cur->arbattrs[i+1];
       }
 

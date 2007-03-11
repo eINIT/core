@@ -102,11 +102,11 @@ int __ipc_process (char *cmd, FILE *f) {
  ec = setcount (event->set);
 
  for (ic = 0; ic < ec; ic++) {
-  if (!strcmp (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
-  else if (!strcmp (event->set[ic], "--ansi")) event->status |= EIPC_OUTPUT_ANSI;
-  else if (!strcmp (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
-  else if (!strcmp (event->set[ic], "--help")) event->status |= EIPC_HELP;
-  else if (!strcmp (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
+  if (strmatch (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
+  else if (strmatch (event->set[ic], "--ansi")) event->status |= EIPC_OUTPUT_ANSI;
+  else if (strmatch (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
+  else if (strmatch (event->set[ic], "--help")) event->status |= EIPC_HELP;
+  else if (strmatch (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
  }
 
  if (event->status & EIPC_OUTPUT_XML) {
@@ -156,9 +156,9 @@ int __ipc_process (char *cmd, FILE *f) {
    char have_pattern = 0, *new_command = NULL;
 
    for (u = 0; n->arbattrs[u]; u+=2) {
-    if (!strcmp(n->arbattrs[u], "for")) {
+    if (strmatch(n->arbattrs[u], "for")) {
      have_pattern = !eregcomp (&pattern, n->arbattrs[u+1]);
-    } else if (!strcmp(n->arbattrs[u], "do")) {
+    } else if (strmatch(n->arbattrs[u], "do")) {
      new_command = n->arbattrs[u+1];
     }
    }
@@ -176,7 +176,7 @@ int __ipc_process (char *cmd, FILE *f) {
 }
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
    eputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
    ev->task++;

@@ -297,7 +297,7 @@ int inset (const void **haystack, const void *needle, int32_t esize) {
 
  if (esize == SET_TYPE_STRING) {
   for (; haystack[c] != NULL; c++)
-   if (!strcmp (haystack[c], needle)) return 1;
+   if (strmatch (haystack[c], needle)) return 1;
  } else if (esize == -1) {
   for (; haystack[c] != NULL; c++)
    if (haystack[c] == needle) return 1;

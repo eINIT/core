@@ -102,7 +102,7 @@ struct mexecinfo **mxdata = NULL;
 struct lmodule *this = NULL;
 
 void ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
+ if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
@@ -178,43 +178,43 @@ int scanmodules (struct lmodule *modchain) {
 
   if (!node->arbattrs) continue;
   for (; node->arbattrs[i]; i+=2 ) {
-   if (!strcmp (node->arbattrs[i], "id")) {
+   if (strmatch (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
     mexec->id = node->arbattrs[i+1];
-   } else if (!strcmp (node->arbattrs[i], "name"))
+   } else if (strmatch (node->arbattrs[i], "name"))
     modinfo->name = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "enable"))
+   else if (strmatch (node->arbattrs[i], "enable"))
     mexec->enable = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "disable"))
+   else if (strmatch (node->arbattrs[i], "disable"))
     mexec->disable = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "reset"))
+   else if (strmatch (node->arbattrs[i], "reset"))
     mexec->reset = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "reload"))
+   else if (strmatch (node->arbattrs[i], "reload"))
     mexec->reload = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "prepare"))
+   else if (strmatch (node->arbattrs[i], "prepare"))
     mexec->prepare = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "cleanup"))
+   else if (strmatch (node->arbattrs[i], "cleanup"))
     mexec->cleanup = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "uid"))
+   else if (strmatch (node->arbattrs[i], "uid"))
     mexec->uid = atoi(node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "gid"))
+   else if (strmatch (node->arbattrs[i], "gid"))
     mexec->gid = atoi(node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "user"))
+   else if (strmatch (node->arbattrs[i], "user"))
     mexec->user = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "group"))
+   else if (strmatch (node->arbattrs[i], "group"))
     mexec->group = node->arbattrs[i+1];
-   else if (!strcmp (node->arbattrs[i], "pid")) {
+   else if (strmatch (node->arbattrs[i], "pid")) {
     mexec->environment = straddtoenviron (mexec->environment, "pidfile", node->arbattrs[i+1]);
     mexec->pidfile = node->arbattrs[i+1];
-   } else if (!strcmp (node->arbattrs[i], "requires"))
+   } else if (strmatch (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "provides"))
+   else if (strmatch (node->arbattrs[i], "provides"))
     modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "after"))
+   else if (strmatch (node->arbattrs[i], "after"))
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "before"))
+   else if (strmatch (node->arbattrs[i], "before"))
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
-   else if (!strcmp (node->arbattrs[i], "variables"))
+   else if (strmatch (node->arbattrs[i], "variables"))
     mexec->variables = str2set (':', node->arbattrs[i+1]);
    else
     mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
@@ -224,7 +224,7 @@ int scanmodules (struct lmodule *modchain) {
    uint32_t u = 0;
    char add = 1;
    for (u = 0; mxdata[u]; u++) {
-    if (!strcmp (mxdata[u]->id, mexec->id)) {
+    if (strmatch (mxdata[u]->id, mexec->id)) {
      add = 0;
      mxdata[u] = mexec;
      break;
@@ -240,7 +240,7 @@ int scanmodules (struct lmodule *modchain) {
 
   struct lmodule *lm = modchain;
   while (lm) {
-   if (lm->source && !strcmp(lm->source, modinfo->rid)) {
+   if (lm->source && strmatch(lm->source, modinfo->rid)) {
     lm->param = (void *)mexec;
     lm->enable = (int (*)(void *, struct einit_event *))pexec_wrapper;
     lm->disable = (int (*)(void *, struct einit_event *))pexec_wrapper;

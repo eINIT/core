@@ -82,7 +82,7 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 
  if (argc > 1) {
-  if ((argc > 3) && (!strcmp (argv[0], "set") && !strcmp (argv[1], "variable"))) {
+  if ((argc > 3) && (strmatch (argv[0], "set") && strmatch (argv[1], "variable"))) {
    char *t = estrdup (argv[2]), *x, *subattr = NULL;
    struct cfgnode newnode, *onode = NULL;
 
@@ -122,10 +122,10 @@ void ipc_event_handler (struct einit_event *ev) {
    long int tvalue = parse_integer (argv[3]);
 
    if (!subattr) {
-    if (tflag || !strcmp (argv[3], "false") || !strcmp (argv[3], "disabled") || !strcmp (argv[3], "no")) {
+    if (tflag || strmatch (argv[3], "false") || strmatch (argv[3], "disabled") || strmatch (argv[3], "no")) {
      subattr = "b";
      newnode.flag = tflag;
-    } else if (tvalue || !strcmp (argv[3], "0")) {
+    } else if (tvalue || strmatch (argv[3], "0")) {
      subattr = "i";
      newnode.value = tvalue;
     } else
@@ -139,7 +139,7 @@ void ipc_event_handler (struct einit_event *ev) {
     if (attrs) {
      uint32_t ind = 0;
      for (; attrs[ind]; ind += 2) {
-      if (!strcmp (subattr, attrs[ind])) {
+      if (strmatch (subattr, attrs[ind])) {
        char **tmpadup = attrs;
 
        attrs[ind+1] = argv[3];
@@ -149,7 +149,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
        free (tmpadup);
 
-       if (!strcmp ("s", subattr)) {
+       if (strmatch ("s", subattr)) {
         newnode.svalue = attrs[ind+1];
        }
 
@@ -162,7 +162,7 @@ void ipc_event_handler (struct einit_event *ev) {
      attrs = (char **)setadd ((void **)attrs, (void *)subattr, SET_TYPE_STRING);
      attrs = (char **)setadd ((void **)attrs, (void *)argv[3], SET_TYPE_STRING);
 
-     if (!strcmp ("s", subattr)) {
+     if (strmatch ("s", subattr)) {
       newnode.svalue = attrs[setcount((void **)attrs)-1];
      }
 
@@ -173,7 +173,7 @@ void ipc_event_handler (struct einit_event *ev) {
    cfg_addnode (&newnode);
 
    free (t);
-  } else if (!strcmp (argv[0], "save") && !strcmp (argv[1], "configuration")) {
+  } else if (strmatch (argv[0], "save") && strmatch (argv[1], "configuration")) {
    struct stree *tmptree = cfg_filter (".*", EINIT_CFGNODE_ONLINE_MODIFICATION);
    char *buffer = NULL;
    cfg_string_converter conv;

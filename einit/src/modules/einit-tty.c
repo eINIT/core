@@ -176,13 +176,13 @@ int texec (struct cfgnode *node) {
  char **variables = NULL;
 
  for (; node->arbattrs[i]; i+=2) {
-  if (!strcmp("dev", node->arbattrs[i]))
+  if (strmatch("dev", node->arbattrs[i]))
    device = node->arbattrs[i+1];
-  else if (!strcmp("command", node->arbattrs[i]))
+  else if (strmatch("command", node->arbattrs[i]))
    command = node->arbattrs[i+1];
-  else if (!strcmp("restart", node->arbattrs[i]))
-   restart = !strcmp(node->arbattrs[i+1], "yes");
-  else if (!strcmp("variables", node->arbattrs[i])) {
+  else if (strmatch("restart", node->arbattrs[i]))
+   restart = strmatch(node->arbattrs[i+1], "yes");
+  else if (strmatch("variables", node->arbattrs[i])) {
    variables = str2set (':', node->arbattrs[i+1]);
   } else {
    environment = straddtoenviron (environment, node->arbattrs[i], node->arbattrs[i+1]);
