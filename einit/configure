@@ -52,8 +52,8 @@ BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
 COMPILER=gnu
 
-#ASMFUNCTIONS="strmatch"
-ASMFUNCTIONS=""
+ASMFUNCTIONS="strmatch"
+#ASMFUNCTIONS=""
 GCCFLAGS="-Wall"
 
 echo -n "checking options [";
@@ -71,6 +71,9 @@ for param in $@; do
 	elif test "$short" = "--tree-type"; then
 		echo -n " TREETYPE";
 		TREETYPE=${param#*=};
+	elif test "$short" = "--asm-functions"; then
+		echo -n " ASM";
+		ASMFUNCTIONS=${param#*=};
 	elif test "$short" = "--set-type"; then
 		echo -n " SETTYPE";
 		SETTYPE=${param#*=};

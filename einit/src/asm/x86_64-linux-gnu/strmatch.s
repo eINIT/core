@@ -33,14 +33,14 @@
 
 .globl strmatch
 strmatch:
-repeat:	mov (%rsi),%r12b;
-	cmpb (%rdi),%r12b;    // see if the target of the pointers match
+	mov (%rsi),%r8b;
+	cmp (%rdi),%r8b;    // see if the target of the pointers match
 	jne fail;
-	cmpb $0x00,%r12b;
+	cmp $0x00,%r8b;
 	je good;
 	inc %rsi;            // increase our pointers
 	inc %rdi;
-	jmp repeat;          // repeat
+	jmp strmatch;        // repeat
 good:	movl $1,%eax;
 	ret;
 fail:	xor %eax,%eax;
