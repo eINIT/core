@@ -52,6 +52,10 @@ BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
 COMPILER=gnu
 
+#ASMFUNCTIONS="strmatch"
+ASMFUNCTIONS=""
+GCCFLAGS="-Wall"
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
@@ -90,7 +94,8 @@ for param in $@; do
 		RCVERSION="${param#*=}";
 	elif test "$param" = "--debug"; then
 		echo -n " DEBUG";
-		XCFLAGS="$XCFLAGS -DDEBUG -g";
+		XCFLAGS="$XCFLAGS -DDEBUG";
+		GCCFLAGS="${GCCFLAGS} -g"
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		PMODULES="$PMODULES linux";
@@ -300,11 +305,13 @@ echo ${ARCH}
 echo -n "see if we have some sources in assembly... "
 ASMDIR="`pwd`/src/asm/${ARCH}-${OS}-${COMPILER}"
 if test -d "${ASMDIR}"; then
-#	if test -e "${ASMDIR}/strmatch.s"; then
-#		echo -n "strmatch ";
-#		CORELINK="${CORELINK} asm-strmatch.o"
-#		UTILLINK="${UTILLINK} asm-strmatch.o"
-#	fi
+	for i in "${ASMFUNCTIONS}"; do
+		if test -e "${ASMDIR}/${i}.s"; then
+			echo -n "strmatch ";
+			CORELINK="${CORELINK} asm-${i}.o"
+			UTILLINK="${UTILLINK} asm-${i}.o"
+		fi
+	done
 	echo "done.";
 else
 	echo "nope.";
@@ -353,10 +360,10 @@ CORELIBS = ${CORELIBS}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 
-CC = $CC
-ASM = $ASM
+CC = $CC ${GCCFLAGS}
+ASM = $ASM ${GCCFLAGS}
 
-CFLAGS = $CFLAGS$XCFLAGS -Wall
+CFLAGS = $CFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL
