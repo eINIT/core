@@ -79,7 +79,7 @@
    <shell-exec-timeout i="20" />
    <proc-path s="/proc" />
 
-   <swap device="-a" affinity="-1" />
+   <swap device="-a" affinity="0" />
    <setfont font="lat2-12" ttys="1 2 3 4 5 6" />
 
    <sysctl>
@@ -575,6 +575,15 @@
      requires="mount/system"
      enable="
       kernel_modules_alsa=`/sbin/modprobe -c|grep -E '(snd-card|sound-service)-[0-9]'|awk '{print $3}'`;
+
+      if [[ -z '${kernel_modules_alsa}' &amp;&amp; ! ( -d /proc/asound &amp;&amp; -z '$(grep \' no soundcards \' /proc/asound/cards)' ) ]] ; then
+       echo 'feedback|warning|Looks like you didn\'t customise your alsa installation...';
+       kernel_modules_alsa=$(modprobe -c | grep pci: |  awk '{ print $3 }' | grep snd.* | sort | uniq);
+       if test -z '${kernel_modules_alsa}'; then
+        echo 'feedback|warning|I can\'t seem to figure out your alsa modules...';
+       fi;
+      fi;
+
       for x in ${kernel_modules_alsa};
        do echo $x; modprobe $x;
       done; /bin/true"

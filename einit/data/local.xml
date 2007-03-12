@@ -3,7 +3,6 @@
 <!-- you will need to modify this file -->
  <configuration>
   <system>
-   <swap device="/dev/sdb3" affinity="0" />
    <setfont font="lat2-12" ttys="1 2 3 4 5 6" />
   </system>
 
