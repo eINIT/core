@@ -21,8 +21,8 @@ einit-xml: $(CORELINK)
 einit: einit-xml
 	ln -sf einit-xml einit
 
-einit-control: einit-control.o bitch.o utility.o event.o tree.o set.o config.o
-	$(CLD) einit-control.o bitch.o utility.o event.o tree.o set.o config.o $(XDYNAMIC) -o einit-control $(STATIC) -ldl $(LPA)
+einit-control: einit-control.o bitch.o utility.o event.o tree.o set.o config.o $(UTILLINK)
+	$(CLD) einit-control.o bitch.o utility.o event.o tree.o set.o config.o $(UTILLINK) $(XDYNAMIC) -o einit-control $(STATIC) -ldl $(LPA)
 
 install: all
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
@@ -92,3 +92,6 @@ config-xml-expat.o: config-xml-expat.c
 
 utility.o: utility.c
 	$(CCC) -c utility.c
+
+asm-strmatch.o: $(ASMDIR)/strmatch.s
+	$(ASM) -c $(ASMDIR)/strmatch.s -o asm-strmatch.o

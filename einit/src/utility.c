@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <einit/bitch.h>
 #include <einit/config.h>
+#include <einit/configuration.h>
 #include <einit/utility.h>
 #include <einit/set.h>
 #include <einit/event.h>
@@ -498,6 +499,7 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
  return -1;
 }
 
+#ifndef _have_asm_strmatch
 char strmatch (const char *str1, const char *str2) {
  while (*str1 == *str2) {
   if (!*str1) return 1;
@@ -506,3 +508,4 @@ char strmatch (const char *str1, const char *str2) {
  }
  return 0;
 }
+#endif

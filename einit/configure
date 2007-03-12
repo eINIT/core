@@ -50,6 +50,8 @@ MODULELOGICTYPE="v3"
 CORELINK="einit.o module.o bitch.o utility.o scheduler.o event.o config.o tree.o set.o module-configuration.o"
 BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
+COMPILER=gnu
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
@@ -207,6 +209,13 @@ else
 	fi;
 fi
 
+echo -n "checking for an assembler... "
+if test "${COMPILER}" = "gnu"; then
+	ASM=${CC};
+fi
+echo ${ASM}
+
+
 echo "finding absolute include directory..."
 INCLUDE="-I`pwd`/src/include ${INCLUDE}";
 echo -n "searching for expat.h..."
@@ -251,12 +260,14 @@ echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
+	OS="darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
 	LLD="-bundle -Wl,-bundle_loader,`pwd`/src/einit";
 	STATIC="";
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
+	OS="linux";
 	XCFLAGS="$XCFLAGS -DPOSIX -DLINUX";
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
@@ -270,11 +281,33 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	fi
 else
 	echo "(guess) generic posix-ish unix";
+	OS="unknown";
 	XCFLAGS="$XCFLAGS -DPOSIX";
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
 	STATIC="";
+fi
+
+echo -n "testing architecture... "
+if test -x "$(which arch 2>/dev/null)"; then
+	ARCH=`arch`
+else
+	ARCH="unknown"
+fi
+echo ${ARCH}
+
+echo -n "see if we have some sources in assembly... "
+ASMDIR="`pwd`/src/asm/${ARCH}-${OS}-${COMPILER}"
+if test -d "${ASMDIR}"; then
+#	if test -e "${ASMDIR}/strmatch.s"; then
+#		echo -n "strmatch ";
+#		CORELINK="${CORELINK} asm-strmatch.o"
+#		UTILLINK="${UTILLINK} asm-strmatch.o"
+#	fi
+	echo "done.";
+else
+	echo "nope.";
 fi
 
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
@@ -295,6 +328,11 @@ IPARAM =
 SOIPARAM = \${IPARAM}
 BINIPARAM = \${IPARAM}
 
+COMPILER = ${COMPILER}
+OS = ${OS}
+ARCH = ${ARCH}
+ASMDIR = ${ASMDIR}
+
 PMODULES = $PMODULES
 OPTIONS = $OPTIONS
 INCLUDE = $INCLUDE
@@ -310,11 +348,14 @@ INTERNALMODULES = ${INTERNALMODULES}
 EXTERNALMODULES = ${EXTERNALMODULES}
 
 CORELINK = ${CORELINK}
+UTILLINK = ${UTILLINK}
 CORELIBS = ${CORELIBS}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 
 CC = $CC
+ASM = $ASM
+
 CFLAGS = $CFLAGS$XCFLAGS -Wall
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
@@ -376,6 +417,10 @@ if test "${ISSVN}" = "1"; then
 else
  echo "#define EINIT_VERSION_LITERAL_SUFFIX \"#${BUILDNUMBER}\" " >> src/include/einit/configuration.h;
 fi;
+
+if test -n "`echo ${CORELINK}|grep asm-strmatch.o`"; then
+ echo "#define _have_asm_strmatch" >> src/include/einit/configuration.h;
+fi
 
 echo "#endif
 " >> src/include/einit/configuration.h
