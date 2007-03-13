@@ -223,11 +223,11 @@ int main(int argc, char **argv) {
 
      if (strmatch (atom[0], "file")) {
 /* specify configuration files */
-      einit_startup_configuration_files = (char **)setdup ((void **)atom, SET_TYPE_STRING);
+      einit_startup_configuration_files = (char **)setdup ((const void **)atom, SET_TYPE_STRING);
       einit_startup_configuration_files = (char **)strsetdel (einit_startup_configuration_files, (void *)"file");
      } else if (strmatch (atom[0], "mode")) {
 /* specify mode-switches */
-      einit_startup_mode_switches = (char **)setdup ((void **)atom, SET_TYPE_STRING);
+      einit_startup_mode_switches = (char **)setdup ((const void **)atom, SET_TYPE_STRING);
       einit_startup_mode_switches = (char **)strsetdel (einit_startup_mode_switches, (void *)"mode");
      }
 

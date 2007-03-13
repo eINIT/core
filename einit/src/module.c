@@ -271,13 +271,13 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
   nmod->si = ecalloc (1, sizeof (struct service_information));
 
   if (module->si.provides)
-   nmod->si->provides = (char **)setdup((void **)module->si.provides, SET_TYPE_STRING);
+   nmod->si->provides = (char **)setdup((const void **)module->si.provides, SET_TYPE_STRING);
   if (module->si.requires)
-   nmod->si->requires = (char **)setdup((void **)module->si.requires, SET_TYPE_STRING);
+   nmod->si->requires = (char **)setdup((const void **)module->si.requires, SET_TYPE_STRING);
   if (module->si.after)
-   nmod->si->after = (char **)setdup((void **)module->si.after, SET_TYPE_STRING);
+   nmod->si->after = (char **)setdup((const void **)module->si.after, SET_TYPE_STRING);
   if (module->si.before)
-   nmod->si->before = (char **)setdup((void **)module->si.before, SET_TYPE_STRING);
+   nmod->si->before = (char **)setdup((const void **)module->si.before, SET_TYPE_STRING);
  } else
   nmod->si = NULL;
 
@@ -524,7 +524,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
 
   while (ha) {
    if (((struct service_usage_item *)(ha->value))->users &&
-       inset ((void **)(((struct service_usage_item *)(ha->value))->provider), module, -1)) {
+       inset ((const void **)(((struct service_usage_item *)(ha->value))->provider), module, -1)) {
 
     ret ^= SERVICE_NOT_IN_USE;
     break;
@@ -617,7 +617,7 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
    struct service_usage_item *citem = (struct service_usage_item *)ha->value;
 
    if (citem) {
-    if (!inset ((void **)citem->provider, (void *)module, SET_NOALLOC)) {
+    if (!inset ((const void **)citem->provider, (void *)module, SET_NOALLOC)) {
      citem->provider = (struct lmodule **)setadd ((void **)citem->provider, (void *)module, SET_NOALLOC);
     }
    }
@@ -627,14 +627,14 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
   if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
-   nitem.provider = (struct lmodule **)setdup ((void **)module, SET_NOALLOC);
+   nitem.provider = (struct lmodule **)setdup ((const void **)module, SET_NOALLOC);
    service_usage = streeadd (service_usage, service, &nitem, sizeof (struct service_usage_item), NULL);
   } else {
    struct service_usage_item *citem = (struct service_usage_item *)ha->value;
 
    if (citem) {
     free (citem->provider);
-    citem->provider = (struct lmodule **)setdup ((void **)module, SET_NOALLOC);
+    citem->provider = (struct lmodule **)setdup ((const void **)module, SET_NOALLOC);
    }
   }
  }
@@ -659,11 +659,11 @@ char **service_usage_query_cr (const uint16_t task, const struct lmodule *module
   if (module) {
    while (ha) {
     if (((struct service_usage_item *)(ha->value))->users &&
-        inset ((void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
+        inset ((const void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
      for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
       if (((struct service_usage_item *)(ha->value))->users[i]->si &&
           ((struct service_usage_item *)(ha->value))->users[i]->si->provides)
-       ret = (char **)setcombine ((void **)ret, (void **)((struct service_usage_item *)(ha->value))->users[i]->si->provides, SET_TYPE_STRING);
+       ret = (char **)setcombine ((const void **)ret, (const void **)((struct service_usage_item *)(ha->value))->users[i]->si->provides, SET_TYPE_STRING);
      }
     }
     ha = streenext (ha);
@@ -672,7 +672,7 @@ char **service_usage_query_cr (const uint16_t task, const struct lmodule *module
  } else if (task & SERVICE_GET_SERVICES_USED_BY) {
   if (module) {
    while (ha) {
-    if (inset ((void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {
+    if (inset ((const void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {
      ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
     }
     ha = streenext (ha);
@@ -698,7 +698,7 @@ char **service_usage_query_cr (const uint16_t task, const struct lmodule *module
 void mod_event_handler(struct einit_event *ev) {
  if (!ev || !ev->set) return;
  char **argv = (char **) ev->set;
- int argc = setcount (ev->set);
+ int argc = setcount ((const void **)ev->set);
  uint32_t options = ev->status;
 
  if (argc >= 2) {
@@ -721,30 +721,30 @@ void mod_event_handler(struct einit_event *ev) {
       if (cur->si) {
        if (cur->si->provides) {
         if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  provides=\"%s\"", set2str(':', cur->si->provides));
+         eprintf ((FILE *)ev->para, "\n  provides=\"%s\"", set2str(':', (const char **)cur->si->provides));
         } else {
-         eprintf ((FILE *)ev->para, "\n > provides: %s", set2str(' ', cur->si->provides));
+         eprintf ((FILE *)ev->para, "\n > provides: %s", set2str(' ', (const char **)cur->si->provides));
         }
        }
        if (cur->si->requires) {
         if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  requires=\"%s\"", set2str(':', cur->si->requires));
+         eprintf ((FILE *)ev->para, "\n  requires=\"%s\"", set2str(':', (const char **)cur->si->requires));
         } else {
-         eprintf ((FILE *)ev->para, "\n > requires: %s", set2str(' ', cur->si->requires));
+         eprintf ((FILE *)ev->para, "\n > requires: %s", set2str(' ', (const char **)cur->si->requires));
         }
        }
        if (cur->si->after) {
         if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  after=\"%s\"", set2str(':', cur->si->after));
+         eprintf ((FILE *)ev->para, "\n  after=\"%s\"", set2str(':', (const char **)cur->si->after));
         } else {
-         eprintf ((FILE *)ev->para, "\n > after: %s", set2str(' ', cur->si->after));
+         eprintf ((FILE *)ev->para, "\n > after: %s", set2str(' ', (const char **)cur->si->after));
         }
        }
        if (cur->si->before) {
         if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  before=\"%s\"", set2str(':', cur->si->before));
+         eprintf ((FILE *)ev->para, "\n  before=\"%s\"", set2str(':', (const char **)cur->si->before));
         } else {
-         eprintf ((FILE *)ev->para, "\n > before: %s", set2str(' ', cur->si->before));
+         eprintf ((FILE *)ev->para, "\n > before: %s", set2str(' ', (const char **)cur->si->before));
         }
        }
       }
@@ -807,7 +807,7 @@ void mod_event_handler(struct einit_event *ev) {
       struct stree *mcur = modes;
 
       while (mcur) {
-       if (inset ((void **)mcur->value, (void *)scur->key, SET_TYPE_STRING)) {
+       if (inset ((const void **)mcur->value, (void *)scur->key, SET_TYPE_STRING)) {
         inmodes = (char **)setadd((void **)inmodes, (void *)mcur->key, SET_TYPE_STRING);
        }
 
@@ -817,10 +817,10 @@ void mod_event_handler(struct einit_event *ev) {
       if (inmodes) {
        char *modestr;
        if (options & EIPC_OUTPUT_XML) {
-        modestr = set2str (':', inmodes);
+        modestr = set2str (':', (const char **)inmodes);
         eprintf ((FILE *)ev->para, " <service id=\"%s\" used-in=\"%s\">\n", scur->key, modestr);
        } else {
-        modestr = set2str (' ', inmodes);
+        modestr = set2str (' ', (const char **)inmodes);
         eprintf ((FILE *)ev->para, (options & EIPC_OUTPUT_ANSI) ?
                                 "\e[1mservice \"%s\" (%s)\n\e[0m" :
                                 "service \"%s\" (%s)\n",

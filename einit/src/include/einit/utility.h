@@ -71,9 +71,9 @@ extern "C" {
  * This is used to add environment variables to an environment. This is basically a wrapper to some set-handling
  * functions, since the environments in posix-ish systems are the same as these string-sets.
 */
-char **straddtoenviron (char **environment, char *key, char *value);
+char **straddtoenviron (char **environment, const char *key, const char *value);
 
-char *readfile (char *filename);
+char *readfile (const char *filename);
 
 /*!\}*/
 
@@ -107,7 +107,7 @@ void *erealloc (void *, size_t);
  * This is a wrapper around strdup(). Usage and return conditions are exactly the same as for strdup(), except
  * that this function will not fail.
 */
-char *estrdup (char *);
+char *estrdup (const char *);
 /*!\}*/
 
 /*!\ingroup utilityfunctionsstrings
@@ -138,7 +138,7 @@ void strtrim (char *s);
  * (The aural feedback module will, by default, vocalise all messages with a severity of <=5 and play them on
  * the system's default speakers.)
 */
-void notice (unsigned char severity, char *message);
+void notice (unsigned char severity, const char *message);
 
 /*!\brief Duplicate event structure \b ev
  * \param[in] ev the event structure to be modified
@@ -147,7 +147,7 @@ void notice (unsigned char severity, char *message);
  *
  * This function will duplicate and return the event structure \b ev that is passed to it.
 */
-struct einit_event *evdup (struct einit_event *ev);
+struct einit_event *evdup (const struct einit_event *ev);
 
 /*!\brief Initialise event structure of type \b type
  * \param[in] type the type of the structure that is to be initalised.
@@ -169,15 +169,15 @@ void evdestroy (struct einit_event *ev);
 /*!\}*/
 
 /* user/group functions */
-int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group);
+int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group);
 
 /* parser functions */
-signed int parse_integer (char *);
-char parse_boolean (char *);
+signed int parse_integer (const char *);
+char parse_boolean (const char *);
 
-char *apply_variables (char *string, char **env);
+char *apply_variables (const char *ostring, const char **env);
 
-char *escape_xml (char *input);
+char *escape_xml (const char *input);
 
 /* some stdio wrappers with error reporting */
 #define efopen(filename, mode)\

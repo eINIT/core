@@ -53,11 +53,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // linear implementation
 
-struct stree *streeadd (struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
+struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  struct stree *n, *base = (stree ? *(stree->lbase) : NULL);
  uint32_t hklen;
 
- if (!key) return stree;
+ if (!key) return (struct stree *)stree;
  hklen = strlen (key)+1;
 
  if (vlen == -1) {
@@ -66,9 +66,9 @@ struct stree *streeadd (struct stree *stree, const char *key, const void *value,
   memcpy ((((char *)n) + sizeof (struct stree)), key, hklen);
 
   n->key = (((char *)n) + sizeof (struct stree));
-  n->value = value;
+  n->value = (void *)value;
  } else {
-  if (!value) return stree;
+  if (!value) return (struct stree *)stree;
   if (vlen == 0)
    vlen = strlen (value)+1;
 
@@ -80,7 +80,7 @@ struct stree *streeadd (struct stree *stree, const char *key, const void *value,
   n->value = (((char *)n) + sizeof (struct stree) + hklen);
  }
 
- n->luggage = luggage;
+ n->luggage = (void *)luggage;
 
  n->lbase = stree ? stree->lbase : NULL;
 
@@ -89,11 +89,11 @@ struct stree *streeadd (struct stree *stree, const char *key, const void *value,
  stree = n;
 
  if (!base)
-  stree->lbase = emalloc (sizeof(struct stree *));
+  n->lbase = emalloc (sizeof(struct stree *));
 
- *(stree->lbase) = stree;
+ *(n->lbase) = (struct stree *)stree;
 
- return stree;
+ return n;
 }
 
 struct stree *streedel (struct stree *subject) {
@@ -124,7 +124,7 @@ struct stree *streedel (struct stree *subject) {
 }
 
 struct stree *streefind (const struct stree *stree, const char *key, const char options) {
- struct stree *c;
+ const struct stree *c;
  if (!stree || !key) return NULL;
 
  if (!stree->lbase) {
@@ -142,13 +142,13 @@ struct stree *streefind (const struct stree *stree, const char *key, const char 
 
  while (c) {
   if (strmatch (key, c->key)) {
-   return c;
+   return (struct stree *)c;
   }
   c = c->next;
  }
  if (c && (!c->next) && strcmp (key, c->key)) return NULL;
 
- return c;
+ return (struct stree *)c;
 }
 
 void streefree (struct stree *stree) {

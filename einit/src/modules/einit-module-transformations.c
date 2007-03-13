@@ -131,13 +131,13 @@ void einit_event_handler (struct einit_event *ev) {
       char **tmp = str2set (':', node->arbattrs[sti+1]);
 
       if (tmp) {
-       if (inset ((void **)tmp, (void *)"provides", SET_TYPE_STRING))
+       if (inset ((const void **)tmp, (void *)"provides", SET_TYPE_STRING))
         new_transformation.options |= SVT_STRIP_PROVIDES;
-       if (inset ((void **)tmp, (void *)"requires", SET_TYPE_STRING))
+       if (inset ((const void **)tmp, (void *)"requires", SET_TYPE_STRING))
         new_transformation.options |= SVT_STRIP_REQUIRES;
-       if (inset ((void **)tmp, (void *)"after", SET_TYPE_STRING))
+       if (inset ((const void **)tmp, (void *)"after", SET_TYPE_STRING))
         new_transformation.options |= SVT_STRIP_AFTER;
-       if (inset ((void **)tmp, (void *)"before", SET_TYPE_STRING))
+       if (inset ((const void **)tmp, (void *)"before", SET_TYPE_STRING))
         new_transformation.options |= SVT_STRIP_BEFORE;
 
        free (tmp);
@@ -192,13 +192,13 @@ void einit_event_handler (struct einit_event *ev) {
 
    if (service_aliases && module->si &&module->si->provides) {
     uint32_t i = 0;
-    char **np = (char **)setdup ((void **)module->si->provides, SET_TYPE_STRING);
+    char **np = (char **)setdup ((const void **)module->si->provides, SET_TYPE_STRING);
     for (; module->si->provides[i]; i++) {
      struct stree *x = streefind (service_aliases, module->si->provides[i], TREE_FIND_FIRST);
 
      while (x) {
       if (x->value) {
-       if (!inset ((void **)np, x->value, SET_TYPE_STRING)) {
+       if (!inset ((const void **)np, x->value, SET_TYPE_STRING)) {
         np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
        }
       }

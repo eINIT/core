@@ -58,12 +58,12 @@ void **setcombine (const void **set1, const void **set2, const int32_t esize) {
  if (!set2) return setdup(set1, esize);
 
  for (x = 0; set1[x]; x++) {
-  if (!inset (newset, set1[x], esize)) {
+  if (!inset ((const void **)newset, set1[x], esize)) {
    newset = setadd (newset, set1[x], esize);
   }
  }
  for (x = 0; set2[x]; x++) {
-  if (!inset (newset, set2[x], esize)) {
+  if (!inset ((const void **)newset, set2[x], esize)) {
    newset = setadd (newset, set2[x], esize);
   }
  }
@@ -114,7 +114,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
    free (set);
   }
 
-  newset[x] = item;
+  newset[x] = (void *)item;
  } else if (esize == SET_TYPE_STRING) {
   char *cpnt;
 
@@ -186,7 +186,7 @@ void **setdup (const void **set, int32_t esize) {
  if (esize == -1) {
   newset = ecalloc (setcount(set) +1, sizeof (char *));
   while (set[y]) {
-   newset[y] = set[y];
+   newset[y] = (void *)set[y];
    y++;
   }
  } else if (esize == 0) {
@@ -270,7 +270,7 @@ void setsort (void **set, const char task, signed int(*sortfunction)(const void 
  if (!set) return;
 
  if (task == SORT_SET_STRING_LEXICAL)
-  sortfunction = (signed int(*)(void *, void*))strcmp;
+  sortfunction = (signed int(*)(const void *, const void*))strcmp;
  else if (!sortfunction) return;
 
 /* this doesn't work, yet */
@@ -307,10 +307,11 @@ int inset (const void **haystack, const void *needle, int32_t esize) {
 
 /* some functions to work with string-sets */
 
-char **str2set (const char sep, char *input) {
+char **str2set (const char sep, const char *oinput) {
  int l, i = 0, sc = 1, cr = 1;
  char **ret;
- if (!input) return NULL;
+ char *input;
+ if (!oinput || !(input = estrdup (oinput))) return NULL;
  l = strlen (input)-1;
 
  for (; i < l; i++) {
@@ -333,7 +334,7 @@ char **str2set (const char sep, char *input) {
  return ret;
 }
 
-char *set2str (const char sep, char **input) {
+char *set2str (const char sep, const char **input) {
  char *ret = NULL;
  size_t slen = 0;
  uint32_t i = 0;
@@ -398,7 +399,7 @@ char **strsetdeldupes (char **set) {
  while (set[y]) {
   char *tmp = set[y];
   set[y] = NULL;
-  if (!inset ((void **)set, (void *)tmp, SET_TYPE_STRING)) {
+  if (!inset ((const void **)set, (const void *)tmp, SET_TYPE_STRING)) {
    newset [x] = tmp;
    x++;
   }

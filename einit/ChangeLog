@@ -1,3 +1,7 @@
+2007/03/13: mdeininger
+ * this should get us more "const-correct" :)
+ * fixed some annoying compiler warnings
+
 2007/03/11: mdeininger
  * introduced a new function to check for string matches (strmatch())
 

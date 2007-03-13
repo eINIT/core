@@ -87,7 +87,7 @@ struct stree {
  * This is used to add stree elements to a stree, or to initialise it. You may point the luggage variable to
  * an area of memory that is to be free()d if the corresponding element is free()d.
 */
-struct stree *streeadd (struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage);
+struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage);
 
 /*!\brief Find the \b key in \b stree.
  * \param[in] stree    the stree to be manipulated

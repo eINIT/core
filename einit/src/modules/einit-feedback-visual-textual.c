@@ -346,14 +346,14 @@ void feedback_event_handler(struct einit_event *ev) {
  uint32_t line = 0;
 
  if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES) {
-  char *tmp = set2str (' ', (char **)ev->set);
+  char *tmp = set2str (' ', (const char **)ev->set);
   if (tmp) {
    eprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
 
    free (tmp);
   }
  } else if (ev->type == EVENT_FEEDBACK_UNRESOLVED_SERVICES) {
-  char *tmp = set2str (' ', (char **)ev->set);
+  char *tmp = set2str (' ', (const char **)ev->set);
   if (tmp) {
    eprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
 
@@ -419,7 +419,7 @@ void feedback_event_handler(struct einit_event *ev) {
    case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
     if (enableansicodes) {
      emutex_lock (&modulesmutex);
-     line = setcount ((void **)modules) +1;
+     line = setcount ((const void **)modules) +1;
      emutex_unlock (&modulesmutex);
     }
 
@@ -465,7 +465,7 @@ void feedback_event_handler(struct einit_event *ev) {
 
       ((struct mstat *)(modules[i]))->textbuffer = (struct nstring **)setadd ((void **)(((struct mstat *)(modules[i]))->textbuffer), (void *)&tm, sizeof (struct nstring));
 
-      setsort ((void **)(((struct mstat *)(modules[i]))->textbuffer), 0, (signed int(*)(void *, void*))nstringsetsort);
+      setsort ((void **)(((struct mstat *)(modules[i]))->textbuffer), 0, (signed int(*)(const void *, const void*))nstringsetsort);
      }
 
      if (((struct mstat *)(modules[i]))->seqid > ev->seqid) {
@@ -624,7 +624,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
   feedback[BUFFERSIZE], tfeedback[BUFFERSIZE];
 
  if (((struct lmodule *)ev->para)->module) {
-  struct smodule *mod = ((struct lmodule *)ev->para)->module;
+  const struct smodule *mod = ((struct lmodule *)ev->para)->module;
   if (mod->name) {
    name = mod->name;
   } else if (mod->rid) {
@@ -740,7 +740,7 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
  }
 
  if (((struct lmodule *)ev->para)->module) {
-  struct smodule *mod = ((struct lmodule *)ev->para)->module;
+  const struct smodule *mod = ((struct lmodule *)ev->para)->module;
   if (mod->name) {
    name = mod->name;
   } else if (mod->rid) {

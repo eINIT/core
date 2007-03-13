@@ -180,7 +180,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->options = ((struct einit_xml_expat_user_data *)userData)->target_options;
 
    newnode->nodetype = EI_NODETYPE_MODE;
-   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+   newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
    newnode->source = xml_source_identifier;
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    for (; newnode->arbattrs[i] != NULL; i+=2) {
@@ -206,7 +206,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
    newnode->nodetype = EI_NODETYPE_CONFIG;
    newnode->mode = curmode;
-   newnode->arbattrs = (char **)setdup ((void **)atts, SET_TYPE_STRING);
+   newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
    newnode->source = xml_source_identifier;
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    if (newnode->arbattrs)
@@ -305,7 +305,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     eprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
 
     if (tx) {
-     if (setcount ((void **)tx) >= line) {
+     if (setcount ((const void **)tx) >= line) {
       eprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
      }
      free (tx);
@@ -313,7 +313,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
     bitch (BITCH_EXPAT, 0, XML_ErrorString (XML_GetErrorCode (par)));
    }
-   if (!inset ((void **)xml_configuration_files, (void *)configfile, SET_TYPE_STRING))
+   if (!inset ((const void **)xml_configuration_files, (void *)configfile, SET_TYPE_STRING))
     xml_configuration_files = (char **)setadd ((void **)xml_configuration_files,
                                                (void *)configfile, SET_TYPE_STRING);
    XML_ParserFree (par);

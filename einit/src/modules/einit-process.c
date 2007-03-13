@@ -87,7 +87,7 @@ pid_t *collect_processes(struct pc_conditional **pcc) {
 
  if (ps) for (i = 0; pcc[i]; i++) {
   process_filter pf = NULL;
-  char *pm[2] = { (pcc[i]->match), NULL };
+  const char *pm[2] = { (pcc[i]->match), NULL };
 
   if (!(pcc[i]->match)) continue;
 

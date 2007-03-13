@@ -159,9 +159,9 @@ int inset (const void **haystack, const void *needle, int32_t esize);
  * Convert \b input into a set of strings, using the separator \b sep. You need not copy the input string before
  * passing it to this function.
 */
-char **str2set (const char sep, char *input);
+char **str2set (const char sep, const char *input);
 
-char *set2str (const char sep, char **input);
+char *set2str (const char sep, const char **oinput);
 
 /*!\brief Remove \b string from \b set.
  * \bug This should be combined with setdel() to remove code-duplication.

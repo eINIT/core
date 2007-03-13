@@ -718,7 +718,7 @@ void update (enum update_task task) {
  if (node && node->svalue)
   fl = str2set (':', node->svalue);
 
- functions = function_find (flb, 1, fl);
+ functions = function_find (flb, 1, (const char **)fl);
  if (functions && functions[0]) {
   for (; functions[i]; i++) {
    f = functions[i];
@@ -1089,7 +1089,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   errno = 0;
   uint32_t retry = 0;
 
-  if (inset ((void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
+  if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
 
   if ((he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
 
@@ -1316,7 +1316,7 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
 
   node->adevice = dset[1];
 #ifdef MS_RDONLY
-  node->aflags = inset ((void**)dset, (void*)"ro", SET_TYPE_STRING) ? MS_RDONLY : 0;
+  node->aflags = inset ((const void **)dset, (void*)"ro", SET_TYPE_STRING) ? MS_RDONLY : 0;
 #endif
   node->afs = dset[2];
 
@@ -1329,7 +1329,7 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
   fse.adevice = dset[1];
   fse.mountpoint = dset[0];
 #ifdef MS_RDONLY
-  fse.aflags = inset ((void**)dset, (void*)"ro", SET_TYPE_STRING) ? MS_RDONLY : 0;
+  fse.aflags = inset ((const void **)dset, (void*)"ro", SET_TYPE_STRING) ? MS_RDONLY : 0;
 #endif
   fse.options = str2set (',', dset[3]);
   fse.afs = dset[2];
@@ -1415,7 +1415,7 @@ void mount_ipc_handler(struct einit_event *ev) {
    } else {
     tmpset = str2set(':', tmpstring);
 
-    if (inset ((void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
+    if (inset ((const void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
      if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
       eputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", (FILE *)ev->para);
       ev->task++;
@@ -1426,12 +1426,12 @@ void mount_ipc_handler(struct einit_event *ev) {
      }
     }
 
-    if (!inset ((void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
+    if (!inset ((const void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
      eputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", (FILE *)ev->para);
      ev->task++;
     }
 
-    if (inset ((void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
+    if (inset ((const void **)tmpset, (void *)"legacy", SET_TYPE_STRING)) {
      eputs (" * fstab-source \"legacy\" enabled; you shouldn't rely on that.\n", (FILE *)ev->para);
      ev->task++;
     }
@@ -1470,7 +1470,7 @@ void mount_ipc_handler(struct einit_event *ev) {
 
      if (!(((struct fstab_entry *)(tstree->value))->fs) || strmatch ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
       char tmpstr[BUFFERSIZE];
-      if (inset ((void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
+      if (inset ((const void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
 #ifdef LINUX
        tstree = streenext (tstree);
        continue;
@@ -1536,7 +1536,7 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
   if (fse) {
    if (fse->status & BF_STATUS_MOUNTED) {
     char tmp[BUFFERSIZE];
-    char *tset = set2str (',', fse->options); 
+    char *tset = set2str (',', (const char **)fse->options); 
 
     if (tset)
      esprintf (tmp, BUFFERSIZE, "%s %s %s %s,%s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
@@ -1594,7 +1594,7 @@ int enable (enum mounttask p, struct einit_event *status) {
   case MOUNT_LOCAL:
   case MOUNT_REMOTE:
    while (ha) {
-    if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) &&
+    if (!inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) &&
          strcmp (ha->key, "/") && strcmp (ha->key, "/dev") &&
          strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if ((fse = (struct fstab_entry *)ha->value)) {
@@ -1642,7 +1642,7 @@ int enable (enum mounttask p, struct einit_event *status) {
    while (ha) {
     if ((fse = (struct fstab_entry *)ha->value) && (fse->mountflags & MOUNT_FSTAB_CRITICAL))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
-    else if (inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
+    else if (inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
 
     ha = streenext (ha);
@@ -1720,7 +1720,7 @@ int disable (enum mounttask p, struct einit_event *status) {
   case MOUNT_REMOTE:
   case MOUNT_LOCAL:
    while (ha) {
-    if (!inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) && strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
+    if (!inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) && strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if ((fse = (struct fstab_entry *)ha->value)) {
       if (!(fse->status & BF_STATUS_MOUNTED)) goto mount_skip;
 
@@ -1767,7 +1767,7 @@ int disable (enum mounttask p, struct einit_event *status) {
 //   return STATUS_OK;
   case MOUNT_CRITICAL:
    while (ha) {
-    if (inset ((void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
+    if (inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
 
     ha = streenext (ha);

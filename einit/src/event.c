@@ -330,7 +330,7 @@ uint32_t event_string_to_code (const char *code) {
 void event_ipc_handler(struct einit_event *event) {
  if (!event || !event->set) return;
  char **argv = (char **) event->set;
- int argc = setcount (event->set);
+ int argc = setcount ((const void **)event->set);
 
  if (argc >= 2) {
   if (strmatch (argv[0], "update") && strmatch (argv[1], "configuration")) {

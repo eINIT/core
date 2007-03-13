@@ -99,7 +99,7 @@ int __ipc_process (char *cmd, FILE *f) {
  event->para = (void *)f;
  event->flag = 0;
 
- ec = setcount (event->set);
+ ec = setcount ((const void **)event->set);
 
  for (ic = 0; ic < ec; ic++) {
   if (strmatch (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;

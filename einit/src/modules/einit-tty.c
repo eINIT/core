@@ -172,7 +172,7 @@ void *watcher (struct spidcb *spid) {
 int texec (struct cfgnode *node) {
  int i = 0, restart = 0;
  char *device = NULL, *command = NULL;
- char **environment = (char **)setdup((void **)einit_global_environment, SET_TYPE_STRING);
+ char **environment = (char **)setdup((const void **)einit_global_environment, SET_TYPE_STRING);
  char **variables = NULL;
 
  for (; node->arbattrs[i]; i+=2) {

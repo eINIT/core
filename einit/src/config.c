@@ -110,8 +110,8 @@ int cfg_addnode (struct cfgnode *node) {
    attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii+1], SET_TYPE_STRING);
    if (strmatch (node->arbattrs[ii], "id")) idn = ii+1;
   }
-  for (ii = 0; tnode->arbattrs[ii]; ii+=2) if (!inset ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING)) {
-   char *tmp = apply_variables (tnode->arbattrs[ii+1], node->arbattrs);
+  for (ii = 0; tnode->arbattrs[ii]; ii+=2) if (!inset ((const void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING)) {
+   char *tmp = apply_variables (tnode->arbattrs[ii+1], (const char **)node->arbattrs);
    attrs = (char **)setadd ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING);
    attrs = (char **)setadd ((void **)attrs, (void *)tmp, SET_TYPE_STRING);
    if (strmatch (tnode->arbattrs[ii], "id")) idn = ii+1;
@@ -374,7 +374,7 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
     cfg_string_converter conv;
 
     if (ev->set[2]) {
-     char *x = set2str (' ', (char **) (ev->set +2));
+     char *x = set2str (' ', (const char **) (ev->set +2));
      if (x) {
       otree = cfg_filter (x, 0);
 
@@ -391,7 +391,7 @@ void einit_config_ipc_event_handler (struct einit_event *ev) {
        { (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable-ansi" : "human-readable",
          (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable" : "xml",
          (ev->status & EIPC_OUTPUT_ANSI) ? "xml" : "human-readable-ansi", NULL };
-     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, rtset))) buffer = conv(otree);
+     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, (const char **)rtset))) buffer = conv(otree);
     }
 
     if (buffer) {

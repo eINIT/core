@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
-char **straddtoenviron (char **environment, char *key, char *value) {
+char **straddtoenviron (char **environment, const char *key, const char *value) {
  char **ret = NULL;
  char *newitem;
  int len = 2;
@@ -83,7 +83,7 @@ char **straddtoenviron (char **environment, char *key, char *value) {
  return ret;
 }
 
-char *readfile (char *filename) {
+char *readfile (const char *filename) {
  int fd = 0, rn = 0;
  void *buf = NULL;
  char *data = NULL;
@@ -154,7 +154,7 @@ void *erealloc (void *c, size_t s) {
  return p;
 }
 
-char *estrdup (char *s) {
+char *estrdup (const char *s) {
  char *p = NULL;
 
  while (!(p = strdup (s))) {
@@ -193,18 +193,18 @@ void strtrim (char *s) {
 }
 
 /* event-helpers */
-void notice (unsigned char severity, char *message) {
+void notice (unsigned char severity, const char *message) {
  struct einit_event *ev = evinit (EVE_FEEDBACK_NOTICE);
 
  ev->flag = severity;
- ev->string = message;
+ ev->string = (char *)message;
 
  event_emit (ev, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
 
  evdestroy (ev);
 }
 
-struct einit_event *evdup (struct einit_event *ev) {
+struct einit_event *evdup (const struct einit_event *ev) {
  struct einit_event *nev = emalloc (sizeof (struct einit_event));
 
  memcpy (nev, ev, sizeof (struct einit_event));
@@ -241,7 +241,7 @@ void evdestroy (struct einit_event *ev) {
 
 
 /* user/group functions */
-int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group) {
+int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
  if (!_getgr_r_size_max) _getgr_r_size_max = sysconf (_SC_GETGR_R_SIZE_MAX);
  if (!_getpw_r_size_max) _getpw_r_size_max = sysconf (_SC_GETPW_R_SIZE_MAX);
 
@@ -301,7 +301,7 @@ int lookupuidgid (uid_t *uid, gid_t *gid, char *user, char *group) {
  return 0;
 }
 
-signed int parse_integer (char *s) {
+signed int parse_integer (const char *s) {
  signed int ret = 0;
 
  if (!s) return ret;
@@ -319,16 +319,17 @@ signed int parse_integer (char *s) {
  return ret;
 }
 
-char parse_boolean (char *s) {
+char parse_boolean (const char *s) {
  return s && (strmatch (s, "true") || strmatch (s, "enabled") || strmatch (s, "yes"));
 }
 
-char *apply_variables (char *string, char **env) {
+char *apply_variables (const char *ostring, const char **env) {
  char *ret = NULL, *vst = NULL, tsin = 0;
  uint32_t len = 0, rpos = 0, spos = 0, rspos = 0;
+ char *string;
 
- if (!string) return NULL;
- if (!env) return estrdup (string);
+ if (!env) return estrdup (ostring);
+ if (!ostring || !(string = estrdup(ostring))) return NULL;
 
  ret = emalloc (len = (strlen (string) + 1));
  *ret = 0;
@@ -379,10 +380,12 @@ char *apply_variables (char *string, char **env) {
  }
  ret[rpos] = 0;
 
+ free (string);
+
  return ret;
 }
 
-char *escape_xml (char *input) {
+char *escape_xml (const char *input) {
  char *retval = NULL;
  if (input) {
   ssize_t olen = strlen (input)+1,

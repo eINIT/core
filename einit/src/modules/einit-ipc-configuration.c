@@ -78,7 +78,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
  if (ev && ev->para) {
   argv = (char **)ev->set;
-  argc = setcount ((void **)argv);
+  argc = setcount ((const void **)argv);
  }
 
  if (argc > 1) {
@@ -134,7 +134,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
    if (subattr) {
     char match = 0;
-    char **attrs = (char **)setdup ((void **)newnode.arbattrs, SET_TYPE_STRING);
+    char **attrs = (char **)setdup ((const void **)newnode.arbattrs, SET_TYPE_STRING);
 
     if (attrs) {
      uint32_t ind = 0;
@@ -143,7 +143,7 @@ void ipc_event_handler (struct einit_event *ev) {
        char **tmpadup = attrs;
 
        attrs[ind+1] = argv[3];
-       attrs = (char **)setdup ((void **)attrs, SET_TYPE_STRING);
+       attrs = (char **)setdup ((const void **)attrs, SET_TYPE_STRING);
        newnode.arbattrs = attrs;
        match = 1;
 
@@ -163,7 +163,7 @@ void ipc_event_handler (struct einit_event *ev) {
      attrs = (char **)setadd ((void **)attrs, (void *)argv[3], SET_TYPE_STRING);
 
      if (strmatch ("s", subattr)) {
-      newnode.svalue = attrs[setcount((void **)attrs)-1];
+      newnode.svalue = attrs[setcount((const void **)attrs)-1];
      }
 
      newnode.arbattrs = attrs;

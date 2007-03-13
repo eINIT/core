@@ -363,7 +363,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  if (!command || !command[0]) return STATUS_FAIL;
 
  cmdsetdup = str2set ('\0', command);
- cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
+ cmd = (char **)setcombine ((const void *)shell, (const void **)cmdsetdup, -1);
 
  struct execst *new = ecalloc (1, sizeof (struct execst));
  emutex_init (&(new->mutex), NULL);
@@ -411,7 +411,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
   dup2 (2, 1);
 // we can safely play with the global environment here, since we fork()-ed earlier
-  exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
+  exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
 
   if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
@@ -515,7 +515,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  }
 
  cmdsetdup = str2set ('\0', command);
- cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, -1);
+ cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
  if (status) {
   status->string = command;
@@ -548,7 +548,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
   }
 
 // we can safely play with the global environment here, since we fork()-ed earlier
-  exec_environment = (char **)setcombine ((void **)einit_global_environment, (void **)local_environment, SET_TYPE_STRING);
+  exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
 
   eprintf (stderr, " >> now executing %s.\n", command);
@@ -781,14 +781,14 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
    perror ("setting uid");
 
   cmdsetdup = str2set ('\0', shellcmd->command);
-  cmd = (char **)setcombine ((void *)shell, (void **)cmdsetdup, 0);
+  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
 //  close (0);
 //  close (1);
 //  close (2);
   eclose (1);
   dup2 (2, 1);
 
-  daemon_environment = (char **)setcombine ((void **)einit_global_environment, (void **)shellcmd->environment, SET_TYPE_STRING);
+  daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
   daemon_environment = __create_environment (daemon_environment, shellcmd->variables);
 
   execve (cmd[0], cmd, daemon_environment);
