@@ -95,3 +95,6 @@ utility.o: utility.c
 
 asm-strmatch.o: $(ASMDIR)/strmatch.s
 	$(ASM) -c $(ASMDIR)/strmatch.s -o asm-strmatch.o
+
+asm-strlen.o: $(ASMDIR)/strlen.s
+	$(ASM) -c $(ASMDIR)/strlen.s -o asm-strlen.o

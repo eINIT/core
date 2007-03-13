@@ -52,7 +52,7 @@ BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
 COMPILER=gnu
 
-ASMFUNCTIONS="strmatch"
+ASMFUNCTIONS="strmatch strlen"
 #ASMFUNCTIONS=""
 GCCFLAGS="-Wall"
 
@@ -308,9 +308,9 @@ echo ${ARCH}
 echo -n "see if we have some sources in assembly... "
 ASMDIR="`pwd`/src/asm/${ARCH}-${OS}-${COMPILER}"
 if test -d "${ASMDIR}"; then
-	for i in "${ASMFUNCTIONS}"; do
+	for i in ${ASMFUNCTIONS}; do
 		if test -e "${ASMDIR}/${i}.s"; then
-			echo -n "strmatch ";
+			echo -n "${i} ";
 			CORELINK="${CORELINK} asm-${i}.o"
 			UTILLINK="${UTILLINK} asm-${i}.o"
 		fi
@@ -428,9 +428,11 @@ else
  echo "#define EINIT_VERSION_LITERAL_SUFFIX \"#${BUILDNUMBER}\" " >> src/include/einit/configuration.h;
 fi;
 
-if test -n "`echo ${CORELINK}|grep asm-strmatch.o`"; then
- echo "#define _have_asm_strmatch" >> src/include/einit/configuration.h;
-fi
+for i in ${ASMFUNCTIONS}; do
+	if test -n "`echo ${CORELINK}|grep asm-${i}.o`"; then
+		echo "#define _have_asm_${i}" >> src/include/einit/configuration.h;
+	fi
+done
 
 echo "#endif
 " >> src/include/einit/configuration.h
