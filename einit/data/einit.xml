@@ -122,7 +122,7 @@
 
   <feedback>
    <visual>
-    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" />
+    <std-io stdin="/dev/tty9" stdout="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" activate-vt="9" kernel-vt="12" />
 <!-- better verbosity on tty10: -->
 <!--    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" /> -->
     <use-ansi-codes b="true" />
@@ -576,11 +576,11 @@
      enable="
       kernel_modules_alsa=`/sbin/modprobe -c|grep -E '(snd-card|sound-service)-[0-9]'|awk '{print $3}'`;
 
-      if [[ -z '${kernel_modules_alsa}' &amp;&amp; ! ( -d /proc/asound &amp;&amp; -z '$(grep \' no soundcards \' /proc/asound/cards)' ) ]] ; then
-       echo 'feedback|warning|Looks like you didn\'t customise your alsa installation...';
+      if [[ -z '${kernel_modules_alsa}' &amp;&amp; ! ( -d /proc/asound &amp;&amp; -z &quot;$(grep ' no soundcards ' /proc/asound/cards)&quot; ) ]] ; then
+       echo 'feedback|warning|Looks like you did not customise your alsa installation...';
        kernel_modules_alsa=$(modprobe -c | grep pci: |  awk '{ print $3 }' | grep snd.* | sort | uniq);
        if test -z '${kernel_modules_alsa}'; then
-        echo 'feedback|warning|I can\'t seem to figure out your alsa modules...';
+        echo 'feedback|warning|I cannot seem to figure out your alsa modules...';
        fi;
       fi;
 
@@ -904,6 +904,7 @@
       name="setfont (${configuration_system_setfont_font})"
       provides="setfont"
       requires="mount/critical"
+      before="tty"
       enable="for t in ${configuration_system_setfont_ttys}; do
                setfont ${configuration_system_setfont_font} -C /dev/tty${t};
               done"
@@ -1146,7 +1147,7 @@
  </mode>
  <mode id="default" base="boot">
   <enable services="audio:portmap:clock:xdm:swap:mount/remote" />
-  <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+  <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-down">
   <disable services="all-but-feedback" />
