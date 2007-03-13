@@ -198,6 +198,8 @@ struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char
 
 int exopen(const char *pathname, int mode, const char *file, const int line, const char *function);
 
+/* NOTE: matching "" against "" will result in undefined behaviour... so just never try to
+   match a string against "" :D */
 char strmatch (const char *, const char *);
 
 #endif /* _UTILITY_H */

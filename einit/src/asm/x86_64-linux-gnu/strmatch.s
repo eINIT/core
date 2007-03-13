@@ -33,15 +33,15 @@
 
 .globl strmatch
 strmatch:
-	xor %eax,%eax;      // make sure our registers are clean
-	xor %ecx,%ecx;
-repeat:	mov (%rsi),%cl;
-	cmp (%rdi),%cl;     // see if the target of the pointers match
-	jne fail;
-	jecxz good;
-	inc %rsi;           // increase our pointers
+	mov (%rsi),%r8b;
+	cmpb (%rdi),%r8b;   // initial check
+	jne end;
+repeat:	inc %rsi;           // increase our pointers
 	inc %rdi;
-	jmp repeat;         // repeat
-good:	movl $1,%eax;
-fail:	ret;
-
+	mov (%rsi),%r8b;
+	cmpb (%rdi),%r8b;   // see if the target of the pointers match
+	jne end;
+	test %r8b,%r8b;
+	jne repeat;
+end:	setz %al;
+	ret;
