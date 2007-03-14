@@ -127,7 +127,7 @@ int cfg_addnode (struct cfgnode *node) {
  if (node->nodetype & EI_NODETYPE_MODE) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
   only the first one would be used anyway. */
-  cur = streefind (cur, node->id, TREE_FIND_FIRST);
+  if (cur) cur = streefind (cur, node->id, TREE_FIND_FIRST);
   while (cur) {
    if (cur->value && !(((struct cfgnode *)cur->value)->nodetype ^ EI_NODETYPE_MODE)) {
 // this means we found something that looks like it
@@ -150,7 +150,7 @@ int cfg_addnode (struct cfgnode *node) {
 /* look for other definitions that are exactly the same, only marginally different or that sport a
    matching id="" attribute */
 
-  cur = streefind (cur, node->id, TREE_FIND_FIRST);
+  if (cur) cur = streefind (cur, node->id, TREE_FIND_FIRST);
   while (cur) {
 // this means we found a node wit the same path
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
@@ -199,7 +199,7 @@ struct cfgnode *cfg_findnode (const char *id, const unsigned int type, const str
  if (!id) return NULL;
 
  if (base) {
-  cur = streefind (cur, id, TREE_FIND_FIRST);
+  if (cur) cur = streefind (cur, id, TREE_FIND_FIRST);
   while (cur) {
    if (cur->value == base) {
     cur = streefind (cur, id, TREE_FIND_NEXT);
@@ -208,8 +208,9 @@ struct cfgnode *cfg_findnode (const char *id, const unsigned int type, const str
 //   cur = streenext (cur);
     cur = streefind (cur, id, TREE_FIND_NEXT);
   }
- } else
+ } else if (cur) {
   cur = streefind (cur, id, TREE_FIND_FIRST);
+ }
 
  while (cur) {
 #ifdef DEBUG

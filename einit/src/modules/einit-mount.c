@@ -924,10 +924,10 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  if (tflags & MOUNT_TF_MOUNT) {
   char **fstype_s = NULL;
   uint32_t fsts_i = 0;
-  if ((he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
+  if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
    source = fse->device;
    fsntype = 0;
-   if ((de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
+   if (de && (de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
     fsntype = bdi->fs_type;
    }
 
@@ -1091,7 +1091,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
   if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
 
-  if ((he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
+  if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
 
   if (fse && !(fse->status & BF_STATUS_MOUNTED))
    esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
@@ -1211,7 +1211,7 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
  bdi.minor = minor;
  bdi.status = BF_STATUS_HAS_MEDIUM | BF_STATUS_ERROR_NOTINIT;
  emutex_lock (&blockdevices_mutex);
- if (streefind (mcb.blockdevices, devicefile, TREE_FIND_FIRST)) {
+ if (mcb.blockdevices && streefind (mcb.blockdevices, devicefile, TREE_FIND_FIRST)) {
   emutex_unlock (&blockdevices_mutex);
   return;
  }
@@ -1256,7 +1256,7 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  fse.variables = variables;
 
  emutex_lock (&fstab_mutex);
- if (streefind (mcb.fstab, mountpoint, TREE_FIND_FIRST)) {
+ if (mcb.fstab && streefind (mcb.fstab, mountpoint, TREE_FIND_FIRST)) {
   if (fse.mountpoint)
    free (fse.mountpoint);
   if (fse.device)
@@ -1311,7 +1311,7 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
 
  emutex_lock (&fstab_mutex);
 
- if ((cur = streefind (mcb.fstab, fs_file, TREE_FIND_FIRST))) {
+ if (mcb.fstab && (cur = streefind (mcb.fstab, fs_file, TREE_FIND_FIRST))) {
   struct fstab_entry *node = cur->value;
 
   node->adevice = dset[1];
@@ -1357,7 +1357,7 @@ void add_filesystem (char *name, char *options) {
  }
 
  emutex_lock (&fs_mutex);
- if (streefind (mcb.filesystems, name, TREE_FIND_FIRST)) {
+ if (mcb.filesystems && streefind (mcb.filesystems, name, TREE_FIND_FIRST)) {
   emutex_unlock (&fs_mutex);
   return;
  }
@@ -1603,7 +1603,7 @@ int enable (enum mounttask p, struct einit_event *status) {
       if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
        goto mount_skip;
 
-      if (fse->fs && (fsi = streefind (mcb.filesystems, fse->fs, TREE_FIND_FIRST))) {
+      if (fse->fs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->fs, TREE_FIND_FIRST))) {
        if (p == MOUNT_LOCAL) {
         if ((uintptr_t)fsi->value & FS_CAPA_NETWORK) goto mount_skip;
        } else {
@@ -1726,10 +1726,10 @@ int disable (enum mounttask p, struct einit_event *status) {
 
       if (p == MOUNT_LOCAL) {
        if (fse->afs) {
-        if ((fsi = streefind (mcb.filesystems, fse->afs, TREE_FIND_FIRST)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+        if (mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, TREE_FIND_FIRST)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
-       if (fse->afs && (fsi = streefind (mcb.filesystems, fse->afs, TREE_FIND_FIRST))) {
+       if (fse->afs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, TREE_FIND_FIRST))) {
         if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        } else goto mount_skip;
       }

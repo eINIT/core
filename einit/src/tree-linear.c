@@ -125,20 +125,8 @@ struct stree *streedel (struct stree *subject) {
 
 struct stree *streefind (const struct stree *stree, const char *key, const char options) {
  const struct stree *c;
- if (!stree || !key) return NULL;
 
- if (!stree->lbase) {
-  return NULL;
- }
-
- if (options == TREE_FIND_FIRST) {
-  if (stree->lbase)
-   c = *(stree->lbase);
-  else
-   c = stree;
- } else c = stree->next;
-
- if (!c) return NULL;
+ c = (options == TREE_FIND_FIRST) ? *(stree->lbase) : stree->next;
 
  while (c) {
   if (strmatch (key, c->key)) {
@@ -146,7 +134,6 @@ struct stree *streefind (const struct stree *stree, const char *key, const char 
   }
   c = c->next;
  }
- if (c && (!c->next) && strcmp (key, c->key)) return NULL;
 
  return (struct stree *)c;
 }

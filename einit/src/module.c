@@ -535,7 +535,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   ret |= SERVICE_REQUIREMENTS_MET;
   if (module->si && (t = module->si->requires)) {
    for (i = 0; t[i]; i++) {
-    if (!(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
+    if (!service_usage || !(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
      ret ^= SERVICE_REQUIREMENTS_MET;
      break;
@@ -546,14 +546,14 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   if (module->status & STATUS_ENABLED) {
    if (module->si && (t = module->si->requires)) {
     for (i = 0; t[i]; i++) {
-     if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
+     if (service_usage && (ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
    if (module->si && (t = module->si->provides)) {
     for (i = 0; t[i]; i++) {
-     if ((ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
+     if (service_usage && (ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
      } else {
       struct service_usage_item nitem;
@@ -583,10 +583,10 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
     ha = streenext (ha);
   }
  } else if (task & SERVICE_IS_REQUIRED) {
-  if ((ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->users))
+  if (service_usage && (ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->users))
    ret |= SERVICE_IS_REQUIRED;
  } else if (task & SERVICE_IS_PROVIDED) {
-  if ((ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
+  if (service_usage && (ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
  }
 
@@ -608,7 +608,7 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
    return 0;
   }
 
-  if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
+  if (!service_usage || !(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
@@ -624,7 +624,7 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
   }
  }
  if (task & SERVICE_SET_GROUP_PROVIDERS) {
-  if (!(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
+  if (!service_usage || !(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setdup ((const void **)module, SET_NOALLOC);
@@ -769,7 +769,7 @@ void mod_event_handler(struct einit_event *ev) {
      uint32_t i = 0;
      if (cur->si && cur->si->provides) {
       for (i = 0; cur->si->provides[i]; i++) {
-       struct stree *curserv = streefind (serv, cur->si->provides[i], TREE_FIND_FIRST);
+       struct stree *curserv = serv ? streefind (serv, cur->si->provides[i], TREE_FIND_FIRST) : NULL;
        if (curserv) {
         curserv->value = (void *)setadd ((void **)curserv->value, (void *)cur, SET_NOALLOC);
         curserv->luggage = curserv->value;
@@ -784,7 +784,7 @@ void mod_event_handler(struct einit_event *ev) {
     }
 
     while (cfgn) {
-     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && !streefind (modes, cfgn->mode->id, TREE_FIND_FIRST)) {
+     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !streefind (modes, cfgn->mode->id, TREE_FIND_FIRST))) {
       uint32_t i = 0;
       for (i = 0; cfgn->arbattrs[i]; i+=2) {
        if (strmatch(cfgn->arbattrs[i], "services")) {

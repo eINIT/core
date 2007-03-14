@@ -219,7 +219,7 @@ struct group_data *mod_group_get_data (char *group) {
 
  emutex_lock (&ml_group_data_mutex);
 
- struct stree *cur = streefind (module_logics_group_data, group, TREE_FIND_FIRST);
+ struct stree *cur = module_logics_group_data ? streefind (module_logics_group_data, group, TREE_FIND_FIRST) : NULL;
  if (cur) { ret = (struct group_data *)cur->value; }
  else {
   char *tnodeid = emalloc (strlen (group)+17);
@@ -284,7 +284,7 @@ void mod_update_group (struct lmodule *lmx) {
 
      emutex_lock (&ml_service_list_mutex);
 
-     if ((serv = streefind(module_logics_service_list, gd->members[x], TREE_FIND_FIRST))) {
+     if (module_logics_service_list && (serv = streefind(module_logics_service_list, gd->members[x], TREE_FIND_FIRST))) {
       struct lmodule **lm = (struct lmodule **)serv->value;
 
       if (lm) {
@@ -622,7 +622,7 @@ void mod_get_and_apply_recurse (int task) {
    } else {
     emutex_lock (&ml_service_list_mutex);
 
-    struct stree *des = streefind (module_logics_service_list, services[x], TREE_FIND_FIRST);
+    struct stree *des = module_logics_service_list ? streefind (module_logics_service_list, services[x], TREE_FIND_FIRST) : NULL;
     struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
 
     emutex_unlock (&ml_service_list_mutex);
@@ -770,7 +770,7 @@ void mod_get_and_apply_recurse (int task) {
   for (x = 0; now[x]; x++) {
    emutex_lock (&ml_service_list_mutex);
 
-   struct stree *des = streefind (module_logics_service_list, now[x], TREE_FIND_FIRST);
+   struct stree *des = module_logics_service_list ? streefind (module_logics_service_list, now[x], TREE_FIND_FIRST) : NULL;
    struct lmodule **lm = des ? (struct lmodule **)des->value : NULL;
 
    emutex_unlock (&ml_service_list_mutex);
@@ -1091,7 +1091,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     } else if ((disable_all && strmatch(tmp[i], "all")) ||
                (disable_all_but_feedback && strmatch(tmp[i], "all-but-feedback"))) {
      add = 0;
-    } else if ((cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
+    } else if (module_logics_service_list && (cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
      if (lm) {
       ssize_t y = 0;
@@ -1419,7 +1419,9 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     ssize_t i = 0;
 
     for (; cur->si->provides[i]; i++) {
-     struct stree *slnode = streefind (new_service_list, cur->si->provides[i], TREE_FIND_FIRST);
+     struct stree *slnode = new_service_list ?
+       streefind (new_service_list, cur->si->provides[i], TREE_FIND_FIRST) :
+       NULL;
      struct lnode **curval = (struct lnode **) (slnode ? slnode->value : NULL);
 
      curval = (struct lnode **)setadd ((void **)curval, cur, SET_NOALLOC);
