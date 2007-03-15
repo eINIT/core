@@ -87,7 +87,7 @@ for param in $@; do
 		GCCFLAGS="${GCCFLAGS} -g"
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
-		EXTERNAMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
 	elif test "$param" = "--enable-bsd"; then
 		echo -n " BSD";
 		PMODULES="$PMODULES bsd";
