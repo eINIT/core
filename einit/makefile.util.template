@@ -3,6 +3,8 @@ util: einit-control
 install: einit-control
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
+	ln -s einit-control ${DESTDIR}/${SBINDIR}/power
+	ln -s einit-control ${DESTDIR}/${SBINDIR}/erc
 
 einit-control: $(objects)
 	$(CLD) $(objects) -o einit-control $(STATIC) -ldl $(CORELIBS) $(LPA)
