@@ -1130,6 +1130,14 @@
       restart="yes"
       variables="configuration-bluetooth-sobexsrv/.*" />
 
+<!-- creds to AidanJT@gentoo forums for this module :)-->
+     <daemon id="daemon-rsyncd"
+      name="Rsync Daemon"
+      provides="rsyncd"
+      requires="net-lo:mount/local"
+      command="/usr/bin/rsync --daemon;"
+      restart="yes" /> 
+
    </module>
   </virtual>
 
