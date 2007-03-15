@@ -27,10 +27,6 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------
 
-INCLUDEPATH="/usr/local/include"
-#INTERNALMODULES="einit-module-logic-v3 einit-config-xml-expat"
-EXTERNALMODULES="einit-module-logic-v3 einit-config-xml-expat"
-
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
 	ISSVN=1
@@ -40,21 +36,20 @@ else
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
-# this is on by default for now
-PMODULES="compatibility"
-
-TREETYPE="linear"
-SETTYPE="lowmem"
-MODULELOGICTYPE="v3"
-
-CORELINK="einit.o module.o bitch.o utility.o scheduler.o event.o config.o tree.o set.o module-configuration.o"
 BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
+
+SOURCESUFFIXES="c s"
+HEADERSUFFIXES="h"
 
 COMPILER=gnu
 
-ASMFUNCTIONS="strmatch strlen"
-#ASMFUNCTIONS=""
 GCCFLAGS="-Wall"
+
+MAKEFILETASKS="all install"
+
+pwd=$(pwd)
+
+source configure.options
 
 echo -n "checking options [";
 for param in $@; do
@@ -68,18 +63,9 @@ for param in $@; do
 	elif test "$short" = "--prefix"; then
 		echo -n " PREFIX";
 		PREFIX=${param#*=};
-	elif test "$short" = "--tree-type"; then
-		echo -n " TREETYPE";
-		TREETYPE=${param#*=};
 	elif test "$short" = "--asm-functions"; then
 		echo -n " ASM";
 		ASMFUNCTIONS=${param#*=};
-	elif test "$short" = "--set-type"; then
-		echo -n " SETTYPE";
-		SETTYPE=${param#*=};
-	elif test "$short" = "--module-logic-type"; then
-		echo -n " MODULELOGICTYPE";
-		MODULELOGICTYPE=${param#*=};
 	elif test "$short" = "--bootstrap-module-path"; then
 		echo -n " BOOTSTRAPMODULEPATH";
 		BOOTSTRAP_MODULE_PATH=${param#*=};
@@ -101,7 +87,7 @@ for param in $@; do
 		GCCFLAGS="${GCCFLAGS} -g"
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
-		PMODULES="$PMODULES linux";
+		EXTERNAMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
 	elif test "$param" = "--enable-bsd"; then
 		echo -n " BSD";
 		PMODULES="$PMODULES bsd";
@@ -225,7 +211,7 @@ echo ${ASM}
 
 
 echo "finding absolute include directory..."
-INCLUDE="-I`pwd`/src/include ${INCLUDE}";
+INCLUDE="-I`pwd`/build/headers ${INCLUDE}";
 echo -n "searching for expat.h..."
 EXPAT=`find -d ${INCLUDEPATH} -iname expat.h 2>/dev/null`
 if test -n {EXPAT}; then
@@ -239,22 +225,6 @@ else
 	echo "not found";
 	echo "expat is currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or go to http://expat.sf.net/.";
 fi
-
-echo -n "figuring out what files to link right into the core..."
-if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
- echo -n " config-xml-expat.o"
- CORELINK="${CORELINK} config-xml-expat.o"
-fi;
-
-if test -n "`echo ${INTERNALMODULES}|grep einit-module-logic-v3`"; then
- echo -n " module-logic.o"
- CORELINK="${CORELINK} module-logic.o"
-elif test "${MODULELOGICTYPE}" != "v3"; then
- echo -n "module-logic.o"
- CORELINK="${CORELINK} module-logic.o"
-fi;
-
-echo " done"
 
 echo -n "figuring out what libs need to be linked into the core..."
 if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
@@ -271,7 +241,7 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	OS="darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
-	LLD="-bundle -Wl,-bundle_loader,`pwd`/src/einit";
+	LLD="-bundle -Wl,-bundle_loader,`pwd`/build/core/einit";
 	STATIC="";
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
@@ -306,19 +276,9 @@ fi
 echo ${ARCH}
 
 echo -n "see if we have some sources in assembly... "
-ASMDIR="`pwd`/src/asm/${ARCH}-${OS}-${COMPILER}"
-if test -d "${ASMDIR}"; then
-	for i in ${ASMFUNCTIONS}; do
-		if test -e "${ASMDIR}/${i}.s"; then
-			echo -n "${i} ";
-			CORELINK="${CORELINK} asm-${i}.o"
-			UTILLINK="${UTILLINK} asm-${i}.o"
-		fi
-	done
-	echo "done.";
-else
-	echo "nope.";
-fi
+rm -f src/assembly
+ln -sf "`pwd`/asm/${ARCH}-${OS}-${COMPILER}" src/assembly
+echo "done.";
 
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
@@ -350,15 +310,10 @@ INCLUDE = $INCLUDE
 XDYNAMIC = $XDYNAMIC
 BUILDNUMBER = $BUILDNUMBER
 ISSVN = $ISSVN
-TREETYPE = ${TREETYPE}
-SETTYPE = ${SETTYPE}
-MODULELOGICTYPE = ${MODULELOGICTYPE}
 
 INTERNALMODULES = ${INTERNALMODULES}
 EXTERNALMODULES = ${EXTERNALMODULES}
 
-CORELINK = ${CORELINK}
-UTILLINK = ${UTILLINK}
 CORELIBS = ${CORELIBS}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
@@ -376,41 +331,103 @@ XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA" > config.mk
 
-echo "creating module-configuration.h"
-echo "/* created by the configure-script, you shouldn't modify this */
+function collect_objects() {
+	objects=""
+	for i in $@; do
+		for suffix in ${SUFFIXES}; do
+			res=$(find -L src -name "${i}.${suffix}");
+			if test -n "${res}"; then
+				subobjects="";
+				for y in ${res}; do
+					subobjects="${subobjects} ${pwd}/${y}"
+				done
+				objects="${objects} ${i}.o";
+
+				echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+			fi
+		done
+	done
+}
+
+function collect_modules() {
+	objects=""
+	for i in $@; do
+		for suffix in ${SUFFIXES}; do
+			res=$(find -L src -name "${i}.${suffix}");
+			if test -n "${res}"; then
+				subobjects="";
+				for y in ${res}; do
+					subobjects="${subobjects} ${pwd}/${y}"
+				done
+				objects="${objects} ${i}.so";
+
+				echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+
+				if test -z "$(grep ${i}.so\:\  ${template})"; then
+					echo -e "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n"
+				fi
+			fi
+		done
+	done
+}
+
+function install_modules() {
+	echo "install-auto: $@
+	\${INSTALL} \${SOIPARAM} -d \${DESTDIR}/\${MODDIR}
+	\${INSTALL} \${SOIPARAM} -d \${DESTDIR}/\${BOOTSTRAPDIR};";
+	for i in $@; do
+		if test -n "$(echo ${i}|grep bootstrap-)"; then
+			echo -e "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${BOOTSTRAPDIR}"
+		else
+			echo -e "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${MODDIR}"
+		fi
+	done
+}
+
+function collect_and_install_headers() {
+	objects=""
+	install=""
+
+	for i in $@; do
+		mkdir -p build/$z/$(basename ${i});
+		install="${install}\n	\${INSTALL} \${IPARAM} -d \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})\n	\${INSTALL} \${IPARAM} -m 0644 $(basename ${i})/*.h \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})"
+		
+		for suffix in ${SUFFIXES}; do
+			headers=$(find ${i} -name "*.${suffix}")
+			for h in ${headers}; do
+				newname=$(echo `basename $h`|${HEADERPREPARE})
+				ln -sf $(pwd)/${h} build/$z/$(basename ${i})/${newname};
+			
+				objects="${objects} ${newname}"
+			done
+		done
+	done
+	echo -e "install-auto:${install}"
+	
+	echo "/* created by the configure-script, you shouldn't modify this */
 
 #ifndef _EINIT_MODULES_CONFIGURATION_H
 #define _EINIT_MODULES_CONFIGURATION_H
 
 #define BOOTSTRAP_MODULE_PATH \"${BOOTSTRAP_MODULE_PATH}\"
 
-" > src/include/einit-modules/configuration.h
+" > build/headers/einit-modules/configuration.h
 
-if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
- echo "#define EINIT_MODULES_XML_EXPAT 'y'" >> src/include/einit-modules/configuration.h;
-elif test -n "`echo ${EXTERNALMODULES}|grep einit-config-xml-expat`"; then
- echo "#define EINIT_MODULES_XML_EXPAT 'm'
-#define DO_BOOTSTRAP
-" >> src/include/einit-modules/configuration.h;
-else
- echo "#define EINIT_MODULES_XML_EXPAT 'n'
-#define DO_BOOTSTRAP
-" >> src/include/einit-modules/configuration.h;
-fi;
+	if test "${DO_BOOTSTRAP}" = "yes"; then
+ 		echo "#define DO_BOOTSTRAP" >> build/headers/einit-modules/configuration.h;
+	fi
 
-if test -n "`echo ${INTERNALMODULES}|grep einit-module-logic-v3`"; then
- echo "#define EINIT_MODULES_MODULE_LOGIC_V3 'y'" >> src/include/einit-modules/configuration.h;
-elif test -n "`echo ${EXTERNALMODULES}|grep einit-module-logic-v3`"; then
- echo "#define EINIT_MODULES_MODULE_LOGIC_V3 'm'" >> src/include/einit-modules/configuration.h;
-else
- echo "#define EINIT_MODULES_MODULE_LOGIC_V3 'n'" >> src/include/einit-modules/configuration.h;
-fi;
+	for i in ${INTERNALMODULES}; do
+ 		echo "#define einit_modules_$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g") 'y'" >> build/headers/einit-modules/configuration.h;
+	done
+	for i in ${EXTERNALMODULES}; do
+ 		echo "#define einit_modules_$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g") 'm'" >> build/headers/einit-modules/configuration.h;
+	done
 
-echo "#endif
-" >> src/include/einit-modules/configuration.h
+	echo "#endif
+" >> build/headers/einit-modules/configuration.h
 
-echo "creating configuration.h"
-echo "/* created by the configure-script, you shouldn't modify this */
+	echo "/* created by the configure-script, you shouldn't modify this */
 
 #ifndef _EINIT_CONFIGURATION_H
 #define _EINIT_CONFIGURATION_H
@@ -420,38 +437,73 @@ echo "/* created by the configure-script, you shouldn't modify this */
 
 #define BUFFERSIZE 1024
 
-" > src/include/einit/configuration.h
+" > build/headers/einit/configuration.h
 
-if test "${ISSVN}" = "1"; then
- echo "#define EINIT_VERSION_LITERAL_SUFFIX \"-svn-${BUILDNUMBER}\" " >> src/include/einit/configuration.h;
-else
- echo "#define EINIT_VERSION_LITERAL_SUFFIX \"#${BUILDNUMBER}\" " >> src/include/einit/configuration.h;
+	if test "${ISSVN}" = "1"; then
+		echo "#define EINIT_VERSION_LITERAL_SUFFIX \"-svn-${BUILDNUMBER}\" " >> build/headers/einit/configuration.h;
+	else
+		echo "#define EINIT_VERSION_LITERAL_SUFFIX \"#${BUILDNUMBER}\" " >> build/headers/einit/configuration.h;
+	fi;
+
+	for i in ${ASMFUNCTIONS}; do
+		if test -e "src/assembly/${i}.s"; then
+			echo "#define _have_asm_${i}" >> build/headers/einit/configuration.h;
+		fi
+	done
+
+	echo "#endif
+" >> build/headers/einit/configuration.h
+
+}
+
+echo -n "creating build environment... "
+if test -d build; then
+	echo -n "clean ";
+	rm -Rf build;
 fi;
+echo -n "build ";
+mkdir -p build;
 
-for i in ${ASMFUNCTIONS}; do
-	if test -n "`echo ${CORELINK}|grep asm-${i}.o`"; then
-		echo "#define _have_asm_${i}" >> src/include/einit/configuration.h;
+components=""
+
+for z in ${BUILDCOMPONENTS}; do
+	echo -n "${z} ";
+	mkdir -p build/${z};
+	cat config.mk > build/${z}/Makefile
+	echo -e "\nall: ${z}\n" >> build/${z}/Makefile
+
+	inobjects=""
+	inmodules=""
+	inheaders=""
+
+	if test "${z}" = "core"; then inobjects="${COREOBJECTS} ${INTERNALMODULES}"; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-D_EINIT_CORE"; fi
+	if test "${z}" = "util"; then inobjects=${UTILOBJECTS}; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-D_EINIT_UTIL"; fi
+	if test "${z}" = "modules"; then inmodules=${EXTERNALMODULES}; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-D_EINIT_MODULE"; fi
+	if test "${z}" = "headers"; then inheaders=${HEADERSOURCES}; SUFFIXES=${HEADERSUFFIXES}; fi
+
+	output="build/${z}/Makefile";
+	template="makefile.${z}.template";
+
+	if test -n "${inobjects}"; then collect_objects ${inobjects} >> build/${z}/Makefile; fi
+	if test -n "${inmodules}"; then
+		collect_modules ${inmodules} >> build/${z}/Makefile;
+		install_modules ${objects} >> build/${z}/Makefile;
 	fi
+	if test -n "${inheaders}"; then collect_and_install_headers ${inheaders} >> build/${z}/Makefile; fi
+
+	if test -n "${objects}"; then components="${components} ${z}"; fi
+
+	echo -e "\nobjects = ${objects}\n" >> build/${z}/Makefile
+	cat makefile.${z}.template >> build/${z}/Makefile
 done
 
-echo "#endif
-" >> src/include/einit/configuration.h
+echo "# makefiles below here are auto-created, it's not gonna help much if you modify any of them." > build/Makefile;
 
-if test -e src/einit; then
-	echo -n "cleaning the environment... "
-	if make clean >/dev/null 2>&1; then
-		echo "done";
-	else
-		echo "failed!";
-	fi
-fi
+for y in ${MAKEFILETASKS}; do
+	echo -e "\n${y}:" >> build/Makefile
+	for i in ${components}; do
+		echo "	cd ${i} && \${MAKE} ${y}" >> build/Makefile
+	done
+done
 
-echo -n "creating dependency information... "
-touch src/depend.mk
-touch src/modules/depend.mk
-
-if make depend > /dev/null; then
-	echo "done";
-else
-	echo "failed!";
-fi
+echo "done."

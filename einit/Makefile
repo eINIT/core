@@ -1,7 +1,7 @@
 include config.mk
 
 all:
-	cd src && ${MAKE} all
+	cd build && ${MAKE} all
 	cd data && ${MAKE} all
 
 documentation-html:
@@ -20,13 +20,10 @@ documentation-api:
 documentation: documentation-man documentation-html documentation-api
 
 install: all
-	cd src && ${MAKE} install
+	cd build && ${MAKE} install
 	cd data && ${MAKE} install
 
 depend:
-	touch src/depend.mk
-	cd src && ${MAKE} depend
 
 clean:
-	rm -f einit
-	cd src && ${MAKE} clean
+	rm -Rf build

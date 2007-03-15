@@ -1,0 +1,6 @@
+modules: $(objects)
+
+install: install-auto
+
+bootstrap-einit-configuration-xml-expat.so: bootstrap-einit-configuration-xml-expat.o
+	${LLD} bootstrap-einit-configuration-xml-expat.o -o bootstrap-einit-configuration-xml-expat.so -lexpat

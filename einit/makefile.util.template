@@ -1,0 +1,8 @@
+util: einit-control
+
+install: einit-control
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
+
+einit-control: $(objects)
+	$(CLD) $(objects) -o einit-control $(STATIC) -ldl $(CORELIBS) $(LPA)

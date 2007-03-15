@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
 
-#if ( EINIT_MODULES_XML_EXPAT == 'm' )
+#if defined(_EINIT_MODULE)
 void einit_config_xml_expat_event_handler (struct einit_event *);
 char *einit_config_xml_cfg_to_xml (struct stree *);
 

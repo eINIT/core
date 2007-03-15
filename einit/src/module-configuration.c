@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EXPORTED_FUNCTIONS_PTR NULL
 
 /* event handler for the expat-based XML parser */
-#if ( EINIT_MODULES_XML_EXPAT == 'y' )
+#if ( einit_modules_bootstrap_einit_configuration_xml_expat == 'y' )
 void einit_config_xml_expat_event_handler (struct einit_event *);
 char *einit_config_xml_cfg_to_xml (struct stree *);
 
@@ -147,7 +147,7 @@ struct event_function bitchin_einit_event_handler_ef = {
 
 #include <einit/module-logic.h>
 
-#if ( EINIT_MODULES_MODULE_LOGIC_V3 == 'y' )
+#if ( einit_modules_einit_module_logic_v3 == 'y' )
 
 #ifdef MODULE_LOGIC_V3
 /* einit event handler for the v3 module logics core */

@@ -52,7 +52,7 @@ void module_logic_ipc_event_handler (struct einit_event *);
 void module_logic_einit_event_handler (struct einit_event *);
 double __mod_get_plan_progress_f (struct mloadplan *);
 
-#if ( EINIT_MODULES_MODULE_LOGIC_V3 == 'm' )
+#if defined(_EINIT_MODULE)
 const struct smodule self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,

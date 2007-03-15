@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
   }
 
 #ifdef DO_BOOTSTRAP
-   cev.type = EVE_CONFIGURATION_UPDATE;
+   cev.type = EVE_UPDATE_MODULES;
    cev.string = NULL;
    event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
 
