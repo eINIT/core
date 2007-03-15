@@ -7,7 +7,8 @@ export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl
 export INTERNALMODULES=""
 export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 
-export ASMFUNCTIONS="strmatch strlen"
+#export ASMFUNCTIONS="strmatch strlen"
+export ASMFUNCTIONS=""
 
 export COREOBJECTS="einit module module-configuration bitch utility scheduler event config tree-linear set-lowmem ${ASMFUNCTIONS}"
 export UTILOBJECTS="einit-control bitch utility event tree-linear set-lowmem config ${ASMFUNCTIONS}"
