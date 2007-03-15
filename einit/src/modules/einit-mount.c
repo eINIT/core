@@ -921,13 +921,15 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
  unsigned long mntflags = 0;
 
+ if (!mountpoint) return NULL;
+
  if (tflags & MOUNT_TF_MOUNT) {
   char **fstype_s = NULL;
   uint32_t fsts_i = 0;
   if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
    source = fse->device;
    fsntype = 0;
-   if (de && (de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
+   if (de && source && (de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
     fsntype = bdi->fs_type;
    }
 
