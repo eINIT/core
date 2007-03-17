@@ -174,7 +174,7 @@ void synthesize (char *string) {
   perror ("tts: popen");
 }
 
-int configure (struct lmodule *r) {
+int _einit_feedback_aural_configure (struct lmodule *r) {
  module_init (r);
  exec_configure (r);
 

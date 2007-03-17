@@ -697,7 +697,7 @@ void update (enum update_task task) {
  }
 }
 
-int scanmodules (struct lmodule *modchain) {
+int _einit_mount_scanmodules (struct lmodule *modchain) {
  struct lmodule *new,
                 *lm = modchain;
  char doop = 1;
