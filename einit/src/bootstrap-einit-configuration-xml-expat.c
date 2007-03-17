@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define moduleprefix _bootstrap_einit_configuration_xml_expat_
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>

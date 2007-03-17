@@ -331,6 +331,8 @@ XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA" > config.mk
 
+#define moduleprefix _bootstrap_einit_configuration_xml_expat_
+
 function collect_objects() {
 	objects=""
 	for i in $@; do
@@ -343,7 +345,11 @@ function collect_objects() {
 				done
 				objects="${objects} ${i}.o";
 
-				echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+				if test -n "$(echo ${INTERNALMODULES}|grep -w {i})"; then
+					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dmoduleprefix=_$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_ -c ${subobjects} -o ${i}.o\n"
+				else
+					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+				fi
 			fi
 		done
 	done
