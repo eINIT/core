@@ -1,5 +1,5 @@
 /*
- *  module-configuration.h
+ *  module-configuration.c
  *  eINIT
  *
  *  Created by Magnus Deininger on 22/10/2006.
@@ -39,42 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 
 #define EVENT_FUNCTIONS_PTR NULL
-#define EXPORTED_FUNCTIONS_PTR NULL
-
-/* event handler for the expat-based XML parser */
-#if ( einit_modules_bootstrap_einit_configuration_xml_expat == 'y' )
-void einit_config_xml_expat_event_handler (struct einit_event *);
-char *einit_config_xml_cfg_to_xml (struct stree *);
-
-struct event_function einit_config_xml_expat_event_handler_ef = {
- .type = EVENT_SUBSYSTEM_EINIT,
- .handler = einit_config_xml_expat_event_handler,
- .next = EVENT_FUNCTIONS_PTR
-};
-
-struct exported_function einit_config_xml_expat_cfg2xml_function_header = {
- .version = 1,
- .function = einit_config_xml_cfg_to_xml
-};
-
-struct stree *exported_functions_rootnode;
-
-struct stree einit_config_xml_expat_cfg2xml_function = {
- .key = "einit-configuration-converter-xml",
- .value = &einit_config_xml_expat_cfg2xml_function_header,
- .luggage = NULL,
- .next = EXPORTED_FUNCTIONS_PTR,
- .lbase = &exported_functions_rootnode
-};
-
-struct stree *exported_functions_rootnode = &einit_config_xml_expat_cfg2xml_function;
-
-#undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_config_xml_expat_event_handler_ef
-#undef EXPORTED_FUNCTIONS_PTR
-#define EXPORTED_FUNCTIONS_PTR &einit_config_xml_expat_cfg2xml_function
-
-#endif
 
 /* event handler for the default scheduler */
 void sched_ipc_event_handler(struct einit_event *);
@@ -172,4 +136,3 @@ struct event_function module_logic_ipc_event_handler_ef = {
 #endif
 
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;
-struct stree *exported_functions = EXPORTED_FUNCTIONS_PTR;

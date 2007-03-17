@@ -34,6 +34,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+#define moduleprefix _bootstrap_einit_configuration_xml_expat_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -80,6 +83,7 @@ const struct smodule _bootstrap_einit_configuration_xml_expat_self = {
 module_register(_bootstrap_einit_configuration_xml_expat_self);
 
 #endif
+#if !defined(_EINIT_MODULE_HEADER)
 
 int _bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
@@ -541,3 +545,5 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
 
  return ret;
 }
+
+#endif

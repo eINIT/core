@@ -227,7 +227,7 @@ else
 fi
 
 echo -n "figuring out what libs need to be linked into the core..."
-if test -n "`echo ${INTERNALMODULES}|grep einit-config-xml-expat`"; then
+if test -n "`echo ${INTERNALMODULES}|grep bootstrap-einit-configuration-xml-expat`"; then
  echo -n " -lexpat"
  CORELIBS="${CORELIBS} -lexpat"
 fi;

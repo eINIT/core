@@ -317,6 +317,7 @@ void mod_event_handler(struct einit_event *event);
 #endif
 
 char *bootstrapmodulepath;
+struct smodule *coremodules;
 
 #if defined(_EINIT_MODULE)
 
@@ -326,6 +327,19 @@ const struct smodule *self;
 #define module_register(smod) const struct smodule *self = &smod
 #define module_init(lmod) thismodule = lmod;
 
+#endif
+
+#if defined(_EINIT_CORE) && defined(moduleprefix)
+
+#define thismodule moduleprefix ## thismodule
+#define self moduleprefix ## self
+
+struct lmodule *thismodule;
+const struct smodule *self;
+
+#define module_register(smod)\
+ const struct smodule *self = &smod;
+#define module_init(lmod) thismodule = lmod;
 #endif
 
 #endif
