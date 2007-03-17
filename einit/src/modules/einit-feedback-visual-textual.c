@@ -77,8 +77,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+
+int _einit_feedback_visual_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
 char * provides[] = {"feedback-visual", "feedback-textual", NULL};
-const struct smodule self = {
+const struct smodule _einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -91,8 +96,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_feedback_visual_configure
 };
+
+module_register(_einit_feedback_visual_self);
+
+#endif
 
 struct planref {
  struct mloadplan *plan;
@@ -135,7 +145,6 @@ FILE *vofile = NULL;
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
 struct feedback_fd **feedback_fds = NULL;
-struct lmodule *me;
 pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t feedback_fdsmutex = PTHREAD_MUTEX_INITIALIZER;
@@ -167,15 +176,8 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *this) {
- me = this;
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
- emutex_lock (&me->imutex);
+int _einit_feedback_visual_cleanup (struct lmodule *this) {
+ emutex_lock (&thismodule->imutex);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  if (plans) {
   emutex_lock (&plansmutex);
@@ -203,15 +205,15 @@ int cleanup (struct lmodule *this) {
   emutex_unlock (&modulesmutex);
  }
 
- emutex_unlock (&me->imutex);
+ emutex_unlock (&thismodule->imutex);
  return 0;
 }
 
 /*
   -------- function to enable and configure this module -----------------------
  */
-int enable (void *pa, struct einit_event *status) {
- emutex_lock (&me->imutex);
+int _einit_feedback_visual_enable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
@@ -323,19 +325,19 @@ int enable (void *pa, struct einit_event *status) {
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_listen (EVENT_SUBSYSTEM_POWER, power_event_handler);
 
- emutex_unlock (&me->imutex);
+ emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
 /*
   -------- function to disable this module ------------------------------------
  */
-int disable (void *pa, struct einit_event *status) {
- emutex_lock (&me->imutex);
+int _einit_feedback_visual_disable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
  event_ignore (EVENT_SUBSYSTEM_POWER, power_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- emutex_unlock (&me->imutex);
+ emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
@@ -360,7 +362,7 @@ void feedback_event_handler(struct einit_event *ev) {
    free (tmp);
   }
  } else if (ev->type == EVENT_FEEDBACK_REGISTER_FD) {
-  emutex_lock (&me->imutex);
+  emutex_lock (&thismodule->imutex);
 
   struct feedback_fd *newfd = emalloc (sizeof (struct feedback_fd));
 
@@ -372,9 +374,9 @@ void feedback_event_handler(struct einit_event *ev) {
   feedback_fds = (struct feedback_fd **)setadd ((void **)feedback_fds, (void *)newfd, SET_NOALLOC);
   emutex_unlock (&feedback_fdsmutex);
 
-  emutex_unlock (&me->imutex);
+  emutex_unlock (&thismodule->imutex);
  } else if (ev->type == EVENT_FEEDBACK_UNREGISTER_FD) {
-  emutex_lock (&me->imutex);
+  emutex_lock (&thismodule->imutex);
 
   uint32_t i = 0;
    emutex_lock (&feedback_fdsmutex);
@@ -390,9 +392,9 @@ void feedback_event_handler(struct einit_event *ev) {
 
    emutex_unlock (&feedback_fdsmutex);
 
-  emutex_unlock (&me->imutex);
+  emutex_unlock (&thismodule->imutex);
  } else if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
-  emutex_lock (&me->imutex);
+  emutex_lock (&thismodule->imutex);
 
   int i = 0;
   struct planref plan, *cul = NULL;
@@ -445,9 +447,9 @@ void feedback_event_handler(struct einit_event *ev) {
     break;
   }
 
-  emutex_unlock (&me->imutex);
+  emutex_unlock (&thismodule->imutex);
  } else if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
-  emutex_lock (&me->imutex);
+  emutex_lock (&thismodule->imutex);
 
   struct mstat *mst = NULL;
   uint32_t i = 0;
@@ -471,7 +473,7 @@ void feedback_event_handler(struct einit_event *ev) {
      if (((struct mstat *)(modules[i]))->seqid > ev->seqid) {
 /* discard older messages that came in after newer ones (happens frequently in multi-threaded situations) */
       emutex_unlock (&modulesmutex);
-      emutex_unlock (&me->imutex);
+      emutex_unlock (&thismodule->imutex);
       return;
      } else {
       ((struct mstat *)(modules[i]))->seqid = ev->seqid;
@@ -532,7 +534,7 @@ void feedback_event_handler(struct einit_event *ev) {
    ev->string = NULL;
   }
 
-  emutex_unlock (&me->imutex);
+  emutex_unlock (&thismodule->imutex);
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
    strtrim (ev->string);
@@ -821,14 +823,14 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
 void einit_event_handler(struct einit_event *ev) {
 
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  emutex_lock (&me->imutex);
+  emutex_lock (&thismodule->imutex);
 
   struct cfgnode *node;
 
   if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
    shutdownfailuretimeout = node->value;
 
-  emutex_unlock (&me->imutex);
+  emutex_unlock (&thismodule->imutex);
 #if 0
  } else if (ev->type == EVE_MODULE_UPDATE) {
   if (show_progress && !(ev->status & STATUS_WORKING)) {
@@ -885,7 +887,7 @@ void power_event_handler(struct einit_event *ev) {
 
  if ((ev->type == EVENT_POWER_DOWN_IMMINENT) || (ev->type == EVENT_POWER_RESET_IMMINENT)) {
 // shutdown imminent
-//  emutex_lock (&me->imutex);
+//  emutex_lock (&thismodule->imutex);
 
   uint32_t c = shutdownfailuretimeout;
   char errors = 0;
@@ -916,7 +918,7 @@ void power_event_handler(struct einit_event *ev) {
   if ((ev->type == EVENT_POWER_RESET_IMMINENT) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
    broadcast_message ("/dev/", "rebooting NOW!");
 
-//  emutex_lock (&me->imutex);
+//  emutex_lock (&thismodule->imutex);
  }
 
  return;
@@ -987,3 +989,14 @@ unsigned char broadcast_message (char *path, char *message) {
  return 0;
 }
 
+int _einit_feedback_visual_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ irr->cleanup = _einit_feedback_visual_cleanup;
+ irr->enable  = _einit_feedback_visual_enable;
+ irr->disable = _einit_feedback_visual_disable;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
+}

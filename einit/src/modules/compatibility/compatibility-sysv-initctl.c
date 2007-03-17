@@ -79,9 +79,12 @@ struct init_command {
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _compatibility_sysv_initctl_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 char * provides[] = {"initctl", NULL};
 char * requires[] = {"mount/system", NULL};
-const struct smodule self = {
+const struct smodule _compatibility_sysv_initctl_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -94,13 +97,17 @@ const struct smodule self = {
   .requires = requires,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _compatibility_sysv_initctl_configure
 };
+
+module_register(_compatibility_sysv_initctl_self);
+
+#endif
 
 char running = 0;
 
 pthread_t initctl_thread;
-struct lmodule *this = NULL;
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
@@ -113,16 +120,7 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *r) {
- ipc_configure (r);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- this = r;
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _compatibility_sysv_initctl_cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
@@ -140,7 +138,7 @@ void * initctl_wait (char *fifo) {
    char tmp[BUFFERSIZE];
    esprintf (tmp, BUFFERSIZE, "initctl: opening FIFO failed: %s", strerror (errno));
    notice (4, tmp);
-   mod (MOD_DISABLE, this);
+   mod (MOD_DISABLE, thismodule);
    running = 0;
    return NULL;
   }
@@ -170,7 +168,7 @@ void * initctl_wait (char *fifo) {
        memset (&tnode, 0, sizeof(struct cfgnode));
 
        tnode.nodetype = EI_NODETYPE_CONFIG;
-       tnode.source = self.rid;
+       tnode.source = self->rid;
        tnode.id = "configuration-system-daemon-term-timeout-primary";
        tnode.value = ic.timeout;
 
@@ -231,7 +229,7 @@ void * initctl_wait (char *fifo) {
  return NULL;
 }
 
-int enable (void *pa, struct einit_event *status) {
+int _compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
  char tmp[BUFFERSIZE];
  struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
  char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
@@ -263,7 +261,7 @@ int enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int disable (void *pa, struct einit_event *status) {
+int _compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
  char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
  if (!fifo) fifo =  "/dev/initctl";
 
@@ -280,4 +278,17 @@ int disable (void *pa, struct einit_event *status) {
 
  running = 0;
  return STATUS_OK;
+}
+
+int _compatibility_sysv_initctl_configure (struct lmodule *r) {
+ module_init (r);
+
+ thismodule->cleanup = _compatibility_sysv_initctl_cleanup;
+ thismodule->enable = _compatibility_sysv_initctl_enable;
+ thismodule->disable = _compatibility_sysv_initctl_disable;
+
+ ipc_configure (r);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }

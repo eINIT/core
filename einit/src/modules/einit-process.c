@@ -54,7 +54,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _einit_process_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _einit_process_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -67,8 +70,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_process_configure
 };
+
+module_register(_einit_process_self);
+
+#endif
 
 struct process_status **ps = NULL;
 
@@ -183,19 +191,7 @@ int __pekill (struct pc_conditional **pcc) {
  return ekill (pcc, SIGKILL);
 }
 
-int configure (struct lmodule *irr) {
- process_configure (irr);
- function_register ("einit-process-filter-cwd", 1, filter_processes_cwd);
- function_register ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
- function_register ("einit-process-collect", 1, collect_processes);
- function_register ("einit-process-ekill", 1, __ekill);
- function_register ("einit-process-killing-spree", 1, __pekill);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- return 0;
-}
-
-int cleanup (struct lmodule *irr) {
+int _einit_process_cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-process-killing-spree", 1, __pekill);
  function_unregister ("einit-process-ekill", 1, __ekill);
@@ -203,6 +199,21 @@ int cleanup (struct lmodule *irr) {
  function_unregister ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
  function_unregister ("einit-process-filter-cwd", 1, filter_processes_cwd);
  process_cleanup (irr);
+
+ return 0;
+}
+
+int _einit_process_configure (struct lmodule *irr) {
+ module_init (irr);
+ irr->cleanup = _einit_process_cleanup;
+
+ process_configure (irr);
+ function_register ("einit-process-filter-cwd", 1, filter_processes_cwd);
+ function_register ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
+ function_register ("einit-process-collect", 1, collect_processes);
+ function_register ("einit-process-ekill", 1, __ekill);
+ function_register ("einit-process-killing-spree", 1, __pekill);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }

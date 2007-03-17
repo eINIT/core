@@ -58,7 +58,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
-const struct smodule self = {
+int _einit_exec_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
+const struct smodule _einit_exec_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -71,8 +75,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+.configure = _einit_exec_configure
 };
+
+module_register(_einit_exec_self);
+
+#endif
 
 // char hasslash = strchr(key, '/') ? 1 : 0;
 
@@ -98,34 +107,8 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 char **__create_environment (char **environment, char **variables);
 void ipc_event_handler (struct einit_event *);
-struct lmodule *me;
 
-int configure (struct lmodule *irr) {
- struct cfgnode *node;
- me = irr;
- if (!(shell = (char **)str2set (' ', cfg_getstring ("configuration-system-shell", NULL))))
-  shell = dshell;
- exec_configure (irr);
-
- if ((node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL)))
-  spawn_timeout = node->value;
- if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-primary", 0, NULL)))
-  kill_timeout_primary = node->value;
- if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
-  kill_timeout_secondary = node->value;
-
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- function_register ("einit-execute-command", 1, __pexec_function);
- function_register ("einit-execute-daemon", 1, __start_daemon_function);
- function_register ("einit-stop-daemon", 1, __stop_daemon_function);
- function_register ("einit-create-environment", 1, __create_environment);
- function_register ("einit-check-variables", 1, __check_variables);
-
- return 0;
-}
-
-int cleanup (struct lmodule *irr) {
+int _einit_exec_cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) free (shell);
  exec_cleanup (irr);
 
@@ -144,7 +127,7 @@ void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "exec")) {
   struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
   ev->flag = 1;
-  ee.para = (void *)me;
+  ee.para = (void *)thismodule;
 
   __pexec_function (ev->string, NULL, 0, 0, NULL, NULL, NULL, &ee);
   evstaticdestroy(ee);
@@ -857,4 +840,32 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  }
 
  return STATUS_OK;
+}
+
+int _einit_exec_configure (struct lmodule *irr) {
+ module_init(irr);
+
+ irr->cleanup = _einit_exec_cleanup;
+
+ struct cfgnode *node;
+ if (!(shell = (char **)str2set (' ', cfg_getstring ("configuration-system-shell", NULL))))
+  shell = dshell;
+ exec_configure (irr);
+
+ if ((node = cfg_findnode ("configuration-system-daemon-spawn-timeout", 0, NULL)))
+  spawn_timeout = node->value;
+ if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-primary", 0, NULL)))
+  kill_timeout_primary = node->value;
+ if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
+  kill_timeout_secondary = node->value;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ function_register ("einit-execute-command", 1, __pexec_function);
+ function_register ("einit-execute-daemon", 1, __start_daemon_function);
+ function_register ("einit-stop-daemon", 1, __stop_daemon_function);
+ function_register ("einit-create-environment", 1, __create_environment);
+ function_register ("einit-check-variables", 1, __check_variables);
+
+ return 0;
 }

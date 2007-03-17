@@ -260,12 +260,3 @@ if test -e src/einit; then
 		echo "failed!";
 	fi
 fi
-
-echo -n "creating dependency information... "
-touch src/depend.mk
-
-if make depend > /dev/null; then
-	echo "done";
-else
-	echo "failed!";
-fi

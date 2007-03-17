@@ -60,7 +60,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _linux_process_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _linux_process_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -73,8 +76,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _linux_process_configure
 };
+
+module_register(_linux_process_self);
+
+#endif
 
 struct process_status ** update_processes_proc_linux (struct process_status **pstat) {
  DIR *dir;
@@ -155,16 +163,20 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
  return npstat;
 }
 
-int configure (struct lmodule *irr) {
- process_configure (irr);
- function_register ("einit-process-status-updater", 1, update_processes_proc_linux);
+int _linux_process_cleanup (struct lmodule *this) {
+ function_unregister ("einit-process-status-updater", 1, update_processes_proc_linux);
+ process_cleanup (irr);
 
  return 0;
 }
 
-int cleanup (struct lmodule *this) {
- function_unregister ("einit-process-status-updater", 1, update_processes_proc_linux);
- process_cleanup (irr);
+int _linux_process_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ thismodule->cleanup = _linux_process_cleanup;
+
+ process_configure (irr);
+ function_register ("einit-process-status-updater", 1, update_processes_proc_linux);
 
  return 0;
 }

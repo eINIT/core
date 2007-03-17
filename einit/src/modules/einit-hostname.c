@@ -52,8 +52,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _einit_hostname_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
 char * provides[] = {"hostname", "domainname", NULL};
-const struct smodule self = {
+const struct smodule _einit_hostname_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -66,8 +70,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_hostname_configure
 };
+
+module_register(_einit_hostname_self);
+
+#endif
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
@@ -91,20 +100,14 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_hostname_cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }
 
 
-int enable (void *pa, struct einit_event *status) {
+int _einit_hostname_enable (void *pa, struct einit_event *status) {
  char *name;
  if ((name = cfg_getstring ("configuration-network-hostname", NULL))) {
   status->string = "setting hostname";
@@ -139,6 +142,18 @@ int enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int disable (void *pa, struct einit_event *status) {
+int _einit_hostname_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
+}
+
+int _einit_hostname_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ thismodule->cleanup = _einit_hostname_cleanup;
+ thismodule->enable = _einit_hostname_enable;
+ thismodule->disable = _einit_hostname_disable;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }

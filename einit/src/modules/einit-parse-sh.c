@@ -64,7 +64,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _einit_parse_sh_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _einit_parse_sh_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -77,19 +80,17 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_parse_sh_configure
 };
+
+module_register(_einit_parse_sh_self);
+
+#endif
 
 int __parse_sh (char *, void (*)(char **, uint8_t));
 
-int configure (struct lmodule *irr) {
- parse_sh_configure (irr);
- function_register ("einit-parse-sh", 1, __parse_sh);
-
- return 0;
-}
-
-int cleanup (struct lmodule *irr) {
+int _einit_parse_sh_cleanup (struct lmodule *irr) {
  function_unregister ("einit-parse-sh", 1, __parse_sh);
  parse_sh_cleanup (irr);
 
@@ -190,3 +191,14 @@ int __parse_sh (char *data, void (*callback)(char **, uint8_t)) {
 }
 
 /* passive module: no enable/disable */
+
+int _einit_parse_sh_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ irr->cleanup = _einit_parse_sh_cleanup;
+
+ parse_sh_configure (irr);
+ function_register ("einit-parse-sh", 1, __parse_sh);
+
+ return 0;
+}

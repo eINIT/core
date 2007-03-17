@@ -52,7 +52,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _einit_ipc_configuration_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
+const struct smodule _einit_ipc_configuration_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -65,12 +69,15 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_ipc_configuration_configure
 };
 
-void einit_ipc_handler (struct einit_event *);
+module_register(_einit_ipc_configuration_self);
 
-struct lmodule *this;
+#endif
+
+void einit_ipc_handler (struct einit_event *);
 
 void ipc_event_handler (struct einit_event *ev) {
  char **argv = NULL;
@@ -113,7 +120,7 @@ void ipc_event_handler (struct einit_event *ev) {
      onode && onode->arbattrs ? onode->arbattrs : NULL;
    newnode.path =
      onode && onode->path ? onode->path : NULL;
-   newnode.source = self.rid;
+   newnode.source = self->rid;
    newnode.source_file = NULL;
    newnode.options =
      (onode && onode->options ? onode->options : 0) | EINIT_CFGNODE_ONLINE_MODIFICATION;
@@ -205,16 +212,18 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *r) {
- this = r;
-
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+int _einit_ipc_configuration_cleanup (struct lmodule *irr) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }
 
-int cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+int _einit_ipc_configuration_configure (struct lmodule *r) {
+ module_init (r);
+
+ thismodule->cleanup = _einit_ipc_configuration_cleanup;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }

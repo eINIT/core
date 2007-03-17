@@ -58,7 +58,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _einit_shadow_exec_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _einit_shadow_exec_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -71,8 +74,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_shadow_exec_configure
 };
+
+module_register(_einit_shadow_exec_self);
+
+#endif
 
 struct shadow_descriptor {
  char *before_enable,
@@ -211,18 +219,22 @@ void einit_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *this) {
- exec_configure(this);
+int _einit_shadow_exec_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ exec_cleanup(this);
 
  return 0;
 }
 
-int cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+int _einit_shadow_exec_configure (struct lmodule *this) {
+ module_init (this);
 
- exec_cleanup(this);
+ thismodule->cleanup = _einit_shadow_exec_cleanup;
+
+ exec_configure(this);
+
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
 
  return 0;
 }

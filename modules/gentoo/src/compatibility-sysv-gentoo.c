@@ -35,7 +35,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
+#define _EINIT_MODULE
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -65,7 +65,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _compatibility_sysv_gentoo_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _compatibility_sysv_gentoo_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -78,8 +81,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _compatibility_sysv_gentoo_configure
 };
+
+module_register(_compatibility_sysv_gentoo_self);
+
+#endif
 
 #ifdef POSIXREGEX
 struct stree *service_group_transformations = NULL;
@@ -97,33 +105,25 @@ char  do_service_tracking = 0,
      *init_d_exec_scriptlet = NULL;
 time_t profile_env_mtime = 0;
 
-int scanmodules (struct lmodule *);
-int init_d_enable (char *, struct einit_event *);
-int init_d_disable (char *, struct einit_event *);
-int init_d_reset (char *, struct einit_event *);
-int init_d_reload (char *, struct einit_event *);
-int configure (struct lmodule *);
-int cleanup (struct lmodule *);
+int _compatibility_sysv_gentoo_scanmodules (struct lmodule *);
+int _compatibility_sysv_gentoo_init_d_enable (char *, struct einit_event *);
+int _compatibility_sysv_gentoo_init_d_disable (char *, struct einit_event *);
+int _compatibility_sysv_gentoo_init_d_reset (char *, struct einit_event *);
+int _compatibility_sysv_gentoo_init_d_reload (char *, struct einit_event *);
+int _compatibility_sysv_gentoo_configure (struct lmodule *);
+int _compatibility_sysv_gentoo_cleanup (struct lmodule *);
 void sh_add_environ_callback (char **, uint8_t);
 void parse_gentoo_runlevels (char *, struct cfgnode *, char);
 void einit_event_handler (struct einit_event *);
 void ipc_event_handler (struct einit_event *);
-int cleanup_after_module (struct lmodule *);
+int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *);
 
 #define SVCDIR "/lib/rcscripts/init.d"
 
 char svcdir_init_done = 0;
 
 /* functions that module tend to need */
-int configure (struct lmodule *irr) {
- exec_configure (irr);
- parse_sh_configure (irr);
-
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-}
-
-int cleanup (struct lmodule *irr) {
+int _compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
 
@@ -162,7 +162,7 @@ void sh_add_environ_callback (char **data, uint8_t status) {
     nnode.id = estrdup ("configuration-environment-global");
     nnode.arbattrs = (char **)setdup ((void **)&narb, SET_TYPE_STRING);
     nnode.svalue = nnode.arbattrs[3];
-    nnode.source = self.rid;
+    nnode.source = self->rid;
 //    nnode.source_file = "/etc/profile.env";
 
     cfg_addnode (&nnode);
@@ -256,7 +256,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     newnode.nodetype = EI_NODETYPE_MODE;
     newnode.id = estrdup(arbattrs[1]);
-    newnode.source   = self.rid;
+    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
     cfg_addnode (&newnode);
@@ -354,7 +354,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        newnode.nodetype = EI_NODETYPE_CONFIG;
 //       newnode.mode     = currentmode;
        newnode.id       = cfgid;
-       newnode.source   = self.rid;
+       newnode.source   = self->rid;
        newnode.arbattrs = arbattrs;
 
        cfg_addnode (&newnode);
@@ -412,7 +412,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     newnode.nodetype = EI_NODETYPE_CONFIG;
     newnode.mode     = currentmode;
     newnode.id       = estrdup("mode-enable");
-    newnode.source   = self.rid;
+    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
     cfg_addnode (&newnode);
@@ -554,7 +554,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
 /* gentoo init.d support functions */
 
-int cleanup_after_module (struct lmodule *this) {
+int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
 #if 0
  if (this->module) {
  if (this->module->provides)
@@ -572,7 +572,7 @@ int cleanup_after_module (struct lmodule *this) {
 #endif
 }
 
-int scanmodules (struct lmodule *modchain) {
+int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  DIR *dir;
  struct dirent *de;
  char *nrid = NULL,
@@ -727,11 +727,11 @@ int scanmodules (struct lmodule *modchain) {
     while (lm) {
      if (lm->source && !strcmp(lm->source, tmp)) {
       lm->param = (void *)estrdup (tmp);
-      lm->enable = (int (*)(void *, struct einit_event *))init_d_enable;
-      lm->disable = (int (*)(void *, struct einit_event *))init_d_disable;
-      lm->reset = (int (*)(void *, struct einit_event *))init_d_reset;
-      lm->reload = (int (*)(void *, struct einit_event *))init_d_reload;
-      lm->cleanup = cleanup_after_module;
+      lm->enable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_enable;
+      lm->disable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_disable;
+      lm->reset = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reset;
+      lm->reload = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reload;
+      lm->cleanup = _compatibility_sysv_gentoo_cleanup_after_module;
       lm->module = modinfo;
 
       lm = mod_update (lm);
@@ -746,11 +746,11 @@ int scanmodules (struct lmodule *modchain) {
      if (new) {
       new->source = estrdup (tmp);
       new->param = (void *)estrdup (tmp);
-      new->enable = (int (*)(void *, struct einit_event *))init_d_enable;
-      new->disable = (int (*)(void *, struct einit_event *))init_d_disable;
-      new->reset = (int (*)(void *, struct einit_event *))init_d_reset;
-      new->reload = (int (*)(void *, struct einit_event *))init_d_reload;
-      new->cleanup = cleanup_after_module;
+      new->enable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_enable;
+      new->disable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_disable;
+      new->reset = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reset;
+      new->reload = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reload;
+      new->cleanup = _compatibility_sysv_gentoo_cleanup_after_module;
      }
     }
 
@@ -778,7 +778,7 @@ int scanmodules (struct lmodule *modchain) {
 
 // int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 
-int init_d_enable (char *init_script, struct einit_event *status) {
+int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_event *status) {
  char *variables[7] = {
   "script-path", init_script,
   "script-name", init_script,
@@ -794,7 +794,7 @@ int init_d_enable (char *init_script, struct einit_event *status) {
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int init_d_disable (char *init_script, struct einit_event *status) {
+int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_event *status) {
  char *variables[7] = {
   "script-path", init_script,
   "script-name", init_script,
@@ -810,7 +810,7 @@ int init_d_disable (char *init_script, struct einit_event *status) {
   return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int init_d_reset (char *init_script, struct einit_event *status) {
+int _compatibility_sysv_gentoo_init_d_reset (char *init_script, struct einit_event *status) {
  char *variables[7] = {
   "script-path", init_script,
   "script-name", init_script,
@@ -826,7 +826,7 @@ int init_d_reset (char *init_script, struct einit_event *status) {
   return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int init_d_reload (char *init_script, struct einit_event *status) {
+int _compatibility_sysv_gentoo_init_d_reload (char *init_script, struct einit_event *status) {
  char *variables[7] = {
   "script-path", init_script,
   "script-name", init_script,
@@ -840,6 +840,19 @@ int init_d_reload (char *init_script, struct einit_event *status) {
   cmdscript = apply_variables (init_d_exec_scriptlet, variables);
 
   return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+}
+
+int _compatibility_sysv_gentoo_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ thismodule->cleanup = _compatibility_sysv_gentoo_cleanup;
+ thismodule->scanmodules = _compatibility_sysv_gentoo_scanmodules;
+
+ exec_configure (irr);
+ parse_sh_configure (irr);
+
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
 // no enable/disable functions: this is a passive module

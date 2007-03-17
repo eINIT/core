@@ -62,7 +62,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _compatibility_mod_sysv_init_d_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _compatibility_mod_sysv_init_d_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -75,16 +78,21 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+.configure = _compatibility_mod_sysv_init_d_configure
 };
 
-int scanmodules (struct lmodule *);
-int init_d_enable (char *, struct einit_event *);
-int init_d_disable (char *, struct einit_event *);
-int init_d_reset (char *, struct einit_event *);
-int init_d_reload (char *, struct einit_event *);
-int configure (struct lmodule *);
-int cleanup (struct lmodule *);
+module_register(_compatibility_mod_sysv_init_d_self);
+
+#endif
+
+int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *);
+int _compatibility_mod_sysv_init_d_init_d_enable (char *, struct einit_event *);
+int _compatibility_mod_sysv_init_d_init_d_disable (char *, struct einit_event *);
+int _compatibility_mod_sysv_init_d_init_d_reset (char *, struct einit_event *);
+int _compatibility_mod_sysv_init_d_init_d_reload (char *, struct einit_event *);
+int _compatibility_mod_sysv_init_d_configure (struct lmodule *);
+int _compatibility_mod_sysv_init_d_cleanup (struct lmodule *);
 
 void ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && !strcmp(ev->set[0], "examine") && !strcmp(ev->set[1], "configuration")) {
@@ -97,17 +105,12 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
- exec_configure (irr);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-}
-
-int cleanup (struct lmodule *irr) {
+int _compatibility_mod_sysv_init_d_cleanup (struct lmodule *irr) {
  exec_cleanup(irr);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }
 
-int cleanup_after_module (struct lmodule *this) {
+int _compatibility_mod_sysv_init_d_cleanup_after_module (struct lmodule *this) {
 #if 0
  if (this->module) {
   if (this->module->provides)
@@ -125,7 +128,7 @@ int cleanup_after_module (struct lmodule *this) {
 #endif
 }
 
-int scanmodules (struct lmodule *modchain) {
+int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *modchain) {
  DIR *dir;
  struct dirent *de;
  char *nrid = NULL,
@@ -174,11 +177,11 @@ int scanmodules (struct lmodule *modchain) {
     while (lm) {
      if (lm->source && !strcmp(lm->source, tmp)) {
       lm->param = (void *)estrdup (tmp);
-      lm->enable = (int (*)(void *, struct einit_event *))init_d_enable;
-      lm->disable = (int (*)(void *, struct einit_event *))init_d_disable;
-      lm->reset = (int (*)(void *, struct einit_event *))init_d_reset;
-      lm->reload = (int (*)(void *, struct einit_event *))init_d_reload;
-      lm->cleanup = cleanup_after_module;
+      lm->enable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_enable;
+      lm->disable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_disable;
+      lm->reset = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reset;
+      lm->reload = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reload;
+      lm->cleanup = _compatibility_mod_sysv_init_d_cleanup_after_module;
       lm->module = modinfo;
 
       lm = mod_update (lm);
@@ -193,11 +196,11 @@ int scanmodules (struct lmodule *modchain) {
      if (new) {
       new->source = estrdup (tmp);
       new->param = (void *)estrdup (tmp);
-      new->enable = (int (*)(void *, struct einit_event *))init_d_enable;
-      new->disable = (int (*)(void *, struct einit_event *))init_d_disable;
-      new->reset = (int (*)(void *, struct einit_event *))init_d_reset;
-      new->reload = (int (*)(void *, struct einit_event *))init_d_reload;
-      new->cleanup = cleanup_after_module;
+      new->enable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_enable;
+      new->disable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_disable;
+      new->reset = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reset;
+      new->reload = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reload;
+      new->cleanup = _compatibility_mod_sysv_init_d_cleanup_after_module;
      }
     }
 
@@ -210,7 +213,7 @@ int scanmodules (struct lmodule *modchain) {
  }
 }
 
-int init_d_enable (char *init_script, struct einit_event *status) {
+int _compatibility_mod_sysv_init_d_init_d_enable (char *init_script, struct einit_event *status) {
  char *cmd;
 
  cmd = emalloc (7 + strlen(init_script));
@@ -221,7 +224,7 @@ int init_d_enable (char *init_script, struct einit_event *status) {
  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int init_d_disable (char *init_script, struct einit_event *status) {
+int _compatibility_mod_sysv_init_d_init_d_disable (char *init_script, struct einit_event *status) {
  char *cmd;
 
  cmd = emalloc (6 + strlen(init_script));
@@ -232,7 +235,7 @@ int init_d_disable (char *init_script, struct einit_event *status) {
  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int init_d_reset (char *init_script, struct einit_event *status) {
+int _compatibility_mod_sysv_init_d_init_d_reset (char *init_script, struct einit_event *status) {
  char *cmd;
 
  cmd = emalloc (7 + strlen(init_script));
@@ -243,7 +246,7 @@ int init_d_reset (char *init_script, struct einit_event *status) {
  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int init_d_reload (char *init_script, struct einit_event *status) {
+int _compatibility_mod_sysv_init_d_init_d_reload (char *init_script, struct einit_event *status) {
  char *cmd;
 
  cmd = emalloc (8 + strlen(init_script));
@@ -252,4 +255,14 @@ int init_d_reload (char *init_script, struct einit_event *status) {
  strcat (cmd, " reload");
 
  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
+}
+
+int _compatibility_mod_sysv_init_d_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ thismodule->cleanup = _compatibility_mod_sysv_init_d_cleanup;
+ thismodule->scanmodules = _compatibility_mod_sysv_init_d_scanmodules;
+
+ exec_configure (irr);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 }

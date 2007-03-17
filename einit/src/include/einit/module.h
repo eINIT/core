@@ -161,6 +161,8 @@ struct service_information {
 #endif
 };
 
+struct lmodule;
+
 /*!\brief Static (on-file) module definition
  * \ingroup moduledefinition
  *
@@ -175,6 +177,9 @@ struct smodule {
  char *name;            /*!< The real name of the module. */
  char *rid;             /*!< The short ID of the module. */
  struct service_information si;
+
+ int (*configure)(struct lmodule *);
+                        /*!< function used to initialise the module. */
 };
 
 /*!\brief In-memory module definition
@@ -190,6 +195,7 @@ struct lmodule {
  int (*reset) (void *, struct einit_event *);   /*!< Pointer to the module's reset()-function */
  int (*reload) (void *, struct einit_event *);  /*!< Pointer to the module's reload()-function */
  int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
+ int (*scanmodules) (struct lmodule *);         /*!< Pointer to the module's scanmodules()-function */
  uint32_t status;                               /*!< Current module status (enabled, disabled, ...) */
  void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
@@ -311,6 +317,16 @@ void mod_event_handler(struct einit_event *event);
 #endif
 
 char *bootstrapmodulepath;
+
+#if defined(_EINIT_MODULE)
+
+struct lmodule *thismodule;
+const struct smodule *self;
+
+#define module_register(smod) const struct smodule *self = &smod
+#define module_init(lmod) thismodule = lmod;
+
+#endif
 
 #endif
 

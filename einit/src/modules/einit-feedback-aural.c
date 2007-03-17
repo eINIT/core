@@ -57,9 +57,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _einit_feedback_aural_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
 char *provides[] = {"feedback-aural", NULL};
 char *requires[] = {"audio", "mount/critical", NULL};
-const struct smodule self = {
+const struct smodule _einit_feedback_aural_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -72,10 +76,13 @@ const struct smodule self = {
   .requires = requires,
   .after    = NULL,
   .before   = NULL
- }
+ },
+.configure = _einit_feedback_aural_configure
 };
 
-struct lmodule *self_l = NULL;
+module_register(_einit_feedback_aural_self);
+
+#endif
 
 void feedback_event_handler(struct einit_event *);
 void synthesize (char *);
@@ -97,45 +104,29 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *this) {
- exec_configure (this);
-
- struct cfgnode *node;
-
- synthesizer = cfg_getstring ("configuration-feedback-aural-tts-synthesizer-command", NULL);
-
- if ((node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL)))
-  sev_threshold = node->value;
-
- self_l = this;
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_feedback_aural_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }
 
-int enable (void *pa, struct einit_event *status) {
- emutex_lock (&self_l->imutex);
+int _einit_feedback_aural_enable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- emutex_unlock (&self_l->imutex);
+ emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
-int disable (void *pa, struct einit_event *status) {
- emutex_lock (&self_l->imutex);
+int _einit_feedback_aural_disable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
  event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- emutex_unlock (&self_l->imutex);
+ emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
 void feedback_event_handler(struct einit_event *ev) {
- emutex_lock (&self_l->imutex);
+ emutex_lock (&thismodule->imutex);
 
  char phrase[BUFFERSIZE], hostname[BUFFERSIZE];
  phrase[0] = 0;
@@ -165,7 +156,7 @@ void feedback_event_handler(struct einit_event *ev) {
 
  if (phrase[0]) synthesize (phrase);
 
- emutex_unlock (&self_l->imutex);
+ emutex_unlock (&thismodule->imutex);
  return;
 }
 
@@ -181,4 +172,24 @@ void synthesize (char *string) {
    perror ("tts: pclose");
  } else
   perror ("tts: popen");
+}
+
+int configure (struct lmodule *r) {
+ module_init (r);
+ exec_configure (r);
+
+ r->cleanup = _einit_feedback_aural_cleanup;
+ r->enable = _einit_feedback_aural_enable;
+ r->disable = _einit_feedback_aural_disable;
+
+ struct cfgnode *node;
+
+ synthesizer = cfg_getstring ("configuration-feedback-aural-tts-synthesizer-command", NULL);
+
+ if ((node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL)))
+  sev_threshold = node->value;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }

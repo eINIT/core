@@ -52,8 +52,10 @@ void module_logic_ipc_event_handler (struct einit_event *);
 void module_logic_einit_event_handler (struct einit_event *);
 double __mod_get_plan_progress_f (struct mloadplan *);
 
-#if defined(_EINIT_MODULE)
-const struct smodule self = {
+int _einit_module_logic_v3_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _einit_module_logic_v3_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -66,19 +68,15 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_module_logic_v3_configure
 };
 
-int configure (struct lmodule *this) {
- event_listen (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
+module_register(_einit_module_logic_v3_self);
 
- function_register ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
+#endif
 
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_module_logic_v3_cleanup (struct lmodule *this) {
  function_unregister ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
 
  event_ignore (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
@@ -86,7 +84,19 @@ int cleanup (struct lmodule *this) {
 
  return 0;
 }
-#endif
+
+int _einit_module_logic_v3_configure (struct lmodule *this) {
+ module_init(this);
+
+ thismodule->cleanup = _einit_module_logic_v3_cleanup;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
+
+ function_register ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
+
+ return 0;
+}
 
 struct module_taskblock
   current = { NULL, NULL, NULL, NULL, NULL, NULL },

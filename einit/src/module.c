@@ -120,7 +120,7 @@ int mod_scanmodules ( void ) {
 //   tmp = (char *)emalloc (el = (((mplen + strlen (entry->d_name))) & (~3))+4);
    tmp = (char *)emalloc (mplen + strlen (entry->d_name));
    struct stat sbuf;
-   struct smodule *modinfo;
+   struct smodule **modinfo;
    struct lmodule *lm;
    *tmp = 0;
    strcat (tmp, modulepath);
@@ -136,12 +136,7 @@ int mod_scanmodules ( void ) {
      lm = mod_update (lm);
 
 // tell module to scan for changes if it's a module-loader
-     if (lm->module && lm->sohandle && (lm->module->mode & EINIT_MOD_LOADER)) {
-      int (*scanfunc)(struct lmodule *) = (int (*)(struct lmodule *)) dlsym (lm->sohandle, "scanmodules");
-      if (scanfunc != NULL) {
-       scanfunc (mlist);
-      }
-      else bitch(BITCH_DL, 0, "searching for scanmodules()");
+     if (lm->module && lm->sohandle && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
      }
 
      goto cleanup_continue;
@@ -155,15 +150,15 @@ int mod_scanmodules ( void ) {
     goto cleanup_continue;
    }
 
-   modinfo = (struct smodule *)dlsym (sohandle, "self");
-   if (modinfo != NULL) {
-    if (modinfo->eibuild == BUILDNUMBER) {
-     struct lmodule *new = mod_add (sohandle, modinfo);
+   modinfo = (struct smodule **)dlsym (sohandle, "self");
+   if ((modinfo != NULL) && ((*modinfo) != NULL)) {
+    if ((*modinfo)->eibuild == BUILDNUMBER) {
+     struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
       new->source = estrdup(tmp);
      }
     } else {
-     eprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, modinfo->eibuild);
+     eprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, (*modinfo)->eibuild);
 
      dlclose (sohandle);
     }
@@ -251,9 +246,6 @@ struct lmodule *mod_update (struct lmodule *module) {
 
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
- int (*scanfunc)(struct lmodule *);
- int (*ftload)  (void *, struct einit_event *);
- int (*configfunc)(struct lmodule *);
 
  nmod = ecalloc (1, sizeof (struct lmodule));
 
@@ -281,56 +273,9 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  } else
   nmod->si = NULL;
 
-// this will do additional initialisation functions for certain module-types
- if (module && sohandle) {
-// look for and execute any configure() functions in modules
-  configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "configure");
-  if (configfunc != NULL) {
-   configfunc (nmod);
-  }
 
-// look for any cleanup() functions
-  if (!nmod->cleanup) {
-   configfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "cleanup");
-   if (configfunc != NULL) {
-    nmod->cleanup = configfunc;
-   }
-  }
-// EINIT_MOD_LOADER modules will usually want to provide a function to scan
-//  for modules so they can be included in the dependency chain
-  if (module->mode & EINIT_MOD_LOADER) {
-   scanfunc = (int (*)(struct lmodule *)) dlsym (sohandle, "scanmodules");
-   if (scanfunc != NULL) {
-    scanfunc (mlist);
-   }
-   else bitch(BITCH_DL, 0, "searching for scanmodules()");
-  }
-// we need to scan for load and unload functions if NULL was supplied for these
-  if (!nmod->enable) {
-   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "enable");
-   if (ftload != NULL) {
-    nmod->enable = ftload;
-   }
-  }
-  if (!nmod->disable) {
-   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "disable");
-   if (ftload != NULL) {
-    nmod->disable = ftload;
-   }
-  }
-  if (!nmod->reset) {
-   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reset");
-   if (ftload != NULL) {
-    nmod->reset = ftload;
-   }
-  }
-  if (!nmod->reload) {
-   ftload = (int (*)(void *, struct einit_event *)) dlsym (sohandle, "reload");
-   if (ftload != NULL) {
-    nmod->reload = ftload;
-   }
-  }
- }
+ if (module->configure) module->configure (nmod);
+ if (nmod->scanmodules) nmod->scanmodules(mlist);
 
  nmod = mod_update (nmod);
 

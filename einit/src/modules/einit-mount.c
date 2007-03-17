@@ -80,9 +80,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _einit_mount_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 /* module definitions */
 // char *provides[] = {"mount", NULL};
-const struct smodule self = {
+const struct smodule _einit_mount_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -95,8 +98,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_mount_configure
 };
+
+module_register(_einit_mount_self);
+
+#endif
 
 char *provides_mountlocal[] = {"mount/local", NULL};
 char *requires_mountlocal[] = {"mount/system", "mount/critical", NULL};
@@ -200,11 +208,10 @@ struct mount_control_block mcb = {
 };
 
 /* function declarations */
-int scanmodules (struct lmodule *);
-int configure (struct lmodule *);
-int cleanup (struct lmodule *);
-int enable (enum mounttask, struct einit_event *);
-int disable (enum mounttask, struct einit_event *);
+int _einit_mount_scanmodules (struct lmodule *);
+int _einit_mount_cleanup (struct lmodule *);
+int _einit_mount_enable (enum mounttask, struct einit_event *);
+int _einit_mount_disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
 char *__options_string_to_mountflags (char **, unsigned long *, char *);
 void einit_event_handler (struct einit_event *);
@@ -236,62 +243,7 @@ char *generate_legacy_mtab (struct mount_control_block *);
 
 /* the actual module */
 
-int configure (struct lmodule *this) {
- struct cfgnode *node = NULL;
-
-/* pexec configuration */
- exec_configure (this);
-
- event_listen (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
- event_listen (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
-
- read_filesystem_flags_from_configuration (NULL);
-
- function_register ("find-block-devices-dev", 1, (void *)find_block_devices_recurse_path);
- function_register ("read-fstab-label", 1, (void *)forge_fstab_by_label);
- function_register ("read-fstab-configuration", 1, (void *)read_fstab_from_configuration);
- function_register ("read-fstab-legacy", 1, (void *)read_fstab);
- function_register ("read-mtab-legacy", 1, (void *)read_mtab);
- function_register ("fs-mount", 1, (void *)mountwrapper);
-
- if ((node = cfg_findnode ("configuration-storage-update-steps",0,NULL)) && node->svalue) {
-  char **tmp = str2set(':', node->svalue);
-  uint32_t c = 0;
-  mcb.update_options = EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB;
-  for (; tmp[c]; c++) {
-   if (strmatch (tmp[c], "metadata")) mcb.update_options |= EVENT_UPDATE_METADATA;
-   else if (strmatch (tmp[c], "block-devices")) mcb.update_options |= EVENT_UPDATE_BLOCK_DEVICES;
-  }
-  free (tmp);
- }
-
- if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue)
-  mcb.critical = str2set(':', node->svalue);
-
- if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue)
-  mcb.noumount = str2set(':', node->svalue);
-
- if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
-  fsck_command = estrdup(node->svalue);
-
- if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
-  mcb.options |= OPTION_MAINTAIN_MTAB;
-  mcb.mtab_file = node->svalue;
- }
-
- if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
-  update (UPDATE_BLOCK_DEVICES);
-  if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
-   update_fstab();
-  }
- } else update_fstab();
- update_mtab();
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_mount_cleanup (struct lmodule *this) {
  struct stree *ucur;
 
  streefree (mcb.blockdevices);
@@ -753,8 +705,8 @@ int scanmodules (struct lmodule *modchain) {
  while (lm) { if (lm->source && strmatch(lm->source, sm_mountlocal.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountlocal))) {
    new->source = new->module->rid;
-   new->enable = (int (*)(void *, struct einit_event *))enable;
-   new->disable = (int (*)(void *, struct einit_event *))disable;
+   new->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
+   new->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
    new->param = (void *)MOUNT_LOCAL;
   }
 
@@ -763,8 +715,8 @@ int scanmodules (struct lmodule *modchain) {
  while (lm) { if (lm->source && strmatch(lm->source, sm_mountremote.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountremote))) {
   new->source = new->module->rid;
-  new->enable = (int (*)(void *, struct einit_event *))enable;
-  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
+  new->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
   new->param = (void *)MOUNT_REMOTE;
  }
 
@@ -773,8 +725,8 @@ int scanmodules (struct lmodule *modchain) {
  while (lm) { if (lm->source && strmatch(lm->source, sm_system.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_system))) {
   new->source = new->module->rid;
-  new->enable = (int (*)(void *, struct einit_event *))enable;
-  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
+  new->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
   new->param = (void *)MOUNT_SYSTEM;
  }
 
@@ -783,8 +735,8 @@ int scanmodules (struct lmodule *modchain) {
  while (lm) { if (lm->source && strmatch(lm->source, sm_critical.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_critical))) {
   new->source = new->module->rid;
-  new->enable = (int (*)(void *, struct einit_event *))enable;
-  new->disable = (int (*)(void *, struct einit_event *))disable;
+  new->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
+  new->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
   new->param = (void *)MOUNT_CRITICAL;
  }
 
@@ -921,7 +873,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
  unsigned long mntflags = 0;
 
- if (!mountpoint) return NULL;
+ if (!mountpoint) return STATUS_FAIL;
 
  if (tflags & MOUNT_TF_MOUNT) {
   char **fstype_s = NULL;
@@ -1583,7 +1535,7 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
 }
 
 /* --------- enabling and disabling --------------------------------------- */
-int enable (enum mounttask p, struct einit_event *status) {
+int _einit_mount_enable (enum mounttask p, struct einit_event *status) {
 // struct einit_event feedback = ei_module_feedback_default;
  struct stree *ha = mcb.fstab, *fsi = NULL;
  struct fstab_entry *fse;
@@ -1705,7 +1657,7 @@ int enable (enum mounttask p, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int disable (enum mounttask p, struct einit_event *status) {
+int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
 // return STATUS_OK;
  struct stree *ha;
  struct stree *fsi;
@@ -1830,4 +1782,66 @@ void einit_event_handler (struct einit_event *ev) {
 
   update_fstab();
  }
+}
+
+int _einit_mount_configure (struct lmodule *r) {
+ module_init (r);
+
+ thismodule->scanmodules = _einit_mount_scanmodules;
+ thismodule->cleanup = _einit_mount_cleanup;
+ thismodule->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
+ thismodule->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
+
+ struct cfgnode *node = NULL;
+
+/* pexec configuration */
+ exec_configure (this);
+
+ event_listen (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
+ event_listen (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+
+ read_filesystem_flags_from_configuration (NULL);
+
+ function_register ("find-block-devices-dev", 1, (void *)find_block_devices_recurse_path);
+ function_register ("read-fstab-label", 1, (void *)forge_fstab_by_label);
+ function_register ("read-fstab-configuration", 1, (void *)read_fstab_from_configuration);
+ function_register ("read-fstab-legacy", 1, (void *)read_fstab);
+ function_register ("read-mtab-legacy", 1, (void *)read_mtab);
+ function_register ("fs-mount", 1, (void *)mountwrapper);
+
+ if ((node = cfg_findnode ("configuration-storage-update-steps",0,NULL)) && node->svalue) {
+  char **tmp = str2set(':', node->svalue);
+  uint32_t c = 0;
+  mcb.update_options = EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB;
+  for (; tmp[c]; c++) {
+   if (strmatch (tmp[c], "metadata")) mcb.update_options |= EVENT_UPDATE_METADATA;
+   else if (strmatch (tmp[c], "block-devices")) mcb.update_options |= EVENT_UPDATE_BLOCK_DEVICES;
+  }
+  free (tmp);
+ }
+
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue)
+  mcb.critical = str2set(':', node->svalue);
+
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue)
+  mcb.noumount = str2set(':', node->svalue);
+
+ if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
+  fsck_command = estrdup(node->svalue);
+
+ if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
+  mcb.options |= OPTION_MAINTAIN_MTAB;
+  mcb.mtab_file = node->svalue;
+ }
+
+ if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
+  update (UPDATE_BLOCK_DEVICES);
+  if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
+   update_fstab();
+  }
+ } else update_fstab();
+ update_mtab();
+
+ return 0;
 }

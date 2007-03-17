@@ -54,9 +54,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _linux_sysconf_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 char * provides[] = {"sysconf", NULL};
 char * requires[] = {"mount/system", NULL};
-const struct smodule self = {
+const struct smodule _linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -69,8 +72,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _linux_sysconf_configure
 };
+
+module_register(_linux_sysconf_self);
+
+#endif
 
 void linux_reboot () {
  reboot (LINUX_REBOOT_CMD_RESTART);
@@ -99,15 +107,7 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- function_register ("core-power-off-linux", 1, linux_power_off);
- function_register ("core-power-reset-linux", 1, linux_reboot);
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _linux_sysconf_cleanup (struct lmodule *this) {
  function_unregister ("core-power-reset-linux", 1, linux_reboot);
  function_unregister ("core-power-off-linux", 1, linux_power_off);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
@@ -115,7 +115,7 @@ int cleanup (struct lmodule *this) {
  return 0;
 }
 
-int enable (void *pa, struct einit_event *status) {
+int _linux_sysconf_enable (void *pa, struct einit_event *status) {
  struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
  FILE *sfile;
  char *sfilename;
@@ -188,6 +188,20 @@ int enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int disable (void *pa, struct einit_event *status) {
+int _linux_sysconf_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
+}
+
+int _linux_sysconf_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ thismodule->cleanup = _linux_sysconf_cleanup;
+ thismodule->enable = _linux_sysconf_enable;
+ thismodule->disable = _linux_sysconf_disable;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ function_register ("core-power-off-linux", 1, linux_power_off);
+ function_register ("core-power-reset-linux", 1, linux_reboot);
+
+ return 0;
 }

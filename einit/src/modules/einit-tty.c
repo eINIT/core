@@ -84,9 +84,13 @@ struct ttyst {
  struct cfgnode *node;
 };
 
+int _einit_tty_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
 char * provides[] = {"tty", NULL};
 char * requires[] = {"mount/system", NULL};
-const struct smodule self = {
+const struct smodule _einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -99,8 +103,13 @@ const struct smodule self = {
   .requires = requires,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_tty_configure
 };
+
+module_register(_einit_tty_self);
+
+#endif
 
 struct ttyst *ttys = NULL;
 char do_utmp;
@@ -108,18 +117,7 @@ pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int texec (struct cfgnode *);
 
-int configure (struct lmodule *this) {
- utmp_configure(this);
- exec_configure(this);
-
- struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
- if (utmpnode)
-  do_utmp = utmpnode->flag;
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
 
@@ -257,7 +255,7 @@ int texec (struct cfgnode *node) {
  return 0;
 }
 
-int enable (void *pa, struct einit_event *status) {
+int _einit_tty_enable (void *pa, struct einit_event *status) {
  struct cfgnode *node = NULL;
  char **ttys = NULL;
  int i = 0;
@@ -298,7 +296,7 @@ int enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int disable (void *pa, struct einit_event *status) {
+int _einit_tty_disable (void *pa, struct einit_event *status) {
  struct ttyst *cur = ttys;
  emutex_lock (&ttys_mutex);
 #ifdef LINUX
@@ -322,6 +320,24 @@ int disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int reset (void *pa, struct einit_event *status) {
+int _einit_tty_reset (void *pa, struct einit_event *status) {
  return STATUS_OK;
+}
+
+int _einit_tty_configure (struct lmodule *this) {
+ module_init (this);
+
+ thismodule->cleanup = _einit_tty_cleanup;
+ thismodule->enable = _einit_tty_enable;
+ thismodule->disable = _einit_tty_disable;
+ thismodule->reset = _einit_tty_reset;
+
+ utmp_configure(this);
+ exec_configure(this);
+
+ struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
+ if (utmpnode)
+  do_utmp = utmpnode->flag;
+
+ return 0;
 }

@@ -65,7 +65,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-const struct smodule self = {
+int _einit_mod_daemon_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
+const struct smodule _einit_mod_daemon_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -78,14 +82,18 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_mod_daemon_configure
 };
 
+module_register(_einit_mod_daemon_self);
 
-int scanmodules (struct lmodule *);
-int configure (struct lmodule *);
-int enable (struct dexecinfo *dexec, struct einit_event *status);
-int disable (struct dexecinfo *dexec, struct einit_event *status);
+#endif
+
+int _einit_mod_daemon_scanmodules (struct lmodule *);
+int _einit_mod_daemon_configure (struct lmodule *);
+int _einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status);
+int _einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status);
 
 struct dexecinfo **dxdata = NULL;
 
@@ -109,21 +117,14 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
- exec_configure (irr);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_mod_daemon_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
 
  return 0;
 }
 
-int cleanup_after_module (struct lmodule *this) {
+int _einit_mod_daemon_cleanup_after_module (struct lmodule *this) {
 #if 0
  if (this->module) {
   if (this->module->provides)
@@ -146,7 +147,7 @@ int cleanup_after_module (struct lmodule *this) {
  return 0;
 }
 
-int scanmodules (struct lmodule *modchain) {
+int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
 
  node = NULL;
@@ -221,9 +222,9 @@ int scanmodules (struct lmodule *modchain) {
    if (lm->source && strmatch(lm->source, modinfo->rid)) {
 
     lm->param = (void *)dexec;
-    lm->enable = (int (*)(void *, struct einit_event *))enable;
-    lm->disable = (int (*)(void *, struct einit_event *))disable;
-    lm->cleanup = cleanup_after_module;
+    lm->enable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_enable;
+    lm->disable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_disable;
+    lm->cleanup = _einit_mod_daemon_cleanup_after_module;
     lm->module = modinfo;
 
     lm = mod_update (lm);
@@ -237,11 +238,11 @@ int scanmodules (struct lmodule *modchain) {
    if (new) {
     new->source = estrdup (modinfo->rid);
     new->param = (void *)dexec;
-    new->enable = (int (*)(void *, struct einit_event *))enable;
-    new->disable = (int (*)(void *, struct einit_event *))disable;
+    new->enable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_enable;
+    new->disable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_disable;
 /*    new->reset = (int (*)(void *, struct einit_event *))NULL;
     new->reload = (int (*)(void *, struct einit_event *))NULL;*/
-    new->cleanup = cleanup_after_module;
+    new->cleanup = _einit_mod_daemon_cleanup_after_module;
    }
   }
  }
@@ -249,10 +250,22 @@ int scanmodules (struct lmodule *modchain) {
  return 0;
 }
 
-int enable (struct dexecinfo *dexec, struct einit_event *status) {
+int _einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status) {
  return startdaemon (dexec, status);
 }
 
-int disable (struct dexecinfo *dexec, struct einit_event *status) {
+int _einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status) {
  return stopdaemon (dexec, status);
+}
+
+int _einit_mod_daemon_configure (struct lmodule *irr) {
+ module_init (irr);
+
+ irr->scanmodules = _einit_mod_daemon_scanmodules;
+ irr->cleanup = _einit_mod_daemon_cleanup;
+
+ exec_configure (irr);
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+
+ return 0;
 }

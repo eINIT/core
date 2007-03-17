@@ -1,5 +1,4 @@
 include ../config.mk
-include depend.mk
 
 all: einit-module
 

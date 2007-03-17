@@ -1,5 +1,4 @@
 include ../config.mk
-include depend.mk
 
 all:
 	if test -n "${PMODULES}"; then for module in ${PMODULES}; do cd "$$module" && ${MAKE} all && cd ..; done; fi;

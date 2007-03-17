@@ -66,9 +66,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _einit_ipc_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
 char * provides[] = {"ipc", NULL};
 char * requires[] = {"mount/system", NULL};
-const struct smodule self = {
+const struct smodule _einit_ipc_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -81,8 +85,13 @@ const struct smodule self = {
   .requires = requires,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_ipc_configure
 };
+
+module_register(_einit_ipc_self);
+
+#endif
 
 pthread_t ipc_thread;
 char running = 0;
@@ -186,14 +195,7 @@ void ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int configure (struct lmodule *irr) {
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- function_register ("einit-ipc-process-string", 1, __ipc_process);
-
- return 0;
-}
-
-int cleanup (struct lmodule *this) {
+int _einit_ipc_cleanup (struct lmodule *this) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  function_unregister ("einit-ipc-process-string", 1, __ipc_process);
 
@@ -293,14 +295,27 @@ void * ipc_wait (void *unused_parameter) {
  return NULL;
 }
 
-int enable (void *pa, struct einit_event *status) {
+int _einit_ipc_enable (void *pa, struct einit_event *status) {
  ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
  return STATUS_OK;
 }
 
-int disable (void *pa, struct einit_event *status) {
+int _einit_ipc_disable (void *pa, struct einit_event *status) {
  if (running)
   ethread_cancel (ipc_thread);
 
  return STATUS_OK;
+}
+
+int _einit_ipc_configure (struct lmodule *irr) {
+ module_init(irr);
+
+ irr->cleanup = _einit_ipc_cleanup;
+ irr->enable = _einit_ipc_enable;
+ irr->disable = _einit_ipc_disable;
+
+ event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ function_register ("einit-ipc-process-string", 1, __ipc_process);
+
+ return 0;
 }

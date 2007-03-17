@@ -1,5 +1,4 @@
 include ../../config.mk
-include depend.mk
 
 all: compatibility-mod-sysv-init-d.so
 
