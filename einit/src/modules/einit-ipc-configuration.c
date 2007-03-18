@@ -77,9 +77,9 @@ module_register(_einit_ipc_configuration_self);
 
 #endif
 
-void einit_ipc_handler (struct einit_event *);
+void _einit_ipc_configuration_ipc_event_handler (struct einit_event *);
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
  char **argv = NULL;
  ssize_t argc = 0;
 
@@ -213,7 +213,7 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int _einit_ipc_configuration_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_ipc_configuration_ipc_event_handler);
 
  return 0;
 }
@@ -223,7 +223,7 @@ int _einit_ipc_configuration_configure (struct lmodule *r) {
 
  thismodule->cleanup = _einit_ipc_configuration_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_ipc_configuration_ipc_event_handler);
 
  return 0;
 }

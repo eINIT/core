@@ -70,8 +70,8 @@ int _einit_ipc_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char * provides[] = {"ipc", NULL};
-char * requires[] = {"mount/system", NULL};
+char * _einit_ipc_provides[] = {"ipc", NULL};
+char * _einit_ipc_requires[] = {"mount/system", NULL};
 const struct smodule _einit_ipc_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -81,8 +81,8 @@ const struct smodule _einit_ipc_self = {
  .name      = "eINIT IPC module",
  .rid       = "einit-ipc",
  .si        = {
-  .provides = provides,
-  .requires = requires,
+  .provides = _einit_ipc_provides,
+  .requires = _einit_ipc_requires,
   .after    = NULL,
   .before   = NULL
  },
@@ -94,7 +94,7 @@ module_register(_einit_ipc_self);
 #endif
 
 pthread_t ipc_thread;
-char running = 0;
+char _einit_ipc_running = 0;
 
 int __ipc_process (char *cmd, FILE *f) {
  if (!cmd) return 0;
@@ -184,7 +184,7 @@ int __ipc_process (char *cmd, FILE *f) {
  return ret;
 }
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_ipc_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
    eputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
@@ -196,7 +196,7 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int _einit_ipc_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_ipc_ipc_event_handler);
  function_unregister ("einit-ipc-process-string", 1, __ipc_process);
 
  return 0;
@@ -238,12 +238,12 @@ void * ipc_wait (void *unused_parameter) {
  mode_t socketmode = (node && node->value ? node->value : 0600);
  struct sockaddr_un saddr;
 
- running = 1;
+ _einit_ipc_running = 1;
 
  if (sock == -1) {
   perror ("einit-ipc: initialising socket");
 
-  running = 0;
+  _einit_ipc_running = 0;
   return NULL;
  }
 
@@ -256,7 +256,7 @@ void * ipc_wait (void *unused_parameter) {
    eclose (sock);
    perror ("einit-ipc: binding socket");
 
-   running = 0;
+   _einit_ipc_running = 0;
    return NULL;
   }
  }
@@ -269,7 +269,7 @@ void * ipc_wait (void *unused_parameter) {
   eclose (sock);
   perror ("einit-ipc: listening on socket");
 
-  running = 0;
+  _einit_ipc_running = 0;
   return NULL;
  }
 
@@ -291,7 +291,7 @@ void * ipc_wait (void *unused_parameter) {
  eclose (sock);
  if (unlink (saddr.sun_path)) perror ("einit-ipc: removing socket");
 
- running = 0;
+ _einit_ipc_running = 0;
  return NULL;
 }
 
@@ -301,7 +301,7 @@ int _einit_ipc_enable (void *pa, struct einit_event *status) {
 }
 
 int _einit_ipc_disable (void *pa, struct einit_event *status) {
- if (running)
+ if (_einit_ipc_running)
   ethread_cancel (ipc_thread);
 
  return STATUS_OK;
@@ -314,7 +314,7 @@ int _einit_ipc_configure (struct lmodule *irr) {
  irr->enable = _einit_ipc_enable;
  irr->disable = _einit_ipc_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_ipc_ipc_event_handler);
  function_register ("einit-ipc-process-string", 1, __ipc_process);
 
  return 0;

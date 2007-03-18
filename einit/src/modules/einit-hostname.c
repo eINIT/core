@@ -56,7 +56,7 @@ int _einit_hostname_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char * provides[] = {"hostname", "domainname", NULL};
+char * _einit_hostname_provides[] = {"hostname", "domainname", NULL};
 const struct smodule _einit_hostname_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -66,7 +66,7 @@ const struct smodule _einit_hostname_self = {
  .name      = "Set Host- and Domainname",
  .rid       = "einit-hostname",
  .si        = {
-  .provides = provides,
+  .provides = _einit_hostname_provides,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
@@ -78,7 +78,7 @@ module_register(_einit_hostname_self);
 
 #endif
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_hostname_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   char *s;
 
@@ -101,7 +101,7 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int _einit_hostname_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_hostname_ipc_event_handler);
 
  return 0;
 }
@@ -153,7 +153,7 @@ int _einit_hostname_configure (struct lmodule *irr) {
  thismodule->enable = _einit_hostname_enable;
  thismodule->disable = _einit_hostname_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_hostname_ipc_event_handler);
 
  return 0;
 }

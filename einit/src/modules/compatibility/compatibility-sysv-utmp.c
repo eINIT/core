@@ -62,8 +62,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int _compatibility_sysv_utmp_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-char * provides[] = {"utmp", NULL};
-char * requires[] = {"mount/critical", NULL};
+char * _compatibility_sysv_utmp_provides[] = {"utmp", NULL};
+char * _compatibility_sysv_utmp_requires[] = {"mount/critical", NULL};
 const struct smodule _compatibility_sysv_utmp_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -73,8 +73,8 @@ const struct smodule _compatibility_sysv_utmp_self = {
  .name      = "System-V Compatibility: {U|W}TMP",
  .rid       = "compatibility-sysv-utmp",
  .si        = {
-  .provides = provides,
-  .requires = requires,
+  .provides = _compatibility_sysv_utmp_provides,
+  .requires = _compatibility_sysv_utmp_requires,
   .after    = NULL,
   .before   = NULL
  },
@@ -90,7 +90,7 @@ int  _compatibility_sysv_utmp_disable (void *, struct einit_event *);
 char __updateutmp (unsigned char, struct utmp *);
 
 int _compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
-// event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+// event_ignore (EVENT_SUBSYSTEM_IPC, _compatibility_sysv_utmp_ipc_event_handler);
  function_unregister ("einit-utmp-update", 1, __updateutmp);
  utmp_cleanup (irr);
 
@@ -252,7 +252,7 @@ int _compatibility_sysv_utmp_configure (struct lmodule *irr) {
 
  utmp_configure (irr);
  function_register ("einit-utmp-update", 1, __updateutmp);
-// event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+// event_listen (EVENT_SUBSYSTEM_IPC, _compatibility_sysv_utmp_ipc_event_handler);
 
  return 0;
 }

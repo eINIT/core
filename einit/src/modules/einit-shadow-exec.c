@@ -93,20 +93,20 @@ struct shadow_descriptor {
       *after_reload;
 };
 
-struct cfgnode *ecmode = NULL;
-struct stree *shadows = NULL;
+struct cfgnode *_einit_shadow_exec_ecmode = NULL;
+struct stree *_einit_shadow_exec_shadows = NULL;
 
-pthread_mutex_t shadow_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t _einit_shadow_exec_shadow_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void update_shadows(struct cfgnode *xmode) {
- emutex_lock(&shadow_mutex);
+ emutex_lock(&_einit_shadow_exec_shadow_mutex);
 
- if (ecmode != xmode) {
+ if (_einit_shadow_exec_ecmode != xmode) {
   char *tmp = cfg_getstring("shadows", xmode);
 
-  if (shadows) {
+  if (_einit_shadow_exec_shadows) {
 //   streefree (shadows);
-   shadows = NULL;
+   _einit_shadow_exec_shadows = NULL;
   }
 
   if (tmp) {
@@ -145,7 +145,7 @@ void update_shadows(struct cfgnode *xmode) {
 
       if (nserv) {
        for (i = 0; nserv[i]; i++) {
-        shadows = streeadd (shadows, nserv[i], &nshadow, sizeof(struct shadow_descriptor), NULL);
+        _einit_shadow_exec_shadows = streeadd (_einit_shadow_exec_shadows, nserv[i], &nshadow, sizeof(struct shadow_descriptor), NULL);
        }
 
        free (nserv);
@@ -157,23 +157,23 @@ void update_shadows(struct cfgnode *xmode) {
    }
   }
 
-  ecmode = xmode;
+  _einit_shadow_exec_ecmode = xmode;
  }
 
- emutex_unlock(&shadow_mutex);
+ emutex_unlock(&_einit_shadow_exec_shadow_mutex);
 }
 
-void einit_event_handler (struct einit_event *ev) {
+void _einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
   update_shadows(cmode);
  } else if (ev->type == EVE_SWITCHING_MODE) {
   update_shadows(ev->para);
  } else if (ev->type == EVE_SERVICE_UPDATE) {
-  if (shadows && ev->set) {
+  if (_einit_shadow_exec_shadows && ev->set) {
    ssize_t i = 0;
 
    for (; ev->set[i]; i++) {
-    struct stree *cur = streefind(shadows, (char *)ev->set[i], TREE_FIND_FIRST);
+    struct stree *cur = streefind(_einit_shadow_exec_shadows, (char *)ev->set[i], TREE_FIND_FIRST);
 
     while (cur) {
      struct shadow_descriptor *sd = cur->value;
@@ -220,7 +220,7 @@ void einit_event_handler (struct einit_event *ev) {
 }
 
 int _einit_shadow_exec_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_shadow_exec_einit_event_handler);
 
  exec_cleanup(this);
 
@@ -234,7 +234,7 @@ int _einit_shadow_exec_configure (struct lmodule *this) {
 
  exec_configure(this);
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_shadow_exec_einit_event_handler);
 
  return 0;
 }

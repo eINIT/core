@@ -84,7 +84,6 @@ int _einit_mount_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 /* module definitions */
-// char *provides[] = {"mount", NULL};
 const struct smodule _einit_mount_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -214,7 +213,7 @@ int _einit_mount_enable (enum mounttask, struct einit_event *);
 int _einit_mount_disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
 char *__options_string_to_mountflags (char **, unsigned long *, char *);
-void einit_event_handler (struct einit_event *);
+void _einit_mount_einit_event_handler (struct einit_event *);
 
 char *generate_legacy_mtab (struct mount_control_block *);
 
@@ -289,9 +288,9 @@ int _einit_mount_cleanup (struct lmodule *this) {
  function_unregister ("read-mtab-legacy", 1, (void *)read_mtab);
  function_unregister ("fs-mount", 1, (void *)mountwrapper);
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_ignore (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
- event_ignore (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_mount_einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_mount_mount_ipc_handler);
+ event_ignore (EVENT_SUBSYSTEM_MOUNT, _einit_mount_mount_update_handler);
 
  if (fsck_command) {
   free (fsck_command);
@@ -632,7 +631,7 @@ unsigned char read_filesystem_flags_from_configuration (void *na) {
  return 0;
 }
 
-void update (enum update_task task) {
+void _einit_mount_update (enum update_task task) {
  struct cfgnode *node = NULL;
  char **fl = NULL;
  void **functions = NULL;
@@ -682,11 +681,11 @@ void update (enum update_task task) {
  switch (task) {
   case UPDATE_METADATA:
    if (fl != defaultfilesystems) free (fl);
-   if (mcb.update_options & EVENT_UPDATE_FSTAB) update (UPDATE_FSTAB);
+   if (mcb.update_options & EVENT_UPDATE_FSTAB) _einit_mount_update (UPDATE_FSTAB);
    break;
   case UPDATE_BLOCK_DEVICES:
    if (fl != defaultblockdevicesource) free (fl);
-   if (mcb.update_options & EVENT_UPDATE_METADATA) update (UPDATE_METADATA);
+   if (mcb.update_options & EVENT_UPDATE_METADATA) _einit_mount_update (UPDATE_METADATA);
    break;
   case UPDATE_FSTAB:
    if (fl != defaultfstabsource) free (fl);
@@ -1322,7 +1321,7 @@ void add_filesystem (char *name, char *options) {
 
 /* all the current IPC commands will be made #DEBUG-only, but we'll keep 'em for now */
 /* --------- error checking and direct user interaction ------------------- */
-void mount_ipc_handler(struct einit_event *ev) {
+void _einit_mount_mount_ipc_handler(struct einit_event *ev) {
  if (!ev || !ev->set) return;
  char **argv = (char **) ev->set;
  if (argv[0] && argv[1]) {
@@ -1467,7 +1466,7 @@ void mount_ipc_handler(struct einit_event *ev) {
  }
 }
 
-void mount_update_handler(struct einit_event *event) {
+void _einit_mount_mount_update_handler(struct einit_event *event) {
  if (event) {
   if ((event->flag & EVENT_UPDATE_METADATA) && (mcb.update_options & EVENT_UPDATE_METADATA)) update_filesystem_metadata ();
   if ((event->flag & EVENT_UPDATE_BLOCK_DEVICES) && (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) update_block_devices ();
@@ -1576,14 +1575,14 @@ int _einit_mount_enable (enum mounttask p, struct einit_event *status) {
   case MOUNT_SYSTEM:
 #ifdef LINUX
    ret = mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
-   update (UPDATE_MTAB);
+   _einit_mount_update (UPDATE_MTAB);
    ret = mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
 #endif
    ret = mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
    if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
     status->string = "re-scanning block devices";
     status_update (status);
-    update (UPDATE_BLOCK_DEVICES);
+    _einit_mount_update (UPDATE_BLOCK_DEVICES);
    }
 
    ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
@@ -1667,7 +1666,7 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
 
  if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
 
- update (UPDATE_MTAB);
+ _einit_mount_update (UPDATE_MTAB);
  ha = mcb.fstab;
 
  switch (p) {
@@ -1772,7 +1771,7 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
  return STATUS_OK;
 }
 
-void einit_event_handler (struct einit_event *ev) {
+void _einit_mount_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node = NULL;
   if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
@@ -1797,9 +1796,9 @@ int _einit_mount_configure (struct lmodule *r) {
 /* pexec configuration */
  exec_configure (this);
 
- event_listen (EVENT_SUBSYSTEM_IPC, mount_ipc_handler);
- event_listen (EVENT_SUBSYSTEM_MOUNT, mount_update_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_mount_mount_ipc_handler);
+ event_listen (EVENT_SUBSYSTEM_MOUNT, _einit_mount_mount_update_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_mount_einit_event_handler);
 
  read_filesystem_flags_from_configuration (NULL);
 
@@ -1836,7 +1835,7 @@ int _einit_mount_configure (struct lmodule *r) {
  }
 
  if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
-  update (UPDATE_BLOCK_DEVICES);
+  _einit_mount_update (UPDATE_BLOCK_DEVICES);
   if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
    update_fstab();
   }

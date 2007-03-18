@@ -209,14 +209,14 @@ unsigned char read_fstab_from_configuration (void *);
 unsigned char read_fstab (void *);
 unsigned char read_mtab (void *);
 unsigned char read_filesystem_flags_from_configuration (void *);
-void update (enum update_task);
-#define update_filesystem_metadata() update (UPDATE_METADATA)
-#define update_block_devices() update (UPDATE_BLOCK_DEVICES)
-#define update_fstab() update (UPDATE_FSTAB)
-#define update_mtab() update (UPDATE_MTAB)
+void _einit_mount_update (enum update_task);
+#define update_filesystem_metadata() _einit_mount_update (UPDATE_METADATA)
+#define update_block_devices() _einit_mount_update (UPDATE_BLOCK_DEVICES)
+#define update_fstab() _einit_mount_update (UPDATE_FSTAB)
+#define update_mtab() _einit_mount_update (UPDATE_MTAB)
 
-void mount_ipc_handler(struct einit_event *);
-void mount_update_handler(struct einit_event *);
+void _einit_mount_mount_ipc_handler(struct einit_event *);
+void _einit_mount_mount_update_handler(struct einit_event *);
 
 void add_block_device (char *, uint32_t, uint32_t);
 void add_fstab_entry (char *, char *, char *, char **, uint32_t, char *, char *, char *, char *, char *, uint32_t, char **);

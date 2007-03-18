@@ -95,20 +95,20 @@ int _einit_mod_daemon_configure (struct lmodule *);
 int _einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status);
 int _einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status);
 
-struct dexecinfo **dxdata = NULL;
+struct dexecinfo **_einit_mod_daemon_dxdata = NULL;
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
-  if (dxdata) {
+  if (_einit_mod_daemon_dxdata) {
    uint32_t i = 0;
-   for (i = 0; dxdata[i]; i++) {
-    if (dxdata[i]->variables) {
-     check_variables (dxdata[i]->id, dxdata[i]->variables, (FILE*)ev->para);
+   for (i = 0; _einit_mod_daemon_dxdata[i]; i++) {
+    if (_einit_mod_daemon_dxdata[i]->variables) {
+     check_variables (_einit_mod_daemon_dxdata[i]->id, _einit_mod_daemon_dxdata[i]->variables, (FILE*)ev->para);
     }
    }
   }
@@ -119,7 +119,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int _einit_mod_daemon_cleanup (struct lmodule *this) {
  exec_cleanup(this);
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_mod_daemon_ipc_event_handler);
 
  return 0;
 }
@@ -200,20 +200,20 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
 
-  if (dxdata) {
+  if (_einit_mod_daemon_dxdata) {
    uint32_t u = 0;
    char add = 1;
-   for (u = 0; dxdata[u]; u++) {
-    if (strmatch (dxdata[u]->id, dexec->id)) {
+   for (u = 0; _einit_mod_daemon_dxdata[u]; u++) {
+    if (strmatch (_einit_mod_daemon_dxdata[u]->id, dexec->id)) {
      add = 0;
-     dxdata[u] = dexec;
+     _einit_mod_daemon_dxdata[u] = dexec;
      break;
     }
    }
    if (add)
-    dxdata = (struct dexecinfo **)setadd ((void **)dxdata, (void *)dexec, SET_NOALLOC);
+    _einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)_einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
   } else
-   dxdata = (struct dexecinfo **)setadd ((void **)dxdata, (void *)dexec, SET_NOALLOC);
+   _einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)_einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 
@@ -265,7 +265,7 @@ int _einit_mod_daemon_configure (struct lmodule *irr) {
  irr->cleanup = _einit_mod_daemon_cleanup;
 
  exec_configure (irr);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_mod_daemon_ipc_event_handler);
 
  return 0;
 }

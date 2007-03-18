@@ -88,8 +88,8 @@ int _einit_tty_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char * provides[] = {"tty", NULL};
-char * requires[] = {"mount/system", NULL};
+char * _einit_tty_provides[] = {"tty", NULL};
+char * _einit_tty_requires[] = {"mount/system", NULL};
 const struct smodule _einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -99,8 +99,8 @@ const struct smodule _einit_tty_self = {
  .name      = "TTY-Configuration",
  .rid       = "einit-tty",
  .si        = {
-  .provides = provides,
-  .requires = requires,
+  .provides = _einit_tty_provides,
+  .requires = _einit_tty_requires,
   .after    = NULL,
   .before   = NULL
  },
@@ -112,10 +112,10 @@ module_register(_einit_tty_self);
 #endif
 
 struct ttyst *ttys = NULL;
-char do_utmp;
+char _einit_tty_do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int texec (struct cfgnode *);
+int _einit_tty_texec (struct cfgnode *);
 
 int _einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
@@ -124,7 +124,7 @@ int _einit_tty_cleanup (struct lmodule *this) {
  return 0;
 }
 
-void *watcher (struct spidcb *spid) {
+void *_einit_tty_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
  emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
@@ -132,7 +132,7 @@ void *watcher (struct spidcb *spid) {
  struct cfgnode *node = NULL;
  while (cur) {
   if (cur->pid == pid) {
-   if (do_utmp) {
+   if (_einit_tty_do_utmp) {
     create_utmp_record(utmprecord, DEAD_PROCESS, spid->pid, NULL, NULL, NULL, NULL, 0, 0, spid->pid);
 
     update_utmp (UTMP_MODIFY,&utmprecord);
@@ -161,13 +161,13 @@ void *watcher (struct spidcb *spid) {
    esprintf (tmp, BUFFERSIZE, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
-  texec (node);
+  _einit_tty_texec (node);
  }
 
  return 0;
 }
 
-int texec (struct cfgnode *node) {
+int _einit_tty_texec (struct cfgnode *node) {
  int i = 0, restart = 0;
  char *device = NULL, *command = NULL;
  char **environment = (char **)setdup((const void **)einit_global_environment, SET_TYPE_STRING);
@@ -218,13 +218,13 @@ int texec (struct cfgnode *node) {
     int ctty = -1;
     pid_t curpgrp;
 
-    if (do_utmp) {
+    if (_einit_tty_do_utmp) {
      create_utmp_record(utmprecord, INIT_PROCESS, cpid, device, "etty", NULL, NULL, 0, 0, cpid);
 
      update_utmp (UTMP_ADD, &utmprecord);
     }
 
-    sched_watch_pid (cpid, watcher);
+    sched_watch_pid (cpid, _einit_tty_watcher);
 
     setpgid (cpid, cpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
@@ -280,7 +280,7 @@ int _einit_tty_enable (void *pa, struct einit_event *status) {
 
   node = cfg_getnode (tmpnodeid, NULL);
   if (node && node->arbattrs) {
-   texec (node);
+   _einit_tty_texec (node);
   } else {
    char warning[BUFFERSIZE];
    esprintf (warning, BUFFERSIZE, "einit-tty: node %s not found", tmpnodeid);
@@ -337,7 +337,7 @@ int _einit_tty_configure (struct lmodule *this) {
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
-  do_utmp = utmpnode->flag;
+  _einit_tty_do_utmp = utmpnode->flag;
 
  return 0;
 }

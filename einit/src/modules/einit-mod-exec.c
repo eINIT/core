@@ -106,20 +106,20 @@ module_register(_einit_mod_exec_self);
 int _einit_mod_exec_scanmodules (struct lmodule *);
 int _einit_mod_exec_pexec_wrapper (struct mexecinfo *, struct einit_event *);
 
-struct mexecinfo **mxdata = NULL;
+struct mexecinfo **_einit_mod_exec_mxdata = NULL;
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
-  if (mxdata) {
+  if (_einit_mod_exec_mxdata) {
    uint32_t i = 0;
-   for (i = 0; mxdata[i]; i++) {
-    if (mxdata[i]->variables) {
-     check_variables (mxdata[i]->id, mxdata[i]->variables, (FILE*)ev->para);
+   for (i = 0; _einit_mod_exec_mxdata[i]; i++) {
+    if (_einit_mod_exec_mxdata[i]->variables) {
+     check_variables (_einit_mod_exec_mxdata[i]->id, _einit_mod_exec_mxdata[i]->variables, (FILE*)ev->para);
     }
    }
   }
@@ -130,7 +130,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int _einit_mod_exec_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_mod_exec_ipc_event_handler);
 
  return 0;
 }
@@ -202,21 +202,21 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
     mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
 
-  if (mxdata) {
+  if (_einit_mod_exec_mxdata) {
    uint32_t u = 0;
    char add = 1;
-   for (u = 0; mxdata[u]; u++) {
-    if (strmatch (mxdata[u]->id, mexec->id)) {
+   for (u = 0; _einit_mod_exec_mxdata[u]; u++) {
+    if (strmatch (_einit_mod_exec_mxdata[u]->id, mexec->id)) {
      add = 0;
-     mxdata[u] = mexec;
+     _einit_mod_exec_mxdata[u] = mexec;
      break;
     }
    }
    if (add) {
-    mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
+    _einit_mod_exec_mxdata = (struct mexecinfo **)setadd ((void **)_einit_mod_exec_mxdata, (void *)mexec, SET_NOALLOC);
    }
   } else
-   mxdata = (struct mexecinfo **)setadd ((void **)mxdata, (void *)mexec, SET_NOALLOC);
+   _einit_mod_exec_mxdata = (struct mexecinfo **)setadd ((void **)_einit_mod_exec_mxdata, (void *)mexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 
@@ -310,7 +310,7 @@ int _einit_mod_exec_configure (struct lmodule *pa) {
  pa->cleanup = _einit_mod_exec_cleanup;
 
  exec_configure (pa);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_mod_exec_ipc_event_handler);
 
  return 0;
 }

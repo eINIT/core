@@ -133,7 +133,7 @@ pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct p
  return ret;
 }
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_process_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && strmatch (ev->set[0], "list")) {
   if (ev->set[1] && strmatch (ev->set[1], "processes") && ev->set[2]) {
    uintptr_t tnum = atoi (ev->set[3]);
@@ -192,7 +192,7 @@ int __pekill (struct pc_conditional **pcc) {
 }
 
 int _einit_process_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_process_ipc_event_handler);
  function_unregister ("einit-process-killing-spree", 1, __pekill);
  function_unregister ("einit-process-ekill", 1, __ekill);
  function_unregister ("einit-process-collect", 1, collect_processes);
@@ -213,7 +213,7 @@ int _einit_process_configure (struct lmodule *irr) {
  function_register ("einit-process-collect", 1, collect_processes);
  function_register ("einit-process-ekill", 1, __ekill);
  function_register ("einit-process-killing-spree", 1, __pekill);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_process_ipc_event_handler);
 
  return 0;
 }

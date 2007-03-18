@@ -100,7 +100,7 @@ struct service_transformation {
 };
 #endif
 
-void einit_event_handler (struct einit_event *ev) {
+void _einit_module_transformations_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
@@ -351,7 +351,7 @@ void einit_event_handler (struct einit_event *ev) {
 }
 
 int _einit_module_transformations_cleanup (struct lmodule *r) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_module_transformations_einit_event_handler);
 
  return 0;
 }
@@ -361,7 +361,7 @@ int _einit_module_transformations_configure (struct lmodule *r) {
 
  thismodule->cleanup = _einit_module_transformations_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_module_transformations_einit_event_handler);
 
  return 0;
 }

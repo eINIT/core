@@ -57,8 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int _linux_sysconf_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-char * provides[] = {"sysconf", NULL};
-char * requires[] = {"mount/system", NULL};
+char * _linux_sysconf_provides[] = {"sysconf", NULL};
 const struct smodule _linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -68,7 +67,7 @@ const struct smodule _linux_sysconf_self = {
  .name      = "Linux-specific System-Configuration",
  .rid       = "linux-sysconf",
  .si        = {
-  .provides = provides,
+  .provides = _linux_sysconf_provides,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
@@ -92,7 +91,7 @@ void linux_power_off () {
  exit (EXIT_FAILURE);
 }
 
-void ipc_event_handler (struct einit_event *ev) {
+void _linux_sysconf_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
    eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", (FILE *)ev->para);
@@ -110,7 +109,7 @@ void ipc_event_handler (struct einit_event *ev) {
 int _linux_sysconf_cleanup (struct lmodule *this) {
  function_unregister ("core-power-reset-linux", 1, linux_reboot);
  function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _linux_sysconf_ipc_event_handler);
 
  return 0;
 }
@@ -199,7 +198,7 @@ int _linux_sysconf_configure (struct lmodule *irr) {
  thismodule->enable = _linux_sysconf_enable;
  thismodule->disable = _linux_sysconf_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _linux_sysconf_ipc_event_handler);
  function_register ("core-power-off-linux", 1, linux_power_off);
  function_register ("core-power-reset-linux", 1, linux_reboot);
 
