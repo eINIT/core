@@ -79,9 +79,9 @@ module_register(_einit_external_self);
 #endif
 
 
-void einit_event_handler (struct einit_event *);
+void _einit_external_einit_event_handler (struct einit_event *);
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_external_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
 #ifdef BITCHY
   if (!cfg_getnode("services-external", NULL)) {
@@ -95,8 +95,8 @@ void ipc_event_handler (struct einit_event *ev) {
 }
 
 int _einit_external_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_external_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_external_einit_event_handler);
 
  return 0;
 }
@@ -116,7 +116,7 @@ int _einit_external_disable (void *pa, struct einit_event *status) {
  return STATUS_FAIL; // once enabled, this module cannot be disabled
 }
 
-void einit_event_handler (struct einit_event *ev) {
+void _einit_external_einit_event_handler (struct einit_event *ev) {
  if ((ev->type == EVE_CONFIGURATION_UPDATE) || (ev->type == EVE_UPDATE_CONFIGURATION)) {
   char *p;
   if ((p = cfg_getstring("services-external/provided", NULL))) {
@@ -146,8 +146,8 @@ int _einit_external_configure (struct lmodule *r) {
  r->enable = _einit_external_enable;
  r->disable = _einit_external_disable;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_external_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_external_ipc_event_handler);
 
  return 0;
 }

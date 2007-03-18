@@ -106,7 +106,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 char **__create_environment (char **environment, char **variables);
-void ipc_event_handler (struct einit_event *);
+void _einit_exec_ipc_event_handler (struct einit_event *);
 
 int _einit_exec_cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) free (shell);
@@ -118,12 +118,12 @@ int _einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-create-environment", 1, __create_environment);
  function_unregister ("einit-check-variables", 1, __check_variables);
 
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
 
  return 0;
 }
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_exec_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "exec")) {
   struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
   ev->flag = 1;
@@ -859,7 +859,7 @@ int _einit_exec_configure (struct lmodule *irr) {
  if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
 
  function_register ("einit-execute-command", 1, __pexec_function);
  function_register ("einit-execute-daemon", 1, __start_daemon_function);

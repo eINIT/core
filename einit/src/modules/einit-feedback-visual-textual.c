@@ -82,7 +82,7 @@ int _einit_feedback_visual_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char * provides[] = {"feedback-visual", "feedback-textual", NULL};
+char * _einit_feedback_visual_provides[] = {"feedback-visual", "feedback-textual", NULL};
 const struct smodule _einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -92,7 +92,7 @@ const struct smodule _einit_feedback_visual_self = {
  .name      = "visual/text-based feedback module",
  .rid       = "einit-feedback-visual-textual",
  .si        = {
-  .provides = provides,
+  .provides = _einit_feedback_visual_provides,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
@@ -129,9 +129,9 @@ struct mstat {
  struct nstring **textbuffer;
 };
 
-void feedback_event_handler(struct einit_event *);
-void einit_event_handler(struct einit_event *);
-void power_event_handler(struct einit_event *);
+void _einit_feedback_visual_feedback_event_handler(struct einit_event *);
+void _einit_feedback_visual_einit_event_handler(struct einit_event *);
+void _einit_feedback_visual_power_event_handler(struct einit_event *);
 
 void update_screen_neat (struct einit_event *, struct mstat *);
 void update_screen_noansi (struct einit_event *, struct mstat *);
@@ -153,7 +153,7 @@ char enableansicodes = 1;
 char show_progress = 1;
 uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
-void ipc_event_handler (struct einit_event *ev) {
+void _einit_feedback_visual_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
    eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", (FILE *)ev->para);
@@ -178,7 +178,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int _einit_feedback_visual_cleanup (struct lmodule *this) {
  emutex_lock (&thismodule->imutex);
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_feedback_visual_ipc_event_handler);
  if (plans) {
   emutex_lock (&plansmutex);
   free (plans);
@@ -321,9 +321,9 @@ int _einit_feedback_visual_enable (void *pa, struct einit_event *status) {
   eputs ("\e[2J\e[0;0H", vofile);
  }
 
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_POWER, power_event_handler);
+ event_listen (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_visual_feedback_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_feedback_visual_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_POWER, _einit_feedback_visual_power_event_handler);
 
  emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
@@ -334,9 +334,9 @@ int _einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  */
 int _einit_feedback_visual_disable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
- event_ignore (EVENT_SUBSYSTEM_POWER, power_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, feedback_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_POWER, _einit_feedback_visual_power_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_feedback_visual_einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_visual_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
@@ -344,7 +344,7 @@ int _einit_feedback_visual_disable (void *pa, struct einit_event *status) {
 /*
   -------- feedback event-handler ---------------------------------------------
  */
-void feedback_event_handler(struct einit_event *ev) {
+void _einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
  uint32_t line = 0;
 
  if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES) {
@@ -820,7 +820,7 @@ int nstringsetsort (struct nstring *st1, struct nstring *st2) {
 /*
   -------- core event-handler -------------------------------------------------
  */
-void einit_event_handler(struct einit_event *ev) {
+void _einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
 
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   emutex_lock (&thismodule->imutex);
@@ -877,7 +877,7 @@ void einit_event_handler(struct einit_event *ev) {
 /*
   -------- power event-handler -------------------------------------------------
  */
-void power_event_handler(struct einit_event *ev) {
+void _einit_feedback_visual_power_event_handler(struct einit_event *ev) {
  struct cfgnode *n;
 
  if ((ev->type == EVENT_POWER_DOWN_SCHEDULED) && ((n = cfg_getnode ("configuration-feedback-visual-reset-shutdown-broadcast-messages", NULL)) && n->flag))
@@ -996,7 +996,7 @@ int _einit_feedback_visual_configure (struct lmodule *irr) {
  irr->enable  = _einit_feedback_visual_enable;
  irr->disable = _einit_feedback_visual_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_feedback_visual_ipc_event_handler);
 
  return 0;
 }

@@ -1,10 +1,10 @@
 export INCLUDEPATH="/usr/local/include"
 
-export MODULES_GENERIC="einit-feedback-visual-textual einit-mod-exec einit-tty einit-mod-daemon einit-ipc einit-mount einit-hostname einit-feedback-aural einit-process einit-exec einit-external einit-parse-sh einit-ipc-configuration einit-shadow-exec einit-module-transformations"
+export MODULES_GENERIC="einit-tty einit-mod-exec einit-mod-daemon einit-ipc einit-mount einit-hostname einit-process einit-parse-sh einit-ipc-configuration einit-shadow-exec einit-module-transformations"
 export MODULES_LINUX="linux-sysconf linux-mount linux-process"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 
-export INTERNALMODULES="bootstrap-einit-configuration-xml-expat einit-module-logic-v3"
+export INTERNALMODULES="bootstrap-einit-configuration-xml-expat einit-module-logic-v3 einit-feedback-visual-textual einit-feedback-aural einit-external einit-exec"
 export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 #export EXTERNALMODULES=""
 
