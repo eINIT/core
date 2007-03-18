@@ -4,5 +4,5 @@ install: einit
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} einit ${DESTDIR}/${SBINDIR}
 
-einit: $(objects)
-	$(CLD) $(objects) -o einit $(STATIC) -ldl $(CORELIBS) $(LPA) $(XDYNAMIC)
+einit: $(objects) module-configuration.o
+	$(CLD) $(objects) module-configuration.o -o einit $(STATIC) -ldl $(CORELIBS) $(LPA) $(XDYNAMIC)

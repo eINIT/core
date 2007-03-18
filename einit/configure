@@ -345,8 +345,8 @@ function collect_objects() {
 				done
 				objects="${objects} ${i}.o";
 
-				if test -n "$(echo ${INTERNALMODULES}|grep -w {i})"; then
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dmoduleprefix=_$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_ -c ${subobjects} -o ${i}.o\n"
+				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
+					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dthismodule=__$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=__$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
 				else
 					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
 				fi
@@ -498,6 +498,36 @@ for z in ${BUILDCOMPONENTS}; do
 	if test -n "${inheaders}"; then collect_and_install_headers ${inheaders} >> build/${z}/Makefile; fi
 
 	if test -n "${objects}"; then components="${components} ${z}"; fi
+
+	if test "${z}" = "core"; then 
+		started="";
+		for i in ${INTERNALMODULES}; do
+			if test -z "${started}"; then
+				started="yes";
+				echo "// this file was automatically created by the build process" > build/core/module-configuration.c
+				echo "#include <einit/module.h>" >> build/core/module-configuration.c
+			fi;
+			echo "extern const struct smodule * __$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self;" >> build/core/module-configuration.c
+		done
+		if test -n "${started}"; then
+			echo "const struct smodule **coremodules[] = {" >> build/core/module-configuration.c
+			
+			for i in ${INTERNALMODULES}; do
+				echo " &__$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self," >> build/core/module-configuration.c
+			done
+			echo  " NULL };" >> build/core/module-configuration.c
+			echo  "" >> build/core/module-configuration.c
+		else
+			echo "// this file was automatically created by the build process" > build/core/module-configuration.c
+			echo "#include <einit/module.h>" >> build/core/module-configuration.c
+			echo "const struct smodule **coremodules[] = { NULL };" >> build/core/module-configuration.c
+			echo  "" >> build/core/module-configuration.c
+		fi;
+
+		cat src/module-configuration.c >> build/core/module-configuration.c
+
+		echo -e "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -D_EINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
+	fi
 
 	echo -e "\nobjects = ${objects}\n" >> build/${z}/Makefile
 	cat makefile.${z}.template >> build/${z}/Makefile

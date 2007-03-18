@@ -35,7 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <einit-modules/configuration.h>
 #include <einit/event.h>
 
 #define EVENT_FUNCTIONS_PTR NULL
@@ -108,31 +107,5 @@ struct event_function bitchin_einit_event_handler_ef = {
 
 #undef EVENT_FUNCTIONS_PTR
 #define EVENT_FUNCTIONS_PTR &bitchin_einit_event_handler_ef
-
-#include <einit/module-logic.h>
-
-#if ( einit_modules_einit_module_logic_v3 == 'y' )
-
-#ifdef MODULE_LOGIC_V3
-/* einit event handler for the v3 module logics core */
-void module_logic_einit_event_handler(struct einit_event *);
-void module_logic_ipc_event_handler(struct einit_event *);
-
-struct event_function module_logic_einit_event_handler_ef = {
- .type = EVENT_SUBSYSTEM_EINIT,
- .handler = module_logic_einit_event_handler,
- .next = EVENT_FUNCTIONS_PTR
-};
-struct event_function module_logic_ipc_event_handler_ef = {
- .type = EVENT_SUBSYSTEM_IPC,
- .handler = module_logic_ipc_event_handler,
- .next = &module_logic_einit_event_handler_ef
-};
-
-#undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &module_logic_ipc_event_handler_ef
-#endif
-
-#endif
 
 struct event_function *event_functions = EVENT_FUNCTIONS_PTR;

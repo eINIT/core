@@ -81,6 +81,8 @@ extern "C" {
 #ifndef _MODULE_H
 #define _MODULE_H
 
+#define MAXMODULES 40
+
 #include <pthread.h>
 #include <sys/types.h>
 #include <stdint.h>
@@ -317,7 +319,7 @@ void mod_event_handler(struct einit_event *event);
 #endif
 
 char *bootstrapmodulepath;
-struct smodule *coremodules;
+const struct smodule **coremodules[MAXMODULES];
 
 #if defined(_EINIT_MODULE)
 
@@ -329,16 +331,14 @@ const struct smodule *self;
 
 #endif
 
-#if defined(_EINIT_CORE) && defined(moduleprefix)
+#if defined(_EINIT_CORE) && defined(thismodule) && defined(self)
 
-#define thismodule moduleprefix ## thismodule
-#define self moduleprefix ## self
+#define _EINIT_MODULE_HEADER
 
-struct lmodule *thismodule;
-const struct smodule *self;
+struct lmodule * thismodule;
+const struct smodule * self;
 
-#define module_register(smod)\
- const struct smodule *self = &smod;
+#define module_register(smod) const struct smodule * self = &smod;
 #define module_init(lmod) thismodule = lmod;
 #endif
 

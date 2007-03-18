@@ -300,6 +300,15 @@ int main(int argc, char **argv) {
    cev.type = EVE_UPDATE_CONFIGURATION;
 #endif
 
+/* this should be a good place to initialise internal modules */
+   if (coremodules) {
+    uint32_t cp = 0;
+    for (; coremodules[cp]; cp++) {
+     eprintf (stderr, "initialising in-core module: %s\n", (*coremodules[cp])->rid);
+     mod_add(NULL, (*coremodules[cp]));
+    }
+   }
+
 /* emit events to read configuration files */
   if (einit_startup_configuration_files) {
    uint32_t rx = 0;

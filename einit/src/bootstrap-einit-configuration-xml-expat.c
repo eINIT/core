@@ -81,7 +81,6 @@ const struct smodule _bootstrap_einit_configuration_xml_expat_self = {
 module_register(_bootstrap_einit_configuration_xml_expat_self);
 
 #endif
-#if !defined(_EINIT_MODULE_HEADER)
 
 int _bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
@@ -543,5 +542,3 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
 
  return ret;
 }
-
-#endif

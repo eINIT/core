@@ -1,16 +1,17 @@
 export INCLUDEPATH="/usr/local/include"
 
-export MODULES_GENERIC="einit-feedback-visual-textual einit-mod-exec einit-tty einit-mod-daemon einit-ipc einit-mount einit-hostname einit-feedback-aural einit-process einit-exec einit-external einit-parse-sh einit-ipc-configuration einit-shadow-exec einit-module-transformations einit-module-logic-v3"
-export MODULES_LINUX="linux-sysconf linux-mount linux-process bootstrap-einit-configuration-xml-expat"
+export MODULES_GENERIC="einit-feedback-visual-textual einit-mod-exec einit-tty einit-mod-daemon einit-ipc einit-mount einit-hostname einit-feedback-aural einit-process einit-exec einit-external einit-parse-sh einit-ipc-configuration einit-shadow-exec einit-module-transformations"
+export MODULES_LINUX="linux-sysconf linux-mount linux-process"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 
-export INTERNALMODULES=""
+export INTERNALMODULES="bootstrap-einit-configuration-xml-expat einit-module-logic-v3"
 export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
+#export EXTERNALMODULES=""
 
 export ASMFUNCTIONS="strmatch strlen"
 #export ASMFUNCTIONS=""
 
-export COREOBJECTS="einit module module-configuration bitch utility scheduler event config tree-linear set-lowmem ${ASMFUNCTIONS}"
+export COREOBJECTS="einit module bitch utility scheduler event config tree-linear set-lowmem ${ASMFUNCTIONS}"
 export UTILOBJECTS="einit-control bitch utility event tree-linear set-lowmem config ${ASMFUNCTIONS}"
 
 export BUILDCOMPONENTS="core util modules headers"
@@ -18,4 +19,4 @@ export BUILDCOMPONENTS="core util modules headers"
 export HEADERSOURCES="src/include/einit src/include/einit-modules"
 export HEADERPREPARE="sed -e s/set-lowmem/set/ -e s/einit-// -e s/module-logic-v3/module-logic/ -e s/tree-linear/tree/"
 
-export DO_BOOTSTRAP="yes"
+#export DO_BOOTSTRAP="yes"
