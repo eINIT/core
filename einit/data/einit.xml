@@ -1138,6 +1138,13 @@
       command="/usr/bin/rsync --daemon;"
       restart="yes" /> 
 
+<!-- kostko@gentoo forums made this one :) -->
+     <daemon id="daemon-powersave"
+      name="Powersave"
+      provides="powersave"
+      requires="mount/critical:hal:acpi"
+      command="/usr/sbin/powersaved $([[ -S /var/run/acpid.socket ]] &amp;&amp; echo '-f /var/run/acpid.socket')"
+      restart="yes" />
    </module>
   </virtual>
 
