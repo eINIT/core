@@ -120,6 +120,7 @@ int _einit_tty_texec (struct cfgnode *);
 int _einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
+ sched_configure(this);
 
  return 0;
 }
@@ -326,6 +327,7 @@ int _einit_tty_reset (void *pa, struct einit_event *status) {
 
 int _einit_tty_configure (struct lmodule *this) {
  module_init (this);
+ sched_configure(this);
 
  thismodule->cleanup = _einit_tty_cleanup;
  thismodule->enable = _einit_tty_enable;
