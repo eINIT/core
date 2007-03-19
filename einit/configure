@@ -126,6 +126,21 @@ if test -e configure.overrides; then source configure.overrides; fi
 
 if test -n "$(echo ${EXTERNALMODULES}|grep bootstrap-)"; then DO_BOOTSTRAP=yes; else DO_BOOTSTRAP=; fi
 
+newext="";
+for i in ${EXTERNALMODULES}; do
+	match="no"
+	for j in ${INTERNALMODULES}; do
+		if test "${i}" = "${j}"; then
+			match="yes"
+		fi
+	done
+
+	if test "${match}" = "no"; then
+		newext="${newext} ${i}";
+	fi
+done
+EXTERNALMODULES="${newext}";
+
 echo "selected modules:"
 echo " internal: ${INTERNALMODULES}"
 echo " external: ${EXTERNALMODULES}"
