@@ -95,7 +95,8 @@ int ipc (char *cmd) {
   bitch(BITCH_STDIO, 0, "fputs() failed.");
  }
 
- fflush (esocket);
+ if (fflush (esocket) == EOF)
+  bitch(BITCH_STDIO, errno, "couldn't flush IPC buffer");
 
  while ((!feof(esocket)) && fgets (buffer, BUFFERSIZE, esocket)) {
   if (strmatch("IPC//processed.\n", buffer)) {
