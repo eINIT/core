@@ -96,14 +96,14 @@ module_register(_einit_ipc_self);
 pthread_t ipc_thread;
 char _einit_ipc_running = 0;
 
-int __ipc_process (char *cmd, FILE *f) {
+int __ipc_process (const char *cmd, FILE *f) {
  if (!cmd) return 0;
 
  struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
  uint32_t ic, ec;
  int ret = 0;
 
- event->string = cmd;
+ event->string = (char *)cmd;
  event->set = (void **)str2set (' ', cmd);
  event->para = (void *)f;
  event->flag = 0;

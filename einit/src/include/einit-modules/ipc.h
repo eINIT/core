@@ -46,8 +46,9 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/types.h>
 
+#if (! defined(einit_modules_einit_ipc)) || (einit_modules_einit_ipc == 'm') || (einit_modules_einit_ipc == 'n')
 
-typedef int (*ipc_processor) (char *, FILE *);
+typedef int (*ipc_processor) (const char *, FILE *);
 
 ipc_processor __ipc_string_process;
 
@@ -55,6 +56,17 @@ ipc_processor __ipc_string_process;
 
 #define ipc_configure(mod) __ipc_string_process = NULL;
 #define ipc_cleanup(mod) __ipc_string_process = NULL;
+
+#else
+
+#define ipc_configure(mod) ;
+#define ipc_cleanup(mod) ;
+
+int __ipc_process (const char *cmd, FILE *f);
+
+#define ipc_process(string, output) __ipc_process(string, output)
+
+#endif
 
 #endif
 

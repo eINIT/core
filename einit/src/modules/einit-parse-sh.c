@@ -88,7 +88,7 @@ module_register(_einit_parse_sh_self);
 
 #endif
 
-int __parse_sh (char *, void (*)(char **, uint8_t));
+int __parse_sh (const char *, void (*)(const char **, uint8_t));
 
 int _einit_parse_sh_cleanup (struct lmodule *irr) {
  function_unregister ("einit-parse-sh", 1, __parse_sh);
@@ -98,12 +98,12 @@ int _einit_parse_sh_cleanup (struct lmodule *irr) {
 }
 
 // parse sh-style files and call back for each line
-int __parse_sh (char *data, void (*callback)(char **, uint8_t)) {
+int __parse_sh (const char *data, void (*callback)(const char **, uint8_t)) {
  if (!data) return -1;
 
- char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp,
- *cur = data-1,
- stat = SH_PARSER_STATUS_LW, squote = 0, dquote = 0, lit = 0,
+ char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp;
+ const char *cur = data-1;
+ char stat = SH_PARSER_STATUS_LW, squote = 0, dquote = 0, lit = 0,
  **command = NULL;
 
  while (*(cur +1)) {
@@ -137,7 +137,7 @@ int __parse_sh (char *data, void (*callback)(char **, uint8_t)) {
     stat = SH_PARSER_STATUS_LW;
 
     if (command) {
-     callback (command, PA_NEW_CONTEXT);
+     callback ((const char **)command, PA_NEW_CONTEXT);
 
      free (command);
      command = NULL;
@@ -178,7 +178,7 @@ int __parse_sh (char *data, void (*callback)(char **, uint8_t)) {
  stat = SH_PARSER_STATUS_LW;
 
  if (command) {
-  callback (command, PA_NEW_CONTEXT);
+  callback ((const char **)command, PA_NEW_CONTEXT);
 
   free (command);
   command = NULL;

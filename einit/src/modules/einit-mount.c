@@ -173,6 +173,36 @@ struct smodule sm_critical = {
     }
 };
 
+/* variable declarations */
+pthread_mutex_t blockdevices_mutex;
+char *defaultblockdevicesource[5];
+char *defaultfstabsource[5];
+char *defaultmtabsource[5];
+char *defaultfilesystems[5];
+
+/* function declarations */
+unsigned char find_block_devices_recurse_path (char *);
+unsigned char forge_fstab_by_label (void *);
+unsigned char read_fstab_from_configuration (void *);
+unsigned char read_fstab (void *);
+unsigned char read_mtab (void *);
+unsigned char read_filesystem_flags_from_configuration (void *);
+void _einit_mount_update (enum update_task);
+#define update_filesystem_metadata() _einit_mount_update (UPDATE_METADATA)
+#define update_block_devices() _einit_mount_update (UPDATE_BLOCK_DEVICES)
+#define update_fstab() _einit_mount_update (UPDATE_FSTAB)
+#define update_mtab() _einit_mount_update (UPDATE_MTAB)
+
+void _einit_mount_mount_ipc_handler(struct einit_event *);
+void _einit_mount_mount_update_handler(struct einit_event *);
+
+void add_block_device (char *, uint32_t, uint32_t);
+void add_fstab_entry (char *, char *, char *, char **, uint32_t, char *, char *, char *, char *, char *, uint32_t, char **);
+void add_mtab_entry (char *, char *, char *, char *, uint32_t, uint32_t);
+void add_filesystem (char *, char *);
+
+struct stree *read_fsspec_file (char *);
+
 /* variable definitions */
 pthread_mutex_t blockdevices_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t fstab_mutex = PTHREAD_MUTEX_INITIALIZER;

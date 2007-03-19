@@ -53,8 +53,9 @@ extern "C" {
 #define PA_END_OF_FILE                   0x01
 #define PA_NEW_CONTEXT                   0x02
 
+#if (! defined(einit_modules_einit_parse_sh)) || (einit_modules_einit_parse_sh == 'm') || (einit_modules_einit_parse_sh == 'n')
 
-typedef int (*sh_parser) (char *, void (*)(char **, uint8_t));
+typedef int (*sh_parser) (const char *, void (*)(const char **, uint8_t));
 
 sh_parser __f_parse_sh;
 
@@ -62,6 +63,17 @@ sh_parser __f_parse_sh;
 
 #define parse_sh_configure(mod) __f_parse_sh = NULL;
 #define parse_sh_cleanup(mod) __f_parse_sh = NULL;
+
+#else
+
+int __parse_sh (const char *, void (*)(const char **, uint8_t));
+
+#define parse_sh_configure(mod) ;
+#define parse_sh_cleanup(mod) ;
+
+#define parse_sh(data, callback) __parse_sh(data, callback)
+
+#endif
 
 #endif
 
