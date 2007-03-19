@@ -193,6 +193,18 @@ void _einit_ipc_ipc_event_handler (struct einit_event *ev) {
 
   ev->flag = 1;
  }
+
+ if (ev->set[0] && ev->set[1] && ev->set[2] && strmatch (ev->set[0], "emit-event")) {
+  struct einit_event nev = evstaticinit(event_string_to_code(ev->set[1]));
+  nev.string = ev->set[2];
+  nev.set = (void **)(ev->set+2);
+
+  event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+
+  evstaticdestroy(nev);
+
+  if (!ev->flag) ev->flag = 1;
+ }
 }
 
 int _einit_ipc_cleanup (struct lmodule *this) {

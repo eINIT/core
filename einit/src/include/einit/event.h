@@ -176,28 +176,6 @@ struct exported_function {
  void const *function;                   /*!< pointer to the function */
 };
 
-#ifdef DEBUG
-// we don't need this for normal operation...
-struct event_ringbuffer_node {
- uint32_t type;
- char *type_custom;
- void **set; /* watch out when trying to use this one, can't duplicate it */
- char *string;
- int32_t integer, status, task;
- unsigned char flag;
-
- uint32_t seqid;
- time_t timestamp;
-
- void *para; /* watch out when trying to use this one */
-
- struct event_ringbuffer_node *previous, *next;
-};
-
-struct event_ringbuffer_node *event_logbuffer;
-pthread_mutex_t event_logbuffer_mutex;
-#endif
-
 void *event_emit (struct einit_event *, const uint16_t);
 void event_listen (const uint32_t, void (*)(struct einit_event *));
 void event_ignore (const uint32_t, void (*)(struct einit_event *));

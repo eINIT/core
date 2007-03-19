@@ -51,18 +51,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#ifdef DEBUG
-pthread_mutex_t event_logbuffer_mutex = PTHREAD_MUTEX_INITIALIZER;
-struct event_ringbuffer_node *event_logbuffer = NULL;
-#endif
-
 uint32_t cseqid = 0;
 
 void *event_emit (struct einit_event *event, const uint16_t flags) {
  uint32_t subsystem;
-#ifdef DEBUG
- struct event_ringbuffer_node *new_logbuffer_node;
-#endif
 
  if (!event || !event->type) return NULL;
  subsystem = event->type & EVENT_SUBSYSTEM_MASK;
@@ -70,34 +62,6 @@ void *event_emit (struct einit_event *event, const uint16_t flags) {
 /* initialise sequence id and timestamp of the event */
   event->seqid = cseqid++;
   event->timestamp = time(NULL);
-
-#ifdef DEBUG
-/* initialise copy for the log-ringbuffer */
-  new_logbuffer_node = emalloc (sizeof(struct event_ringbuffer_node));
-
-  new_logbuffer_node->type = event->type;
-  new_logbuffer_node->set = event->set;
-  new_logbuffer_node->string = (event->string ? estrdup (event->string) : NULL);
-  new_logbuffer_node->integer = event->integer;
-  new_logbuffer_node->status = event->status;
-  new_logbuffer_node->task = event->task;
-  new_logbuffer_node->flag = event->flag;
-  new_logbuffer_node->seqid = event->seqid;
-  new_logbuffer_node->timestamp = event->timestamp;
-  new_logbuffer_node->para = event->para;
-
-  if (event_logbuffer) {
-   new_logbuffer_node->next = event_logbuffer->next;
-   new_logbuffer_node->previous = event_logbuffer;
-
-   event_logbuffer->next->previous = new_logbuffer_node;
-   event_logbuffer->next = new_logbuffer_node;
-  } else {
-   new_logbuffer_node->previous = new_logbuffer_node;
-   new_logbuffer_node->next = new_logbuffer_node;
-  }
-  event_logbuffer = new_logbuffer_node;
-#endif
 
   struct event_function *cur = event_functions;
   while (cur) {
@@ -324,71 +288,4 @@ uint32_t event_string_to_code (const char *code) {
  }
 
  return ret;
-}
-
-// event-system ipc-handler
-void event_ipc_handler(struct einit_event *event) {
- if (!event || !event->set) return;
- char **argv = (char **) event->set;
- int argc = setcount ((const void **)event->set);
-
- if (argc >= 2) {
-  if (strmatch (argv[0], "update") && strmatch (argv[1], "configuration")) {
-   struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
-   nev.string = argv[2];
-
-   if (nev.string) {
-    eprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
-   } else {
-    eputs ("event-subsystem: updating configuration\n", stderr);
-   }
-   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
-
-   evstaticdestroy(nev);
-
-   if (!event->flag) event->flag = 1;
-  } else if (strmatch (argv[0], "emit-event")) {
-   struct einit_event nev = evstaticinit(event_string_to_code(argv[1]));
-   nev.string = argv[2];
-   nev.set = (void **)(argv+2);
-
-   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
-
-   evstaticdestroy(nev);
-
-   if (!event->flag) event->flag = 1;
-  }
-#ifdef DEBUG
-   else if (strmatch (argv[0], "list")) {
-   if (strmatch (argv[1], "event-log")) {
-    if (event_logbuffer) {
-     struct event_ringbuffer_node *cnode = event_logbuffer;
-
-     do {
-      char print = 0, *vstring;
-      if (cnode->string) {
-       strtrim(cnode->string);
-       vstring = cnode->string;
-
-       print++;
-      } else {
-       vstring = "- no verbose message -";
-       if (!(event->status & EIPC_ONLY_RELEVANT)) print++;
-      }
-
-      if (print) {
-       eprintf ((FILE *)event->para, "[%6i] %s: %s\n", cnode->seqid, event_code_to_string(cnode->type), vstring);
-      }
-
-      cnode = cnode->next;
-     } while (cnode != event_logbuffer);
-    } else {
-     eputs (" - log buffer empty -\n", (FILE *)event->para);
-    }
-
-    if (!event->flag) event->flag = 1;
-   }
-  }
-#endif
- }
 }

@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* event handlers for the default module loader and configuration system */
 void module_loader_einit_event_handler (struct einit_event *);
 void einit_config_event_handler (struct einit_event *);
-void einit_config_ipc_event_handler (struct einit_event *);
 
 struct event_function module_loader_einit_event_handler_ef = {
  .type = EVENT_SUBSYSTEM_EINIT,
@@ -56,26 +55,8 @@ struct event_function einit_config_event_handler_ef = {
  .next = &module_loader_einit_event_handler_ef
 };
 
-struct event_function einit_config_ipc_event_handler_ef = {
- .type = EVENT_SUBSYSTEM_IPC,
- .handler = einit_config_ipc_event_handler,
- .next = &einit_config_event_handler_ef
-};
-
 #undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_config_ipc_event_handler_ef
-
-/* ipc-handler for the default event system manager */
-void event_ipc_handler(struct einit_event *);
-
-struct event_function einit_event_ipc_handler_ef = {
- .type = EVENT_SUBSYSTEM_IPC,
- .handler = event_ipc_handler,
- .next = EVENT_FUNCTIONS_PTR
-};
-
-#undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_event_ipc_handler_ef
+#define EVENT_FUNCTIONS_PTR &einit_config_event_handler_ef
 
 /* einit event handler for the bitchin' library */
 void bitchin_einit_event_handler(struct einit_event *);

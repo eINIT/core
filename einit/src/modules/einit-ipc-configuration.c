@@ -89,6 +89,54 @@ void _einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
  }
 
  if (argc > 1) {
+  if (strmatch (argv[0], "update") && strmatch (argv[1], "configuration")) {
+   struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+   nev.string = argv[2];
+
+   if (nev.string) {
+    eprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
+   } else {
+    eputs ("event-subsystem: updating configuration\n", stderr);
+   }
+   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+
+   evstaticdestroy(nev);
+
+   if (!ev->flag) ev->flag = 1;
+  }
+
+  if (strmatch ("list", ev->set[0]) && strmatch ("configuration", ev->set[1])) {
+   struct stree *otree = NULL;
+   char *buffer = NULL;
+   cfg_string_converter conv;
+
+   if (ev->set[2]) {
+    char *x = set2str (' ', (const char **) (ev->set +2));
+    if (x) {
+     otree = cfg_filter (x, 0);
+
+     free (x);
+    }
+   } else {
+    otree = hconfiguration;
+   }
+
+   if (ev->status & EIPC_OUTPUT_XML) {
+    if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL))) buffer = conv(otree);
+   } else {
+    char *rtset[] =
+    { (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable-ansi" : "human-readable",
+    (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable" : "xml",
+    (ev->status & EIPC_OUTPUT_ANSI) ? "xml" : "human-readable-ansi", NULL };
+    if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, (const char **)rtset))) buffer = conv(otree);
+   }
+
+   if (buffer) {
+    eputs (buffer, (FILE *)ev->para);
+   }
+   ev->flag = 1;
+  }
+
   if ((argc > 3) && (strmatch (argv[0], "set") && strmatch (argv[1], "variable"))) {
    char *t = estrdup (argv[2]), *x, *subattr = NULL;
    struct cfgnode newnode, *onode = NULL;
