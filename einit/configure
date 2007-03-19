@@ -139,12 +139,9 @@ for i in ${EXTERNALMODULES}; do
 done
 EXTERNALMODULES="${newext}";
 
-if test -n "$(echo ${EXTERNALMODULES}|grep bootstrap-)"; then DO_BOOTSTRAP=yes; else DO_BOOTSTRAP=; fi
-
 echo "selected modules:"
 echo " internal: ${INTERNALMODULES}"
 echo " external: ${EXTERNALMODULES}"
-echo " bootstrap: ${DO_BOOTSTRAP}"
 
 if test "$HELP" = "1"; then
 	echo "Usage:
@@ -293,6 +290,8 @@ if test -n "`echo ${INTERNALMODULES}|grep bootstrap-einit-configuration-xml-expa
  CORELIBS="${CORELIBS} -lexpat"
 fi;
 echo " done"
+
+if test -n "$(echo ${EXTERNALMODULES}|grep bootstrap-)"; then DO_BOOTSTRAP=yes; else DO_BOOTSTRAP=; fi
 
 echo -n "testing architecture... "
 if test -x "$(which arch 2>/dev/null)"; then
