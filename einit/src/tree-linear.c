@@ -126,6 +126,8 @@ struct stree *streedel (struct stree *subject) {
 struct stree *streefind (const struct stree *stree, const char *key, const char options) {
  const struct stree *c;
 
+ if (!stree || !key) return NULL;
+
  c = (options == TREE_FIND_FIRST) ? *(stree->lbase) : stree->next;
 
  while (c) {
