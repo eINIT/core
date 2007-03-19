@@ -122,6 +122,8 @@ for param in $@; do
 done;
 echo " ]";
 
+if test -e configure.overrides; then source configure.overrides; fi
+
 if test "$HELP" = "1"; then
 	echo "Usage:
  ./configure [--prefix=path] [--enable-*] [--debug] [--help]
