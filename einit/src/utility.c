@@ -516,3 +516,14 @@ char strmatch (const char *str1, const char *str2) {
  return 0;
 }
 #endif
+
+uintptr_t hashp (const char *str) {
+ uintptr_t rv = 0;
+
+ while (*str) {
+  rv += *str;
+  str++;
+ }
+
+ return rv;
+}

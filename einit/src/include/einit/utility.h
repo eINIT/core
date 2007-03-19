@@ -202,6 +202,8 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
    match a string against "" :D */
 char strmatch (const char *, const char *);
 
+uintptr_t hashp (const char *str);
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus

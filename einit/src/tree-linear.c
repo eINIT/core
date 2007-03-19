@@ -84,6 +84,8 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
 
  n->lbase = stree ? stree->lbase : NULL;
 
+ n->keyhash = hashp(key);
+
 // n->next = base;
  n->next = stree && stree->lbase ? *stree->lbase : base;
  stree = n;
@@ -128,10 +130,12 @@ struct stree *streefind (const struct stree *stree, const char *key, const char 
 
  if (!stree || !key) return NULL;
 
+ uintptr_t khash = hashp(key);
+
  c = (options == TREE_FIND_FIRST) ? *(stree->lbase) : stree->next;
 
  while (c) {
-  if (strmatch (key, c->key)) {
+  if ((khash == c->keyhash) && strmatch (key, c->key)) {
    return (struct stree *)c;
   }
   c = c->next;

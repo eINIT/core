@@ -1,3 +1,8 @@
+2007/03/19: mdeininger
+ * fixed/enhanced the build system
+ * added some very simple hashing to the tree-linear code...
+   seems to decrease execution time considerably
+
 2007/03/18: mdeininger
  * some good progress with compiling modules into the core
 

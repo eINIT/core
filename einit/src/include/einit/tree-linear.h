@@ -67,6 +67,7 @@ extern "C" {
 */
 struct stree {
  char *key;           /*!< the key (perl-style; think of it as a variable-name) */
+ uintptr_t keyhash;
  void *value;         /*!< the value associated with the key */
  void *luggage;       /*!< a pointer to an area of memory that is references by the value (will be free()d) */
  struct stree *next;  /*!< next element (for sequential tree traversal) */
