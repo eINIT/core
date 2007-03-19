@@ -124,6 +124,10 @@ echo " ]";
 
 if test -e configure.overrides; then source configure.overrides; fi
 
+echo "selected modules:"
+echo " internal: ${INTERNALMODULES}"
+echo " external: ${EXTERNALMODULES}"
+
 if test "$HELP" = "1"; then
 	echo "Usage:
  ./configure [--prefix=path] [--enable-*] [--debug] [--help]
