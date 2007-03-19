@@ -368,7 +368,7 @@ unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mount
    return 0;
   else {
    if (fse->after_umount)
-    pexec_v1 (fse->after_umount, fse->variables, NULL, status);
+    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
    return 1;
   }
  } else {

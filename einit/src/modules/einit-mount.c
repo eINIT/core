@@ -929,7 +929,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
    if (gmode != EINIT_GMODE_SANDBOX) {
     if (fse->before_mount)
-     pexec_v1 (fse->before_mount, fse->variables, NULL, status);
+     pexec_v1 (fse->before_mount, (const char **)fse->variables, NULL, status);
    }
 
    if (fstype_s) for (; fstype_s[fsts_i]; fsts_i++) {
@@ -997,7 +997,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
        status->string = (char *)strerror(errno);
        status_update (status);
        if (fse->after_umount)
-        pexec_v1 (fse->after_umount, fse->variables, NULL, status);
+        pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
 //       return STATUS_FAIL;
         continue;
       }
@@ -1012,7 +1012,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
 
     if (gmode != EINIT_GMODE_SANDBOX) {
      if (fse->after_mount)
-      pexec_v1 (fse->after_mount, fse->variables, NULL, status);
+      pexec_v1 (fse->after_mount, (const char **)fse->variables, NULL, status);
 
      if (fse->manager)
       startdaemon (fse->manager, status);
@@ -1139,7 +1139,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
   umount_ok:
   if (gmode != EINIT_GMODE_SANDBOX) {
    if (fse && fse->after_umount)
-    pexec_v1 (fse->after_umount, fse->variables, NULL, status);
+    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
   }
   if (fse && (fse->status & BF_STATUS_MOUNTED))
    fse->status ^= BF_STATUS_MOUNTED;

@@ -101,11 +101,11 @@ pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 
-char **__check_variables (char *, char **, FILE *);
-int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
+char **__check_variables (const char *, const char **, FILE *);
+int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
-char **__create_environment (char **environment, char **variables);
+char **__create_environment (char **environment, const char **variables);
 void _einit_exec_ipc_event_handler (struct einit_event *);
 
 int _einit_exec_cleanup (struct lmodule *irr) {
@@ -154,9 +154,9 @@ void *pexec_watcher (struct spidcb *spid) {
 }
 #endif
 
-char **__check_variables (char *id, char **variables, FILE *output) {
+char **__check_variables (const char *id, const char **variables, FILE *output) {
  uint32_t u = 0;
- if (!variables) return variables;
+ if (!variables) return (char **)variables;
  for (u = 0; variables[u]; u++) {
   char *e = estrdup (variables[u]), *ep = strchr (e, '/');
   char *x[] = { e, NULL, NULL };
@@ -210,10 +210,10 @@ char **__check_variables (char *id, char **variables, FILE *output) {
   free (e);
  }
 
- return variables;
+ return (char **)variables;
 }
 
-char **__create_environment (char **environment, char **variables) {
+char **__create_environment (char **environment, const char **variables) {
  int i = 0;
  char *variablevalue = NULL;
  if (variables) for (i = 0; variables[i]; i++) {
@@ -307,7 +307,7 @@ char **__create_environment (char **environment, char **variables) {
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 // less features and verbosity in this one -- we only want it to work *somehow*
 
-int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
+int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  pid_t child;
  int pidstatus = 0;
  char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
@@ -445,7 +445,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
 
 #else
 
-int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status) {
+int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
@@ -458,7 +458,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  if (!command) return STATUS_FAIL;
 // if the first command is pexec-options, then set some special options
  if (strstr (command, "pexec-options") == command) {
-  char *ocmds = command,
+  char *ocmds = estrdup(command),
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
   if (!rcmds) return STATUS_FAIL;
@@ -501,7 +501,7 @@ int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, cha
  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
  if (status) {
-  status->string = command;
+  status->string = (char *)command;
   status_update (status);
  }
 
@@ -714,7 +714,7 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 
  if (shellcmd->prepare) {
 //  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
-  if (pexec (shellcmd->prepare, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
+  if (pexec (shellcmd->prepare, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
  }
 
 // if ((status->task & MOD_ENABLE) && (!shellcmd || !shellcmd->command)) return STATUS_FAIL;
@@ -772,7 +772,7 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   dup2 (2, 1);
 
   daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
-  daemon_environment = __create_environment (daemon_environment, shellcmd->variables);
+  daemon_environment = __create_environment (daemon_environment, (const char **)shellcmd->variables);
 
   execve (cmd[0], cmd, daemon_environment);
   free (cmd);
@@ -836,7 +836,7 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
 
  if (shellcmd->cleanup) {
  // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
-  if (pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
+  if (pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
  }
 
  return STATUS_OK;

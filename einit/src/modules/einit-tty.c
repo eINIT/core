@@ -187,7 +187,7 @@ int _einit_tty_texec (struct cfgnode *node) {
   }
  }
 
- environment = create_environment(environment, variables);
+ environment = create_environment(environment, (const char **)variables);
  if (variables) free (variables);
 
  if (command) {

@@ -45,6 +45,7 @@ extern "C" {
 #include <einit/module.h>
 #include <einit/scheduler.h>
 #include <einit/event.h>
+#include <einit-modules/configuration.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,12 +90,14 @@ struct execst {
 };
 #endif
 
-/* function types */
-typedef int (*pexec_function)(char *, char **,  uid_t, gid_t, char *, char *, char **, struct einit_event *);
-typedef int (*daemon_function)(struct dexecinfo *, struct einit_event *);
-typedef char **(*environment_function)(char **, char **);
+#if (! defined(einit_modules_einit_exec)) || (einit_modules_einit_exec == 'm') || (einit_modules_einit_exec == 'n')
 
-typedef void (*variable_checkup_function)(char *, char **, FILE *);
+/* function types */
+typedef int (*pexec_function)(const char *, const char **, uid_t, gid_t, const char *, const char *, char **, struct einit_event *);
+typedef int (*daemon_function)(struct dexecinfo *, struct einit_event *);
+typedef char **(*environment_function)(char **, const char **);
+
+typedef void (*variable_checkup_function)(const char *, const char **, FILE *);
 
 /* functions */
 pexec_function __f_pxe;
@@ -114,6 +117,29 @@ variable_checkup_function __f_check_variables;
 #define create_environment(environment, variables) ((__f_create_environment || (__f_create_environment = function_find_one("einit-create-environment", 1, NULL)))? __f_create_environment(environment, variables) : environment)
 
 #define check_variables(output_id, variables, target) ((__f_check_variables || (__f_check_variables = function_find_one("einit-check-variables", 1, NULL)))? __f_check_variables(output_id, variables, target) : NULL)
+
+#else
+
+char **__check_variables (const char *, const char **, FILE *);
+int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
+int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
+char **__create_environment (char **environment, const char **variables);
+
+#define exec_configure(mod) ;
+#define exec_cleanup(mod) ;
+
+#define pexec(command, variables, uid, gid, user, group, local_environment, status) __pexec_function(command, variables, uid, gid, user, group, local_environment, status)
+#define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
+
+#define startdaemon(execheader, status) __start_daemon_function(execheader, status)
+#define stopdaemon(execheader, status) __stop_daemon_function(execheader, status)
+
+#define create_environment(environment, variables) __create_environment(environment, variables)
+
+#define check_variables(output_id, variables, target) __check_variables(output_id, variables, target)
+
+#endif
 
 #endif
 

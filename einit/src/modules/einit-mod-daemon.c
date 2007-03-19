@@ -108,7 +108,7 @@ void _einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
    uint32_t i = 0;
    for (i = 0; _einit_mod_daemon_dxdata[i]; i++) {
     if (_einit_mod_daemon_dxdata[i]->variables) {
-     check_variables (_einit_mod_daemon_dxdata[i]->id, _einit_mod_daemon_dxdata[i]->variables, (FILE*)ev->para);
+     check_variables (_einit_mod_daemon_dxdata[i]->id, (const char **)_einit_mod_daemon_dxdata[i]->variables, (FILE*)ev->para);
     }
    }
   }

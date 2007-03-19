@@ -119,7 +119,7 @@ void _einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
    uint32_t i = 0;
    for (i = 0; _einit_mod_exec_mxdata[i]; i++) {
     if (_einit_mod_exec_mxdata[i]->variables) {
-     check_variables (_einit_mod_exec_mxdata[i]->id, _einit_mod_exec_mxdata[i]->variables, (FILE*)ev->para);
+     check_variables (_einit_mod_exec_mxdata[i]->id, (const char **)_einit_mod_exec_mxdata[i]->variables, (FILE*)ev->para);
     }
    }
   }
@@ -268,21 +268,21 @@ int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_even
     }
 
     if (shellcmd->prepare) {
-     pexec (shellcmd->prepare, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+     pexec (shellcmd->prepare, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
     }
 
-    retval = pexec (shellcmd->enable, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+    retval = pexec (shellcmd->enable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
     if ((retval == STATUS_FAIL) && shellcmd->cleanup)
-     pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+     pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
    }
   } else if (status->task & MOD_DISABLE) {
    if (shellcmd->disable) {
-    retval = pexec (shellcmd->disable, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+    retval = pexec (shellcmd->disable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
     if (retval & STATUS_OK) {
      if (shellcmd->cleanup) {
-      pexec (shellcmd->cleanup, shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+      pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
      }
 
      if (shellcmd->pidfile) {
@@ -293,10 +293,10 @@ int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_even
    }
   } else if (status->task & MOD_RESET) {
    if (shellcmd->reset)
-    retval = pexec (shellcmd->reset, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+    retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
   } else if (status->task & MOD_RELOAD) {
    if (shellcmd->reload)
-    retval = pexec (shellcmd->reload, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+    retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
   }
  }
 

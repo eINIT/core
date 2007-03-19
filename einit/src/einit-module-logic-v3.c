@@ -1378,7 +1378,7 @@ int mod_switchmode (char *mode) {
    pthread_t th;
    mod_plan_commit (plan);
 /* make it so that the erase operation will not disturb the flow of the program */
-//   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
   }
 
  return 0;
