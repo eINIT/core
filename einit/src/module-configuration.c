@@ -52,21 +52,14 @@ struct event_function einit_sched_ipc_event_handler_handler_ef = {
 #define EVENT_FUNCTIONS_PTR &einit_sched_ipc_event_handler_handler_ef
 
 /* event handlers for the default module loader and configuration system */
-void mod_event_handler(struct einit_event *);
 void module_loader_einit_event_handler (struct einit_event *);
 void einit_config_event_handler (struct einit_event *);
 void einit_config_ipc_event_handler (struct einit_event *);
 
-struct event_function einit_mod_event_handler_ef = {
- .type = EVENT_SUBSYSTEM_IPC,
- .handler = mod_event_handler,
- .next = EVENT_FUNCTIONS_PTR
-};
-
 struct event_function module_loader_einit_event_handler_ef = {
  .type = EVENT_SUBSYSTEM_EINIT,
  .handler = module_loader_einit_event_handler,
- .next = &einit_mod_event_handler_ef
+ .next = EVENT_FUNCTIONS_PTR
 };
 
 struct event_function einit_config_event_handler_ef = {
