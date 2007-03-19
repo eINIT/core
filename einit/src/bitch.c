@@ -66,6 +66,7 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
    case 1: // 1: print error or stderr
    case 255: // 255: just die
     switch (sauce) {
+#if ! defined (_EINIT_UTIL)
 #ifdef POSIXREGEX
      case BITCH_REGEX:
      {
@@ -110,6 +111,7 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
      }
       break;
 #endif
+#endif
      default:
       if ((fprintf(stderr, BITCHM_ERROR_TEMPLATE " (System Error #%i [%s])\n", lfile, lline, lfunction, lreason, lerror, strerror(lerror)) < 0))
        perror ("bitch_macro: writing error message");
@@ -123,6 +125,7 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
  return error;
 }
 
+#if ! defined (_EINIT_UTIL)
 void bitchin_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct cfgnode *node;
@@ -148,3 +151,4 @@ void bitchin_einit_event_handler (struct einit_event *ev) {
    mortality[BITCH_EPTHREADS] = node->value;
  }
 }
+#endif

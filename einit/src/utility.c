@@ -192,6 +192,8 @@ void strtrim (char *s) {
  }
 }
 
+#if ! defined (_EINIT_UTIL)
+
 /* event-helpers */
 void notice (unsigned char severity, const char *message) {
  struct einit_event *ev = evinit (EVE_FEEDBACK_NOTICE);
@@ -300,6 +302,8 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
 
  return 0;
 }
+
+#endif
 
 signed int parse_integer (const char *s) {
  signed int ret = 0;
