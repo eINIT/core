@@ -555,8 +555,6 @@ for z in ${BUILDCOMPONENTS}; do
 			echo  "" >> build/core/module-configuration.c
 		fi;
 
-		cat src/module-configuration.c >> build/core/module-configuration.c
-
 		echo -e "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -D_EINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
 	fi
 

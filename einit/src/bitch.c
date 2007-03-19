@@ -124,31 +124,3 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
 
  return error;
 }
-
-#if ! defined (_EINIT_UTIL)
-void bitchin_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  struct cfgnode *node;
-  if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
-   mortality[BITCH_EMALLOC] = node->value;
-
-  if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
-   mortality[BITCH_STDIO] = node->value;
-
-  if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
-   mortality[BITCH_REGEX] = node->value;
-
-  if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
-   mortality[BITCH_EXPAT] = node->value;
-
-  if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
-   mortality[BITCH_DL] = node->value;
-
-  if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
-   mortality[BITCH_LOOKUP] = node->value;
-
-  if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
-   mortality[BITCH_EPTHREADS] = node->value;
- }
-}
-#endif

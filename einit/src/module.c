@@ -495,25 +495,3 @@ char **service_usage_query_cr (const uint16_t task, const struct lmodule *module
  emutex_unlock (&service_usage_mutex);
  return ret;
 }
-
-
-/* ---------------------------------------------------- event handlers ----- */
-void module_loader_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  ev->chain_type = EVE_UPDATE_MODULES;
- } else if (ev->type == EVE_UPDATE_MODULES) {
-  struct lmodule *lm = mlist;
-  while (lm) {
-   if (lm->source && strmatch(lm->source, "core")) {
-    lm = mod_update (lm);
-
-// tell module to scan for changes if it's a module-loader
-    if (lm->module && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
-     lm->scanmodules (mlist);
-    }
-
-   }
-   lm = lm->next;
-  }
- }
-}

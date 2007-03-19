@@ -132,6 +132,64 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
  kill (einit_sub, SIGINT);
 }
 
+struct lmodule *mlist;
+
+void core_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+// update global environment here
+  char **env = einit_global_environment;
+  einit_global_environment = NULL;
+  struct cfgnode *node = NULL;
+  free (env);
+
+  env = NULL;
+  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
+   if (node->idattr && node->svalue) {
+    env = straddtoenviron (env, node->idattr, node->svalue);
+   }
+  }
+  einit_global_environment = env;
+
+  ev->chain_type = EVE_UPDATE_MODULES;
+
+  if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
+   mortality[BITCH_EMALLOC] = node->value;
+
+  if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
+   mortality[BITCH_STDIO] = node->value;
+
+  if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
+   mortality[BITCH_REGEX] = node->value;
+
+  if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
+   mortality[BITCH_EXPAT] = node->value;
+
+  if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
+   mortality[BITCH_DL] = node->value;
+
+  if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
+   mortality[BITCH_LOOKUP] = node->value;
+
+  if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
+   mortality[BITCH_EPTHREADS] = node->value;
+
+ } else if (ev->type == EVE_UPDATE_MODULES) {
+  struct lmodule *lm = mlist;
+  while (lm) {
+   if (lm->source && strmatch(lm->source, "core")) {
+    lm = mod_update (lm);
+
+// tell module to scan for changes if it's a module-loader
+    if (lm->module && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
+     lm->scanmodules (mlist);
+    }
+
+   }
+   lm = lm->next;
+  }
+ }
+}
+
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 #ifndef NONIXENVIRON
 int main(int argc, char **argv, char **environ) {
@@ -150,6 +208,8 @@ int main(int argc, char **argv) {
 
 // is this the system's init-process?
  isinit = getpid() == 1;
+
+ event_listen (EVENT_SUBSYSTEM_EINIT, core_einit_event_handler);
 
 /* check command line arguments */
  for (i = 1; i < argc; i++) {
