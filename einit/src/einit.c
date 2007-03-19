@@ -292,24 +292,20 @@ int main(int argc, char **argv) {
    }
   }
 
-#ifdef DO_BOOTSTRAP
-   cev.type = EVE_UPDATE_MODULES;
-   cev.string = NULL;
-   event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
-
-   cev.type = EVE_UPDATE_CONFIGURATION;
-#endif
-
 /* this should be a good place to initialise internal modules */
    if (coremodules) {
     uint32_t cp = 0;
+
+    eputs (" >> initialising in-core modules:", stderr);
+
     for (; coremodules[cp]; cp++) {
      struct lmodule *lmm;
-     eprintf (stderr, "initialising in-core module: %s\n", (*coremodules[cp])->rid);
+     eprintf (stderr, " (%s)", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
      lmm->source = estrdup("core");
     }
+    eputs (" done.\n", stderr);
    }
 
 /* emit events to read configuration files */

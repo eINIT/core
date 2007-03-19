@@ -289,6 +289,10 @@ if test -n "`echo ${INTERNALMODULES}|grep bootstrap-einit-configuration-xml-expa
  echo -n " -lexpat"
  CORELIBS="${CORELIBS} -lexpat"
 fi;
+if test -n "`echo ${INTERNALMODULES}|grep einit-mod-so`"; then
+ echo -n " -ldl"
+ CORELIBS="${CORELIBS} -ldl"
+fi;
 echo " done"
 
 if test -n "$(echo ${EXTERNALMODULES}|grep bootstrap-)"; then DO_BOOTSTRAP=yes; else DO_BOOTSTRAP=; fi

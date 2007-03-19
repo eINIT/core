@@ -39,10 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <dirent.h>
-#include <dlfcn.h>
 #include <string.h>
 #include <einit/bitch.h>
 #include <einit/config.h>
@@ -52,138 +49,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <errno.h>
 
-#ifdef POSIXREGEX
-#include <regex.h>
-#endif
-
 struct lmodule *mlist = NULL;
 
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-int mod_scanmodules ( void ) {
- DIR *dir;
- struct dirent *entry;
- char *tmp;
- int mplen;
- void *sohandle;
-#ifdef POSIXREGEX
- regex_t allowpattern, disallowpattern;
- unsigned char haveallowpattern = 0, havedisallowpattern = 0;
- char *spattern = NULL;
-#endif
-
- emutex_lock (&modules_update_mutex);
-
- char *modulepath = cfg_getpath ("core-settings-module-path");
- if (!modulepath) {
-  modulepath = bootstrapmodulepath;
- }
- if (!modulepath) {
-  bitch(BITCH_STDIO, 0, "no path to load modules from.");
-  return -1;
- }
-
- if (gmode == EINIT_GMODE_SANDBOX) {
-// override module path in sandbox-mode to be relative
-  if (modulepath[0] == '/') modulepath++;
- }
-
- eprintf (stderr, " >> updating modules in \"%s\".\n", modulepath);
-
-#ifdef POSIXREGEX
- if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {
-  haveallowpattern = !eregcomp (&allowpattern, spattern);
- }
-
- if ((spattern = cfg_getstring ("core-settings-module-load/pattern-disallow", NULL))) {
-  havedisallowpattern = !eregcomp (&disallowpattern, spattern);
- }
-#endif
-
- mplen = strlen (modulepath) +4;
- dir = eopendir (modulepath);
- if (dir != NULL) {
-  while ((entry = ereaddir (dir))) {
-//   uint32_t el = 0;
-// if we have posix regular expressions, match them against the filename, if not, exclude '.'-files
-#ifdef POSIXREGEX
-   if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
-   if (havedisallowpattern && !regexec (&disallowpattern, entry->d_name, 0, NULL, 0)) continue;
-#else
-   if (entry->d_name[0] == '.') continue;
-#endif
-
-//   tmp = (char *)emalloc (el = (((mplen + strlen (entry->d_name))) & (~3))+4);
-   tmp = (char *)emalloc (mplen + strlen (entry->d_name));
-   struct stat sbuf;
-   struct smodule **modinfo;
-   struct lmodule *lm;
-   *tmp = 0;
-   strcat (tmp, modulepath);
-   strcat (tmp, entry->d_name);
-   dlerror ();
-   if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
-    goto cleanup_continue;
-   }
-
-   lm = mlist;
-   while (lm) {
-    if (lm->source && strmatch(lm->source, tmp)) {
-     lm = mod_update (lm);
-
-     goto cleanup_continue;
-    }
-    lm = lm->next;
-   }
-
-   sohandle = dlopen (tmp, RTLD_NOW);
-   if (sohandle == NULL) {
-    eputs (dlerror (), stdout);
-    goto cleanup_continue;
-   }
-
-   modinfo = (struct smodule **)dlsym (sohandle, "self");
-   if ((modinfo != NULL) && ((*modinfo) != NULL)) {
-    if ((*modinfo)->eibuild == BUILDNUMBER) {
-     struct lmodule *new = mod_add (sohandle, (*modinfo));
-     if (new) {
-      new->source = estrdup(tmp);
-     }
-    } else {
-     eprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, (*modinfo)->eibuild);
-
-     dlclose (sohandle);
-    }
-   } else {
-    eprintf (stderr, " >> module %s: not loading: missing header.\n", tmp);
-
-    dlclose (sohandle);
-   }
-
-   cleanup_continue:
-   free (tmp);
-  }
-  eclosedir (dir);
- }
-
-#ifdef POSIXREGEX
-  if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
-  if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
-#endif
-
-/* give the module-logic code and others a chance at processing the current list */
- struct einit_event update_event = evstaticinit(EVE_MODULE_LIST_UPDATE);
- event_emit (&update_event, EINIT_EVENT_FLAG_BROADCAST);
- evstaticdestroy(update_event);
-
- emutex_unlock (&modules_update_mutex);
-
- return 1;
-}
 
 void mod_freedesc (struct lmodule *m) {
  emutex_lock (&m->mutex);
@@ -704,7 +575,7 @@ void mod_event_handler(struct einit_event *ev) {
     struct stree *modes = NULL;
     struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
 
-    emutex_lock (&modules_update_mutex);
+//    emutex_lock (&modules_update_mutex);
 
     while (cur) {
      uint32_t i = 0;
@@ -817,7 +688,7 @@ void mod_event_handler(struct einit_event *ev) {
     }
     if (modes) streefree (modes);
 
-    emutex_unlock (&modules_update_mutex);
+//    emutex_unlock (&modules_update_mutex);
 
     if (!ev->flag) ev->flag = 1;
    }
@@ -827,8 +698,6 @@ void mod_event_handler(struct einit_event *ev) {
 
 void module_loader_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-//  update modules()
-//  mod_scanmodules();
   ev->chain_type = EVE_UPDATE_MODULES;
  } else if (ev->type == EVE_UPDATE_MODULES) {
   struct lmodule *lm = mlist;
@@ -844,7 +713,5 @@ void module_loader_einit_event_handler (struct einit_event *ev) {
    }
    lm = lm->next;
   }
-
-  mod_scanmodules();
  }
 }
