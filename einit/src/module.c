@@ -135,10 +135,6 @@ int mod_scanmodules ( void ) {
     if (lm->source && strmatch(lm->source, tmp)) {
      lm = mod_update (lm);
 
-// tell module to scan for changes if it's a module-loader
-     if (lm->module && lm->sohandle && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
-     }
-
      goto cleanup_continue;
     }
     lm = lm->next;
@@ -835,6 +831,20 @@ void module_loader_einit_event_handler (struct einit_event *ev) {
 //  mod_scanmodules();
   ev->chain_type = EVE_UPDATE_MODULES;
  } else if (ev->type == EVE_UPDATE_MODULES) {
+  struct lmodule *lm = mlist;
+  while (lm) {
+   if (lm->source && strmatch(lm->source, "core")) {
+    lm = mod_update (lm);
+
+// tell module to scan for changes if it's a module-loader
+    if (lm->module && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
+     lm->scanmodules (mlist);
+    }
+
+   }
+   lm = lm->next;
+  }
+
   mod_scanmodules();
  }
 }

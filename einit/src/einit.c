@@ -304,8 +304,11 @@ int main(int argc, char **argv) {
    if (coremodules) {
     uint32_t cp = 0;
     for (; coremodules[cp]; cp++) {
+     struct lmodule *lmm;
      eprintf (stderr, "initialising in-core module: %s\n", (*coremodules[cp])->rid);
-     mod_add(NULL, (*coremodules[cp]));
+     lmm = mod_add(NULL, (*coremodules[cp]));
+
+     lmm->source = estrdup("core");
     }
    }
 
