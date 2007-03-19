@@ -124,9 +124,12 @@ echo " ]";
 
 if test -e configure.overrides; then source configure.overrides; fi
 
+if test -n "$(echo ${EXTERNALMODULES}|grep bootstrap-)"; then DO_BOOTSTRAP=yes; else DO_BOOTSTRAP=; fi
+
 echo "selected modules:"
 echo " internal: ${INTERNALMODULES}"
 echo " external: ${EXTERNALMODULES}"
+echo " bootstrap: ${DO_BOOTSTRAP}"
 
 if test "$HELP" = "1"; then
 	echo "Usage:

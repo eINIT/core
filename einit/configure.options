@@ -21,5 +21,3 @@ export BUILDCOMPONENTS="core util modules headers"
 
 export HEADERSOURCES="src/include/einit src/include/einit-modules"
 export HEADERPREPARE="sed -e s/set-lowmem/set/ -e s/einit-// -e s/module-logic-v3/module-logic/ -e s/tree-linear/tree/"
-
-#export DO_BOOTSTRAP="yes"
