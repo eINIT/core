@@ -39,18 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_FUNCTIONS_PTR NULL
 
-/* event handler for the default scheduler */
-void sched_ipc_event_handler(struct einit_event *);
-
-struct event_function einit_sched_ipc_event_handler_handler_ef = {
- .type = EVENT_SUBSYSTEM_IPC,
- .handler = sched_ipc_event_handler,
- .next = EVENT_FUNCTIONS_PTR
-};
-
-#undef EVENT_FUNCTIONS_PTR
-#define EVENT_FUNCTIONS_PTR &einit_sched_ipc_event_handler_handler_ef
-
 /* event handlers for the default module loader and configuration system */
 void module_loader_einit_event_handler (struct einit_event *);
 void einit_config_event_handler (struct einit_event *);

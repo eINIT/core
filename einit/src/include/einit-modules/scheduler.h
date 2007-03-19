@@ -71,9 +71,7 @@ uint32_t gstatus;
 
 int scheduler_cleanup ();
 
-void sched_init ();
 void sched_reset_event_handlers ();
-int sched_watch_pid (pid_t, void *(*)(struct spidcb *));
 void *sched_run_sigchild (void *);
 
 /* this should be the best place for signal handlers... */
@@ -82,6 +80,33 @@ void sched_signal_sigchld (int, siginfo_t *, void *);
 void sched_signal_sigint (int, siginfo_t *, void *);
 
 void sched_event_handler(struct einit_event *);
+
+
+
+#if (! defined(einit_modules_einit_scheduler)) || (einit_modules_einit_scheduler == 'm') || (einit_modules_einit_scheduler == 'n')
+
+typedef int (*sched_watch_pid_t)(pid_t, void *(*)(struct spidcb *));
+
+sched_watch_pid_t __sched_watch_pid_f;
+
+#define sched_watch_pid(pid, callback) ((__sched_watch_pid_f || (__sched_watch_pid_f = function_find_one("einit-scheduler-watch-pid", 1, NULL))) ? __sched_watch_pid_f(pid, callback) : -1)
+
+#define sched_configure(mod) __sched_watch_pid_f = NULL;
+#define sched_cleanup(mod) __sched_watch_pid_f = NULL;
+
+#else
+
+#define sched_configure(mod) ;
+#define sched_cleanup(mod) ;
+
+int __sched_watch_pid (pid_t, void *(*)(struct spidcb *));
+
+#define sched_watch_pid(pid, callback) __sched_watch_pid(pid, callback)
+
+#endif
+
+
+
 
 #endif
 

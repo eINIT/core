@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
-#include <einit/scheduler.h>
+#include <einit-modules/scheduler.h>
 #include <einit/event.h>
 #include <string.h>
 #include <einit-modules/process.h>

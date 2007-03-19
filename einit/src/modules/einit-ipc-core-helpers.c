@@ -52,8 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-struct lmodule *mlist;
-
 int _einit_ipc_core_helpers_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
@@ -64,8 +62,8 @@ const struct smodule _einit_ipc_core_helpers_self = {
  .version   = 1,
  .mode      = 0,
  .options   = 0,
- .name      = "IPC Command Library: Mode Configuration",
- .rid       = "einit-ipc-configuration",
+ .name      = "IPC Command Library: Core Helpers",
+ .rid       = "einit-ipc-core-helpers",
  .si        = {
   .provides = NULL,
   .requires = NULL,
@@ -78,6 +76,8 @@ const struct smodule _einit_ipc_core_helpers_self = {
 module_register(_einit_ipc_core_helpers_self);
 
 #endif
+
+struct lmodule *mlist;
 
 void _einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
 

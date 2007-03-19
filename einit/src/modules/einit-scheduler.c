@@ -1,8 +1,9 @@
 /*
- *  scheduler.c
+ *  einit-scheduler.c
  *  einit
  *
  *  Created by Magnus Deininger on 02/05/2006.
+ *  Renamed from scheduler.c on 03/19/2007.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -41,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <einit/scheduler.h>
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
@@ -55,6 +55,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <einit-modules/scheduler.h>
+
+int _einit_scheduler_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
+const struct smodule _einit_scheduler_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "eINIT scheduler",
+ .rid       = "einit-scheduler",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = _einit_scheduler_configure
+};
+
+module_register(_einit_scheduler_self);
+
+#endif
 
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -99,41 +125,6 @@ int scheduler_cleanup () {
 #endif
 
  return 0;
-}
-
-void sched_init () {
-#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sigchild_semaphore = &sigchild_semaphore_static;
- sem_init (sigchild_semaphore, 0, 0);
-#elif defined(DARWIN)
- char tmp[BUFFERSIZE];
-
- esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());
-
- if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
-  perror ("scheduler: semaphore setup");
-  exit (EXIT_FAILURE);
- }
-#else
-#warning no proper or recognised semaphores implementation, i can't promise this code will work.
-/* let's just hope for the best... */
- char tmp[BUFFERSIZE];
-
- sigchild_semaphore = ecalloc (1, sizeof (sem_t));
- if (sem_init (sigchild_semaphore, 0, 0) == -1) {
-  free (sigchild_semaphore);
-  esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
-
-  if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
-   perror ("scheduler: semaphore setup");
-   exit (EXIT_FAILURE);
-  }
- }
-#endif
-
-// pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
-
- sched_reset_event_handlers ();
 }
 
 void sched_reset_event_handlers () {
@@ -185,7 +176,7 @@ void sched_reset_event_handlers () {
 
 }
 
-int sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
+int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  struct spidcb *nele;
  emutex_lock (&schedcpidmutex);
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
@@ -369,6 +360,12 @@ void sched_ipc_event_handler(struct einit_event *ev) {
 #endif
    errno = 0;
   }
+ }
+}
+
+void sched_einit_event_handler(struct einit_event *ev) {
+ if (ev->type == EVE_MAIN_LOOP) {
+  sched_run_sigchild(NULL);
  }
 }
 
@@ -562,3 +559,47 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 #endif
+
+int _einit_scheduler_configure (struct lmodule *tm) {
+ module_init(tm);
+
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+ sigchild_semaphore = &sigchild_semaphore_static;
+ sem_init (sigchild_semaphore, 0, 0);
+#elif defined(DARWIN)
+ char tmp[BUFFERSIZE];
+
+ esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());
+
+ if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+  perror ("scheduler: semaphore setup");
+  exit (EXIT_FAILURE);
+ }
+#else
+#warning no proper or recognised semaphores implementation, i can't promise this code will work.
+ /* let's just hope for the best... */
+ char tmp[BUFFERSIZE];
+
+ sigchild_semaphore = ecalloc (1, sizeof (sem_t));
+ if (sem_init (sigchild_semaphore, 0, 0) == -1) {
+  free (sigchild_semaphore);
+  esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
+
+  if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+   perror ("scheduler: semaphore setup");
+   exit (EXIT_FAILURE);
+  }
+ }
+#endif
+
+ event_listen (EVENT_SUBSYSTEM_EINIT, sched_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, sched_ipc_event_handler);
+
+ function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
+
+// pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
+
+ sched_reset_event_handlers ();
+
+ return 0;
+}

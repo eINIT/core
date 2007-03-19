@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
-#include <einit/scheduler.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -346,8 +345,6 @@ int main(int argc, char **argv) {
    exit (EXIT_FAILURE);
   } else {
    uint32_t e = 0;
-   sched_init ();
-
 /* queue default mode-switches */
    if (einit_do_feedback_switch) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
@@ -368,7 +365,9 @@ int main(int argc, char **argv) {
     evstaticdestroy(ee);
    }
 
-   sched_run_sigchild (NULL);
+   struct einit_event eml = evstaticinit(EVE_MAIN_LOOP);
+   event_emit (&eml, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy(eml);
   }
 
   return ret;

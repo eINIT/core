@@ -47,11 +47,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
-#include <einit/scheduler.h>
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
 #include <einit-modules/exec.h>
+#include <einit-modules/scheduler.h>
 #include <ctype.h>
 
 #ifdef POSIXREGEX
@@ -119,6 +119,8 @@ int _einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-check-variables", 1, __check_variables);
 
  event_ignore (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
+
+ sched_cleanup(irr);
 
  return 0;
 }
@@ -844,6 +846,8 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
 
 int _einit_exec_configure (struct lmodule *irr) {
  module_init(irr);
+
+ sched_configure(irr);
 
  irr->cleanup = _einit_exec_cleanup;
 

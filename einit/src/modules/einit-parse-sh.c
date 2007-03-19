@@ -43,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/module.h>
 #include <einit/utility.h>
-#include <einit/scheduler.h>
 #include <einit/event.h>
 #include <sys/types.h>
 #include <sys/socket.h>

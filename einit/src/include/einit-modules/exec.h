@@ -43,7 +43,7 @@ extern "C" {
 #define _EINIT_MODULES_EXEC_H
 
 #include <einit/module.h>
-#include <einit/scheduler.h>
+#include <einit-modules/scheduler.h>
 #include <einit/event.h>
 #include <einit-modules/configuration.h>
 #include <unistd.h>
