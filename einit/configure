@@ -139,6 +139,31 @@ for i in ${EXTERNALMODULES}; do
 done
 EXTERNALMODULES="${newext}";
 
+function deldupes() {
+	local ret;
+	local have;
+
+	ret=""
+	
+	for i in $@; do
+		have="no"
+		for y in ${ret}; do
+			if test "${i}" = "${y}"; then
+				have="yes"
+			fi
+		done
+
+		if test "${have}" = "no"; then
+			ret="${ret} ${i}"
+		fi
+	done
+
+	echo ${ret};
+}
+
+EXTERNALMODULES=$(deldupes ${EXTERNALMODULES})
+INTERNALMODULES=$(deldupes ${INTERNALMODULES})
+
 echo "selected modules:"
 echo " internal: ${INTERNALMODULES}"
 echo " external: ${EXTERNALMODULES}"
