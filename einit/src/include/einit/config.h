@@ -125,27 +125,61 @@ unsigned char *gdebug;
 
 char **einit_global_environment;
 
-// free configuration
-int cfg_free ();
-
-// add a node to the main configuration
-int cfg_addnode (struct cfgnode *);
-
-// find a node (by id)
-struct cfgnode *cfg_findnode (const char *, const unsigned int, const struct cfgnode *);
-
-/* these functions take the current mode into consideration */
-char *cfg_getstring (const char *, const struct cfgnode *);          // get string (by id)
-struct cfgnode *cfg_getnode (const char *, const struct cfgnode *);  // get node (by id)
-
-// return a new stree with the filter applied
-struct stree *cfg_filter (const char *, const uint32_t);
-
-/* those i-could've-sworn-there-were-library-functions-for-that functions */
-char *cfg_getpath (const char *);
-
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
+
+#if (! defined(einit_modules_bootstrap_einit_configuration_stree)) || (einit_modules_bootstrap_einit_configuration_stree == 'm') || (einit_modules_bootstrap_einit_configuration_stree == 'n')
+
+typedef int (*cfg_addnode_t) (struct cfgnode *);
+typedef struct cfgnode *(*cfg_findnode_t) (const char *, const unsigned int, const struct cfgnode *);
+typedef char *(*cfg_getstring_t) (const char *, const struct cfgnode *);
+typedef struct cfgnode *(*cfg_getnode_t) (const char *, const struct cfgnode *);
+typedef struct stree *(*cfg_filter_t) (const char *, const uint32_t);
+typedef char *(*cfg_getpath_t) (const char *);
+
+cfg_addnode_t cfg_addnode_fp;
+cfg_findnode_t cfg_findnode_fp;
+cfg_getstring_t cfg_getstring_fp;
+cfg_getnode_t cfg_getnode_fp;
+cfg_filter_t cfg_filter_fp;
+cfg_getpath_t cfg_getpath_fp;
+
+#define config_configure() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL
+#define config_cleanup() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL
+
+
+#define cfg_addnode(node) ((cfg_addnode_fp || (cfg_addnode_fp = function_find_one("einit-configuration-node-add", 1, NULL))) ? cfg_addnode_fp(node) : -1)
+
+#define cfg_findnode(name, mode, node) ((cfg_findnode_fp || (cfg_findnode_fp = function_find_one("einit-configuration-node-get-find", 1, NULL))) ? cfg_findnode_fp(name, mode, node) : NULL)
+
+#define cfg_getstring(id, base) ((cfg_getstring_fp || (cfg_getstring_fp = function_find_one("einit-configuration-node-get-string", 1, NULL))) ? cfg_getstring_fp(id, base) : NULL)
+
+#define cfg_getnode(id, base) ((cfg_getnode_fp || (cfg_getnode_fp = function_find_one("einit-configuration-node-get", 1, NULL))) ? cfg_getnode_fp(id, base) : NULL)
+
+#define cfg_getpath(id) ((cfg_getpath_fp || (cfg_getpath_fp = function_find_one("einit-configuration-node-get-path", 1, NULL))) ? cfg_getpath_fp(id) : NULL)
+
+#define cfg_filter(filter, i) ((cfg_filter_fp || (cfg_filter_fp = function_find_one("einit-configuration-node-get-filter", 1, NULL))) ? cfg_filter_fp(filter, i) : NULL)
+
+#else
+
+int __cfg_addnode (struct cfgnode *);
+struct cfgnode *__cfg_findnode (const char *, const unsigned int, const struct cfgnode *);
+char *__cfg_getstring (const char *, const struct cfgnode *);
+struct cfgnode *__cfg_getnode (const char *, const struct cfgnode *);
+struct stree *__cfg_filter (const char *, const uint32_t);
+char *__cfg_getpath (const char *);
+
+#define config_configure() ;
+#define config_cleanup() ;
+
+#define cfg_addnode(node) __cfg_addnode (node)
+#define cfg_findnodenode(name, mode, node) __cfg_addnode (name, mode, node)
+#define cfg_getstring(id, base) __cfg_getstring(id, base)
+#define cfg_getnode(id, base) __cfg_getnode(id, base)
+#define cfg_getpath(id) __cfg_getpath(id)
+#define cfg_filter(filter, i) __cfg_filter(filter, i)
+
+#endif
 
 #endif /* _CONFIG_H */
 

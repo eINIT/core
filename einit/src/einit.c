@@ -66,6 +66,9 @@ int cleanup ();
 pid_t einit_sub = 0;
 char isinit = 1, initoverride = 0;
 
+char **einit_global_environment = NULL;
+struct stree *hconfiguration = NULL;
+
 struct cfgnode *cmode = NULL, *amode = NULL;
 uint32_t gmode = EINIT_GMODE_INIT;
 unsigned char *gdebug = 0;
@@ -117,7 +120,7 @@ int print_usage_info () {
    a problem, since it's THE program that doesn't terminate. */
 int cleanup () {
  mod_freemodules ();
- cfg_free ();
+ config_cleanup();
 
 // bitch (BTCH_DL + BTCH_ERRNO);
 
@@ -136,20 +139,7 @@ struct lmodule *mlist;
 
 void core_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
-// update global environment here
-  char **env = einit_global_environment;
-  einit_global_environment = NULL;
-  struct cfgnode *node = NULL;
-  free (env);
-
-  env = NULL;
-  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
-   if (node->idattr && node->svalue) {
-    env = straddtoenviron (env, node->idattr, node->svalue);
-   }
-  }
-  einit_global_environment = env;
-
+  struct cfgnode *node;
   ev->chain_type = EVE_UPDATE_MODULES;
 
   if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
@@ -187,6 +177,11 @@ void core_einit_event_handler (struct einit_event *ev) {
    }
    lm = lm->next;
   }
+
+/* give the module-logic code and others a chance at processing the current list */
+  struct einit_event update_event = evstaticinit(EVE_MODULE_LIST_UPDATE);
+  event_emit (&update_event, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy(update_event);
  }
 }
 
@@ -202,6 +197,7 @@ int main(int argc, char **argv) {
  int pthread_errno;
 
  uname (&osinfo);
+ config_configure();
 
 // initialise subsystems
  ipc_configure(NULL);

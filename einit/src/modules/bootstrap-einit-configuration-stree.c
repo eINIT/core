@@ -1,9 +1,10 @@
 /*
- *  config.c
+ *  bootstrap-einit-configuration-stree.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
  *  Split from config-xml-expat.c on 22/10/2006
+ *  Renamed/moved from config.c on 20/03/2007
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -52,8 +53,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
-struct stree *hconfiguration = NULL;
-char **einit_global_environment = NULL;
+int _bootstrap_einit_configuration_stree_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+const struct smodule _bootstrap_einit_configuration_stree_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = 0,
+ .options   = 0,
+ .name      = "Core Configuration Storage and Retrieval (stree-based)",
+ .rid       = "bootstrap-einit-configuration-stree",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = _bootstrap_einit_configuration_stree_configure
+};
+
+module_register(_bootstrap_einit_configuration_stree_self);
+
+#endif
 
 int cfg_free () {
  struct stree *cur = hconfiguration;
@@ -72,7 +94,7 @@ int cfg_free () {
  return 1;
 }
 
-int cfg_addnode (struct cfgnode *node) {
+int __cfg_addnode (struct cfgnode *node) {
  if (!node || !node->id) return -1;
  struct stree *cur = hconfiguration;
  char doop = 1;
@@ -194,7 +216,7 @@ int cfg_addnode (struct cfgnode *node) {
  return 0;
 }
 
-struct cfgnode *cfg_findnode (const char *id, const unsigned int type, const struct cfgnode *base) {
+struct cfgnode *__cfg_findnode (const char *id, const unsigned int type, const struct cfgnode *base) {
  struct stree *cur = hconfiguration;
  if (!id) return NULL;
 
@@ -231,7 +253,7 @@ struct cfgnode *cfg_findnode (const char *id, const unsigned int type, const str
 }
 
 // get string (by id)
-char *cfg_getstring (const char *id, const struct cfgnode *mode) {
+char *__cfg_getstring (const char *id, const struct cfgnode *mode) {
  struct cfgnode *node = NULL;
  char *ret = NULL, **sub;
  uint32_t i;
@@ -273,7 +295,7 @@ char *cfg_getstring (const char *id, const struct cfgnode *mode) {
 }
 
 // get node (by id)
-struct cfgnode *cfg_getnode (const char *id, const struct cfgnode *mode) {
+struct cfgnode *__cfg_getnode (const char *id, const struct cfgnode *mode) {
  struct cfgnode *node = NULL;
  struct cfgnode *ret = NULL;
 
@@ -305,7 +327,7 @@ struct cfgnode *cfg_getnode (const char *id, const struct cfgnode *mode) {
 }
 
 // return a new stree with the filter applied
-struct stree *cfg_filter (const char *filter, const uint32_t node_options) {
+struct stree *__cfg_filter (const char *filter, const uint32_t node_options) {
  struct stree *retval = NULL;
 
 #ifdef POSIXREGEX
@@ -328,7 +350,7 @@ struct stree *cfg_filter (const char *filter, const uint32_t node_options) {
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
-char *cfg_getpath (const char *id) {
+char *__cfg_getpath (const char *id) {
  int mplen;
  char *svpath = cfg_getstring (id, NULL);
  if (!svpath) return NULL;
@@ -346,4 +368,54 @@ char *cfg_getpath (const char *id) {
   return tmpsvpath;
  }
  return svpath;
+}
+
+void _bootstrap_einit_configuration_stree_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+// update global environment here
+  char **env = einit_global_environment;
+  einit_global_environment = NULL;
+  struct cfgnode *node = NULL;
+  free (env);
+
+  env = NULL;
+  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
+   if (node->idattr && node->svalue) {
+    env = straddtoenviron (env, node->idattr, node->svalue);
+   }
+  }
+  einit_global_environment = env;
+ }
+}
+
+int _bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
+ cfg_free();
+
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _bootstrap_einit_configuration_stree_einit_event_handler);
+
+ function_unregister ("einit-configuration-node-add", 1, __cfg_addnode);
+ function_unregister ("einit-configuration-node-get", 1, __cfg_getnode);
+ function_unregister ("einit-configuration-node-get-string", 1, __cfg_getstring);
+ function_unregister ("einit-configuration-node-get-find", 1, __cfg_findnode);
+ function_unregister ("einit-configuration-node-get-filter", 1, __cfg_filter);
+ function_unregister ("einit-configuration-node-get-path", 1, __cfg_getpath);
+
+ return 0;
+}
+
+int _bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
+ module_init (tm);
+
+ thismodule->cleanup = _bootstrap_einit_configuration_stree_cleanup;
+
+ event_listen (EVENT_SUBSYSTEM_EINIT, _bootstrap_einit_configuration_stree_einit_event_handler);
+
+ function_register ("einit-configuration-node-add", 1, __cfg_addnode);
+ function_register ("einit-configuration-node-get", 1, __cfg_getnode);
+ function_register ("einit-configuration-node-get-string", 1, __cfg_getstring);
+ function_register ("einit-configuration-node-get-find", 1, __cfg_findnode);
+ function_register ("einit-configuration-node-get-filter", 1, __cfg_filter);
+ function_register ("einit-configuration-node-get-path", 1, __cfg_getpath);
+
+ return 0;
 }
