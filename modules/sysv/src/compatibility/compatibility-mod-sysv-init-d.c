@@ -48,7 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
-#include <einit/scheduler.h>
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
