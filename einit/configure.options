@@ -14,7 +14,7 @@ export ASMFUNCTIONS="strmatch strlen"
 #export ASMFUNCTIONS=""
 
 export COREOBJECTS="einit module bitch utility event config tree-linear set-lowmem ${ASMFUNCTIONS}"
-export UTILOBJECTS="einit-control bitch utility tree-linear set-lowmem ${ASMFUNCTIONS}"
+export UTILOBJECTS="einit-control bitch utility ${ASMFUNCTIONS}"
 
 export BUILDCOMPONENTS="core util modules headers"
 

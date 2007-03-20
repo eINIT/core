@@ -56,6 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
+#if ! defined (_EINIT_UTIL)
+
 char **straddtoenviron (char **environment, const char *key, const char *value) {
  char **ret = NULL;
  char *newitem;
@@ -82,6 +84,8 @@ char **straddtoenviron (char **environment, const char *key, const char *value) 
 
  return ret;
 }
+
+#endif
 
 char *readfile (const char *filename) {
  int fd = 0, rn = 0;
