@@ -259,6 +259,56 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
    emutex_unlock(&logmutex);
   }
+
+  if ((ev->status & STATUS_OK) || (ev->task & MOD_FEEDBACK_SHOW)){
+   char logentry[BUFFERSIZE];
+   char *action = "uknown";
+
+   if ((ev->task & MOD_FEEDBACK_SHOW)) {
+    if (ev->task & MOD_ENABLE) {
+     action = "enabling";
+    } else if (ev->task & MOD_DISABLE) {
+     action = "disabling";
+    } else if (ev->task & MOD_RESET) {
+     action = "resetting";
+    } else if (ev->task & MOD_RELOAD) {
+     action = "reloading";
+    } else if (ev->task & MOD_ZAP) {
+     action = "zapping";
+    }
+   } else {
+    if (ev->task & MOD_ENABLE) {
+     action = "enabled";
+    } else if (ev->task & MOD_DISABLE) {
+     action = "disabled";
+    } else if (ev->task & MOD_RESET) {
+     action = "reset";
+    } else if (ev->task & MOD_RELOAD) {
+     action = "reloaded";
+    } else if (ev->task & MOD_ZAP) {
+     action = "zapped";
+    }
+   }
+
+   if (ev->flag) {
+    esprintf (logentry, BUFFERSIZE, "module \"%s\": %s (with %i warnings)",
+             (ev->para && ((struct lmodule *)(ev->para))->module && ((struct lmodule *)(ev->para))->module->rid ? ((struct lmodule *)(ev->para))->module->rid : "unknown"), action, ev->flag);
+   } else {
+    esprintf (logentry, BUFFERSIZE, "module \"%s\": %s",
+              (ev->para && ((struct lmodule *)(ev->para))->module && ((struct lmodule *)(ev->para))->module->rid ? ((struct lmodule *)(ev->para))->module->rid : "unknown"), action);
+   }
+
+   struct log_entry ne = {
+    .seqid = ev->seqid,
+    .timestamp = ev->timestamp,
+    .message = estrdup (logentry),
+    .severity = 0
+   };
+
+   emutex_lock(&logmutex);
+   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+   emutex_unlock(&logmutex);
+  }
  } else if ((ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
   struct log_entry ne = {
    .seqid = ev->seqid,
