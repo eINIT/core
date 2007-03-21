@@ -331,8 +331,7 @@ fi
 echo ${ARCH}
 
 echo -n "see if we have some sources in assembly... "
-rm -f src/assembly
-ln -sf "`pwd`/asm/${ARCH}-${OS}-${COMPILER}" src/assembly
+ASMDIR="asm/${ARCH}-${OS}-${COMPILER}"
 echo "done.";
 
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
@@ -392,7 +391,7 @@ function collect_objects() {
 	objects=""
 	for i in $@; do
 		for suffix in ${SUFFIXES}; do
-			res=$(find -L src -name "${i}.${suffix}");
+			res=$(find src ${ASMDIR} -name "${i}.${suffix}");
 			if test -n "${res}"; then
 				subobjects="";
 				for y in ${res}; do
@@ -414,7 +413,7 @@ function collect_modules() {
 	objects=""
 	for i in $@; do
 		for suffix in ${SUFFIXES}; do
-			res=$(find -L src -name "${i}.${suffix}");
+			res=$(find src ${ASMDIR} -name "${i}.${suffix}");
 			if test -n "${res}"; then
 				subobjects="";
 				for y in ${res}; do
@@ -507,7 +506,7 @@ function collect_and_install_headers() {
 	fi;
 
 	for i in ${ASMFUNCTIONS}; do
-		if test -e "src/assembly/${i}.s"; then
+		if test -e "${ASMDIR}/${i}.s"; then
 			echo "#define _have_asm_${i}" >> build/headers/einit/configuration.h;
 		fi
 	done
