@@ -83,43 +83,153 @@ module_register(_einit_log_self);
 #endif
 
 struct log_entry {
- time_t ltime;
+ uint32_t seqid;
+ time_t timestamp;
+
  char *message;
  unsigned char severity;
 };
 
-struct log_entry *logbuffer = NULL;
-
+struct log_entry **logbuffer = NULL;
 pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
+char dolog = 1;
 
 void _einit_log_feedback_event_handler(struct einit_event *);
 void _einit_log_ipc_event_handler(struct einit_event *);
+void _einit_log_event_event_handler(struct einit_event *);
+signed int logsort (struct log_entry *, struct log_entry *);
+
+void flush_log_buffer () {
+ struct log_entry **slog = NULL;
+ uint32_t i = 0;
+ struct cfgnode *lognode = cfg_getnode("configuration-system-log", NULL);
+ FILE *logfile;
+
+ dolog = !lognode || lognode->flag;
+
+ if (!logbuffer) return;
+
+ if (dolog) {
+
+  if (!lognode || !lognode->svalue || !(logfile = fopen (lognode->svalue, "a")))
+   logfile = fopen ("/tmp/einit.log", "a");
+
+  if (logfile) {
+   emutex_lock(&logmutex);
+
+   slog = (struct log_entry **)setdup ((const void **)logbuffer, SET_NOALLOC);
+   setsort ((void **)logbuffer, 0, (signed int(*)(const void *, const void*))logsort);
+
+   for (; slog[i]; i++) {
+    char timebuffer[50];
+    char txbuffer[BUFFERSIZE];
+    struct tm *tb = localtime (&(slog[i]->timestamp));
+
+    strftime (timebuffer, 50, "%c", tb);
+
+    if (slog[i]->message) {
+     strtrim (slog[i]->message);
+     esprintf (txbuffer, BUFFERSIZE, "%s; +%i; %s\n", timebuffer, slog[i]->severity, slog[i]->message);
+    }
+
+    eputs (txbuffer, logfile);
+   }
+
+   for (i = 0; logbuffer[i]; i++) {
+    if (logbuffer[i]->message) free (logbuffer[i]->message);
+   }
+
+   free (logbuffer);
+   logbuffer = NULL;
+   emutex_unlock(&logmutex);
+
+   fclose (logfile);
+  } else {
+   bitch (BITCH_STDIO, errno, "could not open logfile for saving.");
+  }
+ } else {
+  emutex_lock(&logmutex);
+  for (; logbuffer[i]; i++) {
+   if (logbuffer[i]->message) free (logbuffer[i]->message);
+  }
+
+  free (logbuffer);
+  logbuffer = NULL;
+
+  dolog = 0;
+  emutex_unlock(&logmutex);
+ }
+}
+
+signed int logsort (struct log_entry *st1, struct log_entry *st2) {
+ if (!st1) return 1;
+ if (!st2) return -1;
+
+ return (st2->seqid - st1->seqid);
+}
 
 void _einit_log_ipc_event_handler (struct einit_event *ev) {
 }
 
-int _einit_log_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_log_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_log_feedback_event_handler);
+void _einit_log_einit_event_handler(struct einit_event *ev) {
+ if (ev->type == EVE_SWITCHING_MODE) {
+  char logentry[BUFFERSIZE];
 
- return 0;
+  esprintf (logentry, BUFFERSIZE, "Now switching to mode \"%s\".", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
+
+  struct log_entry ne = {
+   .seqid = ev->seqid,
+   .timestamp = ev->timestamp,
+   .message = estrdup (logentry),
+   .severity = ev->flag
+  };
+
+  emutex_lock(&logmutex);
+  logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+  emutex_unlock(&logmutex);
+ } else if (ev->type == EVE_MODE_SWITCHED) {
+  char logentry[BUFFERSIZE];
+
+  esprintf (logentry, BUFFERSIZE, "Mode \"%s\" is now in effect.", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
+
+  struct log_entry ne = {
+   .seqid = ev->seqid,
+   .timestamp = ev->timestamp,
+   .message = estrdup (logentry),
+   .severity = ev->flag
+  };
+
+  emutex_lock(&logmutex);
+  logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+  emutex_unlock(&logmutex);
+
+  flush_log_buffer();
+ }
 }
 
 void _einit_log_feedback_event_handler(struct einit_event *ev) {
- if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
- } else if ((ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
+ if (dolog && (ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
   struct log_entry ne = {
-   .ltime = time(NULL),
+   .seqid = ev->seqid,
+   .timestamp = ev->timestamp,
    .message = estrdup (ev->string),
    .severity = ev->flag
   };
 
   emutex_lock(&logmutex);
-  logbuffer = (struct log_entry *)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+  logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
   emutex_unlock(&logmutex);
  }
 
  return;
+}
+
+int _einit_log_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_log_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_log_feedback_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_log_einit_event_handler);
+
+ return 0;
 }
 
 int _einit_log_configure (struct lmodule *r) {
@@ -129,6 +239,7 @@ int _einit_log_configure (struct lmodule *r) {
 
  event_listen (EVENT_SUBSYSTEM_IPC, _einit_log_ipc_event_handler);
  event_listen (EVENT_SUBSYSTEM_FEEDBACK, _einit_log_feedback_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_log_einit_event_handler);
 
  return 0;
 }

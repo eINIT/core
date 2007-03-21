@@ -85,6 +85,8 @@
    <sysctl>
     <file s="/etc/sysctl.conf" />
    </sysctl>
+
+   <log b="true" s="/var/log/einit.log" />
   </system>
 
   <environment>
