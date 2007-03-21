@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <string.h>
 #include <einit/bitch.h>
+#include <einit/tree.h>
 #include <errno.h>
 
 #define EXPECTED_EIV 1
@@ -81,6 +82,16 @@ module_register(_einit_log_self);
 
 #endif
 
+struct log_entry {
+ time_t ltime;
+ char *message;
+ unsigned char severity;
+};
+
+struct log_entry *logbuffer = NULL;
+
+pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
+
 void _einit_log_feedback_event_handler(struct einit_event *);
 void _einit_log_ipc_event_handler(struct einit_event *);
 
@@ -96,7 +107,16 @@ int _einit_log_cleanup (struct lmodule *this) {
 
 void _einit_log_feedback_event_handler(struct einit_event *ev) {
  if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
- } else if (ev->type == EVE_FEEDBACK_NOTICE) {
+ } else if ((ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
+  struct log_entry ne = {
+   .ltime = time(NULL),
+   .message = estrdup (ev->string),
+   .severity = ev->flag
+  };
+
+  emutex_lock(&logmutex);
+  logbuffer = (struct log_entry *)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+  emutex_unlock(&logmutex);
  }
 
  return;
