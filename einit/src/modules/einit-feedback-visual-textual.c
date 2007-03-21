@@ -774,13 +774,13 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
 
   if (strlen(ev->string) < 45) {
    eprintf (stdout, "\e[%i;10H%s: %s\e[0K\n", line, name, ev->string);
-  } else {
+  }/* else {
    char tmp[BUFFERSIZE];
    eprintf (stdout, "\e[%i;10H%s: <...>\e[0K\n", line, name);
 
    esprintf (tmp, BUFFERSIZE, "%s: %s", name, ev->string);
    notice (3, tmp);
-  }
+  }*/
  }
 
  if ((ev->status & STATUS_OK) && ev->flag) {

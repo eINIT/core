@@ -129,8 +129,9 @@ void flush_log_buffer () {
 
     if (slog[i]->message) {
      strtrim (slog[i]->message);
-     esprintf (txbuffer, BUFFERSIZE, "%s; +%i; %s\n", timebuffer, slog[i]->severity, slog[i]->message);
-    }
+     esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) %s\n", timebuffer, slog[i]->seqid, slog[i]->severity, slog[i]->message);
+    } else
+     esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) <no message>\n", timebuffer, slog[i]->seqid, slog[i]->severity);
 
     eputs (txbuffer, logfile);
    }
@@ -169,9 +170,16 @@ signed int logsort (struct log_entry *st1, struct log_entry *st2) {
 }
 
 void _einit_log_ipc_event_handler (struct einit_event *ev) {
+ if (ev->set && ev->set[0] && ev->set[1] && strmatch (ev->set[0], "flush") && strmatch (ev->set[1], "log")) {
+  flush_log_buffer();
+
+  ev->flag = 1;
+ }
 }
 
 void _einit_log_einit_event_handler(struct einit_event *ev) {
+ if (!dolog) return;
+
  if (ev->type == EVE_SWITCHING_MODE) {
   char logentry[BUFFERSIZE];
 
@@ -181,7 +189,7 @@ void _einit_log_einit_event_handler(struct einit_event *ev) {
    .seqid = ev->seqid,
    .timestamp = ev->timestamp,
    .message = estrdup (logentry),
-   .severity = ev->flag
+   .severity = 0
   };
 
   emutex_lock(&logmutex);
@@ -196,7 +204,7 @@ void _einit_log_einit_event_handler(struct einit_event *ev) {
    .seqid = ev->seqid,
    .timestamp = ev->timestamp,
    .message = estrdup (logentry),
-   .severity = ev->flag
+   .severity = 0
   };
 
   emutex_lock(&logmutex);
@@ -208,7 +216,50 @@ void _einit_log_einit_event_handler(struct einit_event *ev) {
 }
 
 void _einit_log_feedback_event_handler(struct einit_event *ev) {
- if (dolog && (ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
+ if (!dolog) return;
+
+ if ((ev->type == EVENT_FEEDBACK_UNRESOLVED_SERVICES) || (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES)) {
+  char *tmp = set2str (' ', (const char **)ev->set);
+  if (tmp) {
+   char logentry[BUFFERSIZE];
+
+   if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES)
+    esprintf (logentry, BUFFERSIZE, ev->set[1] ? "broken services: %s\n" : "broken service: %s\n", tmp);
+   else
+    esprintf (logentry, BUFFERSIZE, ev->set[1] ? "unresolved services: %s\n" : "unresolved service: %s\n", tmp);
+
+   struct log_entry ne = {
+    .seqid = ev->seqid,
+    .timestamp = ev->timestamp,
+    .message = estrdup (logentry),
+    .severity = 0
+   };
+
+   emutex_lock(&logmutex);
+   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+   emutex_unlock(&logmutex);
+
+   free (tmp);
+  }
+ } else if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
+  if (ev->string) {
+   char logentry[BUFFERSIZE];
+
+   esprintf (logentry, BUFFERSIZE, "module \"%s\": %s",
+             (ev->para && ((struct lmodule *)(ev->para))->module && ((struct lmodule *)(ev->para))->module->rid ? ((struct lmodule *)(ev->para))->module->rid : "unknown"), ev->string);
+
+   struct log_entry ne = {
+    .seqid = ev->seqid,
+    .timestamp = ev->timestamp,
+    .message = estrdup (logentry),
+    .severity = 0
+   };
+
+   emutex_lock(&logmutex);
+   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+   emutex_unlock(&logmutex);
+  }
+ } else if ((ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
   struct log_entry ne = {
    .seqid = ev->seqid,
    .timestamp = ev->timestamp,
