@@ -335,11 +335,15 @@ void mod_update_group (struct lmodule *lmx) {
       group_failed = 1;
      }
     } else {
+     notice (2, "marking group %s broken (bad group type)", cur->key);
+
      mod_mark (cur->key, MARK_BROKEN);
     }
    }
 
    if (group_failed) {
+    notice (2, "marking group %s broken (group requirements failed)", cur->key);
+
     mod_mark (cur->key, MARK_BROKEN);
    }
 
@@ -662,6 +666,8 @@ void mod_get_and_apply_recurse (int task) {
         }
 
         if (!gd->members[r]) {
+         notice (2, "marking group %s broken (group requirement %s failed)", services[x], gd->members[r]);
+
          mod_mark (services[x], MARK_BROKEN);
         }
        } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST)) {
@@ -675,6 +681,8 @@ void mod_get_and_apply_recurse (int task) {
           }
          } else if (gd->options & (MOD_PLAN_GROUP_SEQ_ALL)) {
 /* all required: any broken modules mean we're screwed */
+          notice (2, "marking group %s broken (group requirement %s failed)", services[x], gd->members[r]);
+
           mod_mark (services[x], MARK_BROKEN);
           dm |= 2;
           break;
@@ -704,6 +712,7 @@ void mod_get_and_apply_recurse (int task) {
         current.variable = strsetdel (current.variable, services[x]);\
        }\
        if (broken == r) {\
+        notice (2, "marking group %s broken (all requirements failed)", services[x]);\
         mod_mark (services[x], MARK_BROKEN);\
        }\
       }
@@ -714,6 +723,8 @@ void mod_get_and_apply_recurse (int task) {
 
       emutex_unlock (&ml_tb_current_mutex);
      } else {
+      notice (2, "marking %s as unresolved", services[x]);
+
       mod_mark (services[x], MARK_UNRESOLVED);
      }
     } else if (lm) {
@@ -768,6 +779,8 @@ void mod_get_and_apply_recurse (int task) {
        now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
      }
     } else {
+     notice (2, "marking %s broken (service found but no modules)", services[x]);
+
      mod_mark (services[x], MARK_BROKEN);
     }
    }
