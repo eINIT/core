@@ -324,7 +324,7 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
   emutex_unlock(&logmutex);
 
   if (ev->flag < 3) {
-   eprintf (stderr, " !! %s\n", ev->string);
+   eprintf (stderr, " ** %s\n", ev->string);
   } else if (ev->flag > 7) {
    eprintf (stderr, " -- %s\n", ev->string);
   } else {
