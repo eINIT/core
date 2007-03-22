@@ -27,6 +27,8 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------
 
+alias source=.
+
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
 	ISSVN=1
@@ -139,7 +141,7 @@ for i in ${EXTERNALMODULES}; do
 done
 EXTERNALMODULES="${newext}";
 
-function deldupes() {
+deldupes() {
 	local ret;
 	local have;
 
@@ -332,6 +334,7 @@ echo ${ARCH}
 
 echo -n "see if we have some sources in assembly... "
 ASMDIR="asm/${ARCH}-${OS}-${COMPILER}"
+if ! test -d ${ASMDIR}; then ASMDIR=""; fi
 echo "done.";
 
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
@@ -387,7 +390,7 @@ LPA = $LPA" > config.mk
 
 #define moduleprefix _bootstrap_einit_configuration_xml_expat_
 
-function collect_objects() {
+collect_objects () {
 	objects=""
 	for i in $@; do
 		for suffix in ${SUFFIXES}; do
@@ -409,7 +412,7 @@ function collect_objects() {
 	done
 }
 
-function collect_modules() {
+collect_modules() {
 	objects=""
 	for i in $@; do
 		for suffix in ${SUFFIXES}; do
@@ -431,7 +434,7 @@ function collect_modules() {
 	done
 }
 
-function install_modules() {
+install_modules() {
 	echo "install-auto: $@
 	\${INSTALL} \${SOIPARAM} -d \${DESTDIR}/\${MODDIR}
 	\${INSTALL} \${SOIPARAM} -d \${DESTDIR}/\${BOOTSTRAPDIR};";
@@ -444,7 +447,7 @@ function install_modules() {
 	done
 }
 
-function collect_and_install_headers() {
+collect_and_install_headers() {
 	objects=""
 	install=""
 
