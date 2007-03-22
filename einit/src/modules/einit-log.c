@@ -92,7 +92,7 @@ struct log_entry {
 
 struct log_entry **logbuffer = NULL;
 pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
-char dolog = 1;
+char dolog = 1, log_notices_to_stderr = 1;
 
 void _einit_log_feedback_event_handler(struct einit_event *);
 void _einit_log_ipc_event_handler(struct einit_event *);
@@ -310,6 +310,8 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
    emutex_unlock(&logmutex);
   }
  } else if ((ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
+  strtrim (ev->string);
+
   struct log_entry ne = {
    .seqid = ev->seqid,
    .timestamp = ev->timestamp,
@@ -320,6 +322,19 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
   emutex_lock(&logmutex);
   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
   emutex_unlock(&logmutex);
+
+  if (ev->flag < 3) {
+   eprintf (stderr, " !! %s\n", ev->string);
+  } else if (ev->flag > 7) {
+   eprintf (stderr, " -- %s\n", ev->string);
+  } else {
+   eprintf (stderr, " >> %s\n", ev->string);
+  }
+
+  fflush (stderr);
+
+  if (log_notices_to_stderr) {
+  }
  }
 
  return;

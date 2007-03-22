@@ -1,5 +1,5 @@
 /*
- *  config-xml-expat.c
+ *  bootstrap-config-xml-expat.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
@@ -68,7 +68,7 @@ const struct smodule _bootstrap_einit_configuration_xml_expat_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "Configuration Parser (XML, Expat)",
- .rid       = "einit-configuration-xml-expat",
+ .rid       = "bootstrap-einit-configuration-xml-expat",
  .si        = {
   .provides = NULL,
   .requires = NULL,
@@ -295,14 +295,20 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  };
 
  if ((data = readfile (configfile))) {
-  eprintf (stderr, " >> parsing \"%s\".\n", configfile);
+  notice (4, "parsing \"%s\".\n", configfile);
 
+#ifdef DEBUG
   time_t currenttime = time(NULL);
   if (st.st_mtime > currenttime) {// sanity check mtime
-   eprintf (stderr, " >> warning: file \"%s\" has mtime in the future\n", configfile);
-   xml_configuration_files_highest_mtime = st.st_mtime;
+   notice (5, "file \"%s\" has mtime in the future\n", configfile);
+   if (st.st_mtime > xml_configuration_files_highest_mtime)
+    xml_configuration_files_highest_mtime = st.st_mtime;
   } else if (st.st_mtime > xml_configuration_files_highest_mtime) // update combined mtime
    xml_configuration_files_highest_mtime = st.st_mtime;
+#else
+  if (st.st_mtime > xml_configuration_files_highest_mtime)
+   xml_configuration_files_highest_mtime = st.st_mtime;
+#endif
 
   blen = strlen(data)+1;
   par = XML_ParserCreate (NULL);
@@ -313,11 +319,11 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 
-    eprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
+    notice (2, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
 
     if (tx) {
      if (setcount ((const void **)tx) >= line) {
-      eprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
+      notice (2, " * offending line:\n%s\n", tx[line-1]);
      }
      free (tx);
     }
@@ -420,7 +426,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
        if (mkdir (includedir, 0777)) {
         bitch(BITCH_STDIO, errno, (char *)includedir);
        } else {
-        eprintf (stderr, " >> created missing directory \"%s\"\n", includedir);
+        notice (5, "created missing directory \"%s\"\n", includedir);
        }
       }
      }
@@ -438,7 +444,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
   return hconfiguration != NULL;
  } else if (errno) {
-  eprintf (stderr, " >> could not read file \"%s\": %s\n", configfile, strerror (errno));
+  notice (3, "could not read file \"%s\": %s\n", configfile, strerror (errno));
 
   return errno;
  }

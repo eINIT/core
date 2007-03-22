@@ -130,7 +130,7 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   if (modulepath[0] == '/') modulepath++;
  }
 
- eprintf (stderr, " >> updating modules in \"%s\".\n", modulepath);
+ notice (4, "updating modules in \"%s\".\n", modulepath);
 
 #ifdef POSIXREGEX
  if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {
@@ -196,12 +196,12 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
       new->source = estrdup(tmp);
      }
     } else {
-     eprintf (stderr, " >> module %s: not loading: different build number: %i.\n", tmp, (*modinfo)->eibuild);
+     notice (1, "module %s: not loading: different build number: %i.\n", tmp, (*modinfo)->eibuild);
 
      dlclose (sohandle);
     }
    } else {
-    eprintf (stderr, " >> module %s: not loading: missing header.\n", tmp);
+    notice (1, "module %s: not loading: missing header.\n", tmp);
 
     dlclose (sohandle);
    }

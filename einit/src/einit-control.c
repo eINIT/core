@@ -84,14 +84,12 @@ int ipc (char *cmd) {
  esprintf (c, (len+2), "%s\n", cmd);
 
  if (!(esocket = fdopen (sock, "w+"))) {
-  eputs (" >> opening socket failed.", stderr);
   bitch(BITCH_STDIO, 0, "fdopen() failed.");
   eclose (sock);
   return 0;
  }
 
  if (fputs(c, esocket) == EOF) {
-  eputs (" >> sending command failed.", stderr);
   bitch(BITCH_STDIO, 0, "fputs() failed.");
  }
 

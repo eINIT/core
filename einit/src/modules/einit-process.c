@@ -174,7 +174,7 @@ int __ekill (struct pc_conditional **pcc, int sign) {
 
  for (; pl[i]; i++) if ((pl[i] != 1) && (pl[i] != getpid())) {
   if (gmode != EINIT_GMODE_SANDBOX) {
-   eprintf (stderr, " >> sending signal %i to process %i\n", sign, pl[i]);
+   debugx(" >> sending signal %i to process %i\n", sign, pl[i]);
    kill ((pid_t)pl[i], sign);
   }
  }

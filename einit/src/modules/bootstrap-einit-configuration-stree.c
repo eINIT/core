@@ -237,10 +237,10 @@ struct cfgnode *__cfg_findnode (const char *id, const unsigned int type, const s
  while (cur) {
 #ifdef DEBUG
   if ((((struct cfgnode *)cur->value)->signature) != EI_SIGNATURE)
-   eputs (" >> WARNING: corrupted in-core configuration: bad signature\n", stderr);
+   notice (1, "corrupted in-core configuration: bad signature\n");
 
   if (strcmp ((((struct cfgnode *)cur->value)->id), cur->key))
-   eputs (" >> WARNING: configuration node: outside key differs from inside key\n", stderr);
+   notice ("configuration node: outside key differs from inside key\n");
 #endif
 
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {

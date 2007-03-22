@@ -781,7 +781,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
  for (; options[fi]; fi++) {
 #ifdef LINUX
   if (strmatch (options[fi], "user") || strmatch (options[fi], "users")) {
-   eprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
+   notice (6, "node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
 #ifdef MS_NOEXEC
    (*mntflags) |= MS_NOEXEC;
@@ -793,7 +793,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
    (*mntflags) |= MS_NOSUID;
 #endif
   } else if (strmatch (options[fi], "owner")) {
-   eprintf (stderr, " >> node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
+   notice (6, "node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
 #ifdef MS_NODEV
    (*mntflags) |= MS_NODEV;
@@ -802,9 +802,9 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
    (*mntflags) |= MS_NOSUID;
 #endif
   } else if (strmatch (options[fi], "nouser") || strmatch (options[fi], "group") || strmatch (options[fi], "auto") || strmatch (options[fi], "defaults")) {
-   eprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
+   notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
   } else if (strmatch (options[fi], "_netdev")) {
-   eprintf (stderr, " >> node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
+   notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
   } else
 #endif
 

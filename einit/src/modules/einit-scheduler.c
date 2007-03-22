@@ -526,13 +526,13 @@ void *sched_run_sigchild (void *p) {
   if (!check) {
    if (gstatus != EINIT_EXITING) sem_wait (sigchild_semaphore);
    else {
-    eputs (" >> scheduler SIGCHLD thread now going to sleep\n", stderr);
+    debug ("scheduler SIGCHLD thread now going to sleep\n");
     while (sleep (1)) {
-     eputs (" >> still not dead...", stderr);
+     debug ("still not dead...");
     }
    }
    if (sigint_called) {
-    eputs (" >> scheduler SIGCHLD thread: making eINIT shut down\n", stderr);
+    debug ("scheduler SIGCHLD thread: making eINIT shut down\n");
 
     struct einit_event ee = evstaticinit (EVE_SWITCH_MODE);
     ee.string = "power-reset";

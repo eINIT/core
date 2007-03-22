@@ -166,14 +166,13 @@ void core_einit_event_handler (struct einit_event *ev) {
  } else if (ev->type == EVE_UPDATE_MODULES) {
   struct lmodule *lm = mlist;
 
-  eputs ("updating modules: ", stderr);
   while (lm) {
    if (lm->source && strmatch(lm->source, "core")) {
     lm = mod_update (lm);
 
 // tell module to scan for changes if it's a module-loader
     if (lm->module && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
-     eputs (".", stderr);
+     notice (1, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
 
      lm->scanmodules (mlist);
     }
@@ -181,7 +180,6 @@ void core_einit_event_handler (struct einit_event *ev) {
    }
    lm = lm->next;
   }
-  eputs ("done.", stderr);
 
 /* give the module-logic code and others a chance at processing the current list */
   struct einit_event update_event = evstaticinit(EVE_MODULE_LIST_UPDATE);
@@ -359,7 +357,7 @@ int main(int argc, char **argv) {
 
     for (; coremodules[cp]; cp++) {
      struct lmodule *lmm;
-     eprintf (stderr, "  %s\n", (*coremodules[cp])->rid);
+     eprintf (stderr, " * module \"%s\"\n", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
      lmm->source = estrdup("core");

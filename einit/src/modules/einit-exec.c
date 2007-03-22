@@ -400,7 +400,7 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
   exec_environment = __create_environment (exec_environment, variables);
 
   if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
-   eprintf (stderr, " >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
+   debugx(" >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
    execve (cmd[0], cmd, safe_environment);
   } else {
    execve (cmd[0], cmd, exec_environment);
@@ -535,8 +535,6 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
-
-  eprintf (stderr, " >> now executing %s.\n", command);
 
   execve (cmd[0], cmd, exec_environment);
   perror (cmd[0]);

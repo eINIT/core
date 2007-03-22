@@ -199,7 +199,7 @@ char *apply_variables (const char *ostring, const char **env);
 
 char *escape_xml (const char *input);
 
-#ifdef DEBUF
+#ifdef DEBUG
 /* some stdio wrappers with error reporting */
 #define efopen(filename, mode)\
  exfopen(filename, mode, __FILE__, __LINE__, __func__)
