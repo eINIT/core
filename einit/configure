@@ -49,6 +49,8 @@ GCCFLAGS="-Wall"
 
 MAKEFILETASKS="all install"
 
+LIBRARIES="-L /lib -L /usr/lib -L /usr/local/lib"
+
 pwd=$(pwd)
 
 source configure.options
@@ -317,8 +319,10 @@ if test -n "`echo ${INTERNALMODULES}|grep bootstrap-einit-configuration-xml-expa
  CORELIBS="${CORELIBS} -lexpat"
 fi;
 if test -n "`echo ${INTERNALMODULES}|grep einit-mod-so`"; then
- echo -n " -ldl"
- CORELIBS="${CORELIBS} -ldl"
+	if test -z "$(uname -a|grep BSD)"; then
+		echo -n " -ldl";
+		CORELIBS="${CORELIBS} -ldl"
+	fi
 fi;
 echo " done"
 
@@ -382,8 +386,8 @@ CFLAGS = $CFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL
-CLD = \${CC} \${LDFLAGS}
-LLD = \${CC} \${LDFLAGS} $LLD
+CLD = \${CC} \${LDFLAGS} ${LIBRARIES}
+LLD = \${CC} \${LDFLAGS} $LLD ${LIBRARIES}
 XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA" > config.mk
