@@ -519,6 +519,8 @@ void mod_apply (struct ma_task *task) {
     if ((lm[0] == current) && lm[1]) {
      ssize_t rx = 1;
 
+     notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+
      for (; lm[rx]; rx++) {
       lm[rx-1] = lm[rx];
      }
@@ -549,6 +551,8 @@ void mod_apply (struct ma_task *task) {
    }
 
 /* mark service broken if stuff went completely wrong */
+   notice (2, "ran out of options for service %s, marking as broken", des->key);
+
    mod_mark (des->key, MARK_BROKEN);
   }
 
