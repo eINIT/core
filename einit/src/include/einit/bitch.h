@@ -55,8 +55,16 @@ unsigned char mortality[BITCH_SAUCES];
  *
  * Bitch about whatever happened just now, i.e. report the last error.
 */
+#ifdef DEBUG
 #define bitch(sauce, code, reason)\
  bitch_macro (sauce, __FILE__, __LINE__, __func__ , code, reason)
+
+#else
+
+#define bitch(sauce, code, reason)\
+ bitch_macro (sauce, "", __LINE__, __func__ , code, reason)
+
+#endif
 
 int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
 
