@@ -199,7 +199,7 @@ void strtrim (char *s) {
 #if ! defined (_EINIT_UTIL)
 
 /* event-helpers */
-void notice (unsigned char severity, const char *message) {
+void notice_macro (unsigned char severity, const char *message) {
  struct einit_event *ev = evinit (EVE_FEEDBACK_NOTICE);
 
  ev->flag = severity;
@@ -453,6 +453,8 @@ char *escape_xml (const char *input) {
  return retval;
 }
 
+#ifdef DEBUG
+
 /* some stdio wrappers with error reporting */
 FILE *exfopen (const char *filename, const char *mode, const char *file, const int line, const char *function) {
  const char *lfile          = file ? file : "unknown";
@@ -509,6 +511,8 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
  bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "open() failed.");
  return -1;
 }
+
+#endif
 
 #ifndef _have_asm_strmatch
 char strmatch (const char *str1, const char *str2) {

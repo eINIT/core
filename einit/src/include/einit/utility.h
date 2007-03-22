@@ -138,7 +138,27 @@ void strtrim (char *s);
  * (The aural feedback module will, by default, vocalise all messages with a severity of <=5 and play them on
  * the system's default speakers.)
 */
-void notice (unsigned char severity, const char *message);
+void notice_macro (unsigned char severity, const char *message);
+
+#define notice(severity, ...) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); notice_macro (severity, _notice_buffer); }
+
+#ifdef DEBUG
+
+/* debug messages... don't care if those can't be written */
+#define debugx(message, ...)\
+ notice(stderr, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+
+#define debug(message)\
+ notice(stderr, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__)
+
+#else
+
+#define debugx(message, ...) (0)
+
+#define debug(message) (0)
+
+#endif
+
 
 /*!\brief Duplicate event structure \b ev
  * \param[in] ev the event structure to be modified
@@ -179,6 +199,7 @@ char *apply_variables (const char *ostring, const char **env);
 
 char *escape_xml (const char *input);
 
+#ifdef DEBUF
 /* some stdio wrappers with error reporting */
 #define efopen(filename, mode)\
  exfopen(filename, mode, __FILE__, __LINE__, __func__)
@@ -197,6 +218,21 @@ DIR *exopendir (const char *name, const char *file, const int line, const char *
 struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char *function);
 
 int exopen(const char *pathname, int mode, const char *file, const int line, const char *function);
+
+#else
+#define efopen(filename, mode)\
+ fopen(filename, mode)
+
+#define eopendir(name)\
+ opendir(name)
+
+#define ereaddir(dir)\
+ readdir(dir)
+
+#define eopen(filename, mode)\
+ open(filename, mode)
+
+#endif
 
 /* NOTE: matching "" against "" will result in undefined behaviour... so just never try to
    match a string against "" :D */

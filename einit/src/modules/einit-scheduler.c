@@ -283,12 +283,12 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    if (strmatch (argv[1], "power-down") || (reset = strmatch (argv[1], "power-reset"))) {
     if (!ev->flag) ev->flag = 1;
 
-     notice (1, ">> scheduler: sync()-ing");
+     notice (1, "scheduler: sync()-ing");
 
      sync ();
 
      if (gmode == EINIT_GMODE_SANDBOX) {
-      notice (1, ">> scheduler: cleaning up");
+      notice (1, "scheduler: cleaning up");
      }
 
      gstatus = EINIT_EXITING;

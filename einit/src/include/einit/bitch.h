@@ -62,25 +62,6 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
 
 #ifdef DEBUG
 
-/* debug messages... don't care if those can't be written */
-#define debug(message)\
- fprintf(stderr, "DEBUG: %s:%i(%s): %s\n", __FILE__, __LINE__, __func__, message), fflush (stderr)
-
-#if 0
-#define emutex_lock(mutex)\
- ((debug("pthread_mutex_lock() called."), (errno = pthread_mutex_lock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno), debug("pthread_mutex_lock() done."), errno)
-
-#define emutex_unlock(mutex)\
- ((debug("pthread_mutex_unlock() called."), (errno = pthread_mutex_unlock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno), debug("pthread_mutex_unlock() done."), errno)
-#endif
-
-#else
-
-#define debug(message)\
- 0
-
-#endif
-
 #define emutex_lock(mutex)\
  ((errno = pthread_mutex_lock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno)
 
@@ -92,9 +73,6 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
 
 #define emutex_destroy(mutex)\
  ((errno = pthread_mutex_destroy(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_destroy() failed."), errno) : errno)
-
-#define ethread_create(th, tattr, function, fattr)\
- ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
 
 #define ethread_cancel(th)\
  ((errno = pthread_cancel(th)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_cancel() failed."), errno) : errno)
@@ -111,11 +89,6 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
 #define eputs(text, file)\
  (fputs(text, file) < 0 ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "fputs() failed."), errno) : 0)
 
-#ifdef POSIXREGEX
-#define eregcomp(target, pattern)\
- ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
-#endif
-
 #define efclose(stream)\
  ((fclose(stream) == EOF) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "fclose() failed"), EOF): 0)
 
@@ -124,6 +97,55 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
 
 #define eclose(fd)\
  (close(fd) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "close() failed"), -1): 0)
+
+#else
+
+
+#define emutex_lock(mutex)\
+ pthread_mutex_lock(mutex)
+
+#define emutex_unlock(mutex)\
+ pthread_mutex_unlock(mutex)
+
+#define emutex_init(mutex, mattr)\
+ pthread_mutex_init(mutex, mattr)
+
+#define emutex_destroy(mutex)\
+ pthread_mutex_destroy(mutex)
+
+#define ethread_cancel(th)\
+ pthread_cancel(th)
+
+#define ethread_join(th, ret)\
+ pthread_join(th, ret)
+
+#define eprintf(file, format, ...)\
+ fprintf(file, format, __VA_ARGS__)
+
+#define esprintf(buffer, size, format, ...)\
+ snprintf(buffer, size, format, __VA_ARGS__)
+
+#define eputs(text, file)\
+ fputs(text, file)
+
+#define efclose(stream)\
+ fclose(stream)
+
+#define eclosedir(dir)\
+ closedir(dir)
+
+#define eclose(fd)\
+ close(fd)
+
+#endif
+
+#define ethread_create(th, tattr, function, fattr)\
+ ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
+
+#ifdef POSIXREGEX
+#define eregcomp(target, pattern)\
+ ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+#endif
 
 #endif /* _BITCH_H */
 

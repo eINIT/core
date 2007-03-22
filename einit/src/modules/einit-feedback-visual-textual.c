@@ -538,7 +538,16 @@ void _einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
  } else if (ev->type == EVE_FEEDBACK_NOTICE) {
   if (ev->string) {
    strtrim (ev->string);
-   eprintf (stderr, "[time=%i; severity=%i] %s\n", (int)time(NULL), ev->flag, ev->string);
+//   eprintf (stderr, "[time=%i; severity=%i] %s\n", (int)time(NULL), ev->flag, ev->string);
+   if (ev->flag < 3) {
+    eprintf (stderr, " !! %s\n", ev->string);
+   } else if (ev->flag > 7) {
+    eprintf (stderr, " -- %s\n", ev->string);
+   } else {
+    eprintf (stderr, " >> %s\n", ev->string);
+   }
+
+   fflush (stderr);
   }
  }
 

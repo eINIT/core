@@ -196,7 +196,7 @@ int main(int argc, char **argv, char **environ) {
 #else
 int main(int argc, char **argv) {
 #endif
- int i, stime, ret = EXIT_SUCCESS;
+ int i, ret = EXIT_SUCCESS;
  pid_t pid = getpid(), wpid = 0;
  char **ipccommands = NULL;
  int pthread_errno;
@@ -340,11 +340,10 @@ int main(int argc, char **argv) {
    gmode = EINIT_GMODE_IPCONLY;
   }
 
-  stime = time(NULL);
-  eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
+  eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
-   eputs ("pthread initialisation failed.\n", stderr);
+   bitch(BITCH_EPTHREADS, pthread_errno, "pthread_attr_init() failed.");
    return -1;
   } else {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
@@ -356,16 +355,15 @@ int main(int argc, char **argv) {
    if (coremodules) {
     uint32_t cp = 0;
 
-    eputs (" >> initialising in-core modules:", stderr);
+    eputs (" >> initialising in-core modules:\n", stderr);
 
     for (; coremodules[cp]; cp++) {
      struct lmodule *lmm;
-     eprintf (stderr, " (%s)", (*coremodules[cp])->rid);
+     eprintf (stderr, "  %s\n", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
      lmm->source = estrdup("core");
     }
-    eputs (" done.\n", stderr);
    }
 
 /* emit events to read configuration files */
@@ -402,7 +400,7 @@ int main(int argc, char **argv) {
 
    return ret;
   } else if ((gmode == EINIT_GMODE_INIT) && !isinit && !initoverride) {
-   eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not spcified.\nexiting...\n\n", stdout);
+   eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
    exit (EXIT_FAILURE);
   } else {
    uint32_t e = 0;
@@ -416,7 +414,7 @@ int main(int argc, char **argv) {
     evstaticdestroy(ee);
    }
 
-   eprintf (stderr, " >> [+%is] scheduling startup switches.\n", (int)(time(NULL)-stime));
+   notice (2, "scheduling startup switches.\n");
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
