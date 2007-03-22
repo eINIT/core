@@ -52,6 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <sys/stat.h>
 #include <pthread.h>
+
+#include <sys/param.h>
 #include <sys/mount.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -997,7 +999,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
     if (gmode != EINIT_GMODE_SANDBOX) {
 // root node should only be remounted...
      if (strmatch ("/", mountpoint)) goto attempt_remount;
-#ifdef DARWIN
+#if defined(DARWIN) || defined(__FreeBSD__)
      if (mount (source, mountpoint, mntflags, fsdata) == -1)
 #else
      if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1)
@@ -1091,7 +1093,7 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
    retry++;
 
 //   if (gmode != EINIT_GMODE_SANDBOX) {
-#ifdef DARWIN
+#if defined(DARWIN) || defined(__FreeBSD__)
     if (unmount (mountpoint, 0) != -1)
 #else
     if (umount (mountpoint) != -1)
