@@ -17,7 +17,7 @@ KEYWORDS="-*"
 IUSE_EINIT_CORE="module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log linux-sysconf linux-mount linux-process"
 IUSE_EINIT_MODULES="feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl"
 
-IUSE="doc efl static"
+IUSE="doc static"
 
 for iuse_einit in ${IUSE_EINIT_CORE}; do
         IUSE="${IUSE} einit_core_${iuse_einit}"
@@ -26,8 +26,7 @@ for iuse_einit in ${IUSE_EINIT_MODULES}; do
         IUSE="${IUSE} einit_modules_${iuse_einit}"
 done
 
-RDEPEND="dev-libs/expat
-	efl? ( media-libs/edje x11-libs/evas x11-libs/ecore )"
+RDEPEND="dev-libs/expat"
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
@@ -60,9 +59,6 @@ src_compile() {
 
 	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=${ROOT}"
 
-	if use efl ; then
-		local myconf="${myconf} --enable-efl"
-	fi
 	if use static ; then
 		local myconf="${myconf} --static"
 	fi
