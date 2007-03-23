@@ -83,7 +83,7 @@ void sched_event_handler(struct einit_event *);
 
 
 
-#if (! defined(einit_modules_einit_scheduler)) || (einit_modules_einit_scheduler == 'm') || (einit_modules_einit_scheduler == 'n')
+#if (! defined(einit_modules_scheduler)) || (einit_modules_scheduler == 'm') || (einit_modules_scheduler == 'n')
 
 typedef int (*sched_watch_pid_t)(pid_t, void *(*)(struct spidcb *));
 

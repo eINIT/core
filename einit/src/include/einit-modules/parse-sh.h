@@ -53,7 +53,7 @@ extern "C" {
 #define PA_END_OF_FILE                   0x01
 #define PA_NEW_CONTEXT                   0x02
 
-#if (! defined(einit_modules_einit_parse_sh)) || (einit_modules_einit_parse_sh == 'm') || (einit_modules_einit_parse_sh == 'n')
+#if (! defined(einit_modules_parse_sh)) || (einit_modules_parse_sh == 'm') || (einit_modules_parse_sh == 'n')
 
 typedef int (*sh_parser) (const char *, void (*)(const char **, uint8_t));
 

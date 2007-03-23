@@ -128,7 +128,7 @@ char **einit_global_environment;
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
 
-#if (! defined(einit_modules_bootstrap_einit_configuration_stree)) || (einit_modules_bootstrap_einit_configuration_stree == 'm') || (einit_modules_bootstrap_einit_configuration_stree == 'n')
+#if (! defined(einit_modules_bootstrap_configuration_stree)) || (einit_modules_bootstrap_configuration_stree == 'm') || (einit_modules_bootstrap_configuration_stree == 'n')
 
 typedef int (*cfg_addnode_t) (struct cfgnode *);
 typedef struct cfgnode *(*cfg_findnode_t) (const char *, const unsigned int, const struct cfgnode *);

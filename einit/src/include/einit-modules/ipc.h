@@ -46,7 +46,7 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/types.h>
 
-#if (! defined(einit_modules_einit_ipc)) || (einit_modules_einit_ipc == 'm') || (einit_modules_einit_ipc == 'n')
+#if (! defined(einit_modules_ipc)) || (einit_modules_ipc == 'm') || (einit_modules_ipc == 'n')
 
 typedef int (*ipc_processor) (const char *, FILE *);
 

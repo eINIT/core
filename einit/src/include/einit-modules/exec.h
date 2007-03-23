@@ -90,7 +90,7 @@ struct execst {
 };
 #endif
 
-#if (! defined(einit_modules_einit_exec)) || (einit_modules_einit_exec == 'm') || (einit_modules_einit_exec == 'n')
+#if (! defined(einit_modules_exec)) || (einit_modules_exec == 'm') || (einit_modules_exec == 'n')
 
 /* function types */
 typedef int (*pexec_function)(const char *, const char **, uid_t, gid_t, const char *, const char *, char **, struct einit_event *);
