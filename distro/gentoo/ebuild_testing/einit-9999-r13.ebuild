@@ -4,8 +4,6 @@
 
 inherit subversion
 
-USE_EXPAND="EINIT_EXTMOD EINIT_INTMOD"
-
 ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/${PN}"
 SRC_URI=""
 
@@ -16,13 +14,17 @@ LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
 
-IUSE_EINIT_EXTMOD="
-	einit_extmod_testa"
-IUSE_EINIT_INTMOD="
-	einit_intmod_textb"
-IUSE="${IUSE_EINIT_EXTMOD}
-      ${IUSE_EINIT_INTMOD}
-      doc efl static"
+IUSE_EINIT_CORE="module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log linux-sysconf linux-mount linux-process"
+IUSE_EINIT_MODULES="feedback-visual-textual feedback-aural hostname external exec ipc mod-exec mod-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl"
+
+IUSE="doc efl static"
+
+for iuse_einit in ${IUSE_EINIT_CORE}; do
+        IUSE="${IUSE} einit_core_${iuse_einit}"
+done
+for iuse_einit in ${IUSE_EINIT_MODULES}; do
+        IUSE="${IUSE} einit_modules_${iuse_einit}"
+done
 
 RDEPEND="dev-libs/expat
 	efl? ( media-libs/edje x11-libs/evas x11-libs/ecore )"
@@ -37,42 +39,25 @@ src_unpack() {
 	cd "${S}"
 }
 
-function einit_get_modules () {
-	if test -z "$(echo $@|grep -w default)"; then
-		for i in $@; do
-			if test "${i}" = "-*"; then
-				current=""
-			elif test "${i}" = "*"; then
-				current=${ALLMODULES}
-			elif test "${i}" = "-.*"; then
-				current=""
-			elif test "${i}" = ".*"; then
-				current=${ALLMODULES}
-			elif test "${i:0:1}" = "-"; then
-				newcur="";
-				for z in ${current}; do
-					if ! echo ${z}|egrep ${i:1}>/dev/null; then newcur="${newcur} ${z}"; fi
-				done
-				current="${newcur}";
-			else
-				newcur=${current};
-				for z in ${ALLMODULES}; do
-					if echo ${z}|egrep ${i}>/dev/null; then newcur="${newcur} ${z}"; fi
-				done
-				current="${newcur}";
-			fi
-		done;
-		
-		echo ${current}
-	else
-		echo "default"
-	fi
-}
-
 src_compile() {
-	local myconf
+	local myconf internalmodules externalmodules
 
-	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=${ROOT}"
+	for module in ${EINIT_CORE}; do
+		if has einit_core_${module} ${IUSE}; then
+			internalmodules="${internalmodules} ${module}"
+		fi
+	done
+
+	for module in ${EINIT_MODULES}; do
+		if has einit_modules_${module} ${IUSE}; then
+			externalmodules="${externalmodules} ${module}"
+		fi
+	done
+
+	internalmodules=`echo ${internalmodules} | sed 's/^[ \t]*//'`
+	externalmodules=`echo ${externalmodules} | sed 's/^[ \t]*//'`
+
+	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=${ROOT} --internal-modules=\"${internalmodules}\" --external-modules=\"${externalmodules}\""
 
 	if use efl ; then
 		local myconf="${myconf} --enable-efl"
