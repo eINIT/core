@@ -1,5 +1,5 @@
 /*
- *  bootstrap-config-xml-expat.c
+ *  bootstrap-configuration-xml-expat.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
@@ -68,7 +68,7 @@ const struct smodule _bootstrap_einit_configuration_xml_expat_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "Configuration Parser (XML, Expat)",
- .rid       = "bootstrap-einit-configuration-xml-expat",
+ .rid       = "bootstrap-configuration-xml-expat",
  .si        = {
   .provides = NULL,
   .requires = NULL,

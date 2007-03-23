@@ -1,5 +1,5 @@
 /*
- *  einit-log.c
+ *  log.c
  *  einit
  *
  *  Created by Magnus Deininger on 20/03/2007.
@@ -68,7 +68,7 @@ const struct smodule _einit_log_self = {
  .mode      = EINIT_MOD_FEEDBACK,
  .options   = 0,
  .name      = "eINIT Core Log Module",
- .rid       = "einit-log",
+ .rid       = "log",
  .si        = {
   .provides = NULL,
   .requires = NULL,

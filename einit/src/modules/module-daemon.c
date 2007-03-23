@@ -1,5 +1,5 @@
 /*
- *  einit-mod-daemon.c
+ *  module-daemon.c
  *  einit
  *
  *  Created by Magnus Deininger on 03/05/2006.
@@ -75,8 +75,8 @@ const struct smodule _einit_mod_daemon_self = {
  .version   = 1,
  .mode      = EINIT_MOD_LOADER,
  .options   = 0,
- .name      = "daemon-pseudo-module support",
- .rid       = "einit-mod-daemon",
+ .name      = "Module Support (Configuration, Daemon)",
+ .rid       = "module-daemon",
  .si        = {
   .provides = NULL,
   .requires = NULL,

@@ -1,5 +1,5 @@
 /*
- *  einit-meta-service.c
+ *  external.c
  *  einit
  *
  *  Created by Magnus Deininger on 27/12/2006.
@@ -64,7 +64,7 @@ const struct smodule _einit_external_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "External Services",
- .rid       = "einit-external",
+ .rid       = "external",
  .si        = {
   .provides = NULL,
   .requires = NULL,

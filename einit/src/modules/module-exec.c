@@ -1,5 +1,5 @@
 /*
- *  einit-mod-exec.c
+ *  module-exec.c
  *  einit
  *
  *  Created by Magnus Deininger on 19/04/2006.
@@ -88,8 +88,8 @@ const struct smodule _einit_mod_exec_self = {
  .version   = 1,
  .mode      = EINIT_MOD_LOADER,
  .options   = 0,
- .name      = "shell-command-pseudo-module support",
- .rid       = "einit-mod-exec",
+ .name      = "Module Support (Configuration, Shell-Script)",
+ .rid       = "module-exec",
  .si        = {
   .provides = NULL,
   .requires = NULL,

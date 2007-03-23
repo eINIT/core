@@ -1,5 +1,5 @@
 /*
- *  einit-scheduler.c
+ *  scheduler.c
  *  einit
  *
  *  Created by Magnus Deininger on 02/05/2006.
@@ -68,7 +68,7 @@ const struct smodule _einit_scheduler_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "eINIT scheduler",
- .rid       = "einit-scheduler",
+ .rid       = "scheduler",
  .si        = {
   .provides = NULL,
   .requires = NULL,

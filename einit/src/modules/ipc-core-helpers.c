@@ -1,5 +1,5 @@
 /*
- *  einit-ipc-core-helpers.c
+ *  ipc-core-helpers.c
  *  einit
  *
  *  Created by Magnus Deininger on 19/03/2007.
@@ -63,7 +63,7 @@ const struct smodule _einit_ipc_core_helpers_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "IPC Command Library: Core Helpers",
- .rid       = "einit-ipc-core-helpers",
+ .rid       = "ipc-core-helpers",
  .si        = {
   .provides = NULL,
   .requires = NULL,

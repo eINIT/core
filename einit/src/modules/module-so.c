@@ -1,5 +1,5 @@
 /*
- *  einit-mod-so.c
+ *  module-so.c
  *  einit
  *
  *  split from module.c on 19/03/2007.
@@ -76,8 +76,8 @@ const struct smodule _einit_mod_so_self = {
  .version   = 1,
  .mode      = EINIT_MOD_LOADER,
  .options   = 0,
- .name      = "Support for .so Modules",
- .rid       = "einit-mod-so",
+ .name      = "Module Support (.so)",
+ .rid       = "module-so",
  .si        = {
   .provides = NULL,
   .requires = NULL,

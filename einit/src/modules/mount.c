@@ -1,5 +1,5 @@
 /*
- *  einit-mount.c
+ *  mount.c
  *  eINIT
  *
  *  Created by Magnus Deininger on 07/06/2006.
@@ -93,7 +93,7 @@ const struct smodule _einit_mount_self = {
  .mode      = EINIT_MOD_LOADER,
  .options   = 0,
  .name      = "Filesystem-Mounter",
- .rid       = "einit-mount",
+ .rid       = "mount",
  .si        = {
   .provides = NULL,
   .requires = NULL,

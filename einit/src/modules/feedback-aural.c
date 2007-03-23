@@ -1,5 +1,5 @@
 /*
- *  einit-feedback-aural.c
+ *  feedback-aural.c
  *  einit
  *
  *  Created by Magnus Deininger on 11/09/2006.
@@ -70,7 +70,7 @@ const struct smodule _einit_feedback_aural_self = {
  .mode      = EINIT_MOD_FEEDBACK,
  .options   = 0,
  .name      = "aural/tts feedback module",
- .rid       = "einit-feedback-aural",
+ .rid       = "feedback-aural",
  .si        = {
   .provides = _einit_feedback_aural_provides,
   .requires = _einit_feedback_aural_requires,

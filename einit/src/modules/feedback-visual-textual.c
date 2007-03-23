@@ -1,5 +1,5 @@
 /*
- *  einit-feedback-visual-textual.c
+ *  feedback-visual-textual.c
  *  einit
  *
  *  Created by Magnus Deininger on 11/03/2006.
@@ -90,7 +90,7 @@ const struct smodule _einit_feedback_visual_self = {
  .mode      = EINIT_MOD_FEEDBACK,
  .options   = 0,
  .name      = "visual/text-based feedback module",
- .rid       = "einit-feedback-visual-textual",
+ .rid       = "feedback-visual-textual",
  .si        = {
   .provides = _einit_feedback_visual_provides,
   .requires = NULL,

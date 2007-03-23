@@ -1,5 +1,5 @@
 /*
- *  einit-exec.c
+ *  exec.c
  *  eINIT
  *
  *  Created by Magnus Deininger on 23/11/2006.
@@ -69,7 +69,7 @@ const struct smodule _einit_exec_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "pexec/dexec library module",
- .rid       = "einit-exec",
+ .rid       = "exec",
  .si        = {
   .provides = NULL,
   .requires = NULL,

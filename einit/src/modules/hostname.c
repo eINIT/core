@@ -1,5 +1,5 @@
 /*
- *  einit-hostname.c
+ *  hostname.c
  *  einit
  *
  *  Created by Magnus Deininger on 05/09/2006.
@@ -64,7 +64,7 @@ const struct smodule _einit_hostname_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "Set Host- and Domainname",
- .rid       = "einit-hostname",
+ .rid       = "hostname",
  .si        = {
   .provides = _einit_hostname_provides,
   .requires = NULL,

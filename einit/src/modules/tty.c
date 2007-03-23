@@ -1,5 +1,5 @@
 /*
- *  einit-tty.c
+ *  tty.c
  *  einit
  *
  *  Created by Magnus Deininger on 20/04/2006.
@@ -97,7 +97,7 @@ const struct smodule _einit_tty_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "TTY-Configuration",
- .rid       = "einit-tty",
+ .rid       = "tty",
  .si        = {
   .provides = _einit_tty_provides,
   .requires = _einit_tty_requires,

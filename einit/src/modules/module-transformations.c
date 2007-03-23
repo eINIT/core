@@ -1,5 +1,5 @@
 /*
- *  einit-module-transformations.c
+ *  module-transformations.c
  *  einit
  *
  *  Created by Magnus Deininger on 10/03/2007.
@@ -69,7 +69,7 @@ const struct smodule _einit_module_transformations_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "Module Transformations",
- .rid       = "einit-module-transformations",
+ .rid       = "module-transformations",
  .si        = {
   .provides = NULL,
   .requires = NULL,

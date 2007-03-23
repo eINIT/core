@@ -1,5 +1,5 @@
 /*
- *  einit-ipc.c
+ *  ipc.c
  *  einit
  *
  *  Created by Magnus Deininger on 20/04/2006.
@@ -79,7 +79,7 @@ const struct smodule _einit_ipc_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "eINIT IPC module",
- .rid       = "einit-ipc",
+ .rid       = "ipc",
  .si        = {
   .provides = _einit_ipc_provides,
   .requires = _einit_ipc_requires,

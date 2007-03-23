@@ -1,5 +1,5 @@
 /*
- *  bootstrap-einit-configuration-stree.c
+ *  bootstrap-configuration-stree.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
@@ -63,7 +63,7 @@ const struct smodule _bootstrap_einit_configuration_stree_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "Core Configuration Storage and Retrieval (stree-based)",
- .rid       = "bootstrap-einit-configuration-stree",
+ .rid       = "bootstrap-configuration-stree",
  .si        = {
   .provides = NULL,
   .requires = NULL,

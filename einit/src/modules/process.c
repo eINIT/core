@@ -1,5 +1,5 @@
 /*
- *  einit-process.c
+ *  process.c
  *  einit
  *
  *  Created by Magnus Deininger on 19/09/2006.
@@ -64,7 +64,7 @@ const struct smodule _einit_process_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "eINIT Process Function Library",
- .rid       = "einit-process",
+ .rid       = "process",
  .si        = {
   .provides = NULL,
   .requires = NULL,

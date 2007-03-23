@@ -1,5 +1,5 @@
 /*
- *  einit-parse-sh.c
+ *  parse-sh.c
  *  einit
  *
  *  Created by Magnus Deininger on 08/01/2006.
@@ -73,7 +73,7 @@ const struct smodule _einit_parse_sh_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "eINIT Parser Library: SH",
- .rid       = "einit-parse-sh",
+ .rid       = "parse-sh",
  .si        = {
   .provides = NULL,
   .requires = NULL,

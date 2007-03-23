@@ -1,5 +1,5 @@
 /*
- *  einit-ipc-configuration.c
+ *  ipc-configuration.c
  *  einit
  *
  *  Created by Magnus Deininger on 08/02/2007.
@@ -63,7 +63,7 @@ const struct smodule _einit_ipc_configuration_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "IPC Command Library: Mode Configuration",
- .rid       = "einit-ipc-configuration",
+ .rid       = "ipc-configuration",
  .si        = {
   .provides = NULL,
   .requires = NULL,

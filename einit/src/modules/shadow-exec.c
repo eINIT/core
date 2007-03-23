@@ -1,5 +1,5 @@
 /*
- *  einit-shadow-exec.c
+ *  shadow-exec.c
  *  einit
  *
  *  Created by Magnus Deininger on 09/03/2007.
@@ -68,7 +68,7 @@ const struct smodule _einit_shadow_exec_self = {
  .mode      = 0,
  .options   = 0,
  .name      = "Shadow Module Support",
- .rid       = "einit-shadow-exec",
+ .rid       = "shadow-exec",
  .si        = {
   .provides = NULL,
   .requires = NULL,
