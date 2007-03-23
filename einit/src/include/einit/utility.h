@@ -146,10 +146,10 @@ void notice_macro (unsigned char severity, const char *message);
 
 /* debug messages... don't care if those can't be written */
 #define debugx(message, ...)\
- notice(stderr, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+ notice(10, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #define debug(message)\
- notice(stderr, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__)
+ notice(10, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__)
 
 #else
 

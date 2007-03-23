@@ -87,10 +87,6 @@ extern "C" {
 
 #define EINIT_CFGNODE_ONLINE_MODIFICATION 0x00000001
 
-#ifdef DEBUG
-#define EI_SIGNATURE 0xD1E0B666
-#endif
-
 #define EINIT_GMODE_INIT       0x00000001
 #define EINIT_GMODE_METADAEMON 0x00000002
 #define EINIT_GMODE_SANDBOX    0x00000003
@@ -108,9 +104,6 @@ struct cfgnode {
  char *path;
  char *source;
  char *source_file;
-#ifdef DEBUG
- uint32_t signature;
-#endif
  uint32_t options;
 };
 

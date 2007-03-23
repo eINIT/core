@@ -100,10 +100,6 @@ int __cfg_addnode (struct cfgnode *node) {
  char doop = 1;
  char *template = NULL;
 
-#ifdef DEBUG
- node->signature = EI_SIGNATURE;
-#endif
-
  if (node->arbattrs) {
   uint32_t r = 0;
   for (; node->arbattrs[r]; r+=2) {
@@ -235,14 +231,6 @@ struct cfgnode *__cfg_findnode (const char *id, const unsigned int type, const s
  }
 
  while (cur) {
-#ifdef DEBUG
-  if ((((struct cfgnode *)cur->value)->signature) != EI_SIGNATURE)
-   notice (1, "corrupted in-core configuration: bad signature\n");
-
-  if (strcmp ((((struct cfgnode *)cur->value)->id), cur->key))
-   notice ("configuration node: outside key differs from inside key\n");
-#endif
-
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {
    return cur->value;
   }
