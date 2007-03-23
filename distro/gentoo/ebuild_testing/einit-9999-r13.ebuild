@@ -4,6 +4,8 @@
 
 inherit subversion
 
+USE_EXPAND="EINIT_EXTMOD EINIT_INTMOD"
+
 ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/${PN}"
 SRC_URI=""
 

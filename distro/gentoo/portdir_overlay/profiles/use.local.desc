@@ -1,1 +1,3 @@
 sys-apps/einit:efl - Use the EFL -- Evas/Edje/Ecore
+sys-apps/einit:einit_extmod_testa - Test
+sys-apps/einit:einit_intmod_textb - Test
