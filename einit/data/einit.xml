@@ -513,11 +513,11 @@
      requires="mount/system:ipc"
      enable="
       for x in ${configuration_kernel_modules_${system}};
-       do echo $x; modprobe $x;
+       do echo $x; modprobe $x &amp;
       done; /bin/true"
      disable="
       for x in ${configuration_kernel_modules_${system}}; do
-       ${configuration_command_rmmod} $x;
+       ${configuration_command_rmmod} $x &amp;
       done; /bin/true"
      variables="configuration-kernel-modules-${system}:configuration-command-rmmod" />
 
@@ -555,7 +555,7 @@
       if test -e ${configuration_kernel_modules_autoload_d_file}; then
        modules=`grep -E '^\s*\w+' ${configuration_kernel_modules_autoload_d_file}`;
        for x in ${modules};
-        do echo $x; modprobe $x;
+        do echo $x; modprobe $x &amp;
        done; /bin/true;
       else
        /bin/false;
@@ -564,7 +564,7 @@
       if test -e ${configuration_kernel_modules_autoload_d_file}; then
        modules=`grep -E '^\s*\w+' ${configuration_kernel_modules_autoload_d_file}`;
        for x in ${modules}; do
-        ${configuration_command_rmmod} $x;
+        ${configuration_command_rmmod} $x &amp;
        done; /bin/true;
       else
        /bin/false;
@@ -603,12 +603,12 @@
      requires="mount/critical"
      enable="
       for x in ${configuration_kernel_modules_sensors};
-       do echo $x; modprobe $x;
+       do echo $x; modprobe $x &amp;
       done;
       /usr/bin/sensors -s"
      disable="
       for x in ${configuration_kernel_modules_sensors}; do
-       ${configuration_command_rmmod} $x;
+       ${configuration_command_rmmod} $x $amp;
       done; /bin/true"
      variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
 
