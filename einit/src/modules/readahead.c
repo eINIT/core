@@ -4,35 +4,7 @@
  *
  *  Created by Ryan Hope on 3/30/2007.
  *
- *
  */
-
-/*
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice,
-	  this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice,
-	  this list of conditions and the following disclaimer in the documentation
-	  and/or other materials provided with the distribution.
-    * Neither the name of the project nor the names of its contributors may be
-	  used to endorse or promote products derived from this software without
-	  specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 
 #define _MODULE
 
@@ -82,6 +54,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int _einit_readahead_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
+char * _einit_readahead_provides[] = {"readahead", NULL};
 const struct smodule _einit_readahead_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -91,7 +65,7 @@ const struct smodule _einit_readahead_self = {
  .name      = "eINIT readahead",
  .rid       = "readahead",
  .si        = {
-  .provides = "readahead",
+  .provides = _einit_readahead_provides,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
@@ -120,17 +94,7 @@ void process_file(char *filename) {
 	if (fd<0)
 		goto end;
 
-	{
-		int readahead_errno;
-		readahead(fd, (loff_t)0, (size_t)buf.st_size);
-		readahead_errno = errno;
-		switch(readahead_errno) {
-			case 0: 
-				break;
-			case EINVAL:
-				break;
-		}
-	}
+	readahead(fd, (loff_t)0, (size_t)buf.st_size);
 
 	close(fd);
 
@@ -175,7 +139,7 @@ void process_files(char* filename) {
 			// if the length is positive, and shorter than MAXPATH
 			// then we process it
 			if((next - iter) >= MAXPATH) {
-				fprintf(stderr,"%s:%s:%d:item in list too long!\n",__FILE__,__func__,__LINE__);
+				return;
 			} else if (next-iter > 1) {
 				memcpy(buffer, iter, next-iter);
 				// replace newline with string terminator
@@ -198,7 +162,7 @@ void _einit_readahead_ipc_event_handler (struct einit_event *ev) {
 
   if (!(s = cfg_getstring("configuration-system-readahead", NULL))) {
    eputs (" * configuration variable \"configuration-system-readahead\" not found.\n", (FILE *)ev->para);
-   /* ev->task++; */
+   ev->task++;
   }
 
   ev->flag = 1;
@@ -213,12 +177,13 @@ int _einit_readahead_cleanup (struct lmodule *this) {
 
 int _einit_readahead_enable (void *pa, struct einit_event *status) {
  char *list;
- if ((list = cfg_getstring ("configuration-system-readahead-list", NULL))) {
+ list = cfg_getstring ("configuration-system-readahead", NULL);
+ if (list) {
   status->string = "Performing file readahead";
   status_update (status);
   process_files (list);
  } else {
-  status->string = "there was some error";
+  status->string = list ;
   status->flag++;
   status_update (status);
  }
