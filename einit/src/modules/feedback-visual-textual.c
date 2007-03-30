@@ -915,6 +915,7 @@ void _einit_feedback_visual_power_event_handler(struct einit_event *ev) {
 }
 
 unsigned char broadcast_message (char *path, char *message) {
+#if 0
 #ifdef POSIXREGEX
  DIR *dir;
  struct dirent *entry;
@@ -975,6 +976,7 @@ unsigned char broadcast_message (char *path, char *message) {
   havedevpattern = 0;
   regfree (&devpattern);
  }
+#endif
 #endif
  return 0;
 }
