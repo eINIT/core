@@ -34,8 +34,6 @@
 #include <errno.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
-/* okay, i think i found the proper file now */
 #include <asm/ioctls.h>
 #include <linux/vt.h>
 #endif
@@ -53,6 +51,7 @@ int _einit_readahead_configure (struct lmodule *);
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
 char * _einit_readahead_provides[] = {"readahead", NULL};
+char * _einit_readahead_requires[] = {"mount/critical", NULL};
 const struct smodule _einit_readahead_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -63,7 +62,7 @@ const struct smodule _einit_readahead_self = {
  .rid       = "readahead",
  .si        = {
   .provides = _einit_readahead_provides,
-  .requires = NULL,
+  .requires = _einit_readahead_requires,
   .after    = NULL,
   .before   = NULL
  },
@@ -77,26 +76,55 @@ module_register(_einit_readahead_self);
 void process_file(char *filename) {
 	int fd;
 	struct stat buf;
-	
+
 	if (!filename)
 		return;
+	
+	if (stat(filename, &buf)<0) {
+		int stat_errno;
+		stat_errno = errno;
+		switch(stat_errno) {
+			case EBADF:
+			case ENOENT:
+			case ENOTDIR:
+			case ENAMETOOLONG:
+			case ELOOP:
+			case EACCES:
+				break;
+			default:
+				break;
+		}
+	goto end;
+	}
 
-	if (stat(filename, &buf)<0)
-		goto end;
-
-	if(S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || S_ISBLK(buf.st_mode) || S_ISFIFO(buf.st_mode) || S_ISSOCK(buf.st_mode))
+	/* Don't bother reading directories, devices (char or block), FIFOs or named sockets */
+	if(S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || 
+			S_ISBLK(buf.st_mode) || S_ISFIFO(buf.st_mode) ||
+			S_ISSOCK(buf.st_mode))
 		goto end;
 
 	fd = open(filename,O_RDONLY);
-	if (fd<0)
+	if (fd<0) {
 		goto end;
+	}
 
-	readahead(fd, (loff_t)0, (size_t)buf.st_size);
+	{
+		int readahead_errno;
+		readahead(fd, (loff_t)0, (size_t)buf.st_size);
+		readahead_errno = errno;
+		switch(readahead_errno) {
+			case 0: 
+				break;
+			case EBADF:
+			case EINVAL:
+				break;
+		}
+	}
 
 	close(fd);
 
 end:
-	/* this could be bad, idk */
+	/* be nice to other processes now */
 	sched_yield();
 }
 
@@ -111,16 +139,19 @@ void process_files(char* filename) {
 	if (!filename)
 		return;
 	
-	if(strcmp(filename,"-") == 0)
+	if(strcmp(filename,"-") == 0) {
 		return;
+	}
 
 	fd = open(filename,O_RDONLY);
 
-	if (fd<0)
+	if (fd<0) {
 		return;
+	}
 	
-	if (fstat(fd, &statbuf)<0)
+	if (fstat(fd, &statbuf)<0) {
 		return;
+	}
 
 	/* map the whole file */
 	file = mmap(0, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
@@ -130,20 +161,14 @@ void process_files(char* filename) {
 
 	iter = file;
 	while (iter) {
-		/* find next newline */
 		char* next = memchr(iter,'\n',file + statbuf.st_size - iter);
 		if (next) {
-			// if the length is positive, and shorter than MAXPATH
-			// then we process it
-			if((next - iter) >= MAXPATH) {
-				return;
-			} else if (next-iter > 1) {
-				memcpy(buffer, iter, next-iter);
-				// replace newline with string terminator
-				buffer[next-iter]='\0';
-				// we allow # as the first character in a line, to show comments
-				if(buffer[0] != '#') {
-					process_file(buffer);
+			if(!(next - iter) >= MAXPATH) {
+				if (next-iter > 1) {
+					memcpy(buffer, iter, next-iter);
+					buffer[next-iter]='\0';
+					if(buffer[0] != '#')
+						process_file(buffer);
 				}
 			}
 			iter = next + 1;
@@ -180,7 +205,7 @@ int _einit_readahead_enable (void *pa, struct einit_event *status) {
   status_update (status);
   process_files (list);
  } else {
-  status->string = list ;
+  status->string = "Could not perform file readahead";
   status->flag++;
   status_update (status);
  }
