@@ -55,10 +55,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 
 #ifdef LINUX
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 /* okay, i think i found the proper file now */
 #include <asm/ioctls.h>
 #include <linux/vt.h>
@@ -74,7 +78,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if EXPECTED_EIV != EINIT_VERSION
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
-
 
 int _einit_readahead_configure (struct lmodule *);
 
@@ -209,16 +212,11 @@ int _einit_readahead_cleanup (struct lmodule *this) {
 }
 
 int _einit_readahead_enable (void *pa, struct einit_event *status) {
- char *name;
+ char *list;
  if ((list = cfg_getstring ("configuration-system-readahead-list", NULL))) {
-  status->string = "performing file readahead into page cache";
+  status->string = "Performing file readahead";
   status_update (status);
-  if (process_files (list) {
-   status->string = strerror(errno);
-   errno = 0;
-   status->flag++;
-   status_update (status);
-  }
+  process_files (list);
  } else {
   status->string = "there was some error";
   status->flag++;
