@@ -40,10 +40,7 @@
 #include <linux/vt.h>
 #endif
 
-#ifdef POSIXREGEX
-#include <regex.h>
-#include <dirent.h>
-#endif
+#include <fcntl.h>
 
 #define EXPECTED_EIV 1
 

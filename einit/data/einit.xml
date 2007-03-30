@@ -124,9 +124,9 @@
 
   <feedback>
    <visual>
-    <std-io stdin="/dev/tty9" stdout="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" activate-vt="9" kernel-vt="12" />
+    <std-io stdio="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" activate-vt="9" kernel-vt="12" />
 <!-- better verbosity on tty10: -->
-<!--    <std-io stdin="/dev/tty1" stdout="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" /> -->
+<!--    <std-io stdio="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" /> -->
     <use-ansi-codes b="true" />
     <shutdown-failure-timeout i="3" />
     <broadcast-constraints s="/dev/(tty[1-8][12]?|pts/.*)" />

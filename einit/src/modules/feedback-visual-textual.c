@@ -235,22 +235,17 @@ int _einit_feedback_visual_enable (void *pa, struct einit_event *status) {
    errno = 0;
 
    if (filenode->arbattrs[i]) {
-    if (strmatch (filenode->arbattrs[i], "stdin")) {
+    if (strmatch (filenode->arbattrs[i], "stdio")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
       tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
       if (!tmp)
        freopen ("/dev/null", "r+", stdin);
-     } else {
-      perror ("einit-feedback-visual-textual: opening stdin");
-     }
-    } else if (strmatch (filenode->arbattrs[i], "stdout")) {
-     if (!stat (filenode->arbattrs[i+1], &st)) {
+
       tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
       if (!tmp)
        tmp = freopen ("einit-panic-stdout", "w", stdout);
      } else {
-      perror ("einit-feedback-visual-textual: opening stdout");
-      enableansicodes = 0;
+      perror ("einit-feedback-visual-textual: opening stdio");
      }
     } else if (strmatch (filenode->arbattrs[i], "stderr")) {
      if (!stat (filenode->arbattrs[i+1], &st)) {
