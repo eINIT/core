@@ -104,6 +104,7 @@ struct module_taskblock
 
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
 struct stree *module_logics_group_data = NULL;
+struct stree *ml_service_status_worker_threads = NULL;
 
 struct lmodule *mlist;
 
@@ -115,7 +116,11 @@ pthread_mutex_t
   ml_tb_target_state_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_group_data_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER;
+  ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
+  ml_mutex_apply_loop = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_cond_t
+  ml_cond_apply_loop = PTHREAD_COND_INITIALIZER;
 
 struct ma_task {
  struct stree *st;
@@ -568,25 +573,20 @@ void mod_apply (struct ma_task *task) {
 void mod_get_and_apply_recurse (int task) {
  ssize_t x = 0, nservices;
  char **services = NULL;
- char **now = NULL, **defer = NULL;
+ char **now = NULL;
+ struct stree *defer = NULL;
  pthread_t **subthreads = NULL;
  pthread_t th;
- char dm = 2;
-#ifdef DEBUG
- char recurse = 0;
-#endif
+ char dm = 2, repeat = 0;
+
+ do {
+ repeat = 0;
 
  while (dm & 2) {
-#ifdef DEBUG
-  if (recurse) {
-   eputs ("recursing", stderr);
-  } else
-   recurse = 1;
-#endif
   dm = 0;
 
   if (now) { free (now); now = NULL; }
-  if (defer) { free (defer); defer = NULL; }
+  if (defer) { streefree (defer); defer = NULL; }
   if (services) { free (services); services = NULL; }
 
   emutex_lock (&ml_tb_current_mutex);
@@ -761,7 +761,8 @@ void mod_get_and_apply_recurse (int task) {
         for (ix = 0; lm[0]->si->before[ix]; ix++) {
          if (inset ((const void **)now, (void *)lm[0]->si->before[ix], SET_TYPE_STRING)) {
           now = strsetdel (now, lm[0]->si->before[ix]);
-          defer = (char **)setadd ((void **)defer, (void *)lm[0]->si->before[ix], SET_TYPE_STRING);
+		  defer = streeadd (defer, lm[0]->si->before[ix], NULL, SET_NOALLOC, NULL);
+//          defer = (char **)setadd ((void **)defer, (void *)lm[0]->si->before[ix], SET_TYPE_STRING);
          }
         }
        }
@@ -769,13 +770,14 @@ void mod_get_and_apply_recurse (int task) {
         ssize_t ix = 0;
         for (ix = 0; lm[0]->si->after[ix]; ix++) {
          if (inset ((const void **)services, (void *)lm[0]->si->after[ix], SET_TYPE_STRING)) {
-          defer = (char **)setadd ((void **)defer, (void *)services[x], SET_TYPE_STRING);
+		  defer = streeadd (defer, services[x], NULL, SET_NOALLOC, NULL);
+//          defer = (char **)setadd ((void **)defer, (void *)services[x], SET_TYPE_STRING);
          }
         }
        }
       }
 
-      if (!inset ((const void **)defer, (void *)services[x], SET_TYPE_STRING))
+      if (!defer || !streefind (defer, services[x], TREE_FIND_FIRST))
        now = (char **)setadd ((void **)now, (void *)services[x], SET_TYPE_STRING);
      }
     } else {
@@ -788,7 +790,15 @@ void mod_get_and_apply_recurse (int task) {
  }
 
  if (!now && defer) {
-  now = defer;
+  struct stree *dcur = defer;
+
+  while (dcur) {
+   now = (char **)setadd ((void **)now, (const void *)dcur->key, SET_TYPE_STRING);
+
+   dcur = streenext(dcur);
+  }
+
+  streefree (defer);
   defer = NULL;
  }
 
@@ -826,6 +836,8 @@ void mod_get_and_apply_recurse (int task) {
   uint32_t u;
   uintptr_t ret;
 
+//  pthread_cond_wait (&ml_cond_apply_loop, &ml_mutex_apply_loop);
+
   for (u = 0; subthreads[u]; u++) {
    ethread_join (*(subthreads[u]), (void *)&ret);
   }
@@ -833,6 +845,20 @@ void mod_get_and_apply_recurse (int task) {
  }
 
  free (services);
+
+/*  char **left
+  switch (task) {
+   case MOD_ENABLE: repeat = 1; break;
+   case MOD_DISABLE: repeat = 1; break;
+   case MOD_RESET: repeat = 1; break;
+   case MOD_RELOAD: repeat = 1; break;
+   case MOD_ZAP: repeat = 1; break;
+  }*/
+
+  repeat = 0;
+
+
+ } while (repeat);
 }
 
 void mod_get_and_apply () {
@@ -1496,8 +1522,9 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   emutex_unlock (&ml_group_data_mutex);
  } else if ((ev->type == EVE_SERVICE_UPDATE) && (!(ev->status & STATUS_WORKING))) {
 /* something's done now, update our lists */
-
   mod_done ((struct lmodule *)ev->para, ev->task);
+
+  pthread_cond_broadcast (&ml_cond_apply_loop);
  } else switch (ev->type) {
   case EVE_SWITCH_MODE:
    if (!ev->string) return;

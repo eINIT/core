@@ -49,7 +49,7 @@ GCCFLAGS="-Wall"
 
 MAKEFILETASKS="all install"
 
-LIBRARIES="-L /lib -L /usr/lib -L /usr/local/lib"
+LIBRARIES="-L/lib -L/usr/lib -L/usr/local/lib"
 
 pwd=$(pwd)
 
