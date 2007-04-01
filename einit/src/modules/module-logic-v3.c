@@ -100,6 +100,7 @@ int _einit_module_logic_v3_configure (struct lmodule *this) {
 
 struct module_taskblock
   current = { NULL, NULL, NULL, NULL, NULL, NULL },
+  working = { NULL, NULL, NULL, NULL, NULL, NULL },
   target_state = { NULL, NULL, NULL, NULL, NULL, NULL };
 
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
