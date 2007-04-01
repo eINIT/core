@@ -106,8 +106,11 @@ char *readfile (const char *filename) {
    blen = blen + rn;
   } while (rn > 0);
 
-  if (errno && (errno != EAGAIN))
+  if (errno && (errno != EAGAIN)) {
    bitch(BITCH_STDIO, errno, "reading file failed.");
+
+   puts (buf);
+  }
 
   eclose (fd);
   data = erealloc (buf, blen+1);

@@ -64,6 +64,10 @@ for param in $@; do
 	elif test "$short" = "--external-modules"; then
 		echo -n " EXTERNAL";
 		EXTERNALMODULES=${param#*=};
+	elif test "$short" = "--extra-object"; then
+		echo -n " XOBJECT";
+		COREOBJECTS="${COREOBJECTS} ${param#*=}";
+		UTILOBJECTS="${UTILOBJECTS} ${param#*=}";
 	elif test "$short" = "--prefix"; then
 		echo -n " PREFIX";
 		PREFIX=${param#*=};

@@ -1,3 +1,7 @@
+2007/04/01: mdeininger
+ * started on a custom set of (m|re|c)alloc() functions
+ * modified configure script to add files to link into the core
+
 [2006/04/01: mdeininger: release, Version 0.21.0]
 
 [2006/03/27: mdeininger: release, Version 0.20.0]
