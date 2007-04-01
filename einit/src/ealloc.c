@@ -55,22 +55,39 @@ struct page_header {
  void *next_page;
  void *prev_page;
  size_t size;
- uint32_t pages;
 };
 
-void *current_page = NULL;
+struct page_header dummy_page = {
+ .next_page = &dummy_page,
+ .prev_page = &dummy_page,
+ .size = 0
+};
+struct page_header *current_page = &dummy_page;
 
-/*mmap(void *start, size_t length, int prot, int flags,
-     int fd, off_t offset);*/
+#define size2pages(size) ((((size)+sizeof(struct page_header)) / pagesize) +1)
+#if 0
+#define init_page(page, s)\
+ ((struct page_header *)(page))->next_page = current_page;\
+ ((struct page_header *)(page))->prev_page = current_page->prev_page;\
+ current_page->next_page = (page);\
+ current_page = (page);\
+ ((struct page_header *)(page))->size = s;
+#else
+#define init_page(page, s)\
+ ((struct page_header *)(page))->size = s;
+#endif
+
+#define remove_page(page)\
+ current_page = ((struct page_header *)(page))->next_page;\
+ (((struct page_header *)(page))->next_page)->prev_page = ((struct page_header *)(page))->prev_page;\
+ (((struct page_header *)(page))->prev_page)->next_page = ((struct page_header *)(page))->next_page;
 
 void *malloc(size_t s) {
  size_t pages = 0;
 
  if (!pagesize) pagesize = sysconf(_SC_PAGESIZE);
 
- pages = ((s+sizeof(struct page_header)) / pagesize) +1;
-
-// fprintf (stderr, "allocating %i pages for memory of size %i (pagesize = %i).\n", pages, s, pagesize);
+ pages = size2pages(s);
 
  void *p = mmap(NULL, pages*pagesize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
@@ -79,8 +96,7 @@ void *malloc(size_t s) {
   return NULL;
  }
 
- ((struct page_header *)p)->size = s;
- ((struct page_header *)p)->pages = pages;
+ init_page (p, s);
 
  return p+sizeof(struct page_header);
 }
@@ -99,16 +115,18 @@ void *realloc(void *p, size_t s) {
  if (!s) { free (p); return NULL; }
 
  void *np = NULL;
- size_t oldsize = ((struct page_header *)(p-sizeof(struct page_header)))->pages;
+ size_t oldsize = size2pages(((struct page_header *)(p-sizeof(struct page_header)))->size);
  size_t pages = 0;
 
  if (!pagesize) pagesize = sysconf(_SC_PAGESIZE);
 
- pages = ((s+sizeof(struct page_header)) / pagesize) +1;
+ pages = size2pages(s);
 
-// if (oldsize == pages) return p;
+ if (oldsize == pages) {
+  ((struct page_header *)(p-sizeof(struct page_header)))->size = s;
 
-// fprintf (stderr, "(re)allocating %i pages for memory of size %i (pagesize = %i).\n", pages, s, pagesize);
+  return p;
+ }
 
  np = mmap(NULL, pages*pagesize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
@@ -119,14 +137,17 @@ void *realloc(void *p, size_t s) {
 
  memcpy (np+sizeof(struct page_header), p, (((struct page_header *)(p-sizeof(struct page_header)))->size));
 
+// remove_page(p-sizeof(struct page_header));
+
  munmap (p-sizeof(struct page_header), oldsize * pagesize);
 
- ((struct page_header *)np)->size = s;
- ((struct page_header *)np)->pages = pages;
+ init_page (np, s);
 
  return np+sizeof(struct page_header);
 }
 
 void free(void *p) {
- if (p) munmap (p-sizeof(struct page_header), (((struct page_header *)(p-sizeof(struct page_header)))->pages) * pagesize);
+// remove_page(p-sizeof(struct page_header));
+
+ if (p) munmap (p-sizeof(struct page_header), size2pages(((struct page_header *)(p-sizeof(struct page_header)))->size) * pagesize);
 }
