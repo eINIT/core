@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <stdio.h>
 
+#include <sys/mman.h>
+
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
@@ -92,34 +94,44 @@ char *readfile (const char *filename) {
  void *buf = NULL;
  char *data = NULL;
  uint32_t blen = 0;
+ struct stat st;
 
  if (!filename) return NULL;
+
+ if (stat (filename, &st) || (st.st_size <= 0)) return NULL;
+
  fd = eopen (filename, O_RDONLY);
 
  if (fd != -1) {
-  buf = emalloc (BUFFERSIZE*sizeof(char));
-  blen = 0;
-  do {
-   buf = erealloc (buf, blen + BUFFERSIZE);
-   if (buf == NULL) return NULL;
-   rn = read (fd, (char *)(buf + blen), BUFFERSIZE);
-   blen = blen + rn;
-  } while (rn > 0);
+  if ((buf = mmap (NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
+   eclose (fd);
+   data = emalloc (st.st_size +1);
+   memcpy (data, buf, st.st_size);
+   munmap (buf, st.st_size);
 
-  if (errno && (errno != EAGAIN)) {
-   bitch(BITCH_STDIO, errno, "reading file failed.");
-
-   puts (buf);
-  }
-
-  eclose (fd);
-  data = erealloc (buf, blen+1);
-  data[blen] = 0;
-  if (blen > 0) {
-   *(data+blen-1) = 0;
+   *(data+st.st_size-1) = 0;
   } else {
-   free (data);
-   data = NULL;
+   buf = emalloc (BUFFERSIZE*sizeof(char));
+   blen = 0;
+   do {
+    buf = erealloc (buf, blen + BUFFERSIZE);
+    if (buf == NULL) return NULL;
+    rn = read (fd, (char *)(buf + blen), BUFFERSIZE);
+    blen = blen + rn;
+   } while (rn > 0);
+
+   if (errno && (errno != EAGAIN))
+    bitch(BITCH_STDIO, errno, "reading file failed.");
+
+   eclose (fd);
+   data = erealloc (buf, blen+1);
+   data[blen] = 0;
+   if (blen > 0) {
+    *(data+blen-1) = 0;
+   } else {
+    free (data);
+    data = NULL;
+   }
   }
  }
 
