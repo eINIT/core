@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-apmd"
+  name="APMd"
+  provides="apmd"
+  requires="mount/critical"
+  command="/usr/sbin/apmd"
+  restart="yes" />
+</einit>

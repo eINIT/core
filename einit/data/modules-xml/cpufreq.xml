@@ -1,0 +1,13 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-cpufreq"
+  name="Cpufreq Governor"
+  provides="cpufreq"
+  requires="mount/critical:acpi"
+  enable="for i in ${configuration_program_options_cpufreq_cpus};
+   do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
+   done; /bin/true"
+  disable="for i in ${configuration_program_options_cpufreq_cpus} ;
+   do /usr/bin/cpufreq-set --cpu $i --governor performance ;
+   done; /bin/true"
+  variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufreq-cpus" />
+</einit>

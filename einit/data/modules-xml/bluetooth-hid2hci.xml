@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-bluez-hid2hci"
+  name="Bluetooth (HID2HCI)"
+  provides="bluetooth-hid2hci"
+  requires="mount/local:kern-bluetooth"
+  enable="/usr/sbin/hid2hci -0 -q"
+  disable="/bin/true" />
+</einit>

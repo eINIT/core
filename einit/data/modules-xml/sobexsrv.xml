@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-sobexsrv"
+  name="Scripting/Secure OBEX Server"
+  provides="sobexsrv"
+  requires="mount/critical:bluetooth-hci:bluetooth-sdp"
+  user="sobexsrv"
+  command="sobexsrv -l ${configuration_bluetooth_sobexsrv_options} -s 2 -IRS -r ${configuration_bluetooth_sobexsrv_directory} -d 2&gt; /dev/null"
+  restart="yes"
+  variables="configuration-bluetooth-sobexsrv/.*" />
+</einit>

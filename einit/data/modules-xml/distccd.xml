@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-distccd"
+  name="Distributed compiling daemon"
+  provides="distccd"
+  requires="mount/system:net-lo"
+  command="/usr/bin/distccd --daemon --no-detach -N ${configuration_distccd_nice} --pid-file /var/run/distccd/distccd.pid --port ${configuration_distccd_port} --allow ${configuration_distccd_allow} --listen ${configuration_distccd_listen}"
+  restart="yes"
+  variables="configuration-distccd/.*" />
+</einit>

@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-keyboard"
+  name="Console (Keyboard Layout)"
+  provides="keyboard"
+  requires="mount/local"
+  enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout}"
+  disable="/bin/loadkeys us"
+  variables="configuration-peripherals-keyboard/layout" />
+</einit>

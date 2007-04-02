@@ -1,9 +1,11 @@
 <einit prefix="services-virtual-module">
-  <daemon id="deamon-dhcdbd"
-   name="dhcdbd"
-   provides="dhcdbd"
-   requires="dbus"
-   pid="/var/run/dhcdbd.pid"
-   command="dbus-launch dhcdbd -sn"
-   restart="yes" />
+ <daemon id="daemon-dbus"
+  name="D-BUS system messagebus"
+  provides="dbus"
+  requires="mount/critical"
+  pid="/var/run/dbus.pid"
+  prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
+  command="dbus-daemon --system --nofork"
+  cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
+  restart="yes" />
 </einit>

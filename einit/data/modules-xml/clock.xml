@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-clock-hwclock"
+  name="Set the system clock using the hardware clock"
+  provides="clock"
+  requires="mount/system"
+  enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock}"
+  disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
+           /bin/true"
+  variables="configuration-program-options-hwclock" />
+</einit>

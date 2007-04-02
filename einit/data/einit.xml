@@ -324,84 +324,6 @@
  <services>
   <virtual>
    <module>
-<!-- you can define daemoni like this -->
-    <daemon id="daemon-apmd"
-     name="APMd"
-     provides="apmd"
-     requires="mount/critical"
-     command="/usr/sbin/apmd"
-     restart="yes" />
-
-<!-- modified version of the gpm module by teppic from the wiki -->
-<!-- as has been suggested by him, i have modified this to use variables, hope it works... -->
-    <shell id="shell-gpm"
-     name="Console mouse services (GPM)"
-     provides="gpm"
-     requires="tty"
-     enable="/usr/sbin/gpm -m ${configuration_peripherals_pointing_device_gpm_device} -t ${configuration_peripherals_pointing_device_gpm_type}"
-     disable="killall gpm"
-     restart="yes"
-     vairables="configuration-peripherals-pointing-device-gpm/.*" />
-
-<!-- new DBUS module -->
-    <daemon id="daemon-dbus"
-     name="D-BUS system messagebus"
-     provides="dbus"
-     requires="mount/critical"
-     pid="/var/run/dbus.pid"
-     prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
-     command="dbus-daemon --system --nofork"
-     cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
-     restart="yes" />
-
-<!-- festival -->
-    <daemon id="daemon-tts-festival"
-     name="TTS (festival)"
-     provides="festival:speechd:tts"
-     requires="mount/critical:audio"
-     command="/usr/bin/festival --server -b /etc/festival/server.scm"
-     restart="yes" />
-
-<!-- network daemoni -->
-    <daemon id="daemon-sshd"
-     name="SSHd"
-     provides="sshd"
-     requires="network:mount/critical"
-     command="/usr/sbin/sshd -D"
-     restart="yes" />
-
-<!-- proxies -->
-    <daemon id="daemon-privoxy"
-     name="Privoxy Daemon"
-     provides="privoxy"
-     requires="network:mount/critical"
-     command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
-     restart="yes" />
-    <daemon id="daemon-tor"
-     name="TOR Daemon"
-     provides="tor"
-     requires="network:mount/critical"
-     command="/usr/bin/tor"
-     restart="yes" />
-
-<!-- portmap -->
-<!-- you need this for NFS -->
-    <daemon id="daemon-portmap"
-     name="Portmap Daemon"
-     provides="portmap"
-     requires="mount/critical"
-     command="/sbin/portmap -d"
-     restart="yes" />
-
-<!-- swap -->
-    <shell id="shell-swap"
-     name="Swap-Device(s)"
-     provides="swap"
-     requires="mount/system"
-     enable="swapon ${configuration_system_swap_device}"
-     disable="swapoff ${configuration_system_swap_device}"
-     variables="configuration-system-swap/device" />
-
 <!-- modules -->
     <shell-template id="template-shell-kern-module-loader"
      name="Kernel Modules (${system})"
@@ -493,21 +415,6 @@
       /bin/true"
      variables="configuration-command-rmmod" />
 
-    <shell id="shell-sensors"
-     name="LM-Sensors"
-     provides="sensors"
-     requires="mount/critical"
-     enable="
-      for x in ${configuration_kernel_modules_sensors};
-       do echo $x; modprobe $x &amp;
-      done;
-      /usr/bin/sensors -s"
-     disable="
-      for x in ${configuration_kernel_modules_sensors}; do
-       ${configuration_command_rmmod} $x $amp;
-      done; /bin/true"
-     variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
-
 <!-- nvidia -->
 <!-- this would normally only load the module, but somehow uevents seem not to work properly
  with this one... *shrugs* might be an old driver of mine -->
@@ -535,24 +442,6 @@
      enable="modprobe fglrx"
      disable="${configuration_command_rmmod} fglrx"
      variables="configuration-command-rmmod" />
-
-<!-- olof from the gentoo forums made a draft for this one -->
-    <shell id="shell-915resolution"
-     name="Resolution (Intel)"
-     provides="video-intel-resolution"
-     requires="mount/critical"
-     enable="915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true"
-     disable="/bin/true"
-     variables="configuration-video-intel-resolution/x:configuration-video-intel-resolution/y:configuration-video-intel-resolution/bpp:configuration-video-intel-resolution/mode" />
-
-<!-- some things that people tend to like :twisted: -->
-    <shell id="shell-keyboard"
-     name="Console (Keyboard Layout)"
-     provides="keyboard"
-     requires="mount/local"
-     enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout}"
-     disable="/bin/loadkeys us"
-     variables="configuration-peripherals-keyboard/layout" />
 
 <!--    <shell-template id="template-shell-net-static"
      name="Network (${interface}, static)"
@@ -600,27 +489,6 @@
      based-on-template="template-shell-net-static"
      interface="lo" />
 
-<!-- Clock -->
-    <shell id="shell-clock-ntpdate"
-     name="Set the system clock using ntpdate"
-     provides="ntpdate"
-     requires="mount/critical:network"
-     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock};
-     ntpdate -b pool.ntp.org"
-     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
-              /bin/true"
-     variables="configuration-program-options-hwclock" />
-
-<!-- I modified what KKtm wrote as a mod-daemon -->
-    <shell id="shell-clock-hwclock"
-     name="Set the system clock using the hardware clock"
-     provides="clock"
-     requires="mount/system"
-     enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock}"
-     disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
-              /bin/true"
-     variables="configuration-program-options-hwclock" />
-
 <!-- another hooray for haader, who contributed this module definition.
     this should (in theory) work for his Atheros WLAN NIC. I slightly modified it to pass the SSID
     as a varialble, just like he wanted. -->
@@ -641,15 +509,6 @@
      disable="${configuration_command_rmmod} ${configuration_kernel_module_ath0}"
      variables="configuration-kernel-module-ath0:configuration-network-wireless-ssid:configuration-command-rmmod" />
 
-<!-- ALSA -->
-    <shell id="shell-audio-alsa"
-     name="Audio (ALSA)"
-     provides="alsa"
-     requires="kern-alsa:mount/critical"
-     enable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} restore;"
-     disable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} store; /bin/true"
-     variables="configuration-audio-alsa-mixer/file" />
-
 <!-- DHCPcd -->
     <shell-template id="template-shell-net-dhcp"
      name="Network (${interface}, using DHCP)"
@@ -663,85 +522,6 @@
     <shell id="shell-net-eth0-dhcp"
      based-on-template="template-shell-net-dhcp"
      interface="eth0" />
-
-<!-- mythtv -->
-<!-- damn this thing's a bitch -->
-    <shell id="shell-mythtv-backend"
-     name="MythTV Backend"
-     provides="mythtv"
-     requires="network:mount/critical:kern-dvb"
-     enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
-     disable="killall mythbackend; /bin/true"
-     HOME="/etc/mythtv"/>
-
-<!-- CpuFrequtils -->
-<!-- original credits to yoyo for this one, and to Lloeki for enhancing it to work with multi-CPU/-core systems -->
-    <shell id="shell-cpufreq"
-     name="Cpufreq Governor"
-     provides="cpufreq"
-     requires="mount/critical:acpi"
-     enable="for i in ${configuration_program_options_cpufreq_cpus};
-      do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
-      done; /bin/true"
-     disable="for i in ${configuration_program_options_cpufreq_cpus} ;
-      do /usr/bin/cpufreq-set --cpu $i --governor performance ;
-      done; /bin/true"
-     variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufreq-cpus" />
-
-
-<!-- fcron -->
-<!-- this one was written by Janax@Gentoo Forums -->
-    <daemon id="daemon-fcron"
-     name="Cron (fcron)"
-     provides="cron"
-     requires="mount/critical"
-     command="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf"
-     restart="yes" />
-
-<!-- Bluetooth modules, thanks Lloeki!
-    err, i modified one variable ;) -->
-     <shell id="shell-bluez-hid2hci"
-      name="Bluetooth (HID2HCI)"
-      provides="bluetooth-hid2hci"
-      requires="mount/local:kern-bluetooth"
-      enable="/usr/sbin/hid2hci -0 -q"
-      disable="/bin/true" />
-
-     <shell id="shell-bluez-rfcomm"
-      name="Bluetooth (RFCOMM)"
-      provides="bluetooth-rfcomm"
-      requires="mount/local:kern-bluetooth:bluetooth-hci"
-      enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
-      disable="/usr/bin/rfcomm release all" />
-
-     <daemon id="daemon-bluez-hcid"
-      name="Bluetooth (HCId)"
-      provides="bluetooth-hci"
-      requires="mount/critical:kern-bluetooth"
-      command="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf"
-      restart="yes" /> 
-
-     <daemon id="daemon-bluez-sdpd"
-      name="Bluetooth (SDPd)"
-      provides="bluetooth-sdp"
-      requires="mount/critical:kern-bluetooth:bluetooth-hci"
-      command="/usr/sbin/sdpd -n"
-      restart="yes" />
-
-     <daemon id="shell-bluez-hidd"
-      name="Bluetooth (HIDd)"
-      provides="bluetooth-hid"
-      requires="mount/critical:kern-bluetooth:bluetooth-hci"
-      command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
-      restart="yes"
-      variables="configuration-bluetooth-hidd/options" />
-
-     <daemon id="daemon-mpd"
-      name="Music Player Daemon"
-      provides="mpd"
-      requires="mount/local"
-      command="/usr/bin/mpd --no-create-db --no-daemon"
-      restart="yes" />
 
     <shell id="shell-apache2"
      name="httpd - Apache Hypertext Transfer Protocol Server"
@@ -774,66 +554,6 @@
      disable="killall -9 -q apache2"
      restart="yes" />
 
-<!-- well done, jvale -->
-    <daemon id="daemon-distccd" 
-     name="Distributed compiling daemon" 
-     provides="distccd" 
-     requires="mount/system:net-lo" 
-     command="/usr/bin/distccd --daemon --no-detach -N ${configuration_distccd_nice} --pid-file /var/run/distccd/distccd.pid --port ${configuration_distccd_port} --allow ${configuration_distccd_allow} --listen ${configuration_distccd_listen}" 
-     restart="yes" 
-     variables="configuration-distccd/.*" /> 
-
-
-     <shell id="shell-fbsplash"
-      name="fbsplash"
-      provides="fbsplash"
-      requires="mount/critical"
-      enable="for TTY in ${configuration_feedback_visual_fbsplash_ttys} ; do
-               splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setcfg ;
-               splash_util --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setpic 2&gt;/dev/null ;
-               splash_util --tty=${TTY} -c on ;
-              done"
-      disable="/bin/true"
-      variables="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
-
-
-<!-- (may be superseded by reworked setfont and keyboard modules) -->
-     <shell id="shell-unicode"
-      name="Unicode"
-      provides="unicode"
-      requires="keyboard:setfont"
-      enable="for t in ${configuration_system_setfont_ttys}; do
-        echo -ne '\033%G' &gt; /dev/tty${t};
-       done;
-       kbd_mode -u;
-       loadkeys -u ${configuration_peripherals_keyboard_layout};"
-      disable="/bin/true"
-      variables="configuration-system-setfont/ttys:configuration-peripherals-keyboard/layout" /> 
-
-     <daemon id="daemon-sobexsrv"
-      name="Scripting/Secure OBEX Server"
-      provides="sobexsrv"
-      requires="mount/critical:bluetooth-hci:bluetooth-sdp"
-      user="sobexsrv"
-      command="sobexsrv -l ${configuration_bluetooth_sobexsrv_options} -s 2 -IRS -r ${configuration_bluetooth_sobexsrv_directory} -d 2&gt; /dev/null"
-      restart="yes"
-      variables="configuration-bluetooth-sobexsrv/.*" />
-
-<!-- creds to AidanJT@gentoo forums for this module :)-->
-     <daemon id="daemon-rsyncd"
-      name="Rsync Daemon"
-      provides="rsyncd"
-      requires="net-lo:mount/local"
-      command="/usr/bin/rsync --daemon;"
-      restart="yes" /> 
-
-<!-- kostko@gentoo forums made this one :) -->
-     <daemon id="daemon-powersave"
-      name="Powersave"
-      provides="powersave"
-      requires="mount/critical:hal:acpi"
-      command="/usr/sbin/powersaved $([[ -S /var/run/acpid.socket ]] &amp;&amp; echo '-f /var/run/acpid.socket')"
-      restart="yes" />
    </module>
   </virtual>
 

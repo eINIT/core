@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-gpm"
+  name="Console mouse services (GPM)"
+  provides="gpm"
+  requires="tty"
+  enable="/usr/sbin/gpm -m ${configuration_peripherals_pointing_device_gpm_device} -t ${configuration_peripherals_pointing_device_gpm_type}"
+  disable="killall gpm"
+  restart="yes"
+  vairables="configuration-peripherals-pointing-device-gpm/.*" />
+</einit>

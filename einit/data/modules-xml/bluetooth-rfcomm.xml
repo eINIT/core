@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-bluez-rfcomm"
+  name="Bluetooth (RFCOMM)"
+  provides="bluetooth-rfcomm"
+  requires="mount/local:kern-bluetooth:bluetooth-hci"
+  enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
+  disable="/usr/bin/rfcomm release all" />
+</einit>

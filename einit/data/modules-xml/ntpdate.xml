@@ -1,0 +1,11 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-clock-ntpdate"
+  name="Set the system clock using ntpdate"
+  provides="ntpdate"
+  requires="mount/critical:network"
+  enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock};
+  ntpdate -b pool.ntp.org"
+  disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock};
+           /bin/true"
+  variables="configuration-program-options-hwclock" />
+</einit>
