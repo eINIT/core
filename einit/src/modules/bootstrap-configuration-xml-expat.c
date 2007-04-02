@@ -304,7 +304,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  };
 
  if ((data = readfile (configfile))) {
-  notice (4, "parsing \"%s\".\n", configfile);
+  notice (9, "parsing \"%s\".\n", configfile);
 
 #ifdef DEBUG
   time_t currenttime = time(NULL);

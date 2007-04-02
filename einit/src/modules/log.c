@@ -325,9 +325,7 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
 
   if (ev->flag < 3) {
    eprintf (stderr, " ** %s\n", ev->string);
-  } else if (ev->flag > 7) {
-   eprintf (stderr, " -- %s\n", ev->string);
-  } else {
+  } else if (ev->flag < 6) {
    eprintf (stderr, " >> %s\n", ev->string);
   }
 

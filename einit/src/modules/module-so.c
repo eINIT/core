@@ -130,7 +130,7 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   if (modulepath[0] == '/') modulepath++;
  }
 
- notice (4, "updating modules in \"%s\".\n", modulepath);
+ notice (9, "updating modules in \"%s\".\n", modulepath);
 
 #ifdef POSIXREGEX
  if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {

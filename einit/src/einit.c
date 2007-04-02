@@ -353,15 +353,17 @@ int main(int argc, char **argv) {
    if (coremodules) {
     uint32_t cp = 0;
 
-    eputs (" >> initialising in-core modules:\n", stderr);
+    eputs (" >> initialising in-core modules:", stderr);
 
     for (; coremodules[cp]; cp++) {
      struct lmodule *lmm;
-     eprintf (stderr, " * module \"%s\"\n", (*coremodules[cp])->rid);
+     eprintf (stderr, " [%s]", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
      lmm->source = estrdup("core");
     }
+
+    eputs (" OK\n", stderr);
    }
 
 /* emit events to read configuration files */
