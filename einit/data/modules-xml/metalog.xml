@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-metalog"
+  name="Syslogger (metalog)"
+  provides="syslog"
+  requires="mount/critical"
+  command="/usr/sbin/metalog"
+  restart="yes" />
+</einit>

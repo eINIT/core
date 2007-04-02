@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+  <daemon id="deamon-dhcdbd"
+   name="dhcdbd"
+   provides="dhcdbd"
+   requires="dbus"
+   pid="/var/run/dhcdbd.pid"
+   command="dbus-launch dhcdbd -sn"
+   restart="yes" />
+</einit>

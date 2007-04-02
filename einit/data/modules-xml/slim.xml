@@ -1,8 +1,9 @@
 <einit prefix="services-virtual-module">
- <daemon id="daemon-xdm"
-  name="xdm - The X Display Manager"
+ <shell id="shell-gdm"
+  name="slim - Simple LogIn Manager"
   provides="x11:displaymanager"
   requires="net-lo:mount/critical"
-  command="/usr/bin/xdm -nodaemon"
+  enable="slim -d"
+  disable="killall -9 slim"
   restart="yes" />
 </einit>

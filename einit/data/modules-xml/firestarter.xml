@@ -1,0 +1,12 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-firestarter"
+  name="firestarter"
+  provides="firestarter"
+  requires="mount/critical:net-lo"
+  prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
+            firestarter --generate-scripts;
+           fi; /bin/true"
+  enable="firestarter --start"
+  disable="firestarter --stop"
+  restart="yes" />
+</einit>

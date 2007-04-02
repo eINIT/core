@@ -545,9 +545,9 @@
      provides="x11:gdm"
      requires="mount/critical:net-lo:kern-x11"
      pid="/var/run/gdm.pid"
-     prepare="mkdir /var/log/gdm"
-     enable="pexec-options no-pipe; gdm&amp;"
-     disable="gdm-stop"
+     prepare="[ ! -e /var/log/gdm ] &amp;&amp; mkdir /var/log/gdm"
+     enable="gdm"
+     disable="killall -9 gdm"
      restart="yes" />
 
     <daemon id="daemon-kdm"

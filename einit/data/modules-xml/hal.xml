@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-hald"
+  name="Hardware Abstraction Layer"
+  provides="hal"
+  requires="mount/critical:dbus"
+  command="/usr/sbin/hald --daemon=no --use-syslog"
+  restart="yes" />
+</einit>

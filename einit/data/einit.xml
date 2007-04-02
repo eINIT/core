@@ -354,48 +354,6 @@
      cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
      restart="yes" />
 
-<!-- HALD -->
-<!-- credits to KKtm from the Gentoo Forums... -->
-    <daemon id="daemon-hald"
-     name="Hardware Abstraction Layer Daemon"
-     provides="hal"
-     requires="mount/critical:dbus"
-     command="/usr/sbin/hald --daemon=no --use-syslog"
-     restart="yes" />
-
-<!-- ACPI --> 
-<!-- ... and more credits to KKtm from the Gentoo Forums :) -->
-    <daemon id="daemon-acpi"
-     name="Advanced Configuration and Power Interface daemon"
-     provides="acpi"
-     requires="mount/critical"
-     command="/usr/sbin/acpid --foreground"
-     restart="yes" />
-
-<!-- Syslog -->
-    <daemon id="daemon-metalog"
-     name="Syslogger (metalog)"
-     provides="syslog"
-     requires="mount/critical"
-     command="/usr/sbin/metalog"
-     restart="yes" />
-
-<!-- haader uses syslog-ng - thanks haader! ;) -->
-    <daemon id="daemon-syslog-ng"
-     name="Syslogger (syslog-ng)"
-     provides="syslog"
-     requires="mount/critical"
-     command="/usr/sbin/syslog-ng -F"
-     restart="yes" />
-
-<!-- this is for the syslog in busybox -->
-    <daemon id="daemon-syslog"
-     name="Syslogger (syslog)"
-     provides="syslog"
-     requires="mount/critical"
-     command="/sbin/syslogd -n"
-     restart="yes" />
-
 <!-- festival -->
     <daemon id="daemon-tts-festival"
      name="TTS (festival)"
@@ -900,17 +858,6 @@
      variables="configuration-distccd/.*" /> 
 
 
-     <shell id="shell-firestarter"
-      name="firestarter"
-      provides="firestarter"
-      requires="mount/critical:net-lo"
-      prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
-                firestarter --generate-scripts;
-               fi; /bin/true"
-      enable="firestarter --start"
-      disable="firestarter --stop"
-      restart="yes" />
-
      <daemon id="daemon-netplugd"
       name="netplugd -- network cable hotplug management daemon"
       provides="netplugd"
@@ -959,101 +906,7 @@
       disable="killall hpiod"
       restart="yes" />
 
-     <daemon id="deamon-dhcdbd"
-      name="dhcdbd"
-      provides="dhcdbd"
-      requires="dbus"
-      pid="/var/run/dhcdbd.pid"
-      command="dbus-launch dhcdbd -sn"
-      restart="yes" />
-
-     <daemon id="daemon-NetworkManager"
-      name="NetworkManager"
-      provides="NM"
-      requires="dhcdbd:hal"
-      prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager;
-               [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console;
-               /bin/true"
-      command="NetworkManager --no-daemon"
-      restart="yes" />
-
-     <daemon id="daemon-atieventsd"
-      name="atieventsd - ATI external events daemon"
-      provides="atieventsd"
-      requires="acpi"
-      command="/opt/ati/sbin/atieventsd --nodaemon"
-      restart="yes" />
-
-     <shell id="shell-hellanzb"
-      name="hellanzb - nzb downloader and post processor"
-      provides="hellanzb"
-      requires="net-lo:mount/local"
-      enable="hellanzb.py -D"
-      disable="hellanzb.py shutdown"
-      restart="yes" />
-
-<!-- super friendly gentoo module, works with modified etc/modules.d/ipw3945d -->
-     <daemon id="daemon-ipw3945d"
-      name="ipw3945d - regulatory daemon"
-      provides="ipw3945d"
-      requires="mount/critical"
-      group="ipw3945d"
-      pid="/var/run/ipw3945d.pid"
-      prepare="chown ipw3945d /sys/bus/pci/drivers/ipw3945/00*/cmd;
-               chmod a-w,u+rw /sys/bus/pci/drivers/ipw3945/00*/cmd"
-      command="ipw3945d --foreground"
-      restart="yes" />
-
-     <daemon id="daemon-ntpd"
-      name="ntpd"
-      provides="ntpd"
-      requires="mount/critical:net-lo"
-      command="ntpd -n"
-      restart="yes" />
-
-     <daemon id="daemon-avahi-dnsconfd"
-      name="avahi-dnsconfd"
-      provides="avahi-dnsconfd"
-      requires="avahi-daemon"
-      command="avahi-dnsconfd"
-      restart="yes" />
-
-     <daemon id="deamon-avahi-daemon"
-      name="avahi-daemon"
-      provides="avahi-daemon"
-      requires="net-lo:mount/critical"
-      command="avahi-daemon"
-      restart="yes" />
-
 <!-- modules by teppic from the wiki -->
-     <daemon id="daemon-cupsd"
-      name="CUPS (Common Unix Printing System)"
-      provides="cupsd"
-      requires="network:syslog:mount/critical"
-      prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups; /bin/true"
-      command="/usr/sbin/cupsd -F"
-      restart="yes" />
-
-     <shell id="shell-dovecot"
-      name="IMAP/POP3 server (Dovecot)"
-      provides="dovecot"
-      requires="network:mount/critical:mysqld"
-      enable="/usr/sbin/dovecot"
-      disable="/usr/bin/killall dovecot" />
-     <shell id="shell-postfix"
-      name="postfix"
-      uid="postfix"
-      provides="mta"
-      requires="network:mount/critical"
-      enable="/usr/sbin/postfix start"
-      disable="/usr/sbin/postfix stop"
-      reload="/usr/sbin/postfix reload" />
-     <shell id="shell-lisa"
-      name="LAN Information Server (LISA)"
-      provides="lisa"
-      requires="network:mount/critical"
-      enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
-      disable="/usr/bin/killall lisa" />
 
 <!-- creds to RedIpS@gentoo-forums for this one -->
 <!-- (may be superseded by reworked setfont and keyboard modules) -->

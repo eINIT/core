@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-syslog"
+  name="Syslogger (syslog)"
+  provides="syslog"
+  requires="mount/critical"
+  command="/sbin/syslogd -n"
+  restart="yes" />
+</einit>

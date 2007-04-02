@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module"> 
+ <daemon id="daemon-acpi"
+  name="Advanced Configuration and Power Interface daemon"
+  provides="acpi"
+  requires="mount/critical"
+  command="/usr/sbin/acpid --foreground"
+  restart="yes" />
+</einit>

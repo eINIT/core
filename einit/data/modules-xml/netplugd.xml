@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-netplugd"
+  name="netplugd -- network cable hotplug management daemon"
+  provides="netplugd"
+  requires="ipc"
+  command="netplugd -F"
+  restart="yes" />
+</einit>
