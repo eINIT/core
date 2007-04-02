@@ -59,10 +59,102 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
 #if ! defined (_EINIT_UTIL)
+#ifdef POSIXREGEX
+#include <regex.h>
+#endif
+
+#include <dirent.h>
 
 char **readdirfilter (struct cfgnode const *node, const char *default_dir, const char *default_allow, const char *default_disallow, char recurse) {
+ DIR *dir;
+ struct dirent *entry;
+ char **retval = NULL;
+ char *tmp;
+ ssize_t mplen = 0;
+ char *px = NULL;
+
+#ifdef POSIXREGEX
+ regex_t allowpattern, disallowpattern;
+ unsigned char haveallowpattern = 0, havedisallowpattern = 0;
+ char *path = (char *)default_dir, *allow = (char *)default_allow, *disallow = (char *)default_disallow;
+#endif
+
+ if (node && node->arbattrs) {
+  uint32_t i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch ("path", node->arbattrs[i])) path = node->arbattrs[i+1];
+#ifdef POSIXREGEX
+   else if (strmatch ("pattern-allow", node->arbattrs[i])) allow = node->arbattrs[i+1];
+   else if (strmatch ("pattern-disallow", node->arbattrs[i])) disallow = node->arbattrs[i+1];
+#endif
+  }
+ }
+
+ if (!path) return NULL;
+
+ if (gmode == EINIT_GMODE_SANDBOX) {
+// override path in sandbox-mode to be relative
+  if (path[0] == '/') path++;
+ }
+
+ mplen = strlen(path) + 4;
+ px = emalloc (mplen);
+ strcpy (px, path);
+
+ if (px[mplen-5] != '/') {
+  px[mplen-4] = '/';
+  px[mplen-3] = 0;
+ }
 
 
+#ifdef POSIXREGEX
+ if (allow) {
+  haveallowpattern = !eregcomp (&allowpattern, allow);
+ }
+
+ if (disallow) {
+  havedisallowpattern = !eregcomp (&disallowpattern, disallow);
+ }
+#endif
+
+ mplen += 4;
+ dir = eopendir (path);
+ if (dir != NULL) {
+  while ((entry = ereaddir (dir))) {
+
+#ifdef POSIXREGEX
+   if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
+   if (havedisallowpattern && !regexec (&disallowpattern, entry->d_name, 0, NULL, 0)) continue;
+#else
+   if (entry->d_name[0] == '.') continue;
+#endif
+
+   tmp = (char *)emalloc (mplen + strlen (entry->d_name));
+   struct stat sbuf;
+   *tmp = 0;
+   strcat (tmp, px);
+   strcat (tmp, entry->d_name);
+   if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
+    goto cleanup_continue;
+   }
+
+   retval = (char **)setadd((void **)retval, (void *)tmp, SET_TYPE_STRING);
+
+   cleanup_continue:
+   free (tmp);
+  }
+  eclosedir (dir);
+ }
+
+#ifdef POSIXREGEX
+ if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
+ if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
+#endif
+
+ free (px);
+
+ return retval;
 }
 
 char **straddtoenviron (char **environment, const char *key, const char *value) {

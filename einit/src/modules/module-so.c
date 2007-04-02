@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <string.h>
 #include <einit/module.h>
 #include <einit/config.h>
@@ -55,10 +54,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
-
-#ifdef POSIXREGEX
-#include <regex.h>
-#endif
 
 #define EXPECTED_EIV 1
 
@@ -100,87 +95,28 @@ int _einit_mod_so_cleanup (struct lmodule *pa) {
 }
 
 int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
- DIR *dir;
- struct dirent *entry;
- char *tmp;
- int mplen;
  void *sohandle;
-#ifdef POSIXREGEX
- regex_t allowpattern, disallowpattern;
- unsigned char haveallowpattern = 0, havedisallowpattern = 0;
- char *spattern = NULL;
-#endif
+ char **modules = NULL;
 
  emutex_lock (&modules_update_mutex);
 
- char *modulepath = cfg_getpath ("core-settings-module-path");
- if (!modulepath) {
-#ifdef DO_BOOTSTRAP
-  modulepath = bootstrapmodulepath;
-#endif
- }
- if (!modulepath) {
-//  bitch(BITCH_STDIO, 0, "no path to load modules from.");
-  emutex_unlock (&modules_update_mutex);
-  return -1;
- }
-
- if (gmode == EINIT_GMODE_SANDBOX) {
-// override module path in sandbox-mode to be relative
-  if (modulepath[0] == '/') modulepath++;
- }
-
- notice (9, "updating modules in \"%s\".\n", modulepath);
-
-#ifdef POSIXREGEX
- if ((spattern = cfg_getstring ("core-settings-module-load/pattern-allow", NULL))) {
-  haveallowpattern = !eregcomp (&allowpattern, spattern);
- }
-
- if ((spattern = cfg_getstring ("core-settings-module-load/pattern-disallow", NULL))) {
-  havedisallowpattern = !eregcomp (&disallowpattern, spattern);
- }
-#endif
-
-#if 0
- char **modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
+ modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
 #ifdef DO_BOOTSTRAP
                                 bootstrapmodulepath
 #else
                                 "/lib/einit/modules/"
 #endif
                                 , ".*\\.so", NULL, 0);
-#endif
 
- mplen = strlen (modulepath) +4;
- dir = eopendir (modulepath);
- if (dir != NULL) {
-  while ((entry = ereaddir (dir))) {
-//   uint32_t el = 0;
-// if we have posix regular expressions, match them against the filename, if not, exclude '.'-files
-#ifdef POSIXREGEX
-   if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
-   if (havedisallowpattern && !regexec (&disallowpattern, entry->d_name, 0, NULL, 0)) continue;
-#else
-   if (entry->d_name[0] == '.') continue;
-#endif
+ if (modules) {
+  uint32_t z = 0;
 
-//   tmp = (char *)emalloc (el = (((mplen + strlen (entry->d_name))) & (~3))+4);
-   tmp = (char *)emalloc (mplen + strlen (entry->d_name));
-   struct stat sbuf;
+  for (; modules[z]; z++) {
    struct smodule **modinfo;
-   struct lmodule *lm;
-   *tmp = 0;
-   strcat (tmp, modulepath);
-   strcat (tmp, entry->d_name);
-   dlerror ();
-   if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
-    goto cleanup_continue;
-   }
+   struct lmodule *lm = modchain;
 
-   lm = modchain;
    while (lm) {
-    if (lm->source && strmatch(lm->source, tmp)) {
+    if (lm->source && strmatch(lm->source, modules[z])) {
      lm = mod_update (lm);
 
      if (lm->module && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
@@ -192,7 +128,9 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     lm = lm->next;
    }
 
-   sohandle = dlopen (tmp, RTLD_NOW);
+   dlerror();
+
+   sohandle = dlopen (modules[z], RTLD_NOW);
    if (sohandle == NULL) {
     eputs (dlerror (), stdout);
     goto cleanup_continue;
@@ -203,29 +141,25 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     if ((*modinfo)->eibuild == BUILDNUMBER) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
-      new->source = estrdup(tmp);
+      new->source = estrdup(modules[z]);
      }
     } else {
-     notice (1, "module %s: not loading: different build number: %i.\n", tmp, (*modinfo)->eibuild);
+     notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);
 
      dlclose (sohandle);
     }
    } else {
-    notice (1, "module %s: not loading: missing header.\n", tmp);
+    notice (1, "module %s: not loading: missing header.\n", modules[z]);
 
     dlclose (sohandle);
    }
 
-   cleanup_continue:
-     free (tmp);
+   cleanup_continue: ;
   }
-  eclosedir (dir);
+
+  free (modules);
  }
 
-#ifdef POSIXREGEX
- if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
- if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
-#endif
 
  emutex_unlock (&modules_update_mutex);
 

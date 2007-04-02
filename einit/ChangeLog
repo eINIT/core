@@ -1,6 +1,7 @@
 2007/04/02: mdeininger
  * need to split that configuration up :D
  * use /etc/fstab by default
+ * introduced a new readdirfilter() function, we did do that a lot...
 
 2007/04/01: mdeininger
  * started on a custom set of (m|re|c)alloc() functions
