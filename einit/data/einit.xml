@@ -2,12 +2,6 @@
 <einit>
  <core>
   <settings>
-   <module>
-<!-- use this to disable the compatibility modules -->
-<!-- <load pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
-    <load pattern-allow=".*\.so" />
-    <path s="/lib/einit/modules/" />
-   </module>
    <xml-parser>
     <auto-create-missing-directories b="true" />
    </xml-parser>
