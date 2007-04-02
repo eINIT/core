@@ -145,7 +145,7 @@
  </services>
 
  <mode id="boot">
-  <enable services="ipc" critical="mount/critical:tty" />
+  <enable services="ipc" critical="mount/critical:tty:whatever" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
