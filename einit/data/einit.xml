@@ -36,12 +36,18 @@
    <settings>
     <configuration-path s="etc/einit/" />
    </settings>
-   <commands-include-file s="sandbox.xml" />
+   <commands-include>
+    <file s="sandbox.xml" />
+    <directory s="../../lib/einit/modules-xml" />
+   </commands-include>
    <else>
     <settings>
      <configuration-path s="/etc/einit/" />
     </settings>
-    <commands-include-file s="local.xml" />
+    <commands-include>
+     <file s="local.xml" />
+     <directory s="/lib/einit/modules-xml" />
+    </commands-include>
    </else>
   </if>
 
@@ -428,74 +434,6 @@
      requires="mount/critical"
      command="/sbin/portmap -d"
      restart="yes" />
-
-<!-- X11 -->
-<!-- credits to KKtm from the gentoo forums for this one -->
-    <daemon id="daemon-gdm"
-     name="XDM (GDM)"
-     provides="xdm:x11"
-     requires="net-lo:mount/critical"
-     command="/usr/sbin/gdm -nodaemon"
-     restart="yes" />
-
-    <shell id="shell-gdm"
-     name="GDM - The GNOME Display Manager"
-     provides="x11:gdm:xdm"
-     requires="mount/critical:net-lo"
-     pid="/var/run/gdm.pid"
-     prepare="mkdir -p /var/log/gdm"
-     enable="gdm"
-     disable="killall -9 gdm"
-     restart="no" />
-
-    <daemon id="daemon-kdm"
-     name="XDM (KDM)"
-     provides="xdm:x11"
-     requires="net-lo:mount/critical"
-     pid="/var/run/kdm.pid"
-     command="/usr/kde/3.5/bin/kdm -nodaemon"
-     restart="yes" />
-
-<!-- credits to haader from the gentoo forums for this one -->
-    <daemon id="daemon-xdm"
-     name="XDM (xdm)"
-     provides="xdm:x11"
-     requires="net-lo:mount/critical"
-     command="/usr/bin/xdm -nodaemon"
-     restart="yes" />
-
-    <daemon id="daemon-xorg"
-     name="X11 (Xorg)"
-     provides="x11"
-     requires="net-lo:mount/critical"
-     command="/usr/X11R6/bin/Xorg :0"
-     restart="yes" />
-
-    <daemon id="daemon-xcompmgr"
-     name="X11 (xcompmgr)"
-     provides="x11-composite"
-     requires="x11"
-     command="/usr/bin/xcompmgr -c"
-     DISPLAY=":0.0"
-     restart="yes" />
-
-    <daemon id="daemon-entranced"
-     name="XDM (EntranceD)"
-     provides="xdm:x11"
-     requires="net-lo:mount/critical"
-     command="/usr/sbin/entranced -nodaemon"
-     restart="yes"
-     DISPLAY=":0.0"
-     HOME="/root" />
-
-    <daemon id="daemon-entrance"
-     name="XDM (Entrance)"
-     provides="xdm"
-     requires="x11"
-     command="/usr/bin/entrance"
-     restart="yes"
-     DISPLAY=":0.0"
-     HOME="/root" />
 
 <!-- swap -->
     <shell id="shell-swap"

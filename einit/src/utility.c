@@ -109,7 +109,7 @@ char *readfile (const char *filename) {
    memcpy (data, buf, st.st_size);
    munmap (buf, st.st_size);
 
-   *(data+st.st_size-1) = 0;
+   *(data+st.st_size) = 0;
   } else {
    buf = emalloc (BUFFERSIZE*sizeof(char));
    blen = 0;

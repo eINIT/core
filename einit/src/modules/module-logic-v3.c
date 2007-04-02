@@ -1381,7 +1381,7 @@ void mod_sort_service_list_items_by_preference() {
     strcat (pnode, cur->key);
 
     if ((preference = str2set (':', cfg_getstring (pnode, NULL)))) {
-     notice (10, "applying module preferences for service %s", cur->key);
+     debugx ("applying module preferences for service %s", cur->key);
 
      for (mpx = 0; preference[mpx]; mpx++) {
       for (mpy = 0; lm[mpy]; mpy++) {

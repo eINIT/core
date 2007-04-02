@@ -121,7 +121,16 @@ char *xml_source_identifier = "xml-expat";
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int nlen = strlen (name);
  if (strmatch (name, "einit")) {
+  uint32_t i = 0;
   ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG;
+
+  for (; atts[i]; i += 2) {
+   if (!strcmp (atts[i], "prefix")) {
+    ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (strlen (atts[i+1])+1);
+    *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
+    strcat (((struct einit_xml_expat_user_data *)userData)->prefix, atts[i+1]);
+   }
+  }
   return;
  }
 

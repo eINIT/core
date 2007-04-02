@@ -1,3 +1,6 @@
+2007/04/02: mdeininger
+ * need to split that configuration up :D
+
 2007/04/01: mdeininger
  * started on a custom set of (m|re|c)alloc() functions
  * modified configure script to add files to link into the core
