@@ -361,10 +361,11 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
  }
  emutex_unlock (&pexec_running_mutex);
 
- if (status) {
+/* if (status) {
   status->string = command;
   status_update (status);
- }
+ }*/
+ notice (10, (char *)command);
 
  if ((child = fork()) < 0) {
   if (status)
@@ -502,10 +503,11 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
  cmdsetdup = str2set ('\0', command);
  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
- if (status) {
+/* if (status) {
   status->string = (char *)command;
   status_update (status);
- }
+ }*/
+ notice (10, (char *)command);
 
  if ((child = fork()) < 0) {
   if (status)
@@ -610,10 +612,10 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
    } else {
     perror ("pexec(): open pipe");
    }
-  } else if (status) {
+  }/* else if (status) {
    status->string = "NOT piping, check stderr for program output";
    status_update (status);
-  }
+  }*/
 
   if (!have_waited) {
    do {

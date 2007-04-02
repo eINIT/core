@@ -801,9 +801,9 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
 #ifdef MS_NOSUID
    (*mntflags) |= MS_NOSUID;
 #endif
-/*  } else if (strmatch (options[fi], "nouser") || strmatch (options[fi], "group") || strmatch (options[fi], "auto") || strmatch (options[fi], "defaults")) {
+  }/* else if (strmatch (options[fi], "nouser") || strmatch (options[fi], "group") || strmatch (options[fi], "auto") || strmatch (options[fi], "defaults")) {
    notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
-  }*/ else if (strmatch (options[fi], "_netdev")) {
+  } else*/ if (strmatch (options[fi], "_netdev")) {
    notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
   } else
 #endif
