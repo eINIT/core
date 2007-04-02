@@ -1,5 +1,6 @@
 2007/04/02: mdeininger
  * need to split that configuration up :D
+ * use /etc/fstab by default
 
 2007/04/01: mdeininger
  * started on a custom set of (m|re|c)alloc() functions

@@ -46,38 +46,13 @@
   <storage>
 <!-- fstab -->
    <fstab>
-<!-- This variable defines all the sources for your fstab. you could add
-     "legacy", like in the example below, to make eINIT parse your /etc/fstab
-     file as well as all the internal nodes.
-     If you intend to do that, remove the nodes in this file for / and /boot
-     (NOT all the others in einit.xml, /dev and the others are required!).
-     Do note that the fstab format is rather limited in design, and that some
-     options recognised by linux's mount(8) command will make einit's mounter
-     fail - most notably that's the "loop" and "encryption=" options.
 
-     NEVER remove the configuration fstab-source! -->
-<!--    <source s="configuration:legacy" /> -->
+<!-- you may specify "extended" attributes using these nodes, they override your
+     /etc/fstab for nodes processed through einit -->
 
-    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
-    <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" />
+<!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
+    <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
 
-<!-- HINT: this can help if you have issues with SCSI-devices being brought up only after einit is started
-    <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" before-mount="sleep 2" /> -->
-
-<!-- example for other mountpoints -->
-<!-- <node mountpoint="/usr/portage" device="/dev/sdb1" fs="reiserfs" options="noatime" />
-    <node mountpoint="/usr" device="/dev/sdc1" fs="ext3" options="noatime" />
-    <node mountpoint="/opt" device="/dev/sdb2" fs="ext3" options="noatime" /> -->
-
-<!-- example for using md-volumes -->
-<!-- <node mountpoint="/media/storage-3" device="/dev/md0" fs="reiserfs" before-mount="modprobe raid5; mdadm -A -a md /dev/md0" options="noatime" /> -->
-
-<!-- example for using nfs-volumes -->
-<!-- <node mountpoint="/media/storage-1" device="host:/media/storage-1" fs="nfs" />
-    <node mountpoint="/media/storage-0" device="chronos:/media/storage-0" fs="nfs" /> -->
-
-<!-- this should be a good idea... but apparently causes problems with beryl/compiz + not everyone has enough ram to do it this way -->
-<!--    <node mountpoint="/tmp" fs="tmpfs" /> -->
 
 <!-- use this if you don't have usb built into your kernel -->
 <!--    <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" before-mount="modprobe usbcore" /> -->
