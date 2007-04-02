@@ -248,6 +248,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
     switch (errno) {
      case ENODEV:
      case ENXIO:
+     case ENOMEDIUM:
       break;
      default:
       bitch(BITCH_STDIO, errno, "opening file failed.");
