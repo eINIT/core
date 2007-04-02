@@ -1,7 +1,7 @@
 <einit prefix="services-virtual-module"> 
  <daemon id="daemon-syslog-ng"
   name="Syslogger (syslog-ng)"
-  provides="syslog"
+  provides="syslog-ng:logger"
   requires="mount/critical"
   command="/usr/sbin/syslog-ng -F"
   restart="yes" />
