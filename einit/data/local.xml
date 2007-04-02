@@ -84,7 +84,7 @@
   </virtual> -->
 
   <prefer>
-   <xdm s="daemon-kdm:daemon-entrance" />
+   <displaymanager s="daemon-kdm:daemon-entrance" />
    <syslog s="daemon-metalog" />
    <kern-alsa s="shell-kern-audio-alsa" />
 <!-- use /etc/modules.autoload.d/kernel-2.6 to autoload modules: -->
