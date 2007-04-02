@@ -142,7 +142,13 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  }
 #endif
 
-// char **modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL));
+ char **modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
+#ifdef DO_BOOTSTRAP
+                                bootstrapmodulepath
+#else
+                                "/lib/einit/modules/"
+#endif
+                                , ".*\\.so", NULL, 0);
 
  mplen = strlen (modulepath) +4;
  dir = eopendir (modulepath);

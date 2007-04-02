@@ -42,6 +42,8 @@ extern "C" {
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+struct cfgnode;
+
 #include <einit/module.h>
 #include <einit/utility.h>
 #include <sys/utsname.h>
