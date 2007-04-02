@@ -245,7 +245,7 @@
 
    <fstab>
 <!-- NEVER remove the configuration fstab-source! -->
-    <source s="configuration:legacy" />
+    <source s="configuration" />
 
 <!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
 <!-- things got a little more complicated with udev lately... -->
@@ -736,86 +736,12 @@
       restart="yes"
       variables="configuration-bluetooth-hidd/options" />
 
-<!-- Credits to DieselPower for these :) -->
-<!-- slightly modified by rmh3093 (presumably so that they don't fork(?)) -->
-     <daemon id="daemon-smbd"
-      name="Samba-daemon"
-      provides="smbd"
-      requires="mount/local:net-lo:nmbd"
-      command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
-      restart="yes" />
-
-     <shell id="shell-nmbd"
-      name="NetBIOS name server"
-      provides="nmbd"
-      requires="mount/local:net-lo"
-      pid="/var/run/samba/nmbd.pid"
-      prepare="[ ! -e /var/run/samba ] &amp;&amp; mkdir /var/run/samba ];
-               /bin/true;"
-      enable="nmbd -D"
-      disable="killall -9 nmbd"
-      restart="yes" />
-
-<!-- creds to lloeki for the next three :) -->
-     <daemon id="daemon-lighttpd"
-      name="HTTPd (Lighty)"
-      provides="httpd"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf"
-      restart="yes" />
-
-     <daemon id="daemon-vixie-cron"
-      name="Cron (Vixie)"
-      provides="cron"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/cron -n"
-      restart="yes" />
-
-     <daemon id="daemon-mysqld"
-      name="Database (MySQL)"
-      provides="mysqld"
-      requires="mount/local:net-lo"
-      command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
-      restart="yes" />
-
-<!-- w00t haader! :) -->
      <daemon id="daemon-mpd"
       name="Music Player Daemon"
       provides="mpd"
       requires="mount/local"
       command="/usr/bin/mpd --no-create-db --no-daemon"
       restart="yes" />
-
-<!-- modified version of the ivman module by teppic from the wiki -->
-     <daemon id="daemon-ivman"
-      name="Ikke's Volume Manager (IVMAN)"
-      uid="ivman"
-      gid="plugdev"
-      provides="ivman"
-      requires="hal"
-      pid="/var/run/ivman.pid"
-      command="/usr/bin/ivman --system --nofork"
-      restart="yes" />
-
-<!-- thanks, rmh3093! -->
-     <shell id="shell-setfont"
-      name="setfont (${configuration_system_setfont_font})"
-      provides="setfont"
-      requires="mount/critical"
-      before="tty"
-      enable="for t in ${configuration_system_setfont_ttys}; do
-               setfont ${configuration_system_setfont_font} -C /dev/tty${t};
-              done"
-      disable="/bin/true"
-      variables="configuration-system-setfont/.*" />
-
-     <shell id="shell-sysctl"
-      name="sysctl - configure kernel parameters at runtime"
-      provides="sysctl"
-      requires="sysconf"
-      enable="sysctl -q -p /etc/sysctl.conf"
-      disable="/bin/true"
-      restart="no" />
 
     <shell id="shell-apache2"
      name="httpd - Apache Hypertext Transfer Protocol Server"
@@ -858,13 +784,6 @@
      variables="configuration-distccd/.*" /> 
 
 
-     <daemon id="daemon-netplugd"
-      name="netplugd -- network cable hotplug management daemon"
-      provides="netplugd"
-      requires="ipc"
-      command="netplugd -F"
-      restart="yes" />
-
      <shell id="shell-fbsplash"
       name="fbsplash"
       provides="fbsplash"
@@ -877,38 +796,7 @@
       disable="/bin/true"
       variables="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
 
-<!-- this program saves its data the pwd so we must cd to the folder we want to saved data reside -->
-     <daemon id="daemon-boinc"
-      name="BOINC client"
-      provides="boinc"
-      requires="mount/critical"
-      command="cd /var/lib/boinc; boinc_client"
-      restart="yes" />
 
-     <shell id="shell-irqbalance"
-      name="irqbalance"
-      provides="irqbalance"
-      requires="mount/critical"
-      enable="irqbalance"
-      disable="/bin/true"
-      restart="no" />
-
-     <daemon id="daemon-hplip"
-      name="HP Linux Imaging and Printing System"
-      provides="hplip"
-      command="python /usr/share/hplip/hpssd.py -x"
-      restart="yes" />
-
-     <shell id="shell-hpiod"
-      name="HP I/O Backend Daemon"
-      provides="hpiod"
-      enable="hpiod"
-      disable="killall hpiod"
-      restart="yes" />
-
-<!-- modules by teppic from the wiki -->
-
-<!-- creds to RedIpS@gentoo-forums for this one -->
 <!-- (may be superseded by reworked setfont and keyboard modules) -->
      <shell id="shell-unicode"
       name="Unicode"

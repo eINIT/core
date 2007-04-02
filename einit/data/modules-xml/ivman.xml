@@ -1,0 +1,11 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-ivman"
+  name="Ikke's Volume Manager (IVMAN)"
+  uid="ivman"
+  gid="plugdev"
+  provides="ivman"
+  requires="hal"
+  pid="/var/run/ivman.pid"
+  command="/usr/bin/ivman --system --nofork"
+  restart="yes" />
+</einit>

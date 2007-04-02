@@ -1,0 +1,12 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-setfont"
+  name="setfont (${configuration_system_setfont_font})"
+  provides="setfont"
+  requires="mount/critical"
+  before="tty"
+  enable="for t in ${configuration_system_setfont_ttys}; do
+          setfont ${configuration_system_setfont_font} -C /dev/tty${t};
+          done"
+  disable="/bin/true"
+  variables="configuration-system-setfont/.*" />
+</einit>

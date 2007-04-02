@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-sysctl"
+  name="sysctl - configure kernel parameters at runtime"
+  provides="sysctl"
+  requires="sysconf"
+  enable="sysctl -q -p /etc/sysctl.conf"
+  disable="/bin/true"
+  restart="no" />
+</einit>
