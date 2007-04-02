@@ -142,6 +142,8 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  }
 #endif
 
+// char **modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL));
+
  mplen = strlen (modulepath) +4;
  dir = eopendir (modulepath);
  if (dir != NULL) {

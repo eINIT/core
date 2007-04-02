@@ -351,6 +351,7 @@ if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
+ETCXDIR = ${PREFIX}/etc
 LIBDIR = ${PREFIX}/lib/einit
 MODDIR = ${PREFIX}/lib/einit/modules
 BINDIR = ${PREFIX}/bin

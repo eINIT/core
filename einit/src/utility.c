@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/set.h>
 #include <einit/event.h>
+#include <einit/config.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -59,6 +60,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
 #if ! defined (_EINIT_UTIL)
+
+/*char **readdirfilter (const struct cfgnode *node, const char *default_dir, const char *default_allow, const char *default_disallow, char recurse) {
+
+
+}*/
 
 char **straddtoenviron (char **environment, const char *key, const char *value) {
  char **ret = NULL;

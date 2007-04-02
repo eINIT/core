@@ -53,6 +53,7 @@ extern "C" {
  * \defgroup utilityfunctionsstrings eINIT Utility Functions: String-manipulation
  * \defgroup utilityfunctionsmem eINIT Utility Functions: Memory-management wrappers
 */
+#include <einit/config.h>
 #include <inttypes.h>
 #include <einit/event.h>
 #include <sys/types.h>
@@ -60,6 +61,7 @@ extern "C" {
 #include <dirent.h>
 #include <stdio.h>
 
+// char **readdirfilter (const struct cfgnode *node, const char *default_dir, const char *default_allow, const char *default_disallow, char recurse);
 
 /*!\brief Add the variable \b key with \b value to \b environment.
  * \param[in,out] environment the environment to be manipulated
