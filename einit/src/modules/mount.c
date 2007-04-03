@@ -1213,6 +1213,8 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  uint32_t i = 0;
  if (!mountpoint) return;
 
+ eprintf (stderr, "DD adding fstab entry: %s -> %s", mountpoint, device ? device : "(nodev)");
+
  memset (&fse, 0, sizeof (struct fstab_entry));
 
  fse.mountpoint = mountpoint;
