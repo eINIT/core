@@ -208,5 +208,7 @@ int _configuration_network_configure (struct lmodule *this) {
 
  event_listen (EVENT_SUBSYSTEM_EINIT, configuration_network_einit_event_handler);
 
+ configuration_network_parse_configuration_and_add_nodes();
+
  return 0;
 }
