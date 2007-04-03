@@ -3,6 +3,11 @@
  * "list services" has been moved to the module-logics core, + it will now
    display candidates in the order that einit will try to deal with them.
  * added envfile="" support
+ * added is-up="" and is-down="" attrs to daemons -- they run after the daemon
+   is forked -- if the return value is shell-ish true, then the appropriate
+   change to the daemon is considered successful, else it is seen as failed
+ * added need-files="" to daemons -- just add a list of files that must exist
+   or else einit won't even try to bring it up (if the list is available).
 
 2007/04/02: mdeininger
  * need to split that configuration up :D

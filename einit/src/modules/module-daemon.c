@@ -202,6 +202,8 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
 
    else if (strmatch (node->arbattrs[i], "variables"))
     dexec->variables = str2set (':', node->arbattrs[i+1]);
+   else if (strmatch (node->arbattrs[i], "need-files"))
+    dexec->need_files = str2set (':', node->arbattrs[i+1]);
    else
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }

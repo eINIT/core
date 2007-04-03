@@ -780,6 +780,20 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 
  if (!shellcmd) return STATUS_FAIL;
 
+/* check if needed files are available */
+ if (shellcmd->need_files) {
+  uint32_t r = 0;
+  struct stat st;
+
+  for (; shellcmd->need_files[r]; r++) {
+   if (stat (shellcmd->need_files[r], &st)) {
+    notice (4, "can't bring up daemon \"%s\", because file \"%s\" does not exist.", shellcmd->id ? shellcmd->id : "unknown", shellcmd->need_files[r]);
+
+    return STATUS_FAIL;
+   }
+  }
+ }
+
  if (shellcmd->pidfile) {
   unlink (shellcmd->pidfile);
   errno = 0;

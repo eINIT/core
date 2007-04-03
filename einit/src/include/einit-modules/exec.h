@@ -70,6 +70,7 @@ struct dexecinfo {
  struct daemonst *cb;
  char **environment;
  char *pidfile;
+ char **need_files;
 };
 
 struct daemonst {
