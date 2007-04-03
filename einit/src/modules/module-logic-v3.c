@@ -1574,101 +1574,208 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
 void module_logic_ipc_event_handler (struct einit_event *ev) {
  if (ev->set && ev->set[0] && ev->set[1] && ev->para) {
-  if (strmatch (ev->set[0], "list") && strmatch (ev->set[1], "control-blocks")) {
-   emutex_lock (&ml_tb_target_state_mutex);
-
-   if (target_state.enable) {
-    char *r = set2str (' ', (const char **)target_state.enable);
-    if (r) {
-     eprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (target_state.disable) {
-    char *r = set2str (' ', (const char **)target_state.disable);
-    if (r) {
-     eprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (target_state.reset) {
-    char *r = set2str (' ', (const char **)target_state.reset);
-    if (r) {
-     eprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (target_state.reload) {
-    char *r = set2str (' ', (const char **)target_state.reload);
-    if (r) {
-     eprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (target_state.zap) {
-    char *r = set2str (' ', (const char **)target_state.zap);
-    if (r) {
-     eprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (target_state.critical) {
-    char *r = set2str (' ', (const char **)target_state.critical);
-    if (r) {
-     eprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
-     free (r);
-    }
-   }
-
-   emutex_unlock (&ml_tb_target_state_mutex);
-   emutex_lock (&ml_tb_current_mutex);
-
-   if (current.enable) {
-    char *r = set2str (' ', (const char **)current.enable);
-    if (r) {
-     eprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (current.disable) {
-    char *r = set2str (' ', (const char **)current.disable);
-    if (r) {
-     eprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (current.reset) {
-    char *r = set2str (' ', (const char **)current.reset);
-    if (r) {
-     eprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (current.reload) {
-    char *r = set2str (' ', (const char **)current.reload);
-    if (r) {
-     eprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (current.zap) {
-    char *r = set2str (' ', (const char **)current.zap);
-    if (r) {
-     eprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
-     free (r);
-    }
-   }
-   if (current.critical) {
-    char *r = set2str (' ', (const char **)current.critical);
-    if (r) {
-     eprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
-     free (r);
-    }
-   }
-
-   emutex_unlock (&ml_tb_current_mutex);
+  if (strmatch (ev->set[0], "examine") && strmatch (ev->set[1], "configuration")) {
 
    ev->flag = 1;
+  } else if (strmatch (ev->set[0], "list")) {
+   if (strmatch (ev->set[1], "services")) {
+    struct stree *modes = NULL;
+    struct stree *cur = NULL;
+    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
+
+    while (cfgn) {
+     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !streefind (modes, cfgn->mode->id, TREE_FIND_FIRST))) {
+      uint32_t i = 0;
+      for (i = 0; cfgn->arbattrs[i]; i+=2) {
+       if (strmatch(cfgn->arbattrs[i], "services")) {
+        char **tmps = str2set (':', cfgn->arbattrs[i+1]);
+
+        modes = streeadd (modes, cfgn->mode->id, tmps, SET_NOALLOC, tmps);
+
+        break;
+       }
+      }
+     }
+
+     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
+    }
+
+    emutex_lock(&ml_service_list_mutex);
+
+    cur = module_logics_service_list;
+
+    while (cur) {
+     char **inmodes = NULL;
+     struct stree *mcur = modes;
+
+     while (mcur) {
+      if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
+       inmodes = (char **)setadd((void **)inmodes, (void *)mcur->key, SET_TYPE_STRING);
+      }
+
+      mcur = streenext(mcur);
+     }
+
+     if (inmodes) {
+      char *modestr;
+      if (ev->status & EIPC_OUTPUT_XML) {
+       modestr = set2str (':', (const char **)inmodes);
+       eprintf ((FILE *)ev->para, " <service id=\"%s\" used-in=\"%s\">\n", cur->key, modestr);
+      } else {
+       modestr = set2str (' ', (const char **)inmodes);
+       eprintf ((FILE *)ev->para, (ev->status & EIPC_OUTPUT_ANSI) ?
+                                "\e[1mservice \"%s\" (%s)\n\e[0m" :
+                                  "service \"%s\" (%s)\n",
+                                cur->key, modestr);
+      }
+      free (modestr);
+      free (inmodes);
+     } else if (!(ev->status & EIPC_ONLY_RELEVANT)) {
+      if (ev->status & EIPC_OUTPUT_XML) {
+       eprintf ((FILE *)ev->para, " <service id=\"%s\">\n", cur->key);
+      } else {
+       eprintf ((FILE *)ev->para, (ev->status & EIPC_OUTPUT_ANSI) ?
+                                "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
+                                  "service \"%s\" (not in any mode)\n",
+                                cur->key);
+      }
+     }
+
+     if (inmodes || (!(ev->status & EIPC_ONLY_RELEVANT))) {
+      if (ev->status & EIPC_OUTPUT_XML) {
+       if (cur->value) {
+        struct lmodule **xs = cur->value;
+        uint32_t u = 0;
+        for (u = 0; xs[u]; u++) {
+         eprintf ((FILE *)ev->para, "  <module id=\"%s\" name=\"%s\" />\n",
+                   xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
+                   xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+        }
+       }
+
+       eputs (" </service>\n", (FILE*)ev->para);
+      } else {
+       if (cur->value) {
+        struct lmodule **xs = cur->value;
+        uint32_t u = 0;
+        for (u = 0; xs[u]; u++) {
+         eprintf ((FILE *)ev->para, (ev->status & EIPC_OUTPUT_ANSI) ?
+           ((xs[u]->module && (xs[u]->module->options & EINIT_MOD_DEPRECATED)) ?
+                                  " \e[31m- \e[0mcandidate \"%s\" (%s)\n" :
+                                  " \e[33m* \e[0mcandidate \"%s\" (%s)\n") :
+             " * candidate \"%s\" (%s)\n",
+           xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
+           xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+        }
+       }
+      }
+     }
+
+     cur = streenext (cur);
+    }
+
+    emutex_unlock(&ml_service_list_mutex);
+
+    ev->flag = 1;
+   }
+#ifdef DEBUG
+   else if (strmatch (ev->set[1], "control-blocks")) {
+    emutex_lock (&ml_tb_target_state_mutex);
+
+    if (target_state.enable) {
+     char *r = set2str (' ', (const char **)target_state.enable);
+     if (r) {
+      eprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (target_state.disable) {
+     char *r = set2str (' ', (const char **)target_state.disable);
+     if (r) {
+      eprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (target_state.reset) {
+     char *r = set2str (' ', (const char **)target_state.reset);
+     if (r) {
+      eprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (target_state.reload) {
+     char *r = set2str (' ', (const char **)target_state.reload);
+     if (r) {
+      eprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (target_state.zap) {
+     char *r = set2str (' ', (const char **)target_state.zap);
+     if (r) {
+      eprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (target_state.critical) {
+     char *r = set2str (' ', (const char **)target_state.critical);
+     if (r) {
+      eprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
+      free (r);
+     }
+    }
+
+    emutex_unlock (&ml_tb_target_state_mutex);
+    emutex_lock (&ml_tb_current_mutex);
+
+    if (current.enable) {
+     char *r = set2str (' ', (const char **)current.enable);
+     if (r) {
+      eprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (current.disable) {
+     char *r = set2str (' ', (const char **)current.disable);
+     if (r) {
+      eprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (current.reset) {
+     char *r = set2str (' ', (const char **)current.reset);
+     if (r) {
+      eprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (current.reload) {
+     char *r = set2str (' ', (const char **)current.reload);
+     if (r) {
+      eprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (current.zap) {
+     char *r = set2str (' ', (const char **)current.zap);
+     if (r) {
+      eprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
+      free (r);
+     }
+    }
+    if (current.critical) {
+     char *r = set2str (' ', (const char **)current.critical);
+     if (r) {
+      eprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
+      free (r);
+     }
+    }
+
+    emutex_unlock (&ml_tb_current_mutex);
+
+    ev->flag = 1;
+   }
+#endif
   }
  }
 }

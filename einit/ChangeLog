@@ -1,5 +1,7 @@
 2007/04/03: mdeininger
  * parsed some of the configuration in the wrong function/forgot updates
+ * "list services" has been moved to the module-logics core, + it will now
+   display candidates in the order that einit will try to deal with them.
 
 2007/04/02: mdeininger
  * need to split that configuration up :D

@@ -384,6 +384,8 @@ int main(int argc, char **argv) {
 
 // make sure we keep updating until everything is sorted out
   while (cev.type == EVE_CONFIGURATION_UPDATE) {
+   notice (2, "stuff changed, updating configuration.");
+
    cev.type = EVE_UPDATE_CONFIGURATION;
    event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
   }
