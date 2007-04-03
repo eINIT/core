@@ -261,8 +261,39 @@ int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_even
  int retval = STATUS_FAIL;
 
  if (shellcmd) {
+  int32_t task = status->task;
 
-  if (status->task & MOD_ENABLE) {
+  if (task & MOD_RESET) {
+   if (shellcmd->reset) {
+    retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+   } else {
+    task = MOD_ENABLE | MOD_DISABLE;
+   }
+  } else if (task & MOD_RELOAD) {
+   if (shellcmd->reload) {
+    retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+   } else {
+    task = MOD_ENABLE | MOD_DISABLE;
+   }
+  }
+
+  if (task & MOD_DISABLE) {
+   if (shellcmd->disable) {
+    retval = pexec (shellcmd->disable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+    if (retval & STATUS_OK) {
+     if (shellcmd->cleanup) {
+      pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+     }
+
+     if (shellcmd->pidfile) {
+      unlink (shellcmd->pidfile);
+      errno = 0;
+     }
+    }
+   }
+  }
+  if (task & MOD_ENABLE) {
    if (shellcmd->enable) {
     if (shellcmd->pidfile) {
      unlink (shellcmd->pidfile);
@@ -278,27 +309,6 @@ int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_even
     if ((retval == STATUS_FAIL) && shellcmd->cleanup)
      pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
    }
-  } else if (status->task & MOD_DISABLE) {
-   if (shellcmd->disable) {
-    retval = pexec (shellcmd->disable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-
-    if (retval & STATUS_OK) {
-     if (shellcmd->cleanup) {
-      pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
-     }
-
-     if (shellcmd->pidfile) {
-      unlink (shellcmd->pidfile);
-      errno = 0;
-     }
-    }
-   }
-  } else if (status->task & MOD_RESET) {
-   if (shellcmd->reset)
-    retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-  } else if (status->task & MOD_RELOAD) {
-   if (shellcmd->reload)
-    retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
   }
  }
 

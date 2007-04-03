@@ -1,0 +1,14 @@
+<einit prefix="services-virtual-module">
+ <shell-template id="template-shell-if-hardwired"
+  name="Network (${interface}, hardwired)"
+  provides="if-${interface}"
+  requires="kern-${interface}"
+  enable="/bin/true"
+  disable="/bin/true"  />
+
+ <shell-template id="template-shell-if-hardwired-nomodules"
+  name="Network (${interface}, hardwired-generic)"
+  provides="if-${interface}"
+  enable="/bin/true"
+  disable="/bin/true"  />
+</einit>

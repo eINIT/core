@@ -112,7 +112,8 @@
    <domainname s="local" />
 
    <interfaces>
-    <lo ip="static" address="127.0.0.1/8" network="127.0.0.0/8" />
+    <lo ip="static-hardwired" address="127.0.0.1/8" network="127.0.0.0/8" />
+    <eth0 ip="dhcpcd" control="hardwired" />
    </interfaces>
 
    <dhcp>
@@ -442,38 +443,6 @@
      disable="${configuration_command_rmmod} fglrx"
      variables="configuration-command-rmmod" />
 
-<!--    <shell-template id="template-shell-net-static"
-     name="Network (${interface}, static)"
-     provides="net-${interface}"
-     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address}; route add -net ${configuration_network_interfaces_${interface}_network} gw ${configuration_network_interfaces_${interface}_gateway}"
-     disable="ifconfig ${interface} down"
-     variables="configuration-network-interfaces-${interface}/.*" /> -->
-
-<!-- revised version of the template - thanks lonn! ;) -->
-    <shell-template id="template-shell-net-static"
-     name="Network (${interface}, static)"
-     provides="net-${interface}"
-     enable="/sbin/ifconfig ${interface} up ${configuration_network_interfaces_${interface}_address};
-      route add -net ${configuration_network_interfaces_${interface}_network};
-      if [ ! -z ${configuration_network_interfaces_${interface}_gateway} ]; then
-       route add default gw ${configuration_network_interfaces_${interface}_gateway};
-      fi"
-     disable="ifconfig ${interface} down"
-     variables="configuration-network-interfaces-${interface}/.*" />
-
-<!-- new template using iproute2; creds to truc -->
-    <shell-template id="template-shell-net-static-iproute2"
-     name="Network (${interface}, static)"
-     provides="net-${interface}"
-     enable="/sbin/ip addr add ${configuration_network_interfaces_${interface}_address} dev ${interface} ;
-      /sbin/ip link set ${interface} up ;
-      /sbin/ip route add ${configuration_network_interfaces_${interface}_network} dev ${interface} ;
-      if [ ! -z ${configuration_network_interfaces_${interface}_gateway} ]; then
-       /sbin/ip route add via ${configuration_network_interfaces_${interface}_gateway};
-      fi"
-     disable="/sbin/ip link set ${interface} down"
-     variables="configuration-network-interfaces-${interface}/.*" />
-
 <!-- new template for wpa_supplicant - go ryan! :D -->
     <shell-template id="template-shell-net-wpasupplicant"
      name="Network (${interface}, wpa_supplicant)"
@@ -483,10 +452,6 @@
       wpa_cli -B -i ${interface}"
      disable="ifconfig ${interface} down"
      variables="configuration-network-interfaces-${interface}/.*" />
-
-    <shell id="shell-net-static-loopback"
-     based-on-template="template-shell-net-static"
-     interface="lo" />
 
 <!-- another hooray for haader, who contributed this module definition.
     this should (in theory) work for his Atheros WLAN NIC. I slightly modified it to pass the SSID
@@ -507,20 +472,6 @@
              /sbin/ifconfig ath0 ; "
      disable="${configuration_command_rmmod} ${configuration_kernel_module_ath0}"
      variables="configuration-kernel-module-ath0:configuration-network-wireless-ssid:configuration-command-rmmod" />
-
-<!-- DHCPcd -->
-    <shell-template id="template-shell-net-dhcp"
-     name="Network (${interface}, using DHCP)"
-     provides="net-${interface}"
-     requires="kern-ethernet:mount/critical"
-     pid="/var/run/dhcpcd-${interface}.pid"
-     enable="pexec-options no-pipe; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
-     disable="killall dhcpcd; ifconfig ${interface} down"
-     variables="configuration-network-dhcp-timeout" />
-
-    <shell id="shell-net-eth0-dhcp"
-     based-on-template="template-shell-net-dhcp"
-     interface="eth0" />
 
     <shell id="shell-apache2"
      name="httpd - Apache Hypertext Transfer Protocol Server"
