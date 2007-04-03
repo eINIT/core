@@ -567,7 +567,7 @@
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable services="audio:portmap:clock:xdm:swap:mount/remote" />
+  <enable services="audio:portmap:clock:displaymanager:swap:mount/remote" />
   <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-down">

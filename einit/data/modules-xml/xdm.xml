@@ -4,5 +4,6 @@
   provides="x11:displaymanager"
   requires="net-lo:mount/critical"
   command="/usr/bin/xdm -nodaemon"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/bin/xdm" />
 </einit>

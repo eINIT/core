@@ -5,5 +5,6 @@
   requires="net-lo:mount/critical"
   pid="/var/run/kdm.pid"
   command="/usr/kde/3.5/bin/kdm -nodaemon"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/kde/3.5/bin/kdm"/>
 </einit>
