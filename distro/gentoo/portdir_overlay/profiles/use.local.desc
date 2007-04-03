@@ -1,3 +1,32 @@
 sys-apps/einit:efl - Use the EFL -- Evas/Edje/Ecore
-sys-apps/einit:einit_extmod_testa - Test
-sys-apps/einit:einit_intmod_textb - Test
+sys-apps/einit:nowtf - Don't compile code for the --wtf flag
+sys-apps/einit:externalise - Compile as much as possible externally
+sys-apps/einit:einit_core_bootstrap-configuration-stree - Internal representation for configuration data, stree-based
+sys-apps/einit:einit_core_bootstrap-configuration-xml-expat - Configuration parser, XML/eXpat-based
+sys-apps/einit:einit_modules_mount - Filesystem Mounter
+sys-apps/einit:einit_modules_linux-mount - Filesystem Mounter, Linux-specific parts
+sys-apps/einit:einit_modules_process - Process Collector
+sys-apps/einit:einit_modules_linux-process - Process Collector, Linux-specific parts
+sys-apps/einit:einit_modules_linux-sysconf - System-Configuration, Linux-specific
+sys-apps/einit:einit_core_log - Used to log internal events
+sys-apps/einit:einit_core_module-logic-v3 - Used to resolve dependencies between modules
+sys-apps/einit:einit_core_module-so - Support for "binary" (i.e. ".so") modules
+sys-apps/einit:einit_experimental_feedback-visual-fbsplash - Feedback-module, Visual/Graphical-based, uses fbsplash
+sys-apps/einit:einit_experimental_readahead - Tell the kernel to load a list of files in advance
+sys-apps/einit:einit_modules_compatibility-sysv-initctl - Used to make sysvinit's reboot/halt/shutdown commands work
+sys-apps/einit:einit_modules_compatibility-sysv-utmp - Used to tend to the system's utmp file
+sys-apps/einit:einit_modules_exec - Functions to start daemons and run commands
+sys-apps/einit:einit_modules_external - Used to tell einit that certain services are already provided
+sys-apps/einit:einit_modules_feedback-aural - Feedback-module, Aural/TTS-based
+sys-apps/einit:einit_modules_feedback-visual-textual - Feedback-module, Visual/Text-based
+sys-apps/einit:einit_modules_hostname - Simple module to set host- and NIS-domainname
+sys-apps/einit:einit_modules_ipc - Inter-Process Communication, makes einit-control/erc/power work
+sys-apps/einit:einit_modules_ipc-configuration - Optional IPC commands to query configurarion parameters
+sys-apps/einit:einit_modules_ipc-core-helpers - Optional IPC commands to display core stats
+sys-apps/einit:einit_modules_module-daemon - Support for "<daemon />" modules
+sys-apps/einit:einit_modules_module-shell - Support for "<shell />" modules
+sys-apps/einit:einit_modules_module-transformations - Manipulate modules' service-lists (aliases, etc...)
+sys-apps/einit:einit_modules_parse-sh - Used to parse SH-style files
+sys-apps/einit:einit_modules_scheduler - Scheduler, its primary purpose is informing the daemon- and tty-modules about dead child processes
+sys-apps/einit:einit_modules_shadow-exec - Support for "Shadow Modules"
+sys-apps/einit:einit_modules_tty - Support for TTYs (i.e. spawning (a)gettys on your VTs)

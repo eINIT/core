@@ -93,6 +93,12 @@ for param in $@; do
 		echo -n " DEBUG";
 		XCFLAGS="$XCFLAGS -DDEBUG";
 		GCCFLAGS="${GCCFLAGS} -g"
+	elif test "$param" = "--nowtf"; then
+		echo -n " NOWTF";
+		XCFLAGS="$XCFLAGS -DNOWTF";
+	elif test "$param" = "--externalise"; then
+		echo -n " EXT";
+		externalise="yes";
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
@@ -131,6 +137,11 @@ done;
 echo " ]";
 
 if test -e configure.overrides; then source configure.overrides; fi
+
+if test "${externalise}" = "yes"; then
+	EXTERNALMODULES="${EXTERNALMODULES} ${INTERNALMODULES}";
+	INTERNALMODULES="${NEED_INTERNAL}";
+fi
 
 newext="";
 for i in ${EXTERNALMODULES}; do
