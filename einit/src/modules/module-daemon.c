@@ -170,6 +170,10 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     dexec->prepare = node->arbattrs[i+1];
    else if (strmatch (node->arbattrs[i], "cleanup"))
     dexec->cleanup = node->arbattrs[i+1];
+   else if (strmatch (node->arbattrs[i], "is-up"))
+    dexec->is_up = node->arbattrs[i+1];
+   else if (strmatch (node->arbattrs[i], "is-down"))
+    dexec->is_down = node->arbattrs[i+1];
    else if (strmatch (node->arbattrs[i], "uid"))
     dexec->uid = atoi(node->arbattrs[i+1]);
    else if (strmatch (node->arbattrs[i], "gid"))

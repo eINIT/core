@@ -60,6 +60,8 @@ struct dexecinfo {
  char *command;
  char *prepare;
  char *cleanup;
+ char *is_up;
+ char *is_down;
  char **variables;
  uid_t uid;
  gid_t gid;

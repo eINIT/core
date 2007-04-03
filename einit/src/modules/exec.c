@@ -859,6 +859,10 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
  }
  emutex_unlock (&running_mutex);
 
+ if (shellcmd->is_up) {
+  return pexec (shellcmd->is_up, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+ }
+
  return STATUS_OK;
 }
 
@@ -912,6 +916,10 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  if (shellcmd->cleanup) {
  // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
   if (pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
+ }
+
+ if (shellcmd->is_down) {
+  return pexec (shellcmd->is_down, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
  }
 
  return STATUS_OK;
