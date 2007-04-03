@@ -110,6 +110,7 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 char **__create_environment (char **environment, const char **variables);
 void _einit_exec_ipc_event_handler (struct einit_event *);
+void _einit_exec_einit_event_handler (struct einit_event *);
 
 int _einit_exec_cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) free (shell);
@@ -123,10 +124,18 @@ int _einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-apply-envfile", 1, __apply_envfile);
 
  event_ignore (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_exec_einit_event_handler);
 
  sched_cleanup(irr);
 
  return 0;
+}
+
+void _einit_exec_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  if (!(envfilebase = cfg_getpath("configuration-system-exec-envfile-base")))
+   envfilebase = estrdup("/etc/econf.d/");
+ }
 }
 
 void _einit_exec_ipc_event_handler (struct einit_event *ev) {
@@ -928,6 +937,7 @@ int _einit_exec_configure (struct lmodule *irr) {
   kill_timeout_secondary = node->value;
 
  event_listen (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_exec_einit_event_handler);
 
  function_register ("einit-execute-command", 1, __pexec_function);
  function_register ("einit-execute-daemon", 1, __start_daemon_function);

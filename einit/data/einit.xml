@@ -80,6 +80,7 @@
    <daemon-term-timeout-secondary i="2" />
    <shell s="/bin/sh -c" />
    <shell-exec-timeout i="20" />
+   <exec-envfile-base s="/etc/econf.d/" />
    <proc-path s="/proc" />
 
    <swap device="-a" affinity="0" />
