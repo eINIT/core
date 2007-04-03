@@ -547,7 +547,7 @@
      prepare="[ ! -e /var/log/apache2 ] &amp;&amp; mkdir /var/log/apache2;
               [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;
               /bin/true"
-     enable="pexec-options no-pipe; source ${envfile}; apache2 $APACHE2_OPTS -d ${root} -f ${config} -k start&amp;"
+     enable="pexec-options no-pipe; apache2 $APACHE2_OPTS -d ${root} -f ${config} -k start&amp;"
      disable="killall -9 -q apache2"
      restart="yes" />
 

@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/exec.h>
 #include <einit-modules/scheduler.h>
 #include <ctype.h>
+#include <sys/stat.h> 
 
 #ifdef POSIXREGEX
 #include <regex.h>
@@ -90,6 +91,7 @@ struct daemonst * running = NULL;
 
 char **shell = NULL;
 char *dshell[] = {"/bin/sh", "-c", NULL};
+char *envfilebase = "/etc/econf.d/";
 
 char *safe_environment[] = { "PATH=/bin:/sbin:/usr/bin:/usr/sbin", "TERM=dumb", NULL };
 
@@ -102,6 +104,7 @@ int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 
 char **__check_variables (const char *, const char **, FILE *);
+char *__apply_envfile (char *command, const char **environment);
 int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
 int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
 int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
@@ -117,6 +120,7 @@ int _einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-stop-daemon", 1, __stop_daemon_function);
  function_unregister ("einit-create-environment", 1, __create_environment);
  function_unregister ("einit-check-variables", 1, __check_variables);
+ function_unregister ("einit-apply-envfile", 1, __apply_envfile);
 
  event_ignore (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
 
@@ -155,6 +159,56 @@ void *pexec_watcher (struct spidcb *spid) {
  emutex_unlock (&pexec_running_mutex);
 }
 #endif
+
+char *__apply_envfile (char *command, const char **environment) {
+ uint32_t i = 0;
+
+ char **envfiles = NULL;
+
+ if (environment) {
+  for (; environment[i]; i++) {
+   if (strstr(environment[i], "envfile=") == environment[i]) {
+    if (envfiles) free (envfiles);
+
+    envfiles = str2set (':', environment[i]+8);
+    break;
+   }
+   if (strstr(environment[i], "services=") == environment[i]) {
+    envfiles = str2set (':', environment[i]+9);
+   }
+  }
+ }
+
+ if (envfiles) {
+  for (i = 0; envfiles[i]; i++) {
+   char buffer[BUFFERSIZE];
+   char *file = NULL;
+   struct stat st;
+
+   if (envfiles[i][0] == '/')
+    file = envfiles[i];
+   else {
+    file = emalloc (strlen (envfilebase)+strlen(envfiles[i]) + 1);
+    *file = 0;
+    strcat (file, envfilebase);
+    strcat (file, envfiles[i]);
+   }
+
+   if (file && !stat (file, &st)) {
+    char *oc = command;
+
+    esprintf (buffer, BUFFERSIZE, " . %s;\n", file);
+
+    command = emalloc (strlen(buffer) + strlen (oc) + 1);
+    *command = 0;
+    strcat (command, buffer);
+    strcat (command, oc);
+   }
+  }
+ }
+
+ return command;
+}
 
 char **__check_variables (const char *id, const char **variables, FILE *output) {
  uint32_t u = 0;
@@ -347,9 +401,6 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
  }
  if (!command || !command[0]) return STATUS_FAIL;
 
- cmdsetdup = str2set ('\0', command);
- cmd = (char **)setcombine ((const void *)shell, (const void **)cmdsetdup, -1);
-
  struct execst *new = ecalloc (1, sizeof (struct execst));
  emutex_init (&(new->mutex), NULL);
  emutex_lock (&(new->mutex));
@@ -399,6 +450,11 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
+
+  command = __apply_envfile ((char *)command, (const char **)exec_environment);
+
+  cmdsetdup = str2set ('\0', command);
+  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
   if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
    debugx(" >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
@@ -500,9 +556,6 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
   }
  }
 
- cmdsetdup = str2set ('\0', command);
- cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
-
 /* if (status) {
   status->string = (char *)command;
   status_update (status);
@@ -538,7 +591,16 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
   exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
   exec_environment = __create_environment (exec_environment, variables);
 
-  execve (cmd[0], cmd, exec_environment);
+  command = __apply_envfile ((char *)command, (const char **)exec_environment);
+
+  cmdsetdup = str2set ('\0', command);
+  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
+
+  if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
+   execve (cmd[0], cmd, safe_environment);
+  } else {
+   execve (cmd[0], cmd, exec_environment);
+  }
   perror (cmd[0]);
   free (cmd);
   free (cmdsetdup);
@@ -765,6 +827,11 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
   if (uid && (setuid (uid) == -1))
    perror ("setting uid");
 
+  daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
+  daemon_environment = __create_environment (daemon_environment, (const char **)shellcmd->variables);
+
+  shellcmd->command = __apply_envfile (shellcmd->command, (const char **)daemon_environment);
+
   cmdsetdup = str2set ('\0', shellcmd->command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
 //  close (0);
@@ -772,9 +839,6 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
 //  close (2);
   eclose (1);
   dup2 (2, 1);
-
-  daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
-  daemon_environment = __create_environment (daemon_environment, (const char **)shellcmd->variables);
 
   execve (cmd[0], cmd, daemon_environment);
   free (cmd);
@@ -870,6 +934,7 @@ int _einit_exec_configure (struct lmodule *irr) {
  function_register ("einit-stop-daemon", 1, __stop_daemon_function);
  function_register ("einit-create-environment", 1, __create_environment);
  function_register ("einit-check-variables", 1, __check_variables);
+ function_register ("einit-apply-envfile", 1, __apply_envfile);
 
  return 0;
 }

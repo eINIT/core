@@ -190,9 +190,11 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
     mexec->pidfile = node->arbattrs[i+1];
    } else if (strmatch (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "provides"))
+   else if (strmatch (node->arbattrs[i], "provides")) {
     modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "after"))
+
+    mexec->environment = straddtoenviron (mexec->environment, "services", node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "after"))
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
    else if (strmatch (node->arbattrs[i], "before"))
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
