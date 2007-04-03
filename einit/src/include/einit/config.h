@@ -131,6 +131,7 @@ typedef char *(*cfg_getstring_t) (const char *, const struct cfgnode *);
 typedef struct cfgnode *(*cfg_getnode_t) (const char *, const struct cfgnode *);
 typedef struct stree *(*cfg_filter_t) (const char *, const uint32_t);
 typedef char *(*cfg_getpath_t) (const char *);
+typedef struct stree *(*cfg_prefix_t) (const char *);
 
 cfg_addnode_t cfg_addnode_fp;
 cfg_findnode_t cfg_findnode_fp;
@@ -138,9 +139,10 @@ cfg_getstring_t cfg_getstring_fp;
 cfg_getnode_t cfg_getnode_fp;
 cfg_filter_t cfg_filter_fp;
 cfg_getpath_t cfg_getpath_fp;
+cfg_prefix_t cfg_prefix_fp;
 
-#define config_configure() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL
-#define config_cleanup() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL
+#define config_configure() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL; cfg_prefix_fp = NULL;
+#define config_cleanup() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL; cfg_prefix_fp = NULL;
 
 
 #define cfg_addnode(node) ((cfg_addnode_fp || (cfg_addnode_fp = function_find_one("einit-configuration-node-add", 1, NULL))) ? cfg_addnode_fp(node) : -1)
@@ -155,6 +157,8 @@ cfg_getpath_t cfg_getpath_fp;
 
 #define cfg_filter(filter, i) ((cfg_filter_fp || (cfg_filter_fp = function_find_one("einit-configuration-node-get-filter", 1, NULL))) ? cfg_filter_fp(filter, i) : NULL)
 
+#define cfg_prefix(prefix) ((cfg_prefix_fp || (cfg_prefix_fp = function_find_one("einit-configuration-node-get-prefix", 1, NULL))) ? cfg_prefix_fp(prefix) : NULL)
+
 #else
 
 int __cfg_addnode (struct cfgnode *);
@@ -163,6 +167,7 @@ char *__cfg_getstring (const char *, const struct cfgnode *);
 struct cfgnode *__cfg_getnode (const char *, const struct cfgnode *);
 struct stree *__cfg_filter (const char *, const uint32_t);
 char *__cfg_getpath (const char *);
+char *__cfg_prefix (const char *);
 
 #define config_configure() ;
 #define config_cleanup() ;
@@ -173,6 +178,7 @@ char *__cfg_getpath (const char *);
 #define cfg_getnode(id, base) __cfg_getnode(id, base)
 #define cfg_getpath(id) __cfg_getpath(id)
 #define cfg_filter(filter, i) __cfg_filter(filter, i)
+#define cfg_prefix(filter, i) __cfg_prefix(filter, i)
 
 #endif
 

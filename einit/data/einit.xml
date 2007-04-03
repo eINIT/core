@@ -36,6 +36,7 @@
    <commands-include>
     <file s="sandbox.xml" />
     <directory s="../../lib/einit/modules-xml" />
+    <directory s="../../lib/einit/modules-xml/templates-net" />
    </commands-include>
    <else>
     <settings>
@@ -44,6 +45,7 @@
     <commands-include>
      <file s="local.xml" />
      <directory s="/lib/einit/modules-xml" />
+     <directory s="/lib/einit/modules-xml/templates-net" />
     </commands-include>
    </else>
   </if>
@@ -110,8 +112,7 @@
    <domainname s="local" />
 
    <interfaces>
-    <source s="sys:proc" />
-    <lo address="127.0.0.1/8" network="127.0.0.0/8" />
+    <lo ip="static" address="127.0.0.1/8" network="127.0.0.0/8" />
    </interfaces>
 
    <dhcp>

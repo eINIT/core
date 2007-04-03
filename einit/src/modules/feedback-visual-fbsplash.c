@@ -59,8 +59,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
+int _einit_feedback_visual_fbsplash_configure (struct lmodule *);
+
+#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+
 char *provides[] = {"feedback-visual", "feedback-graphical", NULL};
-const struct smodule self = {
+const struct smodule _einit_feedback_visual_fbsplash_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -73,8 +77,13 @@ const struct smodule self = {
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
- }
+ },
+ .configure = _einit_feedback_visual_fbsplash_configure
 };
+
+module_register(_einit_feedback_visual_fbsplash_self);
+
+#endif
 
 struct planref {
  struct mloadplan *plan;

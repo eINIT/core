@@ -337,6 +337,25 @@ struct stree *__cfg_filter (const char *filter, const uint32_t node_options) {
  return retval;
 }
 
+// return a new stree with the filter applied
+struct stree *__cfg_prefix (const char *prefix) {
+ struct stree *retval = NULL;
+
+#ifdef POSIXREGEX
+ if (prefix) {
+  struct stree *cur = hconfiguration;
+  while (cur) {
+   if (strstr(cur->key, prefix) == cur->key) {
+    retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
+   }
+   cur = streenext (cur);
+  }
+ }
+#endif
+
+ return retval;
+}
+
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *__cfg_getpath (const char *id) {
  int mplen;
@@ -387,6 +406,7 @@ int _bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  function_unregister ("einit-configuration-node-get-find", 1, __cfg_findnode);
  function_unregister ("einit-configuration-node-get-filter", 1, __cfg_filter);
  function_unregister ("einit-configuration-node-get-path", 1, __cfg_getpath);
+ function_unregister ("einit-configuration-node-get-prefix", 1, __cfg_prefix);
 
  return 0;
 }
@@ -404,6 +424,7 @@ int _bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  function_register ("einit-configuration-node-get-find", 1, __cfg_findnode);
  function_register ("einit-configuration-node-get-filter", 1, __cfg_filter);
  function_register ("einit-configuration-node-get-path", 1, __cfg_getpath);
+ function_register ("einit-configuration-node-get-prefix", 1, __cfg_prefix);
 
  return 0;
 }

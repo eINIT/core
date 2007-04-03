@@ -8,6 +8,7 @@
    change to the daemon is considered successful, else it is seen as failed
  * added need-files="" to daemons -- just add a list of files that must exist
    or else einit won't even try to bring it up (if the list is available).
+ * new module: configuration-network
 
 2007/04/02: mdeininger
  * need to split that configuration up :D

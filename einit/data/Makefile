@@ -10,9 +10,11 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCXDIR}/econf.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml/templates-net
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/*.xml ${DESTDIR}/${LIBDIR}/modules-xml
+	${INSTALL} ${IPARAM} -m 0644 modules-xml/templates-net/*.xml ${DESTDIR}/${LIBDIR}/modules-xml/templates-net
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	
 	if test -e ${ETCDIR}/local.xml; then ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}/local.xml.example; else ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}; fi
