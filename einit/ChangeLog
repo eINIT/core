@@ -1,3 +1,6 @@
+2007/04/03: mdeininger
+ * parsed some of the configuration in the wrong function/forgot updates
+
 2007/04/02: mdeininger
  * need to split that configuration up :D
  * use /etc/fstab by default

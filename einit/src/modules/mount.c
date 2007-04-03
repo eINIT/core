@@ -246,6 +246,7 @@ int _einit_mount_disable (enum mounttask, struct einit_event *);
 int mountwrapper (char *, struct einit_event *, uint32_t);
 char *__options_string_to_mountflags (char **, unsigned long *, char *);
 void _einit_mount_einit_event_handler (struct einit_event *);
+void _einit_mount_update_configuration ();
 
 char *generate_legacy_mtab (struct mount_control_block *);
 
@@ -1803,43 +1804,10 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
  return STATUS_OK;
 }
 
-void _einit_mount_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
-  struct cfgnode *node = NULL;
-  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
-   mcb.options |= OPTION_MAINTAIN_MTAB;
-   mcb.mtab_file = node->svalue;
-  }
-
-  update_fstab();
- }
-}
-
-int _einit_mount_configure (struct lmodule *r) {
- module_init (r);
-
- thismodule->scanmodules = _einit_mount_scanmodules;
- thismodule->cleanup = _einit_mount_cleanup;
- thismodule->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
- thismodule->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
-
+void _einit_mount_update_configuration () {
  struct cfgnode *node = NULL;
 
-/* pexec configuration */
- exec_configure (this);
-
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_mount_mount_ipc_handler);
- event_listen (EVENT_SUBSYSTEM_MOUNT, _einit_mount_mount_update_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_mount_einit_event_handler);
-
  read_filesystem_flags_from_configuration (NULL);
-
- function_register ("find-block-devices-dev", 1, (void *)find_block_devices_recurse_path);
- function_register ("read-fstab-label", 1, (void *)forge_fstab_by_label);
- function_register ("read-fstab-configuration", 1, (void *)read_fstab_from_configuration);
- function_register ("read-fstab-legacy", 1, (void *)read_fstab);
- function_register ("read-mtab-legacy", 1, (void *)read_mtab);
- function_register ("fs-mount", 1, (void *)mountwrapper);
 
  if ((node = cfg_findnode ("configuration-storage-update-steps",0,NULL)) && node->svalue) {
   char **tmp = str2set(':', node->svalue);
@@ -1873,6 +1841,37 @@ int _einit_mount_configure (struct lmodule *r) {
   }
  } else update_fstab();
  update_mtab();
+}
+
+void _einit_mount_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == EVE_CONFIGURATION_UPDATE) {
+  _einit_mount_update_configuration();
+ }
+}
+
+int _einit_mount_configure (struct lmodule *r) {
+ module_init (r);
+
+ thismodule->scanmodules = _einit_mount_scanmodules;
+ thismodule->cleanup = _einit_mount_cleanup;
+ thismodule->enable = (int (*)(void *, struct einit_event *))_einit_mount_enable;
+ thismodule->disable = (int (*)(void *, struct einit_event *))_einit_mount_disable;
+
+/* pexec configuration */
+ exec_configure (this);
+
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_mount_mount_ipc_handler);
+ event_listen (EVENT_SUBSYSTEM_MOUNT, _einit_mount_mount_update_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_mount_einit_event_handler);
+
+ function_register ("find-block-devices-dev", 1, (void *)find_block_devices_recurse_path);
+ function_register ("read-fstab-label", 1, (void *)forge_fstab_by_label);
+ function_register ("read-fstab-configuration", 1, (void *)read_fstab_from_configuration);
+ function_register ("read-fstab-legacy", 1, (void *)read_fstab);
+ function_register ("read-mtab-legacy", 1, (void *)read_mtab);
+ function_register ("fs-mount", 1, (void *)mountwrapper);
+
+ _einit_mount_update_configuration();
 
  return 0;
 }
