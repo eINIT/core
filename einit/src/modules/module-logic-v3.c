@@ -106,6 +106,7 @@ struct module_taskblock
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
 struct stree *module_logics_group_data = NULL;
 struct stree *ml_service_status_worker_threads = NULL;
+struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 
 struct lmodule *mlist;
 
@@ -118,7 +119,8 @@ pthread_mutex_t
   ml_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_group_data_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_mutex_apply_loop = PTHREAD_MUTEX_INITIALIZER;
+  ml_mutex_apply_loop = PTHREAD_MUTEX_INITIALIZER,
+  ml_chain_examine = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_cond_t
   ml_cond_apply_loop = PTHREAD_COND_INITIALIZER;
@@ -146,6 +148,9 @@ char initdone = 0;
 void mod_update_group (struct lmodule *lm);
 char mod_isbroken (char *service);
 char mod_mark (char *service, char task);
+
+/* examine service status and (maybe) change dependant services */
+void mod_examine (char *service);
 
 char mod_done (struct lmodule *module, int task) {
  if (!module) return 0;
@@ -1575,6 +1580,41 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 void module_logic_ipc_event_handler (struct einit_event *ev) {
  if (ev->set && ev->set[0] && ev->set[1] && ev->para) {
   if (strmatch (ev->set[0], "examine") && strmatch (ev->set[1], "configuration")) {
+   struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
+   char **modes = NULL;
+
+   while (cfgn) {
+    if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !inset ((const void **)modes, (const void *)cfgn->mode->id, SET_TYPE_STRING))) {
+     uint32_t i = 0;
+     modes = (char **)setadd ((void **)modes, (void *)cfgn->mode->id, SET_TYPE_STRING);
+
+     for (i = 0; cfgn->arbattrs[i]; i+=2) {
+      if (strmatch(cfgn->arbattrs[i], "services")) {
+       char **tmps = str2set (':', cfgn->arbattrs[i+1]);
+
+       if (tmps) {
+        uint32_t i = 0;
+
+        emutex_lock(&ml_service_list_mutex);
+
+        for (; tmps[i]; i++) {
+         if (!streefind (module_logics_service_list, tmps[i], TREE_FIND_FIRST) && !mod_group_get_data(tmps[i])) {
+          eprintf ((FILE *)ev->para, " * mode \"%s\": service \"%s\" referenced but not found\n", cfgn->mode->id, tmps[i]);
+          ev->task++;
+         }
+        }
+
+        emutex_unlock(&ml_service_list_mutex);
+
+        free (tmps);
+       }
+       break;
+      }
+     }
+    }
+
+    cfgn = cfg_findnode ("mode-enable", 0, cfgn);
+   }
 
    ev->flag = 1;
   } else if (strmatch (ev->set[0], "list")) {
