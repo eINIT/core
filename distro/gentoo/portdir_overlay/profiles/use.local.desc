@@ -24,7 +24,7 @@ sys-apps/einit:einit_modules_ipc - Inter-Process Communication, makes einit-cont
 sys-apps/einit:einit_modules_ipc-configuration - Optional IPC commands to query configurarion parameters
 sys-apps/einit:einit_modules_ipc-core-helpers - Optional IPC commands to display core stats
 sys-apps/einit:einit_modules_module-daemon - Support for "<daemon />" modules
-sys-apps/einit:einit_modules_module-shell - Support for "<shell />" modules
+sys-apps/einit:einit_modules_module-exec - Support for "<shell />" modules
 sys-apps/einit:einit_modules_module-transformations - Manipulate modules' service-lists (aliases, etc...)
 sys-apps/einit:einit_modules_parse-sh - Used to parse SH-style files
 sys-apps/einit:einit_modules_scheduler - Scheduler, its primary purpose is informing the daemon- and tty-modules about dead child processes
