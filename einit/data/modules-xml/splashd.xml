@@ -1,0 +1,52 @@
+<einit>
+ <configuration>
+  <feedback>
+   <visual>
+    <fbsplash>
+     <daemon>
+      <ttys silent="10" verbose="1" />
+      <fifo s="/lib/splash/cache/.splash" />
+      <mount-dir b="yes" path="/lib/splash/cache/" size="1m" />
+     </daemon>
+<!--     <theme s="gentoo" /> -->
+    </fbsplash>
+   </visual>
+  </feedback>
+ </configuration>
+
+ <services>
+  <virtual>
+   <module>
+    <shell id="shell-splash"
+     name="Splash-Util (Daemon)"
+     provides="splashd"
+     prepare="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot; then
+       mount splashcache -t tmpfs &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot; -o size=${configuration_feedback_visual_fbsplash_daemon_mount_dir_size};
+      fi; /bin/true"
+     enable="/sbin/splash_util -d -t ${configuration_feedback_visual_fbsplash_theme};"
+     disable="echo exit&gt;${configuration_feedback_visual_fbsplash_daemon_fifo};"
+     cleanup="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot; then
+       umount &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot;
+      fi; /bin/true"
+     variables="configuration-feedback-visual-fbsplash-daemon-ttys/.*:configuration-feedback-visual-fbsplash-theme:configuration-feedback-visual-fbsplash-daemon-fifo:configuration-feedback-visual-fbsplash-daemon-mount-dir/.*" />
+
+    <shell id="shell-splash-static"
+     name="Splash-Util (Daemon, Static)"
+     provides="splashd"
+     prepare="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot; then
+       mount splashcache -t tmpfs &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot; -o size=${configuration_feedback_visual_fbsplash_daemon_mount_dir_size};
+      fi; /bin/true"
+     enable="/sbin/splash_util.static -d -t ${configuration_feedback_visual_fbsplash_theme};"
+     disable="echo exit&gt;${configuration_feedback_visual_fbsplash_daemon_fifo};"
+     cleanup="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot; then
+       umount &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot;
+      fi; /bin/true"
+     variables="configuration-feedback-visual-fbsplash-daemon-ttys/.*:configuration-feedback-visual-fbsplash-theme:configuration-feedback-visual-fbsplash-daemon-fifo:configuration-feedback-visual-fbsplash-daemon-mount-dir/.*" />
+   </module>
+  </virtual>
+
+  <prefer>
+   <splashd s="shell-splash" />
+  </prefer>
+ </services>
+</einit>
