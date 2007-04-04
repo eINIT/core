@@ -1,8 +1,7 @@
 <einit prefix="services-virtual-module">
- <shell-template id="template-shell-if-wpa_supplicant"
+ <shell-template id="template-shell-ifctl-wpa_supplicant"
   name="Network (${interface}, wpa_supplicant)"
-  provides="if-${interface}"
-  requires="kern-${interface}"
+  provides="ifctl-${interface}"
   prepare="sleep 3"
   enable="pexec-options no-pipe; wpa_supplicant -D ${configuration_network_interfaces_${interface}_driver} -i ${interface} -c ${configuration_network_interfaces_${interface}_config} -w -B;
           wpa_cli -i ${interface} -B;"
