@@ -244,7 +244,7 @@
 
    <fstab>
 <!-- NEVER remove the configuration fstab-source! -->
-    <source s="configuration:legacy" />
+    <source s="configuration" />
 
 <!-- you'll probably need to leave these as they are, einit needs them to boot properly -->
 <!-- things got a little more complicated with udev lately... -->
