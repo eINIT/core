@@ -3,6 +3,6 @@
   name="Network Interface (${interface})"
   provides="net-${interface}"
   requires="kern-${interface}"
-  enable="erc ifctl-${interface} enable&amp; erc ip-${interface} enable&amp;"
-  disable="erc ip-${interface} disable&amp; erc ifctl-${interface} disable&amp;" />
+  enable="erc ifctl-${interface} enable&amp; sleep 1; erc ip-${interface} enable&amp;"
+  disable="erc ip-${interface} disable&amp; sleep 1; erc ifctl-${interface} disable&amp;" />
 </einit>
