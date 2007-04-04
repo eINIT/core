@@ -98,6 +98,26 @@ char configuration_network_parse_configuration_and_add_nodes() {
      uint32_t i = 0;
      struct cfgnode newnode;
 
+// net module
+     char tmp[BUFFERSIZE];
+     memset (&newnode, 0, sizeof(struct cfgnode));
+
+     newnode.id = estrdup ("services-virtual-module-shell");
+     newnode.source = self->rid;
+     newnode.nodetype = EI_NODETYPE_CONFIG;
+
+     esprintf (tmp, BUFFERSIZE, "shell-net-%s", interfacename, nn->arbattrs[i+1]);
+     newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+     newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
+
+     newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"based-on-template", SET_TYPE_STRING);
+     newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"template-shell-net", SET_TYPE_STRING);
+
+     newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"interface", SET_TYPE_STRING);
+     newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)interfacename, SET_TYPE_STRING);
+
+     cfg_addnode (&newnode);
+
      for (; nn->arbattrs[i]; i+=2) {
       if (strmatch(nn->arbattrs[i], "ip")) {
 // ip module
@@ -128,7 +148,7 @@ char configuration_network_parse_configuration_and_add_nodes() {
        newnode.source = self->rid;
        newnode.nodetype = EI_NODETYPE_CONFIG;
 
-       esprintf (tmp, BUFFERSIZE, "shell-kern-net-%s", interfacename);
+       esprintf (tmp, BUFFERSIZE, "shell-kern-%s", interfacename);
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
 
