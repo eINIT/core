@@ -172,7 +172,7 @@ char configuration_network_parse_configuration_and_add_nodes() {
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
 
-       esprintf (tmp, BUFFERSIZE, "template-shell-if-%s", nn->arbattrs[i+1]);
+       esprintf (tmp, BUFFERSIZE, "template-shell-ifctl-%s", nn->arbattrs[i+1]);
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"based-on-template", SET_TYPE_STRING);
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
 
