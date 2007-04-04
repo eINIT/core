@@ -1,0 +1,11 @@
+<einit prefix="services-virtual-module">
+<!-- the old template, for now -->
+ <shell-template id="template-shell-net-dhcp"
+  name="Network (${interface}, using DHCP)"
+  provides="net-${interface}"
+  requires="kern-ethernet:mount/critical"
+  pid="/var/run/dhcpcd-${interface}.pid"
+  enable="pexec-options no-pipe; /sbin/dhcpcd -d -t ${configuration_network_dhcp_timeout} ${interface};"
+  disable="killall dhcpcd; ifconfig ${interface} down"
+  variables="configuration-network-dhcp-timeout" />
+</einit>

@@ -1,8 +1,8 @@
 <einit prefix="services-virtual-module">
  <shell-template id="template-shell-ip-pump"
-  name="Network (${interface}, pump)"
-  provides="net-${interface}"
-  requires="if-${interface}"
+  name="Using 'pump' to manage ip addresses for interface ${interface}"
+  requires="ifctl-${interface}"
+  provides="ip-${interface}"
   enable="pump -i ${interface}"
   disable="pump -r ${interface}" />
 </einit>
