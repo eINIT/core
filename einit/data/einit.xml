@@ -112,8 +112,7 @@
    <domainname s="local" />
 
    <interfaces>
-    <lo ip="static-hardwired" address="127.0.0.1/8" network="127.0.0.0/8" />
-    <eth0 ip="dhcpcd" control="hardwired" />
+    <lo control="none" ip="iproute2" address="127.0.0.1/8" network="127.0.0.0/8" />
    </interfaces>
 
    <dhcp>
@@ -516,7 +515,7 @@
   <enable services="feedback-textual" />
  </mode>
  <mode id="boot">
-  <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:syslog:network:dbus:hal:utmp:initctl" critical="mount/critical:tty" />
+  <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:logger:network:dbus:hal:utmp:initctl" critical="mount/critical:tty" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
