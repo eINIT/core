@@ -2,6 +2,8 @@
 #
 # net.sh: udev external RUN script
 #
+# Copyright 2007 Ryan Hope <rmh3093@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
 
 IFACE="$1"
 ACTION="$2"
@@ -13,7 +15,7 @@ then
     EINIT="no"
 elif grep -q einit /proc/1/cmdline
 then
-    EXEC="/sbin/einit-control"
+    EXEC="/sbin/erc"
     INITNG="no"
     EINIT="yes"
 else
@@ -29,7 +31,7 @@ case "${ACTION}" in
 	    ARGS="-u net/${IFACE}"
 	elif [ "${EINIT}" = "yes" ]
 	then
-	    ARGS="rc net-${IFACE} enable"
+	    ARGS="net-${IFACE} enable"
 	else
 	    ARGS="--quiet start"
 	fi
@@ -40,7 +42,7 @@ case "${ACTION}" in
 	    ARGS="-d net/${IFACE}"
 	elif [ "${EINIT}" = "yes" ]
 	then
-	    ARGS="rc net-${IFACE} disable"
+	    ARGS="net-${IFACE} disable"
 	else
 	    ARGS="--quiet stop"
 	fi
@@ -62,5 +64,9 @@ else
     logger -t netplug "Error: Couldn't configure ${IFACE}, no ${EXEC} !"
     exit 1
 fi
+
+# If we're stopping then sleep for a bit in-case a daemon is monitoring
+# the interface. This to try and ensure we stop after they do.
+[ "${ACTION}" == "stop" ] && sleep 2
 
 # vim: set ts=4
