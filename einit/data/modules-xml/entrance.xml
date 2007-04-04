@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module"> 
+ <daemon id="daemon-entrance"
+  name="Entrance"
+  provides="entrance"
+  requires="x11"
+  command="/usr/bin/entrance"
+  restart="yes"
+  DISPLAY=":0.0"
+  HOME="/root" />
+</einit>
