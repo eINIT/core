@@ -74,6 +74,7 @@ struct mexecinfo {
  gid_t gid;
  char *user, *group;
  char *pidfile;
+ char **oattrs;
 };
 
 int _einit_mod_exec_configure (struct lmodule *);
@@ -158,6 +159,9 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
   char doop = 1;
 
   if (!node->arbattrs) continue;
+
+  mexec->oattrs = (char **)node->arbattrs;
+
   for (; node->arbattrs[i]; i+=2 ) {
    if (strmatch (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
@@ -263,6 +267,18 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
 }
 
 int _einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
+ if (strmatch (command, "zap"))
+  return STATUS_OK | STATUS_DISABLED;
+ else if (shellcmd->oattrs) {
+  uint32_t i = 0;
+
+  for (; shellcmd->oattrs[i]; i+=2 ) {
+   if (strmatch (shellcmd->oattrs[i], command)) {
+    return STATUS_ENABLED | pexec (shellcmd->oattrs[i+1], (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+   }
+  }
+ }
+
 /* if (task & MOD_RESET) {
   if (shellcmd->reset) {
    retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
