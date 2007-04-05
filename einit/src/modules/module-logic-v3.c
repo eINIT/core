@@ -1350,7 +1350,28 @@ int mod_plan_free (struct mloadplan *plan) {
 }
 
 double __mod_get_plan_progress_f (struct mloadplan *plan) {
- return 0.0;
+ if (plan) {
+  return 0.0;
+ } else {
+  double all = 0, left = 0;
+  emutex_lock (&ml_tb_target_state_mutex);
+  if (target_state.enable) all += setcount ((const void **)target_state.enable);
+  if (target_state.disable) all += setcount ((const void **)target_state.disable);
+  if (target_state.reset) all += setcount ((const void **)target_state.reset);
+  if (target_state.reload) all += setcount ((const void **)target_state.reload);
+  if (target_state.zap) all += setcount ((const void **)target_state.zap);
+  emutex_unlock (&ml_tb_target_state_mutex);
+
+  emutex_lock (&ml_tb_current_mutex);
+  if (current.enable) left += setcount ((const void **)current.enable);
+  if (current.disable) left += setcount ((const void **)current.disable);
+  if (current.reset) left += setcount ((const void **)current.reset);
+  if (current.reload) left += setcount ((const void **)current.reload);
+  if (current.zap) left += setcount ((const void **)current.zap);
+  emutex_unlock (&ml_tb_current_mutex);
+
+  return (double)(left / all);
+ }
 }
 
 void mod_sort_service_list_items_by_preference() {

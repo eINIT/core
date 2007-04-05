@@ -117,31 +117,33 @@ void flush_log_buffer () {
   if (logfile) {
    emutex_lock(&logmutex);
 
-   slog = (struct log_entry **)setdup ((const void **)logbuffer, SET_NOALLOC);
-   setsort ((void **)logbuffer, 0, (signed int(*)(const void *, const void*))logsort);
+   if (logbuffer) {
+    slog = (struct log_entry **)setdup ((const void **)logbuffer, SET_NOALLOC);
+    setsort ((void **)logbuffer, 0, (signed int(*)(const void *, const void*))logsort);
 
-   for (; slog[i]; i++) {
-    char timebuffer[50];
-    char txbuffer[BUFFERSIZE];
-    struct tm *tb = localtime (&(slog[i]->timestamp));
+    for (; slog[i]; i++) {
+     char timebuffer[50];
+     char txbuffer[BUFFERSIZE];
+     struct tm *tb = localtime (&(slog[i]->timestamp));
 
-    strftime (timebuffer, 50, "%c", tb);
+     strftime (timebuffer, 50, "%c", tb);
 
-    if (slog[i]->message) {
-     strtrim (slog[i]->message);
-     esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) %s\n", timebuffer, slog[i]->seqid, slog[i]->severity, slog[i]->message);
-    } else
-     esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) <no message>\n", timebuffer, slog[i]->seqid, slog[i]->severity);
+     if (slog[i]->message) {
+      strtrim (slog[i]->message);
+      esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) %s\n", timebuffer, slog[i]->seqid, slog[i]->severity, slog[i]->message);
+     } else
+      esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) <no message>\n", timebuffer, slog[i]->seqid, slog[i]->severity);
 
-    eputs (txbuffer, logfile);
+     eputs (txbuffer, logfile);
+    }
+
+    for (i = 0; logbuffer[i]; i++) {
+     if (logbuffer[i]->message) free (logbuffer[i]->message);
+    }
+
+    free (logbuffer);
+    logbuffer = NULL;
    }
-
-   for (i = 0; logbuffer[i]; i++) {
-    if (logbuffer[i]->message) free (logbuffer[i]->message);
-   }
-
-   free (logbuffer);
-   logbuffer = NULL;
    emutex_unlock(&logmutex);
 
    fclose (logfile);

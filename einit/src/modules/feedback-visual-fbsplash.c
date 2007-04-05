@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
+#include <einit/bitch.h>
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
@@ -62,8 +63,8 @@ int _einit_feedback_visual_fbsplash_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char *provides[] = {"feedback-visual", "feedback-graphical", NULL};
-char *requires[] = {"splashd", NULL};
+char *_einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-graphical", NULL};
+char *_einit_feedback_visual_fbsplash_requires[] = {"splashd", NULL};
 const struct smodule _einit_feedback_visual_fbsplash_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -73,8 +74,8 @@ const struct smodule _einit_feedback_visual_fbsplash_self = {
  .name      = "visual/fbsplash-based feedback module",
  .rid       = "einit-feedback-visual-fbsplash",
  .si        = {
-  .provides = provides,
-  .requires = NULL,
+  .provides = _einit_feedback_visual_fbsplash_provides,
+  .requires = _einit_feedback_visual_fbsplash_requires,
   .after    = NULL,
   .before   = NULL
  },
@@ -85,12 +86,196 @@ module_register(_einit_feedback_visual_fbsplash_self);
 
 #endif
 
+pthread_t fbsplash_thread;
+char _einit_feedback_visual_fbsplash_worker_thread_running = 0,
+     _einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
+
+char **fbsplash_commandQ = NULL;
+
+char *fbsplash_fifo = "/lib/splash/cache/.splash";
+
+pthread_mutex_t
+ fbsplash_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
+ fbsplash_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t fbsplash_commandQ_cond = PTHREAD_COND_INITIALIZER;
+
+void fbsplash_queue_comand (const char *command) {
+ emutex_lock (&fbsplash_commandQ_mutex);
+ fbsplash_commandQ = (char **)setadd ((void **)fbsplash_commandQ, command, SET_TYPE_STRING);
+ emutex_unlock (&fbsplash_commandQ_mutex);
+
+ pthread_cond_broadcast (&fbsplash_commandQ_cond);
+}
+
+void _einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
+ if (ev->type == EVE_SWITCHING_MODE) {
+  char tmp[BUFFERSIZE];
+
+  fbsplash_queue_comand("set mode silent");
+  fbsplash_queue_comand("progress 0");
+  if (ev->para && ((struct cfgnode *)ev->para)->id) {
+   esprintf (tmp, BUFFERSIZE, "set message eINIT now switching to mode %s", ((struct cfgnode *)ev->para)->id);
+   fbsplash_queue_comand(tmp);
+  }
+
+  fbsplash_queue_comand("repaint");
+ }
+ if (ev->type == EVE_MODE_SWITCHED) {
+  char tmp[BUFFERSIZE];
+
+  if (ev->para && ((struct cfgnode *)ev->para)->id) {
+   esprintf (tmp, BUFFERSIZE, "set message mode %s now in effect.", ((struct cfgnode *)ev->para)->id);
+   fbsplash_queue_comand(tmp);
+  }
+  fbsplash_queue_comand("progress 65535");
+  fbsplash_queue_comand("repaint");
+//  fbsplash_queue_comand("set mode verbose");
+ }
+ if ((ev->type == EVE_SERVICE_UPDATE) && ev->set) {
+  char tmp[BUFFERSIZE];
+  uint32_t i = 0;
+
+  if (ev->status & STATUS_WORKING) {
+   if (ev->task & MOD_ENABLE) {
+    for (; ev->set[i]; i++) {
+     esprintf (tmp, BUFFERSIZE, "update_svc %s svc_start", (char *)ev->set[i]);
+     fbsplash_queue_comand(tmp);
+    }
+   } else if (ev->task & MOD_DISABLE) {
+    for (; ev->set[i]; i++) {
+     esprintf (tmp, BUFFERSIZE, "update_svc %s svc_stop", (char *)ev->set[i]);
+     fbsplash_queue_comand(tmp);
+    }
+   }
+  } else {
+   if (ev->task & MOD_ENABLE) {
+    if (ev->status & STATUS_FAIL) {
+     for (; ev->set[i]; i++) {
+      esprintf (tmp, BUFFERSIZE, "update_svc %s svc_start_failed", (char *)ev->set[i]);
+      fbsplash_queue_comand(tmp);
+     }
+    } else {
+     for (; ev->set[i]; i++) {
+      esprintf (tmp, BUFFERSIZE, "update_svc %s svc_started", (char *)ev->set[i]);
+      fbsplash_queue_comand(tmp);
+     }
+    }
+   } else if (ev->task & MOD_DISABLE) {
+    if (ev->status & STATUS_FAIL) {
+     for (; ev->set[i]; i++) {
+      esprintf (tmp, BUFFERSIZE, "update_svc %s svc_stop_failed", (char *)ev->set[i]);
+      fbsplash_queue_comand(tmp);
+     }
+    } else {
+     for (; ev->set[i]; i++) {
+      esprintf (tmp, BUFFERSIZE, "update_svc %s svc_stopped", (char *)ev->set[i]);
+      fbsplash_queue_comand(tmp);
+     }
+    }
+   }
+  }
+
+// get_plan_progress(NULL): overall progress, 0.0-1.0
+  esprintf (tmp, BUFFERSIZE, "progress %i", (int)(get_plan_progress (NULL) * 65535));
+  fbsplash_queue_comand(tmp);
+
+  fbsplash_queue_comand("repaint");
+ }
+}
+
+void *_einit_feedback_visual_fbsplash_worker_thread (void *irr) {
+ _einit_feedback_visual_fbsplash_worker_thread_running = 1;
+
+ while (_einit_feedback_visual_fbsplash_worker_thread_keep_running) {
+  while (fbsplash_commandQ) {
+   char *command = NULL;
+
+   emutex_lock (&fbsplash_commandQ_mutex);
+   if (fbsplash_commandQ) {
+    if ((command = fbsplash_commandQ[0])) {
+     void *it = command;
+     command = estrdup (command);
+
+     fbsplash_commandQ = (char **)setdel ((void **)fbsplash_commandQ, it);
+    }
+   }
+   emutex_unlock (&fbsplash_commandQ_mutex);
+
+   if (command) {
+//    notice (1, command);
+    FILE *fifo = efopen (fbsplash_fifo, "w");
+    if (fifo) {
+     eprintf (fifo, "%s\n", command);
+     fclose (fifo);
+    }
+
+    free (command);
+   }
+  }
+
+  pthread_cond_wait (&fbsplash_commandQ_cond, &fbsplash_commandQ_cond_mutex);
+ }
+
+ return NULL;
+}
+
+int _einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status) {
+ char *tmp = NULL;
+
+ _einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
+ ethread_create (&fbsplash_thread, NULL, _einit_feedback_visual_fbsplash_worker_thread, NULL);
+
+ if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-theme", NULL))) {
+  char tmpx[BUFFERSIZE];
+
+  esprintf (tmpx, BUFFERSIZE, "set theme %s", tmp);
+  fbsplash_queue_comand(tmpx);
+ }
+ if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/silent", NULL))) {
+  char tmpx[BUFFERSIZE];
+
+  esprintf (tmpx, BUFFERSIZE, "set tty silent %s", tmp);
+  fbsplash_queue_comand(tmpx);
+ }
+ if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/verbose", NULL))) {
+  char tmpx[BUFFERSIZE];
+
+  esprintf (tmpx, BUFFERSIZE, "set tty verbose %s", tmp);
+  fbsplash_queue_comand(tmpx);
+ }
+ if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-fifo", NULL))) {
+  fbsplash_fifo = tmp;
+ }
+
+ fbsplash_queue_comand("set mode silent");
+ fbsplash_queue_comand("progress 0");
+ fbsplash_queue_comand("repaint");
+
+ event_listen (EVENT_SUBSYSTEM_EINIT, _einit_feedback_visual_fbsplash_einit_event_handler);
+
+ return STATUS_OK;
+}
+
+int _einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status) {
+ _einit_feedback_visual_fbsplash_worker_thread_keep_running = 0;
+ pthread_cond_broadcast (&fbsplash_commandQ_cond);
+
+ event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_feedback_visual_fbsplash_einit_event_handler);
+
+ return STATUS_OK;
+}
+
 int _einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
+ return 0;
 }
 
 int _einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
  module_init (tm);
+ module_logic_configure(tm);
 
  tm->cleanup = _einit_feedback_visual_fbsplash_cleanup;
+ tm->enable = _einit_feedback_visual_fbsplash_enable;
+ tm->disable = _einit_feedback_visual_fbsplash_disable;
 
+ return 0;
 }
