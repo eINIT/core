@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-local"
+  name="Local"
+  provides="local"
+  after=".*"
+  enable="source ${configuration_system_exec_envfile_base}/local.start"
+  disable="source ${configuration_system_exec_envfile_base}/local.stop"
+  restart="no"
+  variables="configuration-system-exec-envfile-base" />
+</einit>
