@@ -1293,11 +1293,20 @@ int mod_modaction (char **argv) {
   emutex_unlock (&ml_service_list_mutex);
 
   ret = 1;
-  for (; tm[r]; r++) {
-   int retx = mod (MOD_CUSTOM, tm[r], argv[1]);
+  if (tm) {
+   if (strmatch (argv[1], "status")) {
+    for (; tm[r]; r++) {
+     if (tm[r]->status & STATUS_ENABLED)
+      ret = 0;
+    }
+   } else {
+    for (; tm[r]; r++) {
+     int retx = mod (MOD_CUSTOM, tm[r], argv[1]);
 
-   if (retx == STATUS_OK)
-    ret = 0;
+     if (retx == STATUS_OK)
+      ret = 0;
+    }
+   }
   }
 
   return ret;
