@@ -189,6 +189,16 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     dexec->pidfile = node->arbattrs[i+1];
    }
 
+   else if (strmatch (node->arbattrs[i], "options")) {
+    char **opt = str2set (':', node->arbattrs[i+1]);
+    uint32_t ri = 0;
+
+    for (; opt[ri]; ri++) {
+     if (strmatch (opt[ri], "feedback"))
+      modinfo->mode |= EINIT_MOD_FEEDBACK;
+    }
+   }
+
    else if (strmatch (node->arbattrs[i], "requires"))
     modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
    else if (strmatch (node->arbattrs[i], "provides")) {

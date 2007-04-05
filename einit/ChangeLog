@@ -1,3 +1,7 @@
+2007/04/05: mdeininger
+ * added options="feedback" to daemon/shell modules to tag them as feedback-
+   modules (gonna be useful for the fbsplash module)
+
 2007/04/03: mdeininger
  * parsed some of the configuration in the wrong function/forgot updates
  * "list services" has been moved to the module-logics core, + it will now
