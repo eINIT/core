@@ -4,7 +4,7 @@
    <visual>
     <fbsplash>
      <daemon>
-      <ttys silent="10" verbose="1" />
+      <ttys silent="10" verbose="9" />
       <fifo s="/lib/splash/cache/.splash" />
       <mount-dir b="yes" path="/lib/splash/cache/" size="1m" />
      </daemon>

@@ -221,16 +221,55 @@ void *_einit_feedback_visual_fbsplash_worker_thread (void *irr) {
 }
 
 int _einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status) {
- char *tmp = NULL;
+ char *tmp = NULL, *fbtheme = NULL, *fbmode = "silent";
+ char freetheme = 0, freemode = 0;
 
  _einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
  ethread_create (&fbsplash_thread, NULL, _einit_feedback_visual_fbsplash_worker_thread, NULL);
 
- if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-theme", NULL))) {
+ if (einit_initial_environment) {
+/* check for kernel params */
+  uint32_t i = 0;
+  for (; einit_initial_environment[i]; i++) {
+   if (strstr (einit_initial_environment[i], "splash=")) {
+    char *params = estrdup(einit_initial_environment[i] + 7);
+
+    if (params) {
+     char **p = str2set (',', params);
+     if (p) {
+      for (i = 0; p[i]; i++) {
+       char *sep = strchr (p[i], ':');
+       if (sep) {
+        *sep = 0;
+        sep++;
+        if (strmatch (p[i], "theme")) {
+         fbtheme = estrdup (sep);
+         freetheme = 1;
+        }
+       } else {
+        fbmode = estrdup(p[i]);
+        freemode = 1;
+       }
+      }
+      free (p);
+     }
+
+     free (params);
+    }
+
+    break;
+   }
+  }
+ }
+
+ if (fbtheme || (fbtheme = cfg_getstring ("configuration-feedback-visual-fbsplash-theme", NULL))) {
   char tmpx[BUFFERSIZE];
 
-  esprintf (tmpx, BUFFERSIZE, "set theme %s", tmp);
+  esprintf (tmpx, BUFFERSIZE, "set theme %s", fbtheme);
   fbsplash_queue_comand(tmpx);
+
+  if (freetheme) free (fbtheme);
+//  notice (1, tmpx);
  }
  if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/silent", NULL))) {
   char tmpx[BUFFERSIZE];
@@ -248,7 +287,16 @@ int _einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status
   fbsplash_fifo = tmp;
  }
 
- fbsplash_queue_comand("set mode silent");
+ if (fbmode) {
+  char tmpx[BUFFERSIZE];
+
+  esprintf (tmpx, BUFFERSIZE, "set mode %s", fbmode);
+  fbsplash_queue_comand(tmpx);
+
+  if (freemode) free (fbmode);
+//  notice (1, tmpx);
+ }
+
  fbsplash_queue_comand("progress 0");
  fbsplash_queue_comand("repaint");
 

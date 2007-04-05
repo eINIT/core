@@ -66,7 +66,7 @@ int cleanup ();
 pid_t einit_sub = 0;
 char isinit = 1, initoverride = 0;
 
-char **einit_global_environment = NULL;
+char **einit_global_environment = NULL, **einit_initial_environment = NULL;
 struct stree *hconfiguration = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
@@ -297,6 +297,8 @@ int main(int argc, char **argv) {
 
    free (ed);
   }
+
+  einit_initial_environment = (char **)setdup ((const void **)environ, SET_TYPE_STRING);
  }
 
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;

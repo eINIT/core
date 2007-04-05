@@ -118,7 +118,8 @@ struct cfgnode *cmode, *amode;
 uint32_t gmode;
 unsigned char *gdebug;
 
-char **einit_global_environment;
+char **einit_global_environment,
+     **einit_initial_environment;
 
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
