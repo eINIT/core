@@ -6,5 +6,5 @@
   enable="/usr/sbin/gpm -m ${configuration_peripherals_pointing_device_gpm_device} -t ${configuration_peripherals_pointing_device_gpm_type}"
   disable="killall gpm"
   restart="yes"
-  vairables="configuration-peripherals-pointing-device-gpm/.*" />
+  variables="configuration-peripherals-pointing-device-gpm/.*" />
 </einit>
