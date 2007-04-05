@@ -1620,13 +1620,13 @@ int _einit_mount_enable (enum mounttask p, struct einit_event *status) {
     _einit_mount_update (UPDATE_BLOCK_DEVICES);
    }
 
+   return ret;
+   break;
+  case MOUNT_CRITICAL:
    ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
    unlink ("/etc/mtab");
    update_real_mtab();
 
-   return ret;
-   break;
-  case MOUNT_CRITICAL:
    while (ha) {
     if ((fse = (struct fstab_entry *)ha->value) && (fse->mountflags & MOUNT_FSTAB_CRITICAL))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);

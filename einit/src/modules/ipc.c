@@ -261,7 +261,7 @@ void * ipc_wait (void *unused_parameter) {
  }
 
  saddr.sun_family = AF_UNIX;
- strncpy (saddr.sun_path, (node && node->svalue ? node->svalue : "/etc/einit/control"), sizeof(saddr.sun_path) - 1);
+ strncpy (saddr.sun_path, (node && node->svalue ? node->svalue : "/dev/einit-control"), sizeof(saddr.sun_path) - 1);
 
  if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
   unlink (saddr.sun_path);

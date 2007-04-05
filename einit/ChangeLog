@@ -1,6 +1,9 @@
 2007/04/05: mdeininger
  * added options="feedback" to daemon/shell modules to tag them as feedback-
    modules (gonna be useful for the fbsplash module)
+ * moved re-mounting the root-filesystem to mount/critical
+ * the fbsplash module seems to work just fine =)
+ * moved the control socket to /dev/einit-control
 
 2007/04/03: mdeininger
  * parsed some of the configuration in the wrong function/forgot updates
