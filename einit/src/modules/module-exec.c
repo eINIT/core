@@ -66,8 +66,6 @@ struct mexecinfo {
  char *id;
  char *enable;
  char *disable;
- char *reset;
- char *reload;
  char *prepare;
  char *cleanup;
  char **variables;
@@ -105,6 +103,7 @@ module_register(_einit_mod_exec_self);
 
 int _einit_mod_exec_scanmodules (struct lmodule *);
 int _einit_mod_exec_pexec_wrapper (struct mexecinfo *, struct einit_event *);
+int _einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *, char *, struct einit_event *);
 
 struct mexecinfo **_einit_mod_exec_mxdata = NULL;
 
@@ -169,10 +168,6 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
     mexec->enable = node->arbattrs[i+1];
    else if (strmatch (node->arbattrs[i], "disable"))
     mexec->disable = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "reset"))
-    mexec->reset = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "reload"))
-    mexec->reload = node->arbattrs[i+1];
    else if (strmatch (node->arbattrs[i], "prepare"))
     mexec->prepare = node->arbattrs[i+1];
    else if (strmatch (node->arbattrs[i], "cleanup"))
@@ -240,8 +235,7 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
     lm->param = (void *)mexec;
     lm->enable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
     lm->disable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    lm->reset = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    lm->reload = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
+    lm->custom = (int (*)(void *, char *, struct einit_event *))_einit_mod_exec_pexec_wrapper_custom;
     lm->cleanup = _einit_mod_exec_cleanup_after_module;
     lm->module = modinfo;
 
@@ -259,8 +253,7 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
     new->param = (void *)mexec;
     new->enable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
     new->disable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    new->reset = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    new->reload = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
+    new->custom = (int (*)(void *, char *, struct einit_event *))_einit_mod_exec_pexec_wrapper_custom;
     new->cleanup = _einit_mod_exec_cleanup_after_module;
    }
   }
@@ -269,25 +262,31 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
  return 0;
 }
 
+int _einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
+/* if (task & MOD_RESET) {
+  if (shellcmd->reset) {
+   retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+  } else {
+   task = MOD_ENABLE | MOD_DISABLE;
+  }
+ } else if (task & MOD_RELOAD) {
+  if (shellcmd->reload) {
+   retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+  } else {
+   task = MOD_ENABLE | MOD_DISABLE;
+  }
+ }
+
+// + ZAP */
+
+ return STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
+}
+
 int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
  int retval = STATUS_FAIL;
 
  if (shellcmd) {
   int32_t task = status->task;
-
-  if (task & MOD_RESET) {
-   if (shellcmd->reset) {
-    retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-   } else {
-    task = MOD_ENABLE | MOD_DISABLE;
-   }
-  } else if (task & MOD_RELOAD) {
-   if (shellcmd->reload) {
-    retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-   } else {
-    task = MOD_ENABLE | MOD_DISABLE;
-   }
-  }
 
   if (task & MOD_DISABLE) {
    if (shellcmd->disable) {

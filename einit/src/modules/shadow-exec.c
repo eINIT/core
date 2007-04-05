@@ -86,11 +86,7 @@ struct shadow_descriptor {
  char *before_enable,
       *after_enable,
       *before_disable,
-      *after_disable,
-      *before_reset,
-      *after_reset,
-      *before_reload,
-      *after_reload;
+      *after_disable
 };
 
 struct cfgnode *_einit_shadow_exec_ecmode = NULL;
@@ -129,18 +125,10 @@ void update_shadows(struct cfgnode *xmode) {
         nshadow.before_enable = cur->arbattrs[i+1];
        else if (strmatch (cur->arbattrs[i], "before-disable"))
         nshadow.before_disable = cur->arbattrs[i+1];
-       else if (strmatch (cur->arbattrs[i], "before-reset"))
-        nshadow.before_reset = cur->arbattrs[i+1];
-       else if (strmatch (cur->arbattrs[i], "before-reload"))
-        nshadow.before_reload = cur->arbattrs[i+1];
        else if (strmatch (cur->arbattrs[i], "after-enable"))
         nshadow.after_enable = cur->arbattrs[i+1];
        else if (strmatch (cur->arbattrs[i], "after-disable"))
         nshadow.after_disable = cur->arbattrs[i+1];
-       else if (strmatch (cur->arbattrs[i], "after-reset"))
-        nshadow.after_reset = cur->arbattrs[i+1];
-       else if (strmatch (cur->arbattrs[i], "after-reload"))
-        nshadow.after_reload = cur->arbattrs[i+1];
       }
 
       if (nserv) {
@@ -193,22 +181,6 @@ void _einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
       } else if (ev->status & STATUS_DISABLED) {
        if (sd->after_disable)
         pexec (sd->after_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      }
-     } else if (ev->task & MOD_RESET) {
-      if (ev->status == STATUS_WORKING) {
-       if (sd->before_reset)
-        pexec (sd->before_reset, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      } else if (ev->status & STATUS_ENABLED) {
-       if (sd->after_reset)
-        pexec (sd->after_reset, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      }
-     } else if (ev->task & MOD_RELOAD) {
-      if (ev->status == STATUS_WORKING) {
-       if (sd->before_reload)
-        pexec (sd->before_reload, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      } else if (ev->status & STATUS_ENABLED) {
-       if (sd->after_reload)
-        pexec (sd->after_reload, NULL, 0, 0, NULL, NULL, NULL, NULL);
       }
      }
 

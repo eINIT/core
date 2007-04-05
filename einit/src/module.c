@@ -66,7 +66,7 @@ void mod_freedesc (struct lmodule *m) {
  m->next = NULL;
  if (m->status & STATUS_ENABLED) {
   emutex_unlock (&m->imutex);
-  mod (MOD_DISABLE | MOD_IGNORE_DEPENDENCIES | MOD_NOMUTEX, m);
+  mod (MOD_DISABLE | MOD_IGNORE_DEPENDENCIES | MOD_NOMUTEX, m, NULL);
   emutex_lock (&m->imutex);
  }
 
@@ -149,7 +149,7 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  return nmod;
 }
 
-int mod (unsigned int task, struct lmodule *module) {
+int mod (unsigned int task, struct lmodule *module, char *custom_command) {
  struct einit_event *fb;
  unsigned int ret;
 
@@ -159,7 +159,13 @@ int mod (unsigned int task, struct lmodule *module) {
  if (!(task & MOD_NOMUTEX))
   emutex_lock (&module->mutex);
 
- if ((task & MOD_IGNORE_DEPENDENCIES) || (task & MOD_ZAP)) {
+ if (task & MOD_CUSTOM) {
+  if (!custom_command) return STATUS_FAIL;
+
+  goto skipdependencies;
+ }
+
+ if (task & MOD_IGNORE_DEPENDENCIES) {
   notice (2, "module: skipping dependency-checks");
   task ^= MOD_IGNORE_DEPENDENCIES;
   goto skipdependencies;
@@ -188,10 +194,6 @@ int mod (unsigned int task, struct lmodule *module) {
   return STATUS_IDLE;
  }
  if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED) || (module->status == STATUS_IDLE)))
-  goto wontload;
- if ((task & MOD_RESET) && (module->status & STATUS_DISABLED))
-  goto wontload;
- if ((task & MOD_RELOAD) && (module->status & STATUS_DISABLED))
   goto wontload;
 
  if (task & MOD_ENABLE) {
@@ -237,9 +239,15 @@ int mod (unsigned int task, struct lmodule *module) {
   fb->integer = module->fbseq+1;
   status_update (fb);
 
-  if (task & MOD_ZAP) {
-   module->status = STATUS_IDLE;
-   fb->status = STATUS_OK | STATUS_IDLE;
+  if (task & MOD_CUSTOM) {
+   if (module->custom) {
+    module->status = module->custom(module->param, custom_command, fb);
+   } else if (strmatch (custom_command, "zap")) {
+    module->status = STATUS_IDLE;
+    fb->status = STATUS_OK | STATUS_IDLE;
+   } else {
+    fb->status = STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
+   }
   } else if (task & MOD_ENABLE) {
     ret = module->enable (module->param, fb);
     if (ret & STATUS_OK) {
@@ -256,28 +264,6 @@ int mod (unsigned int task, struct lmodule *module) {
     } else {
      fb->status = STATUS_FAIL;
     }
-  } else if (task & MOD_RESET) {
-   if (module->reset) {
-    ret = module->reset (module->param, fb);
-    if (ret & STATUS_OK) {
-     fb->status = STATUS_OK | module->status;
-    } else
-     fb->status = STATUS_FAIL;
-   } else if (module->disable && module->enable) {
-     ret = module->disable (module->param, fb);
-    if (ret & STATUS_OK) {
-     ret = module->enable (module->param, fb);
-    } else
-     fb->status = STATUS_FAIL;
-   }
-  } else if (task & MOD_RELOAD) {
-   if (module->reload) {
-    ret = module->reload (module->param, fb);
-    if (ret & STATUS_OK) {
-     fb->status = STATUS_OK | module->status;
-    } else
-     fb->status = STATUS_FAIL;
-   }
   }
 
   module->fbseq = fb->integer + 1;

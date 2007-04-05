@@ -781,10 +781,8 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
    eprintf (stdout, "\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name);
   } else if (ev->task & MOD_DISABLE) {
    eprintf (stdout, "\e[%i;0H[ \e[32mDISA\e[0m ] %s\n", line, name);
-  } else if (ev->task & MOD_RESET) {
-   eprintf (stdout, "\e[%i;0H[ \e[32mRSET\e[0m ] %s\n", line, name);
-  } else if (ev->task & MOD_RELOAD) {
-   eprintf (stdout, "\e[%i;0H[ \e[32mRELO\e[0m ] %s\n", line, name);
+  } else if (ev->task & MOD_CUSTOM) {
+   eprintf (stdout, "\e[%i;0H[ \e[32mCSTM\e[0m ] %s\n", line, name);
   } else {
    eprintf (stdout, "\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name);
   }

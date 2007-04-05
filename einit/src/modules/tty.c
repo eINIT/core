@@ -321,7 +321,7 @@ int _einit_tty_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_tty_reset (void *pa, struct einit_event *status) {
+int _einit_tty_custom (void *pa, char *cmd, struct einit_event *status) {
  return STATUS_OK;
 }
 
@@ -332,7 +332,7 @@ int _einit_tty_configure (struct lmodule *this) {
  thismodule->cleanup = _einit_tty_cleanup;
  thismodule->enable = _einit_tty_enable;
  thismodule->disable = _einit_tty_disable;
- thismodule->reset = _einit_tty_reset;
+ thismodule->custom = _einit_tty_custom;
 
  utmp_configure(this);
  exec_configure(this);

@@ -103,9 +103,7 @@ extern "C" {
  * \{ */
 #define MOD_ENABLE 0x0001              /*!< Command for mod(): Enable specified module. */
 #define MOD_DISABLE 0x0002             /*!< Command for mod(): Disable specified module. */
-#define MOD_RELOAD 0x0004              /*!< Command for mod(): Reload specified module. */
-#define MOD_RESET 0x0008               /*!< Command for mod(): Reset specified module. */
-#define MOD_ZAP 0x0010                 /*!< Command for mod(): Zap specified module. */
+#define MOD_CUSTOM 0x0010              /*!< Execute a custom action. */
 #define MOD_FEEDBACK_SHOW 0x0100       /*!< Option set by mod(): Show feedback. */
 #define MOD_IGNORE_DEPENDENCIES 0x0800 /*!< Option: Ignore dependencies on module status change with mod() */
 #define MOD_NOMUTEX 0x0400             /*!< Option: Do not use mutex */
@@ -130,8 +128,7 @@ extern "C" {
 
 #define STATUS_ENABLING (STATUS_WORKING | MOD_ENABLE)  /*!< Status Information: Object is currently being enabled. */
 #define STATUS_DISABLING (STATUS_WORKING | MOD_DISABLE) /*!< Status Information: Object is currently being disabled. */
-#define STATUS_RELOADING (STATUS_WORKING | MOD_RELOAD) /*!< Status Information: Object is currently being reloaded. */
-#define STATUS_RESETTING (STATUS_WORKING | MOD_RESET) /*!< Status Information: Object is currently being reset. */
+#define STATUS_COMMAND_NOT_IMPLEMENTED 0x0040 /*!< Status Information: command not implemented*/
 
 #define STATUS_ENABLED 0x0401   /*!< Status Information: Object is enabled. */
 #define STATUS_DISABLED 0x0802  /*!< Status Information: Object is disabled. */
@@ -194,8 +191,7 @@ struct lmodule {
  void *sohandle;                                /*!< .so file-handle */
  int (*enable)  (void *, struct einit_event *); /*!< Pointer to the module's enable()-function */
  int (*disable) (void *, struct einit_event *); /*!< Pointer to the module's disable()-function */
- int (*reset) (void *, struct einit_event *);   /*!< Pointer to the module's reset()-function */
- int (*reload) (void *, struct einit_event *);  /*!< Pointer to the module's reload()-function */
+ int (*custom) (void *, char *, struct einit_event *); /*!< Pointer to the module's custom()-function */
  int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
  int (*scanmodules) (struct lmodule *);         /*!< Pointer to the module's scanmodules()-function */
  uint32_t status;                               /*!< Current module status (enabled, disabled, ...) */
@@ -258,9 +254,9 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
  * \param[in,out] module The module that is to be manipulated.
  * \ingroup modulemanipulation
  *
- * Use this to change the state of a module, i.e. enable it, disable it, reset it or reload it.
+ * Use this to change the state of a module, i.e. enable it, disable it, etc...
 */
-int mod (unsigned int task, struct lmodule *module);
+int mod (unsigned int task, struct lmodule *module, char *custom_command);
 
 /*!\ingroup serviceusagequeries
  * \{ */

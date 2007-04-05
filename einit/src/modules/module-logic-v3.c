@@ -99,9 +99,9 @@ int _einit_module_logic_v3_configure (struct lmodule *this) {
 }
 
 struct module_taskblock
-  current = { NULL, NULL, NULL, NULL, NULL, NULL },
-  working = { NULL, NULL, NULL, NULL, NULL, NULL },
-  target_state = { NULL, NULL, NULL, NULL, NULL, NULL };
+  current = { NULL, NULL, NULL },
+  working = { NULL, NULL, NULL },
+  target_state = { NULL, NULL, NULL };
 
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
 struct stree *module_logics_group_data = NULL;
@@ -179,51 +179,6 @@ char mod_done (struct lmodule *module, int task) {
     emutex_lock(&ml_tb_current_mutex);
 
     current.disable = strsetdel (current.disable, module->si->provides[x]);
-
-    emutex_unlock(&ml_tb_current_mutex);
-   }
-  }
-
-  return 1;
- }
-
- if ((task & MOD_RESET) && (module->status & STATUS_OK)) {
-  if (module->si && module->si->provides) {
-   uint32_t x = 0;
-   for (; module->si->provides[x]; x++) {
-    emutex_lock(&ml_tb_current_mutex);
-
-    current.reset = strsetdel (current.reset, module->si->provides[x]);
-
-    emutex_unlock(&ml_tb_current_mutex);
-   }
-  }
-
-  return 1;
- }
-
- if ((task & MOD_RELOAD) && (module->status & STATUS_OK)) {
-  if (module->si && module->si->provides) {
-   uint32_t x = 0;
-   for (; module->si->provides[x]; x++) {
-    emutex_lock(&ml_tb_current_mutex);
-
-    current.reload = strsetdel (current.reload, module->si->provides[x]);
-
-    emutex_unlock(&ml_tb_current_mutex);
-   }
-  }
-
-  return 1;
- }
-
- if ((task & MOD_ZAP) && (module->status & STATUS_OK)) {
-  if (module->si && module->si->provides) {
-   uint32_t x = 0;
-   for (; module->si->provides[x]; x++) {
-    emutex_lock(&ml_tb_current_mutex);
-
-    current.zap = strsetdel (current.zap, module->si->provides[x]);
 
     emutex_unlock(&ml_tb_current_mutex);
    }
@@ -490,11 +445,6 @@ void mod_apply (struct ma_task *task) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((task->task & (MOD_RESET | MOD_RELOAD | MOD_ZAP)) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) {
-     /* well, if nothing needs to be done, then it's ok */
-     any_ok = 1;
-     goto skip_module;
-    }
     if ((task->task & MOD_DISABLE) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) {
      goto skip_module;
     }
@@ -512,12 +462,12 @@ void mod_apply (struct ma_task *task) {
      return;
     }
 
-    int retval = mod (task->task, current);
+//    int retval = 
+      mod (task->task, current, NULL);
 
 /* check module status or return value to find out if it's appropriate for the task */
-    if (((task->task & (MOD_DISABLE | MOD_ZAP)) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) ||
-        ((task->task & MOD_ENABLE) && (lm[0]->status & STATUS_ENABLED)) ||
-        ((task->task & (MOD_RESET | MOD_RELOAD)) && (retval & STATUS_OK))) {
+    if (((task->task & MOD_DISABLE) && ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE))) ||
+        ((task->task & MOD_ENABLE) && (lm[0]->status & STATUS_ENABLED))) {
      any_ok = 1;
     }
 
@@ -553,9 +503,6 @@ void mod_apply (struct ma_task *task) {
    switch (task->task) {
     case MOD_ENABLE: current.enable = strsetdel(current.enable, des->key); break;
     case MOD_DISABLE: current.disable = strsetdel(current.disable, des->key); break;
-    case MOD_RESET: current.reset = strsetdel(current.reset, des->key); break;
-    case MOD_RELOAD: current.reload = strsetdel(current.reload, des->key); break;
-    case MOD_ZAP: current.zap = strsetdel(current.zap, des->key); break;
    }
 
    emutex_unlock (&ml_tb_current_mutex);
@@ -600,9 +547,6 @@ void mod_get_and_apply_recurse (int task) {
   switch (task) {
    case MOD_ENABLE: services = (char **)setdup((const void **)current.enable, SET_TYPE_STRING); break;
    case MOD_DISABLE: services = (char **)setdup((const void **)current.disable, SET_TYPE_STRING); break;
-   case MOD_RESET: services = (char **)setdup((const void **)current.reset, SET_TYPE_STRING); break;
-   case MOD_RELOAD: services = (char **)setdup((const void **)current.reload, SET_TYPE_STRING); break;
-   case MOD_ZAP: services = (char **)setdup((const void **)current.zap, SET_TYPE_STRING); break;
   }
 
   emutex_unlock (&ml_tb_current_mutex);
@@ -637,9 +581,6 @@ void mod_get_and_apply_recurse (int task) {
     switch (task) {
      case MOD_ENABLE: current.enable = strsetdel(current.enable, services[x]); break;
      case MOD_DISABLE: current.disable = strsetdel(current.disable, services[x]); break;
-     case MOD_RESET: current.reset = strsetdel(current.reset, services[x]); break;
-     case MOD_RELOAD: current.reload = strsetdel(current.reload, services[x]); break;
-     case MOD_ZAP: current.zap = strsetdel(current.zap, services[x]); break;
     }
 
     emutex_unlock (&ml_tb_current_mutex);
@@ -723,9 +664,6 @@ void mod_get_and_apply_recurse (int task) {
        }\
       }
       mod_apply_recurse_group_rec_add(MOD_DISABLE, disable);
-      mod_apply_recurse_group_rec_add(MOD_ZAP, zap);
-      mod_apply_recurse_group_rec_add(MOD_RESET, reset);
-      mod_apply_recurse_group_rec_add(MOD_RELOAD, reload);
 
       emutex_unlock (&ml_tb_current_mutex);
      } else {
@@ -856,9 +794,6 @@ void mod_get_and_apply_recurse (int task) {
   switch (task) {
    case MOD_ENABLE: repeat = 1; break;
    case MOD_DISABLE: repeat = 1; break;
-   case MOD_RESET: repeat = 1; break;
-   case MOD_RELOAD: repeat = 1; break;
-   case MOD_ZAP: repeat = 1; break;
   }*/
 
   repeat = 0;
@@ -868,39 +803,15 @@ void mod_get_and_apply_recurse (int task) {
 }
 
 void mod_get_and_apply () {
- while (current.zap || current.disable || current.reset || current.reload || current.enable) {
+ while (current.disable || current.enable) {
   pthread_t **subthreads = NULL;
   pthread_t th;
-
-  if (current.zap) {
-   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_ZAP)) {
-    subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-   } else {
-    mod_get_and_apply_recurse (MOD_ZAP);
-   }
-  }
 
   if (current.disable) {
    if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_DISABLE)) {
     subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
    } else {
     mod_get_and_apply_recurse (MOD_DISABLE);
-   }
-  }
-
-  if (current.reset) {
-   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_RESET)) {
-    subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-   } else {
-    mod_get_and_apply_recurse (MOD_RESET);
-   }
-  }
-
-  if (current.reload) {
-   if (!ethread_create (&th, NULL, (void *(*)(void *))mod_get_and_apply_recurse, (void *)MOD_RELOAD)) {
-    subthreads = (pthread_t **)setadd ((void **)subthreads, (void *)&th, sizeof (pthread_t));
-   } else {
-    mod_get_and_apply_recurse (MOD_RELOAD);
    }
   }
 
@@ -959,16 +870,6 @@ void cross_taskblock (struct module_taskblock *source, struct module_taskblock *
   if (target->disable) free (target->disable);
   target->disable = tmp;
  }
- if (source->reset) {
-  char **tmp = (char **)setcombine ((const void **)target->reset, (const void **)source->reset, SET_TYPE_STRING);
-  if (target->reset) free (target->reset);
-  target->reset = tmp;
- }
- if (source->reload) {
-  char **tmp = (char **)setcombine ((const void **)target->reload, (const void **)source->reload, SET_TYPE_STRING);
-  if (target->reload) free (target->reload);
-  target->reload = tmp;
- }
  if (source->critical) {
   char **tmp = (char **)setcombine ((const void **)target->critical, (const void **)source->critical, SET_TYPE_STRING);
   if (target->critical) free (target->critical);
@@ -988,20 +889,6 @@ void cross_taskblock (struct module_taskblock *source, struct module_taskblock *
   if (target->critical) free (target->critical);
   target->critical = tmp;
  }
-
- if (source->zap) {
-  char **tmp = (char **)setcombine ((const void **)target->zap, (const void **)source->zap, SET_TYPE_STRING);
-  if (target->zap) free (target->zap);
-  target->zap = tmp;
-
-  tmp = (char **)setslice ((const void **)target->enable, (const void **)source->zap, SET_TYPE_STRING);
-  if (target->enable) free (target->enable);
-  target->enable = tmp;
-
-  tmp = (char **)setslice ((const void **)target->critical, (const void **)source->zap, SET_TYPE_STRING);
-  if (target->critical) free (target->critical);
-  target->critical = tmp;
- }
 }
 
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
@@ -1017,17 +904,12 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   uint32_t xi = 0;
   char **enable   = str2set (':', cfg_getstring ("enable/services", mode));
   char **disable  = str2set (':', cfg_getstring ("disable/services", mode));
-  char **reset    = str2set (':', cfg_getstring ("reset/services", mode));
-  char **reload   = str2set (':', cfg_getstring ("reload/services", mode));
-  char **zap      = str2set (':', cfg_getstring ("zap/services", mode));
   char **critical = str2set (':', cfg_getstring ("enable/critical", mode));
 
   if (!enable)
    enable  = str2set (':', cfg_getstring ("enable/mod", mode));
   if (!disable)
    disable = str2set (':', cfg_getstring ("disable/mod", mode));
-  if (!reset)
-   reset   = str2set (':', cfg_getstring ("reset/mod", mode));
 
   if (mode->arbattrs) for (; mode->arbattrs[xi]; xi+=2) {
    if (strmatch(mode->arbattrs[xi], "base")) {
@@ -1062,21 +944,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    if (plan->changes.disable) free (plan->changes.disable);
    plan->changes.disable = tmp;
   }
-  if (reset) {
-   char **tmp = (char **)setcombine ((const void **)plan->changes.reset, (const void **)reset, SET_TYPE_STRING);
-   if (plan->changes.reset) free (plan->changes.reset);
-   plan->changes.reset = tmp;
-  }
-  if (reload) {
-   char **tmp = (char **)setcombine ((const void **)plan->changes.reload, (const void **)reload, SET_TYPE_STRING);
-   if (plan->changes.reload) free (plan->changes.reload);
-   plan->changes.reload = tmp;
-  }
-  if (zap) {
-   char **tmp = (char **)setcombine ((const void **)plan->changes.zap, (const void **)zap, SET_TYPE_STRING);
-   if (plan->changes.zap) free (plan->changes.zap);
-   plan->changes.zap = tmp;
-  }
   if (critical) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.critical, (const void **)critical, SET_TYPE_STRING);
    if (plan->changes.critical) free (plan->changes.critical);
@@ -1098,21 +965,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    char **tmp = (char **)setcombine ((const void **)plan->changes.disable, (const void **)atoms, SET_TYPE_STRING);
    if (plan->changes.disable) free (plan->changes.disable);
    plan->changes.disable = tmp;
-  }
-  if (task & MOD_RESET) {
-   char **tmp = (char **)setcombine ((const void **)plan->changes.reset, (const void **)atoms, SET_TYPE_STRING);
-   if (plan->changes.reset) free (plan->changes.reset);
-   plan->changes.reset = tmp;
-  }
-  if (task & MOD_RELOAD) {
-   char **tmp = (char **)setcombine ((const void **)plan->changes.reload, (const void **)atoms, SET_TYPE_STRING);
-   if (plan->changes.reload) free (plan->changes.reload);
-   plan->changes.reload = tmp;
-  }
-  if (task & MOD_ZAP) {
-   char **tmp = (char **)setcombine ((const void **)plan->changes.zap, (const void **)atoms, SET_TYPE_STRING);
-   if (plan->changes.zap) free (plan->changes.zap);
-   plan->changes.zap = tmp;
   }
  }
 
@@ -1248,36 +1100,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   free (current.disable);
   current.disable = tmp;
  }
- if (current.zap) {
-  char **tmp = NULL;
-  for (i = 0; current.zap[i]; i++) {
-   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.zap[i])) {
-    tmp = (char **)setadd ((void **)tmp, (void *)current.zap[i], SET_TYPE_STRING);
-   }
-  }
-  free (current.zap);
-  current.zap = tmp;
- }
- if (current.reset) {
-  char **tmp = NULL;
-  for (i = 0; current.reset[i]; i++) {
-   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.reset[i])) {
-    tmp = (char **)setadd ((void **)tmp, (void *)current.reset[i], SET_TYPE_STRING);
-   }
-  }
-  free (current.reset);
-  current.reset = tmp;
- }
- if (current.reload) {
-  char **tmp = NULL;
-  for (i = 0; current.reload[i]; i++) {
-   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.reload[i])) {
-    tmp = (char **)setadd ((void **)tmp, (void *)current.reload[i], SET_TYPE_STRING);
-   }
-  }
-  free (current.reload);
-  current.reload = tmp;
- }
 
  emutex_unlock (&ml_tb_current_mutex);
  emutex_unlock (&ml_tb_target_state_mutex);
@@ -1337,10 +1159,7 @@ int mod_plan_free (struct mloadplan *plan) {
  if (plan) {
   if (plan->changes.enable) free (plan->changes.enable);
   if (plan->changes.disable) free (plan->changes.disable);
-  if (plan->changes.reset) free (plan->changes.reset);
-  if (plan->changes.reload) free (plan->changes.reload);
   if (plan->changes.critical) free (plan->changes.critical);
-  if (plan->changes.zap) free (plan->changes.zap);
 
   if (plan->used_modes) free (plan->used_modes);
 
@@ -1357,17 +1176,11 @@ double __mod_get_plan_progress_f (struct mloadplan *plan) {
   emutex_lock (&ml_tb_target_state_mutex);
   if (target_state.enable) all += setcount ((const void **)target_state.enable);
   if (target_state.disable) all += setcount ((const void **)target_state.disable);
-  if (target_state.reset) all += setcount ((const void **)target_state.reset);
-  if (target_state.reload) all += setcount ((const void **)target_state.reload);
-  if (target_state.zap) all += setcount ((const void **)target_state.zap);
   emutex_unlock (&ml_tb_target_state_mutex);
 
   emutex_lock (&ml_tb_current_mutex);
   if (current.enable) left += setcount ((const void **)current.enable);
   if (current.disable) left += setcount ((const void **)current.disable);
-  if (current.reset) left += setcount ((const void **)current.reset);
-  if (current.reload) left += setcount ((const void **)current.reload);
-  if (current.zap) left += setcount ((const void **)current.zap);
   emutex_unlock (&ml_tb_current_mutex);
 
   return 1.0 - (double)(left / all);
@@ -1465,9 +1278,30 @@ int mod_modaction (char **argv) {
 
  if (strmatch (argv[1], "enable")) task = MOD_ENABLE;
  else if (strmatch (argv[1], "disable")) task = MOD_DISABLE;
- else if (strmatch (argv[1], "reset")) task = MOD_RESET;
- else if (strmatch (argv[1], "reload")) task = MOD_RELOAD;
- else if (strmatch (argv[1], "zap")) task = MOD_ZAP;
+ else {
+  struct lmodule **tm = NULL;
+  uint32_t r = 0;
+
+  emutex_lock (&ml_service_list_mutex);
+  if (module_logics_service_list) {
+   struct stree *cur = streefind (module_logics_service_list, argv[0], TREE_FIND_FIRST);
+   if (cur) {
+    tm = cur->value;
+   }
+  }
+
+  emutex_unlock (&ml_service_list_mutex);
+
+  ret = 1;
+  for (; tm[r]; r++) {
+   int retx = mod (MOD_CUSTOM, tm[r], argv[1]);
+
+   if (retx == STATUS_OK)
+    ret = 0;
+  }
+
+  return ret;
+ }
 
  argv[1] = NULL;
 
@@ -1757,27 +1591,6 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
       free (r);
      }
     }
-    if (target_state.reset) {
-     char *r = set2str (' ', (const char **)target_state.reset);
-     if (r) {
-      eprintf ((FILE *)ev->para, "target_state.reset = { %s }\n", r);
-      free (r);
-     }
-    }
-    if (target_state.reload) {
-     char *r = set2str (' ', (const char **)target_state.reload);
-     if (r) {
-      eprintf ((FILE *)ev->para, "target_state.reload = { %s }\n", r);
-      free (r);
-     }
-    }
-    if (target_state.zap) {
-     char *r = set2str (' ', (const char **)target_state.zap);
-     if (r) {
-      eprintf ((FILE *)ev->para, "target_state.zap = { %s }\n", r);
-      free (r);
-     }
-    }
     if (target_state.critical) {
      char *r = set2str (' ', (const char **)target_state.critical);
      if (r) {
@@ -1800,27 +1613,6 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      char *r = set2str (' ', (const char **)current.disable);
      if (r) {
       eprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
-      free (r);
-     }
-    }
-    if (current.reset) {
-     char *r = set2str (' ', (const char **)current.reset);
-     if (r) {
-      eprintf ((FILE *)ev->para, "current.reset = { %s }\n", r);
-      free (r);
-     }
-    }
-    if (current.reload) {
-     char *r = set2str (' ', (const char **)current.reload);
-     if (r) {
-      eprintf ((FILE *)ev->para, "current.reload = { %s }\n", r);
-      free (r);
-     }
-    }
-    if (current.zap) {
-     char *r = set2str (' ', (const char **)current.zap);
-     if (r) {
-      eprintf ((FILE *)ev->para, "current.zap = { %s }\n", r);
       free (r);
      }
     }

@@ -258,8 +258,6 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     new->param = (void *)dexec;
     new->enable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_enable;
     new->disable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_disable;
-/*    new->reset = (int (*)(void *, struct einit_event *))NULL;
-    new->reload = (int (*)(void *, struct einit_event *))NULL;*/
     new->cleanup = _einit_mod_daemon_cleanup_after_module;
    }
   }

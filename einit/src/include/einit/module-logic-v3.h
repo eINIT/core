@@ -54,9 +54,6 @@ extern "C" {
 struct module_taskblock {
  char **enable;
  char **disable;
- char **reset;
- char **reload;
- char **zap;
  char **critical;
 };
 

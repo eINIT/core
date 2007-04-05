@@ -271,24 +271,16 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
      action = "enabling";
     } else if (ev->task & MOD_DISABLE) {
      action = "disabling";
-    } else if (ev->task & MOD_RESET) {
-     action = "resetting";
-    } else if (ev->task & MOD_RELOAD) {
-     action = "reloading";
-    } else if (ev->task & MOD_ZAP) {
-     action = "zapping";
+    } else if (ev->task & MOD_CUSTOM) {
+     action = "custom";
     }
    } else {
     if (ev->task & MOD_ENABLE) {
      action = "enabled";
     } else if (ev->task & MOD_DISABLE) {
      action = "disabled";
-    } else if (ev->task & MOD_RESET) {
-     action = "reset";
-    } else if (ev->task & MOD_RELOAD) {
-     action = "reloaded";
-    } else if (ev->task & MOD_ZAP) {
-     action = "zapped";
+    } else if (ev->task & MOD_CUSTOM) {
+     action = "custom";
     }
    }
 

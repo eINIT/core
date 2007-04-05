@@ -134,7 +134,7 @@ void _einit_external_einit_event_handler (struct einit_event *ev) {
 
    thismodule = mod_update (thismodule);
 
-   mod (MOD_ENABLE, thismodule);
+   mod (MOD_ENABLE, thismodule, NULL);
   }
  }
 }

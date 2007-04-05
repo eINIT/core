@@ -138,7 +138,7 @@ void * initctl_wait (char *fifo) {
    char tmp[BUFFERSIZE];
    esprintf (tmp, BUFFERSIZE, "initctl: opening FIFO failed: %s", strerror (errno));
    notice (4, tmp);
-   mod (MOD_DISABLE, thismodule);
+   mod (MOD_DISABLE, thismodule, NULL);
    _compatibility_sysv_initctl_running = 0;
    return NULL;
   }
