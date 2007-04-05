@@ -2,66 +2,69 @@
 #
 # net.sh: udev external RUN script
 #
-# Copyright 2007 Ryan Hope <rmh3093@gmail.com>
+# Copyright 2007 Roy Marples <uberlord@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
 
 IFACE="$1"
 ACTION="$2"
 
-if grep -q initng /proc/1/cmdline 
-then
-    EXEC="/sbin/ngc"
-    INITNG="yes"
-    EINIT="no"
-elif grep -q einit /proc/1/cmdline
-then
-    EXEC="/sbin/erc"
-    INITNG="no"
-    EINIT="yes"
-else
-    EXEC="/etc/init.d/net.${IFACE}"
-    INITNG="no"
-    EINIT="no"
+# ignore interfaces that are registered after being "up" (?)
+case ${IFACE} in
+    ppp*|ippp*|isdn*|plip*|lo*|irda*|dummy*|ipsec*|tun*|tap*)
+    	exit 0 ;;
+esac
+
+# sypport for various init systems add your next big init system here
+USE_INIT=`grep -Eo '^(init|initng|einit) ' -a /proc/1/cmdline`
+
+if [ -z ${USE_INIT} ]; then
+	logger -t udev-net.sh "${IFACE} ${ACTION} failed. Failed to determine init system."
+	exit 1
 fi
 
 case "${ACTION}" in
-    start)
-	if [ "${INITNG}" = "yes" ]
-	then
-	    ARGS="-u net/${IFACE}"
-	elif [ "${EINIT}" = "yes" ]
-	then
-	    ARGS="net-${IFACE} enable"
-	else
-	    ARGS="--quiet start"
-	fi
-	;;
-    stop)
-	if [ "${INITNG}" = "yes" ]
-	then
-	    ARGS="-d net/${IFACE}"
-	elif [ "${EINIT}" = "yes" ]
-	then
-	    ARGS="net-${IFACE} disable"
-	else
-	    ARGS="--quiet stop"
-	fi
-	;;
-    *)
-	echo "$0: wrong arguments" >&2
-	echo "Call with <interface> <start|stop>" >&2
-	exit 1
-	;;
+	start)
+		case "${USE_INIT}" in
+			initng)
+				EXEC="/sbin/ngc"
+				ARGS="-u net/${IFACE}"
+				;;
+			einit)
+				EXEC="/sbin/erc"
+				ARGS="net-${IFACE} enable"
+				;;
+			init)
+				EXEC="/etc/init.d/net.${IFACE}"
+				ARGS="--quiet start"
+				;;
+		esac
+		;;
+	stop)
+		case "${USE_INIT}" in
+			initng)
+				EXEC="/sbin/ngc"
+				ARGS="-d net/${IFACE}"
+				;;
+			einit)
+				EXEC="/sbin/erc"
+				ARGS="net-${IFACE} disable"
+				;;
+			init)
+				EXEC="/etc/init.d/net.${IFACE}"
+				ARGS="--quiet stop"
+				;;
+		esac
+		;;
+	*)
+		logger -t udev-net.sh "${IFACE} ${ACTION} failed. Improper action requested."
+		logger -t udev-net.sh "Action must be start/stop."
+		exit 1
+		;;
 esac
 
-export IN_HOTPLUG=1
 
-if [ -x "${EXEC}" ]
-then
-    ${EXEC} ${ARGS}
-    exit 0
-else
-    logger -t netplug "Error: Couldn't configure ${IFACE}, no ${EXEC} !"
+if [ ! -x "${EXEC}" ] ; then
+    logger -t udev-net.sh "${IFACE} ${ACTION} failed. ${EXEC}: does not exist or is not executable"
     exit 1
 fi
 
@@ -69,4 +72,5 @@ fi
 # the interface. This to try and ensure we stop after they do.
 [ "${ACTION}" == "stop" ] && sleep 2
 
-# vim: set ts=4
+export IN_HOTPLUG=1
+"${EXEC}" "${ARGS}"
