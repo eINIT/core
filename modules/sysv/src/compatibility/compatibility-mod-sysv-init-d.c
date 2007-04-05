@@ -88,8 +88,7 @@ module_register(_compatibility_mod_sysv_init_d_self);
 int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *);
 int _compatibility_mod_sysv_init_d_init_d_enable (char *, struct einit_event *);
 int _compatibility_mod_sysv_init_d_init_d_disable (char *, struct einit_event *);
-int _compatibility_mod_sysv_init_d_init_d_reset (char *, struct einit_event *);
-int _compatibility_mod_sysv_init_d_init_d_reload (char *, struct einit_event *);
+int _compatibility_mod_sysv_init_d_init_d_custom (char *, char *, struct einit_event *);
 int _compatibility_mod_sysv_init_d_configure (struct lmodule *);
 int _compatibility_mod_sysv_init_d_cleanup (struct lmodule *);
 
@@ -170,7 +169,7 @@ int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *modchain) {
 
     char *xt[2] = { (nrid + 7), NULL };
 
-    modinfo->si.provides = (char **)setdup ((void **)xt, SET_TYPE_STRING);
+    modinfo->si.provides = (char **)setdup ((const void **)xt, SET_TYPE_STRING);
 
     struct lmodule *lm = modchain;
     while (lm) {
@@ -178,8 +177,7 @@ int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *modchain) {
       lm->param = (void *)estrdup (tmp);
       lm->enable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_enable;
       lm->disable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_disable;
-      lm->reset = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reset;
-      lm->reload = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reload;
+      lm->custom = (int (*)(void *, char *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_custom;
       lm->cleanup = _compatibility_mod_sysv_init_d_cleanup_after_module;
       lm->module = modinfo;
 
@@ -197,8 +195,7 @@ int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *modchain) {
       new->param = (void *)estrdup (tmp);
       new->enable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_enable;
       new->disable = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_disable;
-      new->reset = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reset;
-      new->reload = (int (*)(void *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_reload;
+      new->custom = (int (*)(void *, char *, struct einit_event *))_compatibility_mod_sysv_init_d_init_d_custom;
       new->cleanup = _compatibility_mod_sysv_init_d_cleanup_after_module;
      }
     }
@@ -234,24 +231,14 @@ int _compatibility_mod_sysv_init_d_init_d_disable (char *init_script, struct ein
  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int _compatibility_mod_sysv_init_d_init_d_reset (char *init_script, struct einit_event *status) {
+int _compatibility_mod_sysv_init_d_init_d_custom (char *init_script, char *custom_command, struct einit_event *status) {
  char *cmd;
 
- cmd = emalloc (7 + strlen(init_script));
+ cmd = emalloc (strlen(init_script) + 2 + strlen (custom_command));
  *cmd = 0;
  strcat (cmd, init_script);
- strcat (cmd, " reset");
-
- return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
-}
-
-int _compatibility_mod_sysv_init_d_init_d_reload (char *init_script, struct einit_event *status) {
- char *cmd;
-
- cmd = emalloc (8 + strlen(init_script));
- *cmd = 0;
- strcat (cmd, init_script);
- strcat (cmd, " reload");
+ strcat (cmd, " ");
+ strcat (cmd, custom_command);
 
  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
 }
@@ -259,8 +246,8 @@ int _compatibility_mod_sysv_init_d_init_d_reload (char *init_script, struct eini
 int _compatibility_mod_sysv_init_d_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _compatibility_mod_sysv_init_d_cleanup;
- thismodule->scanmodules = _compatibility_mod_sysv_init_d_scanmodules;
+ irr->cleanup = _compatibility_mod_sysv_init_d_cleanup;
+ irr->scanmodules = _compatibility_mod_sysv_init_d_scanmodules;
 
  exec_configure (irr);
  event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);

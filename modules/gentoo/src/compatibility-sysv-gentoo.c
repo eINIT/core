@@ -109,7 +109,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *);
 int _compatibility_sysv_gentoo_init_d_enable (char *, struct einit_event *);
 int _compatibility_sysv_gentoo_init_d_disable (char *, struct einit_event *);
 int _compatibility_sysv_gentoo_init_d_reset (char *, struct einit_event *);
-int _compatibility_sysv_gentoo_init_d_reload (char *, struct einit_event *);
+int _compatibility_sysv_gentoo_init_d_custom (char *, char *, struct einit_event *);
 int _compatibility_sysv_gentoo_configure (struct lmodule *);
 int _compatibility_sysv_gentoo_cleanup (struct lmodule *);
 void sh_add_environ_callback (char **, uint8_t);
@@ -729,8 +729,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
       lm->param = (void *)estrdup (tmp);
       lm->enable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_enable;
       lm->disable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_disable;
-      lm->reset = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reset;
-      lm->reload = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reload;
+      lm->custom = (int (*)(void *, char *, struct einit_event *))_compatibility_sysv_gentoo_init_d_custom;
       lm->cleanup = _compatibility_sysv_gentoo_cleanup_after_module;
       lm->module = modinfo;
 
@@ -748,8 +747,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
       new->param = (void *)estrdup (tmp);
       new->enable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_enable;
       new->disable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_disable;
-      new->reset = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reset;
-      new->reload = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_reload;
+      new->custom = (int (*)(void *, char *, struct einit_event *))_compatibility_sysv_gentoo_init_d_custom;
       new->cleanup = _compatibility_sysv_gentoo_cleanup_after_module;
      }
     }
@@ -810,27 +808,11 @@ int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_e
   return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
-int _compatibility_sysv_gentoo_init_d_reset (char *init_script, struct einit_event *status) {
+int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, struct einit_event *status) {
  char *variables[7] = {
   "script-path", init_script,
   "script-name", init_script,
-  "action", "restart", NULL },
-  *cmdscript = NULL,
-  *xrev = NULL;
-
-  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
-  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
-
-  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
-
-  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
-}
-
-int _compatibility_sysv_gentoo_init_d_reload (char *init_script, struct einit_event *status) {
- char *variables[7] = {
-  "script-path", init_script,
-  "script-name", init_script,
-  "action", "reload", NULL },
+  "action", action, NULL },
   *cmdscript = NULL,
   *xrev = NULL;
 
