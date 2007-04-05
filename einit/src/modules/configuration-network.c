@@ -83,6 +83,33 @@ int _configuration_network_cleanup (struct lmodule *this) {
  return 0;
 }
 
+#if 0
+void add_module_through_template (cahr *id, char *template, char *interface, char *attr) {
+ struct cfgnode newnode;
+
+// net module
+ char tmp[BUFFERSIZE];
+ memset (&newnode, 0, sizeof(struct cfgnode));
+
+ newnode.id = estrdup ("services-virtual-module-shell");
+ newnode.source = self->rid;
+ newnode.nodetype = EI_NODETYPE_CONFIG;
+
+ esprintf (tmp, BUFFERSIZE, id, interface, attr);
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
+
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"based-on-template", SET_TYPE_STRING);
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"template-shell-net", SET_TYPE_STRING);
+
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"interface", SET_TYPE_STRING);
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)interfacename, SET_TYPE_STRING);
+
+ cfg_addnode (&newnode);
+
+}
+#endif
+
 char configuration_network_parse_configuration_and_add_nodes() {
  struct stree *network_nodes = cfg_prefix("configuration-network-interfaces-");
 
@@ -96,6 +123,9 @@ char configuration_network_parse_configuration_and_add_nodes() {
     if (nn->arbattrs) {
      char *interfacename = cur->key+33; /* 33 = strlen("configuration-network-interfaces-") */
      uint32_t i = 0;
+
+//     add_module_through_template ("shell-net-%s", "template-shell-net", interfacename, nn->arbattrs[i+1]);
+
      struct cfgnode newnode;
 
 // net module

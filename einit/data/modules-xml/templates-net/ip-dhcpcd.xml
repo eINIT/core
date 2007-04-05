@@ -3,6 +3,7 @@
   name="Using 'dhcpcd' to manage ip addresses for interface ${interface}"
   requires="ifctl-${interface}"
   provides="ip-${interface}"
+  pidfile="/var/run/dhcpcd-${interface}.pid"
   enable="dhcpcd ${interface}"
   disable="dhcpcd -k ${interface}" />
 </einit>
