@@ -1296,8 +1296,14 @@ int mod_modaction (char **argv) {
   if (tm) {
    if (strmatch (argv[1], "status")) {
     for (; tm[r]; r++) {
-     if (tm[r]->status & STATUS_ENABLED)
+     if (tm[r]->status & STATUS_WORKING) {
+      ret = 2;
+      break;
+     }
+     if (tm[r]->status & STATUS_ENABLED) {
       ret = 0;
+      break;
+     }
     }
    } else {
     for (; tm[r]; r++) {
