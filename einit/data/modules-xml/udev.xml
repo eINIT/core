@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-udev"
+  name="udev - dynamic device management"
+  provides="dev:udev"
+  requires="proc:sysfs"
+  prepare="pexec-options dont-close-stdin; mount -t tmpfs none /dev; udevstart"
+  command="udevd"
+  restart="yes" />
+</einit>

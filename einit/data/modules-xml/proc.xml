@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-proc"
+  name="proc - process information pseudo-filesystem"
+  provides="proc"
+  enable="mount -n -t proc /proc /proc"
+  disable="/bin/true"
+  restart="no" />
+</einit>
