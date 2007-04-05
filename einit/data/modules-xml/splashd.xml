@@ -23,7 +23,13 @@
      prepare="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
        umount splashcache;
        mount splashcache -t tmpfs &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot; -o size=${configuration_feedback_visual_fbsplash_daemon_mount_dir_size};
-      fi; /bin/true"
+      fi;
+      if test ! -e /dev/fb0; then
+       mknod /dev/fb0 c 29 0;
+       chown root:video /dev/fb0;
+       chmod 0660 /dev/fb0;
+      fi;
+      /bin/true"
      enable="pexec-options dont-close-stdin;
       if /sbin/splash_util -d -t ${configuration_feedback_visual_fbsplash_theme}; then exit 0; fi;
       /sbin/splash_util.static -d -t ${configuration_feedback_visual_fbsplash_theme};"

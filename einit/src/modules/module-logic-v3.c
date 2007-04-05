@@ -1370,7 +1370,7 @@ double __mod_get_plan_progress_f (struct mloadplan *plan) {
   if (current.zap) left += setcount ((const void **)current.zap);
   emutex_unlock (&ml_tb_current_mutex);
 
-  return (double)(left / all);
+  return 1.0 - (double)(left / all);
  }
 }
 
