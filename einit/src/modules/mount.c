@@ -1751,7 +1751,7 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
    errno = 0;
 #endif
 
-   return mountwrapper ("/", status, MOUNT_TF_UMOUNT);
+   return STATUS_OK;
 //   return STATUS_OK;
   case MOUNT_CRITICAL:
    while (ha) {
@@ -1760,6 +1760,7 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
 
     ha = streenext (ha);
    }
+
    break;
   default:
    status->string = "come again?";
@@ -1802,6 +1803,10 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
  }
 
  update_real_mtab();
+
+ if (p == MOUNT_CRITICAL) {
+  mountwrapper ("/", status, MOUNT_TF_UMOUNT);
+ }
 
  return STATUS_OK;
 }
