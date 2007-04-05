@@ -2,7 +2,7 @@
  <daemon id="daemon-boinc"
   name="BOINC client"
   provides="boinc"
-  requires="mount/critical"
+  requires="mount-critical"
   command="cd /var/lib/boinc; boinc_client"
   restart="yes" />
 </einit>

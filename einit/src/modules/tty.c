@@ -89,7 +89,7 @@ int _einit_tty_configure (struct lmodule *);
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
 char * _einit_tty_provides[] = {"tty", NULL};
-char * _einit_tty_requires[] = {"mount/system", NULL};
+char * _einit_tty_requires[] = {"mount-system", NULL};
 const struct smodule _einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,

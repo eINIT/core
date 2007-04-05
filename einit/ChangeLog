@@ -5,6 +5,7 @@
  * the fbsplash module seems to work just fine =)
  * moved the control socket to /dev/einit-control
  * removed module reset/reload/zap hooks in favour of "custom" hooks
+ * changed mount/* to mount-
 
 2007/04/03: mdeininger
  * parsed some of the configuration in the wrong function/forgot updates

@@ -2,7 +2,7 @@
  <daemon id="daemon-syslog-ng"
   name="Syslogger (syslog-ng)"
   provides="syslog-ng:logger"
-  requires="mount/critical"
+  requires="mount-critical"
   command="/usr/sbin/syslog-ng -F"
   restart="yes" />
 </einit>

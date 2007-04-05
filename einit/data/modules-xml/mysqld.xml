@@ -2,7 +2,7 @@
  <daemon id="daemon-mysqld"
   name="Database (MySQL)"
   provides="mysqld"
-  requires="mount/local:net-lo"
+  requires="mount-local:net-lo"
   command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
   restart="yes" />
 </einit>

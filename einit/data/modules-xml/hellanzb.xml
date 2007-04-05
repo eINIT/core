@@ -2,7 +2,7 @@
  <shell id="shell-hellanzb"
   name="hellanzb - nzb downloader and post processor"
   provides="hellanzb"
-  requires="net-lo:mount/local"
+  requires="net-lo:mount-local"
   enable="hellanzb.py -D"
   disable="hellanzb.py shutdown"
   restart="yes" />

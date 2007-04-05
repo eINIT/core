@@ -2,7 +2,7 @@
  <daemon id="daemon-dbus"
   name="D-BUS system messagebus"
   provides="dbus"
-  requires="mount/critical"
+  requires="mount-critical"
   pid="/var/run/dbus.pid"
   prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
   command="dbus-daemon --system --nofork"

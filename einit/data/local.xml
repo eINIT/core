@@ -101,27 +101,27 @@
    <printing group="hpiod:hplip:cupsd" seq="any-iop" />
   </alias>
 
-<!-- example alias: localmount is the same as mount/local -->
-<!--  <alias id="localmount" s="mount/local" /> -->
+  <!-- example alias: localmount is the same as mount-local -->
+  <!--  <alias id="localmount" s="mount-local" /> -->
 
-<!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
-     to use quingy and have the terminals controlled using einit-tty, then you will need mount/critical
+  <!-- example override: on regular systems, einit-tty will only need mount-system, but if you'd like
+       to use quingy and have the terminals controlled using einit-tty, then you will need mount-critical
      if /usr is on its own partition (due to libquingy) -->
 <!--  <override>
-   <module id="einit-tty" requires="mount/critical" />
+ <module id="einit-tty" requires="mount-critical" />
   </override> -->
 
 <!-- example override, probably useful for lvm users:
-     this should make einit mount mount/system-nodes, i.e. /dev, /sys and /proc
+     this should make einit mount mount-system-nodes, i.e. /dev, /sys and /proc
      before trying to mount the root-filesystem -->
 <!--  <override>
-   <module id="einit-mount-root" requires="mount/system" />
+ <module id="einit-mount-root" requires="mount-system" />
    <module id="einit-mount-system" requires="sysconf" />
   </override> -->
  </services>
 
  <mode id="default" base="boot">
-  <enable services="audio:portmap:clock:xdm:swap:mount/remote:tts:kern-arbitrary" />
+  <enable services="audio:portmap:clock:xdm:swap:mount-remote:tts:kern-arbitrary" />
   <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
 </einit>

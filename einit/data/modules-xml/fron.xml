@@ -2,7 +2,7 @@
  <daemon id="daemon-fcron"
   name="Cron (fcron)"
   provides="fcron:cron"
-  requires="mount/critical"
+  requires="mount-critical"
   command="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf"
   restart="yes" />
 </einit>

@@ -2,7 +2,7 @@
  <daemon id="shell-bluez-hidd"
   name="Bluetooth (HIDd)"
   provides="bluetooth-hid"
-  requires="mount/critical:kern-bluetooth:bluetooth-hci"
+  requires="mount-critical:kern-bluetooth:bluetooth-hci"
   command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
   restart="yes"
   variables="configuration-bluetooth-hidd/options" />

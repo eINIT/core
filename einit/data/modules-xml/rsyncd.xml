@@ -2,7 +2,7 @@
  <daemon id="daemon-rsyncd"
   name="Rsync Daemon"
   provides="rsyncd"
-  requires="net-lo:mount/local"
+  requires="net-lo:mount-local"
   command="/usr/bin/rsync --daemon;"
   restart="yes" />
 </einit>

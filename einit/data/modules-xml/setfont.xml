@@ -2,7 +2,7 @@
  <shell id="shell-setfont"
   name="setfont (${configuration_system_setfont_font})"
   provides="setfont"
-  requires="mount/critical"
+  requires="mount-critical"
   before="tty"
   enable="for t in ${configuration_system_setfont_ttys}; do
           setfont ${configuration_system_setfont_font} -C /dev/tty${t};

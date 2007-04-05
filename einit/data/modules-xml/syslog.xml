@@ -2,7 +2,7 @@
  <daemon id="daemon-syslog"
   name="Syslogger (syslog)"
   provides="syslog:logger"
-  requires="mount/critical"
+  requires="mount-critical"
   command="/sbin/syslogd -n"
   restart="yes" />
 </einit>

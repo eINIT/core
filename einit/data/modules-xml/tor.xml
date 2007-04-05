@@ -2,7 +2,7 @@
  <daemon id="daemon-tor"
   name="TOR Daemon"
   provides="tor"
-  requires="network:mount/critical"
+  requires="network:mount-critical"
   command="/usr/bin/tor"
   restart="yes" />
 </einit>

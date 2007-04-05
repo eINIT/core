@@ -2,7 +2,7 @@
  <daemon id="daemon-privoxy"
   name="Privoxy Daemon"
   provides="privoxy"
-  requires="network:mount/critical"
+  requires="network:mount-critical"
   command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
   restart="yes" />
 </einit>

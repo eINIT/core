@@ -2,7 +2,7 @@
  <daemon id="daemon-portmap"
   name="Portmap Daemon"
   provides="portmap"
-  requires="mount/critical"
+  requires="mount-critical"
   command="/sbin/portmap -d"
   restart="yes" />
 </einit>

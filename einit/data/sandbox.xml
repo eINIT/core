@@ -132,20 +132,20 @@
    <audio group="alsa" seq="any-iop" />
   </alias>
 
-  <alias id="localmount" s="mount/local" />
+  <alias id="localmount" s="mount-local" />
 
-<!-- example override: on regular systems, einit-tty will only need mount/system, but if you'd like
-     to use quingy and have the terminals controlled using einit-tty, then you will need mount/critical
+  <!-- example override: on regular systems, einit-tty will only need mount-system, but if you'd like
+       to use quingy and have the terminals controlled using einit-tty, then you will need mount-critical
      if /usr is on its own partition (due to libquingy) -->
   <override>
-   <module id="einit-tty" requires="mount/critical" />
+   <module id="einit-tty" requires="mount-critical" />
   </override>
 
-  <external provided="mount/local:/:mount/system:mount/remote:mount/critical:video" />
+  <external provided="mount-local:/:mount-system:mount-remote:mount-critical:video" />
  </services>
 
  <mode id="boot">
-  <enable services="ipc" critical="mount/critical:tty:whatever" />
+  <enable services="ipc" critical="mount-critical:tty:whatever" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">

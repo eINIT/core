@@ -51,7 +51,7 @@ int _einit_readahead_configure (struct lmodule *);
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
 char * _einit_readahead_provides[] = {"readahead", NULL};
-char * _einit_readahead_requires[] = {"mount/critical", NULL};
+char * _einit_readahead_requires[] = {"mount-critical", NULL};
 const struct smodule _einit_readahead_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,

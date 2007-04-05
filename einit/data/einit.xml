@@ -327,7 +327,7 @@
     <shell-template id="template-shell-kern-module-loader"
      name="Kernel Modules (${system})"
      provides="kern-${system}"
-     requires="mount/system:ipc"
+     requires="mount-system:ipc"
      enable="
       for x in ${configuration_kernel_modules_${system}};
        do echo $x; modprobe $x &amp;
@@ -367,7 +367,7 @@
     <shell id="shell-kern-module-autoload.d"
      name="Kernel Modules (autoload.d)"
      provides="kern-arbitrary"
-     requires="mount/system:ipc"
+     requires="mount-system:ipc"
      enable="
       if test -e ${configuration_kernel_modules_autoload_d_file}; then
        modules=`grep -E '^\s*\w+' ${configuration_kernel_modules_autoload_d_file}`;
@@ -391,7 +391,7 @@
     <shell id="shell-kern-audio-alsa"
      name="Kernel Modules (ALSA)"
      provides="kern-alsa"
-     requires="mount/system"
+     requires="mount-system"
      enable="
       kernel_modules_alsa=`/sbin/modprobe -c|grep -E '(snd-card|sound-service)-[0-9]'|awk '{print $3}'`;
 
@@ -420,7 +420,7 @@
     <shell id="shell-kern-nvidia"
      name="Proprietary NVIDIA X11 Drivers"
      provides="kern-nvidia"
-     requires="mount/system"
+     requires="mount-system"
      enable="modprobe nvidia;
       for i in 0 1 2 3 4 5 6 7; do
        mknod /dev/nvidia$i c 195 $i;
@@ -437,7 +437,7 @@
     <shell id="shell-kern-ati"
      name="Proprietary ATI X11 Drivers"
      provides="kern-ati"
-     requires="mount/system"
+     requires="mount-system"
      enable="modprobe fglrx"
      disable="${configuration_command_rmmod} fglrx"
      variables="configuration-command-rmmod" />
@@ -457,7 +457,7 @@
     as a varialble, just like he wanted. -->
     <shell id="shell-net-ath0"
      name="Network (Wireless, Atheros)"
-     requires="mount/system"
+     requires="mount-system"
      provides="net-ath0"
      pid="/var/run/dhcpcd-ath0.pid"
      enable="pexec-options no-pipe;
@@ -475,7 +475,7 @@
     <shell id="shell-apache2"
      name="httpd - Apache Hypertext Transfer Protocol Server"
      provides="apache2"
-     requires="mount/critical:net-lo"
+     requires="mount-critical:net-lo"
      pid="/var/run/apache2.pid"
      opts="-D DEFAULT_VHOST"
      root="/usr/lib/apache2"
@@ -491,7 +491,7 @@
     <shell id="shell-apache2-gentoo"
      name="httpd - Apache Hypertext Transfer Protocol Server"
      provides="apache2"
-     requires="mount/critical:net-lo"
+     requires="mount-critical:net-lo"
      pid="/var/run/apache2.pid"
      envfile="/etc/conf.d/apache2"
      root="/usr/lib/apache2"
@@ -515,11 +515,11 @@
   <enable services="feedback-textual" />
  </mode>
  <mode id="boot">
-  <enable services="sysconf:mount/local:hostname:tty:keyboard:ipc:logger:network:dbus:hal:utmp:initctl" critical="mount/critical:tty" />
+  <enable services="sysconf:mount-local:hostname:tty:keyboard:ipc:logger:network:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable services="audio:portmap:clock:displaymanager:swap:mount/remote" />
+  <enable services="audio:portmap:clock:displaymanager:swap:mount-remote" />
   <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
  </mode>
  <mode id="power-down">

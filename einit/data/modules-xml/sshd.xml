@@ -2,7 +2,7 @@
  <daemon id="daemon-sshd"
   name="SSHd"
   provides="sshd"
-  requires="network:mount/critical"
+  requires="network:mount-critical"
   command="/usr/sbin/sshd -D"
   restart="yes" />
 </einit>

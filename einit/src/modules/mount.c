@@ -107,8 +107,8 @@ module_register(_einit_mount_self);
 
 #endif
 
-char *provides_mountlocal[] = {"mount/local", NULL};
-char *requires_mountlocal[] = {"mount/system", "mount/critical", NULL};
+char *provides_mountlocal[] = {"mount-local", NULL};
+char *requires_mountlocal[] = {"mount-system", "mount-critical", NULL};
 struct smodule sm_mountlocal = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -124,8 +124,8 @@ struct smodule sm_mountlocal = {
     }
 };
 
-char *provides_mountremote[] = { "mount/remote", NULL};
-char *requires_mountremote[] = { "mount/system", "network", NULL};
+char *provides_mountremote[] = { "mount-remote", NULL};
+char *requires_mountremote[] = { "mount-system", "network", NULL};
 char *after_mountremote[] = { "portmap", NULL};
 struct smodule sm_mountremote = {
 	.eiversion	= EINIT_VERSION,
@@ -142,7 +142,7 @@ struct smodule sm_mountremote = {
     }
 };
 
-char *provides_system[] = {"mount/system", NULL};
+char *provides_system[] = {"mount-system", NULL};
 struct smodule sm_system = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
@@ -158,8 +158,8 @@ struct smodule sm_system = {
     }
 };
 
-char *provides_critical[] = {"mount/critical", NULL};
-char *requires_critical[] = {"mount/system", NULL};
+char *provides_critical[] = {"mount-critical", NULL};
+char *requires_critical[] = {"mount-system", NULL};
 struct smodule sm_critical = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,

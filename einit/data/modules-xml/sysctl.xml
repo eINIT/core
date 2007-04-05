@@ -2,7 +2,7 @@
  <shell id="shell-sysctl"
   name="sysctl - configure kernel parameters at runtime"
   provides="sysctl"
-  requires="mount/critical"
+  requires="mount-critical"
   enable="sysctl -q -p /etc/sysctl.conf"
   disable="/bin/true"
   restart="no" />

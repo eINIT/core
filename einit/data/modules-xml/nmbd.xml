@@ -2,7 +2,7 @@
  <shell id="shell-nmbd"
   name="NetBIOS name server"
   provides="nmbd"
-  requires="mount/local:net-lo"
+  requires="mount-local:net-lo"
   pid="/var/run/samba/nmbd.pid"
   prepare="[ ! -e /var/run/samba ] &amp;&amp; mkdir /var/run/samba ];
            /bin/true;"

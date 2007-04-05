@@ -2,7 +2,7 @@
  <shell id="shell-irqbalance"
   name="irqbalance"
   provides="irqbalance"
-  requires="mount/critical"
+  requires="mount-critical"
   enable="irqbalance"
   disable="/bin/true"
   restart="no" />

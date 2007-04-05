@@ -2,7 +2,7 @@
  <shell id="shell-sensors"
   name="LM-Sensors"
   provides="sensors"
-  requires="mount/critical"
+  requires="mount-critical"
   enable="
    for x in ${configuration_kernel_modules_sensors};
     do echo $x; modprobe $x &amp;

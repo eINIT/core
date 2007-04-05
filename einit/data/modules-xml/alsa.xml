@@ -2,7 +2,7 @@
  <shell id="shell-audio-alsa"
   name="Audio (ALSA)"
   provides="alsa"
-  requires="kern-alsa:mount/critical"
+  requires="kern-alsa:mount-critical"
   enable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} restore;"
   disable="/usr/sbin/alsactl -f ${configuration_audio_alsa_mixer_file} store; /bin/true"
   variables="configuration-audio-alsa-mixer/file" />

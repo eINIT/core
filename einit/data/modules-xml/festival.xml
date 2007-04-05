@@ -2,7 +2,7 @@
  <daemon id="daemon-tts-festival"
   name="TTS (festival)"
   provides="festival:speechd:tts"
-  requires="mount/critical:audio"
+  requires="mount-critical:audio"
   command="/usr/bin/festival --server -b /etc/festival/server.scm"
   restart="yes" />
 </einit>

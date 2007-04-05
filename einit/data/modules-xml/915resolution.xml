@@ -2,7 +2,7 @@
  <shell id="shell-915resolution"
   name="Resolution (Intel)"
   provides="video-intel-resolution"
-  requires="mount/critical"
+  requires="mount-critical"
   enable="915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true"
   disable="/bin/true"
   variables="configuration-video-intel-resolution/x:configuration-video-intel-resolution/y:configuration-video-intel-resolution/bpp:configuration-video-intel-resolution/mode" />

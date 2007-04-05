@@ -2,7 +2,7 @@
  <daemon id="daemon-metalog"
   name="Syslogger (metalog)"
   provides="metalog:logger"
-  requires="mount/critical"
+  requires="mount-critical"
   command="/usr/sbin/metalog"
   restart="yes" />
 </einit>

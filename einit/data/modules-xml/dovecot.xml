@@ -2,7 +2,7 @@
  <shell id="shell-dovecot"
   name="IMAP/POP3 server (Dovecot)"
   provides="dovecot"
-  requires="network:mount/critical:mysqld"
+  requires="network:mount-critical:mysqld"
   enable="/usr/sbin/dovecot"
   disable="/usr/bin/killall dovecot" />
 </einit>

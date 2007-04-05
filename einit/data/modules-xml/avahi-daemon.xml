@@ -2,7 +2,7 @@
  <daemon id="deamon-avahi-daemon"
   name="avahi-daemon"
   provides="avahi-daemon"
-  requires="net-lo:mount/critical"
+  requires="net-lo:mount-critical"
   command="avahi-daemon"
   restart="yes" />
 </einit>

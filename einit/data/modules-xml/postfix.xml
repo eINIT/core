@@ -3,7 +3,7 @@
   name="postfix"
   uid="postfix"
   provides="mta:postfix"
-  requires="network:mount/critical"
+  requires="network:mount-critical"
   enable="/usr/sbin/postfix start"
   disable="/usr/sbin/postfix stop"
   reload="/usr/sbin/postfix reload" />

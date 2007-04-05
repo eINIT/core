@@ -2,7 +2,7 @@
  <daemon id="daemon-vixie-cron"
   name="Cron (Vixie)"
   provides="cron"
-  requires="mount/local:net-lo"
+  requires="mount-local:net-lo"
   command="/usr/sbin/cron -n"
   restart="yes" />
 </einit>

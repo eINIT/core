@@ -2,7 +2,7 @@
  <daemon id="daemon-bluez-sdpd"
   name="Bluetooth (SDPd)"
   provides="bluetooth-sdp"
-  requires="mount/critical:kern-bluetooth:bluetooth-hci"
+  requires="mount-critical:kern-bluetooth:bluetooth-hci"
   command="/usr/sbin/sdpd -n"
   restart="yes" />
 </einit>

@@ -2,7 +2,7 @@
  <shell id="shell-lisa"
   name="LAN Information Server (LISA)"
   provides="lisa"
-  requires="network:mount/critical"
+  requires="network:mount-critical"
   enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
   disable="/usr/bin/killall lisa" />
 </einit>

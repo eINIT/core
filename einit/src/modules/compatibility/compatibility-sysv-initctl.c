@@ -83,7 +83,7 @@ int _compatibility_sysv_initctl_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 char * _compatibility_sysv_initctl_provides[] = {"initctl", NULL};
-char * _compatibility_sysv_initctl_requires[] = {"mount/system", NULL};
+char * _compatibility_sysv_initctl_requires[] = {"mount-system", NULL};
 const struct smodule _compatibility_sysv_initctl_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,

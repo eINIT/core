@@ -2,7 +2,7 @@
  <shell id="shell-cpufreq"
   name="Cpufreq Governor"
   provides="cpufreq"
-  requires="mount/critical:acpi"
+  requires="mount-critical:acpi"
   enable="for i in ${configuration_program_options_cpufreq_cpus};
    do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
    done; /bin/true"
