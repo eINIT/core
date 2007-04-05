@@ -305,6 +305,36 @@ int inset (const void **haystack, const void *needle, int32_t esize) {
  return 0;
 }
 
+#ifdef POSIXREGEX
+#include <regex.h>
+
+int inset_pattern (const void **haystack, const void *needle, int32_t esize) {
+ regex_t pattern;
+ int c = 0;
+
+ if (!haystack) return 0;
+ if (!haystack[0]) return 0;
+ if (!needle) return 0;
+
+ if (esize == SET_TYPE_STRING) {
+  if (eregcomp (&pattern, needle)) {
+   for (; haystack[c] != NULL; c++)
+    if (strmatch (haystack[c], needle)) return 1;
+  } else {
+   for (; haystack[c] != NULL; c++)
+    if (!regexec (&pattern, haystack[c], 0, NULL, 0)) return 1;
+
+   regfree (&pattern);
+  }
+ } else if (esize == -1) {
+  for (; haystack[c] != NULL; c++)
+   if (haystack[c] == needle) return 1;
+ }
+
+ return 0;
+}
+#endif
+
 /* some functions to work with string-sets */
 
 char **str2set (const char sep, const char *oinput) {

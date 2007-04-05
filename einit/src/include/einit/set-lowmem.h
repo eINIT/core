@@ -149,6 +149,8 @@ void setsort (void **set, const char task, signed int(*sortfunction)(const void 
 */
 int inset (const void **haystack, const void *needle, int32_t esize);
 
+int inset_pattern (const void **haystack, const void *needle, int32_t esize);
+
 /*!\brief Convert \b input into a set of strings, using the separator \b sep.
  * \param[in] sep   the separator
  * \param[in] input the string that is to be converted into a set

@@ -703,9 +703,9 @@ void mod_get_and_apply_recurse (int task) {
        if (lm[0]->si && lm[0]->si->before) {
         ssize_t ix = 0;
         for (ix = 0; lm[0]->si->before[ix]; ix++) {
-         if (inset ((const void **)now, (void *)lm[0]->si->before[ix], SET_TYPE_STRING)) {
+         if (inset_pattern ((const void **)now, (void *)lm[0]->si->before[ix], SET_TYPE_STRING)) {
           now = strsetdel (now, lm[0]->si->before[ix]);
-		  defer = streeadd (defer, lm[0]->si->before[ix], NULL, SET_NOALLOC, NULL);
+          defer = streeadd (defer, lm[0]->si->before[ix], NULL, SET_NOALLOC, NULL);
 //          defer = (char **)setadd ((void **)defer, (void *)lm[0]->si->before[ix], SET_TYPE_STRING);
          }
         }
@@ -713,8 +713,8 @@ void mod_get_and_apply_recurse (int task) {
        if (lm[0]->si && lm[0]->si->after) {
         ssize_t ix = 0;
         for (ix = 0; lm[0]->si->after[ix]; ix++) {
-         if (inset ((const void **)services, (void *)lm[0]->si->after[ix], SET_TYPE_STRING)) {
-		  defer = streeadd (defer, services[x], NULL, SET_NOALLOC, NULL);
+         if (inset_pattern ((const void **)services, (void *)lm[0]->si->after[ix], SET_TYPE_STRING)) {
+          defer = streeadd (defer, services[x], NULL, SET_NOALLOC, NULL);
 //          defer = (char **)setadd ((void **)defer, (void *)services[x], SET_TYPE_STRING);
          }
         }
