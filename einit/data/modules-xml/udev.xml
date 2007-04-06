@@ -1,9 +1,16 @@
 <einit prefix="services-virtual-module">
- <daemon id="daemon-udev"
+ <shell id="shell-udev"
   name="udev - dynamic device management"
   provides="mount-system"
-  requires="proc:sysfs"
-  prepare="pexec-options dont-close-stdin; mount -t tmpfs none /dev; udevstart"
-  command="udevd"
+  requires="sysfs"
+  enable="mount -n -t tmpfs none /dev;
+	  mknod -m 600 /dev/console c 5 1;
+	  mknod -m 666 /dev/null c 1 3;
+          udevd --daemon;
+	  touch /dev/.udev_populate;
+	  /sbin/udevtrigger --attr-match=dev;
+	  /sbin/udevsettle --timeout=60;
+	  rm /dev/.udev_populate"
+  disable="killall -9 udevd"
   restart="yes" />
 </einit>
