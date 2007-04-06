@@ -72,7 +72,7 @@ int _einit_ipc_configure (struct lmodule *);
 
 char * _einit_ipc_provides[] = {"ipc", NULL};
 char * _einit_ipc_requires[] = {"mount-system", NULL};
-char * _einit_ipc_before[] = {"kern-.*", NULL};
+char * _einit_ipc_before[] = {"mount-local", NULL};
 const struct smodule _einit_ipc_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
