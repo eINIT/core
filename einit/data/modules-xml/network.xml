@@ -1,0 +1,56 @@
+<einit>
+ <configuration>
+  <network>
+  </network>
+ </configuration>
+ <services>
+  <virtual>
+   <network>
+    <ifctl id="wpa_supplicant"
+     enable="pexec-options no-pipe;
+      echo &quot;Using 'wpa_supplicant' to manage interface.&quot;;
+      sleep 3;
+      wpa_supplicant -D ${configuration_network_interfaces_${interface}_driver} -i ${interface} -c ${configuration_network_interfaces_${interface}_config} -w -B;
+      wpa_cli -i ${interface} -B; status=$(wpa_cli status | grep wpa_state | sed -e 's/.*wpa_state=//');
+      while [[ $status != COMPLETED ]];
+       do sleep .1; status=$(wpa_cli status | grep wpa_state | sed -e 's/.*wpa_state=//');
+      done; /bin/true"
+     disable="echo &quot;Disabling 'wpa_supplicant'.&quot;;
+      wpa_cli terminate"
+     variables="configuration-network-interfaces-${interface}/.*" />
+
+    <ip id="dhclient"
+     enable="echo &quot;Using 'dhclient' to manage ip addresses.&quot;;
+      dhclient ${interface}"
+     disable="echo &quot;Disabling 'dhclient' to manage ip addresses.&quot;;
+      /bin/true" />
+
+    <ip id="dhcpcd"
+     pid="/var/run/dhcpcd-${interface}.pid"
+     enable="echo &quot;Using 'dhcpcd' to manage ip addresses.&quot;;
+      dhcpcd ${interface}"
+     disable="echo &quot;Disabling 'dhcpcd'.&quot;;
+      dhcpcd -k ${interface}" />
+
+    <ip id="iproute2"
+     enable="echo &quot;Using 'ip' to assign a static addresses.&quot;;
+      /sbin/ip addr add ${configuration_network_interfaces_${interface}_address} dev ${interface} ;
+      /sbin/ip link set ${interface} up ;
+      /sbin/ip route add ${configuration_network_interfaces_${interface}_network} dev ${interface} ;
+      if [ ! -z ${configuration_network_interfaces_${interface}_gateway} ]; then
+       /sbin/ip route add via ${configuration_network_interfaces_${interface}_gateway};
+      fi"
+     disable="echo &quot;Using 'ip' to bring interface down.&quot;;
+      /sbin/ip link set ${interface} down"
+     variables="configuration-network-interfaces-${interface}/.*" />
+
+    <ip id="pump"
+     enable="echo &quot;feedback|notice|Using 'pump' to manage ip addresses.&quot;;
+      pump -i ${interface}"
+     disable="echo &quot;feedback|notice|Disabling 'pump'.&quot;;
+      pump -r ${interface}" />
+
+   </network>
+  </virtual>
+ </services>
+</einit>
