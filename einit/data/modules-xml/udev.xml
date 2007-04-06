@@ -7,10 +7,8 @@
 	  mknod -m 600 /dev/console c 5 1;
 	  mknod -m 666 /dev/null c 1 3;
           udevd --daemon;
-	  touch /dev/.udev_populate;
-	  /sbin/udevtrigger --attr-match=dev;
-	  /sbin/udevsettle --timeout=60;
-	  rm /dev/.udev_populate"
+	  mkdir -p /dev/.udev/db/ /dev/.udev/queue/;
+	  udevtrigger; udevsettle --timeout=60"
   disable="killall -9 udevd"
   restart="yes" />
 </einit>
