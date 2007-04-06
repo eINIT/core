@@ -484,10 +484,8 @@
 
    </module>
   </virtual>
-  <alias>
-   <mount-system group="dev" seq="all" />
-  </alias>
   <prefer>
+   <mount-system s="daemon-udev" />
    <kern-alsa s="shell-kern-audio-alsa" />
   </prefer>
  </services>
