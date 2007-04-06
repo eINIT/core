@@ -110,12 +110,14 @@ int _network_scanmodules (struct lmodule *mainlist) {
      char *interfacename = cur->key+33; /* 33 = strlen("configuration-network-interfaces-") */
      struct smodule newmodule;
      char tmp[BUFFERSIZE];
-     struct lmodule *lm = mainlist;
+     struct lmodule *lm;
 
      memset (&newmodule, 0, sizeof (struct smodule));
 
+     lm = mainlist;
      while (lm) {
       if (lm->source && strmatch(lm->source, cur->key)) {
+       lm = mod_update (lm);
        lm->param = NULL;
 
        goto do_next;
@@ -132,14 +134,14 @@ int _network_scanmodules (struct lmodule *mainlist) {
      newmodule.mode = EINIT_MOD_EXEC;
      newmodule.options = 0;
 
-     esprintf (tmp, BUFFERSIZE, "Network Interface (%s)", interfacename);
+     esprintf (tmp, BUFFERSIZE, "Auto-created Network Interface (%s)", interfacename);
      newmodule.name = estrdup (tmp);
 
      esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
      newmodule.si.provides = (char **)setadd ((void **)newmodule.si.provides, (void *)tmp, SET_TYPE_STRING);
+     newmodule.si.requires = (char **)setadd ((void **)newmodule.si.requires, (void *)"mount-system", SET_TYPE_STRING);
 
      lm = mod_add (NULL, &newmodule);
-     lm->source = estrdup (cur->key);
     }
    }
 
@@ -174,15 +176,19 @@ int _network_interface_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _network_interface_configure (struct lmodule *this) {
- if (!this->module || !this->module->rid) return 1;
+int _network_interface_configure (struct lmodule *tm) {
+ if (!tm->module || !tm->module->rid) return 1;
 
- this->cleanup = _network_interface_cleanup;
- this->enable = (int (*)(void *, struct einit_event *))_network_interface_enable;
- this->disable = (int (*)(void *, struct einit_event *))_network_interface_disable;
- this->custom = (int (*)(void *, char *, struct einit_event *))_network_interface_custom;
+ eprintf (stderr, "new network module: %s\n", tm->module->rid);
 
- this->param = NULL;
+ tm->cleanup = _network_interface_cleanup;
+ tm->enable = (int (*)(void *, struct einit_event *))_network_interface_enable;
+ tm->disable = (int (*)(void *, struct einit_event *))_network_interface_disable;
+ tm->custom = (int (*)(void *, char *, struct einit_event *))_network_interface_custom;
+
+ tm->param = NULL;
+
+ tm->source = estrdup(tm->module->rid);
 
  return 0;
 }

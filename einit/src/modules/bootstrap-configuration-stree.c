@@ -337,7 +337,7 @@ struct stree *__cfg_filter (const char *filter, const uint32_t node_options) {
  return retval;
 }
 
-// return a new stree with the filter applied
+// return a new stree with a certain prefix applied
 struct stree *__cfg_prefix (const char *prefix) {
  struct stree *retval = NULL;
 
