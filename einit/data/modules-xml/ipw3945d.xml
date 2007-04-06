@@ -1,5 +1,5 @@
 <einit prefix="services-virtual-module">
- <daemon id="daemon-ipw3945d"
+ <shell id="shell-ipw3945d"
   name="ipw3945d - regulatory daemon"
   provides="ipw3945d"
   requires="mount-critical"
@@ -7,6 +7,7 @@
   pid="/var/run/ipw3945d.pid"
   prepare="chown ipw3945d /sys/bus/pci/drivers/ipw3945/00*/cmd;
            chmod a-w,u+rw /sys/bus/pci/drivers/ipw3945/00*/cmd"
-  command="ipw3945d --foreground"
+  enable="pexec-options no-pipe; ipw3945d"
+  disable="killall -9 ipw3945d"
   restart="yes" />
 </einit>
