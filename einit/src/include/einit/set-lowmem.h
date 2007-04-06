@@ -149,7 +149,11 @@ void setsort (void **set, const char task, signed int(*sortfunction)(const void 
 */
 int inset (const void **haystack, const void *needle, int32_t esize);
 
+#ifdef POSIXREGEX
 int inset_pattern (const void **haystack, const void *needle, int32_t esize);
+#else
+#define inset_pattern(haystack, needle, esize) inset(haystack, needle, esize)
+#endif
 
 /*!\brief Convert \b input into a set of strings, using the separator \b sep.
  * \param[in] sep   the separator
