@@ -72,6 +72,7 @@ int _einit_ipc_configure (struct lmodule *);
 
 char * _einit_ipc_provides[] = {"ipc", NULL};
 char * _einit_ipc_requires[] = {"mount-system", NULL};
+char * _einit_ipc_before[] = {"kern-.*", NULL};
 const struct smodule _einit_ipc_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -84,7 +85,7 @@ const struct smodule _einit_ipc_self = {
   .provides = _einit_ipc_provides,
   .requires = _einit_ipc_requires,
   .after    = NULL,
-  .before   = "kern-.*"
+  .before   = _einit_ipc_before
  },
  .configure = _einit_ipc_configure
 };
