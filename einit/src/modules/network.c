@@ -449,7 +449,7 @@ int _network_interface_cleanup (struct lmodule *this) {
 int _network_interface_configure (struct lmodule *tm) {
  if (!tm->module || !tm->module->rid) return 1;
 
- eprintf (stderr, "new network module: %s\n", tm->module->rid);
+// eprintf (stderr, "new network module: %s\n", tm->module->rid);
 
  tm->cleanup = _network_interface_cleanup;
  tm->enable = (int (*)(void *, struct einit_event *))_network_interface_enable;

@@ -355,7 +355,14 @@ unsigned char find_block_devices_recurse_path (char *path) {
   nfitfc = 1;
   npattern = cfg_getstring ("configuration-storage-block-devices-dev-constraints", NULL);
   if (npattern) {
-   havedevpattern = !eregcomp (&devpattern, npattern);
+   if (!(havedevpattern = !eregcomp (&devpattern, npattern))) {
+    notice (2, "find_block_devices_recurse_path(): bad device constraints, bailing...");
+    return 0;
+   }
+  } else {
+   notice (2, "find_block_devices_recurse_path(): no device constraints, bailing...");
+
+   return 0;
   }
  }
 #endif
