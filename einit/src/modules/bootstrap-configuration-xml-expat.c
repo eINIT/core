@@ -358,24 +358,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    rescan_node:
    hnode = hconfiguration;
 
-   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-file", TREE_FIND_FIRST))) {
-    node = (struct cfgnode *)hnode->value;
-    if (node->svalue) {
-     char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
-     includefile = strcat (includefile, confpath);
-     includefile = strcat (includefile, node->svalue);
-     recursion++;
-
-     einit_config_xml_expat_parse_configuration_file (includefile);
-     recursion--;
-     free (includefile);
-     if (node->id) free (node->id);
-//     streedel (hconfiguration, hnode);
-     streedel (hnode);
-     goto rescan_node;
-    }
-   }
-
    while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-directory", TREE_FIND_FIRST))) {
     node = (struct cfgnode *)hnode->value;
 
@@ -441,6 +423,24 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      }
 
      free (includedir);
+     if (node->id) free (node->id);
+//     streedel (hconfiguration, hnode);
+     streedel (hnode);
+     goto rescan_node;
+    }
+   }
+
+   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-file", TREE_FIND_FIRST))) {
+    node = (struct cfgnode *)hnode->value;
+    if (node->svalue) {
+     char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
+     includefile = strcat (includefile, confpath);
+     includefile = strcat (includefile, node->svalue);
+     recursion++;
+
+     einit_config_xml_expat_parse_configuration_file (includefile);
+     recursion--;
+     free (includefile);
      if (node->id) free (node->id);
 //     streedel (hconfiguration, hnode);
      streedel (hnode);
