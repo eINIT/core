@@ -141,7 +141,7 @@
    <module id="einit-tty" requires="mount-critical" />
   </override>
 
-  <external provided="mount-local:/:mount-system:mount-remote:mount-critical:video" />
+  <external provided="mount-system" />
  </services>
 
  <mode id="boot">
@@ -149,7 +149,7 @@
   <ttys s="tty1-regular" />
  </mode>
  <mode id="default" base="boot">
-  <enable services="tty" />
+  <enable services="tty:net-lo" />
   <ttys s="tty9-regular" />
  </mode>
 </einit>
