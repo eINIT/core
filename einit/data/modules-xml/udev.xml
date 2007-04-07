@@ -3,7 +3,7 @@
   name="udev - dynamic device management"
   provides="mount-system"
   requires="sysfs:proc"
-  enable="pexec-options dont-close-stdin;
+  enable="pexec-options dont-close-stdin no-pipe;
           mount -n -t tmpfs none /dev;
 	  mknod -m 600 /dev/console c 5 1;
 	  mknod -m 666 /dev/null c 1 3;
