@@ -172,7 +172,7 @@ int _network_scanmodules (struct lmodule *mainlist) {
      newmodule->mode = EINIT_MOD_EXEC;
      newmodule->options = 0;
 
-     esprintf (tmp, BUFFERSIZE, "Network Interface (%s, N)", interfacename);
+     esprintf (tmp, BUFFERSIZE, "Network Interface (%s)", interfacename);
      newmodule->name = estrdup (tmp);
 
      esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
@@ -282,12 +282,10 @@ struct interface_template_item **network_import_templates (char *type, char *lis
 }
 
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
- struct interface_descriptor *id = emalloc (sizeof (struct interface_descriptor));
+ struct interface_descriptor *id = ecalloc (1, sizeof (struct interface_descriptor));
 
  id->interface_name = lm->module->rid+33;
  id->interface = cfg_getnode (lm->module->rid, NULL);
- id->ci = 0;
- id->pi = 0;
 
  if (id->interface && id->interface->arbattrs) {
   uint32_t i = 0;
@@ -320,6 +318,32 @@ int _network_interface_enable (struct interface_descriptor *id, struct einit_eve
  uint32_t ci = 0, pi = 0;
 
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
+
+ if (id->kernel_module) {
+  char *command = cfg_getstring ("configuration-command-modprobe/with-env", NULL),
+       tmp[BUFFERSIZE], *nc, **cx = NULL;
+
+  if (command) {
+   cx = (char **)setadd ((void **)cx, (void *)"module", SET_TYPE_STRING);
+   cx = (char **)setadd ((void **)cx, (void *)id->kernel_module, SET_TYPE_STRING);
+
+   if (cx) {
+    nc = apply_variables (command, (const char **)cx);
+    if (nc) {
+
+     esprintf (tmp, BUFFERSIZE, "Loading Kernel Module (%s)", id->kernel_module);
+     status->string = tmp;
+     status_update (status);
+
+     if (!(pexec (nc, NULL, 0, 0, NULL, NULL, NULL, status) & STATUS_OK))
+      return STATUS_FAIL;
+
+     free (nc);
+    }
+    free (cx);
+   }
+  }
+ }
 
  if (id->controller) { // == NULL if ip not mentioned or ="none"
   for (ci = 0; id->controller[ci]; ci++) {
@@ -393,7 +417,23 @@ int _network_interface_disable (struct interface_descriptor *id, struct einit_ev
 int _network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
 
- return STATUS_FAIL;
+ if (id->ip_manager && id->ip_manager[id->pi]) {
+  struct stree *t = streefind (id->ip_manager[id->pi]->action, action, TREE_FIND_FIRST);
+
+  if (t) {
+   pexec (t->value, (const char **)id->ip_manager[id->pi]->variables, 0, 0, NULL, NULL, id->ip_manager[id->pi]->environment, status);
+  }
+ }
+
+ if (id->controller && id->controller[id->ci]) {
+  struct stree *t = streefind (id->controller[id->ci]->action, action, TREE_FIND_FIRST);
+
+  if (t) {
+   pexec (t->value, (const char **)id->controller[id->ci]->variables, 0, 0, NULL, NULL, id->controller[id->ci]->environment, status);
+  }
+ }
+
+ return STATUS_OK | STATUS_ENABLED;
 }
 
 int _network_cleanup (struct lmodule *this) {
@@ -428,7 +468,7 @@ int _network_configure (struct lmodule *this) {
  exec_configure (this);
 
  thismodule->cleanup = _network_cleanup;
-// thismodule->scanmodules = _network_scanmodules;
+ thismodule->scanmodules = _network_scanmodules;
 
 #if 0
  event_listen (EVENT_SUBSYSTEM_EINIT, network_einit_event_handler);
