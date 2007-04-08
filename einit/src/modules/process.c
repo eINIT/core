@@ -140,7 +140,7 @@ void _einit_process_ipc_event_handler (struct einit_event *ev) {
    struct pc_conditional pcc = {
     .match = ev->set[2],
     .para = (ev->set[3] ?
-      ((strmatch (ev->set[2], "cwd") || strmatch (ev->set[2], "cwd-below")) ?
+      ((strmatch (ev->set[2], "cwd") || strmatch (ev->set[2], "cwd-below") || strmatch (ev->set[2], "files-below")) ?
       (void *)ev->set[3] : (void *)tnum) : NULL),
     .match_options = PC_COLLECT_ADDITIVE },
     *pcl[2] = { &pcc, NULL };
