@@ -163,8 +163,50 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
  return npstat;
 }
 
+pid_t *filter_processes_files_below (struct pc_conditional * cond, pid_t * ret, struct process_status ** stat) {
+ uint32_t i = 0;
+ char *path = cfg_getpath ("configuration-system-proc-path");
+ if (!path) path = "/proc/";
+
+ if (stat && cond && cond->para)
+  for (; stat[i]; i++) {
+  uintptr_t tmppx = (stat[i]->pid);
+  if (inset ((const void **)ret, (const void *)tmppx, SET_NOALLOC)) {
+    continue;
+   } else {
+    DIR *dir;
+    char tmp[BUFFERSIZE];
+    esprintf (tmp, BUFFERSIZE, "%s%i/fd/", path, stat[i]->pid);
+
+    if ((dir = eopendir (tmp))) {
+     struct dirent *entry;
+
+     while ((entry = ereaddir (dir))) {
+      struct stat buf;
+      esprintf (tmp, BUFFERSIZE, "%s%i/fd/%s", path, stat[i]->pid, entry->d_name);
+
+      if (!lstat(tmp, &buf) && S_ISLNK(buf.st_mode)) {
+       char ttarget[BUFFERSIZE];
+       if (readlink (tmp, ttarget, BUFFERSIZE) == -1) continue;
+
+       if (strstr (ttarget, cond->para) == ttarget) {
+        ret = (pid_t *)setadd ((void **)ret, (void *)tmppx, SET_NOALLOC);
+        goto kk;
+       }
+      }
+     }
+     kk:
+     eclosedir (dir);
+    }
+   }
+  }
+
+ return ret;
+}
+
 int _linux_process_cleanup (struct lmodule *this) {
  function_unregister ("einit-process-status-updater", 1, update_processes_proc_linux);
+ function_unregister ("einit-process-filter-files-below", 1, filter_processes_files_below);
  process_cleanup (irr);
 
  return 0;
@@ -177,6 +219,7 @@ int _linux_process_configure (struct lmodule *irr) {
 
  process_configure (irr);
  function_register ("einit-process-status-updater", 1, update_processes_proc_linux);
+ function_register ("einit-process-filter-files-below", 1, filter_processes_files_below);
 
  return 0;
 }
