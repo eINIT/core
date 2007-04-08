@@ -243,7 +243,8 @@ int _einit_mount_scanmodules (struct lmodule *);
 int _einit_mount_cleanup (struct lmodule *);
 int _einit_mount_enable (enum mounttask, struct einit_event *);
 int _einit_mount_disable (enum mounttask, struct einit_event *);
-int mountwrapper (char *, struct einit_event *, uint32_t);
+int emount (char *, struct einit_event *);
+int eumount (char *, struct einit_event *);
 char *__options_string_to_mountflags (char **, unsigned long *, char *);
 void _einit_mount_einit_event_handler (struct einit_event *);
 void _einit_mount_update_configuration ();
@@ -319,7 +320,8 @@ int _einit_mount_cleanup (struct lmodule *this) {
  function_unregister ("read-fstab-configuration", 1, (void *)read_fstab_from_configuration);
  function_unregister ("read-fstab-fstab", 1, (void *)read_fstab);
  function_unregister ("read-mtab-legacy", 1, (void *)read_mtab);
- function_unregister ("fs-mount", 1, (void *)mountwrapper);
+ function_unregister ("fs-mount", 1, (void *)emount);
+ function_unregister ("fs-umount", 1, (void *)eumount);
 
  event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_mount_einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_IPC, _einit_mount_mount_ipc_handler);
@@ -896,7 +898,7 @@ char *__options_string_to_mountflags (char **options, unsigned long *mntflags, c
 }
 
 /* --------- the big mount-wrapper-function ------------------------------- */
-int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags) {
+int emount (char *mountpoint, struct einit_event *status) {
  struct stree *he = mcb.fstab;
  struct stree *de = mcb.blockdevices;
  struct fstab_entry *fse = NULL;
@@ -908,289 +910,287 @@ int mountwrapper (char *mountpoint, struct einit_event *status, uint32_t tflags)
  char verbosebuffer [BUFFERSIZE];
  void **fs_mount_functions = NULL;
  char *fs_mount_function_name;
- unsigned char (*mount_function)(uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
+ unsigned char (*mount_function)(char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 
  unsigned long mntflags = 0;
 
  if (!mountpoint) return STATUS_FAIL;
 
- if (tflags & MOUNT_TF_MOUNT) {
-  char **fstype_s = NULL;
-  uint32_t fsts_i = 0;
-  if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
-   source = fse->device;
-   fsntype = 0;
-   if (de && source && (de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
-    fsntype = bdi->fs_type;
-   }
+ char **fstype_s = NULL;
+ uint32_t fsts_i = 0;
+ if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
+  source = fse->device;
+  fsntype = 0;
+  if (de && source && (de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
+   fsntype = bdi->fs_type;
+  }
 
-   if (fse->fs) {
-    fstype = fse->fs;
-   } else if (fsntype) {
-    if (bdi->fs_type < 0xffff)
-     fstype = fslist_hr[bdi->fs_type];
-    else
-     fstype = NULL;
-   } else
+  if (fse->fs) {
+   fstype = fse->fs;
+  } else if (fsntype) {
+   if (bdi->fs_type < 0xffff)
+    fstype = fslist_hr[bdi->fs_type];
+   else
     fstype = NULL;
+  } else
+   fstype = NULL;
 
-   if (!fstype) fstype = "auto";
+  if (!fstype) fstype = "auto";
 
-   if (bdi && (bdi->status & BF_STATUS_DIRTY)) {
-    if (fsck_command) {
-     char tmp[BUFFERSIZE];
-     status->string = "filesystem dirty; running fsck";
-     status_update (status);
-
-     esprintf (tmp, BUFFERSIZE, fsck_command, fstype, de->key);
-     if (gmode != EINIT_GMODE_SANDBOX) {
-      pexec_v1 (tmp, NULL, NULL, status);
-     } else {
-      status->string = tmp;
-      status_update (status);
-     }
-    } else {
-     status->string = "WARNING: filesystem dirty, but no fsck command known";
-     status_update (status);
-    }
-   }
-
-   if (!source)
-    source = fstype;
-
-   if (strmatch (fstype, "auto"))
-    fstype = cfg_getstring ("configuration-storage-filesystem-guessing-order", NULL);
-
-   fstype_s = str2set (':', fstype);
-
-   mntflags = 0;
-   if (fse->options)
-    fsdata = __options_string_to_mountflags (fse->options, &mntflags, mountpoint);
-
-   if (gmode != EINIT_GMODE_SANDBOX) {
-    if (fse->before_mount)
-     pexec_v1 (fse->before_mount, (const char **)fse->variables, NULL, status);
-   }
-
-   if (fstype_s) for (; fstype_s[fsts_i]; fsts_i++) {
-    fstype = fstype_s[fsts_i];
-
-    if (bdi && bdi->label)
-     esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
-    else
-     esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
-    status->string = verbosebuffer;
+  if (bdi && (bdi->status & BF_STATUS_DIRTY)) {
+   if (fsck_command) {
+    char tmp[BUFFERSIZE];
+    status->string = "filesystem dirty; running fsck";
     status_update (status);
 
-    fs_mount_function_name = emalloc (10+strlen (fstype));
-    *fs_mount_function_name = 0;
-    fs_mount_function_name = strcat (fs_mount_function_name, "fs-mount-");
-    fs_mount_function_name = strcat (fs_mount_function_name, fstype);
-
-    if (fs_mount_function_name) {
-     fs_mount_functions = function_find (fs_mount_function_name, 1, NULL);
-     free (fs_mount_function_name);
-    }
-
-    if (fs_mount_functions && fs_mount_functions[0]) {
-     uint32_t j = 0;
-     for (; fs_mount_functions[j]; j++) {
-      mount_function = fs_mount_functions[j];
-      if (!mount_function (tflags, source, mountpoint, fstype, bdi, fse, status)) {
-       free (fs_mount_functions);
-       goto mount_success;
-      }
-     }
-     free (fs_mount_functions);
-    }
-
+    esprintf (tmp, BUFFERSIZE, fsck_command, fstype, de->key);
     if (gmode != EINIT_GMODE_SANDBOX) {
-// root node should only be remounted...
-     if (strmatch ("/", mountpoint)) goto attempt_remount;
-#if defined(DARWIN) || defined(__FreeBSD__)
-     if (mount (source, mountpoint, mntflags, fsdata) == -1)
-#else
-     if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1)
-#endif
-     {
-#ifdef MS_REMOUNT
-      if (errno == EBUSY) {
-       attempt_remount:
-       status->string = "attempting to remount node instead of mounting";
-       status_update (status);
-//       sleep(2);
-
-       if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) {
-        status->string = "remounting node failed...";
-        status_update (status);
-        goto mount_panic;
-       }
-      } else
-#else
-      attempt_remount:
-      status->string = "should now try to remount node, but OS does not support this";
-      status_update (status);
-#endif
-      {
-       mount_panic:
-
-       status->string = (char *)strerror(errno);
-       status_update (status);
-       if (fse->after_umount)
-        pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
-//       return STATUS_FAIL;
-        continue;
-      }
-     }
+     pexec_v1 (tmp, NULL, NULL, status);
+    } else {
+     status->string = tmp;
+     status_update (status);
     }
+   } else {
+    status->string = "WARNING: filesystem dirty, but no fsck command known";
+    status_update (status);
+   }
+  }
 
-    mount_success:
+  if (!source)
+   source = fstype;
 
-    fse->afs = fstype;
-    fse->adevice = source;
-    fse->aflags = mntflags;
+  if (strmatch (fstype, "auto"))
+   fstype = cfg_getstring ("configuration-storage-filesystem-guessing-order", NULL);
 
-    if (gmode != EINIT_GMODE_SANDBOX) {
-     if (fse->after_mount)
-      pexec_v1 (fse->after_mount, (const char **)fse->variables, NULL, status);
+  fstype_s = str2set (':', fstype);
 
-     if (fse->manager)
-      startdaemon (fse->manager, status);
-    }
+  mntflags = 0;
+  if (fse->options)
+   fsdata = __options_string_to_mountflags (fse->options, &mntflags, mountpoint);
 
-    struct einit_event eem = evstaticinit (EVENT_NODE_MOUNTED);
-    eem.string = mountpoint;
-    event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
-    evstaticdestroy (eem);
+  if (gmode != EINIT_GMODE_SANDBOX) {
+   if (fse->before_mount)
+    pexec_v1 (fse->before_mount, (const char **)fse->variables, NULL, status);
+  }
 
-    fse->status |= BF_STATUS_MOUNTED;
+  if (fstype_s) for (; fstype_s[fsts_i]; fsts_i++) {
+   fstype = fstype_s[fsts_i];
 
-    return STATUS_OK;
+   if (bdi && bdi->label)
+    esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
+   else
+    esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
+   status->string = verbosebuffer;
+   status_update (status);
+
+   fs_mount_function_name = emalloc (10+strlen (fstype));
+   *fs_mount_function_name = 0;
+   fs_mount_function_name = strcat (fs_mount_function_name, "fs-mount-");
+   fs_mount_function_name = strcat (fs_mount_function_name, fstype);
+
+   if (fs_mount_function_name) {
+    fs_mount_functions = function_find (fs_mount_function_name, 1, NULL);
+    free (fs_mount_function_name);
    }
 
-// we reach this if none of the attempts worked out
-   if (fstype_s) free (fstype_s);
-   return STATUS_FAIL;
-  } else {
-   status->string = "nothing known about this mountpoint; bailing out.";
-   status_update (status);
-   return STATUS_FAIL;
-  }
- }
- if (tflags & MOUNT_TF_UMOUNT) {
-  char textbuffer[BUFFERSIZE];
-  errno = 0;
-  uint32_t retry = 0;
+   if (fs_mount_functions && fs_mount_functions[0]) {
+    uint32_t j = 0;
+    for (; fs_mount_functions[j]; j++) {
+     mount_function = fs_mount_functions[j];
+     if (!mount_function (source, mountpoint, fstype, bdi, fse, status)) {
+      free (fs_mount_functions);
+      goto mount_success;
+     }
+    }
+    free (fs_mount_functions);
+   }
 
-  if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
-
-  if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
-
-  if (fse && !(fse->status & BF_STATUS_MOUNTED))
-   esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
-  else
-   esprintf (textbuffer, BUFFERSIZE, "unmounting %s", mountpoint);
-
-  if (fse && fse->manager)
-   stopdaemon (fse->manager, status);
-
-  status->string = textbuffer;
-  status_update (status);
-
-  while (1) {
-   retry++;
-
-//   if (gmode != EINIT_GMODE_SANDBOX) {
+   if (gmode != EINIT_GMODE_SANDBOX) {
+// root node should only be remounted...
+    if (strmatch ("/", mountpoint)) goto attempt_remount;
 #if defined(DARWIN) || defined(__FreeBSD__)
-    if (unmount (mountpoint, 0) != -1)
+    if (mount (source, mountpoint, mntflags, fsdata) == -1)
 #else
-    if (umount (mountpoint) != -1)
+    if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1)
 #endif
     {
-     goto umount_ok;
-    } else {
-     struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
-                          *pcl[2] = { &pcc, NULL };
+#ifdef MS_REMOUNT
+     if (errno == EBUSY) {
+      attempt_remount:
+      status->string = "attempting to remount node instead of mounting";
+      status_update (status);
 
-     esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
-     errno = 0;
-     status->string = textbuffer;
-     status_update (status);
-
-     pekill (pcl);
-#ifdef LINUX
-     if (retry >= 2) {
-      if (umount2 (mountpoint, MNT_FORCE) != -1) {
-       goto umount_ok;
-      } else {
-       esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
-       errno = 0;
-       status->string = textbuffer;
+      if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) {
+       status->string = "remounting node failed...";
        status_update (status);
+       goto mount_panic;
       }
+     } else
+#else
+     attempt_remount:
+     status->string = "should now try to remount node, but OS does not support this";
+     status_update (status);
+#endif
+     {
+      mount_panic:
 
-      if (fse) {
-       if (retry >= 3) {
-        if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-         esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+      status->string = (char *)strerror(errno);
+      status_update (status);
+      if (fse->after_umount)
+       pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
+       continue;
+     }
+    }
+   }
+
+   mount_success:
+
+   fse->afs = fstype;
+   fse->adevice = source;
+   fse->aflags = mntflags;
+
+   if (gmode != EINIT_GMODE_SANDBOX) {
+    if (fse->after_mount)
+     pexec_v1 (fse->after_mount, (const char **)fse->variables, NULL, status);
+
+    if (fse->manager)
+     startdaemon (fse->manager, status);
+   }
+
+   struct einit_event eem = evstaticinit (EVENT_NODE_MOUNTED);
+   eem.string = mountpoint;
+   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+   evstaticdestroy (eem);
+
+   fse->status |= BF_STATUS_MOUNTED;
+
+   return STATUS_OK;
+  }
+
+// we reach this if none of the attempts worked out
+  if (fstype_s) free (fstype_s);
+  return STATUS_FAIL;
+ } else {
+  status->string = "nothing known about this mountpoint; bailing out.";
+  status_update (status);
+  return STATUS_FAIL;
+ }
+
+ return STATUS_OK;
+}
+
+int eumount (char *mountpoint, struct einit_event *status) {
+ struct stree *he = mcb.fstab;
+ struct fstab_entry *fse = NULL;
+
+ if (!mountpoint) return STATUS_FAIL;
+
+ char textbuffer[BUFFERSIZE];
+ errno = 0;
+ uint32_t retry = 0;
+
+ if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
+
+ if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
+
+ if (fse && !(fse->status & BF_STATUS_MOUNTED))
+  esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
+ else
+  esprintf (textbuffer, BUFFERSIZE, "unmounting %s", mountpoint);
+
+ if (fse && fse->manager)
+  stopdaemon (fse->manager, status);
+
+ status->string = textbuffer;
+ status_update (status);
+
+ while (1) {
+  retry++;
+
+#if defined(DARWIN) || defined(__FreeBSD__)
+   if (unmount (mountpoint, 0) != -1)
+#else
+   if (umount (mountpoint) != -1)
+#endif
+   {
+    goto umount_ok;
+   } else {
+    struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
+                         *pcl[2] = { &pcc, NULL };
+
+    esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
+    errno = 0;
+    status->string = textbuffer;
+    status_update (status);
+
+    pekill (pcl);
+#ifdef LINUX
+    if (retry >= 2) {
+     if (umount2 (mountpoint, MNT_FORCE) != -1) {
+      goto umount_ok;
+     } else {
+      esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
+      errno = 0;
+      status->string = textbuffer;
+      status_update (status);
+     }
+
+     if (fse) {
+      if (retry >= 3) {
+       if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
+        esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+        errno = 0;
+        status->string = textbuffer;
+        status_update (status);
+        goto umount_fail;
+       } else {
+        if (umount2 (mountpoint, MNT_DETACH) == -1) {
+         esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
          errno = 0;
          status->string = textbuffer;
          status_update (status);
-         goto umount_fail;
+         goto umount_ok;
         } else {
-         if (umount2 (mountpoint, MNT_DETACH) == -1) {
-          esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
-          errno = 0;
-          status->string = textbuffer;
-          status_update (status);
-          goto umount_ok;
-         } else {
-          esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o and detached", mountpoint, retry);
-          status->string = textbuffer;
-          status_update (status);
-          goto umount_ok;
-         }
+         esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o and detached", mountpoint, retry);
+         status->string = textbuffer;
+         status_update (status);
+         goto umount_ok;
         }
        }
-      } else {
-       esprintf (textbuffer, BUFFERSIZE, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
-       status->string = textbuffer;
-       status_update (status);
-       goto umount_fail;
       }
+     } else {
+      esprintf (textbuffer, BUFFERSIZE, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
+      status->string = textbuffer;
+      status_update (status);
+      goto umount_fail;
      }
-#else
-     goto umount_fail;
-#endif
     }
-/*   } else {
-    goto umount_ok;
-   }*/
-
-   umount_fail:
-
-   status->flag++;
-   if (retry > 3) {
-    return STATUS_FAIL;
+#else
+    goto umount_fail;
+#endif
    }
-   sleep (1);
+
+  umount_fail:
+
+  status->flag++;
+  if (retry > 3) {
+   return STATUS_FAIL;
   }
-
-  umount_ok:
-  if (gmode != EINIT_GMODE_SANDBOX) {
-   if (fse && fse->after_umount)
-    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
-  }
-  if (fse && (fse->status & BF_STATUS_MOUNTED))
-   fse->status ^= BF_STATUS_MOUNTED;
-
-  struct einit_event eem = evstaticinit (EVENT_NODE_UNMOUNTED);
-  eem.string = mountpoint;
-  event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
-  evstaticdestroy (eem);
-
-  return STATUS_OK;
+  sleep (1);
  }
+
+ umount_ok:
+ if (gmode != EINIT_GMODE_SANDBOX) {
+  if (fse && fse->after_umount)
+   pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
+ }
+ if (fse && (fse->status & BF_STATUS_MOUNTED))
+  fse->status ^= BF_STATUS_MOUNTED;
+
+ struct einit_event eem = evstaticinit (EVENT_NODE_UNMOUNTED);
+ eem.string = mountpoint;
+ event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+ evstaticdestroy (eem);
 
  return STATUS_OK;
 }
@@ -1616,11 +1616,11 @@ int _einit_mount_enable (enum mounttask p, struct einit_event *status) {
    break;
   case MOUNT_SYSTEM:
 #ifdef LINUX
-   ret = mountwrapper ("/proc", status, MOUNT_TF_MOUNT);
+   ret = emount ("/proc", status);
    _einit_mount_update (UPDATE_MTAB);
-   ret = mountwrapper ("/sys", status, MOUNT_TF_MOUNT);
+   ret = emount ("/sys", status);
 #endif
-   ret = mountwrapper ("/dev", status, MOUNT_TF_MOUNT);
+   ret = emount ("/dev", status);
    if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
     status->string = "re-scanning block devices";
     status_update (status);
@@ -1630,7 +1630,7 @@ int _einit_mount_enable (enum mounttask p, struct einit_event *status) {
    return ret;
    break;
   case MOUNT_CRITICAL:
-   ret = mountwrapper ("/", status, MOUNT_TF_MOUNT | MOUNT_TF_FORCE_RW);
+   ret = emount ("/", status);
    unlink ("/etc/mtab");
    update_real_mtab();
 
@@ -1677,7 +1677,7 @@ int _einit_mount_enable (enum mounttask p, struct einit_event *status) {
   if (acand)
    for (c = 0; acand[c]; c++) {
     candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
-    if (mountwrapper (acand[c], status, MOUNT_TF_MOUNT) != STATUS_OK)
+    if (emount (acand[c], status) != STATUS_OK)
      status->flag++;
    }
 
@@ -1737,10 +1737,10 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
    break;
   case MOUNT_SYSTEM:
    {
-    mountwrapper ("/dev", status, MOUNT_TF_UMOUNT);
+    eumount ("/dev", status);
 #ifdef LINUX
-    mountwrapper ("/sys", status, MOUNT_TF_UMOUNT);
-    mountwrapper ("/proc", status, MOUNT_TF_UMOUNT);
+    eumount ("/sys", status);
+    eumount ("/proc", status);
 #endif
     if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
 //     status->string = "re-scanning block devices";
@@ -1801,7 +1801,7 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
   if (acand)
    for (c = 0; acand[c]; c++) {
     candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
-    if (mountwrapper (acand[c], status, MOUNT_TF_UMOUNT) != STATUS_OK)
+    if (eumount (acand[c], status) != STATUS_OK)
      status->flag++;
    }
 
@@ -1812,7 +1812,7 @@ int _einit_mount_disable (enum mounttask p, struct einit_event *status) {
  update_real_mtab();
 
  if (p == MOUNT_CRITICAL) {
-  mountwrapper ("/", status, MOUNT_TF_UMOUNT);
+  eumount ("/", status);
  }
 
  return STATUS_OK;
@@ -1884,7 +1884,8 @@ int _einit_mount_configure (struct lmodule *r) {
  function_register ("read-fstab-configuration", 1, (void *)read_fstab_from_configuration);
  function_register ("read-fstab-legacy", 1, (void *)read_fstab);
  function_register ("read-mtab-legacy", 1, (void *)read_mtab);
- function_register ("fs-mount", 1, (void *)mountwrapper);
+ function_register ("fs-mount", 1, (void *)emount);
+ function_register ("fs-umount", 1, (void *)eumount);
 
  _einit_mount_update_configuration();
 

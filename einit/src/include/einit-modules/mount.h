@@ -85,20 +85,6 @@ extern "C" {
 #define BF_STATUS_HAS_MEDIUM            0x00000004 /*!< Status Bit: blockdevice has medium */
 /*!\}*/
 
-/*!\name Mountwrapper Task Bitfield
- * \bug only partially used and set appropriately
- \{
-*/
-#define MOUNT_TF_MOUNT                  0x0001     /*!< Mountwrapper Task: mount */
-#define MOUNT_TF_UMOUNT                 0x0002     /*!< Mountwrapper Task: unmount */
-#define MOUNT_TF_FORCE_RW               0x0010
-/*!< Mountwrapper Task Option: force R/W
-   \bug not implemented */
-#define MOUNT_TF_FORCE_RO               0x0020
-/*!< Mountwrapper Task Option: force R/O
-   \bug not implemented */
-/*!\}*/
-
 /*!\name FSTab Options
  \{*/
 #define MOUNT_FSTAB_NOAUTO              0x0001

@@ -156,7 +156,7 @@ module_register(_linux_mount_self);
 
 /* function declarations */
 unsigned char read_metadata_linux (struct mount_control_block *);
-unsigned char mount_linux_real_mount (uint32_t, char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
+unsigned char mount_linux_real_mount (char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 unsigned char find_block_devices_proc (struct mount_control_block *);
 int _linux_mount_configure (struct lmodule *);
 int _linux_mount_cleanup (struct lmodule *);
@@ -328,7 +328,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
  return 0;
 }
 
-unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
+unsigned char mount_linux_real_mount (char *source, char *mountpoint, char *fstype, struct bd_info *bdi, struct fstab_entry *fse, struct einit_event *status) {
  char *fsdata = NULL;
  char command[BUFFERSIZE];
 
@@ -349,19 +349,9 @@ unsigned char mount_linux_real_mount (uint32_t tflags, char *source, char *mount
  }
 
  if (fsdata) {
-  if (tflags & MOUNT_TF_FORCE_RW)
-   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"rw,%s\"", source, mountpoint, fstype, fsdata);
-  else if (tflags & MOUNT_TF_FORCE_RO)
-   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"ro,%s\"", source, mountpoint, fstype, fsdata);
-  else
-   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
+  esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"%s\"", source, mountpoint, fstype, fsdata);
  } else {
-  if (tflags & MOUNT_TF_FORCE_RW)
-   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o rw", source, mountpoint, fstype);
-  else if (tflags & MOUNT_TF_FORCE_RO)
-   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o ro", source, mountpoint, fstype);
-  else
-   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
+  esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
  }
 
  if (gmode != EINIT_GMODE_SANDBOX) {
