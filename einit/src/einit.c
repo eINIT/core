@@ -77,7 +77,6 @@ unsigned char *gdebug = 0;
 char **einit_startup_mode_switches = NULL;
 char **einit_startup_configuration_files = NULL;
 
-char einit_do_feedback_switch = 1; // whether or not to initalise the feedback mode first
 char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list of modes to activate by default
 
 // the list of files to  parse by default
@@ -98,8 +97,6 @@ int print_usage_info () {
   "-c <filename>         load <filename> instead of/lib/einit/einit.xml\n"
   "-h, --help            display this text\n"
   "-v                    print version and copyright notice, then exit\n"
-  "--no-feedback-switch  disable the first switch to the feedback mode\n"
-  "--feedback-switch     enable the mode-switch to the feedback mode (default)\n"
   "--bootstrap-modules   use this path to load bootstrap-modules\n"
   "--ipc-command         don't boot, only run specified ipc-command\n"
   "                      (you can use this more than once)\n"
@@ -233,11 +230,7 @@ int main(int argc, char **argv) {
     case '-':
      if (strmatch(argv[i], "--check-configuration") || strmatch(argv[i], "--checkup") || strmatch(argv[i], "--wtf")) {
       ipccommands = (char **)setadd ((void **)ipccommands, "examine configuration", SET_TYPE_STRING);
-     } else if (strmatch(argv[i], "--no-feedback-switch"))
-      einit_do_feedback_switch = 0;
-     else if (strmatch(argv[i], "--feedback-switch"))
-      einit_do_feedback_switch = 1;
-     else if (strmatch(argv[i], "--help"))
+     } else if (strmatch(argv[i], "--help"))
       return print_usage_info ();
      else if (strmatch(argv[i], "--ipc-command") && argv[i+1])
       ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
@@ -408,15 +401,6 @@ int main(int argc, char **argv) {
    exit (EXIT_FAILURE);
   } else {
    uint32_t e = 0;
-/* queue default mode-switches */
-   if (einit_do_feedback_switch) {
-    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
-
-    ee.string = "feedback";
-//    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
-    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-    evstaticdestroy(ee);
-   }
 
    notice (2, "scheduling startup switches.\n");
 

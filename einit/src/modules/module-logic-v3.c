@@ -892,7 +892,7 @@ void cross_taskblock (struct module_taskblock *source, struct module_taskblock *
 }
 
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- char disable_all_but_feedback = 0, disable_all = 0;
+ char disable_all_but_feedback = 0, disable_all = 0, auto_add_feedback = 0;
 
  if (!plan) {
   plan = emalloc (sizeof (struct mloadplan));
@@ -905,6 +905,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **enable   = str2set (':', cfg_getstring ("enable/services", mode));
   char **disable  = str2set (':', cfg_getstring ("disable/services", mode));
   char **critical = str2set (':', cfg_getstring ("enable/critical", mode));
+  struct cfgnode *node = cfg_getnode ("auto-add-feedback", mode);
+
+  if (node)
+   auto_add_feedback = node->flag;
 
   if (!enable)
    enable  = str2set (':', cfg_getstring ("enable/mod", mode));
@@ -915,23 +919,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    if (strmatch(mode->arbattrs[xi], "base")) {
     base = str2set (':', mode->arbattrs[xi+1]);
    }
-  }
-
-  if (base) {
-   int y = 0;
-   struct cfgnode *cno;
-   while (base[y]) {
-    if (!inset ((const void **)plan->used_modes, (void *)base[y], SET_TYPE_STRING)) {
-     cno = cfg_findnode (base[y], EI_NODETYPE_MODE, NULL);
-     if (cno) {
-      plan = mod_plan (plan, NULL, 0, cno);
-     }
-    }
-
-    y++;
-   }
-
-   free (base);
   }
 
   if (enable) {
@@ -948,6 +935,47 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    char **tmp = (char **)setcombine ((const void **)plan->changes.critical, (const void **)critical, SET_TYPE_STRING);
    if (plan->changes.critical) free (plan->changes.critical);
    plan->changes.critical = tmp;
+  }
+
+  if (auto_add_feedback) {
+   if (plan->changes.enable) {
+    uint32_t y = 0;
+
+    for (; plan->changes.enable[y]; y++) {
+     struct stree *st = NULL;
+
+     emutex_lock (&ml_service_list_mutex);
+
+     if ((st = streefind (module_logics_service_list, plan->changes.enable[y], TREE_FIND_FIRST))) {
+      struct lmodule **lmod = st->value;
+
+      if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & EINIT_MOD_FEEDBACK)
+       goto have_feedback;
+     }
+
+     emutex_unlock (&ml_service_list_mutex);
+    }
+   }
+
+   plan->changes.enable = (char **)setadd ((void **)plan->changes.enable, (void *)"feedback", SET_TYPE_STRING);
+  }
+  have_feedback:
+
+  if (base) {
+   int y = 0;
+   struct cfgnode *cno;
+   while (base[y]) {
+    if (!inset ((const void **)plan->used_modes, (void *)base[y], SET_TYPE_STRING)) {
+     cno = cfg_findnode (base[y], EI_NODETYPE_MODE, NULL);
+     if (cno) {
+      plan = mod_plan (plan, NULL, 0, cno);
+     }
+    }
+
+    y++;
+   }
+
+   free (base);
   }
 
   if (mode->id) {

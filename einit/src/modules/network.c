@@ -255,7 +255,6 @@ struct interface_template_item **network_import_templates (char *type, char *lis
       if (tmp) {
        ni.action = streeadd (ni.action, name, tmp, SET_TYPE_STRING, NULL);
 
-       eprintf (stderr, "added action %s: %s\n", name, tmp);
        free (tmp);
       }
      } else if (strmatch (node->arbattrs[y], "variables")) {

@@ -1,3 +1,7 @@
+2007/04/08: mdeininger
+ * made suff cleaner by removing the 'feedback' mode, but also auto-adding
+   a feedback module if none is specified
+
 2007/04/05: mdeininger
  * added options="feedback" to daemon/shell modules to tag them as feedback-
    modules (gonna be useful for the fbsplash module)

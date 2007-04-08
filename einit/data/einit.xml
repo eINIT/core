@@ -488,15 +488,14 @@
   <prefer>
    <mount-system s="daemon-udev" />
    <kern-alsa s="shell-kern-audio-alsa" />
+   <feedback s="feedback-visual-textual" />
   </prefer>
  </services>
 
- <mode id="feedback">
-  <enable services="feedback-textual" />
- </mode>
  <mode id="boot">
   <enable services="sysconf:mount-local:hostname:tty:keyboard:ipc:logger:network:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
   <ttys s="tty1-regular" />
+  <auto-add-feedback b="true" />
  </mode>
  <mode id="default" base="boot">
   <enable services="audio:portmap:clock:displaymanager:swap:mount-remote" />

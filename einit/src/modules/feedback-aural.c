@@ -61,7 +61,7 @@ int _einit_feedback_aural_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char *_einit_feedback_aural_provides[] = {"feedback-aural", NULL};
+char *_einit_feedback_aural_provides[] = {"feedback", "feedback-aural", NULL};
 char *_einit_feedback_aural_requires[] = {"audio", "mount-critical", NULL};
 const struct smodule _einit_feedback_aural_self = {
  .eiversion = EINIT_VERSION,
