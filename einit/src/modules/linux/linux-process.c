@@ -187,7 +187,9 @@ pid_t *filter_processes_files_below (struct pc_conditional * cond, pid_t * ret, 
 
       if (!lstat(tmp, &buf) && S_ISLNK(buf.st_mode)) {
        char ttarget[BUFFERSIZE];
-       if (readlink (tmp, ttarget, BUFFERSIZE) == -1) continue;
+       int r = readlink (tmp, ttarget, BUFFERSIZE-1);
+       if (r == -1) continue;
+       ttarget[r] = 0;
 
        if (strstr (ttarget, cond->para) == ttarget) {
         ret = (pid_t *)setadd ((void **)ret, (void *)tmppx, SET_NOALLOC);
