@@ -1131,87 +1131,6 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-char mod_disable_users (struct lmodule *module) {
- if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL)) {
-  ssize_t i = 0;
-  char **need = NULL;
-  char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, module, NULL);
-  char retval = 1;
-
-  if (t) {
-   for (; t[i]; i++) {
-    if (mod_isbroken (t[i])) {
-     if (need) free (need);
-     return 0;
-    } else {
-     emutex_lock (&ml_tb_current_mutex);
-
-     if (!inset ((const void **)current.disable, (void *)t[i], SET_TYPE_STRING)) {
-      retval = 2;
-      need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
-     }
-
-     emutex_unlock (&ml_tb_current_mutex);
-    }
-   }
-
-   if (retval == 2) {
-    emutex_lock (&ml_tb_current_mutex);
-
-    char **tmp = (char **)setcombine ((const void **)current.disable, (const void **)need, SET_TYPE_STRING);
-    if (current.disable) free (current.disable);
-    current.disable = tmp;
-
-    emutex_unlock (&ml_tb_current_mutex);
-   }
-  }
-
-  return retval;
- }
-
- return 0;
-}
-
-char mod_enable_requirements (struct lmodule *module) {
- if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL)) {
-  char retval = 1;
-  if (module->si && module->si->requires) {
-   ssize_t i = 0;
-   char **need = NULL;
-
-   for (; module->si->requires[i]; i++) {
-    if (mod_isbroken (module->si->requires[i])) {
-     if (need) free (need);
-     return 0;
-    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, module->si->requires[i])) {
-     emutex_lock (&ml_tb_current_mutex);
-
-     if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
-      retval = 2;
-      need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
-     }
-
-     emutex_unlock (&ml_tb_current_mutex);
-    }
-   }
-
-   if (retval == 2) {
-    emutex_lock (&ml_tb_current_mutex);
-
-    char **tmp = (char **)setcombine ((const void **)current.enable, (const void **)need, SET_TYPE_STRING);
-    if (current.enable) free (current.enable);
-    current.enable = tmp;
-
-    emutex_unlock (&ml_tb_current_mutex);
-   }
-  }
-
-  return retval;
- }
-
- return 0;
-}
-
 /* end common functions */
 
 /* start new functions */
@@ -1226,6 +1145,28 @@ struct stree *module_logics_chain_examine_reverse = NULL;
 char **currently_provided;
 
 uint32_t workthreads = 0;
+
+void mod_workthreads_dec () {
+ emutex_lock (&ml_workthreads_mutex);
+ workthreads--;
+ if (!workthreads) {
+  emutex_unlock (&ml_workthreads_mutex);
+
+#ifdef _POSIX_PRIORITY_SCHEDULING
+  sched_yield();
+#endif
+
+  pthread_cond_broadcast (&ml_cond_service_update);
+ } else {
+  emutex_unlock (&ml_workthreads_mutex);
+ }
+}
+
+void mod_workthreads_inc () {
+ emutex_lock (&ml_workthreads_mutex);
+ workthreads++;
+ emutex_unlock (&ml_workthreads_mutex);
+}
 
 void mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
@@ -1628,6 +1569,245 @@ void mod_post_examine (char *service) {
  }
 }
 
+char mod_disable_users (struct lmodule *module) {
+ if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL)) {
+  ssize_t i = 0;
+  char **need = NULL;
+  char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, module, NULL);
+  char retval = 1;
+
+  if (t) {
+   for (; t[i]; i++) {
+    if (mod_isbroken (t[i])) {
+     if (need) free (need);
+     return 0;
+    } else {
+     emutex_lock (&ml_tb_current_mutex);
+
+     if (!inset ((const void **)current.disable, (void *)t[i], SET_TYPE_STRING)) {
+      retval = 2;
+      need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+
+      if (module->si && module->si->provides) {
+       uint32_t y = 0;
+       for (; module->si->provides[y]; y++) {
+        mod_defer_until (module->si->provides[y], t[i]);
+       }
+      }
+     }
+
+     emutex_unlock (&ml_tb_current_mutex);
+    }
+   }
+
+   if (retval == 2) {
+    emutex_lock (&ml_tb_current_mutex);
+
+    char **tmp = (char **)setcombine ((const void **)current.disable, (const void **)need, SET_TYPE_STRING);
+    if (current.disable) free (current.disable);
+    current.disable = tmp;
+
+    emutex_unlock (&ml_tb_current_mutex);
+
+    for (i = 0; need[i]; i++) {
+     mod_examine (need[i]);
+    }
+   }
+  }
+
+  return retval;
+ }
+
+ return 0;
+}
+
+char mod_enable_requirements (struct lmodule *module) {
+ if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL)) {
+  char retval = 1;
+  if (module->si && module->si->requires) {
+   ssize_t i = 0;
+   char **need = NULL;
+
+   for (; module->si->requires[i]; i++) {
+    if (mod_isbroken (module->si->requires[i])) {
+     if (need) free (need);
+     return 0;
+    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, module->si->requires[i])) {
+     emutex_lock (&ml_tb_current_mutex);
+
+     if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
+      retval = 2;
+      need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
+
+      if (module->si && module->si->provides) {
+       uint32_t y = 0;
+       for (; module->si->provides[y]; y++) {
+        mod_defer_until (module->si->provides[y], module->si->requires[i]);
+       }
+      }
+     }
+
+     emutex_unlock (&ml_tb_current_mutex);
+    }
+   }
+
+   if (retval == 2) {
+    emutex_lock (&ml_tb_current_mutex);
+
+    char **tmp = (char **)setcombine ((const void **)current.enable, (const void **)need, SET_TYPE_STRING);
+    if (current.enable) free (current.enable);
+    current.enable = tmp;
+
+    emutex_unlock (&ml_tb_current_mutex);
+
+    for (i = 0; need[i]; i++) {
+     mod_examine (need[i]);
+    }
+   }
+  }
+
+  return retval;
+ }
+
+ return 0;
+}
+
+void mod_apply_enable (struct stree *des) {
+ mod_workthreads_inc();
+ if (des) {
+  struct lmodule **lm = (struct lmodule **)des->value;
+
+  if (lm && lm[0]) {
+   struct lmodule *first = lm[0];
+
+   do {
+    struct lmodule *current = lm[0];
+
+    if ((lm[0]->status & STATUS_ENABLED) || mod_enable_requirements (current)) {
+     mod_workthreads_dec();
+     return;
+    }
+
+    mod (MOD_ENABLE, current, NULL);
+
+/* check module status or return value to find out if it's appropriate for the task */
+    if (lm[0]->status & STATUS_ENABLED) {
+     mod_workthreads_dec();
+     return;
+    }
+
+/* next module */
+    emutex_lock (&ml_service_list_mutex);
+
+/* make sure there's not been a different thread that did what we want to do */
+    if ((lm[0] == current) && lm[1]) {
+     ssize_t rx = 1;
+
+     notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+
+     for (; lm[rx]; rx++) {
+      lm[rx-1] = lm[rx];
+     }
+
+     lm[rx-1] = current;
+    }
+
+    emutex_unlock (&ml_service_list_mutex);
+   } while (lm[0] != first);
+/* if we tried to enable something and end up here, it means we did a complete
+   round-trip and nothing worked */
+
+   emutex_lock (&ml_tb_current_mutex);
+   current.enable = strsetdel(current.enable, des->key);
+   emutex_unlock (&ml_tb_current_mutex);
+
+/* mark service broken if stuff went completely wrong */
+   notice (2, "ran out of options for service %s (enable), marking as broken", des->key);
+
+   mod_mark (des->key, MARK_BROKEN);
+  }
+
+  mod_workthreads_dec();
+  return;
+ }
+
+ mod_workthreads_dec();
+ return;
+}
+
+void mod_apply_disable (struct stree *des) {
+ mod_workthreads_inc();
+ if (des) {
+  struct lmodule **lm = (struct lmodule **)des->value;
+
+  if (lm && lm[0]) {
+   struct lmodule *first = lm[0];
+   int any_ok = 0;
+
+   do {
+    struct lmodule *current = lm[0];
+
+    if ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)) {
+     goto skip_module;
+    }
+
+    if (mod_disable_users (current)) {
+     mod_workthreads_dec();
+     return;
+    }
+
+    mod (MOD_DISABLE, current, NULL);
+
+    /* check module status or return value to find out if it's appropriate for the task */
+    if ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)) {
+     any_ok = 1;
+    }
+
+    skip_module:
+/* next module */
+    emutex_lock (&ml_service_list_mutex);
+
+/* make sure there's not been a different thread that did what we want to do */
+    if ((lm[0] == current) && lm[1]) {
+     ssize_t rx = 1;
+
+     notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+
+     for (; lm[rx]; rx++) {
+      lm[rx-1] = lm[rx];
+     }
+
+     lm[rx-1] = current;
+    }
+
+    emutex_unlock (&ml_service_list_mutex);
+   } while (lm[0] != first);
+/* if we tried to enable something and end up here, it means we did a complete
+   round-trip and nothing worked */
+
+   emutex_lock (&ml_tb_current_mutex);
+   current.disable = strsetdel(current.disable, des->key);
+   emutex_unlock (&ml_tb_current_mutex);
+
+   if (any_ok) {
+    mod_workthreads_dec();
+    return;
+   }
+
+/* mark service broken if stuff went completely wrong */
+   notice (2, "ran out of options for service %s (disable), marking as broken", des->key);
+
+   mod_mark (des->key, MARK_BROKEN);
+  }
+
+  mod_workthreads_dec();
+  return;
+ }
+
+ mod_workthreads_dec();
+ return;
+}
+
 char mod_examine_group (char *groupname) {
  struct group_data *gd = mod_group_get_data (groupname);
  if (!gd) return 0;
@@ -1636,37 +1816,61 @@ char mod_examine_group (char *groupname) {
 }
 
 void mod_examine (char *service) {
- if (mod_examine_group (service)) {
+ if (mod_isdeferred (service)) {
+  return;
+ } else if (mod_examine_group (service)) {
   mod_post_examine(service);
   return;
+ } else {
+  int task = 0;
+
+  emutex_lock (&ml_tb_current_mutex);
+  if (inset ((const void **)current.disable, service, SET_TYPE_STRING))
+   task = MOD_DISABLE;
+  else if (inset ((const void **)current.enable, service, SET_TYPE_STRING))
+   task = MOD_ENABLE;
+  emutex_unlock (&ml_tb_current_mutex);
+
+  if (!task ||
+      ((task & MOD_ENABLE) && mod_isprovided (service)) ||
+      ((task & MOD_DISABLE) && !mod_isprovided (service))) {
+   mod_post_examine (service);
+   return;
+  }
+
+  eprintf (stderr, " ** examining service %s (%s).\n", service,
+                   task & MOD_ENABLE ? "enable" : "disable");
+
+  emutex_lock (&ml_service_list_mutex);
+  struct stree *v = streefind (module_logics_service_list, service, TREE_FIND_FIRST);
+  struct lmodule **lm = v->value;
+  emutex_unlock (&ml_service_list_mutex);
+
+  if (lm && lm[0]) {
+   pthread_t th;
+
+   if (task & MOD_ENABLE) {
+    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
+     mod_apply_enable(v);
+    }
+   } else {
+    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_disable, v)) {
+     mod_apply_disable(v);
+    }
+   }
+  }
+
+  return;
  }
-
- mod_post_examine (service);
-
- return;
 }
 
 void workthread_examine (char *service) {
- emutex_lock (&ml_workthreads_mutex);
- workthreads++;
- emutex_unlock (&ml_workthreads_mutex);
+ mod_workthreads_inc();
 
  mod_examine (service);
  free (service);
 
- emutex_lock (&ml_workthreads_mutex);
- workthreads--;
- if (!workthreads) {
-  emutex_unlock (&ml_workthreads_mutex);
-
-#ifdef _POSIX_PRIORITY_SCHEDULING
-  sched_yield();
-#endif
-
-  pthread_cond_broadcast (&ml_cond_service_update);
- } else {
-  emutex_unlock (&ml_workthreads_mutex);
- }
+ mod_workthreads_dec();
 }
 
 void mod_spawn_workthreads () {
@@ -1677,8 +1881,6 @@ void mod_spawn_workthreads () {
   for (; current.enable[i]; i++) {
    char *sc = estrdup (current.enable[i]);
    pthread_t th;
-
-   eprintf (stderr, " ** spawning worker thread for service %s.\n", sc);
 
    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
     emutex_lock (&ml_tb_current_mutex);
@@ -1693,8 +1895,6 @@ void mod_spawn_workthreads () {
   for (; current.disable[i]; i++) {
    char *sc = estrdup (current.disable[i]);
    pthread_t th;
-
-   eprintf (stderr, " ** spawning worker thread for service %s.\n", sc);
 
    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
     emutex_lock (&ml_tb_current_mutex);
