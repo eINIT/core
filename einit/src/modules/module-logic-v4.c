@@ -48,6 +48,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/ipc.h>
 #include <einit-modules/configuration.h>
 
+#ifdef _POSIX_PRIORITY_SCHEDULING
+#include <sched.h>
+#endif
+
 int _einit_module_logic_v4_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
@@ -1653,7 +1657,17 @@ void workthread_examine (char *service) {
 
  emutex_lock (&ml_workthreads_mutex);
  workthreads--;
- emutex_unlock (&ml_workthreads_mutex);
+ if (!workthreads) {
+  emutex_unlock (&ml_workthreads_mutex);
+
+#ifdef _POSIX_PRIORITY_SCHEDULING
+  sched_yield();
+#endif
+
+  pthread_cond_broadcast (&ml_cond_service_update);
+ } else {
+  emutex_unlock (&ml_workthreads_mutex);
+ }
 }
 
 void mod_spawn_workthreads () {
