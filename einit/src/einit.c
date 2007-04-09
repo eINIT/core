@@ -180,6 +180,7 @@ void core_einit_event_handler (struct einit_event *ev) {
 
 /* give the module-logic code and others a chance at processing the current list */
   struct einit_event update_event = evstaticinit(EVE_MODULE_LIST_UPDATE);
+  update_event.para = mlist;
   event_emit (&update_event, EINIT_EVENT_FLAG_BROADCAST);
   evstaticdestroy(update_event);
  }

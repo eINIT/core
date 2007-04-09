@@ -108,8 +108,6 @@ struct stree *module_logics_group_data = NULL;
 struct stree *ml_service_status_worker_threads = NULL;
 struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 
-struct lmodule *mlist;
-
 char **unresolved_services = NULL;
 char **broken_services = NULL;
 
@@ -1370,7 +1368,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
  } else if (ev->type == EVE_MODULE_LIST_UPDATE) {
 /* update list with services */
   struct stree *new_service_list = NULL;
-  struct lmodule *cur = mlist;
+  struct lmodule *cur = ev->para;
 
   emutex_lock (&ml_service_list_mutex);
 
