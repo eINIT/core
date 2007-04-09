@@ -177,7 +177,7 @@ int _network_scanmodules (struct lmodule *mainlist) {
 
      esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
      newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, (void *)tmp, SET_TYPE_STRING);
-     newmodule->si.requires = (char **)setadd ((void **)newmodule->si.requires, (void *)"mount-system", SET_TYPE_STRING);
+     newmodule->si.requires = (char **)setadd ((void **)newmodule->si.requires, (void *)"mount-critical", SET_TYPE_STRING);
 
      lm = mod_add (NULL, newmodule);
     }
@@ -258,12 +258,17 @@ struct interface_template_item **network_import_templates (char *type, char *lis
        free (tmp);
       }
      } else if (strmatch (node->arbattrs[y], "variables")) {
-      ni.variables = str2set (':', node->arbattrs[y+1]);
+      char *tmp = apply_variables (node->arbattrs[y+1], (const char **)if_vars);
+      ni.variables = str2set (':', tmp);
+      free (tmp);
      } else if (strmatch (node->arbattrs[y], "pid")) {
-      ni.pidfile = node->arbattrs[y+1];
-      ni.environment = straddtoenviron(ni.environment, "pidfile", node->arbattrs[y+1]);
+      char *tmp = apply_variables (node->arbattrs[y+1], (const char **)if_vars);
+      ni.pidfile = tmp;
+      ni.environment = straddtoenviron(ni.environment, "pidfile", tmp);
      } else {
-      ni.environment = straddtoenviron(ni.environment, node->arbattrs[y], node->arbattrs[y+1]);
+      char *tmp = apply_variables (node->arbattrs[y+1], (const char **)if_vars);
+      ni.environment = straddtoenviron(ni.environment, node->arbattrs[y], tmp);
+      free (tmp);
      }
     }
 
