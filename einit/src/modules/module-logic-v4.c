@@ -52,6 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sched.h>
 #endif
 
+#define MAX_SPAWNS 10
+
 int _einit_module_logic_v4_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
@@ -1628,12 +1630,9 @@ void mod_post_examine (char *service) {
 
 char mod_examine_group (char *groupname) {
  struct group_data *gd = mod_group_get_data (groupname);
+ if (!gd) return 0;
 
- if (gd) {
-  return 1;
- }
-
- return 0;
+ return 1;
 }
 
 void mod_examine (char *service) {
@@ -1710,6 +1709,7 @@ void mod_spawn_workthreads () {
 
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
+ char spawns = 0;
 
  eputs (" ** called mod_commit_and_wait()\n", stderr);
 
@@ -1749,7 +1749,14 @@ void mod_commit_and_wait (char **en, char **dis) {
   emutex_unlock (&ml_workthreads_mutex);
 
   if (spawn) {
+/* lockup protection... */
+   if (spawns > MAX_SPAWNS) {
+    notice (1, "too many respawns: giving up on plan requirements.");
+
+    return;
+   }
    mod_spawn_workthreads ();
+   spawns++;
   }
 
   pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
