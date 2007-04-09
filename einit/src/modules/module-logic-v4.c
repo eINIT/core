@@ -1125,17 +1125,101 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
+char mod_disable_users (struct lmodule *module) {
+ if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL)) {
+  ssize_t i = 0;
+  char **need = NULL;
+  char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, module, NULL);
+  char retval = 1;
+
+  if (t) {
+   for (; t[i]; i++) {
+    if (mod_isbroken (t[i])) {
+     if (need) free (need);
+     return 0;
+    } else {
+     emutex_lock (&ml_tb_current_mutex);
+
+     if (!inset ((const void **)current.disable, (void *)t[i], SET_TYPE_STRING)) {
+      retval = 2;
+      need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+     }
+
+     emutex_unlock (&ml_tb_current_mutex);
+    }
+   }
+
+   if (retval == 2) {
+    emutex_lock (&ml_tb_current_mutex);
+
+    char **tmp = (char **)setcombine ((const void **)current.disable, (const void **)need, SET_TYPE_STRING);
+    if (current.disable) free (current.disable);
+    current.disable = tmp;
+
+    emutex_unlock (&ml_tb_current_mutex);
+   }
+  }
+
+  return retval;
+ }
+
+ return 0;
+}
+
+char mod_enable_requirements (struct lmodule *module) {
+ if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL)) {
+  char retval = 1;
+  if (module->si && module->si->requires) {
+   ssize_t i = 0;
+   char **need = NULL;
+
+   for (; module->si->requires[i]; i++) {
+    if (mod_isbroken (module->si->requires[i])) {
+     if (need) free (need);
+     return 0;
+    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, module->si->requires[i])) {
+     emutex_lock (&ml_tb_current_mutex);
+
+     if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
+      retval = 2;
+      need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
+     }
+
+     emutex_unlock (&ml_tb_current_mutex);
+    }
+   }
+
+   if (retval == 2) {
+    emutex_lock (&ml_tb_current_mutex);
+
+    char **tmp = (char **)setcombine ((const void **)current.enable, (const void **)need, SET_TYPE_STRING);
+    if (current.enable) free (current.enable);
+    current.enable = tmp;
+
+    emutex_unlock (&ml_tb_current_mutex);
+   }
+  }
+
+  return retval;
+ }
+
+ return 0;
+}
+
 /* end common functions */
 
 /* start new functions */
 
 pthread_mutex_t
  ml_examine_mutex = PTHREAD_MUTEX_INITIALIZER,
- ml_chain_examine = PTHREAD_MUTEX_INITIALIZER;
+ ml_chain_examine = PTHREAD_MUTEX_INITIALIZER,
+ ml_workthreads_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 struct stree *module_logics_chain_examine_reverse = NULL;
 char **currently_provided;
+
+uint32_t workthreads = 0;
 
 void mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
@@ -1149,7 +1233,7 @@ void mod_defer_until (char *service, char *after) {
    xn->luggage = (void *)n;
   }
  } else {
-  char **n = (char **)setadd ((void **)xn->value, service, SET_TYPE_STRING);
+  char **n = (char **)setadd ((void **)NULL, service, SET_TYPE_STRING);
 
   module_logics_chain_examine =
    streeadd(module_logics_chain_examine, after, n, SET_NOALLOC, n);
@@ -1163,7 +1247,7 @@ void mod_defer_until (char *service, char *after) {
    xn->luggage = (void *)n;
   }
  } else {
-  char **n = (char **)setadd ((void **)xn->value, after, SET_TYPE_STRING);
+  char **n = (char **)setadd ((void **)NULL, after, SET_TYPE_STRING);
 
   module_logics_chain_examine_reverse =
    streeadd(module_logics_chain_examine_reverse, service, n, SET_NOALLOC, n);
@@ -1229,16 +1313,33 @@ char mod_isprovided(char *service) {
 }
 
 void mod_queue_enable (char *service) {
+ emutex_lock (&ml_tb_current_mutex);
+
+ current.enable = (char **)setadd ((void **)current.enable, (const void *)service, SET_TYPE_STRING);
+ current.disable = strsetdel ((char **)current.disable, (void *)service);
+
+ emutex_unlock (&ml_tb_current_mutex);
+
+ mod_examine (service);
 }
 
 void mod_queue_disable (char *service) {
+ emutex_lock (&ml_tb_current_mutex);
+
+ current.disable = (char **)setadd ((void **)current.disable, (const void *)service, SET_TYPE_STRING);
+ current.enable = strsetdel ((char **)current.enable, (void *)service);
+
+ emutex_unlock (&ml_tb_current_mutex);
+
+ mod_examine (service);
 }
 
-signed char mod_flatten_current_tb_group(char *service, char task) {
- struct group_data *gd = mod_group_get_data (service);
+signed char mod_flatten_current_tb_group(char *serv, char task) {
+ struct group_data *gd = mod_group_get_data (serv);
 
  if (gd) {
   uint32_t changes = 0;
+  char *service = estrdup (serv);
 
   if (!gd->members || !gd->members[0])
    return -1;
@@ -1247,6 +1348,12 @@ signed char mod_flatten_current_tb_group(char *service, char task) {
    uint32_t i = 0;
 
    for (; gd->members[i]; i++) {
+    if (((task & MOD_ENABLE) && mod_isprovided (gd->members[i])) ||
+          ((task & MOD_DISABLE) && !mod_isprovided (gd->members[i]))) {
+     free (service);
+     return 0;
+    }
+
     if (mod_isbroken (gd->members[i])) {
      continue;
     }
@@ -1260,6 +1367,9 @@ signed char mod_flatten_current_tb_group(char *service, char task) {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
      }
 
+     mod_defer_until(service, gd->members[i]);
+
+     free (service);
      return 1;
     }
    }
@@ -1269,6 +1379,11 @@ signed char mod_flatten_current_tb_group(char *service, char task) {
    uint32_t i = 0, bc = 0;
 
    for (; gd->members[i]; i++) {
+    if (((task & MOD_ENABLE) && mod_isprovided (gd->members[i])) ||
+        ((task & MOD_DISABLE) && !mod_isprovided (gd->members[i]))) {
+     continue;
+    }
+
     if (mod_isbroken (gd->members[i])) {
      bc++;
      continue;
@@ -1276,6 +1391,8 @@ signed char mod_flatten_current_tb_group(char *service, char task) {
 
     if (!inset ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
+
+     mod_defer_until(service, gd->members[i]);
 
      if (task & MOD_ENABLE) {
       current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
@@ -1294,13 +1411,104 @@ signed char mod_flatten_current_tb_group(char *service, char task) {
    }
   }
 
+  free (service);
   return changes != 0;
  }
 
  return -1;
 }
 
-signed char mod_flatten_current_tb_module(char *service, char task) {
+signed char mod_flatten_current_tb_module(char *serv, char task) {
+ emutex_lock (&ml_service_list_mutex);
+ struct stree *xn = streefind (module_logics_service_list, serv, TREE_FIND_FIRST);
+
+ if (xn && xn->value) {
+  struct lmodule **lm = xn->value;
+  uint32_t changes = 0;
+  char *service = estrdup (serv);
+
+  if (task & MOD_ENABLE) {
+   struct lmodule *first = lm[0];
+   char broken = 0;
+
+   do {
+    struct lmodule *rcurrent = lm[0];
+    char rotate = 0;
+    broken = 0;
+
+    first = 0;
+    if (rcurrent && rcurrent->si && rcurrent->si->requires) {
+     uint32_t i = 0;
+
+     for (; rcurrent->si->requires[i]; i++) {
+      if (mod_isprovided (rcurrent->si->requires[i])) {
+       continue;
+      }
+
+      if (mod_isbroken (rcurrent->si->requires[i])) {
+       rotate = 1;
+       broken = 1;
+
+       break;
+      }
+
+      if (!inset ((const void **)current.enable, (const void *)rcurrent->si->requires[i], SET_TYPE_STRING)) {
+       current.enable = (char **)setadd ((void **)current.enable, (const void *)rcurrent->si->requires[i], SET_TYPE_STRING);
+
+       changes++;
+      }
+
+      broken = 0;
+     }
+    }
+
+    if (rotate && lm[1]) {
+     ssize_t rx = 1;
+
+     for (; lm[rx]; rx++) {
+      lm[rx-1] = lm[rx];
+     }
+
+     lm[rx-1] = rcurrent;
+    }
+   } while (broken && (lm[0] != first));
+
+   if (broken) {
+    mod_mark (service, MARK_BROKEN);
+   }
+  } else { /* disable... */
+   uint32_t z = 0;
+
+   for (; lm[z]; z++) {
+    char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, lm[z], NULL);
+
+    if (t) {
+     uint32_t i = 0;
+
+     for (; t[i]; i++) {
+      if (!mod_isprovided (t[i])) {
+       continue;
+      }
+
+      if (!inset ((const void **)current.disable, (const void *)lm[0]->si->requires[i], SET_TYPE_STRING)) {
+       current.disable = (char **)setadd ((void **)current.disable, (const void *)t[i], SET_TYPE_STRING);
+
+       changes++;
+      }
+     }
+    }
+   }
+  }
+
+  emutex_unlock (&ml_service_list_mutex);
+
+  free (service);
+
+  return changes != 0;
+ }
+
+ emutex_unlock (&ml_service_list_mutex);
+
  return -1;
 }
 
@@ -1435,6 +1643,57 @@ void mod_examine (char *service) {
  return;
 }
 
+void workthread_examine (char *service) {
+ emutex_lock (&ml_workthreads_mutex);
+ workthreads++;
+ emutex_unlock (&ml_workthreads_mutex);
+
+ mod_examine (service);
+ free (service);
+
+ emutex_lock (&ml_workthreads_mutex);
+ workthreads--;
+ emutex_unlock (&ml_workthreads_mutex);
+}
+
+void mod_spawn_workthreads () {
+ emutex_lock (&ml_tb_current_mutex);
+
+ if (current.enable) {
+  uint32_t i = 0;
+  for (; current.enable[i]; i++) {
+   char *sc = estrdup (current.enable[i]);
+   pthread_t th;
+
+   eprintf (stderr, " ** spawning worker thread for service %s.\n", sc);
+
+   if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
+    emutex_lock (&ml_tb_current_mutex);
+    workthread_examine (sc);
+    emutex_unlock (&ml_tb_current_mutex);
+   }
+  }
+ }
+
+ if (current.disable) {
+  uint32_t i = 0;
+  for (; current.disable[i]; i++) {
+   char *sc = estrdup (current.disable[i]);
+   pthread_t th;
+
+   eprintf (stderr, " ** spawning worker thread for service %s.\n", sc);
+
+   if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
+    emutex_lock (&ml_tb_current_mutex);
+    workthread_examine (sc);
+    emutex_unlock (&ml_tb_current_mutex);
+   }
+  }
+ }
+
+ emutex_unlock (&ml_tb_current_mutex);
+}
+
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
 
@@ -1445,6 +1704,7 @@ void mod_commit_and_wait (char **en, char **dis) {
  eputs (" ** entering loop...\n", stderr);
  do {
   remainder = 0;
+  char spawn = 0;
 
   if (en) {
    uint32_t i = 0;
@@ -1469,6 +1729,14 @@ void mod_commit_and_wait (char **en, char **dis) {
   if (!remainder) return;
 
   eprintf (stderr, " ** still need %i services\n", remainder);
+
+  emutex_lock (&ml_workthreads_mutex);
+  spawn = workthreads == 0;
+  emutex_unlock (&ml_workthreads_mutex);
+
+  if (spawn) {
+   mod_spawn_workthreads ();
+  }
 
   pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
  } while (remainder);
