@@ -82,8 +82,11 @@ char mod_mark (char *service, char task);
 struct group_data *mod_group_get_data (char *group);
 
 /* new functions: */
+char mod_examine_group (char *);
+void mod_examine_module (struct lmodule *);
+void mod_examine (char *);
+
 void mod_commit_and_wait (char **, char **);
-void mod_done (struct lmodule *mod, int task);
 
 struct module_taskblock
   current = { NULL, NULL, NULL },
@@ -91,7 +94,6 @@ struct module_taskblock
 
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
 struct stree *module_logics_group_data = NULL;
-struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 
 pthread_mutex_t
   ml_tb_current_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -99,7 +101,8 @@ pthread_mutex_t
   ml_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_group_data_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_chain_examine = PTHREAD_MUTEX_INITIALIZER;
+  ml_currently_provided_mutex = PTHREAD_MUTEX_INITIALIZER,
+  ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_cond_t
   ml_cond_service_update = PTHREAD_COND_INITIALIZER;
@@ -873,10 +876,8 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
   emutex_unlock (&ml_group_data_mutex);
  } else if ((ev->type == EVE_SERVICE_UPDATE) && (!(ev->status & STATUS_WORKING))) {
-  /* something's done now, update our lists */
-  mod_done ((struct lmodule *)ev->para, ev->task);
-
-  pthread_cond_broadcast (&ml_cond_service_update);
+/* something's done now, update our lists */
+  mod_examine_module ((struct lmodule *)ev->para);
  } else switch (ev->type) {
   case EVE_SWITCH_MODE:
    if (!ev->string) return;
@@ -1129,16 +1130,348 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 /* start new functions */
 
 pthread_mutex_t
- ml_examine_mutex = PTHREAD_MUTEX_INITIALIZER;
+ ml_examine_mutex = PTHREAD_MUTEX_INITIALIZER,
+ ml_chain_examine = PTHREAD_MUTEX_INITIALIZER;
 
-void mod_examine (char *service) {
+struct stree *module_logics_chain_examine = NULL; // value is a (char **)
+struct stree *module_logics_chain_examine_reverse = NULL;
+char **currently_provided;
 
+void mod_defer_until (char *service, char *after) {
+ struct stree *xn = NULL;
+ emutex_lock(&ml_chain_examine);
+
+ if ((xn = streefind (module_logics_chain_examine, after, TREE_FIND_FIRST))) {
+  if (!inset ((const void **)xn->value, service, SET_TYPE_STRING)) {
+   char **n = (char **)setadd ((void **)xn->value, service, SET_TYPE_STRING);
+
+   xn->value = (void *)n;
+   xn->luggage = (void *)n;
+  }
+ } else {
+  char **n = (char **)setadd ((void **)xn->value, service, SET_TYPE_STRING);
+
+  module_logics_chain_examine =
+   streeadd(module_logics_chain_examine, after, n, SET_NOALLOC, n);
+ }
+
+ if ((xn = streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST))) {
+  if (!inset ((const void **)xn->value, after, SET_TYPE_STRING)) {
+   char **n = (char **)setadd ((void **)xn->value, after, SET_TYPE_STRING);
+
+   xn->value = (void *)n;
+   xn->luggage = (void *)n;
+  }
+ } else {
+  char **n = (char **)setadd ((void **)xn->value, after, SET_TYPE_STRING);
+
+  module_logics_chain_examine_reverse =
+   streeadd(module_logics_chain_examine_reverse, service, n, SET_NOALLOC, n);
+ }
+
+ emutex_unlock(&ml_chain_examine);
 }
 
-void mod_done (struct lmodule *module, int task) {
+void mod_remove_defer (char *service) {
+ struct stree *xn = NULL;
+ emutex_lock(&ml_chain_examine);
+
+ if ((xn = streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST))) {
+  uint32_t i = 0;
+
+  if (xn->value) {
+   for (; ((char **)xn->value)[i]; i++) {
+    struct stree *yn = streefind (module_logics_chain_examine, ((char **)xn->value)[i], TREE_FIND_FIRST);
+
+    if (yn) {
+     yn->value = (void *)strsetdel ((char **)yn->value, ((char **)xn->value)[i]);
+
+     if (!yn->value) {
+      streedel (yn);
+     } else {
+      yn->luggage = yn->value;
+     }
+    }
+   }
+  }
+
+  streedel (xn);
+ }
+
+ emutex_unlock(&ml_chain_examine);
+}
+
+char mod_isdeferred (char *service) {
+ char ret = 0;
+
+ emutex_lock(&ml_chain_examine);
+
+ struct stree *r =
+  streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST);
+
+ emutex_unlock(&ml_chain_examine);
+
+ ret = r != NULL;
+
+ return ret;
+}
+
+char mod_isprovided(char *service) {
+ char ret = 0;
+
+ emutex_lock (&ml_currently_provided_mutex);
+
+ ret = inset ((const void **)currently_provided, (const void *)service, SET_TYPE_STRING);
+
+ emutex_unlock (&ml_currently_provided_mutex);
+
+ return ret;
+}
+
+void mod_queue_enable (char *service) {
+}
+
+void mod_queue_disable (char *service) {
+}
+
+signed char mod_flatten_current_tb_group(char *service, char task) {
+ struct group_data *gd = mod_group_get_data (service);
+
+ if (gd) {
+  uint32_t changes = 0;
+
+  if (!gd->members || !gd->members[0])
+   return -1;
+
+  if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
+   uint32_t i = 0;
+
+   for (; gd->members[i]; i++) {
+    if (mod_isbroken (gd->members[i])) {
+     continue;
+    }
+
+    if (!inset ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
+     changes++;
+
+     if (task & MOD_ENABLE) {
+      current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
+     } else {
+      current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
+     }
+
+     return 1;
+    }
+   }
+
+   mod_mark (service, MARK_BROKEN);
+  } else { // MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST
+   uint32_t i = 0, bc = 0;
+
+   for (; gd->members[i]; i++) {
+    if (mod_isbroken (gd->members[i])) {
+     bc++;
+     continue;
+    }
+
+    if (!inset ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
+     changes++;
+
+     if (task & MOD_ENABLE) {
+      current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
+     } else {
+      current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
+     }
+    }
+   }
+
+   if (bc > 0) {
+    if (bc == i) {
+     mod_mark (service, MARK_BROKEN);
+    } else if (gd->options & MOD_PLAN_GROUP_SEQ_ALL) {
+     mod_mark (service, MARK_BROKEN);
+    }
+   }
+  }
+
+  return changes != 0;
+ }
+
+ return -1;
+}
+
+signed char mod_flatten_current_tb_module(char *service, char task) {
+ return -1;
+}
+
+void mod_flatten_current_tb () {
+ emutex_lock (&ml_tb_current_mutex);
+
+ repeat_ena:
+ if (current.enable) {
+  uint32_t i;
+
+  for (i = 0; current.enable[i]; i++) {
+   signed char t = 0;
+   if (mod_isprovided (current.enable[i]) || mod_isbroken(current.enable[i])) {
+    current.enable = (char **)setdel ((void **)current.enable, current.enable[i]);
+    goto repeat_ena;
+   }
+
+   if (((t = mod_flatten_current_tb_group(current.enable[i], MOD_ENABLE)) == -1) &&
+       ((t = mod_flatten_current_tb_module(current.enable[i], MOD_ENABLE)) == -1)) {
+    eprintf (stderr, " ** can't resolve service %s\n", current.enable[i]);
+
+    mod_mark (current.enable[i], MARK_UNRESOLVED);
+   } else {
+    if (t != 0) {
+     goto repeat_ena;
+    }
+   }
+  }
+ }
+
+ repeat_disa:
+ if (current.disable) {
+  uint32_t i;
+
+  for (i = 0; current.disable[i]; i++) {
+   signed char t = 0;
+   if (!mod_isprovided (current.disable[i]) || mod_isbroken(current.disable[i])) {
+    current.disable = (char **)setdel ((void **)current.disable, current.disable[i]);
+    goto repeat_disa;
+   }
+
+   if (((t = mod_flatten_current_tb_group(current.disable[i], MOD_DISABLE)) == -1) &&
+       ((t = mod_flatten_current_tb_module(current.disable[i], MOD_DISABLE)) == -1)) {
+    eprintf (stderr, " ** can't resolve service %s\n", current.disable[i]);
+
+    mod_mark (current.disable[i], MARK_UNRESOLVED);
+   } else {
+    if (t != 0) {
+     goto repeat_disa;
+    }
+   }
+  }
+ }
+
+ emutex_unlock (&ml_tb_current_mutex);
+}
+
+void mod_examine_module (struct lmodule *module) {
+ if (!(module->status & STATUS_WORKING)) {
+  if (module->si && module->si->provides) {
+   uint32_t i = 0;
+   if (module->status & STATUS_ENABLED) {
+    emutex_lock (&ml_tb_current_mutex);
+    current.enable = (char **)setslice_nc ((void **)current.enable, (const void **)module->si->provides, SET_TYPE_STRING);
+    emutex_unlock (&ml_tb_current_mutex);
+
+    emutex_lock (&ml_currently_provided_mutex);
+    currently_provided = (char **)setcombine_nc ((void **)currently_provided, (const void **)module->si->provides, SET_TYPE_STRING);
+    emutex_unlock (&ml_currently_provided_mutex);
+
+    pthread_cond_broadcast (&ml_cond_service_update);
+   } else {
+    emutex_lock (&ml_tb_current_mutex);
+    current.disable = (char **)setslice_nc ((void **)current.disable, (const void **)module->si->provides, SET_TYPE_STRING);
+    emutex_unlock (&ml_tb_current_mutex);
+
+    emutex_lock (&ml_currently_provided_mutex);
+    currently_provided = (char **)setslice_nc ((void **)currently_provided, (const void **)module->si->provides, SET_TYPE_STRING);
+    emutex_unlock (&ml_currently_provided_mutex);
+
+    pthread_cond_broadcast (&ml_cond_service_update);
+   }
+
+   for (; module->si->provides[i]; i++) {
+    mod_examine (module->si->provides[i]);
+   }
+  }
+ }
+}
+
+void mod_post_examine (char *service) {
+ char **pex = NULL;
+ struct stree *post_examine;
+
+ emutex_lock (&ml_chain_examine);
+
+ if ((post_examine = streefind (module_logics_chain_examine, service, TREE_FIND_FIRST))) {
+  pex = (char **)setdup ((const void **)post_examine->value, SET_TYPE_STRING);
+ }
+
+ emutex_unlock (&ml_chain_examine);
+
+ if (pex) {
+  uint32_t j = 0;
+
+  for (; pex[j]; j++) {
+   mod_examine (pex[j]);
+  }
+
+  free (pex);
+ }
+}
+
+char mod_examine_group (char *groupname) {
+ struct group_data *gd = mod_group_get_data (groupname);
+
+ if (gd) {
+  return 1;
+ }
+
+ return 0;
+}
+
+void mod_examine (char *service) {
+ if (mod_examine_group (service)) {
+  mod_post_examine(service);
+  return;
+ }
+
+ mod_post_examine (service);
+
+ return;
 }
 
 void mod_commit_and_wait (char **en, char **dis) {
+ int remainder;
+
+ eputs (" ** called mod_commit_and_wait()\n", stderr);
+
+ mod_flatten_current_tb();
+
+ eputs (" ** entering loop...\n", stderr);
+ do {
+  remainder = 0;
+
+  if (en) {
+   uint32_t i = 0;
+
+   for (; en[i]; i++) {
+    if (!mod_isbroken (en[i]) && !mod_isprovided(en[i])) {
+     remainder++;
+    }
+   }
+  }
+
+  if (dis) {
+   uint32_t i = 0;
+
+   for (; dis[i]; i++) {
+    if (!mod_isbroken (dis[i]) && mod_isprovided(dis[i])) {
+     remainder++;
+    }
+   }
+  }
+
+  if (!remainder) return;
+
+  eprintf (stderr, " ** still need %i services\n", remainder);
+
+  pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
+ } while (remainder);
 }
 
 /* end new functions */

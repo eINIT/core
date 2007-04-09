@@ -3,7 +3,7 @@ export INCLUDEPATH="/usr/local/include"
 export MODULES_GENERIC="feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler feedback-visual-fbsplash network"
 export MODULES_LINUX="linux-sysconf linux-mount linux-process "
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
-export MODULES_CORE="module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log"
+export MODULES_CORE="module-so module-logic-v4 bootstrap-configuration-xml-expat bootstrap-configuration-stree log"
 export MODULES_EXPERIMENTAL="readahead"
 
 export ALLMODULES="${MODULES_GENERIC} ${MODULES_LINUX} ${MODULES_COMPATIBILITY} ${MODULES_CORE}"

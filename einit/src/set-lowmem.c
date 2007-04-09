@@ -71,6 +71,22 @@ void **setcombine (const void **set1, const void **set2, const int32_t esize) {
  return newset;
 }
 
+void **setcombine_nc (void **set1, const void **set2, const int32_t esize) {
+ void **newset = NULL;
+ int x = 0;
+
+ if (!set1) return setdup(set2, esize);
+ if (!set2) return set1;
+
+ for (x = 0; set2[x]; x++) {
+  if (!inset ((const void **)set1, set2[x], esize)) {
+   set1 = setadd (set1, set2[x], esize);
+  }
+ }
+
+ return newset;
+}
+
 void **setslice (const void **set1, const void **set2, const int32_t esize) {
  void **newset = NULL;
  int x = 0;
@@ -83,6 +99,24 @@ void **setslice (const void **set1, const void **set2, const int32_t esize) {
    newset = setadd (newset, set1[x], esize);
   }
  }
+
+ return newset;
+}
+
+void **setslice_nc (void **set1, const void **set2, const int32_t esize) {
+ void **newset = NULL;
+ int x = 0;
+
+ if (!set1) return NULL;
+ if (!set2) return set1;
+
+ for (; set1[x]; x++) {
+  if (!inset (set2, set1[x], esize)) {
+   newset = setadd (newset, set1[x], esize);
+  }
+ }
+
+ free (set1);
 
  return newset;
 }

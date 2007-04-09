@@ -272,6 +272,8 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
 //  event_emit(fb, EINIT_EVENT_FLAG_BROADCAST);
 //  if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
 
+  module->lastfb = fb->status;
+
 /* module status update */
   if (module) {
    struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);

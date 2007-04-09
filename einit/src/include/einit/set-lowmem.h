@@ -76,7 +76,11 @@ extern "C" {
 */
 void **setcombine (const void **set1, const void **set2, const int32_t esize);
 
+void **setcombine_nc (void **set1, const void **set2, const int32_t esize);
+
 void **setslice (const void **set1, const void **set2, const int32_t esize);
+
+void **setslice_nc (void **set1, const void **set2, const int32_t esize);
 
 /*!\brief Add \b item to \b set.
  * \param[in,out] set   the set

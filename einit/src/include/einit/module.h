@@ -195,6 +195,7 @@ struct lmodule {
  int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
  int (*scanmodules) (struct lmodule *);         /*!< Pointer to the module's scanmodules()-function */
  uint32_t status;                               /*!< Current module status (enabled, disabled, ...) */
+ uint32_t lastfb;                               /*!< Last feedback message */
  void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
  pthread_mutex_t imutex;                        /*!< Internal module-mutex; to be used by the module */
