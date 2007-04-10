@@ -40,7 +40,7 @@ fi
 
 BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
-SOURCESUFFIXES="c s"
+SOURCESUFFIXES="c s c++"
 HEADERSUFFIXES="h"
 
 COMPILER=gnu
@@ -311,6 +311,7 @@ fi
 
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
+XXL="\${CXX} \${INCLUDE} \${CXXFLAGS} -fPIC"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	OS="darwin";
@@ -470,10 +471,18 @@ collect_modules() {
 				done
 				objects="${objects} ${i}.so";
 
-				echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+				if test "${suffix}" = "c++"; then
+					echo -e "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} -c ${subobjects} -o ${i}.o\n";
+				else
+					echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} -c ${subobjects} -o ${i}.o\n";
+				fi
 
 				if test -z "$(grep ${i}.so\:\  ${template})"; then
-					echo -e "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n"
+					if test "${suffix}" = "c++"; then
+						echo -e "${i}.so: ${i}.o\n	\${LXXLD} ${i}.o -o ${i}.so\n";
+					else
+						echo -e "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n";
+					fi
 				fi
 			fi
 		done

@@ -321,7 +321,10 @@ const struct smodule **coremodules[MAXMODULES];
 #if defined(_EINIT_MODULE)
 
 struct lmodule *thismodule;
+
+#ifndef __cplusplus
 const struct smodule *self;
+#endif
 
 #define module_register(smod) const struct smodule *self = &smod
 #define module_init(lmod) thismodule = lmod;
