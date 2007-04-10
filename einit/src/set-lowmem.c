@@ -340,33 +340,43 @@ int inset (const void **haystack, const void *needle, int32_t esize) {
 
 #ifdef POSIXREGEX
 #include <regex.h>
+#endif
 
-int inset_pattern (const void **haystack, const void *needle, int32_t esize) {
+char ** inset_pattern (const void **haystack, const void *needle, int32_t esize) {
+#ifdef POSIXREGEX
  regex_t pattern;
+#endif
  int c = 0;
+ char **retval = NULL;
 
  if (!haystack) return 0;
  if (!haystack[0]) return 0;
  if (!needle) return 0;
 
  if (esize == SET_TYPE_STRING) {
+#ifdef POSIXREGEX
   if (eregcomp (&pattern, needle)) {
+#endif
    for (; haystack[c] != NULL; c++)
-    if (strmatch (haystack[c], needle)) return 1;
+    if (strmatch (haystack[c], needle))
+     retval = (char **)setadd ((void **)retval, haystack[c], SET_TYPE_STRING);
+#ifdef POSIXREGEX
   } else {
    for (; haystack[c] != NULL; c++)
-    if (!regexec (&pattern, haystack[c], 0, NULL, 0)) return 1;
+    if (!regexec (&pattern, haystack[c], 0, NULL, 0))
+     retval = (char **)setadd ((void **)retval, haystack[c], SET_TYPE_STRING);
 
    regfree (&pattern);
   }
+#endif
  } else if (esize == -1) {
   for (; haystack[c] != NULL; c++)
-   if (haystack[c] == needle) return 1;
+   if (haystack[c] == needle)
+    retval = (char **)setadd ((void **)retval, haystack[c], SET_TYPE_STRING);
  }
 
- return 0;
+ return retval;
 }
-#endif
 
 /* some functions to work with string-sets */
 
