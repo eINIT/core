@@ -274,6 +274,24 @@ if test "${COMPILER}" = "gnu"; then
 fi
 echo ${ASM}
 
+echo -n "checking for a C++ compiler... "
+if test -n "$CXX"; then
+	echo "got one! ($CXX)";
+else
+	if test -x "$(which ${CTARGET}-g++-${RCVERSION} 2>/dev/null)"; then CXX="${CTARGET}-g++-${RCVERSION}";
+	elif test -x "$(which ${CTARGET}-g++ 2>/dev/null)"; then CXX="${CTARGET}-g++";
+	elif test -x "$(which ${CTARGET}-cc 2>/dev/null)"; then CXX="${CTARGET}-cc";
+	elif test -x "$(which ${CHOST}-g++-${RCVERSION} 2>/dev/null)"; then CXX="${CHOST}-g++-${RCVERSION}";
+	elif test -x "$(which ${CHOST}-g++ 2>/dev/null)"; then CXX="${CHOST}-g++";
+	elif test -x "$(which ${CHOST}-cc 2>/dev/null)"; then CXX="${CHOST}-cc";
+	elif test -x "$(which g++ 2>/dev/null)"; then CXX=g++;
+	elif test -x "$(which cc 2>/dev/null)"; then CXX=cc; fi;
+	if test -n "$CXX"; then
+		echo "$CXX";
+	else
+		echo "no C++ compiler found, bailing out!"; exit;
+	fi;
+fi
 
 echo "finding absolute include directory..."
 INCLUDE="-I`pwd`/build/headers ${INCLUDE}";
@@ -406,7 +424,15 @@ CLD = \${CC} \${LDFLAGS} ${LIBRARIES}
 LLD = \${CC} \${LDFLAGS} $LLD ${LIBRARIES}
 XLLD = $LLD
 STATIC = $STATIC
-LPA = $LPA" > config.mk
+LPA = $LPA
+
+CXX = $CXX
+CXXC = \${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}
+XXL = $XXL -DISSVN=\${ISSVN}
+CXXLD = \${CXX} \${LDFLAGS}
+CXXLD = \${CXXC} \${LDFLAGS}
+LXXLD = \${CXXC} \${LDFLAGS} $LLD
+" > config.mk
 
 #define moduleprefix _bootstrap_einit_configuration_xml_expat_
 
