@@ -15,19 +15,32 @@ SLOT="0"
 KEYWORDS="-*"
 
 IUSE_EINIT_CORE="module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log"
-IUSE_EINIT_MODULES="feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl linux-sysconf linux-mount linux-process configuration-network feedback-visual-fbsplash"
+IUSE_EINIT_MODULES="feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl linux-sysconf linux-mount linux-process network feedback-visual-fbsplash"
 IUSE_EINIT_EXPERIMENTAL="readahead"
+DEFAULT_MODULES="network"
 
 IUSE="doc static debug nowtf externalise"
 
 for iuse_einit in ${IUSE_EINIT_CORE}; do
-        IUSE="${IUSE} einit_core_${iuse_einit}"
+	if has ${iuse_einit} ${DEFAULT_MODULES}; then
+	        IUSE="${IUSE} +einit_core_${iuse_einit}"
+	else
+	        IUSE="${IUSE} einit_core_${iuse_einit}"
+	fi
 done
 for iuse_einit in ${IUSE_EINIT_MODULES}; do
-        IUSE="${IUSE} einit_modules_${iuse_einit}"
+	if has ${iuse_einit} ${DEFAULT_MODULES}; then
+	        IUSE="${IUSE} +einit_modules_${iuse_einit}"
+	else
+	        IUSE="${IUSE} einit_modules_${iuse_einit}"
+	fi
 done
 for iuse_einit in ${IUSE_EINIT_EXPERIMENTAL}; do
-        IUSE="${IUSE} einit_experimental_${iuse_einit}"
+	if has ${iuse_einit} ${DEFAULT_MODULES}; then
+	        IUSE="${IUSE} +einit_experimental_${iuse_einit}"
+	else
+	        IUSE="${IUSE} einit_experimental_${iuse_einit}"
+	fi
 done
 
 RDEPEND="dev-libs/expat
@@ -49,7 +62,7 @@ warn_about_use_expand() {
 	einfo
 	einfo "USE_EXPAND=\"EINIT_MODULES EINIT_CORE\""
 	einfo "EINIT_CORE=\"module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log\""
-	einfo "EINIT_MODULES=\"feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl linux-sysconf linux-mount linux-process configuration-network feedback-visual-fbsplash\""
+	einfo "EINIT_MODULES=\"feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl linux-sysconf linux-mount linux-process network feedback-visual-fbsplash\""
 	einfo
 	einfo "not specifying this will just build everything, so you're not technically"
 	einfo "\"missing out\" on anything."
