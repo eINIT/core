@@ -35,6 +35,7 @@
    </settings>
    <commands-include>
     <file s="sandbox.xml" />
+    <file s="fstab.xml" />
     <directory s="../../lib/einit/modules-xml" />
     <directory s="../../lib/einit/modules-xml/network" />
     <directory s="../../lib/einit/modules-xml/templates-net" />
@@ -47,6 +48,7 @@
      <file s="local.xml" />
      <file s="fstab.xml" />
      <directory s="/lib/einit/modules-xml" />
+     <directory s="/lib/einit/modules-xml/network" />
      <directory s="/lib/einit/modules-xml/templates-net" />
     </commands-include>
    </else>
