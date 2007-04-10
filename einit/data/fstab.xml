@@ -1,0 +1,5 @@
+<einit prefix="configuration-storage-fstab">
+ <source s="configuration" />
+ <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir -p /dev/shm" options="critical" />
+ <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir -p /dev/pts" options="critical" />
+</einit>
