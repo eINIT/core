@@ -1,5 +1,7 @@
 2007/04/10: mdeininger
  * new core mostly operational.
+ * changed configure script to support modules in C++
+ * added template for C++ module (ipc-dbus)
 
 2007/04/09: mdeininger
  * started on a new more-or-less event-based module logics core
