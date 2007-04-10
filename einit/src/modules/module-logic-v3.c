@@ -2101,17 +2101,15 @@ void mod_examine (char *service) {
 
   if (lm && lm[0]) {
    pthread_t th;
-   char **before = NULL, **after = NULL, **against = NULL;
+   char **before = NULL, **after = NULL;
 
    if (lm[0]->si && (lm[0]->si->before || lm[0]->si->after)) {
     if (task & MOD_ENABLE) {
      before = lm[0]->si->before;
      after = lm[0]->si->after;
-     against = current.enable;
     } else if (task & MOD_DISABLE) {
      before = lm[0]->si->after;
      after = lm[0]->si->before;
-     against = current.disable;
     }
    }
 
@@ -2122,7 +2120,7 @@ void mod_examine (char *service) {
     for (; before[i]; i++) {
      char **d;
      emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)against, before[i], SET_TYPE_STRING))) {
+     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), before[i], SET_TYPE_STRING))) {
       uint32_t y = 0;
       emutex_unlock (&ml_tb_current_mutex);
 
@@ -2142,7 +2140,7 @@ void mod_examine (char *service) {
     for (; after[i]; i++) {
      char **d;
      emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)against, after[i], SET_TYPE_STRING))) {
+     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), after[i], SET_TYPE_STRING))) {
       uint32_t y = 0;
       emutex_unlock (&ml_tb_current_mutex);
 
