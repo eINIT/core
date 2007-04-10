@@ -21,7 +21,6 @@
   <commands-include>
    <directory s="local" />
    <directory s="modules" />
-   <directory s="modules/network" />
   </commands-include>
 
   <settings>
@@ -37,6 +36,7 @@
    <commands-include>
     <file s="sandbox.xml" />
     <directory s="../../lib/einit/modules-xml" />
+    <directory s="../../lib/einit/modules-xml/network" />
     <directory s="../../lib/einit/modules-xml/templates-net" />
    </commands-include>
    <else>
