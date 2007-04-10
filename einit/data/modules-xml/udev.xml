@@ -10,7 +10,7 @@
           touch /dev/.udev_populate;
           udevd --daemon;
 	  mkdir -p /dev/.udev/db/ /dev/.udev/queue/;
-	  udevtrigger; udevsettle --timeout=60
+	  udevtrigger; udevsettle --timeout=60;
           rm /dev/.udev_populate"
   disable="killall -9 udevd"
   restart="yes" />
