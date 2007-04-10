@@ -21,6 +21,7 @@
   <commands-include>
    <directory s="local" />
    <directory s="modules" />
+   <directory s="modules/network" />
   </commands-include>
 
   <settings>
