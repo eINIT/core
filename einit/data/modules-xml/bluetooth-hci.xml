@@ -4,5 +4,6 @@
   provides="bluetooth-hci"
   requires="mount-critical:kern-bluetooth"
   command="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/hcid" />
 </einit>

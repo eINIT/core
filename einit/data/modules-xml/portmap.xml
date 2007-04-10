@@ -4,5 +4,6 @@
   provides="portmap"
   requires="mount-critical"
   command="/sbin/portmap -d"
-  restart="yes" />
+  restart="yes"
+  need-files="/sbin/portmap" />
 </einit>

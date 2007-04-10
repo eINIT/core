@@ -4,5 +4,6 @@
   provides="acpi"
   requires="mount-critical"
   command="/usr/sbin/acpid --foreground"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/acpid" />
 </einit>

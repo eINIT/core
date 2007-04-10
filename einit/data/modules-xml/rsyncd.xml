@@ -4,5 +4,6 @@
   provides="rsyncd"
   requires="net-lo:mount-local"
   command="/usr/bin/rsync --daemon;"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/bin/rsync" />
 </einit>

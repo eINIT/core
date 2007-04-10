@@ -4,5 +4,6 @@
   provides="hal"
   requires="mount-critical:dbus"
   command="/usr/sbin/hald --daemon=no --use-syslog"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/hald" />
 </einit>

@@ -4,5 +4,6 @@
   provides="mysqld"
   requires="mount-local:net-lo"
   command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/mysqld" />
 </einit>

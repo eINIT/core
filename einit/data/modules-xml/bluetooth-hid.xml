@@ -5,5 +5,6 @@
   requires="mount-critical:kern-bluetooth:bluetooth-hci"
   command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
   restart="yes"
-  variables="configuration-bluetooth-hidd/options" />
+  variables="configuration-bluetooth-hidd/options"
+  need-files="/usr/bin/hidd" />
 </einit>

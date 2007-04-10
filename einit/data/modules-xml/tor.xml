@@ -4,5 +4,6 @@
   provides="tor"
   requires="network:mount-critical"
   command="/usr/bin/tor"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/bin/tor" />
 </einit>

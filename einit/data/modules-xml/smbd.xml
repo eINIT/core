@@ -4,5 +4,6 @@
   provides="smbd"
   requires="mount-local:net-lo:nmbd"
   command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/smbd" />
 </einit>

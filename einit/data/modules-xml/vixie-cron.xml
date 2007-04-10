@@ -4,5 +4,6 @@
   provides="cron"
   requires="mount-local:net-lo"
   command="/usr/sbin/cron -n"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/cron" />
 </einit>

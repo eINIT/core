@@ -3,5 +3,6 @@
   name="HP Linux Imaging and Printing System"
   provides="hplip"
   command="python /usr/share/hplip/hpssd.py -x"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/share/hplip/hpssd.py" />
 </einit>

@@ -4,5 +4,6 @@
   provides="syslog-ng:logger"
   requires="mount-critical"
   command="/usr/sbin/syslog-ng -F"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/syslog-ng" />
 </einit>

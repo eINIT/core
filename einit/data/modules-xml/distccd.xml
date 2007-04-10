@@ -5,5 +5,6 @@
   requires="mount-critical:net-lo"
   command="/usr/bin/distccd --daemon --no-detach -N ${configuration_distccd_nice} --pid-file /var/run/distccd/distccd.pid --port ${configuration_distccd_port} --allow ${configuration_distccd_allow} --listen ${configuration_distccd_listen}"
   restart="yes"
-  variables="configuration-distccd/.*" />
+  variables="configuration-distccd/.*"
+  need-files="/usr/bin/distccd" />
 </einit>

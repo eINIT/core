@@ -4,5 +4,6 @@
   provides="mpd"
   requires="mount-local"
   command="/usr/bin/mpd --no-create-db --no-daemon"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/bin/mpd" />
 </einit>

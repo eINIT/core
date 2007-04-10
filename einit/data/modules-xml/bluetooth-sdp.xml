@@ -4,5 +4,6 @@
   provides="bluetooth-sdp"
   requires="mount-critical:kern-bluetooth:bluetooth-hci"
   command="/usr/sbin/sdpd -n"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/sdpd" />
 </einit>

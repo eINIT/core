@@ -4,5 +4,6 @@
   provides="metalog:logger"
   requires="mount-critical"
   command="/usr/sbin/metalog"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/metalog" />
 </einit>

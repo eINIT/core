@@ -4,5 +4,6 @@
   provides="apmd"
   requires="mount-critical"
   command="/usr/sbin/apmd"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/apmd" />
 </einit>

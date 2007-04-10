@@ -6,5 +6,6 @@
   command="/usr/sbin/entranced -nodaemon"
   restart="yes"
   DISPLAY=":0.0"
-  HOME="/root" />
+  HOME="/root"
+  need-files="/usr/sbin/entranced" />
 </einit>

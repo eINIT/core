@@ -4,5 +4,6 @@
   provides="powersave"
   requires="mount-critical:hal:acpi"
   command="/usr/sbin/powersaved $([[ -S /var/run/acpid.socket ]] &amp;&amp; echo '-f /var/run/acpid.socket')"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/powersaved" />
 </einit>

@@ -4,5 +4,6 @@
   provides="sshd"
   requires="net-lo:mount-critical"
   command="/usr/sbin/sshd -D"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/sshd" />
 </einit>

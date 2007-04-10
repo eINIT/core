@@ -4,5 +4,6 @@
   provides="syslog:logger"
   requires="mount-critical"
   command="/sbin/syslogd -n"
-  restart="yes" />
+  restart="yes"
+  need-files="/sbin/syslog" />
 </einit>

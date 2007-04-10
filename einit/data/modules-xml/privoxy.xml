@@ -4,5 +4,6 @@
   provides="privoxy"
   requires="network:mount-critical"
   command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/privoxy" />
 </einit>

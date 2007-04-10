@@ -4,5 +4,6 @@
   provides="festival:speechd:tts"
   requires="mount-critical:audio"
   command="/usr/bin/festival --server -b /etc/festival/server.scm"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/bin/festival" />
 </einit>

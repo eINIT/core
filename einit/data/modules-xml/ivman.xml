@@ -7,5 +7,6 @@
   requires="hal"
   pid="/var/run/ivman.pid"
   command="/usr/bin/ivman --system --nofork"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/bin/ivman" />
 </einit>

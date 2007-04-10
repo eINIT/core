@@ -4,5 +4,6 @@
   provides="atieventsd"
   requires="acpi"
   command="/opt/ati/sbin/atieventsd --nodaemon"
-  restart="yes" />
+  restart="yes"
+  need-files="/opt/ati/sbin/atieventsd" />
 </einit>

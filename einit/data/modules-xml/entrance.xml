@@ -6,5 +6,6 @@
   command="/usr/bin/entrance"
   restart="yes"
   DISPLAY=":0.0"
-  HOME="/root" />
+  HOME="/root"
+  need-files="/usr/bin/entrance" />
 </einit>

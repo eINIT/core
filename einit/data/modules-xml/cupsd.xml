@@ -5,5 +5,6 @@
   requires="net-lo:mount-critical"
   prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups; /bin/true"
   command="/usr/sbin/cupsd -F"
-  restart="yes" />
+  restart="yes"
+  need-files="/usr/sbin/cupsd" />
 </einit>
