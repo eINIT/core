@@ -1039,19 +1039,21 @@ int mod_gettask (char * service);
 pthread_mutex_t
  ml_examine_mutex = PTHREAD_MUTEX_INITIALIZER,
  ml_chain_examine = PTHREAD_MUTEX_INITIALIZER,
- ml_workthreads_mutex = PTHREAD_MUTEX_INITIALIZER;
+ ml_workthreads_mutex = PTHREAD_MUTEX_INITIALIZER,
+ ml_commits_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 struct stree *module_logics_chain_examine_reverse = NULL;
 char **currently_provided;
 signed char mod_flatten_current_tb_group(char *serv, char task);
 
-uint32_t workthreads = 0;
+uint32_t ml_workthreads = 0;
+uint32_t ml_commits = 0;
 
 void mod_workthreads_dec () {
  emutex_lock (&ml_workthreads_mutex);
- workthreads--;
- if (!workthreads) {
+ ml_workthreads--;
+ if (!ml_workthreads) {
   emutex_unlock (&ml_workthreads_mutex);
 
 #ifdef _POSIX_PRIORITY_SCHEDULING
@@ -1065,8 +1067,58 @@ void mod_workthreads_dec () {
 }
 
 void mod_workthreads_inc () {
+ emutex_lock (&ml_commits_mutex);
+ ml_workthreads++;
+ emutex_unlock (&ml_commits_mutex);
+}
+
+void mod_commits_dec () {
+ char clean_broken = 0;
+ emutex_lock (&ml_unresolved_mutex);
+ if (broken_services) {
+  struct einit_event ee = evstaticinit(EVENT_FEEDBACK_BROKEN_SERVICES);
+  ee.set = (void **)broken_services;
+
+  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (ee);
+
+  free (broken_services);
+  broken_services = NULL;
+ }
+ if (unresolved_services) {
+  struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNRESOLVED_SERVICES);
+  ee.set = (void **)unresolved_services;
+
+  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  evstaticdestroy (ee);
+
+  free (unresolved_services);
+  unresolved_services = NULL;
+ }
+ emutex_unlock (&ml_unresolved_mutex);
+
+ emutex_lock (&ml_commits_mutex);
+ ml_commits--;
+ clean_broken = (ml_commits == 0);
+ emutex_unlock (&ml_commits_mutex);
+
+ if (clean_broken) {
+  emutex_lock (&ml_unresolved_mutex);
+  if (unresolved_services) {
+   free (unresolved_services);
+   unresolved_services = NULL;
+  }
+  if (broken_services) {
+   free (broken_services);
+   broken_services = NULL;
+  }
+  emutex_unlock (&ml_unresolved_mutex);
+ }
+}
+
+void mod_commits_inc () {
  emutex_lock (&ml_workthreads_mutex);
- workthreads++;
+ ml_commits++;
  emutex_unlock (&ml_workthreads_mutex);
 }
 
@@ -2177,6 +2229,8 @@ void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
  char spawns = 0;
 
+ mod_commits_inc();
+
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
@@ -2238,13 +2292,14 @@ void mod_commit_and_wait (char **en, char **dis) {
   if (remainder <= 0) {
    notice (5, "plan finished.");
 
+   mod_commits_dec();
    return;
   }
 
   notice (4, "still need %i services\n", remainder);
 
   emutex_lock (&ml_workthreads_mutex);
-  spawn = workthreads == 0;
+  spawn = ml_workthreads == 0;
   emutex_unlock (&ml_workthreads_mutex);
 
   if (spawn) {
@@ -2252,16 +2307,19 @@ void mod_commit_and_wait (char **en, char **dis) {
    if (spawns > MAX_SPAWNS) {
     notice (1, "too many respawns: giving up on plan requirements.");
 
+    mod_commits_dec();
     return;
    }
    mod_spawn_workthreads ();
    spawns++;
   } else {
-   notice (4, "%i workthreads left\n", workthreads);
+   notice (4, "%i workthreads left\n", ml_workthreads);
   }
 
   pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
  } while (remainder);
+
+ mod_commits_dec();
 }
 
 /* end new functions */
