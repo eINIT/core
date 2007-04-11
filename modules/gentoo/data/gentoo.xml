@@ -20,7 +20,7 @@
      you also shouldn't set "exclusive" to true. just... don't do it, it'll
      override all the modes that are defined in the xml configuration with
      gentoo's runlevel data which means lots of important things will be
-     missing - like mount/critical... -->
+     missing - like mount-critical... -->
     <runlevels path="/etc/runlevels" exclusive="false" />
     <parse-env.d b="true" />
     <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
@@ -53,11 +53,11 @@
  </configuration>
 
  <services>
-  <alias id="localmount" s="mount/local" />
-  <alias id="checkroot" s="mount/system" />
-  <alias id="checkfs" s="mount/local" />
-  <alias id="nfsmount" s="mount/remote" />
-  <alias id="netmount" s="mount/remote" />
+  <alias id="localmount" s="mount-local" />
+  <alias id="checkroot" s="mount-system" />
+  <alias id="checkfs" s="mount-local" />
+  <alias id="nfsmount" s="mount-remote" />
+  <alias id="netmount" s="mount-remote" />
   <alias id="lm_sensors" s="sensors" />
   <alias id="alsasound" s="alsa" />
   <alias id="logger" s="syslog" />

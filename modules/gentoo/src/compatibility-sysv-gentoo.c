@@ -53,7 +53,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/exec.h>
 #include <einit-modules/parse-sh.h>
 
-#include "../gentoo-baselayout-1.13.0-alpha13/rc.h"
+#include <rc.h>
+#include <einfo.h>
 
 #ifdef POSIXREGEX
 #include <regex.h>
@@ -614,7 +615,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 
  if (dir = eopendir (init_d_path)) {
 // load gentoo's default dependency information using librc.so's functions
-  rc_depinfo_t *gentoo_deptree = rc_load_deptree(NULL);
+  rc_depinfo_t *gentoo_deptree = rc_load_deptree();
   if (!gentoo_deptree) {
    fputs (" >> unable to load gentoo's dependency information.\n", stderr);
   }
@@ -663,27 +664,27 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     modinfo->name = estrdup (tmpx);
     modinfo->rid = estrdup(nrid);
 
-    if (depinfo = get_depinfo (gentoo_deptree, de->d_name)) {
+    if (depinfo = rc_get_depinfo (gentoo_deptree, de->d_name)) {
      rc_deptype_t *dependencies;
-     if (dependencies = get_deptype(depinfo, "ineed")) {
+     if (dependencies = rc_get_deptype(depinfo, "ineed")) {
       char *serv = estrdup (dependencies->services);
       ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
       modinfo->si.requires = str2set (' ', serv);
       free (serv);
      }
-     if (dependencies = get_deptype(depinfo, "iprovide")) {
+     if (dependencies = rc_get_deptype(depinfo, "iprovide")) {
       char *serv = estrdup (dependencies->services);
       ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
       modinfo->si.provides = str2set (' ', serv);
       free (serv);
      }
-     if (dependencies = get_deptype(depinfo, "ibefore")) {
+     if (dependencies = rc_get_deptype(depinfo, "ibefore")) {
       char *serv = estrdup (dependencies->services);
       ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
       modinfo->si.before = str2set (' ', serv);
       free (serv);
      }
-     if (dependencies = get_deptype(depinfo, "after")) {
+     if (dependencies = rc_get_deptype(depinfo, "after")) {
       char *serv = estrdup (dependencies->services);
       ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
       char **tmp = str2set (' ', serv);
@@ -695,7 +696,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
       }
       free (serv);
      }
-     if (dependencies = get_deptype(depinfo, "iuse")) {
+     if (dependencies = rc_get_deptype(depinfo, "iuse")) {
       char *serv = estrdup (dependencies->services);
       ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
       char **tmp = str2set (' ', serv);
@@ -707,7 +708,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
       }
       free (serv);
      }
-/*     if (dependencies = get_deptype(depinfo, "iafter")) {
+/*     if (dependencies = rc_get_deptype(depinfo, "iafter")) {
       dependencies->services;
      }*/
     } else {
