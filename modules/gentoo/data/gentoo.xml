@@ -67,5 +67,6 @@
 
   <transform id="gentoo-net" module-id="gentoo-.*" in="net" out="network" strip-from="provides" />
   <transform id="gentoo-xdm" module-id="gentoo-xdm" in="xdm" out="xdm" strip-from="after" />
+  <transform id="gentoo-mount" module-id="gentoo-.*" in="localmount" out="mount-local" strip-from="provides" />
  </services>
 </einit>
