@@ -103,6 +103,7 @@
    <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin" />
    <global id="TERM" s="linux" />
    <global id="COLDPLUG" s="no" />
+   <global id="DEVICE_TARBALL" s="no" />
    <safe PATH="/bin:/sbin:/usr/bin:/usr/sbin" TERM="dumb" />
   </environment>
 
