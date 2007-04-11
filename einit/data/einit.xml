@@ -490,7 +490,7 @@
  </services>
 
  <mode id="boot">
-  <enable services="sysconf:mount-local:hostname:tty:keyboard:ipc:logger:network:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
+  <enable services="sysconf:mount-local:hostname:tty:keyboard:ipc:logger:net-lo:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
   <ttys s="tty1-regular" />
   <auto-add-feedback b="true" />
  </mode>
