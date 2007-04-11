@@ -1,3 +1,7 @@
+2007/04/11: mdeininger
+ * a number of minor fixes
+ * the new core seems to be doing quite well
+
 2007/04/10: mdeininger
  * new core mostly operational.
  * changed configure script to support modules in C++
