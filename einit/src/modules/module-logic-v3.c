@@ -306,8 +306,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      if ((st = streefind (module_logics_service_list, plan->changes.enable[y], TREE_FIND_FIRST))) {
       struct lmodule **lmod = st->value;
 
-      if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & EINIT_MOD_FEEDBACK)
+      if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & EINIT_MOD_FEEDBACK) {
+       emutex_unlock (&ml_service_list_mutex);
        goto have_feedback;
+      }
      }
 
      emutex_unlock (&ml_service_list_mutex);
