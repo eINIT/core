@@ -123,6 +123,25 @@ int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *);
 
 char svcdir_init_done = 0;
 
+void gentoo_fixname (char *name) {
+ ssize_t i = 0;
+ for (; name[i]; i++) {
+  if (name[i] == '.') name[i] = '-';
+ }
+}
+
+void gentoo_fixname_set (char **set) {
+ uint32_t i = 0;
+ char xd = 0;
+
+ for (; set[i]; i++) {
+  gentoo_fixname(set[i]);
+  if (strmatch (set[i], "*")) {
+   set[i] = estrdup (".*");
+  }
+ }
+}
+
 /* functions that module tend to need */
 int _compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
@@ -571,21 +590,6 @@ int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
  free (this->param);
 }
 #endif
-}
-
-void gentoo_fixname (char *name) {
- ssize_t i = 0;
- for (; name[i]; i++) {
-  if (name[i] == '.') name[i] = '-';
- }
-}
-
-void gentoo_fixname_set (char **set) {
- uint32_t i = 0;
-
- for (; set[i]; i++) {
-  gentoo_fixname(set[i]);
- }
 }
 
 char **gentoo_resolve_dependency_type (rc_depinfo_t *depinfo, char *type, char **current) {

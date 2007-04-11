@@ -15,13 +15,9 @@
             pattern-allow=".*"
             pattern-disallow="(.*\.sh|clock|.*mount|checkroot|bootmisc)" />
 <!-- use this to make einit parse gentoo's runlevels as einit modes.
-     NOTE: until someone defines a list with gentoo<>einit aliases, you'll
-      get lots of unknown dependencies
-     you also shouldn't set "exclusive" to true. just... don't do it, it'll
-     override all the modes that are defined in the xml configuration with
-     gentoo's runlevel data which means lots of important things will be
-     missing - like mount-critical... -->
-    <runlevels path="/etc/runlevels" exclusive="false" />
+     NOTE: some aliases/transformations are still missing...
+     NOTE.2: it's broken atm... somewhat -->
+<!--    <runlevels path="/etc/runlevels" exclusive="false" /> -->
     <parse-env.d b="true" />
     <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
 
@@ -67,6 +63,6 @@
 
   <transform id="gentoo-net" module-id="gentoo-.*" in="net" out="network" strip-from="provides" />
   <transform id="gentoo-xdm" module-id="gentoo-xdm" in="xdm" out="xdm" strip-from="after" />
-  <transform id="gentoo-mount" module-id="gentoo-.*" in="localmount" out="mount-local" strip-from="provides" />
+  <transform id="gentoo-mount" module-id="gentoo-.*" in="localmount" out="mount-local" />
  </services>
 </einit>
