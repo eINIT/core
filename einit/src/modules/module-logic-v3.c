@@ -1931,7 +1931,7 @@ char mod_examine_group (char *groupname) {
  if (gd->members) {
   int task = mod_gettask (groupname);
 
-  notice (2, "group %s: examining members", groupname);
+//  notice (2, "group %s: examining members", groupname);
 
   ssize_t x = 0, mem = setcount ((const void **)gd->members), failed = 0, on = 0;
   struct lmodule **providers = NULL;
@@ -2012,7 +2012,7 @@ char mod_examine_group (char *groupname) {
    }
 
    if (group_ok) {
-    notice (2, "marking group %s up", groupname);
+//    notice (2, "marking group %s up", groupname);
 
     service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, groupname);
 
@@ -2078,7 +2078,7 @@ void mod_examine (char *service) {
   return;
  } else if (mod_isdeferred (service)) {
   mod_pre_examine(service);
-  notice (2, "service %s still marked as deferred", service);
+//  notice (2, "service %s still marked as deferred", service);
 
   return;
  } else if (mod_examine_group (service)) {
@@ -2296,7 +2296,7 @@ void mod_commit_and_wait (char **en, char **dis) {
    return;
   }
 
-  notice (4, "still need %i services\n", remainder);
+//  notice (4, "still need %i services\n", remainder);
 
   emutex_lock (&ml_workthreads_mutex);
   spawn = ml_workthreads == 0;
@@ -2312,9 +2312,9 @@ void mod_commit_and_wait (char **en, char **dis) {
    }
    mod_spawn_workthreads ();
    spawns++;
-  } else {
+  }/* else {
    notice (4, "%i workthreads left\n", ml_workthreads);
-  }
+  }*/
 
   pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
  } while (remainder);
