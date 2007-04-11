@@ -4,14 +4,34 @@
   provides="mount-system"
   requires="sysfs:proc"
   enable="pexec-options dont-close-stdin no-pipe;
-          mount -n -t tmpfs none /dev;
-	  mknod -m 600 /dev/console c 5 1;
-	  mknod -m 666 /dev/null c 1 3;
-          touch /dev/.udev_populate;
+	  mount -n -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
+          [ ! -c /dev/console ] &amp;&amp; mknod /dev/console c 5 1;
+          [ ! -c /dev/tty1 ] &amp;&amp; mknod /dev/tty1 c 4 1;
+          [ ! -c /dev/null ] &amp;&amp; mknod /dev/null c 1 3;
+          ln -snf /proc/self/fd /dev/fd;
+          ln -snf fd/0 /dev/stdin;
+          ln -snf fd/1 /dev/stdout;
+          ln -snf fd/2 /dev/stderr;
+          [ -e /proc/kcore ] &amp;&amp; ln -snf /proc/kcore /dev/core;
+          mkdir -p /dev/pts /dev/shm;
+          if [ -e /proc/sys/kernel/hotplug ]; then
+           if [ $(uname -r | cut -f 3 -d . | cut -f 1 -d -) -gt 14 ]; then
+            echo &quot;&quot; > /proc/sys/kernel/hotplug;
+           else
+            echo &quot;/sbin/udevsend&quot; > /proc/sys/kernel/hotplug;
+           fi;
+          fi;
           udevd --daemon;
-	  mkdir -p /dev/.udev/db/ /dev/.udev/queue/;
-	  udevtrigger; udevsettle --timeout=60;
-          rm /dev/.udev_populate"
+          touch /dev/.udev_populate;
+          if [ $(uname -r | cut -f 3 -d . | cut -f 1 -d -) -gt 14 ]; then
+           local opts=;
+           [ &quot;${RC_COLDPLUG}&quot; != &quot;yes&quot; ] &amp;&amp; opts=&quot;--attr-match=dev&quot;;
+           udevtrigger ${opts};
+          else
+           udevstart;
+          fi;
+          udevsettle --timeout=60;
+          rm -f /dev/.udev_populate"
   disable="killall -9 udevd"
   restart="yes" />
 </einit>
