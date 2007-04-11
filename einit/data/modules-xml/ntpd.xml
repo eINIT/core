@@ -2,6 +2,7 @@
  <daemon id="daemon-ntpd"
   name="ntpd"
   provides="ntpd"
+  after="net-.*"
   requires="mount-critical:net-lo"
   command="ntpd -n"
   restart="yes" />
