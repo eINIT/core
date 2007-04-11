@@ -16,7 +16,7 @@ KEYWORDS="-*"
 IUSE="doc static"
 
 RDEPEND=">=sys-apps/einit-0.21.0
-         >=sys-apps/baselayout-2.0.0
+         >=sys-apps/baselayout-2.0.0_alpha1
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
 DEPEND="${RDEPEND}
 	>=sys-apps/portage-2.1.2-r11"
