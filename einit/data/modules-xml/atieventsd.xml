@@ -2,7 +2,7 @@
  <daemon id="daemon-atieventsd"
   name="atieventsd - ATI external events daemon"
   provides="atieventsd"
-  requires="acpi"
+  requires="acpid"
   command="/opt/ati/sbin/atieventsd --nodaemon"
   restart="yes"
   need-files="/opt/ati/sbin/atieventsd" />
