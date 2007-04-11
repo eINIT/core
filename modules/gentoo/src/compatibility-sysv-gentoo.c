@@ -573,6 +573,77 @@ int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
 #endif
 }
 
+void gentoo_fixname (char *name) {
+ ssize_t i = 0;
+ for (; name[i]; i++) {
+  if (name[i] == '.') name[i] = '-';
+ }
+}
+
+void gentoo_fixname_set (char **set) {
+ uint32_t i = 0;
+
+ for (; set[i]; i++) {
+  gentoo_fixname(set[i]);
+ }
+}
+
+char **gentoo_resolve_dependency_type (rc_depinfo_t *depinfo, char *type, char **current) {
+ rc_deptype_t *dependencies;
+ char **serv = NULL;
+
+ if ((dependencies = rc_get_deptype(depinfo, type)) && dependencies->services) {
+  serv = (char **)setdup ((const void **)dependencies->services, SET_TYPE_STRING);
+//  eprintf (stderr, "deps: %s %s\n", set2str (' ', dependencies->services), set2str (' ', serv));
+ }
+
+ if (current) {
+  if (serv) {
+   serv = (char **)setcombine ((void **)serv, (void **)current, SET_TYPE_STRING);
+   free (current);
+  } else {
+   return current;
+  }
+ }
+
+ return serv;
+}
+
+void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptree, char *name) {
+ rc_depinfo_t *depinfo;
+
+ memset (&module->si, 0, sizeof(module->si));
+/* module->si.requires = NULL;
+ module->si.provides = NULL;
+ module->si.before = NULL;
+ module->si.after = NULL;*/
+
+ if (depinfo = rc_get_depinfo (gentoo_deptree, name)) {
+  module->si.requires = gentoo_resolve_dependency_type(depinfo, "ineed", module->si.requires);
+  module->si.provides = gentoo_resolve_dependency_type(depinfo, "iprovide", module->si.provides);
+  module->si.before = gentoo_resolve_dependency_type(depinfo, "ibefore", module->si.before);
+  module->si.after = gentoo_resolve_dependency_type(depinfo, "after", module->si.after);
+  module->si.after = gentoo_resolve_dependency_type(depinfo, "iuse", module->si.after);
+
+/*  if (dependencies = rc_get_deptype(depinfo, "iafter")) {
+   dependencies->services;
+  }*/
+ } else {
+  fprintf (stderr, " >> no dependency information for service \"%s\".\n", name);
+ }
+
+// modinfo->si.after = str2set (' ', serv);
+
+ module->si.provides = (char **)setadd ((void **)module->si.provides, (void *)name, SET_TYPE_STRING);
+ module->si.requires = (char **)setadd ((void **)module->si.requires, (void *)"utmp", SET_TYPE_STRING);
+ module->si.requires = (char **)setadd ((void **)module->si.requires, (void *)"initctl", SET_TYPE_STRING);
+
+ if (module->si.requires) gentoo_fixname_set (module->si.requires);
+ if (module->si.provides) gentoo_fixname_set (module->si.provides);
+ if (module->si.before) gentoo_fixname_set (module->si.before);
+ if (module->si.after) gentoo_fixname_set (module->si.after);
+}
+
 int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  DIR *dir;
  struct dirent *de;
@@ -625,7 +696,6 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 #endif
   while (de = ereaddir (dir)) {
    char doop = 1;
-   rc_depinfo_t *depinfo;
 
 //   puts (de->d_name);
 
@@ -664,65 +734,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     modinfo->name = estrdup (tmpx);
     modinfo->rid = estrdup(nrid);
 
-    if (depinfo = rc_get_depinfo (gentoo_deptree, de->d_name)) {
-     rc_deptype_t *dependencies;
-     if (dependencies = rc_get_deptype(depinfo, "ineed")) {
-      char *serv = estrdup (dependencies->services);
-      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-      modinfo->si.requires = str2set (' ', serv);
-      free (serv);
-     }
-     if (dependencies = rc_get_deptype(depinfo, "iprovide")) {
-      char *serv = estrdup (dependencies->services);
-      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-      modinfo->si.provides = str2set (' ', serv);
-      free (serv);
-     }
-     if (dependencies = rc_get_deptype(depinfo, "ibefore")) {
-      char *serv = estrdup (dependencies->services);
-      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-      modinfo->si.before = str2set (' ', serv);
-      free (serv);
-     }
-     if (dependencies = rc_get_deptype(depinfo, "after")) {
-      char *serv = estrdup (dependencies->services);
-      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-      char **tmp = str2set (' ', serv);
-      if (tmp) {
-       char **bef = modinfo->si.after;
-       modinfo->si.after = (char **)setcombine((void **)bef, (void **)tmp, SET_TYPE_STRING);
-       if (bef) free (bef);
-       free (tmp);
-      }
-      free (serv);
-     }
-     if (dependencies = rc_get_deptype(depinfo, "iuse")) {
-      char *serv = estrdup (dependencies->services);
-      ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-      char **tmp = str2set (' ', serv);
-      if (tmp) {
-       char **bef = modinfo->si.after;
-       modinfo->si.after = (char **)setcombine((void **)bef, (void **)tmp, SET_TYPE_STRING);
-       if (bef) free (bef);
-       free (tmp);
-      }
-      free (serv);
-     }
-/*     if (dependencies = rc_get_deptype(depinfo, "iafter")) {
-      dependencies->services;
-     }*/
-    } else {
-     fprintf (stderr, " >> no dependency information for service \"%s\".\n", de->d_name);
-    }
-
-    char *serv = estrdup (nrid + 7);
-    ssize_t i = 0; for (; serv[i]; i++) { if (serv[i] == '.') serv[i] = '-'; }
-    modinfo->si.after = str2set (' ', serv);
-    modinfo->si.provides = (char **)setadd ((void **)modinfo->si.provides, (void *)serv, SET_TYPE_STRING);
-    free (serv);
-
-    modinfo->si.requires = (char **)setadd ((void **)modinfo->si.requires, (void *)"utmp", SET_TYPE_STRING);
-    modinfo->si.requires = (char **)setadd ((void **)modinfo->si.requires, (void *)"initctl", SET_TYPE_STRING);
+    gentoo_add_dependencies (modinfo, gentoo_deptree, de->d_name);
 
     struct lmodule *lm = modchain;
     while (lm) {
