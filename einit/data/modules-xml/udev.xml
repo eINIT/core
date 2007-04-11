@@ -3,7 +3,7 @@
   name="udev - dynamic device management"
   provides="mount-system"
   requires="sysfs:proc"
-  enable="pexec-options dont-close-stdin no-pipe;
+  enable="pexec-options dont-close-stdin;
 	  echo &quot;feedback|notice|Mounting /dev for udev&quot;;
 	  mount -n -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
 	  echo &quot;feedback|notice|Seeding /dev with needed nodes&quot;;
