@@ -240,32 +240,31 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
   status_update (fb);
 
   if (task & MOD_CUSTOM) {
-   if (module->custom) {
-    module->status = module->custom(module->param, custom_command, fb);
-   } else if (strmatch (custom_command, "zap")) {
+   if (strmatch (custom_command, "zap")) {
+    module->status = "module ZAP'd.";
     module->status = STATUS_IDLE;
-    fb->status = STATUS_OK | STATUS_IDLE;
+   } else if (module->custom) {
+    module->status = module->custom(module->param, custom_command, fb);
    } else {
-    fb->status = STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
+    module->status = (module->status & (STATUS_ENABLED | STATUS_DISABLED)) | STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
    }
   } else if (task & MOD_ENABLE) {
     ret = module->enable (module->param, fb);
     if (ret & STATUS_OK) {
-     module->status = STATUS_ENABLED;
-     fb->status = STATUS_OK | STATUS_ENABLED;
+     module->status = STATUS_OK | STATUS_ENABLED;
     } else {
-     fb->status = STATUS_FAIL;
+     module->status = STATUS_FAIL | STATUS_DISABLED;
     }
   } else if (task & MOD_DISABLE) {
     ret = module->disable (module->param, fb);
     if (ret & STATUS_OK) {
-     module->status = STATUS_DISABLED;
-     fb->status = STATUS_OK | STATUS_DISABLED;
+     module->status = STATUS_OK | STATUS_DISABLED;
     } else {
-     fb->status = STATUS_FAIL;
+     module->status = STATUS_FAIL | STATUS_ENABLED;
     }
   }
 
+  fb->status = module->status;
   module->fbseq = fb->integer + 1;
 
   status_update (fb);

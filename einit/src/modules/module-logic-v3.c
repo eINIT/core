@@ -52,8 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sched.h>
 #endif
 
-#define MAX_SPAWNS 10
-
 int _einit_module_logic_v3_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
@@ -77,6 +75,8 @@ const struct smodule _einit_module_logic_v3_self = {
 module_register(_einit_module_logic_v3_self);
 
 #endif
+
+char shutting_down = 0;
 
 void module_logic_ipc_event_handler (struct einit_event *);
 void module_logic_einit_event_handler (struct einit_event *);
@@ -264,8 +264,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **critical = str2set (':', cfg_getstring ("enable/critical", mode));
   char *strng = cfg_getstring ("feedback/auto-add", mode);
 
-  if (strng)
+  if ((strng = cfg_getstring ("feedback/auto-add", mode)))
    auto_add_feedback = parse_boolean(strng);
+  if ((strng = cfg_getstring ("options/shutdown", mode)) && parse_boolean(strng)) {
+   plan->options |= MP_OPTION_SHUTDOWN;
+  }
 
   if (!enable)
    enable  = str2set (':', cfg_getstring ("enable/mod", mode));
@@ -423,6 +426,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
 
  if (!plan) return 0;
+
+ if (plan->options & MP_OPTION_SHUTDOWN)
+  shutting_down = 1;
 
 // do some extra work if the plan was derived from a mode
  if (plan->mode) {
@@ -639,13 +645,13 @@ int mod_switchmode (char *mode) {
  struct mloadplan *plan = NULL;
 
  if (!cur) {
-  notice (1, "scheduler: scheduled mode not defined, aborting");
+  notice (1, "module-logic-v3: scheduled mode \"%s\" not defined, aborting", mode);
   return -1;
  }
 
  plan = mod_plan (NULL, NULL, 0, cur);
  if (!plan) {
-  notice (1, "scheduler: scheduled mode defined but nothing to be done");
+  notice (1, "module-logic-v3: scheduled mode \"%s\" defined but nothing to be done", mode);
  } else {
   pthread_t th;
   mod_plan_commit (plan);
@@ -1048,6 +1054,8 @@ struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 struct stree *module_logics_chain_examine_reverse = NULL;
 char **currently_provided;
 signed char mod_flatten_current_tb_group(char *serv, char task);
+void mod_spawn_workthreads ();
+char mod_isprovided(char *service);
 
 uint32_t ml_workthreads = 0;
 uint32_t ml_commits = 0;
@@ -1055,8 +1063,35 @@ uint32_t ml_commits = 0;
 void mod_workthreads_dec () {
  emutex_lock (&ml_workthreads_mutex);
  ml_workthreads--;
+
+// eprintf (stderr, "workthreads: %i\n", ml_workthreads);
+
  if (!ml_workthreads) {
+  char spawn = 0;
+  uint32_t i = 0;
   emutex_unlock (&ml_workthreads_mutex);
+
+  emutex_lock (&ml_tb_current_mutex);
+  if (current.enable) {
+   for (i = 0; current.enable[i]; i++) {
+    if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i])) {
+     spawn = 1;
+     break;
+    }
+   }
+  }
+  if (!spawn && current.disable) {
+   for (i = 0; current.disable[i]; i++) {
+    if (mod_isprovided (current.disable[i]) && !mod_isbroken(current.disable[i])) {
+     spawn = 1;
+     break;
+    }
+   }
+  }
+  emutex_unlock (&ml_tb_current_mutex);
+
+  if (spawn)
+   mod_spawn_workthreads ();
 
 #ifdef _POSIX_PRIORITY_SCHEDULING
   sched_yield();
@@ -1069,9 +1104,9 @@ void mod_workthreads_dec () {
 }
 
 void mod_workthreads_inc () {
- emutex_lock (&ml_commits_mutex);
+ emutex_lock (&ml_workthreads_mutex);
  ml_workthreads++;
- emutex_unlock (&ml_commits_mutex);
+ emutex_unlock (&ml_workthreads_mutex);
 }
 
 void mod_commits_dec () {
@@ -1119,9 +1154,18 @@ void mod_commits_dec () {
 }
 
 void mod_commits_inc () {
- emutex_lock (&ml_workthreads_mutex);
+ char spawn = 0;
+
+ emutex_lock (&ml_commits_mutex);
  ml_commits++;
+ emutex_unlock (&ml_commits_mutex);
+
+ emutex_lock (&ml_workthreads_mutex);
+ spawn = (ml_workthreads == 0);
  emutex_unlock (&ml_workthreads_mutex);
+
+ if (spawn)
+  mod_spawn_workthreads ();
 }
 
 void mod_defer_until (char *service, char *after) {
@@ -1528,7 +1572,7 @@ void mod_flatten_current_tb () {
 
     mod_mark (current.enable[i], MARK_UNRESOLVED);
    } else {
-    if (t != 0) {
+    if (t) {
      goto repeat_ena;
     }
    }
@@ -1552,7 +1596,7 @@ void mod_flatten_current_tb () {
 
     mod_mark (current.disable[i], MARK_UNRESOLVED);
    } else {
-    if (t != 0) {
+    if (t) {
      goto repeat_disa;
     }
    }
@@ -1566,7 +1610,10 @@ void mod_examine_module (struct lmodule *module) {
  if (!(module->status & STATUS_WORKING)) {
   if (module->si && module->si->provides) {
    uint32_t i = 0;
+
    if (module->status & STATUS_ENABLED) {
+//    eprintf (stderr, " ** service enabled, module=%s...\n", module->module->rid);
+
     emutex_lock (&ml_tb_current_mutex);
     current.enable = (char **)setslice_nc ((void **)current.enable, (const void **)module->si->provides, SET_TYPE_STRING);
     emutex_unlock (&ml_tb_current_mutex);
@@ -1581,6 +1628,8 @@ void mod_examine_module (struct lmodule *module) {
 
     pthread_cond_broadcast (&ml_cond_service_update);
    } else if ((module->status & STATUS_DISABLED) || (module->status == STATUS_IDLE)) {
+//    eputs ("service disabled...\n", stderr);
+
     emutex_lock (&ml_tb_current_mutex);
     current.disable = (char **)setslice_nc ((void **)current.disable, (const void **)module->si->provides, SET_TYPE_STRING);
     emutex_unlock (&ml_tb_current_mutex);
@@ -1783,7 +1832,7 @@ void mod_apply_enable (struct stree *des) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((lm[0]->status & STATUS_ENABLED) || mod_enable_requirements (current)) {
+    if ((current->status & STATUS_ENABLED) || mod_enable_requirements (current)) {
      mod_workthreads_dec();
      return;
     }
@@ -1791,7 +1840,7 @@ void mod_apply_enable (struct stree *des) {
     mod (MOD_ENABLE, current, NULL);
 
 /* check module status or return value to find out if it's appropriate for the task */
-    if (lm[0]->status & STATUS_ENABLED) {
+    if (current->status & STATUS_ENABLED) {
      mod_workthreads_dec();
      return;
     }
@@ -1842,17 +1891,19 @@ void mod_apply_disable (struct stree *des) {
 
   if (lm && lm[0]) {
    struct lmodule *first = lm[0];
-   int any_ok = 0;
+   char any_ok = 0, failures = 0;
 
    do {
     struct lmodule *current = lm[0];
 
-    if ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)) {
+    if ((current->status & STATUS_DISABLED) || (current->status == STATUS_IDLE)) {
+//     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
      any_ok = 1;
      goto skip_module;
     }
 
     if (mod_disable_users (current)) {
+//     eprintf (stderr, "cannot disable %s yet...", des->key);
      mod_workthreads_dec();
      return;
     }
@@ -1860,8 +1911,11 @@ void mod_apply_disable (struct stree *des) {
     mod (MOD_DISABLE, current, NULL);
 
     /* check module status or return value to find out if it's appropriate for the task */
-    if ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)) {
+    if ((current->status & STATUS_DISABLED) || (current->status == STATUS_IDLE)) {
      any_ok = 1;
+    } else {
+//     eputs ("gonna ZAPP! something later...\n", stderr);
+     failures = 1;
     }
 
     skip_module:
@@ -1889,6 +1943,35 @@ void mod_apply_disable (struct stree *des) {
    emutex_lock (&ml_tb_current_mutex);
    current.disable = strsetdel(current.disable, des->key);
    emutex_unlock (&ml_tb_current_mutex);
+
+/* zap stuff that's broken */
+/*   if (failures) {
+    eputs ("ZAPP...?\n", stderr);
+   }*/
+   if (shutting_down && failures) {
+    struct lmodule *first = lm[0];
+
+    notice (1, "was forced to ZAPP! %s", des->key);
+
+    do {
+     struct lmodule *current = lm[0];
+     mod (MOD_CUSTOM, current, "zap");
+
+     emutex_lock (&ml_service_list_mutex);
+     if ((lm[0] == current) && lm[1]) {
+      ssize_t rx = 1;
+
+      notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+
+      for (; lm[rx]; rx++) {
+       lm[rx-1] = lm[rx];
+      }
+
+      lm[rx-1] = current;
+     }
+     emutex_unlock (&ml_service_list_mutex);
+    } while (lm[0] != first);
+   }
 
    if (any_ok) {
     mod_workthreads_dec();
@@ -2228,7 +2311,6 @@ void mod_spawn_workthreads () {
 
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
- char spawns = 0;
 
  mod_commits_inc();
 
@@ -2240,11 +2322,8 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  mod_flatten_current_tb();
 
- mod_spawn_workthreads ();
-
  do {
   remainder = 0;
-  char spawn = 0;
 
   if (en) {
    uint32_t i = 0;
@@ -2273,12 +2352,13 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; dis[i]; i++) {
     if (!mod_isbroken (dis[i]) && mod_isprovided(dis[i])) {
-//     eprintf (stderr, "still provided: %s\n", dis[i]);
+     eprintf (stderr, "still provided: %s\n", dis[i]);
 
      remainder++;
 
      emutex_lock (&ml_tb_current_mutex);
      if (!inset ((const void **)current.disable, dis[i], SET_TYPE_STRING)) {
+      current.disable = (char **)setadd ((void **)current.disable, dis[i], SET_TYPE_STRING);
       emutex_unlock (&ml_tb_current_mutex);
 
       notice (2, "something must've gone wrong with service %s...", dis[i]);
@@ -2298,24 +2378,6 @@ void mod_commit_and_wait (char **en, char **dis) {
   }
 
 //  notice (4, "still need %i services\n", remainder);
-
-  emutex_lock (&ml_workthreads_mutex);
-  spawn = ml_workthreads == 0;
-  emutex_unlock (&ml_workthreads_mutex);
-
-  if (spawn) {
-/* lockup protection... */
-   if (spawns > MAX_SPAWNS) {
-    notice (1, "too many respawns: giving up on plan requirements.");
-
-    mod_commits_dec();
-    return;
-   }
-   mod_spawn_workthreads ();
-   spawns++;
-  }/* else {
-   notice (4, "%i workthreads left\n", ml_workthreads);
-  }*/
 
   pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
  } while (remainder);

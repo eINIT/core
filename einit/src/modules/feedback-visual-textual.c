@@ -648,7 +648,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
   *tfeedback = 0;
  }
 
- switch (ev->status) {
+/* switch (ev->status) {
   case STATUS_IDLE:
    if (feedback[0])
     strncpy (tfeedback, " > idle\n", BUFFERSIZE);
@@ -661,7 +661,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
    else
     esprintf (tfeedback, BUFFERSIZE, "%s: enabling\n", name);
    break;
- }
+ }*/
 
  if (tfeedback[0]) {
   strcat (feedback, tfeedback);
@@ -746,6 +746,12 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   }
  }
 
+ if (ev->status == STATUS_IDLE) {
+  eprintf (stdout, "\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[0K\n", line, name);
+ }/* else if (ev->status & STATUS_WORKING) {
+  eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: working...\e[0K\n", line, name);
+ }*/
+
  if (ev->task & MOD_FEEDBACK_SHOW) {
   if (ev->task & MOD_ENABLE) {
    eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
@@ -754,15 +760,6 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   } else  {
    eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s\e[0K\n", line, name);
   }
- }
-
- switch (ev->status) {
-  case STATUS_IDLE:
-   eprintf (stdout, "\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[0K\n", line, name);
-   break;
-  case STATUS_ENABLING:
-   eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
-   break;
  }
 
  if (ev->string) {
@@ -790,12 +787,19 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   } else if (ev->task & MOD_CUSTOM) {
    eprintf (stdout, "\e[%i;0H[ \e[32mCSTM\e[0m ] %s\n", line, name);
   } else {
-   eprintf (stdout, "\e[%i;0H[ \e[32mOK\e[0m ] %s\n", line, name);
+   eprintf (stdout, "\e[%i;0H[ \e[32m OK \e[0m ] %s\n", line, name);
   }
 
   mst->errors = 0;
  } else if (ev->status & STATUS_FAIL) {
-  eprintf (stdout, "\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
+  if (ev->status & STATUS_ENABLED) {
+   eprintf (stdout, "\e[%i;0H! \e[31mENAB\e[0m ! %s\n", line, name);
+  } else if (ev->status & STATUS_DISABLED) {
+   eprintf (stdout, "\e[%i;0H! \e[31mDISA\e[0m ! %s\n", line, name);
+  } else {
+   eprintf (stdout, "\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
+  }
+
   mst->errors = 1;
  }
 
