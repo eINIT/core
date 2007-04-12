@@ -20,10 +20,10 @@
       	   echo &quot;feedback|notice|Setting up proper hotplug agent&quot;;
            if [ $(uname -r | cut -f 3 -d . | cut -f 1 -d -) -gt 14 ]; then
    	    echo &quot;feedback|notice|Using netlink for hotplug events...&quot;;
-            echo &quot;&quot; > /proc/sys/kernel/hotplug;
+            echo &quot;&quot; &gt; /proc/sys/kernel/hotplug;
            else
 	    echo &quot;feedback|notice|Setting /sbin/udevsend as hotplug agent ...&quot;;
-            echo &quot;/sbin/udevsend&quot; > /proc/sys/kernel/hotplug;
+            echo &quot;/sbin/udevsend&quot; &gt; /proc/sys/kernel/hotplug;
            fi;
           fi;
 	  echo &quot;feedback|notice|Starting udevd&quot;;
@@ -41,6 +41,48 @@
 	  echo &quot;feedback|notice|Letting udev process events&quot;;
           udevsettle --timeout=60;
           rm -f /dev/.udev_populate"
-  disable="killall -9 udevd"
+  disable="if [ &quot;${DEVICE_TARBALL}&quot; = &quot;yes&quot; ]; then
+	    echo &quot;feedback|notice|Saving device nodes&quot;;
+            save_tmp_base=/tmp/udev.savedevices.&quot;$$&quot;;
+            devices_udev=&quot;${save_tmp_base}&quot;/devices.udev;
+            devices_real=&quot;${save_tmp_base}&quot;/devices.real;
+            devices_totar=&quot;${save_tmp_base}&quot;/devices.totar;
+            device_tarball=&quot;${save_tmp_base}&quot;/devices;
+            rm -rf &quot;${save_tmp_base}&quot;;
+            mkdir &quot;${save_tmp_base}&quot;;
+            touch &quot;${devices_udev}&quot; &quot;${devices_real}&quot; &quot;${devices_totar}&quot; &quot;${device_tarball}&quot;;
+            if [ -f ${devices_udev} ] &amp;&amp; [ -f ${devices_real} ] &amp;&amp; [ -f ${devices_totar} ] &amp;&amp; [ -f ${device_tarball} ]; then
+             cd /dev;
+             find . -xdev -type b -or -type c -or -type l | cut -d/ -f2- &gt; &quot;${devices_real}&quot;;
+             udevinfo=$(udevinfo --export-db);
+             echo &quot;${udevinfo}&quot; | gawk &#39;
+                     /^(N|S):.+/ {
+                             sub(/^(N|S):/, &quot;&quot;)
+                             split($0, nodes)
+                             for (x in nodes)
+                                     print nodes[x]
+                     }&#39; &gt; &quot;${devices_udev}&quot;
+             for x in MAKEDEV core fd initctl pts shm stderr stdin stdout; do
+              echo &quot;${x}&quot; &gt;&gt; &quot;${devices_udev}&quot;;
+             done
+             if [ -d /lib/udev/devices ]; then
+              cd /lib/udev/devices;
+              find . -xdev -type b -or -type c -or -type l | cut -d/ -f2- &gt;&gt; &quot;${devices_udev}&quot;;
+             fi;
+             cd /dev;
+             fgrep -x -v -f &quot;${devices_udev}&quot; &lt; &quot;${devices_real}&quot; | grep -v ^\\.udev &gt; &quot;${devices_totar}&quot;;
+             if [ -s ${devices_totar} ]; then
+              tar --one-file-system --numeric-owner -jcpf &quot;${device_tarball}&quot; -T &quot;${devices_totar}&quot;;
+              mv -f &quot;${device_tarball}&quot; /lib/udev/state/devices.tar.bz2;
+             else
+              rm -f /lib/udev/state/devices.tar.bz2;
+             fi;
+            else
+	     echo &quot;feedback|warning|Could not create temporary files!&quot;;
+            fi;
+            rm -rf &quot;${save_tmp_base}&quot;;
+           fi;
+	   killall -9 udevd;
+ 	   echo &quot;feedback|notice|Shutdown successfull!&quot;;"
   restart="yes" />
 </einit>
