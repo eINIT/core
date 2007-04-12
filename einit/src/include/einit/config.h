@@ -115,6 +115,8 @@ pthread_attr_t thread_attribute_detached;
 
 struct cfgnode *cmode, *amode;
 
+time_t boottime;
+
 uint32_t gmode;
 unsigned char *gdebug;
 

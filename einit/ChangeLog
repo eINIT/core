@@ -1,3 +1,7 @@
+2007/04/12: mdeininger
+ * changes to the feedback and feedback auto-add code
+ * new feedback module for festival (gonna use a thread like with fbsplash)
+
 2007/04/11: mdeininger
  * a number of minor fixes
  * the new core seems to be doing quite well

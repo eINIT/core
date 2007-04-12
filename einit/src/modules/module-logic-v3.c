@@ -262,10 +262,10 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **enable   = str2set (':', cfg_getstring ("enable/services", mode));
   char **disable  = str2set (':', cfg_getstring ("disable/services", mode));
   char **critical = str2set (':', cfg_getstring ("enable/critical", mode));
-  struct cfgnode *node = cfg_getnode ("auto-add-feedback", mode);
+  char *strng = cfg_getstring ("feedback/auto-add", mode);
 
-  if (node)
-   auto_add_feedback = node->flag;
+  if (strng)
+   auto_add_feedback = parse_boolean(strng);
 
   if (!enable)
    enable  = str2set (':', cfg_getstring ("enable/mod", mode));
@@ -294,7 +294,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    plan->changes.critical = tmp;
   }
 
-  if (auto_add_feedback) {
+  if (auto_add_feedback && (strng = cfg_getstring("feedback/default", mode))) {
    if (plan->changes.enable) {
     uint32_t y = 0;
 
@@ -316,7 +316,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     }
    }
 
-   plan->changes.enable = (char **)setadd ((void **)plan->changes.enable, (void *)"feedback", SET_TYPE_STRING);
+   plan->changes.enable = (char **)setadd ((void **)plan->changes.enable, (void *)strng, SET_TYPE_STRING);
   }
   have_feedback:
 

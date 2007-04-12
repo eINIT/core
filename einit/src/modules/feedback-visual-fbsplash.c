@@ -63,7 +63,7 @@ int _einit_feedback_visual_fbsplash_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char *_einit_feedback_visual_fbsplash_provides[] = {"feedback", "feedback-visual", "feedback-graphical", NULL};
+char *_einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-graphical", NULL};
 char *_einit_feedback_visual_fbsplash_requires[] = {"mount-system", "splashd", NULL};
 char *_einit_feedback_visual_fbsplash_before[]   = {"mount-critical", NULL};
 const struct smodule _einit_feedback_visual_fbsplash_self = {

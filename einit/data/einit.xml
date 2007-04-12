@@ -493,24 +493,34 @@
 
  <mode id="boot">
   <enable services="sysconf:mount-local:hostname:tty:keyboard:ipc:logger:net-lo:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
-  <ttys s="tty1-regular" />
-  <auto-add-feedback b="true" />
+  <overrides>
+   <ttys s="tty1-regular" />
+   <feedback auto-add="true" default="feedback-textual" />
+  </overrides>
  </mode>
+
  <mode id="default" base="boot">
   <enable services="audio:portmap:clock:displaymanager:swap:mount-remote" />
-  <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+  <overrides>
+   <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+  </overrides>
  </mode>
+
  <mode id="power-down">
   <disable services="all-but-feedback" />
-  <ttys s="none" />
-  <before-switch emit-event="power/mps-down-scheduled" ipc="save configuration" />
-<!--  <after-switch emit-event="power/mps-down-imminent" ipc="exec /etc/init.d/halt.sh;scheduler power-down" /> -->
-  <after-switch emit-event="power/mps-down-imminent" ipc="scheduler power-down" />
+  <overrides>
+   <ttys s="none" />
+   <before-switch emit-event="power/mps-down-scheduled" ipc="save configuration" />
+   <after-switch emit-event="power/mps-down-imminent" ipc="scheduler power-down" />
+  </overrides>
  </mode>
- <mode id="power-reset" base="power-down">
-  <ttys s="none" />
-  <before-switch emit-event="power/reset-scheduled" ipc="save configuration" />
-<!--  <after-switch emit-event="power/reset-imminent" ipc="exec /etc/init.d/halt.sh;scheduler power-reset" /> -->
-  <after-switch emit-event="power/reset-imminent" ipc="scheduler power-reset" />
+
+ <mode id="power-reset">
+  <disable services="all-but-feedback" />
+  <overrides>
+   <ttys s="none" />
+   <before-switch emit-event="power/reset-scheduled" ipc="save configuration" />
+   <after-switch emit-event="power/reset-imminent" ipc="scheduler power-reset" />
+  </overrides>
  </mode>
 </einit>

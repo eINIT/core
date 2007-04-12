@@ -82,7 +82,7 @@ int _einit_feedback_visual_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char * _einit_feedback_visual_provides[] = {"feedback", "feedback-visual", "feedback-textual", NULL};
+char * _einit_feedback_visual_provides[] = {"feedback-visual", "feedback-textual", NULL};
 const struct smodule _einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -310,7 +310,8 @@ int _einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  }
 
  if (enableansicodes) {
-  eputs ("\e[2J\e[0;0H", stdout);
+  eputs ("\e[2J\e[0;0H"
+         "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
  }
  if (vofile) {
   eputs ("\e[2J\e[0;0H", vofile);
@@ -420,7 +421,12 @@ void _einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
      emutex_unlock (&modulesmutex);
     }
 
-    if (!plans) break;
+    if (!plans) {
+     if (enableansicodes) {
+      eprintf (stdout, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mswitch complete.\e[0m\e[0K\n", (int)(time(NULL) - boottime));
+     }
+     break;
+    }
     emutex_lock (&plansmutex);
      for (; plans[i]; i++)
       if (plans[i]->plan == (struct mloadplan *)ev->para) {
@@ -432,13 +438,13 @@ void _einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
       plans = (struct planref **)setdel ((void **)plans, (void *)cul);
     emutex_unlock (&plansmutex);
     if (enableansicodes) {
-     eprintf (stdout, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown");
+     eprintf (stdout, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect (BT+%i).\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown", (int)(time(NULL) - boottime));
     } else {
-     eprintf (stdout, "new mode %s is now in effect.\n", (amode && amode->id) ? amode->id : "unknown");
+     eprintf (stdout, "new mode %s is now in effect (BT+%i).\n", (amode && amode->id) ? amode->id : "unknown", (int)(time(NULL) - boottime));
     }
 
     if (vofile)
-     eprintf (vofile, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect.\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown");
+     eprintf (vofile, "\e[0;0H[ \e[33m%4.4i\e[0m ] \e[34mnew mode \"%s\" is now in effect (BT+%i).\e[0m\e[0K\n", (int)(time(NULL) - startedat), (amode && amode->id) ? amode->id : "unknown", (int)(time(NULL) - boottime));
     break;
   }
 

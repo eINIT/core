@@ -1,8 +1,8 @@
 /*
- *  feedback-aural.c
+ *  feedback-aural-festival.c
  *  einit
  *
- *  Created by Magnus Deininger on 11/09/2006.
+ *  Created by Magnus Deininger on 12/04/2006.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -57,39 +57,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_feedback_aural_configure (struct lmodule *);
+int _einit_feedback_aural_festival_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
-char *_einit_feedback_aural_provides[] = {"feedback-aural", NULL};
-char *_einit_feedback_aural_requires[] = {"audio", "mount-critical", NULL};
-const struct smodule _einit_feedback_aural_self = {
+char *_einit_feedback_aural_festival_provides[] = {"feedback-aural", NULL};
+char *_einit_feedback_aural_festival_requires[] = {"audio", "mount-critical", NULL};
+const struct smodule _einit_feedback_aural_festival_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = EINIT_MOD_FEEDBACK,
- .options   = 0,
- .name      = "aural/tts feedback module",
+ .options   = EINIT_MOD_DEPRECATED,
+ .name      = "aural/festival feedback module",
  .rid       = "feedback-aural",
  .si        = {
-  .provides = _einit_feedback_aural_provides,
-  .requires = _einit_feedback_aural_requires,
+  .provides = _einit_feedback_aural_festival_provides,
+  .requires = _einit_feedback_aural_festival_requires,
   .after    = NULL,
   .before   = NULL
  },
-.configure = _einit_feedback_aural_configure
+.configure = _einit_feedback_aural_festival_configure
 };
 
-module_register(_einit_feedback_aural_self);
+module_register(_einit_feedback_aural_festival_self);
 
 #endif
 
-void _einit_feedback_aural_feedback_event_handler(struct einit_event *);
+void _einit_feedback_aural_festival_feedback_event_handler(struct einit_event *);
 void synthesize (char *);
 char *synthesizer;
 int sev_threshold = 2;
 
-void _einit_feedback_aural_ipc_event_handler (struct einit_event *ev) {
+void _einit_feedback_aural_festival_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
    eputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para);
@@ -104,28 +104,28 @@ void _einit_feedback_aural_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_feedback_aural_cleanup (struct lmodule *this) {
+int _einit_feedback_aural_festival_cleanup (struct lmodule *this) {
  exec_cleanup(this);
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_feedback_aural_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, _einit_feedback_aural_festival_ipc_event_handler);
 
  return 0;
 }
 
-int _einit_feedback_aural_enable (void *pa, struct einit_event *status) {
+int _einit_feedback_aural_festival_enable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_aural_feedback_event_handler);
+ event_listen (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_aural_festival_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
-int _einit_feedback_aural_disable (void *pa, struct einit_event *status) {
+int _einit_feedback_aural_festival_disable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_aural_feedback_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_aural_festival_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
-void _einit_feedback_aural_feedback_event_handler(struct einit_event *ev) {
+void _einit_feedback_aural_festival_feedback_event_handler(struct einit_event *ev) {
  emutex_lock (&thismodule->imutex);
 
  char phrase[BUFFERSIZE], hostname[BUFFERSIZE];
@@ -174,13 +174,13 @@ void synthesize (char *string) {
   perror ("tts: popen");
 }
 
-int _einit_feedback_aural_configure (struct lmodule *r) {
+int _einit_feedback_aural_festival_configure (struct lmodule *r) {
  module_init (r);
  exec_configure (r);
 
- r->cleanup = _einit_feedback_aural_cleanup;
- r->enable = _einit_feedback_aural_enable;
- r->disable = _einit_feedback_aural_disable;
+ r->cleanup = _einit_feedback_aural_festival_cleanup;
+ r->enable = _einit_feedback_aural_festival_enable;
+ r->disable = _einit_feedback_aural_festival_disable;
 
  struct cfgnode *node;
 
@@ -189,7 +189,7 @@ int _einit_feedback_aural_configure (struct lmodule *r) {
  if ((node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL)))
   sev_threshold = node->value;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_feedback_aural_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, _einit_feedback_aural_festival_ipc_event_handler);
 
  return 0;
 }

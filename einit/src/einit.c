@@ -197,6 +197,8 @@ int main(int argc, char **argv) {
  char **ipccommands = NULL;
  int pthread_errno;
 
+ boottime = time(NULL);
+
  uname (&osinfo);
  config_configure();
 
