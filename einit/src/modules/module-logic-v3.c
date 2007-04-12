@@ -52,6 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sched.h>
 #endif
 
+#define MAX_ITERATIONS 1000
+
 int _einit_module_logic_v3_configure (struct lmodule *);
 
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
@@ -2354,47 +2356,48 @@ void workthread_examine (char *service) {
 // mod_workthreads_dec(service);
 }
 
+void mod_spawn_batch(char **batch) {
+ uint32_t i = 0, deferred = 0;
+
+ for (; batch[i]; i++) {
+  if (mod_isdeferred(batch[i])) {
+   deferred++;
+//   eprintf (stderr, " !! %s\n", batch[i]);
+  } else {
+   char *sc = estrdup (batch[i]);
+   pthread_t th;
+
+//   eprintf (stderr, " kk:%s\n", batch[i]);
+
+   if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
+    emutex_unlock (&ml_tb_current_mutex);
+    workthread_examine (sc);
+    emutex_lock (&ml_tb_current_mutex);
+//    notice (1, "couldn't create thread!!");
+   }
+  }
+ }
+
+ eprintf (stderr, "i=%i, deferred=%i\n", i, deferred);
+
+// ignorereorderfor =
+}
+
 void mod_spawn_workthreads () {
  emutex_lock (&ml_tb_current_mutex);
  if (current.enable) {
-  uint32_t i = 0;
-
-  for (; current.enable[i]; i++) {
-   char *sc = estrdup (current.enable[i]);
-   pthread_t th;
-
-   if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
-    emutex_unlock (&ml_tb_current_mutex);
-    workthread_examine (sc);
-    emutex_lock (&ml_tb_current_mutex);
-//    notice (1, "couldn't create thread!!");
-   }
-  }
-
-// ignorereorderfor =
+  mod_spawn_batch(current.enable);
  }
 
  if (current.disable) {
-  uint32_t i = 0;
-
-  for (; current.disable[i]; i++) {
-   char *sc = estrdup (current.disable[i]);
-   pthread_t th;
-
-   if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
-    emutex_unlock (&ml_tb_current_mutex);
-    workthread_examine (sc);
-    emutex_lock (&ml_tb_current_mutex);
-//    notice (1, "couldn't create thread!!");
-   }
-  }
+  mod_spawn_batch(current.disable);
  }
-
  emutex_unlock (&ml_tb_current_mutex);
 }
 
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
+ uint32_t iterations = 0;
 
  mod_commits_inc();
 
@@ -2413,6 +2416,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  do {
   remainder = 0;
+  iterations++;
 
   if (en) {
    uint32_t i = 0;
@@ -2467,6 +2471,13 @@ void mod_commit_and_wait (char **en, char **dis) {
   }
 
 //  notice (4, "still need %i services\n", remainder);
+
+  if (iterations >= MAX_ITERATIONS) {
+   notice (1, "plan aborted (too many iterations: %i).\n", iterations);
+
+   mod_commits_dec();
+   return;
+  }
 
   pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
  } while (remainder);
