@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-smartd"
+  name="S.M.A.R.T daemon"
+  provides="smartd"
+  requires="net-lo:mount-critical"
+  pid="/var/run/smartd.pid"
+  enable="/usr/sbin/smartd"
+  disable="killall -9 smartd"
+  restart="yes" />
+</einit>
