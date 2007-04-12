@@ -1065,6 +1065,7 @@ void mod_workthreads_dec () {
  ml_workthreads--;
 
 // eprintf (stderr, "workthreads: %i\n", ml_workthreads);
+ fflush (stderr);
 
  if (!ml_workthreads) {
   char spawn = 0;
@@ -1093,14 +1094,15 @@ void mod_workthreads_dec () {
   if (spawn)
    mod_spawn_workthreads ();
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
-  sched_yield();
-#endif
-
-  pthread_cond_broadcast (&ml_cond_service_update);
  } else {
   emutex_unlock (&ml_workthreads_mutex);
  }
+
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&ml_cond_service_update);
 }
 
 void mod_workthreads_inc () {
@@ -1955,7 +1957,9 @@ void mod_apply_disable (struct stree *des) {
 
     do {
      struct lmodule *current = lm[0];
-     mod (MOD_CUSTOM, current, "zap");
+
+     if (current->status & STATUS_ENABLED)
+      mod (MOD_CUSTOM, current, "zap");
 
      emutex_lock (&ml_service_list_mutex);
      if ((lm[0] == current) && lm[1]) {
@@ -2287,6 +2291,7 @@ void mod_spawn_workthreads () {
     emutex_unlock (&ml_tb_current_mutex);
     workthread_examine (sc);
     emutex_lock (&ml_tb_current_mutex);
+//    notice (1, "couldn't create thread!!");
    }
   }
  }
@@ -2302,6 +2307,7 @@ void mod_spawn_workthreads () {
     emutex_unlock (&ml_tb_current_mutex);
     workthread_examine (sc);
     emutex_lock (&ml_tb_current_mutex);
+//    notice (1, "couldn't create thread!!");
    }
   }
  }
@@ -2320,7 +2326,12 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  pthread_cond_broadcast (&ml_cond_service_update);
 
+ eputs ("flattening...\n", stderr);
+ fflush(stderr);
  mod_flatten_current_tb();
+
+ eputs ("flat as a pancake now...\n", stderr);
+ fflush(stderr);
 
  do {
   remainder = 0;
