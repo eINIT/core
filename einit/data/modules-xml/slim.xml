@@ -1,5 +1,5 @@
 <einit prefix="services-virtual-module">
- <shell id="shell-gdm"
+ <shell id="shell-slim"
   name="slim - Simple LogIn Manager"
   provides="x11:displaymanager"
   requires="net-lo:mount-critical"
