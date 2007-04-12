@@ -241,7 +241,7 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
 
   if (task & MOD_CUSTOM) {
    if (strmatch (custom_command, "zap")) {
-    module->status = "module ZAP'd.";
+    fb->string = "module ZAP'd.";
     module->status = STATUS_IDLE;
    } else if (module->custom) {
     module->status = module->custom(module->param, custom_command, fb);
