@@ -2356,7 +2356,6 @@ void workthread_examine (char *service) {
 
 void mod_spawn_workthreads () {
  emutex_lock (&ml_tb_current_mutex);
-
  if (current.enable) {
   uint32_t i = 0;
 
@@ -2371,6 +2370,8 @@ void mod_spawn_workthreads () {
 //    notice (1, "couldn't create thread!!");
    }
   }
+
+// ignorereorderfor =
  }
 
  if (current.disable) {
