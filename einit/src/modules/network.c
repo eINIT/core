@@ -165,7 +165,8 @@ int _network_scanmodules (struct lmodule *mainlist) {
      }
 
      newmodule->configure = _network_interface_configure;
-     newmodule->rid = estrdup (cur->key);
+     esprintf (tmp, BUFFERSIZE, "interface-%s", interfacename);
+     newmodule->rid = estrdup (tmp);
      newmodule->eiversion = EINIT_VERSION;
      newmodule->eibuild = BUILDNUMBER;
      newmodule->version = 1;
