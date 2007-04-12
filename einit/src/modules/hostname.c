@@ -57,6 +57,7 @@ int _einit_hostname_configure (struct lmodule *);
 #if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
 
 char * _einit_hostname_provides[] = {"hostname", "domainname", NULL};
+char * _einit_hostname_before[] = {"displaymanager", NULL};
 const struct smodule _einit_hostname_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -69,7 +70,7 @@ const struct smodule _einit_hostname_self = {
   .provides = _einit_hostname_provides,
   .requires = NULL,
   .after    = NULL,
-  .before   = NULL
+  .before   = _einit_hostname_before
  },
  .configure = _einit_hostname_configure
 };
