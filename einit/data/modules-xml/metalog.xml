@@ -1,9 +1,11 @@
 <einit prefix="services-virtual-module">
- <daemon id="daemon-metalog"
+ <shell id="shell-metalog"
   name="Syslogger (metalog)"
   provides="metalog:logger"
   requires="mount-critical"
-  command="/usr/sbin/metalog"
+  pid="/var/run/metalog.pid"
+  enable="/usr/sbin/metalog --daemonize"
+  disable="killall -9 metalog"
   restart="yes"
   need-files="/usr/sbin/metalog" />
 </einit>
