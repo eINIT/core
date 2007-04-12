@@ -800,6 +800,7 @@ int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_ev
   "action", "start", NULL },
   *cmdscript = NULL,
   *xrev = NULL;
+ char **env = rc_config_env (NULL);
 
  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
@@ -816,13 +817,14 @@ int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_e
   "action", "stop", NULL },
   *cmdscript = NULL,
   *xrev = NULL;
+ char **env = rc_config_env (NULL);
 
-  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
-  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+ if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+ if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
-  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+ cmdscript = apply_variables (init_d_exec_scriptlet, variables);
 
-  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+ return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
 int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, struct einit_event *status) {
@@ -832,13 +834,14 @@ int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, s
   "action", action, NULL },
   *cmdscript = NULL,
   *xrev = NULL;
+ char **env = rc_config_env (NULL);
 
-  if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
-  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+ if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+ if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
-  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+ cmdscript = apply_variables (init_d_exec_scriptlet, variables);
 
-  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+ return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
 int _compatibility_sysv_gentoo_configure (struct lmodule *irr) {
