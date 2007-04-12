@@ -171,7 +171,13 @@ char mod_isbroken (char *service) {
 struct group_data *mod_group_get_data (char *group) {
  struct group_data *ret = NULL;
 
+/* eputs ("mod_group_get_data", stderr);
+ fflush (stderr);*/
+
  emutex_lock (&ml_group_data_mutex);
+
+/* eputs ("got mutex", stderr);
+ fflush (stderr);*/
 
  struct stree *cur = module_logics_group_data ? streefind (module_logics_group_data, group, TREE_FIND_FIRST) : NULL;
  if (cur) { ret = (struct group_data *)cur->value; }
@@ -1060,8 +1066,13 @@ char mod_isprovided(char *service);
 uint32_t ml_workthreads = 0;
 uint32_t ml_commits = 0;
 
-void mod_workthreads_dec () {
+char **lm_workthreads_list = NULL;
+
+char mod_workthreads_dec (char *service) {
  emutex_lock (&ml_workthreads_mutex);
+
+ lm_workthreads_list = strsetdel (lm_workthreads_list, service);
+
  ml_workthreads--;
 
 // eprintf (stderr, "workthreads: %i\n", ml_workthreads);
@@ -1103,12 +1114,23 @@ void mod_workthreads_dec () {
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+
+ return 0;
 }
 
-void mod_workthreads_inc () {
+char mod_workthreads_inc (char *service) {
+ char retval = 0;
  emutex_lock (&ml_workthreads_mutex);
- ml_workthreads++;
+
+ if (inset ((const void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING)) {
+  eprintf (stderr, " XX someone's already working on %s...\n", service);
+  fflush (stderr);
+  retval = 1;
+ } else
+  ml_workthreads++;
  emutex_unlock (&ml_workthreads_mutex);
+
+ return retval;
 }
 
 void mod_commits_dec () {
@@ -1152,6 +1174,17 @@ void mod_commits_dec () {
    broken_services = NULL;
   }
   emutex_unlock (&ml_unresolved_mutex);
+
+  emutex_lock(&ml_chain_examine);
+  if (module_logics_chain_examine) {
+   streefree (module_logics_chain_examine);
+   module_logics_chain_examine = NULL;
+  }
+  if (module_logics_chain_examine_reverse) {
+   streefree (module_logics_chain_examine_reverse);
+   module_logics_chain_examine = NULL;
+  }
+  emutex_unlock(&ml_chain_examine);
  }
 }
 
@@ -1369,6 +1402,9 @@ void mod_queue_disable (char *service) {
 signed char mod_flatten_current_tb_group(char *serv, char task) {
  struct group_data *gd = mod_group_get_data (serv);
 
+ eputs ("g", stderr);
+ fflush (stderr);
+
  if (gd) {
   uint32_t changes = 0;
   char *service = estrdup (serv);
@@ -1463,6 +1499,9 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
 signed char mod_flatten_current_tb_module(char *serv, char task) {
  emutex_lock (&ml_service_list_mutex);
  struct stree *xn = streefind (module_logics_service_list, serv, TREE_FIND_FIRST);
+
+ eputs ("m", stderr);
+ fflush (stderr);
 
  if (xn && xn->value) {
   struct lmodule **lm = xn->value;
@@ -1561,12 +1600,18 @@ void mod_flatten_current_tb () {
  if (current.enable) {
   uint32_t i;
 
+  eputs ("e", stderr);
+  fflush (stderr);
+
   for (i = 0; current.enable[i]; i++) {
    signed char t = 0;
    if (mod_isprovided (current.enable[i]) || mod_isbroken(current.enable[i])) {
     current.enable = (char **)setdel ((void **)current.enable, current.enable[i]);
     goto repeat_ena;
    }
+
+   eputs ("+", stderr);
+   fflush (stderr);
 
    if (((t = mod_flatten_current_tb_group(current.enable[i], MOD_ENABLE)) == -1) &&
        ((t = mod_flatten_current_tb_module(current.enable[i], MOD_ENABLE)) == -1)) {
@@ -1578,6 +1623,9 @@ void mod_flatten_current_tb () {
      goto repeat_ena;
     }
    }
+
+   eputs ("-", stderr);
+   fflush (stderr);
   }
  }
 
@@ -1585,12 +1633,18 @@ void mod_flatten_current_tb () {
  if (current.disable) {
   uint32_t i;
 
+  eputs ("d", stderr);
+  fflush (stderr);
+
   for (i = 0; current.disable[i]; i++) {
    signed char t = 0;
    if (!mod_isprovided (current.disable[i]) || mod_isbroken(current.disable[i])) {
     current.disable = (char **)setdel ((void **)current.disable, current.disable[i]);
     goto repeat_disa;
    }
+
+   eputs ("z", stderr);
+   fflush (stderr);
 
    if (((t = mod_flatten_current_tb_group(current.disable[i], MOD_DISABLE)) == -1) &&
        ((t = mod_flatten_current_tb_module(current.disable[i], MOD_DISABLE)) == -1)) {
@@ -1602,8 +1656,14 @@ void mod_flatten_current_tb () {
      goto repeat_disa;
     }
    }
+
+   eputs ("!", stderr);
+   fflush (stderr);
   }
  }
+
+ eputs ("R", stderr);
+ fflush (stderr);
 
  emutex_unlock (&ml_tb_current_mutex);
 }
@@ -1824,8 +1884,7 @@ char mod_enable_requirements (struct lmodule *module) {
 }
 
 void mod_apply_enable (struct stree *des) {
- mod_workthreads_inc();
- if (des) {
+ if (!des || mod_workthreads_inc(des->key)) return;
   struct lmodule **lm = (struct lmodule **)des->value;
 
   if (lm && lm[0]) {
@@ -1835,7 +1894,7 @@ void mod_apply_enable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if ((current->status & STATUS_ENABLED) || mod_enable_requirements (current)) {
-     mod_workthreads_dec();
+     mod_workthreads_dec(des->key);
      return;
     }
 
@@ -1843,7 +1902,7 @@ void mod_apply_enable (struct stree *des) {
 
 /* check module status or return value to find out if it's appropriate for the task */
     if (current->status & STATUS_ENABLED) {
-     mod_workthreads_dec();
+     mod_workthreads_dec(des->key);
      return;
     }
 
@@ -1878,17 +1937,13 @@ void mod_apply_enable (struct stree *des) {
    mod_mark (des->key, MARK_BROKEN);
   }
 
-  mod_workthreads_dec();
+  mod_workthreads_dec(des->key);
   return;
- }
-
- mod_workthreads_dec();
- return;
 }
 
 void mod_apply_disable (struct stree *des) {
- mod_workthreads_inc();
- if (des) {
+ if (!des || mod_workthreads_inc(des->key)) return;
+
   struct lmodule **lm = (struct lmodule **)des->value;
 
   if (lm && lm[0]) {
@@ -1906,7 +1961,7 @@ void mod_apply_disable (struct stree *des) {
 
     if (mod_disable_users (current)) {
 //     eprintf (stderr, "cannot disable %s yet...", des->key);
-     mod_workthreads_dec();
+     mod_workthreads_dec(des->key);
      return;
     }
 
@@ -1942,10 +1997,6 @@ void mod_apply_disable (struct stree *des) {
 /* if we tried to enable something and end up here, it means we did a complete
    round-trip and nothing worked */
 
-   emutex_lock (&ml_tb_current_mutex);
-   current.disable = strsetdel(current.disable, des->key);
-   emutex_unlock (&ml_tb_current_mutex);
-
 /* zap stuff that's broken */
 /*   if (failures) {
     eputs ("ZAPP...?\n", stderr);
@@ -1977,8 +2028,12 @@ void mod_apply_disable (struct stree *des) {
     } while (lm[0] != first);
    }
 
+   emutex_lock (&ml_tb_current_mutex);
+   current.disable = strsetdel(current.disable, des->key);
+   emutex_unlock (&ml_tb_current_mutex);
+
    if (any_ok) {
-    mod_workthreads_dec();
+    mod_workthreads_dec(des->key);
     return;
    }
 
@@ -1988,12 +2043,8 @@ void mod_apply_disable (struct stree *des) {
    mod_mark (des->key, MARK_BROKEN);
   }
 
-  mod_workthreads_dec();
+  mod_workthreads_dec(des->key);
   return;
- }
-
- mod_workthreads_dec();
- return;
 }
 
 int mod_gettask (char * service) {
@@ -2013,27 +2064,34 @@ char mod_examine_group (char *groupname) {
  struct group_data *gd = mod_group_get_data (groupname);
  if (!gd) return 0;
  char post_examine = 0;
+ char **members = NULL;
+ uint32_t options = 0;
 
  emutex_lock (&ml_group_data_mutex);
-
  if (gd->members) {
+  members = (char **)setdup ((const void **)gd->members, SET_TYPE_STRING);
+ }
+ options = gd->options;
+ emutex_unlock (&ml_group_data_mutex);
+
+ if (members) {
   int task = mod_gettask (groupname);
 
 //  notice (2, "group %s: examining members", groupname);
 
-  ssize_t x = 0, mem = setcount ((const void **)gd->members), failed = 0, on = 0;
+  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0;
   struct lmodule **providers = NULL;
   char group_failed = 0, group_ok = 0;
 
-  for (; gd->members[x]; x++) {
-   if (mod_isbroken (gd->members[x])) {
+  for (; members[x]; x++) {
+   if (mod_isbroken (members[x])) {
     failed++;
    } else {
     struct stree *serv = NULL;
 
     emutex_lock (&ml_service_list_mutex);
 
-    if (module_logics_service_list && (serv = streefind(module_logics_service_list, gd->members[x], TREE_FIND_FIRST))) {
+    if (module_logics_service_list && (serv = streefind(module_logics_service_list, members[x], TREE_FIND_FIRST))) {
      struct lmodule **lm = (struct lmodule **)serv->value;
 
      if (lm) {
@@ -2074,19 +2132,19 @@ char mod_examine_group (char *groupname) {
 
   if (task & MOD_ENABLE) {
    if (providers) {
-    if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
+    if (options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
      if (on > 0) {
       group_ok = 1;
      } else if (failed >= mem) {
       group_failed = 1;
      }
-    } else if (gd->options & MOD_PLAN_GROUP_SEQ_MOST) {
+    } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
      if (on && ((on + failed) >= mem)) {
       group_ok = 1;
      } else if (failed >= mem) {
       group_failed = 1;
      }
-    } else if (gd->options & MOD_PLAN_GROUP_SEQ_ALL) {
+    } else if (options & MOD_PLAN_GROUP_SEQ_ALL) {
      if (on >= mem) {
       group_ok = 1;
      } else if (failed) {
@@ -2123,21 +2181,21 @@ char mod_examine_group (char *groupname) {
     mod_mark (groupname, MARK_BROKEN);
    } else {
 /* just to make sure everything will actually be enabled/disabled */
-    emutex_unlock (&ml_group_data_mutex);
+    emutex_lock (&ml_tb_current_mutex);
     mod_flatten_current_tb_group(groupname, task);
-    emutex_lock (&ml_group_data_mutex);
+    emutex_unlock (&ml_tb_current_mutex);
    }
   } else { /* mod_disable */
 /* just to make sure everything will actually be enabled/disabled */
-   emutex_unlock (&ml_group_data_mutex);
+   emutex_lock (&ml_tb_current_mutex);
    mod_flatten_current_tb_group(groupname, task);
-   emutex_lock (&ml_group_data_mutex);
+   emutex_unlock (&ml_tb_current_mutex);
   }
 
   if (providers) free (providers);
- }
 
- emutex_unlock (&ml_group_data_mutex);
+  free (members);
+ }
 
  if (post_examine) {
   mod_post_examine (groupname);
@@ -2269,12 +2327,12 @@ void mod_examine (char *service) {
 }
 
 void workthread_examine (char *service) {
- mod_workthreads_inc();
+// if (mod_workthreads_inc(service)) return;
 
  mod_examine (service);
  free (service);
 
- mod_workthreads_dec();
+// mod_workthreads_dec(service);
 }
 
 void mod_spawn_workthreads () {
