@@ -1075,8 +1075,8 @@ char mod_workthreads_dec (char *service) {
 
  ml_workthreads--;
 
-// eprintf (stderr, "workthreads: %i\n", ml_workthreads);
- fflush (stderr);
+// eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
+// fflush (stderr);
 
  if (!ml_workthreads) {
   char spawn = 0;
@@ -1126,8 +1126,11 @@ char mod_workthreads_inc (char *service) {
   eprintf (stderr, " XX someone's already working on %s...\n", service);
   fflush (stderr);
   retval = 1;
- } else
+ } else {
+  lm_workthreads_list = (char **)setadd((void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING);
+
   ml_workthreads++;
+ }
  emutex_unlock (&ml_workthreads_mutex);
 
  return retval;
@@ -1884,7 +1887,7 @@ char mod_enable_requirements (struct lmodule *module) {
 }
 
 void mod_apply_enable (struct stree *des) {
- if (!des || mod_workthreads_inc(des->key)) return;
+ if (!des) return;
   struct lmodule **lm = (struct lmodule **)des->value;
 
   if (lm && lm[0]) {
@@ -1942,7 +1945,7 @@ void mod_apply_enable (struct stree *des) {
 }
 
 void mod_apply_disable (struct stree *des) {
- if (!des || mod_workthreads_inc(des->key)) return;
+ if (!des) return;
 
   struct lmodule **lm = (struct lmodule **)des->value;
 
@@ -2204,6 +2207,8 @@ char mod_examine_group (char *groupname) {
 }
 
 void mod_examine (char *service) {
+ if (mod_workthreads_inc(service)) return;
+
  if (mod_isbroken (service)) {
   notice (2, "service %s marked as being broken", service);
 
@@ -2221,13 +2226,21 @@ void mod_examine (char *service) {
   }
 
   mod_post_examine(service);
+
+  if (mod_workthreads_dec(service)) return;
+
   return;
  } else if (mod_isdeferred (service)) {
   mod_pre_examine(service);
 //  notice (2, "service %s still marked as deferred", service);
 
+  if (mod_workthreads_dec(service)) return;
+
   return;
  } else if (mod_examine_group (service)) {
+
+  if (mod_workthreads_dec(service)) return;
+
   return;
  } else {
   int task = mod_gettask (service);
@@ -2236,6 +2249,9 @@ void mod_examine (char *service) {
       ((task & MOD_ENABLE) && mod_isprovided (service)) ||
       ((task & MOD_DISABLE) && !mod_isprovided (service))) {
    mod_post_examine (service);
+
+   if (mod_workthreads_dec(service)) return;
+
    return;
   }
 
@@ -2304,6 +2320,8 @@ void mod_examine (char *service) {
     }
 
     if (hd) {
+     if (mod_workthreads_dec(service)) return;
+
      return;
     }
    }
