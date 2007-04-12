@@ -1065,6 +1065,7 @@ char mod_isprovided(char *service);
 
 uint32_t ml_workthreads = 0;
 uint32_t ml_commits = 0;
+int32_t ignorereorderfor = 0;
 
 char **lm_workthreads_list = NULL;
 
@@ -1123,7 +1124,7 @@ char mod_workthreads_inc (char *service) {
  emutex_lock (&ml_workthreads_mutex);
 
  if (inset ((const void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING)) {
-  eprintf (stderr, " XX someone's already working on %s...\n", service);
+//  eprintf (stderr, " XX someone's already working on %s...\n", service);
   fflush (stderr);
   retval = 1;
  } else {
@@ -1185,7 +1186,7 @@ void mod_commits_dec () {
   }
   if (module_logics_chain_examine_reverse) {
    streefree (module_logics_chain_examine_reverse);
-   module_logics_chain_examine = NULL;
+   module_logics_chain_examine_reverse = NULL;
   }
   emutex_unlock(&ml_chain_examine);
  }
