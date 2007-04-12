@@ -807,7 +807,7 @@ int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_ev
 
  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
 
- return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+ return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
 
 int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_event *status) {
@@ -824,7 +824,7 @@ int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_e
 
  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
 
- return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+ return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
 
 int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, struct einit_event *status) {
@@ -841,7 +841,7 @@ int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, s
 
  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
 
- return pexec (cmdscript, NULL, 0, 0, NULL, NULL, NULL, status);
+ return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
 
 int _compatibility_sysv_gentoo_configure (struct lmodule *irr) {
