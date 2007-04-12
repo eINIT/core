@@ -88,7 +88,7 @@
    <shell-exec-timeout i="20" />
    <exec-envfile-base s="/etc/econf.d" />
    <proc-path s="/proc" />
-
+   <udev coldplug="yes" device_tarball="no" />
    <swap device="-a" affinity="0" />
    <setfont font="lat2-12" ttys="1 2 3 4 5 6" />
 
@@ -102,8 +102,6 @@
   <environment>
    <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin" />
    <global id="TERM" s="linux" />
-   <global id="COLDPLUG" s="no" />
-   <global id="DEVICE_TARBALL" s="no" />
    <safe PATH="/bin:/sbin:/usr/bin:/usr/sbin" TERM="dumb" />
   </environment>
 

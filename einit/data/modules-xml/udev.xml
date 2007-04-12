@@ -32,7 +32,7 @@
           if [ $(uname -r | cut -f 3 -d . | cut -f 1 -d -) -gt 14 ]; then
 	   echo &quot;feedback|notice|Populating /dev with existing devices through uevents&quot;;
            local opts=;
-           [ &quot;${RC_COLDPLUG}&quot; != &quot;yes&quot; ] &amp;&amp; opts=&quot;--attr-match=dev&quot;;
+           [ &quot;${configuration_system_udev_coldplug}&quot; != &quot;yes&quot; ] &amp;&amp; opts=&quot;--attr-match=dev&quot;;
            udevtrigger ${opts};
           else
 	   echo &quot;feedback|notice|Populating /dev with existing devices with udevstart&quot;;
@@ -41,7 +41,7 @@
 	  echo &quot;feedback|notice|Letting udev process events&quot;;
           udevsettle --timeout=60;
           rm -f /dev/.udev_populate"
-  disable="if [ &quot;${DEVICE_TARBALL}&quot; = &quot;yes&quot; ]; then
+  disable="if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
 	    echo &quot;feedback|notice|Saving device nodes&quot;;
             save_tmp_base=/tmp/udev.savedevices.&quot;$$&quot;;
             devices_udev=&quot;${save_tmp_base}&quot;/devices.udev;
@@ -84,5 +84,6 @@
            fi;
 	   killall -9 udevd;
  	   echo &quot;feedback|notice|Shutdown successfull!&quot;;"
+  variables="configuration-system-udev/.*" />
   restart="yes" />
 </einit>
