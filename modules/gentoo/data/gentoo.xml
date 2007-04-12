@@ -28,7 +28,7 @@
      svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d;
       cp -a /sbin/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
       echo default>/lib/rcscripts/init.d/softlevel;"
-     execute='/lib/rcscripts/sh/runscript.sh ${script-path} --quiet --nodeps ${action};' />
+     execute='/lib/rcscripts/sh/runscript.sh ${script-path} --nodeps ${action};' />
 
     <service-group id="gentoo-network-group" service="net\..*" put-into="network" />
     <service-group id="gentoo-audio-group" service=".*sound.*" put-into="audio" />
