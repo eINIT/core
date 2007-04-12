@@ -288,9 +288,15 @@ struct interface_template_item **network_import_templates (char *type, char *lis
 
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
  struct interface_descriptor *id = ecalloc (1, sizeof (struct interface_descriptor));
+ char nodename[BUFFERSIZE];
 
- id->interface_name = lm->module->rid+33;
- id->interface = cfg_getnode (lm->module->rid, NULL);
+
+ id->interface_name = lm->module->rid+10;
+
+ esprintf (nodename, BUFFERSIZE, "configuration-network-interfaces-%s", id->interface_name);
+
+// eputs (nodename, stderr);
+ id->interface = cfg_getnode (nodename, NULL);
 
  if (id->interface && id->interface->arbattrs) {
   uint32_t i = 0;
