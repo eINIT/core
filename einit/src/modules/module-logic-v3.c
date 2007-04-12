@@ -1056,14 +1056,17 @@ pthread_mutex_t
  ml_examine_mutex = PTHREAD_MUTEX_INITIALIZER,
  ml_chain_examine = PTHREAD_MUTEX_INITIALIZER,
  ml_workthreads_mutex = PTHREAD_MUTEX_INITIALIZER,
- ml_commits_mutex = PTHREAD_MUTEX_INITIALIZER;
+ ml_commits_mutex = PTHREAD_MUTEX_INITIALIZER,
+ ml_changed_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 struct stree *module_logics_chain_examine_reverse = NULL;
-char **currently_provided;
+char **currently_provided = NULL;
+char **changed_recently = NULL;
 signed char mod_flatten_current_tb_group(char *serv, char task);
 void mod_spawn_workthreads ();
 char mod_isprovided(char *service);
+char mod_haschanged(char *service);
 
 uint32_t ml_workthreads = 0;
 uint32_t ml_commits = 0;
@@ -1180,6 +1183,13 @@ void mod_commits_dec () {
    broken_services = NULL;
   }
   emutex_unlock (&ml_unresolved_mutex);
+
+  emutex_lock (&ml_changed_mutex);
+  if (changed_recently) {
+   free (changed_recently);
+   changed_recently = NULL;
+  }
+  emutex_unlock (&ml_changed_mutex);
 
   emutex_lock(&ml_chain_examine);
   if (module_logics_chain_examine) {
@@ -1379,6 +1389,18 @@ char mod_isprovided(char *service) {
  ret = inset ((const void **)currently_provided, (const void *)service, SET_TYPE_STRING);
 
  emutex_unlock (&ml_currently_provided_mutex);
+
+ return ret;
+}
+
+char mod_haschanged(char *service) {
+ char ret = 0;
+
+ emutex_lock (&ml_changed_mutex);
+
+ ret = inset ((const void **)changed_recently, (const void *)service, SET_TYPE_STRING);
+
+ emutex_unlock (&ml_changed_mutex);
 
  return ret;
 }
@@ -1690,6 +1712,10 @@ void mod_examine_module (struct lmodule *module) {
     currently_provided = (char **)setcombine_nc ((void **)currently_provided, (const void **)module->si->provides, SET_TYPE_STRING);
     emutex_unlock (&ml_currently_provided_mutex);
 
+    emutex_lock (&ml_changed_mutex);
+    changed_recently = (char **)setcombine_nc ((void **)changed_recently, (const void **)module->si->provides, SET_TYPE_STRING);
+    emutex_unlock (&ml_changed_mutex);
+
 #ifdef _POSIX_PRIORITY_SCHEDULING
     sched_yield();
 #endif
@@ -1706,6 +1732,10 @@ void mod_examine_module (struct lmodule *module) {
     currently_provided = (char **)setslice_nc ((void **)currently_provided, (const void **)module->si->provides, SET_TYPE_STRING);
     emutex_unlock (&ml_currently_provided_mutex);
 
+    emutex_lock (&ml_changed_mutex);
+    changed_recently = (char **)setcombine_nc ((void **)changed_recently, (const void **)module->si->provides, SET_TYPE_STRING);
+    emutex_unlock (&ml_changed_mutex);
+
 #ifdef _POSIX_PRIORITY_SCHEDULING
     sched_yield();
 #endif
@@ -1718,6 +1748,12 @@ void mod_examine_module (struct lmodule *module) {
    }
   }
  }
+
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&ml_cond_service_update);
 }
 
 void mod_post_examine (char *service) {
@@ -2085,7 +2121,7 @@ char mod_examine_group (char *groupname) {
 
 //  notice (2, "group %s: examining members", groupname);
 
-  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0;
+  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0, off = 0;
   struct lmodule **providers = NULL;
   char group_failed = 0, group_ok = 0;
 
@@ -2124,6 +2160,20 @@ char mod_examine_group (char *groupname) {
     currently_provided = (char **)strsetdel ((char **)currently_provided, (char *)groupname);
     emutex_unlock (&ml_currently_provided_mutex);
 
+    emutex_lock (&ml_tb_current_mutex);
+    current.enable = strsetdel (current.enable, groupname);
+    current.disable = strsetdel (current.disable, groupname);
+    emutex_unlock (&ml_tb_current_mutex);
+
+    emutex_lock (&ml_changed_mutex);
+    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
+     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
+    emutex_unlock (&ml_changed_mutex);
+
+    notice (2, "marking group %s off", groupname);
+
+    post_examine = 1;
+
 #ifdef _POSIX_PRIORITY_SCHEDULING
     sched_yield();
 #endif
@@ -2145,7 +2195,7 @@ char mod_examine_group (char *groupname) {
       group_failed = 1;
      }
     } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
-     if (on && ((on + failed) >= mem)) {
+     if (on && ((on + off + failed) >= mem)) {
       group_ok = 1;
      } else if (failed >= mem) {
       group_failed = 1;
@@ -2164,7 +2214,17 @@ char mod_examine_group (char *groupname) {
    }
 
    if (group_ok) {
-//    notice (2, "marking group %s up", groupname);
+    notice (2, "marking group %s up", groupname);
+
+    emutex_lock (&ml_tb_current_mutex);
+    current.enable = strsetdel (current.enable, groupname);
+    current.disable = strsetdel (current.disable, groupname);
+    emutex_unlock (&ml_tb_current_mutex);
+
+    emutex_lock (&ml_changed_mutex);
+    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
+     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
+    emutex_unlock (&ml_changed_mutex);
 
     service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, groupname);
 
@@ -2235,12 +2295,13 @@ void mod_examine (char *service) {
   return;
  } else if (mod_isdeferred (service)) {
   mod_pre_examine(service);
-//  notice (2, "service %s still marked as deferred", service);
+  notice (2, "service %s still marked as deferred", service);
 
   if (mod_workthreads_dec(service)) return;
 
   return;
  } else if (mod_examine_group (service)) {
+  notice (2, "service %s: group examination", service);
 
   if (mod_workthreads_dec(service)) return;
 
@@ -2258,8 +2319,8 @@ void mod_examine (char *service) {
    return;
   }
 
-/*  eprintf (stderr, " ** examining service %s (%s).\n", service,
-                   task & MOD_ENABLE ? "enable" : "disable");*/
+  eprintf (stderr, " ** examining service %s (%s).\n", service,
+                   task & MOD_ENABLE ? "enable" : "disable");
 
   emutex_lock (&ml_service_list_mutex);
   struct stree *v = streefind (module_logics_service_list, service, TREE_FIND_FIRST);
@@ -2287,7 +2348,7 @@ void mod_examine (char *service) {
     for (; before[i]; i++) {
      char **d;
      emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), before[i], SET_TYPE_STRING))) {
+     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
       uint32_t y = 0;
       emutex_unlock (&ml_tb_current_mutex);
 
@@ -2307,7 +2368,7 @@ void mod_examine (char *service) {
     for (; after[i]; i++) {
      char **d;
      emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), after[i], SET_TYPE_STRING))) {
+     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
       uint32_t y = 0;
       emutex_unlock (&ml_tb_current_mutex);
 
@@ -2356,18 +2417,31 @@ void workthread_examine (char *service) {
 // mod_workthreads_dec(service);
 }
 
-void mod_spawn_batch(char **batch) {
- uint32_t i = 0, deferred = 0;
+void mod_spawn_batch(char **batch, int task) {
+ uint32_t i = 0, deferred = 0, broken = 0;
 
- for (; batch[i]; i++) {
-  if (mod_isdeferred(batch[i])) {
+ retry:
+
+ if (!batch) return;
+
+ for (i = 0; batch[i]; i++) {
+  if (mod_isbroken(batch[i])) {
+   broken++;
+//   eprintf (stderr, " !! %s\n", batch[i]);
+  } else if (mod_isdeferred(batch[i])) {
    deferred++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
+  } else if ((task == MOD_ENABLE) && mod_isprovided (batch[i])) {
+   current.enable = strsetdel (current.enable, batch[i]);
+   batch = current.enable;
+   goto retry;
+  } else if ((task == MOD_DISABLE) && !mod_isprovided (batch[i])) {
+   current.disable = strsetdel (current.disable, batch[i]);
+   batch = current.disable;
+   goto retry;
   } else {
    char *sc = estrdup (batch[i]);
    pthread_t th;
-
-//   eprintf (stderr, " kk:%s\n", batch[i]);
 
    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
     emutex_unlock (&ml_tb_current_mutex);
@@ -2378,28 +2452,43 @@ void mod_spawn_batch(char **batch) {
   }
  }
 
- eprintf (stderr, "i=%i, deferred=%i\n", i, deferred);
+ eprintf (stderr, "i=%i, broken=%i, deferred=%i\n", i, broken, deferred);
 
 // ignorereorderfor =
 }
 
 void mod_spawn_workthreads () {
+ emutex_lock(&ml_chain_examine);
+ if (module_logics_chain_examine) {
+  streefree (module_logics_chain_examine);
+  module_logics_chain_examine = NULL;
+ }
+ if (module_logics_chain_examine_reverse) {
+  streefree (module_logics_chain_examine_reverse);
+  module_logics_chain_examine_reverse = NULL;
+ }
+ emutex_unlock(&ml_chain_examine);
+
  emutex_lock (&ml_tb_current_mutex);
  if (current.enable) {
-  mod_spawn_batch(current.enable);
+  mod_spawn_batch(current.enable, MOD_ENABLE);
  }
 
  if (current.disable) {
-  mod_spawn_batch(current.disable);
+  mod_spawn_batch(current.disable, MOD_DISABLE);
  }
  emutex_unlock (&ml_tb_current_mutex);
+
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&ml_cond_service_update);
 }
 
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
  uint32_t iterations = 0;
-
- mod_commits_inc();
 
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
@@ -2414,6 +2503,8 @@ void mod_commit_and_wait (char **en, char **dis) {
  eputs ("flat as a pancake now...\n", stderr);
  fflush(stderr);
 
+ mod_commits_inc();
+
  do {
   remainder = 0;
   iterations++;
@@ -2422,8 +2513,8 @@ void mod_commit_and_wait (char **en, char **dis) {
    uint32_t i = 0;
 
    for (; en[i]; i++) {
-    if (!mod_isbroken (en[i]) && !mod_isprovided(en[i])) {
-//        eprintf (stderr, "not yet provided: %s\n", en[i]);
+    if (!mod_isbroken (en[i]) && !mod_haschanged(en[i])) {
+        eprintf (stderr, "not yet provided: %s\n", en[i]);
 
      remainder++;
 
@@ -2444,7 +2535,7 @@ void mod_commit_and_wait (char **en, char **dis) {
    uint32_t i = 0;
 
    for (; dis[i]; i++) {
-    if (!mod_isbroken (dis[i]) && mod_isprovided(dis[i])) {
+    if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i])) {
      eprintf (stderr, "still provided: %s\n", dis[i]);
 
      remainder++;
