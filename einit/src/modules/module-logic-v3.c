@@ -1848,6 +1848,7 @@ void mod_apply_disable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if ((lm[0]->status & STATUS_DISABLED) || (lm[0]->status == STATUS_IDLE)) {
+     any_ok = 1;
      goto skip_module;
     }
 
