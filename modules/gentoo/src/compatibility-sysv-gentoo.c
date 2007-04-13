@@ -530,6 +530,30 @@ void einit_event_handler (struct einit_event *ev) {
   if (ca)
    streefree (ca);
 #endif
+ } else if (ev->type == EVE_SERVICE_UPDATE) { // update service status
+  uint32_t i = 0;
+  eputs ("marking service status!\n", stderr);
+  if (!ev->set) return;
+  if (ev->status & STATUS_WORKING) {
+   if (ev->task & MOD_ENABLE) {
+    for (; ev->set[i]; i++)
+     rc_mark_service (ev->set[i], rc_service_starting);
+   } else if (ev->task & MOD_DISABLE) {
+    for (; ev->set[i]; i++)
+     rc_mark_service (ev->set[i], rc_service_stopping);
+   }
+  } else if (ev->status == STATUS_IDLE) {
+   for (; ev->set[i]; i++)
+    rc_mark_service (ev->set[i], rc_service_inactive);
+  } else {
+   if (ev->status & STATUS_ENABLED) {
+    for (; ev->set[i]; i++)
+     rc_mark_service (ev->set[i], rc_service_started);
+   } else if (ev->status & STATUS_DISABLED) {
+    for (; ev->set[i]; i++)
+     rc_mark_service (ev->set[i], rc_service_stopped);
+   }
+  }
  } else if (ev->type == EVE_PLAN_UPDATE) { // set active "soft mode"
   if (do_service_tracking && ev->string) {
    char tmp[BUFFERSIZE];

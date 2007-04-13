@@ -60,9 +60,10 @@
   <alias id="keymaps" s="keyboard" />
   <alias id="bootmisc" s="sysconf" />
   <alias id="acpid" s="acpi" />
+  <alias id="xdm" s="displaymanager" />
 
   <transform id="gentoo-net" module-id="gentoo-.*" in="net" out="network" strip-from="provides" />
-  <transform id="gentoo-xdm" module-id="gentoo-xdm" in="xdm" out="xdm" strip-from="after" />
+  <transform id="gentoo-xdm" module-id="gentoo-xdm" in="xdm" out="displaymanager" strip-from="after" />
   <transform id="gentoo-mount" module-id="gentoo-.*" in="localmount" out="mount-local" />
  </services>
 </einit>
