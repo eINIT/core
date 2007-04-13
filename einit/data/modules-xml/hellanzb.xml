@@ -3,7 +3,7 @@
   name="hellanzb - nzb downloader and post processor"
   provides="hellanzb"
   requires="net-lo:mount-local"
-  enable="hellanzb.py -D"
+  enable="hellanzb.py -D&amp;&gt;/dev/null"
   disable="hellanzb.py shutdown"
   restart="yes" />
 </einit>
