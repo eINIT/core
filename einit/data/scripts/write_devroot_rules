@@ -5,16 +5,8 @@ for o in `cat /proc/cmdline` ; do
     root=*)
         root=${o#root=}
         ;;
-    rootflags=*)
-        rootflags=${o#rootflags=}
-        ;;
-    rootfstype=*)
-        rootfstype=${o#rootfstype=}
-        ;;
     esac
 done
-
-echo "root=$root"
 
 case $root in
     /dev/disk/by-label/*)
