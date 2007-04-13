@@ -26,7 +26,7 @@
      arguments: script-path, script-name, action -->
     <init.d-scriptlets
      svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d;
-      cp -a /sbin/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
+      cp -a /lib/einit/scripts/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
       echo default>/lib/rcscripts/init.d/softlevel;"
      execute='cd /etc/init.d/; SVCNAME=${script-name} /lib/rcscripts/sh/runscript.sh ${script-name} ${action};' />
 

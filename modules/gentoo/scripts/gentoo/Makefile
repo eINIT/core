@@ -3,5 +3,5 @@ include ../../config.mk
 all:
 
 install:
-	${INSTALL} ${IPARAM} -d ${DESTDIR}/${SBINDIR}
-	${INSTALL} ${IPARAM} runscript-einit.sh ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
+	${INSTALL} ${IPARAM} runscript-einit.sh ${DESTDIR}/${LIBDIR}/scripts
