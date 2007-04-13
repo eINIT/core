@@ -53,4 +53,7 @@ elif test "${action}" = "stop"; then
  action="disable"
 fi
 
-/sbin/einit-control rc $(basename ${script}) ${action}
+servicename="$(basename ${script})"
+servicename="$(echo ${servicename}|sed -e y/./-/)"
+
+/sbin/einit-control rc ${servicename} ${action}
