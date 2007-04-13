@@ -794,9 +794,10 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 // int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 
 int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_event *status) {
+ char *bn = strrchr(init_script, '/');
  char *variables[7] = {
   "script-path", init_script,
-  "script-name", init_script,
+  "script-name", bn ? bn+1 : init_script,
   "action", "start", NULL },
   *cmdscript = NULL,
   *xrev = NULL;
@@ -811,9 +812,10 @@ int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_ev
 }
 
 int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_event *status) {
+ char *bn = strrchr(init_script, '/');
  char *variables[7] = {
   "script-path", init_script,
-  "script-name", init_script,
+  "script-name", bn ? bn+1 : init_script,
   "action", "stop", NULL },
   *cmdscript = NULL,
   *xrev = NULL;
@@ -828,9 +830,10 @@ int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_e
 }
 
 int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, struct einit_event *status) {
+ char *bn = strrchr(init_script, '/');
  char *variables[7] = {
   "script-path", init_script,
-  "script-name", init_script,
+  "script-name", bn ? bn+1 : init_script,
   "action", action, NULL },
   *cmdscript = NULL,
   *xrev = NULL;
