@@ -78,8 +78,8 @@ extern "C" {
  * based visualiser once i get to it.
 */
 
-#ifndef _MODULE_H
-#define _MODULE_H
+#ifndef _EINIT_MODULE_H
+#define _EINIT_MODULE_H
 
 #define MAXMODULES 40
 

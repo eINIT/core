@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _SCHEDULER_H
-#define _SCHEDULER_H
+#ifndef _EINIT_SCHEDULER_H
+#define _EINIT_SCHEDULER_H
 
 #include <pthread.h>
 #include <sys/types.h>

@@ -31,8 +31,8 @@ extern "C" {
  * Error reporting (a.k.a. "bitching") is fairly important...
 */
 
-#ifndef _BITCH_H
-#define _BITCH_H
+#ifndef _EINIT_BITCH_H
+#define _EINIT_BITCH_H
 
 #include <errno.h>
 

@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef _EINIT_CONFIG_H
+#define _EINIT_CONFIG_H
 
 struct cfgnode;
 
