@@ -26,6 +26,8 @@
             echo &quot;/sbin/udevsend&quot; &gt; /proc/sys/kernel/hotplug;
            fi;
           fi;
+	  echo &quot;feedback|notice|Generating udev rules to generate /dev/root symlink&quot;;
+	  /lib/einit/scripts/write_devroot_rules;
 	  echo &quot;feedback|notice|Starting udevd&quot;;
           udevd --daemon;
           touch /dev/.udev_populate;
