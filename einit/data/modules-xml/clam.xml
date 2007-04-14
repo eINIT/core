@@ -1,0 +1,44 @@
+<einit prefix="services">
+<!-- creds to Tyrius for this one =) -->
+ <virtual>
+  <module>
+   <shell id="shell-clamd"
+    name="clamd - AntiVirus"
+    provides="antivirus:clamd"
+    requires="net-lo:mount-critical"
+    prepare="local clamd_socket=$(awk '$1 == &quot;LocalSocket&quot; { print $2 }'
+     /etc/clamd.conf); 
+     local logfile=$(awk '$1 == &quot;LogFile&quot; { print $2 }' /etc/clamd.conf);
+     local clamav_user=$(awk '$1 == &quot;User&quot; { print $2 }' /etc/clamd.conf);
+     if [[ -n &quot;${logfile}&quot; &amp;&amp; -n &quot;${clamav_user}&quot; ]]; then 
+      if [ ! -f &quot;${logfile}&quot; ]; then
+       touch ${logfile};
+      fi;
+      chown ${clamav_user} ${logfile};
+     fi;
+     if [ -S &quot;${clamd_socket:-/tmp/clamd}&quot; ]; then
+      rm -f ${clamd_socket:-/tmp/clamd};
+     fi;"
+    enable="/usr/sbin/clamd"
+    disable="killall clamd" />
+
+   <shell id="shell-freshclam" 
+    name="freshclam - clamav updater" 
+    provides="freshclam"
+    requires="net-lo:mount-critical:clamd"
+    prepare="logfile=$(awk '$1 == &quot;UpdateLogFile&quot; { print $2 }' /etc/freshclam.conf);
+     if [[ -n &quot;${logfile}&quot; &amp;&amp; -n &quot;${clamav_user}&quot; ]]; then 
+      if [ ! -f &quot;${logfile}&quot; ]; then
+       touch ${logfile};
+      fi;
+      chown ${clamav_user} ${logfile};
+     fi;"
+    enable="/usr/bin/freshclam -d"
+    disable="killall freshclam" />
+  </module>
+ </virtual>
+
+ <prefer>
+  <antivirus s="shell-clamd" />
+ </prefer>
+</einit>
