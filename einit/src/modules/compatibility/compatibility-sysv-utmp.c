@@ -104,7 +104,7 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
 // if we don't have anything to do, bail out
  if (!options) return -1;
 
- if (gmode == EINIT_GMODE_SANDBOX)
+ if (coremode == einit_mode_sandbox)
   ufile = eopen ("var/run/utmp", O_RDWR);
  else
   ufile = eopen ("/var/run/utmp", O_RDWR);
@@ -202,7 +202,7 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
  }
 
  if (options & UTMP_ADD) { // still didn't get to add this.. try to append it to the file
-  if (gmode == EINIT_GMODE_SANDBOX)
+  if (coremode == einit_mode_sandbox)
    ufile = open ("var/run/utmp", O_WRONLY | O_APPEND);
   else
    ufile = open ("/var/run/utmp", O_WRONLY | O_APPEND);

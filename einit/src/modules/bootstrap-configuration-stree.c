@@ -142,12 +142,12 @@ int cfg_addnode_f (struct cfgnode *node) {
  }
  no_template:
 
- if (node->nodetype & EI_NODETYPE_MODE) {
+ if (node->type & einit_node_mode) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
   only the first one would be used anyway. */
   if (cur) cur = streefind (cur, node->id, TREE_FIND_FIRST);
   while (cur) {
-   if (cur->value && !(((struct cfgnode *)cur->value)->nodetype ^ EI_NODETYPE_MODE)) {
+   if (cur->value && !(((struct cfgnode *)cur->value)->type ^ einit_node_mode)) {
 // this means we found something that looks like it
     void *bsl = cur->luggage;
 
@@ -181,7 +181,7 @@ int cfg_addnode_f (struct cfgnode *node) {
     cur->luggage = node->arbattrs;
 //    if (bsl) free (bsl);
 
-    ((struct cfgnode *)cur->value)->nodetype    = node->nodetype;
+    ((struct cfgnode *)cur->value)->type        = node->type;
     ((struct cfgnode *)cur->value)->mode        = node->mode;
     ((struct cfgnode *)cur->value)->flag        = node->flag;
     ((struct cfgnode *)cur->value)->value       = node->value;
@@ -212,7 +212,7 @@ int cfg_addnode_f (struct cfgnode *node) {
  return 0;
 }
 
-struct cfgnode *cfg_findnode_f (const char *id, const unsigned int type, const struct cfgnode *base) {
+struct cfgnode *cfg_findnode_f (const char *id, enum einit_cfg_node_options type, const struct cfgnode *base) {
  struct stree *cur = hconfiguration;
  if (!id) return NULL;
 
@@ -231,7 +231,7 @@ struct cfgnode *cfg_findnode_f (const char *id, const unsigned int type, const s
  }
 
  while (cur) {
-  if (cur->value && (!type || !(((struct cfgnode *)cur->value)->nodetype ^ type))) {
+  if (cur->value && (!type || !(((struct cfgnode *)cur->value)->type ^ type))) {
    return cur->value;
   }
   cur = streefind (cur, id, TREE_FIND_NEXT);
@@ -328,7 +328,7 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
 }
 
 // return a new stree with the filter applied
-struct stree *cfg_filter_f (const char *filter, const uint32_t node_options) {
+struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type) {
  struct stree *retval = NULL;
 
 #ifdef POSIXREGEX
@@ -338,7 +338,7 @@ struct stree *cfg_filter_f (const char *filter, const uint32_t node_options) {
   if (!eregcomp(&pattern, filter)) {
    while (cur) {
     if (!regexec (&pattern, cur->key, 0, NULL, 0) &&
-        (!node_options || (((struct cfgnode *)(cur->value))->options & node_options))) {
+        (!type || (((struct cfgnode *)(cur->value))->type & type))) {
      retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
     }
     cur = streenext (cur);

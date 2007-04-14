@@ -111,7 +111,7 @@ struct einit_xml_expat_user_data {
           if_level,
           if_results;
  char *file, *prefix;
- uint32_t target_options;
+ enum einit_cfg_node_options type;
 };
 
 char xml_parser_auto_create_missing_directories = 0;
@@ -152,10 +152,10 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     if (strmatch (atts[i], "match")) { // condition is a literal string match
      char **mt = str2set (':', (char *)(atts[i+1]));
      if (mt && mt[0] && mt[1]) {
-      if (strmatch (mt[0], "core-mode")) { // literal match is against the einit core mode (gmode)
-       mt[0] = ((gmode == EINIT_GMODE_INIT) ? "init" :
-               ((gmode == EINIT_GMODE_METADAEMON) ? "metadaemon" :
-               ((gmode == EINIT_GMODE_SANDBOX) ? "sandbox" : "undefined")));
+      if (strmatch (mt[0], "core-mode")) { // literal match is against the einit core mode
+       mt[0] = ((coremode == einit_mode_init) ? "init" :
+               ((coremode == einit_mode_metadaemon) ? "metadaemon" :
+               ((coremode == einit_mode_sandbox) ? "sandbox" : "undefined")));
       }
 
       if (strmatch (mt[0], mt[1]))
@@ -197,9 +197,9 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
   if (strmatch (name, "mode")) {
 /* parse the information presented in the element as a mode-definition */
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-   newnode->options = ((struct einit_xml_expat_user_data *)userData)->target_options;
+   newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
 
-   newnode->nodetype = EI_NODETYPE_MODE;
+   newnode->type |= einit_node_mode;
    newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
    newnode->source = xml_source_identifier;
    newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
@@ -215,16 +215,17 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     char *id = newnode->id;
     cfg_addnode (newnode);
     curmode = NULL;
-    curmode = cfg_findnode (id, EI_NODETYPE_MODE, curmode);
+    curmode = cfg_findnode (id, einit_node_mode, curmode);
     free (newnode);
    }
   } else {
 /* parse the information presented in the element as a variable */
    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-   newnode->options = ((struct einit_xml_expat_user_data *)userData)->target_options;
+   newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
+
+   newnode->type |= einit_node_regular;
 
    newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
-   newnode->nodetype = EI_NODETYPE_CONFIG;
    newnode->mode = curmode;
    newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
    newnode->source = xml_source_identifier;
@@ -297,10 +298,10 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   .if_level = 0,
   .file = configfile,
   .prefix = NULL,
-  .target_options =
+  .type =
     (tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&
     strmatch (configfile, tmps) ?
-    EINIT_CFGNODE_ONLINE_MODIFICATION : 0
+    einit_node_modified : 0
  };
 
  if ((data = readfile (configfile))) {

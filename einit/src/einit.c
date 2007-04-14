@@ -70,7 +70,7 @@ char **einit_global_environment = NULL, **einit_initial_environment = NULL;
 struct stree *hconfiguration = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
-uint32_t gmode = EINIT_GMODE_INIT;
+enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
 
 /* some more variables that are only of relevance to main() */
@@ -241,9 +241,9 @@ int main(int argc, char **argv) {
       initoverride = 1;
      else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
-      gmode = EINIT_GMODE_SANDBOX;
+      coremode = einit_mode_sandbox;
      } else if (strmatch(argv[i], "--metadaemon")) {
-      gmode = EINIT_GMODE_METADAEMON;
+      coremode = einit_mode_metadaemon;
      } else if (strmatch(argv[i], "--bootstrap-modules")) {
       bootstrapmodulepath = argv[i+1];
      }
@@ -332,8 +332,8 @@ int main(int argc, char **argv) {
 /* actual system initialisation */
   struct einit_event cev = evstaticinit(EVE_UPDATE_CONFIGURATION);
 
-  if (ipccommands && (gmode != EINIT_GMODE_SANDBOX)) {
-   gmode = EINIT_GMODE_IPCONLY;
+  if (ipccommands && (coremode != einit_mode_sandbox)) {
+   coremode = einit_mode_ipconly;
   }
 
   eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
 //    cleanup ();
 
    return ret;
-  } else if ((gmode == EINIT_GMODE_INIT) && !isinit && !initoverride) {
+  } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {
    eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
    exit (EXIT_FAILURE);
   } else {

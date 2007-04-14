@@ -336,7 +336,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    struct cfgnode *cno;
    while (base[y]) {
     if (!inset ((const void **)plan->used_modes, (void *)base[y], SET_TYPE_STRING)) {
-     cno = cfg_findnode (base[y], EI_NODETYPE_MODE, NULL);
+     cno = cfg_findnode (base[y], einit_node_mode, NULL);
      if (cno) {
       plan = mod_plan (plan, NULL, 0, cno);
      }
@@ -649,7 +649,7 @@ void mod_sort_service_list_items_by_preference() {
 
 int mod_switchmode (char *mode) {
  if (!mode) return -1;
- struct cfgnode *cur = cfg_findnode (mode, EI_NODETYPE_MODE, NULL);
+ struct cfgnode *cur = cfg_findnode (mode, einit_node_mode, NULL);
  struct mloadplan *plan = NULL;
 
  if (!cur) {

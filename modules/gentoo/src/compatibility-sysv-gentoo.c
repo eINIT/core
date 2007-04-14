@@ -232,7 +232,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
 // if not exclusive, merge current mode base with the new base
     if (!exclusive) {
-     if ((currentmode = cfg_findnode (de->d_name, EI_NODETYPE_MODE, NULL)) && currentmode->arbattrs) {
+     if ((currentmode = cfg_findnode (de->d_name, einit_node_mode, NULL)) && currentmode->arbattrs) {
       char **curmodebase = NULL;
 
       uint32_t i = 0;
@@ -274,14 +274,14 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      }
     }
 
-    newnode.nodetype = EI_NODETYPE_MODE;
+    newnode.type = einit_node_mode;
     newnode.id = estrdup(arbattrs[1]);
     newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
     cfg_addnode (&newnode);
 
-    if (currentmode = cfg_findnode (newnode.id, EI_NODETYPE_MODE, NULL)) {
+    if (currentmode = cfg_findnode (newnode.id, einit_node_mode, NULL)) {
      tmp[xplen-2] = '/';
      tmp[xplen-1] = 0;
      parse_gentoo_runlevels (tmp, currentmode, exclusive);
@@ -371,7 +371,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
        memset (&newnode, 0, sizeof(struct cfgnode));
 
-       newnode.nodetype = EI_NODETYPE_CONFIG;
+       newnode.type = einit_node_regular;
 //       newnode.mode     = currentmode;
        newnode.id       = cfgid;
        newnode.source   = self->rid;
@@ -429,7 +429,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      arbattrs = (char **)setadd ((void **)arbattrs, (void *)critical, SET_TYPE_STRING);
     }
 
-    newnode.nodetype = EI_NODETYPE_CONFIG;
+    newnode.type = einit_node_regular;
     newnode.mode     = currentmode;
     newnode.id       = estrdup("mode-enable");
     newnode.source   = self->rid;
@@ -693,7 +693,7 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
   fprintf (stderr, " >> parsing gentoo scripts\n");
  }*/
 
- if (!svcdir_init_done && (gmode != EINIT_GMODE_IPCONLY) && (gmode != EINIT_GMODE_SANDBOX)) {
+ if (!svcdir_init_done && (coremode != einit_mode_ipconly) && (coremode != einit_mode_sandbox)) {
   char *cmd = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/svcdir-init", NULL);
 
   if (cmd) pexec(cmd, NULL, 0, 0, NULL, NULL, NULL, NULL);

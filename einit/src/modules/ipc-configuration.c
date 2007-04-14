@@ -150,8 +150,8 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    onode = cfg_getnode (t, NULL);
    memset (&newnode, 0, sizeof (struct cfgnode));
 
-   newnode.nodetype =
-     onode && onode->nodetype ? onode->nodetype : EI_NODETYPE_CONFIG;
+   newnode.type =
+     (onode && onode->type ? onode->type : einit_node_regular) | einit_node_modified;
    newnode.id =
      estrdup (onode && onode->id ? onode->id : t);
    newnode.mode =
@@ -168,8 +168,6 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
      onode && onode->path ? onode->path : NULL;
    newnode.source = self->rid;
    newnode.source_file = NULL;
-   newnode.options =
-     (onode && onode->options ? onode->options : 0) | EINIT_CFGNODE_ONLINE_MODIFICATION;
 
    char tflag = parse_boolean (argv[3]);
    long int tvalue = parse_integer (argv[3]);
@@ -227,7 +225,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 
    free (t);
   } else if (strmatch (argv[0], "save") && strmatch (argv[1], "configuration")) {
-   struct stree *tmptree = cfg_filter (".*", EINIT_CFGNODE_ONLINE_MODIFICATION);
+   struct stree *tmptree = cfg_filter (".*", einit_node_modified);
    char *buffer = NULL;
    cfg_string_converter conv;
    char *targetfile = argv[2] ? argv[2] :

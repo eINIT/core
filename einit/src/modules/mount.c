@@ -943,7 +943,7 @@ int emount (char *mountpoint, struct einit_event *status) {
     status_update (status);
 
     esprintf (tmp, BUFFERSIZE, fsck_command, fstype, de->key);
-    if (gmode != EINIT_GMODE_SANDBOX) {
+    if (coremode != einit_mode_sandbox) {
      pexec_v1 (tmp, NULL, NULL, status);
     } else {
      status->string = tmp;
@@ -967,7 +967,7 @@ int emount (char *mountpoint, struct einit_event *status) {
   if (fse->options)
    fsdata = options_string_to_mountflags (fse->options, &mntflags, mountpoint);
 
-  if (gmode != EINIT_GMODE_SANDBOX) {
+  if (coremode != einit_mode_sandbox) {
    if (fse->before_mount)
     pexec_v1 (fse->before_mount, (const char **)fse->variables, NULL, status);
   }
@@ -1004,7 +1004,7 @@ int emount (char *mountpoint, struct einit_event *status) {
     free (fs_mount_functions);
    }
 
-   if (gmode != EINIT_GMODE_SANDBOX) {
+   if (coremode != einit_mode_sandbox) {
 // root node should only be remounted...
     if (strmatch ("/", mountpoint)) goto attempt_remount;
 #if defined(DARWIN) || defined(__FreeBSD__)
@@ -1048,7 +1048,7 @@ int emount (char *mountpoint, struct einit_event *status) {
    fse->adevice = source;
    fse->aflags = mntflags;
 
-   if (gmode != EINIT_GMODE_SANDBOX) {
+   if (coremode != einit_mode_sandbox) {
     if (fse->after_mount)
      pexec_v1 (fse->after_mount, (const char **)fse->variables, NULL, status);
 
@@ -1180,7 +1180,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
  }
 
  umount_ok:
- if (gmode != EINIT_GMODE_SANDBOX) {
+ if (coremode != einit_mode_sandbox) {
   if (fse && fse->after_umount)
    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
  }
@@ -1583,7 +1583,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t ret, sc = 0, slc;
 
- if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
+ if (coremode == einit_mode_sandbox) return STATUS_OK;
 
  switch (p) {
   case MOUNT_LOCAL:
@@ -1706,7 +1706,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t sc = 0, slc;
 
- if (gmode == EINIT_GMODE_SANDBOX) return STATUS_OK;
+ if (coremode == einit_mode_sandbox) return STATUS_OK;
 
  einit_mount_update (UPDATE_MTAB);
  ha = mcb.fstab;

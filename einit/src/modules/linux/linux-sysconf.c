@@ -118,7 +118,7 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
  char *sfilename;
 
  if (cfg && !cfg->flag) {
-  if (gmode != EINIT_GMODE_SANDBOX) {
+  if (coremode != einit_mode_sandbox) {
    if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
     status->string = strerror(errno);
     errno = 0;

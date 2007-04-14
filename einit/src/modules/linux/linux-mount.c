@@ -170,7 +170,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
  char c_uuid[38];
  char tmp[BUFFERSIZE];
 
- if (gmode == EINIT_GMODE_SANDBOX) return 0;
+ if (coremode == einit_mode_sandbox) return 0;
 
  if (!element) return 1;
 
@@ -352,7 +352,7 @@ unsigned char mount_linux_real_mount (char *source, char *mountpoint, char *fsty
   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", source, mountpoint, fstype);
  }
 
- if (gmode != EINIT_GMODE_SANDBOX) {
+ if (coremode != einit_mode_sandbox) {
   if (pexec_v1 (command, NULL, NULL, status) == STATUS_OK)
    return 0;
   else {

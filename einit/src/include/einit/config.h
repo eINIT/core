@@ -82,31 +82,35 @@ struct cfgnode;
 #define EINIT_VERSION_LITERAL_NUMBER "0.21.1"
 #define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER EINIT_VERSION_LITERAL_SUFFIX
 
-#define EI_NODETYPE_BASENODE 1
-#define EI_NODETYPE_CONFIG 2
-#define EI_NODETYPE_CONFIG_CUSTOM 4
-#define EI_NODETYPE_MODE 8
+enum einit_cfg_node_options {
+ einit_node_regular = 0x02,
+ einit_node_mode = 0x08,
+ einit_node_modified = 0x10
+};
 
-#define EINIT_CFGNODE_ONLINE_MODIFICATION 0x00000001
-
-#define EINIT_GMODE_INIT       0x00000001
-#define EINIT_GMODE_METADAEMON 0x00000002
-#define EINIT_GMODE_SANDBOX    0x00000003
-#define EINIT_GMODE_IPCONLY    0x00000004
+enum einit_mode {
+ einit_mode_init = 0x01,
+ einit_mode_metadaemon = 0x02,
+ einit_mode_sandbox = 0x10,
+ einit_mode_ipconly = 0x20
+};
 
 struct cfgnode {
- unsigned int nodetype;
+ enum einit_cfg_node_options type;
  char *id;
  struct cfgnode *mode;
+
+/* data */
  unsigned char flag;
  long int value;
  char *svalue;
+
+/* arbitrary attributes + shortcuts */
  char **arbattrs;
  char *idattr;
  char *path;
  char *source;
  char *source_file;
- uint32_t options;
 };
 
 struct stree *hconfiguration;
@@ -117,7 +121,7 @@ struct cfgnode *cmode, *amode;
 
 time_t boottime;
 
-uint32_t gmode;
+enum einit_mode coremode;
 unsigned char *gdebug;
 
 char **einit_global_environment,
@@ -129,10 +133,10 @@ typedef char *(*cfg_string_converter) (const struct stree *);
 #if (! defined(einit_modules_bootstrap_configuration_stree)) || (einit_modules_bootstrap_configuration_stree == 'm') || (einit_modules_bootstrap_configuration_stree == 'n')
 
 typedef int (*cfg_addnode_t) (struct cfgnode *);
-typedef struct cfgnode *(*cfg_findnode_t) (const char *, const unsigned int, const struct cfgnode *);
+typedef struct cfgnode *(*cfg_findnode_t) (const char *, enum einit_cfg_node_options, const struct cfgnode *);
 typedef char *(*cfg_getstring_t) (const char *, const struct cfgnode *);
 typedef struct cfgnode *(*cfg_getnode_t) (const char *, const struct cfgnode *);
-typedef struct stree *(*cfg_filter_t) (const char *, const uint32_t);
+typedef struct stree *(*cfg_filter_t) (const char *, enum einit_cfg_node_options);
 typedef char *(*cfg_getpath_t) (const char *);
 typedef struct stree *(*cfg_prefix_t) (const char *);
 
@@ -165,10 +169,10 @@ cfg_prefix_t cfg_prefix_fp;
 #else
 
 int cfg_addnode_f (struct cfgnode *);
-struct cfgnode *cfg_findnode_f (const char *, const unsigned int, const struct cfgnode *);
+struct cfgnode *cfg_findnode_f (const char *, enum einit_cfg_node_options, const struct cfgnode *);
 char *cfg_getstring_f (const char *, const struct cfgnode *);
 struct cfgnode *cfg_getnode_f (const char *, const struct cfgnode *);
-struct stree *cfg_filter_f (const char *, const uint32_t);
+struct stree *cfg_filter_f (const char *, enum einit_cfg_node_options);
 char *cfg_getpath_f (const char *);
 char *cfg_prefix_f (const char *);
 

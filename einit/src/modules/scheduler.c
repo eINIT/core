@@ -160,7 +160,7 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGTSTP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTIN, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTOU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if (gmode != EINIT_GMODE_SANDBOX) {
+ if (coremode != einit_mode_sandbox) {
   if ( sigaction (SIGTERM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  }
 #ifdef SIGPOLL
@@ -287,7 +287,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
 
      sync ();
 
-     if (gmode == EINIT_GMODE_SANDBOX) {
+     if (coremode == einit_mode_sandbox) {
       notice (1, "scheduler: cleaning up");
      }
 

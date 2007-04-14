@@ -93,7 +93,7 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
 
  if (!path) return NULL;
 
- if (gmode == EINIT_GMODE_SANDBOX) {
+ if (coremode == einit_mode_sandbox) {
 // override path in sandbox-mode to be relative
   if (path[0] == '/') path++;
  }
