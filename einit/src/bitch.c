@@ -52,13 +52,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 unsigned char mortality[BITCH_SAUCES] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
-int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason) {
+int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const char *function, int error, const char *reason) {
  const char *lfile          = file ? file : "unknown";
  const char *lfunction      = function ? function : "unknown";
  const char *lreason        = reason ? reason : "unknown";
  const int lerror           = error ? error : errno;
  const int lline            = line ? line : 0;
- const unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : BITCH_BAD_SAUCE;
+ const unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : bitch_bad_sauce;
 
  switch (mortality[lsauce]) {
   case 0: // 0: ignore the problem
@@ -68,7 +68,7 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
     switch (sauce) {
 #if ! defined (EINIT_UTIL)
 #ifdef POSIXREGEX
-     case BITCH_REGEX:
+     case bitch_regex:
      {
       char *sregerr = NULL;
       switch (lerror) {

@@ -69,14 +69,14 @@ int ipc (char *cmd) {
  char *c;
  FILE *esocket;
  if (sock == -1)
-  return bitch (BITCH_STDIO, 0, "socket not open");
+  return bitch (bitch_stdio, 0, "socket not open");
 
  saddr.sun_family = AF_UNIX;
  strncpy (saddr.sun_path, ctrlsocket, sizeof(saddr.sun_path) - 1);
 
  if (connect(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
   eclose (sock);
-  return bitch (BITCH_STDIO, 0, "connect() failed.");
+  return bitch (bitch_stdio, 0, "connect() failed.");
  }
 
  len = strlen(cmd);
@@ -84,17 +84,17 @@ int ipc (char *cmd) {
  esprintf (c, (len+2), "%s\n", cmd);
 
  if (!(esocket = fdopen (sock, "w+"))) {
-  bitch(BITCH_STDIO, 0, "fdopen() failed.");
+  bitch(bitch_stdio, 0, "fdopen() failed.");
   eclose (sock);
   return 0;
  }
 
  if (fputs(c, esocket) == EOF) {
-  bitch(BITCH_STDIO, 0, "fputs() failed.");
+  bitch(bitch_stdio, 0, "fputs() failed.");
  }
 
  if (fflush (esocket) == EOF)
-  bitch(BITCH_STDIO, errno, "couldn't flush IPC buffer");
+  bitch(bitch_stdio, errno, "couldn't flush IPC buffer");
 
  while ((!feof(esocket)) && fgets (buffer, BUFFERSIZE, esocket)) {
   if (strmatch("IPC//processed.\n", buffer)) {

@@ -230,7 +230,7 @@ int ipc_read (int *nfd) {
 
     eprintf (f, "\nIPC//processed.\n%i\n", ret);
     if (fflush (f) == EOF)
-     bitch(BITCH_STDIO, errno, "couldn't flush IPC buffer");
+     bitch(bitch_stdio, errno, "couldn't flush IPC buffer");
    }
 
    efclose (f);

@@ -146,7 +146,7 @@ void flush_log_buffer () {
 
    fclose (logfile);
   } else {
-   bitch (BITCH_STDIO, errno, "could not open logfile for saving.");
+   bitch (bitch_stdio, errno, "could not open logfile for saving.");
   }
  } else {
   emutex_lock(&logmutex);

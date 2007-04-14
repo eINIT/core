@@ -142,36 +142,36 @@ void sched_reset_event_handlers () {
 // action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
 // SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
- if ( sigaction (SIGCHLD, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGCHLD, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
- if ( sigaction (SIGINT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
 /* ignore most signals */
  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
 
- if ( sigaction (SIGQUIT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGABRT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGPIPE, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGQUIT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGPIPE, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 // if ( sigaction (SIGALRM, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGUSR1, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGUSR2, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGTSTP, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGTTIN, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGTTOU, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR2, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTSTP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTTIN, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTTOU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if (gmode != EINIT_GMODE_SANDBOX) {
-  if ( sigaction (SIGTERM, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+  if ( sigaction (SIGTERM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  }
 #ifdef SIGPOLL
- if ( sigaction (SIGPOLL, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGPOLL, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 #endif
- if ( sigaction (SIGPROF, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGPROF, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 // if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGXCPU, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXCPU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 #ifdef SIGIO
- if ( sigaction (SIGIO, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGIO, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 #endif
 
 }
@@ -214,7 +214,7 @@ int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  emutex_unlock (&schedcpidmutex);
  if ((gstatus != EINIT_EXITING) && sigchild_semaphore) {
   if (sem_post (sigchild_semaphore)) {
-   bitch(BITCH_STDIO, 0, "sem_post() failed.");
+   bitch(bitch_stdio, 0, "sem_post() failed.");
   }
  }
 
@@ -294,7 +294,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      gstatus = EINIT_EXITING;
      if (sigchild_semaphore) {
       if (sem_post (sigchild_semaphore)) {
-       bitch(BITCH_STDIO, 0, "sem_post() failed.");
+       bitch(bitch_stdio, 0, "sem_post() failed.");
       }
      }
 
@@ -458,7 +458,7 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
  emutex_unlock (&schedcpidmutex);
 
  if (sem_post (sigchild_semaphore)) {
-  bitch(BITCH_STDIO, 0, "sem_post() failed.");
+  bitch(bitch_stdio, 0, "sem_post() failed.");
  }
 }
 
@@ -552,7 +552,7 @@ void *sched_run_sigchild (void *p) {
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
  if ((gstatus != EINIT_EXITING) && sigchild_semaphore) {
   if (sem_post (sigchild_semaphore)) {
-   bitch(BITCH_STDIO, 0, "sem_post() failed.");
+   bitch(bitch_stdio, 0, "sem_post() failed.");
   }
  }
 

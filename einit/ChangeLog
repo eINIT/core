@@ -1,3 +1,6 @@
+2007/04/14: mdeininger
+ * API changes... lots of 'em...
+
 2007/04/12: mdeininger
  * changes to the feedback and feedback auto-add code
  * new feedback module for festival (gonna use a thread like with fbsplash)

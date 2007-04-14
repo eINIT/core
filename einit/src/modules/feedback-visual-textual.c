@@ -858,7 +858,7 @@ void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
       }
      }
      if (eputs ("", stderr) < 0)
-      bitch(BITCH_STDIO, 0, "puts() failed.");
+      bitch(bitch_stdio, 0, "puts() failed.");
     }
 
     emutex_unlock (&plansmutex);

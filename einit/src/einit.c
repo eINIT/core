@@ -140,25 +140,25 @@ void core_einit_event_handler (struct einit_event *ev) {
   ev->chain_type = EVE_UPDATE_MODULES;
 
   if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
-   mortality[BITCH_EMALLOC] = node->value;
+   mortality[bitch_emalloc] = node->value;
 
   if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
-   mortality[BITCH_STDIO] = node->value;
+   mortality[bitch_stdio] = node->value;
 
   if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
-   mortality[BITCH_REGEX] = node->value;
+   mortality[bitch_regex] = node->value;
 
   if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
-   mortality[BITCH_EXPAT] = node->value;
+   mortality[bitch_expat] = node->value;
 
   if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
-   mortality[BITCH_DL] = node->value;
+   mortality[bitch_dl] = node->value;
 
   if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
-   mortality[BITCH_LOOKUP] = node->value;
+   mortality[bitch_lookup] = node->value;
 
   if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
-   mortality[BITCH_EPTHREADS] = node->value;
+   mortality[bitch_epthreads] = node->value;
 
  } else if (ev->type == EVE_UPDATE_MODULES) {
   struct lmodule *lm = mlist;
@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
   action.sa_sigaction = einit_sigint;
   sigemptyset(&(action.sa_mask));
   action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER;
-  if ( sigaction (SIGINT, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
+  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
   while (1) {
    wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
@@ -339,11 +339,11 @@ int main(int argc, char **argv) {
   eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
 
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
-   bitch(BITCH_EPTHREADS, pthread_errno, "pthread_attr_init() failed.");
+   bitch(bitch_epthreads, pthread_errno, "pthread_attr_init() failed.");
    return -1;
   } else {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
-    bitch(BITCH_EPTHREADS, pthread_errno, "pthread_attr_setdetachstate() failed.");
+    bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
    }
   }
 

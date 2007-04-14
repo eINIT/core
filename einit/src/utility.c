@@ -218,7 +218,7 @@ char *readfile (const char *filename) {
    } while (rn > 0);
 
    if (errno && (errno != EAGAIN))
-    bitch(BITCH_STDIO, errno, "reading file failed.");
+    bitch(bitch_stdio, errno, "reading file failed.");
 
    eclose (fd);
    data = erealloc (buf, blen+1);
@@ -241,7 +241,7 @@ void *emalloc (size_t s) {
  void *p = NULL;
 
  while (!(p = malloc (s))) {
-  bitch(BITCH_EMALLOC, 0, "call to malloc() failed.");
+  bitch(bitch_emalloc, 0, "call to malloc() failed.");
   sleep (1);
  }
 
@@ -252,7 +252,7 @@ void *ecalloc (size_t c, size_t s) {
  void *p = NULL;
 
  while (!(p = calloc (c, s))) {
-  bitch(BITCH_EMALLOC, 0, "call to calloc() failed.");
+  bitch(bitch_emalloc, 0, "call to calloc() failed.");
   sleep (1);
  }
 
@@ -263,7 +263,7 @@ void *erealloc (void *c, size_t s) {
  void *p = NULL;
 
  while (!(p = realloc (c, s))) {
-  bitch(BITCH_EMALLOC, 0, "call to realloc() failed.");
+  bitch(bitch_emalloc, 0, "call to realloc() failed.");
   sleep (1);
  }
 
@@ -274,7 +274,7 @@ char *estrdup (const char *s) {
  char *p = NULL;
 
  while (!(p = strdup (s))) {
-  bitch(BITCH_EMALLOC, 0, "call to strdup() failed.");
+  bitch(bitch_emalloc, 0, "call to strdup() failed.");
   sleep (1);
  }
 
@@ -577,7 +577,7 @@ FILE *exfopen (const char *filename, const char *mode, const char *file, const i
 
  if (retval) return retval;
 
- bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "fopen() failed.");
+ bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "fopen() failed.");
  return NULL;
 }
 
@@ -590,7 +590,7 @@ DIR *exopendir (const char *name, const char *file, const int line, const char *
 
  if (retval) return retval;
 
- bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "opendir() failed.");
+ bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "opendir() failed.");
  return NULL;
 }
 
@@ -606,7 +606,7 @@ struct dirent *exreaddir (DIR *dir, const char *file, const int line, const char
  if (retval) return retval;
 
  if (errno) {
-  bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "readdir() failed.");
+  bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "readdir() failed.");
  }
  return NULL;
 }
@@ -620,7 +620,7 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
 
  if (retval != -1) return retval;
 
- bitch_macro (BITCH_STDIO, lfile, lline, lfunction, errno, "open() failed.");
+ bitch_macro (bitch_stdio, lfile, lline, lfunction, errno, "open() failed.");
  return -1;
 }
 

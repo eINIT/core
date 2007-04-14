@@ -191,14 +191,14 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
 
     munmap (utmpentries, st.st_size);
    } else {
-    bitch(BITCH_STDIO, 0, "mmap() failed");
+    bitch(bitch_stdio, 0, "mmap() failed");
    }
   }
 
   if (ufile)
    eclose (ufile);
  } else {
-  bitch(BITCH_STDIO, 0, "open() failed");
+  bitch(bitch_stdio, 0, "open() failed");
  }
 
  if (options & UTMP_ADD) { // still didn't get to add this.. try to append it to the file
@@ -209,12 +209,12 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
 
   if (ufile) {
    if (write(ufile, new_entry, sizeof (struct utmp)) != sizeof (struct utmp)) {
-    bitch(BITCH_STDIO, 0, "short write to utmp file");
+    bitch(bitch_stdio, 0, "short write to utmp file");
    }
    eclose (ufile);
 
   } else {
-   bitch(BITCH_STDIO, 0, "mmap() failed");
+   bitch(bitch_stdio, 0, "mmap() failed");
   }
 
   options ^= UTMP_ADD;

@@ -249,7 +249,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
      case ENOMEDIUM:
       break;
      default:
-      bitch(BITCH_STDIO, errno, "opening file failed.");
+      bitch(bitch_stdio, errno, "opening file failed.");
     }
    }
   }
@@ -279,7 +279,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
      efclose (f);
      return 1;
     default:
-     bitch(BITCH_STDIO, 0, "fgets() failed.");
+     bitch(bitch_stdio, 0, "fgets() failed.");
      efclose (f);
      return 1;
    }

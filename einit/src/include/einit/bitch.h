@@ -36,16 +36,18 @@ extern "C" {
 
 #include <errno.h>
 
-#define BITCH_BAD_SAUCE 0x00
-#define BITCH_EMALLOC   0x01
-#define BITCH_STDIO     0x02
-#define BITCH_REGEX     0x03
-#define BITCH_EXPAT     0x04
-#define BITCH_DL        0x05
-#define BITCH_LOOKUP    0x06
-#define BITCH_EPTHREADS 0x07
+enum bitch_sauce {
+ bitch_bad_sauce = 0x00,
+ bitch_emalloc   = 0x01,
+ bitch_stdio     = 0x02,
+ bitch_regex     = 0x03,
+ bitch_expat     = 0x04,
+ bitch_dl        = 0x05,
+ bitch_lookup    = 0x06,
+ bitch_epthreads = 0x07
+};
 
-#define BITCH_SAUCES (BITCH_EPTHREADS + 1)
+#define BITCH_SAUCES 0x08
 
 unsigned char mortality[BITCH_SAUCES];
 
@@ -66,45 +68,45 @@ unsigned char mortality[BITCH_SAUCES];
 
 #endif
 
-int bitch_macro (const unsigned char sauce, const char *file, const int line, const char *function, int error, const char *reason);
+int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const char *function, int error, const char *reason);
 
 #ifdef DEBUG
 
 #define emutex_lock(mutex)\
- ((errno = pthread_mutex_lock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno)
+ ((errno = pthread_mutex_lock(mutex)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_lock() failed."), errno) : errno)
 
 #define emutex_unlock(mutex)\
- ((errno = pthread_mutex_unlock(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_unlock() failed."), errno) : errno)
+ ((errno = pthread_mutex_unlock(mutex)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_unlock() failed."), errno) : errno)
 
 #define emutex_init(mutex, mattr)\
- ((errno = pthread_mutex_init(mutex, mattr)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_init() failed."), errno) : errno)
+ ((errno = pthread_mutex_init(mutex, mattr)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_init() failed."), errno) : errno)
 
 #define emutex_destroy(mutex)\
- ((errno = pthread_mutex_destroy(mutex)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_destroy() failed."), errno) : errno)
+ ((errno = pthread_mutex_destroy(mutex)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_mutex_destroy() failed."), errno) : errno)
 
 #define ethread_cancel(th)\
- ((errno = pthread_cancel(th)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_cancel() failed."), errno) : errno)
+ ((errno = pthread_cancel(th)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_cancel() failed."), errno) : errno)
 
 #define ethread_join(th, ret)\
- ((errno = pthread_join(th, ret)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_join() failed."), errno) : errno)
+ ((errno = pthread_join(th, ret)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_join() failed."), errno) : errno)
 
 #define eprintf(file, format, ...)\
- ((fprintf(file, format, __VA_ARGS__) < 0) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "fprintf() failed."), errno) : 0)
+ ((fprintf(file, format, __VA_ARGS__) < 0) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "fprintf() failed."), errno) : 0)
 
 #define esprintf(buffer, size, format, ...)\
- (snprintf(buffer, size, format, __VA_ARGS__) < 0 ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "snprintf() failed."), errno) : 0)
+ (snprintf(buffer, size, format, __VA_ARGS__) < 0 ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "snprintf() failed."), errno) : 0)
 
 #define eputs(text, file)\
- (fputs(text, file) < 0 ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , 0, "fputs() failed."), errno) : 0)
+ (fputs(text, file) < 0 ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , 0, "fputs() failed."), errno) : 0)
 
 #define efclose(stream)\
- ((fclose(stream) == EOF) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "fclose() failed"), EOF): 0)
+ ((fclose(stream) == EOF) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , errno, "fclose() failed"), EOF): 0)
 
 #define eclosedir(dir)\
- (closedir(dir) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "closedir() failed"), -1): 0)
+ (closedir(dir) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , errno, "closedir() failed"), -1): 0)
 
 #define eclose(fd)\
- (close(fd) ? (bitch_macro (BITCH_STDIO, __FILE__, __LINE__, __func__ , errno, "close() failed"), -1): 0)
+ (close(fd) ? (bitch_macro (bitch_stdio, __FILE__, __LINE__, __func__ , errno, "close() failed"), -1): 0)
 
 #else
 
@@ -148,11 +150,11 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
 #endif
 
 #define ethread_create(th, tattr, function, fattr)\
- ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (BITCH_EPTHREADS, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
+ ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
 
 #ifdef POSIXREGEX
 #define eregcomp(target, pattern)\
- ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (BITCH_REGEX, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+ ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
 #endif
 
 #endif /* _BITCH_H */
