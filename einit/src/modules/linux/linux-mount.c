@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <sys/mount.h>
 #include <einit/module.h>
 #include <einit/config.h>
@@ -129,11 +127,11 @@ struct ext2_super_block {
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _linux_mount_configure (struct lmodule *);
+int linux_mount_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 /* module definitions */
-const struct smodule _linux_mount_self = {
+const struct smodule module_linux_mount_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -147,10 +145,10 @@ const struct smodule _linux_mount_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _linux_mount_configure
+ .configure = linux_mount_configure
 };
 
-module_register(_linux_mount_self);
+module_register(module_linux_mount_self);
 
 #endif
 
@@ -158,8 +156,8 @@ module_register(_linux_mount_self);
 unsigned char read_metadata_linux (struct mount_control_block *);
 unsigned char mount_linux_real_mount (char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 unsigned char find_block_devices_proc (struct mount_control_block *);
-int _linux_mount_configure (struct lmodule *);
-int _linux_mount_cleanup (struct lmodule *);
+int linux_mount_configure (struct lmodule *);
+int linux_mount_cleanup (struct lmodule *);
 
 /* function definitions */
 unsigned char read_metadata_linux (struct mount_control_block *mcb) {
@@ -370,7 +368,7 @@ unsigned char mount_linux_real_mount (char *source, char *mountpoint, char *fsty
  return 0;
 }
 
-int _linux_mount_cleanup (struct lmodule *this) {
+int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
@@ -380,10 +378,10 @@ int _linux_mount_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _linux_mount_configure (struct lmodule *this) {
+int linux_mount_configure (struct lmodule *this) {
  module_init (this);
 
- thismodule->cleanup = _linux_mount_cleanup;
+ thismodule->cleanup = linux_mount_cleanup;
 
 /* pexec configuration */
  exec_configure (this);

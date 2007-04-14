@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
-#if ! defined (_EINIT_UTIL)
+#if ! defined (EINIT_UTIL)
 #ifdef POSIXREGEX
 #include <regex.h>
 #endif
@@ -308,7 +308,7 @@ void strtrim (char *s) {
  }
 }
 
-#if ! defined (_EINIT_UTIL)
+#if ! defined (EINIT_UTIL)
 
 /* event-helpers */
 void notice_macro (unsigned char severity, const char *message) {

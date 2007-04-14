@@ -46,8 +46,8 @@ extern "C" {
  * search-trees, etc 
 */
 
-#ifndef _EINIT_TREE_H
-#define _EINIT_TREE_H
+#ifndef EINIT_TREE_H
+#define EINIT_TREE_H
 
 /*!\defgroup trees eINIT Utility Functions: Trees
 */

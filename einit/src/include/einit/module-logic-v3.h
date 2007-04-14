@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_MODULE_LOGIC_H
-#define _EINIT_MODULE_LOGIC_H
+#ifndef EINIT_MODULE_LOGIC_H
+#define EINIT_MODULE_LOGIC_H
 
 #define MODULE_LOGIC_V3
 
@@ -69,13 +69,13 @@ struct mloadplan {
 
 typedef double (*plan_progress_fetcher)(struct mloadplan *);
 
-plan_progress_fetcher _get_plan_progress_function;
+plan_progress_fetcher get_plan_progress_fp;
 
 #define get_plan_progress(plan)\
- ((_get_plan_progress_function || (_get_plan_progress_function = function_find_one ("module-logic-get-plan-progress", 1, NULL))) ? _get_plan_progress_function(plan) : 0.0)
+ ((get_plan_progress_fp || (get_plan_progress_fp = function_find_one ("module-logic-get-plan-progress", 1, NULL))) ? get_plan_progress_fp(plan) : 0.0)
 
 #define module_logic_configure(x)\
- _get_plan_progress_function = NULL
+ get_plan_progress_fp = NULL
 
 #endif
 

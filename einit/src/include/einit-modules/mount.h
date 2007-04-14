@@ -47,8 +47,8 @@ extern "C" {
  * This header file defines functions and data types that are used by the common-mount.c and linux-mount.c
  * modules.
 */
-#ifndef _EINIT_MODULES_MOUNT_H
-#define _EINIT_MODULES_MOUNT_H
+#ifndef EINIT_MODULES_MOUNT_H
+#define EINIT_MODULES_MOUNT_H
 
 #include <stdio.h>
 #include <einit/module.h>

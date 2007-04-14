@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_MODULES_IPC_H
-#define _EINIT_MODULES_IPC_H
+#ifndef EINIT_MODULES_IPC_H
+#define EINIT_MODULES_IPC_H
 
 #include <unistd.h>
 #include <inttypes.h>
@@ -50,21 +50,21 @@ extern "C" {
 
 typedef int (*ipc_processor) (const char *, FILE *);
 
-ipc_processor __ipc_string_process;
+ipc_processor ipc_string_process_fp;
 
-#define ipc_process(string, output) ((__ipc_string_process || (__ipc_string_process = function_find_one("einit-ipc-process-string", 1, NULL))) ? __ipc_string_process(string, output) : -1)
+#define ipc_process(string, output) ((ipc_string_process_fp || (ipc_string_process_fp = function_find_one("einit-ipc-process-string", 1, NULL))) ? ipc_string_process_fp(string, output) : -1)
 
-#define ipc_configure(mod) __ipc_string_process = NULL;
-#define ipc_cleanup(mod) __ipc_string_process = NULL;
+#define ipc_configure(mod) ipc_string_process_fp = NULL;
+#define ipc_cleanup(mod) ipc_string_process_fp = NULL;
 
 #else
 
 #define ipc_configure(mod) ;
 #define ipc_cleanup(mod) ;
 
-int __ipc_process (const char *cmd, FILE *f);
+int ipc_process_f (const char *cmd, FILE *f);
 
-#define ipc_process(string, output) __ipc_process(string, output)
+#define ipc_process(string, output) ipc_process_f(string, output)
 
 #endif
 

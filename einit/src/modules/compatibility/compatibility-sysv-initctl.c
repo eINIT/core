@@ -36,8 +36,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -79,12 +77,12 @@ struct init_command {
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _compatibility_sysv_initctl_configure (struct lmodule *);
+int compatibility_sysv_initctl_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-char * _compatibility_sysv_initctl_provides[] = {"initctl", NULL};
-char * _compatibility_sysv_initctl_requires[] = {"mount-system", NULL};
-const struct smodule _compatibility_sysv_initctl_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+char * compatibility_sysv_initctl_provides[] = {"initctl", NULL};
+char * compatibility_sysv_initctl_requires[] = {"mount-system", NULL};
+const struct smodule module_compatibility_sysv_initctl_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -93,23 +91,23 @@ const struct smodule _compatibility_sysv_initctl_self = {
  .name      = "System-V Compatibility: initctl",
  .rid       = "compatibility-sysv-initctl",
  .si        = {
-  .provides = _compatibility_sysv_initctl_provides,
-  .requires = _compatibility_sysv_initctl_requires,
+  .provides = compatibility_sysv_initctl_provides,
+  .requires = compatibility_sysv_initctl_requires,
   .after    = NULL,
   .before   = NULL
  },
- .configure = _compatibility_sysv_initctl_configure
+ .configure = compatibility_sysv_initctl_configure
 };
 
-module_register(_compatibility_sysv_initctl_self);
+module_register(module_compatibility_sysv_initctl_self);
 
 #endif
 
-char _compatibility_sysv_initctl_running = 0;
+char compatibility_sysv_initctl_running = 0;
 
 pthread_t initctl_thread;
 
-void _compatibility_sysv_initctl_ipc_event_handler (struct einit_event *ev) {
+void compatibility_sysv_initctl_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-compatibility-sysv-initctl", NULL)) {
    eputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", (FILE *)ev->para);
@@ -120,16 +118,16 @@ void _compatibility_sysv_initctl_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _compatibility_sysv_initctl_cleanup (struct lmodule *this) {
+int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
- event_ignore (EVENT_SUBSYSTEM_IPC, _compatibility_sysv_initctl_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, compatibility_sysv_initctl_ipc_event_handler);
 
  return 0;
 }
 
 void * initctl_wait (char *fifo) {
  int nfd;
- _compatibility_sysv_initctl_running = 1;
+ compatibility_sysv_initctl_running = 1;
 
  while ((nfd = eopen (fifo, O_RDONLY))) {
   struct init_command ic;
@@ -139,7 +137,7 @@ void * initctl_wait (char *fifo) {
    esprintf (tmp, BUFFERSIZE, "initctl: opening FIFO failed: %s", strerror (errno));
    notice (4, tmp);
    mod (MOD_DISABLE, thismodule, NULL);
-   _compatibility_sysv_initctl_running = 0;
+   compatibility_sysv_initctl_running = 0;
    return NULL;
   }
 
@@ -225,11 +223,11 @@ void * initctl_wait (char *fifo) {
   eclose (nfd);
  }
 
- _compatibility_sysv_initctl_running = 0;
+ compatibility_sysv_initctl_running = 0;
  return NULL;
 }
 
-int _compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
+int compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
  char tmp[BUFFERSIZE];
  struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
  char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
@@ -261,11 +259,11 @@ int _compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
+int compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
  char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
  if (!fifo) fifo =  "/dev/initctl";
 
- if (_compatibility_sysv_initctl_running)
+ if (compatibility_sysv_initctl_running)
   ethread_cancel (initctl_thread);
 
  if (unlink (fifo)) {
@@ -276,19 +274,19 @@ int _compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- _compatibility_sysv_initctl_running = 0;
+ compatibility_sysv_initctl_running = 0;
  return STATUS_OK;
 }
 
-int _compatibility_sysv_initctl_configure (struct lmodule *r) {
+int compatibility_sysv_initctl_configure (struct lmodule *r) {
  module_init (r);
 
- thismodule->cleanup = _compatibility_sysv_initctl_cleanup;
- thismodule->enable = _compatibility_sysv_initctl_enable;
- thismodule->disable = _compatibility_sysv_initctl_disable;
+ thismodule->cleanup = compatibility_sysv_initctl_cleanup;
+ thismodule->enable = compatibility_sysv_initctl_enable;
+ thismodule->disable = compatibility_sysv_initctl_disable;
 
  ipc_configure (r);
- event_listen (EVENT_SUBSYSTEM_IPC, _compatibility_sysv_initctl_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, compatibility_sysv_initctl_ipc_event_handler);
 
  return 0;
 }

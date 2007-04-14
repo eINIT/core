@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_MODULES_PROCESS_H
-#define _EINIT_MODULES_PROCESS_H
+#ifndef EINIT_MODULES_PROCESS_H
+#define EINIT_MODULES_PROCESS_H
 
 #include <unistd.h>
 #include <inttypes.h>
@@ -109,16 +109,16 @@ typedef int (*process_signal_function)(struct pc_conditional **, int);
 typedef pid_t *(*process_filter)(struct pc_conditional *, pid_t *, struct process_status **);
 typedef struct process_status **(*process_status_updater)(struct process_status **);
 
-process_collector __f_process_collector, __f_p_jktdb;
-process_signal_function __f_e_kill;
+process_collector f_process_collector, f_p_jktdb;
+process_signal_function f_e_kill;
 
-#define pcollect(x) ((__f_process_collector || (__f_process_collector = function_find_one("einit-process-collect", 1, NULL))) ? __f_process_collector(x) : NULL)
+#define pcollect(x) ((f_process_collector || (f_process_collector = function_find_one("einit-process-collect", 1, NULL))) ? f_process_collector(x) : NULL)
 
-#define ekill(x,signal) ((__f_e_kill || (__f_e_kill = function_find_one("einit-process-ekill", 1, NULL))) ? __f_e_kill(x,signal) : -1)
-#define pekill(x) ((__f_p_jktdb || (__f_p_jktdb = function_find_one("einit-process-killing-spree", 1, NULL))) ? __f_p_jktdb(x) : NULL)
+#define ekill(x,signal) ((f_e_kill || (f_e_kill = function_find_one("einit-process-ekill", 1, NULL))) ? f_e_kill(x,signal) : -1)
+#define pekill(x) ((f_p_jktdb || (f_p_jktdb = function_find_one("einit-process-killing-spree", 1, NULL))) ? f_p_jktdb(x) : NULL)
 
-#define process_configure(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
-#define process_cleanup(mod) __f_process_collector = NULL; __f_e_kill = NULL; __f_p_jktdb = NULL;
+#define process_configure(mod) f_process_collector = NULL; f_e_kill = NULL; f_p_jktdb = NULL;
+#define process_cleanup(mod) f_process_collector = NULL; f_e_kill = NULL; f_p_jktdb = NULL;
 
 #endif
 

@@ -55,13 +55,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
 
-int _bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
+int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
 
 void einit_config_xml_expat_event_handler (struct einit_event *);
 char *einit_config_xml_cfg_to_xml (struct stree *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _bootstrap_einit_configuration_xml_expat_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule bootstrap_einit_configuration_xml_expat_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -75,14 +75,14 @@ const struct smodule _bootstrap_einit_configuration_xml_expat_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _bootstrap_einit_configuration_xml_expat_configure
+ .configure = bootstrap_einit_configuration_xml_expat_configure
 };
 
-module_register(_bootstrap_einit_configuration_xml_expat_self);
+module_register(bootstrap_einit_configuration_xml_expat_self);
 
 #endif
 
-int _bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
+int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_config_xml_expat_event_handler);
@@ -90,10 +90,10 @@ int _bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
+int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
  module_init(this);
 
- thismodule->cleanup = _bootstrap_einit_configuration_xml_expat_cleanup;
+ thismodule->cleanup = bootstrap_einit_configuration_xml_expat_cleanup;
 
  event_listen (EVENT_SUBSYSTEM_EINIT, einit_config_xml_expat_event_handler);
 

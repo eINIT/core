@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_EVENT_H
-#define _EINIT_EVENT_H
+#ifndef EINIT_EVENT_H
+#define EINIT_EVENT_H
 
 #include <inttypes.h>
 #include <pthread.h>

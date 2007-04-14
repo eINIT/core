@@ -47,8 +47,8 @@ extern "C" {
  * These are functions that should be of use to all modules and eINIT itself.
 */
 
-#ifndef _EINIT_SET_H
-#define _EINIT_SET_H
+#ifndef EINIT_SET_H
+#define EINIT_SET_H
 
 /*!\defgroup utilityfunctionssets eINIT Utility Functions: Sets
 */

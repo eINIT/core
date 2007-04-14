@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
@@ -59,14 +57,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_feedback_visual_fbsplash_configure (struct lmodule *);
+int einit_feedback_visual_fbsplash_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char *_einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-graphical", NULL};
-char *_einit_feedback_visual_fbsplash_requires[] = {"mount-system", "splashd", NULL};
-char *_einit_feedback_visual_fbsplash_before[]   = {"mount-critical", NULL};
-const struct smodule _einit_feedback_visual_fbsplash_self = {
+char *einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-graphical", NULL};
+char *einit_feedback_visual_fbsplash_requires[] = {"mount-system", "splashd", NULL};
+char *einit_feedback_visual_fbsplash_before[]   = {"mount-critical", NULL};
+const struct smodule einit_feedback_visual_fbsplash_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -75,21 +73,21 @@ const struct smodule _einit_feedback_visual_fbsplash_self = {
  .name      = "visual/fbsplash-based feedback module",
  .rid       = "einit-feedback-visual-fbsplash",
  .si        = {
-  .provides = _einit_feedback_visual_fbsplash_provides,
-  .requires = _einit_feedback_visual_fbsplash_requires,
+  .provides = einit_feedback_visual_fbsplash_provides,
+  .requires = einit_feedback_visual_fbsplash_requires,
   .after    = NULL,
-  .before   = _einit_feedback_visual_fbsplash_before
+  .before   = einit_feedback_visual_fbsplash_before
  },
- .configure = _einit_feedback_visual_fbsplash_configure
+ .configure = einit_feedback_visual_fbsplash_configure
 };
 
-module_register(_einit_feedback_visual_fbsplash_self);
+module_register(einit_feedback_visual_fbsplash_self);
 
 #endif
 
 pthread_t fbsplash_thread;
-char _einit_feedback_visual_fbsplash_worker_thread_running = 0,
-     _einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
+char einit_feedback_visual_fbsplash_worker_thread_running = 0,
+     einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
 
 char **fbsplash_commandQ = NULL;
 
@@ -108,7 +106,7 @@ void fbsplash_queue_comand (const char *command) {
  pthread_cond_broadcast (&fbsplash_commandQ_cond);
 }
 
-void _einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
+void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
  if (ev->type == EVE_SWITCHING_MODE) {
   char tmp[BUFFERSIZE];
 
@@ -184,10 +182,10 @@ void _einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev)
  }
 }
 
-void *_einit_feedback_visual_fbsplash_worker_thread (void *irr) {
- _einit_feedback_visual_fbsplash_worker_thread_running = 1;
+void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
+ einit_feedback_visual_fbsplash_worker_thread_running = 1;
 
- while (_einit_feedback_visual_fbsplash_worker_thread_keep_running) {
+ while (einit_feedback_visual_fbsplash_worker_thread_keep_running) {
   while (fbsplash_commandQ) {
    char *command = NULL;
 
@@ -220,12 +218,12 @@ void *_einit_feedback_visual_fbsplash_worker_thread (void *irr) {
  return NULL;
 }
 
-int _einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status) {
+int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status) {
  char *tmp = NULL, *fbtheme = NULL, *fbmode = "silent";
  char freetheme = 0, freemode = 0;
 
- _einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
- ethread_create (&fbsplash_thread, NULL, _einit_feedback_visual_fbsplash_worker_thread, NULL);
+ einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
+ ethread_create (&fbsplash_thread, NULL, einit_feedback_visual_fbsplash_worker_thread, NULL);
 
  if (einit_initial_environment) {
 /* check for kernel params */
@@ -300,31 +298,31 @@ int _einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status
  fbsplash_queue_comand("progress 0");
  fbsplash_queue_comand("repaint");
 
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_feedback_visual_fbsplash_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_feedback_visual_fbsplash_einit_event_handler);
 
  return STATUS_OK;
 }
 
-int _einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status) {
- _einit_feedback_visual_fbsplash_worker_thread_keep_running = 0;
+int einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status) {
+ einit_feedback_visual_fbsplash_worker_thread_keep_running = 0;
  pthread_cond_broadcast (&fbsplash_commandQ_cond);
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_feedback_visual_fbsplash_einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_feedback_visual_fbsplash_einit_event_handler);
 
  return STATUS_OK;
 }
 
-int _einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
+int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
  return 0;
 }
 
-int _einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
+int einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
  module_init (tm);
  module_logic_configure(tm);
 
- tm->cleanup = _einit_feedback_visual_fbsplash_cleanup;
- tm->enable = _einit_feedback_visual_fbsplash_enable;
- tm->disable = _einit_feedback_visual_fbsplash_disable;
+ tm->cleanup = einit_feedback_visual_fbsplash_cleanup;
+ tm->enable = einit_feedback_visual_fbsplash_enable;
+ tm->disable = einit_feedback_visual_fbsplash_disable;
 
  return 0;
 }

@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,17 +50,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_dbus_cleanup (struct lmodule *);
+int einit_dbus_cleanup (struct lmodule *);
 
 extern "C" {
 
-int _einit_dbus_configure (struct lmodule *);
+int einit_dbus_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * _einit_dbus_provides[] = {"ipc-dbus", NULL};
-char * _einit_dbus_requires[] = {"dbus", NULL};
-const struct smodule _einit_dbus_self = {
+char * einit_dbus_provides[] = {"ipc-dbus", NULL};
+char * einit_dbus_requires[] = {"dbus", NULL};
+const struct smodule einit_dbus_self = {
  EINIT_VERSION,
  BUILDNUMBER,
  1,
@@ -71,27 +69,28 @@ const struct smodule _einit_dbus_self = {
  "eINIT <-> DBUS connector",
  "ipc-dbus",
  {
-  _einit_dbus_provides,
-  _einit_dbus_requires,
+  einit_dbus_provides,
+  einit_dbus_requires,
   NULL,
   NULL
  },
- _einit_dbus_configure
+ einit_dbus_configure
 };
 
-module_register(_einit_dbus_self);
+module_register(einit_dbus_self);
 
 #endif
 
-int _einit_dbus_configure (struct lmodule *irr) {
+int einit_dbus_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _einit_dbus_cleanup;
+ thismodule->cleanup = einit_dbus_cleanup;
 
  return 0;
 }
 
 }
 
-int _einit_dbus_cleanup (struct lmodule *) {
+int einit_dbus_cleanup (struct lmodule *) {
+ return 0;
 }

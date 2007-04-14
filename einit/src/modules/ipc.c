@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdio.h>
 #include <unistd.h>
 #include <einit/config.h>
@@ -66,14 +64,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_ipc_configure (struct lmodule *);
+int einit_ipc_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * _einit_ipc_provides[] = {"ipc", NULL};
-char * _einit_ipc_requires[] = {"mount-system", NULL};
-char * _einit_ipc_before[] = {"mount-local", NULL};
-const struct smodule _einit_ipc_self = {
+char * einit_ipc_provides[] = {"ipc", NULL};
+char * einit_ipc_requires[] = {"mount-system", NULL};
+char * einit_ipc_before[] = {"mount-local", NULL};
+const struct smodule einit_ipc_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -82,22 +80,22 @@ const struct smodule _einit_ipc_self = {
  .name      = "eINIT IPC module",
  .rid       = "ipc",
  .si        = {
-  .provides = _einit_ipc_provides,
-  .requires = _einit_ipc_requires,
+  .provides = einit_ipc_provides,
+  .requires = einit_ipc_requires,
   .after    = NULL,
-  .before   = _einit_ipc_before
+  .before   = einit_ipc_before
  },
- .configure = _einit_ipc_configure
+ .configure = einit_ipc_configure
 };
 
-module_register(_einit_ipc_self);
+module_register(einit_ipc_self);
 
 #endif
 
 pthread_t ipc_thread;
-char _einit_ipc_running = 0;
+char einit_ipc_running = 0;
 
-int __ipc_process (const char *cmd, FILE *f) {
+int ipc_process_f (const char *cmd, FILE *f) {
  if (!cmd) return 0;
 
  struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
@@ -175,7 +173,7 @@ int __ipc_process (const char *cmd, FILE *f) {
 
    if (have_pattern && new_command) {
     if (!regexec (&pattern, cmd, 0, NULL, 0))
-     __ipc_process (new_command, f);
+     ipc_process_f (new_command, f);
     regfree (&pattern);
    }
   }
@@ -185,7 +183,7 @@ int __ipc_process (const char *cmd, FILE *f) {
  return ret;
 }
 
-void _einit_ipc_ipc_event_handler (struct einit_event *ev) {
+void einit_ipc_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
    eputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
@@ -208,9 +206,9 @@ void _einit_ipc_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_ipc_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_ipc_ipc_event_handler);
- function_unregister ("einit-ipc-process-string", 1, __ipc_process);
+int einit_ipc_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_ipc_ipc_event_handler);
+ function_unregister ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;
 }
@@ -228,7 +226,7 @@ int ipc_read (int *nfd) {
     int ret = 0;
     strtrim(buffer);
 
-    ret = __ipc_process (buffer, f);
+    ret = ipc_process_f (buffer, f);
 
     eprintf (f, "\nIPC//processed.\n%i\n", ret);
     if (fflush (f) == EOF)
@@ -252,12 +250,12 @@ void * ipc_wait (void *unused_parameter) {
  mode_t socketmode = (node && node->value ? node->value : 0600);
  struct sockaddr_un saddr;
 
- _einit_ipc_running = 1;
+ einit_ipc_running = 1;
 
  if (sock == -1) {
   perror ("einit-ipc: initialising socket");
 
-  _einit_ipc_running = 0;
+  einit_ipc_running = 0;
   return NULL;
  }
 
@@ -270,7 +268,7 @@ void * ipc_wait (void *unused_parameter) {
    eclose (sock);
    perror ("einit-ipc: binding socket");
 
-   _einit_ipc_running = 0;
+   einit_ipc_running = 0;
    return NULL;
   }
  }
@@ -283,7 +281,7 @@ void * ipc_wait (void *unused_parameter) {
   eclose (sock);
   perror ("einit-ipc: listening on socket");
 
-  _einit_ipc_running = 0;
+  einit_ipc_running = 0;
   return NULL;
  }
 
@@ -305,31 +303,31 @@ void * ipc_wait (void *unused_parameter) {
  eclose (sock);
  if (unlink (saddr.sun_path)) perror ("einit-ipc: removing socket");
 
- _einit_ipc_running = 0;
+ einit_ipc_running = 0;
  return NULL;
 }
 
-int _einit_ipc_enable (void *pa, struct einit_event *status) {
+int einit_ipc_enable (void *pa, struct einit_event *status) {
  ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
  return STATUS_OK;
 }
 
-int _einit_ipc_disable (void *pa, struct einit_event *status) {
- if (_einit_ipc_running)
+int einit_ipc_disable (void *pa, struct einit_event *status) {
+ if (einit_ipc_running)
   ethread_cancel (ipc_thread);
 
  return STATUS_OK;
 }
 
-int _einit_ipc_configure (struct lmodule *irr) {
+int einit_ipc_configure (struct lmodule *irr) {
  module_init(irr);
 
- irr->cleanup = _einit_ipc_cleanup;
- irr->enable = _einit_ipc_enable;
- irr->disable = _einit_ipc_disable;
+ irr->cleanup = einit_ipc_cleanup;
+ irr->enable = einit_ipc_enable;
+ irr->disable = einit_ipc_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_ipc_ipc_event_handler);
- function_register ("einit-ipc-process-string", 1, __ipc_process);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_ipc_ipc_event_handler);
+ function_register ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;
 }

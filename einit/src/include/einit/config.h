@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_CONFIG_H
-#define _EINIT_CONFIG_H
+#ifndef EINIT_CONFIG_H
+#define EINIT_CONFIG_H
 
 struct cfgnode;
 
@@ -164,24 +164,24 @@ cfg_prefix_t cfg_prefix_fp;
 
 #else
 
-int __cfg_addnode (struct cfgnode *);
-struct cfgnode *__cfg_findnode (const char *, const unsigned int, const struct cfgnode *);
-char *__cfg_getstring (const char *, const struct cfgnode *);
-struct cfgnode *__cfg_getnode (const char *, const struct cfgnode *);
-struct stree *__cfg_filter (const char *, const uint32_t);
-char *__cfg_getpath (const char *);
-char *__cfg_prefix (const char *);
+int cfg_addnode_f (struct cfgnode *);
+struct cfgnode *cfg_findnode_f (const char *, const unsigned int, const struct cfgnode *);
+char *cfg_getstring_f (const char *, const struct cfgnode *);
+struct cfgnode *cfg_getnode_f (const char *, const struct cfgnode *);
+struct stree *cfg_filter_f (const char *, const uint32_t);
+char *cfg_getpath_f (const char *);
+char *cfg_prefix_f (const char *);
 
 #define config_configure() ;
 #define config_cleanup() ;
 
-#define cfg_addnode(node) __cfg_addnode (node)
-#define cfg_findnodenode(name, mode, node) __cfg_addnode (name, mode, node)
-#define cfg_getstring(id, base) __cfg_getstring(id, base)
-#define cfg_getnode(id, base) __cfg_getnode(id, base)
-#define cfg_getpath(id) __cfg_getpath(id)
-#define cfg_filter(filter, i) __cfg_filter(filter, i)
-#define cfg_prefix(filter, i) __cfg_prefix(filter, i)
+#define cfg_addnode(node) cfg_addnode_f (node)
+#define cfg_findnodenode(name, mode, node) cfg_addnode_f (name, mode, node)
+#define cfg_getstring(id, base) cfg_getstring_f(id, base)
+#define cfg_getnode(id, base) cfg_getnode_f(id, base)
+#define cfg_getpath(id) cfg_getpath_f(id)
+#define cfg_filter(filter, i) cfg_filter_f(filter, i)
+#define cfg_prefix(filter, i) cfg_prefix_f(filter, i)
 
 #endif
 

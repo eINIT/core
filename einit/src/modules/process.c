@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,10 +52,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_process_configure (struct lmodule *);
+int einit_process_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _einit_process_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule einit_process_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -71,10 +69,10 @@ const struct smodule _einit_process_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_process_configure
+ .configure = einit_process_configure
 };
 
-module_register(_einit_process_self);
+module_register(einit_process_self);
 
 #endif
 
@@ -133,7 +131,7 @@ pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct p
  return ret;
 }
 
-void _einit_process_ipc_event_handler (struct einit_event *ev) {
+void einit_process_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && strmatch (ev->set[0], "list")) {
   if (ev->set[1] && strmatch (ev->set[1], "processes") && ev->set[2]) {
    uintptr_t tnum = atoi (ev->set[3]);
@@ -166,7 +164,7 @@ void _einit_process_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int __ekill (struct pc_conditional **pcc, int sign) {
+int ekill_f (struct pc_conditional **pcc, int sign) {
  pid_t *pl = pcollect (pcc);
  uint32_t i = 0;
 
@@ -184,17 +182,17 @@ int __ekill (struct pc_conditional **pcc, int sign) {
  return i;
 }
 
-int __pekill (struct pc_conditional **pcc) {
+int pekill_f (struct pc_conditional **pcc) {
 /* pid **pl = pcollect (pcc);
 
  free (pl);*/
  return ekill (pcc, SIGKILL);
 }
 
-int _einit_process_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_process_ipc_event_handler);
- function_unregister ("einit-process-killing-spree", 1, __pekill);
- function_unregister ("einit-process-ekill", 1, __ekill);
+int einit_process_cleanup (struct lmodule *irr) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_process_ipc_event_handler);
+ function_unregister ("einit-process-killing-spree", 1, pekill_f);
+ function_unregister ("einit-process-ekill", 1, ekill_f);
  function_unregister ("einit-process-collect", 1, collect_processes);
  function_unregister ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
  function_unregister ("einit-process-filter-cwd", 1, filter_processes_cwd);
@@ -203,17 +201,17 @@ int _einit_process_cleanup (struct lmodule *irr) {
  return 0;
 }
 
-int _einit_process_configure (struct lmodule *irr) {
+int einit_process_configure (struct lmodule *irr) {
  module_init (irr);
- irr->cleanup = _einit_process_cleanup;
+ irr->cleanup = einit_process_cleanup;
 
  process_configure (irr);
  function_register ("einit-process-filter-cwd", 1, filter_processes_cwd);
  function_register ("einit-process-filter-cwd-below", 1, filter_processes_cwd_below);
  function_register ("einit-process-collect", 1, collect_processes);
- function_register ("einit-process-ekill", 1, __ekill);
- function_register ("einit-process-killing-spree", 1, __pekill);
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_process_ipc_event_handler);
+ function_register ("einit-process-ekill", 1, ekill_f);
+ function_register ("einit-process-killing-spree", 1, pekill_f);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_process_ipc_event_handler);
 
  return 0;
 }

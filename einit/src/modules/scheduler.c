@@ -57,11 +57,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <einit-modules/scheduler.h>
 
-int _einit_scheduler_configure (struct lmodule *);
+int einit_scheduler_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_scheduler_self = {
+const struct smodule einit_scheduler_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -75,10 +75,10 @@ const struct smodule _einit_scheduler_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_scheduler_configure
+ .configure = einit_scheduler_configure
 };
 
-module_register(_einit_scheduler_self);
+module_register(einit_scheduler_self);
 
 #endif
 
@@ -560,7 +560,7 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 }
 #endif
 
-int _einit_scheduler_configure (struct lmodule *tm) {
+int einit_scheduler_configure (struct lmodule *tm) {
  module_init(tm);
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)

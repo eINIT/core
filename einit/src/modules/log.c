@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
@@ -57,11 +55,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_log_configure (struct lmodule *);
+int einit_log_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_log_self = {
+const struct smodule einit_log_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -75,10 +73,10 @@ const struct smodule _einit_log_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_log_configure
+ .configure = einit_log_configure
 };
 
-module_register(_einit_log_self);
+module_register(einit_log_self);
 
 #endif
 
@@ -94,9 +92,9 @@ struct log_entry **logbuffer = NULL;
 pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
 char dolog = 1, log_notices_to_stderr = 1;
 
-void _einit_log_feedback_event_handler(struct einit_event *);
-void _einit_log_ipc_event_handler(struct einit_event *);
-void _einit_log_event_event_handler(struct einit_event *);
+void einit_log_feedback_event_handler(struct einit_event *);
+void einit_log_ipc_event_handler(struct einit_event *);
+void einit_log_event_event_handler(struct einit_event *);
 signed int logsort (struct log_entry *, struct log_entry *);
 
 void flush_log_buffer () {
@@ -171,7 +169,7 @@ signed int logsort (struct log_entry *st1, struct log_entry *st2) {
  return (st2->seqid - st1->seqid);
 }
 
-void _einit_log_ipc_event_handler (struct einit_event *ev) {
+void einit_log_ipc_event_handler (struct einit_event *ev) {
  if (ev->set && ev->set[0] && ev->set[1] && strmatch (ev->set[0], "flush") && strmatch (ev->set[1], "log")) {
   flush_log_buffer();
 
@@ -179,7 +177,7 @@ void _einit_log_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-void _einit_log_einit_event_handler(struct einit_event *ev) {
+void einit_log_einit_event_handler(struct einit_event *ev) {
  if (!dolog) return;
 
  if (ev->type == EVE_SWITCHING_MODE) {
@@ -217,7 +215,7 @@ void _einit_log_einit_event_handler(struct einit_event *ev) {
  }
 }
 
-void _einit_log_feedback_event_handler(struct einit_event *ev) {
+void einit_log_feedback_event_handler(struct einit_event *ev) {
  if (!dolog) return;
 
  if ((ev->type == EVENT_FEEDBACK_UNRESOLVED_SERVICES) || (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES)) {
@@ -332,22 +330,22 @@ void _einit_log_feedback_event_handler(struct einit_event *ev) {
  return;
 }
 
-int _einit_log_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_log_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_log_feedback_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_log_einit_event_handler);
+int einit_log_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_log_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_FEEDBACK, einit_log_feedback_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_log_einit_event_handler);
 
  return 0;
 }
 
-int _einit_log_configure (struct lmodule *r) {
+int einit_log_configure (struct lmodule *r) {
  module_init (r);
 
- r->cleanup = _einit_log_cleanup;
+ r->cleanup = einit_log_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_log_ipc_event_handler);
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, _einit_log_feedback_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_log_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_log_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_FEEDBACK, einit_log_feedback_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_log_einit_event_handler);
 
  return 0;
 }

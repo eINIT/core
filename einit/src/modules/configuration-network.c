@@ -55,10 +55,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
 
-int _configuration_network_configure (struct lmodule *);
+int configuration_network_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _configuration_network_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule configuration_network_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -72,14 +72,14 @@ const struct smodule _configuration_network_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _configuration_network_configure
+ .configure = configuration_network_configure
 };
 
-module_register(_configuration_network_self);
+module_register(configuration_network_self);
 
 #endif
 
-int _configuration_network_cleanup (struct lmodule *this) {
+int configuration_network_cleanup (struct lmodule *this) {
  return 0;
 }
 
@@ -251,10 +251,10 @@ void configuration_network_einit_event_handler (struct einit_event *ev) {
  }
 }
 
-int _configuration_network_configure (struct lmodule *this) {
+int configuration_network_configure (struct lmodule *this) {
  module_init(this);
 
- thismodule->cleanup = _configuration_network_cleanup;
+ thismodule->cleanup = configuration_network_cleanup;
 
  event_listen (EVENT_SUBSYSTEM_EINIT, configuration_network_einit_event_handler);
 

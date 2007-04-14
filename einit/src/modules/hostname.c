@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,13 +50,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_hostname_configure (struct lmodule *);
+int einit_hostname_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * _einit_hostname_provides[] = {"hostname", "domainname", NULL};
-char * _einit_hostname_before[] = {"displaymanager", NULL};
-const struct smodule _einit_hostname_self = {
+char * einit_hostname_provides[] = {"hostname", "domainname", NULL};
+char * einit_hostname_before[] = {"displaymanager", NULL};
+const struct smodule einit_hostname_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -67,19 +65,19 @@ const struct smodule _einit_hostname_self = {
  .name      = "Set Host- and Domainname",
  .rid       = "hostname",
  .si        = {
-  .provides = _einit_hostname_provides,
+  .provides = einit_hostname_provides,
   .requires = NULL,
   .after    = NULL,
-  .before   = _einit_hostname_before
+  .before   = einit_hostname_before
  },
- .configure = _einit_hostname_configure
+ .configure = einit_hostname_configure
 };
 
-module_register(_einit_hostname_self);
+module_register(einit_hostname_self);
 
 #endif
 
-void _einit_hostname_ipc_event_handler (struct einit_event *ev) {
+void einit_hostname_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   char *s;
 
@@ -101,14 +99,14 @@ void _einit_hostname_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_hostname_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_hostname_ipc_event_handler);
+int einit_hostname_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_hostname_ipc_event_handler);
 
  return 0;
 }
 
 
-int _einit_hostname_enable (void *pa, struct einit_event *status) {
+int einit_hostname_enable (void *pa, struct einit_event *status) {
  char *name;
  if ((name = cfg_getstring ("configuration-network-hostname", NULL))) {
   status->string = "setting hostname";
@@ -143,18 +141,18 @@ int _einit_hostname_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_hostname_disable (void *pa, struct einit_event *status) {
+int einit_hostname_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_hostname_configure (struct lmodule *irr) {
+int einit_hostname_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _einit_hostname_cleanup;
- thismodule->enable = _einit_hostname_enable;
- thismodule->disable = _einit_hostname_disable;
+ thismodule->cleanup = einit_hostname_cleanup;
+ thismodule->enable = einit_hostname_enable;
+ thismodule->disable = einit_hostname_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_hostname_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_hostname_ipc_event_handler);
 
  return 0;
 }

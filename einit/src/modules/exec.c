@@ -59,11 +59,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
-int _einit_exec_configure (struct lmodule *);
+int einit_exec_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_exec_self = {
+const struct smodule einit_exec_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -77,10 +77,10 @@ const struct smodule _einit_exec_self = {
   .after    = NULL,
   .before   = NULL
  },
-.configure = _einit_exec_configure
+ .configure = einit_exec_configure
 };
 
-module_register(_einit_exec_self);
+module_register(einit_exec_self);
 
 #endif
 
@@ -103,48 +103,48 @@ pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 
-char **__check_variables (const char *, const char **, FILE *);
-char *__apply_envfile (char *command, const char **environment);
-int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
-int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
-int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
-char **__create_environment (char **environment, const char **variables);
-void _einit_exec_ipc_event_handler (struct einit_event *);
-void _einit_exec_einit_event_handler (struct einit_event *);
+char **check_variables_f (const char *, const char **, FILE *);
+char *apply_envfile_f (char *command, const char **environment);
+int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
+int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
+char **create_environment_f (char **environment, const char **variables);
+void einit_exec_ipc_event_handler (struct einit_event *);
+void einit_exec_einit_event_handler (struct einit_event *);
 
-int _einit_exec_cleanup (struct lmodule *irr) {
+int einit_exec_cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) free (shell);
  exec_cleanup (irr);
 
- function_unregister ("einit-execute-command", 1, __pexec_function);
- function_unregister ("einit-execute-daemon", 1, __start_daemon_function);
- function_unregister ("einit-stop-daemon", 1, __stop_daemon_function);
- function_unregister ("einit-create-environment", 1, __create_environment);
- function_unregister ("einit-check-variables", 1, __check_variables);
- function_unregister ("einit-apply-envfile", 1, __apply_envfile);
+ function_unregister ("einit-execute-command", 1, pexec_f);
+ function_unregister ("einit-execute-daemon", 1, start_daemon_f);
+ function_unregister ("einit-stop-daemon", 1, stop_daemon_f);
+ function_unregister ("einit-create-environment", 1, create_environment_f);
+ function_unregister ("einit-check-variables", 1, check_variables_f);
+ function_unregister ("einit-apply-envfile", 1, apply_envfile_f);
 
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_exec_einit_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_exec_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_exec_einit_event_handler);
 
  sched_cleanup(irr);
 
  return 0;
 }
 
-void _einit_exec_einit_event_handler (struct einit_event *ev) {
+void einit_exec_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   if (!(envfilebase = cfg_getpath("configuration-system-exec-envfile-base")))
    envfilebase = estrdup("/etc/econf.d/");
  }
 }
 
-void _einit_exec_ipc_event_handler (struct einit_event *ev) {
+void einit_exec_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "exec")) {
   struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
   ev->flag = 1;
   ee.para = (void *)thismodule;
 
-  __pexec_function (ev->string, NULL, 0, 0, NULL, NULL, NULL, &ee);
+  pexec_f (ev->string, NULL, 0, 0, NULL, NULL, NULL, &ee);
   evstaticdestroy(ee);
  }
 }
@@ -169,7 +169,7 @@ void *pexec_watcher (struct spidcb *spid) {
 }
 #endif
 
-char *__apply_envfile (char *command, const char **environment) {
+char *apply_envfile_f (char *command, const char **environment) {
  uint32_t i = 0;
 
  char **envfiles = NULL;
@@ -219,7 +219,7 @@ char *__apply_envfile (char *command, const char **environment) {
  return command;
 }
 
-char **__check_variables (const char *id, const char **variables, FILE *output) {
+char **check_variables_f (const char *id, const char **variables, FILE *output) {
  uint32_t u = 0;
  if (!variables) return (char **)variables;
  for (u = 0; variables[u]; u++) {
@@ -278,7 +278,7 @@ char **__check_variables (const char *id, const char **variables, FILE *output) 
  return (char **)variables;
 }
 
-char **__create_environment (char **environment, const char **variables) {
+char **create_environment_f (char **environment, const char **variables) {
  int i = 0;
  char *variablevalue = NULL;
  if (variables) for (i = 0; variables[i]; i++) {
@@ -372,7 +372,7 @@ char **__create_environment (char **environment, const char **variables) {
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 // less features and verbosity in this one -- we only want it to work *somehow*
 
-int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
+int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  pid_t child;
  int pidstatus = 0;
  char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
@@ -458,9 +458,9 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
   dup2 (2, 1);
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
-  exec_environment = __create_environment (exec_environment, variables);
+  exec_environment = create_environment_f (exec_environment, variables);
 
-  command = __apply_envfile ((char *)command, (const char **)exec_environment);
+  command = apply_envfile_f ((char *)command, (const char **)exec_environment);
 
   cmdsetdup = str2set ('\0', command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
@@ -513,7 +513,7 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
 
 #else
 
-int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
+int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
@@ -598,9 +598,9 @@ int __pexec_function (const char *command, const char **variables, uid_t uid, gi
 
 // we can safely play with the global environment here, since we fork()-ed earlier
   exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
-  exec_environment = __create_environment (exec_environment, variables);
+  exec_environment = create_environment_f (exec_environment, variables);
 
-  command = __apply_envfile ((char *)command, (const char **)exec_environment);
+  command = apply_envfile_f ((char *)command, (const char **)exec_environment);
 
   cmdsetdup = str2set ('\0', command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
@@ -751,7 +751,7 @@ void *dexec_watcher (struct spidcb *spid) {
     status_update ((&fb));
 
     dx->cb = NULL;
-    __start_daemon_function (dx, &fb);
+    start_daemon_f (dx, &fb);
    } else {
     dx->cb = NULL;
     esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
@@ -772,7 +772,7 @@ void *dexec_watcher (struct spidcb *spid) {
  return NULL;
 }
 
-int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status) {
+int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  pid_t child;
  uid_t uid;
  gid_t gid;
@@ -851,9 +851,9 @@ int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *sta
    perror ("setting uid");
 
   daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
-  daemon_environment = __create_environment (daemon_environment, (const char **)shellcmd->variables);
+  daemon_environment = create_environment_f (daemon_environment, (const char **)shellcmd->variables);
 
-  shellcmd->command = __apply_envfile (shellcmd->command, (const char **)daemon_environment);
+  shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
 
   cmdsetdup = str2set ('\0', shellcmd->command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
@@ -892,7 +892,7 @@ void dexec_resume_timer (struct dexecinfo *dx) {
  }
 }
 
-int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status) {
+int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  if (shellcmd->cb) {
   pthread_t th;
   pthread_mutex_trylock (&shellcmd->cb->mutex);
@@ -939,12 +939,12 @@ int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *stat
  return STATUS_OK;
 }
 
-int _einit_exec_configure (struct lmodule *irr) {
+int einit_exec_configure (struct lmodule *irr) {
  module_init(irr);
 
  sched_configure(irr);
 
- irr->cleanup = _einit_exec_cleanup;
+ irr->cleanup = einit_exec_cleanup;
 
  struct cfgnode *node;
  if (!(shell = (char **)str2set (' ', cfg_getstring ("configuration-system-shell", NULL))))
@@ -958,15 +958,15 @@ int _einit_exec_configure (struct lmodule *irr) {
  if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_exec_ipc_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_exec_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_exec_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_exec_einit_event_handler);
 
- function_register ("einit-execute-command", 1, __pexec_function);
- function_register ("einit-execute-daemon", 1, __start_daemon_function);
- function_register ("einit-stop-daemon", 1, __stop_daemon_function);
- function_register ("einit-create-environment", 1, __create_environment);
- function_register ("einit-check-variables", 1, __check_variables);
- function_register ("einit-apply-envfile", 1, __apply_envfile);
+ function_register ("einit-execute-command", 1, pexec_f);
+ function_register ("einit-execute-daemon", 1, start_daemon_f);
+ function_register ("einit-stop-daemon", 1, stop_daemon_f);
+ function_register ("einit-create-environment", 1, create_environment_f);
+ function_register ("einit-check-variables", 1, check_variables_f);
+ function_register ("einit-apply-envfile", 1, apply_envfile_f);
 
  return 0;
 }

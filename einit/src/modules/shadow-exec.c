@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -58,10 +56,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_shadow_exec_configure (struct lmodule *);
+int einit_shadow_exec_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _einit_shadow_exec_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule einit_shadow_exec_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -75,10 +73,10 @@ const struct smodule _einit_shadow_exec_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_shadow_exec_configure
+ .configure = einit_shadow_exec_configure
 };
 
-module_register(_einit_shadow_exec_self);
+module_register(einit_shadow_exec_self);
 
 #endif
 
@@ -86,23 +84,23 @@ struct shadow_descriptor {
  char *before_enable,
       *after_enable,
       *before_disable,
-      *after_disable
+      *after_disable;
 };
 
-struct cfgnode *_einit_shadow_exec_ecmode = NULL;
-struct stree *_einit_shadow_exec_shadows = NULL;
+struct cfgnode *einit_shadow_exec_ecmode = NULL;
+struct stree *einit_shadow_exec_shadows = NULL;
 
-pthread_mutex_t _einit_shadow_exec_shadow_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t einit_shadow_exec_shadow_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void update_shadows(struct cfgnode *xmode) {
- emutex_lock(&_einit_shadow_exec_shadow_mutex);
+ emutex_lock(&einit_shadow_exec_shadow_mutex);
 
- if (_einit_shadow_exec_ecmode != xmode) {
+ if (einit_shadow_exec_ecmode != xmode) {
   char *tmp = cfg_getstring("shadows", xmode);
 
-  if (_einit_shadow_exec_shadows) {
+  if (einit_shadow_exec_shadows) {
 //   streefree (shadows);
-   _einit_shadow_exec_shadows = NULL;
+   einit_shadow_exec_shadows = NULL;
   }
 
   if (tmp) {
@@ -133,7 +131,7 @@ void update_shadows(struct cfgnode *xmode) {
 
       if (nserv) {
        for (i = 0; nserv[i]; i++) {
-        _einit_shadow_exec_shadows = streeadd (_einit_shadow_exec_shadows, nserv[i], &nshadow, sizeof(struct shadow_descriptor), NULL);
+        einit_shadow_exec_shadows = streeadd (einit_shadow_exec_shadows, nserv[i], &nshadow, sizeof(struct shadow_descriptor), NULL);
        }
 
        free (nserv);
@@ -145,23 +143,23 @@ void update_shadows(struct cfgnode *xmode) {
    }
   }
 
-  _einit_shadow_exec_ecmode = xmode;
+  einit_shadow_exec_ecmode = xmode;
  }
 
- emutex_unlock(&_einit_shadow_exec_shadow_mutex);
+ emutex_unlock(&einit_shadow_exec_shadow_mutex);
 }
 
-void _einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
+void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_UPDATE_CONFIGURATION) {
   update_shadows(cmode);
  } else if (ev->type == EVE_SWITCHING_MODE) {
   update_shadows(ev->para);
  } else if (ev->type == EVE_SERVICE_UPDATE) {
-  if (_einit_shadow_exec_shadows && ev->set) {
+  if (einit_shadow_exec_shadows && ev->set) {
    ssize_t i = 0;
 
    for (; ev->set[i]; i++) {
-    struct stree *cur = streefind(_einit_shadow_exec_shadows, (char *)ev->set[i], TREE_FIND_FIRST);
+    struct stree *cur = streefind(einit_shadow_exec_shadows, (char *)ev->set[i], TREE_FIND_FIRST);
 
     while (cur) {
      struct shadow_descriptor *sd = cur->value;
@@ -191,22 +189,22 @@ void _einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_shadow_exec_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_shadow_exec_einit_event_handler);
+int einit_shadow_exec_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_shadow_exec_einit_event_handler);
 
  exec_cleanup(this);
 
  return 0;
 }
 
-int _einit_shadow_exec_configure (struct lmodule *this) {
+int einit_shadow_exec_configure (struct lmodule *this) {
  module_init (this);
 
- thismodule->cleanup = _einit_shadow_exec_cleanup;
+ thismodule->cleanup = einit_shadow_exec_cleanup;
 
  exec_configure(this);
 
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_shadow_exec_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_shadow_exec_einit_event_handler);
 
  return 0;
 }

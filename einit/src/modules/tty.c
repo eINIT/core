@@ -36,8 +36,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -84,13 +82,13 @@ struct ttyst {
  struct cfgnode *node;
 };
 
-int _einit_tty_configure (struct lmodule *);
+int einit_tty_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * _einit_tty_provides[] = {"tty", NULL};
-char * _einit_tty_requires[] = {"mount-system", NULL};
-const struct smodule _einit_tty_self = {
+char * einit_tty_provides[] = {"tty", NULL};
+char * einit_tty_requires[] = {"mount-system", NULL};
+const struct smodule einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -99,25 +97,25 @@ const struct smodule _einit_tty_self = {
  .name      = "TTY-Configuration",
  .rid       = "tty",
  .si        = {
-  .provides = _einit_tty_provides,
-  .requires = _einit_tty_requires,
+  .provides = einit_tty_provides,
+  .requires = einit_tty_requires,
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_tty_configure
+ .configure = einit_tty_configure
 };
 
-module_register(_einit_tty_self);
+module_register(einit_tty_self);
 
 #endif
 
 struct ttyst *ttys = NULL;
-char _einit_tty_do_utmp;
+char einit_tty_do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int _einit_tty_texec (struct cfgnode *);
+int einit_tty_texec (struct cfgnode *);
 
-int _einit_tty_cleanup (struct lmodule *this) {
+int einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
  sched_configure(this);
@@ -125,7 +123,7 @@ int _einit_tty_cleanup (struct lmodule *this) {
  return 0;
 }
 
-void *_einit_tty_watcher (struct spidcb *spid) {
+void *einit_tty_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
  emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
@@ -133,7 +131,7 @@ void *_einit_tty_watcher (struct spidcb *spid) {
  struct cfgnode *node = NULL;
  while (cur) {
   if (cur->pid == pid) {
-   if (_einit_tty_do_utmp) {
+   if (einit_tty_do_utmp) {
     create_utmp_record(utmprecord, DEAD_PROCESS, spid->pid, NULL, NULL, NULL, NULL, 0, 0, spid->pid);
 
     update_utmp (UTMP_MODIFY,&utmprecord);
@@ -162,13 +160,13 @@ void *_einit_tty_watcher (struct spidcb *spid) {
    esprintf (tmp, BUFFERSIZE, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
-  _einit_tty_texec (node);
+  einit_tty_texec (node);
  }
 
  return 0;
 }
 
-int _einit_tty_texec (struct cfgnode *node) {
+int einit_tty_texec (struct cfgnode *node) {
  int i = 0, restart = 0;
  char *device = NULL, *command = NULL;
  char **environment = (char **)setdup((const void **)einit_global_environment, SET_TYPE_STRING);
@@ -219,13 +217,13 @@ int _einit_tty_texec (struct cfgnode *node) {
     int ctty = -1;
     pid_t curpgrp;
 
-    if (_einit_tty_do_utmp) {
+    if (einit_tty_do_utmp) {
      create_utmp_record(utmprecord, INIT_PROCESS, cpid, device, "etty", NULL, NULL, 0, 0, cpid);
 
      update_utmp (UTMP_ADD, &utmprecord);
     }
 
-    sched_watch_pid (cpid, _einit_tty_watcher);
+    sched_watch_pid (cpid, einit_tty_watcher);
 
     setpgid (cpid, cpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
@@ -256,7 +254,7 @@ int _einit_tty_texec (struct cfgnode *node) {
  return 0;
 }
 
-int _einit_tty_enable (void *pa, struct einit_event *status) {
+int einit_tty_enable (void *pa, struct einit_event *status) {
  struct cfgnode *node = NULL;
  char **ttys = NULL;
  int i = 0;
@@ -281,7 +279,7 @@ int _einit_tty_enable (void *pa, struct einit_event *status) {
 
   node = cfg_getnode (tmpnodeid, NULL);
   if (node && node->arbattrs) {
-   _einit_tty_texec (node);
+   einit_tty_texec (node);
   } else {
    char warning[BUFFERSIZE];
    esprintf (warning, BUFFERSIZE, "einit-tty: node %s not found", tmpnodeid);
@@ -297,7 +295,7 @@ int _einit_tty_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_tty_disable (void *pa, struct einit_event *status) {
+int einit_tty_disable (void *pa, struct einit_event *status) {
  struct ttyst *cur = ttys;
  emutex_lock (&ttys_mutex);
 #ifdef LINUX
@@ -321,25 +319,25 @@ int _einit_tty_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_tty_custom (void *pa, char *cmd, struct einit_event *status) {
+int einit_tty_custom (void *pa, char *cmd, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_tty_configure (struct lmodule *this) {
+int einit_tty_configure (struct lmodule *this) {
  module_init (this);
  sched_configure(this);
 
- thismodule->cleanup = _einit_tty_cleanup;
- thismodule->enable = _einit_tty_enable;
- thismodule->disable = _einit_tty_disable;
- thismodule->custom = _einit_tty_custom;
+ thismodule->cleanup = einit_tty_cleanup;
+ thismodule->enable = einit_tty_enable;
+ thismodule->disable = einit_tty_disable;
+ thismodule->custom = einit_tty_custom;
 
  utmp_configure(this);
  exec_configure(this);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
-  _einit_tty_do_utmp = utmpnode->flag;
+  einit_tty_do_utmp = utmpnode->flag;
 
  return 0;
 }

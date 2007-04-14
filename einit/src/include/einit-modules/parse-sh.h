@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_MODULES_IPC_H
-#define _EINIT_MODULES_IPC_H
+#ifndef EINIT_MODULES_IPC_H
+#define EINIT_MODULES_IPC_H
 
 #include <unistd.h>
 #include <inttypes.h>
@@ -57,21 +57,21 @@ extern "C" {
 
 typedef int (*sh_parser) (const char *, void (*)(const char **, uint8_t));
 
-sh_parser __f_parse_sh;
+sh_parser f_parse_sh;
 
-#define parse_sh(data, callback) ((__f_parse_sh || (__f_parse_sh = function_find_one("einit-parse-sh", 1, NULL))) ? __f_parse_sh(data, callback) : -1)
+#define parse_sh(data, callback) ((f_parse_sh || (f_parse_sh = function_find_one("einit-parse-sh", 1, NULL))) ? f_parse_sh(data, callback) : -1)
 
-#define parse_sh_configure(mod) __f_parse_sh = NULL;
-#define parse_sh_cleanup(mod) __f_parse_sh = NULL;
+#define parse_sh_configure(mod) f_parse_sh = NULL;
+#define parse_sh_cleanup(mod) f_parse_sh = NULL;
 
 #else
 
-int __parse_sh (const char *, void (*)(const char **, uint8_t));
+int parse_sh_f (const char *, void (*)(const char **, uint8_t));
 
 #define parse_sh_configure(mod) ;
 #define parse_sh_cleanup(mod) ;
 
-#define parse_sh(data, callback) __parse_sh(data, callback)
+#define parse_sh(data, callback) parse_sh_f(data, callback)
 
 #endif
 

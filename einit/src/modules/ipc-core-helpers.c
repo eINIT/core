@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,11 +50,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_ipc_core_helpers_configure (struct lmodule *);
+int einit_ipc_core_helpers_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_ipc_core_helpers_self = {
+const struct smodule einit_ipc_core_helpers_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -70,16 +68,16 @@ const struct smodule _einit_ipc_core_helpers_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_ipc_core_helpers_configure
+ .configure = einit_ipc_core_helpers_configure
 };
 
-module_register(_einit_ipc_core_helpers_self);
+module_register(einit_ipc_core_helpers_self);
 
 #endif
 
 struct lmodule *mlist;
 
-void _einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
+void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
 
 #define STATUS2STRING(status)\
  (status == STATUS_IDLE ? "idle" : \
@@ -90,7 +88,7 @@ void _einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
  (status & STATUS_WORKING ? "W" : \
  (status & STATUS_ENABLED ? "E" : "D")))
 
-void _einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
+void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  if (!ev || !ev->set) return;
  char **argv = (char **) ev->set;
  int argc = setcount ((const void **)ev->set);
@@ -158,18 +156,18 @@ void _einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
 }
 
 
-int _einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_ipc_core_helpers_ipc_event_handler);
+int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_ipc_core_helpers_ipc_event_handler);
 
  return 0;
 }
 
-int _einit_ipc_core_helpers_configure (struct lmodule *r) {
+int einit_ipc_core_helpers_configure (struct lmodule *r) {
  module_init (r);
 
- thismodule->cleanup = _einit_ipc_core_helpers_cleanup;
+ thismodule->cleanup = einit_ipc_core_helpers_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_ipc_core_helpers_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_ipc_core_helpers_ipc_event_handler);
 
  return 0;
 }

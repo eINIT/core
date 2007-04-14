@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_MODULES_UTMP_H
-#define _EINIT_MODULES_UTMP_H
+#ifndef EINIT_MODULES_UTMP_H
+#define EINIT_MODULES_UTMP_H
 
 #include <utmp.h>
 #include <string.h>
@@ -86,12 +86,12 @@ extern "C" {
 
 typedef char (*utmp_function) (unsigned char, struct utmp *);
 
-utmp_function __utmp_update_function;
+utmp_function utmp_update_fp;
 
-#define update_utmp(options, record) ((__utmp_update_function || (__utmp_update_function = function_find_one("einit-utmp-update", 1, NULL))) ? __utmp_update_function(options, record) : -1)
+#define update_utmp(options, record) ((utmp_update_fp || (utmp_update_fp = function_find_one("einit-utmp-update", 1, NULL))) ? utmp_update_fp(options, record) : -1)
 
-#define utmp_configure(mod) __utmp_update_function = NULL;
-#define utmp_cleanup(mod) __utmp_update_function = NULL;
+#define utmp_configure(mod) utmp_update_fp = NULL;
+#define utmp_cleanup(mod) utmp_update_fp = NULL;
 
 #ifdef LINUX
 #define create_utmp_record(record, utype, upid, uline, uid, uuser, uhost, ueterm, ueexit, usession) struct utmp record = { .ut_type = utype, \

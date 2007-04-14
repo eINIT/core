@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_MODULES_EXEC_H
-#define _EINIT_MODULES_EXEC_H
+#ifndef EINIT_MODULES_EXEC_H
+#define EINIT_MODULES_EXEC_H
 
 #include <einit/module.h>
 #include <einit-modules/scheduler.h>
@@ -103,44 +103,44 @@ typedef char **(*environment_function)(char **, const char **);
 typedef void (*variable_checkup_function)(const char *, const char **, FILE *);
 
 /* functions */
-pexec_function __f_pxe;
-daemon_function __f_start_daemon, __f_stop_daemon;
-environment_function __f_create_environment;
-variable_checkup_function __f_check_variables;
+pexec_function f_pxe;
+daemon_function f_start_daemon, f_stop_daemon;
+environment_function f_create_environment;
+variable_checkup_function f_check_variables;
 
-#define exec_configure(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL; __f_check_variables = NULL;
-#define exec_cleanup(mod) __f_pxe = NULL; __f_start_daemon = NULL; __f_stop_daemon = NULL; __f_create_environment = NULL; __f_check_variables = NULL;
+#define exec_configure(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
+#define exec_cleanup(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
 
-#define pexec(command, variables, uid, gid, user, group, local_environment, status) ((__f_pxe || (__f_pxe = function_find_one("einit-execute-command", 1, NULL)))? __f_pxe(command, variables, uid, gid, user, group, local_environment, status) : STATUS_FAIL)
+#define pexec(command, variables, uid, gid, user, group, local_environment, status) ((f_pxe || (f_pxe = function_find_one("einit-execute-command", 1, NULL)))? f_pxe(command, variables, uid, gid, user, group, local_environment, status) : STATUS_FAIL)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
 
-#define startdaemon(execheader, status) ((__f_start_daemon || (__f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? __f_start_daemon(execheader, status) : STATUS_FAIL)
-#define stopdaemon(execheader, status) ((__f_stop_daemon || (__f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? __f_stop_daemon(execheader, status) : STATUS_FAIL)
+#define startdaemon(execheader, status) ((f_start_daemon || (f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? f_start_daemon(execheader, status) : STATUS_FAIL)
+#define stopdaemon(execheader, status) ((f_stop_daemon || (f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? f_stop_daemon(execheader, status) : STATUS_FAIL)
 
-#define create_environment(environment, variables) ((__f_create_environment || (__f_create_environment = function_find_one("einit-create-environment", 1, NULL)))? __f_create_environment(environment, variables) : environment)
+#define create_environment(environment, variables) ((f_create_environment || (f_create_environment = function_find_one("einit-create-environment", 1, NULL)))? f_create_environment(environment, variables) : environment)
 
-#define check_variables(output_id, variables, target) ((__f_check_variables || (__f_check_variables = function_find_one("einit-check-variables", 1, NULL)))? __f_check_variables(output_id, variables, target) : NULL)
+#define check_variables(output_id, variables, target) ((f_check_variables || (f_check_variables = function_find_one("einit-check-variables", 1, NULL)))? f_check_variables(output_id, variables, target) : NULL)
 
 #else
 
-char **__check_variables (const char *, const char **, FILE *);
-int __pexec_function (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
-int __start_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
-int __stop_daemon_function (struct dexecinfo *shellcmd, struct einit_event *status);
-char **__create_environment (char **environment, const char **variables);
+char **check_variables_f (const char *, const char **, FILE *);
+int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
+int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
+char **create_environment_f (char **environment, const char **variables);
 
 #define exec_configure(mod) ;
 #define exec_cleanup(mod) ;
 
-#define pexec(command, variables, uid, gid, user, group, local_environment, status) __pexec_function(command, variables, uid, gid, user, group, local_environment, status)
+#define pexec(command, variables, uid, gid, user, group, local_environment, status) pexec_f(command, variables, uid, gid, user, group, local_environment, status)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
 
-#define startdaemon(execheader, status) __start_daemon_function(execheader, status)
-#define stopdaemon(execheader, status) __stop_daemon_function(execheader, status)
+#define startdaemon(execheader, status) start_daemon_f(execheader, status)
+#define stopdaemon(execheader, status) stop_daemon_f(execheader, status)
 
-#define create_environment(environment, variables) __create_environment(environment, variables)
+#define create_environment(environment, variables) create_environment_f(environment, variables)
 
-#define check_variables(output_id, variables, target) __check_variables(output_id, variables, target)
+#define check_variables(output_id, variables, target) check_variables_f(output_id, variables, target)
 
 #endif
 

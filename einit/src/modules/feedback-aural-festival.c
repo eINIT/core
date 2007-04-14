@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
@@ -47,7 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
-#include <einit-modules/exec.h>
 #include <einit/bitch.h>
 #include <errno.h>
 
@@ -57,13 +54,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_feedback_aural_festival_configure (struct lmodule *);
+int einit_feedback_aural_festival_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char *_einit_feedback_aural_festival_provides[] = {"feedback-aural", NULL};
-char *_einit_feedback_aural_festival_requires[] = {"audio", "mount-critical", NULL};
-const struct smodule _einit_feedback_aural_festival_self = {
+char *einit_feedback_aural_festival_provides[] = {"feedback-aural", NULL};
+char *einit_feedback_aural_festival_requires[] = {"audio", "mount-critical", NULL};
+const struct smodule einit_feedback_aural_festival_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -72,124 +69,26 @@ const struct smodule _einit_feedback_aural_festival_self = {
  .name      = "aural/festival feedback module",
  .rid       = "feedback-aural",
  .si        = {
-  .provides = _einit_feedback_aural_festival_provides,
-  .requires = _einit_feedback_aural_festival_requires,
+  .provides = einit_feedback_aural_festival_provides,
+  .requires = einit_feedback_aural_festival_requires,
   .after    = NULL,
   .before   = NULL
  },
-.configure = _einit_feedback_aural_festival_configure
+ .configure = einit_feedback_aural_festival_configure
 };
 
-module_register(_einit_feedback_aural_festival_self);
+module_register(einit_feedback_aural_festival_self);
 
 #endif
 
-void _einit_feedback_aural_festival_feedback_event_handler(struct einit_event *);
-void synthesize (char *);
-char *synthesizer;
-int sev_threshold = 2;
-
-void _einit_feedback_aural_festival_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
-  if (!cfg_getnode("configuration-feedback-aural-tts-synthesizer-command", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-aural-tts-synthesizer-command\" not found.\n", (FILE *)ev->para);
-   ev->task++;
-  }
-  if (!cfg_getnode("configuration-feedback-aural-tts-vocalising-threshold", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-aural-tts-vocalising-threshold\" not found.\n", (FILE *)ev->para);
-   ev->task++;
-  }
-
-  ev->flag = 1;
- }
-}
-
-int _einit_feedback_aural_festival_cleanup (struct lmodule *this) {
- exec_cleanup(this);
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_feedback_aural_festival_ipc_event_handler);
-
+int einit_feedback_aural_festival_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _einit_feedback_aural_festival_enable (void *pa, struct einit_event *status) {
- emutex_lock (&thismodule->imutex);
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_aural_festival_feedback_event_handler);
- emutex_unlock (&thismodule->imutex);
- return STATUS_OK;
-}
-
-int _einit_feedback_aural_festival_disable (void *pa, struct einit_event *status) {
- emutex_lock (&thismodule->imutex);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, _einit_feedback_aural_festival_feedback_event_handler);
- emutex_unlock (&thismodule->imutex);
- return STATUS_OK;
-}
-
-void _einit_feedback_aural_festival_feedback_event_handler(struct einit_event *ev) {
- emutex_lock (&thismodule->imutex);
-
- char phrase[BUFFERSIZE], hostname[BUFFERSIZE];
- phrase[0] = 0;
-
- if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
-  switch (ev->task) {
-   case MOD_SCHEDULER_PLAN_COMMIT_START:
-    if (gethostname (hostname, BUFFERSIZE)) strcpy (hostname, "localhost");
-    hostname[BUFFERSIZE] = 0;
-    esprintf (phrase, BUFFERSIZE, "Host \"%s\" now switching to mode \"%s\".", hostname, (cmode && cmode->id) ? cmode->id : "unknown");
-    break;
-   case MOD_SCHEDULER_PLAN_COMMIT_FINISH:
-    esprintf (phrase, BUFFERSIZE, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
-    break;
-  }
- } else if (ev->type == EVE_FEEDBACK_NOTICE) {
-  if (synthesizer && ev->string && (ev->flag < sev_threshold)) {
-   char *tx;
-   strtrim (ev->string);
-
-   if (!(tx = strrchr (ev->string, ':'))) tx = ev->string;
-   else tx ++;
-
-   if (tx) strncat (phrase, tx, BUFFERSIZE);
-  }
- }
-
- if (phrase[0]) synthesize (phrase);
-
- emutex_unlock (&thismodule->imutex);
- return;
-}
-
-/* BUG: using popen/pclose might interfere with the scheduler's zombie-auto-reaping code,
-        if we're running this on a system with a buggy pthreads implementation */
-void synthesize (char *string) {
- FILE *px = popen (synthesizer, "w");
-
- if (px) {
-  eputs (string, px);
-
-  if (pclose (px) == -1)
-   perror ("tts: pclose");
- } else
-  perror ("tts: popen");
-}
-
-int _einit_feedback_aural_festival_configure (struct lmodule *r) {
+int einit_feedback_aural_festival_configure (struct lmodule *r) {
  module_init (r);
- exec_configure (r);
 
- r->cleanup = _einit_feedback_aural_festival_cleanup;
- r->enable = _einit_feedback_aural_festival_enable;
- r->disable = _einit_feedback_aural_festival_disable;
-
- struct cfgnode *node;
-
- synthesizer = cfg_getstring ("configuration-feedback-aural-tts-synthesizer-command", NULL);
-
- if ((node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL)))
-  sev_threshold = node->value;
-
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_feedback_aural_festival_ipc_event_handler);
+ r->cleanup = einit_feedback_aural_festival_cleanup;
 
  return 0;
 }

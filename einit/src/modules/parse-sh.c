@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdio.h>
 #include <unistd.h>
 #include <einit/bitch.h>
@@ -63,10 +61,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_parse_sh_configure (struct lmodule *);
+int einit_parse_sh_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _einit_parse_sh_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule einit_parse_sh_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -80,24 +78,24 @@ const struct smodule _einit_parse_sh_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_parse_sh_configure
+ .configure = einit_parse_sh_configure
 };
 
-module_register(_einit_parse_sh_self);
+module_register(einit_parse_sh_self);
 
 #endif
 
-int __parse_sh (const char *, void (*)(const char **, uint8_t));
+int parse_sh_f (const char *, void (*)(const char **, uint8_t));
 
-int _einit_parse_sh_cleanup (struct lmodule *irr) {
- function_unregister ("einit-parse-sh", 1, __parse_sh);
+int einit_parse_sh_cleanup (struct lmodule *irr) {
+ function_unregister ("einit-parse-sh", 1, parse_sh_f);
  parse_sh_cleanup (irr);
 
  return 0;
 }
 
 // parse sh-style files and call back for each line
-int __parse_sh (const char *data, void (*callback)(const char **, uint8_t)) {
+int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
  if (!data) return -1;
 
  char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp;
@@ -191,13 +189,13 @@ int __parse_sh (const char *data, void (*callback)(const char **, uint8_t)) {
 
 /* passive module: no enable/disable */
 
-int _einit_parse_sh_configure (struct lmodule *irr) {
+int einit_parse_sh_configure (struct lmodule *irr) {
  module_init (irr);
 
- irr->cleanup = _einit_parse_sh_cleanup;
+ irr->cleanup = einit_parse_sh_cleanup;
 
  parse_sh_configure (irr);
- function_register ("einit-parse-sh", 1, __parse_sh);
+ function_register ("einit-parse-sh", 1, parse_sh_f);
 
  return 0;
 }

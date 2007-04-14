@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -60,10 +58,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _linux_process_configure (struct lmodule *);
+int linux_process_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _linux_process_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule module_linux_process_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -77,10 +75,10 @@ const struct smodule _linux_process_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _linux_process_configure
+ .configure = linux_process_configure
 };
 
-module_register(_linux_process_self);
+module_register(module_linux_process_self);
 
 #endif
 
@@ -206,7 +204,7 @@ pid_t *filter_processes_files_below (struct pc_conditional * cond, pid_t * ret, 
  return ret;
 }
 
-int _linux_process_cleanup (struct lmodule *this) {
+int linux_process_cleanup (struct lmodule *this) {
  function_unregister ("einit-process-status-updater", 1, update_processes_proc_linux);
  function_unregister ("einit-process-filter-files-below", 1, filter_processes_files_below);
  process_cleanup (irr);
@@ -214,10 +212,10 @@ int _linux_process_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _linux_process_configure (struct lmodule *irr) {
+int linux_process_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _linux_process_cleanup;
+ thismodule->cleanup = linux_process_cleanup;
 
  process_configure (irr);
  function_register ("einit-process-status-updater", 1, update_processes_proc_linux);

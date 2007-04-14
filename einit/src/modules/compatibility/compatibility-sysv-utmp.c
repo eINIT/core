@@ -36,8 +36,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -59,12 +57,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _compatibility_sysv_utmp_configure (struct lmodule *);
+int compatibility_sysv_utmp_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-char * _compatibility_sysv_utmp_provides[] = {"utmp", NULL};
-char * _compatibility_sysv_utmp_requires[] = {"mount-critical", NULL};
-const struct smodule _compatibility_sysv_utmp_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+char * compatibility_sysv_utmp_provides[] = {"utmp", NULL};
+char * compatibility_sysv_utmp_requires[] = {"mount-critical", NULL};
+const struct smodule module_compatibility_sysv_utmp_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -73,31 +71,31 @@ const struct smodule _compatibility_sysv_utmp_self = {
  .name      = "System-V Compatibility: {U|W}TMP",
  .rid       = "compatibility-sysv-utmp",
  .si        = {
-  .provides = _compatibility_sysv_utmp_provides,
-  .requires = _compatibility_sysv_utmp_requires,
+  .provides = compatibility_sysv_utmp_provides,
+  .requires = compatibility_sysv_utmp_requires,
   .after    = NULL,
   .before   = NULL
  },
- .configure = _compatibility_sysv_utmp_configure
+ .configure = compatibility_sysv_utmp_configure
 };
 
-module_register(_compatibility_sysv_utmp_self);
+module_register(module_compatibility_sysv_utmp_self);
 
 #endif
 
-int  _compatibility_sysv_utmp_enable  (void *, struct einit_event *);
-int  _compatibility_sysv_utmp_disable (void *, struct einit_event *);
-char __updateutmp (unsigned char, struct utmp *);
+int  compatibility_sysv_utmp_enable  (void *, struct einit_event *);
+int  compatibility_sysv_utmp_disable (void *, struct einit_event *);
+char updateutmp_f (unsigned char, struct utmp *);
 
-int _compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
-// event_ignore (EVENT_SUBSYSTEM_IPC, _compatibility_sysv_utmp_ipc_event_handler);
- function_unregister ("einit-utmp-update", 1, __updateutmp);
+int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
+// event_ignore (EVENT_SUBSYSTEM_IPC, compatibility_sysv_utmp_ipc_event_handler);
+ function_unregister ("einit-utmp-update", 1, updateutmp_f);
  utmp_cleanup (irr);
 
  return 0;
 }
 
-char __updateutmp (unsigned char options, struct utmp *new_entry) {
+char updateutmp_f (unsigned char options, struct utmp *new_entry) {
  int ufile;
  struct stat st;
 
@@ -225,13 +223,13 @@ char __updateutmp (unsigned char options, struct utmp *new_entry) {
  return 0;
 }
 
-int _compatibility_sysv_utmp_enable (void *pa, struct einit_event *status) {
+int compatibility_sysv_utmp_enable (void *pa, struct einit_event *status) {
  char utmp_cfg = parse_boolean (cfg_getstring ("configuration-compatibility-sysv/utmp", NULL));
 
  if (utmp_cfg) {
   status->string = "cleaning utmp";
   status_update (status);
-  __updateutmp (UTMP_CLEAN, NULL);
+  updateutmp_f (UTMP_CLEAN, NULL);
  }
 
 /* always return OK, as utmp is pretty much useless to eINIT, so no reason
@@ -239,20 +237,20 @@ int _compatibility_sysv_utmp_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _compatibility_sysv_utmp_disable (void *pa, struct einit_event *status) {
+int compatibility_sysv_utmp_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _compatibility_sysv_utmp_configure (struct lmodule *irr) {
+int compatibility_sysv_utmp_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->enable = _compatibility_sysv_utmp_enable;
- thismodule->disable = _compatibility_sysv_utmp_disable;
- thismodule->cleanup = _compatibility_sysv_utmp_cleanup;
+ thismodule->enable = compatibility_sysv_utmp_enable;
+ thismodule->disable = compatibility_sysv_utmp_disable;
+ thismodule->cleanup = compatibility_sysv_utmp_cleanup;
 
  utmp_configure (irr);
- function_register ("einit-utmp-update", 1, __updateutmp);
-// event_listen (EVENT_SUBSYSTEM_IPC, _compatibility_sysv_utmp_ipc_event_handler);
+ function_register ("einit-utmp-update", 1, updateutmp_f);
+// event_listen (EVENT_SUBSYSTEM_IPC, compatibility_sysv_utmp_ipc_event_handler);
 
  return 0;
 }

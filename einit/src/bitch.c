@@ -66,7 +66,7 @@ int bitch_macro (const unsigned char sauce, const char *file, const int line, co
    case 1: // 1: print error or stderr
    case 255: // 255: just die
     switch (sauce) {
-#if ! defined (_EINIT_UTIL)
+#if ! defined (EINIT_UTIL)
 #ifdef POSIXREGEX
      case BITCH_REGEX:
      {

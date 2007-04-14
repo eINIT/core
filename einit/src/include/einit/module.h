@@ -78,8 +78,8 @@ extern "C" {
  * based visualiser once i get to it.
 */
 
-#ifndef _EINIT_MODULE_H
-#define _EINIT_MODULE_H
+#ifndef EINIT_MODULE_H
+#define EINIT_MODULE_H
 
 #define MAXMODULES 40
 
@@ -316,7 +316,7 @@ void mod_event_handler(struct einit_event *event);
 char *bootstrapmodulepath;
 const struct smodule **coremodules[MAXMODULES];
 
-#if defined(_EINIT_MODULE)
+#if defined(EINIT_MODULE)
 
 struct lmodule *thismodule;
 
@@ -329,9 +329,9 @@ const struct smodule *self;
 
 #endif
 
-#if defined(_EINIT_CORE) && defined(thismodule) && defined(self)
+#if defined(EINIT_CORE) && defined(thismodule) && defined(self)
 
-#define _EINIT_MODULE_HEADER
+#define EINIT_MODULE_HEADER
 
 struct lmodule * thismodule;
 const struct smodule * self;

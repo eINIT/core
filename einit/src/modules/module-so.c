@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -61,11 +59,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_mod_so_configure (struct lmodule *);
+int einit_mod_so_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_mod_so_self = {
+const struct smodule einit_mod_so_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -79,22 +77,22 @@ const struct smodule _einit_mod_so_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_mod_so_configure
+ .configure = einit_mod_so_configure
 };
 
-module_register(_einit_mod_so_self);
+module_register(einit_mod_so_self);
 
 #endif
 
 pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int _einit_mod_so_scanmodules (struct lmodule *);
+int einit_mod_so_scanmodules (struct lmodule *);
 
-int _einit_mod_so_cleanup (struct lmodule *pa) {
+int einit_mod_so_cleanup (struct lmodule *pa) {
  return 0;
 }
 
-int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
+int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  void *sohandle;
  char **modules = NULL;
 
@@ -166,11 +164,11 @@ int _einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  return 1;
 }
 
-int _einit_mod_so_configure (struct lmodule *pa) {
+int einit_mod_so_configure (struct lmodule *pa) {
  module_init (pa);
 
- pa->scanmodules = _einit_mod_so_scanmodules;
- pa->cleanup = _einit_mod_so_cleanup;
+ pa->scanmodules = einit_mod_so_scanmodules;
+ pa->cleanup = einit_mod_so_cleanup;
 
  return 0;
 }

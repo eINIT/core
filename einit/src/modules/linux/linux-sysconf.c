@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,11 +52,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _linux_sysconf_configure (struct lmodule *);
+int linux_sysconf_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-char * _linux_sysconf_provides[] = {"sysconf", NULL};
-const struct smodule _linux_sysconf_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+char * linux_sysconf_provides[] = {"sysconf", NULL};
+const struct smodule module_linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -67,15 +65,15 @@ const struct smodule _linux_sysconf_self = {
  .name      = "Linux-specific System-Configuration",
  .rid       = "linux-sysconf",
  .si        = {
-  .provides = _linux_sysconf_provides,
+  .provides = linux_sysconf_provides,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = _linux_sysconf_configure
+ .configure = linux_sysconf_configure
 };
 
-module_register(_linux_sysconf_self);
+module_register(module_linux_sysconf_self);
 
 #endif
 
@@ -91,7 +89,7 @@ void linux_power_off () {
  exit (EXIT_FAILURE);
 }
 
-void _linux_sysconf_ipc_event_handler (struct einit_event *ev) {
+void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
    eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", (FILE *)ev->para);
@@ -106,15 +104,15 @@ void _linux_sysconf_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _linux_sysconf_cleanup (struct lmodule *this) {
+int linux_sysconf_cleanup (struct lmodule *this) {
  function_unregister ("core-power-reset-linux", 1, linux_reboot);
  function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (EVENT_SUBSYSTEM_IPC, _linux_sysconf_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, linux_sysconf_ipc_event_handler);
 
  return 0;
 }
 
-int _linux_sysconf_enable (void *pa, struct einit_event *status) {
+int linux_sysconf_enable (void *pa, struct einit_event *status) {
  struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
  FILE *sfile;
  char *sfilename;
@@ -187,18 +185,18 @@ int _linux_sysconf_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _linux_sysconf_disable (void *pa, struct einit_event *status) {
+int linux_sysconf_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _linux_sysconf_configure (struct lmodule *irr) {
+int linux_sysconf_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _linux_sysconf_cleanup;
- thismodule->enable = _linux_sysconf_enable;
- thismodule->disable = _linux_sysconf_disable;
+ thismodule->cleanup = linux_sysconf_cleanup;
+ thismodule->enable = linux_sysconf_enable;
+ thismodule->disable = linux_sysconf_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _linux_sysconf_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, linux_sysconf_ipc_event_handler);
  function_register ("core-power-off-linux", 1, linux_power_off);
  function_register ("core-power-reset-linux", 1, linux_reboot);
 

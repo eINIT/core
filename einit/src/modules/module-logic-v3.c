@@ -54,10 +54,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define MAX_ITERATIONS 1000
 
-int _einit_module_logic_v3_configure (struct lmodule *);
+int einit_module_logic_v3_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _einit_module_logic_v3_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule einit_module_logic_v3_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -71,10 +71,10 @@ const struct smodule _einit_module_logic_v3_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_module_logic_v3_configure
+ .configure = einit_module_logic_v3_configure
 };
 
-module_register(_einit_module_logic_v3_self);
+module_register(einit_module_logic_v3_self);
 
 #endif
 
@@ -82,7 +82,7 @@ char shutting_down = 0;
 
 void module_logic_ipc_event_handler (struct einit_event *);
 void module_logic_einit_event_handler (struct einit_event *);
-double __mod_get_plan_progress_f (struct mloadplan *);
+double mod_get_plan_progress_f (struct mloadplan *);
 char initdone = 0;
 char mod_isbroken (char *service);
 char mod_mark (char *service, char task);
@@ -132,8 +132,8 @@ struct group_data {
 
 /* module header functions */
 
-int _einit_module_logic_v3_cleanup (struct lmodule *this) {
- function_unregister ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
+int einit_module_logic_v3_cleanup (struct lmodule *this) {
+ function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
  event_ignore (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
  event_ignore (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
@@ -141,15 +141,15 @@ int _einit_module_logic_v3_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _einit_module_logic_v3_configure (struct lmodule *this) {
+int einit_module_logic_v3_configure (struct lmodule *this) {
  module_init(this);
 
- thismodule->cleanup = _einit_module_logic_v3_cleanup;
+ thismodule->cleanup = einit_module_logic_v3_cleanup;
 
  event_listen (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
  event_listen (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
 
- function_register ("module-logic-get-plan-progress", 1, __mod_get_plan_progress_f);
+ function_register ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
  return 0;
 }
@@ -569,7 +569,7 @@ int mod_plan_free (struct mloadplan *plan) {
  return 0;
 }
 
-double __mod_get_plan_progress_f (struct mloadplan *plan) {
+double mod_get_plan_progress_f (struct mloadplan *plan) {
  if (plan) {
   return 0.0;
  } else {
@@ -738,7 +738,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
  if ((ev->type == EVE_UPDATE_CONFIGURATION) && !initdone) {
   initdone = 1;
 
-  function_register("module-logic-get-plan-progress", 1, (void (*)(void *))__mod_get_plan_progress_f);
+  function_register("module-logic-get-plan-progress", 1, (void (*)(void *))mod_get_plan_progress_f);
  } else if (ev->type == EVE_MODULE_LIST_UPDATE) {
   /* update list with services */
   struct stree *new_service_list = NULL;

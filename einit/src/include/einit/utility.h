@@ -46,8 +46,8 @@ extern "C" {
  * These are functions that should be of use to all modules and eINIT itself.
 */
 
-#ifndef _EINIT_UTILITY_H
-#define _EINIT_UTILITY_H
+#ifndef EINIT_UTILITY_H
+#define EINIT_UTILITY_H
 
 /*!\defgroup utilityfunctionsevents eINIT Utility Functions: Events
  * \defgroup utilityfunctionsstrings eINIT Utility Functions: String-manipulation

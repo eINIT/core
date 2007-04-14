@@ -75,21 +75,21 @@ struct interface_descriptor {
  struct cfgnode *interface;
 };
 
-int _network_scanmodules (struct lmodule *);
-int _network_interface_enable (struct interface_descriptor *, struct einit_event *);
-int _network_interface_disable (struct interface_descriptor *, struct einit_event *);
-int _network_interface_custom (struct interface_descriptor *, char *, struct einit_event *);
-int _network_interface_cleanup (struct lmodule *);
-int _network_interface_configure (struct lmodule *);
-int _network_cleanup (struct lmodule *);
-int _network_configure (struct lmodule *);
+int network_scanmodules (struct lmodule *);
+int network_interface_enable (struct interface_descriptor *, struct einit_event *);
+int network_interface_disable (struct interface_descriptor *, struct einit_event *);
+int network_interface_custom (struct interface_descriptor *, char *, struct einit_event *);
+int network_interface_cleanup (struct lmodule *);
+int network_interface_configure (struct lmodule *);
+int network_cleanup (struct lmodule *);
+int network_configure (struct lmodule *);
 
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *);
 void network_free_interface_descriptor (struct interface_descriptor *);
 struct interface_template_item **network_import_templates (char *, char *, struct interface_descriptor *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _network_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule einit_network_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -103,10 +103,10 @@ const struct smodule _network_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _network_configure
+ .configure = network_configure
 };
 
-module_register(_network_self);
+module_register(einit_network_self);
 
 #endif
 
@@ -120,7 +120,7 @@ void network_einit_event_handler (struct einit_event *ev) {
 }
 #endif
 
-int _network_scanmodules (struct lmodule *mainlist) {
+int network_scanmodules (struct lmodule *mainlist) {
  struct stree *network_nodes = cfg_prefix("configuration-network-interfaces-");
 
  if (network_nodes) {
@@ -164,7 +164,7 @@ int _network_scanmodules (struct lmodule *mainlist) {
       lm = lm->next;
      }
 
-     newmodule->configure = _network_interface_configure;
+     newmodule->configure = network_interface_configure;
      esprintf (tmp, BUFFERSIZE, "interface-%s", interfacename);
      newmodule->rid = estrdup (tmp);
      newmodule->eiversion = EINIT_VERSION;
@@ -325,7 +325,7 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
 
 // pexec(command, variables, uid, gid, user, group, local_environment, status)
 
-int _network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
+int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t ci = 0, pi = 0;
 
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
@@ -390,7 +390,7 @@ int _network_interface_enable (struct interface_descriptor *id, struct einit_eve
  return STATUS_FAIL;
 }
 
-int _network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
+int network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
 
  if (id->ip_manager[id->pi]) {
@@ -425,7 +425,7 @@ int _network_interface_disable (struct interface_descriptor *id, struct einit_ev
  return STATUS_OK;
 }
 
-int _network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
+int network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
 
  if (id->ip_manager && id->ip_manager[id->pi]) {
@@ -447,25 +447,25 @@ int _network_interface_custom (struct interface_descriptor *id, char *action, st
  return STATUS_OK | STATUS_ENABLED;
 }
 
-int _network_cleanup (struct lmodule *this) {
+int network_cleanup (struct lmodule *this) {
  exec_cleanup (this);
 
  return 0;
 }
 
-int _network_interface_cleanup (struct lmodule *this) {
+int network_interface_cleanup (struct lmodule *this) {
  return 0;
 }
 
-int _network_interface_configure (struct lmodule *tm) {
+int network_interface_configure (struct lmodule *tm) {
  if (!tm->module || !tm->module->rid) return 1;
 
 // eprintf (stderr, "new network module: %s\n", tm->module->rid);
 
- tm->cleanup = _network_interface_cleanup;
- tm->enable = (int (*)(void *, struct einit_event *))_network_interface_enable;
- tm->disable = (int (*)(void *, struct einit_event *))_network_interface_disable;
- tm->custom = (int (*)(void *, char *, struct einit_event *))_network_interface_custom;
+ tm->cleanup = network_interface_cleanup;
+ tm->enable = (int (*)(void *, struct einit_event *))network_interface_enable;
+ tm->disable = (int (*)(void *, struct einit_event *))network_interface_disable;
+ tm->custom = (int (*)(void *, char *, struct einit_event *))network_interface_custom;
 
  tm->param = NULL;
 
@@ -474,12 +474,12 @@ int _network_interface_configure (struct lmodule *tm) {
  return 0;
 }
 
-int _network_configure (struct lmodule *this) {
+int network_configure (struct lmodule *this) {
  module_init(this);
  exec_configure (this);
 
- thismodule->cleanup = _network_cleanup;
- thismodule->scanmodules = _network_scanmodules;
+ thismodule->cleanup = network_cleanup;
+ thismodule->scanmodules = network_scanmodules;
 
 #if 0
  event_listen (EVENT_SUBSYSTEM_EINIT, network_einit_event_handler);

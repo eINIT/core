@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,11 +51,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_external_configure (struct lmodule *);
+int einit_external_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_external_self = {
+const struct smodule einit_external_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -71,17 +69,17 @@ const struct smodule _einit_external_self = {
   .after    = NULL,
   .before   = NULL
  },
-.configure = _einit_external_configure
+ .configure = einit_external_configure
 };
 
-module_register(_einit_external_self);
+module_register(einit_external_self);
 
 #endif
 
 
-void _einit_external_einit_event_handler (struct einit_event *);
+void einit_external_einit_event_handler (struct einit_event *);
 
-void _einit_external_ipc_event_handler (struct einit_event *ev) {
+void einit_external_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
 #ifdef BITCHY
   if (!cfg_getnode("services-external", NULL)) {
@@ -94,14 +92,14 @@ void _einit_external_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_external_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_external_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_external_einit_event_handler);
+int einit_external_cleanup (struct lmodule *irr) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_external_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_external_einit_event_handler);
 
  return 0;
 }
 
-int _einit_external_enable (void *pa, struct einit_event *status) {
+int einit_external_enable (void *pa, struct einit_event *status) {
  if (!cfg_getstring ("services-external/provided", NULL)) {
   status->string = "no external services configured, not enabling";
   status->flag++;
@@ -112,11 +110,11 @@ int _einit_external_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_external_disable (void *pa, struct einit_event *status) {
+int einit_external_disable (void *pa, struct einit_event *status) {
  return STATUS_FAIL; // once enabled, this module cannot be disabled
 }
 
-void _einit_external_einit_event_handler (struct einit_event *ev) {
+void einit_external_einit_event_handler (struct einit_event *ev) {
  if ((ev->type == EVE_CONFIGURATION_UPDATE) || (ev->type == EVE_UPDATE_CONFIGURATION)) {
   char *p;
   if ((p = cfg_getstring("services-external/provided", NULL))) {
@@ -139,15 +137,15 @@ void _einit_external_einit_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_external_configure (struct lmodule *r) {
+int einit_external_configure (struct lmodule *r) {
  module_init (r);
 
- r->cleanup = _einit_external_cleanup;
- r->enable = _einit_external_enable;
- r->disable = _einit_external_disable;
+ r->cleanup = einit_external_cleanup;
+ r->enable = einit_external_enable;
+ r->disable = einit_external_disable;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_external_einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_external_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_external_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_external_ipc_event_handler);
 
  return 0;
 }

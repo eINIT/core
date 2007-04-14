@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-#ifndef _EINIT_SCHEDULER_H
-#define _EINIT_SCHEDULER_H
+#ifndef EINIT_SCHEDULER_H
+#define EINIT_SCHEDULER_H
 
 #include <pthread.h>
 #include <sys/types.h>
@@ -87,21 +87,21 @@ void sched_event_handler(struct einit_event *);
 
 typedef int (*sched_watch_pid_t)(pid_t, void *(*)(struct spidcb *));
 
-sched_watch_pid_t __sched_watch_pid_f;
+sched_watch_pid_t sched_watch_pid_fp;
 
-#define sched_watch_pid(pid, callback) ((__sched_watch_pid_f || (__sched_watch_pid_f = function_find_one("einit-scheduler-watch-pid", 1, NULL))) ? __sched_watch_pid_f(pid, callback) : -1)
+#define sched_watch_pid(pid, callback) ((sched_watch_pid_fp || (sched_watch_pid_fp = function_find_one("einit-scheduler-watch-pid", 1, NULL))) ? sched_watch_pid_fp(pid, callback) : -1)
 
-#define sched_configure(mod) __sched_watch_pid_f = NULL;
-#define sched_cleanup(mod) __sched_watch_pid_f = NULL;
+#define sched_configure(mod) sched_watch_pid_fp = NULL;
+#define sched_cleanup(mod) sched_watch_pid_fp = NULL;
 
 #else
 
 #define sched_configure(mod) ;
 #define sched_cleanup(mod) ;
 
-int __sched_watch_pid (pid_t, void *(*)(struct spidcb *));
+int sched_watch_pid_f (pid_t, void *(*)(struct spidcb *));
 
-#define sched_watch_pid(pid, callback) __sched_watch_pid(pid, callback)
+#define sched_watch_pid(pid, callback) sched_watch_pid_f(pid, callback)
 
 #endif
 

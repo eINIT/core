@@ -435,8 +435,6 @@ CXXLD = \${CXXC} \${LDFLAGS}
 LXXLD = \${CXXC} \${LDFLAGS} $LLD
 " > config.mk
 
-#define moduleprefix _bootstrap_einit_configuration_xml_expat_
-
 collect_objects () {
 	objects=""
 	for i in $@; do
@@ -450,7 +448,7 @@ collect_objects () {
 				objects="${objects} ${i}.o";
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dthismodule=__$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=__$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
+					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
 				else
 					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
 				fi
@@ -524,8 +522,8 @@ collect_and_install_headers() {
 	
 	echo "/* created by the configure-script, you shouldn't modify this */
 
-#ifndef _EINIT_MODULES_CONFIGURATION_H
-#define _EINIT_MODULES_CONFIGURATION_H
+#ifndef EINIT_MODULES_CONFIGURATION_H
+#define EINIT_MODULES_CONFIGURATION_H
 
 #define BOOTSTRAP_MODULE_PATH \"${BOOTSTRAP_MODULE_PATH}\"
 
@@ -547,8 +545,8 @@ collect_and_install_headers() {
 
 	echo "/* created by the configure-script, you shouldn't modify this */
 
-#ifndef _EINIT_CONFIGURATION_H
-#define _EINIT_CONFIGURATION_H
+#ifndef EINIT_CONFIGURATION_H
+#define EINIT_CONFIGURATION_H
 
 #define BUILDNUMBER ${BUILDNUMBER}
 #define ISSVN ${ISSVN}
@@ -595,9 +593,9 @@ for z in ${BUILDCOMPONENTS}; do
 	inheaders=""
 	objects=""
 
-	if test "${z}" = "core"; then inobjects="${COREOBJECTS} ${INTERNALMODULES}"; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-D_EINIT_CORE"; fi
-	if test "${z}" = "util"; then inobjects=${UTILOBJECTS}; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-D_EINIT_UTIL"; fi
-	if test "${z}" = "modules"; then inmodules=${EXTERNALMODULES}; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-D_EINIT_MODULE"; fi
+	if test "${z}" = "core"; then inobjects="${COREOBJECTS} ${INTERNALMODULES}"; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-DEINIT_CORE"; fi
+	if test "${z}" = "util"; then inobjects=${UTILOBJECTS}; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-DEINIT_UTIL"; fi
+	if test "${z}" = "modules"; then inmodules=${EXTERNALMODULES}; SUFFIXES=${SOURCESUFFIXES}; DEFINES="-DEINIT_MODULE"; fi
 	if test "${z}" = "headers"; then inheaders=${HEADERSOURCES}; SUFFIXES=${HEADERSUFFIXES}; fi
 
 	output="build/${z}/Makefile";
@@ -620,13 +618,13 @@ for z in ${BUILDCOMPONENTS}; do
 				echo "// this file was automatically created by the build process" > build/core/module-configuration.c
 				echo "#include <einit/module.h>" >> build/core/module-configuration.c
 			fi;
-			echo "extern const struct smodule * __$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self;" >> build/core/module-configuration.c
+			echo "extern const struct smodule * $(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self;" >> build/core/module-configuration.c
 		done
 		if test -n "${started}"; then
 			echo "const struct smodule **coremodules[] = {" >> build/core/module-configuration.c
 			
 			for i in ${INTERNALMODULES}; do
-				echo " &__$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self," >> build/core/module-configuration.c
+				echo " &$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self," >> build/core/module-configuration.c
 			done
 			echo  " NULL };" >> build/core/module-configuration.c
 			echo  "" >> build/core/module-configuration.c
@@ -637,7 +635,7 @@ for z in ${BUILDCOMPONENTS}; do
 			echo  "" >> build/core/module-configuration.c
 		fi;
 
-		echo -e "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -D_EINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
+		echo -e "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
 	fi
 
 	echo -e "\nobjects = ${objects}\n" >> build/${z}/Makefile

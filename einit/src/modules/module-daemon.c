@@ -36,8 +36,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -65,11 +63,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_mod_daemon_configure (struct lmodule *);
+int einit_mod_daemon_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_mod_daemon_self = {
+const struct smodule einit_mod_daemon_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -83,32 +81,32 @@ const struct smodule _einit_mod_daemon_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_mod_daemon_configure
+ .configure = einit_mod_daemon_configure
 };
 
-module_register(_einit_mod_daemon_self);
+module_register(einit_mod_daemon_self);
 
 #endif
 
-int _einit_mod_daemon_scanmodules (struct lmodule *);
-int _einit_mod_daemon_configure (struct lmodule *);
-int _einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status);
-int _einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status);
+int einit_mod_daemon_scanmodules (struct lmodule *);
+int einit_mod_daemon_configure (struct lmodule *);
+int einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status);
+int einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status);
 
-struct dexecinfo **_einit_mod_daemon_dxdata = NULL;
+struct dexecinfo **einit_mod_daemon_dxdata = NULL;
 
-void _einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
+void einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
-  if (_einit_mod_daemon_dxdata) {
+  if (einit_mod_daemon_dxdata) {
    uint32_t i = 0;
-   for (i = 0; _einit_mod_daemon_dxdata[i]; i++) {
-    if (_einit_mod_daemon_dxdata[i]->variables) {
-     check_variables (_einit_mod_daemon_dxdata[i]->id, (const char **)_einit_mod_daemon_dxdata[i]->variables, (FILE*)ev->para);
+   for (i = 0; einit_mod_daemon_dxdata[i]; i++) {
+    if (einit_mod_daemon_dxdata[i]->variables) {
+     check_variables (einit_mod_daemon_dxdata[i]->id, (const char **)einit_mod_daemon_dxdata[i]->variables, (FILE*)ev->para);
     }
    }
   }
@@ -117,14 +115,14 @@ void _einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_mod_daemon_cleanup (struct lmodule *this) {
+int einit_mod_daemon_cleanup (struct lmodule *this) {
  exec_cleanup(this);
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_mod_daemon_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_mod_daemon_ipc_event_handler);
 
  return 0;
 }
 
-int _einit_mod_daemon_cleanup_after_module (struct lmodule *this) {
+int einit_mod_daemon_cleanup_after_module (struct lmodule *this) {
 #if 0
  if (this->module) {
   if (this->module->provides)
@@ -147,7 +145,7 @@ int _einit_mod_daemon_cleanup_after_module (struct lmodule *this) {
  return 0;
 }
 
-int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
+int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
 
  node = NULL;
@@ -218,20 +216,20 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
 
-  if (_einit_mod_daemon_dxdata) {
+  if (einit_mod_daemon_dxdata) {
    uint32_t u = 0;
    char add = 1;
-   for (u = 0; _einit_mod_daemon_dxdata[u]; u++) {
-    if (strmatch (_einit_mod_daemon_dxdata[u]->id, dexec->id)) {
+   for (u = 0; einit_mod_daemon_dxdata[u]; u++) {
+    if (strmatch (einit_mod_daemon_dxdata[u]->id, dexec->id)) {
      add = 0;
-     _einit_mod_daemon_dxdata[u] = dexec;
+     einit_mod_daemon_dxdata[u] = dexec;
      break;
     }
    }
    if (add)
-    _einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)_einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
+    einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
   } else
-   _einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)_einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
+   einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 
@@ -240,9 +238,9 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
    if (lm->source && strmatch(lm->source, modinfo->rid)) {
 
     lm->param = (void *)dexec;
-    lm->enable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_enable;
-    lm->disable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_disable;
-    lm->cleanup = _einit_mod_daemon_cleanup_after_module;
+    lm->enable = (int (*)(void *, struct einit_event *))einit_mod_daemon_enable;
+    lm->disable = (int (*)(void *, struct einit_event *))einit_mod_daemon_disable;
+    lm->cleanup = einit_mod_daemon_cleanup_after_module;
     lm->module = modinfo;
 
     lm = mod_update (lm);
@@ -256,9 +254,9 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
    if (new) {
     new->source = estrdup (modinfo->rid);
     new->param = (void *)dexec;
-    new->enable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_enable;
-    new->disable = (int (*)(void *, struct einit_event *))_einit_mod_daemon_disable;
-    new->cleanup = _einit_mod_daemon_cleanup_after_module;
+    new->enable = (int (*)(void *, struct einit_event *))einit_mod_daemon_enable;
+    new->disable = (int (*)(void *, struct einit_event *))einit_mod_daemon_disable;
+    new->cleanup = einit_mod_daemon_cleanup_after_module;
    }
   }
  }
@@ -266,22 +264,22 @@ int _einit_mod_daemon_scanmodules (struct lmodule *modchain) {
  return 0;
 }
 
-int _einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status) {
+int einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status) {
  return startdaemon (dexec, status);
 }
 
-int _einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status) {
+int einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status) {
  return stopdaemon (dexec, status);
 }
 
-int _einit_mod_daemon_configure (struct lmodule *irr) {
+int einit_mod_daemon_configure (struct lmodule *irr) {
  module_init (irr);
 
- irr->scanmodules = _einit_mod_daemon_scanmodules;
- irr->cleanup = _einit_mod_daemon_cleanup;
+ irr->scanmodules = einit_mod_daemon_scanmodules;
+ irr->cleanup = einit_mod_daemon_cleanup;
 
  exec_configure (irr);
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_mod_daemon_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_mod_daemon_ipc_event_handler);
 
  return 0;
 }

@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -58,11 +56,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_module_transformations_configure (struct lmodule *);
+int einit_module_transformations_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_module_transformations_self = {
+const struct smodule einit_module_transformations_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -76,10 +74,10 @@ const struct smodule _einit_module_transformations_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_module_transformations_configure
+ .configure = einit_module_transformations_configure
 };
 
-module_register(_einit_module_transformations_self);
+module_register(einit_module_transformations_self);
 
 #endif
 
@@ -100,7 +98,7 @@ struct service_transformation {
 };
 #endif
 
-void _einit_module_transformations_einit_event_handler (struct einit_event *ev) {
+void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
  if (ev->type == EVE_CONFIGURATION_UPDATE) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
@@ -350,18 +348,18 @@ void _einit_module_transformations_einit_event_handler (struct einit_event *ev) 
  }
 }
 
-int _einit_module_transformations_cleanup (struct lmodule *r) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, _einit_module_transformations_einit_event_handler);
+int einit_module_transformations_cleanup (struct lmodule *r) {
+ event_ignore (EVENT_SUBSYSTEM_EINIT, einit_module_transformations_einit_event_handler);
 
  return 0;
 }
 
-int _einit_module_transformations_configure (struct lmodule *r) {
+int einit_module_transformations_configure (struct lmodule *r) {
  module_init (r);
 
- thismodule->cleanup = _einit_module_transformations_cleanup;
+ thismodule->cleanup = einit_module_transformations_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, _einit_module_transformations_einit_event_handler);
+ event_listen (EVENT_SUBSYSTEM_EINIT, einit_module_transformations_einit_event_handler);
 
  return 0;
 }

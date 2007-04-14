@@ -35,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,11 +50,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_ipc_configuration_configure (struct lmodule *);
+int einit_ipc_configuration_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_ipc_configuration_self = {
+const struct smodule einit_ipc_configuration_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -70,16 +68,16 @@ const struct smodule _einit_ipc_configuration_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_ipc_configuration_configure
+ .configure = einit_ipc_configuration_configure
 };
 
-module_register(_einit_ipc_configuration_self);
+module_register(einit_ipc_configuration_self);
 
 #endif
 
-void _einit_ipc_configuration_ipc_event_handler (struct einit_event *);
+void einit_ipc_configuration_ipc_event_handler (struct einit_event *);
 
-void _einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
+void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
  char **argv = NULL;
  ssize_t argc = 0;
 
@@ -260,18 +258,18 @@ void _einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_ipc_configuration_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_ipc_configuration_ipc_event_handler);
+int einit_ipc_configuration_cleanup (struct lmodule *irr) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_ipc_configuration_ipc_event_handler);
 
  return 0;
 }
 
-int _einit_ipc_configuration_configure (struct lmodule *r) {
+int einit_ipc_configuration_configure (struct lmodule *r) {
  module_init (r);
 
- thismodule->cleanup = _einit_ipc_configuration_cleanup;
+ thismodule->cleanup = einit_ipc_configuration_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_ipc_configuration_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_ipc_configuration_ipc_event_handler);
 
  return 0;
 }

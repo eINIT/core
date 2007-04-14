@@ -36,8 +36,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -77,11 +75,11 @@ struct mexecinfo {
  char **oattrs;
 };
 
-int _einit_mod_exec_configure (struct lmodule *);
+int einit_mod_exec_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule _einit_mod_exec_self = {
+const struct smodule einit_mod_exec_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -95,31 +93,31 @@ const struct smodule _einit_mod_exec_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_mod_exec_configure
+ .configure = einit_mod_exec_configure
 };
 
-module_register(_einit_mod_exec_self);
+module_register(einit_mod_exec_self);
 
 #endif
 
-int _einit_mod_exec_scanmodules (struct lmodule *);
-int _einit_mod_exec_pexec_wrapper (struct mexecinfo *, struct einit_event *);
-int _einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *, char *, struct einit_event *);
+int einit_mod_exec_scanmodules (struct lmodule *);
+int einit_mod_exec_pexec_wrapper (struct mexecinfo *, struct einit_event *);
+int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *, char *, struct einit_event *);
 
-struct mexecinfo **_einit_mod_exec_mxdata = NULL;
+struct mexecinfo **einit_mod_exec_mxdata = NULL;
 
-void _einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
+void einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
    eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
    ev->task++;
   }
 
-  if (_einit_mod_exec_mxdata) {
+  if (einit_mod_exec_mxdata) {
    uint32_t i = 0;
-   for (i = 0; _einit_mod_exec_mxdata[i]; i++) {
-    if (_einit_mod_exec_mxdata[i]->variables) {
-     check_variables (_einit_mod_exec_mxdata[i]->id, (const char **)_einit_mod_exec_mxdata[i]->variables, (FILE*)ev->para);
+   for (i = 0; einit_mod_exec_mxdata[i]; i++) {
+    if (einit_mod_exec_mxdata[i]->variables) {
+     check_variables (einit_mod_exec_mxdata[i]->id, (const char **)einit_mod_exec_mxdata[i]->variables, (FILE*)ev->para);
     }
    }
   }
@@ -128,14 +126,14 @@ void _einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_mod_exec_cleanup (struct lmodule *pa) {
+int einit_mod_exec_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_mod_exec_ipc_event_handler);
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_mod_exec_ipc_event_handler);
 
  return 0;
 }
 
-int _einit_mod_exec_cleanup_after_module (struct lmodule *pa) {
+int einit_mod_exec_cleanup_after_module (struct lmodule *pa) {
  if (pa->param) {
   if (((struct mexecinfo *)(pa->param))->variables)
    free (((struct mexecinfo *)(pa->param))->variables);
@@ -147,7 +145,7 @@ int _einit_mod_exec_cleanup_after_module (struct lmodule *pa) {
  return 0;
 }
 
-int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
+int einit_mod_exec_scanmodules (struct lmodule *modchain) {
  struct cfgnode *node;
 
  node = NULL;
@@ -217,21 +215,21 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
     mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
   }
 
-  if (_einit_mod_exec_mxdata) {
+  if (einit_mod_exec_mxdata) {
    uint32_t u = 0;
    char add = 1;
-   for (u = 0; _einit_mod_exec_mxdata[u]; u++) {
-    if (strmatch (_einit_mod_exec_mxdata[u]->id, mexec->id)) {
+   for (u = 0; einit_mod_exec_mxdata[u]; u++) {
+    if (strmatch (einit_mod_exec_mxdata[u]->id, mexec->id)) {
      add = 0;
-     _einit_mod_exec_mxdata[u] = mexec;
+     einit_mod_exec_mxdata[u] = mexec;
      break;
     }
    }
    if (add) {
-    _einit_mod_exec_mxdata = (struct mexecinfo **)setadd ((void **)_einit_mod_exec_mxdata, (void *)mexec, SET_NOALLOC);
+    einit_mod_exec_mxdata = (struct mexecinfo **)setadd ((void **)einit_mod_exec_mxdata, (void *)mexec, SET_NOALLOC);
    }
   } else
-   _einit_mod_exec_mxdata = (struct mexecinfo **)setadd ((void **)_einit_mod_exec_mxdata, (void *)mexec, SET_NOALLOC);
+   einit_mod_exec_mxdata = (struct mexecinfo **)setadd ((void **)einit_mod_exec_mxdata, (void *)mexec, SET_NOALLOC);
 
   if (!modinfo->rid) continue;
 
@@ -239,10 +237,10 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
   while (lm) {
    if (lm->source && strmatch(lm->source, modinfo->rid)) {
     lm->param = (void *)mexec;
-    lm->enable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    lm->disable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    lm->custom = (int (*)(void *, char *, struct einit_event *))_einit_mod_exec_pexec_wrapper_custom;
-    lm->cleanup = _einit_mod_exec_cleanup_after_module;
+    lm->enable = (int (*)(void *, struct einit_event *))einit_mod_exec_pexec_wrapper;
+    lm->disable = (int (*)(void *, struct einit_event *))einit_mod_exec_pexec_wrapper;
+    lm->custom = (int (*)(void *, char *, struct einit_event *))einit_mod_exec_pexec_wrapper_custom;
+    lm->cleanup = einit_mod_exec_cleanup_after_module;
     lm->module = modinfo;
 
     lm = mod_update (lm);
@@ -257,10 +255,10 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
    if (new) {
     new->source = estrdup (modinfo->rid);
     new->param = (void *)mexec;
-    new->enable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    new->disable = (int (*)(void *, struct einit_event *))_einit_mod_exec_pexec_wrapper;
-    new->custom = (int (*)(void *, char *, struct einit_event *))_einit_mod_exec_pexec_wrapper_custom;
-    new->cleanup = _einit_mod_exec_cleanup_after_module;
+    new->enable = (int (*)(void *, struct einit_event *))einit_mod_exec_pexec_wrapper;
+    new->disable = (int (*)(void *, struct einit_event *))einit_mod_exec_pexec_wrapper;
+    new->custom = (int (*)(void *, char *, struct einit_event *))einit_mod_exec_pexec_wrapper_custom;
+    new->cleanup = einit_mod_exec_cleanup_after_module;
    }
   }
  }
@@ -268,7 +266,7 @@ int _einit_mod_exec_scanmodules (struct lmodule *modchain) {
  return 0;
 }
 
-int _einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
+int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
  if (strmatch (command, "zap"))
   return STATUS_OK | STATUS_DISABLED;
  else if (shellcmd->oattrs) {
@@ -304,7 +302,7 @@ int _einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *comm
  return STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
 }
 
-int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
+int einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
  int retval = STATUS_FAIL;
 
  if (shellcmd) {
@@ -348,14 +346,14 @@ int _einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_even
  return retval;
 }
 
-int _einit_mod_exec_configure (struct lmodule *pa) {
+int einit_mod_exec_configure (struct lmodule *pa) {
  module_init (pa);
 
- pa->scanmodules = _einit_mod_exec_scanmodules;
- pa->cleanup = _einit_mod_exec_cleanup;
+ pa->scanmodules = einit_mod_exec_scanmodules;
+ pa->cleanup = einit_mod_exec_cleanup;
 
  exec_configure (pa);
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_mod_exec_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_mod_exec_ipc_event_handler);
 
  return 0;
 }

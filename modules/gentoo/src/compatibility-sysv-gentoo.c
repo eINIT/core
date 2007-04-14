@@ -35,7 +35,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _EINIT_MODULE
+#define EINIT_MODULE
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -66,10 +66,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _compatibility_sysv_gentoo_configure (struct lmodule *);
+int compatibility_sysv_gentoo_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
-const struct smodule _compatibility_sysv_gentoo_self = {
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule compatibility_sysv_gentoo_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -83,10 +83,10 @@ const struct smodule _compatibility_sysv_gentoo_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = _compatibility_sysv_gentoo_configure
+ .configure = compatibility_sysv_gentoo_configure
 };
 
-module_register(_compatibility_sysv_gentoo_self);
+module_register(compatibility_sysv_gentoo_self);
 
 #endif
 
@@ -106,18 +106,18 @@ char  do_service_tracking = 0,
      *init_d_exec_scriptlet = NULL;
 time_t profile_env_mtime = 0;
 
-int _compatibility_sysv_gentoo_scanmodules (struct lmodule *);
-int _compatibility_sysv_gentoo_init_d_enable (char *, struct einit_event *);
-int _compatibility_sysv_gentoo_init_d_disable (char *, struct einit_event *);
-int _compatibility_sysv_gentoo_init_d_reset (char *, struct einit_event *);
-int _compatibility_sysv_gentoo_init_d_custom (char *, char *, struct einit_event *);
-int _compatibility_sysv_gentoo_configure (struct lmodule *);
-int _compatibility_sysv_gentoo_cleanup (struct lmodule *);
+int compatibility_sysv_gentoo_scanmodules (struct lmodule *);
+int compatibility_sysv_gentoo_init_d_enable (char *, struct einit_event *);
+int compatibility_sysv_gentoo_init_d_disable (char *, struct einit_event *);
+int compatibility_sysv_gentoo_init_d_reset (char *, struct einit_event *);
+int compatibility_sysv_gentoo_init_d_custom (char *, char *, struct einit_event *);
+int compatibility_sysv_gentoo_configure (struct lmodule *);
+int compatibility_sysv_gentoo_cleanup (struct lmodule *);
 void sh_add_environ_callback (char **, uint8_t);
 void parse_gentoo_runlevels (char *, struct cfgnode *, char);
 void einit_event_handler (struct einit_event *);
 void ipc_event_handler (struct einit_event *);
-int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *);
+int compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *);
 
 #define SVCDIR "/lib/rcscripts/init.d"
 
@@ -143,7 +143,7 @@ void gentoo_fixname_set (char **set) {
 }
 
 /* functions that module tend to need */
-int _compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
+int compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
  event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
  event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
 
@@ -598,7 +598,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
 /* gentoo init.d support functions */
 
-int _compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
+int compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
 #if 0
  if (this->module) {
  if (this->module->provides)
@@ -672,7 +672,7 @@ void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptr
  if (module->si.after) gentoo_fixname_set (module->si.after);
 }
 
-int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
+int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  DIR *dir;
  struct dirent *de;
  char *nrid = NULL,
@@ -768,10 +768,10 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     while (lm) {
      if (lm->source && !strcmp(lm->source, tmp)) {
       lm->param = (void *)estrdup (tmp);
-      lm->enable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_enable;
-      lm->disable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_disable;
-      lm->custom = (int (*)(void *, char *, struct einit_event *))_compatibility_sysv_gentoo_init_d_custom;
-      lm->cleanup = _compatibility_sysv_gentoo_cleanup_after_module;
+      lm->enable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_enable;
+      lm->disable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_disable;
+      lm->custom = (int (*)(void *, char *, struct einit_event *))compatibility_sysv_gentoo_init_d_custom;
+      lm->cleanup = compatibility_sysv_gentoo_cleanup_after_module;
       lm->module = modinfo;
 
       lm = mod_update (lm);
@@ -786,10 +786,10 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
      if (new) {
       new->source = estrdup (tmp);
       new->param = (void *)estrdup (tmp);
-      new->enable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_enable;
-      new->disable = (int (*)(void *, struct einit_event *))_compatibility_sysv_gentoo_init_d_disable;
-      new->custom = (int (*)(void *, char *, struct einit_event *))_compatibility_sysv_gentoo_init_d_custom;
-      new->cleanup = _compatibility_sysv_gentoo_cleanup_after_module;
+      new->enable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_enable;
+      new->disable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_disable;
+      new->custom = (int (*)(void *, char *, struct einit_event *))compatibility_sysv_gentoo_init_d_custom;
+      new->cleanup = compatibility_sysv_gentoo_cleanup_after_module;
      }
     }
 
@@ -817,7 +817,7 @@ int _compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 
 // int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
 
-int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_event *status) {
+int compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_event *status) {
  char *bn = strrchr(init_script, '/');
  char *variables[7] = {
   "script-path", init_script,
@@ -835,7 +835,7 @@ int _compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_ev
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
 
-int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_event *status) {
+int compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_event *status) {
  char *bn = strrchr(init_script, '/');
  char *variables[7] = {
   "script-path", init_script,
@@ -853,7 +853,7 @@ int _compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_e
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
 
-int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, struct einit_event *status) {
+int compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, struct einit_event *status) {
  char *bn = strrchr(init_script, '/');
  char *variables[7] = {
   "script-path", init_script,
@@ -871,11 +871,11 @@ int _compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, s
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
 
-int _compatibility_sysv_gentoo_configure (struct lmodule *irr) {
+int compatibility_sysv_gentoo_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _compatibility_sysv_gentoo_cleanup;
- thismodule->scanmodules = _compatibility_sysv_gentoo_scanmodules;
+ thismodule->cleanup = compatibility_sysv_gentoo_cleanup;
+ thismodule->scanmodules = compatibility_sysv_gentoo_scanmodules;
 
  exec_configure (irr);
  parse_sh_configure (irr);

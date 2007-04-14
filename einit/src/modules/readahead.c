@@ -6,8 +6,6 @@
  *
  */
 
-#define _MODULE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
@@ -46,13 +44,13 @@
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int _einit_readahead_configure (struct lmodule *);
+int einit_readahead_configure (struct lmodule *);
 
-#if defined(_EINIT_MODULE) || defined(_EINIT_MODULE_HEADER)
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * _einit_readahead_provides[] = {"readahead", NULL};
-char * _einit_readahead_requires[] = {"mount-critical", NULL};
-const struct smodule _einit_readahead_self = {
+char * einit_readahead_provides[] = {"readahead", NULL};
+char * einit_readahead_requires[] = {"mount-critical", NULL};
+const struct smodule einit_readahead_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -61,15 +59,15 @@ const struct smodule _einit_readahead_self = {
  .name      = "eINIT readahead",
  .rid       = "readahead",
  .si        = {
-  .provides = _einit_readahead_provides,
-  .requires = _einit_readahead_requires,
+  .provides = einit_readahead_provides,
+  .requires = einit_readahead_requires,
   .after    = NULL,
   .before   = NULL
  },
- .configure = _einit_readahead_configure
+ .configure = einit_readahead_configure
 };
 
-module_register(_einit_readahead_self);
+module_register(einit_readahead_self);
 
 #endif
 
@@ -178,7 +176,7 @@ void process_files(char* filename) {
 	}
 }
 
-void _einit_readahead_ipc_event_handler (struct einit_event *ev) {
+void einit_readahead_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
   char *s;
 
@@ -191,13 +189,13 @@ void _einit_readahead_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int _einit_readahead_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, _einit_readahead_ipc_event_handler);
+int einit_readahead_cleanup (struct lmodule *this) {
+ event_ignore (EVENT_SUBSYSTEM_IPC, einit_readahead_ipc_event_handler);
 
  return 0;
 }
 
-int _einit_readahead_enable (void *pa, struct einit_event *status) {
+int einit_readahead_enable (void *pa, struct einit_event *status) {
  char *list;
  list = cfg_getstring ("configuration-system-readahead", NULL);
  if (list) {
@@ -213,18 +211,18 @@ int _einit_readahead_enable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_readahead_disable (void *pa, struct einit_event *status) {
+int einit_readahead_disable (void *pa, struct einit_event *status) {
  return STATUS_OK;
 }
 
-int _einit_readahead_configure (struct lmodule *irr) {
+int einit_readahead_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = _einit_readahead_cleanup;
- thismodule->enable = _einit_readahead_enable;
- thismodule->disable = _einit_readahead_disable;
+ thismodule->cleanup = einit_readahead_cleanup;
+ thismodule->enable = einit_readahead_enable;
+ thismodule->disable = einit_readahead_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, _einit_readahead_ipc_event_handler);
+ event_listen (EVENT_SUBSYSTEM_IPC, einit_readahead_ipc_event_handler);
 
  return 0;
 }
