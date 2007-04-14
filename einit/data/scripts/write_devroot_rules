@@ -12,10 +12,6 @@ case $root in
     /dev/disk/by-label/*)
         LABEL=${root#/dev/disk/by-label/}
         echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
-        if [ "$quiet" != "1" ] ; then
-            echo "Added udev rule 00-label.rules:"
-            cat /etc/udev/rules.d/00-label.rules
-        fi
         ;;
     CDLABEL=*)
         CDLABEL=${root#CDLABEL=}
@@ -23,34 +19,18 @@ case $root in
         echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
         echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
         echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
-        if [ "$quiet" != "1" ] ; then
-            echo "Added udev rule 00-cdlabel.rules:"
-            cat /etc/udev/rules.d/00-cdlabel.rules
-        fi
         ;;
     LABEL=*)
         LABEL=${root#LABEL=}
         echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
-        if [ "$quiet" != "1" ] ; then
-            echo "Added udev rule 00-label.rules:"
-            cat /etc/udev/rules.d/00-label.rules
-        fi
         ;;
     /dev/disk/by-id/*)
         UUID=${root#/dev/disk/by-id/}
         echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
-        if [ "$quiet" != "1" ] ; then
-            echo "Added udev rule 01-uuid.rules:"
-            cat /etc/udev/rules.d/01-uuid.rules
-        fi
         ;;
     UUID=*)
         UUID=${root#UUID=}
         echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
-        if [ "$quiet" != "1" ] ; then
-            echo "Added udev rule 01-uuid.rules:"
-            cat /etc/udev/rules.d/01-uuid.rules
-        fi
         ;;
     /dev/*)
         ln -sf $root /dev/root
