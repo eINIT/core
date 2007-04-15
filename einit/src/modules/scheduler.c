@@ -94,7 +94,6 @@ stack_t signalstack;
 
 struct spidcb *cpids = NULL;
 struct spidcb *sched_deadorphans = NULL;
-uint32_t gstatus = EINIT_NOMINAL;
 
 char sigint_called = 0;
 
@@ -212,7 +211,7 @@ int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  cpids = nele;
 
  emutex_unlock (&schedcpidmutex);
- if ((gstatus != EINIT_EXITING) && sigchild_semaphore) {
+ if (!(coremode & einit_core_exiting) && sigchild_semaphore) {
   if (sem_post (sigchild_semaphore)) {
    bitch(bitch_stdio, 0, "sem_post() failed.");
   }
@@ -234,7 +233,7 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #endif
  {
   sigint_called = 1;
-  if ((gstatus != EINIT_EXITING) && sigchild_semaphore)
+  if (!(coremode & einit_core_exiting) && sigchild_semaphore)
    sem_post (sigchild_semaphore);
 
  }
@@ -280,7 +279,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
       notice (1, "scheduler: cleaning up");
      }
 
-     gstatus = EINIT_EXITING;
+     coremode |= einit_core_exiting;
      if (sigchild_semaphore) {
       if (sem_post (sigchild_semaphore)) {
        bitch(bitch_stdio, 0, "sem_post() failed.");
@@ -397,7 +396,7 @@ void *sched_run_sigchild (void *p) {
   emutex_unlock (&schedcpidmutex);
   if (!check) {
    sem_wait (sigchild_semaphore);
-   if (gstatus == EINIT_EXITING) {
+   if (coremode & einit_core_exiting) {
     return NULL;
    }
 
@@ -513,7 +512,7 @@ void *sched_run_sigchild (void *p) {
 
   emutex_unlock (&schedcpidmutex);
   if (!check) {
-   if (gstatus != EINIT_EXITING) sem_wait (sigchild_semaphore);
+   if (!(coremode & einit_core_exiting)) sem_wait (sigchild_semaphore);
    else {
     debug ("scheduler SIGCHLD thread now going to sleep\n");
     while (sleep (1)) {
@@ -539,7 +538,7 @@ void *sched_run_sigchild (void *p) {
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- if ((gstatus != EINIT_EXITING) && sigchild_semaphore) {
+ if (!(coremode & einit_core_exiting) && sigchild_semaphore) {
   if (sem_post (sigchild_semaphore)) {
    bitch(bitch_stdio, 0, "sem_post() failed.");
   }

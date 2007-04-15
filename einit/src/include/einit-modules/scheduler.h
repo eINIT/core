@@ -48,15 +48,6 @@ extern "C" {
 #include <einit/event.h>
 #include <signal.h>
 
-#define SCHEDULER_SWITCH_MODE 0x0001
-#define SCHEDULER_POWER_OFF 0x0002
-#define SCHEDULER_POWER_RESET 0x0003
-#define SCHEDULER_PID_NOTIFY 0x0004
-#define SCHEDULER_MOD_ACTION 0x0005
-
-#define EINIT_NOMINAL 0x00000000
-#define EINIT_EXITING 0x00000001
-
 struct spidcb {
  pid_t pid;
  int status;
@@ -67,7 +58,6 @@ struct spidcb {
 
 struct spidcb *cpids;
 struct spidcb *sched_deadorphans;
-uint32_t gstatus;
 
 int scheduler_cleanup ();
 

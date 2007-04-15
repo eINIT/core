@@ -89,10 +89,11 @@ enum einit_cfg_node_options {
 };
 
 enum einit_mode {
- einit_mode_init = 0x01,
- einit_mode_metadaemon = 0x02,
- einit_mode_sandbox = 0x10,
- einit_mode_ipconly = 0x20
+ einit_mode_init       = 0x0001,
+ einit_mode_metadaemon = 0x0002,
+ einit_mode_sandbox    = 0x0010,
+ einit_mode_ipconly    = 0x0020,
+ einit_core_exiting    = 0x1000
 };
 
 struct cfgnode {
