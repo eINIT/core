@@ -245,43 +245,32 @@ void sched_ipc_event_handler(struct einit_event *ev) {
  errno = 0;
  if (!ev) return;
  else {
-  char **argv = (char **)ev->set;
-  int argc = setcount ((const void **)argv);
-  if (!argv) {
-   perror ("sched_ipc_event_handler: counting argv");
-   return;
-  } else if (!argv[0]) {
-   free (argv);
-   perror ("sched_ipc_event_handler: basic sanity check");
-   return;
-  }
-
-  if (strmatch (argv[0], "power") && (argc > 1)) {
-   if (strmatch (argv[1], "down") || strmatch (argv[1], "off")) {
-    if (!ev->flag) ev->flag = 1;
+  if (strmatch (ev->argv[0], "power") && (ev->argc > 1)) {
+   if (strmatch (ev->argv[1], "down") || strmatch (ev->argv[1], "off")) {
+    ev->implemented = 1;
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-down";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-    eputs (" >> shutdown queued\n", (FILE *)ev->para);
+    eputs (" >> shutdown queued\n", ev->output);
     evstaticdestroy(ee);
    }
-   if (strmatch (argv[1], "reset")) {
-    if (!ev->flag) ev->flag = 1;
+   if (strmatch (ev->argv[1], "reset")) {
+    ev->implemented = 1;
 
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
     ee.string = "power-reset";
     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-    eputs (" >> reset queued\n", (FILE *)ev->para);
+    eputs (" >> reset queued\n", ev->output);
     evstaticdestroy(ee);
    }
   }
 
 /* actual power-down/power-reset IPC commands */
-  if (strmatch (argv[0], "scheduler") && (argc > 1)) {
+  if (strmatch (ev->argv[0], "scheduler") && (ev->argc > 1)) {
    char reset = 0;
-   if (strmatch (argv[1], "power-down") || (reset = strmatch (argv[1], "power-reset"))) {
-    if (!ev->flag) ev->flag = 1;
+   if (strmatch (ev->argv[1], "power-down") || (reset = strmatch (ev->argv[1], "power-reset"))) {
+    ev->implemented = 1;
 
      notice (1, "scheduler: sync()-ing");
 
@@ -324,31 +313,31 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    }
   }
 
-  if (strmatch (argv[0], "rc") && (argc > 2)) {
-   if (!ev->flag) ev->flag = 1;
+  if (strmatch (ev->argv[0], "rc") && (ev->argc > 2)) {
+   ev->implemented = 1;
 
-   if (strmatch (argv[1], "switch-mode")) {
+   if (strmatch (ev->argv[1], "switch-mode")) {
     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
-    ee.string = argv[2];
-    if (ev->status & EIPC_DETACH) {
+    ee.string = ev->argv[2];
+    if (ev->ipc_options & einit_ipc_detach) {
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-     eputs (" >> modeswitch queued\n", (FILE *)ev->para);
+     eputs (" >> modeswitch queued\n", ev->output);
     } else {
-     ee.para = ev->para;
+     ee.para = ev->output;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-     ev->integer = ee.integer;
+     ev->ipc_return = ee.integer;
     }
     evstaticdestroy(ee);
    } else {
     struct einit_event ee = evstaticinit(EVE_CHANGE_SERVICE_STATUS);
-    ee.set = (void **)setdup ((const void **)argv+1, SET_TYPE_STRING);
-    if (ev->status & EIPC_DETACH) {
+    ee.set = (void **)setdup ((const void **)ev->argv+1, SET_TYPE_STRING);
+    if (ev->ipc_options & einit_ipc_detach) {
      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
-     eputs (" >> status change queued\n", (FILE *)ev->para);
+     eputs (" >> status change queued\n", ev->output);
     } else {
-     ee.para = ev->para;
+     ee.para = ev->output;
      event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
-     ev->integer = ee.integer;
+     ev->ipc_return = ee.integer;
     }
     evstaticdestroy(ee);
    }

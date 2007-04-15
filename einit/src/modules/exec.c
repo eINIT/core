@@ -139,13 +139,14 @@ void einit_exec_einit_event_handler (struct einit_event *ev) {
 }
 
 void einit_exec_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "exec")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "exec")) {
   struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
-  ev->flag = 1;
   ee.para = (void *)thismodule;
 
-  pexec_f (ev->string, NULL, 0, 0, NULL, NULL, NULL, &ee);
+  pexec_f (ev->command, NULL, 0, 0, NULL, NULL, NULL, &ee);
   evstaticdestroy(ee);
+
+  ev->implemented = 1;
  }
 }
 

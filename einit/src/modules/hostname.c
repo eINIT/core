@@ -78,24 +78,24 @@ module_register(einit_hostname_self);
 #endif
 
 void einit_hostname_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   char *s;
 
   if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
-   eputs (" * configuration variable \"configuration-network-hostname\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-network-hostname\" not found.\n", ev->output);
+   ev->ipc_return++;
   } else if (strmatch ("localhost", s)) {
-   eputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", ev->output);
+   ev->ipc_return++;
   }
   if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
-   eputs (" * configuration variable \"configuration-network-domainname\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-network-domainname\" not found.\n", ev->output);
+   ev->ipc_return++;
   } else if (strmatch ("local", s)) {
-   eputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", (FILE *)ev->para);
+   eputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", ev->output);
   }
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

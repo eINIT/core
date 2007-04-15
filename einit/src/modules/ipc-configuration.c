@@ -78,21 +78,13 @@ module_register(einit_ipc_configuration_self);
 void einit_ipc_configuration_ipc_event_handler (struct einit_event *);
 
 void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
- char **argv = NULL;
- ssize_t argc = 0;
-
- if (ev && ev->para) {
-  argv = (char **)ev->set;
-  argc = setcount ((const void **)argv);
- }
-
- if (argc > 1) {
-  if (strmatch (argv[0], "update") && strmatch (argv[1], "configuration")) {
+ if (ev->argc > 1) {
+  if (strmatch (ev->argv[0], "update") && strmatch (ev->argv[1], "configuration")) {
    struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
-   nev.string = argv[2];
+   nev.string = ev->argv[2];
 
    if (nev.string) {
-    eprintf (stderr, "event-subsystem: updating configuration with file %s\n", argv[2]);
+    eprintf (stderr, "event-subsystem: updating configuration with file %s\n", ev->argv[2]);
    } else {
     eputs ("event-subsystem: updating configuration\n", stderr);
    }
@@ -100,16 +92,16 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 
    evstaticdestroy(nev);
 
-   if (!ev->flag) ev->flag = 1;
+   ev->implemented = 1;
   }
 
-  if (strmatch ("list", ev->set[0]) && strmatch ("configuration", ev->set[1])) {
+  if (strmatch ("list", ev->argv[0]) && strmatch ("configuration", ev->argv[1])) {
    struct stree *otree = NULL;
    char *buffer = NULL;
    cfg_string_converter conv;
 
-   if (ev->set[2]) {
-    char *x = set2str (' ', (const char **) (ev->set +2));
+   if (ev->argv[2]) {
+    char *x = set2str (' ', (const char **) (ev->argv +2));
     if (x) {
      otree = cfg_filter (x, 0);
 
@@ -119,28 +111,28 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
     otree = hconfiguration;
    }
 
-   if (ev->status & EIPC_OUTPUT_XML) {
+   if (ev->ipc_options & einit_ipc_output_xml) {
     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter-xml", 1, NULL))) buffer = conv(otree);
    } else {
     char *rtset[] =
-    { (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable-ansi" : "human-readable",
-    (ev->status & EIPC_OUTPUT_ANSI) ? "human-readable" : "xml",
-    (ev->status & EIPC_OUTPUT_ANSI) ? "xml" : "human-readable-ansi", NULL };
+    { (ev->ipc_options & einit_ipc_output_ansi) ? "human-readable-ansi" : "human-readable",
+    (ev->ipc_options & einit_ipc_output_ansi) ? "human-readable" : "xml",
+    (ev->ipc_options & einit_ipc_output_ansi) ? "xml" : "human-readable-ansi", NULL };
     if ((conv = (cfg_string_converter)function_find_one ("einit-configuration-converter", 1, (const char **)rtset))) buffer = conv(otree);
    }
 
    if (buffer) {
-    eputs (buffer, (FILE *)ev->para);
+    eputs (buffer, ev->output);
    }
-   ev->flag = 1;
+   ev->implemented = 1;
   }
 
-  if ((argc > 3) && (strmatch (argv[0], "set") && strmatch (argv[1], "variable"))) {
-   char *t = estrdup (argv[2]), *x, *subattr = NULL;
+  if ((ev->argc > 3) && (strmatch (ev->argv[0], "set") && strmatch (ev->argv[1], "variable"))) {
+   char *t = estrdup (ev->argv[2]), *x, *subattr = NULL;
    struct cfgnode newnode, *onode = NULL;
 
-   eprintf ((FILE *)ev->para, " >> setting variable \"%s\".\n", t);
-   ev->flag = 1;
+   eprintf (ev->output, " >> setting variable \"%s\".\n", t);
+   ev->implemented = 1;
 
    if ((x = strchr (t, '/'))) {
     *x = 0;
@@ -169,14 +161,14 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    newnode.source = self->rid;
    newnode.source_file = NULL;
 
-   char tflag = parse_boolean (argv[3]);
-   long int tvalue = parse_integer (argv[3]);
+   char tflag = parse_boolean (ev->argv[3]);
+   long int tvalue = parse_integer (ev->argv[3]);
 
    if (!subattr) {
-    if (tflag || strmatch (argv[3], "false") || strmatch (argv[3], "disabled") || strmatch (argv[3], "no")) {
+    if (tflag || strmatch (ev->argv[3], "false") || strmatch (ev->argv[3], "disabled") || strmatch (ev->argv[3], "no")) {
      subattr = "b";
      newnode.flag = tflag;
-    } else if (tvalue || strmatch (argv[3], "0")) {
+    } else if (tvalue || strmatch (ev->argv[3], "0")) {
      subattr = "i";
      newnode.value = tvalue;
     } else
@@ -193,7 +185,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
       if (strmatch (subattr, attrs[ind])) {
        char **tmpadup = attrs;
 
-       attrs[ind+1] = argv[3];
+       attrs[ind+1] = ev->argv[3];
        attrs = (char **)setdup ((const void **)attrs, SET_TYPE_STRING);
        newnode.arbattrs = attrs;
        match = 1;
@@ -211,7 +203,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 
     if (!match) {
      attrs = (char **)setadd ((void **)attrs, (void *)subattr, SET_TYPE_STRING);
-     attrs = (char **)setadd ((void **)attrs, (void *)argv[3], SET_TYPE_STRING);
+     attrs = (char **)setadd ((void **)attrs, (void *)ev->argv[3], SET_TYPE_STRING);
 
      if (strmatch ("s", subattr)) {
       newnode.svalue = attrs[setcount((const void **)attrs)-1];
@@ -224,11 +216,11 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    cfg_addnode (&newnode);
 
    free (t);
-  } else if (strmatch (argv[0], "save") && strmatch (argv[1], "configuration")) {
+  } else if (strmatch (ev->argv[0], "save") && strmatch (ev->argv[1], "configuration")) {
    struct stree *tmptree = cfg_filter (".*", einit_node_modified);
    char *buffer = NULL;
    cfg_string_converter conv;
-   char *targetfile = argv[2] ? argv[2] :
+   char *targetfile = ev->argv[2] ? ev->argv[2] :
      cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL);
 
    if (tmptree) {
@@ -239,7 +231,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
      if (buffer) {
       FILE *target;
 
-      eprintf ((FILE *)ev->para, " >> configuration changed on-line, saving modifications to %s.\n", targetfile);
+      eprintf (ev->output, " >> configuration changed on-line, saving modifications to %s.\n", targetfile);
 
       if ((target = efopen(targetfile, "w+"))) {
        eputs (buffer, target);
@@ -247,11 +239,11 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
       }
      }
     } else {
-     eputs (" >> where should i save to?\n", (FILE *)ev->para);
+     eputs (" >> where should i save to?\n", ev->output);
     }
    }
 
-   ev->flag = 1;
+   ev->implemented = 1;
   }
  }
 }

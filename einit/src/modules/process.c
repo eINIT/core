@@ -132,14 +132,14 @@ pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct p
 }
 
 void einit_process_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && strmatch (ev->set[0], "list")) {
-  if (ev->set[1] && strmatch (ev->set[1], "processes") && ev->set[2]) {
-   uintptr_t tnum = atoi (ev->set[3]);
+ if (ev && ev->argv && ev->argv[0] && strmatch (ev->argv[0], "list")) {
+  if (ev->argv[1] && strmatch (ev->argv[1], "processes") && ev->argv[2]) {
+   uintptr_t tnum = atoi (ev->argv[3]);
    struct pc_conditional pcc = {
-    .match = ev->set[2],
-    .para = (ev->set[3] ?
-      ((strmatch (ev->set[2], "cwd") || strmatch (ev->set[2], "cwd-below") || strmatch (ev->set[2], "files-below")) ?
-      (void *)ev->set[3] : (void *)tnum) : NULL),
+    .match = ev->argv[2],
+    .para = (ev->argv[3] ?
+      ((strmatch (ev->argv[2], "cwd") || strmatch (ev->argv[2], "cwd-below") || strmatch (ev->argv[2], "files-below")) ?
+      (void *)ev->argv[3] : (void *)tnum) : NULL),
     .match_options = PC_COLLECT_ADDITIVE },
     *pcl[2] = { &pcc, NULL };
    pid_t *process_list = NULL, i;
@@ -148,18 +148,18 @@ void einit_process_ipc_event_handler (struct einit_event *ev) {
 
    if (process_list) {
     for (i = 0; process_list[i]; i++) {
-     if (ev->status & EIPC_OUTPUT_XML) {
-      eprintf ((FILE *)ev->para, " <process pid=\"%i\" />\n", process_list[i]);
+     if (ev->ipc_options & einit_ipc_output_xml) {
+      eprintf (ev->output, " <process pid=\"%i\" />\n", process_list[i]);
      } else {
-      eprintf ((FILE *)ev->para, "process [pid=%i]\n", process_list[i]);
+      eprintf (ev->output, "process [pid=%i]\n", process_list[i]);
      }
     }
     free (process_list);
    } else {
-    eputs ("einit-process: ipc-event-handler: your query has matched no processes\n", (FILE *)ev->para);
+    eputs ("einit-process: ipc-event-handler: your query has matched no processes\n", ev->output);
    }
 
-   ev->flag ++;
+   ev->implemented ++;
   }
  }
 }

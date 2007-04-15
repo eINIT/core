@@ -42,6 +42,7 @@ extern "C" {
 #ifndef EINIT_EVENT_H
 #define EINIT_EVENT_H
 
+#include <stdio.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <einit/tree.h>
@@ -135,33 +136,55 @@ extern "C" {
 #define EVENT_SUBSYSTEM_CUSTOM		0xfffff000
 /*!< custom events; not yet implemented */
 
-/* (generic) IPC-event flags */
-#define EIPC_OUTPUT_XML             0x0001
-#define EIPC_OUTPUT_ANSI            0x0004
-#define EIPC_ONLY_RELEVANT          0x1000
-#define EIPC_HELP                   0x0002
-#define EIPC_DETACH                 0x0010
 
-#define evstaticinit(ttype) { .type = ttype, .chain_type = 0, /* .type_custom = NULL, */ .set = NULL, .string = NULL, .integer = 0, .status = 0, .task = 0, .flag = 0, .para = NULL, .mutex = PTHREAD_MUTEX_INITIALIZER }
+enum einit_ipc_options {
+ einit_ipc_output_xml    = 0x0001,
+ einit_ipc_output_ansi   = 0x0004,
+ einit_ipc_only_relevant = 0x0100,
+ einit_ipc_help          = 0x0002,
+ einit_ipc_detach        = 0x0010
+};
+
+#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0 } }, 0, 0, { NULL }, PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
  uint32_t type;                  /*!< the event or subsystem to watch */
-// char *type_custom;
- /*!< not yet implemented; reserved for custom events */
- void **set;                     /*!< a set that should make sense in combination with the event type */
- char *string;                   /*!< a string */
- int32_t integer, status, task;  /*!< integers */
- unsigned char flag;             /*!< flags */
+ uint32_t chain_type;            /*!< the event to be called right after this one */
+
+ union {
+/*! these struct elements are for use with non-IPC events */
+  struct {
+   void **set;                   /*!< a set that should make sense in combination with the event type */
+   char *string;                 /*!< a string */
+   int32_t integer,              /*!< generic integer */
+           status,               /*!< generic integer */
+           task;                 /*!< generic integer */
+   unsigned char flag;           /*!< flags */
+  };
+
+/*! these struct elements are for use with IPC events */
+  struct {
+   char **argv;
+   char *command;
+   enum einit_ipc_options ipc_options;
+   int argc,
+       ipc_return;
+   char implemented;
+   FILE *output;
+  };
+ };
 
  uint32_t seqid;
  time_t timestamp;
 
- uint32_t chain_type;            /*!< the event to be called right after this one */
-// char *chain_type_custom;
- /*!< not yet implemented; reserved for custom events */
+/*! additional parameters */
+ union {
+  struct cfgnode *node;
+  struct lmodule *module;
+  void *para;
+ };
 
- void *para;                     /*!< additional parametres */
  pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */
 };
 

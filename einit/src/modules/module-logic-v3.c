@@ -846,8 +846,8 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 }
 
 void module_logic_ipc_event_handler (struct einit_event *ev) {
- if (ev->set && ev->set[0] && ev->set[1] && ev->para) {
-  if (strmatch (ev->set[0], "examine") && strmatch (ev->set[1], "configuration")) {
+ if (ev->argv && ev->argv[0] && ev->argv[1] && ev->output) {
+  if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
    char **modes = NULL;
 
@@ -867,8 +867,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
         for (; tmps[i]; i++) {
          if (!streefind (module_logics_service_list, tmps[i], TREE_FIND_FIRST) && !mod_group_get_data(tmps[i])) {
-          eprintf ((FILE *)ev->para, " * mode \"%s\": service \"%s\" referenced but not found\n", cfgn->mode->id, tmps[i]);
-          ev->task++;
+          eprintf (ev->output, " * mode \"%s\": service \"%s\" referenced but not found\n", cfgn->mode->id, tmps[i]);
+          ev->ipc_return++;
          }
         }
 
@@ -884,9 +884,9 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
    }
 
-   ev->flag = 1;
-  } else if (strmatch (ev->set[0], "list")) {
-   if (strmatch (ev->set[1], "services")) {
+   ev->implemented = 1;
+  } else if (strmatch (ev->argv[0], "list")) {
+   if (strmatch (ev->argv[1], "services")) {
     struct stree *modes = NULL;
     struct stree *cur = NULL;
     struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
@@ -926,48 +926,48 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
      if (inmodes) {
       char *modestr;
-      if (ev->status & EIPC_OUTPUT_XML) {
+      if (ev->ipc_options & einit_ipc_output_xml) {
        modestr = set2str (':', (const char **)inmodes);
-       eprintf ((FILE *)ev->para, " <service id=\"%s\" used-in=\"%s\">\n", cur->key, modestr);
+       eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\">\n", cur->key, modestr);
       } else {
        modestr = set2str (' ', (const char **)inmodes);
-       eprintf ((FILE *)ev->para, (ev->status & EIPC_OUTPUT_ANSI) ?
-                                "\e[1mservice \"%s\" (%s)\n\e[0m" :
-                                  "service \"%s\" (%s)\n",
-                                cur->key, modestr);
+       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
+                            "\e[1mservice \"%s\" (%s)\n\e[0m" :
+                            "service \"%s\" (%s)\n",
+                            cur->key, modestr);
       }
       free (modestr);
       free (inmodes);
-     } else if (!(ev->status & EIPC_ONLY_RELEVANT)) {
-      if (ev->status & EIPC_OUTPUT_XML) {
-       eprintf ((FILE *)ev->para, " <service id=\"%s\">\n", cur->key);
+     } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
+      if (ev->ipc_options & einit_ipc_output_xml) {
+       eprintf (ev->output, " <service id=\"%s\">\n", cur->key);
       } else {
-       eprintf ((FILE *)ev->para, (ev->status & EIPC_OUTPUT_ANSI) ?
-                                "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
-                                  "service \"%s\" (not in any mode)\n",
-                                cur->key);
+       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
+                            "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
+                            "service \"%s\" (not in any mode)\n",
+                            cur->key);
       }
      }
 
-     if (inmodes || (!(ev->status & EIPC_ONLY_RELEVANT))) {
-      if (ev->status & EIPC_OUTPUT_XML) {
+     if (inmodes || (!(ev->ipc_options & einit_ipc_only_relevant))) {
+      if (ev->ipc_options & einit_ipc_output_xml) {
        if (cur->value) {
         struct lmodule **xs = cur->value;
         uint32_t u = 0;
         for (u = 0; xs[u]; u++) {
-         eprintf ((FILE *)ev->para, "  <module id=\"%s\" name=\"%s\" />\n",
+         eprintf (ev->output, "  <module id=\"%s\" name=\"%s\" />\n",
                    xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
                    xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
         }
        }
 
-       eputs (" </service>\n", (FILE*)ev->para);
+       eputs (" </service>\n", ev->output);
       } else {
        if (cur->value) {
         struct lmodule **xs = cur->value;
         uint32_t u = 0;
         for (u = 0; xs[u]; u++) {
-         eprintf ((FILE *)ev->para, (ev->status & EIPC_OUTPUT_ANSI) ?
+         eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
            ((xs[u]->module && (xs[u]->module->options & EINIT_MOD_DEPRECATED)) ?
                                   " \e[31m- \e[0mcandidate \"%s\" (%s)\n" :
                                   " \e[33m* \e[0mcandidate \"%s\" (%s)\n") :
@@ -984,30 +984,30 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
     emutex_unlock(&ml_service_list_mutex);
 
-    ev->flag = 1;
+    ev->implemented = 1;
    }
 #ifdef DEBUG
-   else if (strmatch (ev->set[1], "control-blocks")) {
+   else if (strmatch (ev->argv[1], "control-blocks")) {
     emutex_lock (&ml_tb_target_state_mutex);
 
     if (target_state.enable) {
      char *r = set2str (' ', (const char **)target_state.enable);
      if (r) {
-      eprintf ((FILE *)ev->para, "target_state.enable = { %s }\n", r);
+      eprintf (ev->output, "target_state.enable = { %s }\n", r);
       free (r);
      }
     }
     if (target_state.disable) {
      char *r = set2str (' ', (const char **)target_state.disable);
      if (r) {
-      eprintf ((FILE *)ev->para, "target_state.disable = { %s }\n", r);
+      eprintf (ev->output, "target_state.disable = { %s }\n", r);
       free (r);
      }
     }
     if (target_state.critical) {
      char *r = set2str (' ', (const char **)target_state.critical);
      if (r) {
-      eprintf ((FILE *)ev->para, "target_state.critical = { %s }\n", r);
+      eprintf (ev->output, "target_state.critical = { %s }\n", r);
       free (r);
      }
     }
@@ -1018,28 +1018,28 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     if (current.enable) {
      char *r = set2str (' ', (const char **)current.enable);
      if (r) {
-      eprintf ((FILE *)ev->para, "current.enable = { %s }\n", r);
+      eprintf (ev->output, "current.enable = { %s }\n", r);
       free (r);
      }
     }
     if (current.disable) {
      char *r = set2str (' ', (const char **)current.disable);
      if (r) {
-      eprintf ((FILE *)ev->para, "current.disable = { %s }\n", r);
+      eprintf (ev->output, "current.disable = { %s }\n", r);
       free (r);
      }
     }
     if (current.critical) {
      char *r = set2str (' ', (const char **)current.critical);
      if (r) {
-      eprintf ((FILE *)ev->para, "current.critical = { %s }\n", r);
+      eprintf (ev->output, "current.critical = { %s }\n", r);
       free (r);
      }
     }
 
     emutex_unlock (&ml_tb_current_mutex);
 
-    ev->flag = 1;
+    ev->implemented = 1;
    }
 #endif
   }

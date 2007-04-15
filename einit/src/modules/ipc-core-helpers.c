@@ -89,63 +89,60 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
  (status & STATUS_ENABLED ? "E" : "D")))
 
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
- if (!ev || !ev->set) return;
- char **argv = (char **) ev->set;
- int argc = setcount ((const void **)ev->set);
- uint32_t options = ev->status;
+ if (!ev || !ev->argv) return;
 
- if (argc >= 2) {
-  if (strmatch (argv[0], "list")) {
-   if (strmatch (argv[1], "modules")) {
+ if (ev->argc >= 2) {
+  if (strmatch (ev->argv[0], "list")) {
+   if (strmatch (ev->argv[1], "modules")) {
     struct lmodule *cur = mlist;
 
-    if (!ev->flag) ev->flag = 1;
+    ev->implemented = 1;
 
     while (cur) {
-     if ((cur->module && !(options & EIPC_ONLY_RELEVANT)) || (cur->status != STATUS_IDLE)) {
-      if (options & EIPC_OUTPUT_XML) {
-       eprintf ((FILE *)ev->para, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
+     if ((cur->module && !(ev->ipc_options & einit_ipc_only_relevant)) || (cur->status != STATUS_IDLE)) {
+      if (ev->ipc_options & einit_ipc_output_xml) {
+       eprintf (ev->output, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
                  (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
       } else {
-       eprintf ((FILE *)ev->para, "[%s] %s (%s)",
+       eprintf (ev->output, "[%s] %s (%s)",
                  STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
       }
 
       if (cur->si) {
        if (cur->si->provides) {
-        if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  provides=\"%s\"", set2str(':', (const char **)cur->si->provides));
+        if (ev->ipc_options & einit_ipc_output_xml) {
+         eprintf (ev->output, "\n  provides=\"%s\"", set2str(':', (const char **)cur->si->provides));
         } else {
-         eprintf ((FILE *)ev->para, "\n > provides: %s", set2str(' ', (const char **)cur->si->provides));
+         eprintf (ev->output, "\n > provides: %s", set2str(' ', (const char **)cur->si->provides));
         }
        }
        if (cur->si->requires) {
-        if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  requires=\"%s\"", set2str(':', (const char **)cur->si->requires));
+        if (ev->ipc_options & einit_ipc_output_xml) {
+         eprintf (ev->output, "\n  requires=\"%s\"", set2str(':', (const char **)cur->si->requires));
         } else {
-         eprintf ((FILE *)ev->para, "\n > requires: %s", set2str(' ', (const char **)cur->si->requires));
+         eprintf (ev->output, "\n > requires: %s", set2str(' ', (const char **)cur->si->requires));
         }
        }
        if (cur->si->after) {
-        if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  after=\"%s\"", set2str(':', (const char **)cur->si->after));
+        if (ev->ipc_options & einit_ipc_output_xml) {
+         eprintf (ev->output, "\n  after=\"%s\"", set2str(':', (const char **)cur->si->after));
         } else {
-         eprintf ((FILE *)ev->para, "\n > after: %s", set2str(' ', (const char **)cur->si->after));
+         eprintf (ev->output, "\n > after: %s", set2str(' ', (const char **)cur->si->after));
         }
        }
        if (cur->si->before) {
-        if (options & EIPC_OUTPUT_XML) {
-         eprintf ((FILE *)ev->para, "\n  before=\"%s\"", set2str(':', (const char **)cur->si->before));
+        if (ev->ipc_options & einit_ipc_output_xml) {
+         eprintf (ev->output, "\n  before=\"%s\"", set2str(':', (const char **)cur->si->before));
         } else {
-         eprintf ((FILE *)ev->para, "\n > before: %s", set2str(' ', (const char **)cur->si->before));
+         eprintf (ev->output, "\n > before: %s", set2str(' ', (const char **)cur->si->before));
         }
        }
       }
 
-      if (options & EIPC_OUTPUT_XML) {
-       eputs (" />\n", (FILE *)ev->para);
+      if (ev->ipc_options & einit_ipc_output_xml) {
+       eputs (" />\n", ev->output);
       } else {
-       eputs ("\n", (FILE *)ev->para);
+       eputs ("\n", ev->output);
       }
      }
      cur = cur->next;

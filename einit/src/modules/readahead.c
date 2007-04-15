@@ -177,15 +177,15 @@ void process_files(char* filename) {
 }
 
 void einit_readahead_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   char *s;
 
   if (!(s = cfg_getstring("configuration-system-readahead", NULL))) {
-   eputs (" * configuration variable \"configuration-system-readahead\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-system-readahead\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

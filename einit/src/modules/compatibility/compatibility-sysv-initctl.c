@@ -108,13 +108,14 @@ char compatibility_sysv_initctl_running = 0;
 pthread_t initctl_thread;
 
 void compatibility_sysv_initctl_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   if (!cfg_getnode("configuration-compatibility-sysv-initctl", NULL)) {
-   eputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", ev->output);
+
+   ev->ipc_return++;
   }
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

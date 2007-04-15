@@ -80,15 +80,16 @@ module_register(einit_external_self);
 void einit_external_einit_event_handler (struct einit_event *);
 
 void einit_external_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
 #ifdef BITCHY
   if (!cfg_getnode("services-external", NULL)) {
-   eputs ("NOTICE: configuration variable \"services-external\" not found. (not a problem)\n", (FILE *)ev->para);
-   ev->task++;
+   eputs ("NOTICE: configuration variable \"services-external\" not found. (not a problem)\n", ev->output);
+
+   ev->ipc_return++;
   }
 #endif
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

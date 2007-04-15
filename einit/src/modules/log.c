@@ -170,10 +170,10 @@ signed int logsort (struct log_entry *st1, struct log_entry *st2) {
 }
 
 void einit_log_ipc_event_handler (struct einit_event *ev) {
- if (ev->set && ev->set[0] && ev->set[1] && strmatch (ev->set[0], "flush") && strmatch (ev->set[1], "log")) {
+ if (ev->argv && ev->argv[0] && ev->argv[1] && strmatch (ev->argv[0], "flush") && strmatch (ev->argv[1], "log")) {
   flush_log_buffer();
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

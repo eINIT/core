@@ -99,46 +99,46 @@ int ipc_process_f (const char *cmd, FILE *f) {
  if (!cmd) return 0;
 
  struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
- uint32_t ic, ec;
+ uint32_t ic;
  int ret = 0;
 
- event->string = (char *)cmd;
- event->set = (void **)str2set (' ', cmd);
- event->para = (void *)f;
- event->flag = 0;
+ event->command = (char *)cmd;
+ event->argv = str2set (' ', cmd);
+ event->output = f;
+ event->implemented = 0;
 
- ec = setcount ((const void **)event->set);
+ event->argc = setcount ((const void **)event->argv);
 
- for (ic = 0; ic < ec; ic++) {
-  if (strmatch (event->set[ic], "--xml")) event->status |= EIPC_OUTPUT_XML;
-  else if (strmatch (event->set[ic], "--ansi")) event->status |= EIPC_OUTPUT_ANSI;
-  else if (strmatch (event->set[ic], "--only-relevant")) event->status |= EIPC_ONLY_RELEVANT;
-  else if (strmatch (event->set[ic], "--help")) event->status |= EIPC_HELP;
-  else if (strmatch (event->set[ic], "--detach")) event->status |= EIPC_DETACH;
+ for (ic = 0; ic < event->argc; ic++) {
+  if (strmatch (event->argv[ic], "--xml")) event->ipc_options |= einit_ipc_output_xml;
+  else if (strmatch (event->argv[ic], "--ansi")) event->ipc_options |= einit_ipc_output_ansi;
+  else if (strmatch (event->argv[ic], "--only-relevant")) event->ipc_options |= einit_ipc_only_relevant;
+  else if (strmatch (event->argv[ic], "--help")) event->ipc_options |= einit_ipc_help;
+  else if (strmatch (event->argv[ic], "--detach")) event->ipc_options |= einit_ipc_detach;
  }
 
- if (event->status & EIPC_OUTPUT_XML) {
+ if (event->ipc_options & einit_ipc_output_xml) {
   eputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
-  event->set = (void**)strsetdel ((char**)event->set, "--xml");
+  event->argv = strsetdel (event->argv, "--xml");
  }
- if (event->status & EIPC_ONLY_RELEVANT) event->set = (void**)strsetdel ((char**)event->set, "--only-relevant");
- if (event->status & EIPC_OUTPUT_ANSI) event->set = (void**)strsetdel ((char**)event->set, "--ansi");
- if (event->status & EIPC_HELP) {
-  if (event->status & EIPC_OUTPUT_XML) {
+ if (event->ipc_options & einit_ipc_only_relevant) event->argv = strsetdel (event->argv, "--only-relevant");
+ if (event->ipc_options & einit_ipc_output_ansi) event->argv = strsetdel (event->argv, "--ansi");
+ if (event->ipc_options & einit_ipc_help) {
+  if (event->ipc_options & einit_ipc_output_xml) {
    eputs (" <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n", f);
   } else {
    eputs ("eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n", f);
   }
 
-  event->set = (void**)strsetdel ((char**)event->set, "--help");
+  event->argv = strsetdel ((char**)event->argv, "--help");
  }
 
  event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
 
- if (event->set) free (event->set);
+ if (event->argv) free (event->argv);
 
- if (!event->flag) {
-  if (event->status & EIPC_OUTPUT_XML) {
+ if (!event->implemented) {
+  if (event->ipc_options & einit_ipc_output_xml) {
    eprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
   } else {
    eprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
@@ -146,9 +146,9 @@ int ipc_process_f (const char *cmd, FILE *f) {
 
   ret = 1;
  } else
-  ret = (int)event->integer;
+  ret = event->ipc_return;
 
- if (event->status & EIPC_OUTPUT_XML) {
+ if (event->ipc_options & einit_ipc_output_xml) {
   eputs ("</einit-ipc>\n", f);
  }
 
@@ -184,25 +184,25 @@ int ipc_process_f (const char *cmd, FILE *f) {
 }
 
 void einit_ipc_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   if (!cfg_getnode("configuration-ipc-control-socket", NULL)) {
-   eputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-ipc-control-socket\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 
- if (ev->set[0] && ev->set[1] && ev->set[2] && strmatch (ev->set[0], "emit-event")) {
-  struct einit_event nev = evstaticinit(event_string_to_code(ev->set[1]));
-  nev.string = ev->set[2];
-  nev.set = (void **)(ev->set+2);
+ if (ev->argv[0] && ev->argv[1] && ev->argv[2] && strmatch (ev->argv[0], "emit-event")) {
+  struct einit_event nev = evstaticinit(event_string_to_code(ev->argv[1]));
+  nev.string = ev->argv[2];
+  nev.set = (void **)(ev->argv+2);
 
   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
 
   evstaticdestroy(nev);
 
-  if (!ev->flag) ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

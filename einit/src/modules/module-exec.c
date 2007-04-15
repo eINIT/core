@@ -107,22 +107,22 @@ int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *, char *, struct eini
 struct mexecinfo **einit_mod_exec_mxdata = NULL;
 
 void einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
-   eputs (" * configuration variable \"configuration-system-shell\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-system-shell\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
 
   if (einit_mod_exec_mxdata) {
    uint32_t i = 0;
    for (i = 0; einit_mod_exec_mxdata[i]; i++) {
     if (einit_mod_exec_mxdata[i]->variables) {
-     check_variables (einit_mod_exec_mxdata[i]->id, (const char **)einit_mod_exec_mxdata[i]->variables, (FILE*)ev->para);
+     check_variables (einit_mod_exec_mxdata[i]->id, (const char **)einit_mod_exec_mxdata[i]->variables, ev->output);
     }
    }
   }
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 

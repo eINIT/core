@@ -152,25 +152,25 @@ char show_progress = 1;
 uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
 
 void einit_feedback_visual_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->set && ev->set[0] && ev->set[1] && strmatch(ev->set[0], "examine") && strmatch(ev->set[1], "configuration")) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
   if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
   if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
   if (!cfg_getnode("configuration-feedback-visual-calculate-switch-status", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", (FILE *)ev->para);
-   ev->task++;
+   eputs (" * configuration variable \"configuration-feedback-visual-calculate-switch-status\" not found.\n", ev->output);
+   ev->ipc_return++;
   }
 
-  ev->flag = 1;
+  ev->implemented = 1;
  }
 }
 
