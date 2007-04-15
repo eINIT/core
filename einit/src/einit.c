@@ -161,7 +161,12 @@ void core_einit_event_handler (struct einit_event *ev) {
    mortality[bitch_epthreads] = node->value;
 
  } else if (ev->type == einit_core_update_modules) {
-  struct lmodule *lm = mlist;
+  struct lmodule *lm;
+
+  repeat:
+
+  lm = mlist;
+  einit_new_node = 0;
 
   while (lm) {
    if (lm->source && strmatch(lm->source, "core")) {
@@ -172,6 +177,10 @@ void core_einit_event_handler (struct einit_event *ev) {
      notice (1, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
 
      lm->scanmodules (mlist);
+
+/* if an actual new node has been added to the configuration,
+   repeat this step */
+     if (einit_new_node) goto repeat;
     }
 
    }

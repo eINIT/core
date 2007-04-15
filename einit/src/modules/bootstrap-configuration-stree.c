@@ -205,8 +205,11 @@ int cfg_addnode_f (struct cfgnode *node) {
   }
  }
 
- if (doop)
+ if (doop) {
   hconfiguration = streeadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
+
+  einit_new_node = 1;
+ }
 
  return 0;
 }

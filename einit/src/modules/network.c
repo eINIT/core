@@ -132,14 +132,70 @@ int network_scanmodules (struct lmodule *mainlist) {
     if (nn->arbattrs) {
      char *interfacename = cur->key+33; /* 33 = strlen("configuration-network-interfaces-") */
      struct smodule *newmodule = emalloc (sizeof (struct smodule));
-     char tmp[BUFFERSIZE];
+     char tmp[BUFFERSIZE], **req = NULL;
      struct lmodule *lm;
+     struct cfgnode *node = cur->value;
+     uint32_t y = 0;
+
+     req = (char **)setadd ((void **)req, (void *)"mount-critical", SET_TYPE_STRING);
+
+     for (; node->arbattrs[y]; y+=2) {
+      if (strmatch (node->arbattrs[y], "kernel-module")) {
+       struct cfgnode newnode;
+
+       esprintf (tmp, BUFFERSIZE, "kern-%s", interfacename);
+       req = (char **)setadd ((void **)req, tmp, SET_TYPE_STRING);
+
+// kernel module
+       memset (&newnode, 0, sizeof(struct cfgnode));
+
+       newnode.id = estrdup ("services-virtual-module-shell");
+       newnode.source = self->rid;
+       newnode.type = einit_node_regular;
+
+       esprintf (tmp, BUFFERSIZE, "shell-kern-%s", interfacename);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
+
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"based-on-template", SET_TYPE_STRING);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"template-shell-kern-module-loader", SET_TYPE_STRING);
+
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"system", SET_TYPE_STRING);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)interfacename, SET_TYPE_STRING);
+
+       cfg_addnode (&newnode);
+
+       memset (&newnode, 0, sizeof(struct cfgnode));
+
+       esprintf (tmp, BUFFERSIZE, "configuration-kernel-modules-%s", interfacename);
+       newnode.id = estrdup (tmp);
+       newnode.source = self->rid;
+       newnode.type = einit_node_regular;
+
+       esprintf (tmp, BUFFERSIZE, "kernel-module-%s", interfacename);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
+
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
+       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)nn->arbattrs[y+1], SET_TYPE_STRING);
+
+       newnode.svalue = newnode.arbattrs[3];
+
+       cfg_addnode (&newnode);
+      }
+     }
 
      memset (newmodule, 0, sizeof (struct smodule));
 
      lm = mainlist;
+
+     esprintf (tmp, BUFFERSIZE, "interface-%s", interfacename);
+
      while (lm) {
-      if (lm->source && strmatch(lm->source, cur->key)) {
+      if (lm->source && strmatch(lm->source, tmp)) {
+       struct smodule *sm = (struct smodule *)lm->module;
+       sm->si.requires = req;
+
        lm = mod_update (lm);
 
        emutex_lock (&(lm->mutex));
@@ -176,7 +232,7 @@ int network_scanmodules (struct lmodule *mainlist) {
 
      esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
      newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, (void *)tmp, SET_TYPE_STRING);
-     newmodule->si.requires = (char **)setadd ((void **)newmodule->si.requires, (void *)"mount-critical", SET_TYPE_STRING);
+     newmodule->si.requires = req;
 
      lm = mod_add (NULL, newmodule);
     }
@@ -328,6 +384,8 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
+/* outsourced this one... */
+#if 0
  if (id->kernel_module) {
   char *command = cfg_getstring ("configuration-command-modprobe/with-env", NULL),
        tmp[BUFFERSIZE], *nc, **cx = NULL;
@@ -353,6 +411,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
    }
   }
  }
+#endif
 
  if (id->controller) { // == NULL if ip not mentioned or ="none"
   for (ci = 0; id->controller[ci]; ci++) {

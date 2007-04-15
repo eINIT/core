@@ -121,6 +121,7 @@ pthread_attr_t thread_attribute_detached;
 struct cfgnode *cmode, *amode;
 
 time_t boottime;
+char einit_new_node;
 
 enum einit_mode coremode;
 unsigned char *gdebug;
