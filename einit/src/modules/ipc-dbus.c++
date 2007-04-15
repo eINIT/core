@@ -64,8 +64,7 @@ const struct smodule einit_dbus_self = {
  EINIT_VERSION,
  BUILDNUMBER,
  1,
- 0,
- 0,
+ einit_module_generic,
  "eINIT <-> DBUS connector",
  "ipc-dbus",
  {

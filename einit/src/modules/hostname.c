@@ -61,7 +61,6 @@ const struct smodule einit_hostname_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Set Host- and Domainname",
  .rid       = "hostname",
  .si        = {
@@ -138,11 +137,11 @@ int einit_hostname_enable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_hostname_disable (void *pa, struct einit_event *status) {
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_hostname_configure (struct lmodule *irr) {

@@ -71,8 +71,7 @@ const struct smodule einit_mod_daemon_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "Module Support (Configuration, Daemon)",
  .rid       = "module-daemon",
  .si        = {
@@ -193,7 +192,7 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
 
     for (; opt[ri]; ri++) {
      if (strmatch (opt[ri], "feedback"))
-      modinfo->mode |= EINIT_MOD_FEEDBACK;
+      modinfo->mode |= einit_module_feedback;
     }
    }
 

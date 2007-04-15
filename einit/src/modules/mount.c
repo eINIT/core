@@ -89,8 +89,7 @@ const struct smodule einit_mount_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "Filesystem-Mounter",
  .rid       = "mount",
  .si        = {
@@ -111,8 +110,7 @@ char *requires_mountlocal[] = {"mount-system", "mount-critical", NULL};
 struct smodule sm_mountlocal = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
-	.mode		= EINIT_MOD_EXEC,
-	.options	= 0,
+	.mode		= einit_module_generic,
 	.name		= "mount (local)",
 	.rid		= "einit-mount-local",
     .si           = {
@@ -129,8 +127,7 @@ char *after_mountremote[] = { "portmap", NULL};
 struct smodule sm_mountremote = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
-	.mode		= EINIT_MOD_EXEC,
-	.options	= 0,
+	.mode		= einit_module_generic,
 	.name		= "mount (remote)",
 	.rid		= "einit-mount-remote",
     .si           = {
@@ -145,8 +142,7 @@ char *provides_system[] = {"mount-system", NULL};
 struct smodule sm_system = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
-	.mode		= EINIT_MOD_EXEC,
-	.options	= 0,
+	.mode		= einit_module_generic,
 	.name		= "mount (system)",
 	.rid		= "einit-mount-system",
     .si           = {
@@ -162,8 +158,7 @@ char *requires_critical[] = {"mount-system", NULL};
 struct smodule sm_critical = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
-	.mode		= EINIT_MOD_EXEC,
-	.options	= 0,
+	.mode		= einit_module_generic,
 	.name		= "mount (critical)",
 	.rid		= "einit-mount-critical",
     .si           = {
@@ -913,7 +908,7 @@ int emount (char *mountpoint, struct einit_event *status) {
 
  unsigned long mntflags = 0;
 
- if (!mountpoint) return STATUS_FAIL;
+ if (!mountpoint) return status_failed;
 
  char **fstype_s = NULL;
  uint32_t fsts_i = 0;
@@ -1063,32 +1058,32 @@ int emount (char *mountpoint, struct einit_event *status) {
 
    fse->status |= device_status_mounted;
 
-   return STATUS_OK;
+   return status_ok;
   }
 
 // we reach this if none of the attempts worked out
   if (fstype_s) free (fstype_s);
-  return STATUS_FAIL;
+  return status_failed;
  } else {
   status->string = "nothing known about this mountpoint; bailing out.";
   status_update (status);
-  return STATUS_FAIL;
+  return status_failed;
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int eumount (char *mountpoint, struct einit_event *status) {
  struct stree *he = mcb.fstab;
  struct fstab_entry *fse = NULL;
 
- if (!mountpoint) return STATUS_FAIL;
+ if (!mountpoint) return status_failed;
 
  char textbuffer[BUFFERSIZE];
  errno = 0;
  uint32_t retry = 0;
 
- if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
+ if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return status_ok;
 
  if (he && (he = streefind (he, mountpoint, tree_find_first))) fse = (struct fstab_entry *)he->value;
 
@@ -1174,7 +1169,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
 
   status->flag++;
   if (retry > 3) {
-   return STATUS_FAIL;
+   return status_failed;
   }
   sleep (1);
  }
@@ -1192,7 +1187,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
  event_emit (&eem, einit_event_flag_broadcast);
  evstaticdestroy (eem);
 
- return STATUS_OK;
+ return status_ok;
 }
 
 void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
@@ -1577,7 +1572,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t ret, sc = 0, slc;
 
- if (coremode == einit_mode_sandbox) return STATUS_OK;
+ if (coremode == einit_mode_sandbox) return status_ok;
 
  switch (p) {
   case MOUNT_LOCAL:
@@ -1640,7 +1635,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
   default:
    status->string = "I'm clueless?";
    status_update (status);
-   return STATUS_FAIL;
+   return status_failed;
    break;
  }
 
@@ -1671,7 +1666,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
   if (acand)
    for (c = 0; acand[c]; c++) {
     candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
-    if (emount (acand[c], status) != STATUS_OK)
+    if (emount (acand[c], status) != status_ok)
      status->flag++;
    }
 
@@ -1689,18 +1684,18 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
 
  update_real_mtab();
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_mount_disable (enum mounttask p, struct einit_event *status) {
-// return STATUS_OK;
+// return status_ok;
  struct stree *ha;
  struct stree *fsi;
  struct fstab_entry *fse = NULL;
  char **candidates = NULL;
  uint32_t sc = 0, slc;
 
- if (coremode == einit_mode_sandbox) return STATUS_OK;
+ if (coremode == einit_mode_sandbox) return status_ok;
 
  einit_mount_update (UPDATE_MTAB);
  ha = mcb.fstab;
@@ -1752,8 +1747,8 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
    errno = 0;
 #endif
 
-   return STATUS_OK;
-//   return STATUS_OK;
+   return status_ok;
+//   return status_ok;
   case MOUNT_CRITICAL:
    while (ha) {
     if (inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
@@ -1766,7 +1761,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
   default:
    status->string = "come again?";
    status_update (status);
-   return STATUS_FAIL;
+   return status_failed;
    break;
  }
 
@@ -1795,7 +1790,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
   if (acand)
    for (c = 0; acand[c]; c++) {
     candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
-    if (eumount (acand[c], status) != STATUS_OK)
+    if (eumount (acand[c], status) != status_ok)
      status->flag++;
    }
 
@@ -1809,7 +1804,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
   eumount ("/", status);
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 void einit_mount_update_configuration () {

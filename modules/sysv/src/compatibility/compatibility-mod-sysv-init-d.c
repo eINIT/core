@@ -68,8 +68,7 @@ const struct smodule _compatibility_mod_sysv_init_d_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "System-V Compatibility: init.d Pseudo-Module Support",
  .rid       = "compatibility-mod-sysv-init-d",
  .si        = {
@@ -156,7 +155,7 @@ int _compatibility_mod_sysv_init_d_scanmodules (struct lmodule *modchain) {
 
     modinfo = emalloc (sizeof (struct smodule));
     memset (modinfo, 0, sizeof(struct smodule));
-    modinfo->options |= EINIT_MOD_DEPRECATED;
+    modinfo->mode |= einit_module_deprecated;
 
     nrid = emalloc (8 + strlen(de->d_name));
     *nrid = 0;

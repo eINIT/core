@@ -136,7 +136,6 @@ const struct smodule module_linux_mount_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Linux-specific Filesystem-Mounter Functions",
  .rid       = "linux-mount",
  .si        = {
@@ -353,7 +352,7 @@ unsigned char mount_linux_real_mount (char *source, char *mountpoint, char *fsty
  }
 
  if (coremode != einit_mode_sandbox) {
-  if (pexec_v1 (command, NULL, NULL, status) == STATUS_OK)
+  if (pexec_v1 (command, NULL, NULL, status) == status_ok)
    return 0;
   else {
    if (fse->after_umount)

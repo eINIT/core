@@ -62,7 +62,6 @@ const struct smodule self = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
 	.mode		= EINIT_MOD_FEEDBACK,
-	.options	= 0,
 	.name		= "visual/evas-based feedback module",
 	.rid		= "einit-efl-feedback-evas-edje",
     .si           = {

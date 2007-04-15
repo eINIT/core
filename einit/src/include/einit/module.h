@@ -93,43 +93,62 @@ extern "C" {
 
 /*!\ingroup modulemdefinition
  * \{ */
-#define EINIT_MOD_LOADER 1     /*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
-#define EINIT_MOD_FEEDBACK 2   /*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
-#define EINIT_MOD_EXEC 4       /*!< Module-type: Regular modules, i.e. those that provide services. */
-#define EINIT_MOD_DEPRECATED 8 /*!< Module-type: Deprecated module: only try if nothing else worked */
+enum einit_module_options {
+ einit_module_loader     = 0x1,
+/*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
+ einit_module_feedback   = 0x2,
+/*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
+ einit_module_generic    = 0x4,
+/*!< Module-type: Regular modules, i.e. those that provide services. */
+ einit_module_deprecated = 0x10
+/*!< Module-option: Deprecated module: only try if nothing else worked */
+};
 /*!\} */
 
 /*!\ingroup modulemanipulation
  * \{ */
-#define MOD_ENABLE 0x0001              /*!< Command for mod(): Enable specified module. */
-#define MOD_DISABLE 0x0002             /*!< Command for mod(): Disable specified module. */
-#define MOD_CUSTOM 0x0010              /*!< Execute a custom action. */
-#define MOD_FEEDBACK_SHOW 0x0100       /*!< Option set by mod(): Show feedback. */
-#define MOD_IGNORE_DEPENDENCIES 0x0800 /*!< Option: Ignore dependencies on module status change with mod() */
-#define MOD_NOMUTEX 0x0400             /*!< Option: Do not use mutex */
+enum einit_module_task {
+ einit_module_enable              = 0x0001,
+/*!< Command for mod(): Enable specified module. */
+ einit_module_disable             = 0x0002,
+/*!< Command for mod(): Disable specified module. */
+ einit_module_custom              = 0x0004,
+/*!< Execute a custom action. */
+ einit_module_feedback_show       = 0x0100,
+/*!< Option set by mod(): Show feedback. */
+ einit_module_ignore_mutex        = 0x0400,
+/*!< Option: Do not use mutex */
+ einit_module_ignore_dependencies = 0x0800,
+/*!< Option: Ignore dependencies on module status change with mod() */
+};
 /*!\} */
-
-#define MOD_SCHEDULER 0x1000                    /*!< Bitmask for scheduler-feedback-options. */
-#define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001  /*!< Scheduler-feedback-option: "New plan is now being executed.". */
-#define MOD_SCHEDULER_PLAN_COMMIT_FINISH 0x1002 /*!< Scheduler-feedback-option: "New plan is now done executing.". */
-
-#define MOD_LOCKED 0x8000        /*!< Module-option: Module is locked. */
 
 /*!\ingroup statusinformation
  * \{ */
-#define STATUS_IDLE 0x0000      /*!< Status Information: Object is currently idle. */
-#define STATUS_OK 0x0001        /*!< Status Information: Last command executed OK. */
-#define STATUS_ABORTED 0x0002   /*!< Status Information: Last command was aborted. */
-#define STATUS_FAIL 0x0004      /*!< Status Information: Last command failed. */
-#define STATUS_FAIL_REQ 0x0014  /*!< Status Information: Last command cannot be executed, because requirements are not met. */
-#define STATUS_DONE 0x8000      /*!< Status Information: Bitmask: Last command is not executing anymore. */
-#define STATUS_WORKING 0x4000   /*!< Status Information: Bitmask: Someone is working on this object just now. */
-#define STATUS_SUSPENDED 0x2000 /*!< Status Information: Bitmask: Module is currently not loaded. */
-
-#define STATUS_COMMAND_NOT_IMPLEMENTED 0x0020 /*!< Status Information: command not implemented*/
-
-#define STATUS_ENABLED 0x0100   /*!< Status Information: Object is enabled. */
-#define STATUS_DISABLED 0x0200  /*!< Status Information: Object is disabled. */
+enum einit_module_status {
+ status_idle      = 0x0000,
+/*!< Status Information: Object is currently idle. */
+ status_ok        = 0x0001,
+/*!< Status Information: Last command executed OK. */
+ status_aborted   = 0x0002,
+/*!< Status Information: Last command was aborted. */
+ status_failed    = 0x0004,
+/*!< Status Information: Last command failed. */
+ status_failed_requirement = 0x0014,
+/*!< Status Information: Last command cannot be executed, because requirements are not met. */
+ status_done      = 0x8000,
+/*!< Status Information: Last command is not executing anymore. */
+ status_working   = 0x4000,
+/*!< Status Information: Someone is working on this object just now. */
+ status_suspended = 0x2000,
+/*!< Status Information: Module is currently not loaded. */
+ status_command_not_implemented = 0x0020,
+/*!< Status Information: command not implemented*/
+ status_enabled   = 0x0100,
+/*!< Status Information: Object is enabled. */
+ status_disabled  = 0x0200
+/*!< Status Information: Object is disabled. */
+};
 /*!\} */
 
 /*!\ingroup serviceusagequeries
@@ -147,6 +166,15 @@ extern "C" {
 #define SERVICE_ADD_GROUP_PROVIDER      0x0200 /*!< Service-usage-query: "This module provides this service" */
 #define SERVICE_SET_GROUP_PROVIDERS     0x0400 /*!< Service-usage-query: "These modules provide this service" */
 /*!\} */
+
+
+/* these will be removed soon, not gonna mess with 'em now */
+#define MOD_SCHEDULER 0x1000                    /*!< Bitmask for scheduler-feedback-options. */
+#define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001  /*!< Scheduler-feedback-option: "New plan is now being executed.". */
+#define MOD_SCHEDULER_PLAN_COMMIT_FINISH 0x1002 /*!< Scheduler-feedback-option: "New plan is now done executing.". */
+
+#define MOD_LOCKED 0x8000        /*!< Module-option: Module is locked. */
+
 
 struct service_information {
  char **provides;       /*!< A list of services that this module provides. */
@@ -169,8 +197,8 @@ struct smodule {
  uint32_t eiversion;    /*!< The API version of eINIT that the module was compiled with. */
  uint32_t eibuild;      /*!< The build number of eINIT that the module was compiled with. */
  uint32_t version;      /*!< The module's version; this is currently ignored by eINIT. */
- int mode;              /*!< The module type; should be EINIT_MOD_EXEC for most modules. */
- uint32_t options;      /*!< Module options; this is currently ignored. */
+ enum einit_module_options mode;
+                        /*!< The module type; should be einit_module_generic for most modules. */
  char *name;            /*!< The real name of the module. */
  char *rid;             /*!< The short ID of the module. */
  struct service_information si;
@@ -192,8 +220,7 @@ struct lmodule {
  int (*custom) (void *, char *, struct einit_event *); /*!< Pointer to the module's custom()-function */
  int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
  int (*scanmodules) (struct lmodule *);         /*!< Pointer to the module's scanmodules()-function */
- uint32_t status;                               /*!< Current module status (enabled, disabled, ...) */
- uint32_t lastfb;                               /*!< Last feedback message */
+ enum einit_module_status status;               /*!< Current module status (enabled, disabled, ...) */
  void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
  pthread_mutex_t imutex;                        /*!< Internal module-mutex; to be used by the module */
@@ -255,7 +282,7 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
  *
  * Use this to change the state of a module, i.e. enable it, disable it, etc...
 */
-int mod (unsigned int task, struct lmodule *module, char *custom_command);
+int mod (enum einit_module_task task, struct lmodule *module, char *custom_command);
 
 /*!\ingroup serviceusagequeries
  * \{ */
@@ -306,11 +333,11 @@ void mod_event_handler(struct einit_event *event);
 #if 1
 #define status_update(a) \
  event_emit(a, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate); \
- if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL
+ if (a->task & einit_module_feedback_show) a->task ^= einit_module_feedback_show; a->string = NULL
 #else
 #define status_update(a) \
  event_emit(a, einit_event_flag_broadcast); \
- if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL
+ if (a->task & einit_module_feedback_show) a->task ^= einit_module_feedback_show; a->string = NULL
 #endif
 
 char *bootstrapmodulepath;

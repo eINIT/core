@@ -93,8 +93,7 @@ const struct smodule einit_network_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "Network Interface Configuration",
  .rid       = "network",
  .si        = {
@@ -170,8 +169,7 @@ int network_scanmodules (struct lmodule *mainlist) {
      newmodule->eiversion = EINIT_VERSION;
      newmodule->eibuild = BUILDNUMBER;
      newmodule->version = 1;
-     newmodule->mode = EINIT_MOD_EXEC;
-     newmodule->options = 0;
+     newmodule->mode = einit_module_generic;
 
      esprintf (tmp, BUFFERSIZE, "Network Interface (%s)", interfacename);
      newmodule->name = estrdup (tmp);
@@ -328,7 +326,7 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t ci = 0, pi = 0;
 
- if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
+ if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
  if (id->kernel_module) {
   char *command = cfg_getstring ("configuration-command-modprobe/with-env", NULL),
@@ -346,8 +344,8 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
      status->string = tmp;
      status_update (status);
 
-     if (!(pexec (nc, NULL, 0, 0, NULL, NULL, NULL, status) & STATUS_OK))
-      return STATUS_FAIL;
+     if (!(pexec (nc, NULL, 0, 0, NULL, NULL, NULL, status) & status_ok))
+      return status_failed;
 
      free (nc);
     }
@@ -362,14 +360,14 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
    struct stree *t = streefind (id->controller[ci]->action, "enable", tree_find_first);
 
    if (t) {
-    if (pexec (t->value, (const char **)id->controller[ci]->variables, 0, 0, NULL, NULL, id->controller[ci]->environment, status) & STATUS_OK) {
+    if (pexec (t->value, (const char **)id->controller[ci]->variables, 0, 0, NULL, NULL, id->controller[ci]->environment, status) & status_ok) {
      id->ci = ci;
      goto ip;
     }
    }
   }
 
-  return STATUS_FAIL;
+  return status_failed;
  }
 
  ip:
@@ -379,25 +377,25 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   struct stree *t = streefind (id->ip_manager[pi]->action, "enable", tree_find_first);
 
   if (t) {
-   if (pexec (t->value, (const char **)id->ip_manager[pi]->variables, 0, 0, NULL, NULL, id->ip_manager[pi]->environment, status) & STATUS_OK) {
+   if (pexec (t->value, (const char **)id->ip_manager[pi]->variables, 0, 0, NULL, NULL, id->ip_manager[pi]->environment, status) & status_ok) {
     id->pi = pi;
-    return STATUS_OK;
+    return status_ok;
    }
   }
  }
 
 
- return STATUS_FAIL;
+ return status_failed;
 }
 
 int network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
- if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
+ if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
  if (id->ip_manager[id->pi]) {
   struct stree *t = streefind (id->ip_manager[id->pi]->action, "disable", tree_find_first);
 
   if (t) {
-   if (pexec (t->value, (const char **)id->ip_manager[id->pi]->variables, 0, 0, NULL, NULL, id->ip_manager[id->pi]->environment, status) & STATUS_OK) {
+   if (pexec (t->value, (const char **)id->ip_manager[id->pi]->variables, 0, 0, NULL, NULL, id->ip_manager[id->pi]->environment, status) & status_ok) {
     if (id->ip_manager[id->pi]->pidfile) unlink (id->ip_manager[id->pi]->pidfile);
 
     goto controller;
@@ -405,28 +403,28 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
   }
  }
 
- return STATUS_FAIL;
+ return status_failed;
 
  controller:
  if (id->controller && id->controller[id->ci]) { // == NULL if ip not mentioned or ="none"
   struct stree *t = streefind (id->controller[id->ci]->action, "disable", tree_find_first);
 
   if (t) {
-   if (pexec (t->value, (const char **)id->controller[id->ci]->variables, 0, 0, NULL, NULL, id->controller[id->ci]->environment, status) & STATUS_OK) {
+   if (pexec (t->value, (const char **)id->controller[id->ci]->variables, 0, 0, NULL, NULL, id->controller[id->ci]->environment, status) & status_ok) {
     if (id->controller[id->ci]->pidfile) unlink (id->controller[id->ci]->pidfile);
 
-    return STATUS_OK;
+    return status_ok;
    }
   }
 
-  return STATUS_FAIL;
+  return status_failed;
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
- if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
+ if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
  if (id->ip_manager && id->ip_manager[id->pi]) {
   struct stree *t = streefind (id->ip_manager[id->pi]->action, action, tree_find_first);
@@ -444,7 +442,7 @@ int network_interface_custom (struct interface_descriptor *id, char *action, str
   }
  }
 
- return STATUS_OK | STATUS_ENABLED;
+ return status_ok | status_enabled;
 }
 
 int network_cleanup (struct lmodule *this) {

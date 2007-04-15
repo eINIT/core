@@ -61,7 +61,6 @@ const struct smodule bootstrap_einit_configuration_stree_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Core Configuration Storage and Retrieval (stree-based)",
  .rid       = "bootstrap-configuration-stree",
  .si        = {

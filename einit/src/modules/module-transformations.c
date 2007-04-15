@@ -65,7 +65,6 @@ const struct smodule einit_module_transformations_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Module Transformations",
  .rid       = "module-transformations",
  .si        = {

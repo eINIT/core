@@ -55,7 +55,6 @@ const struct smodule einit_readahead_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "eINIT readahead",
  .rid       = "readahead",
  .si        = {
@@ -208,11 +207,11 @@ int einit_readahead_enable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_readahead_disable (void *pa, struct einit_event *status) {
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_readahead_configure (struct lmodule *irr) {

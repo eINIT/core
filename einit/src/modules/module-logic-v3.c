@@ -62,7 +62,6 @@ const struct smodule einit_module_logic_v3_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Module Logic Core (V3)",
  .rid       = "module-logic-v3",
  .si        = {
@@ -317,7 +316,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      if ((st = streefind (module_logics_service_list, plan->changes.enable[y], tree_find_first))) {
       struct lmodule **lmod = st->value;
 
-      if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & EINIT_MOD_FEEDBACK) {
+      if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & einit_module_feedback) {
        emutex_unlock (&ml_service_list_mutex);
        goto have_feedback;
       }
@@ -354,12 +353,12 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   plan->mode = mode;
  } else {
-  if (task & MOD_ENABLE) {
+  if (task & einit_module_enable) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.enable, (const void **)atoms, SET_TYPE_STRING);
    if (plan->changes.enable) free (plan->changes.enable);
    plan->changes.enable = tmp;
   }
-  if (task & MOD_DISABLE) {
+  if (task & einit_module_disable) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.disable, (const void **)atoms, SET_TYPE_STRING);
    if (plan->changes.disable) free (plan->changes.disable);
    plan->changes.disable = tmp;
@@ -405,7 +404,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
      if (lm) {
       ssize_t y = 0;
       for (; lm[y]; y++) {
-       if (disable_all_but_feedback && (lm[y]->module->mode & EINIT_MOD_FEEDBACK)) {
+       if (disable_all_but_feedback && (lm[y]->module->mode & einit_module_feedback)) {
         add = 0;
 
         break;
@@ -606,7 +605,7 @@ void mod_sort_service_list_items_by_preference() {
    /* first make sure all modules marked as "deprecated" are last */
    for (mpx = 0; lm[mpx]; mpx++); mpx--;
    for (mpy = 0; mpy < mpx; mpy++) {
-    if (lm[mpy]->module && (lm[mpy]->module->options & EINIT_MOD_DEPRECATED)) {
+    if (lm[mpy]->module && (lm[mpy]->module->mode & einit_module_deprecated)) {
      struct lmodule *t = lm[mpx];
      lm[mpx] = lm[mpy];
      lm[mpy] = t;
@@ -676,8 +675,8 @@ int mod_modaction (char **argv) {
  struct mloadplan *plan;
  if (!argv || (argc != 2)) return -1;
 
- if (strmatch (argv[1], "enable")) task = MOD_ENABLE;
- else if (strmatch (argv[1], "disable")) task = MOD_DISABLE;
+ if (strmatch (argv[1], "enable")) task = einit_module_enable;
+ else if (strmatch (argv[1], "disable")) task = einit_module_disable;
  else {
   struct lmodule **tm = NULL;
   uint32_t r = 0;
@@ -696,20 +695,20 @@ int mod_modaction (char **argv) {
   if (tm) {
    if (strmatch (argv[1], "status")) {
     for (; tm[r]; r++) {
-     if (tm[r]->status & STATUS_WORKING) {
+     if (tm[r]->status & status_working) {
       ret = 2;
       break;
      }
-     if (tm[r]->status & STATUS_ENABLED) {
+     if (tm[r]->status & status_enabled) {
       ret = 0;
       break;
      }
     }
    } else {
     for (; tm[r]; r++) {
-     int retx = mod (MOD_CUSTOM, tm[r], argv[1]);
+     int retx = mod (einit_module_custom, tm[r], argv[1]);
 
-     if (retx == STATUS_OK)
+     if (retx == status_ok)
       ret = 0;
     }
    }
@@ -796,7 +795,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   }
 
   emutex_unlock (&ml_group_data_mutex);
- } else if ((ev->type == einit_core_service_update) && (!(ev->status & STATUS_WORKING))) {
+ } else if ((ev->type == einit_core_service_update) && (!(ev->status & status_working))) {
 /* something's done now, update our lists */
   mod_examine_module ((struct lmodule *)ev->para);
  } else switch (ev->type) {
@@ -970,7 +969,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
         uint32_t u = 0;
         for (u = 0; xs[u]; u++) {
          eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
-           ((xs[u]->module && (xs[u]->module->options & EINIT_MOD_DEPRECATED)) ?
+           ((xs[u]->module && (xs[u]->module->mode & einit_module_deprecated)) ?
                                   " \e[31m- \e[0mcandidate \"%s\" (%s)\n" :
                                   " \e[33m* \e[0mcandidate \"%s\" (%s)\n") :
              " * candidate \"%s\" (%s)\n",
@@ -1446,8 +1445,8 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
    uint32_t i = 0;
 
    for (; gd->members[i]; i++) {
-    if (((task & MOD_ENABLE) && mod_isprovided (gd->members[i])) ||
-          ((task & MOD_DISABLE) && !mod_isprovided (gd->members[i]))) {
+    if (((task & einit_module_enable) && mod_isprovided (gd->members[i])) ||
+          ((task & einit_module_disable) && !mod_isprovided (gd->members[i]))) {
      free (service);
      return 0;
     }
@@ -1456,10 +1455,10 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      continue;
     }
 
-    if (!inset ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
+    if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
 
-     if (task & MOD_ENABLE) {
+     if (task & einit_module_enable) {
       current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
      } else {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
@@ -1477,8 +1476,8 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
    uint32_t i = 0, bc = 0;
 
    for (; gd->members[i]; i++) {
-    if (((task & MOD_ENABLE) && mod_isprovided (gd->members[i])) ||
-        ((task & MOD_DISABLE) && !mod_isprovided (gd->members[i]))) {
+    if (((task & einit_module_enable) && mod_isprovided (gd->members[i])) ||
+        ((task & einit_module_disable) && !mod_isprovided (gd->members[i]))) {
 //     eprintf (stderr, "%s: skipping %s (already in proper state)\n", service, gd->members[i]);
 
      continue;
@@ -1491,14 +1490,14 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      continue;
     }
 
-    if (!inset ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
+    if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
 
 //     eprintf (stderr, "%s: deferring after %s\n", service, gd->members[i]);
 
      mod_defer_until(service, gd->members[i]);
 
-     if (task & MOD_ENABLE) {
+     if (task & einit_module_enable) {
       current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
      } else {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
@@ -1538,7 +1537,7 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
   uint32_t changes = 0;
   char *service = estrdup (serv);
 
-  if (task & MOD_ENABLE) {
+  if (task & einit_module_enable) {
    struct lmodule *first = lm[0];
    char broken = 0;
 
@@ -1643,8 +1642,8 @@ void mod_flatten_current_tb () {
    eputs ("+", stderr);
    fflush (stderr);
 
-   if (((t = mod_flatten_current_tb_group(current.enable[i], MOD_ENABLE)) == -1) &&
-       ((t = mod_flatten_current_tb_module(current.enable[i], MOD_ENABLE)) == -1)) {
+   if (((t = mod_flatten_current_tb_group(current.enable[i], einit_module_enable)) == -1) &&
+       ((t = mod_flatten_current_tb_module(current.enable[i], einit_module_enable)) == -1)) {
     notice (2, "can't resolve service %s\n", current.enable[i]);
 
     mod_mark (current.enable[i], MARK_UNRESOLVED);
@@ -1676,8 +1675,8 @@ void mod_flatten_current_tb () {
    eputs ("z", stderr);
    fflush (stderr);
 
-   if (((t = mod_flatten_current_tb_group(current.disable[i], MOD_DISABLE)) == -1) &&
-       ((t = mod_flatten_current_tb_module(current.disable[i], MOD_DISABLE)) == -1)) {
+   if (((t = mod_flatten_current_tb_group(current.disable[i], einit_module_disable)) == -1) &&
+       ((t = mod_flatten_current_tb_module(current.disable[i], einit_module_disable)) == -1)) {
     notice (2, "can't resolve service %s\n", current.disable[i]);
 
     mod_mark (current.disable[i], MARK_UNRESOLVED);
@@ -1699,11 +1698,11 @@ void mod_flatten_current_tb () {
 }
 
 void mod_examine_module (struct lmodule *module) {
- if (!(module->status & STATUS_WORKING)) {
+ if (!(module->status & status_working)) {
   if (module->si && module->si->provides) {
    uint32_t i = 0;
 
-   if (module->status & STATUS_ENABLED) {
+   if (module->status & status_enabled) {
 //    eprintf (stderr, " ** service enabled, module=%s...\n", module->module->rid);
 
     emutex_lock (&ml_tb_current_mutex);
@@ -1723,7 +1722,7 @@ void mod_examine_module (struct lmodule *module) {
 #endif
 
     pthread_cond_broadcast (&ml_cond_service_update);
-   } else if ((module->status & STATUS_DISABLED) || (module->status == STATUS_IDLE)) {
+   } else if ((module->status & status_disabled) || (module->status == status_idle)) {
 //    eputs ("service disabled...\n", stderr);
 
     emutex_lock (&ml_tb_current_mutex);
@@ -1805,8 +1804,8 @@ void mod_pre_examine (char *service) {
     int task = mod_gettask (service);
 
     if (!task ||
-        ((task & MOD_ENABLE) && mod_isprovided (pex[j])) ||
-        ((task & MOD_DISABLE) && !mod_isprovided (pex[j]))) {
+        ((task & einit_module_enable) && mod_isprovided (pex[j])) ||
+        ((task & einit_module_disable) && !mod_isprovided (pex[j]))) {
      done++;
 
      mod_post_examine (pex[j]);
@@ -1937,15 +1936,15 @@ void mod_apply_enable (struct stree *des) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((current->status & STATUS_ENABLED) || mod_enable_requirements (current)) {
+    if ((current->status & status_enabled) || mod_enable_requirements (current)) {
      mod_workthreads_dec(des->key);
      return;
     }
 
-    mod (MOD_ENABLE, current, NULL);
+    mod (einit_module_enable, current, NULL);
 
 /* check module status or return value to find out if it's appropriate for the task */
-    if (current->status & STATUS_ENABLED) {
+    if (current->status & status_enabled) {
      mod_workthreads_dec(des->key);
      return;
     }
@@ -1997,7 +1996,7 @@ void mod_apply_disable (struct stree *des) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((current->status & STATUS_DISABLED) || (current->status == STATUS_IDLE)) {
+    if ((current->status & status_disabled) || (current->status == status_idle)) {
 //     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
      any_ok = 1;
      goto skip_module;
@@ -2009,10 +2008,10 @@ void mod_apply_disable (struct stree *des) {
      return;
     }
 
-    mod (MOD_DISABLE, current, NULL);
+    mod (einit_module_disable, current, NULL);
 
     /* check module status or return value to find out if it's appropriate for the task */
-    if ((current->status & STATUS_DISABLED) || (current->status == STATUS_IDLE)) {
+    if ((current->status & status_disabled) || (current->status == status_idle)) {
      any_ok = 1;
     } else {
 //     eputs ("gonna ZAPP! something later...\n", stderr);
@@ -2053,8 +2052,8 @@ void mod_apply_disable (struct stree *des) {
     do {
      struct lmodule *current = lm[0];
 
-     if (current->status & STATUS_ENABLED)
-      mod (MOD_CUSTOM, current, "zap");
+     if (current->status & status_enabled)
+      mod (einit_module_custom, current, "zap");
 
      emutex_lock (&ml_service_list_mutex);
      if ((lm[0] == current) && lm[1]) {
@@ -2096,9 +2095,9 @@ int mod_gettask (char * service) {
 
  emutex_lock (&ml_tb_current_mutex);
  if (inset ((const void **)current.disable, service, SET_TYPE_STRING))
-  task = MOD_DISABLE;
+  task = einit_module_disable;
  else if (inset ((const void **)current.enable, service, SET_TYPE_STRING))
-  task = MOD_ENABLE;
+  task = einit_module_enable;
  emutex_unlock (&ml_tb_current_mutex);
 
  return task;
@@ -2142,7 +2141,7 @@ char mod_examine_group (char *groupname) {
       ssize_t y = 0;
 
       for (; lm[y]; y++) {
-       if (lm[y]->status & STATUS_ENABLED) {
+       if (lm[y]->status & status_enabled) {
         providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
         on++;
 
@@ -2183,12 +2182,12 @@ char mod_examine_group (char *groupname) {
     pthread_cond_broadcast (&ml_cond_service_update);
    }
 
-   if (task & MOD_DISABLE) {
+   if (task & einit_module_disable) {
     post_examine = 1;
    }
   }
 
-  if (task & MOD_ENABLE) {
+  if (task & einit_module_enable) {
    if (providers) {
     if (options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
      if (on > 0) {
@@ -2282,9 +2281,9 @@ void mod_examine (char *service) {
 
   if (task) {
    emutex_lock (&ml_tb_current_mutex);
-   if (task & MOD_ENABLE) {
+   if (task & einit_module_enable) {
     current.enable = strsetdel (current.enable, service);
-   } else if (task & MOD_DISABLE) {
+   } else if (task & einit_module_disable) {
     current.disable = strsetdel (current.disable, service);
    }
    emutex_unlock (&ml_tb_current_mutex);
@@ -2312,8 +2311,8 @@ void mod_examine (char *service) {
   int task = mod_gettask (service);
 
   if (!task ||
-      ((task & MOD_ENABLE) && mod_isprovided (service)) ||
-      ((task & MOD_DISABLE) && !mod_isprovided (service))) {
+      ((task & einit_module_enable) && mod_isprovided (service)) ||
+      ((task & einit_module_disable) && !mod_isprovided (service))) {
    mod_post_examine (service);
 
    if (mod_workthreads_dec(service)) return;
@@ -2322,7 +2321,7 @@ void mod_examine (char *service) {
   }
 
   eprintf (stderr, " ** examining service %s (%s).\n", service,
-                   task & MOD_ENABLE ? "enable" : "disable");
+                   task & einit_module_enable ? "enable" : "disable");
 
   emutex_lock (&ml_service_list_mutex);
   struct stree *v = streefind (module_logics_service_list, service, tree_find_first);
@@ -2334,10 +2333,10 @@ void mod_examine (char *service) {
    char **before = NULL, **after = NULL;
 
    if (lm[0]->si && (lm[0]->si->before || lm[0]->si->after)) {
-    if (task & MOD_ENABLE) {
+    if (task & einit_module_enable) {
      before = lm[0]->si->before;
      after = lm[0]->si->after;
-    } else if (task & MOD_DISABLE) {
+    } else if (task & einit_module_disable) {
      before = lm[0]->si->after;
      after = lm[0]->si->before;
     }
@@ -2350,7 +2349,7 @@ void mod_examine (char *service) {
     for (; before[i]; i++) {
      char **d;
      emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
+     if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
       uint32_t y = 0;
       emutex_unlock (&ml_tb_current_mutex);
 
@@ -2370,7 +2369,7 @@ void mod_examine (char *service) {
     for (; after[i]; i++) {
      char **d;
      emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)(task & MOD_ENABLE ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
+     if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
       uint32_t y = 0;
       emutex_unlock (&ml_tb_current_mutex);
 
@@ -2391,7 +2390,7 @@ void mod_examine (char *service) {
      return;
     }
    }
-   if (task & MOD_ENABLE) {
+   if (task & einit_module_enable) {
     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
      mod_apply_enable(v);
     }
@@ -2433,11 +2432,11 @@ void mod_spawn_batch(char **batch, int task) {
   } else if (mod_isdeferred(batch[i])) {
    deferred++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
-  } else if ((task == MOD_ENABLE) && mod_isprovided (batch[i])) {
+  } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
    current.enable = strsetdel (current.enable, batch[i]);
    batch = current.enable;
    goto retry;
-  } else if ((task == MOD_DISABLE) && !mod_isprovided (batch[i])) {
+  } else if ((task == einit_module_disable) && !mod_isprovided (batch[i])) {
    current.disable = strsetdel (current.disable, batch[i]);
    batch = current.disable;
    goto retry;
@@ -2473,11 +2472,11 @@ void mod_spawn_workthreads () {
 
  emutex_lock (&ml_tb_current_mutex);
  if (current.enable) {
-  mod_spawn_batch(current.enable, MOD_ENABLE);
+  mod_spawn_batch(current.enable, einit_module_enable);
  }
 
  if (current.disable) {
-  mod_spawn_batch(current.disable, MOD_DISABLE);
+  mod_spawn_batch(current.disable, einit_module_disable);
  }
  emutex_unlock (&ml_tb_current_mutex);
 

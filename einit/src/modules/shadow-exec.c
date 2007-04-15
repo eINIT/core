@@ -64,7 +64,6 @@ const struct smodule einit_shadow_exec_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Shadow Module Support",
  .rid       = "shadow-exec",
  .si        = {
@@ -164,19 +163,19 @@ void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
     while (cur) {
      struct shadow_descriptor *sd = cur->value;
 
-     if (ev->task & MOD_ENABLE) {
-      if (ev->status == STATUS_WORKING) {
+     if (ev->task & einit_module_enable) {
+      if (ev->status == status_working) {
        if (sd->before_enable)
         pexec (sd->before_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      } else if (ev->status & STATUS_ENABLED) {
+      } else if (ev->status & status_enabled) {
        if (sd->after_enable)
         pexec (sd->after_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
       }
-     } else if (ev->task & MOD_DISABLE) {
-      if (ev->status == STATUS_WORKING) {
+     } else if (ev->task & einit_module_disable) {
+      if (ev->status == status_working) {
        if (sd->before_disable)
         pexec (sd->before_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      } else if (ev->status & STATUS_DISABLED) {
+      } else if (ev->status & status_disabled) {
        if (sd->after_disable)
         pexec (sd->after_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
       }

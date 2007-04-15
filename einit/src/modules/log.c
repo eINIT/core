@@ -63,8 +63,7 @@ const struct smodule einit_log_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_FEEDBACK,
- .options   = 0,
+ .mode      = einit_module_feedback,
  .name      = "eINIT Core Log Module",
  .rid       = "log",
  .si        = {
@@ -260,24 +259,24 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    emutex_unlock(&logmutex);
   }
 
-  if ((ev->status & STATUS_OK) || (ev->task & MOD_FEEDBACK_SHOW)){
+  if ((ev->status & status_ok) || (ev->task & einit_module_feedback_show)){
    char logentry[BUFFERSIZE];
    char *action = "uknown";
 
-   if ((ev->task & MOD_FEEDBACK_SHOW)) {
-    if (ev->task & MOD_ENABLE) {
+   if ((ev->task & einit_module_feedback_show)) {
+    if (ev->task & einit_module_enable) {
      action = "enabling";
-    } else if (ev->task & MOD_DISABLE) {
+    } else if (ev->task & einit_module_disable) {
      action = "disabling";
-    } else if (ev->task & MOD_CUSTOM) {
+    } else if (ev->task & einit_module_custom) {
      action = "custom";
     }
    } else {
-    if (ev->task & MOD_ENABLE) {
+    if (ev->task & einit_module_enable) {
      action = "enabled";
-    } else if (ev->task & MOD_DISABLE) {
+    } else if (ev->task & einit_module_disable) {
      action = "disabled";
-    } else if (ev->task & MOD_CUSTOM) {
+    } else if (ev->task & einit_module_custom) {
      action = "custom";
     }
    }

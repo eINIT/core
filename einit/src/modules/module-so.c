@@ -67,8 +67,7 @@ const struct smodule einit_mod_so_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "Module Support (.so)",
  .rid       = "module-so",
  .si        = {
@@ -117,7 +116,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     if (lm->source && strmatch(lm->source, modules[z])) {
      lm = mod_update (lm);
 
-     if (lm->module && (lm->module->mode & EINIT_MOD_LOADER) && (lm->scanmodules != NULL)) {
+     if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
       lm->scanmodules (modchain);
      }
 

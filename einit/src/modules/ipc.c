@@ -76,7 +76,6 @@ const struct smodule einit_ipc_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "eINIT IPC module",
  .rid       = "ipc",
  .si        = {
@@ -309,14 +308,14 @@ void * ipc_wait (void *unused_parameter) {
 
 int einit_ipc_enable (void *pa, struct einit_event *status) {
  ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_ipc_disable (void *pa, struct einit_event *status) {
  if (einit_ipc_running)
   ethread_cancel (ipc_thread);
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_ipc_configure (struct lmodule *irr) {

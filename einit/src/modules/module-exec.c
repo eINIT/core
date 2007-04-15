@@ -83,8 +83,7 @@ const struct smodule einit_mod_exec_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "Module Support (Configuration, Shell-Script)",
  .rid       = "module-exec",
  .si        = {
@@ -195,7 +194,7 @@ int einit_mod_exec_scanmodules (struct lmodule *modchain) {
 
     for (; opt[ri]; ri++) {
      if (strmatch (opt[ri], "feedback"))
-      modinfo->mode |= EINIT_MOD_FEEDBACK;
+      modinfo->mode |= einit_module_feedback;
     }
    }
 
@@ -268,7 +267,7 @@ int einit_mod_exec_scanmodules (struct lmodule *modchain) {
 
 int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
  if (strmatch (command, "zap"))
-  return STATUS_OK | STATUS_DISABLED;
+  return status_ok | status_disabled;
  else if (shellcmd->oattrs) {
   char tmp[BUFFERSIZE];
 
@@ -278,7 +277,7 @@ int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *comma
 
   for (; shellcmd->oattrs[i]; i+=2 ) {
    if (strmatch (shellcmd->oattrs[i], tmp)) {
-    return STATUS_ENABLED | pexec (shellcmd->oattrs[i+1], (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+    return status_enabled | pexec (shellcmd->oattrs[i+1], (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
    }
   }
  }
@@ -287,32 +286,32 @@ int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *comma
   if (shellcmd->reset) {
    retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
   } else {
-   task = MOD_ENABLE | MOD_DISABLE;
+   task = einit_module_enable | einit_module_disable;
   }
  } else if (task & MOD_RELOAD) {
   if (shellcmd->reload) {
    retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
   } else {
-   task = MOD_ENABLE | MOD_DISABLE;
+   task = einit_module_enable | einit_module_disable;
   }
  }
 
 // + ZAP */
 
- return STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
+ return status_failed | status_command_not_implemented;
 }
 
 int einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
- int retval = STATUS_FAIL;
+ int retval = status_failed;
 
  if (shellcmd) {
   int32_t task = status->task;
 
-  if (task & MOD_DISABLE) {
+  if (task & einit_module_disable) {
    if (shellcmd->disable) {
     retval = pexec (shellcmd->disable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
-    if (retval & STATUS_OK) {
+    if (retval & status_ok) {
      if (shellcmd->cleanup) {
       pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
      }
@@ -324,7 +323,7 @@ int einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event
     }
    }
   }
-  if (task & MOD_ENABLE) {
+  if (task & einit_module_enable) {
    if (shellcmd->enable) {
     if (shellcmd->pidfile) {
      unlink (shellcmd->pidfile);
@@ -337,7 +336,7 @@ int einit_mod_exec_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event
 
     retval = pexec (shellcmd->enable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
-    if ((retval == STATUS_FAIL) && shellcmd->cleanup)
+    if ((retval == status_failed) && shellcmd->cleanup)
      pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
    }
   }

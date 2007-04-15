@@ -59,7 +59,6 @@ const struct smodule einit_ipc_core_helpers_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "IPC Command Library: Core Helpers",
  .rid       = "ipc-core-helpers",
  .si        = {
@@ -80,13 +79,13 @@ struct lmodule *mlist;
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
 
 #define STATUS2STRING(status)\
- (status == STATUS_IDLE ? "idle" : \
- (status & STATUS_WORKING ? "working" : \
- (status & STATUS_ENABLED ? "enabled" : "disabled")))
+ (status == status_idle ? "idle" : \
+ (status & status_working ? "working" : \
+ (status & status_enabled ? "enabled" : "disabled")))
 #define STATUS2STRING_SHORT(status)\
- (status == STATUS_IDLE ? "I" : \
- (status & STATUS_WORKING ? "W" : \
- (status & STATUS_ENABLED ? "E" : "D")))
+ (status == status_idle ? "I" : \
+ (status & status_working ? "W" : \
+ (status & status_enabled ? "E" : "D")))
 
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  if (!ev || !ev->argv) return;
@@ -99,7 +98,7 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
     ev->implemented = 1;
 
     while (cur) {
-     if ((cur->module && !(ev->ipc_options & einit_ipc_only_relevant)) || (cur->status != STATUS_IDLE)) {
+     if ((cur->module && !(ev->ipc_options & einit_ipc_only_relevant)) || (cur->status != status_idle)) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        eprintf (ev->output, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
                  (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));

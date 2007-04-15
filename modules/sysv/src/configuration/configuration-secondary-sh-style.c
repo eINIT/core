@@ -64,7 +64,6 @@ const struct smodule self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Secondary Configuration Module: SH-Style Files",
  .rid       = "configuration-secondary-sh-style",
  .si        = {

@@ -67,7 +67,6 @@ const struct smodule module_compatibility_sysv_utmp_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "System-V Compatibility: {U|W}TMP",
  .rid       = "compatibility-sysv-utmp",
  .si        = {
@@ -234,11 +233,11 @@ int compatibility_sysv_utmp_enable (void *pa, struct einit_event *status) {
 
 /* always return OK, as utmp is pretty much useless to eINIT, so no reason
    to bitch about it... */
- return STATUS_OK;
+ return status_ok;
 }
 
 int compatibility_sysv_utmp_disable (void *pa, struct einit_event *status) {
- return STATUS_OK;
+ return status_ok;
 }
 
 int compatibility_sysv_utmp_configure (struct lmodule *irr) {

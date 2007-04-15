@@ -65,8 +65,7 @@ const struct smodule einit_feedback_aural_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_FEEDBACK,
- .options   = 0,
+ .mode      = einit_module_feedback,
  .name      = "aural/tts feedback module",
  .rid       = "feedback-aural",
  .si        = {
@@ -113,14 +112,14 @@ int einit_feedback_aural_enable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
  event_listen (einit_event_subsystem_feedback, einit_feedback_aural_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_feedback_aural_disable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
  event_ignore (einit_event_subsystem_feedback, einit_feedback_aural_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
- return STATUS_OK;
+ return status_ok;
 }
 
 void einit_feedback_aural_feedback_event_handler(struct einit_event *ev) {

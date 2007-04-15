@@ -85,8 +85,7 @@ const struct smodule einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_FEEDBACK,
- .options   = 0,
+ .mode      = einit_module_feedback,
  .name      = "visual/text-based feedback module",
  .rid       = "feedback-visual-textual",
  .si        = {
@@ -320,7 +319,7 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  event_listen (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
 
  emutex_unlock (&thismodule->imutex);
- return STATUS_OK;
+ return status_ok;
 }
 
 /*
@@ -332,7 +331,7 @@ int einit_feedback_visual_disable (void *pa, struct einit_event *status) {
  event_ignore (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
  event_ignore (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
- return STATUS_OK;
+ return status_ok;
 }
 
 /*
@@ -512,7 +511,7 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
 
   mst->task = ev->task;
 
-  if ((ev->status & STATUS_FAIL) || ev->flag) {
+  if ((ev->status & status_failed) || ev->flag) {
    mst->lines = 4;
    mst->errors = 1 + ev->flag;
   }
@@ -526,8 +525,8 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
   }
   emutex_unlock (&feedback_fdsmutex);
 
-  if (ev->task & MOD_FEEDBACK_SHOW) {
-   ev->task ^= MOD_FEEDBACK_SHOW;
+  if (ev->task & einit_module_feedback_show) {
+   ev->task ^= einit_module_feedback_show;
   }
   if (ev->string) {
    ev->string = NULL;
@@ -563,7 +562,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
        (((struct mstat *)(modules[i]))->mod->si) &&
        (((struct mstat *)(modules[i]))->mod->si->provides) &&
        (((struct mstat *)(modules[i]))->mod->si->provides[0])) {
-    if (((struct mstat *)(modules[i]))->mod->status & STATUS_ENABLED) {
+    if (((struct mstat *)(modules[i]))->mod->status & status_enabled) {
      eputs (" ", vofile);
      eputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
@@ -580,7 +579,7 @@ void update_screen_neat (struct einit_event *ev, struct mstat *mst) {
        (((struct mstat *)(modules[i]))->mod->si) &&
        (((struct mstat *)(modules[i]))->mod->si->provides) &&
        (((struct mstat *)(modules[i]))->mod->si->provides[0])) {
-    if (((struct mstat *)(modules[i]))->mod->status & STATUS_DISABLED) {
+    if (((struct mstat *)(modules[i]))->mod->status & status_disabled) {
      eputs (" ", vofile);
      eputs (((struct mstat *)(modules[i]))->mod->si->provides[0], vofile);
      ((struct mstat *)(modules[i]))->display = 0;
@@ -631,10 +630,10 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
  *feedback = 0;
  *tfeedback = 0;
 
- if (ev->task & MOD_FEEDBACK_SHOW) {
-  if (ev->task & MOD_ENABLE) {
+ if (ev->task & einit_module_feedback_show) {
+  if (ev->task & einit_module_enable) {
    esprintf (tfeedback, BUFFERSIZE, "%s: enabling\n", name);
-  } else if (ev->task & MOD_DISABLE) {
+  } else if (ev->task & einit_module_disable) {
    esprintf (tfeedback, BUFFERSIZE, "%s: disabling\n", name);
   } else  {
    esprintf (tfeedback, BUFFERSIZE, "%s: unknown status change\n", name);
@@ -647,7 +646,7 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
  }
 
 /* switch (ev->status) {
-  case STATUS_IDLE:
+  case status_idle:
    if (feedback[0])
     strncpy (tfeedback, " > idle\n", BUFFERSIZE);
    else
@@ -678,19 +677,19 @@ void update_screen_noansi (struct einit_event *ev, struct mstat *mst) {
   *tfeedback = 0;
  }
 
- if ((ev->status & STATUS_OK) && ev->flag) {
+ if ((ev->status & status_ok) && ev->flag) {
   if (feedback[0])
    esprintf (tfeedback, BUFFERSIZE, " > success, with %i error(s)\n", ev->flag);
   else
    esprintf (tfeedback, BUFFERSIZE, "%s: success, with %i error(s)\n", name, ev->flag);
   mst->errors = 1;
- } else if (ev->status & STATUS_OK) {
+ } else if (ev->status & status_ok) {
   if (feedback[0])
    strncpy (tfeedback, " > success\n", BUFFERSIZE);
   else
    esprintf (tfeedback, BUFFERSIZE, "%s: success\n", name);
   mst->errors = 0;
- } else if (ev->status & STATUS_FAIL) {
+ } else if (ev->status & status_failed) {
   if (feedback[0])
    strncpy (tfeedback, " > failed\n", BUFFERSIZE);
   else
@@ -744,16 +743,16 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   }
  }
 
- if (ev->status == STATUS_IDLE) {
+ if (ev->status == status_idle) {
   eprintf (stdout, "\e[%i;0H[ \e[31mIDLE\e[0m ] %s\e[0K\n", line, name);
- }/* else if (ev->status & STATUS_WORKING) {
+ }/* else if (ev->status & status_working) {
   eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: working...\e[0K\n", line, name);
  }*/
 
- if (ev->task & MOD_FEEDBACK_SHOW) {
-  if (ev->task & MOD_ENABLE) {
+ if (ev->task & einit_module_feedback_show) {
+  if (ev->task & einit_module_enable) {
    eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: enabling\e[0K\n", line, name);
-  } else if (ev->task & MOD_DISABLE) {
+  } else if (ev->task & einit_module_disable) {
    eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s: disabling\e[0K\n", line, name);
   } else  {
    eprintf (stdout, "\e[%i;0H[ \e[31m....\e[0m ] %s\e[0K\n", line, name);
@@ -774,25 +773,25 @@ void update_screen_ansi (struct einit_event *ev, struct mstat *mst) {
   }*/
  }
 
- if ((ev->status & STATUS_OK) && ev->flag) {
+ if ((ev->status & status_ok) && ev->flag) {
   eprintf (stdout, "\e[%i;0H[ \e[33mWA%2.2i\e[0m ] %s\n", line, ev->flag, name);
   mst->errors = 1;
- } else if (ev->status & STATUS_OK) {
-  if (ev->task & MOD_ENABLE) {
+ } else if (ev->status & status_ok) {
+  if (ev->task & einit_module_enable) {
    eprintf (stdout, "\e[%i;0H[ \e[32mENAB\e[0m ] %s\n", line, name);
-  } else if (ev->task & MOD_DISABLE) {
+  } else if (ev->task & einit_module_disable) {
    eprintf (stdout, "\e[%i;0H[ \e[32mDISA\e[0m ] %s\n", line, name);
-  } else if (ev->task & MOD_CUSTOM) {
+  } else if (ev->task & einit_module_custom) {
    eprintf (stdout, "\e[%i;0H[ \e[32mCSTM\e[0m ] %s\n", line, name);
   } else {
    eprintf (stdout, "\e[%i;0H[ \e[32m OK \e[0m ] %s\n", line, name);
   }
 
   mst->errors = 0;
- } else if (ev->status & STATUS_FAIL) {
-  if (ev->status & STATUS_ENABLED) {
+ } else if (ev->status & status_failed) {
+  if (ev->status & status_enabled) {
    eprintf (stdout, "\e[%i;0H! \e[31mENAB\e[0m ! %s\n", line, name);
-  } else if (ev->status & STATUS_DISABLED) {
+  } else if (ev->status & status_disabled) {
    eprintf (stdout, "\e[%i;0H! \e[31mDISA\e[0m ! %s\n", line, name);
   } else {
    eprintf (stdout, "\e[%i;0H[ \e[31mFAIL\e[0m ] %s\n", line, name);
@@ -829,7 +828,7 @@ void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
   emutex_unlock (&thismodule->imutex);
 #if 0
  } else if (ev->type == einit_core_module_update) {
-  if (show_progress && !(ev->status & STATUS_WORKING)) {
+  if (show_progress && !(ev->status & status_working)) {
    if (plans) {
     uint32_t i = 0;
     emutex_lock (&plansmutex);

@@ -73,8 +73,7 @@ const struct smodule compatibility_sysv_gentoo_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_LOADER,
- .options   = 0,
+ .mode      = einit_module_loader,
  .name      = "System-V Compatibility: Gentoo Support",
  .rid       = "compatibility-sysv-gentoo",
  .si        = {
@@ -534,22 +533,22 @@ void einit_event_handler (struct einit_event *ev) {
   uint32_t i = 0;
   eputs ("marking service status!\n", stderr);
   if (!ev->set) return;
-  if (ev->status & STATUS_WORKING) {
-   if (ev->task & MOD_ENABLE) {
+  if (ev->status & status_working) {
+   if (ev->task & einit_module_enable) {
     for (; ev->set[i]; i++)
      rc_mark_service (ev->set[i], rc_service_starting);
-   } else if (ev->task & MOD_DISABLE) {
+   } else if (ev->task & einit_module_disable) {
     for (; ev->set[i]; i++)
      rc_mark_service (ev->set[i], rc_service_stopping);
    }
-  } else if (ev->status == STATUS_IDLE) {
+  } else if (ev->status == status_idle) {
    for (; ev->set[i]; i++)
     rc_mark_service (ev->set[i], rc_service_inactive);
   } else {
-   if (ev->status & STATUS_ENABLED) {
+   if (ev->status & status_enabled) {
     for (; ev->set[i]; i++)
      rc_mark_service (ev->set[i], rc_service_started);
-   } else if (ev->status & STATUS_DISABLED) {
+   } else if (ev->status & status_disabled) {
     for (; ev->set[i]; i++)
      rc_mark_service (ev->set[i], rc_service_stopped);
    }
@@ -751,7 +750,7 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     modinfo = emalloc (sizeof (struct smodule));
     memset (modinfo, 0, sizeof(struct smodule));
 // make sure this module is only a last resort:
-    modinfo->options |= EINIT_MOD_DEPRECATED;
+    modinfo->mode |= einit_module_deprecated;
 
     nrid = emalloc (8 + strlen(de->d_name));
     *nrid = 0;
@@ -827,7 +826,7 @@ int compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_eve
   *xrev = NULL;
  char **env = rc_config_env (NULL);
 
- if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+ if (!init_script || !init_d_exec_scriptlet) return status_failed;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
@@ -845,7 +844,7 @@ int compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_ev
   *xrev = NULL;
  char **env = rc_config_env (NULL);
 
- if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+ if (!init_script || !init_d_exec_scriptlet) return status_failed;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
  cmdscript = apply_variables (init_d_exec_scriptlet, variables);
@@ -863,7 +862,7 @@ int compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, st
   *xrev = NULL;
  char **env = rc_config_env (NULL);
 
- if (!init_script || !init_d_exec_scriptlet) return STATUS_FAIL;
+ if (!init_script || !init_d_exec_scriptlet) return status_failed;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
  cmdscript = apply_variables (init_d_exec_scriptlet, variables);

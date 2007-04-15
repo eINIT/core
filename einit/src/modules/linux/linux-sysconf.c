@@ -61,7 +61,6 @@ const struct smodule module_linux_sysconf_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Linux-specific System-Configuration",
  .rid       = "linux-sysconf",
  .si        = {
@@ -182,11 +181,11 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
   }
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int linux_sysconf_disable (void *pa, struct einit_event *status) {
- return STATUS_OK;
+ return status_ok;
 }
 
 int linux_sysconf_configure (struct lmodule *irr) {

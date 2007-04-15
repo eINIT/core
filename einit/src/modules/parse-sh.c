@@ -69,7 +69,6 @@ const struct smodule einit_parse_sh_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "eINIT Parser Library: SH",
  .rid       = "parse-sh",
  .si        = {

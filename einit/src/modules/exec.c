@@ -68,7 +68,6 @@ const struct smodule einit_exec_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "pexec/dexec library module",
  .rid       = "exec",
  .si        = {
@@ -381,13 +380,13 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
  lookupuidgid (&uid, &gid, user, group);
 
- if (!command) return STATUS_FAIL;
+ if (!command) return status_failed;
 // if the first command is pexec-options, then set some special options
  if (strstr (command, "pexec-options") == command) {
   char *ocmds = command,
        *rcmds = strchr (ocmds, ';'),
        **optx = NULL;
-  if (!rcmds) return STATUS_FAIL;
+  if (!rcmds) return status_failed;
 
   *rcmds = 0;
   optx = str2set (' ', ocmds);
@@ -410,7 +409,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    free (optx);
   }
  }
- if (!command || !command[0]) return STATUS_FAIL;
+ if (!command || !command[0]) return status_failed;
 
  struct execst *new = ecalloc (1, sizeof (struct execst));
  emutex_init (&(new->mutex), NULL);
@@ -446,7 +445,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    }
   }
   free (new);
-  return STATUS_FAIL;
+  return status_failed;
  } else if (child == 0) {
   char **exec_environment;
 
@@ -509,8 +508,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   free (new);
  }
 
- if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return STATUS_OK;
- return STATUS_FAIL;
+ if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
+ return status_failed;
 }
 
 #else
@@ -521,18 +520,18 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  int pidstatus = 0;
  char **cmd, **cmdsetdup;
  enum pexec_options options = (status ? 0 : pexec_option_nopipe);
- uint32_t cs = STATUS_OK;
+ uint32_t cs = status_ok;
  char have_waited = 0;
 
  lookupuidgid (&uid, &gid, user, group);
 
- if (!command) return STATUS_FAIL;
+ if (!command) return status_failed;
 // if the first command is pexec-options, then set some special options
  if (strstr (command, "pexec-options") == command) {
   char *ocmds = estrdup(command),
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
-  if (!rcmds) return STATUS_FAIL;
+  if (!rcmds) return status_failed;
 
   *rcmds = 0;
   optx = str2set (' ', ocmds);
@@ -555,7 +554,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    free (optx);
   }
  }
- if (!command || !command[0]) return STATUS_FAIL;
+ if (!command || !command[0]) return status_failed;
 
  if (!(options & pexec_option_nopipe)) {
   if (pipe (pipefderr)) {
@@ -564,7 +563,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     status_update (status);
     status->string = strerror (errno);
    }
-   return STATUS_FAIL;
+   return status_failed;
   }
  }
 
@@ -577,7 +576,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
-  return STATUS_FAIL;
+  return status_failed;
  } else if (child == 0) {
   char **exec_environment;
 
@@ -639,7 +638,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
      if (fbc) {
       if (strmatch (fbc[0], "feedback")) {
 // suppose things are going fine until proven otherwise
-       cs = STATUS_OK;
+       cs = status_ok;
 
        if (strmatch (fbc[1], "notice")) {
         orest = 0;
@@ -652,12 +651,12 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
         status_update (status);
        } else if (strmatch (fbc[1], "success")) {
         orest = 0;
-        cs = STATUS_OK;
+        cs = status_ok;
         status->string = fbc[2];
         status_update (status);
        } else if (strmatch (fbc[1], "failure")) {
         orest = 0;
-        cs = STATUS_FAIL;
+        cs = status_failed;
         status->string = fbc[2];
         status->flag++;
         status_update (status);
@@ -698,9 +697,9 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   }
  }
 
- if (cs == STATUS_FAIL) return STATUS_FAIL;
- if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return STATUS_OK;
- return STATUS_FAIL;
+ if (cs == status_failed) return status_failed;
+ if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
+ return status_failed;
 }
 #endif
 
@@ -744,8 +743,8 @@ void *dexec_watcher (struct spidcb *spid) {
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb = evstaticinit(einit_feedback_module_status);
     fb.para = (void *)module;
-    fb.task = MOD_ENABLE | MOD_FEEDBACK_SHOW;
-    fb.status = STATUS_WORKING;
+    fb.task = einit_module_enable | einit_module_feedback_show;
+    fb.status = status_working;
     fb.flag = 0;
 
     esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
@@ -760,7 +759,7 @@ void *dexec_watcher (struct spidcb *spid) {
     esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died too swiftly, considering defunct.\n", rid);
     notice (5, stmp);
     if (module)
-     mod (MOD_DISABLE, module, NULL);
+     mod (einit_module_disable, module, NULL);
    }
   } else {
    emutex_unlock (&cur->mutex);
@@ -768,7 +767,7 @@ void *dexec_watcher (struct spidcb *spid) {
    esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died, but does not wish to be restarted.\n", rid);
    notice (5, stmp);
    if (module)
-    mod (MOD_DISABLE, module, NULL);
+    mod (einit_module_disable, module, NULL);
   }
  }
 
@@ -781,7 +780,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  gid_t gid;
 // char *cmddup;
 
- if (!shellcmd) return STATUS_FAIL;
+ if (!shellcmd) return status_failed;
 
 /* check if needed files are available */
  if (shellcmd->need_files) {
@@ -792,7 +791,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    if (stat (shellcmd->need_files[r], &st)) {
     notice (4, "can't bring up daemon \"%s\", because file \"%s\" does not exist.", shellcmd->id ? shellcmd->id : "unknown", shellcmd->need_files[r]);
 
-    return STATUS_FAIL;
+    return status_failed;
    }
   }
  }
@@ -803,14 +802,14 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  }
 
  if (shellcmd->prepare) {
-//  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
-  if (pexec (shellcmd->prepare, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_FAIL;
+//  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_failed) return status_failed;
+  if (pexec (shellcmd->prepare, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == status_failed) return status_failed;
  }
 
-// if ((status->task & MOD_ENABLE) && (!shellcmd || !shellcmd->command)) return STATUS_FAIL;
+// if ((status->task & einit_module_enable) && (!shellcmd || !shellcmd->command)) return status_failed;
 
-// if (status->task & MOD_ENABLE)
-// else return STATUS_OK;
+// if (status->task & einit_module_enable)
+// else return status_ok;
 
 // cmddup = estrdup (shellcmd->command);
 
@@ -842,7 +841,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   if (status) {
    status->string = strerror (errno);
   }
-  return STATUS_FAIL;
+  return status_failed;
  } else if (child == 0) {
   char **cmd;
   char **cmdsetdup;
@@ -880,7 +879,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   return pexec (shellcmd->is_up, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 void dexec_resume_timer (struct dexecinfo *dx) {
@@ -931,15 +930,15 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  }
 
  if (shellcmd->cleanup) {
- // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
-  if (pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == STATUS_FAIL) return STATUS_OK;
+ // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_failed) return status_ok;
+  if (pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == status_failed) return status_ok;
  }
 
  if (shellcmd->is_down) {
   return pexec (shellcmd->is_down, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_exec_configure (struct lmodule *irr) {

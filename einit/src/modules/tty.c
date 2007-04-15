@@ -93,7 +93,6 @@ const struct smodule einit_tty_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "TTY-Configuration",
  .rid       = "tty",
  .si        = {
@@ -261,7 +260,7 @@ int einit_tty_enable (void *pa, struct einit_event *status) {
 
  if (!(ttys = str2set (':', cfg_getstring("ttys", NULL)))) {
   status->string = "I've no idea what to start, really.";
-  return STATUS_FAIL;
+  return status_failed;
  }
 
  status->string = "creating environment";
@@ -292,7 +291,7 @@ int einit_tty_enable (void *pa, struct einit_event *status) {
  status->string="all ttys up";
  status_update (status);
  free (ttys);
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_tty_disable (void *pa, struct einit_event *status) {
@@ -316,11 +315,11 @@ int einit_tty_disable (void *pa, struct einit_event *status) {
   cur = cur->next;
  }
  emutex_unlock (&ttys_mutex);
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_tty_custom (void *pa, char *cmd, struct einit_event *status) {
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_tty_configure (struct lmodule *this) {

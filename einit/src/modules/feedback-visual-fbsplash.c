@@ -68,8 +68,7 @@ const struct smodule einit_feedback_visual_fbsplash_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = EINIT_MOD_FEEDBACK,
- .options   = 0,
+ .mode      = einit_module_feedback,
  .name      = "visual/fbsplash-based feedback module",
  .rid       = "einit-feedback-visual-fbsplash",
  .si        = {
@@ -134,21 +133,21 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   char tmp[BUFFERSIZE];
   uint32_t i = 0;
 
-  if (ev->status & STATUS_WORKING) {
-   if (ev->task & MOD_ENABLE) {
+  if (ev->status & status_working) {
+   if (ev->task & einit_module_enable) {
     for (; ev->set[i]; i++) {
      esprintf (tmp, BUFFERSIZE, "update_svc %s svc_start", (char *)ev->set[i]);
      fbsplash_queue_comand(tmp);
     }
-   } else if (ev->task & MOD_DISABLE) {
+   } else if (ev->task & einit_module_disable) {
     for (; ev->set[i]; i++) {
      esprintf (tmp, BUFFERSIZE, "update_svc %s svc_stop", (char *)ev->set[i]);
      fbsplash_queue_comand(tmp);
     }
    }
   } else {
-   if (ev->task & MOD_ENABLE) {
-    if (ev->status & STATUS_FAIL) {
+   if (ev->task & einit_module_enable) {
+    if (ev->status & status_failed) {
      for (; ev->set[i]; i++) {
       esprintf (tmp, BUFFERSIZE, "update_svc %s svc_start_failed", (char *)ev->set[i]);
       fbsplash_queue_comand(tmp);
@@ -159,8 +158,8 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
       fbsplash_queue_comand(tmp);
      }
     }
-   } else if (ev->task & MOD_DISABLE) {
-    if (ev->status & STATUS_FAIL) {
+   } else if (ev->task & einit_module_disable) {
+    if (ev->status & status_failed) {
      for (; ev->set[i]; i++) {
       esprintf (tmp, BUFFERSIZE, "update_svc %s svc_stop_failed", (char *)ev->set[i]);
       fbsplash_queue_comand(tmp);
@@ -300,7 +299,7 @@ int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status)
 
  event_listen (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status) {
@@ -309,7 +308,7 @@ int einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status
 
  event_ignore (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {

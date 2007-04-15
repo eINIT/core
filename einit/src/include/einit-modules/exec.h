@@ -113,11 +113,11 @@ variable_checkup_function f_check_variables;
 #define exec_configure(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
 #define exec_cleanup(mod) f_pxe = NULL; f_start_daemon = NULL; f_stop_daemon = NULL; f_create_environment = NULL; f_check_variables = NULL;
 
-#define pexec(command, variables, uid, gid, user, group, local_environment, status) ((f_pxe || (f_pxe = function_find_one("einit-execute-command", 1, NULL)))? f_pxe(command, variables, uid, gid, user, group, local_environment, status) : STATUS_FAIL)
+#define pexec(command, variables, uid, gid, user, group, local_environment, status) ((f_pxe || (f_pxe = function_find_one("einit-execute-command", 1, NULL)))? f_pxe(command, variables, uid, gid, user, group, local_environment, status) : status_failed)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
 
-#define startdaemon(execheader, status) ((f_start_daemon || (f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? f_start_daemon(execheader, status) : STATUS_FAIL)
-#define stopdaemon(execheader, status) ((f_stop_daemon || (f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? f_stop_daemon(execheader, status) : STATUS_FAIL)
+#define startdaemon(execheader, status) ((f_start_daemon || (f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? f_start_daemon(execheader, status) : status_failed)
+#define stopdaemon(execheader, status) ((f_stop_daemon || (f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? f_stop_daemon(execheader, status) : status_failed)
 
 #define create_environment(environment, variables) ((f_create_environment || (f_create_environment = function_find_one("einit-create-environment", 1, NULL)))? f_create_environment(environment, variables) : environment)
 

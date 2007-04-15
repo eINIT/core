@@ -64,9 +64,9 @@ void mod_freedesc (struct lmodule *m) {
   mod_freedesc (m->next);
 
  m->next = NULL;
- if (m->status & STATUS_ENABLED) {
+ if (m->status & status_enabled) {
   emutex_unlock (&m->imutex);
-  mod (MOD_DISABLE | MOD_IGNORE_DEPENDENCIES | MOD_NOMUTEX, m, NULL);
+  mod (einit_module_disable | einit_module_ignore_dependencies | einit_module_ignore_mutex, m, NULL);
   emutex_lock (&m->imutex);
  }
 
@@ -149,57 +149,57 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  return nmod;
 }
 
-int mod (unsigned int task, struct lmodule *module, char *custom_command) {
+int mod (enum einit_module_task task, struct lmodule *module, char *custom_command) {
  struct einit_event *fb;
  unsigned int ret;
 
  if (!module) return 0;
 
 /* wait if the module is already being processed in a different thread */
- if (!(task & MOD_NOMUTEX))
+ if (!(task & einit_module_ignore_mutex))
   emutex_lock (&module->mutex);
 
- if (task & MOD_CUSTOM) {
-  if (!custom_command) return STATUS_FAIL;
+ if (task & einit_module_custom) {
+  if (!custom_command) return status_failed;
 
   goto skipdependencies;
  }
 
- if (task & MOD_IGNORE_DEPENDENCIES) {
+ if (task & einit_module_ignore_dependencies) {
   notice (2, "module: skipping dependency-checks");
-  task ^= MOD_IGNORE_DEPENDENCIES;
+  task ^= einit_module_ignore_dependencies;
   goto skipdependencies;
  }
 
  if (module->status & MOD_LOCKED) { // this means the module is locked. maybe we're shutting down just now.
-  if (!(task & MOD_NOMUTEX))
+  if (!(task & einit_module_ignore_mutex))
    emutex_unlock (&module->mutex);
 
-  if (task & MOD_ENABLE)
-   return STATUS_FAIL;
-  else if (task & MOD_DISABLE)
-   return STATUS_OK;
+  if (task & einit_module_enable)
+   return status_failed;
+  else if (task & einit_module_disable)
+   return status_ok;
   else
-   return STATUS_OK;
+   return status_ok;
  }
 
- module->status |= STATUS_WORKING;
+ module->status |= status_working;
 
 /* check if the task requested has already been done (or if it can be done at all) */
- if ((task & MOD_ENABLE) && (!module->enable || (module->status & STATUS_ENABLED))) {
+ if ((task & einit_module_enable) && (!module->enable || (module->status & status_enabled))) {
   wontload:
-  module->status ^= STATUS_WORKING;
-  if (!(task & MOD_NOMUTEX))
+  module->status ^= status_working;
+  if (!(task & einit_module_ignore_mutex))
    emutex_unlock (&module->mutex);
-  return STATUS_IDLE;
+  return status_idle;
  }
- if ((task & MOD_DISABLE) && (!module->disable || (module->status & STATUS_DISABLED) || (module->status == STATUS_IDLE)))
+ if ((task & einit_module_disable) && (!module->disable || (module->status & status_disabled) || (module->status == status_idle)))
   goto wontload;
 
- if (task & MOD_ENABLE) {
+ if (task & einit_module_enable) {
   if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL))
    goto wontload;
- } else if (task & MOD_DISABLE) {
+ } else if (task & einit_module_disable) {
   if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL))
    goto wontload;
  }
@@ -210,7 +210,7 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
  {
   struct einit_event eem = evstaticinit (einit_core_module_update);
   eem.task = task;
-  eem.status = STATUS_WORKING;
+  eem.status = status_working;
   eem.para = (void *)module;
   event_emit (&eem, einit_event_flag_broadcast);
   evstaticdestroy (eem);
@@ -219,7 +219,7 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
   if (module->si && module->si->provides) {
    struct einit_event ees = evstaticinit (einit_core_service_update);
    ees.task = task;
-   ees.status = STATUS_WORKING;
+   ees.status = status_working;
    ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
    ees.set = (void **)module->si->provides;
    ees.para = (void *)module;
@@ -232,35 +232,35 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
  {
   fb = evinit (einit_feedback_module_status);
   fb->para = (void *)module;
-  fb->task = task | MOD_FEEDBACK_SHOW;
-  fb->status = STATUS_WORKING;
+  fb->task = task | einit_module_feedback_show;
+  fb->status = status_working;
   fb->flag = 0;
   fb->string = NULL;
   fb->integer = module->fbseq+1;
   status_update (fb);
 
-  if (task & MOD_CUSTOM) {
+  if (task & einit_module_custom) {
    if (strmatch (custom_command, "zap")) {
     fb->string = "module ZAP'd.";
-    module->status = STATUS_IDLE;
+    module->status = status_idle;
    } else if (module->custom) {
     module->status = module->custom(module->param, custom_command, fb);
    } else {
-    module->status = (module->status & (STATUS_ENABLED | STATUS_DISABLED)) | STATUS_FAIL | STATUS_COMMAND_NOT_IMPLEMENTED;
+    module->status = (module->status & (status_enabled | status_disabled)) | status_failed | status_command_not_implemented;
    }
-  } else if (task & MOD_ENABLE) {
+  } else if (task & einit_module_enable) {
     ret = module->enable (module->param, fb);
-    if (ret & STATUS_OK) {
-     module->status = STATUS_OK | STATUS_ENABLED;
+    if (ret & status_ok) {
+     module->status = status_ok | status_enabled;
     } else {
-     module->status = STATUS_FAIL | STATUS_DISABLED;
+     module->status = status_failed | status_disabled;
     }
-  } else if (task & MOD_DISABLE) {
+  } else if (task & einit_module_disable) {
     ret = module->disable (module->param, fb);
-    if (ret & STATUS_OK) {
-     module->status = STATUS_OK | STATUS_DISABLED;
+    if (ret & status_ok) {
+     module->status = status_ok | status_disabled;
     } else {
-     module->status = STATUS_FAIL | STATUS_ENABLED;
+     module->status = status_failed | status_enabled;
     }
   }
 
@@ -269,9 +269,7 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
 
   status_update (fb);
 //  event_emit(fb, einit_event_flag_broadcast);
-//  if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
-
-  module->lastfb = fb->status;
+//  if (fb->task & einit_module_feedback_show) fb->task ^= einit_module_feedback_show; fb->string = NULL;
 
 /* module status update */
   if (module) {
@@ -299,7 +297,7 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
 
   service_usage_query(SERVICE_UPDATE, module, NULL);
 
-  if (!(task & MOD_NOMUTEX))
+  if (!(task & einit_module_ignore_mutex))
    emutex_unlock (&module->mutex);
 
  }
@@ -342,7 +340,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
    }
   }
  } else if (task & SERVICE_UPDATE) {
-  if (module->status & STATUS_ENABLED) {
+  if (module->status & status_enabled) {
    if (module->si && (t = module->si->requires)) {
     for (i = 0; t[i]; i++) {
      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
@@ -369,7 +367,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   while (ha) {
    item = (struct service_usage_item *)ha->value;
 
-   if (!(module->status & STATUS_ENABLED)) {
+   if (!(module->status & status_enabled)) {
      item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
      item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
    }

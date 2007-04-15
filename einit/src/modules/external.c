@@ -60,7 +60,6 @@ const struct smodule einit_external_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "External Services",
  .rid       = "external",
  .si        = {
@@ -105,14 +104,14 @@ int einit_external_enable (void *pa, struct einit_event *status) {
   status->string = "no external services configured, not enabling";
   status->flag++;
   status_update (status);
-  return STATUS_FAIL;
+  return status_failed;
  }
 
- return STATUS_OK;
+ return status_ok;
 }
 
 int einit_external_disable (void *pa, struct einit_event *status) {
- return STATUS_FAIL; // once enabled, this module cannot be disabled
+ return status_failed; // once enabled, this module cannot be disabled
 }
 
 void einit_external_einit_event_handler (struct einit_event *ev) {
@@ -133,7 +132,7 @@ void einit_external_einit_event_handler (struct einit_event *ev) {
 
    thismodule = mod_update (thismodule);
 
-   mod (MOD_ENABLE, thismodule, NULL);
+   mod (einit_module_enable, thismodule, NULL);
   }
  }
 }

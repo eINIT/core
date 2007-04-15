@@ -66,7 +66,6 @@ const struct smodule bootstrap_einit_configuration_xml_expat_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "Configuration Parser (XML, Expat)",
  .rid       = "bootstrap-configuration-xml-expat",
  .si        = {

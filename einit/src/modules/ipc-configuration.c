@@ -59,7 +59,6 @@ const struct smodule einit_ipc_configuration_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "IPC Command Library: Mode Configuration",
  .rid       = "ipc-configuration",
  .si        = {

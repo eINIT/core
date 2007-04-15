@@ -87,7 +87,6 @@ const struct smodule module_compatibility_sysv_initctl_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .options   = 0,
  .name      = "System-V Compatibility: initctl",
  .rid       = "compatibility-sysv-initctl",
  .si        = {
@@ -137,7 +136,7 @@ void * initctl_wait (char *fifo) {
    char tmp[BUFFERSIZE];
    esprintf (tmp, BUFFERSIZE, "initctl: opening FIFO failed: %s", strerror (errno));
    notice (4, tmp);
-   mod (MOD_DISABLE, thismodule, NULL);
+   mod (einit_module_disable, thismodule, NULL);
    compatibility_sysv_initctl_running = 0;
    return NULL;
   }
@@ -240,7 +239,7 @@ int compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
     esprintf (tmp, BUFFERSIZE, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
     status->string = tmp;
     status_update (status);
-    return STATUS_FAIL;
+    return status_failed;
    }
    if (mkfifo (fifo, fifomode)) {
     esprintf (tmp, BUFFERSIZE, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
@@ -252,12 +251,12 @@ int compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
    esprintf (tmp, BUFFERSIZE, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
    status->string = tmp;
    status_update (status);
-   return STATUS_FAIL;
+   return status_failed;
   }
  }
 
  ethread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
- return STATUS_OK;
+ return status_ok;
 }
 
 int compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
@@ -276,7 +275,7 @@ int compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
  }
 
  compatibility_sysv_initctl_running = 0;
- return STATUS_OK;
+ return status_ok;
 }
 
 int compatibility_sysv_initctl_configure (struct lmodule *r) {
