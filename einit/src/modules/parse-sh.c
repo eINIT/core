@@ -100,15 +100,16 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
 
  char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp;
  const char *cur = data-1;
- char stat = SH_PARSER_STATUS_LW, squote = 0, dquote = 0, lit = 0,
+ enum einit_sh_parser_status stat = sh_parser_status_lw;
+ char squote = 0, dquote = 0, lit = 0,
  **command = NULL;
 
  while (*(cur +1)) {
   cur++;
 
-  if (stat == SH_PARSER_STATUS_IGNORE_TILL_EOL) {
+  if (stat == sh_parser_status_ignore_till_eol) {
    if (*cur == '\n')
-    stat = SH_PARSER_STATUS_LW;
+    stat = sh_parser_status_lw;
 
    continue;
   }
@@ -119,22 +120,22 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
    *cdp = *cur;
    cdp++;
   } else switch (*cur) {
-   case '#': stat = SH_PARSER_STATUS_IGNORE_TILL_EOL; break;
+   case '#': stat = sh_parser_status_ignore_till_eol; break;
    case '\'': squote = !squote; break;
    case '\"': dquote = !dquote; break;
    case '\\': lit = 1; break;
    case '\n':
-    if ((stat != SH_PARSER_STATUS_LW) && (cdp != sdp)) {
+    if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
      *cdp = 0;
      command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
      cdp++;
      sdp = cdp;
     }
 
-    stat = SH_PARSER_STATUS_LW;
+    stat = sh_parser_status_lw;
 
     if (command) {
-     callback ((const char **)command, PA_NEW_CONTEXT);
+     callback ((const char **)command, pa_new_context);
 
      free (command);
      command = NULL;
@@ -146,17 +147,17 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
      *cdp = *cur;
      cdp++;
     } else if (isspace(*cur)) {
-     if ((stat != SH_PARSER_STATUS_LW) && (cdp != sdp)) {
+     if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
       *cdp = 0;
       command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
       cdp++;
       sdp = cdp;
      }
-     stat = SH_PARSER_STATUS_LW;
+     stat = sh_parser_status_lw;
     } else {
      *cdp = *cur;
      cdp++;
-     stat = SH_PARSER_STATUS_READ;
+     stat = sh_parser_status_read;
     }
 
     break;
@@ -165,23 +166,23 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
 
 /* commit last line */
 
- if ((stat != SH_PARSER_STATUS_LW) && (cdp != sdp)) {
+ if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
   *cdp = 0;
   command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
   cdp++;
   sdp = cdp;
  }
 
- stat = SH_PARSER_STATUS_LW;
+ stat = sh_parser_status_lw;
 
  if (command) {
-  callback ((const char **)command, PA_NEW_CONTEXT);
+  callback ((const char **)command, pa_new_context);
 
   free (command);
   command = NULL;
  }
 
- callback (NULL, PA_END_OF_FILE);
+ callback (NULL, pa_end_of_file);
  free (ndp);
 
  return 0;

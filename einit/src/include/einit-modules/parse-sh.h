@@ -46,16 +46,20 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/types.h>
 
-#define SH_PARSER_STATUS_LW              0
-#define SH_PARSER_STATUS_READ            1
-#define SH_PARSER_STATUS_IGNORE_TILL_EOL 2
+enum einit_sh_parser_status {
+ sh_parser_status_lw = 0,
+ sh_parser_status_read = 1,
+ sh_parser_status_ignore_till_eol = 2
+};
 
-#define PA_END_OF_FILE                   0x01
-#define PA_NEW_CONTEXT                   0x02
+enum einit_sh_parser_pa {
+ pa_end_of_file = 0x1,
+ pa_new_context = 0x2
+};
 
 #if (! defined(einit_modules_parse_sh)) || (einit_modules_parse_sh == 'm') || (einit_modules_parse_sh == 'n')
 
-typedef int (*sh_parser) (const char *, void (*)(const char **, uint8_t));
+typedef int (*sh_parser) (const char *, void (*)(const char **, enum einit_sh_parser_pa));
 
 sh_parser f_parse_sh;
 

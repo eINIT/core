@@ -157,7 +157,7 @@ void sh_add_environ_callback (char **data, uint8_t status) {
 // if (data)
 //  puts (set2str(' ', data));
 
- if (status == PA_NEW_CONTEXT) {
+ if (status == pa_new_context) {
   if (data && (x = data[0])) {
    if ((!strcmp (data[0], "export") || (x = data[1])) && (y = strchr (x, '='))) {
 // if we get here, we got ourselves a variable definition
