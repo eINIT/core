@@ -145,7 +145,7 @@ int cfg_addnode_f (struct cfgnode *node) {
  if (node->type & einit_node_mode) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
   only the first one would be used anyway. */
-  if (cur) cur = streefind (cur, node->id, TREE_FIND_FIRST);
+  if (cur) cur = streefind (cur, node->id, tree_find_first);
   while (cur) {
    if (cur->value && !(((struct cfgnode *)cur->value)->type ^ einit_node_mode)) {
 // this means we found something that looks like it
@@ -162,13 +162,13 @@ int cfg_addnode_f (struct cfgnode *node) {
     break;
    }
 //   cur = streenext (cur);
-   cur = streefind (cur, node->id, TREE_FIND_NEXT);
+   cur = streefind (cur, node->id, tree_find_next);
   }
  } else {
 /* look for other definitions that are exactly the same, only marginally different or that sport a
    matching id="" attribute */
 
-  if (cur) cur = streefind (cur, node->id, TREE_FIND_FIRST);
+  if (cur) cur = streefind (cur, node->id, tree_find_first);
   while (cur) {
 // this means we found a node wit the same path
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
@@ -202,7 +202,7 @@ int cfg_addnode_f (struct cfgnode *node) {
     break;
    }
 //   cur = streenext (cur);
-   cur = streefind (cur, node->id, TREE_FIND_NEXT);
+   cur = streefind (cur, node->id, tree_find_next);
   }
  }
 
@@ -217,24 +217,24 @@ struct cfgnode *cfg_findnode_f (const char *id, enum einit_cfg_node_options type
  if (!id) return NULL;
 
  if (base) {
-  if (cur) cur = streefind (cur, id, TREE_FIND_FIRST);
+  if (cur) cur = streefind (cur, id, tree_find_first);
   while (cur) {
    if (cur->value == base) {
-    cur = streefind (cur, id, TREE_FIND_NEXT);
+    cur = streefind (cur, id, tree_find_next);
     break;
    }
 //   cur = streenext (cur);
-    cur = streefind (cur, id, TREE_FIND_NEXT);
+    cur = streefind (cur, id, tree_find_next);
   }
  } else if (cur) {
-  cur = streefind (cur, id, TREE_FIND_FIRST);
+  cur = streefind (cur, id, tree_find_first);
  }
 
  while (cur) {
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->type ^ type))) {
    return cur->value;
   }
-  cur = streefind (cur, id, TREE_FIND_NEXT);
+  cur = streefind (cur, id, tree_find_next);
  }
 
  return NULL;

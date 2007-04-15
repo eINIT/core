@@ -125,14 +125,14 @@ struct stree *streedel (struct stree *subject) {
  return be;
 }
 
-struct stree *streefind (const struct stree *stree, const char *key, const char options) {
+struct stree *streefind (const struct stree *stree, const char *key, enum tree_search_base options) {
  const struct stree *c;
 
  if (!stree || !key) return NULL;
 
  uintptr_t khash = hashp(key);
 
- c = (options == TREE_FIND_FIRST) ? *(stree->lbase) : stree->next;
+ c = (options == tree_find_first) ? *(stree->lbase) : stree->next;
 
  while (c) {
   if ((khash == c->keyhash) && strmatch (key, c->key)) {

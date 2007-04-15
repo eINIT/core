@@ -157,11 +157,11 @@ void **function_find (const char *name, const uint32_t version, const char ** su
 
  emutex_lock (&pof_mutex);
  if (!sub) {
-  ha = streefind (exported_functions, name, TREE_FIND_FIRST);
+  ha = streefind (exported_functions, name, tree_find_first);
   while (ha) {
    struct exported_function *ef = ha->value;
    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
-   ha = streefind (ha, name, TREE_FIND_NEXT);
+   ha = streefind (ha, name, tree_find_next);
   }
  } else {
   uint32_t i = 0, k = strlen (name)+1;
@@ -175,14 +175,14 @@ void **function_find (const char *name, const uint32_t version, const char ** su
    n = erealloc (n, k+1+strlen (sub[i]));
    strcat (n, sub[i]);
 
-   ha = streefind (exported_functions, n, TREE_FIND_FIRST);
+   ha = streefind (exported_functions, n, tree_find_first);
 
    while (ha) {
 
     struct exported_function *ef = ha->value;
     if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
 
-    ha = streefind (ha, n, TREE_FIND_NEXT);
+    ha = streefind (ha, n, tree_find_next);
    }
   }
 
@@ -207,14 +207,14 @@ void function_unregister (const char *name, uint32_t version, void const *functi
  struct stree *ha = exported_functions;
 
  emutex_lock (&pof_mutex);
- ha = streefind (exported_functions, name, TREE_FIND_FIRST);
+ ha = streefind (exported_functions, name, tree_find_first);
  while (ha) {
   struct exported_function *ef = ha->value;
   if (ef && (ef->version == version)) {
    exported_functions = streedel (ha);
-   ha = streefind (exported_functions, name, TREE_FIND_FIRST);
+   ha = streefind (exported_functions, name, tree_find_first);
   } else
-   ha = streefind (exported_functions, name, TREE_FIND_NEXT);
+   ha = streefind (exported_functions, name, tree_find_next);
  }
  emutex_unlock (&pof_mutex);
 

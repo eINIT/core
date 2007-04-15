@@ -297,12 +297,12 @@ int setcount (const void **set) {
  return i;
 }
 
-void setsort (void **set, const char task, signed int(*sortfunction)(const void *, const void*)) {
+void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(const void *, const void*)) {
  uint32_t c = 0, c2 = 0, x = 0, dc = 1;
  void *tmp;
  if (!set) return;
 
- if (task == SORT_SET_STRING_LEXICAL)
+ if (task == set_sort_order_string_lexical)
   sortfunction = (signed int(*)(const void *, const void*))strcmp;
  else if (!sortfunction) return;
 

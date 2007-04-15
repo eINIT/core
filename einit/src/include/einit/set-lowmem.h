@@ -58,11 +58,17 @@ extern "C" {
 /*!\ingroup utilityfunctionssets
  * \{
 */
-#define	SET_TYPE_STRING         0    /*!< Set-type: Set consists of strings */
-#define	SET_NOALLOC            -1   /*!< Set-type: User takes care of (de-)allocating set members */
+#define SET_TYPE_STRING 0
+/*!< Set-type: Set consists of strings */
+#define SET_NOALLOC -1
+/*!< Set-type: User takes care of (de-)allocating set members */
 
-#define SORT_SET_STRING_LEXICAL 0x01 /*!< Sort string lexically */
-#define SORT_SET_CUSTOM         0xFF /*!< Sort string with a custom sorting function */
+enum set_sort_order {
+ set_sort_order_string_lexical = 0x02,
+/*!< Sort string lexically */
+ set_sort_order_custom         = 0x01
+/*!< Sort string with a custom sorting function */
+};
 
 /*!\brief Combine \b set1 and \b set2.
  * \param[in] set1  the first set
@@ -130,7 +136,7 @@ int setcount (const void **set);
 
 /*!\brief Sort elements in \b set.
  * \param[in,out] set          the set
- * \param[in]     task         how to sort the set (use the constant SORT_SET_STRING_LEXICAL or SORT_SET_CUSTOM)
+ * \param[in]     task         how to sort the set
  * \param[in]     sortfunction a function that compares set elements. (if you use task=SORT_SET_CUSTOM)
  * \return This function will modify the set you pass to it. It may free() this set. It may return the same
  *         set unmodified or it may return a completely new set altogether. On error, NULL is returned. If
@@ -140,7 +146,7 @@ int setcount (const void **set);
  * Sorts the \b set you pass to it, either using the function specified with \b sortfunction, or by what you
  * pass to the function in \b task.
 */
-void setsort (void **set, const char task, signed int(*sortfunction)(const void *, const void*));
+void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(const void *, const void*));
 
 /*!\brief Find out if element \b needle is in set \b haystack.
  * \param[in] haystack the set

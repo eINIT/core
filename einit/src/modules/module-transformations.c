@@ -201,7 +201,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
     uint32_t i = 0;
     char **np = (char **)setdup ((const void **)module->si->provides, SET_TYPE_STRING);
     for (; module->si->provides[i]; i++) {
-     struct stree *x = streefind (service_aliases, module->si->provides[i], TREE_FIND_FIRST);
+     struct stree *x = streefind (service_aliases, module->si->provides[i], tree_find_first);
 
      while (x) {
       if (x->value) {
@@ -209,7 +209,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
         np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
        }
       }
-      x = streefind (x, module->si->provides[i], TREE_FIND_NEXT);
+      x = streefind (x, module->si->provides[i], tree_find_next);
      }
     }
 
@@ -225,14 +225,14 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
 
      for (i = 0; module->si->provides[i]; i++) {
       char hit = 0;
-      struct stree *x = streefind (service_transformations, module->si->provides[i], TREE_FIND_FIRST);
+      struct stree *x = streefind (service_transformations, module->si->provides[i], tree_find_first);
 
       while (x) {
        struct service_transformation *trans =
          (struct service_transformation *)x->value;
 
        if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
-        x = streefind (x, module->si->provides[i], TREE_FIND_NEXT);
+        x = streefind (x, module->si->provides[i], tree_find_next);
         continue;
        }
 
@@ -256,14 +256,14 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
 
      for (i = 0; module->si->requires[i]; i++) {
       char hit = 0;
-      struct stree *x = streefind (service_transformations, module->si->requires[i], TREE_FIND_FIRST);
+      struct stree *x = streefind (service_transformations, module->si->requires[i], tree_find_first);
 
       while (x) {
        struct service_transformation *trans =
          (struct service_transformation *)x->value;
 
        if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
-        x = streefind (x, module->si->requires[i], TREE_FIND_NEXT);
+        x = streefind (x, module->si->requires[i], tree_find_next);
         continue;
        }
 
@@ -287,14 +287,14 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
 
      for (i = 0; module->si->after[i]; i++) {
       char hit = 0;
-      struct stree *x = streefind (service_transformations, module->si->after[i], TREE_FIND_FIRST);
+      struct stree *x = streefind (service_transformations, module->si->after[i], tree_find_first);
 
       while (x) {
        struct service_transformation *trans =
          (struct service_transformation *)x->value;
 
        if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
-        x = streefind (x, module->si->after[i], TREE_FIND_NEXT);
+        x = streefind (x, module->si->after[i], tree_find_next);
         continue;
        }
 
@@ -318,14 +318,14 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
 
      for (i = 0; module->si->before[i]; i++) {
       char hit = 0;
-      struct stree *x = streefind (service_transformations, module->si->before[i], TREE_FIND_FIRST);
+      struct stree *x = streefind (service_transformations, module->si->before[i], tree_find_first);
 
       while (x) {
        struct service_transformation *trans =
          (struct service_transformation *)x->value;
 
        if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
-        x = streefind (x, module->si->before[i], TREE_FIND_NEXT);
+        x = streefind (x, module->si->before[i], tree_find_next);
         continue;
        }
 

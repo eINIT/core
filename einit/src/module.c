@@ -334,7 +334,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   ret |= SERVICE_REQUIREMENTS_MET;
   if (module->si && (t = module->si->requires)) {
    for (i = 0; t[i]; i++) {
-    if (!service_usage || !(ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) ||
+    if (!service_usage || !(ha = streefind (service_usage, t[i], tree_find_first)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
      ret ^= SERVICE_REQUIREMENTS_MET;
      break;
@@ -345,14 +345,14 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
   if (module->status & STATUS_ENABLED) {
    if (module->si && (t = module->si->requires)) {
     for (i = 0; t[i]; i++) {
-     if (service_usage && (ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
+     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
    }
    if (module->si && (t = module->si->provides)) {
     for (i = 0; t[i]; i++) {
-     if (service_usage && (ha = streefind (service_usage, t[i], TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value)) {
+     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
      } else {
       struct service_usage_item nitem;
@@ -382,10 +382,10 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
     ha = streenext (ha);
   }
  } else if (task & SERVICE_IS_REQUIRED) {
-  if (service_usage && (ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->users))
+  if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->users))
    ret |= SERVICE_IS_REQUIRED;
  } else if (task & SERVICE_IS_PROVIDED) {
-  if (service_usage && (ha = streefind (service_usage, service, TREE_FIND_FIRST)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
+  if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
    ret |= SERVICE_IS_PROVIDED;
  }
 
@@ -407,7 +407,7 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
    return 0;
   }
 
-  if (!service_usage || !(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
+  if (!service_usage || !(ha = streefind (service_usage, service, tree_find_first))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
@@ -423,7 +423,7 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
   }
  }
  if (task & SERVICE_SET_GROUP_PROVIDERS) {
-  if (!service_usage || !(ha = streefind (service_usage, service, TREE_FIND_FIRST))) {
+  if (!service_usage || !(ha = streefind (service_usage, service, tree_find_first))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
    nitem.provider = (struct lmodule **)setdup ((const void **)module, SET_NOALLOC);

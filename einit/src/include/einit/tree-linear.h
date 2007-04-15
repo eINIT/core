@@ -56,8 +56,10 @@ extern "C" {
 #include <einit/event.h>
 #include <sys/types.h>
 
-#define TREE_FIND_FIRST         0x01
-#define TREE_FIND_NEXT          0x02
+enum tree_search_base {
+ tree_find_first = 0x1,
+ tree_find_next  = 0x2
+};
 
 /*!\ingroup trees
  * \brief Hash-Element
@@ -98,7 +100,7 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
  *
  * This is used to find stree elements in a stree.
 */
-struct stree *streefind (const struct stree *stree, const char *key, const char options);
+struct stree *streefind (const struct stree *stree, const char *key, enum tree_search_base options);
 
 /*!\brief Delete the \b subject from its stree.
  * \param[in]     subject the stree element to be deleted

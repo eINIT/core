@@ -331,8 +331,8 @@ struct stree *streefind (struct stree *stree, char *key, char options) {
  signed char cmp = 0;
  if (!stree || !key) return NULL;
 
- if (options == TREE_FIND_FIRST) c = *(stree->root);
- else if (options == TREE_FIND_NEXT) {
+ if (options == tree_find_first) c = *(stree->root);
+ else if (options == tree_find_next) {
   if (strmatch (key, stree->key))
    c = stree->right;
   else

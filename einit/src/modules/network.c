@@ -359,7 +359,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (id->controller) { // == NULL if ip not mentioned or ="none"
   for (ci = 0; id->controller[ci]; ci++) {
    if (id->controller[ci]->pidfile) unlink (id->controller[ci]->pidfile);
-   struct stree *t = streefind (id->controller[ci]->action, "enable", TREE_FIND_FIRST);
+   struct stree *t = streefind (id->controller[ci]->action, "enable", tree_find_first);
 
    if (t) {
     if (pexec (t->value, (const char **)id->controller[ci]->variables, 0, 0, NULL, NULL, id->controller[ci]->environment, status) & STATUS_OK) {
@@ -376,7 +376,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
  for (pi = 0; id->ip_manager[pi]; pi++) {
   if (id->ip_manager[pi]->pidfile) unlink (id->ip_manager[pi]->pidfile);
-  struct stree *t = streefind (id->ip_manager[pi]->action, "enable", TREE_FIND_FIRST);
+  struct stree *t = streefind (id->ip_manager[pi]->action, "enable", tree_find_first);
 
   if (t) {
    if (pexec (t->value, (const char **)id->ip_manager[pi]->variables, 0, 0, NULL, NULL, id->ip_manager[pi]->environment, status) & STATUS_OK) {
@@ -394,7 +394,7 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
 
  if (id->ip_manager[id->pi]) {
-  struct stree *t = streefind (id->ip_manager[id->pi]->action, "disable", TREE_FIND_FIRST);
+  struct stree *t = streefind (id->ip_manager[id->pi]->action, "disable", tree_find_first);
 
   if (t) {
    if (pexec (t->value, (const char **)id->ip_manager[id->pi]->variables, 0, 0, NULL, NULL, id->ip_manager[id->pi]->environment, status) & STATUS_OK) {
@@ -409,7 +409,7 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
 
  controller:
  if (id->controller && id->controller[id->ci]) { // == NULL if ip not mentioned or ="none"
-  struct stree *t = streefind (id->controller[id->ci]->action, "disable", TREE_FIND_FIRST);
+  struct stree *t = streefind (id->controller[id->ci]->action, "disable", tree_find_first);
 
   if (t) {
    if (pexec (t->value, (const char **)id->controller[id->ci]->variables, 0, 0, NULL, NULL, id->controller[id->ci]->environment, status) & STATUS_OK) {
@@ -429,7 +429,7 @@ int network_interface_custom (struct interface_descriptor *id, char *action, str
  if (!id && !(id = network_import_interface_descriptor(status->para))) return STATUS_FAIL;
 
  if (id->ip_manager && id->ip_manager[id->pi]) {
-  struct stree *t = streefind (id->ip_manager[id->pi]->action, action, TREE_FIND_FIRST);
+  struct stree *t = streefind (id->ip_manager[id->pi]->action, action, tree_find_first);
 
   if (t) {
    pexec (t->value, (const char **)id->ip_manager[id->pi]->variables, 0, 0, NULL, NULL, id->ip_manager[id->pi]->environment, status);
@@ -437,7 +437,7 @@ int network_interface_custom (struct interface_descriptor *id, char *action, str
  }
 
  if (id->controller && id->controller[id->ci]) {
-  struct stree *t = streefind (id->controller[id->ci]->action, action, TREE_FIND_FIRST);
+  struct stree *t = streefind (id->controller[id->ci]->action, action, tree_find_first);
 
   if (t) {
    pexec (t->value, (const char **)id->controller[id->ci]->variables, 0, 0, NULL, NULL, id->controller[id->ci]->environment, status);

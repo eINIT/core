@@ -181,7 +181,7 @@ struct group_data *mod_group_get_data (char *group) {
 /* eputs ("got mutex", stderr);
  fflush (stderr);*/
 
- struct stree *cur = module_logics_group_data ? streefind (module_logics_group_data, group, TREE_FIND_FIRST) : NULL;
+ struct stree *cur = module_logics_group_data ? streefind (module_logics_group_data, group, tree_find_first) : NULL;
  if (cur) { ret = (struct group_data *)cur->value; }
  else {
   char *tnodeid = emalloc (strlen (group)+17);
@@ -314,7 +314,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
      emutex_lock (&ml_service_list_mutex);
 
-     if ((st = streefind (module_logics_service_list, plan->changes.enable[y], TREE_FIND_FIRST))) {
+     if ((st = streefind (module_logics_service_list, plan->changes.enable[y], tree_find_first))) {
       struct lmodule **lmod = st->value;
 
       if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & EINIT_MOD_FEEDBACK) {
@@ -400,7 +400,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     } else if ((disable_all && strmatch(tmp[i], "all")) ||
                (disable_all_but_feedback && strmatch(tmp[i], "all-but-feedback"))) {
      add = 0;
-    } else if (module_logics_service_list && (cur = streefind (module_logics_service_list, tmp[i], TREE_FIND_FIRST))) {
+    } else if (module_logics_service_list && (cur = streefind (module_logics_service_list, tmp[i], tree_find_first))) {
      struct lmodule **lm = (struct lmodule **)cur->value;
      if (lm) {
       ssize_t y = 0;
@@ -684,7 +684,7 @@ int mod_modaction (char **argv) {
 
   emutex_lock (&ml_service_list_mutex);
   if (module_logics_service_list) {
-   struct stree *cur = streefind (module_logics_service_list, argv[0], TREE_FIND_FIRST);
+   struct stree *cur = streefind (module_logics_service_list, argv[0], tree_find_first);
    if (cur) {
     tm = cur->value;
    }
@@ -752,7 +752,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
     for (; cur->si->provides[i]; i++) {
      struct stree *slnode = new_service_list ?
-       streefind (new_service_list, cur->si->provides[i], TREE_FIND_FIRST) :
+       streefind (new_service_list, cur->si->provides[i], tree_find_first) :
        NULL;
      struct lnode **curval = (struct lnode **) (slnode ? slnode->value : NULL);
 
@@ -868,7 +868,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
         emutex_lock(&ml_service_list_mutex);
 
         for (; tmps[i]; i++) {
-         if (!streefind (module_logics_service_list, tmps[i], TREE_FIND_FIRST) && !mod_group_get_data(tmps[i])) {
+         if (!streefind (module_logics_service_list, tmps[i], tree_find_first) && !mod_group_get_data(tmps[i])) {
           eprintf (ev->output, " * mode \"%s\": service \"%s\" referenced but not found\n", cfgn->mode->id, tmps[i]);
           ev->ipc_return++;
          }
@@ -894,7 +894,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
 
     while (cfgn) {
-     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !streefind (modes, cfgn->mode->id, TREE_FIND_FIRST))) {
+     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !streefind (modes, cfgn->mode->id, tree_find_first))) {
       uint32_t i = 0;
       for (i = 0; cfgn->arbattrs[i]; i+=2) {
        if (strmatch(cfgn->arbattrs[i], "services")) {
@@ -1225,7 +1225,7 @@ void mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
  emutex_lock(&ml_chain_examine);
 
- if ((xn = streefind (module_logics_chain_examine, after, TREE_FIND_FIRST))) {
+ if ((xn = streefind (module_logics_chain_examine, after, tree_find_first))) {
   if (!inset ((const void **)xn->value, service, SET_TYPE_STRING)) {
    char **n = (char **)setadd ((void **)xn->value, service, SET_TYPE_STRING);
 
@@ -1239,7 +1239,7 @@ void mod_defer_until (char *service, char *after) {
    streeadd(module_logics_chain_examine, after, n, SET_NOALLOC, n);
  }
 
- if ((xn = streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST))) {
+ if ((xn = streefind (module_logics_chain_examine_reverse, service, tree_find_first))) {
   if (!inset ((const void **)xn->value, after, SET_TYPE_STRING)) {
    char **n = (char **)setadd ((void **)xn->value, after, SET_TYPE_STRING);
 
@@ -1266,12 +1266,12 @@ void mod_remove_defer (char *service) {
  struct stree *xn = NULL;
  emutex_lock(&ml_chain_examine);
 
- if ((xn = streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST))) {
+ if ((xn = streefind (module_logics_chain_examine_reverse, service, tree_find_first))) {
   uint32_t i = 0;
 
   if (xn->value) {
    for (; ((char **)xn->value)[i]; i++) {
-    struct stree *yn = streefind (module_logics_chain_examine, ((char **)xn->value)[i], TREE_FIND_FIRST);
+    struct stree *yn = streefind (module_logics_chain_examine, ((char **)xn->value)[i], tree_find_first);
 
     if (yn) {
      yn->value = (void *)strsetdel ((char **)yn->value, ((char **)xn->value)[i]);
@@ -1297,12 +1297,12 @@ void mod_decrease_deferred_by (char *service) {
 
  emutex_lock(&ml_chain_examine);
 
- if ((xn = streefind (module_logics_chain_examine, service, TREE_FIND_FIRST))) {
+ if ((xn = streefind (module_logics_chain_examine, service, tree_find_first))) {
   uint32_t i = 0;
 
   if (xn->value) {
    for (; ((char **)xn->value)[i]; i++) {
-    struct stree *yn = streefind (module_logics_chain_examine_reverse, ((char **)xn->value)[i], TREE_FIND_FIRST);
+    struct stree *yn = streefind (module_logics_chain_examine_reverse, ((char **)xn->value)[i], tree_find_first);
 
     if (yn) {
      yn->value = (void *)strsetdel ((char **)yn->value, ((char **)xn->value)[i]);
@@ -1338,7 +1338,7 @@ char mod_isdeferred (char *service) {
  emutex_lock(&ml_chain_examine);
 
  struct stree *r =
-  streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST);
+  streefind (module_logics_chain_examine_reverse, service, tree_find_first);
 
 #if 0
  if (r) {
@@ -1528,7 +1528,7 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
 
 signed char mod_flatten_current_tb_module(char *serv, char task) {
  emutex_lock (&ml_service_list_mutex);
- struct stree *xn = streefind (module_logics_service_list, serv, TREE_FIND_FIRST);
+ struct stree *xn = streefind (module_logics_service_list, serv, tree_find_first);
 
  eputs ("m", stderr);
  fflush (stderr);
@@ -1764,7 +1764,7 @@ void mod_post_examine (char *service) {
 
  emutex_lock (&ml_chain_examine);
 
- if ((post_examine = streefind (module_logics_chain_examine, service, TREE_FIND_FIRST))) {
+ if ((post_examine = streefind (module_logics_chain_examine, service, tree_find_first))) {
   pex = (char **)setdup ((const void **)post_examine->value, SET_TYPE_STRING);
  }
 
@@ -1789,7 +1789,7 @@ void mod_pre_examine (char *service) {
 
  emutex_lock (&ml_chain_examine);
 
- if ((post_examine = streefind (module_logics_chain_examine_reverse, service, TREE_FIND_FIRST))) {
+ if ((post_examine = streefind (module_logics_chain_examine_reverse, service, tree_find_first))) {
   pex = (char **)setdup ((const void **)post_examine->value, SET_TYPE_STRING);
  }
 
@@ -2135,7 +2135,7 @@ char mod_examine_group (char *groupname) {
 
     emutex_lock (&ml_service_list_mutex);
 
-    if (module_logics_service_list && (serv = streefind(module_logics_service_list, members[x], TREE_FIND_FIRST))) {
+    if (module_logics_service_list && (serv = streefind(module_logics_service_list, members[x], tree_find_first))) {
      struct lmodule **lm = (struct lmodule **)serv->value;
 
      if (lm) {
@@ -2325,7 +2325,7 @@ void mod_examine (char *service) {
                    task & MOD_ENABLE ? "enable" : "disable");
 
   emutex_lock (&ml_service_list_mutex);
-  struct stree *v = streefind (module_logics_service_list, service, TREE_FIND_FIRST);
+  struct stree *v = streefind (module_logics_service_list, service, tree_find_first);
   struct lmodule **lm = v ? v->value : NULL;
   emutex_unlock (&ml_service_list_mutex);
 

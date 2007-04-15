@@ -159,7 +159,7 @@ void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
    ssize_t i = 0;
 
    for (; ev->set[i]; i++) {
-    struct stree *cur = streefind(einit_shadow_exec_shadows, (char *)ev->set[i], TREE_FIND_FIRST);
+    struct stree *cur = streefind(einit_shadow_exec_shadows, (char *)ev->set[i], tree_find_first);
 
     while (cur) {
      struct shadow_descriptor *sd = cur->value;
@@ -182,7 +182,7 @@ void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
       }
      }
 
-     cur = streefind(cur, (char *)ev->set[i], TREE_FIND_NEXT);
+     cur = streefind(cur, (char *)ev->set[i], tree_find_next);
     }
    }
   }

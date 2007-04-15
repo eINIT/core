@@ -917,10 +917,10 @@ int emount (char *mountpoint, struct einit_event *status) {
 
  char **fstype_s = NULL;
  uint32_t fsts_i = 0;
- if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST)) && (fse = (struct fstab_entry *)he->value)) {
+ if (he && (he = streefind (he, mountpoint, tree_find_first)) && (fse = (struct fstab_entry *)he->value)) {
   source = fse->device;
   fsntype = 0;
-  if (de && source && (de = streefind (de, source, TREE_FIND_FIRST)) && (bdi = (struct bd_info *)de->value)) {
+  if (de && source && (de = streefind (de, source, tree_find_first)) && (bdi = (struct bd_info *)de->value)) {
    fsntype = bdi->fs_type;
   }
 
@@ -1090,7 +1090,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
 
  if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return STATUS_OK;
 
- if (he && (he = streefind (he, mountpoint, TREE_FIND_FIRST))) fse = (struct fstab_entry *)he->value;
+ if (he && (he = streefind (he, mountpoint, tree_find_first))) fse = (struct fstab_entry *)he->value;
 
  if (fse && !(fse->status & BF_STATUS_MOUNTED))
   esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
@@ -1204,7 +1204,7 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
  bdi.minor = minor;
  bdi.status = BF_STATUS_HAS_MEDIUM | BF_STATUS_ERROR_NOTINIT;
  emutex_lock (&blockdevices_mutex);
- if (mcb.blockdevices && streefind (mcb.blockdevices, devicefile, TREE_FIND_FIRST)) {
+ if (mcb.blockdevices && streefind (mcb.blockdevices, devicefile, tree_find_first)) {
   emutex_unlock (&blockdevices_mutex);
   return;
  }
@@ -1251,7 +1251,7 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  fse.variables = variables;
 
  emutex_lock (&fstab_mutex);
- if (mcb.fstab && streefind (mcb.fstab, mountpoint, TREE_FIND_FIRST)) {
+ if (mcb.fstab && streefind (mcb.fstab, mountpoint, tree_find_first)) {
   if (fse.mountpoint)
    free (fse.mountpoint);
   if (fse.device)
@@ -1306,7 +1306,7 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
 
  emutex_lock (&fstab_mutex);
 
- if (mcb.fstab && (cur = streefind (mcb.fstab, fs_file, TREE_FIND_FIRST))) {
+ if (mcb.fstab && (cur = streefind (mcb.fstab, fs_file, tree_find_first))) {
   struct fstab_entry *node = cur->value;
 
   node->adevice = dset[1];
@@ -1352,7 +1352,7 @@ void add_filesystem (char *name, char *options) {
  }
 
  emutex_lock (&fs_mutex);
- if (mcb.filesystems && streefind (mcb.filesystems, name, TREE_FIND_FIRST)) {
+ if (mcb.filesystems && streefind (mcb.filesystems, name, tree_find_first)) {
   emutex_unlock (&fs_mutex);
   return;
  }
@@ -1442,7 +1442,7 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
     ev->ipc_return++;
    } else {
     struct stree *tstree, *fstree;
-    if (!(tstree = streefind (mcb.fstab, "/", TREE_FIND_FIRST))) {
+    if (!(tstree = streefind (mcb.fstab, "/", tree_find_first))) {
      eputs (" * your fstab does not contain an entry for \"/\".\n", ev->output);
      ev->ipc_return++;
     } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
@@ -1472,11 +1472,11 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
      }
 
      if (!(((struct fstab_entry *)(tstree->value))->device)) {
-      if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
+      if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
        eprintf (ev->output, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
        ev->ipc_return++;
       }
-     } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || (mcb.filesystems && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), TREE_FIND_FIRST)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE) && !((uintptr_t)fstree->value & FS_CAPA_NETWORK)))) {
+     } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || (mcb.filesystems && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE) && !((uintptr_t)fstree->value & FS_CAPA_NETWORK)))) {
       eprintf (ev->output, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
       ev->ipc_return++;
      }
@@ -1592,7 +1592,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
       if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
        goto mount_skip;
 
-      if (fse->fs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->fs, TREE_FIND_FIRST))) {
+      if (fse->fs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->fs, tree_find_first))) {
        if (p == MOUNT_LOCAL) {
         if ((uintptr_t)fsi->value & FS_CAPA_NETWORK) goto mount_skip;
        } else {
@@ -1715,10 +1715,10 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
 
       if (p == MOUNT_LOCAL) {
        if (fse->afs) {
-        if (mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, TREE_FIND_FIRST)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+        if (mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, tree_find_first)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
-       if (fse->afs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, TREE_FIND_FIRST))) {
+       if (fse->afs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, tree_find_first))) {
         if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
        } else goto mount_skip;
       }

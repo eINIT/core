@@ -359,7 +359,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    rescan_node:
    hnode = hconfiguration;
 
-   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-directory", TREE_FIND_FIRST))) {
+   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-directory", tree_find_first))) {
     node = (struct cfgnode *)hnode->value;
 
     if (node->svalue) {
@@ -431,7 +431,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     }
    }
 
-   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-file", TREE_FIND_FIRST))) {
+   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-file", tree_find_first))) {
     node = (struct cfgnode *)hnode->value;
     if (node->svalue) {
      char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
