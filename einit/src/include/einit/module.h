@@ -153,18 +153,28 @@ enum einit_module_status {
 
 /*!\ingroup serviceusagequeries
  * \{*/
-#define SERVICE_NOT_IN_USE              0x0001 /*!< Service-usage-query: "Is this module not in use?" */
-#define SERVICE_REQUIREMENTS_MET        0x0002 /*!< Service-usage-query: "Are this module's requirements met?" */
-#define SERVICE_IS_REQUIRED             0x0004 /*!< Service-usage-query: "Is this currently required?" */
-#define SERVICE_IS_PROVIDED             0x0008 /*!< Service-usage-query: "Is this currently provided?" */
-#define SERVICE_UPDATE                  0x0100 /*!< Service-usage-query: "Update service information." */
-
-#define SERVICE_GET_ALL_PROVIDED        0x0010 /*!< Service-usage-query: "What services are currently provided?". */
-#define SERVICE_GET_SERVICES_THAT_USE   0x0020 /*!< Service-usage-query: "What services use this?" */
-#define SERVICE_GET_SERVICES_USED_BY    0x0040 /*!< Service-usage-query: "What services are used by this?" */
-
-#define SERVICE_ADD_GROUP_PROVIDER      0x0200 /*!< Service-usage-query: "This module provides this service" */
-#define SERVICE_SET_GROUP_PROVIDERS     0x0400 /*!< Service-usage-query: "These modules provide this service" */
+enum einit_usage_query {
+ service_not_in_use            = 0x0001,
+/*!< Service-usage-query: "Is this module not in use?" */
+ service_requirements_met      = 0x0002,
+/*!< Service-usage-query: "Are this module's requirements met?" */
+ service_is_required           = 0x0004,
+/*!< Service-usage-query: "Is this currently required?" */
+ service_is_provided           = 0x0008,
+/*!< Service-usage-query: "Is this currently provided?" */
+ service_update                = 0x0100,
+/*!< Service-usage-query: "Update service information." */
+ service_get_all_provided      = 0x0010,
+/*!< Service-usage-query: "What services are currently provided?". */
+ service_get_services_that_use = 0x0020,
+/*!< Service-usage-query: "What services use this?" */
+ service_get_services_used_by  = 0x0040,
+/*!< Service-usage-query: "What services are used by this?" */
+ service_add_group_provider    = 0x0200,
+/*!< Service-usage-query: "This module provides this service" */
+ service_set_group_providers   = 0x0400,
+/*!< Service-usage-query: "These modules provide this service" */
+};
 /*!\} */
 
 
@@ -294,7 +304,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  * This function can be used to query/update certain service-usage information where the result can be
  * expressed as an integer.
 */
-uint16_t service_usage_query (const uint16_t task, const struct lmodule *module, const char *service);
+uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule *module, const char *service);
 
 /*!\brief Query service-usage information.
  * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
@@ -304,7 +314,7 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
  * This function can be used to query certain service-usage information where the result can be expressed
  * as a set of strings.
 */
-char **service_usage_query_cr (const uint16_t task, const struct lmodule *module, const char *service);
+char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule *module, const char *service);
 
 /*!\brief Query service-usage information.
  * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
@@ -314,7 +324,7 @@ char **service_usage_query_cr (const uint16_t task, const struct lmodule *module
  * This function can be used to query/update certain service-group information where the result can be
  * expressed as an integer.
 */
-uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *module, const char *service);
+uint16_t service_usage_query_group (enum einit_usage_query task, const struct lmodule *module, const char *service);
 /*! \} */
 
 /*!\brief The module loader's event-handler.

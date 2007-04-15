@@ -197,10 +197,10 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   goto wontload;
 
  if (task & einit_module_enable) {
-  if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL))
+  if (!service_usage_query(service_requirements_met, module, NULL))
    goto wontload;
  } else if (task & einit_module_disable) {
-  if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL))
+  if (!service_usage_query(service_not_in_use, module, NULL))
    goto wontload;
  }
 
@@ -295,7 +295,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   evdestroy (fb);
 
-  service_usage_query(SERVICE_UPDATE, module, NULL);
+  service_usage_query(service_update, module, NULL);
 
   if (!(task & einit_module_ignore_mutex))
    emutex_unlock (&module->mutex);
@@ -304,7 +304,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  return module->status;
 }
 
-uint16_t service_usage_query (const uint16_t task, const struct lmodule *module, const char *service) {
+uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule *module, const char *service) {
  uint16_t ret = 0;
  struct stree *ha;
  char **t;
@@ -315,31 +315,31 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
 
  emutex_lock (&service_usage_mutex);
 
- if (task & SERVICE_NOT_IN_USE) {
-  ret |= SERVICE_NOT_IN_USE;
+ if (task & service_not_in_use) {
+  ret |= service_not_in_use;
   struct stree *ha = service_usage;
 
   while (ha) {
    if (((struct service_usage_item *)(ha->value))->users &&
        inset ((const void **)(((struct service_usage_item *)(ha->value))->provider), module, -1)) {
 
-    ret ^= SERVICE_NOT_IN_USE;
+    ret ^= service_not_in_use;
     break;
    }
    ha = streenext (ha);
   }
- } else if (task & SERVICE_REQUIREMENTS_MET) {
-  ret |= SERVICE_REQUIREMENTS_MET;
+ } else if (task & service_requirements_met) {
+  ret |= service_requirements_met;
   if (module->si && (t = module->si->requires)) {
    for (i = 0; t[i]; i++) {
     if (!service_usage || !(ha = streefind (service_usage, t[i], tree_find_first)) ||
         !((struct service_usage_item *)(ha->value))->provider) {
-     ret ^= SERVICE_REQUIREMENTS_MET;
+     ret ^= service_requirements_met;
      break;
     }
    }
   }
- } else if (task & SERVICE_UPDATE) {
+ } else if (task & service_update) {
   if (module->status & status_enabled) {
    if (module->si && (t = module->si->requires)) {
     for (i = 0; t[i]; i++) {
@@ -379,26 +379,26 @@ uint16_t service_usage_query (const uint16_t task, const struct lmodule *module,
    } else
     ha = streenext (ha);
   }
- } else if (task & SERVICE_IS_REQUIRED) {
+ } else if (task & service_is_required) {
   if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->users))
-   ret |= SERVICE_IS_REQUIRED;
- } else if (task & SERVICE_IS_PROVIDED) {
+   ret |= service_is_required;
+ } else if (task & service_is_provided) {
   if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->provider))
-   ret |= SERVICE_IS_PROVIDED;
+   ret |= service_is_provided;
  }
 
  emutex_unlock (&service_usage_mutex);
  return ret;
 }
 
-uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *module, const char *service) {
+uint16_t service_usage_query_group (enum einit_usage_query task, const struct lmodule *module, const char *service) {
  uint16_t ret = 0;
  struct stree *ha;
 
  if (!service) return 0;
 
  emutex_lock (&service_usage_mutex);
- if (task & SERVICE_ADD_GROUP_PROVIDER) {
+ if (task & service_add_group_provider) {
   if (!module || !module->module) {
    emutex_unlock (&service_usage_mutex);
 
@@ -420,7 +420,7 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
    }
   }
  }
- if (task & SERVICE_SET_GROUP_PROVIDERS) {
+ if (task & service_set_group_providers) {
   if (!service_usage || !(ha = streefind (service_usage, service, tree_find_first))) {
    struct service_usage_item nitem;
    memset (&nitem, 0, sizeof (struct service_usage_item));
@@ -440,19 +440,19 @@ uint16_t service_usage_query_group (const uint16_t task, const struct lmodule *m
  return ret;
 }
 
-char **service_usage_query_cr (const uint16_t task, const struct lmodule *module, const char *service) {
+char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule *module, const char *service) {
  emutex_lock (&service_usage_mutex);
 
  struct stree *ha = service_usage;
  char **ret = NULL;
  uint32_t i;
 
- if (task & SERVICE_GET_ALL_PROVIDED) {
+ if (task & service_is_provided) {
   while (ha) {
    ret = (char **)setadd ((void **)ret, (void *)ha->key, SET_TYPE_STRING);
    ha = streenext (ha);
   }
- } else if (task & SERVICE_GET_SERVICES_THAT_USE) {
+ } else if (task & service_get_services_that_use) {
   if (module) {
    while (ha) {
     if (((struct service_usage_item *)(ha->value))->users &&
@@ -466,7 +466,7 @@ char **service_usage_query_cr (const uint16_t task, const struct lmodule *module
     ha = streenext (ha);
    }
   }
- } else if (task & SERVICE_GET_SERVICES_USED_BY) {
+ } else if (task & service_get_services_used_by) {
   if (module) {
    while (ha) {
     if (inset ((const void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {

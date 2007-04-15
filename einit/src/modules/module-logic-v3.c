@@ -371,7 +371,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (disable_all || disable_all_but_feedback) {
   struct stree *cur;
   ssize_t i = 0;
-  char **tmpy = service_usage_query_cr (SERVICE_GET_ALL_PROVIDED, NULL, NULL);
+  char **tmpy = service_usage_query_cr (service_is_provided, NULL, NULL);
 
   emutex_lock (&ml_service_list_mutex);
   emutex_lock (&ml_tb_target_state_mutex);
@@ -411,7 +411,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
        }
       }
      }
-    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, tmp[i])) {
+    } else if (!service_usage_query (service_is_provided, NULL, tmp[i])) {
      add = 0;
     }
 
@@ -483,7 +483,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (current.enable) {
   char **tmp = NULL;
   for (i = 0; current.enable[i]; i++) {
-   if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, current.enable[i])) {
+   if (!service_usage_query (service_is_provided, NULL, current.enable[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.enable[i], SET_TYPE_STRING);
    }
   }
@@ -493,7 +493,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  if (current.disable) {
   char **tmp = NULL;
   for (i = 0; current.disable[i]; i++) {
-   if (service_usage_query (SERVICE_IS_PROVIDED, NULL, current.disable[i])) {
+   if (service_usage_query (service_is_provided, NULL, current.disable[i])) {
     tmp = (char **)setadd ((void **)tmp, (void *)current.disable[i], SET_TYPE_STRING);
    }
   }
@@ -1590,7 +1590,7 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
    uint32_t z = 0;
 
    for (; lm[z]; z++) {
-    char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, lm[z], NULL);
+    char **t = service_usage_query_cr (service_get_services_that_use, lm[z], NULL);
 
     if (t) {
      uint32_t i = 0;
@@ -1824,10 +1824,10 @@ void mod_pre_examine (char *service) {
 }
 
 char mod_disable_users (struct lmodule *module) {
- if (!service_usage_query(SERVICE_NOT_IN_USE, module, NULL)) {
+ if (!service_usage_query(service_not_in_use, module, NULL)) {
   ssize_t i = 0;
   char **need = NULL;
-  char **t = service_usage_query_cr (SERVICE_GET_SERVICES_THAT_USE, module, NULL);
+  char **t = service_usage_query_cr (service_get_services_that_use, module, NULL);
   char retval = 1;
 
   if (t) {
@@ -1876,7 +1876,7 @@ char mod_disable_users (struct lmodule *module) {
 }
 
 char mod_enable_requirements (struct lmodule *module) {
- if (!service_usage_query(SERVICE_REQUIREMENTS_MET, module, NULL)) {
+ if (!service_usage_query(service_requirements_met, module, NULL)) {
   char retval = 1;
   if (module->si && module->si->requires) {
    ssize_t i = 0;
@@ -1886,7 +1886,7 @@ char mod_enable_requirements (struct lmodule *module) {
     if (mod_isbroken (module->si->requires[i])) {
      if (need) free (need);
      return 0;
-    } else if (!service_usage_query (SERVICE_IS_PROVIDED, NULL, module->si->requires[i])) {
+    } else if (!service_usage_query (service_is_provided, NULL, module->si->requires[i])) {
      emutex_lock (&ml_tb_current_mutex);
 
      if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
@@ -2227,7 +2227,7 @@ char mod_examine_group (char *groupname) {
      changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
     emutex_unlock (&ml_changed_mutex);
 
-    service_usage_query_group (SERVICE_SET_GROUP_PROVIDERS, (struct lmodule *)providers, groupname);
+    service_usage_query_group (service_set_group_providers, (struct lmodule *)providers, groupname);
 
     if (!mod_isprovided (groupname)) {
      emutex_lock (&ml_currently_provided_mutex);
