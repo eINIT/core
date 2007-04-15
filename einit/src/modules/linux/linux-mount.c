@@ -181,28 +181,28 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
   struct stat statbuf;
 
   if (stat(element->key, &statbuf)) { /* see if we can stat the file */
-   bdi->status = BF_STATUS_ERROR_IO;
+   bdi->status = device_status_error_io;
   } else {
    device = fopen (element->key, "r");
    if (device) {
     c_uuid[0] = 0;
     if (fseek (device, 1024, SEEK_SET) || (fread (&ext2_sb, sizeof(struct ext2_super_block), 1, device) < 0)) {
-     bdi->status = BF_STATUS_ERROR_IO;
+     bdi->status = device_status_error_io;
     } else {
      if (ext2_sb.s_magic == EXT2_SUPER_MAGIC) {
        {
         bdi->fs_type = FILESYSTEM_EXT2;
-        bdi->status = BF_STATUS_HAS_MEDIUM;
+        bdi->status = device_status_has_medium;
 
 /* checks to see if the filesystem is dirty */
         if (ext2_sb.s_mnt_count >= ext2_sb.s_max_mnt_count) // the "maximum mount count"-thing
-         bdi->status |= BF_STATUS_DIRTY;
+         bdi->status |= device_status_dirty;
 
         if (ext2_sb.s_lastcheck + ext2_sb.s_checkinterval >= time(NULL)) // the "check-interval"-thing
-         bdi->status |= BF_STATUS_DIRTY;
+         bdi->status |= device_status_dirty;
 
         if (ext2_sb.s_state != EXT2_VALID_FS) // the current filesystem state
-         bdi->status |= BF_STATUS_DIRTY;
+         bdi->status |= device_status_dirty;
 
         if (ext2_sb.s_rev_level == EXT2_DYNAMIC_REV) {
          memcpy (uuid, ext2_sb.s_uuid, 16);
@@ -212,19 +212,19 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
       }
      } else {
       if (fseek (device, 64*1024, SEEK_SET) || (fread (&reiser_sb, sizeof(struct reiserfs_super_block), 1, device) < 0)) {
-       bdi->status = BF_STATUS_ERROR_IO;
+       bdi->status = device_status_error_io;
       } else if (strmatch (reiser_sb.s_magic, "ReIsErFs") || strmatch (reiser_sb.s_magic, "ReIsEr2Fs") || strmatch (reiser_sb.s_magic, "ReIsEr3Fs")) {
        if (fseek (device, (uintmax_t)((uintmax_t)(reiser_sb.s_block_count -1) * (uintmax_t)reiser_sb.s_blocksize), SEEK_SET) || fread (&tmp, (reiser_sb.s_blocksize < 1024 ? reiser_sb.s_blocksize : 1024), 1, device) <= 0) { // verify that the device is actually large enough (raid, anyone?)
 #ifdef DEBUG
         eprintf (stderr, "%s: ReiserFS superblock found, but blockdevice not large enough (%i*%i): invalid superblock or raw RAID device\n", element->key, reiser_sb.s_block_count, reiser_sb.s_blocksize);
 #endif
-        bdi->status = BF_STATUS_ERROR_IO;
+        bdi->status = device_status_error_io;
        } else {
         bdi->fs_type = FILESYSTEM_REISERFS;
-        bdi->status = BF_STATUS_HAS_MEDIUM;
+        bdi->status = device_status_has_medium;
 
         if (reiser_sb.s_umount_state == 2) // 1 means cleanly unmounted, 2 means the device wasn't unmounted
-         bdi->status |= BF_STATUS_DIRTY;
+         bdi->status |= device_status_dirty;
 
         if (reiser_sb.s_label[0])
          bdi->label = estrdup (reiser_sb.s_label);
@@ -241,7 +241,7 @@ unsigned char read_metadata_linux (struct mount_control_block *mcb) {
     }
     efclose (device);
    } else {
-    bdi->status = BF_STATUS_ERROR_IO;
+    bdi->status = device_status_error_io;
 
     switch (errno) {
      case ENODEV:

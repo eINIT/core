@@ -232,7 +232,7 @@ struct mount_control_block mcb = {
 	 .add_fstab_entry	= add_fstab_entry,
 	 .add_mtab_entry	= add_mtab_entry,
 	 .add_filesystem	= add_filesystem,
-	 .update_options	= EVENT_UPDATE_METADATA + EVENT_UPDATE_BLOCK_DEVICES + EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB,
+	 .update_options	= mount_update_metadata + mount_update_block_devices + mount_update_fstab + mount_update_mtab,
 	 .critical		= NULL,
 	 .noumount		= NULL
 };
@@ -252,7 +252,7 @@ char *generate_legacy_mtab (struct mount_control_block *);
 
 /* macro definitions */
 #define update_real_mtab() {\
- if (mcb.options & OPTION_MAINTAIN_MTAB) {\
+ if (mcb.options & mount_maintain_mtab) {\
   char *tmpmtab = generate_legacy_mtab (&mcb);\
 \
   if (tmpmtab) {\
@@ -434,7 +434,7 @@ unsigned char forge_fstab_by_label (void *na) {
  while (element) {
   struct bd_info *bdi = element->value;
   if (bdi) {
-   if ((bdi->status & BF_STATUS_HAS_MEDIUM) && !(bdi->status & BF_STATUS_ERROR)) {
+   if ((bdi->status & device_status_has_medium) && !(bdi->status & BF_STATUS_ERROR)) {
     char *fsname = NULL;
     char *mpoint = NULL;
     if (bdi->fs_type < 0xffff)
@@ -682,25 +682,25 @@ void einit_mount_update (enum update_task task) {
 
  switch (task) {
   case UPDATE_METADATA:
-   if (!(mcb.update_options & EVENT_UPDATE_METADATA)) return;
+   if (!(mcb.update_options & mount_update_metadata)) return;
    node = cfg_findnode ("configuration-storage-filesystem-label-readers", 0, NULL);
    fl = defaultfilesystems;
    flb = "fs-read-metadata";
    break;
   case UPDATE_BLOCK_DEVICES:
-   if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) return;
+   if (!(mcb.update_options & mount_update_block_devices)) return;
    node = cfg_findnode ("configuration-storage-block-devices-source", 0, NULL);
    fl = defaultblockdevicesource;
    flb = "find-block-devices";
    break;
   case UPDATE_FSTAB:
-   if (!(mcb.update_options & EVENT_UPDATE_FSTAB)) return;
+   if (!(mcb.update_options & mount_update_fstab)) return;
    node = cfg_findnode ("configuration-storage-fstab-source", 0, NULL);
    fl = defaultfstabsource;
    flb = "read-fstab";
    break;
   case UPDATE_MTAB:
-   if (!(mcb.update_options & EVENT_UPDATE_MTAB)) return;
+   if (!(mcb.update_options & mount_update_mtab)) return;
    node = cfg_findnode ("configuration-storage-mtab-source", 0, NULL);
    fl = defaultmtabsource;
    flb = "read-mtab";
@@ -722,11 +722,11 @@ void einit_mount_update (enum update_task task) {
  switch (task) {
   case UPDATE_METADATA:
    if (fl != defaultfilesystems) free (fl);
-   if (mcb.update_options & EVENT_UPDATE_FSTAB) einit_mount_update (UPDATE_FSTAB);
+   if (mcb.update_options & mount_update_fstab) einit_mount_update (UPDATE_FSTAB);
    break;
   case UPDATE_BLOCK_DEVICES:
    if (fl != defaultblockdevicesource) free (fl);
-   if (mcb.update_options & EVENT_UPDATE_METADATA) einit_mount_update (UPDATE_METADATA);
+   if (mcb.update_options & mount_update_metadata) einit_mount_update (UPDATE_METADATA);
    break;
   case UPDATE_FSTAB:
    if (fl != defaultfstabsource) free (fl);
@@ -936,7 +936,7 @@ int emount (char *mountpoint, struct einit_event *status) {
 
   if (!fstype) fstype = "auto";
 
-  if (bdi && (bdi->status & BF_STATUS_DIRTY)) {
+  if (bdi && (bdi->status & device_status_dirty)) {
    if (fsck_command) {
     char tmp[BUFFERSIZE];
     status->string = "filesystem dirty; running fsck";
@@ -1061,7 +1061,7 @@ int emount (char *mountpoint, struct einit_event *status) {
    event_emit (&eem, einit_event_flag_broadcast);
    evstaticdestroy (eem);
 
-   fse->status |= BF_STATUS_MOUNTED;
+   fse->status |= device_status_mounted;
 
    return STATUS_OK;
   }
@@ -1092,7 +1092,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
 
  if (he && (he = streefind (he, mountpoint, tree_find_first))) fse = (struct fstab_entry *)he->value;
 
- if (fse && !(fse->status & BF_STATUS_MOUNTED))
+ if (fse && !(fse->status & device_status_mounted))
   esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
  else
   esprintf (textbuffer, BUFFERSIZE, "unmounting %s", mountpoint);
@@ -1184,8 +1184,8 @@ int eumount (char *mountpoint, struct einit_event *status) {
   if (fse && fse->after_umount)
    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
  }
- if (fse && (fse->status & BF_STATUS_MOUNTED))
-  fse->status ^= BF_STATUS_MOUNTED;
+ if (fse && (fse->status & device_status_mounted))
+  fse->status ^= device_status_mounted;
 
  struct einit_event eem = evstaticinit (einit_mount_node_unmounted);
  eem.string = mountpoint;
@@ -1202,7 +1202,7 @@ void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
 
  bdi.major = major;
  bdi.minor = minor;
- bdi.status = BF_STATUS_HAS_MEDIUM | BF_STATUS_ERROR_NOTINIT;
+ bdi.status = device_status_has_medium | device_status_error_notint;
  emutex_lock (&blockdevices_mutex);
  if (mcb.blockdevices && streefind (mcb.blockdevices, devicefile, tree_find_first)) {
   emutex_unlock (&blockdevices_mutex);
@@ -1230,8 +1230,8 @@ void add_fstab_entry (char *mountpoint, char *device, char *fs, char **options, 
  if (options) {
   char **noptions = NULL;
   for (i = 0; options[i]; i++) {
-   if (strmatch (options[i], "noauto")) mountflags |= MOUNT_FSTAB_NOAUTO;
-   else if (strmatch (options[i], "critical")) mountflags |= MOUNT_FSTAB_CRITICAL;
+   if (strmatch (options[i], "noauto")) mountflags |= mount_fstab_noauto;
+   else if (strmatch (options[i], "critical")) mountflags |= mount_fstab_critical;
    else noptions = (char **)setadd ((void **)noptions, (void *)(options[i]), SET_TYPE_STRING);
   }
   free (options);
@@ -1315,11 +1315,11 @@ void add_mtab_entry (char *fs_spec, char *fs_file, char *fs_vfstype, char *fs_mn
 #endif
   node->afs = dset[2];
 
-  node->status |= BF_STATUS_MOUNTED;
+  node->status |= device_status_mounted;
  } else {
   memset (&fse, 0, sizeof (struct fstab_entry));
 
-  fse.status = BF_STATUS_MOUNTED;
+  fse.status = device_status_mounted;
   fse.device = dset[1];
   fse.adevice = dset[1];
   fse.mountpoint = dset[0];
@@ -1342,11 +1342,11 @@ void add_filesystem (char *name, char *options) {
  if (t) {
   for (; t[i]; i++) {
    if (strmatch (t[i], "rw"))
-    flags |= FS_CAPA_RW;
+    flags |= filesystem_capability_rw;
    else if (strmatch (t[i], "volatile"))
-    flags |= FS_CAPA_VOLATILE;
+    flags |= filesystem_capability_volatile;
    else if (strmatch (t[i], "network"))
-    flags |= FS_CAPA_NETWORK;
+    flags |= filesystem_capability_network;
    }
   free (t);
  }
@@ -1410,11 +1410,11 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
     tmpset = str2set(':', tmpstring);
 
     if (inset ((const void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
-     if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
+     if (!(mcb.update_options & mount_update_metadata)) {
       eputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", ev->output);
       ev->ipc_return++;
      }
-     if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
+     if (!(mcb.update_options & mount_update_block_devices)) {
       eputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", ev->output);
       ev->ipc_return++;
      }
@@ -1428,8 +1428,8 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
     free (tmpset);
    }
 
-   if (mcb.update_options & EVENT_UPDATE_METADATA) {
-    if (!(mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) {
+   if (mcb.update_options & mount_update_metadata) {
+    if (!(mcb.update_options & mount_update_block_devices)) {
      eputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", ev->output);
      ev->ipc_return++;
     }
@@ -1472,11 +1472,11 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
      }
 
      if (!(((struct fstab_entry *)(tstree->value))->device)) {
-      if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE)) {
+      if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & filesystem_capability_volatile)) {
        eprintf (ev->output, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
        ev->ipc_return++;
       }
-     } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || (mcb.filesystems && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & FS_CAPA_VOLATILE) && !((uintptr_t)fstree->value & FS_CAPA_NETWORK)))) {
+     } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || (mcb.filesystems && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & filesystem_capability_volatile) && !((uintptr_t)fstree->value & filesystem_capability_network)))) {
       eprintf (ev->output, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
       ev->ipc_return++;
      }
@@ -1504,10 +1504,10 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
 
 void einit_mount_mount_update_handler(struct einit_event *event) {
  if (event) {
-  if ((event->flag & EVENT_UPDATE_METADATA) && (mcb.update_options & EVENT_UPDATE_METADATA)) update_filesystem_metadata ();
-  if ((event->flag & EVENT_UPDATE_BLOCK_DEVICES) && (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES)) update_block_devices ();
-  if ((event->flag & EVENT_UPDATE_FSTAB) && (mcb.update_options & EVENT_UPDATE_FSTAB)) update_fstab ();
-  if ((event->flag & EVENT_UPDATE_MTAB) && (mcb.update_options & EVENT_UPDATE_MTAB)) update_mtab ();
+  if ((event->flag & mount_update_metadata) && (mcb.update_options & mount_update_metadata)) update_filesystem_metadata ();
+  if ((event->flag & mount_update_block_devices) && (mcb.update_options & mount_update_block_devices)) update_block_devices ();
+  if ((event->flag & mount_update_fstab) && (mcb.update_options & mount_update_fstab)) update_fstab ();
+  if ((event->flag & mount_update_mtab) && (mcb.update_options & mount_update_mtab)) update_mtab ();
  }
 }
 
@@ -1523,7 +1523,7 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
   struct fstab_entry *fse = cur->value;
 
   if (fse) {
-   if (fse->status & BF_STATUS_MOUNTED) {
+   if (fse->status & device_status_mounted) {
     char tmp[BUFFERSIZE];
     char *tset = set2str (',', (const char **)fse->options); 
 
@@ -1587,16 +1587,16 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
          strcmp (ha->key, "/") && strcmp (ha->key, "/dev") &&
          strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if ((fse = (struct fstab_entry *)ha->value)) {
-      if (fse->status & BF_STATUS_MOUNTED)
+      if (fse->status & device_status_mounted)
        goto mount_skip;
-      if (fse->mountflags & (MOUNT_FSTAB_NOAUTO | MOUNT_FSTAB_CRITICAL))
+      if (fse->mountflags & (mount_fstab_noauto | mount_fstab_critical))
        goto mount_skip;
 
       if (fse->fs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->fs, tree_find_first))) {
        if (p == MOUNT_LOCAL) {
-        if ((uintptr_t)fsi->value & FS_CAPA_NETWORK) goto mount_skip;
+        if ((uintptr_t)fsi->value & filesystem_capability_network) goto mount_skip;
        } else {
-         if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+         if (!((uintptr_t)fsi->value & filesystem_capability_network)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
        goto mount_skip;
@@ -1615,7 +1615,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
    ret = emount ("/sys", status);
 #endif
    ret = emount ("/dev", status);
-   if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
+   if (mcb.update_options & mount_update_block_devices) {
     status->string = "re-scanning block devices";
     status_update (status);
     einit_mount_update (UPDATE_BLOCK_DEVICES);
@@ -1629,7 +1629,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
    update_real_mtab();
 
    while (ha) {
-    if ((fse = (struct fstab_entry *)ha->value) && (fse->mountflags & MOUNT_FSTAB_CRITICAL))
+    if ((fse = (struct fstab_entry *)ha->value) && (fse->mountflags & mount_fstab_critical))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
     else if (inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING))
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
@@ -1711,15 +1711,15 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
    while (ha) {
     if (!inset ((const void **)mcb.critical, (void *)ha->key, SET_TYPE_STRING) && strcmp (ha->key, "/") && strcmp (ha->key, "/dev") && strcmp (ha->key, "/proc") && strcmp (ha->key, "/sys")) {
      if ((fse = (struct fstab_entry *)ha->value)) {
-      if (!(fse->status & BF_STATUS_MOUNTED)) goto mount_skip;
+      if (!(fse->status & device_status_mounted)) goto mount_skip;
 
       if (p == MOUNT_LOCAL) {
        if (fse->afs) {
-        if (mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, tree_find_first)) && ((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+        if (mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, tree_find_first)) && ((uintptr_t)fsi->value & filesystem_capability_network)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
        if (fse->afs && mcb.filesystems && (fsi = streefind (mcb.filesystems, fse->afs, tree_find_first))) {
-        if (!((uintptr_t)fsi->value & FS_CAPA_NETWORK)) goto mount_skip;
+        if (!((uintptr_t)fsi->value & filesystem_capability_network)) goto mount_skip;
        } else goto mount_skip;
       }
      }
@@ -1736,7 +1736,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
     eumount ("/sys", status);
     eumount ("/proc", status);
 #endif
-    if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
+    if (mcb.update_options & mount_update_block_devices) {
 //     status->string = "re-scanning block devices";
 //     status_update (status);
 // things go weird if this if enabled:
@@ -1820,10 +1820,10 @@ void einit_mount_update_configuration () {
  if ((node = cfg_findnode ("configuration-storage-update-steps",0,NULL)) && node->svalue) {
   char **tmp = str2set(':', node->svalue);
   uint32_t c = 0;
-  mcb.update_options = EVENT_UPDATE_FSTAB + EVENT_UPDATE_MTAB;
+  mcb.update_options = mount_update_fstab + mount_update_mtab;
   for (; tmp[c]; c++) {
-   if (strmatch (tmp[c], "metadata")) mcb.update_options |= EVENT_UPDATE_METADATA;
-   else if (strmatch (tmp[c], "block-devices")) mcb.update_options |= EVENT_UPDATE_BLOCK_DEVICES;
+   if (strmatch (tmp[c], "metadata")) mcb.update_options |= mount_update_metadata;
+   else if (strmatch (tmp[c], "block-devices")) mcb.update_options |= mount_update_block_devices;
   }
   free (tmp);
  }
@@ -1838,13 +1838,13 @@ void einit_mount_update_configuration () {
   fsck_command = estrdup(node->svalue);
 
  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
-  mcb.options |= OPTION_MAINTAIN_MTAB;
+  mcb.options |= mount_maintain_mtab;
   mcb.mtab_file = node->svalue;
  }
 
- if (mcb.update_options & EVENT_UPDATE_BLOCK_DEVICES) {
+ if (mcb.update_options & mount_update_block_devices) {
   einit_mount_update (UPDATE_BLOCK_DEVICES);
-  if (!(mcb.update_options & EVENT_UPDATE_METADATA)) {
+  if (!(mcb.update_options & mount_update_metadata)) {
    update_fstab();
   }
  } else update_fstab();

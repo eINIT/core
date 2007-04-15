@@ -68,37 +68,54 @@ extern "C" {
  * \bug not used
  \{
 */
-#define FS_CAPA_RW                      0x0001     /*!< Filesystem Capability: can be mounted RW */
-#define FS_CAPA_VOLATILE                0x0002     /*!< Filesystem Capability: changes are lost */
-#define FS_CAPA_NETWORK                 0x0004     /*!< Filesystem Capability: network filesystem */
+enum filesystem_capability {
+ filesystem_capability_rw       = 0x1,
+/*!< Filesystem Capability: can be mounted RW */
+ filesystem_capability_volatile = 0x2,
+/*!< Filesystem Capability: changes are lost */
+ filesystem_capability_network  = 0x4
+/*!< Filesystem Capability: network filesystem */
+};
 /*!\}*/
 
 /*!\name Status Bitfield
  * \bug only partially used and set appropriately
  \{
 */
-#define BF_STATUS_ERROR                 0xf0000000 /*!< Status Bitmask: errors occured */
-#define BF_STATUS_ERROR_IO              0x10000000 /*!< Status Bit: I/O errors */
-#define BF_STATUS_ERROR_NOTINIT         0x20000000 /*!< Status Bit: blockdevice not yet initialised */
-#define BF_STATUS_MOUNTED               0x00000001 /*!< Status Bit: blockdevice mounted */
-#define BF_STATUS_DIRTY                 0x00000002 /*!< Status Bit: blockdevice dirty (run fsck) */
-#define BF_STATUS_HAS_MEDIUM            0x00000004 /*!< Status Bit: blockdevice has medium */
+#define BF_STATUS_ERROR                 0xf000 /*!< Status Bitmask: errors occured */
+
+enum device_status {
+ device_status_mounted      = 0x0001,
+/*!< Status Bit: blockdevice mounted */
+ device_status_dirty        = 0x0002,
+/*!< Status Bit: blockdevice dirty (run fsck) */
+ device_status_has_medium   = 0x0004,
+/*!< Status Bit: blockdevice has medium */
+
+ device_status_error_io     = 0x1000,
+/*!< Status Bit: I/O errors */
+ device_status_error_notint = 0x2000
+/*!< Status Bit: blockdevice not yet initialised */
+};
 /*!\}*/
 
 /*!\name FSTab Options
  \{*/
-#define MOUNT_FSTAB_NOAUTO              0x0001
-#define MOUNT_FSTAB_CRITICAL            0x0002
+enum mount_fstab_options {
+ mount_fstab_noauto   = 0x1,
+ mount_fstab_critical = 0x2
+};
 /*!\}*/
 
 /*!\name Mount data update requests
  \{*/
-#define EVENT_UPDATE_METADATA           0x01
-#define EVENT_UPDATE_BLOCK_DEVICES      0x02
-#define EVENT_UPDATE_FSTAB              0x04
-#define EVENT_UPDATE_MTAB               0x08
-
-#define OPTION_MAINTAIN_MTAB            0x10
+enum mount_options {
+ mount_update_metadata      = 0x01,
+ mount_update_block_devices = 0x02,
+ mount_update_fstab         = 0x04,
+ mount_update_mtab          = 0x08,
+ mount_maintain_mtab        = 0x10
+};
 
 /* definitions */
 enum update_task {
@@ -136,7 +153,7 @@ struct bd_info {
  char *label, *uuid, *fs;
  uint32_t major, minor;
  enum known_filesystems fs_type;
- uint32_t status;
+ enum device_status status;
 };
 
 struct fstab_entry {
@@ -174,7 +191,8 @@ struct mount_control_block {
  void (*add_mtab_entry) (char *, char *, char *, char *, uint32_t, uint32_t);
  void (*add_filesystem) (char *, char *);
  uint32_t update_options;
- unsigned char options;
+
+ enum mount_options options;
 
  char **critical;
  char **noumount;
