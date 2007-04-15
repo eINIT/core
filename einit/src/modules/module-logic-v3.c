@@ -1539,11 +1539,13 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
 
   if (task & einit_module_enable) {
    struct lmodule *first = lm[0];
-   char broken = 0;
+   char broken = 0, rotate = 0;
 
    do {
+/*    eputs (".", stderr);
+    fflush (stderr);*/
     struct lmodule *rcurrent = lm[0];
-    char rotate = 0;
+    rotate = 0;
     broken = 0;
 
     first = 0;
@@ -1580,8 +1582,10 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
      }
 
      lm[rx-1] = rcurrent;
+    } else {
+     rotate = 0;
     }
-   } while (broken && (lm[0] != first));
+   } while (broken && rotate && (lm[0] != first));
 
    if (broken) {
     mod_mark (service, MARK_BROKEN);
@@ -1640,6 +1644,7 @@ void mod_flatten_current_tb () {
    }
 
    eputs ("+", stderr);
+/*   eputs (current.enable[i], stderr);*/
    fflush (stderr);
 
    if (((t = mod_flatten_current_tb_group(current.enable[i], einit_module_enable)) == -1) &&
