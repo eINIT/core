@@ -275,7 +275,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   if ((strng = cfg_getstring ("feedback/auto-add", mode)))
    auto_add_feedback = parse_boolean(strng);
   if ((strng = cfg_getstring ("options/shutdown", mode)) && parse_boolean(strng)) {
-   plan->options |= MP_OPTION_SHUTDOWN;
+   plan->options |= plan_option_shutdown;
   }
 
   if (!enable)
@@ -435,7 +435,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (!plan) return 0;
 
- if (plan->options & MP_OPTION_SHUTDOWN)
+ if (plan->options & plan_option_shutdown)
   shutting_down = 1;
 
 // do some extra work if the plan was derived from a mode

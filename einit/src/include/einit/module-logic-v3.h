@@ -57,14 +57,16 @@ struct module_taskblock {
  char **critical;
 };
 
-#define MP_OPTION_SHUTDOWN 0x0001
+enum einit_plan_options {
+ plan_option_shutdown = 0x1
+};
 
 struct mloadplan {
  struct module_taskblock changes;
  struct cfgnode *mode;
  char **used_modes;
 
- uint16_t options;
+ enum einit_plan_options options;
 };
 
 typedef double (*plan_progress_fetcher)(struct mloadplan *);
