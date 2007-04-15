@@ -107,7 +107,7 @@ void fbsplash_queue_comand (const char *command) {
 }
 
 void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
- if (ev->type == EVE_SWITCHING_MODE) {
+ if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
 
   fbsplash_queue_comand("set mode silent");
@@ -119,7 +119,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
 
   fbsplash_queue_comand("repaint");
  }
- if (ev->type == EVE_MODE_SWITCHED) {
+ if (ev->type == einit_core_mode_switch_done) {
   char tmp[BUFFERSIZE];
 
   if (ev->para && ((struct cfgnode *)ev->para)->id) {
@@ -130,7 +130,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   fbsplash_queue_comand("repaint");
 //  fbsplash_queue_comand("set mode verbose");
  }
- if ((ev->type == EVE_SERVICE_UPDATE) && ev->set) {
+ if ((ev->type == einit_core_service_update) && ev->set) {
   char tmp[BUFFERSIZE];
   uint32_t i = 0;
 
@@ -298,7 +298,7 @@ int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status)
  fbsplash_queue_comand("progress 0");
  fbsplash_queue_comand("repaint");
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_feedback_visual_fbsplash_einit_event_handler);
+ event_listen (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
 
  return STATUS_OK;
 }
@@ -307,7 +307,7 @@ int einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status
  einit_feedback_visual_fbsplash_worker_thread_keep_running = 0;
  pthread_cond_broadcast (&fbsplash_commandQ_cond);
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_feedback_visual_fbsplash_einit_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
 
  return STATUS_OK;
 }

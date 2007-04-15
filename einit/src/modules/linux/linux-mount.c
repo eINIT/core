@@ -386,7 +386,7 @@ int linux_mount_configure (struct lmodule *this) {
 /* pexec configuration */
  exec_configure (this);
 
- struct einit_event *ev = evinit (EVE_DO_UPDATE);
+ struct einit_event *ev = evinit (einit_mount_do_update);
 
  function_register ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_register ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
@@ -394,7 +394,7 @@ int linux_mount_configure (struct lmodule *this) {
 /* nfs mounting is a real, royal PITA. we'll use the regular /bin/mount command for the time being */
  function_register ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
 
- event_emit (ev, EINIT_EVENT_FLAG_BROADCAST);
+ event_emit (ev, einit_event_flag_broadcast);
  evdestroy (ev);
 
  return 0;

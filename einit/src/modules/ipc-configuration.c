@@ -80,7 +80,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *);
 void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
  if (ev->argc > 1) {
   if (strmatch (ev->argv[0], "update") && strmatch (ev->argv[1], "configuration")) {
-   struct einit_event nev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+   struct einit_event nev = evstaticinit(einit_core_update_configuration);
    nev.string = ev->argv[2];
 
    if (nev.string) {
@@ -88,7 +88,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    } else {
     eputs ("event-subsystem: updating configuration\n", stderr);
    }
-   event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&nev, einit_event_flag_broadcast);
 
    evstaticdestroy(nev);
 
@@ -249,7 +249,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 }
 
 int einit_ipc_configuration_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_ipc_configuration_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_ipc_configuration_ipc_event_handler);
 
  return 0;
 }
@@ -259,7 +259,7 @@ int einit_ipc_configuration_configure (struct lmodule *r) {
 
  thismodule->cleanup = einit_ipc_configuration_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_ipc_configuration_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_ipc_configuration_ipc_event_handler);
 
  return 0;
 }

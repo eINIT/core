@@ -50,107 +50,115 @@ extern "C" {
 #define EVENT_SUBSYSTEM_MASK           0xfffff000
 #define EVENT_CODE_MASK                0x00000fff
 
-#define EINIT_EVENT_FLAG_BROADCAST     0x0001
+enum einit_event_emit_flags {
+ einit_event_flag_broadcast    = 0x1,
 /*!< this should always be specified, although just now it's being ignored */
-#define EINIT_EVENT_FLAG_SPAWN_THREAD  0x0002
+ einit_event_flag_spawn_thread = 0x2,
 /*!< use this to tell einit that you don't wish/need to wait for this to return */
-#define EINIT_EVENT_FLAG_DUPLICATE     0x0004
-/*!< duplicate event data block. important with SPAWN_THREAD */
+ einit_event_flag_duplicate    = 0x4
+/*!< duplicate event data block. important with *spawn_thread */
+};
 
-#define EVENT_SUBSYSTEM_EINIT          0x00001000
-#define EVE_PANIC                      0x00001001
+enum einit_event_subsystems {
+ einit_event_subsystem_core     = 0x00001000,
+ einit_event_subsystem_ipc      = 0x00002000,
+/*!< incoming IPC request */
+ einit_event_subsystem_mount    = 0x00003000,
+/*!< update mount status */
+ einit_event_subsystem_feedback = 0x00004000,
+ einit_event_subsystem_power    = 0x00005000,
+/*!< notify others that the power is failing, has been restored or similar */
+ einit_event_subsystem_timer    = 0x00006000,
+/*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
+ einit_event_subsystem_network  = 0x00007000,
+ einit_event_subsystem_custom   = 0xfffff000
+/*!< custom events; not yet implemented */
+};
+
+enum einit_event_code {
+/* einit_event_subsystem_core: */
+ einit_core_panic                   = einit_event_subsystem_core     | 0x001,
 /*!< put everyone in the cast range into a state of panic/calm everyone down; status contains a reason */
-#define EVE_MODULE_UPDATE              0x00001002
-/*!< Module status changing; use the task and status fields to find out just what happened */
-#define EVE_SERVICE_UPDATE             0x00001003
-/*!< Service availability changing; use the task and status fields to find out just what happened */
-#define EVE_CONFIGURATION_UPDATE       0x00001004
+ einit_core_module_update           = einit_event_subsystem_core     | 0x002,
+/*!< Module status changing; use the task and status fields to find out what happened */
+ einit_core_service_update          = einit_event_subsystem_core     | 0x003,
+/*!< Service availability changing; use the task and status fields to find out what happened */
+ einit_core_configuration_update    = einit_event_subsystem_core     | 0x004,
 /*!< notification of configuration update */
-#define EVE_PLAN_UPDATE                0x00001005
+ einit_core_plan_update             = einit_event_subsystem_core     | 0x005,
 /*!< Plan status update */
-#define EVE_MODULE_LIST_UPDATE         0x00001006
+ einit_core_module_list_update      = einit_event_subsystem_core     | 0x006,
 /*!< notification of module-list updates */
 
-/*!< updated core information: new configuration elements */
-#define EVE_UPDATE_CONFIGURATION       0x00001101
+ einit_core_update_configuration    = einit_event_subsystem_core     | 0x101,
 /*!< update the configuration */
-#define EVE_CHANGE_SERVICE_STATUS      0x00001102
+ einit_core_change_service_status   = einit_event_subsystem_core     | 0x102,
 /*!< change status of a service */
-#define EVE_SWITCH_MODE                0x00001103
+ einit_core_switch_mode             = einit_event_subsystem_core     | 0x103,
 /*!< switch to a different mode */
-#define EVE_UPDATE_MODULES             0x00001104
+ einit_core_update_modules          = einit_event_subsystem_core     | 0x104,
 /*!< update the modules */
-#define EVE_UPDATE_MODULE              0x00001105
+ einit_core_update_module           = einit_event_subsystem_core     | 0x105,
 /*!< update this module (in ->para) */
 
+ einit_core_mode_switching          = einit_event_subsystem_core     | 0x201,
+ einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,
 
-#define EVE_SWITCHING_MODE             0x00001201
-#define EVE_MODE_SWITCHED              0x00001202
+ einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
 
-#define EVE_MAIN_LOOP                  0x00001fff
+/* einit_event_subsystem_mount: */
+ einit_mount_do_update              = einit_event_subsystem_mount    | 0x001,
+ einit_mount_node_mounted           = einit_event_subsystem_mount    | 0x011,
+ einit_mount_node_unmounted         = einit_event_subsystem_mount    | 0x012,
+ einit_mount_new_mount_level        = einit_event_subsystem_mount    | 0x021,
 
-#define EVENT_SUBSYSTEM_IPC            0x00002000
-/*!< incoming IPC request */
-#define EVENT_SUBSYSTEM_MOUNT                   0x00003000
-#define EVE_DO_UPDATE                           0x00003001
-#define EVENT_NODE_MOUNTED                      0x00003002
-#define EVE_NEW_MOUNT_LEVEL                     0x00003003
-#define EVENT_NODE_UNMOUNTED                    0x00003004
-/*!< update mount status */
-
-#define EVENT_SUBSYSTEM_FEEDBACK                0x00004000
-#define EVE_FEEDBACK_MODULE_STATUS              0x00004001
+/* einit_event_subsystem_feedback: */
+ einit_feedback_module_status       = einit_event_subsystem_feedback | 0x001,
 /*!< the para field specifies a module that caused the feedback */
-#define EVE_FEEDBACK_PLAN_STATUS                0x00004002
-#define EVE_FEEDBACK_NOTICE                     0x00004003
-#define EVENT_FEEDBACK_REGISTER_FD              0x00004004
-#define EVENT_FEEDBACK_UNREGISTER_FD            0x00004005
+ einit_feedback_plan_status         = einit_event_subsystem_feedback | 0x002,
+ einit_feedback_notice              = einit_event_subsystem_feedback | 0x003,
+ einit_feedback_register_fd         = einit_event_subsystem_feedback | 0x011,
+ einit_feedback_unregister_fd       = einit_event_subsystem_feedback | 0x012,
 
-#define EVENT_FEEDBACK_BROKEN_SERVICES          0x00004010
-#define EVENT_FEEDBACK_UNRESOLVED_SERVICES      0x00004010
+ einit_feedback_broken_services     = einit_event_subsystem_feedback | 0x021,
+ einit_feedback_unresolved_services = einit_event_subsystem_feedback | 0x022,
 
-#define EVENT_SUBSYSTEM_POWER			0x00005000
-/*!< notify others that the power is failing, has been restored or similar */
-#define EVENT_POWER_DOWN_SCHEDULED		0x00005001
+/* einit_event_subsystem_power: */
+ einit_power_down_scheduled         = einit_event_subsystem_power    | 0x001,
 /*!< shutdown scheduled */
-#define EVENT_POWER_DOWN_IMMINENT		0x00005002
+ einit_power_down_imminent          = einit_event_subsystem_power    | 0x002,
 /*!< shutdown going to happen after this event */
-#define EVENT_POWER_RESET_SCHEDULED		0x00005003
+ einit_power_reset_scheduled        = einit_event_subsystem_power    | 0x011,
 /*!< reboot scheduled */
-#define EVENT_POWER_RESET_IMMINENT		0x00005004
+ einit_power_reset_imminent         = einit_event_subsystem_power    | 0x012,
 /*!< reboot going to happen after this event */
 
-#define EVENT_POWER_FAILING				0x00005005
+ einit_power_failing                = einit_event_subsystem_power    | 0x021,
 /*!< power is failing */
-#define EVENT_POWER_FAILURE_IMMINENT	0x00005006
+ einit_power_failure_imminent       = einit_event_subsystem_power    | 0x022,
 /*!< power is failing NOW */
-#define EVENT_POWER_RESTORED			0x00005007
+ einit_power_restored               = einit_event_subsystem_power    | 0x023,
 /*!< power was restored */
 
-#define EVENT_SUBSYSTEM_TIMER		0x00006000
-/*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
-
-#define EVENT_SUBSYSTEM_NETWORK		0x00007000
-#define EVE_NETWORK_DO_UPDATE		0x00007001
-
-#define EVENT_SUBSYSTEM_CUSTOM		0xfffff000
-/*!< custom events; not yet implemented */
-
+/* einit_event_subsystem_network: */
+ einit_network_do_update            = einit_event_subsystem_network  | 0x001
+};
 
 enum einit_ipc_options {
  einit_ipc_output_xml    = 0x0001,
  einit_ipc_output_ansi   = 0x0004,
  einit_ipc_only_relevant = 0x0100,
  einit_ipc_help          = 0x0002,
- einit_ipc_detach        = 0x0010
+ einit_ipc_detach        = 0x0010,
+ einit_ipc_implemented   = 0x1000
 };
 
 #define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0 } }, 0, 0, { NULL }, PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
- uint32_t type;                  /*!< the event or subsystem to watch */
- uint32_t chain_type;            /*!< the event to be called right after this one */
+ enum einit_event_code type;       /*!< the event or subsystem to watch */
+ enum einit_event_code chain_type; /*!< the event to be called right after this one */
 
  union {
 /*! these struct elements are for use with non-IPC events */
@@ -199,9 +207,9 @@ struct exported_function {
  void const *function;                   /*!< pointer to the function */
 };
 
-void *event_emit (struct einit_event *, const uint16_t);
-void event_listen (const uint32_t, void (*)(struct einit_event *));
-void event_ignore (const uint32_t, void (*)(struct einit_event *));
+void *event_emit (struct einit_event *, enum einit_event_emit_flags);
+void event_listen (enum einit_event_subsystems, void (*)(struct einit_event *));
+void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
 
 void function_register (const char *, uint32_t, void const *);
 void function_unregister (const char *, uint32_t, void const *);

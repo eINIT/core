@@ -322,9 +322,9 @@ int einit_mount_cleanup (struct lmodule *this) {
  function_unregister ("fs-mount", 1, (void *)emount);
  function_unregister ("fs-umount", 1, (void *)eumount);
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_mount_einit_event_handler);
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_mount_mount_ipc_handler);
- event_ignore (EVENT_SUBSYSTEM_MOUNT, einit_mount_mount_update_handler);
+ event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
+ event_ignore (einit_event_subsystem_mount, einit_mount_mount_update_handler);
 
  if (fsck_command) {
   free (fsck_command);
@@ -1056,9 +1056,9 @@ int emount (char *mountpoint, struct einit_event *status) {
      startdaemon (fse->manager, status);
    }
 
-   struct einit_event eem = evstaticinit (EVENT_NODE_MOUNTED);
+   struct einit_event eem = evstaticinit (einit_mount_node_mounted);
    eem.string = mountpoint;
-   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&eem, einit_event_flag_broadcast);
    evstaticdestroy (eem);
 
    fse->status |= BF_STATUS_MOUNTED;
@@ -1187,9 +1187,9 @@ int eumount (char *mountpoint, struct einit_event *status) {
  if (fse && (fse->status & BF_STATUS_MOUNTED))
   fse->status ^= BF_STATUS_MOUNTED;
 
- struct einit_event eem = evstaticinit (EVENT_NODE_UNMOUNTED);
+ struct einit_event eem = evstaticinit (einit_mount_node_unmounted);
  eem.string = mountpoint;
- event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+ event_emit (&eem, einit_event_flag_broadcast);
  evstaticdestroy (eem);
 
  return STATUS_OK;
@@ -1679,9 +1679,9 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
   sc++;
  }
 
- struct einit_event rev = evstaticinit(EVE_NEW_MOUNT_LEVEL);
+ struct einit_event rev = evstaticinit(einit_mount_new_mount_level);
  rev.integer = p;
- event_emit (&rev, EINIT_EVENT_FLAG_BROADCAST);
+ event_emit (&rev, einit_event_flag_broadcast);
  evstaticdestroy (rev);
 
 // scan for new modules after mounting all critical filesystems
@@ -1853,7 +1853,7 @@ void einit_mount_update_configuration () {
 }
 
 void einit_mount_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if (ev->type == einit_core_configuration_update) {
   einit_mount_update_configuration();
  }
 }
@@ -1869,9 +1869,9 @@ int einit_mount_configure (struct lmodule *r) {
 /* pexec configuration */
  exec_configure (this);
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_mount_mount_ipc_handler);
- event_listen (EVENT_SUBSYSTEM_MOUNT, einit_mount_mount_update_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_mount_einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
+ event_listen (einit_event_subsystem_mount, einit_mount_mount_update_handler);
+ event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);
 
  function_register ("find-block-devices-dev", 1, (void *)find_block_devices_recurse_path);
  function_register ("read-fstab-label", 1, (void *)forge_fstab_by_label);

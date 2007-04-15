@@ -85,7 +85,7 @@ module_register(bootstrap_einit_configuration_xml_expat_self);
 int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_config_xml_expat_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
 
  return 0;
 }
@@ -95,7 +95,7 @@ int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
 
  thismodule->cleanup = bootstrap_einit_configuration_xml_expat_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_config_xml_expat_event_handler);
+ event_listen (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
 
  function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
@@ -463,7 +463,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 }
 
 void einit_config_xml_expat_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_UPDATE_CONFIGURATION) {
+ if (ev->type == einit_core_update_configuration) {
   if (!ev->string && xml_configuration_files) {
    struct stat st;
    uint32_t i = 0;
@@ -474,7 +474,7 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
      for (i = 0; xml_configuration_files && xml_configuration_files [i]; i++) {
       einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
      }
-     ev->chain_type = EVE_CONFIGURATION_UPDATE;
+     ev->chain_type = einit_core_configuration_update;
 
      break;
     }
@@ -483,7 +483,7 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
 
   if (ev->string) {
    einit_config_xml_expat_parse_configuration_file (ev->string);
-   ev->chain_type = EVE_CONFIGURATION_UPDATE;
+   ev->chain_type = einit_core_configuration_update;
   }
  }
 }

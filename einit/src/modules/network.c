@@ -112,9 +112,9 @@ module_register(einit_network_self);
 
 #if 0
 void network_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_UPDATE_CONFIGURATION) {
+ if (ev->type == einit_core_update_configuration) {
   if (configuration_network_parse_and_add_nodes()) {
-   ev->chain_type = EVE_CONFIGURATION_UPDATE;
+   ev->chain_type = einit_core_configuration_update;
   }
  }
 }
@@ -482,7 +482,7 @@ int network_configure (struct lmodule *this) {
  thismodule->scanmodules = network_scanmodules;
 
 #if 0
- event_listen (EVENT_SUBSYSTEM_EINIT, network_einit_event_handler);
+ event_listen (einit_event_subsystem_core, network_einit_event_handler);
 #endif
 
  return 0;

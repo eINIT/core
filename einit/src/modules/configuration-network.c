@@ -244,9 +244,9 @@ char configuration_network_parse_configuration_and_add_nodes() {
 }
 
 void configuration_network_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_UPDATE_CONFIGURATION) {
+ if (ev->type == einit_core_update_configuration) {
   if (configuration_network_parse_configuration_and_add_nodes()) {
-   ev->chain_type = EVE_CONFIGURATION_UPDATE;
+   ev->chain_type = einit_core_configuration_update;
   }
  }
 }
@@ -256,7 +256,7 @@ int configuration_network_configure (struct lmodule *this) {
 
  thismodule->cleanup = configuration_network_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, configuration_network_einit_event_handler);
+ event_listen (einit_event_subsystem_core, configuration_network_einit_event_handler);
 
  configuration_network_parse_configuration_and_add_nodes();
 

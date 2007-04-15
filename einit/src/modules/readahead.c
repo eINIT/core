@@ -190,7 +190,7 @@ void einit_readahead_ipc_event_handler (struct einit_event *ev) {
 }
 
 int einit_readahead_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_readahead_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_readahead_ipc_event_handler);
 
  return 0;
 }
@@ -222,7 +222,7 @@ int einit_readahead_configure (struct lmodule *irr) {
  thismodule->enable = einit_readahead_enable;
  thismodule->disable = einit_readahead_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_readahead_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_readahead_ipc_event_handler);
 
  return 0;
 }

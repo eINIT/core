@@ -135,8 +135,8 @@ struct group_data {
 int einit_module_logic_v3_cleanup (struct lmodule *this) {
  function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
- event_ignore (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, module_logic_einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
 
  return 0;
 }
@@ -146,8 +146,8 @@ int einit_module_logic_v3_configure (struct lmodule *this) {
 
  thismodule->cleanup = einit_module_logic_v3_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, module_logic_ipc_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, module_logic_einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
+ event_listen (einit_event_subsystem_core, module_logic_einit_event_handler);
 
  function_register ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
@@ -431,7 +431,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- struct einit_event *fb = evinit (EVE_FEEDBACK_PLAN_STATUS);
+ struct einit_event *fb = evinit (einit_feedback_plan_status);
 
  if (!plan) return 0;
 
@@ -443,14 +443,14 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   char *cmdt;
   cmode = plan->mode;
 
-  struct einit_event eex = evstaticinit (EVE_SWITCHING_MODE);
+  struct einit_event eex = evstaticinit (einit_core_mode_switching);
   eex.para = (void *)plan->mode;
-  event_emit (&eex, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&eex, einit_event_flag_broadcast);
   evstaticdestroy (eex);
 
   if ((cmdt = cfg_getstring ("before-switch/emit-event", cmode))) {
    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
-   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&ee, einit_event_flag_broadcast);
    evstaticdestroy (ee);
   }
 
@@ -516,23 +516,23 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   cmode = plan->mode;
   amode = plan->mode;
 
-  struct einit_event eex = evstaticinit (EVE_MODE_SWITCHED);
+  struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
   eex.para = (void *)plan->mode;
-  event_emit (&eex, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&eex, einit_event_flag_broadcast);
   evstaticdestroy (eex);
 
   if (amode->id) {
-   struct einit_event eema = evstaticinit (EVE_PLAN_UPDATE);
+   struct einit_event eema = evstaticinit (einit_core_plan_update);
    eema.string = estrdup(amode->id);
    eema.para   = (void *)amode;
-   event_emit (&eema, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&eema, einit_event_flag_broadcast);
    free (eema.string);
    evstaticdestroy (eema);
   }
 
   if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
-   event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&ee, einit_event_flag_broadcast);
    evstaticdestroy (ee);
   }
 
@@ -735,11 +735,11 @@ int mod_modaction (char **argv) {
 }
 
 void module_logic_einit_event_handler(struct einit_event *ev) {
- if ((ev->type == EVE_UPDATE_CONFIGURATION) && !initdone) {
+ if ((ev->type == einit_core_update_configuration) && !initdone) {
   initdone = 1;
 
   function_register("module-logic-get-plan-progress", 1, (void (*)(void *))mod_get_plan_progress_f);
- } else if (ev->type == EVE_MODULE_LIST_UPDATE) {
+ } else if (ev->type == einit_core_module_list_update) {
   /* update list with services */
   struct stree *new_service_list = NULL;
   struct lmodule *cur = ev->para;
@@ -796,37 +796,37 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   }
 
   emutex_unlock (&ml_group_data_mutex);
- } else if ((ev->type == EVE_SERVICE_UPDATE) && (!(ev->status & STATUS_WORKING))) {
+ } else if ((ev->type == einit_core_service_update) && (!(ev->status & STATUS_WORKING))) {
 /* something's done now, update our lists */
   mod_examine_module ((struct lmodule *)ev->para);
  } else switch (ev->type) {
-  case EVE_SWITCH_MODE:
+  case einit_core_switch_mode:
    if (!ev->string) return;
    else {
     if (ev->para) {
-     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_REGISTER_FD);
+     struct einit_event ee = evstaticinit(einit_feedback_register_fd);
      ee.para = ev->para;
-     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
 
     mod_switchmode (ev->string);
 
     if (ev->para) {
-     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
+     struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
      ee.para = ev->para;
-     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
    }
    return;
-  case EVE_CHANGE_SERVICE_STATUS:
+  case einit_core_change_service_status:
    if (!ev->set) return;
    else {
     if (ev->para) {
-     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_REGISTER_FD);
+     struct einit_event ee = evstaticinit(einit_feedback_register_fd);
      ee.para = ev->para;
-     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
 
@@ -835,12 +835,14 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     }
 
     if (ev->para) {
-     struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNREGISTER_FD);
+     struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
      ee.para = ev->para;
-     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
    }
+   return;
+  default:
    return;
  }
 }
@@ -1146,20 +1148,20 @@ void mod_commits_dec () {
  char clean_broken = 0;
  emutex_lock (&ml_unresolved_mutex);
  if (broken_services) {
-  struct einit_event ee = evstaticinit(EVENT_FEEDBACK_BROKEN_SERVICES);
+  struct einit_event ee = evstaticinit(einit_feedback_broken_services);
   ee.set = (void **)broken_services;
 
-  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);
 
   free (broken_services);
   broken_services = NULL;
  }
  if (unresolved_services) {
-  struct einit_event ee = evstaticinit(EVENT_FEEDBACK_UNRESOLVED_SERVICES);
+  struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
   ee.set = (void **)unresolved_services;
 
-  event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);
 
   free (unresolved_services);

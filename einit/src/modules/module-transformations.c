@@ -99,7 +99,7 @@ struct service_transformation {
 #endif
 
 void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if (ev->type == einit_core_configuration_update) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
 #ifdef POSIXREGEX
@@ -170,7 +170,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
   if (ca)
    streefree (ca);
 #endif
- } else if (ev->type == EVE_UPDATE_MODULE) {
+ } else if (ev->type == einit_core_update_module) {
   struct lmodule *module = ev->para;
   struct cfgnode *lnode = NULL;
 
@@ -349,7 +349,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
 }
 
 int einit_module_transformations_cleanup (struct lmodule *r) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_module_transformations_einit_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
 
  return 0;
 }
@@ -359,7 +359,7 @@ int einit_module_transformations_configure (struct lmodule *r) {
 
  thismodule->cleanup = einit_module_transformations_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_module_transformations_einit_event_handler);
+ event_listen (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
 
  return 0;
 }

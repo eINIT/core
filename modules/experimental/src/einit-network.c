@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char * provides[] = {"network/experimental", NULL};
-char * requires[] = {"mount/critical", NULL};
+char * requires[] = {"mount-critical", NULL};
 const struct smodule self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,

@@ -100,7 +100,7 @@ void einit_hostname_ipc_event_handler (struct einit_event *ev) {
 }
 
 int einit_hostname_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_hostname_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_hostname_ipc_event_handler);
 
  return 0;
 }
@@ -152,7 +152,7 @@ int einit_hostname_configure (struct lmodule *irr) {
  thismodule->enable = einit_hostname_enable;
  thismodule->disable = einit_hostname_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_hostname_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_hostname_ipc_event_handler);
 
  return 0;
 }

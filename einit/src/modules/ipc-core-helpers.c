@@ -154,7 +154,7 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
 
 
 int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_ipc_core_helpers_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_ipc_core_helpers_ipc_event_handler);
 
  return 0;
 }
@@ -164,7 +164,7 @@ int einit_ipc_core_helpers_configure (struct lmodule *r) {
 
  thismodule->cleanup = einit_ipc_core_helpers_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_ipc_core_helpers_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_ipc_core_helpers_ipc_event_handler);
 
  return 0;
 }

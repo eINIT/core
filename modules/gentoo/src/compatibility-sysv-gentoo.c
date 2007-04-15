@@ -144,8 +144,8 @@ void gentoo_fixname_set (char **set) {
 
 /* functions that module tend to need */
 int compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_event_handler);
 
  parse_sh_cleanup (irr);
  exec_cleanup(irr);
@@ -449,7 +449,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 }
 
 void einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_UPDATE_CONFIGURATION) {
+ if (ev->type == einit_core_update_configuration) {
   struct stat st;
 
   init_d_exec_scriptlet = cfg_getstring("configuration-compatibility-sysv-distribution-gentoo-init.d-scriptlets/execute", NULL);
@@ -459,7 +459,7 @@ void einit_event_handler (struct einit_event *ev) {
    if (!is_gentoo_system) {
     is_gentoo_system = 1;
     fputs (" >> gentoo system detected\n", stderr);
-    ev->chain_type = EVE_CONFIGURATION_UPDATE;
+    ev->chain_type = einit_core_configuration_update;
    }
 /* env.d data */
    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-parse-env.d", NULL);
@@ -476,7 +476,7 @@ void einit_event_handler (struct einit_event *ev) {
 
       free (data);
      }
-     ev->chain_type = EVE_CONFIGURATION_UPDATE;
+     ev->chain_type = einit_core_configuration_update;
     }
    }
 
@@ -494,7 +494,7 @@ void einit_event_handler (struct einit_event *ev) {
    }
   }
 #ifdef POSIXREGEX
- } else if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ } else if (ev->type == einit_core_configuration_update) {
   struct cfgnode *node = NULL;
   struct stree *new_transformations = NULL, *ca;
 
@@ -530,7 +530,7 @@ void einit_event_handler (struct einit_event *ev) {
   if (ca)
    streefree (ca);
 #endif
- } else if (ev->type == EVE_SERVICE_UPDATE) { // update service status
+ } else if (ev->type == einit_core_service_update) { // update service status
   uint32_t i = 0;
   eputs ("marking service status!\n", stderr);
   if (!ev->set) return;
@@ -554,7 +554,7 @@ void einit_event_handler (struct einit_event *ev) {
      rc_mark_service (ev->set[i], rc_service_stopped);
    }
   }
- } else if (ev->type == EVE_PLAN_UPDATE) { // set active "soft mode"
+ } else if (ev->type == einit_core_plan_update) { // set active "soft mode"
   if (do_service_tracking && ev->string) {
    char tmp[BUFFERSIZE];
    int slfile;
@@ -880,8 +880,8 @@ int compatibility_sysv_gentoo_configure (struct lmodule *irr) {
  exec_configure (irr);
  parse_sh_configure (irr);
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (einit_event_subsystem_core, einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, ipc_event_handler);
 }
 
 // no enable/disable functions: this is a passive module

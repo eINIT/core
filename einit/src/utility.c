@@ -312,12 +312,12 @@ void strtrim (char *s) {
 
 /* event-helpers */
 void notice_macro (unsigned char severity, const char *message) {
- struct einit_event *ev = evinit (EVE_FEEDBACK_NOTICE);
+ struct einit_event *ev = evinit (einit_feedback_notice);
 
  ev->flag = severity;
  ev->string = (char *)message;
 
- event_emit (ev, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+ event_emit (ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
 
  evdestroy (ev);
 }

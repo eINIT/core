@@ -104,21 +104,21 @@ void einit_feedback_aural_ipc_event_handler (struct einit_event *ev) {
 
 int einit_feedback_aural_cleanup (struct lmodule *this) {
  exec_cleanup(this);
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_feedback_aural_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_feedback_aural_ipc_event_handler);
 
  return 0;
 }
 
 int einit_feedback_aural_enable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, einit_feedback_aural_feedback_event_handler);
+ event_listen (einit_event_subsystem_feedback, einit_feedback_aural_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
 
 int einit_feedback_aural_disable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, einit_feedback_aural_feedback_event_handler);
+ event_ignore (einit_event_subsystem_feedback, einit_feedback_aural_feedback_event_handler);
  emutex_unlock (&thismodule->imutex);
  return STATUS_OK;
 }
@@ -129,7 +129,7 @@ void einit_feedback_aural_feedback_event_handler(struct einit_event *ev) {
  char phrase[BUFFERSIZE], hostname[BUFFERSIZE];
  phrase[0] = 0;
 
- if (ev->type == EVE_FEEDBACK_PLAN_STATUS) {
+ if (ev->type == einit_feedback_plan_status) {
   switch (ev->task) {
    case MOD_SCHEDULER_PLAN_COMMIT_START:
     if (gethostname (hostname, BUFFERSIZE)) strcpy (hostname, "localhost");
@@ -140,7 +140,7 @@ void einit_feedback_aural_feedback_event_handler(struct einit_event *ev) {
     esprintf (phrase, BUFFERSIZE, "New mode \"%s\" is now in effect.", (amode && amode->id) ? amode->id : "unknown");
     break;
   }
- } else if (ev->type == EVE_FEEDBACK_NOTICE) {
+ } else if (ev->type == einit_feedback_notice) {
   if (synthesizer && ev->string && (ev->flag < sev_threshold)) {
    char *tx;
    strtrim (ev->string);
@@ -187,7 +187,7 @@ int einit_feedback_aural_configure (struct lmodule *r) {
  if ((node = cfg_getnode ("configuration-feedback-aural-tts-vocalising-threshold", NULL)))
   sev_threshold = node->value;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_feedback_aural_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_feedback_aural_ipc_event_handler);
 
  return 0;
 }

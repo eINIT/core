@@ -121,7 +121,7 @@ void compatibility_sysv_initctl_ipc_event_handler (struct einit_event *ev) {
 
 int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
- event_ignore (EVENT_SUBSYSTEM_IPC, compatibility_sysv_initctl_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, compatibility_sysv_initctl_ipc_event_handler);
 
  return 0;
 }
@@ -149,7 +149,7 @@ void * initctl_wait (char *fifo) {
 //  INITCTL_CMD_START: what's that do?
 //  INITCTL_CMD_UNSETENV is deliberately ignored
     if (ic.command == INITCTL_CMD_RUNLVL) { // switch runlevels (modes...)
-     struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+     struct einit_event ee = evstaticinit(einit_core_switch_mode);
      char tmp[BUFFERSIZE], *nmode;
 
 // we need to look up the runlevel to find out what mode it corresponds to:
@@ -174,29 +174,29 @@ void * initctl_wait (char *fifo) {
        cfg_addnode (&tnode);
       }
 
-      event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+      event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
       evstaticdestroy(ee);
      } else {
       esprintf (tmp, BUFFERSIZE, "initctl: told to switch to runlevel %c, which did not resolve to a valid mode", ic.runlevel);
       notice (3, tmp);
      }
     } else if (ic.command == INITCTL_CMD_POWERFAIL) {
-     struct einit_event ee = evstaticinit(EVENT_POWER_FAILING);
+     struct einit_event ee = evstaticinit(einit_power_failing);
      notice (4, "initctl: power is failing");
 
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      evstaticdestroy(ee);
     } else if (ic.command == INITCTL_CMD_POWERFAILNOW) {
-     struct einit_event ee = evstaticinit(EVENT_POWER_FAILURE_IMMINENT);
+     struct einit_event ee = evstaticinit(einit_power_failure_imminent);
      notice (4, "initctl: power failure is imminent");
 
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      evstaticdestroy(ee);
     } else if (ic.command == INITCTL_CMD_POWEROK) {
-     struct einit_event ee = evstaticinit(EVENT_POWER_RESTORED);
+     struct einit_event ee = evstaticinit(einit_power_restored);
      notice (4, "initctl: power was restored");
 
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      evstaticdestroy(ee);
     } else if (ic.command == INITCTL_CMD_SETENV) { // padding contains the new environment string
      char **cx = str2set (':', ic.padding);
@@ -204,9 +204,9 @@ void * initctl_wait (char *fifo) {
       if (cx[0] && cx[1]) {
        if (strmatch (cx[0], "INIT_HALT")) {
         if (strmatch (cx[1], "HALT") || strmatch (cx[1], "POWERDOWN")) {
-         struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+         struct einit_event ee = evstaticinit(einit_core_switch_mode);
          ee.string = "power-down";
-         event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+         event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
          evstaticdestroy(ee);
         }
        }
@@ -287,7 +287,7 @@ int compatibility_sysv_initctl_configure (struct lmodule *r) {
  thismodule->disable = compatibility_sysv_initctl_disable;
 
  ipc_configure (r);
- event_listen (EVENT_SUBSYSTEM_IPC, compatibility_sysv_initctl_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, compatibility_sysv_initctl_ipc_event_handler);
 
  return 0;
 }

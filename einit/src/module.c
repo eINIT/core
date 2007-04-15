@@ -101,9 +101,9 @@ struct lmodule *mod_update (struct lmodule *module) {
   return module;
  }
 
- struct einit_event ee = evstaticinit (EVE_UPDATE_MODULE);
+ struct einit_event ee = evstaticinit (einit_core_update_module);
  ee.para = (void *)module;
- event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+ event_emit (&ee, einit_event_flag_broadcast);
  evstaticdestroy(ee);
 
  emutex_unlock (&module->mutex);
@@ -208,29 +208,29 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
 
 /* inform everyone about what's going to happen */
  {
-  struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);
+  struct einit_event eem = evstaticinit (einit_core_module_update);
   eem.task = task;
   eem.status = STATUS_WORKING;
   eem.para = (void *)module;
-  event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&eem, einit_event_flag_broadcast);
   evstaticdestroy (eem);
 
 /* same for services */
   if (module->si && module->si->provides) {
-   struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
+   struct einit_event ees = evstaticinit (einit_core_service_update);
    ees.task = task;
    ees.status = STATUS_WORKING;
    ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
    ees.set = (void **)module->si->provides;
    ees.para = (void *)module;
-   event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&ees, einit_event_flag_broadcast);
    evstaticdestroy (ees);
   }
  }
 
 /* actual loading bit */
  {
-  fb = evinit (EVE_FEEDBACK_MODULE_STATUS);
+  fb = evinit (einit_feedback_module_status);
   fb->para = (void *)module;
   fb->task = task | MOD_FEEDBACK_SHOW;
   fb->status = STATUS_WORKING;
@@ -268,29 +268,29 @@ int mod (unsigned int task, struct lmodule *module, char *custom_command) {
   module->fbseq = fb->integer + 1;
 
   status_update (fb);
-//  event_emit(fb, EINIT_EVENT_FLAG_BROADCAST);
+//  event_emit(fb, einit_event_flag_broadcast);
 //  if (fb->task & MOD_FEEDBACK_SHOW) fb->task ^= MOD_FEEDBACK_SHOW; fb->string = NULL;
 
   module->lastfb = fb->status;
 
 /* module status update */
   if (module) {
-   struct einit_event eem = evstaticinit (EVE_MODULE_UPDATE);
+   struct einit_event eem = evstaticinit (einit_core_module_update);
    eem.task = task;
    eem.status = fb->status;
    eem.para = (void *)module;
-   event_emit (&eem, EINIT_EVENT_FLAG_BROADCAST);
+   event_emit (&eem, einit_event_flag_broadcast);
    evstaticdestroy (eem);
 
 /* service status update */
    if (module->si && module->si->provides) {
-    struct einit_event ees = evstaticinit (EVE_SERVICE_UPDATE);
+    struct einit_event ees = evstaticinit (einit_core_service_update);
     ees.task = task;
     ees.status = fb->status;
     ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
     ees.set = (void **)module->si->provides;
     ees.para = (void *)module;
-    event_emit (&ees, EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ees, einit_event_flag_broadcast);
     evstaticdestroy (ees);
    }
   }

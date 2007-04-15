@@ -94,8 +94,8 @@ void einit_external_ipc_event_handler (struct einit_event *ev) {
 }
 
 int einit_external_cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_external_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_external_einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_external_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_external_einit_event_handler);
 
  return 0;
 }
@@ -116,7 +116,7 @@ int einit_external_disable (void *pa, struct einit_event *status) {
 }
 
 void einit_external_einit_event_handler (struct einit_event *ev) {
- if ((ev->type == EVE_CONFIGURATION_UPDATE) || (ev->type == EVE_UPDATE_CONFIGURATION)) {
+ if ((ev->type == einit_core_configuration_update) || (ev->type == einit_core_update_configuration)) {
   char *p;
   if ((p = cfg_getstring("services-external/provided", NULL))) {
 
@@ -145,8 +145,8 @@ int einit_external_configure (struct lmodule *r) {
  r->enable = einit_external_enable;
  r->disable = einit_external_disable;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_external_einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, einit_external_ipc_event_handler);
+ event_listen (einit_event_subsystem_core, einit_external_einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_external_ipc_event_handler);
 
  return 0;
 }

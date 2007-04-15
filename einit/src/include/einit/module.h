@@ -305,11 +305,11 @@ void mod_event_handler(struct einit_event *event);
 */
 #if 1
 #define status_update(a) \
- event_emit(a, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE); \
+ event_emit(a, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate); \
  if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL
 #else
 #define status_update(a) \
- event_emit(a, EINIT_EVENT_FLAG_BROADCAST); \
+ event_emit(a, einit_event_flag_broadcast); \
  if (a->task & MOD_FEEDBACK_SHOW) a->task ^= MOD_FEEDBACK_SHOW; a->string = NULL
 #endif
 

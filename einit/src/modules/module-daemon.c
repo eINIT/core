@@ -117,7 +117,7 @@ void einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
 
 int einit_mod_daemon_cleanup (struct lmodule *this) {
  exec_cleanup(this);
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_mod_daemon_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_mod_daemon_ipc_event_handler);
 
  return 0;
 }
@@ -279,7 +279,7 @@ int einit_mod_daemon_configure (struct lmodule *irr) {
  irr->cleanup = einit_mod_daemon_cleanup;
 
  exec_configure (irr);
- event_listen (EVENT_SUBSYSTEM_IPC, einit_mod_daemon_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_mod_daemon_ipc_event_handler);
 
  return 0;
 }

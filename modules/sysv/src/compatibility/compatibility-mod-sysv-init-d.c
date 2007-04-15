@@ -105,7 +105,7 @@ void ipc_event_handler (struct einit_event *ev) {
 
 int _compatibility_mod_sysv_init_d_cleanup (struct lmodule *irr) {
  exec_cleanup(irr);
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, ipc_event_handler);
 }
 
 int _compatibility_mod_sysv_init_d_cleanup_after_module (struct lmodule *this) {
@@ -250,5 +250,5 @@ int _compatibility_mod_sysv_init_d_configure (struct lmodule *irr) {
  irr->scanmodules = _compatibility_mod_sysv_init_d_scanmodules;
 
  exec_configure (irr);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, ipc_event_handler);
 }

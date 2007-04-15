@@ -88,7 +88,7 @@ int  compatibility_sysv_utmp_disable (void *, struct einit_event *);
 char updateutmp_f (unsigned char, struct utmp *);
 
 int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
-// event_ignore (EVENT_SUBSYSTEM_IPC, compatibility_sysv_utmp_ipc_event_handler);
+// event_ignore (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
  function_unregister ("einit-utmp-update", 1, updateutmp_f);
  utmp_cleanup (irr);
 
@@ -250,7 +250,7 @@ int compatibility_sysv_utmp_configure (struct lmodule *irr) {
 
  utmp_configure (irr);
  function_register ("einit-utmp-update", 1, updateutmp_f);
-// event_listen (EVENT_SUBSYSTEM_IPC, compatibility_sysv_utmp_ipc_event_handler);
+// event_listen (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
 
  return 0;
 }

@@ -107,7 +107,7 @@ void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
 int linux_sysconf_cleanup (struct lmodule *this) {
  function_unregister ("core-power-reset-linux", 1, linux_reboot);
  function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (EVENT_SUBSYSTEM_IPC, linux_sysconf_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
 
  return 0;
 }
@@ -196,7 +196,7 @@ int linux_sysconf_configure (struct lmodule *irr) {
  thismodule->enable = linux_sysconf_enable;
  thismodule->disable = linux_sysconf_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, linux_sysconf_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
  function_register ("core-power-off-linux", 1, linux_power_off);
  function_register ("core-power-reset-linux", 1, linux_reboot);
 

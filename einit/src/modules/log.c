@@ -180,7 +180,7 @@ void einit_log_ipc_event_handler (struct einit_event *ev) {
 void einit_log_einit_event_handler(struct einit_event *ev) {
  if (!dolog) return;
 
- if (ev->type == EVE_SWITCHING_MODE) {
+ if (ev->type == einit_core_mode_switching) {
   char logentry[BUFFERSIZE];
 
   esprintf (logentry, BUFFERSIZE, "Now switching to mode \"%s\".", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
@@ -195,7 +195,7 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
   emutex_lock(&logmutex);
   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
   emutex_unlock(&logmutex);
- } else if (ev->type == EVE_MODE_SWITCHED) {
+ } else if (ev->type == einit_core_mode_switch_done) {
   char logentry[BUFFERSIZE];
 
   esprintf (logentry, BUFFERSIZE, "Mode \"%s\" is now in effect.", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
@@ -218,12 +218,12 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
 void einit_log_feedback_event_handler(struct einit_event *ev) {
  if (!dolog) return;
 
- if ((ev->type == EVENT_FEEDBACK_UNRESOLVED_SERVICES) || (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES)) {
+ if ((ev->type == einit_feedback_unresolved_services) || (ev->type == einit_feedback_broken_services)) {
   char *tmp = set2str (' ', (const char **)ev->set);
   if (tmp) {
    char logentry[BUFFERSIZE];
 
-   if (ev->type == EVENT_FEEDBACK_BROKEN_SERVICES)
+   if (ev->type == einit_feedback_broken_services)
     esprintf (logentry, BUFFERSIZE, ev->set[1] ? "broken services: %s\n" : "broken service: %s\n", tmp);
    else
     esprintf (logentry, BUFFERSIZE, ev->set[1] ? "unresolved services: %s\n" : "unresolved service: %s\n", tmp);
@@ -241,7 +241,7 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
 
    free (tmp);
   }
- } else if (ev->type == EVE_FEEDBACK_MODULE_STATUS) {
+ } else if (ev->type == einit_feedback_module_status) {
   if (ev->string) {
    char logentry[BUFFERSIZE];
 
@@ -301,7 +301,7 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
    emutex_unlock(&logmutex);
   }
- } else if ((ev->type == EVE_FEEDBACK_NOTICE) && ev->string) {
+ } else if ((ev->type == einit_feedback_notice) && ev->string) {
   strtrim (ev->string);
 
   struct log_entry ne = {
@@ -331,9 +331,9 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
 }
 
 int einit_log_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_log_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_FEEDBACK, einit_log_feedback_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_log_einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_log_ipc_event_handler);
+ event_ignore (einit_event_subsystem_feedback, einit_log_feedback_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_log_einit_event_handler);
 
  return 0;
 }
@@ -343,9 +343,9 @@ int einit_log_configure (struct lmodule *r) {
 
  r->cleanup = einit_log_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_log_ipc_event_handler);
- event_listen (EVENT_SUBSYSTEM_FEEDBACK, einit_log_feedback_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_log_einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_log_ipc_event_handler);
+ event_listen (einit_event_subsystem_feedback, einit_log_feedback_event_handler);
+ event_listen (einit_event_subsystem_core, einit_log_einit_event_handler);
 
  return 0;
 }

@@ -98,7 +98,7 @@ char einit_ipc_running = 0;
 int ipc_process_f (const char *cmd, FILE *f) {
  if (!cmd) return 0;
 
- struct einit_event *event = evinit (EVENT_SUBSYSTEM_IPC);
+ struct einit_event *event = evinit (einit_event_subsystem_ipc);
  uint32_t ic;
  int ret = 0;
 
@@ -133,7 +133,7 @@ int ipc_process_f (const char *cmd, FILE *f) {
   event->argv = strsetdel ((char**)event->argv, "--help");
  }
 
- event_emit (event, EINIT_EVENT_FLAG_BROADCAST);
+ event_emit (event, einit_event_flag_broadcast);
 
  if (event->argv) free (event->argv);
 
@@ -198,7 +198,7 @@ void einit_ipc_ipc_event_handler (struct einit_event *ev) {
   nev.string = ev->argv[2];
   nev.set = (void **)(ev->argv+2);
 
-  event_emit (&nev, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&nev, einit_event_flag_broadcast);
 
   evstaticdestroy(nev);
 
@@ -207,7 +207,7 @@ void einit_ipc_ipc_event_handler (struct einit_event *ev) {
 }
 
 int einit_ipc_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_ipc_ipc_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);
  function_unregister ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;
@@ -326,7 +326,7 @@ int einit_ipc_configure (struct lmodule *irr) {
  irr->enable = einit_ipc_enable;
  irr->disable = einit_ipc_disable;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_ipc_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);
  function_register ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;

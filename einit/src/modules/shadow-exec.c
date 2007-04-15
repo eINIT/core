@@ -150,11 +150,11 @@ void update_shadows(struct cfgnode *xmode) {
 }
 
 void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_UPDATE_CONFIGURATION) {
+ if (ev->type == einit_core_update_configuration) {
   update_shadows(cmode);
- } else if (ev->type == EVE_SWITCHING_MODE) {
+ } else if (ev->type == einit_core_mode_switching) {
   update_shadows(ev->para);
- } else if (ev->type == EVE_SERVICE_UPDATE) {
+ } else if (ev->type == einit_core_service_update) {
   if (einit_shadow_exec_shadows && ev->set) {
    ssize_t i = 0;
 
@@ -190,7 +190,7 @@ void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
 }
 
 int einit_shadow_exec_cleanup (struct lmodule *this) {
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_shadow_exec_einit_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_shadow_exec_einit_event_handler);
 
  exec_cleanup(this);
 
@@ -204,7 +204,7 @@ int einit_shadow_exec_configure (struct lmodule *this) {
 
  exec_configure(this);
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_shadow_exec_einit_event_handler);
+ event_listen (einit_event_subsystem_core, einit_shadow_exec_einit_event_handler);
 
  return 0;
 }

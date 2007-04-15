@@ -249,18 +249,18 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    if (strmatch (ev->argv[1], "down") || strmatch (ev->argv[1], "off")) {
     ev->implemented = 1;
 
-    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    struct einit_event ee = evstaticinit(einit_core_switch_mode);
     ee.string = "power-down";
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
     eputs (" >> shutdown queued\n", ev->output);
     evstaticdestroy(ee);
    }
    if (strmatch (ev->argv[1], "reset")) {
     ev->implemented = 1;
 
-    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    struct einit_event ee = evstaticinit(einit_core_switch_mode);
     ee.string = "power-reset";
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
     eputs (" >> reset queued\n", ev->output);
     evstaticdestroy(ee);
    }
@@ -317,26 +317,26 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    ev->implemented = 1;
 
    if (strmatch (ev->argv[1], "switch-mode")) {
-    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    struct einit_event ee = evstaticinit(einit_core_switch_mode);
     ee.string = ev->argv[2];
     if (ev->ipc_options & einit_ipc_detach) {
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      eputs (" >> modeswitch queued\n", ev->output);
     } else {
      ee.para = ev->output;
-     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_broadcast);
      ev->ipc_return = ee.integer;
     }
     evstaticdestroy(ee);
    } else {
-    struct einit_event ee = evstaticinit(EVE_CHANGE_SERVICE_STATUS);
+    struct einit_event ee = evstaticinit(einit_core_change_service_status);
     ee.set = (void **)setdup ((const void **)ev->argv+1, SET_TYPE_STRING);
     if (ev->ipc_options & einit_ipc_detach) {
-     event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      eputs (" >> status change queued\n", ev->output);
     } else {
      ee.para = ev->output;
-     event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST);
+     event_emit (&ee, einit_event_flag_broadcast);
      ev->ipc_return = ee.integer;
     }
     evstaticdestroy(ee);
@@ -353,7 +353,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
 }
 
 void sched_einit_event_handler(struct einit_event *ev) {
- if (ev->type == EVE_MAIN_LOOP) {
+ if (ev->type == einit_core_main_loop_reached) {
   sched_run_sigchild(NULL);
  }
 }
@@ -403,12 +403,12 @@ void *sched_run_sigchild (void *p) {
 
    if (sigint_called) {
     struct einit_event ee;
-    ee.type = EVE_SWITCH_MODE;
+    ee.type = einit_core_switch_mode;
     ee.string = "power-reset";
 
 //    ee.para = stdout;
 
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
 //  evstaticdestroy(ee);
 
     sigint_called = 0;
@@ -523,12 +523,12 @@ void *sched_run_sigchild (void *p) {
    if (sigint_called) {
     debug ("scheduler SIGCHLD thread: making eINIT shut down\n");
 
-    struct einit_event ee = evstaticinit (EVE_SWITCH_MODE);
+    struct einit_event ee = evstaticinit (einit_core_switch_mode);
     ee.string = "power-reset";
 
 //    ee.para = stdout;
 
-    event_emit (&ee, EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE | EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
 //  evstaticdestroy(ee);
 
     sigint_called = 0;
@@ -581,8 +581,8 @@ int einit_scheduler_configure (struct lmodule *tm) {
  }
 #endif
 
- event_listen (EVENT_SUBSYSTEM_EINIT, sched_einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, sched_ipc_event_handler);
+ event_listen (einit_event_subsystem_core, sched_einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, sched_ipc_event_handler);
 
  function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
 

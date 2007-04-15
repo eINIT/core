@@ -391,7 +391,7 @@ char *cfg_getpath_f (const char *id) {
 }
 
 void bootstrap_einit_configuration_stree_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if (ev->type == einit_core_configuration_update) {
 // update global environment here
   char **env = einit_global_environment;
   einit_global_environment = NULL;
@@ -411,7 +411,7 @@ void bootstrap_einit_configuration_stree_einit_event_handler (struct einit_event
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
- event_ignore (EVENT_SUBSYSTEM_EINIT, bootstrap_einit_configuration_stree_einit_event_handler);
+ event_ignore (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
 
  function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
@@ -429,7 +429,7 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 
  thismodule->cleanup = bootstrap_einit_configuration_stree_cleanup;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, bootstrap_einit_configuration_stree_einit_event_handler);
+ event_listen (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
 
  function_register ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_register ("einit-configuration-node-get", 1, cfg_getnode_f);

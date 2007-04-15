@@ -53,7 +53,7 @@ pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 uint32_t cseqid = 0;
 
-void *event_emit (struct einit_event *event, const uint16_t flags) {
+void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
  uint32_t subsystem;
 
  if (!event || !event->type) return NULL;
@@ -66,15 +66,15 @@ void *event_emit (struct einit_event *event, const uint16_t flags) {
   struct event_function *cur = event_functions;
   while (cur) {
    if ((cur->type == subsystem) && cur->handler) {
-    if (flags & EINIT_EVENT_FLAG_SPAWN_THREAD) {
+    if (flags & einit_event_flag_spawn_thread) {
      pthread_t threadid;
-     if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
+     if (flags & einit_event_flag_duplicate) {
       struct einit_event *ev = evdup(event);
       ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
      } else
       ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
     } else {
-     if (flags & EINIT_EVENT_FLAG_DUPLICATE) {
+     if (flags & einit_event_flag_duplicate) {
       struct einit_event *ev = evdup(event);
       cur->handler (ev);
      } else
@@ -93,7 +93,7 @@ void *event_emit (struct einit_event *event, const uint16_t flags) {
  return NULL;
 }
 
-void event_listen (const uint32_t type, void (* handler)(struct einit_event *)) {
+void event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
  struct event_function *fstruct = ecalloc (1, sizeof (struct event_function));
 
  fstruct->type = type & EVENT_SUBSYSTEM_MASK;
@@ -107,7 +107,7 @@ void event_listen (const uint32_t type, void (* handler)(struct einit_event *)) 
  emutex_unlock (&evf_mutex);
 }
 
-void event_ignore (const uint32_t type, void (* handler)(struct einit_event *)) {
+void event_ignore (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
  if (!event_functions) return;
 
  uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
@@ -223,26 +223,26 @@ void function_unregister (const char *name, uint32_t version, void const *functi
 
 char *event_code_to_string (const uint32_t code) {
  switch (code) {
-  case EVE_UPDATE_CONFIGURATION:   return "core/update-configuration";
-  case EVE_MODULE_UPDATE:          return "core/module-status-update";
-  case EVE_SERVICE_UPDATE:         return "core/service-status-update";
-  case EVE_CONFIGURATION_UPDATE:   return "core/configuration-status-update";
+  case einit_core_update_configuration:   return "core/update-configuration";
+  case einit_core_module_update:          return "core/module-status-update";
+  case einit_core_service_update:         return "core/service-status-update";
+  case einit_core_configuration_update:   return "core/configuration-status-update";
 
-  case EVE_DO_UPDATE:              return "mount/update";
+  case einit_mount_do_update:              return "mount/update";
 
-  case EVE_FEEDBACK_MODULE_STATUS: return "feedback/module";
-  case EVE_FEEDBACK_PLAN_STATUS:   return "feedback/plan";
-  case EVE_FEEDBACK_NOTICE:        return "feedback/notice";
+  case einit_feedback_module_status: return "feedback/module";
+  case einit_feedback_plan_status:   return "feedback/plan";
+  case einit_feedback_notice:        return "feedback/notice";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
-  case EVENT_SUBSYSTEM_EINIT:    return "core/{unknown}";
-  case EVENT_SUBSYSTEM_IPC:      return "ipc/{unknown}";
-  case EVENT_SUBSYSTEM_MOUNT:    return "mount/{unknown}";
-  case EVENT_SUBSYSTEM_FEEDBACK: return "feedback/{unknown}";
-  case EVENT_SUBSYSTEM_POWER:    return "power/{unknown}";
-  case EVENT_SUBSYSTEM_TIMER:    return "timer/{unknown}";
-  case EVENT_SUBSYSTEM_CUSTOM:   return "custom/{unknown}";
+  case einit_event_subsystem_core:    return "core/{unknown}";
+  case einit_event_subsystem_ipc:      return "ipc/{unknown}";
+  case einit_event_subsystem_mount:    return "mount/{unknown}";
+  case einit_event_subsystem_feedback: return "feedback/{unknown}";
+  case einit_event_subsystem_power:    return "power/{unknown}";
+  case einit_event_subsystem_timer:    return "timer/{unknown}";
+  case einit_event_subsystem_custom:   return "custom/{unknown}";
  }
 
  return "unknown/custom";
@@ -250,37 +250,37 @@ char *event_code_to_string (const uint32_t code) {
 
 uint32_t event_string_to_code (const char *code) {
  char **tcode = str2set ('/', code);
- uint32_t ret = EVENT_SUBSYSTEM_CUSTOM;
+ uint32_t ret = einit_event_subsystem_custom;
 
  if (tcode) {
-  if (strmatch (tcode[0], "core"))          ret = EVENT_SUBSYSTEM_EINIT;
-  else if (strmatch (tcode[0], "ipc"))      ret = EVENT_SUBSYSTEM_IPC;
-  else if (strmatch (tcode[0], "mount"))    ret = EVENT_SUBSYSTEM_MOUNT;
-  else if (strmatch (tcode[0], "feedback")) ret = EVENT_SUBSYSTEM_FEEDBACK;
-  else if (strmatch (tcode[0], "power"))    ret = EVENT_SUBSYSTEM_POWER;
-  else if (strmatch (tcode[0], "timer"))    ret = EVENT_SUBSYSTEM_TIMER;
+  if (strmatch (tcode[0], "core"))          ret = einit_event_subsystem_core;
+  else if (strmatch (tcode[0], "ipc"))      ret = einit_event_subsystem_ipc;
+  else if (strmatch (tcode[0], "mount"))    ret = einit_event_subsystem_mount;
+  else if (strmatch (tcode[0], "feedback")) ret = einit_event_subsystem_feedback;
+  else if (strmatch (tcode[0], "power"))    ret = einit_event_subsystem_power;
+  else if (strmatch (tcode[0], "timer"))    ret = einit_event_subsystem_timer;
 
   if (tcode[1])
    switch (ret) {
-    case EVENT_SUBSYSTEM_EINIT:
-     if (strmatch (tcode[1], "update-configuration")) ret = EVE_UPDATE_CONFIGURATION;
-     else if (strmatch (tcode[1], "module-status-update")) ret = EVE_MODULE_UPDATE;
-     else if (strmatch (tcode[1], "service-status-update")) ret = EVE_SERVICE_UPDATE;
-     else if (strmatch (tcode[1], "configuration-status-update")) ret = EVE_CONFIGURATION_UPDATE;
+    case einit_event_subsystem_core:
+     if (strmatch (tcode[1], "update-configuration")) ret = einit_core_update_configuration;
+     else if (strmatch (tcode[1], "module-status-update")) ret = einit_core_module_update;
+     else if (strmatch (tcode[1], "service-status-update")) ret = einit_core_service_update;
+     else if (strmatch (tcode[1], "configuration-status-update")) ret = einit_core_configuration_update;
      break;
-    case EVENT_SUBSYSTEM_MOUNT:
-     if (strmatch (tcode[1], "update")) ret = EVE_DO_UPDATE;
+    case einit_event_subsystem_mount:
+     if (strmatch (tcode[1], "update")) ret = einit_mount_do_update;
      break;
-    case EVENT_SUBSYSTEM_FEEDBACK:
-     if (strmatch (tcode[1], "module")) ret = EVE_FEEDBACK_MODULE_STATUS;
-     else if (strmatch (tcode[1], "plan")) ret = EVE_FEEDBACK_PLAN_STATUS;
-     else if (strmatch (tcode[1], "notice")) ret = EVE_FEEDBACK_NOTICE;
+    case einit_event_subsystem_feedback:
+     if (strmatch (tcode[1], "module")) ret = einit_feedback_module_status;
+     else if (strmatch (tcode[1], "plan")) ret = einit_feedback_plan_status;
+     else if (strmatch (tcode[1], "notice")) ret = einit_feedback_notice;
      break;
-    case EVENT_SUBSYSTEM_POWER:
-     if (strmatch (tcode[1], "reset-scheduled")) ret = EVENT_POWER_RESET_SCHEDULED;
-     else if (strmatch (tcode[1], "reset-imminent")) ret = EVENT_POWER_RESET_IMMINENT;
-     else if (strmatch (tcode[1], "mps-down-scheduled")) ret = EVENT_POWER_DOWN_SCHEDULED;
-     else if (strmatch (tcode[1], "mps-down-imminent")) ret = EVENT_POWER_DOWN_IMMINENT;
+    case einit_event_subsystem_power:
+     if (strmatch (tcode[1], "reset-scheduled")) ret = einit_power_reset_scheduled;
+     else if (strmatch (tcode[1], "reset-imminent")) ret = einit_power_reset_imminent;
+     else if (strmatch (tcode[1], "mps-down-scheduled")) ret = einit_power_down_scheduled;
+     else if (strmatch (tcode[1], "mps-down-imminent")) ret = einit_power_down_imminent;
      break;
    }
 

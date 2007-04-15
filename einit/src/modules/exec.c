@@ -123,8 +123,8 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-check-variables", 1, check_variables_f);
  function_unregister ("einit-apply-envfile", 1, apply_envfile_f);
 
- event_ignore (EVENT_SUBSYSTEM_IPC, einit_exec_ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_exec_einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_exec_einit_event_handler);
 
  sched_cleanup(irr);
 
@@ -132,7 +132,7 @@ int einit_exec_cleanup (struct lmodule *irr) {
 }
 
 void einit_exec_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if (ev->type == einit_core_configuration_update) {
   if (!(envfilebase = cfg_getpath("configuration-system-exec-envfile-base")))
    envfilebase = estrdup("/etc/econf.d/");
  }
@@ -140,7 +140,7 @@ void einit_exec_einit_event_handler (struct einit_event *ev) {
 
 void einit_exec_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "exec")) {
-  struct einit_event ee = evstaticinit (EVE_FEEDBACK_MODULE_STATUS);
+  struct einit_event ee = evstaticinit (einit_feedback_module_status);
   ee.para = (void *)thismodule;
 
   pexec_f (ev->command, NULL, 0, 0, NULL, NULL, NULL, &ee);
@@ -740,7 +740,7 @@ void *dexec_watcher (struct spidcb *spid) {
 /* don't try to restart if the daemon died too swiftly */
    emutex_unlock (&cur->mutex);
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
-    struct einit_event fb = evstaticinit(EVE_FEEDBACK_MODULE_STATUS);
+    struct einit_event fb = evstaticinit(einit_feedback_module_status);
     fb.para = (void *)module;
     fb.task = MOD_ENABLE | MOD_FEEDBACK_SHOW;
     fb.status = STATUS_WORKING;
@@ -959,8 +959,8 @@ int einit_exec_configure (struct lmodule *irr) {
  if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
 
- event_listen (EVENT_SUBSYSTEM_IPC, einit_exec_ipc_event_handler);
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_exec_einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
+ event_listen (einit_event_subsystem_core, einit_exec_einit_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);

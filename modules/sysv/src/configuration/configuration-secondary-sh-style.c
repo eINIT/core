@@ -86,13 +86,13 @@ time_t *mtimes = NULL;
 int configure (struct lmodule *irr) {
  parse_sh_configure (irr);
 
- event_listen (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
- event_listen (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
+ event_listen (einit_event_subsystem_core, einit_event_handler);
+ event_listen (einit_event_subsystem_ipc, ipc_event_handler);
 }
 
 int cleanup (struct lmodule *irr) {
- event_ignore (EVENT_SUBSYSTEM_IPC, ipc_event_handler);
- event_ignore (EVENT_SUBSYSTEM_EINIT, einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_event_handler);
 
  parse_sh_cleanup (irr);
 }
@@ -115,7 +115,7 @@ void sh_configuration_callback (char **data, uint8_t status) {
 }
 
 void einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_UPDATE_CONFIGURATION) {
+ if (ev->type == einit_core_update_configuration) {
   uint32_t x = 0;
   char *data = NULL;
   struct cfgnode *node = NULL;

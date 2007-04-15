@@ -135,9 +135,9 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
 struct lmodule *mlist;
 
 void core_einit_event_handler (struct einit_event *ev) {
- if (ev->type == EVE_CONFIGURATION_UPDATE) {
+ if (ev->type == einit_core_configuration_update) {
   struct cfgnode *node;
-  ev->chain_type = EVE_UPDATE_MODULES;
+  ev->chain_type = einit_core_update_modules;
 
   if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
    mortality[bitch_emalloc] = node->value;
@@ -160,7 +160,7 @@ void core_einit_event_handler (struct einit_event *ev) {
   if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
    mortality[bitch_epthreads] = node->value;
 
- } else if (ev->type == EVE_UPDATE_MODULES) {
+ } else if (ev->type == einit_core_update_modules) {
   struct lmodule *lm = mlist;
 
   while (lm) {
@@ -179,9 +179,9 @@ void core_einit_event_handler (struct einit_event *ev) {
   }
 
 /* give the module-logic code and others a chance at processing the current list */
-  struct einit_event update_event = evstaticinit(EVE_MODULE_LIST_UPDATE);
+  struct einit_event update_event = evstaticinit(einit_core_module_list_update);
   update_event.para = mlist;
-  event_emit (&update_event, EINIT_EVENT_FLAG_BROADCAST);
+  event_emit (&update_event, einit_event_flag_broadcast);
   evstaticdestroy(update_event);
  }
 }
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
 // is this the system's init-process?
  isinit = getpid() == 1;
 
- event_listen (EVENT_SUBSYSTEM_EINIT, core_einit_event_handler);
+ event_listen (einit_event_subsystem_core, core_einit_event_handler);
 
 /* check command line arguments */
  for (i = 1; i < argc; i++) {
@@ -330,7 +330,7 @@ int main(int argc, char **argv) {
   }
  } else {
 /* actual system initialisation */
-  struct einit_event cev = evstaticinit(EVE_UPDATE_CONFIGURATION);
+  struct einit_event cev = evstaticinit(einit_core_update_configuration);
 
   if (ipccommands && (coremode != einit_mode_sandbox)) {
    coremode = einit_mode_ipconly;
@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
    uint32_t rx = 0;
    for (; einit_startup_configuration_files[rx]; rx++) {
     cev.string = einit_startup_configuration_files[rx];
-    event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+    event_emit (&cev, einit_event_flag_broadcast);
    }
 
    if (einit_startup_configuration_files != einit_default_startup_configuration_files) {
@@ -378,14 +378,14 @@ int main(int argc, char **argv) {
   }
 
   cev.string = NULL;
-  cev.type = EVE_CONFIGURATION_UPDATE;
+  cev.type = einit_core_configuration_update;
 
 // make sure we keep updating until everything is sorted out
-  while (cev.type == EVE_CONFIGURATION_UPDATE) {
+  while (cev.type == einit_core_configuration_update) {
    notice (2, "stuff changed, updating configuration.");
 
-   cev.type = EVE_UPDATE_CONFIGURATION;
-   event_emit (&cev, EINIT_EVENT_FLAG_BROADCAST);
+   cev.type = einit_core_update_configuration;
+   event_emit (&cev, einit_event_flag_broadcast);
   }
   evstaticdestroy(cev);
 
@@ -408,15 +408,15 @@ int main(int argc, char **argv) {
    notice (2, "scheduling startup switches.\n");
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
-    struct einit_event ee = evstaticinit(EVE_SWITCH_MODE);
+    struct einit_event ee = evstaticinit(einit_core_switch_mode);
 
     ee.string = einit_startup_mode_switches[e];
-    event_emit (&ee, EINIT_EVENT_FLAG_BROADCAST | EINIT_EVENT_FLAG_SPAWN_THREAD | EINIT_EVENT_FLAG_DUPLICATE);
+    event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
     evstaticdestroy(ee);
    }
 
-   struct einit_event eml = evstaticinit(EVE_MAIN_LOOP);
-   event_emit (&eml, EINIT_EVENT_FLAG_BROADCAST);
+   struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
+   event_emit (&eml, einit_event_flag_broadcast);
    evstaticdestroy(eml);
   }
 
