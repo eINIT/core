@@ -376,7 +376,8 @@ char **create_environment_f (char **environment, const char **variables) {
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  pid_t child;
  int pidstatus = 0;
- char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
+ char **cmd, **cmdsetdup;
+ enum pexec_options options = (status ? 0 : pexec_option_nopipe);
 
  lookupuidgid (&uid, &gid, user, group);
 
@@ -398,11 +399,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    unsigned int x = 0;
    for (; optx[x]; x++) {
     if (strmatch (optx[x], "no-pipe")) {
-     options |= PEXEC_OPTION_NOPIPE;
+     options |= pexec_option_nopipe;
     } else if (strmatch (optx[x], "safe-environment")) {
-     options |= PEXEC_OPTION_SAFEENVIRONMENT;
+     options |= pexec_option_safe_environment;
     } else if (strmatch (optx[x], "dont-close-stdin")) {
-     options |= PEXEC_OPTION_DONTCLOSESTDIN;
+     options |= pexec_option_dont_close_stdin;
     }
    }
 
@@ -466,7 +467,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   cmdsetdup = str2set ('\0', command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
-  if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
+  if (options & pexec_option_safe_environment) {
    debugx(" >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
    execve (cmd[0], cmd, safe_environment);
   } else {
@@ -518,7 +519,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
- char **cmd, **cmdsetdup, options = (status ? 0 : PEXEC_OPTION_NOPIPE);
+ char **cmd, **cmdsetdup;
+ enum pexec_options options = (status ? 0 : pexec_option_nopipe);
  uint32_t cs = STATUS_OK;
  char have_waited = 0;
 
@@ -542,11 +544,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    unsigned int x = 0;
    for (; optx[x]; x++) {
     if (strmatch (optx[x], "no-pipe")) {
-     options |= PEXEC_OPTION_NOPIPE;
+     options |= pexec_option_nopipe;
     } else if (strmatch (optx[x], "safe-environment")) {
-     options |= PEXEC_OPTION_SAFEENVIRONMENT;
+     options |= pexec_option_safe_environment;
     } else if (strmatch (optx[x], "dont-close-stdin")) {
-     options |= PEXEC_OPTION_DONTCLOSESTDIN;
+     options |= pexec_option_dont_close_stdin;
     }
    }
 
@@ -555,7 +557,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  }
  if (!command || !command[0]) return STATUS_FAIL;
 
- if (!(options & PEXEC_OPTION_NOPIPE)) {
+ if (!(options & pexec_option_nopipe)) {
   if (pipe (pipefderr)) {
    if (status) {
     status->string = "failed to create pipe";
@@ -584,11 +586,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   if (uid && (setuid (uid) == -1))
    perror ("setting uid");
 
-  if (!(options & PEXEC_OPTION_DONTCLOSESTDIN))
+  if (!(options & pexec_option_dont_close_stdin))
    eclose (0);
 
   eclose (1);
-  if (!(options & PEXEC_OPTION_NOPIPE)) {
+  if (!(options & pexec_option_nopipe)) {
    eclose (2);
    eclose (pipefderr [0]);
    dup2 (pipefderr [1], 1);
@@ -606,7 +608,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   cmdsetdup = str2set ('\0', command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
-  if (options & PEXEC_OPTION_SAFEENVIRONMENT) {
+  if (options & pexec_option_safe_environment) {
    execve (cmd[0], cmd, safe_environment);
   } else {
    execve (cmd[0], cmd, exec_environment);
@@ -618,7 +620,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  } else {
   FILE *fx;
 
-  if (!(options & PEXEC_OPTION_NOPIPE) && status) {
+  if (!(options & pexec_option_nopipe) && status) {
    eclose (pipefderr[1]);
 
    if ((fx = fdopen(pipefderr[0], "r"))) {

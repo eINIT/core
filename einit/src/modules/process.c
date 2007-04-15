@@ -140,7 +140,7 @@ void einit_process_ipc_event_handler (struct einit_event *ev) {
     .para = (ev->argv[3] ?
       ((strmatch (ev->argv[2], "cwd") || strmatch (ev->argv[2], "cwd-below") || strmatch (ev->argv[2], "files-below")) ?
       (void *)ev->argv[3] : (void *)tnum) : NULL),
-    .match_options = PC_COLLECT_ADDITIVE },
+    .match_options = einit_pmo_additive },
     *pcl[2] = { &pcc, NULL };
    pid_t *process_list = NULL, i;
 

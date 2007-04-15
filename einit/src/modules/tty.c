@@ -134,7 +134,7 @@ void *einit_tty_watcher (struct spidcb *spid) {
    if (einit_tty_do_utmp) {
     create_utmp_record(utmprecord, DEAD_PROCESS, spid->pid, NULL, NULL, NULL, NULL, 0, 0, spid->pid);
 
-    update_utmp (UTMP_MODIFY,&utmprecord);
+    update_utmp (utmp_modify,&utmprecord);
    }
 
    killpg (pid, SIGHUP); // send a SIGHUP to the getty's process group
@@ -220,7 +220,7 @@ int einit_tty_texec (struct cfgnode *node) {
     if (einit_tty_do_utmp) {
      create_utmp_record(utmprecord, INIT_PROCESS, cpid, device, "etty", NULL, NULL, 0, 0, cpid);
 
-     update_utmp (UTMP_ADD, &utmprecord);
+     update_utmp (utmp_add, &utmprecord);
     }
 
     sched_watch_pid (cpid, einit_tty_watcher);

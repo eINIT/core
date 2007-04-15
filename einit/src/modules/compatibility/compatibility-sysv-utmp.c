@@ -85,7 +85,7 @@ module_register(module_compatibility_sysv_utmp_self);
 
 int  compatibility_sysv_utmp_enable  (void *, struct einit_event *);
 int  compatibility_sysv_utmp_disable (void *, struct einit_event *);
-char updateutmp_f (unsigned char, struct utmp *);
+char updateutmp_f (enum utmp_action, struct utmp *);
 
 int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
 // event_ignore (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
@@ -95,12 +95,12 @@ int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
  return 0;
 }
 
-char updateutmp_f (unsigned char options, struct utmp *new_entry) {
+char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
  int ufile;
  struct stat st;
 
-// strip the UTMP_ADD action if we don't get a new entry to add along with it
- if ((options & UTMP_ADD) && !new_entry) options ^= UTMP_ADD;
+// strip the utmp_add action if we don't get a new entry to add along with it
+ if ((options & utmp_add) && !new_entry) options ^= utmp_add;
 // if we don't have anything to do, bail out
  if (!options) return -1;
 
@@ -122,14 +122,14 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
 #ifdef LINUX
      switch (utmpentries[i].ut_type) {
       case DEAD_PROCESS:
-       if (options & UTMP_ADD) {
+       if (options & utmp_add) {
         memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
-        options ^= UTMP_ADD;
+        options ^= utmp_add;
        }
 
        break;
       case RUN_LVL:
-       if (options & UTMP_CLEAN) {
+       if (options & utmp_clean) {
 /* the higher 8 bits contain the old runlevel, the lower 8 bits the current one */
         char *new_previous_runlevel = cfg_getstring ("configuration-compatibility-sysv-simulate-runlevel/before", NULL),
             *new_runlevel = cfg_getstring ("configuration-compatibility-sysv-simulate-runlevel/now", NULL);
@@ -151,7 +151,7 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
       case LOGIN_PROCESS:
       case USER_PROCESS:
       case ACCOUNTING:
-       if (options & UTMP_CLEAN) {
+       if (options & utmp_clean) {
 #ifdef LINUX
         struct stat xst;
         char path[BUFFERSIZE];
@@ -160,9 +160,9 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
 // if not...
 #endif
 // clean utmp record
-         if (options & UTMP_ADD) {
+         if (options & utmp_add) {
           memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
-          options ^= UTMP_ADD;
+          options ^= utmp_add;
          } else {
           utmpentries[i].ut_type = DEAD_PROCESS;
           memset (&(utmpentries[i].ut_user), 0, sizeof (utmpentries[i].ut_user));
@@ -181,9 +181,9 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
 #endif
      }
 
-     if ((options & UTMP_MODIFY) && (utmpentries[i].ut_pid == new_entry->ut_pid)) {
+     if ((options & utmp_modify) && (utmpentries[i].ut_pid == new_entry->ut_pid)) {
       memcpy (&(utmpentries[i]), new_entry, sizeof (struct utmp));
-      options ^= UTMP_MODIFY;
+      options ^= utmp_modify;
      }
 #endif
      if (!options) break;
@@ -201,7 +201,7 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
   bitch(bitch_stdio, 0, "open() failed");
  }
 
- if (options & UTMP_ADD) { // still didn't get to add this.. try to append it to the file
+ if (options & utmp_add) { // still didn't get to add this.. try to append it to the file
   if (coremode == einit_mode_sandbox)
    ufile = open ("var/run/utmp", O_WRONLY | O_APPEND);
   else
@@ -217,7 +217,7 @@ char updateutmp_f (unsigned char options, struct utmp *new_entry) {
    bitch(bitch_stdio, 0, "mmap() failed");
   }
 
-  options ^= UTMP_ADD;
+  options ^= utmp_add;
  }
 
  return 0;
@@ -229,7 +229,7 @@ int compatibility_sysv_utmp_enable (void *pa, struct einit_event *status) {
  if (utmp_cfg) {
   status->string = "cleaning utmp";
   status_update (status);
-  updateutmp_f (UTMP_CLEAN, NULL);
+  updateutmp_f (utmp_clean, NULL);
  }
 
 /* always return OK, as utmp is pretty much useless to eINIT, so no reason

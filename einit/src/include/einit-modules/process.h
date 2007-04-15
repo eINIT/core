@@ -46,14 +46,16 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/types.h>
 
-#define PC_CONDITION_OPTIONAL  0x0001
-#define PC_COLLECT_ADDITIVE    0x0010
-#define PC_COLLECT_SUBTRACTIVE 0x0020
+enum einit_process_match_options {
+ einit_pmo_optional    = 0x01,
+ einit_pmo_additive    = 0x10,
+ einit_pmo_subtractive = 0x20,
+};
 
 struct pc_conditional {
  char *match;
  void *para;
- uint16_t match_options;
+ enum einit_process_match_options match_options;
 };
 
 struct process_status {

@@ -50,9 +50,11 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PEXEC_OPTION_NOPIPE          0x01
-#define PEXEC_OPTION_SAFEENVIRONMENT 0x02
-#define PEXEC_OPTION_DONTCLOSESTDIN  0x04
+enum pexec_options {
+ pexec_option_nopipe = 0x1,
+ pexec_option_safe_environment = 0x2,
+ pexec_option_dont_close_stdin = 0x4,
+};
 
 /* structures */
 struct dexecinfo {

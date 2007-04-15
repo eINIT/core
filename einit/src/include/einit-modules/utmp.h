@@ -80,11 +80,13 @@ extern "C" {
 #define ACCOUNTING      0xe9
 #endif
 
-#define UTMP_CLEAN  0x01
-#define UTMP_ADD    0x02
-#define UTMP_MODIFY 0x04
+enum utmp_action {
+ utmp_clean  = 0x1,
+ utmp_add    = 0x2,
+ utmp_modify = 0x4
+};
 
-typedef char (*utmp_function) (unsigned char, struct utmp *);
+typedef char (*utmp_function) (enum utmp_action, struct utmp *);
 
 utmp_function utmp_update_fp;
 

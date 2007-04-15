@@ -1114,8 +1114,8 @@ int eumount (char *mountpoint, struct einit_event *status) {
    {
     goto umount_ok;
    } else {
-    struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
-                          pcf = {.match = "files-below", .para = mountpoint, .match_options = PC_COLLECT_ADDITIVE},
+    struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = einit_pmo_additive},
+                          pcf = {.match = "files-below", .para = mountpoint, .match_options = einit_pmo_additive},
                          *pcl[3] = { &pcc, &pcf, NULL };
 
     esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
