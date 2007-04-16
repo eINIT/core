@@ -33,13 +33,19 @@
       fi;
       /bin/true"
      enable="pexec-options dont-close-stdin;
+      for TTY in ${configuration_feedback_visual_fbsplash_ttys} ; do
+       /sbin/splash_util.static --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setcfg ;
+       /sbin/splash_util.static --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setpic 2&gt;/dev/null ;
+       /sbin/splash_util.static --tty=${TTY} -c on ;
+      done;
+
       if /sbin/splash_util -d -t ${configuration_feedback_visual_fbsplash_theme}; then exit 0; fi;
       /sbin/splash_util.static -d -t ${configuration_feedback_visual_fbsplash_theme};"
      disable="echo exit&gt;${configuration_feedback_visual_fbsplash_daemon_fifo};"
      cleanup="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
        umount &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot;
       fi; /bin/true"
-     variables="configuration-feedback-visual-fbsplash-daemon-ttys/.*:configuration-feedback-visual-fbsplash-theme:configuration-feedback-visual-fbsplash-daemon-fifo:configuration-feedback-visual-fbsplash-daemon-mount-dir/.*"
+     variables="configuration-feedback-visual-fbsplash-daemon-ttys/.*:configuration-feedback-visual-fbsplash-theme:configuration-feedback-visual-fbsplash-daemon-fifo:configuration-feedback-visual-fbsplash-daemon-mount-dir/.*:configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-ttys"
      options="feedback" />
 
    </module>
