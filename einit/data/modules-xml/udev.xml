@@ -1,7 +1,7 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-udev"
   name="udev - dynamic device management"
-  provides="mount-system"
+  provides="udev"
   requires="sysfs:proc"
   enable="pexec-options dont-close-stdin;
 	  echo &quot;feedback|notice|Mounting /dev for udev&quot;;

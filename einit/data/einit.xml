@@ -482,8 +482,10 @@
 
    </module>
   </virtual>
+  <alias>
+   <mount-system group="sysfs:proc:udev" seq="most" />
+  </alias>
   <prefer>
-   <mount-system s="daemon-udev" />
    <kern-alsa s="shell-kern-audio-alsa" />
    <feedback s="feedback-visual-textual" />
   </prefer>
