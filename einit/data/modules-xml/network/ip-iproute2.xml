@@ -3,7 +3,9 @@
   enable="echo &quot;Using 'ip' to assign a static addresses.&quot;;
    /sbin/ip addr add ${configuration_network_interfaces_${interface}_address} dev ${interface} ;
    /sbin/ip link set ${interface} up ;
-   /sbin/ip route add ${configuration_network_interfaces_${interface}_network} dev ${interface} ;
+   if [ ! -z ${configuration_network_interfaces_${interface}_network} ]; then
+    /sbin/ip route add ${configuration_network_interfaces_${interface}_network} dev ${interface} ;
+   fi
    if [ ! -z ${configuration_network_interfaces_${interface}_gateway} ]; then
     /sbin/ip route add via ${configuration_network_interfaces_${interface}_gateway};
    fi"
