@@ -381,8 +381,13 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
 
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t ci = 0, pi = 0;
+ char tmps[BUFFERSIZE];
 
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
+
+ esprintf (tmps, BUFFERSIZE, "enabling network interface %s", id->interface_name);
+ status->string = tmps;
+ status_update (status);
 
 /* outsourced this one... */
 #if 0
@@ -414,6 +419,9 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 #endif
 
  if (id->controller) { // == NULL if ip not mentioned or ="none"
+  status->string = "enabling interface controller";
+  status_update (status);
+
   for (ci = 0; id->controller[ci]; ci++) {
    if (id->controller[ci]->pidfile) unlink (id->controller[ci]->pidfile);
    struct stree *t = streefind (id->controller[ci]->action, "enable", tree_find_first);
@@ -426,23 +434,40 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
    }
   }
 
+  status->string = "interface controller defined but doesn't work, bailing";
+  status_update (status);
+
   return status_failed;
  }
 
  ip:
 
  for (pi = 0; id->ip_manager[pi]; pi++) {
+  status->string = "enabling IP controller";
+  status_update (status);
+
   if (id->ip_manager[pi]->pidfile) unlink (id->ip_manager[pi]->pidfile);
   struct stree *t = streefind (id->ip_manager[pi]->action, "enable", tree_find_first);
 
   if (t) {
    if (pexec (t->value, (const char **)id->ip_manager[pi]->variables, 0, 0, NULL, NULL, id->ip_manager[pi]->environment, status) & status_ok) {
     id->pi = pi;
+
+    status->string = "done!";
+    status_update (status);
+
     return status_ok;
    }
   }
  }
 
+ if (!id->ip_manager) {
+  status->string = "no IP controller defined, bailing";
+  status_update (status);
+ } else {
+  status->string = "no IP controller failed, bailing";
+  status_update (status);
+ }
 
  return status_failed;
 }
