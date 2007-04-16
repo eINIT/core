@@ -226,7 +226,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
    fbsplash_queue_comand(tmp);
   }
 
-//  fbsplash_queue_comand("repaint");
+  fbsplash_queue_comand("repaint");
  }
  if (ev->type == einit_core_mode_switch_done) {
   char tmp[BUFFERSIZE];
@@ -236,7 +236,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
    fbsplash_queue_comand(tmp);
   }
   fbsplash_queue_comand("progress 65535");
-//  fbsplash_queue_comand("repaint");
+  fbsplash_queue_comand("repaint");
 //  fbsplash_queue_comand("set mode verbose");
  }
  if ((ev->type == einit_core_service_update) && ev->set) {
@@ -287,7 +287,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   esprintf (tmp, BUFFERSIZE, "progress %i", (int)(get_plan_progress (NULL) * 65535));
   fbsplash_queue_comand(tmp);
 
-//  fbsplash_queue_comand("repaint");
+  fbsplash_queue_comand("repaint");
  }
 }
 
