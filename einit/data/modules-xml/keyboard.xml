@@ -3,7 +3,7 @@
   name="Console (Keyboard Layout)"
   provides="keyboard"
   requires="mount-local"
-  enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout}"
-  disable="/bin/loadkeys us"
+  enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout} 2&gt;/dev/null"
+  disable="/bin/true"
   variables="configuration-peripherals-keyboard/layout" />
 </einit>
