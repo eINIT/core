@@ -61,7 +61,7 @@ int einit_feedback_visual_fbsplash_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char *einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-graphical", NULL};
+char *einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-fbsplash", "feedback-graphical", NULL};
 char *einit_feedback_visual_fbsplash_requires[] = {"mount-system", "splashd", NULL};
 char *einit_feedback_visual_fbsplash_before[]   = {"mount-critical", NULL};
 const struct smodule einit_feedback_visual_fbsplash_self = {
@@ -108,7 +108,56 @@ void fbsplash_queue_comand (const char *command) {
 void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
 /* preinit */
  if ((ev->type == einit_core_module_list_update_complete) && !einit_have_feedback && !(coremode & einit_mode_ipconly)) {
-  eputs (" * [stub] checking kernel command line for feedback...\n", stderr);
+  if (einit_initial_environment) {
+/* check for kernel params */
+   uint32_t i = 0;
+   char start_splash = 0;
+
+   for (; einit_initial_environment[i]; i++) {
+    if (strstr (einit_initial_environment[i], "splash=") == einit_initial_environment[i]) {
+     start_splash = 1;
+    } else if (strstr (einit_initial_environment[i], "console=") == einit_initial_environment[i]) {
+     struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
+
+/* patch console */
+     if (node && node->arbattrs) {
+      uint32_t ri = 0;
+
+      for (; node->arbattrs[ri]; ri+=2) {
+       if (strmatch (node->arbattrs[ri], "stdio")) {
+        char tx[BUFFERSIZE];
+
+        if ((einit_initial_environment[i]+8)[0] == '/')
+         esprintf (tx, BUFFERSIZE, "%s", einit_initial_environment[i]+8);
+        else
+         esprintf (tx, BUFFERSIZE, "/dev/%s", einit_initial_environment[i]+8);
+
+        notice (4, "patching stdio output to go to %s", tx);
+
+        node->arbattrs[ri+1] = estrdup(tx);
+       }
+      }
+     }
+    }
+   }
+
+   if (start_splash) {
+    char *x[3] = { "feedback-fbsplash", "enable", NULL};
+    struct einit_event ee = evstaticinit(einit_core_change_service_status);
+
+    ee.set = (void **)setdup ((const void **)x, SET_TYPE_STRING);
+
+    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+
+    x[0] = "feedback-textual";
+
+    ee.set = (void **)setdup ((const void **)x, SET_TYPE_STRING);
+
+    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+
+    evstaticdestroy(ee);
+   }
+  }
  }
 
  if (ev->type == einit_core_mode_switching) {
@@ -224,7 +273,7 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
 
 int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status) {
  char *tmp = NULL, *fbtheme = NULL, *fbmode = "silent";
- char freetheme = 0, freemode = 0;
+ char freetheme = 0, freemode = 0, have_verbose_tty = 0;
 
  einit_feedback_visual_fbsplash_worker_thread_keep_running = 1;
  ethread_create (&fbsplash_thread, NULL, einit_feedback_visual_fbsplash_worker_thread, NULL);
@@ -279,12 +328,25 @@ int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status)
   esprintf (tmpx, BUFFERSIZE, "set tty silent %s", tmp);
   fbsplash_queue_comand(tmpx);
  }
- if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/verbose", NULL))) {
+
+ if ((tmp = cfg_getstring ("configuration-feedback-visual-std-io/stdio", NULL))) {
+  char *x = strstr (tmp, "tty");
+
+  if (x && *(x+3)) {
+   char tmpx[BUFFERSIZE];
+   esprintf (tmpx, BUFFERSIZE, "set tty verbose %s", x+3);
+   fbsplash_queue_comand(tmpx);
+
+   have_verbose_tty = 1;
+  }
+ }
+ if (!have_verbose_tty && (tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/verbose", NULL))) {
   char tmpx[BUFFERSIZE];
 
   esprintf (tmpx, BUFFERSIZE, "set tty verbose %s", tmp);
   fbsplash_queue_comand(tmpx);
  }
+
  if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-fifo", NULL))) {
   fbsplash_fifo = tmp;
  }

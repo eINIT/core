@@ -255,7 +255,7 @@ int einit_tty_texec (struct cfgnode *node) {
 
 int einit_tty_enable (void *pa, struct einit_event *status) {
  struct cfgnode *node = NULL;
- char **ttys = NULL;
+ char **ttys = NULL, *blocked_tty = cfg_getstring ("configuration-feedback-visual-std-io/stdio", NULL);
  int i = 0;
 
  if (!(ttys = str2set (':', cfg_getstring("ttys", NULL)))) {
@@ -278,7 +278,25 @@ int einit_tty_enable (void *pa, struct einit_event *status) {
 
   node = cfg_getnode (tmpnodeid, NULL);
   if (node && node->arbattrs) {
-   einit_tty_texec (node);
+   if (blocked_tty) {
+    char ttyblocked = 0;
+    uint32_t i = 0;
+    for (; node->arbattrs[i]; i+=2) {
+     if (strmatch (node->arbattrs[i], "dev")) {
+      if (strmatch (node->arbattrs[i+1], blocked_tty))
+       ttyblocked = 1;
+      break;
+     }
+    }
+
+    if (ttyblocked) {
+     notice (2, "refusing to put a getty on the feedback tty (%s)", blocked_tty);
+    } else {
+     einit_tty_texec (node);
+    }
+   } else {
+    einit_tty_texec (node);
+   }
   } else {
    char warning[BUFFERSIZE];
    esprintf (warning, BUFFERSIZE, "einit-tty: node %s not found", tmpnodeid);
