@@ -437,6 +437,7 @@ LXXLD = \${CXXC} \${LDFLAGS} $LLD
 
 collect_objects () {
 	objects=""
+	asmobjects=""
 	for i in $@; do
 		for suffix in ${SUFFIXES}; do
 			res=$(find src ${ASMDIR} -name "${i}.${suffix}");
@@ -446,6 +447,10 @@ collect_objects () {
 					subobjects="${subobjects} ${pwd}/${y}"
 				done
 				objects="${objects} ${i}.o";
+
+				if test "${suffix}" = "s"; then
+					asmobjects="${asmobjects} ${i}.o";
+				fi
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
 					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
@@ -553,6 +558,10 @@ collect_and_install_headers() {
 
 #define BUFFERSIZE 1024
 
+#define EINIT_LIB_BASE \"${PREFIX}/lib/einit\"
+#define EINIT_SBIN_BASE \"${PREFIX}/sbin\"
+#define EINIT_ETC_BASE \"${PREFIX}/etc/einit\"
+
 " > build/headers/einit/configuration.h
 
 	if test "${ISSVN}" = "1"; then
@@ -639,6 +648,7 @@ for z in ${BUILDCOMPONENTS}; do
 	fi
 
 	echo -e "\nobjects = ${objects}\n" >> build/${z}/Makefile
+	echo -e "\nasmobjects = ${asmobjects}\n" >> build/${z}/Makefile
 	cat makefile.${z}.template >> build/${z}/Makefile
 done
 

@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/wait.h>
 #include <einit-modules/ipc.h>
 #include <einit-modules/configuration.h>
+#include <einit/configuration.h>
 
 #ifndef NONIXENVIRON
 int main(int, char **, char **);
@@ -309,7 +310,7 @@ int main(int argc, char **argv) {
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
  if (!einit_startup_configuration_files) einit_startup_configuration_files = einit_default_startup_configuration_files;
 
- if (pid == 1) {
+ if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
   initoverride = 1;
   einit_sub = fork();
  }
@@ -329,10 +330,17 @@ int main(int argc, char **argv) {
    wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
 
    if (wpid == einit_sub) {
-    if (WIFEXITED(rstatus))
+    if (WIFEXITED(rstatus)) {
+     char tmp[BUFFERSIZE];
+     esprintf (tmp, BUFFERSIZE, "%i", WEXITSTATUS(rstatus));
+
+     execl (EINIT_LIB_BASE "/bin/crash-handler", EINIT_LIB_BASE "/bin/crash-handler", "--exit", tmp, NULL);
      exit (EXIT_SUCCESS);
-    if (WIFSIGNALED(rstatus)) {
-     eputs ("eINIT terminated by a signal...\n", stdout);
+    } if (WIFSIGNALED(rstatus)) {
+//     esprintf (tmp, BUFFERSIZE, "sigsegv", WEXITSTATUS(rstatus));
+     execl (EINIT_LIB_BASE "/bin/crash-handler", EINIT_LIB_BASE "/bin/crash-handler", "--signal", "sigsegv", NULL);
+
+     eprintf (stderr, "eINIT was killed by a signal and I couldn't invoke the crash-handler...\n(%s)\n", EINIT_LIB_BASE "/bin/crash-handler");
      exit (EXIT_FAILURE);
     }
    }

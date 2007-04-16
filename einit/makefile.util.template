@@ -1,10 +1,15 @@
 util: einit-control
 
-install: einit-control
+install: einit-control crash-handler
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} crash-handler ${DESTDIR}/${LIBDIR}/bin
 	ln -fs einit-control ${DESTDIR}/${SBINDIR}/power
 	ln -fs einit-control ${DESTDIR}/${SBINDIR}/erc
 
-einit-control: $(objects)
-	$(CLD) $(objects) -o einit-control $(STATIC)
+einit-control: einit-control.o bitch.o utility.o $(asmobjects)
+	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC)
+
+crash-handler: crash-handler.o bitch.o utility.o $(asmobjects)
+	$(CLD) crash-handler.o bitch.o utility.o $(asmobjects) -o crash-handler $(STATIC)
