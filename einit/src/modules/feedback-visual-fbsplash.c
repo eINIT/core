@@ -61,7 +61,7 @@ int einit_feedback_visual_fbsplash_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char *einit_feedback_visual_fbsplash_provides[] = {"feedback-visual", "feedback-fbsplash", "feedback-graphical", NULL};
+char *einit_feedback_visual_fbsplash_provides[] = {"feedback-fbsplash", "feedback-graphical", NULL};
 char *einit_feedback_visual_fbsplash_requires[] = {"mount-system", "splashd", NULL};
 char *einit_feedback_visual_fbsplash_before[]   = {"mount-critical", NULL};
 const struct smodule einit_feedback_visual_fbsplash_self = {
@@ -111,31 +111,87 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   if (einit_initial_environment) {
 /* check for kernel params */
    uint32_t i = 0;
-   char start_splash = 0;
+   char start_splash = 0, *ttypatch = NULL, *splashargs = NULL;
 
    for (; einit_initial_environment[i]; i++) {
     if (strstr (einit_initial_environment[i], "splash=") == einit_initial_environment[i]) {
      start_splash = 1;
-    } else if (strstr (einit_initial_environment[i], "console=") == einit_initial_environment[i]) {
-     struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
 
-/* patch console */
+     splashargs = einit_initial_environment[i]+7;
+
+     if (!ttypatch)
+      ttypatch = "tty1";
+    } else if ((strstr (einit_initial_environment[i], "console=") == einit_initial_environment[i]) ||
+               (strstr (einit_initial_environment[i], "einitty=") == einit_initial_environment[i])) {
+
+     ttypatch = einit_initial_environment[i]+8;
+    }
+   }
+
+   if (splashargs && *splashargs) {
+    char *fbtheme = NULL/*, *fbmode = NULL*/;
+
+    if (splashargs) {
+     char **p = str2set (',', splashargs);
+     if (p) {
+      for (i = 0; p[i]; i++) {
+       char *sep = strchr (p[i], ':');
+       if (sep) {
+        *sep = 0;
+        sep++;
+        if (strmatch (p[i], "theme")) {
+         fbtheme = estrdup (sep);
+        }
+       }/* else {
+        fbmode = estrdup(p[i]);
+       }*/
+      }
+      free (p);
+     }
+    }
+
+    if (fbtheme) {
+     struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-fbsplash-theme", NULL);
+
      if (node && node->arbattrs) {
-      uint32_t ri = 0;
+      uint32_t u = 0;
+      for (; node->arbattrs[u]; u+=2) {
+       if (strmatch(node->arbattrs[u], "s")) {
+        notice (4, "patching fbsplash theme to %s", fbtheme);
 
-      for (; node->arbattrs[ri]; ri+=2) {
-       if (strmatch (node->arbattrs[ri], "stdio")) {
-        char tx[BUFFERSIZE];
-
-        if ((einit_initial_environment[i]+8)[0] == '/')
-         esprintf (tx, BUFFERSIZE, "%s", einit_initial_environment[i]+8);
-        else
-         esprintf (tx, BUFFERSIZE, "/dev/%s", einit_initial_environment[i]+8);
-
-        notice (4, "patching stdio output to go to %s", tx);
-
-        node->arbattrs[ri+1] = estrdup(tx);
+        node->arbattrs[u+1] = fbtheme;
+        node->svalue = fbtheme;
        }
+      }
+     }
+    }
+/*    if (fbmode) {
+    }*/
+   }
+
+   if (ttypatch && *ttypatch) {
+    struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
+    /* patch console */
+    if (node && node->arbattrs) {
+     uint32_t ri = 0;
+
+     for (; node->arbattrs[ri]; ri+=2) {
+      if (strmatch (node->arbattrs[ri], "stdio")) {
+       char tx[BUFFERSIZE];
+
+       if (ttypatch[0] == '/')
+        esprintf (tx, BUFFERSIZE, "%s", ttypatch);
+       else
+        esprintf (tx, BUFFERSIZE, "/dev/%s", ttypatch);
+
+       notice (4, "patching stdio output to go to %s", tx);
+
+       node->arbattrs[ri+1] = estrdup(tx);
+      } else if (strmatch (node->arbattrs[ri], "activate-vt")) {
+       notice (4, "removing activate-vt= instruction");
+
+       node->arbattrs = (char **)setdel ((void **)node->arbattrs, node->arbattrs[ri]);
+       node->arbattrs = (char **)setdel ((void **)node->arbattrs, node->arbattrs[ri]);
       }
      }
     }

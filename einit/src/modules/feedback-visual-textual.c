@@ -80,7 +80,7 @@ int einit_feedback_visual_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_feedback_visual_provides[] = {"feedback-visual", "feedback-textual", NULL};
+char * einit_feedback_visual_provides[] = {"feedback-textual", NULL};
 const struct smodule einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
