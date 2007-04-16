@@ -79,11 +79,11 @@ int main(int argc, char **argv) {
  }
 
 #ifdef LINUX
- if (tmp = freopen ("/dev/tty1", "w", stderr))
+ if ((tmp = freopen ("/dev/tty1", "w", stderr)))
   stderr = tmp;
- if (tmp = freopen ("/dev/tty1", "w", stdout))
+ if ((tmp = freopen ("/dev/tty1", "w", stdout)))
   stdout = tmp;
- if (stdin = freopen ("/dev/tty1", "r", stdin))
+ if ((stdin = freopen ("/dev/tty1", "r", stdin)))
   stdin = tmp;
 
  arg = (1 << 8) | 11;
