@@ -2,6 +2,7 @@
  <shell id="shell-hpiod"
   name="HP I/O Backend Daemon"
   provides="hpiod"
+  requires="mount-local"
   enable="hpiod"
   disable="killall hpiod"
   restart="yes" />
