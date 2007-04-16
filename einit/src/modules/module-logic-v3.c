@@ -454,7 +454,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   }
 
   if ((cmdt = cfg_getstring ("before-switch/ipc", cmode))) {
-   char **cmdts = str2set (';', cmdt);
+   char **cmdts = str2set (':', cmdt);
    uint32_t in = 0;
 
    if (cmdts) {
@@ -536,7 +536,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   }
 
   if ((cmdt = cfg_getstring ("after-switch/ipc", amode))) {
-   char **cmdts = str2set (';', cmdt);
+   char **cmdts = str2set (':', cmdt);
    uint32_t in = 0;
 
    if (cmdts) {
