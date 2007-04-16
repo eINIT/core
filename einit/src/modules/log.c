@@ -123,6 +123,8 @@ void flush_log_buffer () {
      char txbuffer[BUFFERSIZE];
      struct tm *tb = localtime (&(slog[i]->timestamp));
 
+     *txbuffer = 0;
+
      strftime (timebuffer, 50, "%c", tb);
 
      if (slog[i]->message) {

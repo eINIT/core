@@ -1383,15 +1383,15 @@ char mod_mark (char *service, char task) {
 }
 
 char mod_isprovided(char *service) {
- char ret = 0;
+/* char ret = 0;
 
  emutex_lock (&ml_currently_provided_mutex);
 
  ret = inset ((const void **)currently_provided, (const void *)service, SET_TYPE_STRING);
 
- emutex_unlock (&ml_currently_provided_mutex);
+ emutex_unlock (&ml_currently_provided_mutex);*/
 
- return ret;
+ return service_usage_query (service_is_provided, NULL, service);
 }
 
 char mod_haschanged(char *service) {
@@ -2519,7 +2519,7 @@ void mod_commit_and_wait (char **en, char **dis) {
    uint32_t i = 0;
 
    for (; en[i]; i++) {
-    if (!mod_isbroken (en[i]) && !mod_haschanged(en[i])) {
+    if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
         eprintf (stderr, "not yet provided: %s\n", en[i]);
 
      remainder++;
@@ -2541,7 +2541,7 @@ void mod_commit_and_wait (char **en, char **dis) {
    uint32_t i = 0;
 
    for (; dis[i]; i++) {
-    if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i])) {
+    if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
      eprintf (stderr, "still provided: %s\n", dis[i]);
 
      remainder++;
