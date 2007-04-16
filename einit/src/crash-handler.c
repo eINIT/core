@@ -36,15 +36,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
+#include <errno.h>
+
+#ifdef LINUX
+#include <errno.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+/* okay, i think i found the proper file now */
+#include <asm/ioctls.h>
+#include <linux/vt.h>
+#endif
 
 int main(int, char **);
 
 int main(int argc, char **argv) {
  int i;
  char *signal = NULL, *exitstatus = NULL;
+ int tfd = 0;
+ int arg;
+ FILE *tmp;
+
+ errno = 0;
 
  if (argc < 3) {
   eprintf (stderr, "crash-handler: not enough arguments (%i).\n", argc);
@@ -61,17 +78,37 @@ int main(int argc, char **argv) {
   }
  }
 
- if (signal) {
-  eprintf (stderr, "\neINIT has died by signal %s.\n", signal);
+#ifdef LINUX
+ if (tmp = freopen ("/dev/tty1", "w", stderr))
+  stderr = tmp;
+ if (tmp = freopen ("/dev/tty1", "w", stdout))
+  stdout = tmp;
+ if (stdin = freopen ("/dev/tty1", "r", stdin))
+  stdin = tmp;
 
-  return 1;
+ arg = (1 << 8) | 11;
+ errno = 0;
+
+ ioctl(0, TIOCLINUX, &arg);
+ if (errno)
+  perror ("crash-handler: redirecting kernel messages");
+
+ if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
+  ioctl (tfd, VT_ACTIVATE, 0);
+ if (errno)
+  perror ("crash-handler: activate terminal");
+ if (tfd > 0) close (tfd);
+#endif
+
+ if (signal) {
+  eprintf (stderr, "\r\neINIT has died by signal %s.\r\n", signal);
  }
 
  if (exitstatus) {
-  eprintf (stderr, "\neINIT has exited with status %s.\n", exitstatus);
-
-  return 1;
+  eprintf (stderr, "\r\neINIT has exited with status %s.\r\n", exitstatus);
  }
+
+ system ("/sbin/sulogin -t 60 /dev/console");
 
  return 0;
 }
