@@ -129,6 +129,8 @@ unsigned char *gdebug;
 char **einit_global_environment,
      **einit_initial_environment;
 
+int einit_have_feedback;
+
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
 

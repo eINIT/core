@@ -795,6 +795,8 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   }
 
   emutex_unlock (&ml_group_data_mutex);
+
+  ev->chain_type = einit_core_module_list_update_complete;
  } else if ((ev->type == einit_core_service_update) && (!(ev->status & status_working))) {
 /* something's done now, update our lists */
   mod_examine_module ((struct lmodule *)ev->para);

@@ -83,6 +83,8 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list 
 // the list of files to  parse by default
 char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NULL };
 
+int einit_have_feedback = 0;
+
 #ifdef NONIXENVIRON
 char ** environ;
 #endif

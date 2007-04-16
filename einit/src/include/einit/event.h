@@ -89,6 +89,8 @@ enum einit_event_code {
 /*!< Plan status update */
  einit_core_module_list_update      = einit_event_subsystem_core     | 0x006,
 /*!< notification of module-list updates */
+ einit_core_module_list_update_complete
+                                    = einit_event_subsystem_core     | 0x007,
 
  einit_core_update_configuration    = einit_event_subsystem_core     | 0x101,
 /*!< update the configuration */

@@ -1848,7 +1848,7 @@ void einit_mount_update_configuration () {
 }
 
 void einit_mount_einit_event_handler (struct einit_event *ev) {
- if (ev->type == einit_core_configuration_update) {
+ if ((ev->type == einit_core_configuration_update) || (ev->type == einit_core_module_list_update_complete)) {
   einit_mount_update_configuration();
  }
 }
