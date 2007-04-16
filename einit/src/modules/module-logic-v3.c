@@ -1206,18 +1206,18 @@ void mod_commits_dec () {
 }
 
 void mod_commits_inc () {
- char spawn = 0;
+// char spawn = 0;
 
  emutex_lock (&ml_commits_mutex);
  ml_commits++;
  emutex_unlock (&ml_commits_mutex);
 
- emutex_lock (&ml_workthreads_mutex);
- spawn = (ml_workthreads == 0);
- emutex_unlock (&ml_workthreads_mutex);
+// emutex_lock (&ml_workthreads_mutex);
+// spawn = (ml_workthreads == 0);
+// emutex_unlock (&ml_workthreads_mutex);
 
- if (spawn)
-  mod_spawn_workthreads ();
+// if (spawn)
+ mod_spawn_workthreads ();
 }
 
 void mod_defer_until (char *service, char *after) {

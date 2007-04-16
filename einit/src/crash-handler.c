@@ -93,8 +93,10 @@ int main(int argc, char **argv) {
  if (errno)
   perror ("crash-handler: redirecting kernel messages");
 
+ errno = 0;
+
  if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
-  ioctl (tfd, VT_ACTIVATE, 0);
+  ioctl (tfd, VT_ACTIVATE, 1);
  if (errno)
   perror ("crash-handler: activate terminal");
  if (tfd > 0) close (tfd);
