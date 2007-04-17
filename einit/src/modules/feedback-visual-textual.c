@@ -101,6 +101,28 @@ module_register(einit_feedback_visual_self);
 
 #endif
 
+struct feedback_textual_command {
+ struct lmodule *module;
+ enum einit_module_status status;
+ char *message;
+ uint32_t seqid;
+};
+
+struct feedback_textual_command **feedback_textual_commandQ;
+
+pthread_mutex_t
+ feedback_textual_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
+ feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
+
+void feedback_textual_queue_comand (struct feedback_textual_command *command) {
+ emutex_lock (&feedback_textual_commandQ_mutex);
+ feedback_textual_commandQ = (struct feedback_textual_command **)setadd ((void **)feedback_textual_commandQ, command, SET_TYPE_STRING);
+ emutex_unlock (&feedback_textual_commandQ_mutex);
+
+ pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+}
+
 struct planref {
  struct mloadplan *plan;
  time_t startedat;

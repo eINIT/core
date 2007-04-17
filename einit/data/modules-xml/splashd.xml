@@ -22,6 +22,7 @@
      name="Splash-Util (Daemon)"
      provides="splashd"
      requires="mount-system"
+     before="tty"
      prepare="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
        umount splashcache;
        mount splashcache -t tmpfs &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot; -o size=${configuration_feedback_visual_fbsplash_daemon_mount_dir_size};
