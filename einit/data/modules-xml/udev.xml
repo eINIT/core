@@ -1,11 +1,11 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-udev"
-  name="udev - dynamic device management"
+  name="Mount ( /dev )"
   provides="udev"
   requires="rootfs:sysfs:proc"
   enable="pexec-options dont-close-stdin;
-	  echo &quot;feedback|notice|Mounting /dev for udev&quot;;
-	  mount -n -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
+	  echo &quot;feedback|notice|Using udev to manage /dev&quot;;
+	  mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
 	  echo &quot;feedback|notice|Seeding /dev with needed nodes&quot;;
           [ ! -c /dev/console ] &amp;&amp; mknod /dev/console c 5 1;
           [ ! -c /dev/tty1 ] &amp;&amp; mknod /dev/tty1 c 4 1;

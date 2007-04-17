@@ -1,7 +1,8 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-rootfs"
-  name="rootfs"
+  name="Mount ( / )"
   provides="rootfs"
+  before=".*"
   enable="mount -o remount,rw /"
   disable="mount -o remount,ro /"
   restart="no" />
