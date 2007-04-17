@@ -3,7 +3,7 @@
   name="Mount ( / )"
   provides="rootfs"
   before=".*"
-  enable="mount -o remount,rw /"
-  disable="mount -o remount,ro /"
+  enable="mount -o remount,rw / &amp;&amp; echo &quot;feedback|notice|Remounted r/w&quot;"
+  disable="mount -o remount,ro / &amp;&amp; echo &quot;feedback|notice|Remounted r/o"
   restart="no" />
 </einit>

@@ -4,7 +4,7 @@
   requires="rootfs"
   provides="proc"
   before=".*"
-  enable="mount -t proc proc /proc"
+  enable="mount -t proc proc /proc &amp;&amp; echo &quot;feedback|notice|Mounted r/w&quot;"
   disable="/bin/true"
   restart="no" />
 </einit>

@@ -4,7 +4,7 @@
   requires="rootfs"
   before=".*"
   provides="sysfs"
-  enable="mount -t sysfs sysfs /sys"
+  enable="mount -t sysfs sysfs /sys &amp;&amp; echo &quot;feedback|notice|Mounted r/w&quot;"
   disable="/bin/true"
   restart="no" />
 </einit>
