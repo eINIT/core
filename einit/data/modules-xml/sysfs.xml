@@ -1,8 +1,9 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-sysfs"
   name="sysfs - get file system type information"
+  requires="rootfs"
   provides="sysfs"
-  enable="mount -n -t sysfs sysfs /sys"
+  enable="mount -t sysfs sysfs /sys"
   disable="/bin/true"
   restart="no" />
 </einit>
