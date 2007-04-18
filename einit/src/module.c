@@ -319,12 +319,37 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
   ret |= service_not_in_use;
   struct stree *ha = service_usage;
 
+/* a service is "in use" if
+  * it's the provider for something, and
+  * it's the only provider for that for that specific service, and
+  * all of the users of that service use the */
+
   while (ha) {
    if (((struct service_usage_item *)(ha->value))->users &&
+       (((struct service_usage_item *)(ha->value))->provider) &&
+       ((((struct service_usage_item *)(ha->value))->provider)[0]) &&
+       (!((((struct service_usage_item *)(ha->value))->provider)[1])) &&
        inset ((const void **)(((struct service_usage_item *)(ha->value))->provider), module, -1)) {
 
-    ret ^= service_not_in_use;
-    break;
+/* this one might be a culprit */
+    uint32_t i = 0, r = 0;
+
+    for (; (((struct service_usage_item *)(ha->value))->users)[i]; i++) {
+     if ((((struct service_usage_item *)(ha->value))->users)[i]->si &&
+         (((struct service_usage_item *)(ha->value))->users)[i]->si->requires) {
+
+      if (inset ((const void **)((((struct service_usage_item *)(ha->value))->users)[i]->si->requires), ha->key, SET_TYPE_STRING)) {
+       r++;
+      }
+
+     }
+    }
+
+/* yep, really is in use */
+    if (i == r) {
+     ret ^= service_not_in_use;
+     break;
+    }
    }
    ha = streenext (ha);
   }
@@ -456,6 +481,9 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
   if (module) {
    while (ha) {
     if (((struct service_usage_item *)(ha->value))->users &&
+        (((struct service_usage_item *)(ha->value))->provider) &&
+        ((((struct service_usage_item *)(ha->value))->provider)[0]) &&
+        (!((((struct service_usage_item *)(ha->value))->provider)[1])) &&
         inset ((const void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
      for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
       if (((struct service_usage_item *)(ha->value))->users[i]->si &&
