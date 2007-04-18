@@ -1433,8 +1433,10 @@ void mod_queue_disable (char *service) {
 signed char mod_flatten_current_tb_group(char *serv, char task) {
  struct group_data *gd = mod_group_get_data (serv);
 
+#ifdef DEBUG
  eputs ("g", stderr);
  fflush (stderr);
+#endif
 
  if (gd) {
   uint32_t changes = 0;
@@ -1471,7 +1473,12 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      free (service);
      return 1;
     }
+
+    free (service);
+    return 0;
    }
+
+   notice (2, "marking group %s broken (...)", service);
 
    mod_mark (service, MARK_BROKEN);
   } else { // MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST
@@ -1531,8 +1538,10 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
  emutex_lock (&ml_service_list_mutex);
  struct stree *xn = streefind (module_logics_service_list, serv, tree_find_first);
 
+#ifdef DEBUG
  eputs ("m", stderr);
  fflush (stderr);
+#endif
 
  if (xn && xn->value) {
   struct lmodule **lm = xn->value;
@@ -1590,6 +1599,8 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
    } while (broken && rotate && (lm[0] != first));
 
    if (broken) {
+    notice (2, "marking group %s broken (broken != 0)", service);
+
     mod_mark (service, MARK_BROKEN);
    }
   } else { /* disable... */
@@ -1635,8 +1646,10 @@ void mod_flatten_current_tb () {
  if (current.enable) {
   uint32_t i;
 
+#ifdef DEBUG
   eputs ("e", stderr);
   fflush (stderr);
+#endif
 
   for (i = 0; current.enable[i]; i++) {
    signed char t = 0;
@@ -1645,9 +1658,11 @@ void mod_flatten_current_tb () {
     goto repeat_ena;
    }
 
+#ifdef DEBUG
    eputs ("+", stderr);
 /*   eputs (current.enable[i], stderr);*/
    fflush (stderr);
+#endif
 
    if (((t = mod_flatten_current_tb_group(current.enable[i], einit_module_enable)) == -1) &&
        ((t = mod_flatten_current_tb_module(current.enable[i], einit_module_enable)) == -1)) {
@@ -1660,8 +1675,10 @@ void mod_flatten_current_tb () {
     }
    }
 
+#ifdef DEBUG
    eputs ("-", stderr);
    fflush (stderr);
+#endif
   }
  }
 
@@ -1669,8 +1686,10 @@ void mod_flatten_current_tb () {
  if (current.disable) {
   uint32_t i;
 
+#ifdef DEBUG
   eputs ("d", stderr);
   fflush (stderr);
+#endif
 
   for (i = 0; current.disable[i]; i++) {
    signed char t = 0;
@@ -1679,8 +1698,10 @@ void mod_flatten_current_tb () {
     goto repeat_disa;
    }
 
+#ifdef DEBUG
    eputs ("z", stderr);
    fflush (stderr);
+#endif
 
    if (((t = mod_flatten_current_tb_group(current.disable[i], einit_module_disable)) == -1) &&
        ((t = mod_flatten_current_tb_module(current.disable[i], einit_module_disable)) == -1)) {
@@ -1693,13 +1714,17 @@ void mod_flatten_current_tb () {
     }
    }
 
+#ifdef DEBUG
    eputs ("!", stderr);
    fflush (stderr);
+#endif
   }
  }
 
+#ifdef DEBUG
  eputs ("R", stderr);
  fflush (stderr);
+#endif
 
  emutex_unlock (&ml_tb_current_mutex);
 }
@@ -2327,8 +2352,10 @@ void mod_examine (char *service) {
    return;
   }
 
+#ifdef DEBUG
   eprintf (stderr, " ** examining service %s (%s).\n", service,
                    task & einit_module_enable ? "enable" : "disable");
+#endif
 
   emutex_lock (&ml_service_list_mutex);
   struct stree *v = streefind (module_logics_service_list, service, tree_find_first);
@@ -2460,7 +2487,9 @@ void mod_spawn_batch(char **batch, int task) {
   }
  }
 
+#ifdef DEBUG
  eprintf (stderr, "i=%i, broken=%i, deferred=%i\n", i, broken, deferred);
+#endif
 
 // ignorereorderfor =
 }
@@ -2504,12 +2533,16 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  pthread_cond_broadcast (&ml_cond_service_update);
 
+#ifdef DEBUG
  eputs ("flattening...\n", stderr);
  fflush(stderr);
+#endif
  mod_flatten_current_tb();
 
+#ifdef DEBUG
  eputs ("flat as a pancake now...\n", stderr);
  fflush(stderr);
+#endif
 
  mod_commits_inc();
 
@@ -2522,7 +2555,9 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; en[i]; i++) {
     if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
-        eprintf (stderr, "not yet provided: %s\n", en[i]);
+#ifdef DEBUG
+     eprintf (stderr, "not yet provided: %s\n", en[i]);
+#endif
 
      remainder++;
 
@@ -2530,7 +2565,9 @@ void mod_commit_and_wait (char **en, char **dis) {
      if (!inset ((const void **)current.enable, en[i], SET_TYPE_STRING)) {
       emutex_unlock (&ml_tb_current_mutex);
 
+#ifdef DEBUG
       notice (2, "something must've gone wrong with service %s...", en[i]);
+#endif
 
       remainder--;
      } else
@@ -2544,7 +2581,9 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; dis[i]; i++) {
     if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
+#ifdef DEBUG
      eprintf (stderr, "still provided: %s\n", dis[i]);
+#endif
 
      remainder++;
 
@@ -2553,7 +2592,9 @@ void mod_commit_and_wait (char **en, char **dis) {
       current.disable = (char **)setadd ((void **)current.disable, dis[i], SET_TYPE_STRING);
       emutex_unlock (&ml_tb_current_mutex);
 
+#ifdef DEBUG
       notice (2, "something must've gone wrong with service %s...", dis[i]);
+#endif
 
       remainder--;
      } else
