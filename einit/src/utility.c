@@ -637,6 +637,7 @@ char strmatch (const char *str1, const char *str2) {
 }
 #endif
 
+#ifndef _have_asm_hashp
 uintptr_t hashp (const char *str) {
  uintptr_t rv = 0;
 
@@ -647,3 +648,4 @@ uintptr_t hashp (const char *str) {
 
  return rv;
 }
+#endif
