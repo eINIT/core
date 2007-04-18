@@ -3,7 +3,6 @@
   name="Mount ( /proc )"
   requires="rootfs"
   provides="proc"
-  before="udev"
   enable="mount -t proc proc /proc &amp;&amp; echo &quot;feedback|notice|Mounted r/w&quot;"
   disable="/bin/true"
   restart="no" />

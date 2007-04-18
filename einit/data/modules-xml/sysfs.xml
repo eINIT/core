@@ -3,7 +3,6 @@
   name="Mount ( /sys )"
   requires="rootfs"
   provides="sysfs"
-  before="udev"
   enable="mount -t sysfs sysfs /sys &amp;&amp; echo &quot;feedback|notice|Mounted r/w&quot;"
   disable="/bin/true"
   restart="no" />
