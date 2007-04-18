@@ -123,7 +123,8 @@ void **setslice_nc (void **set1, const void **set2, const int32_t esize) {
 void **setadd (void **set, const void *item, int32_t esize) {
  void **newset = NULL;
  int x = 0;
- uint32_t count = 0, size = 0;
+ uint32_t count = 0;
+ uintptr_t size = 0;
 
  if (!item) return NULL;
 // if (!set) set = ecalloc (1, sizeof (void *));
@@ -150,32 +151,38 @@ void **setadd (void **set, const void *item, int32_t esize) {
   newset[x] = (void *)item;
  } else if (esize == SET_TYPE_STRING) {
   char *cpnt;
+  uint32_t strlen_item = 1+strlen(item);
 
-  if (set) for (; set[count]; count++) {
-   size += sizeof(void*) + 1 + strlen(set[count]);
-  }
-  size += sizeof(void*)*2 + 1 +strlen(item);
+  if (set) for (; set[count]; count++);
 
-  newset = ecalloc (1, size);
-  cpnt = ((char *)newset) + (count+2)*sizeof(void*);
+  if (count) {
+   uint32_t strlencache[count];
 
-  if (set) {
+   for (count = 0; set[count]; count++) {
+    size += sizeof(void*) + (strlencache[count] = (1+strlen(set[count])));
+   }
+   size += sizeof(void*)*2 + strlen_item;
+
+   newset = ecalloc (1, size);
+   cpnt = ((char *)newset) + (count+2)*sizeof(void*);
+
    while (set[x]) {
     if (set[x] == item) {
      free (newset);
      return set;
     }
-    esize = 1+strlen(set[x]);
-    memcpy (cpnt, set[x], esize);
+    memcpy (cpnt, set[x], strlencache[x]);
     newset [x] = cpnt;
-    cpnt += esize;
+    cpnt += strlencache[x];
     x++;
    }
    free (set);
+  } else {
+   newset = ecalloc (1, sizeof(void*)*2 + strlen_item);
+   cpnt = ((char *)newset) + (count+2)*sizeof(void*);
   }
 
-  esize = 1+strlen(item);
-  memcpy (cpnt, item, esize);
+  memcpy (cpnt, item, strlen_item);
   newset [x] = cpnt;
  } else {
   char *cpnt;
