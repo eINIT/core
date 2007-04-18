@@ -156,10 +156,23 @@ void **setadd (void **set, const void *item, int32_t esize) {
   if (set) for (; set[count]; count++);
 
   if (count) {
-   uint32_t strlencache[count];
+   uint32_t strlencache[count]/*, cpp = 0*/;
+/*   ssize_t copyblock_size[count+1];
+   void *copyblock_ptr[count+1];
+
+   copyblock_size[0] = 0;
+   copyblock_ptr[0] = NULL;*/
 
    for (count = 0; set[count]; count++) {
     size += sizeof(void*) + (strlencache[count] = (1+strlen(set[count])));
+
+/*    if (copyblock_size[cpp]) {
+    } else {*/
+/*    {
+     copyblock_ptr[cpp] = set[count];
+     copyblock_size[cpp] = strlencache[count];
+     cpp++;
+    }*/
    }
    size += sizeof(void*)*2 + strlen_item;
 
@@ -167,10 +180,10 @@ void **setadd (void **set, const void *item, int32_t esize) {
    cpnt = ((char *)newset) + (count+2)*sizeof(void*);
 
    while (set[x]) {
-    if (set[x] == item) {
+/*    if (set[x] == item) {
      free (newset);
      return set;
-    }
+    }*/
     memcpy (cpnt, set[x], strlencache[x]);
     newset [x] = cpnt;
     cpnt += strlencache[x];
