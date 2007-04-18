@@ -485,10 +485,13 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
         ((((struct service_usage_item *)(ha->value))->provider)[0]) &&
         (!((((struct service_usage_item *)(ha->value))->provider)[1])) &&
         inset ((const void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
+
      for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
       if (((struct service_usage_item *)(ha->value))->users[i]->si &&
           ((struct service_usage_item *)(ha->value))->users[i]->si->provides)
+
        ret = (char **)setcombine ((const void **)ret, (const void **)((struct service_usage_item *)(ha->value))->users[i]->si->provides, SET_TYPE_STRING);
+
      }
     }
     ha = streenext (ha);
