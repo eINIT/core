@@ -1599,7 +1599,7 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
    } while (broken && rotate && (lm[0] != first));
 
    if (broken) {
-    notice (2, "marking group %s broken (broken != 0)", service);
+    notice (2, "marking module %s broken (broken != 0)", service);
 
     mod_mark (service, MARK_BROKEN);
    }
@@ -2388,7 +2388,11 @@ void mod_examine (char *service) {
       emutex_unlock (&ml_tb_current_mutex);
 
       for (; d[y]; y++) {
-       mod_defer_until (d[y], service);
+       struct group_data *gd = mod_group_get_data(d[y]);
+
+       if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
+        mod_defer_until (d[y], service);
+       }
       }
 
       free (d);
@@ -2408,10 +2412,14 @@ void mod_examine (char *service) {
       emutex_unlock (&ml_tb_current_mutex);
 
       for (; d[y]; y++) {
-       mod_defer_until (service, d[y]);
-      }
+       struct group_data *gd = mod_group_get_data(d[y]);
 
-      hd = 1;
+       if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
+        mod_defer_until (service, d[y]);
+
+        hd = 1;
+       }
+      }
 
       free (d);
      } else
@@ -2477,6 +2485,10 @@ void mod_spawn_batch(char **batch, int task) {
   } else {
    char *sc = estrdup (batch[i]);
    pthread_t th;
+
+#ifdef DEBUG
+   eprintf (stderr, " XX spawning thread for %s\n", batch[i]);
+#endif
 
    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
     emutex_unlock (&ml_tb_current_mutex);

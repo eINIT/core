@@ -169,6 +169,22 @@ struct smodule sm_critical = {
     }
 };
 
+char *provides_rootfs[] = {"rootfs", NULL};
+char *before_rootfs[] = {".*", NULL};
+struct smodule sm_rootfs = {
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "mount ( / )",
+ .rid		= "mount-rootfs",
+ .si           = {
+  .provides = provides_rootfs,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = before_rootfs
+ }
+};
+
 /* variable declarations */
 pthread_mutex_t blockdevices_mutex;
 char *defaultblockdevicesource[5];
@@ -775,6 +791,16 @@ int einit_mount_scanmodules (struct lmodule *modchain) {
   new->param = (void *)MOUNT_CRITICAL;
  }
 
+ doop = 1;
+ lm = modchain;
+ while (lm) { if (lm->source && strmatch(lm->source, sm_rootfs.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_rootfs))) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))emount;
+  new->disable = (int (*)(void *, struct einit_event *))eumount;
+  new->param = (void *)estrdup("/");
+ }
+
  return 0;
 }
 
@@ -907,6 +933,8 @@ int emount (char *mountpoint, struct einit_event *status) {
  unsigned char (*mount_function)(char *, char *, char *, struct bd_info *, struct fstab_entry *, struct einit_event *);
 
  unsigned long mntflags = 0;
+
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  if (!mountpoint) return status_failed;
 
@@ -1043,7 +1071,7 @@ int emount (char *mountpoint, struct einit_event *status) {
    fse->adevice = source;
    fse->aflags = mntflags;
 
-   if (coremode != einit_mode_sandbox) {
+   if (!(coremode & einit_mode_sandbox)) {
     if (fse->after_mount)
      pexec_v1 (fse->after_mount, (const char **)fse->variables, NULL, status);
 
@@ -1076,6 +1104,8 @@ int emount (char *mountpoint, struct einit_event *status) {
 int eumount (char *mountpoint, struct einit_event *status) {
  struct stree *he = mcb.fstab;
  struct fstab_entry *fse = NULL;
+
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  if (!mountpoint) return status_failed;
 
@@ -1175,7 +1205,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
  }
 
  umount_ok:
- if (coremode != einit_mode_sandbox) {
+ if (!(coremode & einit_mode_sandbox)) {
   if (fse && fse->after_umount)
    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
  }
@@ -1572,7 +1602,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t ret, sc = 0, slc;
 
- if (coremode == einit_mode_sandbox) return status_ok;
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  switch (p) {
   case MOUNT_LOCAL:
@@ -1619,7 +1649,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
    return ret;
    break;
   case MOUNT_CRITICAL:
-   ret = emount ("/", status);
+/*   ret = emount ("/", status);*/
    unlink ("/etc/mtab");
    update_real_mtab();
 
@@ -1695,7 +1725,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t sc = 0, slc;
 
- if (coremode == einit_mode_sandbox) return status_ok;
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  einit_mount_update (UPDATE_MTAB);
  ha = mcb.fstab;
@@ -1800,9 +1830,9 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
 
  update_real_mtab();
 
- if (p == MOUNT_CRITICAL) {
+/* if (p == MOUNT_CRITICAL) {
   eumount ("/", status);
- }
+ }*/
 
  return status_ok;
 }

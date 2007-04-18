@@ -40,7 +40,7 @@ cp -a einit/ einit-$1 &&
 cd einit-$1 &&
 make clean &&
 rm -fR sandbox* einit.* web build docs &&
-rm -fR `find . -name "nohup.out" -o -name "CVS*" -o -name ".svn" -o -name "*~" -o -iname "" -o -name "*.mk" -o -name "*.so" -o -name "*.o" -o -iname ".[a-z#]*" -o -name "1"` &&
+rm -fR `find . -name "nohup.out" -o -name "CVS*" -o -name ".svn" -o -name "*~" -o -iname "" -o -name "*.mk" -o -name "*.so" -o -name "*.o" -o -iname ".[a-z#]*" -o -name "1"` -o iname "*do_sandbox*" &&
 
 cd .. &&
 tar -cjf einit-$1.tar.bz2 einit-$1 --exclude einit-$1/gentoo &&
