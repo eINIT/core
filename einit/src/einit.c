@@ -312,7 +312,9 @@ int main(int argc, char **argv) {
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
  if (!einit_startup_configuration_files) einit_startup_configuration_files = einit_default_startup_configuration_files;
 
- if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
+
+// if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
+ if (pid == 1) {
   initoverride = 1;
   einit_sub = fork();
  }
