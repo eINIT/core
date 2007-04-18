@@ -2364,7 +2364,7 @@ void mod_examine (char *service) {
 
   if (lm && lm[0]) {
    pthread_t th;
-   char **before = NULL, **after = NULL;
+   char **before = NULL, **after = NULL, **xbefore = NULL;
 
    if (lm[0]->si && (lm[0]->si->before || lm[0]->si->after)) {
     if (task & einit_module_enable) {
@@ -2392,6 +2392,8 @@ void mod_examine (char *service) {
 
        if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
         mod_defer_until (d[y], service);
+
+        xbefore = (char **)setadd ((void **)xbefore, (void *)d[y], SET_TYPE_STRING);
        }
       }
 
@@ -2414,7 +2416,8 @@ void mod_examine (char *service) {
       for (; d[y]; y++) {
        struct group_data *gd = mod_group_get_data(d[y]);
 
-       if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
+       if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
+           (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
         mod_defer_until (service, d[y]);
 
         hd = 1;

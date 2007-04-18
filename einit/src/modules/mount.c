@@ -934,9 +934,11 @@ int emount (char *mountpoint, struct einit_event *status) {
 
  unsigned long mntflags = 0;
 
- if (coremode & einit_mode_sandbox) return status_ok;
-
  if (!mountpoint) return status_failed;
+
+ notice (4, "mounting %s", mountpoint);
+
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  char **fstype_s = NULL;
  uint32_t fsts_i = 0;
@@ -1105,9 +1107,11 @@ int eumount (char *mountpoint, struct einit_event *status) {
  struct stree *he = mcb.fstab;
  struct fstab_entry *fse = NULL;
 
- if (coremode & einit_mode_sandbox) return status_ok;
-
  if (!mountpoint) return status_failed;
+
+ notice (4, "unmounting %s", mountpoint);
+
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  char textbuffer[BUFFERSIZE];
  errno = 0;
