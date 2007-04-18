@@ -1152,10 +1152,10 @@ void mod_commits_dec () {
  char clean_broken = 0, **unresolved = NULL, **broken = NULL;
  emutex_lock (&ml_unresolved_mutex);
  if (broken_services) {
-  broken = setdup ((const void **)broken_services, SET_TYPE_STRING);
+  broken = (char **)setdup ((const void **)broken_services, SET_TYPE_STRING);
  }
  if (unresolved_services) {
-  unresolved = setdup ((const void **)unresolved_services, SET_TYPE_STRING);
+  unresolved = (char **)setdup ((const void **)unresolved_services, SET_TYPE_STRING);
  }
  emutex_unlock (&ml_unresolved_mutex);
 
@@ -2349,13 +2349,17 @@ void mod_examine (char *service) {
   return;
  } else if (mod_isdeferred (service)) {
   mod_pre_examine(service);
+#ifdef DEBUG
   notice (2, "service %s still marked as deferred", service);
+#endif
 
   if (mod_workthreads_dec(service)) return;
 
   return;
  } else if (mod_examine_group (service)) {
+#ifdef DEBUG
   notice (2, "service %s: group examination", service);
+#endif
 
   if (mod_workthreads_dec(service)) return;
 
@@ -2590,7 +2594,9 @@ void mod_commit_and_wait (char **en, char **dis) {
   remainder = 0;
   iterations++;
 
+#ifdef DEBUG
   char **stillneed = NULL;
+#endif
 
   if (en) {
    uint32_t i = 0;
