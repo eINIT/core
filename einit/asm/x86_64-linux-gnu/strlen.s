@@ -33,14 +33,12 @@
 
 .globl strlen
 strlen:
-	cmpb $0x0,(%rdi);
-	je bail;
+	mov %rdi,%r8;       /* save original pointer */
+	mov $0xfffff,%rcx;  /* the equivalent of "do indefinitely" */
+	mov $0x0,%al;       /* set al to zero */
+	cld;
+	repne scasb;        /* scan for al, i.e. zero */
+	sub %r8,%rdi;
 	mov %rdi,%rax;
-repeat:	inc %rdi;           // increase our pointer
-	cmpb $0x0,(%rdi);   // see if the target of the first parameter is 0
-	jne repeat;         // repeat
-	sub %rax,%rdi;
-	mov %rdi,%rax;
-	ret;
-bail:	xor %rax,%rax;
+	dec %rax;
 	ret;

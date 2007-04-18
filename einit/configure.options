@@ -13,8 +13,7 @@ export NEED_INTERNAL="module-so";
 export INTERNALMODULES="${MODULES_CORE}"
 export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 
-export ASMFUNCTIONS="strmatch strlen memcpy"
-#export ASMFUNCTIONS=""
+export ASMFUNCTIONS="strmatch strlen memcpy memset"
 
 export COREOBJECTS="einit module bitch utility event tree-linear set-lowmem ${ASMFUNCTIONS}"
 export UTILOBJECTS="einit-control bitch utility crash-handler ${ASMFUNCTIONS}"

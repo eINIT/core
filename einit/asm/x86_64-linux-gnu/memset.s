@@ -1,8 +1,8 @@
 //
-// memcpy.s
+// memset.s
 // einit
 //
-// why's the libc version of this so... "big"?
+// set a region of mem to a certain value
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,10 +31,13 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl memcpy
-memcpy:
+.globl memset
+memset:
 	mov %edx,%ecx;
-	mov %rdi,%rax;  /* copy arg1 to return value, see man:memcpy */
+	mov %rdi,%r8;   /* copy arg1 for return value, see man:memset */
+	mov %rsi,%rax;
 	cld;
-	rep movsb;      /* copy byte at %rsi to %rdi, cx times */
+	rep stosb;      /* copy byte to (%rdi), increment */
+	mov %r8,%rax;
+	xor %rax,%rax;
 	ret;
