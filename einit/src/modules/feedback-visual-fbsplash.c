@@ -321,7 +321,9 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
    }
   }
 
+  emutex_lock (&fbsplash_commandQ_cond_mutex);
   pthread_cond_wait (&fbsplash_commandQ_cond, &fbsplash_commandQ_cond_mutex);
+  emutex_unlock (&fbsplash_commandQ_cond_mutex);
  }
 
  return NULL;

@@ -352,6 +352,10 @@ if test -n "`echo ${INTERNALMODULES}|grep bootstrap-configuration-xml-expat`"; t
  echo -n " -lexpat"
  CORELIBS="${CORELIBS} -lexpat"
 fi;
+if test -n "`echo ${INTERNALMODULES}|grep module-logic-v3`"; then
+ echo -n " -lrt"
+ CORELIBS="${CORELIBS} -lrt"
+fi;
 if test -n "`echo ${INTERNALMODULES}|grep module-so`"; then
 	if test -z "$(uname -a|grep BSD)"; then
 		echo -n " -ldl";

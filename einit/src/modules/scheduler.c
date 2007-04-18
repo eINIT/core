@@ -146,6 +146,7 @@ void sched_reset_event_handlers () {
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
+#if 0
 /* ignore most signals */
  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
 
@@ -171,7 +172,7 @@ void sched_reset_event_handlers () {
 #ifdef SIGIO
  if ( sigaction (SIGIO, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 #endif
-
+#endif
 }
 
 int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {

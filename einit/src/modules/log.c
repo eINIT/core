@@ -205,8 +205,10 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
    .seqid = ev->seqid,
    .timestamp = ev->timestamp,
    .message = estrdup (logentry),
-   .severity = 0
+   .severity = 1
   };
+
+  eprintf (stderr, " ** %s\n", logentry);
 
   emutex_lock(&logmutex);
   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));

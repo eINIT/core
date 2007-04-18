@@ -109,7 +109,6 @@ pthread_mutex_t
   ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_currently_provided_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 pthread_cond_t
   ml_cond_service_update = PTHREAD_COND_INITIALIZER;
 
@@ -1118,11 +1117,13 @@ char mod_workthreads_dec (char *service) {
   emutex_unlock (&ml_workthreads_mutex);
  }
 
+#if 0
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+#endif
 
  return 0;
 }
@@ -1146,29 +1147,36 @@ char mod_workthreads_inc (char *service) {
 }
 
 void mod_commits_dec () {
- char clean_broken = 0;
+ notice (5, "plan finished.");
+
+ char clean_broken = 0, **unresolved = NULL, **broken = NULL;
  emutex_lock (&ml_unresolved_mutex);
  if (broken_services) {
-  struct einit_event ee = evstaticinit(einit_feedback_broken_services);
-  ee.set = (void **)broken_services;
-
-  event_emit (&ee, einit_event_flag_broadcast);
-  evstaticdestroy (ee);
-
-  free (broken_services);
-  broken_services = NULL;
+  broken = setdup ((const void **)broken_services, SET_TYPE_STRING);
  }
  if (unresolved_services) {
-  struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
-  ee.set = (void **)unresolved_services;
+  unresolved = setdup ((const void **)unresolved_services, SET_TYPE_STRING);
+ }
+ emutex_unlock (&ml_unresolved_mutex);
+
+ if (broken) {
+  struct einit_event ee = evstaticinit(einit_feedback_broken_services);
+  ee.set = (void **)broken;
 
   event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);
 
-  free (unresolved_services);
-  unresolved_services = NULL;
+  free (broken);
  }
- emutex_unlock (&ml_unresolved_mutex);
+ if (unresolved) {
+  struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
+  ee.set = (void **)unresolved;
+
+  event_emit (&ee, einit_event_flag_broadcast);
+  evstaticdestroy (ee);
+
+  free (unresolved);
+ }
 
  emutex_lock (&ml_commits_mutex);
  ml_commits--;
@@ -1205,10 +1213,19 @@ void mod_commits_dec () {
   }
   emutex_unlock(&ml_chain_examine);
  }
+
+#if 0
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&ml_cond_service_update);
+#endif
 }
 
 void mod_commits_inc () {
 // char spawn = 0;
+ notice (5, "plan started.");
 
  emutex_lock (&ml_commits_mutex);
  ml_commits++;
@@ -1256,11 +1273,13 @@ void mod_defer_until (char *service, char *after) {
 
  emutex_unlock(&ml_chain_examine);
 
+#if 0
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+#endif
 }
 
 void mod_remove_defer (char *service) {
@@ -1782,11 +1801,13 @@ void mod_examine_module (struct lmodule *module) {
   }
  }
 
+#if 0
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+#endif
 }
 
 void mod_post_examine (char *service) {
@@ -2531,22 +2552,26 @@ void mod_spawn_workthreads () {
  }
  emutex_unlock (&ml_tb_current_mutex);
 
+#if 0
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+#endif
 }
 
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
  uint32_t iterations = 0;
 
+#if 0
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+#endif
 
 #ifdef DEBUG
  eputs ("flattening...\n", stderr);
@@ -2561,9 +2586,11 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  mod_commits_inc();
 
- do {
+ while (1) {
   remainder = 0;
   iterations++;
+
+  char **stillneed = NULL;
 
   if (en) {
    uint32_t i = 0;
@@ -2572,6 +2599,7 @@ void mod_commit_and_wait (char **en, char **dis) {
     if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
 #ifdef DEBUG
      eprintf (stderr, "not yet provided: %s\n", en[i]);
+     stillneed = setadd (stillneed, en[i], SET_TYPE_STRING);
 #endif
 
      remainder++;
@@ -2598,6 +2626,7 @@ void mod_commit_and_wait (char **en, char **dis) {
     if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
 #ifdef DEBUG
      eprintf (stderr, "still provided: %s\n", dis[i]);
+     stillneed = setadd (stillneed, dis[i], SET_TYPE_STRING);
 #endif
 
      remainder++;
@@ -2619,24 +2648,65 @@ void mod_commit_and_wait (char **en, char **dis) {
   }
 
   if (remainder <= 0) {
-   notice (5, "plan finished.");
-
    mod_commits_dec();
+
+#ifdef DEBUG
+   notice (4, "finished: enable=%s; disable=%s\n", en ? set2str (' ', en) : "none", dis ? set2str (' ', dis) : "none");
+   fflush (stderr);
+#endif
+
+//   pthread_mutex_destroy (&ml_service_update_mutex);
    return;
   }
 
-//  notice (4, "still need %i services\n", remainder);
+#if 0
+#ifdef DEBUG
+  if (!stillneed) {
+   notice (4, "still need %i services\n", remainder);
+  } else {
+   notice (4, "still need %i services (%s)\n", remainder, set2str (' ', stillneed));
+  }
+  fflush (stderr);
+#endif
+#endif
 
   if (iterations >= MAX_ITERATIONS) {
    notice (1, "plan aborted (too many iterations: %i).\n", iterations);
 
+#ifdef DEBUG
+   notice (4, "aborted: enable=%s; disable=%s\n", en ? set2str (' ', en) : "none", dis ? set2str (' ', dis) : "none");
+   fflush (stderr);
+#endif
+
    mod_commits_dec();
+//   pthread_mutex_destroy (&ml_service_update_mutex);
    return;
   }
 
-  pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
- } while (remainder);
+  emutex_lock (&ml_service_update_mutex);
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+  struct timespec ts;
+  int e;
 
+  if (clock_gettime(CLOCK_REALTIME, &ts))
+   bitch (bitch_stdio, errno, "gettime failed!");
+
+  ts.tv_sec += 1; /* max wait before re-evaluate */
+
+  e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
+#else
+  e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
+#endif
+  emutex_unlock (&ml_service_update_mutex);
+
+  if (e) {
+   bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
+  }/* else {
+   notice (1, "woke up, checking plan.\n");
+  }*/
+ };
+
+/* never reached */
  mod_commits_dec();
 }
 
