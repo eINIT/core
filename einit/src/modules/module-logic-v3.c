@@ -2695,6 +2695,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
   e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
 #else
+  notice (2, "warning: un-timed lock.");
   e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
 #endif
   emutex_unlock (&ml_service_update_mutex);

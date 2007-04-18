@@ -578,6 +578,13 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    status->string = strerror (errno);
   return status_failed;
  } else if (child == 0) {
+/* cause segfault */
+/*  sleep (1);
+  *((char *)0) = 1;*/
+
+/* make sure einit's thread is in a proper state */
+  sched_yield();
+
   char **exec_environment;
 
   if (gid && (setgid (gid) == -1))
