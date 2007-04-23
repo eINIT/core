@@ -5,8 +5,8 @@
   requires="rootfs:sysfs:proc"
   enable="pexec-options dont-close-stdin;
 	  echo &quot;feedback|notice|Using udev to manage /dev&quot;;
-	  mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
-	  if [ ! -e /dev/.einit ]; then
+	  if [ -e /dev/.einit ]; then
+	   mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
 	   echo &quot;feedback|notice|Seeding /dev with needed nodes&quot;;
            [ ! -c /dev/console ] &amp;&amp; mknod /dev/console c 5 1;
            [ ! -c /dev/tty1 ] &amp;&amp; mknod /dev/tty1 c 4 1;
@@ -46,7 +46,7 @@
            rm -f /dev/.udev_populate;
 	  else
 	   udevd --daemon;
-	  fi"
+	  fi;"
   disable="if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
 	    echo &quot;feedback|notice|Saving device nodes&quot;;
             save_tmp_base=/tmp/udev.savedevices.&quot;$$&quot;;
@@ -61,16 +61,16 @@
              cd /dev;
              find . -xdev -type b -or -type c -or -type l | cut -d/ -f2- &gt; &quot;${devices_real}&quot;;
              udevinfo=$(udevinfo --export-db);
-             echo &quot;${udevinfo}&quot; | gawk &#39;
-                     /^(N|S):.+/ {
-                             sub(/^(N|S):/, &quot;&quot;)
-                             split($0, nodes)
-                             for (x in nodes)
-                                     print nodes[x]
-                     }&#39; &gt; &quot;${devices_udev}&quot;
+                echo &quot;${udevinfo}&quot; | gawk '
+                        /^(N|S):.+/ {
+                                sub(/^(N|S):/, &quot;&quot;)
+                                split($0, nodes)
+                                for (x in nodes)
+                                        print nodes[x]
+                        }' > &quot;${devices_udev}&quot;;
              for x in MAKEDEV core fd initctl pts shm stderr stdin stdout; do
               echo &quot;${x}&quot; &gt;&gt; &quot;${devices_udev}&quot;;
-             done
+             done;
              if [ -d /lib/udev/devices ]; then
               cd /lib/udev/devices;
               find . -xdev -type b -or -type c -or -type l | cut -d/ -f2- &gt;&gt; &quot;${devices_udev}&quot;;
@@ -89,7 +89,6 @@
             rm -rf &quot;${save_tmp_base}&quot;;
            fi;
 	   killall -9 udevd;
-	   rm -rf /dev/.einit;
  	   echo &quot;feedback|notice|Shutdown successfull!&quot;;"
   variables="configuration-system-udev/.*" />
   restart="yes" />
