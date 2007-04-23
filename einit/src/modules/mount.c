@@ -58,6 +58,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
+#include <fcntl.h>
+
 #include <einit-modules/process.h>
 #include <einit-modules/exec.h>
 
@@ -1068,6 +1070,13 @@ int emount (char *mountpoint, struct einit_event *status) {
    }
 
    mount_success:
+
+// touch /dev/.einit
+   if (strmatch ("/", mountpoint)) {
+    int cfd = open ("/dev/.einit", O_WRONLY | O_CREAT | O_NONBLOCK | O_NOCTTY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+
+    if (cfd) close (cfd);
+   }
 
    fse->afs = fstype;
    fse->adevice = source;
