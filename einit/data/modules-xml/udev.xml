@@ -6,7 +6,7 @@
   enable="pexec-options dont-close-stdin;
 	  echo &quot;feedback|notice|Using udev to manage /dev&quot;;
 	  mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
-	  if [ -e /dev/.einit ]; then
+	  if [ ! -e /dev/.einit ]; then
 	   echo &quot;feedback|notice|Seeding /dev with needed nodes&quot;;
            [ ! -c /dev/console ] &amp;&amp; mknod /dev/console c 5 1;
            [ ! -c /dev/tty1 ] &amp;&amp; mknod /dev/tty1 c 4 1;
