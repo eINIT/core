@@ -47,7 +47,7 @@
 	  else
 	   udevd --daemon;
 	  fi;"
-  disable="if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
+  execute:device_tarball="if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
 	    echo &quot;feedback|notice|Saving device nodes&quot;;
             save_tmp_base=/tmp/udev.savedevices.&quot;$$&quot;;
             devices_udev=&quot;${save_tmp_base}&quot;/devices.udev;
@@ -87,9 +87,10 @@
 	     echo &quot;feedback|warning|Could not create temporary files!&quot;;
             fi;
             rm -rf &quot;${save_tmp_base}&quot;;
-           fi;
-	   killall -9 udevd;
- 	   echo &quot;feedback|notice|Shutdown successfull!&quot;;"
+	   else
+    	    echo &quot;feedback|notice|Not saving device nodes&quot;;
+           fi"
+  disable="killall -9 udevd"
   variables="configuration-system-udev/.*" />
   restart="yes" />
 </einit>
