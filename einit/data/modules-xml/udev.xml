@@ -10,6 +10,7 @@
 	   if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
    	    echo &quot;feedback|notice|Populating /dev with saved device nodes&quot;;
 	    tar -jxpf /lib/udev/state/devices.tar.bz2 -C /dev;
+	    sleep 2;
 	   fi;
 	   echo &quot;feedback|notice|Seeding /dev with needed nodes&quot;;
            [ ! -c /dev/console ] &amp;&amp; mknod /dev/console c 5 1;
@@ -51,7 +52,8 @@
 	  else
 	   udevd --daemon;
 	  fi;"
-  execute:device_tarball="if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
+  execute:device_tarball="pexec-options no-pipe; 
+	   if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
 	    echo &quot;feedback|notice|Saving device nodes&quot;;
             save_tmp_base=/tmp/udev.savedevices.&quot;$$&quot;;
             devices_udev=&quot;${save_tmp_base}&quot;/devices.udev;
@@ -70,8 +72,8 @@
                                 sub(/^(N|S):/, &quot;&quot;)
                                 split($0, nodes)
                                 for (x in nodes)
-                                        print nodes[x]
-                        }' > &quot;${devices_udev}&quot;;
+                                        print nodes[x];
+                        }' &gt; &quot;${devices_udev}&quot;;
              for x in MAKEDEV core fd initctl pts shm stderr stdin stdout; do
               echo &quot;${x}&quot; &gt;&gt; &quot;${devices_udev}&quot;;
              done;
