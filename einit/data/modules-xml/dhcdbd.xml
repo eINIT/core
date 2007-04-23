@@ -4,6 +4,6 @@
    provides="dhcdbd"
    requires="dbus"
    pid="/var/run/dhcdbd.pid"
-   command="dbus-launch dhcdbd -sn"
+   command="dbus-launch --exit-with-session dhcdbd -sn"
    restart="yes" />
 </einit>
