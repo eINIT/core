@@ -7,6 +7,10 @@
 	  echo &quot;feedback|notice|Using udev to manage /dev&quot;;
 	  if [ -e /dev/.einit ]; then
 	   mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
+	   if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
+   	    echo &quot;feedback|notice|Populating /dev with saved device nodes&quot;;
+	    tar -jxpf /lib/udev/state/devices.tar.bz2 -C /dev;
+	   fi;
 	   echo &quot;feedback|notice|Seeding /dev with needed nodes&quot;;
            [ ! -c /dev/console ] &amp;&amp; mknod /dev/console c 5 1;
            [ ! -c /dev/tty1 ] &amp;&amp; mknod /dev/tty1 c 4 1;
