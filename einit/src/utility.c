@@ -271,12 +271,10 @@ void *erealloc (void *c, size_t s) {
 }
 
 char *estrdup (const char *s) {
- char *p = NULL;
+ size_t len = strlen(s)+1;
+ char *p = emalloc (len);
 
- while (!(p = strdup (s))) {
-  bitch(bitch_emalloc, 0, "call to strdup() failed.");
-  sleep (1);
- }
+ memcpy (p, s, len);
 
  return p;
 }

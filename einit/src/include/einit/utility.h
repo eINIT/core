@@ -87,28 +87,28 @@ char *readfile (const char *filename);
  * This is a wrapper around malloc(). Usage and return conditions are exactly the same as for malloc(), except
  * that this function will not fail.
 */
-void *emalloc (size_t);
+void * emalloc (size_t);
 
 /*!\brief calloc()-wrapper
  *
  * This is a wrapper around calloc(). Usage and return conditions are exactly the same as for calloc(), except
  * that this function will not fail.
 */
-void *ecalloc (size_t, size_t);
+void * ecalloc (size_t, size_t);
 
 /*!\brief realloc()-wrapper
  *
  * This is a wrapper around realloc(). Usage and return conditions are exactly the same as for realloc(), except
  * that this function will not fail.
 */
-void *erealloc (void *, size_t);
+void * erealloc (void *, size_t);
 
 /*!\brief strdup()-wrapper
  *
  * This is a wrapper around strdup(). Usage and return conditions are exactly the same as for strdup(), except
  * that this function will not fail.
 */
-char *estrdup (const char *);
+char * estrdup (const char *);
 /*!\}*/
 
 /*!\ingroup utilityfunctionsstrings
