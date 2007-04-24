@@ -1,3 +1,9 @@
+2007/04/24: mdeininger
+ i'm getting quite lazy about updating this file... have a look at the svn
+ revision history for closer details ;)
+ * implemented shutdown-(before|after)
+ * fixed problems with before/after (should work again)
+
 2007/04/15: mdeininger
  * more API changes...
 

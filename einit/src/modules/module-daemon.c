@@ -204,8 +204,12 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     dexec->environment = straddtoenviron (dexec->environment, "services", node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "after"))
     modinfo->si.after = str2set (':', node->arbattrs[i+1]);
+   else if (strmatch (node->arbattrs[i], "shutdown-after"))
+    modinfo->si.shutdown_after = str2set (':', node->arbattrs[i+1]);
    else if (strmatch (node->arbattrs[i], "before"))
     modinfo->si.before = str2set (':', node->arbattrs[i+1]);
+   else if (strmatch (node->arbattrs[i], "shutdown-before"))
+    modinfo->si.shutdown_before = str2set (':', node->arbattrs[i+1]);
 
    else if (strmatch (node->arbattrs[i], "variables"))
     dexec->variables = str2set (':', node->arbattrs[i+1]);

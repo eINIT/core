@@ -2343,8 +2343,15 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
    before = lm->si->before;
    after = lm->si->after;
   } else if (task & einit_module_disable) {
-   before = lm->si->after;
-   after = lm->si->before;
+   if (shutting_down && lm->si->shutdown_before)
+    before = lm->si->shutdown_before;
+   else
+    before = lm->si->after;
+
+   if (shutting_down && lm->si->shutdown_after)
+    after = lm->si->shutdown_after;
+   else
+    after = lm->si->before;
   }
  }
 

@@ -191,6 +191,10 @@ struct service_information {
  char **requires;       /*!< A list of services that this module requires. */
  char **after;          /*!< Load this module after these services, but only if they're loaded to begin with */
  char **before;         /*!< Load this module before these services, but only if they're loaded to begin with */
+
+ char **shutdown_after; /*!< Load this module after these services, but only if they're loaded to begin with and we're currently shutting down */
+ char **shutdown_before;/*!< Load this module before these services, but only if they're loaded to begin with and we're currently shutting down */
+
 #if 0
  char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
 #endif
