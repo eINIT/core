@@ -2323,7 +2323,7 @@ char mod_examine_group (char *groupname) {
  return 1;
 }
 
-char mod_reorder (struct lmodule *lm, int task, char *service) {
+char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
  char **before = NULL, **after = NULL, **xbefore = NULL, hd = 0;
 
  if (!lm) {
@@ -2354,8 +2354,10 @@ char mod_reorder (struct lmodule *lm, int task, char *service) {
 
   for (; before[i]; i++) {
    char **d;
+   if (dolock) emutex_lock (&ml_tb_current_mutex);
    if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
     uint32_t y = 0;
+    if (dolock) emutex_unlock (&ml_tb_current_mutex);
 
     for (; d[y]; y++) {
      struct group_data *gd = mod_group_get_data(d[y]);
@@ -2368,6 +2370,8 @@ char mod_reorder (struct lmodule *lm, int task, char *service) {
     }
 
     free (d);
+   } else {
+    if (dolock) emutex_unlock (&ml_tb_current_mutex);
    }
   }
  }
@@ -2376,8 +2380,10 @@ char mod_reorder (struct lmodule *lm, int task, char *service) {
 
   for (; after[i]; i++) {
    char **d;
+   if (dolock) emutex_lock (&ml_tb_current_mutex);
    if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
     uint32_t y = 0;
+    if (dolock) emutex_unlock (&ml_tb_current_mutex);
 
     for (; d[y]; y++) {
      struct group_data *gd = mod_group_get_data(d[y]);
@@ -2391,6 +2397,8 @@ char mod_reorder (struct lmodule *lm, int task, char *service) {
     }
 
     free (d);
+   } else {
+    if (dolock) emutex_unlock (&ml_tb_current_mutex);
    }
   }
  }
@@ -2465,9 +2473,7 @@ void mod_examine (char *service) {
   if (lm && lm[0]) {
    pthread_t th;
    char hd;
-   emutex_lock (&ml_tb_current_mutex);
-   hd = mod_reorder (lm[0], task, service);
-   emutex_unlock (&ml_tb_current_mutex);
+   hd = mod_reorder (lm[0], task, service, 1);
 
    if (hd) {
     if (mod_workthreads_dec(service)) return;
@@ -2519,7 +2525,7 @@ void mod_spawn_batch(char **batch, int task) {
   if (mod_isbroken(batch[i])) {
    broken++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
-  } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i])) {
+  } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i], 0)) {
    deferred++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
   } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
