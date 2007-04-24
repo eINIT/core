@@ -235,7 +235,7 @@
     <guessing-order s="ext4:ext3:ext2:reiser4:reiserfs:xfs:jfs:ufs:udf" />
    </filesystem>
    <mountpoints>
-    <no-umount s="/dev:/proc:/sys" />
+    <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache" />
     <critical s="/usr:/var" />
    </mountpoints>
 <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
