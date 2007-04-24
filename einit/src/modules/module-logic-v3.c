@@ -2323,6 +2323,81 @@ char mod_examine_group (char *groupname) {
  return 1;
 }
 
+char mod_reorder (struct lmodule *lm, int task, char *service) {
+ char **before = NULL, **after = NULL, **xbefore = NULL, hd = 0;
+
+ if (!lm) {
+  fflush (stderr);
+  emutex_lock (&ml_service_list_mutex);
+  struct stree *v = streefind (module_logics_service_list, service, tree_find_first);
+  struct lmodule **lmx = v ? v->value : NULL;
+  emutex_unlock (&ml_service_list_mutex);
+  fflush (stderr);
+
+  if (lmx && lmx[0]) lm = lmx[0];
+  else return 0;
+ }
+
+ if (lm->si && (lm->si->before || lm->si->after)) {
+  if (task & einit_module_enable) {
+   before = lm->si->before;
+   after = lm->si->after;
+  } else if (task & einit_module_disable) {
+   before = lm->si->after;
+   after = lm->si->before;
+  }
+ }
+
+ /* "loose" service ordering */
+ if (before) {
+  uint32_t i = 0;
+
+  for (; before[i]; i++) {
+   char **d;
+   if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
+    uint32_t y = 0;
+
+    for (; d[y]; y++) {
+     struct group_data *gd = mod_group_get_data(d[y]);
+
+     if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
+      mod_defer_until (d[y], service);
+
+      xbefore = (char **)setadd ((void **)xbefore, (void *)d[y], SET_TYPE_STRING);
+     }
+    }
+
+    free (d);
+   }
+  }
+ }
+ if (after) {
+  uint32_t i = 0;
+
+  for (; after[i]; i++) {
+   char **d;
+   if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
+    uint32_t y = 0;
+
+    for (; d[y]; y++) {
+     struct group_data *gd = mod_group_get_data(d[y]);
+
+     if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
+           (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
+      mod_defer_until (service, d[y]);
+
+      hd = 1;
+     }
+    }
+
+    free (d);
+   }
+  }
+ }
+
+ return hd;
+}
+
 void mod_examine (char *service) {
  if (mod_workthreads_inc(service)) return;
 
@@ -2389,77 +2464,16 @@ void mod_examine (char *service) {
 
   if (lm && lm[0]) {
    pthread_t th;
-   char **before = NULL, **after = NULL, **xbefore = NULL;
+   char hd;
+   emutex_lock (&ml_tb_current_mutex);
+   hd = mod_reorder (lm[0], task, service);
+   emutex_unlock (&ml_tb_current_mutex);
 
-   if (lm[0]->si && (lm[0]->si->before || lm[0]->si->after)) {
-    if (task & einit_module_enable) {
-     before = lm[0]->si->before;
-     after = lm[0]->si->after;
-    } else if (task & einit_module_disable) {
-     before = lm[0]->si->after;
-     after = lm[0]->si->before;
+   if (hd) {
+    if (mod_workthreads_dec(service)) return;
+
+    return;
     }
-   }
-
-/* "loose" service ordering */
-   if (before) {
-    uint32_t i = 0;
-
-    for (; before[i]; i++) {
-     char **d;
-     emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
-      uint32_t y = 0;
-      emutex_unlock (&ml_tb_current_mutex);
-
-      for (; d[y]; y++) {
-       struct group_data *gd = mod_group_get_data(d[y]);
-
-       if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
-        mod_defer_until (d[y], service);
-
-        xbefore = (char **)setadd ((void **)xbefore, (void *)d[y], SET_TYPE_STRING);
-       }
-      }
-
-      free (d);
-     } else
-      emutex_unlock (&ml_tb_current_mutex);
-    }
-   }
-   if (after) {
-    char hd = 0;
-    uint32_t i = 0;
-
-    for (; after[i]; i++) {
-     char **d;
-     emutex_lock (&ml_tb_current_mutex);
-     if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
-      uint32_t y = 0;
-      emutex_unlock (&ml_tb_current_mutex);
-
-      for (; d[y]; y++) {
-       struct group_data *gd = mod_group_get_data(d[y]);
-
-       if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
-           (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
-        mod_defer_until (service, d[y]);
-
-        hd = 1;
-       }
-      }
-
-      free (d);
-     } else
-      emutex_unlock (&ml_tb_current_mutex);
-    }
-
-    if (hd) {
-     if (mod_workthreads_dec(service)) return;
-
-     return;
-    }
-   }
    if (task & einit_module_enable) {
     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
      mod_apply_enable(v);
@@ -2490,8 +2504,14 @@ void workthread_examine (char *service) {
 
 void mod_spawn_batch(char **batch, int task) {
  uint32_t i = 0, deferred = 0, broken = 0;
+ char **dospawn = NULL;
 
  retry:
+
+ if (dospawn) {
+  free(dospawn);
+  dospawn = NULL;
+ }
 
  if (!batch) return;
 
@@ -2499,7 +2519,7 @@ void mod_spawn_batch(char **batch, int task) {
   if (mod_isbroken(batch[i])) {
    broken++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
-  } else if (mod_isdeferred(batch[i])) {
+  } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i])) {
    deferred++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
   } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
@@ -2511,11 +2531,35 @@ void mod_spawn_batch(char **batch, int task) {
    batch = current.disable;
    goto retry;
   } else {
-   char *sc = estrdup (batch[i]);
+   dospawn = (char **)setadd ((void **)dospawn, batch[i], SET_TYPE_STRING);
+  }
+ }
+
+#ifdef DEBUG
+ eprintf (stderr, "i=%i, broken=%i, deferred=%i\n", i, broken, deferred);
+#endif
+
+ if (i == (broken + deferred)) {
+/* foo: circular dependencies? kill the whole chain and hope for something good... */
+  emutex_lock(&ml_chain_examine);
+  if (module_logics_chain_examine) {
+   streefree (module_logics_chain_examine);
+   module_logics_chain_examine = NULL;
+  }
+  if (module_logics_chain_examine_reverse) {
+   streefree (module_logics_chain_examine_reverse);
+   module_logics_chain_examine_reverse = NULL;
+  }
+  emutex_unlock(&ml_chain_examine);
+ }
+
+ if (dospawn) {
+  for (i = 0; dospawn[i]; i++) {
+   char *sc = estrdup (dospawn[i]);
    pthread_t th;
 
 #ifdef DEBUG
-   eprintf (stderr, " XX spawning thread for %s\n", batch[i]);
+   eprintf (stderr, " XX spawning thread for %s\n", dospawn[i]);
 #endif
 
    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
@@ -2525,11 +2569,10 @@ void mod_spawn_batch(char **batch, int task) {
 //    notice (1, "couldn't create thread!!");
    }
   }
- }
 
-#ifdef DEBUG
- eprintf (stderr, "i=%i, broken=%i, deferred=%i\n", i, broken, deferred);
-#endif
+  free (dospawn);
+  dospawn = NULL;
+ }
 
 // ignorereorderfor =
 }
