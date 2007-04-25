@@ -138,8 +138,10 @@ int einit_fqdn_enable (void *pa, struct einit_event *status) {
   status->flag++;
   status_update (status);
  }
- char tmp[BUFFERSIZE], **req = NULL;
- status->string = esprintf (tmp, BUFFERSIZE, "%s.%s", hname, dname);
+ char tmp[BUFFERSIZE];
+ esprintf (tmp, BUFFERSIZE, "%s.%s", hname, dname);
+
+ status->string = tmp;
  status->flag++;
  status_update (status);
 
