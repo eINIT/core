@@ -107,11 +107,11 @@ int einit_fqdn_cleanup (struct lmodule *this) {
 
 
 int einit_fqdn_enable (void *pa, struct einit_event *status) {
- char *name;
- if ((name = cfg_getstring ("configuration-network-hostname", NULL))) {
+ char *hname;
+ if ((hname = cfg_getstring ("configuration-network-hostname", NULL))) {
   status->string = "setting hostname";
   status_update (status);
-  if (sethostname (name, strlen (name))) {
+  if (sethostname (hname, strlen (hname))) {
    status->string = strerror(errno);
    errno = 0;
    status->flag++;
@@ -123,10 +123,11 @@ int einit_fqdn_enable (void *pa, struct einit_event *status) {
   status_update (status);
  }
 
- if ((name = cfg_getstring ("configuration-network-domainname", NULL))) {
+ char *dname;
+ if ((dname = cfg_getstring ("configuration-network-domainname", NULL))) {
   status->string = "setting domainname";
   status_update (status);
-  if (setdomainname (name, strlen (name))) {
+  if (setdomainname (dname, strlen (dname))) {
    status->string = strerror(errno);
    errno = 0;
    status->flag++;
@@ -137,6 +138,8 @@ int einit_fqdn_enable (void *pa, struct einit_event *status) {
   status->flag++;
   status_update (status);
  }
+ char tmp[BUFFERSIZE], **req = NULL;
+ esprintf (tmp, BUFFERSIZE, "%s.%s", hname, dname);
 
  return status_ok;
 }

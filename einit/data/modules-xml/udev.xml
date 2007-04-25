@@ -5,7 +5,7 @@
   requires="rootfs:sysfs:proc"
   enable="pexec-options dont-close-stdin;
 	  echo &quot;feedback|notice|Using udev to manage /dev&quot;;
-	  if [ ! -e /dev/.einit ]; then
+	  if [ ! -n $(cat /proc/mounts | grep udev) ]; then
 	   mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev;
 	   touch /dev/.einit;
 	   if [ &quot;${configuration_system_udev_device_tarball}&quot; = &quot;yes&quot; ]; then
