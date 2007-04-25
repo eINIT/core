@@ -484,7 +484,7 @@
   </virtual>
   <alias>
    <mount-system group="sysfs:proc:udev:rootfs" seq="most" />
-   <network-minimal group="fqdn:net-lo" seq="most" />
+   <samba group="nmbd:smbd" seq="all" />
   </alias>
   <prefer>
    <kern-alsa s="shell-kern-audio-alsa" />

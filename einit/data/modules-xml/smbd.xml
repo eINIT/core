@@ -2,7 +2,8 @@
  <daemon id="daemon-smbd"
   name="Samba-daemon"
   provides="smbd"
-  requires="mount-local:net-lo:nmbd"
+  after="mount-local:dbus:hal:kern-.*"
+  requires="fqdn:net-lo:nmbd"
   command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
   restart="yes"
   need-files="/usr/sbin/smbd" />
