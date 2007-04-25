@@ -484,6 +484,7 @@
   </virtual>
   <alias>
    <mount-system group="sysfs:proc:udev:rootfs" seq="most" />
+   <network-minimal group="hostname:net-lo" seq="most" />
   </alias>
   <prefer>
    <kern-alsa s="shell-kern-audio-alsa" />
@@ -492,7 +493,7 @@
  </services>
 
  <mode id="boot">
-  <enable services="sysconf:mount-local:hostname:tty:keyboard:ipc:logger:net-lo:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
+  <enable services="network-minimal:sysconf:mount-local:tty:keyboard:ipc:logger:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
   <overrides>
    <ttys s="tty1-regular" />
    <feedback auto-add="true" default="feedback-textual" />
