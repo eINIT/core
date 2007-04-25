@@ -2,6 +2,8 @@
  <shell id="shell-cpufreq"
   name="Cpufreq Governor"
   provides="cpufreq"
+  before="local"
+  after=".*"
   requires="mount-critical:acpid"
   enable="for i in ${configuration_program_options_cpufreq_cpus};
    do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;

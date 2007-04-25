@@ -2,7 +2,7 @@
  <daemon id="daemon-hald"
   name="Hardware Abstraction Layer"
   provides="hal"
-  before="net-.*"
+  before="net-.*:kern-.*"
   after="logger"
   requires="mount-critical:dbus"
   command="dbus-launch --exit-with-session /usr/sbin/hald --daemon=no --use-syslog"
