@@ -3,7 +3,7 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v21)
+# eINIT SVN ebuild (v22)
 #
 
 inherit subversion
@@ -19,7 +19,7 @@ SLOT="0"
 KEYWORDS="-*"
 
 IUSE_EINIT_CORE="module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log"
-IUSE_EINIT_MODULES="feedback-visual-textual feedback-aural hostname external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl linux-sysconf linux-mount linux-process network feedback-visual-fbsplash"
+IUSE_EINIT_MODULES="feedback-visual-textual feedback-aural fqdn external exec ipc module-exec module-daemon mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler compatibility-sysv-utmp compatibility-sysv-initctl linux-sysconf linux-mount linux-process network feedback-visual-fbsplash"
 IUSE_EINIT_EXPERIMENTAL="readahead"
 DEFAULT_MODULES="network"
 
