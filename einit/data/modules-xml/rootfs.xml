@@ -2,7 +2,7 @@
  <shell id="shell-rootfs"
   name="Mount ( / )"
   provides="rootfs"
-  enable="mount -o remount,rw /; touch /dev/.einit; echo &quot;feedback|notice|Remounted r/w&quot;"
+  enable="mount -o remount,rw /; echo &quot;feedback|notice|Remounted r/w&quot;"
   disable="/bin/true"
   restart="no" />
 </einit>
