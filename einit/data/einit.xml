@@ -489,6 +489,7 @@
   <prefer>
    <kern-alsa s="shell-kern-audio-alsa" />
    <feedback s="feedback-visual-textual" />
+   <logger s="shell-metalog:daemon-syslog-ng:daemon-syslog" />
   </prefer>
  </services>
 

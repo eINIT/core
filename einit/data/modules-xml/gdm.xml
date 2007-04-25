@@ -2,7 +2,7 @@
  <shell id="shell-gdm"
   name="gdm - The GNOME Display Manager"
   provides="x11:displaymanager"
-  requires="net-lo:mount-critical"
+  requires="mount-critical:fqdn"
   pid="/var/run/gdm.pid"
   prepare="[ ! -e /var/log/gdm ] &amp;&amp; mkdir /var/log/gdm"
   enable="gdm"

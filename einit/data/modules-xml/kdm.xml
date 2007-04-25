@@ -2,7 +2,7 @@
  <daemon id="daemon-kdm"
   name="kdm - The KDE Display Manager"
   provides="x11:displaymanager"
-  requires="net-lo:mount-critical"
+  requires="mount-critical:fqdn"
   pid="/var/run/kdm.pid"
   command="/usr/kde/3.5/bin/kdm -nodaemon"
   restart="yes"

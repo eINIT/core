@@ -2,7 +2,7 @@
  <daemon id="daemon-xdm"
   name="xdm - The X Display Manager"
   provides="x11:displaymanager"
-  requires="net-lo:mount-critical"
+  requires="mount-critical:fqdn"
   command="/usr/bin/xdm -nodaemon"
   restart="yes"
   need-files="/usr/bin/xdm" />
