@@ -87,7 +87,7 @@ int einit_tty_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * einit_tty_provides[] = {"tty", NULL};
-char * einit_tty_requires[] = {"mount-system","hostname", NULL};
+char * einit_tty_requires[] = {"fqdn", NULL};
 const struct smodule einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,

@@ -1,5 +1,5 @@
 /*
- *  hostname.c
+ *  fqdn.c
  *  einit
  *
  *  Created by Magnus Deininger on 05/09/2006.
@@ -50,13 +50,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int einit_hostname_configure (struct lmodule *);
+int einit_fqdn_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_hostname_provides[] = {"hostname", "domainname", NULL};
-char * einit_hostname_before[] = {"displaymanager", NULL};
-const struct smodule einit_hostname_self = {
+char * einit_fqdn_provides[] = {"fqdn", NULL};
+char * einit_fqdn_requires[] = {"mount-system", NULL};
+char * einit_fqdn_before[] = {"displaymanager", NULL};
+const struct smodule einit_fqdn_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
@@ -64,19 +65,19 @@ const struct smodule einit_hostname_self = {
  .name      = "Set Host- and Domainname",
  .rid       = "hostname",
  .si        = {
-  .provides = einit_hostname_provides,
-  .requires = NULL,
+  .provides = einit_fqdn_provides,
+  .requires = einit_fqdn_requires,
   .after    = NULL,
-  .before   = einit_hostname_before
+  .before   = einit_fqdn_before
  },
- .configure = einit_hostname_configure
+ .configure = einit_fqdn_configure
 };
 
-module_register(einit_hostname_self);
+module_register(einit_fqdn_self);
 
 #endif
 
-void einit_hostname_ipc_event_handler (struct einit_event *ev) {
+void einit_fqdn_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   char *s;
 
@@ -98,14 +99,14 @@ void einit_hostname_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
-int einit_hostname_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_ipc, einit_hostname_ipc_event_handler);
+int einit_fqdn_cleanup (struct lmodule *this) {
+ event_ignore (einit_event_subsystem_ipc, einit_fqdn_ipc_event_handler);
 
  return 0;
 }
 
 
-int einit_hostname_enable (void *pa, struct einit_event *status) {
+int einit_fqdn_enable (void *pa, struct einit_event *status) {
  char *name;
  if ((name = cfg_getstring ("configuration-network-hostname", NULL))) {
   status->string = "setting hostname";
@@ -140,18 +141,18 @@ int einit_hostname_enable (void *pa, struct einit_event *status) {
  return status_ok;
 }
 
-int einit_hostname_disable (void *pa, struct einit_event *status) {
+int einit_fqdn_disable (void *pa, struct einit_event *status) {
  return status_ok;
 }
 
-int einit_hostname_configure (struct lmodule *irr) {
+int einit_fqdn_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->cleanup = einit_hostname_cleanup;
- thismodule->enable = einit_hostname_enable;
- thismodule->disable = einit_hostname_disable;
+ thismodule->cleanup = einit_fqdn_cleanup;
+ thismodule->enable = einit_fqdn_enable;
+ thismodule->disable = einit_fqdn_disable;
 
- event_listen (einit_event_subsystem_ipc, einit_hostname_ipc_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_fqdn_ipc_event_handler);
 
  return 0;
 }
