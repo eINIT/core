@@ -2746,9 +2746,9 @@ void mod_commit_and_wait (char **en, char **dis) {
   }
 
   emutex_lock (&ml_service_update_mutex);
+  int e;
 #if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
   struct timespec ts;
-  int e;
 
   if (clock_gettime(CLOCK_REALTIME, &ts))
    bitch (bitch_stdio, errno, "gettime failed!");

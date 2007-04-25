@@ -319,6 +319,7 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	XDYNAMIC="";
 	LLD="-bundle -Wl,-bundle_loader,`pwd`/build/core/einit";
 	STATIC="";
+	LIBRT=""
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
 	OS="linux";
@@ -337,6 +338,7 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	else
 		STATIC=""
 	fi
+	LIBRT="-lrt"
 else
 	echo "(guess) generic posix-ish unix";
 	OS="unknown";
@@ -345,6 +347,7 @@ else
 	XDYNAMIC="-Wl,-export-dynamic";
 	LPA="-lpthread";
 	STATIC="";
+	LIBRT="-lrt"
 fi
 
 echo -n "figuring out what libs need to be linked into the core..."
@@ -354,7 +357,7 @@ if test -n "`echo ${INTERNALMODULES}|grep bootstrap-configuration-xml-expat`"; t
 fi;
 if test -n "`echo ${INTERNALMODULES}|grep module-logic-v3`"; then
  echo -n " -lrt"
- CORELIBS="${CORELIBS} -lrt"
+ CORELIBS="${CORELIBS} ${LIBRT}"
 fi;
 if test -n "`echo ${INTERNALMODULES}|grep module-so`"; then
 	if test -z "$(uname -a|grep BSD)"; then
