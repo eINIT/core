@@ -145,7 +145,7 @@ struct smodule sm_system = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
 	.mode		= einit_module_generic,
-	.name		= "mount (system)",
+	.name		= "Device Mounter ( mount-system )",
 	.rid		= "einit-mount-system",
     .si           = {
         .provides = provides_system,
@@ -161,7 +161,7 @@ struct smodule sm_critical = {
 	.eiversion	= EINIT_VERSION,
 	.version	= 1,
 	.mode		= einit_module_generic,
-	.name		= "mount (critical)",
+	.name		= "Device Mounter ( mount-critical )",
 	.rid		= "einit-mount-critical",
     .si           = {
         .provides = provides_critical,
@@ -171,13 +171,13 @@ struct smodule sm_critical = {
     }
 };
 
-char *provides_sysfs[] = {"sysfs", NULL};
-char *requires_sysfs[] = {"rootfs", NULL};
+char *provides_sysfs[] = {"mount-sysfs", NULL};
+char *requires_sysfs[] = {"mount-rootfs", NULL};
 struct smodule sm_sysfs = {
  .eiversion	= EINIT_VERSION,
  .version	= 1,
  .mode		= einit_module_generic,
- .name		= "Mount ( /sys )",
+ .name		= "Device Mounter ( mount-sysfs )",
  .rid		= "mount-sysfs",
  .si           = {
   .provides = provides_sysfs,
@@ -187,13 +187,13 @@ struct smodule sm_sysfs = {
  }
 };
 
-char *provides_proc[] = {"proc", NULL};
-char *requires_proc[] = {"rootfs", NULL};
+char *provides_proc[] = {"mount-proc", NULL};
+char *requires_proc[] = {"mount-rootfs", NULL};
 struct smodule sm_proc = {
  .eiversion	= EINIT_VERSION,
  .version	= 1,
  .mode		= einit_module_generic,
- .name		= "Mount ( / )",
+ .name		= "Device Mounter ( mount-proc )",
  .rid		= "mount-proc",
  .si           = {
   .provides = provides_proc,
@@ -203,13 +203,13 @@ struct smodule sm_proc = {
  }
 };
 
-char *provides_rootfs[] = {"rootfs", NULL};
+char *provides_rootfs[] = {"mount-rootfs", NULL};
 char *before_rootfs[] = {".*", NULL};
 struct smodule sm_rootfs = {
  .eiversion	= EINIT_VERSION,
  .version	= 1,
  .mode		= einit_module_generic,
- .name		= "Mount ( / )",
+ .name		= "Device Mounter ( mount-rootfs )",
  .rid		= "mount-rootfs",
  .si           = {
   .provides = provides_rootfs,

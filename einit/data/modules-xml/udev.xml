@@ -2,7 +2,7 @@
  <shell id="shell-udev"
   name="Mount ( /dev )"
   provides="udev"
-  requires="rootfs:sysfs:proc"
+  requires="mount-rootfs:mount-sysfs:mount-proc"
   enable="pexec-options dont-close-stdin;
 	  echo &quot;feedback|notice|Using udev to manage /dev&quot;;
 	  udev=$(cat /proc/mounts | grep udev);

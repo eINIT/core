@@ -1,9 +1,0 @@
-<einit prefix="services-virtual-module">
- <shell id="shell-sysfs"
-  name="Mount ( /sys )"
-  requires="rootfs"
-  provides="sysfs"
-  enable="mount -t sysfs sysfs /sys &amp;&amp; echo &quot;feedback|notice|Mounted r/w&quot;"
-  disable="/bin/true"
-  restart="no" />
-</einit>
