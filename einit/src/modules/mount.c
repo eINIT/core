@@ -827,6 +827,26 @@ int einit_mount_scanmodules (struct lmodule *modchain) {
 
  doop = 1;
  lm = modchain;
+ while (lm) { if (lm->source && strmatch(lm->source, sm_sysfs.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_sysfs))) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))emount;
+  new->disable = (int (*)(void *, struct einit_event *))eumount;
+  new->param = (void *)estrdup("/sys");
+ }
+
+ doop = 1;
+ lm = modchain;
+ while (lm) { if (lm->source && strmatch(lm->source, sm_proc.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
+ if (doop && (new = mod_add (NULL, &sm_proc))) {
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))emount;
+  new->disable = (int (*)(void *, struct einit_event *))eumount;
+  new->param = (void *)estrdup("/proc");
+ }
+
+ doop = 1;
+ lm = modchain;
  while (lm) { if (lm->source && strmatch(lm->source, sm_rootfs.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_rootfs))) {
   new->source = new->module->rid;
