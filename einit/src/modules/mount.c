@@ -171,6 +171,38 @@ struct smodule sm_critical = {
     }
 };
 
+char *provides_sysfs[] = {"sysfs", NULL};
+char *requires_sysfs[] = {"rootfs", NULL};
+struct smodule sm_rootfs = {
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "Mount ( /sys )",
+ .rid		= "mount-sysfs",
+ .si           = {
+  .provides = provides_sysfs,
+  .requires = requires_sysfs,
+  .after    = NULL,
+  .before   = NULL
+ }
+};
+
+char *provides_proc[] = {"proc", NULL};
+char *requires_proc[] = {"rootfs", NULL};
+struct smodule sm_rootfs = {
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "Mount ( / )",
+ .rid		= "mount-rootfs",
+ .si           = {
+  .provides = provides_proc,
+  .requires = requires_proc,
+  .after    = NULL,
+  .before   = NULL
+ }
+};
+
 char *provides_rootfs[] = {"rootfs", NULL};
 char *before_rootfs[] = {".*", NULL};
 struct smodule sm_rootfs = {
