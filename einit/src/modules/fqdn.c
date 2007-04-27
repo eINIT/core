@@ -62,8 +62,8 @@ const struct smodule einit_fqdn_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .name      = "Set Host- and Domainname",
- .rid       = "hostname",
+ .name      = "FQDN",
+ .rid       = "fqdn",
  .si        = {
   .provides = einit_fqdn_provides,
   .requires = einit_fqdn_requires,
@@ -105,46 +105,16 @@ int einit_fqdn_cleanup (struct lmodule *this) {
  return 0;
 }
 
-
 int einit_fqdn_enable (void *pa, struct einit_event *status) {
- char *hname;
- if ((hname = cfg_getstring ("configuration-network-hostname", NULL))) {
-  status->string = "setting hostname";
-  status_update (status);
-  if (sethostname (hname, strlen (hname))) {
-   status->string = strerror(errno);
-   errno = 0;
-   status->flag++;
-   status_update (status);
-  }
- } else {
-  status->string = "no hostname configured";
-  status->flag++;
-  status_update (status);
- }
-
- char *dname;
- if ((dname = cfg_getstring ("configuration-network-domainname", NULL))) {
-  status->string = "setting domainname";
-  status_update (status);
-  if (setdomainname (dname, strlen (dname))) {
-   status->string = strerror(errno);
-   errno = 0;
-   status->flag++;
-   status_update (status);
-  }
- } else {
-  status->string = "no domainname configured";
-  status->flag++;
-  status_update (status);
- }
+ char *hname, *dname;
+ if ((hname = cfg_getstring ("configuration-network-hostname", NULL)))
+  sethostname (hname, strlen (hname));
+ if ((dname = cfg_getstring ("configuration-network-domainname", NULL)))
+  setdomainname (dname, strlen (dname));
  char tmp[BUFFERSIZE];
  esprintf (tmp, BUFFERSIZE, "%s.%s", hname, dname);
-
  status->string = tmp;
- status->flag++;
  status_update (status);
-
  return status_ok;
 }
 
