@@ -1241,6 +1241,11 @@ void mod_commits_inc () {
 
 void mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
+
+#ifdef DEBUG
+ eprintf (stderr, " ** deferring %s until after %s\n", service, after);
+#endif
+
  emutex_lock(&ml_chain_examine);
 
  if ((xn = streefind (module_logics_chain_examine, after, tree_find_first))) {
@@ -1942,6 +1947,10 @@ char mod_enable_requirements (struct lmodule *module) {
     } else if (!service_usage_query (service_is_provided, NULL, module->si->requires[i])) {
      emutex_lock (&ml_tb_current_mutex);
 
+#ifdef DEBUG
+     notice (4, "(%s) still need %s:", set2str(' ', module->si->provides), module->si->requires[i]);
+#endif
+
      if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
       retval = 2;
       need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
@@ -1990,6 +1999,10 @@ void mod_apply_enable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if ((current->status & status_enabled) || mod_enable_requirements (current)) {
+#ifdef DEBUG
+     notice (4, "not spawning thread thread for %s exiting (not quite there yet)", des->key);
+#endif
+
      mod_workthreads_dec(des->key);
      return;
     }
@@ -1998,6 +2011,10 @@ void mod_apply_enable (struct stree *des) {
 
 /* check module status or return value to find out if it's appropriate for the task */
     if (current->status & status_enabled) {
+#ifdef DEBUG
+     notice (4, "not spawning thread thread for %s exiting (already up)", des->key);
+#endif
+
      mod_workthreads_dec(des->key);
      return;
     }
@@ -2032,6 +2049,10 @@ void mod_apply_enable (struct stree *des) {
 
    mod_mark (des->key, MARK_BROKEN);
   }
+
+#ifdef DEBUG
+  notice (4, "not spawning thread thread for %s exiting (end of function)", des->key);
+#endif
 
   mod_workthreads_dec(des->key);
   return;
@@ -2320,6 +2341,14 @@ char mod_examine_group (char *groupname) {
  if (post_examine) {
   mod_post_examine (groupname);
  }
+
+#if 0
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&ml_cond_service_update);
+#endif
  return 1;
 }
 
@@ -2516,10 +2545,12 @@ void workthread_examine (char *service) {
 }
 
 void mod_spawn_batch(char **batch, int task) {
- uint32_t i = 0, deferred = 0, broken = 0;
  char **dospawn = NULL;
+ uint32_t i, deferred, broken, groupc;
 
  retry:
+ 
+ deferred = 0; broken = 0; groupc = 0;
 
  if (dospawn) {
   free(dospawn);
@@ -2535,6 +2566,8 @@ void mod_spawn_batch(char **batch, int task) {
   } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i], 0)) {
    deferred++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
+
+   groupc += mod_group_get_data (batch[i]) ? 1 : 0;
   } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
    current.enable = strsetdel (current.enable, batch[i]);
    batch = current.enable;
@@ -2545,14 +2578,20 @@ void mod_spawn_batch(char **batch, int task) {
    goto retry;
   } else {
    dospawn = (char **)setadd ((void **)dospawn, batch[i], SET_TYPE_STRING);
+   
+   groupc += mod_group_get_data (batch[i]) ? 1 : 0;
   }
  }
 
 #ifdef DEBUG
- eprintf (stderr, "i=%i, broken=%i, deferred=%i\n", i, broken, deferred);
+ char *alist = set2str (' ', batch);
+
+ eprintf (stderr, "i=%i (%s), broken=%i, deferred=%i, groups=%i\n", i, alist ? alist : "none", broken, deferred, groupc);
+
+ if (alist) free (alist);
 #endif
 
- if (i == (broken + deferred)) {
+ if (i == (broken + deferred + groupc)) {
 /* foo: circular dependencies? kill the whole chain and hope for something good... */
   emutex_lock(&ml_chain_examine);
   if (module_logics_chain_examine) {
@@ -2754,6 +2793,15 @@ void mod_commit_and_wait (char **en, char **dis) {
    bitch (bitch_stdio, errno, "gettime failed!");
 
   ts.tv_sec += 1; /* max wait before re-evaluate */
+
+  e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
+#elif defined(DARWIN)
+  struct timespec ts;
+  struct timeval tv;
+
+  gettimeofday (&tv, NULL);
+
+  ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
 
   e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
 #else

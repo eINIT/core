@@ -940,7 +940,7 @@ int emount (char *mountpoint, struct einit_event *status) {
 
  notice (4, "mounting %s", mountpoint);
 
-// if (coremode & einit_mode_sandbox) return status_ok;
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  char **fstype_s = NULL;
  uint32_t fsts_i = 0;
@@ -1113,7 +1113,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
 
  notice (4, "unmounting %s", mountpoint);
 
-// if (coremode & einit_mode_sandbox) return status_ok;
+ if (coremode & einit_mode_sandbox) return status_ok;
 
  char textbuffer[BUFFERSIZE];
  errno = 0;
