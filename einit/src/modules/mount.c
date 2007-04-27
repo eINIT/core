@@ -898,6 +898,12 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
   else
 #endif
 
+#ifdef MS_NOTAIL
+  if (strmatch (options[fi], "notail")) (*mntflags) |= MS_NOTAIL;
+  else if (strmatch (options[fi], "tail")) (*mntflags) = ((*mntflags) & MS_NOTAIL) ? (*mntflags) ^ MS_TAIL : (*mntflags);
+  else
+#endif
+
 #ifdef MS_NODEV
   if (strmatch (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
   else if (strmatch (options[fi], "dev")) (*mntflags) = ((*mntflags) & MS_NODEV) ? (*mntflags) ^ MS_NODEV : (*mntflags);
@@ -1103,6 +1109,9 @@ int emount (char *mountpoint, struct einit_event *status) {
        status_update (status);
        goto mount_panic;
       }
+      else
+       status->string = "remounting node...";
+       status_update (status);
      } else
 #else
      attempt_remount:
