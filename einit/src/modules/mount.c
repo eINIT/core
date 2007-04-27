@@ -189,7 +189,7 @@ struct smodule sm_sysfs = {
 
 char *provides_proc[] = {"proc", NULL};
 char *requires_proc[] = {"rootfs", NULL};
-struct smodule sm_procfs = {
+struct smodule sm_proc = {
  .eiversion	= EINIT_VERSION,
  .version	= 1,
  .mode		= einit_module_generic,
