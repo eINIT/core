@@ -173,7 +173,7 @@ struct smodule sm_critical = {
 
 char *provides_sysfs[] = {"sysfs", NULL};
 char *requires_sysfs[] = {"rootfs", NULL};
-struct smodule sm_rootfs = {
+struct smodule sm_sysfs = {
  .eiversion	= EINIT_VERSION,
  .version	= 1,
  .mode		= einit_module_generic,
@@ -189,12 +189,12 @@ struct smodule sm_rootfs = {
 
 char *provides_proc[] = {"proc", NULL};
 char *requires_proc[] = {"rootfs", NULL};
-struct smodule sm_rootfs = {
+struct smodule sm_procfs = {
  .eiversion	= EINIT_VERSION,
  .version	= 1,
  .mode		= einit_module_generic,
  .name		= "Mount ( / )",
- .rid		= "mount-rootfs",
+ .rid		= "mount-proc",
  .si           = {
   .provides = provides_proc,
   .requires = requires_proc,
