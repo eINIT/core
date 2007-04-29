@@ -485,6 +485,7 @@
   <alias>
    <mount-system group="mount-rootfs:mount-sysfs:mount-proc:udev" seq="most" />
    <samba group="nmbd:smbd" seq="all" />
+   <network-minimal group="fqdn:net-lo" seq="most" />
   </alias>
   <prefer>
    <kern-alsa s="shell-kern-audio-alsa" />
