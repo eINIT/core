@@ -898,10 +898,12 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
   else
 #endif
 
+#if 0
 #ifdef MS_NOTAIL
   if (strmatch (options[fi], "notail")) (*mntflags) |= MS_NOTAIL;
-  else if (strmatch (options[fi], "tail")) (*mntflags) = ((*mntflags) & MS_NOTAIL) ? (*mntflags) ^ MS_TAIL : (*mntflags);
+  else if (strmatch (options[fi], "tail")) (*mntflags) = ((*mntflags) & MS_NOTAIL) ? (*mntflags) ^ MS_NOTAIL : (*mntflags);
   else
+#endif
 #endif
 
 #ifdef MS_NODEV
