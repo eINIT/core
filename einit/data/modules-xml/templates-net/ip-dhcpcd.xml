@@ -1,9 +1,0 @@
-<einit prefix="services-virtual-module">
- <shell-template id="template-shell-ip-dhcpcd"
-  name="Using 'dhcpcd' to manage ip addresses for interface ${interface}"
-  requires="ifctl-${interface}"
-  provides="ip-${interface}"
-  pid="/var/run/dhcpcd-${interface}.pid"
-  enable="dhcpcd ${interface}"
-  disable="dhcpcd -k ${interface}" />
-</einit>

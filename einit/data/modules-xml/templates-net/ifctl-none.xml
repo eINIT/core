@@ -1,7 +1,0 @@
-<einit prefix="services-virtual-module">
- <shell-template id="template-shell-ifctl-none"
-  name="Using interface ${interface} without a manager"
-  provides="ifctl-${interface}"
-  enable="/bin/true"
-  disable="/bin/true" />
-</einit>

@@ -1,8 +1,0 @@
-<einit prefix="services-virtual-module">
- <shell-template id="template-shell-ip-dhclient"
-  name="Using 'dhclient' to manage ip addresses for interface ${interface}"
-  requires="ifctl-${interface}"
-  provides="ip-${interface}"
-  enable="dhclient ${interface}"
-  disable="/bin/true" />
-</einit>

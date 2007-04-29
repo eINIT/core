@@ -10,12 +10,10 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCXDIR}/econf.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml
-	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml/templates-net
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml/network
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/*.xml ${DESTDIR}/${LIBDIR}/modules-xml
-	${INSTALL} ${IPARAM} -m 0644 modules-xml/templates-net/*.xml ${DESTDIR}/${LIBDIR}/modules-xml/templates-net
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/network/*.xml ${DESTDIR}/${LIBDIR}/modules-xml/network
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	

@@ -1,9 +1,0 @@
-<einit prefix="services-virtual-module">
- <shell-template id="template-shell-net"
-  name="Network Interface (${interface})"
-  provides="net-${interface}"
-  requires="kern-${interface}"
-  enable="echo starting ip-manager; nohup erc ip-${interface} enable&amp;
-   echo controller and manager started, returning; exit 0"
-  disable="erc ifctl-${interface} disable&amp; echo everything clear, exiting; exit 0" />
-</einit>

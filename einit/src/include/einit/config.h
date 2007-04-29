@@ -79,7 +79,13 @@ struct cfgnode;
 #define NODE_MODE 1
 
 #define EINIT_VERSION 1
+
+#if defined (ISSVN) && (ISSVN > 0)
+#define EINIT_VERSION_LITERAL_NUMBER "live"
+#else
 #define EINIT_VERSION_LITERAL_NUMBER "0.22.0"
+#endif
+
 #define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER EINIT_VERSION_LITERAL_SUFFIX
 
 enum einit_cfg_node_options {
