@@ -1,5 +1,12 @@
 <einit prefix="configuration-storage-fstab">
  <source s="configuration" />
+ <!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
+ <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
+
  <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir -p /dev/shm" options="critical" />
  <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir -p /dev/pts" options="critical" />
+
+ <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" />
+ <!-- use this instead if you don't have usb built into your kernel -->
+ <!--    <node id="usbfs-mount-node" mountpoint="/proc/bus/usb" fs="usbfs" options="critical" before-mount="modprobe usbcore" /> -->
 </einit>
