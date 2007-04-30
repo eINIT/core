@@ -249,9 +249,8 @@
 <!-- some default entries for fstab -->
    <fstab>
     <source s="configuration" />
-
-    <node mountpoint="/proc" fs="proc" />
-    <node mountpoint="/sys" fs="sysfs" />
+    <node mountpoint="/sys" device="sysfs" fs="sysfs" />
+    <node mountpoint="/proc" device="proc" fs="proc" />
    </fstab>
   </storage>
 
