@@ -344,6 +344,9 @@
     <shell id="shell-kern-bluetooth"
      based-on-template="template-shell-kern-module-loader"
      system="bluetooth" />
+    <shell id="shell-kern-sensors"
+     based-on-template="template-shell-kern-module-loader"
+     system="sensors" />
 
     <shell id="shell-kern-module-autoload.d"
      name="Kernel Modules (autoload.d)"

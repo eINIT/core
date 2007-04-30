@@ -1,16 +1,8 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-sensors"
-  name="LM-Sensors"
+  name="lm_sensors (sensord)"
   provides="sensors"
-  requires="mount-critical"
-  enable="
-   for x in ${configuration_kernel_modules_sensors};
-    do echo $x; modprobe $x &amp;
-   done;
-   /usr/bin/sensors -s"
-  disable="
-   for x in ${configuration_kernel_modules_sensors}; do
-    ${configuration_command_rmmod} $x $amp;
-   done; /bin/true"
-  variables="configuration-kernel-modules-sensors:configuration-command-rmmod" />
+  requires="mount-critical:kern-sensors"
+  enable="/usr/bin/sensors -s"
+  disable="/bin/true" />
 </einit>

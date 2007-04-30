@@ -1,0 +1,11 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-sensord"
+  name="lm_sensors (sensord)"
+  provides="sensord"
+  requires="logger:kern-sensors:sensors:mount-critical"
+  enable="/usr/sbin/sensord --config-file ${configuration_program_options_sensord_file} ${configuration_program_options_sensord_options}"
+  disable="killall sensord"
+  need-files="/usr/sbin/sensord"
+  restart="yes"
+  variables="configuration-program-options-sensord/.*" />
+</einit>
