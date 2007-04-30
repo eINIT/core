@@ -468,38 +468,41 @@ void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
   -------- power event-handler -------------------------------------------------
  */
 void einit_feedback_visual_power_event_handler(struct einit_event *ev) {
-#if 0
  struct cfgnode *n;
 
  if ((ev->type == einit_power_down_imminent) || (ev->type == einit_power_reset_imminent)) {
 // shutdown imminent
-
   uint32_t c = shutdownfailuretimeout;
   char errors = 0;
 
-  if (modules) {
-   uint32_t i = 0;
-   for (; modules [i]; i++) {
-    if ((modules [i])->errors) {
-     errors = 1;
+  emutex_lock (&feedback_textual_modules_mutex);
+
+   if (feedback_textual_modules) {
+    uint32_t i = 0;
+    for (; feedback_textual_modules[i]; i++) {
+     if ((feedback_textual_modules[i])->warnings) {
+      errors = 1;
+      break;
+     } else if (feedback_textual_modules[i]->module->status & status_failed) {
+      errors = 1;
+      break;
+     }
     }
    }
-  }
+  emutex_unlock (&feedback_textual_modules_mutex);
 
   if (errors)
    while (c) {
-   if (enableansicodes) {
-    eprintf (stdout, "\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
-   } else {
-    eprintf (stdout, "[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
-   }
+    if (enableansicodes) {
+     eprintf (stdout, "\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
+    } else {
+     eprintf (stdout, "[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
+    }
 
-   sleep (1);
-   c--;
+    c -= 1 - sleep (1);
    }
 
  }
-#endif
 
  return;
 }
