@@ -90,9 +90,4 @@
    <module id="einit-mount-system" requires="sysconf" />
   </override> -->
  </services>
-
- <mode id="default" base="boot">
-  <enable services="audio:portmap:clock:xdm:swap:mount-remote:tts:kern-arbitrary" />
-  <ttys s="tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
- </mode>
 </einit>

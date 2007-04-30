@@ -1,0 +1,38 @@
+<einit>
+
+ <mode id="boot">
+  <enable services="network-minimal:sysconf:mount-local:tty:keyboard:ipc:logger:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
+  <overrides>
+   <ttys s="tty1-regular" />
+   <feedback auto-add="true" default="feedback-textual" />
+  </overrides>
+ </mode>
+
+ <mode id="default" base="boot">
+  <enable services="audio:portmap:clock:displaymanager:swap:mount-remote" />
+  <overrides>
+   <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+  </overrides>
+ </mode>
+
+ <mode id="power-down">
+  <disable services="all-but-feedback" />
+  <options shutdown="yes" />
+  <overrides>
+   <ttys s="none" />
+   <before-switch emit-event="power/mps-down-scheduled" ipc="save configuration:rc udev shutdown" />
+   <after-switch emit-event="power/mps-down-imminent" ipc="scheduler power-down" />
+  </overrides>
+ </mode>
+
+ <mode id="power-reset">
+  <disable services="all-but-feedback" />
+  <options shutdown="yes" />
+  <overrides>
+   <ttys s="none" />
+   <before-switch emit-event="power/reset-scheduled" ipc="save configuration:rc udev shutdown" />
+   <after-switch emit-event="power/reset-imminent" ipc="scheduler power-reset" />
+  </overrides>
+ </mode>
+
+</einit>
