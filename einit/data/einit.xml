@@ -140,8 +140,6 @@
     <shutdown-failure-timeout i="3" />
     <broadcast-constraints s="/dev/(tty[1-8][12]?|pts/.*)" />
     <reset-shutdown-broadcast-messages b="true" />
-<!-- set to true to get feedback on the current switch's status -->
-    <calculate-switch-status b="false" />
     <fbsplash>
      <ttys s="1 2 3 4 5 6" />
      <theme s="gentoo" />

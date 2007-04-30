@@ -102,7 +102,6 @@ module_register(einit_feedback_visual_self);
 #endif
 
 uint32_t shutdownfailuretimeout = 10;
-char show_progress = 1;
 char enableansicodes = 1;
 
 struct feedback_textual_command {
@@ -111,6 +110,7 @@ struct feedback_textual_command {
  char *message;
  char *statusline;
  uint32_t seqid;
+ uint32_t warnings;
  time_t ctime;
 };
 
@@ -123,7 +123,7 @@ struct feedback_textual_module_status {
  struct lmodule *module;
  enum einit_module_status laststatus;
  struct message_log **log;
- char warnings;
+ uint32_t warnings;
  time_t lastchange;
 };
 
@@ -138,7 +138,7 @@ pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
 
 char *feedback_textual_statusline = "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
 
-void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline) {
+void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
  struct feedback_textual_command tnc;
  memset (&tnc, 0, sizeof (struct feedback_textual_command));
 
@@ -149,6 +149,7 @@ void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_st
  if (message)
   tnc.message = estrdup (message);
  tnc.ctime = ctime;
+ tnc.warnings = warnings;
 
  emutex_lock (&feedback_textual_commandQ_mutex);
 
@@ -218,10 +219,12 @@ void feedback_process_textual_noansi(struct feedback_textual_module_status *st) 
 void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
  char *name = (st->module->module && st->module->module->name) ? st->module->module->name : "no name";
 
- char *wmarker = " ";
- char *emarker = " ";
+ char *wmarker = "";
+ char *emarker = "";
  char *rmarker = " ";
  char *status = "\e[31mwtf?\e[0m";
+ char wmbuffer[BUFFERSIZE];
+ char do_details = 0;
 
  if (st->module->status == status_idle) {
   status = "\e[31midle\e[0m";
@@ -234,12 +237,21 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
   }
   if (st->module->status & status_working) {
    status = "\e[31m....\e[0m";
-   wmarker = "\e[33m*\e[0m";
   }
 
   if (st->module->status & status_failed) {
-   emarker = "\e[31m!\e[0m";
+   emarker = " \e[31m(failed)\e[0m";
+   do_details = 1;
   }
+ }
+
+ if (st->warnings > 1) {
+  wmarker = wmbuffer;
+  esprintf (wmbuffer, BUFFERSIZE, "\e[36m(%i warnings)\e[0m ", st->warnings);
+  do_details = 1;
+ } else if (st->warnings == 1) {
+  wmarker = "\e[36m(1 warning)\e[0m ";
+  do_details = 1;
  }
 
  if (st->log) {
@@ -247,14 +259,21 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
 
   for (; st->log[y]; y++) ;
 
-  if (y != 0) {
+  if (do_details && (y > 1)) {
+   eprintf (stdout, "%s[ %s ]%s %s%s; messages:\e[0K\n", rmarker, status, emarker, wmarker, name);
+
+   y = 0;
+   for (; st->log[y]; y++)
+    eprintf (stdout, "  \e[37m*\e[0m %s\e[0K\n", st->log[y]->message);
+  } else if (y != 0) {
    y--;
-   eprintf (stdout, "%s%s%s[ %s ] %s: %s\e[0K\n", rmarker, emarker, wmarker, status, name, st->log[y]->message);
+
+   eprintf (stdout, "%s[ %s ]%s %s%s: %s\e[0K\n", rmarker, status, emarker, wmarker, name, st->log[y]->message);
   } else {
-   eprintf (stdout, "%s%s%s[ %s ] %s\e[0K\n", rmarker, emarker, wmarker, status, name);
+   eprintf (stdout, "%s[ %s ]%s %s%s\e[0K\n", rmarker, status, emarker, wmarker, name);
   }
  } else {
-  eprintf (stdout, "%s%s%s[ %s ] %s\e[0K\n", rmarker, emarker, wmarker, status, name);
+  eprintf (stdout, "%s[ %s ]%s %s%s\e[0K\n", rmarker, status, emarker, wmarker, name);
  }
 }
 
@@ -284,7 +303,7 @@ void feedback_textual_update_screen () {
  emutex_unlock (&feedback_textual_modules_mutex);
 }
 
-void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint32_t seqid, char *message) {
+void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint32_t seqid, char *message, uint32_t warnings) {
  char create_module = 1;
  char do_update = 0;
 
@@ -314,6 +333,10 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
       setsort ((void **)feedback_textual_modules[i]->log, 0, (signed int(*)(const void *, const void*))feedback_log_sort);
      }
     }
+
+    if (warnings > feedback_textual_modules[i]->warnings) {
+     feedback_textual_modules[i]->warnings = warnings;
+    }
    }
   }
  }
@@ -325,6 +348,8 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
 
   nm.module = module;
   nm.lastchange = ctime;
+
+  nm.warnings = warnings;
 
   if (message) {
    struct message_log ne = {
@@ -354,7 +379,7 @@ void feedback_textual_process_command (struct feedback_textual_command *command)
  }
 
  if (command->module) {
-  feedback_textual_update_module (command->module, command->ctime, command->seqid, command->message);
+  feedback_textual_update_module (command->module, command->ctime, command->seqid, command->message, command->warnings);
  }
 }
 
@@ -417,32 +442,85 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
    free (tmp);
   }
  } else if (ev->type == einit_feedback_module_status) {
-  feedback_textual_queue_comand (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp, NULL);
+  feedback_textual_queue_comand (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp, NULL, ev->flag);
  }
 }
 
 void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_service_update) {
-  feedback_textual_queue_comand (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL);
+  feedback_textual_queue_comand (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL, ev->flag);
  } else if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
 
   esprintf (tmp, BUFFERSIZE, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
-  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp));
+  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  } else if (ev->type == einit_core_mode_switch_done) {
   char tmp[BUFFERSIZE];
 
   esprintf (tmp, BUFFERSIZE, "\e[0;0H[ \e[32mdone\e[0m ] \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
-  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp));
+  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  }
 }
 
+/*
+  -------- power event-handler -------------------------------------------------
+ */
 void einit_feedback_visual_power_event_handler(struct einit_event *ev) {
+#if 0
+ struct cfgnode *n;
+
+ if ((ev->type == einit_power_down_imminent) || (ev->type == einit_power_reset_imminent)) {
+// shutdown imminent
+
+  uint32_t c = shutdownfailuretimeout;
+  char errors = 0;
+
+  if (modules) {
+   uint32_t i = 0;
+   for (; modules [i]; i++) {
+    if ((modules [i])->errors) {
+     errors = 1;
+    }
+   }
+  }
+
+  if (errors)
+   while (c) {
+   if (enableansicodes) {
+    eprintf (stdout, "\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
+   } else {
+    eprintf (stdout, "[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
+   }
+
+   sleep (1);
+   c--;
+   }
+
+ }
+#endif
+
+ return;
 }
 
 void einit_feedback_visual_ipc_event_handler(struct einit_event *ev) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
+  if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
+   eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", ev->output);
+   ev->ipc_return++;
+  }
+  if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
+   eputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", ev->output);
+   ev->ipc_return++;
+  }
+  if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
+   eputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", ev->output);
+   ev->ipc_return++;
+  }
+
+  ev->implemented = 1;
+ }
 }
 
 int einit_feedback_visual_cleanup (struct lmodule *this) {
@@ -466,9 +544,6 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
-
- if ((node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL)))
-  show_progress = node->flag;
 
  if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
   shutdownfailuretimeout = node->value;
