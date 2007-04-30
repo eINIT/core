@@ -344,7 +344,7 @@ void mod_event_handler(struct einit_event *event);
  *
  * This macro should be used to provide any feedback-modules with updated status information.
 */
-#if 1
+#if 0
 #define status_update(a) \
  event_emit(a, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate); \
  if (a->task & einit_module_feedback_show) a->task ^= einit_module_feedback_show; a->string = NULL
