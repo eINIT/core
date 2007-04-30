@@ -47,6 +47,7 @@
     <commands-include>
      <file s="local.xml" />
      <file s="fstab.xml" />
+     <file s="modes.xml" />
      <directory s="/lib/einit/modules-xml" />
      <directory s="/lib/einit/modules-xml/network" />
      <directory s="/lib/einit/modules-xml/templates-net" />
