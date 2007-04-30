@@ -5,9 +5,9 @@
   requires="network:mount-system"
   command="unset -f `declare -F | sed 's:declare -f::g'`
            /usr/sbin/xinetd ${configuration_program_options_xinetd_options}"
-  execute:reload="killall -HUP xinetd &>/dev/null"
-  execute:dump="killall -USR1 xinetd &>/dev/null"
-  execute:check="killall -IOT xinetd &>/dev/null"
+  execute:reload="killall -HUP xinetd &amp;&gt;/dev/null"
+  execute:dump="killall -USR1 xinetd &amp;&gt;/dev/null"
+  execute:check="killall -IOT xinetd &amp;&gt;/dev/null"
   need-files="/usr/sbin/xinetd"
   restart="yes"
   variables="configuration-program-options-xinetd/.*" />
