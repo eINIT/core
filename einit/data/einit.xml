@@ -39,7 +39,6 @@
     <file s="modes.xml" />
     <directory s="../../lib/einit/modules-xml" />
     <directory s="../../lib/einit/modules-xml/network" />
-    <directory s="../../lib/einit/modules-xml/templates-net" />
    </commands-include>
    <else>
     <settings>
