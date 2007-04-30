@@ -300,6 +300,10 @@ void feedback_textual_update_screen () {
   }
  }
 
+ if (enableansicodes) {
+  eputs ("\e[0J\n", stdout);
+ }
+
  emutex_unlock (&feedback_textual_modules_mutex);
 }
 
