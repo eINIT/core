@@ -101,27 +101,12 @@ module_register(einit_feedback_visual_self);
 
 #endif
 
-struct feedback_textual_command {
- struct lmodule *module;
- enum einit_module_status status;
- char *message;
- uint32_t seqid;
-};
+uint32_t shutdownfailuretimeout = 10;
+char show_progress = 1;
+char enableansicodes = 1;
 
-struct feedback_textual_command **feedback_textual_commandQ;
-
-pthread_mutex_t
- feedback_textual_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
- feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
-
-void feedback_textual_queue_comand (struct feedback_textual_command *command) {
- emutex_lock (&feedback_textual_commandQ_mutex);
- feedback_textual_commandQ = (struct feedback_textual_command **)setadd ((void **)feedback_textual_commandQ, command, SET_TYPE_STRING);
- emutex_unlock (&feedback_textual_commandQ_mutex);
-
- pthread_cond_broadcast (&feedback_textual_commandQ_cond);
-}
+#if 1
+FILE *vofile = NULL;
 
 struct planref {
  struct mloadplan *plan;
@@ -159,8 +144,6 @@ void update_screen_ansi (struct einit_event *, struct mstat *);
 int nstringsetsort (struct nstring *, struct nstring *);
 unsigned char broadcast_message (char *, char *);
 
-FILE *vofile = NULL;
-
 struct planref **plans = NULL;
 struct mstat **modules = NULL;
 struct feedback_fd **feedback_fds = NULL;
@@ -168,9 +151,7 @@ pthread_mutex_t plansmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t modulesmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t feedback_fdsmutex = PTHREAD_MUTEX_INITIALIZER;
 
-char enableansicodes = 1;
-char show_progress = 1;
-uint32_t shutdownfailuretimeout = 10, statusbarlines = 2;
+uint32_t statusbarlines = 2;
 
 void einit_feedback_visual_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
@@ -226,134 +207,6 @@ int einit_feedback_visual_cleanup (struct lmodule *this) {
 
  emutex_unlock (&thismodule->imutex);
  return 0;
-}
-
-/*
-  -------- function to enable and configure this module -----------------------
- */
-int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
- emutex_lock (&thismodule->imutex);
- struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
- if (node)
-  enableansicodes = node->flag;
-
- if ((node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL)))
-  show_progress = node->flag;
-
- if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
-  shutdownfailuretimeout = node->value;
-
- struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
-
- if (filenode && filenode->arbattrs) {
-  uint32_t i = 0;
-  FILE *tmp;
-  struct stat st;
-
-  for (; filenode->arbattrs[i]; i+=2) {
-   errno = 0;
-
-   if (filenode->arbattrs[i]) {
-    if (strmatch (filenode->arbattrs[i], "stdio")) {
-     if (!stat (filenode->arbattrs[i+1], &st)) {
-      tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
-      if (!tmp)
-       freopen ("/dev/null", "r+", stdin);
-
-      tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
-      if (!tmp)
-       tmp = freopen ("einit-panic-stdout", "w", stdout);
-     } else {
-      perror ("einit-feedback-visual-textual: opening stdio");
-     }
-    } else if (strmatch (filenode->arbattrs[i], "stderr")) {
-     if (!stat (filenode->arbattrs[i+1], &st)) {
-      tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
-      if (!tmp)
-       tmp = freopen ("einit-panic-stdout", "a", stderr);
-      if (tmp)
-       eprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL));
-     } else {
-      perror ("einit-feedback-visual-textual: opening stderr");
-      enableansicodes = 0;
-     }
-    } else if (strmatch (filenode->arbattrs[i], "verbose-output")) {
-     if (!stat (filenode->arbattrs[i+1], &st)) {
-      if (vofile)
-       vofile = freopen (filenode->arbattrs[i+1], "w", vofile);
-
-      if (!vofile);
-       vofile = efopen (filenode->arbattrs[i+1], "w");
-     } else {
-      perror ("einit-feedback-visual-textual: opening verbose-output file");
-     }
-    } else if (strmatch (filenode->arbattrs[i], "console")) {
-#ifdef LINUX
-     int tfd = 0;
-     errno = 0;
-     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0)))
-      ioctl (tfd, TIOCCONS, 0);
-     if (errno)
-      perror (filenode->arbattrs[i+1]);
-
-#else
-     eputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
-#endif
-    } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
-#ifdef LINUX
-     int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
-     errno = 0;
-
-     ioctl(0, TIOCLINUX, &arg);
-     if (errno)
-      perror ("einit-feedback-visual-textual: redirecting kernel messages");
-#else
-     eputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
-#endif
-    } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
-#ifdef LINUX
-     uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
-     int tfd = 0;
-     errno = 0;
-     if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
-      ioctl (tfd, VT_ACTIVATE, vtn);
-     if (errno)
-      perror ("einit-feedback-visual-textual: activate terminal");
-     if (tfd > 0) close (tfd);
-#else
-     eputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr);
-#endif
-    }
-   }
-  }
- }
-
- if (enableansicodes) {
-  eputs ("\e[2J\e[0;0H"
-         "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
- }
- if (vofile) {
-  eputs ("\e[2J\e[0;0H", vofile);
- }
-
- event_listen (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
- event_listen (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
- event_listen (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
-
- emutex_unlock (&thismodule->imutex);
- return status_ok;
-}
-
-/*
-  -------- function to disable this module ------------------------------------
- */
-int einit_feedback_visual_disable (void *pa, struct einit_event *status) {
- emutex_lock (&thismodule->imutex);
- event_ignore (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
- event_ignore (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
- event_ignore (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
- emutex_unlock (&thismodule->imutex);
- return status_ok;
 }
 
 /*
@@ -1006,6 +859,571 @@ unsigned char broadcast_message (char *path, char *message) {
 #endif
 #endif
  return 0;
+}
+
+/*
+  -------- function to enable and configure this module -----------------------
+ */
+int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
+ struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
+ if (node)
+  enableansicodes = node->flag;
+
+ if ((node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL)))
+  show_progress = node->flag;
+
+ if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
+  shutdownfailuretimeout = node->value;
+
+ struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
+
+ if (filenode && filenode->arbattrs) {
+  uint32_t i = 0;
+  FILE *tmp;
+  struct stat st;
+
+  for (; filenode->arbattrs[i]; i+=2) {
+   errno = 0;
+
+   if (filenode->arbattrs[i]) {
+    if (strmatch (filenode->arbattrs[i], "stdio")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
+      if (!tmp)
+       freopen ("/dev/null", "r+", stdin);
+
+      tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "w", stdout);
+     } else {
+      perror ("einit-feedback-visual-textual: opening stdio");
+     }
+    } else if (strmatch (filenode->arbattrs[i], "stderr")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "a", stderr);
+      if (tmp)
+       eprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL));
+     } else {
+      perror ("einit-feedback-visual-textual: opening stderr");
+      enableansicodes = 0;
+     }
+    } else if (strmatch (filenode->arbattrs[i], "verbose-output")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      if (vofile)
+       vofile = freopen (filenode->arbattrs[i+1], "w", vofile);
+
+      if (!vofile);
+       vofile = efopen (filenode->arbattrs[i+1], "w");
+     } else {
+      perror ("einit-feedback-visual-textual: opening verbose-output file");
+     }
+    } else if (strmatch (filenode->arbattrs[i], "console")) {
+#ifdef LINUX
+     int tfd = 0;
+     errno = 0;
+     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0)))
+      ioctl (tfd, TIOCCONS, 0);
+     if (errno)
+      perror (filenode->arbattrs[i+1]);
+
+#else
+     eputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
+#endif
+    } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
+#ifdef LINUX
+     int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
+     errno = 0;
+
+     ioctl(0, TIOCLINUX, &arg);
+     if (errno)
+      perror ("einit-feedback-visual-textual: redirecting kernel messages");
+#else
+     eputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
+#endif
+    } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
+#ifdef LINUX
+     uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
+     int tfd = 0;
+     errno = 0;
+     if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
+      ioctl (tfd, VT_ACTIVATE, vtn);
+     if (errno)
+      perror ("einit-feedback-visual-textual: activate terminal");
+     if (tfd > 0) close (tfd);
+#else
+     eputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr);
+#endif
+    }
+   }
+  }
+ }
+
+ if (enableansicodes) {
+  eputs ("\e[2J\e[0;0H"
+         "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
+ }
+ if (vofile) {
+  eputs ("\e[2J\e[0;0H", vofile);
+ }
+
+ event_listen (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
+ event_listen (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
+ event_listen (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
+
+ emutex_unlock (&thismodule->imutex);
+ return status_ok;
+}
+
+#else
+
+struct feedback_textual_command {
+ struct lmodule *module;
+ enum einit_module_status status;
+ char *message;
+ uint32_t seqid;
+ time_t ctime;
+};
+
+struct message_log {
+ uint32_t seqid;
+ char *message;
+};
+
+struct feedback_textual_module_status {
+ struct lmodule *module;
+ enum einit_module_status laststatus;
+ struct message_log **log;
+ char warnings;
+ time_t lastchange;
+};
+
+struct feedback_textual_command **feedback_textual_commandQ = NULL;
+struct feedback_textual_module_status **feedback_textual_modules = NULL;
+
+pthread_mutex_t
+ feedback_textual_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
+ feedback_textual_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
+ feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
+
+void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime) {
+ struct feedback_textual_command tnc;
+ memset (&tnc, 0, sizeof (struct feedback_textual_command));
+
+ tnc.module = module;
+ tnc.status = status;
+ tnc.seqid = seqid;
+ if (message)
+  tnc.message = estrdup (message);
+ tnc.ctime = ctime;
+
+ emutex_lock (&feedback_textual_commandQ_mutex);
+
+ feedback_textual_commandQ = (struct feedback_textual_command **)setadd ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
+
+ emutex_unlock (&feedback_textual_commandQ_mutex);
+
+ pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+}
+
+pthread_t feedback_textual_thread;
+char einit_feedback_visual_textual_worker_thread_running = 0,
+     einit_feedback_visual_textual_worker_thread_keep_running = 1;
+
+signed int feedback_log_sort (struct message_log *st1, struct message_log *st2) {
+ if (!st1) return 1;
+ if (!st2) return -1;
+
+ return (st2->seqid - st1->seqid);
+}
+
+signed int feedback_time_sort (struct feedback_textual_module_status *st1, struct feedback_textual_module_status *st2) {
+ if (!st1) return 1;
+ if (!st2) return -1;
+
+ return (st2->lastchange - st1->lastchange);
+}
+
+void feedback_process_textual_noansi(struct feedback_textual_module_status *st) {
+ char statuscode[] = { '(', '-', '-', '-', '-', ')', 0 };
+ char *rid = (st->module->module && st->module->module->rid) ? st->module->module->rid : "no idea";
+ char *name = (st->module->module && st->module->module->name) ? st->module->module->name : "no name";
+
+ if (st->module->status == status_idle) {
+  statuscode[1] = 'I';
+ } else {
+  if (st->module->status & status_enabled) {
+   statuscode[2] = 'E';
+  }
+  if (st->module->status & status_disabled) {
+   statuscode[3] = 'D';
+  }
+  if (st->module->status & status_working) {
+   statuscode[4] = 'w';
+  }
+
+  if (st->module->status & status_failed) {
+   statuscode[0] = '!';
+   statuscode[5] = '!';
+  }
+ }
+
+ if (st->log) {
+  uint32_t y = 0;
+
+  for (; st->log[y]; y++) ;
+
+  if (y != 0) {
+   y--;
+   eprintf (stdout, "%s %s (%s): %s\n", statuscode, name, rid, st->log[y]->message);
+  }
+ } else {
+  eprintf (stdout, "%s %s (%s)\n", statuscode, name, rid);
+ }
+}
+
+void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
+ char *name = (st->module->module && st->module->module->name) ? st->module->module->name : "no name";
+
+ char *wmarker = " ";
+ char *emarker = " ";
+ char *rmarker = " ";
+ char *status = "\e[31mwtf?\e[0m";
+
+ if (st->module->status == status_idle) {
+  status = "\e[31midle\e[0m";
+ } else {
+  if (st->module->status & status_enabled) {
+   status = "\e[32menab\e[0m";
+  }
+  if (st->module->status & status_disabled) {
+   status = "\e[33mdisa\e[0m";
+  }
+  if (st->module->status & status_working) {
+   wmarker = "\e[33m*\e[0m";
+  }
+
+  if (st->module->status & status_failed) {
+   emarker = "\e[31m!\e[0m";
+  }
+ }
+
+ if (st->log) {
+  uint32_t y = 0;
+
+  for (; st->log[y]; y++) ;
+
+  if (y != 0) {
+   y--;
+   eprintf (stdout, "%s%s%s[ %s ] %s: %s\e[0K\n", rmarker, emarker, wmarker, status, name, st->log[y]->message);
+  } else {
+   eprintf (stdout, "%s%s%s[ %s ] %s\e[0K\n", rmarker, emarker, wmarker, status, name);
+  }
+ } else {
+  eprintf (stdout, "%s%s%s[ %s ] %s\e[0K\n", rmarker, emarker, wmarker, status, name);
+ }
+}
+
+void feedback_textual_update_screen () {
+ emutex_lock (&feedback_textual_modules_mutex);
+
+ if (enableansicodes) {
+  eputs (/*"\e[2J\e[0;0H"*/
+         "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
+ } else
+  eputs ("\n", stdout);
+
+ if (feedback_textual_modules) {
+  uint32_t i = 0;
+
+/*  setsort ((void **)feedback_textual_modules, 0, (signed int(*)(const void *, const void*))feedback_time_sort);*/
+
+  if (enableansicodes) {
+   for (; feedback_textual_modules[i]; i++)
+    feedback_process_textual_ansi(feedback_textual_modules[i]);
+  }
+  else {
+   for (; feedback_textual_modules[i]; i++)
+    feedback_process_textual_noansi(feedback_textual_modules[i]);
+  }
+ }
+
+ emutex_unlock (&feedback_textual_modules_mutex);
+}
+
+void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint32_t seqid, char *message) {
+ char create_module = 1;
+ char do_update = 0;
+
+ emutex_lock (&feedback_textual_modules_mutex);
+
+ if (feedback_textual_modules) {
+  uint32_t i = 0;
+
+  for (; feedback_textual_modules[i]; i++) {
+   if (feedback_textual_modules[i]->module == module) {
+    create_module = 0;
+
+    if (feedback_textual_modules[i]->lastchange < ctime) {
+     feedback_textual_modules[i]->lastchange = ctime;
+     do_update = 1;
+    }
+    if (message) {
+     struct message_log ne = {
+      .seqid = seqid,
+      .message = message
+     };
+
+     feedback_textual_modules[i]->log = (struct message_log **)setadd ((void **)(feedback_textual_modules[i]->log), &ne, sizeof (struct message_log));
+
+     if (feedback_textual_modules[i]->log) {
+      setsort ((void **)feedback_textual_modules[i]->log, 0, (signed int(*)(const void *, const void*))feedback_log_sort);
+     }
+    }
+   }
+  }
+ }
+
+ if (create_module) {
+  struct feedback_textual_module_status nm;
+
+  memset (&nm, 0, sizeof (struct feedback_textual_module_status));
+
+  nm.module = module;
+  nm.lastchange = ctime;
+
+  if (message) {
+   struct message_log ne = {
+    .seqid = seqid,
+    .message = message
+   };
+
+   nm.log = (struct message_log **)setadd (NULL, &ne, sizeof (struct message_log));
+  }
+
+  feedback_textual_modules = (struct feedback_textual_module_status **)setadd ((void **)feedback_textual_modules, &nm, sizeof (struct feedback_textual_module_status));
+
+  do_update = 1;
+ }
+
+ emutex_unlock (&feedback_textual_modules_mutex);
+
+ if (do_update) {
+  feedback_textual_update_screen ();
+ }
+}
+
+void feedback_textual_process_command (struct feedback_textual_command *command) {
+/* char *rid = (command->module && command->module->module && command->module->module->rid) ? command->module->module->rid : "no idea",
+      *name = (command->module && command->module->module && command->module->module->name) ? command->module->module->name : "no idea";
+
+ if (command->status == status_idle) {
+  eprintf (stdout, "[ IDLE ] %s (%s): %s\n", name, rid, command->message ? command->message : " -- ");
+ } else {
+  if (command->status & status_enabled) {
+   eprintf (stdout, "[ ENAB ] %s (%s): %s\n", name, rid, command->message ? command->message : " -- ");
+  }
+
+  if (command->status & status_disabled) {
+   eprintf (stdout, "[ DISA ] %s (%s): %s\n", name, rid, command->message ? command->message : " -- ");
+  }
+ }*/
+
+ if (command->module) {
+  feedback_textual_update_module (command->module, command->ctime, command->seqid, command->message);
+ }
+}
+
+signed int feedback_command_sort (struct feedback_textual_command *st1, struct feedback_textual_command *st2) {
+ if (!st1) return 1;
+ if (!st2) return -1;
+
+ return (st2->seqid - st1->seqid);
+}
+
+void *einit_feedback_visual_textual_worker_thread (void *irr) {
+ einit_feedback_visual_textual_worker_thread_running = 1;
+
+ while (einit_feedback_visual_textual_worker_thread_keep_running) {
+  while (feedback_textual_commandQ) {
+   struct feedback_textual_command *command = NULL;
+
+   emutex_lock (&feedback_textual_commandQ_mutex);
+   if (feedback_textual_commandQ) {
+    setsort ((void **)feedback_textual_commandQ, 0, (signed int(*)(const void *, const void*))feedback_command_sort);
+
+    if ((command = feedback_textual_commandQ[0])) {
+     void *it = command;
+     command = emalloc (sizeof (struct feedback_textual_command));
+     memcpy (command, it, sizeof (struct feedback_textual_command));
+
+     feedback_textual_commandQ = (struct feedback_textual_command **)setdel ((void **)feedback_textual_commandQ, it);
+    }
+   }
+   emutex_unlock (&feedback_textual_commandQ_mutex);
+
+   if (command) {
+    feedback_textual_process_command (command);
+
+//    if (command->message) free (command->message);
+    free (command);
+   }
+  }
+
+  emutex_lock (&feedback_textual_commandQ_cond_mutex);
+  pthread_cond_wait (&feedback_textual_commandQ_cond, &feedback_textual_commandQ_cond_mutex);
+  emutex_unlock (&feedback_textual_commandQ_cond_mutex);
+ }
+
+ return NULL;
+}
+
+void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
+ if (ev->type == einit_feedback_module_status) {
+  feedback_textual_queue_comand (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp);
+ }
+}
+
+void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
+ if (ev->type == einit_core_service_update) {
+  feedback_textual_queue_comand (ev->module, ev->status, NULL, ev->seqid, ev->timestamp);
+ }
+}
+
+void einit_feedback_visual_power_event_handler(struct einit_event *ev) {
+}
+
+void einit_feedback_visual_ipc_event_handler(struct einit_event *ev) {
+}
+
+int einit_feedback_visual_cleanup (struct lmodule *this) {
+ event_ignore (einit_event_subsystem_ipc, einit_feedback_visual_ipc_event_handler);
+
+ return 0;
+}
+
+/*
+  -------- function to enable and configure this module -----------------------
+ */
+int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
+
+ einit_feedback_visual_textual_worker_thread_keep_running = 1;
+ ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
+
+ struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
+ if (node)
+  enableansicodes = node->flag;
+
+ if ((node = cfg_getnode ("configuration-feedback-visual-calculate-switch-status", NULL)))
+  show_progress = node->flag;
+
+ if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
+  shutdownfailuretimeout = node->value;
+
+ struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
+
+ if (filenode && filenode->arbattrs) {
+  uint32_t i = 0;
+  FILE *tmp;
+  struct stat st;
+
+  for (; filenode->arbattrs[i]; i+=2) {
+   errno = 0;
+
+   if (filenode->arbattrs[i]) {
+    if (strmatch (filenode->arbattrs[i], "stdio")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
+      if (!tmp)
+       freopen ("/dev/null", "r+", stdin);
+
+      tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "w", stdout);
+     } else {
+      perror ("einit-feedback-visual-textual: opening stdio");
+     }
+    } else if (strmatch (filenode->arbattrs[i], "stderr")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "a", stderr);
+      if (tmp)
+       eprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL));
+     } else {
+      perror ("einit-feedback-visual-textual: opening stderr");
+      enableansicodes = 0;
+     }
+    } else if (strmatch (filenode->arbattrs[i], "console")) {
+#ifdef LINUX
+     int tfd = 0;
+     errno = 0;
+     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0)))
+      ioctl (tfd, TIOCCONS, 0);
+     if (errno)
+      perror (filenode->arbattrs[i+1]);
+
+#else
+     eputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
+#endif
+    } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
+#ifdef LINUX
+     int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
+     errno = 0;
+
+     ioctl(0, TIOCLINUX, &arg);
+     if (errno)
+      perror ("einit-feedback-visual-textual: redirecting kernel messages");
+#else
+     eputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
+#endif
+    } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
+#ifdef LINUX
+     uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
+     int tfd = 0;
+     errno = 0;
+     if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
+      ioctl (tfd, VT_ACTIVATE, vtn);
+     if (errno)
+      perror ("einit-feedback-visual-textual: activate terminal");
+     if (tfd > 0) close (tfd);
+#else
+     eputs ("einit-feedback-visual-textual: terminal activation support currently only available on LINUX\n", stderr);
+#endif
+    }
+   }
+  }
+ }
+
+ if (enableansicodes) {
+  eputs ("\e[2J\e[0;0H"
+    "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
+ }
+
+ event_listen (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
+ event_listen (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
+ event_listen (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
+
+ emutex_unlock (&thismodule->imutex);
+ return status_ok;
+}
+
+#endif
+
+/*
+  -------- function to disable this module ------------------------------------
+ */
+int einit_feedback_visual_disable (void *pa, struct einit_event *status) {
+ emutex_lock (&thismodule->imutex);
+ event_ignore (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
+ event_ignore (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
+ emutex_unlock (&thismodule->imutex);
+ return status_ok;
 }
 
 int einit_feedback_visual_configure (struct lmodule *irr) {
