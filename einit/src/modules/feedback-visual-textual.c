@@ -138,6 +138,20 @@ pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
 
 char *feedback_textual_statusline = "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
 
+void *feedback_textual_io_handler_thread (void *irr) {
+ int rchar;
+
+ while (1) {
+  rchar = fgetc(stdin);
+  if (rchar == EOF) {
+  }
+
+  eprintf (stdout, "read character: %c", rchar);
+ }
+
+ return irr;
+}
+
 void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
  struct feedback_textual_command tnc;
  memset (&tnc, 0, sizeof (struct feedback_textual_command));
@@ -475,7 +489,7 @@ void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
   -------- power event-handler -------------------------------------------------
  */
 void einit_feedback_visual_power_event_handler(struct einit_event *ev) {
- struct cfgnode *n;
+// struct cfgnode *n;
 
  if ((ev->type == einit_power_down_imminent) || (ev->type == einit_power_reset_imminent)) {
 // shutdown imminent
@@ -632,6 +646,11 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
    }
   }
  }
+
+#if 0
+ pthread_t th;
+ ethread_create (&th, &thread_attribute_detached, feedback_textual_io_handler_thread, NULL);
+#endif
 
  if (enableansicodes) {
   eputs ("\e[2J\e[0;0H", stdout);

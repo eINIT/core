@@ -83,10 +83,10 @@ module_register(einit_scheduler_self);
 
 pthread_mutex_t schedcpidmutex = PTHREAD_MUTEX_INITIALIZER;
 
-sem_t *sigchild_semaphore = NULL;
+sem_t *signal_semaphore = NULL;
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
-sem_t sigchild_semaphore_static;
+sem_t signal_semaphore_static;
 #endif
 
 stack_t signalstack;
@@ -99,9 +99,9 @@ char sigint_called = 0;
 int cleanup ();
 
 int scheduler_cleanup () {
- sem_t *sembck = sigchild_semaphore;
+ sem_t *sembck = signal_semaphore;
  stack_t curstack;
- sigchild_semaphore = NULL;
+ signal_semaphore = NULL;
 
  if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
   curstack.ss_size = SIGSTKSZ;
@@ -212,8 +212,8 @@ int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  cpids = nele;
 
  emutex_unlock (&schedcpidmutex);
- if (!(coremode & einit_core_exiting) && sigchild_semaphore) {
-  if (sem_post (sigchild_semaphore)) {
+ if (!(coremode & einit_core_exiting) && signal_semaphore) {
+  if (sem_post (signal_semaphore)) {
    bitch(bitch_stdio, 0, "sem_post() failed.");
   }
  }
@@ -234,8 +234,8 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
 #endif
  {
   sigint_called = 1;
-  if (!(coremode & einit_core_exiting) && sigchild_semaphore)
-   sem_post (sigchild_semaphore);
+  if (!(coremode & einit_core_exiting) && signal_semaphore)
+   sem_post (signal_semaphore);
 
  }
  return;
@@ -281,8 +281,8 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      }
 
      coremode |= einit_core_exiting;
-     if (sigchild_semaphore) {
-      if (sem_post (sigchild_semaphore)) {
+     if (signal_semaphore) {
+      if (sem_post (signal_semaphore)) {
        bitch(bitch_stdio, 0, "sem_post() failed.");
       }
      }
@@ -396,7 +396,7 @@ void *sched_run_sigchild (void *p) {
   }
   emutex_unlock (&schedcpidmutex);
   if (!check) {
-   sem_wait (sigchild_semaphore);
+   sem_wait (signal_semaphore);
    if (coremode & einit_core_exiting) {
     return NULL;
    }
@@ -446,7 +446,7 @@ void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
   }
  emutex_unlock (&schedcpidmutex);
 
- if (sem_post (sigchild_semaphore)) {
+ if (sem_post (signal_semaphore)) {
   bitch(bitch_stdio, 0, "sem_post() failed.");
  }
 }
@@ -513,7 +513,7 @@ void *sched_run_sigchild (void *p) {
 
   emutex_unlock (&schedcpidmutex);
   if (!check) {
-   if (!(coremode & einit_core_exiting)) sem_wait (sigchild_semaphore);
+   if (!(coremode & einit_core_exiting)) sem_wait (signal_semaphore);
    else {
     debug ("scheduler SIGCHLD thread now going to sleep\n");
     while (sleep (1)) {
@@ -539,8 +539,8 @@ void *sched_run_sigchild (void *p) {
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- if (!(coremode & einit_core_exiting) && sigchild_semaphore) {
-  if (sem_post (sigchild_semaphore)) {
+ if (!(coremode & einit_core_exiting) && signal_semaphore) {
+  if (sem_post (signal_semaphore)) {
    bitch(bitch_stdio, 0, "sem_post() failed.");
   }
  }
@@ -553,14 +553,14 @@ int einit_scheduler_configure (struct lmodule *tm) {
  module_init(tm);
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sigchild_semaphore = &sigchild_semaphore_static;
- sem_init (sigchild_semaphore, 0, 0);
+ signal_semaphore = &signal_semaphore_static;
+ sem_init (signal_semaphore, 0, 0);
 #elif defined(DARWIN)
  char tmp[BUFFERSIZE];
 
  esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());
 
- if ((int)(sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+ if ((int)(signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
   perror ("scheduler: semaphore setup");
   exit (EXIT_FAILURE);
  }
@@ -569,12 +569,12 @@ int einit_scheduler_configure (struct lmodule *tm) {
  /* let's just hope for the best... */
  char tmp[BUFFERSIZE];
 
- sigchild_semaphore = ecalloc (1, sizeof (sem_t));
- if (sem_init (sigchild_semaphore, 0, 0) == -1) {
-  free (sigchild_semaphore);
+ signal_semaphore = ecalloc (1, sizeof (sem_t));
+ if (sem_init (signal_semaphore, 0, 0) == -1) {
+  free (signal_semaphore);
   esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
 
-  if ((sigchild_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
+  if ((signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
    perror ("scheduler: semaphore setup");
    exit (EXIT_FAILURE);
   }
