@@ -5,14 +5,14 @@
   requires="tty:mount-local"
   enable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular')
           [[ -d /dev/vc ]] &amp;&amp; tty_dev=/dev/vc/ || tty_dev=/dev/tty
-          for tty_num in $(seq 1 "${tty_max}") ; do
-                setleds -D +num < ${tty_dev}${tty_num} &amp;&gt; /dev/null
+          for tty_num in $(seq 1 &quot;${tty_max}&quot;) ; do
+                setleds -D +num &lt; ${tty_dev}${tty_num} &amp;&gt; /dev/null
           done
           unset tty_max tty_num tty_dev"
   disable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular')
            [[ -d /dev/vc ]] &amp;&amp; tty_dev=/dev/vc/ || tty_dev=/dev/tty
-           for tty_num in $(seq 1 "${tty_max}") ; do
-                 setleds -D +num < ${tty_dev}${tty_num} &amp;&gt; /dev/null
+           for tty_num in $(seq 1 &quot;${tty_max}&quot;) ; do
+                 setleds -D +num &lt; ${tty_dev}${tty_num} &amp;&gt; /dev/null
            done
            unset tty_max tty_num tty_dev" 
   restart="no" />
