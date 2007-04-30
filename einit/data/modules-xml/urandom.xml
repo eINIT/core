@@ -4,20 +4,20 @@
   provides="urandom"
   requires="mount-system"
   enable="[[ -c /dev/urandom ]] || return;
-	  if [[ -f /var/run/random-seed ]]; then
-           cat /var/run/random-seed &gt; /dev/urandom;
+	  if [[ -f /var/lib/random-seed ]]; then
+           cat /var/lib/random-seed &gt; /dev/urandom;
           fi;
-          if ! rm -f /var/run/random-seed &amp;&gt; /dev/null ; then
-           echo &quot;feedback|warning|Skipping /var/run/random-seed initialization (ro root?)&quot;;
+          if ! rm -f /var/lib/random-seed &amp;&gt; /dev/null ; then
+           echo &quot;feedback|warning|Skipping /var/lib/random-seed initialization (ro root?)&quot;;
            return 0;
           fi;
 	  echo &quot;feedback|notice|Initializing random number generator&quot;;
           umask 077;
-          dd if=/dev/urandom of=/var/run/random-seed count=1 &amp;&gt; /dev/null;
+          dd if=/dev/urandom of=/var/lib/random-seed count=1 &amp;&gt; /dev/null;
           echo &quot;feedback|warning|Error initializing random number generator&quot;;
           umask 022"
   disable="umask 077;
            echo &quot;feedback|notice|Saving random seed&quot;;
-           dd if=/dev/urandom of=/var/run/random-seed count=1 &amp;&gt; /dev/null || echo &quot;feedback|warning|Failed to save random seed&quot;"
+           dd if=/dev/urandom of=/var/lib/random-seed count=1 &amp;&gt; /dev/null || echo &quot;feedback|warning|Failed to save random seed&quot;"
   restart="no" />
 </einit>
