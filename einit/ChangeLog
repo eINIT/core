@@ -1,3 +1,7 @@
+2007/04/30: mdeininger
+ * enhanced feedback
+ * fixed some deadlocks
+
 2007/04/24: mdeininger
  i'm getting quite lazy about updating this file... have a look at the svn
  revision history for closer details ;)

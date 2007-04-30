@@ -105,7 +105,7 @@ uint32_t shutdownfailuretimeout = 10;
 char show_progress = 1;
 char enableansicodes = 1;
 
-#if 1
+#if 0
 FILE *vofile = NULL;
 
 struct planref {
@@ -983,6 +983,7 @@ struct feedback_textual_command {
  struct lmodule *module;
  enum einit_module_status status;
  char *message;
+ char *statusline;
  uint32_t seqid;
  time_t ctime;
 };
@@ -1009,11 +1010,14 @@ pthread_mutex_t
  feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
 
-void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime) {
+char *feedback_textual_statusline = "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
+
+void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline) {
  struct feedback_textual_command tnc;
  memset (&tnc, 0, sizeof (struct feedback_textual_command));
 
  tnc.module = module;
+ tnc.statusline = statusline;
  tnc.status = status;
  tnc.seqid = seqid;
  if (message)
@@ -1103,6 +1107,7 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
    status = "\e[33mdisa\e[0m";
   }
   if (st->module->status & status_working) {
+   status = "\e[31m....\e[0m";
    wmarker = "\e[33m*\e[0m";
   }
 
@@ -1131,8 +1136,7 @@ void feedback_textual_update_screen () {
  emutex_lock (&feedback_textual_modules_mutex);
 
  if (enableansicodes) {
-  eputs (/*"\e[2J\e[0;0H"*/
-         "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
+  eputs (feedback_textual_statusline, stdout);
  } else
   eputs ("\n", stdout);
 
@@ -1167,11 +1171,12 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
    if (feedback_textual_modules[i]->module == module) {
     create_module = 0;
 
-    if (feedback_textual_modules[i]->lastchange < ctime) {
+    if (feedback_textual_modules[i]->lastchange <= ctime) {
      feedback_textual_modules[i]->lastchange = ctime;
      do_update = 1;
     }
     if (message) {
+     do_update = 1;
      struct message_log ne = {
       .seqid = seqid,
       .message = message
@@ -1217,20 +1222,10 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
 }
 
 void feedback_textual_process_command (struct feedback_textual_command *command) {
-/* char *rid = (command->module && command->module->module && command->module->module->rid) ? command->module->module->rid : "no idea",
-      *name = (command->module && command->module->module && command->module->module->name) ? command->module->module->name : "no idea";
-
- if (command->status == status_idle) {
-  eprintf (stdout, "[ IDLE ] %s (%s): %s\n", name, rid, command->message ? command->message : " -- ");
- } else {
-  if (command->status & status_enabled) {
-   eprintf (stdout, "[ ENAB ] %s (%s): %s\n", name, rid, command->message ? command->message : " -- ");
-  }
-
-  if (command->status & status_disabled) {
-   eprintf (stdout, "[ DISA ] %s (%s): %s\n", name, rid, command->message ? command->message : " -- ");
-  }
- }*/
+ if (command->statusline) {
+  feedback_textual_statusline = command->statusline;
+  feedback_textual_update_screen ();
+ }
 
  if (command->module) {
   feedback_textual_update_module (command->module, command->ctime, command->seqid, command->message);
@@ -1268,7 +1263,6 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
    if (command) {
     feedback_textual_process_command (command);
 
-//    if (command->message) free (command->message);
     free (command);
    }
   }
@@ -1282,14 +1276,40 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
 }
 
 void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
- if (ev->type == einit_feedback_module_status) {
-  feedback_textual_queue_comand (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp);
+ if (ev->type == einit_feedback_broken_services) {
+  char *tmp = set2str (' ', (const char **)ev->set);
+  if (tmp) {
+   eprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
+
+   free (tmp);
+  }
+ } else if (ev->type == einit_feedback_unresolved_services) {
+  char *tmp = set2str (' ', (const char **)ev->set);
+  if (tmp) {
+   eprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
+
+   free (tmp);
+  }
+ } else if (ev->type == einit_feedback_module_status) {
+  feedback_textual_queue_comand (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp, NULL);
  }
 }
 
 void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_service_update) {
-  feedback_textual_queue_comand (ev->module, ev->status, NULL, ev->seqid, ev->timestamp);
+  feedback_textual_queue_comand (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL);
+ } else if (ev->type == einit_core_mode_switching) {
+  char tmp[BUFFERSIZE];
+
+  esprintf (tmp, BUFFERSIZE, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
+
+  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp));
+ } else if (ev->type == einit_core_mode_switch_done) {
+  char tmp[BUFFERSIZE];
+
+  esprintf (tmp, BUFFERSIZE, "\e[0;0H[ \e[32mdone\e[0m ] \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
+
+  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp));
  }
 }
 
@@ -1400,8 +1420,7 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  }
 
  if (enableansicodes) {
-  eputs ("\e[2J\e[0;0H"
-    "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n", stdout);
+  eputs ("\e[2J\e[0;0H", stdout);
  }
 
  event_listen (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);

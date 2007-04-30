@@ -633,7 +633,10 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     char rxbuffer[BUFFERSIZE];
     setvbuf (fx, NULL, _IONBF, 0);
 
-    while (!feof(fx)) {
+    if ((waitpid (child, &pidstatus, WNOHANG) == child) &&
+        (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
+     have_waited = 1;
+    } else while (!feof(fx)) {
      if (!fgets(rxbuffer, BUFFERSIZE, fx)) {
       if (errno == EAGAIN) goto skip_read;
       break;

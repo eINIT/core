@@ -2448,6 +2448,8 @@ void mod_examine (char *service) {
  if (mod_isbroken (service)) {
   notice (2, "service %s marked as being broken", service);
 
+  mod_workthreads_dec(service);
+
 /* make sure this is not still queued for something */
   int task = mod_gettask (service);
 
@@ -2462,8 +2464,6 @@ void mod_examine (char *service) {
   }
 
   mod_post_examine(service);
-
-  if (mod_workthreads_dec(service)) return;
 
   return;
  } else if (mod_isdeferred (service)) {
@@ -2529,10 +2529,13 @@ void mod_examine (char *service) {
    notice (2, "cannot resolve service %s.", service);
 
    mod_mark (service, MARK_UNRESOLVED);
+
+   mod_workthreads_dec(service);
   }
 
   return;
  }
+ mod_workthreads_dec(service);
 }
 
 void workthread_examine (char *service) {
@@ -2578,7 +2581,7 @@ void mod_spawn_batch(char **batch, int task) {
    goto retry;
   } else {
    dospawn = (char **)setadd ((void **)dospawn, batch[i], SET_TYPE_STRING);
-   
+
    groupc += mod_group_get_data (batch[i]) ? 1 : 0;
   }
  }
@@ -2760,7 +2763,6 @@ void mod_commit_and_wait (char **en, char **dis) {
    return;
   }
 
-#if 0
 #ifdef DEBUG
   if (!stillneed) {
    notice (4, "still need %i services\n", remainder);
@@ -2768,7 +2770,11 @@ void mod_commit_and_wait (char **en, char **dis) {
    notice (4, "still need %i services (%s)\n", remainder, set2str (' ', stillneed));
   }
   fflush (stderr);
-#endif
+
+  emutex_lock (&ml_workthreads_mutex);
+
+  notice (4, "workthreads: %i (%s)\n", ml_workthreads, set2str (' ', lm_workthreads_list));
+  emutex_unlock (&ml_workthreads_mutex);
 #endif
 
   if (iterations >= MAX_ITERATIONS) {
@@ -2812,9 +2818,9 @@ void mod_commit_and_wait (char **en, char **dis) {
 
   if (e) {
    bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
-  }/* else {
+  } else {
    notice (1, "woke up, checking plan.\n");
-  }*/
+  }
  };
 
 /* never reached */
