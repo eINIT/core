@@ -284,6 +284,7 @@ void feedback_textual_update_screen () {
   eputs (feedback_textual_statusline, stdout);
 
   eputs ("\e[47;30m \e[46m[ Misc ]\e[30;47m    Network    Mountpoints\e[K\e[0m\n", stdout);
+  eputs ("----------------------------------------------------------------------\n", stdout);
  } else
   eputs ("\n", stdout);
 
