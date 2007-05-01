@@ -1,23 +1,20 @@
 <einit prefix="services-virtual-module">
- <shell id="shell-urandom"
+ <shell id="shell-urandom2"
   name="urandom"
   provides="urandom"
   requires="mount-system"
-  enable="[[ -c /dev/urandom ]] || return;
-	  if [[ -f /var/lib/random-seed ]]; then
-           cat /var/lib/random-seed &gt; /dev/urandom;
+  enable="echo &quot;feedback|notice|Initializing random number generator...&quot;;
+          if [ -f ${configuration_system_urandom_random_seed} ]; then
+           cat ${configuration_system_urandom_random_seed} &gt;/dev/urandom;
+          else
+           touch ${configuration_system_urandom_random_seed};
           fi;
-          if ! rm -f /var/lib/random-seed &amp;&gt; /dev/null ; then
-           echo &quot;feedback|warning|Skipping /var/lib/random-seed initialization (ro root?)&quot;;
-           return 0;
-          fi;
-	  echo &quot;feedback|notice|Initializing random number generator&quot;;
-          umask 077;
-          dd if=/dev/urandom of=/var/lib/random-seed count=1 &amp;&gt; /dev/null;
-          echo &quot;feedback|warning|Error initializing random number generator&quot;;
-          umask 022"
-  disable="umask 077;
-           echo &quot;feedback|notice|Saving random seed&quot;;
-           dd if=/dev/urandom of=/var/lib/random-seed count=1 &amp;&gt; /dev/null || echo &quot;feedback|warning|Failed to save random seed&quot;"
-  restart="no" />
+          chmod 600 ${configuration_system_urandom_random_seed};
+          dd if=/dev/urandom of=${configuration_system_urandom_random_seed} count=1 bs=512 &amp;&gt;/dev/null"
+  disable="echo &quot;feedback|notice|Saving random seed...&quot;;
+            touch ${configuration_system_urandom_random_seed};
+            chmod 600 ${configuration_system_urandom_random_seed};
+            dd if=/dev/urandom of=${configuration_system_urandom_random_seed} count=1 bs=512 &amp;&gt;/dev/null"
+  restart="no"
+  variables="configuration-system-urandom/.*" />
 </einit>
