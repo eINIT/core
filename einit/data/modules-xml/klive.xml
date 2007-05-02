@@ -4,6 +4,5 @@
   provides="klive"
   requires="network:mount-critical:logger"
   command="/usr/bin/twistd --nodaemon --uid klive --syslog -oy /usr/share/klive/klive.tac"
-  restart="yes"
-  need-files="/usr/bin/twistd:/usr/share/klive/klive.tac" />
+  restart="yes" />
 </einit>
