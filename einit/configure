@@ -52,12 +52,14 @@ MAKEFILETASKS="all install"
 LIBRARIES="-L/lib -L/usr/lib -L/usr/local/lib"
 
 pwd=$(pwd)
+nomodule=""
 
 source configure.options
 
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
+	shortd=${param%%--no-*};
 	if test "$short" = "--internal-modules"; then
 		echo -n " INTERNAL";
 		INTERNALMODULES=${param#*=};
@@ -132,9 +134,13 @@ for param in $@; do
         elif test "$param" = "--ebuild"; then
                 echo -n " EBUILD";
                 EBUILD="1";
+	elif test "$shortd" = ""; then
+		nomodule="${nomodule} ${param#*--no-}";
 	fi;
 done;
 echo " ]";
+
+echo "skipping modules: ${nomodule}"
 
 if test -e configure.overrides; then source configure.overrides; fi
 
@@ -180,8 +186,32 @@ deldupes() {
 	echo ${ret};
 }
 
+deldisabled() {
+	local ret;
+	local have;
+
+	ret=""
+	
+	for i in $@; do
+		have="no"
+		for y in ${nomodule}; do
+			if test "${i}" = "${y}"; then
+				have="yes"
+			fi
+		done
+
+		if test "${have}" = "no"; then
+			ret="${ret} ${i}"
+		fi
+	done
+
+	echo ${ret};
+}
+
 EXTERNALMODULES=$(deldupes ${EXTERNALMODULES})
+EXTERNALMODULES=$(deldisabled ${EXTERNALMODULES})
 INTERNALMODULES=$(deldupes ${INTERNALMODULES})
+INTERNALMODULES=$(deldisabled ${INTERNALMODULES})
 
 echo "selected modules:"
 echo " internal: ${INTERNALMODULES}"
