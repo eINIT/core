@@ -73,6 +73,7 @@ struct dexecinfo {
  char **environment;
  char *pidfile;
  char **need_files;
+ char **oattrs;
 };
 
 struct daemonst {

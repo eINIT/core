@@ -91,6 +91,7 @@ int einit_mod_daemon_scanmodules (struct lmodule *);
 int einit_mod_daemon_configure (struct lmodule *);
 int einit_mod_daemon_enable (struct dexecinfo *dexec, struct einit_event *status);
 int einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *status);
+int einit_mod_daemon_custom_custom (struct dexecinfo *dexec, char *command, struct einit_event *status);
 
 struct dexecinfo **einit_mod_daemon_dxdata = NULL;
 
@@ -155,8 +156,13 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
   int i = 0;
   char doop = 1;
   if (!node->arbattrs) continue;
+
+  dexec->oattrs = (char **)node->arbattrs;
+
   for (; node->arbattrs[i]; i+=2 ) {
-   if (strmatch (node->arbattrs[i], "id")) {
+   if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
+    continue;
+   } else if (strmatch (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
     dexec->id = node->arbattrs[i+1];
    } else if (strmatch (node->arbattrs[i], "name"))
@@ -243,6 +249,7 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     lm->param = (void *)dexec;
     lm->enable = (int (*)(void *, struct einit_event *))einit_mod_daemon_enable;
     lm->disable = (int (*)(void *, struct einit_event *))einit_mod_daemon_disable;
+    lm->custom = (int (*)(void *, char *, struct einit_event *))einit_mod_daemon_custom_custom;
     lm->cleanup = einit_mod_daemon_cleanup_after_module;
     lm->module = modinfo;
 
@@ -259,6 +266,7 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     new->param = (void *)dexec;
     new->enable = (int (*)(void *, struct einit_event *))einit_mod_daemon_enable;
     new->disable = (int (*)(void *, struct einit_event *))einit_mod_daemon_disable;
+    new->custom = (int (*)(void *, char *, struct einit_event *))einit_mod_daemon_custom_custom;
     new->cleanup = einit_mod_daemon_cleanup_after_module;
    }
   }
@@ -285,4 +293,24 @@ int einit_mod_daemon_configure (struct lmodule *irr) {
  event_listen (einit_event_subsystem_ipc, einit_mod_daemon_ipc_event_handler);
 
  return 0;
+}
+
+int einit_mod_daemon_custom_custom (struct dexecinfo *dexec, char *command, struct einit_event *status) {
+ if (strmatch (command, "zap"))
+  return status_ok | status_disabled;
+ else if (dexec->oattrs) {
+  char tmp[BUFFERSIZE];
+
+  esprintf (tmp, BUFFERSIZE, "execute:%s", command);
+
+  uint32_t i = 0;
+
+  for (; dexec->oattrs[i]; i+=2 ) {
+   if (strmatch (dexec->oattrs[i], tmp)) {
+    return status_enabled | pexec (dexec->oattrs[i+1], (const char **)dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment, status);
+   }
+  }
+ }
+
+ return status_failed | status_command_not_implemented;
 }
