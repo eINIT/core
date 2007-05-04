@@ -326,7 +326,6 @@ void feedback_textual_update_screen () {
 
 void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint32_t seqid, char *message, uint32_t warnings) {
  char create_module = 1;
- char do_update = 0;
 
  emutex_lock (&feedback_textual_modules_mutex);
 
@@ -339,10 +338,8 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
 
     if (feedback_textual_modules[i]->lastchange <= ctime) {
      feedback_textual_modules[i]->lastchange = ctime;
-     do_update = 1;
     }
     if (message) {
-     do_update = 1;
      struct message_log ne = {
       .seqid = seqid,
       .message = message
@@ -382,21 +379,15 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
   }
 
   feedback_textual_modules = (struct feedback_textual_module_status **)setadd ((void **)feedback_textual_modules, &nm, sizeof (struct feedback_textual_module_status));
-
-  do_update = 1;
  }
 
  emutex_unlock (&feedback_textual_modules_mutex);
-
- if (do_update) {
-  feedback_textual_update_screen ();
- }
 }
 
 void feedback_textual_process_command (struct feedback_textual_command *command) {
  if (command->statusline) {
   feedback_textual_statusline = command->statusline;
-  feedback_textual_update_screen ();
+//  feedback_textual_update_screen ();
  }
 
  if (command->module) {
@@ -415,8 +406,11 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
  einit_feedback_visual_textual_worker_thread_running = 1;
 
  while (einit_feedback_visual_textual_worker_thread_keep_running) {
+  char cs = 0;
   while (feedback_textual_commandQ) {
    struct feedback_textual_command *command = NULL;
+
+   cs++;
 
    emutex_lock (&feedback_textual_commandQ_mutex);
    if (feedback_textual_commandQ) {
@@ -436,8 +430,16 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
     feedback_textual_process_command (command);
 
     free (command);
+
+    if (cs >= 10) {
+     feedback_textual_update_screen ();
+     cs = 0;
+    }
    }
   }
+
+  if (cs)
+   feedback_textual_update_screen ();
 
   emutex_lock (&feedback_textual_commandQ_cond_mutex);
   pthread_cond_wait (&feedback_textual_commandQ_cond, &feedback_textual_commandQ_cond_mutex);
