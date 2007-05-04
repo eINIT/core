@@ -295,7 +295,7 @@ void feedback_textual_update_screen () {
  emutex_lock (&feedback_textual_modules_mutex);
 
  if (enableansicodes) {
-  eputs ("\e[0;0H\e[47;30m \e[34;1m[\e[30m Misc \e[34m]\e[30;22m    Network    Mountpoints\e[K\e[0m\n\n ", stdout);
+  eputs ("\e[0;0H\e[47;30m \e[34;1m[\e[30m Misc \e[34m]\e[90;22m    Network    Mountpoints\e[K\e[0m\n\n ", stdout);
 
   eputs (feedback_textual_statusline, stdout);
  } else
