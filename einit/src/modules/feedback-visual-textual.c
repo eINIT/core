@@ -295,8 +295,7 @@ void feedback_textual_update_screen () {
  emutex_lock (&feedback_textual_modules_mutex);
 
  if (enableansicodes) {
-  eputs ("\e[0;0H\e[47;30m \e[97m[\e[30m Misc \e[97m]\e[30m    Network    Mountpoints\e[K\e[0m\n", stdout);
-  eputs ("____________________________________________________________________\n", stdout);
+  eputs ("\e[0;0H\e[47;30m \e[34;1m[\e[30m Misc \e[34m]\e[30;22m    Network    Mountpoints\e[K\e[0m\n\n ", stdout);
 
   eputs (feedback_textual_statusline, stdout);
  } else
@@ -387,7 +386,7 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
 void feedback_textual_process_command (struct feedback_textual_command *command) {
  if (command->statusline) {
   feedback_textual_statusline = command->statusline;
-//  feedback_textual_update_screen ();
+  feedback_textual_update_screen ();
  }
 
  if (command->module) {
