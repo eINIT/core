@@ -136,7 +136,7 @@ pthread_mutex_t
  feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
 
-char *feedback_textual_statusline = "\e[0;0H[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
+char *feedback_textual_statusline = "[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
 
 void *feedback_textual_io_handler_thread (void *irr) {
  int rchar;
@@ -295,10 +295,10 @@ void feedback_textual_update_screen () {
  emutex_lock (&feedback_textual_modules_mutex);
 
  if (enableansicodes) {
-  eputs (feedback_textual_statusline, stdout);
+  eputs ("\e[0;0H\e[47;30m \e[97m[\e[30m Misc \e[97m]\e[30m    Network    Mountpoints\e[K\e[0m\n", stdout);
+  eputs ("____________________________________________________________________\n", stdout);
 
-  eputs ("\e[47;30m \e[46m[ Misc ]\e[30;47m    Network    Mountpoints\e[K\e[0m\n", stdout);
-  eputs ("----------------------------------------------------------------------\n", stdout);
+  eputs (feedback_textual_statusline, stdout);
  } else
   eputs ("\n", stdout);
 
@@ -473,13 +473,13 @@ void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
  } else if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
 
-  esprintf (tmp, BUFFERSIZE, "\e[0;0H[ \e[31m....\e[0m ] \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
+  esprintf (tmp, BUFFERSIZE, "[ \e[31m....\e[0m ] \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
   feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  } else if (ev->type == einit_core_mode_switch_done) {
   char tmp[BUFFERSIZE];
 
-  esprintf (tmp, BUFFERSIZE, "\e[0;0H[ \e[32mdone\e[0m ] \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
+  esprintf (tmp, BUFFERSIZE, "[ \e[32mdone\e[0m ] \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
   feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  }
@@ -515,7 +515,7 @@ void einit_feedback_visual_power_event_handler(struct einit_event *ev) {
   if (errors)
    while (c) {
     if (enableansicodes) {
-     eprintf (stdout, "\e[0;0H\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
+     eprintf (stdout, "\e[0m[ \e[31m%4.4i\e[0m ] \e[31mWarning: Errors occured while shutting down, waiting...\e[0m\n", c);
     } else {
      eprintf (stdout, "[ %4.4i ] Warning: Errors occured while shutting down, waiting...\n", c);
     }
