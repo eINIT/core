@@ -3,12 +3,12 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v22)
+# eINIT SVN ebuild (v23)
 #
 
 inherit subversion
 
-ESVN_REPO_URI="http://einit.svn.sourceforge.net/svnroot/einit/trunk/${PN}"
+ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/${PN}"
 SRC_URI=""
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
