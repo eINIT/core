@@ -19,7 +19,7 @@ LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
 
-IUSE="doc static debug nowtf externalise"
+IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural"
 
 RDEPEND="dev-libs/expat
 	sys-apps/iproute2"
@@ -50,6 +50,15 @@ src_compile() {
 	fi
 	if use externalise ; then
 		local myconf="${myconf} --externalise"
+	fi
+	if ! use fbsplash ; then
+		local myconf="${myconf} --no-feedback-visual-fbsplash"
+	fi
+	if ! use sysv-compat ; then
+		local myconf="${myconf} --no-compatibility-sysv-initctl --no-compatibility-sysv-utmp"
+	fi
+	if ! use aural ; then
+		local myconf="${myconf} --no-feedback-aural --no-feedback-aural-festival"
 	fi
 	
 	echo ${myconf}
@@ -83,8 +92,8 @@ pkg_postinst() {
 		einfo "in /usr/share/doc/einit-version/html/"
 	fi
 	einfo
-	einfo "You can always find the latest documentation over at"
-	einfo "http://einit.org/"
+	einfo "You can always find the latest documentation at"
+	einfo "http://einit.sourceforge.net/documentation/users/"
 	einfo
 	einfo "I'm going to run 'einit --wtf' now, to see if there's anything you'll need"
 	einfo "to set up."
