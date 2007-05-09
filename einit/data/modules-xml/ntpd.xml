@@ -1,9 +1,8 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-ntpd"
-  name="ntpd"
+  name="NTPD"
   provides="ntpd"
-  after="net-.*"
-  requires="mount-critical:net-lo"
+  requires="network"
   command="ntpd -n"
   restart="yes" />
 </einit>

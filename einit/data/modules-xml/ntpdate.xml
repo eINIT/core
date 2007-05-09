@@ -1,20 +1,12 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-clock-ntpdate"
-  name="Set the system clock using ntpdate"
-  provides="ntpdate:clock"
-  requires="mount-critical:network"
-  enable="if [ ! /sbin/hwclock --hctosys ${configuration_program_options_hwclock} ] ; then
-                echo -n 'feedback|warning|failed to read time from hardware clock!' ;
-          fi ;
-          if [ ntpdate -s -b -u pool.ntp.org ] ; then
+  name="NTPDATE"
+  provides="ntpdate"
+  requires="network"
+  enable="if [ ntpdate -s -b -u pool.ntp.org ] ; then
                 echo -n 'feedback|notice|time synced with ntp server' ;
           else 
                 echo -n 'feedback|warning|failed to sync time with ntp server!' ;
           fi"
-  disable="if [ /sbin/hwclock --systohc ${configuration_program_options_hwclock} ] ; then
-                echo -n 'feedback|notice|time written to hardware clock' ;
-           else
-                echo -n 'feedback|warning|failed to write time to hardware clock!' ;
-           fi"
-  variables="configuration-program-options-hwclock" />
+  disable="/bin/true" />
 </einit>

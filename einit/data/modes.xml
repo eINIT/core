@@ -1,7 +1,7 @@
 <einit>
 
  <mode id="boot">
-  <enable services="network-minimal:sysconf:mount-local:tty:keyboard:ipc:logger:dbus:hal:utmp:initctl" critical="mount-critical:tty" />
+  <enable services="network-minimal:sysconf:hwclock:mount-local:tty:keyboard:ipc:logger:utmp:initctl" critical="mount-critical:tty" />
   <overrides>
    <ttys s="tty1-regular" />
    <feedback auto-add="true" default="feedback-textual" />
@@ -9,7 +9,7 @@
  </mode>
 
  <mode id="default" base="boot">
-  <enable services="audio:portmap:clock:displaymanager:swap:mount-remote" />
+  <enable services="audio:portmap:dbus:hal:displaymanager:swap:mount-remote" />
   <overrides>
    <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
   </overrides>
