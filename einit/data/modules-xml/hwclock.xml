@@ -3,15 +3,7 @@
   name="HWCLOCK"
   provides="hwclock"
   requires="mount-system"
-  enable="if [ /sbin/hwclock --hctosys ${configuration_program_options_hwclock} ] ; then
-                echo -n 'feedback|notice|time read from hardware clock' ;
-          else 
-                echo -n 'feedback|warning|failed to read time from hardware clock' ;
-          fi"
-  disable="if [ /sbin/hwclock --systohc ${configuration_program_options_hwclock} ] ; then
-                echo -n 'feedback|notice|time saved to hardware clock' ;
-          else 
-                echo -n 'feedback|warning|failed to save time to hardware clock' ;
-          fi"      
+  enable="/sbin/hwclock --hctosys ${configuration_program_options_hwclock} &amp;&amp; echo -n 'feedback|notice|time read from hardware clock' || echo -n 'feedback|warning|failed to read time from hardware clock'"
+  disable="/sbin/hwclock --systohc ${configuration_program_options_hwclock} &amp;&amp; echo -n 'feedback|notice|time saved to hardware clock' || echo -n 'feedback|warning|failed to save time to hardware clock'"
   variables="configuration-program-options-hwclock" />
 </einit>
