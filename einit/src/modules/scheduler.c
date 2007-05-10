@@ -565,7 +565,7 @@ int einit_scheduler_configure (struct lmodule *tm) {
   exit (EXIT_FAILURE);
  }
 #else
-#warning no proper or recognised semaphores implementation, i can't promise this code will work.
+#warning no proper or recognised semaphores implementation, i can not promise this code will work.
  /* let's just hope for the best... */
  char tmp[BUFFERSIZE];
 
