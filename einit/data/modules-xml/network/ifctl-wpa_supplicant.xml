@@ -1,7 +1,6 @@
 <einit prefix="services-virtual-network">
  <ifctl id="wpa_supplicant"
   enable="echo -n &quot;Using 'wpa_supplicant' to manage interface.&quot;;
-   sleep 3;
    wpa_supplicant -D ${configuration_network_interfaces_${interface}_driver} -i ${interface} -c ${configuration_network_interfaces_${interface}_config} -w -B;
    wpa_cli -i ${interface} -B; /bin/true"
   disable="echo -n &quot;Disabling 'wpa_supplicant'.&quot;;
