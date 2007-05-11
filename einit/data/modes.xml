@@ -1,7 +1,7 @@
 <einit>
 
  <mode id="boot">
-  <enable services="network-minimal:sysconf:hwclock:mount-local:tty:keyboard:ipc:logger:utmp:initctl" critical="mount-critical:tty" />
+  <enable services="network-minimal:sysconf:hwclock:mount-local:tty:keyboard:ipc:logger:utmp:initctl:urandom" critical="mount-critical:tty" />
   <overrides>
    <ttys s="tty1-regular" />
    <feedback auto-add="true" default="feedback-textual" />
@@ -20,7 +20,7 @@
   <options shutdown="yes" />
   <overrides>
    <ttys s="none" />
-   <before-switch emit-event="power/mps-down-scheduled" ipc="save configuration:rc udev shutdown" />
+   <before-switch emit-event="power/mps-down-scheduled" ipc="save configuration:rc urandom shutdown:rc udev shutdown" />
    <after-switch emit-event="power/mps-down-imminent" ipc="scheduler power-down" />
   </overrides>
  </mode>
@@ -30,7 +30,7 @@
   <options shutdown="yes" />
   <overrides>
    <ttys s="none" />
-   <before-switch emit-event="power/reset-scheduled" ipc="save configuration:rc udev shutdown" />
+   <before-switch emit-event="power/reset-scheduled" ipc="save configuration:rc urandom shutdown:rc udev shutdown" />
    <after-switch emit-event="power/reset-imminent" ipc="scheduler power-reset" />
   </overrides>
  </mode>

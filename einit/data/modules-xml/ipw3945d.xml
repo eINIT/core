@@ -13,7 +13,7 @@
 	   modprobe -r -i ipw3945; modprobe -i ipw3945;
 	   ipw3945d --quiet; sleep 1;
 	   STATE=$(cat /proc/modules | grep ipw3945 | awk '{print $3}');
-	  done; sleep 1"
+	  done; sleep 2"
   disable="killall -9 ipw3945d"
   restart="yes" />
 </einit>

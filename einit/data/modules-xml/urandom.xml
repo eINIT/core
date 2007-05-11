@@ -11,10 +11,11 @@
           fi;
           chmod 600 ${configuration_system_urandom_random_seed};
           dd if=/dev/urandom of=${configuration_system_urandom_random_seed} count=1 bs=512 &amp;&gt;/dev/null"
-  disable="echo -n &quot;feedback|notice|Saving random seed...&quot;;
+  execute:shutdown="echo -n &quot;feedback|notice|Saving random seed...&quot;;
             touch ${configuration_system_urandom_random_seed};
             chmod 600 ${configuration_system_urandom_random_seed};
             dd if=/dev/urandom of=${configuration_system_urandom_random_seed} count=1 bs=512 &amp;&gt;/dev/null"
+  disable="/bin/true"
   restart="no"
   variables="configuration-system-urandom/.*" />
 </einit>
