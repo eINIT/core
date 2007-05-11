@@ -1,0 +1,4 @@
+1. Building/Installing eINIT
+
+# ./configure --enable-linux --enable-posix-regex
+# make install
