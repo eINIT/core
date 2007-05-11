@@ -14,7 +14,7 @@
 	   ipw3945d --quiet; sleep 1;
 	   STATE=$(cat /proc/modules | grep ipw3945 | awk '{print $3}');
 	  done;
-          while [ ! -n $(cat /sys/bus/pci/drivers/ipw3945/0000\:05\:00.0/status | grep 0x0) ]; do
+          while [ !  -d /sys/class/net/${interface} ]; do
 	   sleep .1;
           done"
   disable="killall -9 ipw3945d"
