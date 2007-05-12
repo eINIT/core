@@ -39,6 +39,7 @@
     <file s="modes.xml" />
     <directory s="../../lib/einit/modules-xml" />
     <directory s="../../lib/einit/modules-xml/network" />
+    <directory s="conf.d" />
    </commands-include>
    <else>
     <settings>
@@ -50,6 +51,7 @@
      <file s="modes.xml" />
      <directory s="/lib/einit/modules-xml" />
      <directory s="/lib/einit/modules-xml/network" />
+     <directory s="conf.d" />
     </commands-include>
    </else>
   </if>
@@ -240,7 +242,8 @@
    <fsck-command s="pexec-options no-pipe; /sbin/fsck -a -T -t %1$s %2$s" />
 
    <block-devices>
-    <dev-constraints s="/dev/([shm]d[a-z]?[0-9]*)" />
+    <dev-constraints path="/dev/"
+     pattern-allow="^([shm]d[a-z]?[0-9]*)" pattern-disallow="^\.udev" />
     <source s="dev" />
    </block-devices>
 
