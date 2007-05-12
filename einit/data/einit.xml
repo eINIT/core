@@ -190,12 +190,6 @@
    <tty-panic dev="/dev/tty8" command="/sbin/agetty 38400 tty8" restart="yes" PANIC="yes" />
   </tty>
 
-  <video>
-   <intel>
-    <resolution x="1280" y="1024" bpp="32" mode="5c" />
-   </intel>
-  </video>
-
 <!-- not much of this is implemented, yet -->
   <compatibility>
    <sysv utmp="yes" wtmp="yes">
