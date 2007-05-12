@@ -13,14 +13,18 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml/network
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/conf.d
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/*.xml ${DESTDIR}/${LIBDIR}/modules-xml
-	${INSTALL} ${IPARAM} -m 0644 conf.d/*.xml ${DESTDIR}/${ETCDIR}/conf.d
+	for fname in conf.d/*.xml; do if [ ! -e "${ETCDIR}/$${fname}" ]; then ${INSTALL} ${IPARAM} -m 0644 $${fname} ${DESTDIR}/${ETCDIR}/conf.d; elif [ -n "${DESTDIR}" ]; then ${INSTALL} ${IPARAM} -m 0644 "${ETCDIR}/$${fname}" ${DESTDIR}/${ETCDIR}/conf.d; fi; done
+	${INSTALL} ${IPARAM} -m 0644 conf.d/*.xml ${DESTDIR}/${LIBDIR}/defaults/conf.d
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/network/*.xml ${DESTDIR}/${LIBDIR}/modules-xml/network
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	
-	if test -e ${ETCDIR}/local.xml; then ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}/local.xml.example; else ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}; fi
-	if test -e ${ETCDIR}/modes.xml; then ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${ETCDIR}/modes.xml.example; else ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${ETCDIR}; fi
-	${INSTALL} ${IPARAM} -m 0644 fstab.xml.example ${DESTDIR}/${ETCDIR}/fstab.xml.example
+	if test -e ${ETCDIR}/local.xml; then ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${LIBDIR}/defaults/local.xml; else ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}; fi
+	if test -e ${ETCDIR}/modes.xml; then ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${LIBDIR}/defaults/modes.xml; else ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${ETCDIR}; fi
+	${INSTALL} ${IPARAM} -m 0644 fstab.xml.example ${DESTDIR}/${LIBDIR}/defaults/fstab.xml
 	if test -e ${ETCDIR}/fstab.xml; then if test -n "${DESTDIR}"; then cp ${ETCDIR}/fstab.xml ${DESTDIR}/${ETCDIR}/fstab.xml; fi else ${INSTALL} ${IPARAM} -m 0644 fstab.xml ${DESTDIR}/${ETCDIR}; fi
 	for module in `ls modules-xml`; do mod=`echo $${module} | sed 's/.xml//g'`; ln -sf ../../lib/einit/scripts/einit.d_erc.sh ${DESTDIR}/${ETCXDIR}/einit.d/$${mod}; done
+	ln -sfn ../../lib/einit/defaults ${DESTDIR}/${ETCDIR}/defaults
