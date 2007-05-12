@@ -160,8 +160,10 @@ void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_st
  tnc.statusline = statusline;
  tnc.status = status;
  tnc.seqid = seqid;
- if (message)
+ if (message) {
   tnc.message = estrdup (message);
+  strtrim (tnc.message);
+ }
  tnc.ctime = ctime;
  tnc.warnings = warnings;
 
