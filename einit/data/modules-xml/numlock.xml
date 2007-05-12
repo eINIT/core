@@ -2,18 +2,29 @@
  <shell id="shell-numlock"
   name="Enable numlock in terminal (numlock)"
   provides="numlock"
-  requires="tty:mount-local"
-  enable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular')
-          [[ -d /dev/vc ]] &amp;&amp; tty_dev=/dev/vc/ || tty_dev=/dev/tty
-          for tty_num in $(seq 1 &quot;${tty_max}&quot;) ; do
-                setleds -D +num &lt; ${tty_dev}${tty_num} &amp;&gt; /dev/null
-          done
-          unset tty_max tty_num tty_dev"
-  disable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular')
-           [[ -d /dev/vc ]] &amp;&amp; tty_dev=/dev/vc/ || tty_dev=/dev/tty
-           for tty_num in $(seq 1 &quot;${tty_max}&quot;) ; do
-                 setleds -D +num &lt; ${tty_dev}${tty_num} &amp;&gt; /dev/null
-           done
-           unset tty_max tty_num tty_dev" 
+  requires="tty:mount-system"
+  enable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular') ;
+          tty_list=$(seq 1 ${tty_max}) ;
+          if [ -d /dev/vc ] ; then tty_dev=/dev/vc/ ; else tty_dev=/dev/tty ; fi ;
+          for tty_num in ${tty_list} ; do
+          	setleds -D +num &lt; ${tty_dev}${tty_num} ;
+          done ;
+          if [[ $? == '0' ]] ; then
+          	echo 'feedback|notice|numlock enabled on ttys '${tty_list} ;
+          else
+          	echo 'feedback|error|failed to enable numlock on ttys '${tty_list} ;
+          fi"
+  disable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular') ;
+           tty_list=$(seq 1 ${tty_max}) ;
+           if [ -d /dev/vc ] ; then tty_dev=/dev/vc/ ; else tty_dev=/dev/tty ; fi ;
+           for tty_num in ${tty_list} ; do
+                 setleds -D -num &lt; ${tty_dev}${tty_num} ;
+           done ;
+           if [[ $? == '0' ]] ; then
+                 echo 'feedback|notice|numlock disabled on ttys '${tty_list} ;
+           else
+                 echo 'feedback|error|failed to disable numlock on ttys '${tty_list} ;
+           fi"
   restart="no" />
 </einit>
+
