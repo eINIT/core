@@ -674,8 +674,8 @@ int mod_modaction (char **argv) {
  struct mloadplan *plan;
  if (!argv || (argc != 2)) return -1;
 
- if (strmatch (argv[1], "enable")) task = einit_module_enable;
- else if (strmatch (argv[1], "disable")) task = einit_module_disable;
+ if (strmatch (argv[1], "enable") || strmatch (argv[1], "start")) task = einit_module_enable;
+ else if (strmatch (argv[1], "disable") || strmatch (argv[1], "stop")) task = einit_module_disable;
  else {
   struct lmodule **tm = NULL;
   uint32_t r = 0;
