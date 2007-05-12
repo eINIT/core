@@ -3,8 +3,8 @@
   name="Local"
   provides="local"
   after=".*"
-  enable="source ${configuration_system_exec_envfile_base}/local.start"
-  disable="source ${configuration_system_exec_envfile_base}/local.stop"
+  enable="source ${configuration_system_exec_envfile_base}/local.start; /bin/true"
+  disable="source ${configuration_system_exec_envfile_base}/local.stop; /bin/true"
   restart="no"
   variables="configuration-system-exec-envfile-base" />
 </einit>
