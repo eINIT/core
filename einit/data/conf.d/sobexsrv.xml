@@ -1,0 +1,5 @@
+<!-- Scripting/Secure OBEX Server options -->
+
+<einit prefix="configuration-services">
+ <sobexsrv directory="/var/spool/sobexsrv" options="" />
+</einit>
