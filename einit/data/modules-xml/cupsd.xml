@@ -1,9 +1,9 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-cupsd"
-  name="CUPS (Common Unix Printing System)"
+  name="Common Unix Printing System Daemon (cupsd)"
   provides="cupsd"
-  requires="net-lo:mount-critical"
-  prepare="[ ! -d /var/log/cups ] &amp;&amp; mkdir /var/log/cups; /bin/true"
+  requires="network-minimal:mount-critical"
+  prepare="if [ ! -d /var/log/cups ]; then mkdir /var/log/cups; fi; /bin/true"
   command="/usr/sbin/cupsd -F"
   restart="yes"
   need-files="/usr/sbin/cupsd" />
