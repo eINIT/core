@@ -60,6 +60,7 @@
    <kern-alsa s="shell-kern-audio-alsa" />
 <!-- use /etc/modules.autoload.d/kernel-2.6 to autoload modules: -->
    <kern-arbitrary s="shell-kern-module-autoload.d" />
+   <antivirus s="shell-clamd" />
   </prefer>
 
   <alias>
