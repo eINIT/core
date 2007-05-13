@@ -2,7 +2,7 @@
  <daemon id="daemon-entranced"
   name="EntranceD"
   provides="x11:displaymanager"
-  requires="mount-critical:fqdn"
+  requires="mount-critical:network-minimal"
   command="/usr/sbin/entranced -nodaemon"
   restart="yes"
   DISPLAY=":0.0"
