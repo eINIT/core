@@ -4,7 +4,7 @@
   provides="sobexsrv"
   requires="mount-critical:bluetooth-hci:bluetooth-sdp"
   user="sobexsrv"
-  command="sobexsrv -l ${configuration_bluetooth_sobexsrv_options} -s 2 -IRS -r ${configuration_bluetooth_sobexsrv_directory} -d 2&gt; /dev/null"
+  command="sobexsrv -l ${configuration_services_sobexsrv_options} -s 2 -IRS -r ${configuration_services_sobexsrv_directory} -d 2&gt; /dev/null"
   restart="yes"
-  variables="configuration-bluetooth-sobexsrv/.*" />
+  variables="configuration-services-sobexsrv/.*" />
 </einit>

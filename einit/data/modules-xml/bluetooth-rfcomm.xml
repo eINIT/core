@@ -3,6 +3,7 @@
   name="Bluetooth (RFCOMM)"
   provides="bluetooth-rfcomm"
   requires="mount-local:kern-bluetooth:bluetooth-hci"
-  enable="/usr/bin/rfcomm -f /etc/bluetooth/rfcomm.conf bind all"
-  disable="/usr/bin/rfcomm release all" />
+  enable="/usr/bin/rfcomm -f ${configuration_services_bluetooth_rfcomm_file} bind all"
+  disable="/usr/bin/rfcomm release all"
+  variables="configuration-services-bluetooth-rfcomm/.*" />
 </einit>

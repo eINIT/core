@@ -171,11 +171,6 @@
    <alsa-mixer file="/etc/asound.state" />
   </audio>
 
-  <bluetooth>
-   <hidd options="" />
-   <sobexsrv directory="/var/spool/sobexsrv"/>
-  </bluetooth>
-
   <tty>
    <manage-utmp b="true" />
 
@@ -236,9 +231,8 @@
    <fsck-command s="pexec-options no-pipe; /sbin/fsck -a -T -t %1$s %2$s" />
 
    <block-devices>
-    <constraints path="/dev/"
+    <dev-constraints path="/dev/"
      pattern-allow="^([shm]d[a-z]?[0-9]*)" pattern-disallow="^\.udev" />
-    <dev-constraints s="/dev/([shm]d[a-z]?[0-9]*)"/>
     <source s="dev" />
    </block-devices>
 

@@ -3,8 +3,8 @@
   name="Bluetooth (HIDd)"
   provides="bluetooth-hid"
   requires="mount-critical:kern-bluetooth:bluetooth-hci"
-  command="/usr/bin/hidd ${configuration_bluetooth_hidd_options} --server -n"
+  command="/usr/bin/hidd ${configuration_services_bluetooth_hid_options} --server -n"
   restart="yes"
-  variables="configuration-bluetooth-hidd/options"
+  variables="configuration-services-bluetooth-hid/.*"
   need-files="/usr/bin/hidd" />
 </einit>
