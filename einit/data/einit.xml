@@ -254,7 +254,6 @@
    <hwclock s="--utc" />
   </program-options>
 
-  <distccd listen="0.0.0.0" allow="192.168.0.0/24" port="3632" nice="15" />
  </configuration>
 
  <information>
