@@ -247,10 +247,6 @@
    <modprobe s="/sbin/modprobe" with-env="/sbin/modprobe ${module}" />
   </command>
 
-  <program-options>
-   <hwclock s="--utc" />
-  </program-options>
-
  </configuration>
 
  <information>

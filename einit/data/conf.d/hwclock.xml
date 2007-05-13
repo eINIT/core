@@ -1,0 +1,4 @@
+<einit prefix="configuration-services">
+ <!-- HWClock options -->
+ <hwclock options="--utc" />
+</einit>
