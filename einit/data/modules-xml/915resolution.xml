@@ -3,7 +3,13 @@
   name="Resolution (Intel)"
   provides="video-intel-resolution"
   requires="mount-critical"
-  enable="915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null; /bin/true"
+  enable="echo 'feedback|notice|Setting up Intel resolution...';
+          915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null;
+          if [[ $? == '0' ]]; then
+          	echo -n ' OK';
+          else
+          	echo 'feedback|error|Intel resolution failed!';
+          fi"
   disable="/bin/true"
   variables="configuration-services-video-intel-resolution/.*" />
 </einit>
