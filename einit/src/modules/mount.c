@@ -4,6 +4,7 @@
  *
  *  Created by Magnus Deininger on 07/06/2006.
  *  Renamed from common-mount.c on 11/10/2006.
+ *  Redesigned on 12/05/2007
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -107,68 +108,71 @@ module_register(einit_mount_self);
 
 #endif
 
+#if 1
+
+
 char *provides_mountlocal[] = {"mount-local", NULL};
 char *requires_mountlocal[] = {"mount-system", "mount-critical", NULL};
 struct smodule sm_mountlocal = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= einit_module_generic,
-	.name		= "mount (local)",
-	.rid		= "einit-mount-local",
-    .si           = {
-        .provides = provides_mountlocal,
-        .requires = requires_mountlocal,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "mount (local)",
+ .rid		= "einit-mount-local",
+ .si           = {
+  .provides = provides_mountlocal,
+  .requires = requires_mountlocal,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 char *provides_mountremote[] = { "mount-remote", NULL};
 char *requires_mountremote[] = { "mount-system", "network", NULL};
 char *after_mountremote[] = { "portmap", NULL};
 struct smodule sm_mountremote = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= einit_module_generic,
-	.name		= "mount (remote)",
-	.rid		= "einit-mount-remote",
-    .si           = {
-        .provides = provides_mountremote,
-        .requires = requires_mountremote,
-        .after    = after_mountremote,
-        .before   = NULL
-    }
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "mount (remote)",
+ .rid		= "einit-mount-remote",
+ .si           = {
+  .provides = provides_mountremote,
+  .requires = requires_mountremote,
+  .after    = after_mountremote,
+  .before   = NULL
+ }
 };
 
 char *provides_system[] = {"mount-system", NULL};
 struct smodule sm_system = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= einit_module_generic,
-	.name		= "Device Mounter ( mount-system )",
-	.rid		= "einit-mount-system",
-    .si           = {
-        .provides = provides_system,
-        .requires = NULL,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "Device Mounter ( mount-system )",
+ .rid		= "einit-mount-system",
+ .si           = {
+  .provides = provides_system,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 char *provides_critical[] = {"mount-critical", NULL};
 char *requires_critical[] = {"mount-system", NULL};
 struct smodule sm_critical = {
-	.eiversion	= EINIT_VERSION,
-	.version	= 1,
-	.mode		= einit_module_generic,
-	.name		= "Device Mounter ( mount-critical )",
-	.rid		= "einit-mount-critical",
-    .si           = {
-        .provides = provides_critical,
-        .requires = requires_critical,
-        .after    = NULL,
-        .before   = NULL
-    }
+ .eiversion	= EINIT_VERSION,
+ .version	= 1,
+ .mode		= einit_module_generic,
+ .name		= "Device Mounter ( mount-critical )",
+ .rid		= "einit-mount-critical",
+ .si           = {
+  .provides = provides_critical,
+  .requires = requires_critical,
+  .after    = NULL,
+  .before   = NULL
+ }
 };
 
 char *provides_sysfs[] = {"mount-sysfs", NULL};
@@ -270,16 +274,16 @@ char *defaultfilesystems[] = {"linux", NULL};
 char *fsck_command = NULL;
 
 struct mount_control_block mcb = {
-	 .blockdevices		= NULL,
-	 .fstab			= NULL,
-	 .filesystems		= NULL,
-	 .add_block_device	= add_block_device,
-	 .add_fstab_entry	= add_fstab_entry,
-	 .add_mtab_entry	= add_mtab_entry,
-	 .add_filesystem	= add_filesystem,
-	 .update_options	= mount_update_metadata + mount_update_block_devices + mount_update_fstab + mount_update_mtab,
-	 .critical		= NULL,
-	 .noumount		= NULL
+ .blockdevices		= NULL,
+ .fstab			= NULL,
+ .filesystems		= NULL,
+ .add_block_device	= add_block_device,
+ .add_fstab_entry	= add_fstab_entry,
+ .add_mtab_entry	= add_mtab_entry,
+ .add_filesystem	= add_filesystem,
+ .update_options	= mount_update_metadata + mount_update_block_devices + mount_update_fstab + mount_update_mtab,
+ .critical		= NULL,
+ .noumount		= NULL
 };
 
 /* function declarations */
@@ -308,11 +312,11 @@ char *generate_legacy_mtab (struct mount_control_block *);
    if (mtabfile) {\
     eputs (tmpmtab, mtabfile);\
     efclose (mtabfile);\
-   }\
+}\
 \
    free (tmpmtab);\
-  }\
- }\
+}\
+}\
 }
 
 
@@ -328,11 +332,11 @@ int einit_mount_cleanup (struct lmodule *this) {
  while (ucur) {
   if (ucur->value) {
 /*   if (((struct fstab_entry *)(ucur->value))->mountpoint)
-    free (((struct fstab_entry *)(ucur->value))->mountpoint);
+   free (((struct fstab_entry *)(ucur->value))->mountpoint);
    if (((struct fstab_entry *)(ucur->value))->device)
-    free (((struct fstab_entry *)(ucur->value))->device);
+   free (((struct fstab_entry *)(ucur->value))->device);
    if (((struct fstab_entry *)(ucur->value))->fs)
-    free (((struct fstab_entry *)(ucur->value))->fs);*/
+   free (((struct fstab_entry *)(ucur->value))->fs);*/
    if (((struct fstab_entry *)(ucur->value))->before_mount)
     free (((struct fstab_entry *)(ucur->value))->before_mount);
    if (((struct fstab_entry *)(ucur->value))->after_mount)
@@ -431,7 +435,7 @@ unsigned char find_block_devices_recurse_path (char *path) {
 #ifdef POSIXREGEX
     if (S_ISBLK (statbuf.st_mode) && (!havedevpattern || !regexec (&devpattern, tmp, 0, NULL, 0)))
 #else
-    if (S_ISBLK (statbuf.st_mode))
+     if (S_ISBLK (statbuf.st_mode))
 #endif
     {
      add_block_device (tmp, 0, 0);
@@ -520,8 +524,8 @@ unsigned char forge_fstab_by_label (void *na) {
            mpoint = strcat (mpoint, "/media/");
            mpoint = strcat (mpoint, cur);
            break;
-          }
-          mpoint[i] = '/';
+              }
+              mpoint[i] = '/';
          }
         }
        }
@@ -552,15 +556,15 @@ unsigned char read_fstab_from_configuration (void *na) {
  uint32_t i;
  while ((node = cfg_findnode ("configuration-storage-fstab-node", 0, node))) {
   char *mountpoint = NULL,
-       *device = NULL,
-       *fs = NULL,
-       **options = NULL,
-       *before_mount = NULL,
-       *after_mount = NULL,
-       *before_umount = NULL,
-       *after_umount = NULL,
-       *manager = NULL,
-       **variables = NULL;
+  *device = NULL,
+  *fs = NULL,
+  **options = NULL,
+  *before_mount = NULL,
+  *after_mount = NULL,
+  *before_umount = NULL,
+  *after_umount = NULL,
+  *manager = NULL,
+  **variables = NULL;
   uint32_t mountflags = 0;
 
   if (node->arbattrs) {
@@ -691,7 +695,7 @@ struct stree *read_fsspec_file (char *file) {
    }
   }
   done_parsing_file:
-  efclose (fp);
+     efclose (fp);
  }
 
  return workstree;
@@ -784,16 +788,16 @@ void einit_mount_update (enum update_task task) {
 
 int einit_mount_scanmodules (struct lmodule *modchain) {
  struct lmodule *new,
-                *lm = modchain;
+ *lm = modchain;
  char doop = 1;
 
  while (lm) { if (lm->source && strmatch(lm->source, sm_mountlocal.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_mountlocal))) {
-   new->source = new->module->rid;
-   new->enable = (int (*)(void *, struct einit_event *))einit_mount_enable;
-   new->disable = (int (*)(void *, struct einit_event *))einit_mount_disable;
-   new->param = (void *)MOUNT_LOCAL;
-  }
+  new->source = new->module->rid;
+  new->enable = (int (*)(void *, struct einit_event *))einit_mount_enable;
+  new->disable = (int (*)(void *, struct einit_event *))einit_mount_disable;
+  new->param = (void *)MOUNT_LOCAL;
+ }
 
  doop = 1;
  lm = modchain;
@@ -886,10 +890,10 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
    (*mntflags) |= MS_NOSUID;
 #endif
   }/* else if (strmatch (options[fi], "nouser") || strmatch (options[fi], "group") || strmatch (options[fi], "auto") || strmatch (options[fi], "defaults")) {
-   notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
-  } else*/ if (strmatch (options[fi], "_netdev")) {
-   notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
-  } else
+  notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
+ } else*/ if (strmatch (options[fi], "_netdev")) {
+           notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
+ } else
 #endif
 
 #ifdef MS_NOATIME
@@ -900,80 +904,80 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
 
 #if 0
 #ifdef MS_NOTAIL
-  if (strmatch (options[fi], "notail")) (*mntflags) |= MS_NOTAIL;
-  else if (strmatch (options[fi], "tail")) (*mntflags) = ((*mntflags) & MS_NOTAIL) ? (*mntflags) ^ MS_NOTAIL : (*mntflags);
-  else
+   if (strmatch (options[fi], "notail")) (*mntflags) |= MS_NOTAIL;
+     else if (strmatch (options[fi], "tail")) (*mntflags) = ((*mntflags) & MS_NOTAIL) ? (*mntflags) ^ MS_NOTAIL : (*mntflags);
+     else
 #endif
 #endif
 
 #ifdef MS_NODEV
-  if (strmatch (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
+     if (strmatch (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
   else if (strmatch (options[fi], "dev")) (*mntflags) = ((*mntflags) & MS_NODEV) ? (*mntflags) ^ MS_NODEV : (*mntflags);
   else
 #endif
 
 #ifdef MS_NODIRATIME
-  if (strmatch (options[fi], "nodiratime")) (*mntflags) |= MS_NODIRATIME;
+   if (strmatch (options[fi], "nodiratime")) (*mntflags) |= MS_NODIRATIME;
   else if (strmatch (options[fi], "diratime")) (*mntflags) = ((*mntflags) & MS_NODIRATIME) ? (*mntflags) ^ MS_NODIRATIME : (*mntflags);
   else
 #endif
 
 #ifdef MS_NOEXEC
-  if (strmatch (options[fi], "noexec")) (*mntflags) |= MS_NOEXEC;
+   if (strmatch (options[fi], "noexec")) (*mntflags) |= MS_NOEXEC;
   else if (strmatch (options[fi], "exec")) (*mntflags) = ((*mntflags) & MS_NOEXEC) ? (*mntflags) ^ MS_NOEXEC : (*mntflags);
   else
 #endif
 
 #ifdef MS_NOSUID
-  if (strmatch (options[fi], "nosuid")) (*mntflags) |= MS_NOSUID;
+   if (strmatch (options[fi], "nosuid")) (*mntflags) |= MS_NOSUID;
   else if (strmatch (options[fi], "suid")) (*mntflags) = ((*mntflags) & MS_NOSUID) ? (*mntflags) ^ MS_NOSUID : (*mntflags);
   else
 #endif
 
 #ifdef MS_DIRSYNC
-  if (strmatch (options[fi], "dirsync")) (*mntflags) |= MS_DIRSYNC;
+   if (strmatch (options[fi], "dirsync")) (*mntflags) |= MS_DIRSYNC;
   else if (strmatch (options[fi], "nodirsync")) (*mntflags) = ((*mntflags) & MS_DIRSYNC) ? (*mntflags) ^ MS_DIRSYNC : (*mntflags);
   else
 #endif
 
 #ifdef MS_SYNCHRONOUS
-  if (strmatch (options[fi], "sync")) (*mntflags) |= MS_SYNCHRONOUS;
+   if (strmatch (options[fi], "sync")) (*mntflags) |= MS_SYNCHRONOUS;
   else if (strmatch (options[fi], "nosync")) (*mntflags) = ((*mntflags) & MS_SYNCHRONOUS) ? (*mntflags) ^ MS_SYNCHRONOUS : (*mntflags);
   else
 #endif
 
 #ifdef MS_MANDLOCK
-  if (strmatch (options[fi], "mand")) (*mntflags) |= MS_MANDLOCK;
+   if (strmatch (options[fi], "mand")) (*mntflags) |= MS_MANDLOCK;
   else if (strmatch (options[fi], "nomand")) (*mntflags) = ((*mntflags) & MS_MANDLOCK) ? (*mntflags) ^ MS_MANDLOCK : (*mntflags);
   else
 #endif
 
 #ifdef MS_RDONLY
-  if (strmatch (options[fi], "ro")) (*mntflags) |= MS_RDONLY;
+   if (strmatch (options[fi], "ro")) (*mntflags) |= MS_RDONLY;
   else if (strmatch (options[fi], "rw")) (*mntflags) = ((*mntflags) & MS_RDONLY) ? (*mntflags) ^ MS_RDONLY : (*mntflags);
   else
 #endif
 
 #ifdef MS_BIND
-  if (strmatch (options[fi], "bind")) (*mntflags) |= MS_BIND;
+   if (strmatch (options[fi], "bind")) (*mntflags) |= MS_BIND;
   else
 #endif
 
 #ifdef MS_REMOUNT
-  if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
+   if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
   else
 #endif
 
-  if (!ret) {
+   if (!ret) {
    uint32_t slen = strlen (options[fi])+1;
    ret = ecalloc (1, slen);
    memcpy (ret, options[fi], slen);
-  } else {
-   uint32_t fsdl = strlen(ret) +1, slen = strlen (options[fi])+1;
-   ret = erealloc (ret, fsdl+slen);
-   *(ret + fsdl -1) = ',';
-   memcpy (ret+fsdl, options[fi], slen);
-  }
+   } else {
+    uint32_t fsdl = strlen(ret) +1, slen = strlen (options[fi])+1;
+    ret = erealloc (ret, fsdl+slen);
+    *(ret + fsdl -1) = ',';
+    memcpy (ret+fsdl, options[fi], slen);
+   }
  }
 
  return ret;
@@ -1021,89 +1025,89 @@ int emount (char *mountpoint, struct einit_event *status) {
   } else
    fstype = NULL;
 
-  if (!fstype) fstype = "auto";
+   if (!fstype) fstype = "auto";
 
-  if (bdi && (bdi->status & device_status_dirty)) {
-   if (fsck_command) {
-    char tmp[BUFFERSIZE];
-    status->string = "filesystem dirty; running fsck";
-    status_update (status);
+   if (bdi && (bdi->status & device_status_dirty)) {
+    if (fsck_command) {
+     char tmp[BUFFERSIZE];
+     status->string = "filesystem dirty; running fsck";
+     status_update (status);
 
-    esprintf (tmp, BUFFERSIZE, fsck_command, fstype, de->key);
-    if (coremode != einit_mode_sandbox) {
-     pexec_v1 (tmp, NULL, NULL, status);
+     esprintf (tmp, BUFFERSIZE, fsck_command, fstype, de->key);
+     if (coremode != einit_mode_sandbox) {
+      pexec_v1 (tmp, NULL, NULL, status);
+     } else {
+      status->string = tmp;
+      status_update (status);
+     }
     } else {
-     status->string = tmp;
+     status->string = "WARNING: filesystem dirty, but no fsck command known";
      status_update (status);
     }
-   } else {
-    status->string = "WARNING: filesystem dirty, but no fsck command known";
-    status_update (status);
-   }
-  }
-
-  if (!source)
-   source = fstype;
-
-  if (strmatch (fstype, "auto"))
-   fstype = cfg_getstring ("configuration-storage-filesystem-guessing-order", NULL);
-
-  fstype_s = str2set (':', fstype);
-
-  mntflags = 0;
-  if (fse->options)
-   fsdata = options_string_to_mountflags (fse->options, &mntflags, mountpoint);
-
-  if (coremode != einit_mode_sandbox) {
-   if (fse->before_mount)
-    pexec_v1 (fse->before_mount, (const char **)fse->variables, NULL, status);
-  }
-
-  if (fstype_s) for (; fstype_s[fsts_i]; fsts_i++) {
-   fstype = fstype_s[fsts_i];
-
-   if (bdi && bdi->label)
-    esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
-   else
-    esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
-   status->string = verbosebuffer;
-   status_update (status);
-
-   fs_mount_function_name = emalloc (10+strlen (fstype));
-   *fs_mount_function_name = 0;
-   fs_mount_function_name = strcat (fs_mount_function_name, "fs-mount-");
-   fs_mount_function_name = strcat (fs_mount_function_name, fstype);
-
-   if (fs_mount_function_name) {
-    fs_mount_functions = function_find (fs_mount_function_name, 1, NULL);
-    free (fs_mount_function_name);
    }
 
-   if (fs_mount_functions && fs_mount_functions[0]) {
-    uint32_t j = 0;
-    for (; fs_mount_functions[j]; j++) {
-     mount_function = fs_mount_functions[j];
-     if (!mount_function (source, mountpoint, fstype, bdi, fse, status)) {
-      free (fs_mount_functions);
-      goto mount_success;
-     }
-    }
-    free (fs_mount_functions);
-   }
+   if (!source)
+    source = fstype;
+
+   if (strmatch (fstype, "auto"))
+    fstype = cfg_getstring ("configuration-storage-filesystem-guessing-order", NULL);
+
+   fstype_s = str2set (':', fstype);
+
+   mntflags = 0;
+   if (fse->options)
+    fsdata = options_string_to_mountflags (fse->options, &mntflags, mountpoint);
 
    if (coremode != einit_mode_sandbox) {
+    if (fse->before_mount)
+     pexec_v1 (fse->before_mount, (const char **)fse->variables, NULL, status);
+   }
+
+   if (fstype_s) for (; fstype_s[fsts_i]; fsts_i++) {
+    fstype = fstype_s[fsts_i];
+
+    if (bdi && bdi->label)
+     esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; label=%s; fs=%s]", mountpoint, source, bdi->label, fstype);
+    else
+     esprintf (verbosebuffer, BUFFERSIZE, "mounting %s [%s; fs=%s]", mountpoint, source, fstype);
+    status->string = verbosebuffer;
+    status_update (status);
+
+    fs_mount_function_name = emalloc (10+strlen (fstype));
+    *fs_mount_function_name = 0;
+    fs_mount_function_name = strcat (fs_mount_function_name, "fs-mount-");
+    fs_mount_function_name = strcat (fs_mount_function_name, fstype);
+
+    if (fs_mount_function_name) {
+     fs_mount_functions = function_find (fs_mount_function_name, 1, NULL);
+     free (fs_mount_function_name);
+    }
+
+    if (fs_mount_functions && fs_mount_functions[0]) {
+     uint32_t j = 0;
+     for (; fs_mount_functions[j]; j++) {
+      mount_function = fs_mount_functions[j];
+      if (!mount_function (source, mountpoint, fstype, bdi, fse, status)) {
+       free (fs_mount_functions);
+       goto mount_success;
+      }
+     }
+     free (fs_mount_functions);
+    }
+
+    if (coremode != einit_mode_sandbox) {
 // root node should only be remounted...
-    if (strmatch ("/", mountpoint)) goto attempt_remount;
+     if (strmatch ("/", mountpoint)) goto attempt_remount;
 #if defined(DARWIN) || defined(__FreeBSD__)
-    if (mount (source, mountpoint, mntflags, fsdata) == -1)
+     if (mount (source, mountpoint, mntflags, fsdata) == -1)
 #else
-    if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1)
+      if (mount (source, mountpoint, fstype, mntflags, fsdata) == -1)
 #endif
-    {
+     {
 #ifdef MS_REMOUNT
-     if (errno == EBUSY) {
+      if (errno == EBUSY) {
       attempt_remount:
-      status->string = "attempting to remount node instead of mounting";
+        status->string = "attempting to remount node instead of mounting";
       status_update (status);
 
       if (mount (source, mountpoint, fstype, MS_REMOUNT | mntflags, fsdata) == -1) {
@@ -1113,28 +1117,28 @@ int emount (char *mountpoint, struct einit_event *status) {
       }
       else
        status->string = "remounting node...";
-       status_update (status);
-     } else
+      status_update (status);
+      } else
 #else
      attempt_remount:
-     status->string = "should now try to remount node, but OS does not support this";
+       status->string = "should now try to remount node, but OS does not support this";
      status_update (status);
 #endif
      {
       mount_panic:
 
-      status->string = (char *)strerror(errno);
+        status->string = (char *)strerror(errno);
       status_update (status);
       if (fse->after_umount)
        pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
-       continue;
+      continue;
+     }
      }
     }
-   }
 
    mount_success:
 
-   fse->afs = fstype;
+     fse->afs = fstype;
    fse->adevice = source;
    fse->aflags = mntflags;
 
@@ -1154,11 +1158,11 @@ int emount (char *mountpoint, struct einit_event *status) {
    fse->status |= device_status_mounted;
 
    return status_ok;
-  }
+   }
 
 // we reach this if none of the attempts worked out
-  if (fstype_s) free (fstype_s);
-  return status_failed;
+   if (fstype_s) free (fstype_s);
+   return status_failed;
  } else {
   status->string = "nothing known about this mountpoint; bailing out.";
   status_update (status);
@@ -1201,72 +1205,72 @@ int eumount (char *mountpoint, struct einit_event *status) {
   retry++;
 
 #if defined(DARWIN) || defined(__FreeBSD__)
-   if (unmount (mountpoint, 0) != -1)
+  if (unmount (mountpoint, 0) != -1)
 #else
    if (umount (mountpoint) != -1)
 #endif
-   {
-    goto umount_ok;
-   } else {
-    struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = einit_pmo_additive},
-                          pcf = {.match = "files-below", .para = mountpoint, .match_options = einit_pmo_additive},
-                         *pcl[3] = { &pcc, &pcf, NULL };
+  {
+   goto umount_ok;
+  } else {
+   struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = einit_pmo_additive},
+   pcf = {.match = "files-below", .para = mountpoint, .match_options = einit_pmo_additive},
+   *pcl[3] = { &pcc, &pcf, NULL };
 
-    esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
-    errno = 0;
-    status->string = textbuffer;
-    status_update (status);
+   esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
+   errno = 0;
+   status->string = textbuffer;
+   status_update (status);
 
-    pekill (pcl);
+   pekill (pcl);
 #ifdef LINUX
-    if (retry >= 2) {
-     if (umount2 (mountpoint, MNT_FORCE) != -1) {
-      goto umount_ok;
-     } else {
-      esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
-      errno = 0;
-      status->string = textbuffer;
-      status_update (status);
-     }
+   if (retry >= 2) {
+    if (umount2 (mountpoint, MNT_FORCE) != -1) {
+     goto umount_ok;
+    } else {
+     esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
+     errno = 0;
+     status->string = textbuffer;
+     status_update (status);
+    }
 
-     if (fse) {
-      if (retry >= 3) {
-       if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-        esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+    if (fse) {
+     if (retry >= 3) {
+      if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
+       esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
+       errno = 0;
+       status->string = textbuffer;
+       status_update (status);
+       goto umount_fail;
+      } else {
+       if (umount2 (mountpoint, MNT_DETACH) == -1) {
+        esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
         errno = 0;
         status->string = textbuffer;
         status_update (status);
-        goto umount_fail;
+        goto umount_ok;
        } else {
-        if (umount2 (mountpoint, MNT_DETACH) == -1) {
-         esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
-         errno = 0;
-         status->string = textbuffer;
-         status_update (status);
-         goto umount_ok;
-        } else {
-         esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o and detached", mountpoint, retry);
-         status->string = textbuffer;
-         status_update (status);
-         goto umount_ok;
-        }
+        esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o and detached", mountpoint, retry);
+        status->string = textbuffer;
+        status_update (status);
+        goto umount_ok;
        }
       }
-     } else {
-      esprintf (textbuffer, BUFFERSIZE, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
-      status->string = textbuffer;
-      status_update (status);
-      goto umount_fail;
      }
+    } else {
+     esprintf (textbuffer, BUFFERSIZE, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
+     status->string = textbuffer;
+     status_update (status);
+     goto umount_fail;
     }
-#else
-    goto umount_fail;
-#endif
    }
+#else
+   goto umount_fail;
+#endif
+  }
 
   umount_fail:
 
-  status->flag++;
+    status->flag++;
   if (retry > 3) {
    return status_failed;
   }
@@ -1274,19 +1278,19 @@ int eumount (char *mountpoint, struct einit_event *status) {
  }
 
  umount_ok:
- if (!(coremode & einit_mode_sandbox)) {
+   if (!(coremode & einit_mode_sandbox)) {
   if (fse && fse->after_umount)
    pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
- }
- if (fse && (fse->status & device_status_mounted))
-  fse->status ^= device_status_mounted;
+   }
+   if (fse && (fse->status & device_status_mounted))
+    fse->status ^= device_status_mounted;
 
- struct einit_event eem = evstaticinit (einit_mount_node_unmounted);
- eem.string = mountpoint;
- event_emit (&eem, einit_event_flag_broadcast);
- evstaticdestroy (eem);
+   struct einit_event eem = evstaticinit (einit_mount_node_unmounted);
+   eem.string = mountpoint;
+   event_emit (&eem, einit_event_flag_broadcast);
+   evstaticdestroy (eem);
 
- return status_ok;
+   return status_ok;
 }
 
 void add_block_device (char *devicefile, uint32_t major, uint32_t minor) {
@@ -1441,7 +1445,7 @@ void add_filesystem (char *name, char *options) {
     flags |= filesystem_capability_volatile;
    else if (strmatch (t[i], "network"))
     flags |= filesystem_capability_network;
-   }
+  }
   free (t);
  }
 
@@ -1461,8 +1465,8 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
  if (!ev || !ev->argv) return;
  if (ev->argv[0] && ev->argv[1]) {
 #ifdef DEBUG
- if (strmatch (ev->argv[0], "list")) {
-  if (strmatch (ev->argv[1], "fstab")) {
+  if (strmatch (ev->argv[0], "list")) {
+   if (strmatch (ev->argv[1], "fstab")) {
     struct stree *cur = ( mcb.fstab ? *(mcb.fstab->lbase) : NULL );
     struct fstab_entry *val = NULL;
 
@@ -1475,7 +1479,7 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
      }
      cur = streenext (cur);
     }
-  } else if (strmatch (ev->argv[1], "block-devices")) {
+   } else if (strmatch (ev->argv[1], "block-devices")) {
     struct stree *cur = mcb.blockdevices;
     struct bd_info *val = NULL;
 
@@ -1491,108 +1495,108 @@ void einit_mount_mount_ipc_handler(struct einit_event *ev) {
    }
   } else
 #endif
-  if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
-/* error checking... */
-   char **tmpset, *tmpstring;
+   if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
+    /* error checking... */
+    char **tmpset, *tmpstring;
 
-   ev->implemented = 1;
+    ev->implemented = 1;
 
-   if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
-    eputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", ev->output);
-    ev->ipc_return++;
-   } else {
-    tmpset = str2set(':', tmpstring);
+    if (!(tmpstring = cfg_getstring("configuration-storage-fstab-source", NULL))) {
+     eputs (" * configuration variable \"configuration-storage-fstab-source\" not found.\n", ev->output);
+     ev->ipc_return++;
+    } else {
+     tmpset = str2set(':', tmpstring);
 
-    if (inset ((const void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
-     if (!(mcb.update_options & mount_update_metadata)) {
-      eputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", ev->output);
+     if (inset ((const void **)tmpset, (void *)"label", SET_TYPE_STRING)) {
+      if (!(mcb.update_options & mount_update_metadata)) {
+       eputs (" * fstab-source \"label\" to be used, but optional update-step \"metadata\" not enabled.\n", ev->output);
+       ev->ipc_return++;
+      }
+      if (!(mcb.update_options & mount_update_block_devices)) {
+       eputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", ev->output);
+       ev->ipc_return++;
+      }
+     }
+
+     if (!inset ((const void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
+      eputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", ev->output);
       ev->ipc_return++;
      }
+
+     free (tmpset);
+    }
+
+    if (mcb.update_options & mount_update_metadata) {
      if (!(mcb.update_options & mount_update_block_devices)) {
-      eputs (" * fstab-source \"label\" to be used, but optional update-step \"block-devices\" not enabled.\n", ev->output);
+      eputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", ev->output);
       ev->ipc_return++;
      }
+    } else {
+     eputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", ev->output);
     }
 
-    if (!inset ((const void **)tmpset, (void *)"configuration", SET_TYPE_STRING)) {
-     eputs (" * fstab-source \"configuration\" disabled! In 99.999% of all cases, you don't want to do that!\n", ev->output);
+    if (!mcb.fstab) {
+     eputs (" * your fstab is empty.\n", ev->output);
      ev->ipc_return++;
-    }
+    } else {
+     struct stree *tstree, *fstree;
+     if (!(tstree = streefind (mcb.fstab, "/", tree_find_first))) {
+      eputs (" * your fstab does not contain an entry for \"/\".\n", ev->output);
+      ev->ipc_return++;
+     } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
+      eputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", ev->output);
+      ev->ipc_return++;
+     } else if (strmatch ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
+      eputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", ev->output);
+      ev->ipc_return++;
+     }
 
-    free (tmpset);
-   }
+     tstree = mcb.fstab;
+     while (tstree) {
+      struct stat stbuf;
 
-   if (mcb.update_options & mount_update_metadata) {
-    if (!(mcb.update_options & mount_update_block_devices)) {
-     eputs (" * update-step \"metadata\" cannot be performed without update-step \"block-devices\".\n", ev->output);
-     ev->ipc_return++;
-    }
-   } else {
-    eputs (" * update-step \"metadata\" disabled; not a problem per-se, but this will prevent your filesystems from being automatically fsck()'d.\n", ev->output);
-   }
-
-   if (!mcb.fstab) {
-    eputs (" * your fstab is empty.\n", ev->output);
-    ev->ipc_return++;
-   } else {
-    struct stree *tstree, *fstree;
-    if (!(tstree = streefind (mcb.fstab, "/", tree_find_first))) {
-     eputs (" * your fstab does not contain an entry for \"/\".\n", ev->output);
-     ev->ipc_return++;
-    } else if (!(((struct fstab_entry *)(tstree->value))->device)) {
-     eputs (" * you have apparently forgotten to specify a device for your root-filesystem.\n", ev->output);
-     ev->ipc_return++;
-    } else if (strmatch ("/dev/ROOT", (((struct fstab_entry *)(tstree->value))->device))) {
-     eputs (" * you didn't edit your local.xml to specify your root-filesystem.\n", ev->output);
-     ev->ipc_return++;
-    }
-
-    tstree = mcb.fstab;
-    while (tstree) {
-     struct stat stbuf;
-
-     if (!(((struct fstab_entry *)(tstree->value))->fs) || strmatch ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
-      char tmpstr[BUFFERSIZE];
-      if (inset ((const void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
+      if (!(((struct fstab_entry *)(tstree->value))->fs) || strmatch ("auto", (((struct fstab_entry *)(tstree->value))->fs))) {
+       char tmpstr[BUFFERSIZE];
+       if (inset ((const void **)(((struct fstab_entry *)(tstree->value))->options), (void *)"bind", SET_TYPE_STRING)) {
 #ifdef LINUX
-       tstree = streenext (tstree);
-       continue;
+        tstree = streenext (tstree);
+        continue;
 #else
-       esprintf (tmpstr, BUFFERSIZE, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
+        esprintf (tmpstr, BUFFERSIZE, " * supposed to bind-mount %s, but this OS seems to lack support for this.\n", tstree->key);
 #endif
-       eputs (tmpstr, ev->output);
+        eputs (tmpstr, ev->output);
+        ev->ipc_return++;
+       }
+      }
+
+      if (!(((struct fstab_entry *)(tstree->value))->device)) {
+       if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & filesystem_capability_volatile)) {
+        eprintf (ev->output, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
+        ev->ipc_return++;
+       }
+      } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || (mcb.filesystems && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & filesystem_capability_volatile) && !((uintptr_t)fstree->value & filesystem_capability_network)))) {
+       eprintf (ev->output, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
        ev->ipc_return++;
       }
-     }
 
-     if (!(((struct fstab_entry *)(tstree->value))->device)) {
-      if ((((struct fstab_entry *)(tstree->value))->fs) && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & filesystem_capability_volatile)) {
-       eprintf (ev->output, " * no device specified for fstab-node \"%s\", and filesystem does not have the volatile-attribute.\n", tstree->key);
-       ev->ipc_return++;
-      }
-     } else if ((stat ((((struct fstab_entry *)(tstree->value))->device), &stbuf) == -1) && (!(((struct fstab_entry *)(tstree->value))->fs) || (mcb.filesystems && (fstree = streefind (mcb.filesystems, (((struct fstab_entry *)(tstree->value))->fs), tree_find_first)) && !((uintptr_t)fstree->value & filesystem_capability_volatile) && !((uintptr_t)fstree->value & filesystem_capability_network)))) {
-      eprintf (ev->output, " * cannot stat device \"%s\" from node \"%s\", the error was \"%s\".\n", (((struct fstab_entry *)(tstree->value))->device), tstree->key, strerror (errno));
-      ev->ipc_return++;
-     }
+      if (((struct fstab_entry *)(tstree->value))->options) {
+       unsigned long tmpmnt = 0;
+       char *xtmp = options_string_to_mountflags ((((struct fstab_entry *)(tstree->value))->options), &tmpmnt, (((struct fstab_entry *)(tstree->value))->mountpoint));
 
-     if (((struct fstab_entry *)(tstree->value))->options) {
-      unsigned long tmpmnt = 0;
-      char *xtmp = options_string_to_mountflags ((((struct fstab_entry *)(tstree->value))->options), &tmpmnt, (((struct fstab_entry *)(tstree->value))->mountpoint));
+       if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && strmatch (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
+        eprintf (ev->output, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
+       }
 
-      if (((struct fstab_entry *)(tstree->value))->options[0] && !((struct fstab_entry *)(tstree->value))->options[1] && strchr (((struct fstab_entry *)(tstree->value))->options[0], ',') && strmatch (((struct fstab_entry *)(tstree->value))->options[0], xtmp)) {
-       eprintf (ev->output, " * node \"%s\": these options look fishy: \"%s\"\n   remember: in the xml files, you need to specify options separated using colons (:), not commas (,)!\n", ((struct fstab_entry *)(tstree->value))->mountpoint, xtmp);
+       if (xtmp) {
+        free (xtmp);
+       }
       }
 
-      if (xtmp) {
-       free (xtmp);
-      }
+      tstree = streenext (tstree);
      }
-
-     tstree = streenext (tstree);
     }
-   }
 
-  }
+   }
  }
 }
 
@@ -1626,17 +1630,17 @@ char *generate_legacy_mtab (struct mount_control_block *cb) {
 #ifdef MS_RDONLY
                fse->aflags & MS_RDONLY
 #else
-               0
+                 0
 #endif
-               ? "ro" : "rw", tset);
+                 ? "ro" : "rw", tset);
     else
      esprintf (tmp, BUFFERSIZE, "%s %s %s %s 0 0\n", fse->adevice, fse->mountpoint, fse->afs,
 #ifdef MS_RDONLY
                fse->aflags & MS_RDONLY
 #else
-               0
+                 0
 #endif
-			   ? "ro" : "rw");
+                 ? "ro" : "rw");
 
     ssize_t nlen = strlen(tmp);
 
@@ -1690,16 +1694,16 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
        if (p == MOUNT_LOCAL) {
         if ((uintptr_t)fsi->value & filesystem_capability_network) goto mount_skip;
        } else {
-         if (!((uintptr_t)fsi->value & filesystem_capability_network)) goto mount_skip;
+        if (!((uintptr_t)fsi->value & filesystem_capability_network)) goto mount_skip;
        }
       } else if (p == MOUNT_REMOTE) {
        goto mount_skip;
       }
      }
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
-    }
+         }
     mount_skip:
-    ha = streenext (ha);
+      ha = streenext (ha);
    }
    break;
   case MOUNT_SYSTEM:
@@ -1718,7 +1722,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
    return ret;
    break;
   case MOUNT_CRITICAL:
-/*   ret = emount ("/", status);*/
+   /*   ret = emount ("/", status);*/
    unlink ("/etc/mtab");
    update_real_mtab();
 
@@ -1764,13 +1768,13 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
 
   if (acand)
    for (c = 0; acand[c]; c++) {
-    candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
-    if (emount (acand[c], status) != status_ok)
-     status->flag++;
+   candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
+   if (emount (acand[c], status) != status_ok)
+    status->flag++;
    }
 
-  free (acand);
-  sc++;
+   free (acand);
+   sc++;
  }
 
  struct einit_event rev = evstaticinit(einit_mount_new_mount_level);
@@ -1820,33 +1824,33 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
      candidates = (char **)setadd ((void **)candidates, (void *)ha->key, SET_NOALLOC);
     }
     mount_skip:
-    ha = streenext (ha);
+      ha = streenext (ha);
    }
    break;
   case MOUNT_SYSTEM:
-   {
-    eumount ("/dev", status);
+  {
+   eumount ("/dev", status);
 #ifdef LINUX
-    eumount ("/sys", status);
-    eumount ("/proc", status);
+   eumount ("/sys", status);
+   eumount ("/proc", status);
 #endif
-    if (mcb.update_options & mount_update_block_devices) {
+   if (mcb.update_options & mount_update_block_devices) {
 //     status->string = "re-scanning block devices";
 //     status_update (status);
 // things go weird if this if enabled:
 //     update (UPDATE_BLOCK_DEVICES);
-    }
    }
+  }
 
 #ifdef LINUX
-   /* link /etc/mtab to /proc/mounts so that after / is r/o things are still up to date*/
-   unlink ("/etc/mtab");
-   symlink ("/proc/mounts", "/etc/mtab");
-   /* discard errors, they are irrelevant. */
-   errno = 0;
+  /* link /etc/mtab to /proc/mounts so that after / is r/o things are still up to date*/
+  unlink ("/etc/mtab");
+  symlink ("/proc/mounts", "/etc/mtab");
+  /* discard errors, they are irrelevant. */
+  errno = 0;
 #endif
 
-   return status_ok;
+  return status_ok;
 //   return status_ok;
   case MOUNT_CRITICAL:
    while (ha) {
@@ -1869,7 +1873,7 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
   char **acand;
 
   retry:
-  c = 0;
+    c = 0;
   sin = 0;
   acand = NULL;
 
@@ -1888,20 +1892,20 @@ int einit_mount_disable (enum mounttask p, struct einit_event *status) {
 
   if (acand)
    for (c = 0; acand[c]; c++) {
-    candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
-    if (eumount (acand[c], status) != status_ok)
-     status->flag++;
+   candidates = (char **)setdel ((void **)candidates, (void *)acand[c]);
+   if (eumount (acand[c], status) != status_ok)
+    status->flag++;
    }
 
-  free (acand);
-  sc--;
+   free (acand);
+   sc--;
  }
 
  update_real_mtab();
 
 /* if (p == MOUNT_CRITICAL) {
-  eumount ("/", status);
- }*/
+ eumount ("/", status);
+}*/
 
  return status_ok;
 }
@@ -1960,7 +1964,7 @@ int einit_mount_configure (struct lmodule *r) {
  thismodule->enable = (int (*)(void *, struct einit_event *))einit_mount_enable;
  thismodule->disable = (int (*)(void *, struct einit_event *))einit_mount_disable;
 
-/* pexec configuration */
+ /* pexec configuration */
  exec_configure (this);
 
  event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
@@ -1979,3 +1983,797 @@ int einit_mount_configure (struct lmodule *r) {
 
  return 0;
 }
+
+#else
+
+int emount (char *, struct einit_event *);
+int eumount (char *, struct einit_event *);
+
+void einit_mount_mount_ipc_handler(struct einit_event *);
+void einit_mount_mount_handler(struct einit_event *);
+void einit_mount_einit_event_handler(struct einit_event *);
+
+int einit_mount_scanmodules (struct lmodule *);
+int einit_mount_cleanup (struct lmodule *);
+
+void einit_mount_update_configuration ();
+
+unsigned char read_filesystem_flags_from_configuration (void *);
+
+void mount_add_filesystem (char *, char *);
+
+char *options_string_to_mountflags (char **, unsigned long *, char *);
+
+enum filesystem_capability mount_get_filesystem_options (char *);
+
+struct device_data **mounter_device_data = NULL;
+struct stree *mounter_dd_by_mountpoint = NULL;
+struct stree *mounter_dd_by_devicefile = NULL;
+
+char **mount_dont_umount = NULL;
+char **mount_critical = NULL;
+char **mount_system = NULL;
+char *mount_fsck_template = NULL;
+char *mount_mtab_file = NULL;
+enum mount_options mount_options;
+
+pthread_mutex_t
+ mount_fs_mutex = PTHREAD_MUTEX_INITIALIZER,
+ mount_device_data_mutex = PTHREAD_MUTEX_INITIALIZER,
+ mounter_dd_by_devicefile_mutex = PTHREAD_MUTEX_INITIALIZER,
+ mounter_dd_by_mountpoint_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct stree *mount_filesystems = NULL;
+
+unsigned char read_filesystem_flags_from_configuration (void *na) {
+ struct cfgnode *node = NULL;
+ uint32_t i;
+ char *id, *flags;
+ while ((node = cfg_findnode ("information-filesystem-type", 0, node))) {
+  if (node->arbattrs) {
+   id = NULL;
+   flags = 0;
+   for (i = 0; node->arbattrs[i]; i+=2) {
+    if (strmatch (node->arbattrs[i], "id"))
+     id = node->arbattrs[i+1];
+    else if (strmatch (node->arbattrs[i], "flags"))
+     flags = node->arbattrs[i+1];
+   }
+   mount_add_filesystem (id, flags);
+  }
+ }
+ return 0;
+}
+
+void mount_add_filesystem (char *name, char *options) {
+ char **t = str2set (':', options);
+ uintptr_t flags = 0, i = 0;
+ if (t) {
+  for (; t[i]; i++) {
+   if (strmatch (t[i], "rw"))
+    flags |= filesystem_capability_rw;
+   else if (strmatch (t[i], "volatile"))
+    flags |= filesystem_capability_volatile;
+   else if (strmatch (t[i], "network"))
+    flags |= filesystem_capability_network;
+  }
+  free (t);
+ }
+
+ emutex_lock (&mount_fs_mutex);
+ if (mount_filesystems && streefind (mount_filesystems, name, tree_find_first)) {
+  emutex_unlock (&mount_fs_mutex);
+  return;
+ }
+
+ mount_filesystems = streeadd (mount_filesystems, name, (void *)flags, -1, NULL);
+ emutex_unlock (&mount_fs_mutex);
+}
+
+enum filesystem_capability mount_get_filesystem_options (char *name) {
+ enum filesystem_capability ret = filesystem_capability_rw;
+ struct stree *t;
+
+ emutex_lock (&mount_fs_mutex);
+ if ((t = streefind (mount_filesystems, name, tree_find_first))) {
+  ret = (enum filesystem_capability)t->value;
+ }
+ emutex_unlock (&mount_fs_mutex);
+
+ return ret;
+}
+
+char **mount_get_device_files () {
+ struct cfgnode *node = cfg_getnode ("configuration-storage-block-devices-constraints", NULL);
+
+ if (node) {
+  char **devices = readdirfilter(node, "/dev/", NULL, NULL, 1);
+
+  if (devices) {
+   uint32_t i = 0;
+
+   for (; devices[i]; i++) {
+    struct stat sbuf;
+
+    if (stat (devices[i], &sbuf) || !S_ISBLK (sbuf.st_mode)) {
+     devices = (char **)setdel ((void **)devices, (void *)devices[i]);
+    }
+   }
+  }
+
+  return devices;
+ }
+
+ return NULL;
+}
+
+void mount_update_device (struct device_data *d) {
+}
+
+void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags) {
+ struct stree *st = (dd->mountpoints ? streefind (dd->mountpoints, mountpoint, tree_find_first) : NULL);
+ struct mountpoint_data *mp = st ? st->value : ecalloc (1, sizeof (struct mountpoint_data));
+ char *device = dd->device;
+
+ mp->mountpoint = mountpoint;
+ mp->fs = fs ? fs : estrdup("auto");
+ mp->options = options;
+ mp->before_mount = before_mount;
+ mp->after_mount = after_mount;
+ mp->before_umount = before_umount;
+ mp->after_umount = after_umount;
+ if (manager) {
+  struct dexecinfo *dx = emalloc (sizeof (struct dexecinfo));
+  memset (dx, 0, sizeof (struct dexecinfo));
+
+  mp->manager = dx;
+  dx->command = manager;
+  dx->variables = variables;
+  dx->restart = 1;
+ }
+ mp->variables = variables;
+ mp->mountflags = mountflags;
+
+ mp->flatoptions = options_string_to_mountflags (mp->options, &(mp->mountflags), mountpoint);
+
+ if (st) {
+  eprintf (stderr, " >> have mountpoint_data node for %s, device %s: updating\n", mountpoint, device);
+ } else {
+  eprintf (stderr, " >> inserting new mountpoint_data node for %s, device %s\n", mountpoint, device);
+
+  dd->mountpoints = streeadd (dd->mountpoints, mountpoint, mp, SET_NOALLOC, mp);
+
+  emutex_lock (&mounter_dd_by_mountpoint_mutex);
+  mounter_dd_by_mountpoint =
+    streeadd (mounter_dd_by_mountpoint, mountpoint, dd, SET_NOALLOC, NULL);
+  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+ }
+}
+
+void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags) {
+ struct device_data *dd = NULL;
+ struct stree *t;
+
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
+ if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, mountpoint, tree_find_first))) {
+  dd = t->value;
+ }
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+
+ if (!dd && (device || (device = fs) || (device = "(none)"))) {
+  emutex_lock (&mounter_dd_by_devicefile_mutex);
+  if (mounter_dd_by_devicefile && (t = streefind (mounter_dd_by_devicefile, device, tree_find_first))) {
+   dd = t->value;
+  }
+ }
+ emutex_unlock (&mounter_dd_by_devicefile_mutex);
+
+ if (dd) {
+  mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
+ } else {
+  struct device_data *d = emalloc(sizeof(struct device_data));
+  uint32_t y = 0;
+
+  memset (d, 0, sizeof(struct device_data));
+
+  if (device || (device = fs) || (device = "(none)")) d->device = estrdup (device);
+
+  eprintf (stderr, " >> inserting new device_data node for %s, device %s\n", mountpoint, device);
+
+  d->device_status = device_status_has_medium | device_status_error_notint;
+
+  mounter_device_data = (struct device_data **)setadd ((void **)mounter_device_data, (void *)d, SET_NOALLOC);
+
+  for (y = 0; mounter_device_data[y]; y++);
+  if (y > 0) y--;
+
+  emutex_lock (&mounter_dd_by_devicefile_mutex);
+  mounter_dd_by_devicefile =
+   streeadd (mounter_dd_by_devicefile, d->device, mounter_device_data[y], SET_NOALLOC, NULL);
+  emutex_unlock (&mounter_dd_by_devicefile_mutex);
+
+  mount_add_update_fstab_data (d, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
+ }
+}
+
+void mount_update_fstab_nodes () {
+ struct cfgnode *node = NULL;
+ uint32_t i;
+ while ((node = cfg_findnode ("configuration-storage-fstab-node", 0, node))) {
+  char *mountpoint = NULL,
+  *device = NULL,
+  *fs = NULL,
+  **options = NULL,
+  *before_mount = NULL,
+  *after_mount = NULL,
+  *before_umount = NULL,
+  *after_umount = NULL,
+  *manager = NULL,
+  **variables = NULL;
+  uint32_t mountflags = 0;
+
+  if (node->arbattrs) {
+   for (i = 0; node->arbattrs[i]; i+=2) {
+    if (strmatch(node->arbattrs[i], "mountpoint"))
+     mountpoint = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "device"))
+     device = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "fs"))
+     fs = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "options"))
+     options = str2set (':', node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "before-mount"))
+     before_mount = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "after-mount"))
+     after_mount = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "before-umount"))
+     before_umount = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "after-umount"))
+     after_umount = estrdup (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "manager")) {
+     manager = estrdup (node->arbattrs[i+1]);
+    } else if (strmatch(node->arbattrs[i], "variables"))
+     variables = str2set (':', node->arbattrs[i+1]);
+   }
+
+   if (mountpoint) mount_add_update_fstab (mountpoint, device, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
+
+//   add_fstab_entry (mountpoint, device, fs, options, mountflags, before_mount, after_mount, before_umount, after_umount, manager, 1, variables);
+  }
+ }
+}
+
+void mount_update_devices () {
+ uint32_t i = 0;
+
+ char **devices = mount_get_device_files();
+
+ emutex_lock (&mount_device_data_mutex);
+
+ if (mounter_device_data) {
+  for (; mounter_device_data[i]; i++) {
+   if (devices)
+    devices = strsetdel (devices, mounter_device_data[i]->device);
+  }
+ }
+
+ if (devices) {
+  for (i = 0; devices[i]; i++) {
+   struct device_data *d = emalloc(sizeof(struct device_data));
+   uint32_t y = 0;
+
+   memset (d, 0, sizeof(struct device_data));
+   d->device = estrdup (devices[i]);
+   d->device_status = device_status_has_medium | device_status_error_notint;
+
+   mounter_device_data = (struct device_data **)setadd ((void **)mounter_device_data, (void *)d, SET_NOALLOC);
+
+   for (y = 0; mounter_device_data[y]; y++);
+   if (y > 0) y--;
+
+   emutex_lock (&mounter_dd_by_devicefile_mutex);
+   mounter_dd_by_devicefile =
+    streeadd (mounter_dd_by_devicefile, devices[i], mounter_device_data[y], SET_NOALLOC, NULL);
+   emutex_unlock (&mounter_dd_by_devicefile_mutex);
+  }
+
+  free (devices);
+ }
+
+ if (mounter_device_data) {
+  for (i = 0; mounter_device_data[i]; i++) {
+   mount_update_device (mounter_device_data[i]);
+  }
+ }
+
+ mount_update_fstab_nodes ();
+
+ emutex_unlock (&mount_device_data_mutex);
+}
+
+void einit_mount_mount_ipc_handler(struct einit_event *ev) {
+}
+
+void einit_mount_mount_handler(struct einit_event *ev) {
+}
+
+void einit_mount_einit_event_handler(struct einit_event *ev) {
+ if ((ev->type == einit_core_configuration_update) || (ev->type == einit_core_module_list_update_complete)) {
+  einit_mount_update_configuration();
+ }
+}
+
+char *mount_mp_to_service_name (char *mp) {
+ if (strmatch (mp, "/"))
+  return estrdup ("fs-root");
+ else {
+  char *tmp = emalloc (4+strlen (mp));
+  uint32_t i = 0, j = 3;
+
+  tmp[0] = 'f';
+  tmp[1] = 's';
+  tmp[2] = '-';
+
+  for (; mp[i]; i++) {
+   if ((mp[i] == '/') && (i == 0)) continue;
+   if (mp[i] == '/') {
+    tmp[j] = '-';
+   } else {
+    tmp[j] = mp[i];
+   }
+   j++;
+  }
+
+  tmp[j] = 0;
+  j--;
+  for (; tmp[j] == '-'; j--) {
+   tmp[j] = 0;
+  }
+
+  return tmp;
+ }
+
+ return NULL;
+}
+
+int einit_mountpoint_configure (struct lmodule *tm) {
+ tm->enable = (int (*)(void *, struct einit_event *))emount;
+ tm->disable = (int (*)(void *, struct einit_event *))eumount;
+
+ tm->param = tm->module->rid + 6;
+
+ tm->source = estrdup(tm->module->rid);
+
+ return 0;
+}
+
+void mount_add_update_group (char *groupname, char **elements, char *seq) {
+ struct cfgnode newnode;
+ char tmp[BUFFERSIZE];
+
+ esprintf (tmp, BUFFERSIZE, "services-alias-%s", groupname);
+
+ struct cfgnode *onode = cfg_getnode (tmp, NULL);
+ if (onode) {
+  char *jele = NULL;
+  if (!onode->source || !strmatch (onode->source, self->rid)) {
+   uint32_t i = 0;
+
+   for (; onode->arbattrs[i]; i+=2) {
+    if (strmatch (onode->arbattrs[i], "group")) {
+     char **nele = str2set (':', onode->arbattrs[i+1]);
+
+     nele = (char **)setcombine_nc ((void **)nele, (const void **)elements, SET_TYPE_STRING);
+
+     jele = set2str (':', (const char **)nele);
+
+     break;
+    }
+   }
+  }
+
+  if (!jele) {
+   jele = set2str (':', (const char **)elements);
+  }
+
+  char **oarb = onode->arbattrs;
+  char **narb = NULL;
+
+  narb = (char **)setadd ((void **)narb, (void *)"group", SET_TYPE_STRING);
+  narb = (char **)setadd ((void **)narb, (void *)jele, SET_TYPE_STRING);
+  narb = (char **)setadd ((void **)narb, (void *)"seq", SET_TYPE_STRING);
+  narb = (char **)setadd ((void **)narb, (void *)seq, SET_TYPE_STRING);
+
+  onode->arbattrs = narb;
+
+  if (oarb) {
+   free (oarb);
+  }
+  free (jele);
+
+ } else {
+  char *jele = set2str (':', (const char **)elements);
+  memset (&newnode, 0, sizeof(struct cfgnode));
+
+  newnode.id = estrdup (tmp);
+  newnode.source = self->rid;
+  newnode.type = einit_node_regular;
+
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"group", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)jele, SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"seq", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)seq, SET_TYPE_STRING);
+
+  cfg_addnode (&newnode);
+  free (jele);
+ }
+}
+
+int einit_mount_scanmodules (struct lmodule *ml) {
+ struct stree *s = NULL;
+ char **scritical = NULL, **ssystem = NULL, **slocal = NULL, **sremote = NULL;
+
+ scritical = (char **)setadd ((void **)scritical, (void *)"mount-system", SET_TYPE_STRING);
+ slocal = (char **)setadd ((void **)slocal, (void *)"mount-critical", SET_TYPE_STRING);
+ sremote = (char **)setadd ((void **)sremote, (void *)"mount-critical", SET_TYPE_STRING);
+
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
+
+ s = mounter_dd_by_mountpoint;
+ while (s) {
+  char *servicename = mount_mp_to_service_name(s->key);
+  char tmp[BUFFERSIZE];
+  char **after = NULL;
+  char *tmpx = NULL;
+  char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;
+  uint32_t r = 0;
+  struct lmodule *lm = ml;
+
+  for (; tmp_split[r]; r++);
+
+  for (r--; tmp_split[r] && r > 0; r--) {
+   tmp_split[r] = 0;
+   char *comb = set2str ('-', (const char **)tmp_split);
+
+   tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
+  }
+  if (tmpxt) {
+   tmpx = set2str ('|', (const char **)tmpxt);
+  }
+
+  free (tmp_split);
+  free (tmpxt);
+
+  if (tmpx) {
+   esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+   after = (char **)setadd ((void **)after, (void *)tmp, SET_TYPE_STRING);
+  }
+
+/*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
+
+  struct smodule *newmodule = emalloc (sizeof (struct smodule));
+  memset (newmodule, 0, sizeof (struct smodule));
+
+  if (inset ((const void **)mount_system, s->key, SET_TYPE_STRING)) {
+   ssystem = (char **)setadd ((void **)ssystem, (void *)servicename, SET_TYPE_STRING);
+  } else if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING)) {
+   scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
+  } else {
+   struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
+   char ad = 0;
+
+   if (t) {
+    struct mountpoint_data *mp = t->value; 
+
+    if (inset ((const void **)mp->options, "critical", SET_TYPE_STRING)) {
+     scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
+     ad = 1;
+    }
+
+    if (inset ((const void **)mp->options, "system", SET_TYPE_STRING)) {
+     ssystem = (char **)setadd ((void **)ssystem, (void *)servicename, SET_TYPE_STRING);
+     ad = 1;
+    }
+   }
+
+   if (!ad) {
+    enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
+
+    if (capa & filesystem_capability_network) {
+     sremote = (char **)setadd ((void **)sremote, (void *)servicename, SET_TYPE_STRING);
+     ad = 1;
+    }
+   }
+
+   if (!ad) {
+    slocal = (char **)setadd ((void **)slocal, (void *)servicename, SET_TYPE_STRING);
+   }
+  }
+
+  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+
+  while (lm) {
+   if (lm->source && strmatch(lm->source, tmp)) {
+    struct smodule *sm = (struct smodule *)lm->module;
+    sm->si.after = after;
+
+    lm = mod_update (lm);
+
+    goto do_next;
+   }
+
+   lm = lm->next;
+  }
+
+  newmodule->configure = einit_mountpoint_configure;
+  newmodule->eiversion = EINIT_VERSION;
+  newmodule->eibuild = BUILDNUMBER;
+  newmodule->version = 1;
+  newmodule->mode = einit_module_generic;
+
+//  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+  newmodule->rid = estrdup (tmp);
+
+  newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, (void *)servicename, SET_TYPE_STRING);
+
+  esprintf (tmp, BUFFERSIZE, "Filesystem ( %s )", s->key);
+  newmodule->name = estrdup (tmp);
+
+  newmodule->si.after = after;
+
+  lm = mod_add (NULL, newmodule);
+
+  do_next:
+  s = s->next;
+ }
+
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+
+ mount_add_update_group ("mount-system", ssystem, "most");
+ mount_add_update_group ("mount-critical", scritical, "most");
+ mount_add_update_group ("mount-local", slocal, "most");
+ mount_add_update_group ("mount-remote", sremote, "most");
+
+ return 0;
+}
+
+struct device_data *mount_get_device_data (char *mountpoint, char *devicefile) {
+ struct device_data *dd = NULL;
+
+ if (mountpoint) {
+  emutex_lock (&mounter_dd_by_mountpoint_mutex);
+  if (mounter_dd_by_mountpoint) {
+   struct stree *t;
+
+   if ((t = streefind (mounter_dd_by_mountpoint, mountpoint, tree_find_first)))
+    dd = t->value;
+  }
+  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+ }
+
+ if (!dd && devicefile) {
+  emutex_lock (&mounter_dd_by_devicefile_mutex);
+  if (mounter_dd_by_devicefile) {
+   struct stree *t;
+
+   if ((t = streefind (mounter_dd_by_devicefile, devicefile, tree_find_first)))
+    dd = t->value;
+  }
+  emutex_unlock (&mounter_dd_by_devicefile_mutex);
+ }
+
+ return dd;
+}
+
+char *options_string_to_mountflags (char **options, unsigned long *mntflags, char *mountpoint) {
+ int fi = 0;
+ char *ret = NULL;
+
+ if (!options) return NULL;
+
+ for (; options[fi]; fi++) {
+#ifdef LINUX
+  if (strmatch (options[fi], "user") || strmatch (options[fi], "users")) {
+//   notice (6, "node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
+
+#ifdef MS_NOEXEC
+   (*mntflags) |= MS_NOEXEC;
+#endif
+#ifdef MS_NODEV
+   (*mntflags) |= MS_NODEV;
+#endif
+#ifdef MS_NOSUID
+   (*mntflags) |= MS_NOSUID;
+#endif
+  } else if (strmatch (options[fi], "owner")) {
+//   notice (6, "node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
+
+#ifdef MS_NODEV
+   (*mntflags) |= MS_NODEV;
+#endif
+#ifdef MS_NOSUID
+   (*mntflags) |= MS_NOSUID;
+#endif
+  }/* else if (strmatch (options[fi], "nouser") || strmatch (options[fi], "group") || strmatch (options[fi], "auto") || strmatch (options[fi], "defaults")) {
+  notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"%s\": it has no meaning for eINIT, you should remove it.\n", mountpoint, options[fi]);
+ } else*/ if (strmatch (options[fi], "_netdev")) {
+           notice (6, "node \"%s\": ignored unsupported/irrelevant mount-flag \"_netdev\": einit uses a table with filesystem data to find out if network access is required to mount a certain node, so you should rather modify that table than specify \"_netdev\".\n", mountpoint);
+ } else
+#endif
+
+#ifdef MS_NOATIME
+  if (strmatch (options[fi], "noatime")) (*mntflags) |= MS_NOATIME;
+  else if (strmatch (options[fi], "atime")) (*mntflags) = ((*mntflags) & MS_NOATIME) ? (*mntflags) ^ MS_NOATIME : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NODEV
+     if (strmatch (options[fi], "nodev")) (*mntflags) |= MS_NODEV;
+  else if (strmatch (options[fi], "dev")) (*mntflags) = ((*mntflags) & MS_NODEV) ? (*mntflags) ^ MS_NODEV : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NODIRATIME
+   if (strmatch (options[fi], "nodiratime")) (*mntflags) |= MS_NODIRATIME;
+  else if (strmatch (options[fi], "diratime")) (*mntflags) = ((*mntflags) & MS_NODIRATIME) ? (*mntflags) ^ MS_NODIRATIME : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NOEXEC
+   if (strmatch (options[fi], "noexec")) (*mntflags) |= MS_NOEXEC;
+  else if (strmatch (options[fi], "exec")) (*mntflags) = ((*mntflags) & MS_NOEXEC) ? (*mntflags) ^ MS_NOEXEC : (*mntflags);
+  else
+#endif
+
+#ifdef MS_NOSUID
+   if (strmatch (options[fi], "nosuid")) (*mntflags) |= MS_NOSUID;
+  else if (strmatch (options[fi], "suid")) (*mntflags) = ((*mntflags) & MS_NOSUID) ? (*mntflags) ^ MS_NOSUID : (*mntflags);
+  else
+#endif
+
+#ifdef MS_DIRSYNC
+   if (strmatch (options[fi], "dirsync")) (*mntflags) |= MS_DIRSYNC;
+  else if (strmatch (options[fi], "nodirsync")) (*mntflags) = ((*mntflags) & MS_DIRSYNC) ? (*mntflags) ^ MS_DIRSYNC : (*mntflags);
+  else
+#endif
+
+#ifdef MS_SYNCHRONOUS
+   if (strmatch (options[fi], "sync")) (*mntflags) |= MS_SYNCHRONOUS;
+  else if (strmatch (options[fi], "nosync")) (*mntflags) = ((*mntflags) & MS_SYNCHRONOUS) ? (*mntflags) ^ MS_SYNCHRONOUS : (*mntflags);
+  else
+#endif
+
+#ifdef MS_MANDLOCK
+   if (strmatch (options[fi], "mand")) (*mntflags) |= MS_MANDLOCK;
+  else if (strmatch (options[fi], "nomand")) (*mntflags) = ((*mntflags) & MS_MANDLOCK) ? (*mntflags) ^ MS_MANDLOCK : (*mntflags);
+  else
+#endif
+
+#ifdef MS_RDONLY
+   if (strmatch (options[fi], "ro")) (*mntflags) |= MS_RDONLY;
+  else if (strmatch (options[fi], "rw")) (*mntflags) = ((*mntflags) & MS_RDONLY) ? (*mntflags) ^ MS_RDONLY : (*mntflags);
+  else
+#endif
+
+#ifdef MS_BIND
+   if (strmatch (options[fi], "bind")) (*mntflags) |= MS_BIND;
+  else
+#endif
+
+#ifdef MS_REMOUNT
+   if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
+  else
+#endif
+
+   if (!ret) {
+   uint32_t slen = strlen (options[fi])+1;
+   ret = ecalloc (1, slen);
+   memcpy (ret, options[fi], slen);
+   } else {
+    uint32_t fsdl = strlen(ret) +1, slen = strlen (options[fi])+1;
+    ret = erealloc (ret, fsdl+slen);
+    *(ret + fsdl -1) = ',';
+    memcpy (ret+fsdl, options[fi], slen);
+   }
+ }
+
+ return ret;
+}
+
+int emount (char *mountpoint, struct einit_event *status) {
+ struct device_data *dd = mount_get_device_data (mountpoint, NULL);
+ if (dd && dd->mountpoints) {
+  struct stree *t = streefind (dd->mountpoints, mountpoint, tree_find_first);
+
+  if (t) {
+   struct mountpoint_data *mp = t->value;
+
+   fbprintf (status, "mounting %s as %s on %s", dd->device, mp->fs, mountpoint);
+
+   return status_ok;
+  } else {
+   fbprintf (status, "can't find details for mountpoint \"%s\".", mountpoint);
+
+   return status_failed;
+  }
+ }
+
+ fbprintf (status, "can't find data for mountpoint \"%s\".", mountpoint);
+
+ return status_failed;
+}
+
+int eumount (char *mountpoint, struct einit_event *status) {
+ struct device_data *dd = mount_get_device_data (mountpoint, NULL);
+
+ return status_failed;
+}
+
+void einit_mount_update_configuration () {
+ struct cfgnode *node = NULL;
+
+ read_filesystem_flags_from_configuration (NULL);
+
+ if ((node = cfg_findnode ("configuration-storage-update-steps",0,NULL)) && node->svalue) {
+  char **tmp = str2set(':', node->svalue);
+  uint32_t c = 0;
+  mount_options = mount_update_fstab + mount_update_mtab;
+  for (; tmp[c]; c++) {
+   if (strmatch (tmp[c], "metadata")) mount_options |= mount_update_metadata;
+   else if (strmatch (tmp[c], "block-devices")) mount_options |= mount_update_block_devices;
+  }
+  free (tmp);
+ }
+
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-system",0,NULL)) && node->svalue)
+  mount_system = str2set(':', node->svalue);
+
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue)
+  mount_critical = str2set(':', node->svalue);
+
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue)
+  mount_dont_umount = str2set(':', node->svalue);
+
+ if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
+  mount_fsck_template = estrdup(node->svalue);
+
+ if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
+  mount_options |= mount_maintain_mtab;
+  mount_mtab_file = node->svalue;
+ }
+
+ mount_update_devices();
+}
+
+int einit_mount_cleanup (struct lmodule *tm) {
+ event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
+ event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
+ event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
+
+ function_unregister ("fs-mount", 1, (void *)emount);
+ function_unregister ("fs-umount", 1, (void *)eumount);
+
+ return 0;
+}
+
+int einit_mount_configure (struct lmodule *r) {
+ module_init (r);
+
+ thismodule->scanmodules = einit_mount_scanmodules;
+ thismodule->cleanup = einit_mount_cleanup;
+
+ /* pexec configuration */
+ exec_configure (this);
+
+ event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
+ event_listen (einit_event_subsystem_mount, einit_mount_mount_handler);
+ event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);
+
+ function_register ("fs-mount", 1, (void *)emount);
+ function_register ("fs-umount", 1, (void *)eumount);
+
+ einit_mount_update_configuration();
+
+ return 0;
+}
+#endif

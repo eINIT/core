@@ -199,6 +199,40 @@ struct mount_control_block {
  char *mtab_file;
 };
 
+/* new block: */
+
+struct mountpoint_data {
+ char *mountpoint;
+
+ char *fs;
+
+ char **options;
+ char *flatoptions;
+ unsigned long mountflags;
+
+ char *before_mount;
+ char *after_mount;
+ char *before_umount;
+ char *after_umount;
+ struct dexecinfo *manager;
+ char **variables;
+
+ uint32_t status;
+};
+
+struct device_data {
+ struct stree *mountpoints; // values must be of type struct mountpoint_data
+ char *device;
+
+ enum device_status device_status;
+
+ char *fs;
+ char *label;
+ char *uuid;
+ char *encryption;
+ char *encryption_key;
+};
+
 #endif
 
 #ifdef __cplusplus

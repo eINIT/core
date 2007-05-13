@@ -222,6 +222,7 @@
    </filesystem>
    <mountpoints>
     <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache" />
+    <system s="/:/sys:/proc:/dev" />
     <critical s="/usr:/var" />
    </mountpoints>
 <!-- parametre 1 is the filesystem type, parametre 2 is the device -->

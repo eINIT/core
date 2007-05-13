@@ -93,6 +93,9 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
 
  if (!path) return NULL;
 
+#if 0
+ if (!recurse)
+#endif
  if (coremode == einit_mode_sandbox) {
 // override path in sandbox-mode to be relative
   if (path[0] == '/') path++;
@@ -135,7 +138,28 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
    *tmp = 0;
    strcat (tmp, px);
    strcat (tmp, entry->d_name);
-   if (stat (tmp, &sbuf) || !S_ISREG (sbuf.st_mode)) {
+
+   if (lstat (tmp, &sbuf)) goto cleanup_continue;
+
+   if (recurse) {
+    if (S_ISLNK(sbuf.st_mode)) goto cleanup_continue;
+
+    if (S_ISDIR (sbuf.st_mode)) {
+     if ((entry->d_name[0] == '.') && (!entry->d_name[1] ||
+          ((entry->d_name[1] == '.') && !entry->d_name[2]))) goto cleanup_continue;
+
+     tmp = strcat (tmp, "/");
+
+     char **n = readdirfilter (NULL, tmp, allow, disallow, 1);
+
+     if (n) {
+      retval = (char **)setcombine_nc ((void **)retval, (const void **)n, SET_TYPE_STRING);
+      free (n);
+     }
+
+     goto cleanup_continue;
+    }
+   } else if (!S_ISREG (sbuf.st_mode)) {
     goto cleanup_continue;
    }
 
