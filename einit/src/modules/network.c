@@ -465,7 +465,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   status->string = "no IP controller defined, bailing";
   status_update (status);
  } else {
-  status->string = "no IP controller failed, bailing";
+  status->string = "IP controller failed, bailing";
   status_update (status);
  }
 

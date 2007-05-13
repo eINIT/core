@@ -2413,9 +2413,10 @@ int einit_mount_scanmodules (struct lmodule *ml) {
  struct stree *s = NULL;
  char **scritical = NULL, **ssystem = NULL, **slocal = NULL, **sremote = NULL;
 
- scritical = (char **)setadd ((void **)scritical, (void *)"mount-system", SET_TYPE_STRING);
- slocal = (char **)setadd ((void **)slocal, (void *)"mount-critical", SET_TYPE_STRING);
- sremote = (char **)setadd ((void **)sremote, (void *)"mount-critical", SET_TYPE_STRING);
+ ssystem = (char **)setadd ((void **)ssystem, (void *)"fs-root", SET_TYPE_STRING);
+ scritical = (char **)setadd ((void **)scritical, (void *)"fs-root", SET_TYPE_STRING);
+ slocal = (char **)setadd ((void **)slocal, (void *)"fs-root", SET_TYPE_STRING);
+ sremote = (char **)setadd ((void **)sremote, (void *)"fs-root", SET_TYPE_STRING);
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
@@ -2424,29 +2425,33 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   char *servicename = mount_mp_to_service_name(s->key);
   char tmp[BUFFERSIZE];
   char **after = NULL;
-  char *tmpx = NULL;
-  char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;
-  uint32_t r = 0;
   struct lmodule *lm = ml;
 
-  for (; tmp_split[r]; r++);
+  if (strcmp (s->key, "/")) {
+   char *tmpx = NULL;
+   char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;
+   uint32_t r = 0;
 
-  for (r--; tmp_split[r] && r > 0; r--) {
-   tmp_split[r] = 0;
-   char *comb = set2str ('-', (const char **)tmp_split);
+   for (; tmp_split[r]; r++);
 
-   tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
-  }
-  if (tmpxt) {
-   tmpx = set2str ('|', (const char **)tmpxt);
-  }
+   for (r--; tmp_split[r] && r > 0; r--) {
+    tmp_split[r] = 0;
+    char *comb = set2str ('-', (const char **)tmp_split);
 
-  free (tmp_split);
-  free (tmpxt);
+    tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
+   }
+   tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+   if (tmpxt) {
+    tmpx = set2str ('|', (const char **)tmpxt);
+   }
 
-  if (tmpx) {
-   esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
-   after = (char **)setadd ((void **)after, (void *)tmp, SET_TYPE_STRING);
+   free (tmp_split);
+   free (tmpxt);
+
+   if (tmpx) {
+    esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+    after = (char **)setadd ((void **)after, (void *)tmp, SET_TYPE_STRING);
+   }
   }
 
 /*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
@@ -2529,10 +2534,10 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
 
- mount_add_update_group ("mount-system", ssystem, "most");
- mount_add_update_group ("mount-critical", scritical, "most");
- mount_add_update_group ("mount-local", slocal, "most");
- mount_add_update_group ("mount-remote", sremote, "most");
+ if (ssystem) mount_add_update_group ("mount-system", ssystem, "most");
+ if (scritical) mount_add_update_group ("mount-critical", scritical, "most");
+ if (slocal) mount_add_update_group ("mount-local", slocal, "most");
+ if (sremote) mount_add_update_group ("mount-remote", sremote, "most");
 
  return 0;
 }
