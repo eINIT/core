@@ -1,0 +1,16 @@
+<einit prefix="services-virtual-module">
+<!-- creds to Tyrius for this one =) -->
+ <shell id="shell-freshclam"
+  name="ClamAV updater (freshclam)"
+  provides="freshclam"
+  requires="network:mount-critical:clamd"
+  prepare="logfile=$(awk '$1 == &quot;UpdateLogFile&quot; { print $2 }' /etc/freshclam.conf);
+           if [[ -n &quot;${logfile}&quot; &amp;&amp; -n &quot;${clamav_user}&quot; ]]; then
+           	if [ ! -f &quot;${logfile}&quot; ]; then
+           		touch ${logfile};
+           	fi;
+           	chown ${clamav_user} ${logfile};
+           fi;"
+  enable="/usr/bin/freshclam -d"
+  disable="killall freshclam" />
+</einit>
