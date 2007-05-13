@@ -3,8 +3,8 @@
   name="Console mouse services (GPM)"
   provides="gpm"
   requires="tty"
-  enable="/usr/sbin/gpm -m ${configuration_peripherals_pointing_device_gpm_device} -t ${configuration_peripherals_pointing_device_gpm_type} ${configuration_peripherals_pointing_device_gpm_options}"
-  disable="killall gpm"
+  enable="/usr/sbin/gpm -m ${configuration_services_gpm_device} -t ${configuration_services_gpm_type} ${configuration_services_gpm_options}"
+  disable="killall gpm &amp;&gt;/dev/null"
   restart="yes"
-  variables="configuration-peripherals-pointing-device-gpm/.*" />
+  variables="configuration-services-gpm/.*" />
 </einit>

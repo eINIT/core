@@ -128,9 +128,6 @@
 
   <peripherals>
    <keyboard layout="us" />
-   <pointing-device>
-    <gpm device="/dev/input/mice" type="ps2" />
-   </pointing-device>
   </peripherals>
 
   <feedback>
