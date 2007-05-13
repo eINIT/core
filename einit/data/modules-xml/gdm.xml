@@ -1,11 +1,11 @@
 <einit prefix="services-virtual-module"> 
- <shell id="shell-gdm"
-  name="gdm - The GNOME Display Manager"
+ <daemon id="daemon-gdm"
+  name="The GNOME Display Manager (gdm)"
   provides="x11:displaymanager"
-  requires="mount-critical:fqdn"
+  requires="mount-critical:network-minimal"
   pid="/var/run/gdm.pid"
-  prepare="[ ! -e /var/log/gdm ] &amp;&amp; mkdir /var/log/gdm"
-  enable="gdm"
-  disable="killall -9 gdm"
+  prepare="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; /bin/true"
+  enable="/usr/bin/gdm -nodaemon"
+  need-files="/usr/bin/gdm"
   restart="yes" />
 </einit>
