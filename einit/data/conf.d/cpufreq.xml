@@ -1,5 +1,6 @@
-<--! CPUFreq userspace utils configuration -->
-
 <einit prefix="configuration-services">
+
+ <!-- CPUFreq userspace utils configuration -->
+
  <cpufreq governor="ondemand" cpus="0" />
 </einit>
