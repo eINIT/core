@@ -251,8 +251,6 @@
   </command>
 
   <program-options>
-   <cpufreq-governor s="ondemand" />
-   <cpufreq-cpus s="0 1" />
    <hwclock s="--utc" />
   </program-options>
 

@@ -5,11 +5,11 @@
   before="local"
   after=".*"
   requires="mount-critical:acpid"
-  enable="for i in ${configuration_program_options_cpufreq_cpus};
-   do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_program_options_cpufreq_governor} ;
-   done; /bin/true"
-  disable="for i in ${configuration_program_options_cpufreq_cpus} ;
-   do /usr/bin/cpufreq-set --cpu $i --governor performance ;
-   done; /bin/true"
-  variables="configuration-program-options-cpufreq-governor:configuration-program-options-cpufreq-cpus" />
+  enable="for i in ${configuration_services_cpufreq_cpus};
+          	do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_services_cpufreq_governor} ;
+          done"
+  disable="for i in ${configuration_services_cpufreq_cpus} ;
+           	do /usr/bin/cpufreq-set --cpu $i --governor performance ;
+           done"
+  variables="configuration-services-cpufreq/.*" />
 </einit>
