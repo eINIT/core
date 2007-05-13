@@ -8,6 +8,6 @@
   pid="/var/run/dbus.pid"
   prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
   command="dbus-daemon --system --nofork"
-  cleanup="[[ -S /var/run/dbus/system_bus_socket ]] &amp;&amp; rm -f /var/run/dbus/system_bus_socket"
+  cleanup="if [ -S /var/run/dbus/system_bus_socket ]; then rm -f /var/run/dbus/system_bus_socket; fi"
   restart="yes" />
 </einit>
