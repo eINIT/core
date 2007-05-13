@@ -4,7 +4,7 @@
   provides="video-intel-resolution"
   requires="mount-critical"
   enable="echo 'feedback|notice|Setting up Intel resolution...';
-          915resolution ${configuration_video_intel_resolution_mode} ${configuration_video_intel_resolution_x} ${configuration_video_intel_resolution_y} ${configuration_video_intel_resolution_bpp} &gt;&gt; /dev/null;
+          915resolution ${configuration_services_video_intel_resolution_mode} ${configuration_services_video_intel_resolution_x} ${configuration_services_video_intel_resolution_y} ${configuration_services_video_intel_resolution_bpp} &gt;&gt; /dev/null;
           if [[ $? == '0' ]]; then
           	echo -n ' OK';
           else
