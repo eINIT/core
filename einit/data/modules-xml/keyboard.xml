@@ -3,7 +3,14 @@
   name="Console (Keyboard Layout)"
   provides="keyboard"
   requires="mount-local"
-  enable="/bin/loadkeys ${configuration_peripherals_keyboard_layout} 2&gt;/dev/null"
+  enable="# first make sure we're getting linux codes if we're on a mac. lots of stealing from gentoo here
+          # this might need disabling on darwin? no idea, needs checking
+          if [[ -f /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ]] ; then
+          	echo 1 > /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ;
+          fi ;
+          # why do this? because its easyer to tell a user to set a boolean :)
+          if [[ ${configuration_services_keyboard_window} == 'yes' ]] ; then WK_KMP='windowkeys' ; fi ;
+          /bin/loadkeys ${WK_KMP} ${configuration_services_keyboard_keymap} ${configuration_services_keyboard_extensions} 2&gt;/dev/null"
   disable="/bin/true"
-  variables="configuration-peripherals-keyboard/layout" />
+  variables="configuration-services-keyboard/.*" />
 </einit>

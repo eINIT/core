@@ -1,0 +1,24 @@
+<einit prefix="configuration-services">
+ <!-- use this file to set your console keyboard layout -->
+
+ <keyboard
+
+ <!-- keymap= is just your usual countrycode,
+      both it and extensions= are passed as-is to loadkeys -->
+
+ <!-- for a complete tree of valid keymap codes,
+      you'll have to find out where your distro keeps them.
+      try /usr/share/keymaps -->
+
+  keymap="us"
+
+ <!-- like the name says, use this value to define extensions.
+      you probably want to leave it like this -->
+
+  extensions="backspace keypad euro"
+
+ <!-- if your arch is x86, then you want to leave this to yes, everyone else should set it to no -->
+
+  window="yes" />
+
+</einit>
