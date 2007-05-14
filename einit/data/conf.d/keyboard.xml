@@ -1,15 +1,15 @@
 <einit prefix="configuration-services">
- <!-- use this file to set your console keyboard layout -->
 
- <keyboard
+ <!-- use this file to set your console keyboard layout
 
- <!-- keymap= is just your usual countrycode,
-      both it and extensions= are passed as-is to loadkeys -->
+      keymap= is just your usual countrycode,
+      both it and extensions= are passed as-is to loadkeys
 
- <!-- for a complete tree of valid keymap codes,
+      for a complete tree of valid keymap codes,
       you'll have to find out where your distro keeps them.
       try /usr/share/keymaps -->
 
+ <keyboard
   keymap="us"
 
  <!-- like the name says, use this value to define extensions.
@@ -17,8 +17,19 @@
 
   extensions="backspace keypad euro"
 
- <!-- if your arch is x86, then you want to leave this to yes, everyone else should set it to no -->
+ <!-- if your arch is x86, then you want to leave this to "yes", everyone else should set it to "no" -->
 
-  window="yes" />
+  window="yes"
+
+ <!-- this is the unicode section.
+      set unicode= to "yes" for a UTF-8 console.
+      if you do set unicode to "yes", you'll want to tell dumpkeys which character set to use
+      for interpreting action codes. otherwise leave it blank.
+      you can find valid options with 'dumpkeys --help' -->
+
+  unicode="no"
+  dumpkeys=""
+
+  />
 
 </einit>
