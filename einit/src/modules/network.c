@@ -405,6 +405,7 @@ int network_kernel_module (struct interface_descriptor *id, struct einit_event *
   }
  }
 #endif
+ return status_ok;
 }
 
 int network_controller_enable (struct interface_descriptor *id, struct einit_event *status) {
@@ -431,6 +432,7 @@ int network_controller_enable (struct interface_descriptor *id, struct einit_eve
   return status_failed;
  }
 
+ return status_ok;
 }
 
 int network_ip_manager(struct interface_descriptor *id, struct einit_event *status) {
@@ -476,10 +478,13 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  status->string = tmps;
  status_update (status);
 
- network_kernel_module(id,status);
- network_controller_enable(id,status);
- network_ip_manager(id,status);
+ if (network_kernel_module(id,status))
+  return status_failed;
 
+ if (network_controller_enable(id,status) == status_failed)
+  return status_failed;
+
+ return network_ip_manager(id,status);
 }
 
 int network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
