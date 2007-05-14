@@ -377,19 +377,7 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
  return id;
 }
 
-// pexec(command, variables, uid, gid, user, group, local_environment, status)
-
-int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
- uint32_t ci = 0, pi = 0;
- char tmps[BUFFERSIZE];
-
- if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
-
- esprintf (tmps, BUFFERSIZE, "enabling network interface %s", id->interface_name);
- status->string = tmps;
- status_update (status);
-
-/* outsourced this one... */
+int network_kernel_module (struct interface_descriptor *id, struct einit_event *status) {
 #if 0
  if (id->kernel_module) {
   char *command = cfg_getstring ("configuration-command-modprobe/with-env", NULL),
@@ -409,7 +397,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
      if (!(pexec (nc, NULL, 0, 0, NULL, NULL, NULL, status) & status_ok))
       return status_failed;
-
+     }
      free (nc);
     }
     free (cx);
@@ -417,7 +405,10 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   }
  }
 #endif
+}
 
+int network_controller_enable (struct interface_descriptor *id, struct einit_event *status) {
+ uint32_t ci = 0;
  if (id->controller) { // == NULL if ip not mentioned or ="none"
   status->string = "enabling interface controller";
   status_update (status);
@@ -429,7 +420,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
    if (t) {
     if (pexec (t->value, (const char **)id->controller[ci]->variables, 0, 0, NULL, NULL, id->controller[ci]->environment, status) & status_ok) {
      id->ci = ci;
-     goto ip;
+     return status_ok;
     }
    }
   }
@@ -440,8 +431,10 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   return status_failed;
  }
 
- ip:
+}
 
+int network_ip_manager(struct interface_descriptor *id, struct einit_event *status) {
+ uint32_t pi = 0;
  for (pi = 0; id->ip_manager[pi]; pi++) {
   status->string = "enabling IP controller";
   status_update (status);
@@ -470,6 +463,23 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  }
 
  return status_failed;
+}
+
+// pexec(command, variables, uid, gid, user, group, local_environment, status)
+
+int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
+ char tmps[BUFFERSIZE];
+
+ if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
+
+ esprintf (tmps, BUFFERSIZE, "enabling network interface %s", id->interface_name);
+ status->string = tmps;
+ status_update (status);
+
+ network_kernel_module(id,status);
+ network_controller_enable(id,status);
+ network_ip_manager(id,status);
+
 }
 
 int network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
