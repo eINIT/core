@@ -4,7 +4,7 @@
   provides="acpid"
   requires="mount-critical"
   prepare="if [ ! -e /proc/acpi ]; then
-                echo 'feedback|error|ACPI support has not been compiled into the kernel!'
+                echo 'feedback|error|ACPI support has not been compiled into the kernel!';
            fi"
   command="/usr/sbin/acpid --foreground ${configuration_services_acpid_options}"
   execute:reload="killall acpid -HUP &amp;&gt;/dev/null"
