@@ -1,4 +1,4 @@
 <einit prefix="configuration-services">
- <<!-- Timidity++ options go here -->
- <timidity options="-B2,8 -Os -EFreverb=0"
+ <!-- Timidity++ options go here -->
+ <timidity options="-B2,8 -Os -EFreverb=0" />
 </einit>
