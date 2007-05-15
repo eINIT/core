@@ -1,9 +1,10 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-sshd"
-  name="SSHd"
+  name="SSH daemon (sshd)"
   provides="sshd"
-  requires="net-lo:mount-critical"
-  command="/usr/sbin/sshd -D"
+  requires="network:mount-critical"
+  command="/usr/sbin/sshd -D ${configuration_services_sshd_options}"
   restart="yes"
-  need-files="/usr/sbin/sshd" />
+  need-files="/usr/sbin/sshd"
+  variables="configuration-services-sshd/.*" />
 </einit>
