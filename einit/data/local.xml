@@ -25,10 +25,6 @@
    </interfaces>
   </network>
 
-  <peripherals>
-   <keyboard layout="us" />
-  </peripherals>
-
   <kernel>
    <modules>
     <usb s="" />
