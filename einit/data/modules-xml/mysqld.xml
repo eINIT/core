@@ -2,8 +2,9 @@
  <daemon id="daemon-mysqld"
   name="Database (MySQL)"
   provides="mysqld"
-  requires="mount-local:net-lo"
-  command="/usr/sbin/mysqld --defaults-file=/etc/mysql/my.cnf"
+  requires="mount-local:networkÃ-minial"
+  command="/usr/sbin/mysqld --defaults-file=${configuration_services_mysqld_defaults}"
   restart="yes"
-  need-files="/usr/sbin/mysqld" />
+  need-files="/usr/sbin/mysqld"
+  variables="configuration-services-mysqld/.*" />
 </einit>
