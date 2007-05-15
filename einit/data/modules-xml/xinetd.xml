@@ -5,11 +5,11 @@
   requires="network:network-minimal:mount-system"
   pid="/var/run/xinetd.pid"
   command="unset -f `declare -F | sed 's:declare -f::g'` ;
-           /usr/sbin/xinetd -dontfork -pidfile /var/run/xinetd.pid ${configuration_program_options_xinetd}"
+           /usr/sbin/xinetd -dontfork -pidfile /var/run/xinetd.pid ${configuration_services_xinetd_options}"
   execute:reload="killall -HUP xinetd &amp;&gt;/dev/null"
   execute:dump="killall -USR1 xinetd &amp;&gt;/dev/null"
   execute:check="killall -IOT xinetd &amp;&gt;/dev/null"
   need-files="/usr/sbin/xinetd"
   restart="yes"
-  variables="configuration-program-options-xinetd" />
+  variables="configuration-services-xinetd/.*" />
 </einit>

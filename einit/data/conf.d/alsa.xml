@@ -1,0 +1,4 @@
+<einit prefix="configuration-services">
+ <!-- set your Alsa-Mixer state file here -->
+ <alsa-mixer file="/etc/asound.state" />
+</einit>

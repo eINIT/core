@@ -93,10 +93,6 @@
    <udev coldplug="no" device_tarball="no" />
    <swap device="-a" affinity="0" />
 
-   <sysctl>
-    <file s="/etc/sysctl.conf" />
-   </sysctl>
-
    <log b="true" s="/var/log/einit.log" />
   </system>
 
@@ -124,10 +120,6 @@
     <timeout s="60"/>
    </dhcp>
   </network>
-
-  <peripherals>
-   <keyboard layout="us" />
-  </peripherals>
 
   <feedback>
    <visual>
@@ -162,10 +154,6 @@
    <control-socket s="/dev/einit-control" i="0600" />
    <chain-command for="^update configuration.*" do="examine configuration" />
   </ipc>
-
-  <audio>
-   <alsa-mixer file="/etc/asound.state" />
-  </audio>
 
   <tty>
    <manage-utmp b="true" />
