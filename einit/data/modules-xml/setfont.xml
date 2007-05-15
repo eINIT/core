@@ -2,11 +2,14 @@
  <shell id="shell-setfont"
   name="setfont (${configuration_system_setfont_font})"
   provides="setfont"
-  requires="mount-critical"
+  requires="mount-critical:keyboard"
   before="tty"
-  enable="for t in ${configuration_system_setfont_ttys}; do
-          setfont ${configuration_system_setfont_font} -C /dev/tty${t};
+  enable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular') ;
+          tty_list=$(seq 1 ${tty_max}) ;
+          if [ -d /dev/vc ] ; then tty_dev=/dev/vc/ ; else tty_dev=/dev/tty ; fi ;
+          for tty_num in ${tty_list} ; do
+                setfont ${configuration_services_setfont_font} -C ${tty_dev}${tty_num} ;
           done"
   disable="/bin/true"
-  variables="configuration-system-setfont/.*" />
+  variables="configuration-services-setfont/.*" />
 </einit>

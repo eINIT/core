@@ -2,10 +2,6 @@
 <einit>
 <!-- you will need to modify this file -->
  <configuration>
-  <system>
-   <setfont font="lat2-12" ttys="1 2 3 4 5 6" />
-  </system>
-
   <network>
    <hostname s="localhost" />
    <domainname s="local" />
