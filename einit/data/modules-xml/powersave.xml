@@ -3,7 +3,7 @@
   name="Powersave"
   provides="powersave"
   requires="mount-critical:hal:acpid"
-  command="/usr/sbin/powersaved $([[ -S /var/run/acpid.socket ]] &amp;&amp; echo '-f /var/run/acpid.socket')"
+  command="/usr/sbin/powersaved $(if [ -S /var/run/acpid.socket ]] ; then echo '-f /var/run/acpid.socket' ; fi)"
   restart="yes"
   need-files="/usr/sbin/powersaved" />
 </einit>
