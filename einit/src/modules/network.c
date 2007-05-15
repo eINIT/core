@@ -378,7 +378,7 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
 }
 
 int network_kernel_module (struct interface_descriptor *id, struct einit_event *status) {
- char ret;
+ int ret = status_ok;
  #if 0
  if (id->kernel_module) {
   char *command = cfg_getstring ("configuration-command-modprobe/with-env", NULL),
@@ -413,7 +413,7 @@ int network_kernel_module (struct interface_descriptor *id, struct einit_event *
 
 int network_controller_enable (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t ci = 0;
- char ret;
+ int ret = status_ok;
  if (id->controller) { // == NULL if ip not mentioned or ="none"
   status->string = "enabling interface controller";
   status_update (status);
@@ -426,6 +426,7 @@ int network_controller_enable (struct interface_descriptor *id, struct einit_eve
     if (pexec (t->value, (const char **)id->controller[ci]->variables, 0, 0, NULL, NULL, id->controller[ci]->environment, status) & status_ok) {
      id->ci = ci;
      ret = status_ok;
+     break;
     } else {
      status->string = "interface controller defined but doesn't work, bailing";
      status_update (status);
@@ -439,7 +440,7 @@ int network_controller_enable (struct interface_descriptor *id, struct einit_eve
 
 int network_ip_manager(struct interface_descriptor *id, struct einit_event *status) {
  uint32_t pi = 0;
- char ret;
+ int ret = status_failed;
  for (pi = 0; id->ip_manager[pi]; pi++) {
   status->string = "enabling IP controller";
   status_update (status);
@@ -455,6 +456,7 @@ int network_ip_manager(struct interface_descriptor *id, struct einit_event *stat
     status_update (status);
 
     ret = status_ok;
+    break;
    } else {
     if (!id->ip_manager) {
      status->string = "no IP controller defined, bailing";
