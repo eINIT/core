@@ -2,7 +2,7 @@
  <daemon id="daemon-mysqld"
   name="Database (MySQL)"
   provides="mysqld"
-  requires="mount-local:networkÃ-minial"
+  requires="mount-local:network-minimal"
   command="/usr/sbin/mysqld --defaults-file=${configuration_services_mysqld_defaults}"
   restart="yes"
   need-files="/usr/sbin/mysqld"
