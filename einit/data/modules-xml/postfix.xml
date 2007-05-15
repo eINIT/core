@@ -6,5 +6,5 @@
   requires="network:mount-critical"
   enable="/usr/sbin/postfix start"
   disable="/usr/sbin/postfix stop"
-  reload="/usr/sbin/postfix reload" />
+  execute:reload="/usr/sbin/postfix reload" />
 </einit>
