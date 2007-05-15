@@ -1,0 +1,13 @@
+<einit prefix="services-virtual-module">
+ <daemon id="daemon-winbindd"
+  name="Samba Winbind daemon (winbindd)"
+  provides="winbindd"
+  after="mount-local:dbus:hal:kern-.*"
+  before="smbd"
+  requires="nmbd"
+  command="/usr/sbin/winbindd -F ${configuration_services_winbindd_options}"
+  execute:reload="killall -HUP winbindd"
+  restart="yes"
+  need-files="/usr/sbin/winbindd"
+  variables="configuration-services-winbindd/.*" />
+</einit>

@@ -1,10 +1,12 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-smbd"
-  name="Samba-daemon"
+  name="Samba daemon (smbd)"
   provides="smbd"
-  after="mount-local:dbus:hal:kern-.*"
-  requires="fqdn:net-lo:nmbd"
-  command="/usr/sbin/smbd -F -s /etc/samba/smb.conf"
+  after="mount-local:dbus:hal:winbindd:kern-.*"
+  requires="nmbd"
+  command="/usr/sbin/smbd -F ${configuration_services_smbd_options}"
+  execute:reload="killall -HUP smbd"
   restart="yes"
-  need-files="/usr/sbin/smbd" />
+  need-files="/usr/sbin/smbd"
+  variables="configuration-services-smbd/.*" />
 </einit>

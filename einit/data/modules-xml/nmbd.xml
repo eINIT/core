@@ -1,13 +1,13 @@
 <einit prefix="services-virtual-module">
- <shell id="shell-nmbd"
-  name="NetBIOS name server"
+ <daemon id="daemon-nmbd"
+  name="Samba NetBIOS name server (nmbd)"
   provides="nmbd"
-  after="mount-local:dbus:hal:kern-.*"
-  requires="fqdn:net-lo"
+  after="mount-local:cups:dbus:hal:kern-.*"
+  requires="network"
   pid="/var/run/samba/nmbd.pid"
-  prepare="[ ! -e /var/run/samba ] &amp;&amp; mkdir /var/run/samba;
-           /bin/true;"
-  enable="nmbd -D"
-  disable="killall -9 nmbd"
-  restart="yes" />
+  prepare="if [ ! -d /var/run/samba ] ; then mkdir /var/run/samba ; fi ; /bin/true"
+  command="nmbd -F ${configuration_services_nmbd_options}"
+  execute:reload="killall -HUP nmbd"
+  restart="yes"
+  variables="configuration-services-nmbd/.*" />
 </einit>
