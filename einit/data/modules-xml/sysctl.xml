@@ -1,9 +1,10 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-sysctl"
-  name="sysctl - configure kernel parameters at runtime"
+  name="configure kernel parameters at runtime (sysctl)"
   provides="sysctl"
   requires="mount-critical"
-  enable="sysctl -q -p /etc/sysctl.conf"
+  enable="sysctl -q -p ${configuration_services_sysctl_config}"
   disable="/bin/true"
-  restart="no" />
+  restart="no"
+  variables="configuration-services-sysctl/.*" />
 </einit>
