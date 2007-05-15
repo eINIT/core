@@ -3,8 +3,8 @@
   name="NetworkManager"
   provides="NM:networkmanager"
   requires="dhcdbd:hal"
-  prepare="[ ! -d /var/run/NetworkManager ] &amp;&amp; mkdir /var/run/NetworkManager;
-           [ ! -d /var/run/console ] &amp;&amp; mkdir /var/run/console;
+  prepare="if [ ! -d /var/run/NetworkManager ] ; then mkdir /var/run/NetworkManager; fi ;
+           if [ ! -d /var/run/console ] ; then mkdir /var/run/console ; fi ;
            /bin/true"
   command="NetworkManager --no-daemon"
   restart="yes" />
