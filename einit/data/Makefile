@@ -8,16 +8,21 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/modules
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/conf.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/init.d
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/subsystems.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-xml/network
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-lisp
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/conf.d
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/*.xml ${DESTDIR}/${LIBDIR}/modules-xml
+	${INSTALL} ${IPARAM} -m 0644 modules-lisp/*lisp ${DESTDIR}/${LIBDIR}/modules-lisp
 	for fname in conf.d/*.xml; do if [ ! -e "${ETCDIR}/$${fname}" ]; then ${INSTALL} ${IPARAM} -m 0644 $${fname} ${DESTDIR}/${ETCDIR}/conf.d; elif [ -n "${DESTDIR}" ]; then ${INSTALL} ${IPARAM} -m 0644 "${ETCDIR}/$${fname}" ${DESTDIR}/${ETCDIR}/conf.d; fi; done
+	for fname in subsystems.d/*.xml; do if [ ! -e "${ETCDIR}/$${fname}" ]; then ${INSTALL} ${IPARAM} -m 0644 $${fname} ${DESTDIR}/${ETCDIR}/subsystems.d; elif [ -n "${DESTDIR}" ]; then ${INSTALL} ${IPARAM} -m 0644 "${ETCDIR}/$${fname}" ${DESTDIR}/${ETCDIR}/subsystems.d; fi; done
 	${INSTALL} ${IPARAM} -m 0644 conf.d/*.xml ${DESTDIR}/${LIBDIR}/defaults/conf.d
+	${INSTALL} ${IPARAM} -m 0644 subsystems.d/*.xml ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/network/*.xml ${DESTDIR}/${LIBDIR}/modules-xml/network
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	
