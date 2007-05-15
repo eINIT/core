@@ -378,7 +378,8 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
 }
 
 int network_kernel_module (struct interface_descriptor *id, struct einit_event *status) {
-#if 0
+ char ret;
+ #if 0
  if (id->kernel_module) {
   char *command = cfg_getstring ("configuration-command-modprobe/with-env", NULL),
        tmp[BUFFERSIZE], *nc, **cx = NULL;
@@ -395,8 +396,10 @@ int network_kernel_module (struct interface_descriptor *id, struct einit_event *
      status->string = tmp;
      status_update (status);
 
-     if (!(pexec (nc, NULL, 0, 0, NULL, NULL, NULL, status) & status_ok))
-      return status_failed;
+     if (!(pexec (nc, NULL, 0, 0, NULL, NULL, NULL, status) & status_ok)) {
+      ret = status_failed;
+     } else {
+      ret = status_ok;
      }
      free (nc);
     }
@@ -404,12 +407,13 @@ int network_kernel_module (struct interface_descriptor *id, struct einit_event *
    }
   }
  }
-#endif
- return status_ok;
+ #endif
+ return ret;
 }
 
 int network_controller_enable (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t ci = 0;
+ char ret;
  if (id->controller) { // == NULL if ip not mentioned or ="none"
   status->string = "enabling interface controller";
   status_update (status);
@@ -421,22 +425,21 @@ int network_controller_enable (struct interface_descriptor *id, struct einit_eve
    if (t) {
     if (pexec (t->value, (const char **)id->controller[ci]->variables, 0, 0, NULL, NULL, id->controller[ci]->environment, status) & status_ok) {
      id->ci = ci;
-     return status_ok;
+     ret = status_ok;
+    } else {
+     status->string = "interface controller defined but doesn't work, bailing";
+     status_update (status);
+     ret = status_failed;
     }
    }
   }
-
-  status->string = "interface controller defined but doesn't work, bailing";
-  status_update (status);
-
-  return status_failed;
  }
-
- return status_ok;
+ return ret;
 }
 
 int network_ip_manager(struct interface_descriptor *id, struct einit_event *status) {
  uint32_t pi = 0;
+ char ret;
  for (pi = 0; id->ip_manager[pi]; pi++) {
   status->string = "enabling IP controller";
   status_update (status);
@@ -451,20 +454,20 @@ int network_ip_manager(struct interface_descriptor *id, struct einit_event *stat
     status->string = "done!";
     status_update (status);
 
-    return status_ok;
+    ret = status_ok;
+   } else {
+    if (!id->ip_manager) {
+     status->string = "no IP controller defined, bailing";
+     status_update (status);
+    } else {
+     status->string = "IP controller failed, bailing";
+     status_update (status);
+    }
+    ret = status_failed;
    }
   }
  }
-
- if (!id->ip_manager) {
-  status->string = "no IP controller defined, bailing";
-  status_update (status);
- } else {
-  status->string = "IP controller failed, bailing";
-  status_update (status);
- }
-
- return status_failed;
+ return ret;
 }
 
 // pexec(command, variables, uid, gid, user, group, local_environment, status)
@@ -478,7 +481,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  status->string = tmps;
  status_update (status);
 
- if (network_kernel_module(id,status))
+ if (network_kernel_module(id,status) == status_failed)
   return status_failed;
 
  if (network_controller_enable(id,status) == status_failed)
