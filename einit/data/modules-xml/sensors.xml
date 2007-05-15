@@ -1,8 +1,9 @@
 <einit prefix="services-virtual-module">
  <shell id="shell-sensors"
-  name="lm_sensors (sensord)"
+  name="lm_sensors (sensors)"
   provides="sensors"
   requires="mount-critical:kern-sensors"
-  enable="/usr/bin/sensors -s"
-  disable="/bin/true" />
+  enable="/usr/bin/sensors -s ${configuration_services_sensors_options}"
+  disable="/bin/true"
+  variables="configuration-services-sensors/.*" />
 </einit>
