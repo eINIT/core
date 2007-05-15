@@ -1,0 +1,6 @@
+<einit prefix="configuration-services">
+
+ <!-- your Rsync Daemon options go here -->
+
+ <rsyncd options="" />
+</einit>

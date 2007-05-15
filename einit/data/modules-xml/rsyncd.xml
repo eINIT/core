@@ -1,9 +1,10 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-rsyncd"
-  name="Rsync Daemon"
+  name="Rsync Daemon (rsyncd)"
   provides="rsyncd"
   requires="net-lo:mount-local"
-  command="/usr/bin/rsync --daemon;"
+  command="/usr/bin/rsync --daemon --no-detach ${configuration_services_rsyncd_options}"
   restart="yes"
-  need-files="/usr/bin/rsync" />
+  need-files="/usr/bin/rsync"
+  variables="configuration-services-rsyncd/.*" />
 </einit>
