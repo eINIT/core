@@ -1,6 +1,6 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-tor"
-  name="TOR Daemon"
+  name="TOR Daemon (tor)"
   provides="tor"
   requires="network:mount-critical"
   command="/usr/bin/tor"
