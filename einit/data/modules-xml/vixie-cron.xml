@@ -2,8 +2,9 @@
  <daemon id="daemon-vixie-cron"
   name="Cron (Vixie)"
   provides="cron"
-  requires="mount-local:net-lo"
-  command="/usr/sbin/cron -n"
+  requires="mount-local:network-minimal"
+  command="/usr/sbin/cron -n ${configuration_services_vixie_cron_options}"
   restart="yes"
-  need-files="/usr/sbin/cron" />
+  need-files="/usr/sbin/cron"
+  variables="configuration-services-vixie-cron/.*" />
 </einit>
