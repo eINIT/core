@@ -1,8 +1,8 @@
 <einit prefix="services-virtual-module">
  <daemon id="daemon-xdm"
-  name="xdm - The X Display Manager"
+  name="The X Display Manager (xdm)"
   provides="x11:displaymanager"
-  requires="mount-critical:fqdn"
+  requires="mount-critical:network-minimal"
   command="/usr/bin/xdm -nodaemon"
   restart="yes"
   need-files="/usr/bin/xdm" />
