@@ -367,10 +367,45 @@ unsigned char mount_linux_real_mount (char *source, char *mountpoint, char *fsty
  return 0;
 }
 
+int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
+ fbprintf (status, "mounting %s on %s (fs=%s; using native mount command)", dd->device, mountpoint, fs);
+
+ char *fsdata = NULL;
+ char command[BUFFERSIZE];
+
+ if (mp->options) {
+  int fi = 0;
+  for (; mp->options[fi]; fi++) {
+   if (!fsdata) {
+    uint32_t slen = strlen (mp->options[fi])+1;
+    fsdata = ecalloc (1, slen);
+    memcpy (fsdata, mp->options[fi], slen);
+   } else {
+    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (mp->options[fi])+1;
+    fsdata = erealloc (fsdata, fsdl+slen);
+    *(fsdata + fsdl -1) = ',';
+    memcpy (fsdata+fsdl, mp->options[fi], slen);
+   }
+  }
+ }
+
+ if (fsdata) {
+  esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o \"%s\"", dd->device, mountpoint, fs, fsdata);
+ } else {
+  esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", dd->device, mountpoint, fs);
+ }
+
+ return pexec_v1 (command, NULL, NULL, status);
+}
+
 int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
  function_unregister ("fs-read-metadata-linux", 1, (void *)read_metadata_linux);
  function_unregister ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
+
+ function_unregister ("fs-mount-linux-nfs", 1, (void *)linux_mount_do_mount_real);
+ function_unregister ("fs-mount-Linux-nfs", 1, (void *)linux_mount_do_mount_real);
+ function_unregister ("fs-mount-generic-nfs", 1, (void *)linux_mount_do_mount_real);
 
  exec_cleanup(this);
 
@@ -392,6 +427,10 @@ int linux_mount_configure (struct lmodule *this) {
 // function_register ("fs-mount-nfs", 1, (void *)mount_linux_nfs);
 /* nfs mounting is a real, royal PITA. we'll use the regular /bin/mount command for the time being */
  function_register ("fs-mount-nfs", 1, (void *)mount_linux_real_mount);
+
+ function_register ("fs-mount-linux-nfs", 1, (void *)linux_mount_do_mount_real);
+ function_register ("fs-mount-Linux-nfs", 1, (void *)linux_mount_do_mount_real);
+ function_register ("fs-mount-generic-nfs", 1, (void *)linux_mount_do_mount_real);
 
  event_emit (ev, einit_event_flag_broadcast);
  evdestroy (ev);

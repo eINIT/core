@@ -123,6 +123,8 @@
    <dummyd s="daemon-dummy-2" />
    <feedback-visual s="einit-feedback-visual-textual:einit-efl-feedback-evas-edje" />
 <!--   <feedback-visual s="einit-efl-feedback-evas-edje" /> -->
+   <x11 s="daemon-xorg" />
+   <displaymanager s="daemon-entranced" />
   </prefer>
 
   <alias>

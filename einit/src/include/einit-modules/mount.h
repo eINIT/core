@@ -233,6 +233,8 @@ struct device_data {
  char *encryption_key;
 };
 
+typedef int (*einit_mount_umount_function) (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
+
 #endif
 
 #ifdef __cplusplus
