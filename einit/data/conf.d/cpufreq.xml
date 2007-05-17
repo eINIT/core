@@ -2,5 +2,5 @@
 
  <!-- CPUFreq userspace utils configuration -->
 
- <cpufreq governor="ondemand" cpus="0" />
+ <cpufreq governor="ondemand" cpus="0 1" />
 </einit>
