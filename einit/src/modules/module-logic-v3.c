@@ -1506,18 +1506,23 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
 
    mod_mark (service, MARK_BROKEN);
   } else { // MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST
-   uint32_t i = 0, bc = 0;
+   uint32_t i = 0, bc = 0, sc = 0;
 
    for (; gd->members[i]; i++) {
     if (((task & einit_module_enable) && mod_isprovided (gd->members[i])) ||
         ((task & einit_module_disable) && !mod_isprovided (gd->members[i]))) {
-//     eprintf (stderr, "%s: skipping %s (already in proper state)\n", service, gd->members[i]);
+#ifdef DEBUG
+     eprintf (stderr, "%s: skipping %s (already in proper state)\n", service, gd->members[i]);
+#endif
 
+     sc++;
      continue;
     }
 
     if (mod_isbroken (gd->members[i])) {
-//     eprintf (stderr, "%s: skipping %s (broken)\n", service, gd->members[i]);
+#ifdef DEBUG
+     eprintf (stderr, "%s: skipping %s (broken)\n", service, gd->members[i]);
+#endif
 
      bc++;
      continue;
@@ -1526,7 +1531,9 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
     if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
 
-//     eprintf (stderr, "%s: deferring after %s\n", service, gd->members[i]);
+#ifdef DEBUG
+     eprintf (stderr, "%s: deferring after %s\n", service, gd->members[i]);
+#endif
 
      mod_defer_until(service, gd->members[i]);
 
@@ -1537,6 +1544,10 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      }
     }
    }
+
+#ifdef DEBUG
+   notice (6, "group %s: i=%i; sc=%i; bc=%i\n", service, i, sc, bc);
+#endif
 
    if (bc) {
     if (bc == i) {
@@ -2000,7 +2011,7 @@ void mod_apply_enable (struct stree *des) {
 
     if ((current->status & status_enabled) || mod_enable_requirements (current)) {
 #ifdef DEBUG
-     notice (4, "not spawning thread thread for %s exiting (not quite there yet)", des->key);
+     notice (4, "not spawning thread thread for %s; exiting (not quite there yet)", des->key);
 #endif
 
      mod_workthreads_dec(des->key);
@@ -2012,7 +2023,7 @@ void mod_apply_enable (struct stree *des) {
 /* check module status or return value to find out if it's appropriate for the task */
     if (current->status & status_enabled) {
 #ifdef DEBUG
-     notice (4, "not spawning thread thread for %s exiting (already up)", des->key);
+     notice (4, "not spawning thread thread for %s; exiting (already up)", des->key);
 #endif
 
      mod_workthreads_dec(des->key);
@@ -2051,7 +2062,7 @@ void mod_apply_enable (struct stree *des) {
   }
 
 #ifdef DEBUG
-  notice (4, "not spawning thread thread for %s exiting (end of function)", des->key);
+  notice (4, "not spawning thread thread for %s; exiting (end of function)", des->key);
 #endif
 
   mod_workthreads_dec(des->key);
@@ -2208,18 +2219,21 @@ char mod_examine_group (char *groupname) {
 
     emutex_lock (&ml_service_list_mutex);
 
-    if (module_logics_service_list && (serv = streefind(module_logics_service_list, members[x], tree_find_first))) {
-     struct lmodule **lm = (struct lmodule **)serv->value;
+    if (mod_isprovided(members[x])) {
+     on++;
 
-     if (lm) {
-      ssize_t y = 0;
+     if (module_logics_service_list && (serv = streefind(module_logics_service_list, members[x], tree_find_first))) {
+      struct lmodule **lm = (struct lmodule **)serv->value;
 
-      for (; lm[y]; y++) {
-       if (lm[y]->status & status_enabled) {
-        providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
-        on++;
+      if (lm) {
+       ssize_t y = 0;
 
-        break;
+       for (; lm[y]; y++) {
+        if (lm[y]->status & status_enabled) {
+         providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
+
+         break;
+        }
        }
       }
      }
@@ -2262,18 +2276,14 @@ char mod_examine_group (char *groupname) {
   }
 
   if (task & einit_module_enable) {
-   if (providers) {
+   if (on) {
     if (options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
      if (on > 0) {
       group_ok = 1;
-     } else if (failed >= mem) {
-      group_failed = 1;
      }
     } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
      if (on && ((on + off + failed) >= mem)) {
       group_ok = 1;
-     } else if (failed >= mem) {
-      group_failed = 1;
      }
     } else if (options & MOD_PLAN_GROUP_SEQ_ALL) {
      if (on >= mem) {
@@ -2285,6 +2295,10 @@ char mod_examine_group (char *groupname) {
      notice (2, "marking group %s broken (bad group type)", groupname);
 
      mod_mark (groupname, MARK_BROKEN);
+    }
+   } else {
+    if (failed >= mem) {
+     group_failed = 1;
     }
    }
 
@@ -2477,7 +2491,7 @@ void mod_examine (char *service) {
   return;
  } else if (mod_examine_group (service)) {
 #ifdef DEBUG
-  notice (2, "service %s: group examination", service);
+  notice (2, "service %s: group examination complete", service);
 #endif
 
   if (mod_workthreads_dec(service)) return;
@@ -2816,11 +2830,15 @@ void mod_commit_and_wait (char **en, char **dis) {
 #endif
   emutex_unlock (&ml_service_update_mutex);
 
-  if (e) {
+  if (e
+#ifdef ETIMEDOUT
+      && (e != ETIMEDOUT)
+#endif
+     ) {
    bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
-  } else {
+  }/* else {
    notice (1, "woke up, checking plan.\n");
-  }
+  }*/
  };
 
 /* never reached */

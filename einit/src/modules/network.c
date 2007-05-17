@@ -475,13 +475,9 @@ int network_ip_manager(struct interface_descriptor *id, struct einit_event *stat
 // pexec(command, variables, uid, gid, user, group, local_environment, status)
 
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
- char tmps[BUFFERSIZE];
-
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
- esprintf (tmps, BUFFERSIZE, "enabling network interface %s", id->interface_name);
- status->string = tmps;
- status_update (status);
+ fbprintf (status, "enabling network interface %s", id->interface_name);
 
  if (network_kernel_module(id,status) == status_failed)
   return status_failed;
