@@ -629,8 +629,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   if (!(options & pexec_option_nopipe) && status) {
    eclose (pipefderr[1]);
    errno = 0;
-   fcntl (pipefderr[0], F_SETFL, O_NONBLOCK);
-   if (errno) {
+   if (fcntl (pipefderr[0], F_SETFL, O_NONBLOCK) == -1) {
     bitch (bitch_stdio, errno, "can't set pipe to non-blocking mode!");
    }
 
