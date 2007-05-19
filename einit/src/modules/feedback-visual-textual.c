@@ -104,14 +104,32 @@ module_register(einit_feedback_visual_self);
 uint32_t shutdownfailuretimeout = 10;
 char enableansicodes = 1;
 
+FILE **feedback_textual_addon_streams_ansi = NULL;
+
+enum feedback_textual_commands {
+ ftc_module_update,
+ ftc_register_fd,
+ ftc_unregister_fd
+};
+
 struct feedback_textual_command {
- struct lmodule *module;
- enum einit_module_status status;
- char *message;
- char *statusline;
- uint32_t seqid;
- uint32_t warnings;
- time_t ctime;
+ enum feedback_textual_commands command;
+ union {
+  struct {
+   struct lmodule *module;
+   enum einit_module_status status;
+   char *message;
+   char *statusline;
+   uint32_t seqid;
+   uint32_t warnings;
+   time_t ctime;
+  };
+
+  struct {
+   FILE *fd;
+   enum einit_ipc_options fd_options;
+  };
+ };
 };
 
 struct message_log {
