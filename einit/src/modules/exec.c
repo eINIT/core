@@ -691,6 +691,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
       status_update (status);
      }
 
+     continue;
+
      skip_read:
 
      if (waitpid (child, &pidstatus, WNOHANG) == child) {
