@@ -473,7 +473,7 @@ void einit_event_handler (struct einit_event *ev) {
 
      if (data) {
 //      puts ("compatibility-sysv-gentoo: updating configuration with env.d");
-      parse_sh (data, sh_add_environ_callback);
+      parse_sh (data, (void (*)(const char **, enum einit_sh_parser_pa))sh_add_environ_callback);
 
       free (data);
      }
