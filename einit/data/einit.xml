@@ -40,6 +40,7 @@
     <directory s="../../lib/einit/modules-xml" />
     <directory s="../../lib/einit/modules-xml/network" />
     <directory s="conf.d" />
+    <directory s="subsystems.d" />
    </commands-include>
    <else>
     <settings>
@@ -52,6 +53,7 @@
      <directory s="/lib/einit/modules-xml" />
      <directory s="/lib/einit/modules-xml/network" />
      <directory s="conf.d" />
+     <directory s="subsystems.d" />
     </commands-include>
    </else>
   </if>
