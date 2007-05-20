@@ -3076,6 +3076,8 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 }
 
 int emount (char *mountpoint, struct einit_event *status) {
+ return status_ok;
+
  struct device_data *dd = mount_get_device_data (mountpoint, NULL);
  if (dd && dd->mountpoints) {
   struct stree *t = streefind (dd->mountpoints, mountpoint, tree_find_first);
@@ -3097,6 +3099,8 @@ int emount (char *mountpoint, struct einit_event *status) {
 }
 
 int eumount (char *mountpoint, struct einit_event *status) {
+ return status_ok;
+
  struct device_data *dd = mount_get_device_data (mountpoint, NULL);
  if (dd && dd->mountpoints) {
   struct stree *t = streefind (dd->mountpoints, mountpoint, tree_find_first);

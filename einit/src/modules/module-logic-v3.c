@@ -895,6 +895,8 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
 
+     fflush (ev->output);
+
      if (ev->integer) {
       eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
      } else {
@@ -2289,10 +2291,22 @@ char mod_examine_group (char *groupname) {
        ssize_t y = 0;
 
        for (; lm[y]; y++) {
-        if (lm[y]->status & status_enabled) {
+        if ((lm[y]->status & status_enabled) && (!providers || !inset ((const void **)providers, (const void *)lm[y], SET_NOALLOC))) {
          providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
 
          break;
+        }
+       }
+      }
+     } else {
+      struct lmodule **lm = (struct lmodule **)service_usage_query_cr (service_get_providers, NULL, members[x]);
+
+      if (lm) {
+       ssize_t y = 0;
+
+       for (; lm[y]; y++) {
+        if (!providers || !inset ((const void **)providers, (const void *)lm[y], SET_NOALLOC)) {
+         providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
         }
        }
       }

@@ -508,6 +508,17 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
   }
  }
 
+ if (task & service_get_providers) {
+  if (service_usage && (ha = streefind (service_usage, service, tree_find_first))) {
+   struct service_usage_item *citem = (struct service_usage_item *)ha->value;
+
+   if (citem) {
+    ret = (char **)citem->provider;
+   }
+  }
+ }
+
+
  emutex_unlock (&service_usage_mutex);
  return ret;
 }
