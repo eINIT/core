@@ -853,7 +853,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
       }
       if (target_state.disable) {
        for (r = 0; target_state.disable[r]; r++) {
-        if (!mod_isprovided (target_state.disable[r]))
+        if (mod_isprovided (target_state.disable[r]))
          sdisable = (char **)setadd ((void **)sdisable, (void *)target_state.disable[r], SET_TYPE_STRING);
        }
       }
