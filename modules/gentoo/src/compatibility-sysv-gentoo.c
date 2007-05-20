@@ -181,7 +181,7 @@ void sh_add_environ_callback (char **data, uint8_t status) {
     }
 
     nnode.id = estrdup ("configuration-environment-global");
-    nnode.arbattrs = (char **)setdup ((void **)&narb, SET_TYPE_STRING);
+    nnode.arbattrs = (char **)setdup ((const void **)&narb, SET_TYPE_STRING);
     nnode.svalue = nnode.arbattrs[3];
     nnode.source = self->rid;
 //    nnode.source_file = "/etc/profile.env";
@@ -248,7 +248,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        if (!base) base = curmodebase;
        else {
          for (i = 0; curmodebase[i]; i++) {
-         if (!inset ((void **)base, (void *)curmodebase[i], SET_TYPE_STRING)) {
+         if (!inset ((const void **)base, (void *)curmodebase[i], SET_TYPE_STRING)) {
           base = (char **)setadd ((void **)base, (void *)curmodebase[i], SET_TYPE_STRING);
          }
         }
@@ -267,7 +267,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)"id", SET_TYPE_STRING);
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)de->d_name, SET_TYPE_STRING);
     if (base) {
-     char *nbase = set2str(':', base);
+     char *nbase = set2str(':', (const char **)base);
      if (nbase) {
       arbattrs = (char **)setadd ((void **)arbattrs, (void *)"base", SET_TYPE_STRING);
       arbattrs = (char **)setadd ((void **)arbattrs, (void *)nbase, SET_TYPE_STRING);
@@ -304,7 +304,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        (struct service_group_transformation *)cur->value;
 
      if (trans) {
-      char **workingset = (char **)setdup ((void **)nservices, SET_TYPE_STRING);
+      char **workingset = (char **)setdup ((const void **)nservices, SET_TYPE_STRING);
       char **new_services_for_group = NULL;
 
       if (workingset) {
@@ -344,7 +344,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
           if (groupmembers) {
            for (; groupmembers[z]; z++) {
-            if (!inset ((void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING)) {
+            if (!inset ((const void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING)) {
              new_services_for_group = (char **)setadd ((void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING);
             }
            }
@@ -363,7 +363,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        }
 
        arbattrs = (char **)setadd ((void **)arbattrs, (void *)"group", SET_TYPE_STRING);
-       arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', new_services_for_group), SET_TYPE_STRING);
+       arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', (const char **)new_services_for_group), SET_TYPE_STRING);
 
        if (!curgroup_has_seq_attribute) {
         arbattrs = (char **)setadd ((void **)arbattrs, (void *)"seq", SET_TYPE_STRING);
@@ -380,7 +380,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
        cfg_addnode (&newnode);
 
-       if (!inset ((void **)nservices, (void *)cur->key, SET_TYPE_STRING))
+       if (!inset ((const void **)nservices, (void *)cur->key, SET_TYPE_STRING))
         nservices = (char **)setadd((void **)nservices, (void *)cur->key, SET_TYPE_STRING);
       }
      }
@@ -409,7 +409,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
      if (curmodeena) {
       for (; curmodeena[i]; i++) {
-       if (!inset ((void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING)) {
+       if (!inset ((const void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING)) {
         nservices = (char **)setadd ((void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING);
        }
       }
@@ -423,7 +423,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     memset (&newnode, 0, sizeof(struct cfgnode));
 
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)"services", SET_TYPE_STRING);
-    arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', nservices), SET_TYPE_STRING);
+    arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', (const char **)nservices), SET_TYPE_STRING);
 
     if (critical = str2set (':', cfg_getstring ("enable/critical", currentmode))) {
      arbattrs = (char **)setadd ((void **)arbattrs, (void *)"critical", SET_TYPE_STRING);
@@ -628,7 +628,7 @@ char **gentoo_resolve_dependency_type (rc_depinfo_t *depinfo, char *type, char *
 
  if (current) {
   if (serv) {
-   serv = (char **)setcombine ((void **)serv, (void **)current, SET_TYPE_STRING);
+   serv = (char **)setcombine ((const void **)serv, (const void **)current, SET_TYPE_STRING);
    free (current);
   } else {
    return current;
@@ -831,7 +831,7 @@ int compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_eve
  if (!init_script || !init_d_exec_scriptlet) return status_failed;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
- cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+ cmdscript = apply_variables (init_d_exec_scriptlet, (const char **)variables);
 
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
@@ -849,7 +849,7 @@ int compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_ev
  if (!init_script || !init_d_exec_scriptlet) return status_failed;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
- cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+ cmdscript = apply_variables (init_d_exec_scriptlet, (const char **)variables);
 
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
@@ -867,7 +867,7 @@ int compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, st
  if (!init_script || !init_d_exec_scriptlet) return status_failed;
  if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
 
- cmdscript = apply_variables (init_d_exec_scriptlet, variables);
+ cmdscript = apply_variables (init_d_exec_scriptlet, (const char **)variables);
 
  return pexec (cmdscript, NULL, 0, 0, NULL, NULL, env, status);
 }
