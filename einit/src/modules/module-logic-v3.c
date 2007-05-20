@@ -86,6 +86,7 @@ char initdone = 0;
 char mod_isbroken (char *service);
 char mod_mark (char *service, char task);
 struct group_data *mod_group_get_data (char *group);
+char mod_isprovided(char *service);
 
 /* new functions: */
 char mod_examine_group (char *);
@@ -669,7 +670,7 @@ int mod_switchmode (char *mode) {
 }
 
 int mod_modaction (char **argv) {
- int argc = setcount ((const void **)argv), ret = 1;
+ int argc = setcount ((const void **)argv), ret = 0;
  int32_t task = 0;
  struct mloadplan *plan;
  if (!argv || (argc != 2)) return -1;
@@ -722,6 +723,12 @@ int mod_modaction (char **argv) {
   pthread_t th;
 
   ret = mod_plan_commit (plan);
+
+  if (task & einit_module_enable) {
+   ret = !mod_isprovided (argv[0]);
+  } else if (task & einit_module_disable) {
+   ret = mod_isprovided (argv[0]);
+  }
 
   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
  }
@@ -827,22 +834,72 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    else {
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
+
+     if (ev->set && ev->set[0] && ev->set[1] &&
+         (strmatch (ev->set[1], "enable") || strmatch (ev->set[1], "disable") ||
+          strmatch (ev->set[1], "start") || strmatch (ev->set[1], "stop"))) {
+      uint32_t r = 0;
+      char **senable = NULL;
+      char **sdisable = NULL;
+
+      eputs ("checking for previously requested but dropped or broken services:", ev->output);
+
+      emutex_lock (&ml_tb_target_state_mutex);
+      if (target_state.enable) {
+       for (r = 0; target_state.enable[r]; r++) {
+        if (!mod_isprovided (target_state.enable[r]))
+         senable = (char **)setadd ((void **)senable, (void *)target_state.enable[r], SET_TYPE_STRING);
+       }
+      }
+      if (target_state.disable) {
+       for (r = 0; target_state.disable[r]; r++) {
+        if (!mod_isprovided (target_state.disable[r]))
+         sdisable = (char **)setadd ((void **)sdisable, (void *)target_state.disable[r], SET_TYPE_STRING);
+       }
+      }
+      emutex_unlock (&ml_tb_target_state_mutex);
+
+      if (senable) {
+       char *x = set2str (' ', (const char **)senable);
+
+       eprintf (ev->output, "\n \e[33m** will also enable: %s\e[0m", x);
+       free (senable);
+       free (x);
+      }
+      if (sdisable) {
+       char *x = set2str (' ', (const char **)sdisable);
+
+       eprintf (ev->output, "\n \e[33m** will also disable: %s\e[0m", x);
+       free (sdisable);
+       free (x);
+      }
+      eputs ("\n \e[32m>> check complete.\e[0m\n", ev->output);
+     }
+
      ee.output = ev->output;
      ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
 
-    if (mod_modaction ((char **)ev->set)) {
+    ev->integer = mod_modaction ((char **)ev->set);
+/*    if (mod_modaction ((char **)ev->set)) {
      ev->integer = 1;
-    }
+    }*/
 
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
+
      ee.output = ev->output;
      ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
+
+     if (ev->integer) {
+      eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
+     } else {
+      eputs (" \e[32m>> changes applied.\e[0m\n", ev->output);
+     }
     }
    }
    return;
@@ -1071,7 +1128,6 @@ char **currently_provided = NULL;
 char **changed_recently = NULL;
 signed char mod_flatten_current_tb_group(char *serv, char task);
 void mod_spawn_workthreads ();
-char mod_isprovided(char *service);
 char mod_haschanged(char *service);
 
 uint32_t ml_workthreads = 0;

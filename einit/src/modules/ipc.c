@@ -97,6 +97,8 @@ char einit_ipc_running = 0;
 int ipc_process_f (const char *cmd, FILE *f) {
  if (!cmd) return 0;
 
+ setvbuf (f, NULL, _IONBF, 0);
+
  struct einit_event *event = evinit (einit_event_subsystem_ipc);
  uint32_t ic;
  int ret = 0;

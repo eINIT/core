@@ -141,11 +141,13 @@ struct feedback_textual_module_status {
  struct message_log **log;
  uint32_t warnings;
  time_t lastchange;
+ uint32_t seqid;
 };
 
 struct feedback_stream {
  FILE *stream;
  uint32_t seqid;
+ uint32_t last_seqid;
  enum einit_ipc_options options;
 };
 
@@ -232,9 +234,34 @@ void feedback_textual_wait_for_commandQ_to_finish() {
   emutex_unlock (&feedback_textual_commandQ_mutex);
 
   if (ret) return;
+  else {
+   pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+  }
 
   emutex_lock (&feedback_textual_all_done_cond_mutex);
-  pthread_cond_wait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex);
+  int e;
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+  struct timespec ts;
+
+  if (clock_gettime(CLOCK_REALTIME, &ts))
+   bitch (bitch_stdio, errno, "gettime failed!");
+
+  ts.tv_sec += 1; /* max wait before re-evaluate */
+
+  e = pthread_cond_timedwait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex, &ts);
+#elif defined(DARWIN)
+  struct timespec ts;
+  struct timeval tv;
+
+  gettimeofday (&tv, NULL);
+
+  ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
+
+  e = pthread_cond_timedwait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex, &ts);
+#else
+  notice (2, "warning: un-timed lock.");
+  e = pthread_cond_wait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex);
+#endif
   emutex_unlock (&feedback_textual_all_done_cond_mutex);
  }
 
@@ -361,11 +388,91 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
 void feedback_textual_update_streams () {
  uint32_t i = 0;
 
-// feedback_streams
-
  for (; feedback_streams[i]; i++) {
-  eprintf (feedback_streams[i]->stream, "/* whatever */", 1);
-  fflush (feedback_streams[i]->stream);
+  uint32_t y = 0;
+  uint32_t hseq = feedback_streams[i]->last_seqid;
+
+  if (feedback_streams[i]->options & einit_ipc_output_ansi)
+   eputs ("\e[F\e[2K", feedback_streams[i]->stream);
+  else
+   eputs ("\r", feedback_streams[i]->stream);
+
+  for (y = 0; feedback_textual_modules[y]; y++) {
+   if (feedback_textual_modules[y]->seqid > feedback_streams[i]->last_seqid) {
+    char *status = "";
+    char *emarker = "";
+    char *wmarker = "";
+    char wmbuffer[BUFFERSIZE];
+    char did_display = 0;
+
+    if (feedback_textual_modules[y]->module->status == status_idle) {
+     status = "\e[31midle\e[0m";
+    } else {
+     if (feedback_textual_modules[y]->module->status & status_enabled) {
+      status = "\e[32menab\e[0m";
+     }
+     if (feedback_textual_modules[y]->module->status & status_disabled) {
+      status = "\e[33mdisa\e[0m";
+     }
+     if (feedback_textual_modules[y]->module->status & status_working) {
+      status = "\e[31m....\e[0m";
+     }
+
+     if (feedback_textual_modules[y]->module->status & status_failed) {
+      emarker = " \e[31m(failed)\e[0m";
+     }
+    }
+
+    if (feedback_textual_modules[y]->warnings > 1) {
+     wmarker = wmbuffer;
+     esprintf (wmbuffer, BUFFERSIZE, "\e[36m(%i warnings)\e[0m ", feedback_textual_modules[y]->warnings);
+    } else if (feedback_textual_modules[y]->warnings == 1) {
+     wmarker = "\e[36m(1 warning)\e[0m ";
+    }
+
+    if (feedback_textual_modules[y]->log) {
+     uint32_t x = 0;
+
+     for (; feedback_textual_modules[y]->log[x]; x++) {
+      if (feedback_textual_modules[y]->log[x]->seqid > feedback_streams[i]->last_seqid) {
+       if (!did_display) {
+        eprintf (feedback_streams[i]->stream, "  [ %s ] %s%s %s: %s\n", status, wmarker, emarker, feedback_textual_modules[y]->module->module->name, feedback_textual_modules[y]->log[x]->message);
+        did_display = 1;
+       } else {
+        eprintf (feedback_streams[i]->stream, " >> %s\n", feedback_textual_modules[y]->log[x]->message);
+       }
+      }
+     }
+    }
+
+    hseq = (feedback_textual_modules[y]->seqid > hseq) ? feedback_textual_modules[y]->seqid : hseq;
+
+    if (!(feedback_textual_modules[y]->module->status & status_working)) {
+     if (!did_display) {
+      eprintf (feedback_streams[i]->stream, "  [ %s ] %s%s %s\n", status, wmarker, emarker, feedback_textual_modules[y]->module->module->name);
+     }
+    }
+   }
+  }
+
+//  fflush (feedback_streams[i]->stream);
+
+/* display all workers: */
+//  eputs ("working on:", feedback_streams[i]->stream);
+
+  for (y = 0; feedback_textual_modules[y]; y++) {
+   if (feedback_textual_modules[y]->module && feedback_textual_modules[y]->module->module &&
+       (feedback_textual_modules[y]->module->status & status_working)) {
+    eprintf (feedback_streams[i]->stream, "[ %s (%i) ]", feedback_textual_modules[y]->module->module->rid, feedback_textual_modules[y]->warnings);
+   }
+  }
+
+  feedback_streams[i]->last_seqid = hseq;
+
+  if (feedback_streams[i]->options & einit_ipc_output_ansi)
+   eputs ("\n", feedback_streams[i]->stream);
+
+//  fflush (feedback_streams[i]->stream);
  }
 }
 
@@ -399,7 +506,7 @@ void feedback_textual_update_screen () {
  }
 
  emutex_lock (&feedback_textual_streams_mutex);
- if (feedback_streams) {
+ if (feedback_streams && feedback_textual_modules) {
   feedback_textual_update_streams ();
  }
  emutex_unlock (&feedback_textual_streams_mutex);
@@ -422,6 +529,11 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
     if (feedback_textual_modules[i]->lastchange <= ctime) {
      feedback_textual_modules[i]->lastchange = ctime;
     }
+
+    if (feedback_textual_modules[i]->seqid <= seqid) {
+     feedback_textual_modules[i]->seqid = seqid;
+    }
+
     if (message) {
      struct message_log ne = {
       .seqid = seqid,
@@ -451,6 +563,7 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
   nm.lastchange = ctime;
 
   nm.warnings = warnings;
+  nm.seqid = seqid;
 
   if (message) {
    struct message_log ne = {
@@ -516,7 +629,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
 
       free (command);
 
-      if (cs >= 10) {
+      if (cs >= 1) {
        feedback_textual_update_screen ();
        cs = 0;
       }
@@ -529,6 +642,10 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
        st.stream = command->fd;
        st.options = command->fd_options;
        st.seqid = command->seqid;
+       st.last_seqid = st.seqid;
+
+       if (st.options & einit_ipc_output_ansi)
+        eputs ("working on your request...\n", st.stream);
 
        emutex_lock (&feedback_textual_streams_mutex);
        feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
@@ -543,7 +660,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
       feedback_textual_update_screen ();
       cs = 0;
 
-      fflush (command->fd);
+//      fflush (command->fd);
 
       emutex_lock (&feedback_textual_streams_mutex);
       repeat_unregister_fd:
@@ -565,7 +682,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
    }
   }
 
-  if (cs)
+//  if (cs)
    feedback_textual_update_screen ();
 
   pthread_cond_broadcast (&feedback_textual_all_done_cond);
