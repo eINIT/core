@@ -455,7 +455,7 @@ void feedback_textual_update_streams () {
    }
   }
 
-//  fflush (feedback_streams[i]->stream);
+  fflush (feedback_streams[i]->stream);
 
 /* display all workers: */
 //  eputs ("working on:", feedback_streams[i]->stream);
@@ -472,7 +472,7 @@ void feedback_textual_update_streams () {
   if (feedback_streams[i]->options & einit_ipc_output_ansi)
    eputs ("\n", feedback_streams[i]->stream);
 
-//  fflush (feedback_streams[i]->stream);
+  fflush (feedback_streams[i]->stream);
  }
 }
 
@@ -660,8 +660,6 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
       feedback_textual_update_screen ();
       cs = 0;
 
-//      fflush (command->fd);
-
       emutex_lock (&feedback_textual_streams_mutex);
       repeat_unregister_fd:
       if (feedback_streams)  {
@@ -715,9 +713,28 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
  } else if (ev->type == einit_feedback_register_fd) {
   feedback_textual_queue_fd_command (ftc_register_fd, ev->output, ev->ipc_options, ev->seqid);
  } else if (ev->type == einit_feedback_unregister_fd) {
-  feedback_textual_queue_fd_command (ftc_unregister_fd, ev->output, ev->ipc_options, ev->seqid);
+  char have_fd = 0;
+  do {
+   have_fd = 0;
+   fflush (ev->output);
 
-  feedback_textual_wait_for_commandQ_to_finish();
+   feedback_textual_queue_fd_command (ftc_unregister_fd, ev->output, ev->ipc_options, ev->seqid);
+
+   feedback_textual_wait_for_commandQ_to_finish();
+
+   emutex_lock (&feedback_textual_streams_mutex);
+   if (feedback_streams) {
+    uint32_t si = 0;
+
+    for (; feedback_streams[si]; si++) {
+     if (feedback_streams[si]->stream == ev->output) {
+      have_fd = 1;
+      break;
+     }
+    }
+   }
+   emutex_unlock (&feedback_textual_streams_mutex);
+  } while (have_fd);
  }
 }
 
