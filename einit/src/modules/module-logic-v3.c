@@ -803,18 +803,20 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   case einit_core_switch_mode:
    if (!ev->string) return;
    else {
-    if (ev->para) {
+    if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
-     ee.para = ev->para;
+     ee.output = ev->output;
+     ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
 
     mod_switchmode (ev->string);
 
-    if (ev->para) {
+    if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
-     ee.para = ev->para;
+     ee.output = ev->output;
+     ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
@@ -823,9 +825,10 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   case einit_core_change_service_status:
    if (!ev->set) return;
    else {
-    if (ev->para) {
+    if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
-     ee.para = ev->para;
+     ee.output = ev->output;
+     ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }
@@ -834,9 +837,10 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
      ev->integer = 1;
     }
 
-    if (ev->para) {
+    if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
-     ee.para = ev->para;
+     ee.output = ev->output;
+     ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      evstaticdestroy(ee);
     }

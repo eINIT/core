@@ -104,8 +104,6 @@ module_register(einit_feedback_visual_self);
 uint32_t shutdownfailuretimeout = 10;
 char enableansicodes = 1;
 
-FILE **feedback_textual_addon_streams_ansi = NULL;
-
 enum feedback_textual_commands {
  ftc_module_update,
  ftc_register_fd,
@@ -120,7 +118,6 @@ struct feedback_textual_command {
    enum einit_module_status status;
    char *message;
    char *statusline;
-   uint32_t seqid;
    uint32_t warnings;
    time_t ctime;
   };
@@ -130,6 +127,7 @@ struct feedback_textual_command {
    enum einit_ipc_options fd_options;
   };
  };
+ uint32_t seqid;
 };
 
 struct message_log {
@@ -145,14 +143,25 @@ struct feedback_textual_module_status {
  time_t lastchange;
 };
 
+struct feedback_stream {
+ FILE *stream;
+ uint32_t seqid;
+ enum einit_ipc_options options;
+};
+
 struct feedback_textual_command **feedback_textual_commandQ = NULL;
 struct feedback_textual_module_status **feedback_textual_modules = NULL;
+struct feedback_stream **feedback_streams;
 
 pthread_mutex_t
  feedback_textual_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
  feedback_textual_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
- feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER;
+ feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER,
+ feedback_textual_streams_mutex = PTHREAD_MUTEX_INITIALIZER,
+ feedback_textual_all_done_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+ pthread_cond_t
+ feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER,
+ feedback_textual_all_done_cond = PTHREAD_COND_INITIALIZER;
 
 char *feedback_textual_statusline = "[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
 
@@ -170,9 +179,30 @@ void *feedback_textual_io_handler_thread (void *irr) {
  return irr;
 }
 
-void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
+void feedback_textual_queue_fd_command (enum feedback_textual_commands command, FILE *fd, enum einit_ipc_options fd_options, uint32_t seqid) {
  struct feedback_textual_command tnc;
  memset (&tnc, 0, sizeof (struct feedback_textual_command));
+
+ tnc.command = command;
+
+ tnc.fd = fd;
+ tnc.fd_options = fd_options;
+ tnc.seqid = seqid;
+
+ emutex_lock (&feedback_textual_commandQ_mutex);
+
+ feedback_textual_commandQ = (struct feedback_textual_command **)setadd ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
+
+ emutex_unlock (&feedback_textual_commandQ_mutex);
+
+ pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+}
+
+void feedback_textual_queue_update (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
+ struct feedback_textual_command tnc;
+ memset (&tnc, 0, sizeof (struct feedback_textual_command));
+
+ tnc.command = ftc_module_update;
 
  tnc.module = module;
  tnc.statusline = statusline;
@@ -192,6 +222,23 @@ void feedback_textual_queue_comand (struct lmodule *module, enum einit_module_st
  emutex_unlock (&feedback_textual_commandQ_mutex);
 
  pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+}
+
+void feedback_textual_wait_for_commandQ_to_finish() {
+ while (1) {
+  char ret = 0;
+  emutex_lock (&feedback_textual_commandQ_mutex);
+  ret = (feedback_textual_commandQ == NULL);
+  emutex_unlock (&feedback_textual_commandQ_mutex);
+
+  if (ret) return;
+
+  emutex_lock (&feedback_textual_all_done_cond_mutex);
+  pthread_cond_wait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex);
+  emutex_unlock (&feedback_textual_all_done_cond_mutex);
+ }
+
+ return;
 }
 
 pthread_t feedback_textual_thread;
@@ -311,6 +358,17 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
  }
 }
 
+void feedback_textual_update_streams () {
+ uint32_t i = 0;
+
+// feedback_streams
+
+ for (; feedback_streams[i]; i++) {
+  eprintf (feedback_streams[i]->stream, "/* whatever */", 1);
+  fflush (feedback_streams[i]->stream);
+ }
+}
+
 void feedback_textual_update_screen () {
  emutex_lock (&feedback_textual_modules_mutex);
 
@@ -339,6 +397,12 @@ void feedback_textual_update_screen () {
  if (enableansicodes) {
   eputs ("\e[0J\n", stdout);
  }
+
+ emutex_lock (&feedback_textual_streams_mutex);
+ if (feedback_streams) {
+  feedback_textual_update_streams ();
+ }
+ emutex_unlock (&feedback_textual_streams_mutex);
 
  emutex_unlock (&feedback_textual_modules_mutex);
 }
@@ -446,19 +510,65 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
    emutex_unlock (&feedback_textual_commandQ_mutex);
 
    if (command) {
-    feedback_textual_process_command (command);
+    switch (command->command) {
+     case ftc_module_update:
+      feedback_textual_process_command (command);
 
-    free (command);
+      free (command);
 
-    if (cs >= 10) {
-     feedback_textual_update_screen ();
-     cs = 0;
+      if (cs >= 10) {
+       feedback_textual_update_screen ();
+       cs = 0;
+      }
+      break;
+     case ftc_register_fd:
+      if (command->fd) {
+       struct feedback_stream st;
+       memset (&st, 0, sizeof (struct feedback_stream));
+
+       st.stream = command->fd;
+       st.options = command->fd_options;
+       st.seqid = command->seqid;
+
+       emutex_lock (&feedback_textual_streams_mutex);
+       feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
+       emutex_unlock (&feedback_textual_streams_mutex);
+
+       feedback_textual_update_screen ();
+       cs = 0;
+      }
+
+      break;
+     case ftc_unregister_fd:
+      feedback_textual_update_screen ();
+      cs = 0;
+
+      fflush (command->fd);
+
+      emutex_lock (&feedback_textual_streams_mutex);
+      repeat_unregister_fd:
+      if (feedback_streams)  {
+       uint32_t si = 0;
+
+       for (; feedback_streams[si]; si++) {
+        if (feedback_streams[si]->stream == command->fd) {
+         feedback_streams = (struct feedback_stream **)setdel ((void **)feedback_streams, (void *)feedback_streams[si]);
+
+         goto repeat_unregister_fd;
+        }
+       }
+      }
+      emutex_unlock (&feedback_textual_streams_mutex);
+
+      break;
     }
    }
   }
 
   if (cs)
    feedback_textual_update_screen ();
+
+  pthread_cond_broadcast (&feedback_textual_all_done_cond);
 
   emutex_lock (&feedback_textual_commandQ_cond_mutex);
   pthread_cond_wait (&feedback_textual_commandQ_cond, &feedback_textual_commandQ_cond_mutex);
@@ -484,25 +594,31 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
    free (tmp);
   }
  } else if (ev->type == einit_feedback_module_status) {
-  feedback_textual_queue_comand (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp, NULL, ev->flag);
+  feedback_textual_queue_update (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp, NULL, ev->flag);
+ } else if (ev->type == einit_feedback_register_fd) {
+  feedback_textual_queue_fd_command (ftc_register_fd, ev->output, ev->ipc_options, ev->seqid);
+ } else if (ev->type == einit_feedback_unregister_fd) {
+  feedback_textual_queue_fd_command (ftc_unregister_fd, ev->output, ev->ipc_options, ev->seqid);
+
+  feedback_textual_wait_for_commandQ_to_finish();
  }
 }
 
 void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_service_update) {
-  feedback_textual_queue_comand (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL, ev->flag);
+  feedback_textual_queue_update (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL, ev->flag);
  } else if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
 
   esprintf (tmp, BUFFERSIZE, "[ \e[31m....\e[0m ] \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
-  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
+  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  } else if (ev->type == einit_core_mode_switch_done) {
   char tmp[BUFFERSIZE];
 
   esprintf (tmp, BUFFERSIZE, "[ \e[32mdone\e[0m ] \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
-  feedback_textual_queue_comand (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
+  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  }
 }
 

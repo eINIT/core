@@ -323,7 +323,8 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      eputs (" >> modeswitch queued\n", ev->output);
     } else {
-     ee.para = ev->output;
+     ee.output = ev->output;
+     ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      ev->ipc_return = ee.integer;
     }
@@ -335,7 +336,8 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      eputs (" >> status change queued\n", ev->output);
     } else {
-     ee.para = ev->output;
+     ee.output = ev->output;
+     ee.ipc_options = ev->ipc_options;
      event_emit (&ee, einit_event_flag_broadcast);
      ev->ipc_return = ee.integer;
     }
