@@ -54,7 +54,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/parse-sh.h>
 
 #include <rc.h>
+#if 0
 #include <einfo.h>
+#endif
 
 #ifdef POSIXREGEX
 #include <regex.h>
