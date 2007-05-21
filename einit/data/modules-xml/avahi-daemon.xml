@@ -1,7 +1,8 @@
 <einit prefix="services-virtual-module">
  <daemon id="deamon-avahi-daemon"
   name="avahi-daemon"
-  provides="avahi-daemon"
+  provides="network-minimal:avahi-daemon"
+  after="network"
   requires="network-minimal:mount-critical"
   command="avahi-daemon"
   restart="yes" />
