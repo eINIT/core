@@ -2269,7 +2269,7 @@ char mod_examine_group (char *groupname) {
 
 //  notice (2, "group %s: examining members", groupname);
 
-  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0, off = 0;
+  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0, off = 0, groupc = 0;
   struct lmodule **providers = NULL;
   char group_failed = 0, group_ok = 0;
 
@@ -2301,12 +2301,18 @@ char mod_examine_group (char *groupname) {
      } else {
       struct lmodule **lm = (struct lmodule **)service_usage_query_cr (service_get_providers, NULL, members[x]);
 
+      groupc++; /* must be a group... */
+
       if (lm) {
        ssize_t y = 0;
 
        for (; lm[y]; y++) {
         if (!providers || !inset ((const void **)providers, (const void *)lm[y], SET_NOALLOC)) {
          providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
+
+#ifdef DEBUG
+         eprintf (stderr, " ** group %s provided by %s (groupc=%i)", groupname, lm[y]->module->name, groupc);
+#endif
         }
        }
       }
@@ -2317,7 +2323,7 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_service_list_mutex);
   }
 
-  if (!on) {
+  if (!on || ((task & einit_module_disable) && (on == groupc))) {
    if (mod_isprovided (groupname)) {
     emutex_lock (&ml_currently_provided_mutex);
     currently_provided = (char **)strsetdel ((char **)currently_provided, (char *)groupname);
