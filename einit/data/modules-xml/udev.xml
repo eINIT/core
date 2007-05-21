@@ -41,7 +41,7 @@
            touch /dev/.udev_populate;
            if [ $(uname -r | cut -f 3 -d . | cut -f 1 -d -) -gt 14 ]; then
 	    echo &quot;feedback|notice|Populating /dev with existing devices through uevents&quot;;
-            local opts=;
+            opts=;
             [ &quot;${configuration_system_udev_coldplug}&quot; != &quot;yes&quot; ] &amp;&amp; opts=&quot;--attr-match=dev&quot;;
             udevtrigger ${opts};
            else
