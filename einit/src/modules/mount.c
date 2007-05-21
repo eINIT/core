@@ -2719,7 +2719,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
  if (functions) {
   uint32_t r = 0;
   for (; functions[r]; r++) {
-   einit_mount_umount_function f = functions[r];
+   einit_mount_function f = functions[r];
    if (f (mountpoint, fs, dd, mp, status) == status_ok) {
     free (functions);
     free (fnames);
@@ -2750,7 +2750,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
  return status_failed;
 }
 
-int mount_try_umount (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
+int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
  void **functions;
  char **fnames = mount_generate_mount_function_suffixes(mp->fs);
 
@@ -2758,8 +2758,8 @@ int mount_try_umount (char *mountpoint, char *fs, struct device_data *dd, struct
  if (functions) {
   uint32_t r = 0;
   for (; functions[r]; r++) {
-   einit_mount_umount_function f = functions[r];
-   if (f (mountpoint, mp->fs, dd, mp, status) == status_ok) {
+   einit_umount_function f = functions[r];
+   if (f (mountpoint, mp->fs, step, dd, mp, status) == status_ok) {
     free (functions);
     free (fnames);
     return status_ok;
@@ -2933,7 +2933,12 @@ int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_dat
 
 int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
 
- return mount_try_umount (mountpoint, mp->fs, dd, mp, status);
+ int retval = status_failed;
+ char step = 0;
+
+ while ((step < 3) && (retval == status_failed)) {
+  retval = mount_try_umount (mountpoint, mp->fs, step, dd, mp, status);
+ }
 
  return status_failed;
 }
