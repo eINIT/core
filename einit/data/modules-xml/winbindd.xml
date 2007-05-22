@@ -2,7 +2,7 @@
  <daemon id="daemon-winbindd"
   name="Samba Winbind daemon (winbindd)"
   provides="winbindd"
-  after="mount-local:dbus:hal:kern-.*"
+  after="cupsd"
   before="smbd"
   requires="nmbd"
   command="/usr/sbin/winbindd -F ${configuration_services_winbindd_options}"

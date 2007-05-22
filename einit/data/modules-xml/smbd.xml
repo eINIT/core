@@ -2,7 +2,7 @@
  <daemon id="daemon-smbd"
   name="Samba daemon (smbd)"
   provides="smbd"
-  after="mount-local:dbus:hal:winbindd:kern-.*"
+  after="mount-critical:winbindd:cupsd"
   requires="nmbd"
   command="/usr/sbin/smbd -F ${configuration_services_smbd_options}"
   execute:reload="killall -HUP smbd"

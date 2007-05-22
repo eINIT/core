@@ -2,7 +2,6 @@
  <daemon id="daemon-sshd"
   name="SSH daemon (sshd)"
   provides="sshd"
-  after="network"
   requires="network-minimal:mount-critical"
   command="/usr/sbin/sshd -D ${configuration_services_sshd_options}"
   restart="yes"
