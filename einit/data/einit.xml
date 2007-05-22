@@ -94,7 +94,6 @@
    <proc-path s="/proc" />
    <udev coldplug="no" device_tarball="no" />
    <swap device="-a" affinity="0" />
-   <sysctl file="/dev/sysctl" />
    <log b="true" s="/var/log/einit.log" />
   </system>
 
