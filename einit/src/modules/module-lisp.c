@@ -83,6 +83,29 @@ module_register(module_lisp_self);
 
 #endif
 
+enum lisp_node_type {
+ lnt_cons,
+ lnt_symbol,
+ lnt_constant
+};
+
+struct lisp_node {
+ lisp_node_type type;
+
+ union {
+  struct { /* cons */
+   lisp_node *primus;
+   lisp_node *secundus;
+  };
+
+  char *symbol;
+  
+  char *constant_string;
+  double constant_float;
+  int constant_int;
+ };
+};
+
 pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int module_lisp_scanmodules (struct lmodule *);
