@@ -1,11 +1,13 @@
-<einit prefix="services-virtual-module"> 
- <daemon id="daemon-entranced"
-  name="EntranceD"
+<einit prefix="services-virtual-module">
+ <shell id="shell-entranced"
+  name="EntranceD (TEST SHELL VERSION)"
   provides="x11:displaymanager"
   requires="mount-critical:network-minimal"
-  command="/usr/sbin/entranced -nodaemon"
-  restart="yes"
+  enable="/usr/sbin/entranced"
+  disable="killall -9 entranced"
+  restart="no"
   DISPLAY=":0.0"
   HOME="/root"
   need-files="/usr/sbin/entranced" />
 </einit>
+
