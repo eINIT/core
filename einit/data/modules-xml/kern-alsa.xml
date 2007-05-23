@@ -11,7 +11,7 @@
          		echo ''; echo -n 'feedback|warning|I cannot seem to figure out your alsa modules...' ;
          	fi ;
           fi ;
-          if [ '${configuration_audio_oss_emulation}' = 'yes' ] ; then
+          if [ '${configuration_services_kern_alsa_oss_emulation}' = 'yes' ] ; then
           	kernel_modules_alsa=&quot;${kernel_modules_alsa} $(modprobe -l | sed -n -e '/snd.*oss/ s:\/.*\/\(.*\).ko:\1:p')&quot; ;
           fi ;
           kernel_modules_alsa=&quot;${kernel_modules_alsa} $(modprobe -l | sed -n -e '/snd.seq\./ s:\/.*\/\(.*\).ko:\1:p')&quot; ;
@@ -23,5 +23,5 @@
            for x in ${kernel_modules_alsa} ; do
           	${configuration_command_rmmod} $x ;
            done ;"
-  variables="configuration-command-rmmod:configuration-audio-oss-emulation" />
+  variables="configuration-command-rmmod:configuration-services-kern-alsa-oss-emulation" />
 </einit>
