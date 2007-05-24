@@ -94,8 +94,8 @@ void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
    eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", ev->output);
    ev->task++;
   }
-  if (!cfg_getstring ("configuration-system-sysctl-file", NULL)) {
-   eputs (" * configuration variable \"configuration-system-sysctl-file\" not found.\n", ev->output);
+  if (!cfg_getstring ("configuration-services-sysctl-config", NULL)) {
+   eputs (" * configuration variable \"configuration-services-sysctl-config\" not found.\n", ev->output);
    ev->ipc_return++;
   }
 
