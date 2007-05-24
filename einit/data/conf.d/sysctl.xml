@@ -1,6 +1,4 @@
 <einit prefix="configuration">
  <!-- point his to your sysctl.conf -->
  <services-sysctl config="/etc/sysctl.conf" />
- <!-- don't touch this unless you know what you're doing -->
- <system-sysctl-file s="/dev/sysctl" />
 </einit>
