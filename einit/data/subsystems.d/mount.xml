@@ -1,4 +1,4 @@
-<einit prefix="configuration-storage">
+<einit>
  <configuration>
   <storage>
    <!-- all settings relevant to mount.c -->
