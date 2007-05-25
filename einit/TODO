@@ -1,2 +1,16 @@
-lalalla
-dfsdfsdfs
+implement this:
+<!-- not much of this is implemented, yet -->
+  <compatibility>
+<!-- not yet implemented
+   <initng>
+    <i-files s="/etc/initng" />
+    <transformations>
+    </transformations>
+   </initng>
+
+   <upstart />
+   <jinit />
+   <cinit />
+   <launchd />
+   <bsd /> -->
+  </compatibility>
