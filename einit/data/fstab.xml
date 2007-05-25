@@ -3,6 +3,8 @@
  <!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
  <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
 
+ <node mountpoint="/sys" device="sysfs" fs="sysfs" />
+ <node mountpoint="/proc" device="proc" fs="proc" />
  <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir -p /dev/shm" options="critical" />
  <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir -p /dev/pts" options="critical" />
 
