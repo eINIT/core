@@ -1,0 +1,13 @@
+<einit prefix="configuration-tty">
+ <manage-utmp b="true" />
+
+ <!-- tty initialisation -->
+ <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" />
+ <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" />
+ <tty3-regular dev="/dev/tty3" command="/sbin/agetty 38400 tty3" restart="yes" />
+ <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="yes" />
+ <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="yes" />
+ <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="yes" />
+
+ <tty-panic dev="/dev/tty8" command="/sbin/agetty 38400 tty8" restart="yes" PANIC="yes" />
+</einit>
