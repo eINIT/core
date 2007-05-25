@@ -1,0 +1,10 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-kern-ati"
+  name="Proprietary ATI X11 Drivers"
+  provides="kern-ati"
+  requires="mount-system"
+  before="displaymanager"
+  enable="modprobe fglrx"
+  disable="${configuration_command_rmmod} fglrx"
+  variables="configuration-command-rmmod" />
+</einit>

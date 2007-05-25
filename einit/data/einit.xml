@@ -291,8 +291,15 @@
     <shell id="shell-kern-sound"
      based-on-template="template-shell-kern-module-loader"
      provides="kern-sound:kern-alsa"
+     before="alsa"
      disable="/bin/true"
      system="sound" />
+    <shell id="shell-kern-video"
+     based-on-template="template-shell-kern-module-loader"
+     provides="kern-video"
+     before="displaymanager"
+     disable="/bin/true"
+     system="video" />
     <shell id="shell-kern-dvb"
      based-on-template="template-shell-kern-module-loader"
      system="dvb" />
@@ -336,34 +343,6 @@
        /bin/false;
       fi;"
      variables="configuration-kernel-modules-autoload.d/file:configuration-command-rmmod" />
-
-<!-- nvidia -->
-<!-- this would normally only load the module, but somehow uevents seem not to work properly
- with this one... *shrugs* might be an old driver of mine -->
-    <shell id="shell-kern-nvidia"
-     name="Proprietary NVIDIA X11 Drivers"
-     provides="kern-nvidia"
-     requires="mount-system"
-     enable="modprobe nvidia;
-      for i in 0 1 2 3 4 5 6 7; do
-       mknod /dev/nvidia$i c 195 $i;
-      done;
-      mknod /dev/nvidiactl c 195 255;
-      chgrp video /dev/nvidia*;
-      chmod 0660 /dev/nvidia*;
-      /bin/true;"
-     disable="${configuration_command_rmmod} nvidia;
-      rm /dev/nvidia*"
-     variables="configuration-command-rmmod" />
-
-<!-- no guarantee on this one, just wrote what i remember should be working -->
-    <shell id="shell-kern-ati"
-     name="Proprietary ATI X11 Drivers"
-     provides="kern-ati"
-     requires="mount-system"
-     enable="modprobe fglrx"
-     disable="${configuration_command_rmmod} fglrx"
-     variables="configuration-command-rmmod" />
 
     <shell id="shell-apache2"
      name="httpd - Apache Hypertext Transfer Protocol Server"
