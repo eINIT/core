@@ -92,7 +92,6 @@
    <shell-exec-timeout i="20" />
    <exec-envfile-base s="/etc/einit/conf.d" />
    <proc-path s="/proc" />
-   <udev coldplug="no" device_tarball="no" />
    <swap device="-a" affinity="0" />
    <log b="true" s="/var/log/einit.log" />
   </system>
