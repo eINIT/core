@@ -222,12 +222,6 @@
     <source s="dev" />
    </block-devices>
 
-<!-- some default entries for fstab -->
-   <fstab>
-    <source s="configuration" />
-    <node mountpoint="/sys" device="sysfs" fs="sysfs" />
-    <node mountpoint="/proc" device="proc" fs="proc" />
-   </fstab>
   </storage>
 
   <command>
