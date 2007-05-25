@@ -198,31 +198,6 @@
    <bsd /> -->
   </compatibility>
 
-<!-- mount settings -->
-  <storage>
-   <update-steps s="block-devices:metadata" />
-   <mtab-source s="legacy" />
-   <maintain-mtab b="yes" s="/etc/mtab" />
-   <filesystem>
-    <label-readers s="linux" />
-    <guessing-order s="ext4:ext3:ext2:reiser4:reiserfs:xfs:jfs:ufs:udf" />
-   </filesystem>
-   <mountpoints>
-    <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache" />
-    <system s="/:/sys:/proc:/dev" />
-    <critical s="/usr:/var" />
-   </mountpoints>
-<!-- parametre 1 is the filesystem type, parametre 2 is the device -->
-   <fsck-command s="pexec-options no-pipe; /sbin/fsck -a -T -t %1$s %2$s" />
-
-   <block-devices>
-    <dev-constraints path="/dev/"
-     pattern-allow="^([shm]d[a-z]?[0-9]*)" pattern-disallow="^\.udev" />
-    <source s="dev" />
-   </block-devices>
-
-  </storage>
-
   <command>
 <!-- the command to run to remove a module from the kernel -->
    <rmmod s="/sbin/modprobe -r" with-env="/sbin/modprobe -r ${module}" />
@@ -230,40 +205,6 @@
   </command>
 
  </configuration>
-
- <information>
-  <filesystem>
-<!-- all-purpose filesystems -->
-   <type id="ext2" flags="rw" />
-   <type id="ext3" flags="rw" />
-   <type id="reiserfs" flags="rw" />
-   <type id="reiser4" flags="rw" />
-   <type id="xfs" flags="rw" />
-   <type id="jfs" flags="rw" />
-
-<!-- special-purpose filesystems -->
-   <type id="tmpfs" flags="volatile:rw" />
-   <type id="squashfs" />
-   <type id="romfs" />
-   <type id="cramfs" />
-
-<!-- network filesystems -->
-   <type id="nfs" flags="network" />
-
-<!-- dos-ish filesystems -->
-   <type id="vfat" flags="rw" />
-   <type id="ntfs" />
-
-<!-- popular on cd/dvd media -->
-   <type id="iso9660" />
-   <type id="udf" flags="rw" />
-
-<!-- internal-use filesystems -->
-   <type id="unionfs" />
-   <type id="proc" flags="rw:volatile" />
-   <type id="sysfs" flags="rw:volatile" />
-  </filesystem>
- </information>
 
  <services>
   <virtual>
