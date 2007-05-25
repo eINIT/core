@@ -1,0 +1,11 @@
+<einit prefix="configuration-network">
+ <hostname s="localhost"/>
+ <domainname s="local"/>
+ <interfaces>
+  <lo ip="iproute2" address="127.0.0.1/8" network="127.0.0.0/8" />
+
+<!--  <eth0 kernel-module="e1000" ip="pump"/> -->
+<!--  <wlan0 kernel-module="ipw3945" control="wpa_supplicant" driver="wext" config="/etc/wpa_supplicant/wpa_supplicant.conf" ip="dhcpcd"/> -->
+<!--  <ppp0 control="wvdial" profile="m610"/> -->
+ </interfaces>
+</einit>

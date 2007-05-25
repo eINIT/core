@@ -29,6 +29,7 @@ install:
 	
 	if test -e ${ETCDIR}/local.xml; then ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${LIBDIR}/defaults/local.xml; else ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}; fi
 	if test -e ${ETCDIR}/modes.xml; then ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${LIBDIR}/defaults/modes.xml; else ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${ETCDIR}; fi
+	if test -e ${ETCDIR}/network.xml; then ${INSTALL} ${IPARAM} -m 0644 network.xml ${DESTDIR}/${LIBDIR}/defaults/network.xml; else ${INSTALL} ${IPARAM} -m 0644 network.xml ${DESTDIR}/${ETCDIR}; fi
 	${INSTALL} ${IPARAM} -m 0644 fstab.xml ${DESTDIR}/${LIBDIR}/defaults/fstab.xml
 	if test -e ${ETCDIR}/fstab.xml; then if test -n "${DESTDIR}"; then cp ${ETCDIR}/fstab.xml ${DESTDIR}/${ETCDIR}/fstab.xml; fi else ${INSTALL} ${IPARAM} -m 0644 fstab.xml ${DESTDIR}/${ETCDIR}; fi
 	for module in `ls modules-xml`; do mod=`echo $${module} | sed 's/.xml//g'`; ln -sf ../../lib/einit/scripts/einit.d_erc.sh ${DESTDIR}/${ETCDIR}/init.d/$${mod}; done

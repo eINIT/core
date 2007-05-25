@@ -36,6 +36,7 @@
    <commands-include>
     <file s="sandbox.xml" />
     <file s="fstab.xml" />
+    <file s="network.xml" />
     <file s="modes.xml" />
     <directory s="../../lib/einit/modules-xml" />
     <directory s="../../lib/einit/modules-xml/network" />
@@ -48,6 +49,7 @@
     </settings>
     <commands-include>
      <file s="local.xml" />
+     <file s="network.xml" />
      <file s="fstab.xml" />
      <file s="modes.xml" />
      <directory s="/lib/einit/modules-xml" />
@@ -109,13 +111,6 @@
   </kernel>
 
   <network>
-   <hostname s="localhost" />
-   <domainname s="local" />
-
-   <interfaces>
-    <lo control="none" ip="iproute2" address="127.0.0.1/8" network="127.0.0.0/8" />
-   </interfaces>
-
    <dhcp>
     <timeout s="60"/>
    </dhcp>

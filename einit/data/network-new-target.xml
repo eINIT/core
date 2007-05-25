@@ -1,0 +1,22 @@
+<einit prefix="configuration-network">
+ <hostname s="Redman"/>
+ <domainname s="brcg.net"/>
+ <interfaces>
+  <eth0>
+   <kernel-module s="e1000" />
+   <ip s="pump">
+    <opts s=""/>
+   </ip>
+  </eth0>
+  <wlan0>
+   <kernel-module s="ipw3945">
+   <control="wpa_supplicant">
+    <driver s="wext"/>
+    <config="/etc/wpa_supplicant/wpa_supplicant.conf"/>
+   </control>
+   <ip="dhcpcd">
+    <opts s=""/>
+   </ip>
+  </wlan0>
+ </interfaces>
+</einit>
