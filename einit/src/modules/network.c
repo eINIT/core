@@ -467,6 +467,19 @@ int network_kernel_module (struct interface_descriptor *id, struct einit_event *
  return ret;
 }
 
+int network_ready (struct interface_descriptor *id, struct einit_event *status) {
+ int ret = status_ok;
+ status->string = "waiting for interface to exist";
+ status_update (status);
+ char interface_path[BUFFERSIZE];
+ esprintf (interface_path, BUFFERSIZE, "/sys/class/net/%s", id->interface_name); 
+ while (!stat(interface_path)) {
+  sched_yield();
+  }
+ }
+ return ret;
+}
+
 int network_controller_enable (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t ci = 0;
  int ret = status_ok;
@@ -539,6 +552,9 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
 #if 0
  if (network_kernel_module(id,status) == status_failed)
+  return status_failed;
+
+ if (network_ready(id,status) == status_failed)
   return status_failed;
 
  if (network_controller_enable(id,status) == status_failed)
