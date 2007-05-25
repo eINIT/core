@@ -1,0 +1,7 @@
+<einit prefix="services-virtual-network">
+ <ifctl id="null"
+  requires="kern-${interface}"
+  enable="while ! [ -d /sys/class/net/${interface} ]; do sleep .1; done"
+  disable="/bin/true"
+  variables="configuration-network-interfaces-${interface}/.*" />
+</einit>
