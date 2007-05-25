@@ -89,24 +89,100 @@ enum lisp_node_type {
  lnt_constant
 };
 
+enum lisp_constant_type {
+ lct_string,
+ lct_float,
+ lct_integer
+};
+
+struct lisp_constant {
+ enum lisp_constant_type type;
+
+ union {
+  char *string;
+  double number_float;
+  int integer;
+ };
+};
+
 struct lisp_node {
- lisp_node_type type;
+ enum lisp_node_type type;
 
  union {
   struct { /* cons */
-   lisp_node *primus;
-   lisp_node *secundus;
+   struct lisp_node *primus;
+   struct lisp_node *secundus;
   };
 
   char *symbol;
   
-  char *constant_string;
-  double constant_float;
-  int constant_int;
+  struct lisp_constant constant;
  };
 };
 
-pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
+enum lisp_parser_bits {
+ lpb_clear = 0x0000,
+ lpb_open_single_quotes = 0x0001,
+ lpb_open_double_quotes = 0x0002,
+ lpb_last_char_was_backspace = 0x0004,
+ lpb_cons_dot = 0x0008
+};
+
+struct lisp_parser_state {
+ enum lisp_parser_bits status;
+
+ uint32_t open_brackets;
+ uint32_t position;
+};
+
+struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
+ char tmp [BUFFERSIZE];
+ struct lisp_node *rv = NULL;
+ uint32_t si = s->position;
+
+ for (; data[s->position]; s->position++) {
+  
+
+  switch (data[s->position]) {
+   case '"':
+    s->status |= lpb_open_double_quotes;
+    break;
+
+   case '(':
+    s->open_brackets++;
+    s->position++;
+
+    lisp_parse_atom	(data, s);
+
+    break;
+   case ')':
+    s->open_brackets--;
+
+	return rv;
+  }
+ }
+
+ return NULL;
+}
+
+struct lisp_node *lisp_parse (char *data) {
+ struct lisp_parser_state ls = {
+  .status = lpb_clear,
+  .open_brackets = 0,
+  .position = 0
+ };
+
+ if (data) {
+  return lisp_parse_atom (data, &ls);
+ }
+
+ notice (4, "got this lisp file: %s", data);
+
+ return NULL;
+}
+
+void lisp_free (struct lisp_node *node) {
+}
 
 int module_lisp_scanmodules (struct lmodule *);
 
@@ -115,13 +191,23 @@ int module_lisp_cleanup (struct lmodule *pa) {
 }
 
 int module_lisp_scanmodules ( struct lmodule *modchain ) {
- void *sohandle;
  char **modules = NULL;
 
  modules = readdirfilter(cfg_getnode ("subsystem-lisp-import", NULL), 
-                         "/lib/einit/modules-lisp/", "(\.e?lisp)$", NULL, 0);
+                         "/lib/einit/modules-lisp/", "(\\.e?lisp)$", NULL, 0);
 
  if (modules) {
+  uint32_t i = 0;
+
+  for (; modules[i]; i++) {
+   char *filecontents = readfile (modules[i]);
+
+   if (filecontents) {
+    struct lisp_node *lisp = lisp_parse (filecontents);
+
+	lisp_free (lisp);
+   }
+  }
  }
 
  return 1;
