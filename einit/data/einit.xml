@@ -291,7 +291,7 @@
     <shell id="shell-kern-sound"
      based-on-template="template-shell-kern-module-loader"
      provides="kern-sound:kern-alsa"
-     before="alsa"
+     before="^alsa"
      disable="/bin/true"
      system="sound" />
     <shell id="shell-kern-video"

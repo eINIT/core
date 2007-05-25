@@ -3,7 +3,7 @@
   name="Kernel Modules (ALSA)"
   provides="kern-alsa"
   requires="mount-system"
-  before="alsa"
+  before="^alsa"
   enable="kernel_modules_alsa=`/sbin/modprobe -c | grep -E '(snd-card|sound-service)-[0-9]' | awk '{print $3}'` ;
           if [[ -z '${kernel_modules_alsa}' &amp;&amp; ! ( -d /proc/asound &amp;&amp; -z &quot;$(grep ' no soundcards ' /proc/asound/cards)&quot; ) ]] ; then
          	echo -n 'feedback|warning|Looks like you did not customise your alsa installation...';
