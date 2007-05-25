@@ -3,8 +3,7 @@
   name="Mount ( /dev )"
   provides="udev"
   requires="mount-rootfs:mount-sysfs:mount-proc"
-  enable="
-	pexec-options dont-close-stdin ;
+  enable="pexec-options dont-close-stdin ;
 	echo 'feedback|notice|Using udev to manage /dev' ;
 	udev=$(cat /proc/mounts | grep udev) ;
 	if [ -z ${udev} ] ; then
