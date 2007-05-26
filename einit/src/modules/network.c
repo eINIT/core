@@ -475,7 +475,6 @@ int network_ready (struct interface_descriptor *id, struct einit_event *status) 
  esprintf (interface_path, BUFFERSIZE, "/sys/class/net/%s", id->interface_name); 
  while (!stat(interface_path)) {
   sched_yield();
-  }
  }
  return ret;
 }
