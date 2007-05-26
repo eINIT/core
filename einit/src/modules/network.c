@@ -486,10 +486,10 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
  fbprintf (status, "enabling network interface %s", id->interface_name);
 
- if (network_execute_interface_action (id->controller, "enable", "interface", 1, status) == status_failed)
+ if (network_ready(id,status) == status_failed)
   return status_failed;
 
- if (network_ready(id,status) == status_failed)
+ if (network_execute_interface_action (id->controller, "enable", "interface", 1, status) == status_failed)
   return status_failed;
 
  ret = network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status);
