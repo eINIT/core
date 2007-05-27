@@ -484,7 +484,35 @@ struct lisp_node *lisp_function_dump (struct lisp_node *node) {
  return rnode;
 }
 
+struct lisp_node *lisp_function_car (struct lisp_node *node) {
+ if ((node->type == lnt_cons) && (node->primus->type == lnt_cons)) {
+  return node->primus->primus;
+ } else {
+  struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+
+  memset (rnode, 0, sizeof (struct lisp_node));
+  rnode->type = lnt_nil;
+
+  return rnode;
+ }
+}
+
+struct lisp_node *lisp_function_cdr (struct lisp_node *node) {
+ if ((node->type == lnt_cons) && (node->primus->type == lnt_cons)) {
+  return node->primus->secundus;
+ } else {
+  struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+
+  memset (rnode, 0, sizeof (struct lisp_node));
+  rnode->type = lnt_nil;
+
+  return rnode;
+ }
+}
+
 int module_lisp_cleanup (struct lmodule *pa) {
+ function_unregister ("car", 6, lisp_function_car);
+ function_unregister ("cdr", 6, lisp_function_cdr);
  function_unregister ("dump", 6, lisp_function_dump);
  function_unregister ("print", 6, lisp_function_print);
 
@@ -499,6 +527,8 @@ int module_lisp_configure (struct lmodule *pa) {
 
  function_register ("print", 6, lisp_function_print);
  function_register ("dump", 6, lisp_function_dump);
+ function_register ("cdr", 6, lisp_function_cdr);
+ function_register ("car", 6, lisp_function_car);
 
  return 0;
 }

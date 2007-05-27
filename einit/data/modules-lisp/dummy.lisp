@@ -1,3 +1,4 @@
 ; this is a comment
-(dump
- (x y z . q))
+;(dump
+; (cdr (x . z))
+; (car (x . z)))
