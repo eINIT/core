@@ -45,7 +45,8 @@ enum lisp_node_type {
  lnt_cons,
  lnt_symbol,
  lnt_constant,
- lnt_nil
+ lnt_nil,
+ lnt_dot,
 };
 
 enum lisp_constant_type {
@@ -86,7 +87,10 @@ enum lisp_parser_bits {
  lpb_open_double_quotes = 0x0002,
  lpb_last_char_was_backspace = 0x0004,
  lpb_cons_dot = 0x0008,
- lpb_comment = 0x0010
+ lpb_comment = 0x0010,
+ lpb_next_item_to_cdr = 0x0020,
+ lpb_ignorefurther = 0x0040,
+ lpb_noeval = 0x0080,
 };
 
 struct lisp_parser_state {

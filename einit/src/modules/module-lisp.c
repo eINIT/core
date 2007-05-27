@@ -175,6 +175,18 @@ struct lisp_node *lisp_sexp_add (struct lisp_node *rn, struct lisp_node *rv) {
  return rn;
 }
 
+struct lisp_node *lisp_sexp_add_cdr (struct lisp_node *rn, struct lisp_node *rv) {
+ if (rn->type == lnt_cons) {
+  rn->secundus = lisp_sexp_add_cdr (rn->secundus, rv);
+ }
+
+ if (rn->type == lnt_nil) {
+  memcpy (rn, rv, sizeof (struct lisp_node));
+ }
+
+ return rn;
+}
+
 struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
  char *tmp = emalloc (BUFFERSIZE);
  struct lisp_node *rv = NULL;
@@ -276,21 +288,38 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
 
      node = lisp_parse_atom (data, s);
 
-     if (sbrackets != s->open_brackets)
-      rv = lisp_sexp_add (rv, node);
+     if (sbrackets != s->open_brackets) {
+      if (localbits & lpb_ignorefurther) {
+       continue;
+      }
 
+      if (localbits & lpb_next_item_to_cdr) {
+       rv = lisp_sexp_add_cdr (rv, node);
+
+       localbits ^= lpb_next_item_to_cdr;
+       localbits |= lpb_ignorefurther;
+
+       continue;
+      }
+
+      if (node->type == lnt_dot) {
+       localbits |= lpb_next_item_to_cdr;
+       localbits |= lpb_noeval;
+
+       continue;
+      }
+
+      rv = lisp_sexp_add (rv, node);
+     }
     } while ((sbrackets != s->open_brackets) && data[s->position]);
 
-    if (localbits & lpb_open_single_quotes)
+    if (localbits & (lpb_open_single_quotes | lpb_noeval))
      return rv;
     else
      return lisp_evaluate (rv);
 
    case ';':
     s->status |= lpb_comment;
-    break;
-
-   case '.':
     break;
 
    case ')':
@@ -305,8 +334,12 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
      tmp[n] = 0;
 //     eprintf (stderr, " >> have symbol: %s\n", tmp);
 
-     rv->type = lnt_symbol;
-	 rv->symbol = estrdup (tmp);
+     if (strmatch (tmp, ".")) {
+      rv->type = lnt_dot;
+     } else {
+      rv->type = lnt_symbol;
+      rv->symbol = estrdup (tmp);
+     }
 
      free (tmp);
 
