@@ -336,6 +336,8 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
 
      if (strmatch (tmp, ".")) {
       rv->type = lnt_dot;
+     } else if (strmatch (tmp, "nil")) {
+      rv->type = lnt_nil;
      } else {
       rv->type = lnt_symbol;
       rv->symbol = estrdup (tmp);
