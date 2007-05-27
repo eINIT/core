@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
+#include <einit-modules/lisp.h>
 
 #define EXPECTED_EIV 1
 
@@ -83,100 +84,288 @@ module_register(module_lisp_self);
 
 #endif
 
-enum lisp_node_type {
- lnt_cons,
- lnt_symbol,
- lnt_constant
-};
+char *lisp_node_to_string (struct lisp_node *node) {
+ char *tmp = NULL, *tmpp = NULL, *tmps = NULL;
+ ssize_t len;
 
-enum lisp_constant_type {
- lct_string,
- lct_float,
- lct_integer
-};
+ switch (node->type) {
+  case lnt_nil:
+   return estrdup ("nil");
 
-struct lisp_constant {
- enum lisp_constant_type type;
+  case lnt_cons:
+   tmpp = lisp_node_to_string (node->primus);
+   tmps = lisp_node_to_string (node->secundus);
 
- union {
-  char *string;
-  double number_float;
-  int integer;
- };
-};
+   len = strlen (tmpp) + strlen (tmps) + 6;
 
-struct lisp_node {
- enum lisp_node_type type;
+   tmp = emalloc (len);
+   esprintf (tmp, len, "(%s . %s)", tmpp, tmps);
 
- union {
-  struct { /* cons */
-   struct lisp_node *primus;
-   struct lisp_node *secundus;
-  };
+   free (tmpp);
+   free (tmps);
 
-  char *symbol;
-  
-  struct lisp_constant constant;
- };
-};
+   return tmp;
 
-enum lisp_parser_bits {
- lpb_clear = 0x0000,
- lpb_open_single_quotes = 0x0001,
- lpb_open_double_quotes = 0x0002,
- lpb_last_char_was_backspace = 0x0004,
- lpb_cons_dot = 0x0008
-};
+  case lnt_constant:
+   switch (node->constant.type) {
+    case lct_string:
+     return estrdup (node->constant.string);
+    default:
+     return estrdup ("(unknown constant)");
+   }
 
-struct lisp_parser_state {
- enum lisp_parser_bits status;
+  case lnt_symbol:
+   return estrdup (node->symbol);
 
- uint32_t open_brackets;
- uint32_t position;
-};
+  default:
+   return estrdup ("(unknown node-type)");
+ }
+}
+
+struct lisp_node *lisp_evaluate (struct lisp_node *node) {
+/* struct lisp_node *rv = NULL;
+
+ rv = emalloc (sizeof (struct lisp_node));
+ memset (rv, 0, sizeof (struct lisp_node));
+ rv->type = lnt_nil;*/
+
+ switch (node->type) {
+  case lnt_cons:
+   switch (node->primus->type) {
+    case lnt_symbol:
+     if (strmatch (node->primus->symbol, "list")) {
+      return node->secundus;
+     } else {
+      lisp_function f = function_find_one (node->primus->symbol, 6, NULL);
+
+      if (f) {
+       return f (node->secundus);
+      } else {
+       eprintf (stderr, "function not implemented: %s\n", lisp_node_to_string(node));
+
+       return node;
+      }
+     }
+
+    default:
+     return node;
+   }
+
+  default:
+   return node;
+ }
+
+ return node;
+}
+
+struct lisp_node *lisp_sexp_add (struct lisp_node *rn, struct lisp_node *rv) {
+ if (rn->type == lnt_cons) {
+  rn->secundus = lisp_sexp_add (rn->secundus, rv);
+ }
+
+ if (rn->type == lnt_nil) {
+  rn->type = lnt_cons;
+  rn->primus = rv;
+  rn->secundus = emalloc (sizeof (struct lisp_node));
+  memset (rn->secundus, 0, sizeof (struct lisp_node));
+
+  rn->secundus->type = lnt_nil;
+ }
+
+ return rn;
+}
 
 struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
- char tmp [BUFFERSIZE];
+ char *tmp = emalloc (BUFFERSIZE);
  struct lisp_node *rv = NULL;
- uint32_t si = s->position;
+ uint32_t n = 0, sbrackets = s->open_brackets;
+ enum lisp_parser_bits localbits = lpb_clear;
+
+ rv = emalloc (sizeof (struct lisp_node));
+ memset (rv, 0, sizeof (struct lisp_node));
+ rv->type = lnt_nil;
 
  for (; data[s->position]; s->position++) {
-  
+  if (s->status & lpb_comment) {
+   switch (data[s->position]) {
+    case '\n':
+	case '\r':
+     s->status ^= lpb_comment;
+     s->position--;
+     break;
+   }
 
-  switch (data[s->position]) {
+   continue;
+  }
+
+  if (s->status & lpb_last_char_was_backspace) {
+   s->status ^= lpb_last_char_was_backspace;
+
+   switch (data[s->position]) {
+    case 'r':
+     tmp[n] = '\r';
+     break;
+
+    case 't':
+     tmp[n] = '\t';
+     break;
+
+    case 'v':
+     tmp[n] = '\v';
+     break;
+
+    case 'n':
+     tmp[n] = '\n';
+     break;
+
+    default:
+     tmp[n] = data[s->position];
+     break;
+   }
+
+   if ((n % BUFFERSIZE) == 2) {
+    tmp = erealloc (tmp, n+2+BUFFERSIZE);
+   }
+
+   n++;
+
+   continue;
+  }
+
+  if (data[s->position] == '\\') {
+   s->status |= lpb_last_char_was_backspace;
+   continue;
+  }
+
+  if (s->status & lpb_open_double_quotes) {
+   if (data[s->position] == '"') {
+    tmp[n] = 0;
+    s->status ^= lpb_open_double_quotes;
+
+//    eprintf (stderr, " >> have string: %s\n", tmp);
+
+    rv->type = lnt_constant;
+    memset (&(rv->constant), 0, sizeof (struct lisp_constant));
+
+    rv->constant.type = lct_string;
+	rv->constant.string = estrdup (tmp);
+
+    free (tmp);
+
+    return rv;
+   }
+
+   tmp[n] = data[s->position];
+
+   if ((n % BUFFERSIZE) == 2) {
+    tmp = erealloc (tmp, n+2+BUFFERSIZE);
+   }
+
+   n++;
+  } else switch (data[s->position]) {
    case '"':
     s->status |= lpb_open_double_quotes;
     break;
 
    case '(':
     s->open_brackets++;
-    s->position++;
 
-    lisp_parse_atom	(data, s);
+    do {
+     struct lisp_node *node;
+     s->position++;
 
+     node = lisp_parse_atom (data, s);
+
+     if (sbrackets != s->open_brackets)
+      rv = lisp_sexp_add (rv, node);
+
+    } while ((sbrackets != s->open_brackets) && data[s->position]);
+
+    if (localbits & lpb_open_single_quotes)
+     return rv;
+    else
+     return lisp_evaluate (rv);
+
+   case ';':
+    s->status |= lpb_comment;
     break;
+
+   case '.':
+    break;
+
    case ')':
     s->open_brackets--;
 
-	return rv;
+   case '\t':
+   case '\n':
+   case '\v':
+   case '\r':
+   case ' ':
+    if (n > 0) {
+     tmp[n] = 0;
+//     eprintf (stderr, " >> have symbol: %s\n", tmp);
+
+     rv->type = lnt_symbol;
+	 rv->symbol = estrdup (tmp);
+
+     free (tmp);
+
+     if (data[s->position] == ')') {
+	  s->open_brackets++;
+	  s->position--;
+     }
+
+     return rv;
+	}
+
+    if (data[s->position] == ')') return rv;
+    break;
+
+   case '\'':
+    if (!n) {
+     localbits |= lpb_open_single_quotes;
+     break;
+    }
+
+   default:
+    tmp[n] = data[s->position];
+
+    if ((n % BUFFERSIZE) == 2) {
+     tmp = erealloc (tmp, n+2+BUFFERSIZE);
+    }
+
+    n++;
+	break;
   }
  }
 
- return NULL;
+ return rv;
 }
 
 struct lisp_node *lisp_parse (char *data) {
- struct lisp_parser_state ls = {
-  .status = lpb_clear,
-  .open_brackets = 0,
-  .position = 0
- };
+ struct lisp_parser_state ls;
+ uint32_t l = strlen (data);
+
+ memset (&ls, 0, sizeof (struct lisp_parser_state));
+
+ ls.status = lpb_clear;
+
+// notice (4, "got this lisp file: %s", data);
 
  if (data) {
-  return lisp_parse_atom (data, &ls);
- }
+  struct lisp_node *n;
 
- notice (4, "got this lisp file: %s", data);
+  n = emalloc (sizeof (struct lisp_node));
+  memset (n, 0, sizeof (struct lisp_node));
+  n->type = lnt_nil;
+
+  while (ls.position < l) {
+   n = lisp_sexp_add (n, lisp_parse_atom (data, &ls));
+   ls.position++;
+  }
+
+//  notice (4, "parsed and evaluated to this: %s", lisp_node_to_string(n));
+ }
 
  return NULL;
 }
@@ -185,10 +374,6 @@ void lisp_free (struct lisp_node *node) {
 }
 
 int module_lisp_scanmodules (struct lmodule *);
-
-int module_lisp_cleanup (struct lmodule *pa) {
- return 0;
-}
 
 int module_lisp_scanmodules ( struct lmodule *modchain ) {
  char **modules = NULL;
@@ -213,11 +398,74 @@ int module_lisp_scanmodules ( struct lmodule *modchain ) {
  return 1;
 }
 
+struct lisp_node *lisp_function_print (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ struct lisp_node *t = node;
+ char ps = 0;
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_nil;
+
+// struct lisp_node *rnode = node;
+
+ while (t->type != lnt_nil) {
+  if (t->type == lnt_cons) {
+   char *s = lisp_node_to_string(t->primus);
+
+   if (ps) {
+    eputs (" ", stderr);
+   } else
+    ps = 1;
+   eputs (s, stderr);
+
+   free (s);
+  } else {
+   char *s = lisp_node_to_string(t);
+   eputs (s, stderr);
+   free (s);
+
+   eputs ("\n", stderr);
+
+   return rnode;
+  }
+
+  t = t->secundus;
+ }
+
+ eputs ("\n", stderr);
+
+ return rnode;
+}
+
+struct lisp_node *lisp_function_dump (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ char *s = lisp_node_to_string(node);
+
+ eprintf (stderr, "%s\n", s);
+
+ free (s);
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_nil;
+
+ return rnode;
+}
+
+int module_lisp_cleanup (struct lmodule *pa) {
+ function_unregister ("dump", 6, lisp_function_dump);
+ function_unregister ("print", 6, lisp_function_print);
+
+ return 0;
+}
+
 int module_lisp_configure (struct lmodule *pa) {
  module_init (pa);
 
  pa->scanmodules = module_lisp_scanmodules;
  pa->cleanup = module_lisp_cleanup;
+
+ function_register ("print", 6, lisp_function_print);
+ function_register ("dump", 6, lisp_function_dump);
 
  return 0;
 }
