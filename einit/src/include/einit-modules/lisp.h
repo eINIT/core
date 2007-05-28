@@ -49,6 +49,11 @@ enum lisp_node_type {
  lnt_dot,
 };
 
+enum lisp_node_status {
+ lns_clear = 0x0000,
+ lns_quoted = 0x0001
+};
+
 enum lisp_constant_type {
  lct_string,
  lct_float,
@@ -68,6 +73,7 @@ struct lisp_constant {
 
 struct lisp_node {
  enum lisp_node_type type;
+ enum lisp_node_status status;
 
  union {
   struct { /* cons */

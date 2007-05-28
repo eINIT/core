@@ -315,8 +315,18 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
 
     if (localbits & (lpb_open_single_quotes | lpb_noeval))
      return rv;
-    else
+    else {
+// evaluate arguments
+     struct lisp_node *arg = rv->secundus;
+
+     while (arg->type == lnt_cons) {
+      arg->primus = lisp_evaluate (arg->primus);
+
+      arg = arg->secundus;
+     }
+
      return lisp_evaluate (rv);
+    }
 
    case ';':
     s->status |= lpb_comment;
@@ -395,9 +405,11 @@ struct lisp_node *lisp_parse (char *data) {
   n->type = lnt_nil;
 
   while (ls.position < l) {
-   n = lisp_sexp_add (n, lisp_parse_atom (data, &ls));
+   n = lisp_sexp_add (n, lisp_evaluate(lisp_parse_atom (data, &ls)));
    ls.position++;
   }
+
+  return n;
 
 //  notice (4, "parsed and evaluated to this: %s", lisp_node_to_string(n));
  }

@@ -1,4 +1,5 @@
 ; this is a comment
-;(dump
-; ((x . (y . nil)) .
-;  (x y a d . d)))
+(dump
+ (print "hello world")
+ (((print "dingg") . (y . nil)) .
+  (x y a d . d)))
