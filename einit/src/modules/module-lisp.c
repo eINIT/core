@@ -148,7 +148,12 @@ char *lisp_node_to_string (struct lisp_node *node) {
   case lnt_constant:
    switch (node->constant.type) {
     case lct_string:
-     return estrdup (node->constant.string);
+     len = strlen(node->constant.string) + 3;
+     tmp = emalloc (len);
+
+     esprintf (tmp, len, "\"%s\"", node->constant.string);
+
+     return tmp;
     default:
      return estrdup ("(unknown constant)");
    }
@@ -162,11 +167,8 @@ char *lisp_node_to_string (struct lisp_node *node) {
 }
 
 struct lisp_node *lisp_evaluate (struct lisp_node *node) {
-/* struct lisp_node *rv = NULL;
-
- rv = emalloc (sizeof (struct lisp_node));
- memset (rv, 0, sizeof (struct lisp_node));
- rv->type = lnt_nil;*/
+ struct lisp_node *arg = node->secundus;
+ if (node->status & lns_quoted) return node;
 
  switch (node->type) {
   case lnt_cons:
@@ -175,6 +177,15 @@ struct lisp_node *lisp_evaluate (struct lisp_node *node) {
      if (strmatch (node->primus->symbol, "list")) {
       return node->secundus;
      } else {
+      arg = node->secundus;
+
+// evaluate arguments
+      while (arg->type == lnt_cons) {
+       arg->primus = lisp_evaluate (arg->primus);
+
+       arg = arg->secundus;
+      }
+
       lisp_function f = function_find_one (node->primus->symbol, 6, NULL);
 
       if (f) {
@@ -186,7 +197,16 @@ struct lisp_node *lisp_evaluate (struct lisp_node *node) {
       }
      }
 
+     return node;
+
     default:
+     arg = node;
+     while (arg->type == lnt_cons) {
+      arg->primus = lisp_evaluate (arg->primus);
+
+      arg = arg->secundus;
+     }
+
      return node;
    }
 
@@ -203,12 +223,16 @@ struct lisp_node *lisp_sexp_add (struct lisp_node *rn, struct lisp_node *rv) {
  }
 
  if (rn->type == lnt_nil) {
+  enum lisp_node_status e = (rn->status & lns_quoted);
+
   rn->type = lnt_cons;
   rn->primus = rv;
   rn->secundus = emalloc (sizeof (struct lisp_node));
   memset (rn->secundus, 0, sizeof (struct lisp_node));
 
   rn->secundus->type = lnt_nil;
+
+  rn->status |= e;
  }
 
  return rn;
@@ -293,8 +317,6 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
     tmp[n] = 0;
     s->status ^= lpb_open_double_quotes;
 
-//    eprintf (stderr, " >> have string: %s\n", tmp);
-
     rv->type = lnt_constant;
     memset (&(rv->constant), 0, sizeof (struct lisp_constant));
 
@@ -352,20 +374,10 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
      }
     } while ((sbrackets != s->open_brackets) && data[s->position]);
 
-    if (localbits & (lpb_open_single_quotes | lpb_noeval))
-     return rv;
-    else {
-// evaluate arguments
-     struct lisp_node *arg = rv->secundus;
-
-     while (arg->type == lnt_cons) {
-      arg->primus = lisp_evaluate (arg->primus);
-
-      arg = arg->secundus;
-     }
-
+    if (!s->open_brackets && !(rv->status & lns_quoted)) {
      return lisp_evaluate (rv);
-    }
+    } else
+	 return rv;
 
    case ';':
     s->status |= lpb_comment;
@@ -381,7 +393,6 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
    case ' ':
     if (n > 0) {
      tmp[n] = 0;
-//     eprintf (stderr, " >> have symbol: %s\n", tmp);
 
      if (strmatch (tmp, ".")) {
       rv->type = lnt_dot;
@@ -407,7 +418,8 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
 
    case '\'':
     if (!n) {
-     localbits |= lpb_open_single_quotes;
+     rv->status |= lns_quoted;
+
      break;
     }
 

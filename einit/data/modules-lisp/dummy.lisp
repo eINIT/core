@@ -1,5 +1,5 @@
 ; this is a comment
 ;(dump
-; (print "hello world")
-; (((print "dingg") . (y . nil))
-;  (x y a d . d)))
+; '(print "styx")
+; ((print "hello world"))
+; '(y) '(z y))
