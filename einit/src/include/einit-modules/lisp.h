@@ -40,6 +40,14 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <einit/tree.h>
+
+struct lisp_stack_frame {
+ struct stree *variables;
+ struct stree *functions;
+
+ struct lisp_stack_frame *up;
+};
 
 enum lisp_node_type {
  lnt_cons,
@@ -74,6 +82,7 @@ struct lisp_constant {
 struct lisp_node {
  enum lisp_node_type type;
  enum lisp_node_status status;
+ struct lisp_stack_frame *stack;
 
  union {
   struct { /* cons */
@@ -104,9 +113,13 @@ struct lisp_parser_state {
 
  uint32_t open_brackets;
  uint32_t position;
+
+ struct lisp_stack_frame *stack;
 };
 
 typedef struct lisp_node *(*lisp_function) (struct lisp_node *);
+
+struct lisp_node *lisp_evaluate (struct lisp_node *);
 
 #ifdef __cplusplus
 }

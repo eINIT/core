@@ -182,17 +182,94 @@ char *lisp_node_to_string (struct lisp_node *node) {
  }
 }
 
+struct lisp_node *lisp_evaluate_special (struct lisp_node *node) {
+ if (node->type == lnt_cons) {
+  char *name = (node->primus->type == lnt_symbol) ? node->primus->symbol : NULL;
+
+  if (name) {
+   struct lisp_node *args = node->secundus;
+
+   if (strmatch ("list", name)) {
+    struct lisp_node *arg = args;
+    while (arg->type == lnt_cons) {
+     arg->primus = lisp_evaluate (arg->primus);
+
+     if (arg->secundus != lnt_cons) {
+      arg->secundus = lisp_evaluate (arg->secundus);
+     }
+
+     arg = arg->secundus;
+    }
+
+    return args;
+   } else if (strmatch ("eval", name)) {
+    struct lisp_node *arg = args;
+    while (arg->type == lnt_cons) {
+     if (arg->primus->status & lns_quoted) {
+      arg->primus->status ^= lns_quoted;
+     }
+     arg->primus = lisp_evaluate (arg->primus);
+
+     if (arg->secundus != lnt_cons) {
+      arg->secundus = lisp_evaluate (arg->secundus);
+     }
+
+     arg = arg->secundus;
+    }
+
+    return args;
+   } else if (strmatch ("defvar", name)) {
+    if ((args->type == lnt_cons) && (args->primus->type == lnt_symbol) &&
+	    (args->secundus->type == lnt_cons)) {
+     char *symbol = args->primus->symbol;
+     struct stree *sv = streefind (node->stack->variables, symbol, tree_find_first);
+
+     if (!sv) {
+      node->stack->variables =
+       streeadd (node->stack->variables, symbol, lisp_evaluate(args->secundus->primus), SET_NOALLOC, NULL);
+     }
+     return args->primus;
+    }
+
+    return NULL;
+   } else if (strmatch ("setf", name)) {
+    if ((args->type == lnt_cons) && (args->primus->type == lnt_symbol) &&
+	    (args->secundus->type == lnt_cons)) {
+     char *symbol = args->primus->symbol;
+     struct lisp_node *val = lisp_evaluate (args->secundus->primus);
+     struct stree *sv = streefind (node->stack->variables, symbol, tree_find_first);
+
+     if (sv) {
+      sv->value = val;
+     } else {
+      node->stack->variables =
+       streeadd (node->stack->variables, symbol, val, SET_NOALLOC, NULL);
+     }
+
+	 return val;
+    }
+
+    return NULL;
+   }
+  }
+ }
+
+ return NULL;
+}
+
 struct lisp_node *lisp_evaluate (struct lisp_node *node) {
  struct lisp_node *arg = node->secundus;
  if (node->status & lns_quoted) return node;
+ struct lisp_node *tar = NULL;
+ struct lisp_stack_frame *stack = node->stack;
 
  switch (node->type) {
   case lnt_cons:
    switch (node->primus->type) {
     case lnt_symbol:
-     if (strmatch (node->primus->symbol, "list")) {
-      return node->secundus;
-     } else {
+     if ((tar = lisp_evaluate_special (node))) {
+      return tar;
+	 } else {
       arg = node->secundus;
 
 // evaluate arguments
@@ -230,6 +307,15 @@ struct lisp_node *lisp_evaluate (struct lisp_node *node) {
      return node;
    }
 
+  case lnt_symbol:
+   while (stack) {
+    struct stree *sv = streefind (stack->variables, node->symbol, tree_find_first);
+    if (sv) return sv->value;
+
+    stack = stack->up;
+   }
+   break;
+
   default:
    return node;
  }
@@ -250,7 +336,10 @@ struct lisp_node *lisp_sexp_add (struct lisp_node *rn, struct lisp_node *rv) {
   rn->secundus = emalloc (sizeof (struct lisp_node));
   memset (rn->secundus, 0, sizeof (struct lisp_node));
 
+  rn->stack = rv->stack;
+
   rn->secundus->type = lnt_nil;
+  rn->secundus->stack = rn->stack;
 
   rn->status |= e;
  }
@@ -279,6 +368,7 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
  rv = emalloc (sizeof (struct lisp_node));
  memset (rv, 0, sizeof (struct lisp_node));
  rv->type = lnt_nil;
+ rv->stack = s->stack;
 
  for (; data[s->position]; s->position++) {
   if (s->status & lpb_comment) {
@@ -496,6 +586,9 @@ struct lisp_node *lisp_parse (char *data) {
  memset (&ls, 0, sizeof (struct lisp_parser_state));
 
  ls.status = lpb_clear;
+ ls.stack = emalloc (sizeof (struct lisp_stack_frame));
+
+ memset (ls.stack, 0, sizeof (struct lisp_stack_frame));
 
 // notice (4, "got this lisp file: %s", data);
 
@@ -505,6 +598,7 @@ struct lisp_node *lisp_parse (char *data) {
   n = emalloc (sizeof (struct lisp_node));
   memset (n, 0, sizeof (struct lisp_node));
   n->type = lnt_nil;
+  n->stack = ls.stack;
 
   while (ls.position < l) {
    n = lisp_sexp_add (n, lisp_evaluate(lisp_parse_atom (data, &ls)));
@@ -554,6 +648,7 @@ struct lisp_node *lisp_function_print (struct lisp_node *node) {
 
  memset (rnode, 0, sizeof (struct lisp_node));
  rnode->type = lnt_nil;
+ rnode->stack = node->stack;
 
 // struct lisp_node *rnode = node;
 
@@ -596,6 +691,7 @@ struct lisp_node *lisp_function_dump (struct lisp_node *node) {
 
  memset (rnode, 0, sizeof (struct lisp_node));
  rnode->type = lnt_nil;
+ rnode->stack = node->stack;
 
  return rnode;
 }
@@ -608,6 +704,7 @@ struct lisp_node *lisp_function_car (struct lisp_node *node) {
 
   memset (rnode, 0, sizeof (struct lisp_node));
   rnode->type = lnt_nil;
+  rnode->stack = node->stack;
 
   return rnode;
  }
@@ -621,6 +718,7 @@ struct lisp_node *lisp_function_cdr (struct lisp_node *node) {
 
   memset (rnode, 0, sizeof (struct lisp_node));
   rnode->type = lnt_nil;
+  rnode->stack = node->stack;
 
   return rnode;
  }
@@ -632,6 +730,7 @@ struct lisp_node *lisp_function_add (struct lisp_node *node) {
 
  memset (rnode, 0, sizeof (struct lisp_node));
  rnode->type = lnt_constant;
+ rnode->stack = node->stack;
 
  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
   if (t->primus->constant.type == lct_integer) {
@@ -680,6 +779,7 @@ struct lisp_node *lisp_function_subtract (struct lisp_node *node) {
 
  memset (rnode, 0, sizeof (struct lisp_node));
  rnode->type = lnt_constant;
+ rnode->stack = node->stack;
 
  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
   if (t->primus->constant.type == lct_integer) {
@@ -728,6 +828,7 @@ struct lisp_node *lisp_function_multiply (struct lisp_node *node) {
 
  memset (rnode, 0, sizeof (struct lisp_node));
  rnode->type = lnt_constant;
+ rnode->stack = node->stack;
 
  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
   if (t->primus->constant.type == lct_integer) {
@@ -776,6 +877,7 @@ struct lisp_node *lisp_function_divide (struct lisp_node *node) {
 
  memset (rnode, 0, sizeof (struct lisp_node));
  rnode->type = lnt_constant;
+ rnode->stack = node->stack;
 
  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
   if (t->primus->constant.type == lct_integer) {
