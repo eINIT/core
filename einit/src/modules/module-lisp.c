@@ -85,6 +85,8 @@ module_register(module_lisp_self);
 
 #endif
 
+char **lisp_have_modules = NULL;
+
 char *lisp_node_to_string (struct lisp_node *node) {
  char *tmp = NULL;
  struct lisp_node *tx;
@@ -622,12 +624,12 @@ int module_lisp_scanmodules ( struct lmodule *modchain ) {
  char **modules = NULL;
 
  modules = readdirfilter(cfg_getnode ("subsystem-lisp-import", NULL), 
-                         "/lib/einit/modules-lisp/", "(\\.e?lisp)$", NULL, 0);
+                         "/lib/einit/modules-lisp-bootstrap/", "(\\.e?lisp)$", NULL, 0);
 
  if (modules) {
   uint32_t i = 0;
 
-  for (; modules[i]; i++) {
+  for (; modules[i]; i++) if (!inset ((const void **)lisp_have_modules, modules[i], SET_TYPE_STRING)) {
    char *filecontents = readfile (modules[i]);
 
    if (filecontents) {
@@ -635,6 +637,8 @@ int module_lisp_scanmodules ( struct lmodule *modchain ) {
 
 	lisp_free (lisp);
    }
+
+   lisp_have_modules = (char **)setadd ((void **)lisp_have_modules, modules[i], SET_TYPE_STRING);
   }
  }
 
@@ -920,6 +924,50 @@ struct lisp_node *lisp_function_divide (struct lisp_node *node) {
  return rnode;
 }
 
+struct lisp_node *lisp_function_set_configuration (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ struct cfgnode cfg;
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_nil;
+ rnode->stack = node->stack;
+
+ memset (&cfg, 0, sizeof (struct cfgnode));
+
+ if ((node->type == lnt_cons) &&
+     (node->primus->type == lnt_constant) &&
+     (node->primus->constant.type == lct_string)) {
+  struct lisp_node *t = node->secundus;
+
+  cfg.id = estrdup (node->primus->constant.string);
+
+  while (t->type == lnt_cons) {
+   if (t->primus->type == lnt_cons) {
+    if ((t->primus->primus->type == lnt_constant) &&
+        (t->primus->primus->constant.type == lct_string) &&
+		(t->primus->secundus->type == lnt_constant) &&
+        (t->primus->secundus->constant.type == lct_string)) {
+
+     if (strmatch ("s", t->primus->primus->constant.string)) {
+      cfg.svalue = t->primus->secundus->constant.string;
+     }
+
+     cfg.arbattrs = (char **)setadd ((void **)cfg.arbattrs, t->primus->primus->constant.string, SET_TYPE_STRING);
+     cfg.arbattrs = (char **)setadd ((void **)cfg.arbattrs, t->primus->secundus->constant.string, SET_TYPE_STRING);
+    }
+   }
+
+   t = t->secundus;
+  }
+ } else {
+  return rnode;
+ }
+
+ cfg_addnode (&cfg);
+
+ return rnode;
+}
+
 int module_lisp_cleanup (struct lmodule *pa) {
  function_unregister ("car", 6, lisp_function_car);
  function_unregister ("cdr", 6, lisp_function_cdr);
@@ -929,6 +977,7 @@ int module_lisp_cleanup (struct lmodule *pa) {
  function_unregister ("-", 6, lisp_function_subtract);
  function_unregister ("*", 6, lisp_function_multiply);
  function_unregister ("/", 6, lisp_function_divide);
+ function_unregister ("set-configuration", 6, lisp_function_set_configuration);
 
  return 0;
 }
@@ -947,6 +996,7 @@ int module_lisp_configure (struct lmodule *pa) {
  function_register ("-", 6, lisp_function_subtract);
  function_register ("*", 6, lisp_function_multiply);
  function_register ("/", 6, lisp_function_divide);
+ function_register ("set-configuration", 6, lisp_function_set_configuration);
 
  return 0;
 }

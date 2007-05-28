@@ -12,3 +12,7 @@
 ; (eval '(
 ;  (/ (* (+ 3 2 12 0.2) 3) 3)
 ;  sum))))
+;
+;(set-configuration
+;  "configuration-kernel-modules-bluetooth"
+;  ("s" . "hello"))
