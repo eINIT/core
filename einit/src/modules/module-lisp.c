@@ -85,7 +85,8 @@ module_register(module_lisp_self);
 #endif
 
 char *lisp_node_to_string (struct lisp_node *node) {
- char *tmp = NULL, *tmpp = NULL, *tmps = NULL;
+ char *tmp = NULL;
+ struct lisp_node *tx;
  ssize_t len;
 
  switch (node->type) {
@@ -93,17 +94,55 @@ char *lisp_node_to_string (struct lisp_node *node) {
    return estrdup ("nil");
 
   case lnt_cons:
-   tmpp = lisp_node_to_string (node->primus);
-   tmps = lisp_node_to_string (node->secundus);
+   tx = node;
+   do {
+    char *tmpp = NULL, *tmps = NULL;
+    tmpp = lisp_node_to_string (tx->primus);
 
-   len = strlen (tmpp) + strlen (tmps) + 6;
+    if (tmp) {
+     len = strlen (tmp) + strlen (tmpp) + 2;
+     tmps = emalloc (len);
 
-   tmp = emalloc (len);
-   esprintf (tmp, len, "(%s . %s)", tmpp, tmps);
+     esprintf (tmps, len, "%s %s", tmp, tmpp);
 
-   free (tmpp);
-   free (tmps);
+     free (tmpp);
+     free (tmp);
 
+     tmp = tmps;
+	} else {
+     tmp = tmpp;
+    }
+
+    if (tx->secundus->type != lnt_cons) {
+     if (tx->secundus->type == lnt_nil) {
+      len = strlen (tmp) + 3;
+
+      tmpp = emalloc (len);
+      esprintf (tmpp, len, "(%s)", tmp);
+
+      free (tmp);
+
+      tmp = tmpp;
+     } else {
+      tmps = lisp_node_to_string (tx->secundus);
+
+      len = strlen (tmp) + strlen (tmps) + 6;
+
+      tmpp = emalloc (len);
+      esprintf (tmpp, len, "(%s . %s)", tmp, tmps);
+
+      free (tmp);
+      free (tmps);
+
+      tmp = tmpp;
+     }
+
+     return tmp;
+    }
+
+    tx = tx->secundus;
+
+   } while (tx->type == lnt_cons);
    return tmp;
 
   case lnt_constant:
