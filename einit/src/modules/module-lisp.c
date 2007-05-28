@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
 #include <einit-modules/lisp.h>
+#include <ctype.h>
 
 #define EXPECTED_EIV 1
 
@@ -154,6 +155,21 @@ char *lisp_node_to_string (struct lisp_node *node) {
      esprintf (tmp, len, "\"%s\"", node->constant.string);
 
      return tmp;
+
+    case lct_float:
+     tmp = emalloc (BUFFERSIZE);
+
+     esprintf (tmp, BUFFERSIZE, "%g", node->constant.number_float);
+
+     return tmp;
+
+    case lct_integer:
+     tmp = emalloc (BUFFERSIZE);
+
+     esprintf (tmp, BUFFERSIZE, "%i", node->constant.integer);
+
+     return tmp;
+
     default:
      return estrdup ("(unknown constant)");
    }
@@ -203,6 +219,10 @@ struct lisp_node *lisp_evaluate (struct lisp_node *node) {
      arg = node;
      while (arg->type == lnt_cons) {
       arg->primus = lisp_evaluate (arg->primus);
+
+      if (arg->secundus != lnt_cons) {
+       arg->secundus = lisp_evaluate (arg->secundus);
+      }
 
       arg = arg->secundus;
      }
@@ -399,8 +419,39 @@ struct lisp_node *lisp_parse_atom (char *data, struct lisp_parser_state *s) {
      } else if (strmatch (tmp, "nil")) {
       rv->type = lnt_nil;
      } else {
-      rv->type = lnt_symbol;
-      rv->symbol = estrdup (tmp);
+      uint32_t k = 0, num = 0, alpha = 0, dec = 0, sign;
+
+      for (; tmp[k]; k++) {
+       if (isdigit (tmp[k])) {
+        num++;
+       } else if ((tmp[k] == '+') || (tmp[k] == '-')) {
+        sign++;
+       } else if (tmp[k] == '.') {
+        dec++;
+       } else if (isalpha (tmp[k])) {
+        alpha++;
+       }
+      }
+
+      if (alpha) {
+       rv->type = lnt_symbol;
+       rv->symbol = estrdup (tmp);
+      } else if (dec && num) {
+       rv->type = lnt_constant;
+       memset (&(rv->constant), 0, sizeof (struct lisp_constant));
+
+       rv->constant.type = lct_float;
+       rv->constant.number_float = strtod (tmp, (char **)NULL);
+      } else if (num) {
+       rv->type = lnt_constant;
+       memset (&(rv->constant), 0, sizeof (struct lisp_constant));
+
+       rv->constant.type = lct_integer;
+       rv->constant.integer = strtol (tmp, (char **)NULL, 10);
+      } else {
+       rv->type = lnt_symbol;
+       rv->symbol = estrdup (tmp);
+      }
      }
 
      free (tmp);
@@ -575,11 +626,207 @@ struct lisp_node *lisp_function_cdr (struct lisp_node *node) {
  }
 }
 
+struct lisp_node *lisp_function_add (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ struct lisp_node *t = node;
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_constant;
+
+ if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+  if (t->primus->constant.type == lct_integer) {
+   rnode->constant.type = lct_integer;
+   rnode->constant.integer = t->primus->constant.integer;
+  } else if (t->primus->constant.type == lct_float) {
+   rnode->constant.type = lct_float;
+   rnode->constant.number_float = t->primus->constant.number_float;
+  } else {
+   rnode->constant.type = lct_integer;
+   return rnode;
+  }
+ } else {
+  rnode->constant.type = lct_integer;
+  return rnode;
+ }
+ t = t->secundus;
+
+ while (t->type != lnt_nil) {
+  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+   if (t->primus->constant.type == lct_integer) {
+    if (rnode->constant.type == lct_integer)
+     rnode->constant.integer += t->primus->constant.integer;
+    else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float += t->primus->constant.integer;
+   } else if (t->primus->constant.type == lct_float) {
+    if (rnode->constant.type == lct_integer) {
+     rnode->constant.type = lct_float;
+     rnode->constant.number_float = rnode->constant.integer + t->primus->constant.number_float;
+    } else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float += t->primus->constant.number_float;
+   }
+  } else {
+   return rnode;
+  }
+
+  t = t->secundus;
+ }
+
+ return rnode;
+}
+
+struct lisp_node *lisp_function_subtract (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ struct lisp_node *t = node;
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_constant;
+
+ if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+  if (t->primus->constant.type == lct_integer) {
+   rnode->constant.type = lct_integer;
+   rnode->constant.integer = t->primus->constant.integer;
+  } else if (t->primus->constant.type == lct_float) {
+   rnode->constant.type = lct_float;
+   rnode->constant.number_float = t->primus->constant.number_float;
+  } else {
+   rnode->constant.type = lct_integer;
+   return rnode;
+  }
+ } else {
+  rnode->constant.type = lct_integer;
+  return rnode;
+ }
+ t = t->secundus;
+
+ while (t->type != lnt_nil) {
+  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+   if (t->primus->constant.type == lct_integer) {
+    if (rnode->constant.type == lct_integer)
+     rnode->constant.integer -= t->primus->constant.integer;
+    else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float -= t->primus->constant.integer;
+   } else if (t->primus->constant.type == lct_float) {
+    if (rnode->constant.type == lct_integer) {
+     rnode->constant.type = lct_float;
+     rnode->constant.number_float = rnode->constant.integer - t->primus->constant.number_float;
+    } else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float -= t->primus->constant.number_float;
+   }
+  } else {
+   return rnode;
+  }
+
+  t = t->secundus;
+ }
+
+ return rnode;
+}
+
+struct lisp_node *lisp_function_multiply (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ struct lisp_node *t = node;
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_constant;
+
+ if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+  if (t->primus->constant.type == lct_integer) {
+   rnode->constant.type = lct_integer;
+   rnode->constant.integer = t->primus->constant.integer;
+  } else if (t->primus->constant.type == lct_float) {
+   rnode->constant.type = lct_float;
+   rnode->constant.number_float = t->primus->constant.number_float;
+  } else {
+   rnode->constant.type = lct_integer;
+   return rnode;
+  }
+ } else {
+  rnode->constant.type = lct_integer;
+  return rnode;
+ }
+ t = t->secundus;
+
+ while (t->type != lnt_nil) {
+  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+   if (t->primus->constant.type == lct_integer) {
+    if (rnode->constant.type == lct_integer)
+     rnode->constant.integer *= t->primus->constant.integer;
+    else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float *= t->primus->constant.integer;
+   } else if (t->primus->constant.type == lct_float) {
+    if (rnode->constant.type == lct_integer) {
+     rnode->constant.type = lct_float;
+     rnode->constant.number_float = rnode->constant.integer * t->primus->constant.number_float;
+    } else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float *= t->primus->constant.number_float;
+   }
+  } else {
+   return rnode;
+  }
+
+  t = t->secundus;
+ }
+
+ return rnode;
+}
+
+struct lisp_node *lisp_function_divide (struct lisp_node *node) {
+ struct lisp_node *rnode = emalloc (sizeof (struct lisp_node));
+ struct lisp_node *t = node;
+
+ memset (rnode, 0, sizeof (struct lisp_node));
+ rnode->type = lnt_constant;
+
+ if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+  if (t->primus->constant.type == lct_integer) {
+   rnode->constant.type = lct_integer;
+   rnode->constant.integer = t->primus->constant.integer;
+  } else if (t->primus->constant.type == lct_float) {
+   rnode->constant.type = lct_float;
+   rnode->constant.number_float = t->primus->constant.number_float;
+  } else {
+   rnode->constant.type = lct_integer;
+   return rnode;
+  }
+ } else {
+  rnode->constant.type = lct_integer;
+  return rnode;
+ }
+ t = t->secundus;
+
+ while (t->type != lnt_nil) {
+  if ((t->type == lnt_cons) && (t->primus->type == lnt_constant)) {
+   if (t->primus->constant.type == lct_integer) {
+    if (rnode->constant.type == lct_integer)
+     rnode->constant.integer /= t->primus->constant.integer;
+    else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float /= t->primus->constant.integer;
+   } else if (t->primus->constant.type == lct_float) {
+    if (rnode->constant.type == lct_integer) {
+     rnode->constant.type = lct_float;
+     rnode->constant.number_float = rnode->constant.integer / t->primus->constant.number_float;
+    } else if (rnode->constant.type == lct_float)
+     rnode->constant.number_float /= t->primus->constant.number_float;
+   }
+  } else {
+   return rnode;
+  }
+
+  t = t->secundus;
+ }
+
+ return rnode;
+}
+
 int module_lisp_cleanup (struct lmodule *pa) {
  function_unregister ("car", 6, lisp_function_car);
  function_unregister ("cdr", 6, lisp_function_cdr);
  function_unregister ("dump", 6, lisp_function_dump);
  function_unregister ("print", 6, lisp_function_print);
+ function_unregister ("+", 6, lisp_function_add);
+ function_unregister ("-", 6, lisp_function_subtract);
+ function_unregister ("*", 6, lisp_function_multiply);
+ function_unregister ("/", 6, lisp_function_divide);
 
  return 0;
 }
@@ -594,6 +841,10 @@ int module_lisp_configure (struct lmodule *pa) {
  function_register ("dump", 6, lisp_function_dump);
  function_register ("cdr", 6, lisp_function_cdr);
  function_register ("car", 6, lisp_function_car);
+ function_register ("+", 6, lisp_function_add);
+ function_register ("-", 6, lisp_function_subtract);
+ function_register ("*", 6, lisp_function_multiply);
+ function_register ("/", 6, lisp_function_divide);
 
  return 0;
 }
