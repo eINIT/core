@@ -95,6 +95,8 @@ void mod_examine (char *);
 
 void mod_commit_and_wait (char **, char **);
 
+void mod_defer_notice (struct lmodule *, char **);
+
 struct module_taskblock
   current = { NULL, NULL, NULL },
   target_state = { NULL, NULL, NULL };
@@ -1301,6 +1303,31 @@ void mod_commits_inc () {
  mod_spawn_workthreads ();
 }
 
+void mod_defer_notice (struct lmodule *mod, char **services) {
+ char tmp[BUFFERSIZE];
+ char *s = set2str (' ', (const char **)services);
+
+ notice (4, "mod_defer_notice() called");
+
+ struct einit_event ee = evstaticinit (einit_feedback_module_status);
+ mod->status |= status_deferred;
+
+ ee.module = mod;
+ ee.status = status_deferred;
+
+ if (s) {
+  esprintf (tmp, BUFFERSIZE, "queued after: %s", s);
+  ee.string = estrdup(tmp);
+ }
+
+ event_emit (&ee, einit_event_flag_broadcast);
+ evstaticdestroy (ee);
+
+ if (s) free (s);
+
+ notice (4, "mod_defer_notice(): event emitted");
+}
+
 void mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
 
@@ -1653,6 +1680,7 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
 /*    eputs (".", stderr);
     fflush (stderr);*/
     struct lmodule *rcurrent = lm[0];
+
     rotate = 0;
     broken = 0;
 
@@ -1777,6 +1805,15 @@ void mod_flatten_current_tb () {
    fflush (stderr);
 #endif
   }
+
+  for (i = 0; current.enable[i]; i++) {
+   struct stree *xn = streefind (module_logics_service_list, current.enable[i], tree_find_first);
+
+   if (xn && xn->value) {
+    struct lmodule **lm = xn->value;
+    mod_defer_notice (lm[0], NULL);
+   }
+  }
  }
 
  repeat_disa:
@@ -1815,6 +1852,15 @@ void mod_flatten_current_tb () {
    eputs ("!", stderr);
    fflush (stderr);
 #endif
+  }
+
+  for (i = 0; current.disable[i]; i++) {
+   struct stree *xn = streefind (module_logics_service_list, current.disable[i], tree_find_first);
+
+   if (xn && xn->value) {
+    struct lmodule **lm = xn->value;
+    mod_defer_notice (lm[0], NULL);
+   }
   }
  }
 
@@ -1986,6 +2032,8 @@ char mod_disable_users (struct lmodule *module) {
    }
 
    if (retval == 2) {
+    mod_defer_notice (module, need);
+
     emutex_lock (&ml_tb_current_mutex);
 
     char **tmp = (char **)setcombine ((const void **)current.disable, (const void **)need, SET_TYPE_STRING);
@@ -2041,6 +2089,8 @@ char mod_enable_requirements (struct lmodule *module) {
    }
 
    if (retval == 2) {
+    mod_defer_notice (module, need);
+
     emutex_lock (&ml_tb_current_mutex);
 
     char **tmp = (char **)setcombine ((const void **)current.enable, (const void **)need, SET_TYPE_STRING);
@@ -2525,6 +2575,8 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
       hd = 1;
      }
     }
+
+    mod_defer_notice (lm, d);
 
     free (d);
    } else {

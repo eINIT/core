@@ -303,6 +303,9 @@ void feedback_process_textual_noansi(struct feedback_textual_module_status *st) 
   if (st->module->status & status_working) {
    statuscode[4] = 'w';
   }
+  if (st->module->status & status_deferred) {
+   statuscode[4] = 's';
+  }
 
   if (st->module->status & status_failed) {
    statuscode[0] = '!';
@@ -345,6 +348,9 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
   }
   if (st->module->status & status_working) {
    status = "\e[31m....\e[0m";
+  }
+  if (st->module->status & status_deferred) {
+   status = "\e[33mschd\e[0m";
   }
 
   if (st->module->status & status_failed) {

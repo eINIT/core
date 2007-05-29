@@ -146,8 +146,11 @@ enum einit_module_status {
 /*!< Status Information: command not implemented*/
  status_enabled   = 0x0100,
 /*!< Status Information: Object is enabled. */
- status_disabled  = 0x0200
+ status_disabled  = 0x0200,
 /*!< Status Information: Object is disabled. */
+
+ status_deferred  = 0x1000
+ /*!< Status Information: Hint: Object is scheduled, but deferred. */
 };
 /*!\} */
 
