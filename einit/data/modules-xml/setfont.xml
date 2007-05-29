@@ -4,7 +4,7 @@
   provides="setfont"
   requires="mount-critical:keyboard"
   before="tty"
-  enable="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular') ;
+  enable="tty_max=$(cat /etc/einit/subsystems.d/tty.xml | egrep -c 'tty[0-9]-regular') ;
           tty_list=$(seq 1 ${tty_max}) ;
           if [ -d /dev/vc ] ; then tty_dev=/dev/vc/ ; else tty_dev=/dev/tty ; fi ;
           for tty_num in ${tty_list} ; do

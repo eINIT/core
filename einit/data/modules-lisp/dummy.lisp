@@ -14,5 +14,5 @@
 ;  sum))))
 ;
 ;(set-configuration
-;  "configuration-kernel-modules-bluetooth"
+;  "configuration-kernel-modules-video"
 ;  ("s" . "hello"))
