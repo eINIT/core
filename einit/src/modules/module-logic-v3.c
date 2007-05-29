@@ -1307,8 +1307,6 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
  char tmp[BUFFERSIZE];
  char *s = set2str (' ', (const char **)services);
 
- notice (4, "mod_defer_notice() called");
-
  struct einit_event ee = evstaticinit (einit_feedback_module_status);
  mod->status |= status_deferred;
 
@@ -1324,8 +1322,6 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
  evstaticdestroy (ee);
 
  if (s) free (s);
-
- notice (4, "mod_defer_notice(): event emitted");
 }
 
 void mod_defer_until (char *service, char *after) {
