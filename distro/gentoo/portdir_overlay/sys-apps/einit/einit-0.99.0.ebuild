@@ -3,7 +3,7 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v24)
+# eINIT SVN ebuild (v25)
 #
 
 inherit subversion
@@ -26,6 +26,7 @@ RDEPEND="dev-libs/expat
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
+PDEPENT="sys-apps/einit-modules-xml"
 
 S=${WORKDIR}/${PN}
 
