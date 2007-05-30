@@ -69,7 +69,8 @@ const struct smodule einit_linux_module_kernel_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = linux_module_kernel_configure
+ .configure = linux_module_kernel_configure,
+ .configuration = NULL
 };
 
 module_register(einit_linux_module_kernel_self);
@@ -156,11 +157,9 @@ int linux_module_kernel_scanmodules (struct lmodule *mainlist) {
    struct cfgnode *node = cur->value;
    if (node && node->svalue) {
     char tmp[BUFFERSIZE];
-    struct smodule *sm = emalloc (sizeof (struct smodule));
+    struct smodule *sm = ecalloc (1, sizeof (struct smodule));
     char doop = 1;
     struct lmodule *lm;
-
-    memset (sm, 0, sizeof (struct smodule));
 
     esprintf (tmp, BUFFERSIZE, "linux-kernel-%s", cur->key + 29);
 

@@ -91,6 +91,30 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  if (!ev || !ev->argv) return;
 
  if (ev->argc >= 2) {
+  if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
+   struct lmodule *cur = mlist;
+   ev->implemented = 1;
+
+   while (cur) {
+    if (cur->module) {
+     struct einit_cfgvar_info **variables = cur->module->configuration;
+
+     if (variables) {
+      uint32_t i = 0;
+
+      for (i = 0; variables[i]; i++) {
+       char *s = cfg_getstring (variables[i]->variable, NULL);
+
+       if (!s) {
+        eprintf (ev->output, " >> module \"%s\" (%s): variable %s not found (%s), description:\n  %s\n", cur->module->name, cur->module->rid, variables[i]->variable, variables[i]->options & eco_critical ? "critical" : "non-critical", variables[i]->description);
+       }
+      }
+     }
+    }
+
+    cur = cur->next;
+   }
+  }
   if (strmatch (ev->argv[0], "list")) {
    if (strmatch (ev->argv[1], "modules")) {
     struct lmodule *cur = mlist;

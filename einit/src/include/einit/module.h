@@ -235,7 +235,7 @@ struct smodule {
  int (*configure)(struct lmodule *);
                         /*!< function used to initialise the module. */
 
- struct einit_cfgvar_info *configuration[];
+ struct einit_cfgvar_info **configuration;
                         /*!< what configuration variables this module is gonna use */
 };
 
