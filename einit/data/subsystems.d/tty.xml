@@ -8,6 +8,7 @@
  <tty4-regular dev="/dev/tty4" command="/sbin/agetty 38400 tty4" restart="yes" />
  <tty5-regular dev="/dev/tty5" command="/sbin/agetty 38400 tty5" restart="yes" />
  <tty6-regular dev="/dev/tty6" command="/sbin/agetty 38400 tty6" restart="yes" />
+ <tty9-regular dev="/dev/tty9" command="/sbin/agetty 38400 tty9" restart="yes" />
 
  <tty-panic dev="/dev/tty8" command="/sbin/agetty 38400 tty8" restart="yes" PANIC="yes" />
 </einit>
