@@ -51,6 +51,8 @@ if [ "${method}" == "ebuild" ]; then
   else
    cp -f "$ETCDIR/${subsystem}/${fileshort}" "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
   fi
+ else
+  cp -f ${file} "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
  fi
  cp -f ${file} "$DESTDIR/$LIBDIR/defaults/${subsystem}/${fileshort}";
 else
