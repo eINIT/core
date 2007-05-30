@@ -189,6 +189,7 @@ int network_scanmodules (struct lmodule *mainlist) {
        esprintf (tmp, BUFFERSIZE, "kern-%s", interfacename);
        req = (char **)setadd ((void **)req, tmp, SET_TYPE_STRING);
 
+#if 0
 // kernel module
        memset (&newnode, 0, sizeof(struct cfgnode));
 
@@ -207,6 +208,7 @@ int network_scanmodules (struct lmodule *mainlist) {
        newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)interfacename, SET_TYPE_STRING);
 
        cfg_addnode (&newnode);
+#endif
 
        memset (&newnode, 0, sizeof(struct cfgnode));
 

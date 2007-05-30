@@ -158,56 +158,6 @@
   <virtual>
    <module>
 <!-- modules -->
-    <shell-template id="template-shell-kern-module-loader"
-     name="Kernel Modules (${system})"
-     provides="kern-${system}"
-     requires="mount-system:ipc"
-     enable="
-      for x in ${configuration_kernel_modules_${system}};
-       do echo $x; modprobe $x &amp;
-      done; /bin/true"
-     disable="
-      for x in ${configuration_kernel_modules_${system}}; do
-       ${configuration_command_rmmod} $x &amp;
-      done; /bin/true"
-     variables="configuration-kernel-modules-${system}:configuration-command-rmmod" />
-
-    <shell id="shell-kern-ethernet"
-     based-on-template="template-shell-kern-module-loader"
-     disable="/bin/true"
-     system="ethernet" />
-    <shell id="shell-kern-sound"
-     based-on-template="template-shell-kern-module-loader"
-     provides="kern-sound:kern-alsa"
-     before="^alsa"
-     disable="/bin/true"
-     system="sound" />
-    <shell id="shell-kern-video"
-     based-on-template="template-shell-kern-module-loader"
-     provides="kern-video"
-     before="displaymanager"
-     disable="/bin/true"
-     system="video" />
-    <shell id="shell-kern-dvb"
-     based-on-template="template-shell-kern-module-loader"
-     system="dvb" />
-    <shell id="shell-kern-arbitrary"
-     based-on-template="template-shell-kern-module-loader"
-     disable="/bin/true"
-     system="arbitrary" />
-    <shell id="shell-kern-usb"
-     based-on-template="template-shell-kern-module-loader"
-     system="usb" />
-    <shell id="shell-kern-hid"
-     based-on-template="template-shell-kern-module-loader"
-     system="hid" />
-    <shell id="shell-kern-bluetooth"
-     based-on-template="template-shell-kern-module-loader"
-     system="bluetooth" />
-    <shell id="shell-kern-sensors"
-     based-on-template="template-shell-kern-module-loader"
-     system="sensors" />
-
     <shell id="shell-kern-module-autoload.d"
      name="Kernel Modules (autoload.d)"
      provides="kern-arbitrary"
