@@ -110,8 +110,8 @@ int einit_module_xml_daemon_disable (struct dexecinfo *dexec, struct einit_event
 int einit_module_xml_daemon_custom (struct dexecinfo *dexec, char *command, struct einit_event *status);
 
 struct mexecinfo **einit_module_xml_mxdata = NULL;
-struct lmodule **einit_module_xml_shutdown = NULL;
 struct dexecinfo **einit_mod_daemon_dxdata = NULL;
+struct lmodule **einit_module_xml_shutdown = NULL;
 
 void einit_module_xml_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
@@ -125,6 +125,15 @@ void einit_module_xml_ipc_event_handler (struct einit_event *ev) {
    for (i = 0; einit_module_xml_mxdata[i]; i++) {
     if (einit_module_xml_mxdata[i]->variables) {
      check_variables (einit_module_xml_mxdata[i]->id, (const char **)einit_module_xml_mxdata[i]->variables, ev->output);
+    }
+   }
+  }
+
+  if (einit_mod_daemon_dxdata) {
+   uint32_t i = 0;
+   for (i = 0; einit_mod_daemon_dxdata[i]; i++) {
+    if (einit_mod_daemon_dxdata[i]->variables) {
+     check_variables (einit_mod_daemon_dxdata[i]->id, (const char **)einit_mod_daemon_dxdata[i]->variables, ev->output);
     }
    }
   }
@@ -189,272 +198,210 @@ int einit_module_xml_daemon_cleanup_after_module (struct lmodule *this) {
 }
 
 int einit_module_xml_scanmodules (struct lmodule *modchain) {
- struct cfgnode *node;
+ struct stree *virtual_module_nodes = cfg_prefix("services-virtual-module-");
+ if (virtual_module_nodes) {
+  struct stree *curnode = virtual_module_nodes;
 
- node = NULL;
- while ((node = cfg_findnode ("services-virtual-module-shell", 0, node))) {
-  struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
-  struct mexecinfo *mexec = ecalloc (1, sizeof (struct mexecinfo));
-  struct lmodule *new;
-  int i = 0;
-  char doop = 1, shutdownaction = 0;
+  while (curnode) {
+   struct cfgnode *node = curnode->value;
+   char type_daemon = strmatch (curnode->key + 24, "daemon"), type_shell = !type_daemon && strmatch (curnode->key + 24, "shell");
 
-  if (!node->arbattrs) continue;
+   if ((type_daemon || type_shell) && node->arbattrs) {
+    struct smodule *modinfo = emalloc (sizeof (struct smodule));
+    struct mexecinfo *mexec = type_shell ? ecalloc (1, sizeof (struct mexecinfo)) : NULL;
+    struct dexecinfo *dexec = type_daemon ? ecalloc (1, sizeof (struct dexecinfo)) : NULL;
+    uint32_t i = 0;
+    char doop = 1, shutdownaction = 0;
+    struct lmodule *new;
 
-  mexec->oattrs = (char **)node->arbattrs;
+    memset (modinfo, 0, sizeof (struct smodule));
 
-  for (; node->arbattrs[i]; i+=2 ) {
-   if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
-    if (strmatch (node->arbattrs[i], "execute:on-shutdown"))
-     shutdownaction = 1;
+    for (; node->arbattrs[i]; i+=2 ) {
+     if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
+      if (strmatch (node->arbattrs[i], "execute:on-shutdown"))
+       shutdownaction = 1;
 
-    continue;
-   } else if (strmatch (node->arbattrs[i], "id")) {
-    modinfo->rid = node->arbattrs[i+1];
-    mexec->id = node->arbattrs[i+1];
-   } else if (strmatch (node->arbattrs[i], "name"))
-    modinfo->name = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "enable"))
-    mexec->enable = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "disable"))
-    mexec->disable = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "prepare"))
-    mexec->prepare = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "cleanup"))
-    mexec->cleanup = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "uid"))
-    mexec->uid = atoi(node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "gid"))
-    mexec->gid = atoi(node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "user"))
-    mexec->user = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "group"))
-    mexec->group = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "pid")) {
-    mexec->environment = straddtoenviron (mexec->environment, "pidfile", node->arbattrs[i+1]);
-    mexec->pidfile = node->arbattrs[i+1];
-   }
+      continue;
+     } else if (strmatch (node->arbattrs[i], "id")) {
+      modinfo->rid = node->arbattrs[i+1];
+      if (type_shell) mexec->id = node->arbattrs[i+1];
+      else dexec->id = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "name"))
+      modinfo->name = node->arbattrs[i+1];
+     else if (type_shell && strmatch (node->arbattrs[i], "enable"))
+      mexec->enable = node->arbattrs[i+1];
+     else if (type_shell && strmatch (node->arbattrs[i], "disable"))
+      mexec->disable = node->arbattrs[i+1];
+     else if (type_daemon && strmatch (node->arbattrs[i], "command"))
+      dexec->command = node->arbattrs[i+1];
+     else if (type_daemon && strmatch (node->arbattrs[i], "is-up"))
+      dexec->is_up = node->arbattrs[i+1];
+     else if (type_daemon && strmatch (node->arbattrs[i], "is-down"))
+      dexec->is_down = node->arbattrs[i+1];
+     else if (type_daemon && strmatch("restart", node->arbattrs[i]))
+      dexec->restart = parse_boolean(node->arbattrs[i+1]);
+     else if (strmatch (node->arbattrs[i], "prepare")) {
+      if (type_shell) mexec->prepare = node->arbattrs[i+1];
+      else dexec->prepare = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "cleanup")) {
+      if (type_shell) mexec->cleanup = node->arbattrs[i+1];
+      else dexec->cleanup = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "uid")) {
+      if (type_shell) mexec->uid = atoi(node->arbattrs[i+1]);
+      else dexec->uid = atoi(node->arbattrs[i+1]);
+     } else if (strmatch (node->arbattrs[i], "gid")) {
+      if (type_shell) mexec->gid = atoi(node->arbattrs[i+1]);
+      else dexec->gid = atoi(node->arbattrs[i+1]);
+     } else if (strmatch (node->arbattrs[i], "user")) {
+      if (type_shell) mexec->user = node->arbattrs[i+1];
+      else dexec->user = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "group")) {
+      if (type_shell) mexec->group = node->arbattrs[i+1];
+      else dexec->group = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "pid")) {
+      if (type_shell) {
+       mexec->environment = straddtoenviron (mexec->environment, "pidfile", node->arbattrs[i+1]);
+       mexec->pidfile = node->arbattrs[i+1];
+      } else {
+       dexec->environment = straddtoenviron (dexec->environment, "pidfile", node->arbattrs[i+1]);
+       dexec->pidfile = node->arbattrs[i+1];
+      }
+     }
 
-   else if (strmatch (node->arbattrs[i], "options")) {
-    char **opt = str2set (':', node->arbattrs[i+1]);
-    uint32_t ri = 0;
+     else if (strmatch (node->arbattrs[i], "options")) {
+      char **opt = str2set (':', node->arbattrs[i+1]);
+      uint32_t ri = 0;
 
-    for (; opt[ri]; ri++) {
-     if (strmatch (opt[ri], "feedback"))
-      modinfo->mode |= einit_module_feedback;
+      for (; opt[ri]; ri++) {
+       if (strmatch (opt[ri], "feedback"))
+        modinfo->mode |= einit_module_feedback;
+      }
+     }
+
+     else if (strmatch (node->arbattrs[i], "requires"))
+      modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
+     else if (strmatch (node->arbattrs[i], "provides")) {
+      modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
+
+      if (type_shell)
+       mexec->environment = straddtoenviron (mexec->environment, "services", node->arbattrs[i+1]);
+      else
+       dexec->environment = straddtoenviron (dexec->environment, "services", node->arbattrs[i+1]);
+     } else if (strmatch (node->arbattrs[i], "after"))
+      modinfo->si.after = str2set (':', node->arbattrs[i+1]);
+     else if (strmatch (node->arbattrs[i], "shutdown-after"))
+      modinfo->si.shutdown_after = str2set (':', node->arbattrs[i+1]);
+     else if (strmatch (node->arbattrs[i], "before"))
+      modinfo->si.before = str2set (':', node->arbattrs[i+1]);
+     else if (strmatch (node->arbattrs[i], "shutdown-before"))
+      modinfo->si.shutdown_before = str2set (':', node->arbattrs[i+1]);
+     else if (strmatch (node->arbattrs[i], "variables")) {
+      if (type_shell)
+       mexec->variables = str2set (':', node->arbattrs[i+1]);
+      else
+       dexec->variables = str2set (':', node->arbattrs[i+1]);
+     } else if (type_daemon && strmatch (node->arbattrs[i], "need-files"))
+       dexec->need_files = str2set (':', node->arbattrs[i+1]);
+     else if (type_shell)
+      mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
+     else
+      dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
+    }
+
+    if (type_shell) {
+     if (einit_module_xml_mxdata) {
+      uint32_t u = 0;
+      char add = 1;
+      for (u = 0; einit_module_xml_mxdata[u]; u++) {
+       if (strmatch (einit_module_xml_mxdata[u]->id, mexec->id)) {
+        add = 0;
+        einit_module_xml_mxdata[u] = mexec;
+        break;
+       }
+      }
+      if (add) {
+       einit_module_xml_mxdata = (struct mexecinfo **)setadd ((void **)einit_module_xml_mxdata, (void *)mexec, SET_NOALLOC);
+      }
+     } else
+      einit_module_xml_mxdata = (struct mexecinfo **)setadd ((void **)einit_module_xml_mxdata, (void *)mexec, SET_NOALLOC);
+    } else {
+     if (einit_mod_daemon_dxdata) {
+      uint32_t u = 0;
+      char add = 1;
+      for (u = 0; einit_mod_daemon_dxdata[u]; u++) {
+       if (strmatch (einit_mod_daemon_dxdata[u]->id, dexec->id)) {
+        add = 0;
+        einit_mod_daemon_dxdata[u] = dexec;
+        break;
+       }
+      }
+      if (add)
+       einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
+     } else
+      einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
+    }
+
+    if (!modinfo->rid) continue;
+
+    struct lmodule *lm = modchain;
+    while (lm) {
+     if (lm->source && strmatch(lm->source, modinfo->rid)) {
+      if (type_shell) {
+       lm->param = (void *)mexec;
+       lm->enable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
+       lm->disable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
+       lm->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_pexec_wrapper_custom;
+       lm->cleanup = einit_module_xml_cleanup_after_module;
+      } else {
+       lm->param = (void *)dexec;
+       lm->enable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_enable;
+       lm->disable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_disable;
+       lm->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_daemon_custom;
+       lm->cleanup = einit_module_xml_daemon_cleanup_after_module;
+      }
+      lm->module = modinfo;
+
+      lm = mod_update (lm);
+      doop = 0;
+
+      if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC)) {
+       einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC);
+      }
+
+      break;
+     }
+     lm = lm->next;
+    }
+
+    if (doop) {
+     new = mod_add (NULL, modinfo);
+     if (new) {
+      new->source = estrdup (modinfo->rid);
+      if (type_shell) {
+       new->param = (void *)mexec;
+       new->enable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
+       new->disable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
+       new->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_pexec_wrapper_custom;
+       new->cleanup = einit_module_xml_cleanup_after_module;
+      } else {
+       new->param = (void *)dexec;
+       new->enable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_enable;
+       new->disable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_disable;
+       new->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_daemon_custom;
+       new->cleanup = einit_module_xml_daemon_cleanup_after_module;
+      }
+
+      if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC)) {
+       einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC);
+      }
+     }
     }
    }
 
-   else if (strmatch (node->arbattrs[i], "requires"))
-    modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "provides")) {
-    modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
-
-    mexec->environment = straddtoenviron (mexec->environment, "services", node->arbattrs[i+1]);
-   } else if (strmatch (node->arbattrs[i], "after"))
-    modinfo->si.after = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "shutdown-after"))
-    modinfo->si.shutdown_after = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "before"))
-    modinfo->si.before = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "shutdown-before"))
-    modinfo->si.shutdown_before = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "variables"))
-    mexec->variables = str2set (':', node->arbattrs[i+1]);
-   else
-    mexec->environment = straddtoenviron (mexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
+   curnode = curnode->next;
   }
 
-  if (einit_module_xml_mxdata) {
-   uint32_t u = 0;
-   char add = 1;
-   for (u = 0; einit_module_xml_mxdata[u]; u++) {
-    if (strmatch (einit_module_xml_mxdata[u]->id, mexec->id)) {
-     add = 0;
-     einit_module_xml_mxdata[u] = mexec;
-     break;
-    }
-   }
-   if (add) {
-    einit_module_xml_mxdata = (struct mexecinfo **)setadd ((void **)einit_module_xml_mxdata, (void *)mexec, SET_NOALLOC);
-   }
-  } else
-   einit_module_xml_mxdata = (struct mexecinfo **)setadd ((void **)einit_module_xml_mxdata, (void *)mexec, SET_NOALLOC);
-
-  if (!modinfo->rid) continue;
-
-  struct lmodule *lm = modchain;
-  while (lm) {
-   if (lm->source && strmatch(lm->source, modinfo->rid)) {
-    lm->param = (void *)mexec;
-    lm->enable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
-    lm->disable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
-    lm->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_pexec_wrapper_custom;
-    lm->cleanup = einit_module_xml_cleanup_after_module;
-    lm->module = modinfo;
-
-    lm = mod_update (lm);
-    doop = 0;
-
-    if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC)) {
-     einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC);
-    }
-
-    break;
-   }
-   lm = lm->next;
-  }
-
-  if (doop) {
-   new = mod_add (NULL, modinfo);
-   if (new) {
-    new->source = estrdup (modinfo->rid);
-    new->param = (void *)mexec;
-    new->enable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
-    new->disable = (int (*)(void *, struct einit_event *))einit_module_xml_pexec_wrapper;
-    new->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_pexec_wrapper_custom;
-    new->cleanup = einit_module_xml_cleanup_after_module;
-
-    if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC)) {
-     einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC);
-    }
-   }
-  }
- }
-
- node = NULL;
- while ((node = cfg_findnode ("services-virtual-module-daemon", 0, node))) {
-  struct smodule *modinfo = ecalloc (1, sizeof (struct smodule));
-  struct dexecinfo *dexec = ecalloc (1, sizeof (struct dexecinfo));
-  struct lmodule *new;
-  int i = 0;
-  char doop = 1, shutdownaction = 0;
-  if (!node->arbattrs) continue;
-
-  dexec->oattrs = (char **)node->arbattrs;
-
-  for (; node->arbattrs[i]; i+=2 ) {
-   if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
-    if (strmatch (node->arbattrs[i], "execute:on-shutdown"))
-     shutdownaction = 1;
-
-    continue;
-   } else if (strmatch (node->arbattrs[i], "id")) {
-    modinfo->rid = node->arbattrs[i+1];
-    dexec->id = node->arbattrs[i+1];
-   } else if (strmatch (node->arbattrs[i], "name"))
-    modinfo->name = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "command"))
-    dexec->command = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "prepare"))
-    dexec->prepare = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "cleanup"))
-    dexec->cleanup = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "is-up"))
-    dexec->is_up = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "is-down"))
-    dexec->is_down = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "uid"))
-    dexec->uid = atoi(node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "gid"))
-    dexec->gid = atoi(node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "user"))
-    dexec->user = node->arbattrs[i+1];
-   else if (strmatch (node->arbattrs[i], "group"))
-    dexec->group = node->arbattrs[i+1];
-   else if (strmatch("restart", node->arbattrs[i]))
-    dexec->restart = parse_boolean(node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "pid")) {
-    dexec->environment = straddtoenviron (dexec->environment, "pidfile", node->arbattrs[i+1]);
-    dexec->pidfile = node->arbattrs[i+1];
-   }
-
-   else if (strmatch (node->arbattrs[i], "options")) {
-    char **opt = str2set (':', node->arbattrs[i+1]);
-    uint32_t ri = 0;
-
-    for (; opt[ri]; ri++) {
-     if (strmatch (opt[ri], "feedback"))
-      modinfo->mode |= einit_module_feedback;
-    }
-   }
-
-   else if (strmatch (node->arbattrs[i], "requires"))
-    modinfo->si.requires = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "provides")) {
-    modinfo->si.provides = str2set (':', node->arbattrs[i+1]);
-
-    dexec->environment = straddtoenviron (dexec->environment, "services", node->arbattrs[i+1]);
-   } else if (strmatch (node->arbattrs[i], "after"))
-    modinfo->si.after = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "shutdown-after"))
-    modinfo->si.shutdown_after = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "before"))
-    modinfo->si.before = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "shutdown-before"))
-    modinfo->si.shutdown_before = str2set (':', node->arbattrs[i+1]);
-
-   else if (strmatch (node->arbattrs[i], "variables"))
-    dexec->variables = str2set (':', node->arbattrs[i+1]);
-   else if (strmatch (node->arbattrs[i], "need-files"))
-    dexec->need_files = str2set (':', node->arbattrs[i+1]);
-   else
-    dexec->environment = straddtoenviron (dexec->environment, node->arbattrs[i], node->arbattrs[i+1]);
-  }
-
-  if (einit_mod_daemon_dxdata) {
-   uint32_t u = 0;
-   char add = 1;
-   for (u = 0; einit_mod_daemon_dxdata[u]; u++) {
-    if (strmatch (einit_mod_daemon_dxdata[u]->id, dexec->id)) {
-     add = 0;
-     einit_mod_daemon_dxdata[u] = dexec;
-     break;
-    }
-   }
-   if (add)
-    einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
-  } else
-   einit_mod_daemon_dxdata = (struct dexecinfo **)setadd ((void **)einit_mod_daemon_dxdata, (void *)dexec, SET_NOALLOC);
-
-  if (!modinfo->rid) continue;
-
-  struct lmodule *lm = modchain;
-  while (lm) {
-   if (lm->source && strmatch(lm->source, modinfo->rid)) {
-
-    lm->param = (void *)dexec;
-    lm->enable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_enable;
-    lm->disable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_disable;
-    lm->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_daemon_custom;
-    lm->cleanup = einit_module_xml_daemon_cleanup_after_module;
-    lm->module = modinfo;
-
-    lm = mod_update (lm);
-    doop = 0;
-
-    if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC)) {
-     einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC);
-    }
-    break;
-   }
-   lm = lm->next;
-  }
-  if (doop) {
-   new = mod_add (NULL, modinfo);
-   if (new) {
-    new->source = estrdup (modinfo->rid);
-    new->param = (void *)dexec;
-    new->enable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_enable;
-    new->disable = (int (*)(void *, struct einit_event *))einit_module_xml_daemon_disable;
-    new->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_daemon_custom;
-    new->cleanup = einit_module_xml_daemon_cleanup_after_module;
-
-    if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC)) {
-     einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC);
-    }
-   }
-  }
+  streefree (virtual_module_nodes);
  }
 
  return 0;
