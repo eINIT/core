@@ -41,6 +41,7 @@
    </commands-include>
    <else>
     <module-logic>
+     <init.d-path s="/etc/einit/init.d/" />
      <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
     </module-logic>
 
