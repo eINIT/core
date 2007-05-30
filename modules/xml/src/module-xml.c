@@ -111,9 +111,7 @@ int einit_module_xml_daemon_custom (struct dexecinfo *dexec, char *command, stru
 
 struct mexecinfo **einit_module_xml_mxdata = NULL;
 struct lmodule **einit_module_xml_shutdown = NULL;
-
 struct dexecinfo **einit_mod_daemon_dxdata = NULL;
-struct lmodule **einit_mod_daemon_shutdown = NULL;
 
 void einit_module_xml_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
@@ -142,14 +140,6 @@ void einit_module_xml_power_event_handler (struct einit_event *ev) {
 
    for (; einit_module_xml_shutdown[i]; i++) {
     mod(einit_module_custom, einit_module_xml_shutdown[i], "on-shutdown");
-   }
-  }
-
-  if (einit_mod_daemon_shutdown) {
-   uint32_t i = 0;
-
-   for (; einit_mod_daemon_shutdown[i]; i++) {
-    mod(einit_module_custom, einit_mod_daemon_shutdown[i], "on-shutdown");
    }
   }
  }
@@ -443,8 +433,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
     lm = mod_update (lm);
     doop = 0;
 
-    if (shutdownaction && !inset ((const void **)einit_mod_daemon_shutdown, (void *)lm, SET_NOALLOC)) {
-     einit_mod_daemon_shutdown = (struct lmodule **)setadd ((void **)einit_mod_daemon_shutdown, (void *)lm, SET_NOALLOC);
+    if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC)) {
+     einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)lm, SET_NOALLOC);
     }
     break;
    }
@@ -460,34 +450,14 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
     new->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_daemon_custom;
     new->cleanup = einit_module_xml_daemon_cleanup_after_module;
 
-    if (shutdownaction && !inset ((const void **)einit_mod_daemon_shutdown, (void *)new, SET_NOALLOC)) {
-     einit_mod_daemon_shutdown = (struct lmodule **)setadd ((void **)einit_mod_daemon_shutdown, (void *)new, SET_NOALLOC);
+    if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC)) {
+     einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC);
     }
    }
   }
  }
 
  return 0;
-}
-
-int einit_module_xml_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
- if (strmatch (command, "zap"))
-  return status_ok | status_disabled;
- else if (shellcmd->oattrs) {
-  char tmp[BUFFERSIZE];
-
-  esprintf (tmp, BUFFERSIZE, "execute:%s", command);
-
-  uint32_t i = 0;
-
-  for (; shellcmd->oattrs[i]; i+=2 ) {
-   if (strmatch (shellcmd->oattrs[i], tmp)) {
-    return status_enabled | pexec (shellcmd->oattrs[i+1], (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-   }
-  }
- }
-
- return status_failed | status_command_not_implemented;
 }
 
 int einit_module_xml_daemon_enable (struct dexecinfo *dexec, struct einit_event *status) {
@@ -498,25 +468,32 @@ int einit_module_xml_daemon_disable (struct dexecinfo *dexec, struct einit_event
  return stopdaemon (dexec, status);
 }
 
-int einit_module_xml_daemon_custom (struct dexecinfo *dexec, char *command, struct einit_event *status) {
- if (strmatch (command, "zap"))
-  return status_ok | status_disabled;
- else if (dexec->oattrs) {
+int einit_module_xml_custom (char **arbattrs, char *command, struct einit_event *status, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **environment) {
+ if (arbattrs) {
   char tmp[BUFFERSIZE];
 
   esprintf (tmp, BUFFERSIZE, "execute:%s", command);
 
   uint32_t i = 0;
 
-  for (; dexec->oattrs[i]; i+=2 ) {
-   if (strmatch (dexec->oattrs[i], tmp)) {
-    return status_enabled | pexec (dexec->oattrs[i+1], (const char **)dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment, status);
+  for (; arbattrs[i]; i+=2 ) {
+   if (strmatch (arbattrs[i], tmp)) {
+    return status_enabled | pexec (arbattrs[i+1], (const char **)variables, uid, gid, user, group, environment, status);
    }
   }
  }
 
- return status_failed | status_command_not_implemented;
+ return status_failed | status_command_not_implemented | status_enabled;
 }
+
+int einit_module_xml_daemon_custom (struct dexecinfo *dexec, char *command, struct einit_event *status) {
+ return einit_module_xml_custom (dexec->oattrs, command, status, dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment);
+}
+
+int einit_module_xml_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
+ return einit_module_xml_custom (shellcmd->oattrs, command, status, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment);
+}
+
 
 int einit_module_xml_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_event *status) {
  int retval = status_failed;
