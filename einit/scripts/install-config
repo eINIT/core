@@ -45,8 +45,14 @@ echo "installing $file to $DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
 if [ "${method}" == "ebuild" ]; then
 # gentoo's ebuilds do internal handling for configuration updates, no need to
 # mess with diff and patch ourselves
+ if [ -e "$ETCDIR/${subsystem}/${fileshort}" ]; then
+  if [ -n "$(diff3 -e "$ETCDIR/${subsystem}/${fileshort}" "$DESTDIR/$LIBDIR/defaults/${subsystem}/${fileshort}" ${file})" ]; then
+   cp -f ${file} "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
+  else
+   cp -f "$ETCDIR/${subsystem}/${fileshort}" "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
+  fi
+ fi
  cp -f ${file} "$DESTDIR/$LIBDIR/defaults/${subsystem}/${fileshort}";
- cp -f ${file} "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
 else
 # non-ebuild methods need patching, so we do that here
  if [ -e "$ETCDIR/${subsystem}/${fileshort}" ]; then
