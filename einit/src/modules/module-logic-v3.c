@@ -947,6 +947,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
  if (ev->argv && ev->argv[0] && ev->argv[1] && ev->output) {
   if (strmatch (ev->argv[0], "update") && strmatch (ev->argv[1], "init.d")) {
    module_logic_update_init_d();
+
+   ev->implemented = 1;
   } else if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
    char **modes = NULL;

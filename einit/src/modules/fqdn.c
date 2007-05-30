@@ -54,6 +54,10 @@ int einit_fqdn_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
+struct einit_cfgvar_info
+  einit_fqdn_cfgvar_hostname = { .options = eco_optional, .variable = "configuration-network-hostname", .description = "Your Machine's Hostname." },
+  einit_fqdn_cfgvar_domainname = { .options = eco_optional, .variable = "configuration-network-domainname", .description = "Your Machine's Domainname." };
+
 char * einit_fqdn_provides[] = {"fqdn", NULL};
 char * einit_fqdn_requires[] = {"mount-system", NULL};
 char * einit_fqdn_before[] = {"displaymanager", NULL};
@@ -70,7 +74,8 @@ const struct smodule einit_fqdn_self = {
   .after    = NULL,
   .before   = einit_fqdn_before
  },
- .configure = einit_fqdn_configure
+ .configure = einit_fqdn_configure,
+ .configuration = { &einit_fqdn_cfgvar_hostname, &einit_fqdn_cfgvar_domainname, NULL }
 };
 
 module_register(einit_fqdn_self);

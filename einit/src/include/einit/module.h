@@ -190,7 +190,6 @@ enum einit_usage_query {
 
 #define MOD_LOCKED 0x8000        /*!< Module-option: Module is locked. */
 
-
 struct service_information {
  char **provides;       /*!< A list of services that this module provides. */
  char **requires;       /*!< A list of services that this module requires. */
@@ -203,6 +202,17 @@ struct service_information {
 #if 0
  char **notwith;        /*!< A list of services that may not be loaded together with this module; ignored. */
 #endif
+};
+
+enum einit_config_options {
+ eco_optional = 0x0001,
+ eco_critical = 0x0002
+};
+
+struct einit_cfgvar_info {
+ enum einit_config_options options;
+ char *variable;
+ char *description;
 };
 
 struct lmodule;
@@ -224,6 +234,9 @@ struct smodule {
 
  int (*configure)(struct lmodule *);
                         /*!< function used to initialise the module. */
+
+ struct einit_cfgvar_info *configuration[];
+                        /*!< what configuration variables this module is gonna use */
 };
 
 /*!\brief In-memory module definition
