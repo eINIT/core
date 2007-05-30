@@ -35,13 +35,8 @@
    </settings>
    <commands-include>
     <file s="sandbox.xml" />
-    <file s="fstab.xml" />
-    <file s="network.xml" />
-    <file s="modes.xml" />
     <directory s="../../lib/einit/modules-xml" />
     <directory s="../../lib/einit/modules-xml/network" />
-    <directory s="conf.d" />
-    <directory s="subsystems.d" />
    </commands-include>
    <else>
     <settings>
@@ -49,16 +44,20 @@
     </settings>
     <commands-include>
      <file s="local.xml" />
-     <file s="network.xml" />
-     <file s="fstab.xml" />
-     <file s="modes.xml" />
      <directory s="/lib/einit/modules-xml" />
      <directory s="/lib/einit/modules-xml/network" />
-     <directory s="conf.d" />
-     <directory s="subsystems.d" />
     </commands-include>
    </else>
   </if>
+
+  <commands-include>
+   <file s="network.xml" />
+   <file s="fstab.xml" />
+   <file s="modes.xml" />
+   <directory s="conf.d" />
+   <directory s="subsystems.d" />
+  </commands-include>
+
 
 <!-- These settings control the "error correction" settings, i.e. how likely
      einit is to kill itself over a (potentially recoverable) problem.
