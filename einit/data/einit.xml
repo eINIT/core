@@ -18,11 +18,6 @@
    <shutdown-function-suffixes s="linux" />
   </scheduler>
 
-  <commands-include>
-   <directory s="local" />
-   <directory s="modules" />
-  </commands-include>
-
   <settings>
 <!-- example: use this to disable the compatibility modules -->
 <!-- <modules path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
@@ -56,6 +51,8 @@
    <file s="modes.xml" />
    <directory s="conf.d" />
    <directory s="subsystems.d" />
+   <directory s="local" />
+   <directory s="modules" />
   </commands-include>
 
 
