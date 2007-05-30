@@ -91,6 +91,8 @@ struct interface_descriptor {
  char **variables;
  char *kernel_module;
 
+ struct stree *bridge_interfaces;
+
  struct cfgnode *interface;
 };
 
@@ -188,27 +190,6 @@ int network_scanmodules (struct lmodule *mainlist) {
 
        esprintf (tmp, BUFFERSIZE, "kern-%s", interfacename);
        req = (char **)setadd ((void **)req, tmp, SET_TYPE_STRING);
-
-#if 0
-// kernel module
-       memset (&newnode, 0, sizeof(struct cfgnode));
-
-       newnode.id = estrdup ("services-virtual-module-shell");
-       newnode.source = self->rid;
-       newnode.type = einit_node_regular;
-
-       esprintf (tmp, BUFFERSIZE, "shell-kern-%s", interfacename);
-       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
-       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)tmp, SET_TYPE_STRING);
-
-       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"based-on-template", SET_TYPE_STRING);
-       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"template-shell-kern-module-loader", SET_TYPE_STRING);
-
-       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"system", SET_TYPE_STRING);
-       newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)interfacename, SET_TYPE_STRING);
-
-       cfg_addnode (&newnode);
-#endif
 
        memset (&newnode, 0, sizeof(struct cfgnode));
 
@@ -392,12 +373,11 @@ struct interface_template_item **network_import_templates (char *type, char *lis
  return retval;
 }
 
-struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
+struct interface_descriptor *network_import_interface_descriptor_string (char *ifname) {
  struct interface_descriptor *id = ecalloc (1, sizeof (struct interface_descriptor));
  char nodename[BUFFERSIZE];
 
-
- id->interface_name = lm->module->rid+10;
+ id->interface_name = ifname;
 
  esprintf (nodename, BUFFERSIZE, "configuration-network-interfaces-%s", id->interface_name);
 
@@ -414,6 +394,22 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
     id->controller = network_import_templates ("ifctl", id->interface->arbattrs[i+1], id);
    } else if (strmatch (id->interface->arbattrs[i], "kernel-module")) {
     id->kernel_module = id->interface->arbattrs[i+1];
+   } else if (strmatch (id->interface->arbattrs[i], "bridge")) {
+    char **n = str2set (' ', id->interface->arbattrs[i+1]);
+
+    if (n) {
+     uint32_t r = 0;
+
+     for (; n[r]; r++) {
+      struct interface_descriptor *subid = network_import_interface_descriptor_string(n[r]);
+
+      if (subid) {
+       id->bridge_interfaces = streeadd (id->bridge_interfaces, n[r], subid, SET_NOALLOC, NULL);
+      }
+     }
+
+     free (n);
+    }
    }
   }
  } else {
@@ -427,6 +423,10 @@ struct interface_descriptor *network_import_interface_descriptor (struct lmodule
  }
 
  return id;
+}
+
+struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
+ return network_import_interface_descriptor_string (lm->module->rid+10);
 }
 
 int network_execute_interface_action (struct interface_template_item **str, char *action, char *ctype, char rotate, struct einit_event *status) {
