@@ -108,7 +108,7 @@ module_register(einit_mount_self);
 
 #endif
 
-#if 1
+#if 0
 
 
 char *provides_mountlocal[] = {"mount-local", NULL};
@@ -2954,6 +2954,20 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
 
  while ((step < 3) && (retval == status_failed)) {
   retval = mount_try_umount (mountpoint, mp->fs, step, dd, mp, status);
+  step++;
+
+  if (!(retval & status_ok)) {
+   struct pc_conditional
+    pcc = {.match = "cwd-below", .para = mountpoint, .match_options = einit_pmo_additive},
+    pcf = {.match = "files-below", .para = mountpoint, .match_options = einit_pmo_additive},
+    *pcl[3] = { &pcc, &pcf, NULL };
+
+   fbprintf (status, "umount() failed, killing some proceses");
+
+   pekill (pcl);
+  } else {
+   return status_ok;
+  }
  }
 
  return status_failed;

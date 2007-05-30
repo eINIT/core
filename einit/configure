@@ -134,6 +134,7 @@ for param in $@; do
         elif test "$param" = "--ebuild"; then
                 echo -n " EBUILD";
                 EBUILD="1";
+                CONFIGINSTALLMETHOD="ebuild";
 	elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
 	fi;
@@ -430,6 +431,7 @@ INSTALL = install
 IPARAM =
 SOIPARAM = \${IPARAM}
 BINIPARAM = \${IPARAM}
+CONFIGINSTALLMETHOD = ${CONFIGINSTALLMETHOD}
 
 COMPILER = ${COMPILER}
 OS = ${OS}

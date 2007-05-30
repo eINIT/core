@@ -10,15 +10,17 @@
     <ssid s="default" />
    </wireless>
 
-   <interfaces>
+<!-- interface configuration moved to network.xml, please modify that file -->
+
+<!--   <interfaces> -->
 <!-- examples for "new" network configuration:
      just add nodes like the ones below for interface X and add net-X to
      the network group below. no need to mess with templates no more =) -->
 <!--    <lo control="none" ip="iproute2" address="127.0.0.1/8" network="127.0.0.0/8" />
     <eth0 control="none" ip="pump" kernel-module="e1000" />
     <wlan0 control="wpa_supplicant" driver="wext" config="/etc/wpa_supplicant/wpa_supplicant.conf" ip="pump" kernel-module="ipw3945" /> -->
-    <ppp0 control="wvdial" profile="m610" kernel-module="cdc_acm" />
-   </interfaces>
+<!--    <ppp0 control="wvdial" profile="m610" kernel-module="cdc_acm" /> -->
+<!--   </interfaces> -->
   </network>
 
   <kernel>

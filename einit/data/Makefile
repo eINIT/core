@@ -20,17 +20,12 @@ install:
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/*.xml ${DESTDIR}/${LIBDIR}/modules-xml
 	${INSTALL} ${IPARAM} -m 0644 modules-lisp/*lisp ${DESTDIR}/${LIBDIR}/modules-lisp
-	for fname in conf.d/*.xml; do if [ ! -e "${ETCDIR}/$${fname}" ]; then ${INSTALL} ${IPARAM} -m 0644 $${fname} ${DESTDIR}/${ETCDIR}/conf.d; elif [ -n "${DESTDIR}" ]; then ${INSTALL} ${IPARAM} -m 0644 "${ETCDIR}/$${fname}" ${DESTDIR}/${ETCDIR}/conf.d; fi; done
-	for fname in subsystems.d/*.xml; do if [ ! -e "${ETCDIR}/$${fname}" ]; then ${INSTALL} ${IPARAM} -m 0644 $${fname} ${DESTDIR}/${ETCDIR}/subsystems.d; elif [ -n "${DESTDIR}" ]; then ${INSTALL} ${IPARAM} -m 0644 "${ETCDIR}/$${fname}" ${DESTDIR}/${ETCDIR}/subsystems.d; fi; done
-	${INSTALL} ${IPARAM} -m 0644 conf.d/*.xml ${DESTDIR}/${LIBDIR}/defaults/conf.d
-	${INSTALL} ${IPARAM} -m 0644 subsystems.d/*.xml ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
 	${INSTALL} ${IPARAM} -m 0644 modules-xml/network/*.xml ${DESTDIR}/${LIBDIR}/modules-xml/network
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	
-	if test -e ${ETCDIR}/local.xml; then ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${LIBDIR}/defaults/local.xml; else ${INSTALL} ${IPARAM} -m 0644 local.xml ${DESTDIR}/${ETCDIR}; fi
-	if test -e ${ETCDIR}/modes.xml; then ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${LIBDIR}/defaults/modes.xml; else ${INSTALL} ${IPARAM} -m 0644 modes.xml ${DESTDIR}/${ETCDIR}; fi
-	if test -e ${ETCDIR}/network.xml; then ${INSTALL} ${IPARAM} -m 0644 network.xml ${DESTDIR}/${LIBDIR}/defaults/network.xml; else ${INSTALL} ${IPARAM} -m 0644 network.xml ${DESTDIR}/${ETCDIR}; fi
-	${INSTALL} ${IPARAM} -m 0644 fstab.xml ${DESTDIR}/${LIBDIR}/defaults/fstab.xml
-	if test -e ${ETCDIR}/fstab.xml; then if test -n "${DESTDIR}"; then cp ${ETCDIR}/fstab.xml ${DESTDIR}/${ETCDIR}/fstab.xml; fi else ${INSTALL} ${IPARAM} -m 0644 fstab.xml ${DESTDIR}/${ETCDIR}; fi
+	for i in subsystems.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
+	for i in conf.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" conf.d "${CONFIGINSTALLMETHOD}"; done
+	for i in local.xml fstab.xml modes.xml network.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" "" "${CONFIGINSTALLMETHOD}"; done
+	
 	for module in `ls modules-xml`; do mod=`echo $${module} | sed 's/.xml//g'`; ln -sf ../../lib/einit/scripts/einit.d_erc.sh ${DESTDIR}/${ETCDIR}/init.d/$${mod}; done
 	ln -sfn ../../lib/einit/defaults ${DESTDIR}/${ETCDIR}/defaults
