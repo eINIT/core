@@ -18,5 +18,4 @@ install:
 	for i in subsystems.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
 	for i in local.xml fstab.xml modes.xml network.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" "" "${CONFIGINSTALLMETHOD}"; done
 	
-	for module in `ls modules-xml`; do mod=`echo $${module} | sed 's/.xml//g'`; ln -sf ../../lib/einit/scripts/einit.d_erc.sh ${DESTDIR}/${ETCDIR}/init.d/$${mod}; done
-	ln -sfn ../../lib/einit/defaults ${DESTDIR}/${ETCDIR}/defaults
+	ln -sfn ../../../sbin/einit ${DESTDIR}/${ETCDIR}/init.d/einit
