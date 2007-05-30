@@ -14,6 +14,7 @@
     </if>
    </configuration>
   </settings>
+
   <scheduler>
    <shutdown-function-suffixes s="linux" />
   </scheduler>
@@ -25,6 +26,11 @@
   </settings>
 
   <if match="core-mode:sandbox">
+   <module-logic>
+    <init.d-path s="etc/einit/init.d/" />
+    <maintain-init.d s="../../../lib/einit/scripts/einit.d_erc.sh" b="true" />
+   </module-logic>
+
    <settings>
     <configuration-path s="etc/einit/" />
    </settings>
@@ -34,6 +40,10 @@
     <directory s="../../lib/einit/modules-xml/network" />
    </commands-include>
    <else>
+    <module-logic>
+     <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
+    </module-logic>
+
     <settings>
      <configuration-path s="/etc/einit/" />
     </settings>

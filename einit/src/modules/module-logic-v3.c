@@ -87,6 +87,7 @@ char mod_isbroken (char *service);
 char mod_mark (char *service, char task);
 struct group_data *mod_group_get_data (char *group);
 char mod_isprovided(char *service);
+void module_logic_update_init_d ();
 
 /* new functions: */
 char mod_examine_group (char *);
@@ -552,6 +553,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  evdestroy (fb);
 
+ module_logic_update_init_d();
+
  if (plan->mode) return 0; // always return "OK" if it's based on a mode
 
  return 0;
@@ -912,9 +915,39 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
  }
 }
 
+void module_logic_update_init_d () {
+ struct cfgnode *einit_d = cfg_getnode ("core-module-logic-maintain-init.d", NULL);
+
+ notice (2, "module_logic_update_init_d(): regenerating list of services in init.d.");
+
+ if (einit_d && einit_d->flag && einit_d->svalue) {
+  char *init_d_path = cfg_getstring ("core-module-logic-init.d-path", NULL);
+
+  if (init_d_path) {
+   struct stree *cur;
+   emutex_lock (&ml_service_list_mutex);
+//  struct stree *module_logics_service_list;
+   cur = module_logics_service_list;
+
+   while (cur) {
+    char tmp[BUFFERSIZE];
+    esprintf (tmp, BUFFERSIZE, "%s/%s", init_d_path, cur->key);
+
+    symlink (einit_d->svalue, tmp);
+
+    cur = cur->next;
+   }
+
+   emutex_unlock (&ml_service_list_mutex);
+  }
+ }
+}
+
 void module_logic_ipc_event_handler (struct einit_event *ev) {
  if (ev->argv && ev->argv[0] && ev->argv[1] && ev->output) {
-  if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
+  if (strmatch (ev->argv[0], "update") && strmatch (ev->argv[1], "init.d")) {
+   module_logic_update_init_d();
+  } else if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
    char **modes = NULL;
 
