@@ -104,6 +104,7 @@ int einit_mod_exec_pexec_wrapper (struct mexecinfo *, struct einit_event *);
 int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *, char *, struct einit_event *);
 
 struct mexecinfo **einit_mod_exec_mxdata = NULL;
+struct lmodule **einit_mod_exec_shutdown = NULL;
 
 void einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
@@ -125,9 +126,22 @@ void einit_mod_exec_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
+void einit_mod_exec_power_event_handler (struct einit_event *ev) {
+ if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
+  if (einit_mod_exec_shutdown) {
+   uint32_t i = 0;
+
+   for (; einit_mod_exec_shutdown[i]; i++) {
+    mod(einit_module_custom, einit_mod_exec_shutdown[i], "on-shutdown");
+   }
+  }
+ }
+}
+
 int einit_mod_exec_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
  event_ignore (einit_event_subsystem_ipc, einit_mod_exec_ipc_event_handler);
+ event_ignore (einit_event_subsystem_power, einit_mod_exec_power_event_handler);
 
  return 0;
 }
@@ -153,7 +167,7 @@ int einit_mod_exec_scanmodules (struct lmodule *modchain) {
   struct mexecinfo *mexec = ecalloc (1, sizeof (struct mexecinfo));
   struct lmodule *new;
   int i = 0;
-  char doop = 1;
+  char doop = 1, shutdownaction = 0;
 
   if (!node->arbattrs) continue;
 
@@ -161,6 +175,9 @@ int einit_mod_exec_scanmodules (struct lmodule *modchain) {
 
   for (; node->arbattrs[i]; i+=2 ) {
    if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
+    if (strmatch (node->arbattrs[i], "execute:on-shutdown"))
+     shutdownaction = 1;
+
     continue;
    } else if (strmatch (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
@@ -248,6 +265,11 @@ int einit_mod_exec_scanmodules (struct lmodule *modchain) {
 
     lm = mod_update (lm);
     doop = 0;
+
+    if (shutdownaction && !inset ((const void **)einit_mod_exec_shutdown, (void *)lm, SET_NOALLOC)) {
+     einit_mod_exec_shutdown = (struct lmodule **)setadd ((void **)einit_mod_exec_shutdown, (void *)lm, SET_NOALLOC);
+    }
+
     break;
    }
    lm = lm->next;
@@ -262,6 +284,10 @@ int einit_mod_exec_scanmodules (struct lmodule *modchain) {
     new->disable = (int (*)(void *, struct einit_event *))einit_mod_exec_pexec_wrapper;
     new->custom = (int (*)(void *, char *, struct einit_event *))einit_mod_exec_pexec_wrapper_custom;
     new->cleanup = einit_mod_exec_cleanup_after_module;
+
+    if (shutdownaction && !inset ((const void **)einit_mod_exec_shutdown, (void *)new, SET_NOALLOC)) {
+     einit_mod_exec_shutdown = (struct lmodule **)setadd ((void **)einit_mod_exec_shutdown, (void *)new, SET_NOALLOC);
+    }
    }
   }
  }
@@ -285,22 +311,6 @@ int einit_mod_exec_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *comma
    }
   }
  }
-
-/* if (task & MOD_RESET) {
-  if (shellcmd->reset) {
-   retval = pexec (shellcmd->reset, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-  } else {
-   task = einit_module_enable | einit_module_disable;
-  }
- } else if (task & MOD_RELOAD) {
-  if (shellcmd->reload) {
-   retval = pexec (shellcmd->reload, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
-  } else {
-   task = einit_module_enable | einit_module_disable;
-  }
- }
-
-// + ZAP */
 
  return status_failed | status_command_not_implemented;
 }
@@ -357,6 +367,7 @@ int einit_mod_exec_configure (struct lmodule *pa) {
 
  exec_configure (pa);
  event_listen (einit_event_subsystem_ipc, einit_mod_exec_ipc_event_handler);
+ event_listen (einit_event_subsystem_power, einit_mod_exec_power_event_handler);
 
  return 0;
 }

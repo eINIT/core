@@ -94,6 +94,7 @@ int einit_mod_daemon_disable (struct dexecinfo *dexec, struct einit_event *statu
 int einit_mod_daemon_custom_custom (struct dexecinfo *dexec, char *command, struct einit_event *status);
 
 struct dexecinfo **einit_mod_daemon_dxdata = NULL;
+struct lmodule **einit_mod_daemon_shutdown = NULL;
 
 void einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
@@ -115,9 +116,22 @@ void einit_mod_daemon_ipc_event_handler (struct einit_event *ev) {
  }
 }
 
+void einit_mod_daemon_power_event_handler (struct einit_event *ev) {
+ if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
+  if (einit_mod_daemon_shutdown) {
+   uint32_t i = 0;
+
+   for (; einit_mod_daemon_shutdown[i]; i++) {
+    mod(einit_module_custom, einit_mod_daemon_shutdown[i], "on-shutdown");
+   }
+  }
+ }
+}
+
 int einit_mod_daemon_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  event_ignore (einit_event_subsystem_ipc, einit_mod_daemon_ipc_event_handler);
+ event_ignore (einit_event_subsystem_power, einit_mod_daemon_power_event_handler);
 
  return 0;
 }
@@ -154,13 +168,16 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
   struct dexecinfo *dexec = ecalloc (1, sizeof (struct dexecinfo));
   struct lmodule *new;
   int i = 0;
-  char doop = 1;
+  char doop = 1, shutdownaction = 0;
   if (!node->arbattrs) continue;
 
   dexec->oattrs = (char **)node->arbattrs;
 
   for (; node->arbattrs[i]; i+=2 ) {
    if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
+    if (strmatch (node->arbattrs[i], "execute:on-shutdown"))
+     shutdownaction = 1;
+
     continue;
    } else if (strmatch (node->arbattrs[i], "id")) {
     modinfo->rid = node->arbattrs[i+1];
@@ -255,6 +272,10 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
 
     lm = mod_update (lm);
     doop = 0;
+
+    if (shutdownaction && !inset ((const void **)einit_mod_daemon_shutdown, (void *)lm, SET_NOALLOC)) {
+     einit_mod_daemon_shutdown = (struct lmodule **)setadd ((void **)einit_mod_daemon_shutdown, (void *)lm, SET_NOALLOC);
+    }
     break;
    }
    lm = lm->next;
@@ -268,6 +289,10 @@ int einit_mod_daemon_scanmodules (struct lmodule *modchain) {
     new->disable = (int (*)(void *, struct einit_event *))einit_mod_daemon_disable;
     new->custom = (int (*)(void *, char *, struct einit_event *))einit_mod_daemon_custom_custom;
     new->cleanup = einit_mod_daemon_cleanup_after_module;
+
+    if (shutdownaction && !inset ((const void **)einit_mod_daemon_shutdown, (void *)new, SET_NOALLOC)) {
+     einit_mod_daemon_shutdown = (struct lmodule **)setadd ((void **)einit_mod_daemon_shutdown, (void *)new, SET_NOALLOC);
+    }
    }
   }
  }
@@ -291,6 +316,7 @@ int einit_mod_daemon_configure (struct lmodule *irr) {
 
  exec_configure (irr);
  event_listen (einit_event_subsystem_ipc, einit_mod_daemon_ipc_event_handler);
+ event_listen (einit_event_subsystem_power, einit_mod_daemon_power_event_handler);
 
  return 0;
 }

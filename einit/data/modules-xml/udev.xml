@@ -54,8 +54,7 @@
 	else
 		udevd --daemon ;
 	fi"
-  execute:shutdown="
-	pexec-options no-pipe ;
+  execute:on-shutdown="pexec-options no-pipe ;
 	if [ '${configuration_services_udev_device_tarball}' = 'yes' ] ; then
 		echo 'feedback|notice|Saving device nodes' ;
 		save_tmp_base=/tmp/udev.savedevices.'$$' ;

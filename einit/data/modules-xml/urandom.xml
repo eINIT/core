@@ -11,7 +11,7 @@
           fi;
           chmod 600 ${configuration_services_urandom_seed};
           dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null"
-  execute:shutdown="echo &quot;feedback|notice|Saving random seed...&quot;;
+  execute:on-shutdown="echo &quot;feedback|notice|Saving random seed...&quot;;
             touch ${configuration_services_urandom_seed};
             chmod 600 ${configuration_services_urandom_seed};
             dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null"
