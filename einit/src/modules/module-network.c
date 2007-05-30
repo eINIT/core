@@ -56,6 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
 
+enum interface_status {
+ is_down,
+ is_ifctl_up,
+ is_up
+};
+
 enum interface_template_action_type {
  ita_pexec,
  ita_daemon,
@@ -82,6 +88,7 @@ struct interface_template_item {
 
 struct interface_descriptor {
  char *interface_name;
+ enum interface_status status;
  struct interface_template_item **controller;
  struct interface_template_item **ip_manager;
 
@@ -139,6 +146,8 @@ void network_einit_event_handler (struct einit_event *ev) {
  }
 }
 #endif
+
+struct stree *network_modules = NULL;
 
 void network_reorder_interface_template_item (struct interface_template_item **str, char *name) {
  if (name) {
@@ -401,10 +410,10 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
      uint32_t r = 0;
 
      for (; n[r]; r++) {
-      struct interface_descriptor *subid = network_import_interface_descriptor_string(n[r]);
+      struct stree *ifst = streefind (network_modules, n[r], tree_find_first);
 
-      if (subid) {
-       id->bridge_interfaces = streeadd (id->bridge_interfaces, n[r], subid, SET_NOALLOC, NULL);
+      if (ifst) {
+       id->bridge_interfaces = streeadd (id->bridge_interfaces, n[r], ifst, SET_NOALLOC, NULL);
       }
      }
 
@@ -539,6 +548,8 @@ int network_interface_configure (struct lmodule *tm) {
  tm->param = NULL;
 
  tm->source = estrdup(tm->module->rid);
+
+ network_modules = streeadd (network_modules, tm->module->rid + 10, tm, SET_NOALLOC, NULL);
 
  return 0;
 }
