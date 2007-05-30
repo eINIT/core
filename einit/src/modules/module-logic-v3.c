@@ -1805,7 +1805,7 @@ void mod_flatten_current_tb () {
   for (i = 0; current.enable[i]; i++) {
    struct stree *xn = streefind (module_logics_service_list, current.enable[i], tree_find_first);
 
-   if (xn && xn->value) {
+   if (!mod_group_get_data (current.enable[i]) && xn && xn->value) {
     struct lmodule **lm = xn->value;
     mod_defer_notice (lm[0], NULL);
    }
@@ -1853,7 +1853,7 @@ void mod_flatten_current_tb () {
   for (i = 0; current.disable[i]; i++) {
    struct stree *xn = streefind (module_logics_service_list, current.disable[i], tree_find_first);
 
-   if (xn && xn->value) {
+   if (!mod_group_get_data (current.disable[i]) && xn && xn->value) {
     struct lmodule **lm = xn->value;
     mod_defer_notice (lm[0], NULL);
    }

@@ -1,0 +1,149 @@
+/*
+ *  linux-module-kernel.c
+ *  einit
+ *
+ *  Created by Magnus Deininger on 30/05/2006.
+ *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *
+ */
+
+/*
+Copyright (c) 2006, 2007, Magnus Deininger
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+	  this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+	  this list of conditions and the following disclaimer in the documentation
+	  and/or other materials provided with the distribution.
+    * Neither the name of the project nor the names of its contributors may be
+	  used to endorse or promote products derived from this software without
+	  specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <expat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <einit/bitch.h>
+#include <einit/config.h>
+#include <einit/utility.h>
+#include <einit/tree.h>
+#include <einit/event.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <einit-modules/configuration.h>
+#include <einit-modules/exec.h>
+
+int linux_module_kernel_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+const struct smodule einit_linux_module_kernel_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_loader,
+ .name      = "Linux Kernel Module Support",
+ .rid       = "linux-module-kernel",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = linux_module_kernel_configure
+};
+
+module_register(einit_linux_module_kernel_self);
+
+#endif
+
+int linux_module_kernel_scanmodules (struct lmodule *);
+int linux_module_kernel_enable (char **, struct einit_event *);
+int linux_module_kernel_disable (char **, struct einit_event *);
+int linux_module_kernel_module_cleanup (struct lmodule *);
+int linux_module_kernel_module_configure (struct lmodule *);
+int linux_module_kernel_cleanup (struct lmodule *);
+
+int linux_module_kernel_scanmodules (struct lmodule *mainlist) {
+ struct stree *linux_module_kernel_nodes = cfg_prefix("configuration-kernel-modules-");
+
+ if (linux_module_kernel_nodes) {
+  struct stree *cur = linux_module_kernel_nodes;
+
+  while (cur) {
+   struct cfgnode *node = cur->value;
+   if (node) {
+   }
+
+   cur = streenext (cur);
+  }
+
+  streefree (linux_module_kernel_nodes);
+ }
+
+ return 0;
+}
+
+
+int linux_module_kernel_enable (char **modules, struct einit_event *status) {
+ return status_failed;
+}
+
+int linux_module_kernel_disable (char **modules, struct einit_event *status) {
+ return status_failed;
+}
+
+int linux_module_kernel_cleanup (struct lmodule *this) {
+ exec_cleanup (this);
+
+ return 0;
+}
+
+int linux_module_kernel_module_cleanup (struct lmodule *this) {
+ return 0;
+}
+
+int linux_module_kernel_module_configure (struct lmodule *tm) {
+ if (!tm->module || !tm->module->rid) return 1;
+
+ eprintf (stderr, "new kernel module set: %s\n", tm->module->rid);
+
+ tm->cleanup = linux_module_kernel_module_cleanup;
+ tm->enable = (int (*)(void *, struct einit_event *))linux_module_kernel_enable;
+ tm->disable = (int (*)(void *, struct einit_event *))linux_module_kernel_disable;
+
+ tm->param = NULL;
+
+ tm->source = estrdup(tm->module->rid);
+
+ return 0;
+}
+
+int linux_module_kernel_configure (struct lmodule *this) {
+ module_init(this);
+ exec_configure (this);
+
+ thismodule->cleanup = linux_module_kernel_cleanup;
+ thismodule->scanmodules = linux_module_kernel_scanmodules;
+
+ return 0;
+}
