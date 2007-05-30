@@ -15,8 +15,6 @@ documentation-pdf:
 	cd documentation && ${MAKE} documentation-pdf
 
 documentation-api:
-	rm -Rf build/documentation/hacking-einit
-	doxygen Doxyfile
 
 documentation: documentation-man documentation-html documentation-api
 
