@@ -1,6 +1,6 @@
 export INCLUDEPATH="/usr/local/include"
 
-export MODULES_GENERIC="module-xml"
+export MODULES_GENERIC="module-exec module-daemon module-network"
 
 export ALLMODULES="${MODULES_GENERIC}"
 
