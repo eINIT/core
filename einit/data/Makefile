@@ -9,12 +9,10 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/init.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/subsystems.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
-	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-lisp
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
-	${INSTALL} ${IPARAM} -m 0644 modules-lisp/*lisp ${DESTDIR}/${LIBDIR}/modules-lisp
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	
 	for i in subsystems.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done

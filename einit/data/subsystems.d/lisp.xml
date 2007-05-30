@@ -1,5 +1,0 @@
-<einit prefix="subsystem-lisp">
-<!-- configuration for the LISP subsystem -->
-
- <import path="/lib/einit/modules-lisp/" pattern-allow="(\.e?lisp)$" />
-</einit>
