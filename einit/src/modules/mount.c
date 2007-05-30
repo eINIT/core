@@ -108,7 +108,7 @@ module_register(einit_mount_self);
 
 #endif
 
-#if 0
+#if 1
 
 
 char *provides_mountlocal[] = {"mount-local", NULL};
