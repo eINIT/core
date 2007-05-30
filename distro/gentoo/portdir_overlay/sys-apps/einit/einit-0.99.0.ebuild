@@ -26,7 +26,7 @@ RDEPEND="dev-libs/expat
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
-PDEPENT="sys-apps/einit-modules-xml"
+PDEPEND="sys-apps/einit-modules-xml"
 
 S=${WORKDIR}/${PN}
 
