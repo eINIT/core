@@ -57,9 +57,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define IF_OK          0x1
 
 enum interface_status {
- is_down,
- is_ifctl_up,
- is_up
+ is_down       = 0x1000,
+ is_ip_blocked = 0x0010,
+ is_ifctl_up   = 0x0001,
+ is_ip_up      = 0x0002
+};
+
+enum interface_action_command {
+ iac_need_all,
+ iac_need_any,
+ iac_need_this
 };
 
 enum interface_template_action_type {
@@ -238,12 +245,16 @@ int network_scanmodules (struct lmodule *mainlist) {
 
        if (lm->param) {
         struct interface_descriptor *id = lm->param;
-        char *ip_name = id->ip_manager ? id->ip_manager[0]->name : NULL;
-        char *ifctl_name = id->controller ? id->controller[0]->name : NULL;
-        char *macchanger_name = id->macchanger ? id->macchanger[0]->name : NULL;
+        char *ip_name = id && id->ip_manager ? id->ip_manager[0]->name : NULL;
+        char *ifctl_name = id && id->controller ? id->controller[0]->name : NULL;
+        char *macchanger_name = id && id->macchanger ? id->macchanger[0]->name : NULL;
+        enum interface_status ifstatus = id ? id->status : is_down;
 
         network_free_interface_descriptor (lm->param);
         lm->param = network_import_interface_descriptor (lm);
+
+        id = lm->param;
+        id->status = ifstatus;
 
         if (ip_name) {
          network_reorder_interface_template_item (id->ip_manager, ip_name);
@@ -428,7 +439,7 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
       struct stree *ifst = streefind (network_modules, n[r], tree_find_first);
 
       if (ifst) {
-       id->bridge_interfaces = streeadd (id->bridge_interfaces, n[r], ifst, SET_NOALLOC, NULL);
+       id->bridge_interfaces = streeadd (id->bridge_interfaces, n[r], ifst->value, SET_NOALLOC, NULL);
       }
      }
 
@@ -450,10 +461,14 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
 }
 
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
- return network_import_interface_descriptor_string (lm->module->rid+10);
+ struct interface_descriptor *id = network_import_interface_descriptor_string (lm->module->rid+10);
+
+ id->status = is_down;
+
+ return id;
 }
 
-int network_execute_interface_action (struct interface_template_item **str, char *action, char *ctype, char rotate, struct einit_event *status) {
+int network_execute_interface_action (struct interface_template_item **str, char *action, char *ctype, enum interface_action_command command, struct einit_event *status) {
  if (str) { // == NULL if ip not mentioned or ="none"
   fbprintf (status, "%s: %s controller", action, ctype);
   struct interface_template_item *start;
@@ -468,24 +483,34 @@ int network_execute_interface_action (struct interface_template_item **str, char
      return status_ok;
     } else {
      fbprintf (status, "%s controller doesn't work", ctype);
+     if (command == iac_need_all) return status_failed;
     }
    }
 
 
-   if (rotate && str[1]) {
-    ssize_t rx = 1;
+   if ((command == iac_need_any) || (command == iac_need_all)) {
+    if (str[1]) {
+     ssize_t rx = 1;
 
-    for (; str[rx]; rx++) {
-     str[rx-1] = str[rx];
+     for (; str[rx]; rx++) {
+      str[rx-1] = str[rx];
+     }
+
+     str[rx-1] = current;
+     current = str[0];
+    } else if (command == iac_need_any) {
+     return status_failed;
     }
-
-    str[rx-1] = current;
-    current = str[0];
    } else {
     return status_failed;
    }
 
-   if (current == start) return status_failed;
+   if (current == start) {
+    if (command == iac_need_all)
+     return status_ok;
+    else
+     return status_failed;
+   }
   }
  } else {
   return status_idle;
@@ -495,13 +520,21 @@ int network_execute_interface_action (struct interface_template_item **str, char
 }
 
 int network_ready (struct interface_descriptor *id, struct einit_event *status) {
+ uint32_t retries = 0;
  int ret = status_ok;
  struct stat st;
  fbprintf (status, "waiting for interface to exist");
  char interface_path[BUFFERSIZE];
  esprintf (interface_path, BUFFERSIZE, "/sys/class/net/%s", id->interface_name); 
  while (stat(interface_path, &st)) {
+  if (retries > 10000000) {
+   fbprintf (status, "too many retries, giving up.");
+
+   return status_failed;
+  }
+
   sched_yield();
+  retries++;
  }
  return ret;
 }
@@ -510,37 +543,139 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  int ret = 0;
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
+ if (id->bridge_interfaces) {
+  struct stree *cur = id->bridge_interfaces;
+
+  while (cur) {
+   struct lmodule *module = cur->value;
+   if (module->status & status_enabled) {
+    fbprintf (status, "suppressing ip controller on interface %s", cur->key);
+
+    mod (einit_module_custom, cur->value, "block-ip");
+   } else {
+    fbprintf (status, "suppressing ip controller on interface %s", cur->key);
+    mod (einit_module_custom, cur->value, "block-ip");
+
+    fbprintf (status, "enabling network interface %s", cur->key);
+    mod (einit_module_enable, cur->value, NULL);
+   }
+
+   cur = cur->next;
+  }
+ }
+
  fbprintf (status, "enabling network interface %s", id->interface_name);
 
  if (network_ready(id,status) == status_failed)
-  return status_failed;
+  goto fail;
 
- if (network_execute_interface_action (id->macchanger, "enable", "macchanger", 1, status) == status_failed)
-  return status_failed;
+ if (network_execute_interface_action (id->macchanger, "enable", "macchanger", iac_need_any, status) == status_failed)
+  goto fail;
 
- if (network_execute_interface_action (id->controller, "enable", "interface", 1, status) == status_failed)
-  return status_failed;
+ if (network_execute_interface_action (id->controller, "enable", "interface", iac_need_all, status) == status_failed)
+  goto fail;
 
- ret = network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status);
- return (ret == status_idle) ? status_failed : ret;
+ id->status |= is_ifctl_up;
+
+ if (id->status & is_ip_blocked) {
+  return status_ok;
+ } else {
+  ret = network_execute_interface_action (id->ip_manager, "enable", "IP", iac_need_any, status);
+
+  if ((ret == status_idle) || (ret == status_failed)) {
+   goto fail;
+  } else {
+   id->status |= is_ip_up;
+   return ret;
+  }
+ }
+
+ return status_ok;
+
+ fail:
+ if (id->bridge_interfaces) {
+  struct stree *cur = id->bridge_interfaces;
+
+  while (cur) {
+   fbprintf (status, "re-enabling ip controller on interface %s", cur->key);
+   mod (einit_module_custom, cur->value, "unblock-ip");
+   mod (einit_module_custom, cur->value, "enable-ip");
+
+   cur = cur->next;
+  }
+ }
+
+ return status_failed;
 }
 
 int network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
- if (network_execute_interface_action (id->ip_manager, "disable", "IP", 0, status) == status_failed)
-  return status_failed;
+ if (id->status & is_ip_up) {
+  if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
+   return status_failed;
 
- return network_execute_interface_action (id->controller, "disable", "interface", 0, status);
+  id->status ^= is_ip_up;
+ }
+
+ if (id->status & is_ifctl_up) {
+  if (network_execute_interface_action (id->controller, "disable", "interface", iac_need_all, status) == status_failed)
+   return status_failed;
+
+  id->status ^= is_ifctl_up;
+ }
+
+ return status_ok;
 }
 
 int network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 
- if (network_execute_interface_action (id->ip_manager, "disable", "IP", 0, status) == status_failed)
+ if (strmatch (action, "block-ip")) {
+  fbprintf (status, "blocking IP controller");
+
+  if (id->status & is_ip_up) {
+   if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
+    return status_failed | status_enabled;
+
+   id->status |= is_ip_blocked;
+   id->status ^= is_ip_up;
+
+   return status_ok;
+  } else {
+   id->status |= is_ip_blocked;
+   return status_ok;
+  }
+ } else if (strmatch (action, "unblock-ip")) {
+  fbprintf (status, "unblocking IP controller");
+
+  if (id->status & is_ip_blocked) id->status ^= is_ip_blocked;
+
+  return status_ok;
+ } else if (strmatch (action, "enable-ip")) {
+  int ret = network_execute_interface_action (id->ip_manager, "enable", "IP", iac_need_this, status);
+
+  if ((ret == status_failed) || (ret == status_idle))
+   return status_failed | status_enabled;
+
+  id->status |= is_ip_up;
+
+  return status_ok;
+ }
+
+ if (status->module->status & status_enabled) {
+  if (network_execute_interface_action (id->ip_manager, action, "IP", iac_need_this, status) == status_failed)
   return status_failed | status_enabled;
 
- return network_execute_interface_action (id->controller, "disable", "interface", 0, status) | status_enabled;
+  return network_execute_interface_action (id->controller, action, "interface", iac_need_all, status) | status_enabled;
+ } else {
+  if (network_execute_interface_action (id->controller, action, "interface", iac_need_all, status) == status_failed)
+   return status_failed | status_enabled;
+
+  return network_execute_interface_action (id->ip_manager, action, "IP", iac_need_any, status) | status_enabled;
+ }
+
+ return status_ok | status_enabled;
 }
 
 int network_cleanup (struct lmodule *this) {

@@ -346,11 +346,11 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
   if (st->module->status & status_disabled) {
    status = "\e[33mdisa\e[0m";
   }
-  if (st->module->status & status_working) {
-   status = "\e[31m....\e[0m";
-  }
   if (st->module->status & status_deferred) {
    status = "\e[33mschd\e[0m";
+  }
+  if (st->module->status & status_working) {
+   status = "\e[31m....\e[0m";
   }
 
   if (st->module->status & status_failed) {
