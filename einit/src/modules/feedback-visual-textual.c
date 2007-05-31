@@ -276,7 +276,13 @@ signed int feedback_log_sort (struct message_log *st1, struct message_log *st2) 
  if (!st1) return 1;
  if (!st2) return -1;
 
+#if 0
  return (st2->seqid - st1->seqid);
+#else
+ if (st2->seqid > st1->seqid)
+  return -1;
+ return 1;
+#endif
 }
 
 signed int feedback_time_sort (struct feedback_textual_module_status *st1, struct feedback_textual_module_status *st2) {

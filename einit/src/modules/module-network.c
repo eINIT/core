@@ -202,7 +202,9 @@ int network_scanmodules (struct lmodule *mainlist) {
      req = (char **)setadd ((void **)req, (void *)"mount-critical", SET_TYPE_STRING);
 
      for (; node->arbattrs[y]; y+=2) {
-      if (strmatch (node->arbattrs[y], "kernel-module")) {
+      if (strmatch (node->arbattrs[y], "bridge")) {
+       req = (char **)setadd ((void **)req, (void *)"kern-brctl", SET_TYPE_STRING);
+      } else if (strmatch (node->arbattrs[y], "kernel-module")) {
        struct cfgnode newnode;
 
        esprintf (tmp, BUFFERSIZE, "kern-%s", interfacename);
@@ -463,7 +465,7 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
  struct interface_descriptor *id = network_import_interface_descriptor_string (lm->module->rid+10);
 
- id->status = is_down;
+ id->status |= is_down;
 
  return id;
 }
