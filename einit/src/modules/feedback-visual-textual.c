@@ -377,8 +377,8 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
    eprintf (stdout, "%s[ %s ]%s %s%s; messages:\e[0K\n", rmarker, status, emarker, wmarker, name);
 
    y = 0;
-   for (; st->log[y]; y++)
-    eprintf (stdout, "  \e[37m*\e[0m %s\e[0K\n", st->log[y]->message);
+   for (; st->log[y] && y < 3; y++)
+    eprintf (stdout, "  \e[37m*\e[0m %i: %s\e[0K\n", st->log[y]->seqid, st->log[y]->message);
   } else if (y != 0) {
    y--;
 
