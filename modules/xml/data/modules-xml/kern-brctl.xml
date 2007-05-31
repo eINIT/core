@@ -1,0 +1,8 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-kern-brctl"
+  name="Bridging Kernel Module"
+  provides="kern-brctl"
+  requires="mount-system"
+  enable="modprobe -q bridge"
+  disable="/bin/true" />
+</einit>
