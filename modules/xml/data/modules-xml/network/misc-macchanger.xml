@@ -1,6 +1,7 @@
 <einit prefix="services-virtual-network">
  <misc id="macchanger"
-  enable="macchanger ${configuration_network_interfaces_${interface}_macchanger} ${interface}"
+  enable="ip link set ${interface} up;
+	  macchanger ${configuration_network_interfaces_${interface}_macchanger} ${interface}"
   disable="/bin/true"
   variables="configuration-network-interfaces-${interface}/.*" />
 </einit>

@@ -240,12 +240,16 @@ int network_scanmodules (struct lmodule *mainlist) {
         struct interface_descriptor *id = lm->param;
         char *ip_name = id->ip_manager ? id->ip_manager[0]->name : NULL;
         char *ifctl_name = id->controller ? id->controller[0]->name : NULL;
+        char *macchanger_name = id->macchanger ? id->macchanger[0]->name : NULL;
 
         network_free_interface_descriptor (lm->param);
         lm->param = network_import_interface_descriptor (lm);
 
         if (ip_name) {
          network_reorder_interface_template_item (id->ip_manager, ip_name);
+        }
+        if (macchanger_name) {
+         network_reorder_interface_template_item (id->macchanger, macchanger_name);
         }
         if (ifctl_name) {
          network_reorder_interface_template_item (id->controller, ifctl_name);
@@ -413,7 +417,7 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
    } else if (strmatch (id->interface->arbattrs[i], "kernel-module")) {
     id->kernel_module = id->interface->arbattrs[i+1];
    } else if (strmatch (id->interface->arbattrs[i], "macchanger")) {
-    id->macchanger = network_import_templates ("misc", id->interface->arbattrs[i], id);
+    id->macchanger = network_import_templates ("misc", "macchanger", id);
    } else if (strmatch (id->interface->arbattrs[i], "bridge")) {
     char **n = str2set (' ', id->interface->arbattrs[i+1]);
 
@@ -511,13 +515,13 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (network_ready(id,status) == status_failed)
   return status_failed;
 
+ if (network_execute_interface_action (id->macchanger, "enable", "macchanger", 1, status) == status_failed)
+  return status_failed;
+
  if (network_execute_interface_action (id->controller, "enable", "interface", 1, status) == status_failed)
   return status_failed;
 
- if (network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status) == status_failed)
-  return status_failed;
-
- ret = network_execute_interface_action (id->macchanger, "enable", "macchanger", 1, status);
+ ret = network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status);
  return (ret == status_idle) ? status_failed : ret;
 }
 
