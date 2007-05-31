@@ -203,7 +203,7 @@ int network_scanmodules (struct lmodule *mainlist) {
 
      for (; node->arbattrs[y]; y+=2) {
       if (strmatch (node->arbattrs[y], "bridge")) {
-       req = (char **)setadd ((void **)req, (void *)"kern-brctl", SET_TYPE_STRING);
+       req = (char **)setadd ((void **)req, (void *)"kern-bridge", SET_TYPE_STRING);
       } else if (strmatch (node->arbattrs[y], "kernel-module")) {
        struct cfgnode newnode;
 

@@ -1,7 +1,7 @@
 <einit prefix="services-virtual-module">
- <shell id="shell-kern-brctl"
-  name="Bridging Kernel Module"
-  provides="kern-brctl"
+ <shell id="shell-kern-bridge"
+  name="802.1d Ethernet Bridging"
+  provides="kern-bridge"
   requires="mount-system"
   enable="modprobe -q bridge; /bin/true"
   disable="/bin/true" />
