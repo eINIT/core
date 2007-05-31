@@ -551,9 +551,18 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   while (cur) {
    struct lmodule *module = cur->value;
    if (module->status & status_enabled) {
-    fbprintf (status, "suppressing ip controller on interface %s", cur->key);
+    char *ip_null = cfg_getstring ("configuration-command-ip-null/with-env", NULL);
+
+    fbprintf (status, "suppressing and disabling ip controller on interface %s", cur->key);
 
     mod (einit_module_custom, cur->value, "block-ip");
+
+    if (ip_null) {
+     const char *ip_null_env[] = { "interface", id->interface_name, NULL};
+     char *cmd = apply_variables (ip_null, ip_null_env);
+
+     pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
+    }
    } else {
     fbprintf (status, "suppressing ip controller on interface %s", cur->key);
     mod (einit_module_custom, cur->value, "block-ip");
@@ -568,8 +577,10 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
  fbprintf (status, "enabling network interface %s", id->interface_name);
 
- if (network_ready(id,status) == status_failed)
-  goto fail;
+ if (id->kernel_module) {
+  if (network_ready(id,status) == status_failed)
+   goto fail;
+ }
 
  if (network_execute_interface_action (id->macchanger, "enable", "macchanger", iac_need_any, status) == status_failed)
   goto fail;

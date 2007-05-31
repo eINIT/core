@@ -161,6 +161,8 @@
 <!-- the command to run to remove a module from the kernel -->
    <rmmod s="/sbin/modprobe -r" with-env="/sbin/modprobe -r ${module}" />
    <modprobe s="/sbin/modprobe" with-env="/sbin/modprobe ${module}" />
+
+   <ip-null with-env="ip addr 0.0.0.0 dev ${interface}" />
   </command>
 
  </configuration>
