@@ -3,6 +3,6 @@
   name="Bridging Kernel Module"
   provides="kern-brctl"
   requires="mount-system"
-  enable="modprobe -q bridge"
+  enable="modprobe -q bridge; /bin/true"
   disable="/bin/true" />
 </einit>
