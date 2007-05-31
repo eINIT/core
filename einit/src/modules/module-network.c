@@ -91,6 +91,7 @@ struct interface_descriptor {
  enum interface_status status;
  struct interface_template_item **controller;
  struct interface_template_item **ip_manager;
+ struct interface_template_item **macchanger;
 
 #if 0
  uint32_t ci, pi;
@@ -309,6 +310,14 @@ void network_free_interface_descriptor (struct interface_descriptor *id) {
    if (id->ip_manager[i]->action) streefree (id->ip_manager[i]->action);
   }
  }
+ if (id->macchanger) {
+  uint32_t i = 0;
+  for (; id->macchanger[i]; i++) {
+   if (id->ip_manager[i]->variables) free (id->ip_manager[i]->variables);
+   if (id->ip_manager[i]->environment) free (id->ip_manager[i]->environment);
+   if (id->ip_manager[i]->action) streefree (id->ip_manager[i]->action);
+  }
+ }
 
  free (id);
 }
@@ -403,6 +412,8 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
     id->controller = network_import_templates ("ifctl", id->interface->arbattrs[i+1], id);
    } else if (strmatch (id->interface->arbattrs[i], "kernel-module")) {
     id->kernel_module = id->interface->arbattrs[i+1];
+   } else if (strmatch (id->interface->arbattrs[i], "macchanger")) {
+    id->macchanger = network_import_templates ("misc", id->interface->arbattrs[i], id);
    } else if (strmatch (id->interface->arbattrs[i], "bridge")) {
     char **n = str2set (' ', id->interface->arbattrs[i+1]);
 
@@ -503,7 +514,10 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (network_execute_interface_action (id->controller, "enable", "interface", 1, status) == status_failed)
   return status_failed;
 
- ret = network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status);
+ if (network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status) == status_failed)
+  return status_failed;
+
+ ret = network_execute_interface_action (id->macchanger, "enable", "interface", 1, status);
  return (ret == status_idle) ? status_failed : ret;
 }
 
