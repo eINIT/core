@@ -313,9 +313,9 @@ void network_free_interface_descriptor (struct interface_descriptor *id) {
  if (id->macchanger) {
   uint32_t i = 0;
   for (; id->macchanger[i]; i++) {
-   if (id->ip_manager[i]->variables) free (id->ip_manager[i]->variables);
-   if (id->ip_manager[i]->environment) free (id->ip_manager[i]->environment);
-   if (id->ip_manager[i]->action) streefree (id->ip_manager[i]->action);
+   if (id->macchanger[i]->variables) free (id->macchanger[i]->variables);
+   if (id->macchanger[i]->environment) free (id->macchanger[i]->environment);
+   if (id->macchanger[i]->action) streefree (id->macchanger[i]->action);
   }
  }
 
@@ -517,7 +517,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (network_execute_interface_action (id->ip_manager, "enable", "IP", 1, status) == status_failed)
   return status_failed;
 
- ret = network_execute_interface_action (id->macchanger, "enable", "interface", 1, status);
+ ret = network_execute_interface_action (id->macchanger, "enable", "macchanger", 1, status);
  return (ret == status_idle) ? status_failed : ret;
 }
 
