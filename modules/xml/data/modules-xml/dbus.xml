@@ -4,7 +4,6 @@
   provides="dbus"
   requires="mount-critical"
   after="fqdn"
-  before="^net-.*:^kern-.*"
   pid="/var/run/dbus.pid"
   prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
   command="dbus-daemon --system --nofork"
