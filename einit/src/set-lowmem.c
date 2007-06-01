@@ -318,7 +318,7 @@ int setcount (const void **set) {
 }
 
 void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(const void *, const void*)) {
-#if 0
+#if 1
  uint32_t c = 0, c2 = 0, x = 0, dc = 1;
  void *tmp;
  if (!set) return;
@@ -340,7 +340,7 @@ void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(co
  }
 
  return;
-#endif
+#else
  uint32_t c = 0;
  if (task == set_sort_order_string_lexical)
   sortfunction = (signed int(*)(const void *, const void*))strcmp;
@@ -349,6 +349,7 @@ void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(co
  for (; set[c]; c++);
 
  qsort (set, c+1, sizeof (void *), sortfunction);
+#endif
 }
 
 int inset (const void **haystack, const void *needle, int32_t esize) {
