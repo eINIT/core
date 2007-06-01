@@ -561,7 +561,8 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
 
     if (warnings > feedback_textual_modules[i]->warnings) {
      feedback_textual_modules[i]->warnings = warnings;
-    }
+    } if (!warnings)
+     feedback_textual_modules[i]->warnings = 0;
    }
   }
  }

@@ -465,7 +465,7 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *lm) {
  struct interface_descriptor *id = network_import_interface_descriptor_string (lm->module->rid+10);
 
- id->status |= is_down;
+ if (id) id->status |= is_down;
 
  return id;
 }
