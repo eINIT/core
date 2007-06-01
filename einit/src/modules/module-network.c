@@ -564,11 +564,24 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
      pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
     }
    } else {
+    struct einit_event ev = evstaticinit(einit_core_change_service_status);
+    char tmp[BUFFERSIZE];
+    char *evs[] = { "", "enable", NULL };
+
     fbprintf (status, "suppressing ip controller on interface %s", cur->key);
     mod (einit_module_custom, cur->value, "block-ip");
 
     fbprintf (status, "enabling network interface %s", cur->key);
-    mod (einit_module_enable, cur->value, NULL);
+/*    mod (einit_module_enable, cur->value, NULL);*/
+
+    esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
+
+    evs[0] = tmp;
+    ev.set = evs;
+
+    event_emit (&ev, einit_event_flag_broadcast);
+
+    evstaticdestroy (ev);
    }
 
    cur = cur->next;

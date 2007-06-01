@@ -292,6 +292,14 @@ signed int feedback_time_sort (struct feedback_textual_module_status *st1, struc
  return (st2->lastchange - st1->lastchange);
 }
 
+signed int feedback_name_sort (struct feedback_textual_module_status *st1, struct feedback_textual_module_status *st2) {
+ if (!st1 || !st1->module || !st1->module->module || !st1->module->module->name) return 1;
+ if (!st2 || !st2->module || !st2->module->module || !st2->module->module->name) return -1;
+
+// return (st2->lastchange - st1->lastchange);
+ return strcmp (st1->module->module->name, st2->module->module->name);
+}
+
 void feedback_process_textual_noansi(struct feedback_textual_module_status *st) {
  char statuscode[] = { '(', '-', '-', '-', '-', ')', 0 };
  char *rid = (st->module->module && st->module->module->rid) ? st->module->module->rid : "no idea";
@@ -588,6 +596,8 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
   }
 
   feedback_textual_modules = (struct feedback_textual_module_status **)setadd ((void **)feedback_textual_modules, &nm, sizeof (struct feedback_textual_module_status));
+
+  setsort ((void **)feedback_textual_modules, 0, (signed int(*)(const void *, const void*))feedback_name_sort);
  }
 
  emutex_unlock (&feedback_textual_modules_mutex);
