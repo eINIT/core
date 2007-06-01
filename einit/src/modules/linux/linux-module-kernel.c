@@ -186,6 +186,8 @@ int linux_module_kernel_scanmodules (struct lmodule *mainlist) {
      esprintf (tmp, BUFFERSIZE, "kern-%s", cur->key + 29);
      sm->si.provides = (char **)setadd ((void **)sm->si.provides, tmp, SET_TYPE_STRING);
 
+     sm->si.requires = (char **)setadd ((void **)sm->si.requires, "mount-system", SET_TYPE_STRING);
+
      modules_group  = (char **)setadd ((void **)modules_group, tmp, SET_TYPE_STRING);
 
      sm->configure = linux_module_kernel_module_configure;

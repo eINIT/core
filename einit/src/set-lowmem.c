@@ -328,16 +328,32 @@ void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(co
  else if (!sortfunction) return;
 
 /* this doesn't work, yet */
- for (; set[c]; c++) {
-  for (c2 = c+1; set[c2]; c2++) {
-   if ((x = sortfunction(set[c], set[c2])) > 0) {
-    dc = 1;
-    tmp = set[c2];
-    set[c2] = set[c];
-    set[c] = tmp;
+/* while (dc) {
+  dc = 0;*/
+  for (c = 0; set[c]; c++) {
+   for (c2 = c+1; set[c2]; c2++) {
+    if ((x = sortfunction(set[c], set[c2])) < 0) {
+     dc = 1;
+     tmp = set[c2];
+     set[c2] = set[c];
+     set[c] = tmp;
+    }
    }
   }
- }
+// }
+
+/* redo:
+
+ for (c = 0; set[c]; c++) {
+  for (c2 = c+1; set[c2]; c2++) {
+   if ((x = sortfunction(set[c], set[c2])) > 0) {
+    tmp = set[0];
+    set[0] = set[c];
+    set[c] = tmp;
+    goto redo;
+   }
+  }
+ }*/
 
  return;
 #else
