@@ -642,6 +642,8 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
    return status_failed;
 
   id->status ^= is_ip_up;
+ } else {
+  fbprintf (status, "IP Controller not up, skipping");
  }
 
  if (id->status & is_ifctl_up) {
@@ -649,6 +651,8 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
    return status_failed;
 
   id->status ^= is_ifctl_up;
+ } else {
+  fbprintf (status, "Interface Controller not up, skipping");
  }
 
  return status_ok;
@@ -724,7 +728,7 @@ int network_interface_configure (struct lmodule *tm) {
  tm->disable = (int (*)(void *, struct einit_event *))network_interface_disable;
  tm->custom = (int (*)(void *, char *, struct einit_event *))network_interface_custom;
 
- tm->param = NULL;
+ lm->param = NULL;
 
  tm->source = estrdup(tm->module->rid);
 
