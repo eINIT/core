@@ -728,7 +728,7 @@ int network_interface_configure (struct lmodule *tm) {
  tm->disable = (int (*)(void *, struct einit_event *))network_interface_disable;
  tm->custom = (int (*)(void *, char *, struct einit_event *))network_interface_custom;
 
- lm->param = NULL;
+ tm->param = NULL;
 
  tm->source = estrdup(tm->module->rid);
 
