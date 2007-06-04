@@ -521,6 +521,42 @@ int network_execute_interface_action (struct interface_template_item **str, char
  return status_failed;
 }
 
+int bridge (struct interface_descriptor *id, struct einit_event *status) {
+ struct stree *cur = id->bridge_interfaces;
+ while (cur) {
+  struct lmodule *module = cur->value;
+  if (module->status & status_enabled) {
+   fbprintf (status, "suppressing and disabling ip controller on interface %s", cur->key);
+   return mod (einit_module_custom, cur->value, "block-ip");
+  } else {
+   struct einit_event ev = evstaticinit(einit_core_change_service_status);
+   char tmp[BUFFERSIZE];
+   char *evs[] = { "", "enable", NULL };
+   fbprintf (status, "suppressing ip controller on interface %s", cur->key);
+   return mod (einit_module_custom, cur->value, "block-ip");
+   fbprintf (status, "enabling network interface %s", cur->key);
+   esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
+   evs[0] = tmp;
+   ev.set = evs;
+   event_emit (&ev, einit_event_flag_broadcast);
+   evstaticdestroy (ev);
+  }
+ cur = cur->next;
+ }
+ return status_failed;
+}
+
+int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
+ char *ip_flush = cfg_getstring ("configuration-command-ip-flush/with-env", NULL);
+ if (ip_flush) {
+  fbprintf (status, "flushing routes and addresses");
+  const char *ip_flush_env[] = { "interface", id->interface_name, NULL};
+  char *cmd = apply_variables (ip_flush, ip_flush_env);
+  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
+ }
+ return status_failed;
+}
+
 int network_ready (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t retries = 0;
  int ret = status_ok;
@@ -544,56 +580,21 @@ int network_ready (struct interface_descriptor *id, struct einit_event *status) 
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
  int ret = 0;
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
-
  if (id->bridge_interfaces) {
   struct stree *cur = id->bridge_interfaces;
-
-  while (cur) {
-   struct lmodule *module = cur->value;
-   if (module->status & status_enabled) {
-    char *ip_null = cfg_getstring ("configuration-command-ip-null/with-env", NULL);
-
-    fbprintf (status, "suppressing and disabling ip controller on interface %s", cur->key);
-
-    mod (einit_module_custom, cur->value, "block-ip");
-
-    if (ip_null) {
-     const char *ip_null_env[] = { "interface", id->interface_name, NULL};
-     char *cmd = apply_variables (ip_null, ip_null_env);
-
-     pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
-    }
-   } else {
-    struct einit_event ev = evstaticinit(einit_core_change_service_status);
-    char tmp[BUFFERSIZE];
-    char *evs[] = { "", "enable", NULL };
-
-    fbprintf (status, "suppressing ip controller on interface %s", cur->key);
-    mod (einit_module_custom, cur->value, "block-ip");
-
-    fbprintf (status, "enabling network interface %s", cur->key);
-/*    mod (einit_module_enable, cur->value, NULL);*/
-
-    esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
-
-    evs[0] = tmp;
-    ev.set = evs;
-
-    event_emit (&ev, einit_event_flag_broadcast);
-
-    evstaticdestroy (ev);
-   }
-
-   cur = cur->next;
-  }
+  if (mod (einit_module_custom, cur->value, "create-interface") == status_failed)
+   goto fail;
+  if (bridge(id,status) == status_failed)
+   goto fail;
  }
-
  fbprintf (status, "enabling network interface %s", id->interface_name);
-
  if (id->kernel_module) {
   if (network_ready(id,status) == status_failed)
    goto fail;
  }
+
+ if (flush_ip(id,status) == status_failed)
+  goto fail;
 
  if (network_execute_interface_action (id->macchanger, "enable", "macchanger", iac_need_any, status) == status_failed)
   goto fail;

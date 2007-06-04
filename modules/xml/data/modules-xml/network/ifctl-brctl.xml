@@ -1,7 +1,7 @@
 <einit prefix="services-virtual-network">
  <ifctl id="brctl"
-  enable="brctl addbr ${interface};
-	  for i in ${configuration_network_interfaces_${interface}_bridge}; do
+  execute:create-interface="brctl addbr ${interface}"
+  enable="for i in ${configuration_network_interfaces_${interface}_bridge}; do
 	   brctl addif ${interface} ${i};
 	  done;
 	  if [ '$(echo ${configuration_network_interfaces_${interface}_options} | grep -c stp)' >= '1' ]; then
