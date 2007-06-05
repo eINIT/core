@@ -69,7 +69,8 @@ else
    diff --unified "$DESTDIR/$LIBDIR/defaults/${subsystem}/${fileshort}" ${file} | patch -u "$DESTDIR/$ETCDIR/backups/${subsystem}/${fileshort}" -o "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
   fi;
  else
-  cp -f "$ETCDIR/${subsystem}/${fileshort}" "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
+#  cp -f "$ETCDIR/${subsystem}/${fileshort}" "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
+  cp -f "${file}" "$DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
  fi;
 
 # defaults-file must always be the most recent

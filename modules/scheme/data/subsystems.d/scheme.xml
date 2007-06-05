@@ -1,0 +1,6 @@
+<?xml version="1.1" encoding="utf-8" ?>
+<einit prefix="subsystem-scheme">
+ <import path="/lib/einit/modules-scheme/" pattern-allow=".*\.scheme$" pattern-disallow="^init.scheme$" />
+
+ <init-file s="lib/einit/modules-scheme/init.scheme" />
+</einit>

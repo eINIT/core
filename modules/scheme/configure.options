@@ -1,0 +1,13 @@
+export INCLUDEPATH="/usr/local/include"
+
+export MODULES_GENERIC="module-scheme"
+
+export ALLMODULES="${MODULES_GENERIC}"
+
+export EXTERNALMODULES="${MODULES_GENERIC}"
+
+export MODULE_PREPARE_OBJECTS="scheme"
+
+export HEADERSOURCES="src/include/einit-bundle"
+
+export BUILDCOMPONENTS="modules headers"

@@ -82,12 +82,18 @@ for param in $@; do
 	elif test "$short" = "--with-include"; then
 		echo -n " INCLUDE";
 		INCLUDEPATH="${INCLUDEPATH} ${param#*=}";
+	elif test "$short" = "--do-include"; then
+		echo -n " UINCLUDE";
+		INCLUDE="${INCLUDE} -I${param#*=}";
 	elif test "$short" = "--host"; then
 		echo -n " HOST";
 		RCHOST="${param#*=}";
 	elif test "$short" = "--target"; then
 		echo -n " TARGET";
 		RCTARGET="${param#*=}";
+	elif test "$short" = "--core"; then
+		echo -n " CORE";
+		COREFILE="${param#*=}";
 	elif test "$short" = "--version"; then
 		echo -n " VERSION";
 		RCVERSION="${param#*=}";
@@ -348,7 +354,11 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	OS="darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
-	LLD="-bundle -Wl,-bundle_loader,`pwd`/build/core/einit";
+	if [ "${COREFILE}" != "" ]; then
+		LLD="-bundle -Wl,-bundle_loader,${COREFILE}";
+	else
+		LLD="-bundle -Wl,-bundle_loader,`pwd`/build/core/einit";
+	fi
 	STATIC="";
 	LIBRT=""
 elif test -n "`uname -a|grep -i 'Linux'`"; then
@@ -515,10 +525,13 @@ collect_modules() {
 				done
 				objects="${objects} ${i}.so";
 
+				if [ -e "object.${i}.defines" ]; then LOCALDEF=$(cat "object.${i}.defines");
+				else LOCALDEF=""; fi
+
 				if test "${suffix}" = "c++"; then
-					echo -e "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} -c ${subobjects} -o ${i}.o\n";
+					echo -e "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
 				else
-					echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} -c ${subobjects} -o ${i}.o\n";
+					echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
 				fi
 
 				if test -z "$(grep ${i}.so\:\  ${template})"; then
@@ -549,8 +562,13 @@ install_modules() {
 collect_and_install_headers() {
 	objects=""
 	install=""
+	main="no"
 
 	for i in $@; do
+		if [ "${i}" == "src/include/einit" ]; then
+			main="yes"
+		fi
+
 		mkdir -p build/$z/$(basename ${i});
 		install="${install}\n	\${INSTALL} \${IPARAM} -d \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})\n	\${INSTALL} \${IPARAM} -m 0644 $(basename ${i})/*.h \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})"
 		
@@ -565,6 +583,8 @@ collect_and_install_headers() {
 		done
 	done
 	echo -e "install-auto:${install}"
+
+	if [ "${main}" == "no" ]; then return; fi
 	
 	echo "/* created by the configure-script, you shouldn't modify this */
 
@@ -653,6 +673,9 @@ for z in ${BUILDCOMPONENTS}; do
 
 	if test -n "${inobjects}"; then collect_objects ${inobjects} >> build/${z}/Makefile; fi
 	if test -n "${inmodules}"; then
+		if test -n "${MODULE_PREPARE_OBJECTS}"; then
+			collect_modules ${MODULE_PREPARE_OBJECTS} >> build/${z}/Makefile;
+		fi
 		collect_modules ${inmodules} >> build/${z}/Makefile;
 		install_modules ${objects} >> build/${z}/Makefile;
 	fi
