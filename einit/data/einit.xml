@@ -163,6 +163,7 @@
    <modprobe s="/sbin/modprobe" with-env="/sbin/modprobe ${module}" />
 
    <ip-flush with-env="ip addr flush dev ${interface}" />
+   <create-bridge with-env="brctl addbr ${interface}" />
   </command>
 
  </configuration>

@@ -526,8 +526,9 @@ int bridge (struct interface_descriptor *id, struct einit_event *status) {
  while (cur) {
   struct lmodule *module = cur->value;
   if (module->status & status_enabled) {
-   fbprintf (status, "suppressing and disabling ip controller on interface %s", cur->key);
-   return mod (einit_module_custom, cur->value, "block-ip");
+   fbprintf (status, "interface %s already enabled, disabling ip-manager", cur->key);
+   if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
+    return status_failed | status_enabled;
   } else {
    struct einit_event ev = evstaticinit(einit_core_change_service_status);
    char tmp[BUFFERSIZE];
@@ -557,6 +558,18 @@ int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
  return status_failed;
 }
 
+int create_bridge (struct interface_descriptor *id, struct einit_event *status) {
+ char *cb = cfg_getstring ("configuration-command-create-bridge/with-env", NULL);
+ if (cb) {
+  char tmp[BUFFERSIZE];
+  esprintf (tmp, BUFFERSIZE, "creating bridge %s", id->interface_name);
+  const char *cb_env[] = { "interface", id->interface_name, NULL};
+  char *cmd = apply_variables (cb, cb_env);
+  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
+ }
+ return status_failed;
+}
+
 int network_ready (struct interface_descriptor *id, struct einit_event *status) {
  uint32_t retries = 0;
  int ret = status_ok;
@@ -580,13 +593,14 @@ int network_ready (struct interface_descriptor *id, struct einit_event *status) 
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
  int ret = 0;
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
+
  if (id->bridge_interfaces) {
-  struct stree *cur = id->bridge_interfaces;
-  if (mod (einit_module_custom, cur->value, "create-interface") == status_failed)
+  if (create_bridge(id,status) == status_failed)
    goto fail;
   if (bridge(id,status) == status_failed)
    goto fail;
  }
+
  fbprintf (status, "enabling network interface %s", id->interface_name);
  if (id->kernel_module) {
   if (network_ready(id,status) == status_failed)
@@ -666,7 +680,11 @@ int network_interface_custom (struct interface_descriptor *id, char *action, str
   fbprintf (status, "blocking IP controller");
 
   if (id->status & is_ip_up) {
+
    if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
+    return status_failed | status_enabled;
+
+   if (flush_ip(id,status) == status_failed)
     return status_failed | status_enabled;
 
    id->status |= is_ip_blocked;
