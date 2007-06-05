@@ -525,7 +525,7 @@ int network_execute_interface_action (struct interface_template_item **str, char
  return status_failed;
 }
 
-int bridge (struct interface_descriptor *id, struct einit_event *status) {
+int bridge_enable (struct interface_descriptor *id, struct einit_event *status) {
  struct stree *cur = id->bridge_interfaces;
  while (cur) {
   struct lmodule *module = cur->value;
@@ -603,7 +603,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (id->bridge_interfaces) {
   if (create_bridge(id,status) == status_failed)
    goto fail;
-  if (bridge(id,status) == status_failed)
+  if (bridge_enable(id,status) == status_failed)
    goto fail;
  }
 
