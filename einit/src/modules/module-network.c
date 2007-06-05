@@ -120,6 +120,12 @@ int network_interface_configure (struct lmodule *);
 int network_cleanup (struct lmodule *);
 int network_configure (struct lmodule *);
 
+int create_bridge (struct interface_descriptor *, struct einit_event *);
+int bridge_enable (struct interface_descriptor *, struct einit_event *);
+int flush_ip (struct interface_descriptor *, struct einit_event *);
+int block_ipman (struct interface_descriptor *, struct einit_event *);
+int unblock_ipman (struct interface_descriptor *, struct einit_event *);
+
 struct interface_descriptor *network_import_interface_descriptor (struct lmodule *);
 void network_free_interface_descriptor (struct interface_descriptor *);
 struct interface_template_item **network_import_templates (char *, char *, struct interface_descriptor *);
@@ -521,7 +527,18 @@ int network_execute_interface_action (struct interface_template_item **str, char
  return status_failed;
 }
 
-int bridge (struct interface_descriptor *id, struct einit_event *status) {
+int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
+ char *ip_flush = cfg_getstring ("configuration-command-ip-flush/with-env", NULL);
+ if (ip_flush) {
+  fbprintf (status, "flushing routes and addresses");
+  const char *ip_flush_env[] = { "interface", id->interface_name, NULL};
+  char *cmd2 = apply_variables (ip_flush, ip_flush_env);
+  return pexec (cmd2, NULL, 0, 0, NULL, NULL, NULL, status);
+ }
+ return status_failed;
+}
+
+int bridge_enable (struct interface_descriptor *id, struct einit_event *status) {
  struct stree *cur = id->bridge_interfaces;
  while (cur) {
   struct lmodule *module = cur->value;
@@ -529,31 +546,13 @@ int bridge (struct interface_descriptor *id, struct einit_event *status) {
    fbprintf (status, "interface %s already enabled, disabling ip-manager", cur->key);
    if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
     return status_failed | status_enabled;
+   if (flush_ip(id,status) == status_failed)
+    return status_failed | status_enabled;
   } else {
-   struct einit_event ev = evstaticinit(einit_core_change_service_status);
-   char tmp[BUFFERSIZE];
-   char *evs[] = { "", "enable", NULL };
-   fbprintf (status, "suppressing ip controller on interface %s", cur->key);
-   return mod (einit_module_custom, cur->value, "block-ip");
-   fbprintf (status, "enabling network interface %s", cur->key);
-   esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
-   evs[0] = tmp;
-   ev.set = evs;
-   event_emit (&ev, einit_event_flag_broadcast);
-   evstaticdestroy (ev);
+   if (block_ipman(id,status) == status_failed)
+    return status_failed | status_enabled;
   }
  cur = cur->next;
- }
- return status_failed;
-}
-
-int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
- char *ip_flush = cfg_getstring ("configuration-command-ip-flush/with-env", NULL);
- if (ip_flush) {
-  fbprintf (status, "flushing routes and addresses");
-  const char *ip_flush_env[] = { "interface", id->interface_name, NULL};
-  char *cmd = apply_variables (ip_flush, ip_flush_env);
-  return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
  }
  return status_failed;
 }
@@ -597,7 +596,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (id->bridge_interfaces) {
   if (create_bridge(id,status) == status_failed)
    goto fail;
-  if (bridge(id,status) == status_failed)
+  if (bridge_enable(id,status) == status_failed)
    goto fail;
  }
 
@@ -638,14 +637,13 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   struct stree *cur = id->bridge_interfaces;
 
   while (cur) {
-   fbprintf (status, "re-enabling ip controller on interface %s", cur->key);
-   mod (einit_module_custom, cur->value, "unblock-ip");
-   mod (einit_module_custom, cur->value, "enable-ip");
-
+   if (id->status & is_ip_blocked) {
+    if (unblock_ipman(id,status) == status_failed)
+     return status_failed | status_enabled;
+   } 
    cur = cur->next;
   }
  }
-
  return status_failed;
 }
 
@@ -673,44 +671,20 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
  return status_ok;
 }
 
+int block_ipman (struct interface_descriptor *id, struct einit_event *status) {
+ fbprintf (status, "blocking IP controller");
+ id->status |= is_ip_blocked;
+ return status_ok;
+}
+
+int unblock_ipman (struct interface_descriptor *id, struct einit_event *status) {
+ fbprintf (status, "unblocking IP controller");
+ if (id->status & is_ip_blocked) id->status ^= is_ip_blocked;
+ return status_ok;
+}
+
 int network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
-
- if (strmatch (action, "block-ip")) {
-  fbprintf (status, "blocking IP controller");
-
-  if (id->status & is_ip_up) {
-
-   if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
-    return status_failed | status_enabled;
-
-   if (flush_ip(id,status) == status_failed)
-    return status_failed | status_enabled;
-
-   id->status |= is_ip_blocked;
-   id->status ^= is_ip_up;
-
-   return status_ok;
-  } else {
-   id->status |= is_ip_blocked;
-   return status_ok;
-  }
- } else if (strmatch (action, "unblock-ip")) {
-  fbprintf (status, "unblocking IP controller");
-
-  if (id->status & is_ip_blocked) id->status ^= is_ip_blocked;
-
-  return status_ok;
- } else if (strmatch (action, "enable-ip")) {
-  int ret = network_execute_interface_action (id->ip_manager, "enable", "IP", iac_need_this, status);
-
-  if ((ret == status_failed) || (ret == status_idle))
-   return status_failed | status_enabled;
-
-  id->status |= is_ip_up;
-
-  return status_ok;
- }
 
  if (status->module->status & status_enabled) {
   if (network_execute_interface_action (id->ip_manager, action, "IP", iac_need_this, status) == status_failed)
