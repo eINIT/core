@@ -109,6 +109,9 @@ int module_scheme_scanmodules ( struct lmodule *modchain ) {
     scheme *interpreter = scheme_init_new();
     scheme_init (interpreter);
 
+    scheme_set_input_port_file(interpreter, stdin);
+    scheme_set_output_port_file(interpreter, stderr);
+
 	if (init) {
      scheme_load_string(interpreter, init);
 	}

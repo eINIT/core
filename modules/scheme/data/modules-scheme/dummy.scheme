@@ -1,1 +1,2 @@
-; (display "this is a dummy")
+(display "this is a dummy")
+"dummy"
