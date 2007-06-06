@@ -1,2 +1,12 @@
-(display "this is a dummy")
-"dummy"
+;(define dummy_enable (lambda () (display "dummy")))
+;
+;(dummy_enable)
+;
+;(define dummy_module
+; '(("name" . "dummy module")
+;   ("enable" . dummy_enable)))
+;
+;((eval (cdr (car (cdr dummy_module)))))
+;
+
+(notice 4 "this function call was useless")

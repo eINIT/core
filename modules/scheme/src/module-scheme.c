@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/configuration.h>
 
 #include <einit-bundle/scheme.h>
+#include <einit-bundle/scheme-private.h>
 
 #define EXPECTED_EIV 1
 
@@ -91,6 +92,32 @@ int module_scheme_cleanup (struct lmodule *pa) {
  return 0;
 }
 
+/* wrapper for the notice() macro in the C api */
+pointer scheme_notice(scheme *sc, pointer args) {
+ if(args!=sc->NIL) {
+  pointer carg = args;
+  int severity = 9;
+
+  if (sc->vptr->is_pair (carg) && sc->vptr->is_integer (sc->vptr->pair_car (carg))) {
+   severity = sc->vptr->ivalue (sc->vptr->pair_car (carg));
+
+   carg = sc->vptr->pair_cdr (carg);
+  }
+
+  while (sc->vptr->is_pair (carg)) {
+   char *s = sc->vptr->string_value (sc->vptr->pair_car (carg));
+
+   if (s) {
+    notice (severity, s);
+   }
+
+   carg = sc->vptr->pair_cdr (carg);
+  }
+ }
+
+ return sc->NIL;
+}
+
 int module_scheme_scanmodules ( struct lmodule *modchain ) {
  char **modules = NULL;
  char *initfile = cfg_getstring ("subsystem-scheme-init-file", NULL);
@@ -107,21 +134,24 @@ int module_scheme_scanmodules ( struct lmodule *modchain ) {
    char *data = readfile(modules[i]);
    if (data) {
     scheme *interpreter = scheme_init_new();
-    scheme_init (interpreter);
 
-    scheme_set_input_port_file(interpreter, stdin);
-    scheme_set_output_port_file(interpreter, stderr);
+	if (scheme_init (interpreter)) {
+     scheme_set_input_port_file(interpreter, stdin);
+     scheme_set_output_port_file(interpreter, stderr);
 
-	if (init) {
-     scheme_load_string(interpreter, init);
-	}
+     if (init) scheme_load_string(interpreter, init);
 
-    notice (3, "have new scheme file: %s\n%s\n", modules[i], data);
+     interpreter->vptr->scheme_define (interpreter, interpreter->global_env, mk_symbol (interpreter,"notice"), mk_foreign_func(interpreter, scheme_notice));
 
-    scheme_load_string(interpreter, data);
-    free (data);
+//     notice (3, "have new scheme file: %s\n%s\n", modules[i], data);
 
-    scheme_deinit (interpreter);
+     scheme_load_string(interpreter, data);
+     free (data);
+
+     scheme_deinit (interpreter);
+	} else {
+     notice (1, "could not initialise scheme interpreter!");
+    }
    }
   }
  } else {
