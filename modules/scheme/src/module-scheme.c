@@ -93,7 +93,7 @@ int module_scheme_cleanup (struct lmodule *pa) {
 }
 
 /* wrapper for the notice() macro in the C api */
-pointer scheme_notice(scheme *sc, pointer args) {
+pointer scheme_notice (scheme *sc, pointer args) {
  if(args!=sc->NIL) {
   pointer carg = args;
   int severity = 9;
@@ -112,6 +112,85 @@ pointer scheme_notice(scheme *sc, pointer args) {
    }
 
    carg = sc->vptr->pair_cdr (carg);
+  }
+ }
+
+ return sc->NIL;
+}
+
+/* functions for configuration variables */
+pointer scheme_configuration_get (scheme *sc, pointer args) {
+ if(args!=sc->NIL) {
+  char *name;
+
+  if (sc->vptr->is_pair (args) && sc->vptr->is_string (sc->vptr->pair_car (args))) {
+   if ((name = sc->vptr->string_value (sc->vptr->pair_car (args)))) {
+    struct cfgnode *node = cfg_getnode (name, NULL);
+
+    if (node && node->arbattrs) {
+     uint32_t i = 0;
+     pointer returnvalue = sc->NIL;
+
+     for (; node->arbattrs[i]; i+=2) {
+	  returnvalue = immutable_cons (sc,
+       immutable_cons (sc,
+        sc->vptr->mk_string(sc, node->arbattrs[i]),
+        sc->vptr->mk_string(sc, node->arbattrs[i+1])),
+       returnvalue);
+     }
+
+     return returnvalue;
+    }
+   }
+  }
+ }
+
+ return sc->NIL;
+}
+
+pointer scheme_configuration_add (scheme *sc, pointer args) {
+ if(args!=sc->NIL) {
+  char *name;
+
+  if (sc->vptr->is_pair (args) && sc->vptr->is_string (sc->vptr->pair_car (args))) {
+   if ((name = sc->vptr->string_value (sc->vptr->pair_car (args)))) {
+    pointer carg = sc->vptr->pair_cdr (args);
+	char **nargs = NULL;
+
+    if (carg == sc->NIL) return sc->NIL;
+
+    while (sc->vptr->is_pair (carg)) {
+     pointer item = sc->vptr->pair_car (carg);
+
+     if (sc->vptr->is_pair (item)) {
+      pointer car = sc->vptr->pair_car (item);
+      pointer cdr = sc->vptr->pair_cdr (item);
+
+      if (sc->vptr->is_string (car) && sc->vptr->is_string (cdr)) {
+       char *aname = sc->vptr->string_value(car);
+       char *avalue = sc->vptr->string_value(cdr);
+
+       if (aname && avalue) {
+        nargs = (char **)setadd ((void **)nargs, aname, SET_TYPE_STRING);
+        nargs = (char **)setadd ((void **)nargs, avalue, SET_TYPE_STRING);
+       }
+      }
+     }
+     sc->vptr->pair_car (carg);
+
+     carg = sc->vptr->pair_cdr (carg);
+    }
+
+    if (nargs) {
+     struct cfgnode newnode;
+     memset (&newnode, 0, sizeof (struct cfgnode));
+
+     newnode.id = estrdup (name);
+     newnode.arbattrs = nargs;
+
+     cfg_addnode (&newnode);
+    }
+   }
   }
  }
 
@@ -141,7 +220,9 @@ int module_scheme_scanmodules ( struct lmodule *modchain ) {
 
      if (init) scheme_load_string(interpreter, init);
 
-     interpreter->vptr->scheme_define (interpreter, interpreter->global_env, mk_symbol (interpreter,"notice"), mk_foreign_func(interpreter, scheme_notice));
+     interpreter->vptr->scheme_define (interpreter, interpreter->global_env, mk_symbol (interpreter, "notice"), mk_foreign_func (interpreter, scheme_notice));
+     interpreter->vptr->scheme_define (interpreter, interpreter->global_env, mk_symbol (interpreter, "cfg-get"), mk_foreign_func (interpreter, scheme_configuration_get));
+     interpreter->vptr->scheme_define (interpreter, interpreter->global_env, mk_symbol (interpreter, "cfg-add"), mk_foreign_func (interpreter, scheme_configuration_add));
 
 //     notice (3, "have new scheme file: %s\n%s\n", modules[i], data);
 

@@ -8,5 +8,12 @@
 ;
 ;((eval (cdr (car (cdr dummy_module)))))
 ;
-
-(notice 4 "this function call was useless")
+;
+;(notice 4 "this function call was useless")
+;
+;(display
+; (cfg-get "configuration-feedback-aural-tts-synthesizer-command"))
+;
+;(cfg-add "scheme-test" '("id" . "none") '("s" . "string value") '("w00tsor" . "moo"))
+;(display (cfg-get "scheme-test"))
+;
