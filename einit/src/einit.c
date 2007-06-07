@@ -316,7 +316,10 @@ int main(int argc, char **argv) {
 // if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
  if (pid == 1) {
   initoverride = 1;
-  einit_sub = fork();
+  if ((einit_sub = fork()) < 0) {
+   bitch (bitch_stdio, errno, "Could not fork()");
+   eputs (" !! Haven't been able to fork a secondary worker process. This is VERY bad, you will get a lot of zombie processes! (provided that things work at all)\n", stderr);
+  }
  }
 
  if (einit_sub) {
@@ -340,7 +343,7 @@ int main(int argc, char **argv) {
 
      execl (EINIT_LIB_BASE "/bin/crash-handler", EINIT_LIB_BASE "/bin/crash-handler", "--exit", tmp, NULL);
      exit (EXIT_SUCCESS);
-    } if (WIFSIGNALED(rstatus)) {
+    } else if (WIFSIGNALED(rstatus)) {
 //     esprintf (tmp, BUFFERSIZE, "sigsegv", WEXITSTATUS(rstatus));
      execl (EINIT_LIB_BASE "/bin/crash-handler", EINIT_LIB_BASE "/bin/crash-handler", "--signal", "sigsegv", NULL);
 

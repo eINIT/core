@@ -905,7 +905,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
      if (ev->integer) {
       eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
      } else {
-      eputs (" \e[32m>> changes applied.\e[0m\n", ev->output);
+      eputs (" \e[32m>> request succeeded.\e[0m\n", ev->output);
      }
     }
    }
