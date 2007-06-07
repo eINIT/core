@@ -416,6 +416,8 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
  struct interface_descriptor *id = ecalloc (1, sizeof (struct interface_descriptor));
  char nodename[BUFFERSIZE];
 
+ notice (2, "importing network interface descriptor for interface %s.", ifname);
+
  id->interface_name = ifname;
 
  esprintf (nodename, BUFFERSIZE, "configuration-network-interfaces-%s", id->interface_name);
