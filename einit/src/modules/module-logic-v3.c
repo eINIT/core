@@ -2628,7 +2628,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
      if (!d) continue;
     }
 
-    for (; d[y]; y++) {
+    for (y = 0; d[y]; y++) {
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
