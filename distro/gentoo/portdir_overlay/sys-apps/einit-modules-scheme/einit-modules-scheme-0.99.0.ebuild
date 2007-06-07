@@ -4,10 +4,10 @@
 
 inherit subversion
 
-ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/modules/xml"
+ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/modules/scheme"
 SRC_URI=""
 
-DESCRIPTION=".xml modules for eINIT"
+DESCRIPTION="Optional modules for eINIT (.scheme + support for these modules)"
 HOMEPAGE="http://einit.org/"
 
 LICENSE="BSD"
