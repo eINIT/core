@@ -546,7 +546,7 @@ int bridge_enable (struct interface_descriptor *id, struct einit_event *status) 
    fbprintf (status, "enabling network interface %s", cur->key);
    esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
    evs[0] = tmp;
-   ev.set = evs;
+   ev.set = (void **)evs;
    event_emit (&ev, einit_event_flag_broadcast);
    evstaticdestroy (ev);
   }
@@ -601,6 +601,7 @@ int network_ready (struct interface_descriptor *id, struct einit_event *status) 
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
  int ret = 0;
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
+ status->module->param = id;
 
  if (id->bridge_interfaces) {
   if (create_bridge(id,status) == status_failed)
@@ -660,6 +661,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
 
 int network_interface_disable (struct interface_descriptor *id, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
+ status->module->param = id;
 
  if (id->status & is_ip_up) {
   if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
@@ -684,6 +686,7 @@ int network_interface_disable (struct interface_descriptor *id, struct einit_eve
 
 int network_interface_custom (struct interface_descriptor *id, char *action, struct einit_event *status) {
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
+ status->module->param = id;
 
  if (strmatch (action, "block-ip")) {
   fbprintf (status, "blocking IP controller");
