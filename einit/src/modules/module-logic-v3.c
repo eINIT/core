@@ -2570,7 +2570,23 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
     uint32_t y = 0;
     if (dolock) emutex_unlock (&ml_tb_current_mutex);
 
-    for (; d[y]; y++) {
+    if (lm->si->requires) {
+     for (y = 0; lm->si->requires[y]; y++) {
+      d = strsetdel (d, lm->si->requires[y]);
+     }
+
+     if (!d) continue;
+    }
+
+    if (lm->si->provides) {
+     for (y = 0; lm->si->provides[y]; y++) {
+      d = strsetdel (d, lm->si->provides[y]);
+     }
+
+     if (!d) continue;
+    }
+
+    for (y = 0; d[y]; y++) {
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
@@ -2595,6 +2611,22 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
    if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), after[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
     uint32_t y = 0;
     if (dolock) emutex_unlock (&ml_tb_current_mutex);
+
+    if (lm->si->requires) {
+     for (y = 0; lm->si->requires[y]; y++) {
+      d = strsetdel (d, lm->si->requires[y]);
+     }
+
+     if (!d) continue;
+    }
+
+    if (lm->si->provides) {
+     for (y = 0; lm->si->provides[y]; y++) {
+      d = strsetdel (d, lm->si->provides[y]);
+     }
+
+     if (!d) continue;
+    }
 
     for (; d[y]; y++) {
      struct group_data *gd = mod_group_get_data(d[y]);
