@@ -483,11 +483,13 @@ int network_execute_interface_action (struct interface_template_item **str, char
   struct interface_template_item *current = str[0];
 
   for (start = str[0], current = str[0]; current; ) {
-   if (current->pidfile) unlink (current->pidfile);
+   if (strmatch(action, "enable") && current->pidfile) unlink (current->pidfile);
    struct stree *t = streefind (current->action, action, tree_find_first);
 
    if (t) {
     if (pexec (t->value, (const char **)current->variables, 0, 0, NULL, NULL, current->environment, status) & status_ok) {
+     if (strmatch(action, "disable") && current->pidfile) unlink (current->pidfile);
+
      return status_ok;
     } else {
      fbprintf (status, "%s controller doesn't work", ctype);
@@ -514,9 +516,11 @@ int network_execute_interface_action (struct interface_template_item **str, char
    }
 
    if (current == start) {
-    if (command == iac_need_all)
+    if (command == iac_need_all) {
+     if (strmatch(action, "disable") && current->pidfile) unlink (current->pidfile);
+
      return status_ok;
-    else
+    } else
      return status_failed;
    }
   }
