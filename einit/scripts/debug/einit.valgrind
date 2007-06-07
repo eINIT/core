@@ -37,7 +37,7 @@ mount proc /proc -t proc
 mount sys /sys -t sysfs
 mount / -o remount,rw
 
-valgrind /sbin/einit --override-init-check 2>/einit-stderr &
+valgrind --log-file=/einit.valgrind /sbin/einit --override-init-check &
 
 while /bin/true; do
  wait;
