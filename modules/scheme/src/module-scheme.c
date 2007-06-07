@@ -204,7 +204,7 @@ int module_scheme_scanmodules ( struct lmodule *modchain ) {
 
  modules = readdirfilter(cfg_getnode ("subsystem-scheme-import", NULL),
                                 "/lib/einit/bootstrap-scheme/",
-								".*\\.scheme$", NULL, 0);
+                                ".*\\.scheme$", NULL, 0);
 
  if (modules) {
   uint32_t i = 0;
@@ -230,7 +230,7 @@ int module_scheme_scanmodules ( struct lmodule *modchain ) {
      free (data);
 
      scheme_deinit (interpreter);
-	} else {
+    } else {
      notice (1, "could not initialise scheme interpreter!");
     }
    }

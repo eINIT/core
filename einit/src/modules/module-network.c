@@ -254,7 +254,7 @@ int network_scanmodules (struct lmodule *mainlist) {
         char *ip_name = id && id->ip_manager ? id->ip_manager[0]->name : NULL;
         char *ifctl_name = id && id->controller ? id->controller[0]->name : NULL;
         char *macchanger_name = id && id->macchanger ? id->macchanger[0]->name : NULL;
-        enum interface_status ifstatus = id ? id->status : is_down;
+        int ifstatus = id ? id->status : is_down;
 
         network_free_interface_descriptor (lm->param);
         lm->param = network_import_interface_descriptor (lm);
