@@ -1,0 +1,121 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+ <refmeta>
+  <refentrytitle><application>tinyscheme</application></refentrytitle>
+  <manvolnum>8</manvolnum>
+  <refmiscinfo>tinyscheme-1.38</refmiscinfo>
+ </refmeta>
+
+ <refnamediv>
+  <refname>
+   <application>tinyscheme</application>
+  </refname>
+  <refpurpose>A lightweight implementation of Scheme.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <cmdsynopsis>
+   <command>tinyscheme</command>
+   <arg><group><arg>-?</arg>
+   <arg>-1<arg><replaceable class="parameter">file</replaceable></arg><arg rep="repeat"><replaceable class="parameter">argument</replaceable></arg></arg>
+   <arg>-c<arg><replaceable class="parameter">command</replaceable></arg><arg rep="repeat"><replaceable class="parameter">argument</replaceable></arg></arg>
+   <arg rep="repeat"><replaceable class="parameter">file</replaceable></arg></group></arg>
+  </cmdsynopsis>
+ </refsynopsisdiv>
+ 
+ <refsect1>
+  <refsect1info>
+   <date>2007-06-09</date>
+  </refsect1info>
+  <title>DESCRIPTION</title>
+  <para>
+   <command>tinyscheme</command> is a small scheme interpreter that tries to keep a minimal footprint while incorporating as much of R5RS as is feasible.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>OPTIONS</title>
+  <variablelist>
+   <varlistentry>
+    <term>-?</term>
+    <listitem>
+     <para>
+      Display command-line argument primer and exit.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><cmdsynopsis><arg>-c <replaceable class="parameter">command</replaceable><arg rep="repeat"><replaceable class="parameter">argument</replaceable></arg></arg></cmdsynopsis></term>
+    <listitem>
+     <para>
+      Evaluate the given <replaceable class="parameter">command</replaceable>, then exit. The <replaceable class="parameter">argument</replaceable>s act as command-line arguments to the scheme expression.
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term><cmdsynopsis><arg>-1 <replaceable class="parameter">file</replaceable><arg rep="repeat"><replaceable class="parameter">argument</replaceable></arg></arg></cmdsynopsis></term>
+    <listitem>
+     <para>
+      Evaluate the given <replaceable class="parameter">file</replaceable>, then exit. The <replaceable class="parameter">argument</replaceable>s act as command-line arguments to the scheme expression.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>USAGE</title>
+  <para>
+   Anyone can call this binary, but ideally you'll want to use this specific scheme interpreter in other programs. To do so, you'd need to link against libtinyscheme.so. This is a more advanced topic and shall not be discussed in this manpage.
+  </para>
+  <para>
+   In REPL mode (calling tinyscheme without telling it to parse a file), you'll sooner or later want to exit the program. To do so, you need to use the special command <command>(quit)</command>.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>ENVIRONMENT</title>
+  <variablelist>
+   <varlistentry>
+    <term>TINYSCHEMEINIT</term>
+    <listitem>
+     <para>
+      Specify your own init.scm.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>FILES</title>
+  <variablelist>
+   <varlistentry>
+    <term>init.scm</term>
+    <listitem>
+     <para>
+      The default Initialisation file. Includes a good deal of the functionality that R5RS dictates.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>BUGS</title>
+  <para>TinySCHEME doesn't implement all of R5RS, only as much of the most useful subset as could fit in a small memory and on-disk footprint. Contact the author for bug reports; better yet: include patches. :)</para>
+ </refsect1>
+
+ <refsect1>
+  <title>SEE ALSO</title>
+  <para>sh(8)</para>
+  <para><ulink url="http://tinyscheme.sourceforge.net/">The official project page</ulink></para>
+ </refsect1>
+
+ <refsect1>
+  <title>COPYRIGHT</title>
+  <para>TinySCHEME was written by Dimitrios Souflis and Jonathan S. Shapiro. It is based on MiniSCHEME (version 0.85k4). See the bundled COPYING and MiniSCHEMETribute.txt for details.</para>
+  <para>This manual page was written by Magnus Deininger (mdeininger@jyujin.de). All errors are entirely his fault ;).</para>
+ </refsect1>
+</refentry>
