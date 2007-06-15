@@ -1176,6 +1176,13 @@ int32_t ignorereorderfor = 0;
 char **lm_workthreads_list = NULL;
 
 char mod_workthreads_dec (char *service) {
+
+/* force re-examination of deferred services */
+ mod_pre_examine (service);
+
+ if (mod_isprovided (service))
+  mod_post_examine (service);
+
  emutex_lock (&ml_workthreads_mutex);
 
  lm_workthreads_list = strsetdel (lm_workthreads_list, service);
