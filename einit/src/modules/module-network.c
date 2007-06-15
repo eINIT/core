@@ -198,7 +198,7 @@ int network_scanmodules (struct lmodule *mainlist) {
     if (nn->arbattrs) {
      char *interfacename = cur->key+33; /* 33 = strlen("configuration-network-interfaces-") */
      struct smodule *newmodule = emalloc (sizeof (struct smodule));
-     char tmp[BUFFERSIZE], **req = NULL;
+     char tmp[BUFFERSIZE], **req = NULL, **after = NULL, **before = NULL;
      struct lmodule *lm;
      struct cfgnode *node = cur->value;
      uint32_t y = 0;
@@ -231,6 +231,10 @@ int network_scanmodules (struct lmodule *mainlist) {
        newnode.svalue = newnode.arbattrs[3];
 
        cfg_addnode (&newnode);
+      } else if (strmatch (node->arbattrs[y], "after")) {
+       after = str2set (':', node->arbattrs[y+1]);
+      } else if (strmatch (node->arbattrs[y], "before")) {
+       before = str2set (':', node->arbattrs[y+1]);
       }
      }
 
@@ -244,6 +248,8 @@ int network_scanmodules (struct lmodule *mainlist) {
       if (lm->source && strmatch(lm->source, tmp)) {
        struct smodule *sm = (struct smodule *)lm->module;
        sm->si.requires = req;
+       sm->si.after = after;
+       sm->si.before = before;
 
        lm = mod_update (lm);
 
@@ -295,6 +301,9 @@ int network_scanmodules (struct lmodule *mainlist) {
      esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
      newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, (void *)tmp, SET_TYPE_STRING);
      newmodule->si.requires = req;
+
+     newmodule->si.after = after;
+     newmodule->si.before = before;
 
      lm = mod_add (NULL, newmodule);
     }
