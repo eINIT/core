@@ -674,7 +674,7 @@ int mod_switchmode (char *mode) {
  return 0;
 }
 
-int mod_modaction (char **argv) {
+int mod_modaction (char **argv, FILE *output) {
  int argc = setcount ((const void **)argv), ret = 0;
  int32_t task = 0;
  struct mloadplan *plan;
@@ -698,16 +698,47 @@ int mod_modaction (char **argv) {
 
   ret = 1;
   if (tm) {
-   if (strmatch (argv[1], "status")) {
-    for (; tm[r]; r++) {
+   if (strmatch (argv[1], "status") && output) {
+    for (; tm[r]; r++) if (tm[r]->module) {
+     if (r == 0) {
+	  eprintf (output, "primary candiate: %s.\n", tm[r]->module->name);
+	 } else {
+	  eprintf (output, "backup candiate #%i: %s.\n", r, tm[r]->module->name);
+	 }
+
+     if (tm[r]->module->rid)
+	  eprintf (output, " >> rid: %s.\n", tm[r]->module->rid);
+     if (tm[r]->source)
+	  eprintf (output, " >> source: %s.\n", tm[r]->source);
+
+     eputs (" >> supported functions:", output);
+
+     if (tm[r]->enable) { eputs (" enabled", output); }
+     if (tm[r]->disable) { eputs (" disable", output); }
+     if (tm[r]->custom) { eputs (" *", output); }
+
+     eputs ("\n >> status flags:", output);
+
      if (tm[r]->status & status_working) {
       ret = 2;
-      break;
+      eputs (" working", output);
      }
+
      if (tm[r]->status & status_enabled) {
       ret = 0;
+      eputs (" enabled", output);
       break;
      }
+
+     if (tm[r]->status & status_disabled) {
+      eputs (" disabled", output);
+     }
+
+     if (tm[r]->status == status_idle) {
+      eputs (" idle", output);
+     }
+
+     eputs ("\n", output);
     }
    } else {
     for (; tm[r]; r++) {
@@ -887,8 +918,8 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
      evstaticdestroy(ee);
     }
 
-    ev->integer = mod_modaction ((char **)ev->set);
-/*    if (mod_modaction ((char **)ev->set)) {
+    ev->integer = mod_modaction ((char **)ev->set, ev->output);
+/*    if (mod_modaction ((char **)ev->set), ev->output) {
      ev->integer = 1;
     }*/
 
