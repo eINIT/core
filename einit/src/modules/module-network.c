@@ -106,7 +106,8 @@ struct interface_descriptor {
  char **variables;
  char *kernel_module;
 
- struct stree *bridge_interfaces;
+// struct stree *bridge_interfaces;
+ char **bridge;
 
  struct cfgnode *interface;
 };
@@ -447,9 +448,9 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
    } else if (strmatch (id->interface->arbattrs[i], "macchanger")) {
     id->macchanger = network_import_templates ("misc", "macchanger", id);
    } else if (strmatch (id->interface->arbattrs[i], "bridge")) {
-    char **n = str2set (' ', id->interface->arbattrs[i+1]);
+    id->bridge = str2set (' ', id->interface->arbattrs[i+1]);
 
-    if (n) {
+/*    if (n) {
      uint32_t r = 0;
 
      for (; n[r]; r++) {
@@ -461,7 +462,7 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
      }
 
      free (n);
-    }
+    } */
    }
   }
  } else {
@@ -541,29 +542,35 @@ int network_execute_interface_action (struct interface_template_item **str, char
 }
 
 int bridge_enable (struct interface_descriptor *id, struct einit_event *status) {
- struct stree *cur = id->bridge_interfaces;
- while (cur) {
-  struct lmodule *module = cur->value;
-  if (module->status & status_enabled) {
-   fbprintf (status, "interface %s already enabled, disabling ip-manager", cur->key);
-   if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
-    return status_failed | status_enabled;
-   if (flush_ip(id,status) == status_failed)
-    return status_failed | status_enabled;
+ uint32_t i = 0;
+
+ if (id->bridge) for (; id->bridge[i]; i++) {
+  struct stree *cur = streefind (network_modules, id->bridge[i], tree_find_first);
+
+  if (cur) {
+   struct lmodule *module = cur->value;
+   if (module->status & status_enabled) {
+    fbprintf (status, "interface %s already enabled, disabling ip-manager", cur->key);
+    if (network_execute_interface_action (id->ip_manager, "disable", "IP", iac_need_this, status) == status_failed)
+     return status_failed | status_enabled;
+    if (flush_ip(id,status) == status_failed)
+     return status_failed | status_enabled;
+   } else {
+    struct einit_event ev = evstaticinit(einit_core_change_service_status);
+    char tmp[BUFFERSIZE];
+    char *evs[] = { "", "enable", NULL };
+    fbprintf (status, "suppressing ip controller on interface %s", cur->key);
+    return mod (einit_module_custom, cur->value, "block-ip");
+    fbprintf (status, "enabling network interface %s", cur->key);
+    esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
+    evs[0] = tmp;
+    ev.set = (void **)evs;
+    event_emit (&ev, einit_event_flag_broadcast);
+    evstaticdestroy (ev);
+   }
   } else {
-   struct einit_event ev = evstaticinit(einit_core_change_service_status);
-   char tmp[BUFFERSIZE];
-   char *evs[] = { "", "enable", NULL };
-   fbprintf (status, "suppressing ip controller on interface %s", cur->key);
-   return mod (einit_module_custom, cur->value, "block-ip");
-   fbprintf (status, "enabling network interface %s", cur->key);
-   esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
-   evs[0] = tmp;
-   ev.set = (void **)evs;
-   event_emit (&ev, einit_event_flag_broadcast);
-   evstaticdestroy (ev);
+   fbprintf (status, "interface not defined: %s; skipping.", id->bridge[i]);
   }
- cur = cur->next;
  }
  return status_failed;
 }
@@ -616,7 +623,7 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
  status->module->param = id;
 
- if (id->bridge_interfaces) {
+ if (id->bridge) {
   if (create_bridge(id,status) == status_failed)
    goto fail;
   if (bridge_enable(id,status) == status_failed)
@@ -658,14 +665,17 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
  return status_ok;
 
  fail:
- if (id->bridge_interfaces) {
-  struct stree *cur = id->bridge_interfaces;
+ if (id->bridge) {
+//  struct stree *cur = id->bridge;
+  uint32_t i = 0;
 
-  while (cur) {
-   fbprintf (status, "re-enabling ip controller on interface %s", cur->key);
-   mod (einit_module_custom, cur->value, "unblock-ip");
+  if (id->bridge) for (; id->bridge[i]; i++) {
+   struct stree *cur = streefind (network_modules, id->bridge[i], tree_find_first);
 
-   cur = cur->next;
+   if (cur) {
+    fbprintf (status, "re-enabling ip controller on interface %s", cur->key);
+    mod (einit_module_custom, cur->value, "unblock-ip");
+   }
   }
  }
 
