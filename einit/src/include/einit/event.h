@@ -71,6 +71,7 @@ enum einit_event_subsystems {
  einit_event_subsystem_timer    = 0x00006000,
 /*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
  einit_event_subsystem_network  = 0x00007000,
+ einit_event_subsystem_process  = 0x00008000,
  einit_event_subsystem_custom   = 0xfffff000
 /*!< custom events; not yet implemented */
 };
@@ -143,7 +144,10 @@ enum einit_event_code {
 /*!< power was restored */
 
 /* einit_event_subsystem_network: */
- einit_network_do_update            = einit_event_subsystem_network  | 0x001
+ einit_network_do_update            = einit_event_subsystem_network  | 0x001,
+
+/* einit_event_subsystem_process: */
+ einit_process_died                 = einit_event_subsystem_process  | 0x001
 };
 
 enum einit_ipc_options {
@@ -171,6 +175,8 @@ struct einit_event {
            status,               /*!< generic integer */
            task;                 /*!< generic integer */
    unsigned char flag;           /*!< flags */
+
+   pid_t source_pid;             /*!< source's pid (if known) */
   };
 
 /*! these struct elements are for use with IPC events */
