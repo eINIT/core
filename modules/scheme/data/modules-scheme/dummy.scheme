@@ -46,16 +46,16 @@
 
 (make-module "scheme-dummy" "Scheme Dummy Module"
  '(("scheme-dummy") ("mount-proc" "sysconf")) ; provides scheme-dummy, requires /proc and sysconf
- '("enable" . dummy-enable) ; set the enable hook to dummy-enable
+ '(enable . dummy-enable) ; set the enable hook to dummy-enable
 
-; (cons "enable" dummy-enable) ; set the enable hook to dummy-enable
+; (cons 'enable dummy-enable) ; set the enable hook to dummy-enable
 
-; (cons "enable" (lambda () (notice 4 "hello world"))) ; set the enable hook to a lambda expression.
+; (cons 'enable (lambda () (notice 4 "hello world"))) ; set the enable hook to a lambda expression.
 
 ; the '( . ) trick doesn't work for lambdas and the like, you need to use (cons x y)!
 
- (cons "disable" (lambda () (pexec "/bin/true"))) ; call /bin/true as the disable action.
- (cons "reset" (lambda () (pexec "/bin/false"))) ; call /bin/true as the rc X disable action.
+ (cons 'disable (lambda () (pexec "/bin/true"))) ; call /bin/true as the disable action.
+ (cons 'reset (lambda () (pexec "/bin/false"))) ; call /bin/true as the rc X disable action.
 ; these functions need to return a boolean:
 ;  #t -> action succeeded
 ;  #f -> action failed

@@ -294,6 +294,8 @@ pointer scheme_configuration_add (scheme *sc, pointer args) {
 
 // now let's get to the actual interface :D
 pointer scheme_make_module (scheme *sc, pointer args) {
+// notice (2, "(make-module)");
+
  if(args!=sc->NIL) {
   struct smodule *sm = emalloc (sizeof (struct smodule));
   memset (sm, 0, sizeof (struct smodule));
@@ -358,8 +360,8 @@ pointer scheme_make_module (scheme *sc, pointer args) {
      while ((cur != sc->NIL) && sc->vptr->is_pair (cur)) {
       pointer dcur = sc->vptr->pair_car (cur);
 
-      if ((dcur != sc->NIL) && sc->vptr->is_pair (dcur) && sc->vptr->is_string(sc->vptr->pair_car (dcur))) {
-       ifd->hooks = streeadd (ifd->hooks, sc->vptr->string_value(sc->vptr->pair_car (dcur)), sc->vptr->pair_cdr (dcur), SET_NOALLOC, NULL);
+      if ((dcur != sc->NIL) && sc->vptr->is_pair (dcur) && sc->vptr->is_symbol(sc->vptr->pair_car (dcur))) {
+       ifd->hooks = streeadd (ifd->hooks, sc->vptr->symname(sc->vptr->pair_car (dcur)), sc->vptr->pair_cdr (dcur), SET_NOALLOC, NULL);
       }
 
       cur = sc->vptr->pair_cdr (cur);
