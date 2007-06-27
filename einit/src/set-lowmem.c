@@ -317,55 +317,37 @@ int setcount (const void **set) {
  return i;
 }
 
+/* not exactly efficient, but it works, better than before */
 void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(const void *, const void*)) {
-#if 1
- uint32_t c = 0, c2 = 0, x = 0, dc = 1;
- void *tmp;
- if (!set) return;
+ uint32_t i = 0;
+
+ if (!set || !set[0] || !set[1]) return; // need a set with at least two elements to do anything meaningful.
 
  if (task == set_sort_order_string_lexical)
   sortfunction = (signed int(*)(const void *, const void*))strcmp;
  else if (!sortfunction) return;
 
-/* this doesn't work, yet */
-/* while (dc) {
-  dc = 0;*/
-  for (c = 0; set[c]; c++) {
-   for (c2 = c+1; set[c2]; c2++) {
-    if ((x = sortfunction(set[c], set[c2])) < 0) {
-     dc = 1;
-     tmp = set[c2];
-     set[c2] = set[c];
-     set[c] = tmp;
-    }
-   }
+ for (;set[i];i++) {
+  uint32_t j = i;
+  char ex = 0;
+
+  for (;set[j];j++) {
+   if ((ex = (sortfunction(set[i], set[j]) < 0))) break;
   }
-// }
 
-/* redo:
-
- for (c = 0; set[c]; c++) {
-  for (c2 = c+1; set[c2]; c2++) {
-   if ((x = sortfunction(set[c], set[c2])) > 0) {
-    tmp = set[0];
-    set[0] = set[c];
-    set[c] = tmp;
-    goto redo;
+  if (ex) {
+   void *cur = set[i];
+   
+   uint32_t k = i+1;
+   for (;set[k];k++) {
+    set[k-1] = set[k];
    }
+
+   set[k-1] = cur;
+
+   i--;
   }
- }*/
-
- return;
-#else
- uint32_t c = 0;
- if (task == set_sort_order_string_lexical)
-  sortfunction = (signed int(*)(const void *, const void*))strcmp;
- else if (!sortfunction) return;
-
- for (; set[c]; c++);
-
- qsort (set, c+1, sizeof (void *), sortfunction);
-#endif
+ }
 }
 
 int inset (const void **haystack, const void *needle, int32_t esize) {

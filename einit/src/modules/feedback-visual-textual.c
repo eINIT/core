@@ -263,6 +263,8 @@ void feedback_textual_wait_for_commandQ_to_finish() {
   e = pthread_cond_wait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex);
 #endif
   emutex_unlock (&feedback_textual_all_done_cond_mutex);
+
+  notice (12, "feedback_textual_wait_for_commandQ_to_finish(): re-evaluation");
  }
 
  return;
@@ -293,11 +295,11 @@ signed int feedback_time_sort (struct feedback_textual_module_status *st1, struc
 }
 
 signed int feedback_name_sort (struct feedback_textual_module_status *st1, struct feedback_textual_module_status *st2) {
- if (!st1 || !st1->module || !st1->module->module || !st1->module->module->name) return 1;
- if (!st2 || !st2->module || !st2->module->module || !st2->module->module->name) return -1;
+ if (!st1 || !st1->module || !st1->module->module || !st1->module->module->name) return -1;
+ if (!st2 || !st2->module || !st2->module->module || !st2->module->module->name) return 1;
 
 // return (st2->lastchange - st1->lastchange);
- return strcmp (st1->module->module->name, st2->module->module->name);
+ return strcmp (st1->module->module->name, st2->module->module->name) * -1;
 }
 
 void feedback_process_textual_noansi(struct feedback_textual_module_status *st) {
@@ -342,43 +344,59 @@ void feedback_process_textual_noansi(struct feedback_textual_module_status *st) 
 }
 
 void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
+ char *defcode = "0";
  char *name = (st->module->module && st->module->module->name) ? st->module->module->name : "no name";
 
  char *wmarker = "";
  char *emarker = "";
  char *rmarker = " ";
- char *status = "\e[31mwtf?\e[0m";
+ char *status = "<FIXME!> \e[31m----\e[0m";
  char wmbuffer[BUFFERSIZE];
+ char embuffer[BUFFERSIZE];
+ char stbuffer[BUFFERSIZE];
  char do_details = 0;
 
+ if (st->module->status & status_working) {
+  defcode = "30;1";
+ } if ((st->module->status & status_disabled) || (st->module->status == status_idle)) {
+  defcode = "36";
+ }
+
  if (st->module->status == status_idle) {
-  status = "\e[31midle\e[0m";
+  status = stbuffer;
+  esprintf (stbuffer, BUFFERSIZE, "\e[31midle\e[%sm", defcode);
  } else {
   if (st->module->status & status_enabled) {
-   status = "\e[32menab\e[0m";
+   status = stbuffer;
+   esprintf (stbuffer, BUFFERSIZE, "\e[32menab\e[%sm", defcode);
   }
   if (st->module->status & status_disabled) {
-   status = "\e[33mdisa\e[0m";
+   status = stbuffer;
+   esprintf (stbuffer, BUFFERSIZE, "\e[33mdisa\e[%sm", defcode);
   }
   if (st->module->status & status_deferred) {
-   status = "\e[33mschd\e[0m";
+   status = stbuffer;
+   esprintf (stbuffer, BUFFERSIZE, "\e[33mschd\e[%sm", defcode);
   }
   if (st->module->status & status_working) {
-   status = "\e[31m....\e[0m";
+   status = stbuffer;
+   esprintf (stbuffer, BUFFERSIZE, "\e[31m....\e[%sm", defcode);
   }
 
   if (st->module->status & status_failed) {
-   emarker = " \e[31m(failed)\e[0m";
+   esprintf (embuffer, BUFFERSIZE, " \e[31m(failed)\e[%sm", defcode);
+   emarker = embuffer;
    do_details = 1;
   }
  }
 
  if (st->warnings > 1) {
   wmarker = wmbuffer;
-  esprintf (wmbuffer, BUFFERSIZE, "\e[36m(%i warnings)\e[0m ", st->warnings);
+  esprintf (wmbuffer, BUFFERSIZE, "\e[36m(%i warnings)\e[%sm ", st->warnings, defcode);
   do_details = 1;
  } else if (st->warnings == 1) {
-  wmarker = "\e[36m(1 warning)\e[0m ";
+  wmarker = wmbuffer;
+  esprintf (wmbuffer, BUFFERSIZE, "\e[36m(one warning)\e[%sm ", defcode);
   do_details = 1;
  }
 
@@ -388,20 +406,20 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
   for (; st->log[y]; y++) ;
 
   if (do_details && (y > 1)) {
-   eprintf (stdout, "%s[ %s ]%s %s%s; messages:\e[0K\n", rmarker, status, emarker, wmarker, name);
+   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s; messages:\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
 
    y = 0;
    for (; st->log[y] && y < 3; y++)
-    eprintf (stdout, "  \e[37m*\e[0m %i: %s\e[0K\n", st->log[y]->seqid, st->log[y]->message);
+    eprintf (stdout, "\e[%sm  \e[37m*\e[0m %i: %s\e[0m\e[0K\n", defcode, st->log[y]->seqid, st->log[y]->message);
   } else if (y != 0) {
    y--;
 
-   eprintf (stdout, "%s[ %s ]%s %s%s: %s\e[0K\n", rmarker, status, emarker, wmarker, name, st->log[y]->message);
+   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s: %s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name, st->log[y]->message);
   } else {
-   eprintf (stdout, "%s[ %s ]%s %s%s\e[0K\n", rmarker, status, emarker, wmarker, name);
+   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
   }
  } else {
-  eprintf (stdout, "%s[ %s ]%s %s%s\e[0K\n", rmarker, status, emarker, wmarker, name);
+  eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
  }
 }
 
@@ -511,13 +529,18 @@ void feedback_textual_update_screen () {
 
 /*  setsort ((void **)feedback_textual_modules, 0, (signed int(*)(const void *, const void*))feedback_time_sort);*/
 
-  if (enableansicodes) {
-   for (; feedback_textual_modules[i]; i++)
-    feedback_process_textual_ansi(feedback_textual_modules[i]);
-  }
-  else {
-   for (; feedback_textual_modules[i]; i++)
-    feedback_process_textual_noansi(feedback_textual_modules[i]);
+  time_t tt = time(NULL) - 10;
+
+  for (; feedback_textual_modules[i]; i++) {
+   if (feedback_textual_modules[i]->module && ((feedback_textual_modules[i]->lastchange) < tt) &&
+       !(feedback_textual_modules[i]->module->status & (status_enabled | status_working))) {
+    continue;
+   } else {
+    if (enableansicodes)
+     feedback_process_textual_ansi(feedback_textual_modules[i]);
+    else
+     feedback_process_textual_noansi(feedback_textual_modules[i]);
+   }
   }
  }
 

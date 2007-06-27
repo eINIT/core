@@ -701,7 +701,7 @@ int mod_modaction (char **argv, FILE *output) {
    if (strmatch (argv[1], "status") && output) {
     for (; tm[r]; r++) if (tm[r]->module) {
      if (r == 0) {
-	  eprintf (output, "primary candiate: %s.\n", tm[r]->module->name);
+	  eprintf (output, "%s: \"%s\".\n", argv[0], tm[r]->module->name);
 	 } else {
 	  eprintf (output, "backup candiate #%i: %s.\n", r, tm[r]->module->name);
 	 }
@@ -711,13 +711,15 @@ int mod_modaction (char **argv, FILE *output) {
      if (tm[r]->source)
 	  eprintf (output, " >> source: %s.\n", tm[r]->source);
 
+     if (tm[r]->suspend) { eputs (" >> this module supports suspension.\n", output); }
+
      eputs (" >> supported functions:", output);
 
-     if (tm[r]->enable) { eputs (" enabled", output); }
+     if (tm[r]->enable) { eputs (" enable", output); }
      if (tm[r]->disable) { eputs (" disable", output); }
      if (tm[r]->custom) { eputs (" *", output); }
 
-     eputs ("\n >> status flags:", output);
+     eputs ("\n >> status flags: (", output);
 
      if (tm[r]->status & status_working) {
       ret = 2;
@@ -727,7 +729,6 @@ int mod_modaction (char **argv, FILE *output) {
      if (tm[r]->status & status_enabled) {
       ret = 0;
       eputs (" enabled", output);
-      break;
      }
 
      if (tm[r]->status & status_disabled) {
@@ -738,7 +739,7 @@ int mod_modaction (char **argv, FILE *output) {
       eputs (" idle", output);
      }
 
-     eputs ("\n", output);
+     eputs (" )\n", output);
     }
    } else {
     for (; tm[r]; r++) {
@@ -919,9 +920,6 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     }
 
     ev->integer = mod_modaction ((char **)ev->set, ev->output);
-/*    if (mod_modaction ((char **)ev->set), ev->output) {
-     ev->integer = 1;
-    }*/
 
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
@@ -933,11 +931,15 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
      fflush (ev->output);
 
-     if (ev->integer) {
-      eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
-     } else {
-      eputs (" \e[32m>> request succeeded.\e[0m\n", ev->output);
+     if (!strmatch(ev->set[1], "status")) {
+      if (ev->integer) {
+       eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
+      } else {
+       eputs (" \e[32m>> request succeeded.\e[0m\n", ev->output);
+      }
      }
+
+     fflush (ev->output);
     }
    }
    return;

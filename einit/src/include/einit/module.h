@@ -261,6 +261,8 @@ struct lmodule {
  uint32_t fbseq;                                /*!< Feedback sequence-number */
  struct service_information *si;
  void *resumedata;
+
+ int (*suspend) (struct lmodule *);             /*!< Pointer to the module's suspend()-function */
 };
 
 /*!\brief Service-usage information.
