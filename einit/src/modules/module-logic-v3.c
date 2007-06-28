@@ -675,10 +675,12 @@ int mod_switchmode (char *mode) {
 }
 
 int mod_modaction (char **argv, FILE *output) {
+ if (!argv) return -1;
+
  int argc = setcount ((const void **)argv), ret = 0;
  int32_t task = 0;
  struct mloadplan *plan;
- if (!argv || (argc != 2)) return -1;
+ if (argc < 2) return -1;
 
  if (strmatch (argv[1], "enable") || strmatch (argv[1], "start")) task = einit_module_enable;
  else if (strmatch (argv[1], "disable") || strmatch (argv[1], "stop")) task = einit_module_disable;
@@ -697,29 +699,47 @@ int mod_modaction (char **argv, FILE *output) {
   emutex_unlock (&ml_service_list_mutex);
 
   ret = 1;
+
+  struct group_data *gd = mod_group_get_data (argv[0]);
+  if (strmatch (argv[1], "status") && output && gd) {
+   char *members = set2str (' ', gd->members);
+  
+   ret = 0;
+
+   eprintf (output, "%s: \e[34mgroup\e[0m\n", argv[0]);
+   eprintf (output, " \e[32m**\e[0m service \"%s\" is currently %s\e[0m.\n", argv[0], mod_isprovided(argv[0]) ? "\e[32mprovided" : "\e[31mnot provided");
+   eprintf (output, " \e[34m>>\e[0m group type: %s\n", (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP) ? "any / any-iop" : (gd->options & (MOD_PLAN_GROUP_SEQ_MOST) ? "most" : "all")));
+
+   if (members) {
+    eprintf (output, " \e[34m>>\e[0m group members: ( %s )\n", members);
+	free (members);
+   }
+  }
+
   if (tm) {
    if (strmatch (argv[1], "status") && output) {
     for (; tm[r]; r++) if (tm[r]->module) {
      if (r == 0) {
 	  eprintf (output, "%s: \"%s\".\n", argv[0], tm[r]->module->name);
+      if (!gd) eprintf (output, " \e[32m**\e[0m service \"%s\" is currently %s\e[0m.\n", argv[0], mod_isprovided(argv[0]) ? "\e[32mprovided" : "\e[31mnot provided");
 	 } else {
-	  eprintf (output, "backup candiate #%i: %s.\n", r, tm[r]->module->name);
+	  eprintf (output, "backup candiate #%i: \"%s\".\n", r, tm[r]->module->name);
 	 }
 
      if (tm[r]->module->rid)
-	  eprintf (output, " >> rid: %s.\n", tm[r]->module->rid);
+	  eprintf (output, " \e[34m>>\e[0m rid: %s.\n", tm[r]->module->rid);
      if (tm[r]->source)
-	  eprintf (output, " >> source: %s.\n", tm[r]->source);
+	  eprintf (output, " \e[34m>>\e[0m source: %s.\n", tm[r]->source);
 
-     if (tm[r]->suspend) { eputs (" >> this module supports suspension.\n", output); }
+     if (tm[r]->suspend) { eputs (" \e[34m>>\e[0m this module supports suspension.\n", output); }
 
-     eputs (" >> supported functions:", output);
+     eputs (" \e[34m>>\e[0m supported functions:", output);
 
      if (tm[r]->enable) { eputs (" enable", output); }
      if (tm[r]->disable) { eputs (" disable", output); }
      if (tm[r]->custom) { eputs (" *", output); }
 
-     eputs ("\n >> status flags: (", output);
+     eputs ("\n \e[34m>>\e[0m status flags: (", output);
 
      if (tm[r]->status & status_working) {
       ret = 2;
@@ -749,6 +769,10 @@ int mod_modaction (char **argv, FILE *output) {
       ret = 0;
     }
    }
+  } else if (strmatch (argv[1], "status") && output && !gd) {
+   ret = 1;
+
+   eprintf (output, " \e[31m!!\e[0m service \"%s\" is currently not defined.\n", argv[0]);
   }
 
   return ret;
@@ -867,7 +891,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    }
    return;
   case einit_core_change_service_status:
-   if (!ev->set) return;
+   if (!ev->set || !ev->set[0] || !ev->set[1]) return;
    else {
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
@@ -931,7 +955,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
      fflush (ev->output);
 
-     if (!strmatch(ev->set[1], "status")) {
+     if (ev->set && ev->set[0] && ev->set[1] && !strmatch(ev->set[1], "status")) {
       if (ev->integer) {
        eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
       } else {

@@ -55,7 +55,7 @@
 ; the '( . ) trick doesn't work for lambdas and the like, you need to use (cons x y)!
 
  (cons 'disable (lambda () (pexec "/bin/true"))) ; call /bin/true as the disable action.
- (cons 'reset (lambda () (pexec "/bin/false"))) ; call /bin/true as the rc X disable action.
+ (cons 'reset (lambda () (pexec "/bin/false"))) ; call /bin/true as the rc X reset action.
 ; these functions need to return a boolean:
 ;  #t -> action succeeded
 ;  #f -> action failed
@@ -64,3 +64,17 @@
 )
 
 ; note: you should always define an "enable" and a "disable" hook, else your module will be reported to malfunction.
+
+; test module:
+(define (test-enable status)
+ (begin
+  (feedback status "feeeedback")
+  #t))
+
+(define (test-disable)
+ #t)
+
+(make-module "scheme-test" "Scheme Test Module"
+ '(("test"))
+ '(enable . test-enable)
+ '(disable . test-disable))

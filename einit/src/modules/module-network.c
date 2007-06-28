@@ -599,6 +599,8 @@ int create_bridge (struct interface_descriptor *id, struct einit_event *status) 
 }
 
 int network_ready (struct interface_descriptor *id, struct einit_event *status) {
+#ifdef LINUX
+/* made linux-specific, because only linux has sysfs */
  uint32_t retries = 0;
  int ret = status_ok;
  struct stat st;
@@ -616,6 +618,10 @@ int network_ready (struct interface_descriptor *id, struct einit_event *status) 
   retries++;
  }
  return ret;
+#else
+/* non-linux systems: hope for the best */
+ return status_ok;
+#endif
 }
 
 int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
