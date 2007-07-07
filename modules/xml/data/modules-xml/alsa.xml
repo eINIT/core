@@ -5,6 +5,7 @@
   requires="mount-critical"
   after="kern-alsa"
   enable="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} restore;"
-  disable="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} store;"
+  disable="/bin/true"
+  execute:on-shutdown="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} store;"
   variables="configuration-services-alsa-mixer/.*" />
 </einit>
