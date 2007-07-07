@@ -15,7 +15,7 @@ SLOT="0"
 KEYWORDS="-*"
 IUSE="doc"
 
-RDEPEND=">=sys-apps/einit-0.22.0
+RDEPEND=">=sys-apps/einit-0.23.5
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
 DEPEND="${RDEPEND}
 	>=sys-apps/portage-2.1.2-r11"
