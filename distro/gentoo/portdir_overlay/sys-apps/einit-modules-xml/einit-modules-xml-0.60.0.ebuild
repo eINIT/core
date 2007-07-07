@@ -2,7 +2,7 @@ inherit eutils toolchain-funcs flag-o-matic
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.org/"
-SRC_URI="mirror://berlios/${PN}/${P}.tar.bz2"
+SRC_URI="mirror://berlios/einit/${P}.tar.bz2"
 
 LICENSE="BSD"
 SLOT="0"
