@@ -24,4 +24,19 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------
 
+if [ "$PREFIX" == "" ]; then
+ echo "PREFIX=\"$1\"
+ETCDIR=\"$1/etc/einit\"
+ETCXDIR=\"$1/etc\"
+LIBDIR=\"$1/lib/einit\"
+MODDIR=\"$1/lib/einit/modules\"
+BINDIR=\"$1/bin\"
+SBINDIR=\"$1/sbin\"
+INCLUDEDIR=\"$1/include\"
+BOOTSTRAPDIR=\"$1/lib/einit/bootstrap/\"
+
+INSTALL=install
+" > config.sh;
+fi
+
 cd data && ./install
