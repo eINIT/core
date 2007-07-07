@@ -22,7 +22,7 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=/"
+	myconf="--ebuild --enable-linux --use-posix-regex --prefix=/"
 
 	echo ${myconf}
 	econf ${myconf} || die
