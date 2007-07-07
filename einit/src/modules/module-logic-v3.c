@@ -98,6 +98,10 @@ void mod_commit_and_wait (char **, char **);
 
 void mod_defer_notice (struct lmodule *, char **);
 
+void workthread_examine (char *service);
+void mod_post_examine (char *service);
+void mod_pre_examine (char *service);
+
 struct module_taskblock
   current = { NULL, NULL, NULL },
   target_state = { NULL, NULL, NULL };
@@ -1233,12 +1237,11 @@ int32_t ignorereorderfor = 0;
 char **lm_workthreads_list = NULL;
 
 char mod_workthreads_dec (char *service) {
-
 /* force re-examination of deferred services */
- mod_pre_examine (service);
-
  if (mod_isprovided (service))
   mod_post_examine (service);
+ else
+  mod_pre_examine (service);
 
  emutex_lock (&ml_workthreads_mutex);
 
@@ -2047,7 +2050,21 @@ void mod_post_examine (char *service) {
   uint32_t j = 0;
 
   for (; pex[j]; j++) {
-   mod_examine (pex[j]);
+   if (pex[j+1]) {
+    char *sc = estrdup (pex[j]);
+    pthread_t th;
+
+#ifdef DEBUG
+    eprintf (stderr, " XX spawning thread for %s\n", pex[j]);
+#endif
+
+    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
+     emutex_unlock (&ml_tb_current_mutex);
+     workthread_examine (sc);
+     emutex_lock (&ml_tb_current_mutex);
+    }
+   } else
+    mod_examine (pex[j]);
   }
 
   free (pex);
@@ -2083,7 +2100,21 @@ void mod_pre_examine (char *service) {
      mod_post_examine (pex[j]);
     }
 
-    mod_examine (pex[j]);
+    if (pex[j+1]) {
+     char *sc = estrdup (pex[j]);
+     pthread_t th;
+
+#ifdef DEBUG
+     eprintf (stderr, " XX spawning thread for %s\n", pex[j]);
+#endif
+
+     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
+      emutex_unlock (&ml_tb_current_mutex);
+      workthread_examine (sc);
+      emutex_lock (&ml_tb_current_mutex);
+     }
+    } else
+     mod_examine (pex[j]);
    }
   }
   free (pex);
