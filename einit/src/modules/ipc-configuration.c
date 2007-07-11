@@ -94,7 +94,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    ev->implemented = 1;
   }
 
-  if (strmatch ("list", ev->argv[0]) && strmatch ("configuration", ev->argv[1])) {
+  if (strmatch ("list", ev->argv[0]) && ev->argv[1] && strmatch ("configuration", ev->argv[1])) {
    struct stree *otree = NULL;
    char *buffer = NULL;
    cfg_string_converter conv;
