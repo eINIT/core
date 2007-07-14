@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-http-replicator" 
+  name="HTTP-Replicator" 
+  provides="http-replicator" 
+  requires="mount/critical:network" 
+  enable="rm -f ${configuration_program_options_http_replicator_pidfile}; /usr/bin/http-replicator ${configuration_program_options_http_replicator_options} --pid ${configuration_program_options_http_replicator_pidfile}" 
+  disable="kill `cat ${configuration_program_options_http_replicator_options}`; rm -f ${configuration_program_options_http_replicator_pidfile};" 
+  variables="configuration-services-http-replicator/options:configuration-services-http-replicator/pidfile" />
+</einit>
