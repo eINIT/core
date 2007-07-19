@@ -242,7 +242,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
  if ((ev->type == einit_core_service_update) && ev->set) {
   char tmp[BUFFERSIZE];
   uint32_t i = 0;
-/*
+
   if (ev->status & status_working) {
    if (ev->task & einit_module_enable) {
     for (; ev->set[i]; i++) {
@@ -281,7 +281,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
      }
     }
    }
-  }*/
+  }
 
 // get_plan_progress(NULL): overall progress, 0.0-1.0
   esprintf (tmp, BUFFERSIZE, "progress %i", (int)(get_plan_progress (NULL) * 65535));
@@ -378,7 +378,7 @@ int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status)
   }
  }
 
- if (fbtheme || (fbtheme = cfg_getstring ("configuration-feedback-visual-fbsplash-theme", NULL))) {
+/* if (fbtheme || (fbtheme = cfg_getstring ("configuration-feedback-visual-fbsplash-theme", NULL))) {
   char tmpx[BUFFERSIZE];
 
   esprintf (tmpx, BUFFERSIZE, "set theme %s", fbtheme);
@@ -386,7 +386,7 @@ int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status)
 
   if (freetheme) free (fbtheme);
 //  notice (1, tmpx);
- }
+ }*/
  if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/silent", NULL))) {
   char tmpx[BUFFERSIZE];
 
