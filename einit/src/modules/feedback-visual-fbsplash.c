@@ -242,7 +242,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
  if ((ev->type == einit_core_service_update) && ev->set) {
   char tmp[BUFFERSIZE];
   uint32_t i = 0;
-
+/*
   if (ev->status & status_working) {
    if (ev->task & einit_module_enable) {
     for (; ev->set[i]; i++) {
@@ -281,7 +281,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
      }
     }
    }
-  }
+  }*/
 
 // get_plan_progress(NULL): overall progress, 0.0-1.0
   esprintf (tmp, BUFFERSIZE, "progress %i", (int)(get_plan_progress (NULL) * 65535));
@@ -310,7 +310,7 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
    emutex_unlock (&fbsplash_commandQ_mutex);
 
    if (command) {
-//    notice (1, command);
+    notice (1, command);
     FILE *fifo = efopen (fbsplash_fifo, "w");
     if (fifo) {
      eprintf (fifo, "%s\n", command);
@@ -318,7 +318,14 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
     }
 
     free (command);
-   }
+   }/* else {
+    notice (1, "repaint");
+    FILE *fifo = efopen (fbsplash_fifo, "w");
+    if (fifo) {
+     eprintf (fifo, "repaint\n", command);
+     fclose (fifo);
+    }
+   }*/
   }
 
   emutex_lock (&fbsplash_commandQ_cond_mutex);
