@@ -1,0 +1,8 @@
+core: icemake
+
+install: icemake
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} icemake ${DESTDIR}/${SBINDIR}
+
+icemake: $(objects)
+	$(CLD) $(objects) -o icemake $(STATIC) $(CORELIBS) $(LPA) $(XDYNAMIC)

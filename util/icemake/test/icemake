@@ -1,0 +1,15 @@
+(package "expat"
+  'uses-pkg-config
+  (list "test-version" 'generic-package-version-test))
+
+(tag (list 'install "/bin")
+  (link "test"
+    (list 'binary)
+    (compile "x.c" "y.c")
+    (compile "expat-user.c" (">" "expat" "2"))
+    (compile "src/boo/")))
+
+(tag (list 'install-no-prefix "/sbin")
+  (compile-and-link "test2"
+    (list 'binary)
+    "y.c")))
