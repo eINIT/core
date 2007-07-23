@@ -6,7 +6,7 @@ bootstrap-configuration-xml-expat.so: bootstrap-configuration-xml-expat.o
 	${LLD} bootstrap-configuration-xml-expat.o -o bootstrap-configuration-xml-expat.so -lexpat
 
 ipc-dbus.so: ipc-dbus.o
-	${LXXLD} ipc-dbus.o -o ipc-dbus.so
+	${LXXLD} ipc-dbus.o -o ipc-dbus.so ${DBUS_LIBS}
 
 module-logic-v3.so: module-logic-v3.o
 	${LLD} module-logic-v3.o ${LIBRT} -o module-logic-v3.so

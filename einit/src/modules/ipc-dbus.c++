@@ -44,6 +44,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
+#include <einit-modules/dbus.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -51,6 +53,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 int einit_dbus_cleanup (struct lmodule *);
+int einit_ipc_dbus_enable (void *pa, struct einit_event *status);
+int einit_ipc_dbus_disable (void *pa, struct einit_event *status);
+
+class einit_dbus einit_main_dbus_class;
 
 extern "C" {
 
@@ -83,11 +89,62 @@ module_register(einit_dbus_self);
 int einit_dbus_configure (struct lmodule *irr) {
  module_init (irr);
 
+ thismodule->enable = einit_ipc_dbus_enable;
+ thismodule->disable = einit_ipc_dbus_enable;
  thismodule->cleanup = einit_dbus_cleanup;
+
+ return einit_main_dbus_class.configure();;
+}
+
+}
+
+int einit_dbus::configure() {
+ event_listen (einit_event_subsystem_ipc, this->ipc_event_handler);
 
  return 0;
 }
 
+void einit_dbus::ipc_event_handler (struct einit_event *ev) {
+ if (ev->argc >= 2) {
+  if (strmatch(ev->argv[0], "test") && strmatch(ev->argv[1], "ipc")) {
+   fprintf (ev->output, "meow!!\n");
+   ev->implemented = 1;
+  }
+ }
+
+ return;
+}
+
+void einit_dbus::string(const char *IN_string, char ** OUT_result) {
+ *OUT_result = estrdup ("hello world!");
+
+ return;
+}
+
+einit_dbus::einit_dbus() {
+ dbus_error_init(&this->error);
+
+// this->introspection_data = einit_dbus_introspection_data;
+// dbus_g_object_type_install_info (COM_FOO_TYPE_MY_OBJECT, &(this->introspection_data));
+}
+
+einit_dbus::~einit_dbus() {
+}
+
+int einit_dbus::enable (struct einit_event *status) {
+ return status_ok;
+}
+
+int einit_dbus::disable (struct einit_event *status) {
+ return status_ok;
+}
+
+int einit_ipc_dbus_enable (void *pa, struct einit_event *status) {
+ return einit_main_dbus_class.enable(status);
+}
+
+int einit_ipc_dbus_disable (void *pa, struct einit_event *status) {
+ return einit_main_dbus_class.disable(status);
 }
 
 int einit_dbus_cleanup (struct lmodule *) {

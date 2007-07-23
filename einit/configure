@@ -62,6 +62,7 @@ echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
 	shortd=${param%%--no-*};
+	shorte=${param%%--enable-*};
 	if test "$short" = "--internal-modules"; then
 		echo -n " INTERNAL";
 		INTERNALMODULES=${param#*=};
@@ -148,6 +149,8 @@ for param in $@; do
                 CONFIGINSTALLMETHOD="ebuild";
 	elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
+	elif test "$shorte" = ""; then
+		EXTERNALMODULES="${EXTERNALMODULES} ${param#*--enable-}";
 	fi;
 done;
 echo " ]";
@@ -431,6 +434,10 @@ echo "done.";
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 
+echo "getting dbus flags off pkg-config..."
+DBUS_CFLAGS=$(pkg-config --cflags dbus-1)
+DBUS_LIBS=$(pkg-config --libs dbus-1)
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
@@ -489,6 +496,9 @@ XXL = $XXL -DISSVN=\${ISSVN}
 CXXLD = \${CXX} \${LDFLAGS}
 CXXLD = \${CXXC} \${LDFLAGS}
 LXXLD = \${CXXC} \${LDFLAGS} $LLD
+
+DBUS_CFLAGS = ${DBUS_CFLAGS}
+DBUS_LIBS = ${DBUS_LIBS}
 " > config.mk
 
 echo "creating config.sh..."
@@ -549,6 +559,9 @@ XXL=\"$XXL -DISSVN=\${ISSVN}\"
 CXXLD=\"\${CXX} \${LDFLAGS}\"
 CXXLD=\"\${CXXC} \${LDFLAGS}\"
 LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
+
+DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
+DBUS_LIBS=\"${DBUS_LIBS}\"
 " > config.sh
 
 collect_objects () {
