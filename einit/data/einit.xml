@@ -160,6 +160,10 @@
   <ipc>
    <control-socket s="/dev/einit-control" i="0600" />
    <chain-command for="^update configuration.*" do="examine configuration" />
+
+   <dbus>
+    <connection name="org.einit.ipc" />
+   </dbus>
   </ipc>
 
   <command>

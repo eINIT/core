@@ -166,7 +166,7 @@ cfg_prefix_t cfg_prefix_fp;
 
 #define cfg_findnode(name, mode, node) ((cfg_findnode_fp || (cfg_findnode_fp = function_find_one("einit-configuration-node-get-find", 1, NULL))) ? cfg_findnode_fp(name, mode, node) : NULL)
 
-#define cfg_getstring(id, base) ((cfg_getstring_fp || (cfg_getstring_fp = function_find_one("einit-configuration-node-get-string", 1, NULL))) ? cfg_getstring_fp(id, base) : NULL)
+#define cfg_getstring(id, base) ((cfg_getstring_fp || (cfg_getstring_fp = (cfg_getstring_t)function_find_one("einit-configuration-node-get-string", 1, NULL))) ? cfg_getstring_fp(id, base) : NULL)
 
 #define cfg_getnode(id, base) ((cfg_getnode_fp || (cfg_getnode_fp = function_find_one("einit-configuration-node-get", 1, NULL))) ? cfg_getnode_fp(id, base) : NULL)
 

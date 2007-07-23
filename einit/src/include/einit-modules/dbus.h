@@ -66,6 +66,7 @@ class einit_dbus {
   ~einit_dbus();
 
   void string(const char *IN_string, char ** OUT_result);
+  void signal_dbus (const char *IN_string);
 
   int enable (struct einit_event *);
   int disable (struct einit_event *);
@@ -73,6 +74,7 @@ class einit_dbus {
  private:
   DBusError error;
   DBusConnection* connection;
+  dbus_uint32_t signal_seqid;
 
   static void ipc_event_handler (struct einit_event *);
 };

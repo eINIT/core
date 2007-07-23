@@ -90,7 +90,7 @@ int einit_dbus_configure (struct lmodule *irr) {
  module_init (irr);
 
  thismodule->enable = einit_ipc_dbus_enable;
- thismodule->disable = einit_ipc_dbus_enable;
+ thismodule->disable = einit_ipc_dbus_disable;
  thismodule->cleanup = einit_dbus_cleanup;
 
  return einit_main_dbus_class.configure();;
@@ -99,12 +99,28 @@ int einit_dbus_configure (struct lmodule *irr) {
 }
 
 int einit_dbus::configure() {
- event_listen (einit_event_subsystem_ipc, this->ipc_event_handler);
-
  return 0;
 }
 
+void einit_dbus::signal_dbus (const char *IN_string) {
+ DBusMessage *message;
+ DBusMessageIter argv;
+
+ message = dbus_message_new_signal("/org/einit/IPC/signal/plain", "org.einit.IPC", "IPC");
+ if (!message) { return; }
+
+ dbus_message_iter_init_append(message, &argv);
+ if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &IN_string)) { return; }
+
+ if (!dbus_connection_send(this->connection, message, &this->signal_seqid)) { return; }
+ dbus_connection_flush(this->connection);
+
+ dbus_message_unref(message);
+}
+
 void einit_dbus::ipc_event_handler (struct einit_event *ev) {
+ einit_main_dbus_class.signal_dbus (ev->string);
+
  if (ev->argc >= 2) {
   if (strmatch(ev->argv[0], "test") && strmatch(ev->argv[1], "ipc")) {
    fprintf (ev->output, "meow!!\n");
@@ -122,20 +138,49 @@ void einit_dbus::string(const char *IN_string, char ** OUT_result) {
 }
 
 einit_dbus::einit_dbus() {
- dbus_error_init(&this->error);
+ dbus_error_init(&(this->error));
+ this->signal_seqid = 0;
 
 // this->introspection_data = einit_dbus_introspection_data;
 // dbus_g_object_type_install_info (COM_FOO_TYPE_MY_OBJECT, &(this->introspection_data));
 }
 
 einit_dbus::~einit_dbus() {
+ dbus_error_free(&(this->error));
 }
 
 int einit_dbus::enable (struct einit_event *status) {
+ char *dbusname;
+ int ret = 0;
+
+ if (!(dbusname = cfg_getstring("configuraion-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.ipc";
+
+ this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
+ if (dbus_error_is_set(&(this->error))) { 
+  fbprintf(status, "DBUS: Connection Error (%s)\n", this->error.message); 
+  dbus_error_free(&(this->error));
+ }
+ if (!this->connection) return status_failed;
+
+ ret = dbus_bus_request_name(this->connection, dbusname, DBUS_NAME_FLAG_REPLACE_EXISTING, &(this->error));
+ if (dbus_error_is_set(&(this->error))) { 
+  fbprintf(status, "DBUS: Name Error (%s)\n", this->error.message); 
+  dbus_error_free(&(this->error));
+ }
+ if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return status_failed;
+
+ event_listen (einit_event_subsystem_ipc, this->ipc_event_handler);
+
  return status_ok;
 }
 
 int einit_dbus::disable (struct einit_event *status) {
+ event_ignore (einit_event_subsystem_ipc, this->ipc_event_handler);
+
+ dbus_connection_flush(this->connection);
+
+// dbus_connection_close(this->connection);
+
  return status_ok;
 }
 
