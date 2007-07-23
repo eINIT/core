@@ -54,6 +54,8 @@ LIBRARIES="-L/lib -L/usr/lib -L/usr/local/lib"
 pwd=$(pwd)
 nomodule=""
 
+XCFLAGS="$XCFLAGS -DPOSIXREGEX";
+
 source configure.options
 
 echo -n "checking options [";
@@ -124,7 +126,10 @@ for param in $@; do
 		XCFLAGS="$XCFLAGS -DBITCHY";
 	elif test "$param" = "--use-posix-regex"; then
 		echo -n " REGEX";
-		XCFLAGS="$XCFLAGS -DPOSIXREGEX";
+		XCFLAGS='$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS}) -DPOSIXREGEX';
+	elif test "$param" = "--no-posix-regex"; then
+		echo -n " NOREGEX";
+		XCFLAGS=$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS});
 	elif test "$param" = "--pthread-wait-bug"; then
 		echo -n " PTHREAD-WAIT-BUG";
 		XCFLAGS="$XCFLAGS -DBUGGY_PTHREAD_CHILD_WAIT_HANDLING";
