@@ -2,14 +2,12 @@
   'uses-pkg-config
   (list "test-version" 'generic-package-version-test))
 
-(tag (list 'install "/bin")
-  (link "test"
-    (list 'binary)
+(install "/bin"
+  (link-binary "test"
     (compile "x.c" "y.c")
-    (compile "expat-user.c" (">" "expat" "2"))
+    (compile "expat-user.c" (">=expat-2"))
     (compile "src/boo/")))
 
-(tag (list 'install-no-prefix "/sbin")
-  (compile-and-link "test2"
-    (list 'binary)
-    "y.c")))
+(install "/sbin"
+  (link-binary "test2"
+    (compile "y.c")))
