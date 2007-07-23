@@ -3,7 +3,7 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v26)
+# eINIT SVN ebuild (v27)
 #
 
 inherit subversion
@@ -18,10 +18,11 @@ LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
 
-IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural"
+IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural dbus"
 
 RDEPEND="dev-libs/expat
-	sys-apps/iproute2"
+	sys-apps/iproute2
+	dbus? ( >=sys-apps/dbus-1.0.2-r2 )"
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
@@ -47,6 +48,9 @@ src_compile() {
 	fi
 	if use nowtf ; then
 		local myconf="${myconf} --nowtf"
+	fi
+	if use dbus ; then
+		local myconf="${myconf} --enable-ipc-dbus"
 	fi
 	if use externalise ; then
 		local myconf="${myconf} --externalise"
