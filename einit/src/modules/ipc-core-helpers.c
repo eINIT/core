@@ -114,6 +114,7 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
 
     cur = cur->next;
    }
+  }
 
   if (strmatch (ev->argv[0], "list")) {
    if (strmatch (ev->argv[1], "modules")) {
@@ -171,7 +172,6 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
      cur = cur->next;
     }
    }
-  }
   }
  }
 }
