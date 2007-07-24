@@ -98,6 +98,8 @@ char *einit_ipc_request(char *command) {
  else
   dbus_message_iter_get_basic(&args, &returnvalue);
 
+ if (returnvalue) returnvalue = estrdup (returnvalue);
+
  dbus_message_unref(message);
 
  return returnvalue;

@@ -49,8 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/config.h>
 
-DBusError error;
-DBusConnection *connection;
+#include <einit/einit.h>
 
 int print_usage_info () {
  fputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, 2007, Magnus Deininger\nUsage:\n einit-control-dbus [-v] [-h] [function] [--] command\n [function] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n down   tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
@@ -58,70 +57,10 @@ int print_usage_info () {
 }
 
 int send_ipc_dbus (char *command) {
- DBusMessage *message;
- DBusMessageIter args;
- DBusPendingCall *pending;
-
- dbus_error_init(&error);
- if (!(connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error))) {
-  if (dbus_error_is_set(&error)) {
-   fprintf(stderr, "Connection Error (%s)\n", error.message);
-   dbus_error_free(&error);
-  }
-  exit(1);
- }
-
- if (!(message = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", "org.einit.Einit.Command", "IPC"))) {
-  fprintf(stderr, "Sending message failed.\n");
-  exit (1);
- }
-
- dbus_message_iter_init_append(message, &args);
- if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &command)) { 
-  fprintf(stderr, "Out Of Memory!\n"); 
-  exit(1);
- }
-
- if (!dbus_connection_send_with_reply (connection, message, &pending, -1)) {
-  fprintf(stderr, "Out Of Memory!\n");
-  exit(1);
- }
- if (!pending) { 
-  fprintf(stderr, "No return value?\n"); 
-  exit(1); 
- }
- dbus_connection_flush(connection);
-
- dbus_message_unref(message);
-
- char *returnvalue;
-
- dbus_pending_call_block(pending);
-
- if (!(message = dbus_pending_call_steal_reply(pending))) {
-  fprintf(stderr, "Bad Reply\n");
-  exit(1);
- }
- dbus_pending_call_unref(pending);
-
- if (!dbus_message_iter_init(message, &args))
-  fprintf(stderr, "Message has no arguments!\n"); 
- else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING)
-  fprintf(stderr, "Argument is not a string...?\n"); 
- else
-  dbus_message_iter_get_basic(&args, &returnvalue);
-
-/* if (!dbus_message_iter_next(&args))
-  fprintf(stderr, "Message has too few arguments!\n"); 
- else if (DBUS_TYPE_UINT32 != dbus_message_iter_get_arg_type(&args)) 
-  fprintf(stderr, "Argument is not int!\n"); 
- else
-  dbus_message_iter_get_basic(&args, &level);*/
+ char *returnvalue = einit_ipc_request(command);
 
  fputs (returnvalue, stdout);
  fputs ("\n", stdout);
-
- dbus_message_unref(message);
 
  return 0;
 }
