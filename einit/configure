@@ -586,15 +586,18 @@ collect_objects () {
 					subobjects="${subobjects} ${pwd}/${y}"
 				done
 				objects="${objects} ${i}.o";
+				
+				if [ -e "object.${i}.defines" ]; then LOCALDEF=$(cat "object.${i}.defines");
+				else LOCALDEF=""; fi
 
 				if test "${suffix}" = "s"; then
 					asmobjects="${asmobjects} ${i}.o";
 				fi
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
+					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
 				else
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o\n"
 				fi
 			fi
 		done
