@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <dbus/dbus.h>
 #include <einit/utility.h>
+#include <einit/bitch.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -103,4 +104,16 @@ char *einit_ipc_request(char *command) {
  dbus_message_unref(message);
 
  return returnvalue;
+}
+
+char *einit_ipc_request_xml(char *command) {
+ char *tmp;
+ uint32_t len;
+
+ if (!command) return NULL;
+ tmp = emalloc ((len = (strlen (command) + 8)));
+
+ esprintf (tmp, len, "%s --xml", command);
+
+ return einit_ipc_request(tmp);
 }

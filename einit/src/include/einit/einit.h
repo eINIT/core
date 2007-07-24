@@ -42,7 +42,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
+
+/* TODO: someone document these functions! */
+
 char *einit_ipc_request(char *);
+char *einit_ipc_request_xml(char *);
 
 #ifdef __cplusplus
 }
