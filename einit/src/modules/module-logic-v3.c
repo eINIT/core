@@ -483,6 +483,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  int currentlistrev = einit_module_logic_list_revision;
 
  do {
+  currentlistrev = einit_module_logic_list_revision;
+
   notice (2, "plan iteration");
 
   emutex_lock (&ml_tb_target_state_mutex);
@@ -521,7 +523,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
   mod_commit_and_wait (plan->changes.enable, plan->changes.disable);
 
-  currentlistrev = einit_module_logic_list_revision;
 // repeat until the modules haven't changed halfway through:
  } while (einit_module_logic_list_revision != currentlistrev);
 
