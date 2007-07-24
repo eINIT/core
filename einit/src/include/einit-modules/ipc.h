@@ -52,7 +52,7 @@ typedef int (*ipc_processor) (const char *, FILE *);
 
 ipc_processor ipc_string_process_fp;
 
-#define ipc_process(string, output) ((ipc_string_process_fp || (ipc_string_process_fp = function_find_one("einit-ipc-process-string", 1, NULL))) ? ipc_string_process_fp(string, output) : -1)
+#define ipc_process(string, output) ((ipc_string_process_fp || (ipc_string_process_fp = (ipc_processor)function_find_one("einit-ipc-process-string", 1, NULL))) ? ipc_string_process_fp(string, output) : -1)
 
 #define ipc_configure(mod) ipc_string_process_fp = NULL;
 #define ipc_cleanup(mod) ipc_string_process_fp = NULL;

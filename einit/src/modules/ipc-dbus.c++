@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include <einit-modules/dbus.h>
+#include <einit-modules/ipc.h>
 
 #define EXPECTED_EIV 1
 
@@ -222,28 +223,30 @@ void einit_dbus::message_thread() {
 }
 
 void einit_dbus::ipc(DBusMessage *message) {
-  DBusMessage *reply;
-  DBusMessageIter args;
-  bool stat = true;
-  dbus_uint32_t serial = 0;
-  char *command = "";
+ DBusMessage *reply;
+ DBusMessageIter args;
+ bool stat = true;
+ dbus_uint32_t serial = 0;
+ char *command = "";
 
-  if (!dbus_message_iter_init(message, &args))
-   fprintf(stderr, "Message has no arguments!\n");
-  else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING) 
-   fprintf(stderr, "Argument is not string!\n"); 
-  else {
-   dbus_message_iter_get_basic(&args, &command);
-   char *returnvalue = "meow?\n";
+ if (!dbus_message_iter_init(message, &args))
+  fprintf(stderr, "Message has no arguments!\n");
+ else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING) 
+  fprintf(stderr, "Argument is not string!\n"); 
+ else {
+  char *returnvalue = "meow!\n";
+  dbus_message_iter_get_basic(&args, &command);
 
-   reply = dbus_message_new_method_return(message);
+  ipc_process(command, stderr);
 
-   dbus_message_iter_init_append(reply, &args);
-   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
-   if (!dbus_connection_send(this->connection, reply, &serial)) { return; }
+  reply = dbus_message_new_method_return(message);
 
-   dbus_message_unref(reply);
-  }
+  dbus_message_iter_init_append(reply, &args);
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+  if (!dbus_connection_send(this->connection, reply, &serial)) { return; }
+
+  dbus_message_unref(reply);
+ }
 }
 
 int einit_ipc_dbus_enable (void *pa, struct einit_event *status) {
