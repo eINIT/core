@@ -106,14 +106,14 @@ void einit_dbus::signal_dbus (const char *IN_string) {
  DBusMessage *message;
  DBusMessageIter argv;
 
- message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit", "IPC");
+ message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit.Information", "SignalIPC");
  if (!message) { return; }
 
  dbus_message_iter_init_append(message, &argv);
  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &IN_string)) { return; }
 
  if (!dbus_connection_send(this->connection, message, &this->sequence)) { return; }
- dbus_connection_flush(this->connection);
+// dbus_connection_flush(this->connection);
 
  dbus_message_unref(message);
  this->sequence++;
@@ -192,10 +192,10 @@ int einit_dbus::enable (struct einit_event *status) {
 int einit_dbus::disable (struct einit_event *status) {
  event_ignore (einit_event_subsystem_ipc, this->ipc_event_handler);
 
- dbus_connection_flush(this->connection);
+/* dbus_connection_flush(this->connection);*/
  this->terminate_thread = 1;
 
- dbus_connection_close(this->connection);
+ dbus_connection_close(this->connection); // close the connection after looping
 
  return status_ok;
 }
@@ -209,13 +209,19 @@ void *einit_dbus::message_thread_bootstrap(void *e) {
 void einit_dbus::message_thread() {
  DBusMessage *message;
 
- while (!(this->terminate_thread)) {
-  dbus_connection_read_write(this->connection, -1); // wait until there's something to do
+ while (dbus_connection_read_write_dispatch(this->connection, 100)) {
   message = dbus_connection_pop_message(this->connection);
 
   if (message) {
+   if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC"))
+    this->ipc(message);
+
+   dbus_message_unref(message);
   }
  }
+}
+
+void einit_dbus::ipc(DBusMessage *message) {
 }
 
 int einit_ipc_dbus_enable (void *pa, struct einit_event *status) {
