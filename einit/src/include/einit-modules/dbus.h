@@ -37,22 +37,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <dbus/dbus.h>
 #include <einit/event.h>
+#include <pthread.h>
 
 #ifndef EINIT_MODULES_DBUS_H_
 #define EINIT_MODULES_DBUS_H_
 
 /*const char * einit_dbus_introspection_data =
   "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-  "<node name=\"/org/einit/ipc\">"
-   "<interface name=\"org.einit.IPC\">"
-    "<annotation name=\"org.einit.DBus.IPC\" value=\"einit_dbus\"/>"
-    "<method name=\"configure\">"
-     "<annotation name=\"org.einit.DBus.IPC.configure\" value=\"einit_dbus_configure\"/>"
+  "<node name=\"/org/einit/einit\">"
+   "<interface name=\"org.einit.Einit\">"
+    "<method name=\"Configure\">"
     "</method>"
-    "<method name=\"event_emit\">"
-     "<annotation name=\"org.einit.DBus.IPC.string\" value=\"einit_dbus_string\"/>"
-     "<arg type=\"s\" name=\"string\" direction=\"in\" />"
-     "<arg type=\"s\" name=\"result\" direction=\"out\" />"
+    "<method name=\"EventEmit\">"
+     "<arg type=\"s\" direction=\"in\" />"
+     "<arg type=\"s\" direction=\"out\" />"
     "</method>"
    "</interface>"
   "</node>";*/
@@ -74,9 +72,14 @@ class einit_dbus {
  private:
   DBusError error;
   DBusConnection* connection;
-  dbus_uint32_t signal_seqid;
+  dbus_uint32_t sequence;
+  char terminate_thread;
+
+  pthread_t message_thread_id;
 
   static void ipc_event_handler (struct einit_event *);
+  static void *message_thread_bootstrap(void *);
+  void message_thread();
 };
 
 #endif

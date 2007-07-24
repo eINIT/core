@@ -162,7 +162,7 @@
    <chain-command for="^update configuration.*" do="examine configuration" />
 
    <dbus>
-    <connection name="org.einit.ipc" />
+    <connection address="unix:path=/var/run/dbus/system_bus_socket" name="org.einit.Einit" />
    </dbus>
   </ipc>
 

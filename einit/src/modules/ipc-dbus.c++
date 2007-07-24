@@ -106,16 +106,17 @@ void einit_dbus::signal_dbus (const char *IN_string) {
  DBusMessage *message;
  DBusMessageIter argv;
 
- message = dbus_message_new_signal("/org/einit/IPC/signal/plain", "org.einit.IPC", "IPC");
+ message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit", "IPC");
  if (!message) { return; }
 
  dbus_message_iter_init_append(message, &argv);
  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &IN_string)) { return; }
 
- if (!dbus_connection_send(this->connection, message, &this->signal_seqid)) { return; }
+ if (!dbus_connection_send(this->connection, message, &this->sequence)) { return; }
  dbus_connection_flush(this->connection);
 
  dbus_message_unref(message);
+ this->sequence++;
 }
 
 void einit_dbus::ipc_event_handler (struct einit_event *ev) {
@@ -139,7 +140,7 @@ void einit_dbus::string(const char *IN_string, char ** OUT_result) {
 
 einit_dbus::einit_dbus() {
  dbus_error_init(&(this->error));
- this->signal_seqid = 0;
+ this->sequence = 0;
 
 // this->introspection_data = einit_dbus_introspection_data;
 // dbus_g_object_type_install_info (COM_FOO_TYPE_MY_OBJECT, &(this->introspection_data));
@@ -151,16 +152,27 @@ einit_dbus::~einit_dbus() {
 
 int einit_dbus::enable (struct einit_event *status) {
  char *dbusname;
+ char *dbusaddress;
  int ret = 0;
 
- if (!(dbusname = cfg_getstring("configuraion-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.ipc";
+ if (!(dbusaddress = cfg_getstring("configuraion-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+ if (!(dbusname = cfg_getstring("configuraion-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.Einit";
 
- this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
+// this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
+ this->connection = dbus_connection_open_private (dbusaddress, &(this->error));
  if (dbus_error_is_set(&(this->error))) { 
   fbprintf(status, "DBUS: Connection Error (%s)\n", this->error.message); 
   dbus_error_free(&(this->error));
  }
  if (!this->connection) return status_failed;
+
+ if (dbus_bus_register (this->connection, &(this->error)) != TRUE) {
+  if (dbus_error_is_set(&(this->error))) { 
+   fbprintf(status, "DBUS: Registration Error (%s)\n", this->error.message); 
+   dbus_error_free(&(this->error));
+  }
+  return status_failed;
+ }
 
  ret = dbus_bus_request_name(this->connection, dbusname, DBUS_NAME_FLAG_REPLACE_EXISTING, &(this->error));
  if (dbus_error_is_set(&(this->error))) { 
@@ -171,6 +183,9 @@ int einit_dbus::enable (struct einit_event *status) {
 
  event_listen (einit_event_subsystem_ipc, this->ipc_event_handler);
 
+ this->terminate_thread = 0;
+ ethread_create (&(this->message_thread_id), &thread_attribute_detached, this->message_thread_bootstrap, NULL);
+
  return status_ok;
 }
 
@@ -178,10 +193,29 @@ int einit_dbus::disable (struct einit_event *status) {
  event_ignore (einit_event_subsystem_ipc, this->ipc_event_handler);
 
  dbus_connection_flush(this->connection);
+ this->terminate_thread = 1;
 
-// dbus_connection_close(this->connection);
+ dbus_connection_close(this->connection);
 
  return status_ok;
+}
+
+void *einit_dbus::message_thread_bootstrap(void *e) {
+ einit_main_dbus_class.message_thread();
+
+ return NULL;
+}
+
+void einit_dbus::message_thread() {
+ DBusMessage *message;
+
+ while (!(this->terminate_thread)) {
+  dbus_connection_read_write(this->connection, -1); // wait until there's something to do
+  message = dbus_connection_pop_message(this->connection);
+
+  if (message) {
+  }
+ }
 }
 
 int einit_ipc_dbus_enable (void *pa, struct einit_event *status) {

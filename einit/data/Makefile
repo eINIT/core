@@ -8,12 +8,15 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/modules
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/init.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/subsystems.d
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
+	${INSTALL} ${IPARAM} -m 0644 einit.conf ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	
 	for i in subsystems.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
 	for i in local.xml fstab.xml modes.xml network.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" "" "${CONFIGINSTALLMETHOD}"; done
