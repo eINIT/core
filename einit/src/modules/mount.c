@@ -825,7 +825,7 @@ int einit_mount_scanmodules (struct lmodule *modchain) {
   new->param = (void *)MOUNT_REMOTE;
  }
 
- doop = 1;
+/* doop = 1;
  lm = modchain;
  while (lm) { if (lm->source && strmatch(lm->source, sm_system.rid)) { doop = 0; lm = mod_update (lm); break; } lm = lm->next; }
  if (doop && (new = mod_add (NULL, &sm_system))) {
@@ -833,7 +833,7 @@ int einit_mount_scanmodules (struct lmodule *modchain) {
   new->enable = (int (*)(void *, struct einit_event *))einit_mount_enable;
   new->disable = (int (*)(void *, struct einit_event *))einit_mount_disable;
   new->param = (void *)MOUNT_SYSTEM;
- }
+ }*/
 
  doop = 1;
  lm = modchain;
@@ -1691,7 +1691,19 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
  char **candidates = NULL;
  uint32_t ret, sc = 0, slc;
 
- if (coremode & einit_mode_sandbox) return status_ok;
+ if (coremode & einit_mode_sandbox) {
+  if (p == MOUNT_CRITICAL) {
+   struct einit_event ev = evstaticinit(einit_core_update_modules);
+
+   fbprintf (status, "updating list of modules");
+
+   event_emit (&ev, einit_event_flag_broadcast);
+
+   evstaticdestroy(ev);
+  }
+
+  return status_ok;
+ }
 
  switch (p) {
   case MOUNT_LOCAL:
@@ -1799,7 +1811,15 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
  evstaticdestroy (rev);
 
 // scan for new modules after mounting all critical filesystems
-// if (p == MOUNT_CRITICAL) mod_scanmodules();
+ if (p == MOUNT_CRITICAL) {
+  struct einit_event ev = evstaticinit(einit_core_update_modules);
+
+  fbprintf (status, "updating list of modules");
+
+  event_emit (&ev, einit_event_flag_broadcast);
+
+  evstaticdestroy(ev);
+ }
 
  update_real_mtab();
 

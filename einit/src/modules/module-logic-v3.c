@@ -102,6 +102,8 @@ void workthread_examine (char *service);
 void mod_post_examine (char *service);
 void mod_pre_examine (char *service);
 
+int einit_module_logic_list_revision = 0;
+
 struct module_taskblock
   current = { NULL, NULL, NULL },
   target_state = { NULL, NULL, NULL };
@@ -284,6 +286,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    plan->options |= plan_option_shutdown;
   }
 
+/* old syntax is old.... */
   if (!enable)
    enable  = str2set (':', cfg_getstring ("enable/mod", mode));
   if (!disable)
@@ -477,41 +480,50 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  fb->para = (void *)plan;
  status_update (fb);
 
- emutex_lock (&ml_tb_target_state_mutex);
+ int currentlistrev = einit_module_logic_list_revision;
 
- cross_taskblock (&(plan->changes), &target_state);
+ do {
+  notice (2, "plan iteration");
 
- emutex_lock (&ml_tb_current_mutex);
+  emutex_lock (&ml_tb_target_state_mutex);
 
- cross_taskblock (&target_state, &current);
+  cross_taskblock (&(plan->changes), &target_state);
 
- uint32_t i = 0;
+  emutex_lock (&ml_tb_current_mutex);
 
- if (current.enable) {
-  char **tmp = NULL;
-  for (i = 0; current.enable[i]; i++) {
-   if (!service_usage_query (service_is_provided, NULL, current.enable[i])) {
-    tmp = (char **)setadd ((void **)tmp, (void *)current.enable[i], SET_TYPE_STRING);
+  cross_taskblock (&target_state, &current);
+
+  uint32_t i = 0;
+
+  if (current.enable) {
+   char **tmp = NULL;
+   for (i = 0; current.enable[i]; i++) {
+    if (!service_usage_query (service_is_provided, NULL, current.enable[i])) {
+     tmp = (char **)setadd ((void **)tmp, (void *)current.enable[i], SET_TYPE_STRING);
+    }
    }
+   free (current.enable);
+   current.enable = tmp;
   }
-  free (current.enable);
-  current.enable = tmp;
- }
- if (current.disable) {
-  char **tmp = NULL;
-  for (i = 0; current.disable[i]; i++) {
-   if (service_usage_query (service_is_provided, NULL, current.disable[i])) {
-    tmp = (char **)setadd ((void **)tmp, (void *)current.disable[i], SET_TYPE_STRING);
+  if (current.disable) {
+   char **tmp = NULL;
+   for (i = 0; current.disable[i]; i++) {
+    if (service_usage_query (service_is_provided, NULL, current.disable[i])) {
+     tmp = (char **)setadd ((void **)tmp, (void *)current.disable[i], SET_TYPE_STRING);
+    }
    }
+   free (current.disable);
+   current.disable = tmp;
   }
-  free (current.disable);
-  current.disable = tmp;
- }
 
- emutex_unlock (&ml_tb_current_mutex);
- emutex_unlock (&ml_tb_target_state_mutex);
+  emutex_unlock (&ml_tb_current_mutex);
+  emutex_unlock (&ml_tb_target_state_mutex);
 
- mod_commit_and_wait (plan->changes.enable, plan->changes.disable);
+  mod_commit_and_wait (plan->changes.enable, plan->changes.disable);
+
+  currentlistrev = einit_module_logic_list_revision;
+// repeat until the modules haven't changed halfway through:
+ } while (einit_module_logic_list_revision != currentlistrev);
 
  fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
  status_update (fb);
@@ -839,8 +851,10 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    cur = cur->next;
   }
 
-  if (module_logics_service_list) streefree (module_logics_service_list);
+/* need to defer-free this at some point... */
+//  if (module_logics_service_list) streefree (module_logics_service_list);
   module_logics_service_list = new_service_list;
+  einit_module_logic_list_revision++;
 
   emutex_unlock (&ml_service_list_mutex);
 
