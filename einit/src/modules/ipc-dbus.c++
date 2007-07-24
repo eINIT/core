@@ -234,12 +234,56 @@ void einit_dbus::ipc(DBusMessage *message) {
  else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING) 
   fprintf(stderr, "Argument is not string!\n"); 
  else {
-  char *returnvalue = "meow!\n";
+  int internalpipe[2];
+  int rv;
+  char *returnvalue = NULL;
   dbus_message_iter_get_basic(&args, &command);
 
-  ipc_process(command, stderr);
+  if ((rv = pipe (internalpipe)) > 0) {
+   ipc_process(command, stderr);
+  } else if (rv == 0) {
+   char *buf = NULL;
+   uint32_t blen = 0;
+   int rn = 0;
+   char *data = NULL;
+   FILE *w = fdopen (internalpipe[1], "w");
+//   FILE *r = fdopen (internalpipe[0], "r");
+
+   ipc_process(command, w);
+
+   fclose (w);
+
+   errno = 0;
+   if (internalpipe[0] != -1) {
+    buf = (char *)emalloc (BUFFERSIZE*sizeof(char));
+    blen = 0;
+    do {
+     buf = (char *)erealloc (buf, blen + BUFFERSIZE);
+     if (buf == NULL) break;
+     rn = read (internalpipe[0], (char *)(buf + blen), BUFFERSIZE);
+     blen = blen + rn;
+    } while (rn > 0);
+
+    if (errno && (errno != EAGAIN))
+     bitch(bitch_stdio, errno, "reading file failed.");
+
+    eclose (internalpipe[0]);
+    data = (char *)erealloc (buf, blen+1);
+    data[blen] = 0;
+    if (blen > 0) {
+     *(data+blen-1) = 0;
+
+     returnvalue = data;
+    } else {
+     free (data);
+     data = NULL;
+    }
+   }
+  }
 
   reply = dbus_message_new_method_return(message);
+
+  if (!returnvalue) returnvalue = "meow!\n";
 
   dbus_message_iter_init_append(reply, &args);
   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }

@@ -119,6 +119,7 @@ int send_ipc_dbus (char *command) {
   dbus_message_iter_get_basic(&args, &level);*/
 
  fputs (returnvalue, stdout);
+ fputs ("\n", stdout);
 
  dbus_message_unref(message);
 

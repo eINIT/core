@@ -90,7 +90,7 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  if (!ev || !ev->argv) return;
 
- if (ev->argc >= 2) {
+ if ((ev->argc >= 2) && ev->argv[0] && ev->argv[1]) {
   if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
    struct lmodule *cur = mlist;
    ev->implemented = 1;
