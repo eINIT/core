@@ -2,7 +2,7 @@
  *  libeinit.c
  *  einit
  *
- *  Created by Magnus Deininger on 05/09/2006.
+ *  Created by Magnus Deininger on 24/07/2007.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -36,3 +36,69 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <dbus/dbus.h>
+#include <einit/utility.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+DBusError einit_dbus_error;
+DBusConnection *einit_dbus_connection;
+
+char *einit_ipc_request(char *command) {
+ char *returnvalue;
+
+ DBusMessage *message;
+ DBusMessageIter args;
+ DBusPendingCall *pending;
+
+ dbus_error_init(&einit_dbus_error);
+ if (!(einit_dbus_connection = dbus_bus_get(DBUS_BUS_SYSTEM, &einit_dbus_error))) {
+  if (dbus_error_is_set(&einit_dbus_error)) {
+   fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error.message);
+   dbus_error_free(&einit_dbus_error);
+  }
+  exit(1);
+ }
+
+ if (!(message = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", "org.einit.Einit.Command", "IPC"))) {
+  fprintf(stderr, "Sending message failed.\n");
+  exit (1);
+ }
+
+ dbus_message_iter_init_append(message, &args);
+ if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &command)) { 
+  fprintf(stderr, "Out Of Memory!\n"); 
+  exit(1);
+ }
+
+ if (!dbus_connection_send_with_reply (einit_dbus_connection, message, &pending, -1)) {
+  fprintf(stderr, "Out Of Memory!\n");
+  exit(1);
+ }
+ if (!pending) { 
+  fprintf(stderr, "No return value?\n"); 
+  exit(1); 
+ }
+ dbus_connection_flush(einit_dbus_connection);
+
+ dbus_message_unref(message);
+
+ dbus_pending_call_block(pending);
+
+ if (!(message = dbus_pending_call_steal_reply(pending))) {
+  fprintf(stderr, "Bad Reply\n");
+  exit(1);
+ }
+ dbus_pending_call_unref(pending);
+
+ if (!dbus_message_iter_init(message, &args))
+  fprintf(stderr, "Message has no arguments!\n"); 
+ else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING)
+  fprintf(stderr, "Argument is not a string...?\n"); 
+ else
+  dbus_message_iter_get_basic(&args, &returnvalue);
+
+ dbus_message_unref(message);
+
+ return returnvalue;
+}
