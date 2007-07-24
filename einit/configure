@@ -56,6 +56,8 @@ nomodule=""
 
 XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 
+DBUS=""
+
 source configure.options
 
 echo -n "checking options [";
@@ -147,6 +149,10 @@ for param in $@; do
                 echo -n " EBUILD";
                 EBUILD="1";
                 CONFIGINSTALLMETHOD="ebuild";
+        elif test "$param" = "--enable-ipc-dbus"; then
+		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
+		DBUS="dbus";
+		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus";
 	elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
 	elif test "$shorte" = ""; then
@@ -434,9 +440,11 @@ echo "done.";
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 
-echo "getting dbus flags off pkg-config..."
-DBUS_CFLAGS=$(pkg-config --cflags dbus-1)
-DBUS_LIBS=$(pkg-config --libs dbus-1)
+if [ "${DBUS}" = "dbus" ]; then
+	echo "getting dbus flags off pkg-config..."
+	DBUS_CFLAGS=$(pkg-config --cflags dbus-1)
+	DBUS_LIBS=$(pkg-config --libs dbus-1)
+fi
 
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
@@ -499,6 +507,7 @@ LXXLD = \${CXXC} \${LDFLAGS} $LLD
 
 DBUS_CFLAGS = ${DBUS_CFLAGS}
 DBUS_LIBS = ${DBUS_LIBS}
+DBUS = ${DBUS}
 " > config.mk
 
 echo "creating config.sh..."
@@ -562,6 +571,7 @@ LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
 
 DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
 DBUS_LIBS=\"${DBUS_LIBS}\"
+DBUS=\"${DBUS}\"
 " > config.sh
 
 collect_objects () {

@@ -1,6 +1,6 @@
 util: einit-control
 
-install: einit-control crash-handler
+install: einit-control crash-handler $(DBUS)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
@@ -13,3 +13,10 @@ einit-control: einit-control.o bitch.o utility.o $(asmobjects)
 
 crash-handler: crash-handler.o bitch.o utility.o $(asmobjects)
 	$(CLD) crash-handler.o bitch.o utility.o $(asmobjects) -o crash-handler $(STATIC)
+
+dbus: einit-control-dbus
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
+	${INSTALL} ${BINIPARAM} einit-control-dbus ${DESTDIR}/${SBINDIR}
+
+einit-control-dbus: einit-control-dbus.o $(asmobjects)
+	$(CLD) einit-control-dbus.o $(asmobjects) -o einit-control-dbus $(STATIC) $(DBUS_LIBS)
