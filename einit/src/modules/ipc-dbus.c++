@@ -214,7 +214,21 @@ void einit_dbus::message_thread() {
   message = dbus_connection_pop_message(this->connection);
 
   if (message) {
-   if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC"))
+// introspection support
+   if (dbus_message_is_method_call(message, "org.freedesktop.DBus.Introspectable", "Introspect")) {
+    DBusMessage *reply;
+    DBusMessageIter args;
+
+    reply = dbus_message_new_method_return(message);
+
+    dbus_message_iter_init_append(reply, &args);
+    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &this->introspection_data)) { continue; }
+    this->sequence++;
+    if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { continue; }
+
+    dbus_message_unref(reply);
+// 'old fashioned' ipc via dbus
+   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC"))
     this->ipc(message);
 
    dbus_message_unref(message);
@@ -226,7 +240,6 @@ void einit_dbus::ipc(DBusMessage *message) {
  DBusMessage *reply;
  DBusMessageIter args;
  bool stat = true;
- dbus_uint32_t serial = 0;
  char *command = "";
 
  if (!dbus_message_iter_init(message, &args))
@@ -285,9 +298,10 @@ void einit_dbus::ipc(DBusMessage *message) {
 
   if (!returnvalue) returnvalue = "meow!\n";
 
+  this->sequence++;
   dbus_message_iter_init_append(reply, &args);
   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
-  if (!dbus_connection_send(this->connection, reply, &serial)) { return; }
+  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
 
   dbus_message_unref(reply);
  }

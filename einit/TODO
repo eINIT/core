@@ -14,3 +14,19 @@ implement this:
    <launchd />
    <bsd /> -->
   </compatibility>
+
+
+
+DBUS Methods:
+
+<JK455> list all proc , get proc state, kill ,start restart
+<JK455> send "soft stop signal"
+<JK455> hard stop (kill)
+<JK455> poweroff
+<JK455> poweron
+<JK455> halt
+<JK455> gotorunlevel
+<JK455> genere_event
+<JK455> reloadconfig
+
+* don't forget about the client lib!

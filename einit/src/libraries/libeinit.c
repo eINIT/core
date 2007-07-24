@@ -1,8 +1,8 @@
 /*
- *  exec.h
- *  eINIT
+ *  libeinit.c
+ *  einit
  *
- *  Created by Magnus Deininger on 23/11/2006.
+ *  Created by Magnus Deininger on 05/09/2006.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -36,52 +36,3 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <dbus/dbus.h>
-#include <einit/event.h>
-#include <pthread.h>
-
-#ifndef EINIT_MODULES_DBUS_H_
-#define EINIT_MODULES_DBUS_H_
-
-const char * einit_dbus_introspection_data =
-  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-  "<node name=\"/org/einit/einit\">"
-   "<interface name=\"org.einit.Einit\">"
-    "<method name=\"Configure\">"
-    "</method>"
-    "<method name=\"EventEmit\">"
-     "<arg type=\"s\" direction=\"in\" />"
-     "<arg type=\"s\" direction=\"out\" />"
-    "</method>"
-   "</interface>"
-  "</node>";
-
-class einit_dbus {
- public:
-  const char *introspection_data;
-  int configure ();
-
-  einit_dbus();
-  ~einit_dbus();
-
-  void string(const char *IN_string, char ** OUT_result);
-  void signal_dbus (const char *IN_string);
-
-  int enable (struct einit_event *);
-  int disable (struct einit_event *);
-
- private:
-  DBusError error;
-  DBusConnection* connection;
-  dbus_uint32_t sequence;
-  char terminate_thread;
-
-  pthread_t message_thread_id;
-
-  static void ipc_event_handler (struct einit_event *);
-  static void *message_thread_bootstrap(void *);
-  void message_thread();
-
-  void ipc(DBusMessage *);
-};
-
-#endif

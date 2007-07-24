@@ -152,7 +152,7 @@ for param in $@; do
         elif test "$param" = "--enable-ipc-dbus"; then
 		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
 		DBUS="dbus";
-		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus";
+		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit";
 	elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
 	elif test "$shorte" = ""; then
@@ -452,6 +452,7 @@ ETCDIR = ${PREFIX}/etc/einit
 ETCXDIR = ${PREFIX}/etc
 LIBDIR = ${PREFIX}/lib/einit
 MODDIR = ${PREFIX}/lib/einit/modules
+ULIBDIR = ${UPREFIX}/lib
 BINDIR = ${PREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
@@ -485,7 +486,7 @@ CORELIBS = ${CORELIBS}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 
-CC = $CC ${GCCFLAGS}
+CC = $CC ${GCCFLAGS} -fPIC
 ASM = $ASM ${GCCFLAGS}
 
 CFLAGS = $CFLAGS$XCFLAGS
@@ -515,6 +516,7 @@ echo "PREFIX=\"$PREFIX\"
 ETCDIR=\"${PREFIX}/etc/einit\"
 ETCXDIR=\"${PREFIX}/etc\"
 LIBDIR=\"${PREFIX}/lib/einit\"
+ULIBDIR=\"${UPREFIX}/lib\"
 MODDIR=\"${PREFIX}/lib/einit/modules\"
 BINDIR=\"${PREFIX}/bin\"
 SBINDIR=\"${PREFIX}/sbin\"
