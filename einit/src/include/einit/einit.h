@@ -47,6 +47,8 @@ extern "C" {
 
 char *einit_ipc_request(char *);
 char *einit_ipc_request_xml(char *);
+char *einit_ipc(char *);
+char einit_connect();
 
 #ifdef __cplusplus
 }

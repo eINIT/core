@@ -59,7 +59,8 @@ int print_usage_info () {
 int send_ipc_dbus (char *command) {
  char *returnvalue = einit_ipc_request(command);
 
- fputs (returnvalue, stdout);
+ if (returnvalue)
+  fputs (returnvalue, stdout);
  fputs ("\n", stdout);
 
  return 0;
