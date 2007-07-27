@@ -66,7 +66,7 @@ enum einit_service_status {
 struct einit_group {
  char **services;
  char *seq;
-}
+};
 
 struct einit_service {
  char *name;
