@@ -228,15 +228,17 @@ void einit_dbus::message_thread() {
 
     dbus_message_unref(reply);
 // 'old fashioned' ipc via dbus
-   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC"))
-    this->ipc(message);
+   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC"))
+    this->ipc(message, 1);
+   else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC"))
+    this->ipc(message, 0);
 
    dbus_message_unref(message);
   }
  }
 }
 
-void einit_dbus::ipc(DBusMessage *message) {
+void einit_dbus::ipc(DBusMessage *message, char safe) {
  DBusMessage *reply;
  DBusMessageIter args;
  bool stat = true;
@@ -251,6 +253,23 @@ void einit_dbus::ipc(DBusMessage *message) {
   int rv;
   char *returnvalue = NULL;
   dbus_message_iter_get_basic(&args, &command);
+
+  if (safe) { // check for safe requests, answer with "unsafe request" if necessary
+   if (!strmatch (command, "list modules --xml")) {
+    reply = dbus_message_new_method_return(message);
+
+    if (!returnvalue) returnvalue = "<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
+
+    this->sequence++;
+    dbus_message_iter_init_append(reply, &args);
+    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+    if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
+
+    dbus_message_unref(reply);
+
+    return;
+   }
+  }
 
   if ((rv = pipe (internalpipe)) > 0) {
    ipc_process(command, stderr);

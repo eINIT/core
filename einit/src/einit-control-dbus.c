@@ -69,9 +69,9 @@ int send_ipc_dbus (char *command) {
  return 0;
 }
 
-/*
-void test() {
- struct stree *modules = einit_get_all_modules();
+
+//void test() {
+/* struct stree *modules = einit_get_all_modules();
 
  if (modules) {
   struct stree *cur = modules;
@@ -84,8 +84,13 @@ void test() {
   }
 
   modulestree_free(modules);
- }
-}*/
+ }*/ /* works */
+
+// einit_power_reset(); /* works */
+
+// einit_service_enable ("alsa"); /* works */
+
+//}
 
 int main(int argc, char **argv) {
  int i, l, ret = 0;

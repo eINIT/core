@@ -64,14 +64,14 @@ char einit_connect() {
  return 1;
 }
 
-char *einit_ipc(char *command) {
+char *einit_ipc_i (char *command, char *interface) {
  char *returnvalue;
 
  DBusMessage *message;
  DBusMessageIter args;
  DBusPendingCall *pending;
 
- if (!(message = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", "org.einit.Einit.Command", "IPC"))) {
+ if (!(message = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", interface, "IPC"))) {
   fprintf(stderr, "Sending message failed.\n");
   return NULL;
  }
@@ -114,6 +114,14 @@ char *einit_ipc(char *command) {
  dbus_message_unref(message);
 
  return returnvalue;
+}
+
+char *einit_ipc(char *command) {
+ return einit_ipc_i (command, "org.einit.Einit.Command");
+}
+
+char *einit_ipc_safe(char *command) {
+ return einit_ipc_i (command, "org.einit.Einit.Information");
 }
 
 char *einit_ipc_request(char *command) {
@@ -259,7 +267,11 @@ void print_xmlstree (struct stree *node) {
 
 struct stree *einit_get_all_modules () {
  struct stree *rtree = NULL;
- char *module_data = einit_ipc_request_xml ("list modules");
+ char *module_data;
+
+ if (!einit_dbus_connection && !einit_connect()) return NULL;
+
+ module_data = einit_ipc_safe ("list modules --xml");
 
  if (module_data) {
   struct stree *tree = xml2stree (module_data);

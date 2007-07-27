@@ -79,6 +79,7 @@ struct einit_xml_tree_node {
 char *einit_ipc_request(char *);
 char *einit_ipc_request_xml(char *);
 char *einit_ipc(char *);
+char *einit_ipc_safe(char *);
 char einit_connect();
 
 struct stree *einit_get_all_modules ();

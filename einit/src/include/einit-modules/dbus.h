@@ -81,7 +81,7 @@ class einit_dbus {
   static void *message_thread_bootstrap(void *);
   void message_thread();
 
-  void ipc(DBusMessage *);
+  void ipc(DBusMessage *, char);
 };
 
 #endif
