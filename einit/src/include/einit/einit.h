@@ -35,6 +35,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <einit/module.h>
+#include <einit/tree.h>
+
 #ifndef EINIT_EINIT_H
 #define EINIT_EINIT_H
 
@@ -42,13 +45,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
+/* TODO: someone document these structs and enums! */
 
-/* TODO: someone document these functions! */
+struct einit_module {
+ char *id;
+ char *name;
+ enum einit_module_status status;
+};
+
+enum einit_service_status {
+ service_idle     = 0x0000,
+ service_provided = 0x0001
+};
+
+struct einit_service {
+ char *name;
+ enum einit_service_status status;
+};
+
+/* TODO: ... and these functions... */
 
 char *einit_ipc_request(char *);
 char *einit_ipc_request_xml(char *);
 char *einit_ipc(char *);
 char einit_connect();
+
+struct einit_module *einit_get_module_information (char *);
+struct stree *einit_get_all_modules ();
 
 #ifdef __cplusplus
 }

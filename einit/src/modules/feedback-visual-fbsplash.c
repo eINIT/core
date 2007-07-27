@@ -310,7 +310,7 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
    emutex_unlock (&fbsplash_commandQ_mutex);
 
    if (command) {
-    notice (1, command);
+//    notice (1, command);
     FILE *fifo = efopen (fbsplash_fifo, "w");
     if (fifo) {
      eprintf (fifo, "%s\n", command);

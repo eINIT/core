@@ -59,8 +59,16 @@ char * einit_fqdn_requires[] = {"mount-system", NULL};
 char * einit_fqdn_before[] = {"displaymanager", NULL};
 
 struct einit_cfgvar_info
-  einit_fqdn_cfgvar_hostname = { .options = eco_optional, .variable = "configuration-network-hostname", .description = "Your Machine's Hostname." },
-  einit_fqdn_cfgvar_domainname = { .options = eco_optional, .variable = "configuration-network-domainname", .description = "Your Machine's Domainname." },
+  einit_fqdn_cfgvar_hostname = {
+   .options = eco_optional | eco_warn_if_default,
+   .variable = "configuration-network-hostname",
+   .description = "Your Machine's Hostname.",
+   .default_value = "localhost" },
+  einit_fqdn_cfgvar_domainname = {
+   .options = eco_optional | eco_warn_if_default,
+   .variable = "configuration-network-domainname",
+   .description = "Your Machine's Domainname.",
+   .default_value = "local" },
   *einit_fqdn_cfgvar_configuration[] = { &einit_fqdn_cfgvar_hostname, &einit_fqdn_cfgvar_domainname, NULL };
 
 const struct smodule einit_fqdn_self = {
@@ -84,31 +92,7 @@ module_register(einit_fqdn_self);
 
 #endif
 
-void einit_fqdn_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
-  char *s;
-
-  if (!(s = cfg_getstring("configuration-network-hostname", NULL))) {
-   eputs (" * configuration variable \"configuration-network-hostname\" not found.\n", ev->output);
-   ev->ipc_return++;
-  } else if (strmatch ("localhost", s)) {
-   eputs (" * you should take your time to specify a hostname, go edit local.xml, look for the hostname-element.\n", ev->output);
-   ev->ipc_return++;
-  }
-  if (!(s = cfg_getstring("configuration-network-domainname", NULL))) {
-   eputs (" * configuration variable \"configuration-network-domainname\" not found.\n", ev->output);
-   ev->ipc_return++;
-  } else if (strmatch ("local", s)) {
-   eputs (" * you should take your time to specify a domainname if you use NIS/YP services, go edit local.xml, look for the domainname-element.\n", ev->output);
-  }
-
-  ev->implemented = 1;
- }
-}
-
 int einit_fqdn_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_ipc, einit_fqdn_ipc_event_handler);
-
  return 0;
 }
 
@@ -135,8 +119,6 @@ int einit_fqdn_configure (struct lmodule *irr) {
  thismodule->cleanup = einit_fqdn_cleanup;
  thismodule->enable = einit_fqdn_enable;
  thismodule->disable = einit_fqdn_disable;
-
- event_listen (einit_event_subsystem_ipc, einit_fqdn_ipc_event_handler);
 
  return 0;
 }

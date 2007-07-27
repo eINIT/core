@@ -55,6 +55,16 @@ int einit_external_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
+#ifdef BITCHY
+struct einit_cfgvar_info
+  einit_external_cfgvar = {
+ .options = eco_optional,
+ .variable = "services-external/provided",
+ .description = "External Services (which are not handled by eINIT)"
+  },
+ *einit_external_cfgvar_configuration[] = { &einit_external_cfgvar, NULL };
+#endif
+
 const struct smodule einit_external_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -69,6 +79,9 @@ const struct smodule einit_external_self = {
   .before   = NULL
  },
  .configure = einit_external_configure
+#ifdef BITCHY
+ , .configuration = einit_external_cfgvar_configuration
+#endif
 };
 
 module_register(einit_external_self);
@@ -78,22 +91,7 @@ module_register(einit_external_self);
 
 void einit_external_einit_event_handler (struct einit_event *);
 
-void einit_external_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
-#ifdef BITCHY
-  if (!cfg_getnode("services-external", NULL)) {
-   eputs ("NOTICE: configuration variable \"services-external\" not found. (not a problem)\n", ev->output);
-
-   ev->ipc_return++;
-  }
-#endif
-
-  ev->implemented = 1;
- }
-}
-
 int einit_external_cleanup (struct lmodule *irr) {
- event_ignore (einit_event_subsystem_ipc, einit_external_ipc_event_handler);
  event_ignore (einit_event_subsystem_core, einit_external_einit_event_handler);
 
  return 0;
@@ -145,7 +143,6 @@ int einit_external_configure (struct lmodule *r) {
  r->disable = einit_external_disable;
 
  event_listen (einit_event_subsystem_core, einit_external_einit_event_handler);
- event_listen (einit_event_subsystem_ipc, einit_external_ipc_event_handler);
 
  return 0;
 }

@@ -147,6 +147,8 @@ void einit_module_xml_power_event_handler (struct einit_event *ev) {
   if (einit_module_xml_shutdown) {
    uint32_t i = 0;
 
+   notice (1, "shutdown initiated, calling pre-shutdown scripts");
+
    for (; einit_module_xml_shutdown[i]; i++) {
     mod(einit_module_custom, einit_module_xml_shutdown[i], "on-shutdown");
    }
@@ -215,6 +217,12 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
     struct lmodule *new;
 
     memset (modinfo, 0, sizeof (struct smodule));
+
+    if (type_shell)
+     mexec->oattrs = node->arbattrs;
+
+    if (type_daemon)
+     dexec->oattrs = node->arbattrs;
 
     for (; node->arbattrs[i]; i+=2 ) {
      if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
@@ -425,20 +433,20 @@ int einit_module_xml_custom (char **arbattrs, char *command, struct einit_event 
 
   for (; arbattrs[i]; i+=2 ) {
    if (strmatch (arbattrs[i], tmp)) {
-    return status_enabled | pexec (arbattrs[i+1], (const char **)variables, uid, gid, user, group, environment, status);
+    return pexec (arbattrs[i+1], (const char **)variables, uid, gid, user, group, environment, status);
    }
   }
  }
 
- return status_failed | status_command_not_implemented | status_enabled;
+ return status_failed | status_command_not_implemented;
 }
 
 int einit_module_xml_daemon_custom (struct dexecinfo *dexec, char *command, struct einit_event *status) {
- return einit_module_xml_custom (dexec->oattrs, command, status, dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment);
+ return ((status->module->status & status_enabled) ? status_enabled : status_disabled) | einit_module_xml_custom (dexec->oattrs, command, status, dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment);
 }
 
 int einit_module_xml_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
- return einit_module_xml_custom (shellcmd->oattrs, command, status, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment);
+ return ((status->module->status & status_enabled) ? status_enabled : status_disabled) | einit_module_xml_custom (shellcmd->oattrs, command, status, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment);
 }
 
 

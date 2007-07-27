@@ -205,14 +205,16 @@ struct service_information {
 };
 
 enum einit_config_options {
- eco_optional = 0x0001,
- eco_critical = 0x0002
+ eco_optional        = 0x0001,
+ eco_critical        = 0x0002,
+ eco_warn_if_default = 0x0100
 };
 
 struct einit_cfgvar_info {
  enum einit_config_options options;
  char *variable;
  char *description;
+ char *default_value;
 };
 
 struct lmodule;

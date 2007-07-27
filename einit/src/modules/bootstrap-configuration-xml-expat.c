@@ -295,7 +295,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
   .if_level = 0,
-  .file = configfile,
+  .file = estrdup(configfile),
   .prefix = NULL,
   .type =
     (tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&

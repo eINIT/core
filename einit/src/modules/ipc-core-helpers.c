@@ -106,7 +106,20 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
        char *s = cfg_getstring (variables[i]->variable, NULL);
 
        if (!s) {
-        eprintf (ev->output, " >> module \"%s\" (%s): variable %s not found (%s), description:\n  %s\n", cur->module->name, cur->module->rid, variables[i]->variable, variables[i]->options & eco_critical ? "critical" : "non-critical", variables[i]->description);
+        eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! %s: variable was not set\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, variables[i]->options & eco_critical ? "error" : "warning", variables[i]->description);
+       } else if (variables[i]->default_value && (variables[i]->options & eco_warn_if_default) && strmatch (variables[i]->default_value, s)) {
+        char **r = str2set('/', variables[i]->variable);
+        if (r) {
+         struct cfgnode *node = cfg_getnode (r[0], NULL);
+
+         if (node && node->source)
+          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * defined by \"%s\" in \"%s\"\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, node->source, node->source_file ? node->source_file : "(unknown)", variables[i]->description);
+         else
+          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
+
+         free (r);
+        } else
+         eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
        }
       }
      }
