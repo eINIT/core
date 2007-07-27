@@ -138,8 +138,16 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
     while (cur) {
      if ((cur->module && !(ev->ipc_options & einit_ipc_only_relevant)) || (cur->status != status_idle)) {
       if (ev->ipc_options & einit_ipc_output_xml) {
+       char *name = escape_xml(cur->module->name ? cur->module->name : "unknown");
+       char *id = escape_xml(cur->module->rid);
+       char *status = escape_xml (STATUS2STRING(cur->status));
+
        eprintf (ev->output, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
-                 (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"), STATUS2STRING(cur->status));
+                 id, name, status);
+
+       free (name);
+       free (id);
+       free (status);
       } else {
        eprintf (ev->output, "[%s] %s (%s)",
                  STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
@@ -147,32 +155,48 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
 
       if (cur->si) {
        if (cur->si->provides) {
+        char *x = set2str(':', (const char **)cur->si->provides);
         if (ev->ipc_options & einit_ipc_output_xml) {
-         eprintf (ev->output, "\n  provides=\"%s\"", set2str(':', (const char **)cur->si->provides));
+         char *y = escape_xml (x);
+         eprintf (ev->output, "\n  provides=\"%s\"", y);
+         free (y);
         } else {
-         eprintf (ev->output, "\n > provides: %s", set2str(' ', (const char **)cur->si->provides));
+         eprintf (ev->output, "\n > provides: %s", x);
         }
+        free (x);
        }
        if (cur->si->requires) {
+        char *x = set2str(':', (const char **)cur->si->requires);
         if (ev->ipc_options & einit_ipc_output_xml) {
-         eprintf (ev->output, "\n  requires=\"%s\"", set2str(':', (const char **)cur->si->requires));
+         char *y = escape_xml (x);
+         eprintf (ev->output, "\n  requires=\"%s\"", y);
+         free (y);
         } else {
-         eprintf (ev->output, "\n > requires: %s", set2str(' ', (const char **)cur->si->requires));
+         eprintf (ev->output, "\n > requires: %s", x);
         }
+        free (x);
        }
        if (cur->si->after) {
+        char *x = set2str(':', (const char **)cur->si->after);
         if (ev->ipc_options & einit_ipc_output_xml) {
-         eprintf (ev->output, "\n  after=\"%s\"", set2str(':', (const char **)cur->si->after));
+         char *y = escape_xml (x);
+         eprintf (ev->output, "\n  after=\"%s\"", y);
+         free (y);
         } else {
-         eprintf (ev->output, "\n > after: %s", set2str(' ', (const char **)cur->si->after));
+         eprintf (ev->output, "\n > after: %s", x);
         }
+        free (x);
        }
        if (cur->si->before) {
+        char *x = set2str(':', (const char **)cur->si->before);
         if (ev->ipc_options & einit_ipc_output_xml) {
-         eprintf (ev->output, "\n  before=\"%s\"", set2str(':', (const char **)cur->si->before));
+         char *y = escape_xml (x);
+         eprintf (ev->output, "\n  before=\"%s\"", y);
+         free (y);
         } else {
-         eprintf (ev->output, "\n > before: %s", set2str(' ', (const char **)cur->si->before));
+         eprintf (ev->output, "\n > before: %s", x);
         }
+        free (x);
        }
       }
 

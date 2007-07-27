@@ -51,6 +51,11 @@ struct einit_module {
  char *id;
  char *name;
  enum einit_module_status status;
+
+ char **provides;
+ char **requires;
+ char **after;
+ char **before;
 };
 
 enum einit_service_status {
@@ -63,6 +68,12 @@ struct einit_service {
  enum einit_service_status status;
 };
 
+struct einit_xml_tree_node {
+ struct stree *parent;
+ struct stree *elements;
+ struct stree *attributes;
+};
+
 /* TODO: ... and these functions... */
 
 char *einit_ipc_request(char *);
@@ -70,8 +81,12 @@ char *einit_ipc_request_xml(char *);
 char *einit_ipc(char *);
 char einit_connect();
 
-struct einit_module *einit_get_module_information (char *);
 struct stree *einit_get_all_modules ();
+
+struct stree *xml2stree (char *);
+
+void xmlstree_free(struct stree *);
+void modulestree_free(struct stree *);
 
 #ifdef __cplusplus
 }

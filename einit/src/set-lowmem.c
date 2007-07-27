@@ -424,6 +424,7 @@ char **str2set (const char sep, const char *oinput) {
  }
  ret = ecalloc (1, ((sc+1)*sizeof(char *)) + 3 + l);
  memcpy ((((char *)ret) + ((sc+1)*sizeof(char *))), input, 2 + l);
+ free (input);
  input = (char *)(((char *)ret) + ((sc+1)*sizeof(char *)));
  ret[0] = input;
  for (i = 0; i < l; i++) {

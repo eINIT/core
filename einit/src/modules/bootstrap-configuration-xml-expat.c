@@ -321,8 +321,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
   blen = strlen(data)+1;
   par = XML_ParserCreate (NULL);
-  XML_SetUserData (par, (void *)&expatuserdata);
   if (par != NULL) {
+   XML_SetUserData (par, (void *)&expatuserdata);
    XML_SetElementHandler (par, cfg_xml_handler_tag_start, cfg_xml_handler_tag_end);
    if (XML_Parse (par, data, blen-1, 1) == XML_STATUS_ERROR) {
     uint32_t line = XML_GetCurrentLineNumber (par);

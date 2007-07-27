@@ -36,15 +36,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <dbus/dbus.h>
+#include <einit/einit.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <expat.h>
 
 DBusError einit_dbus_error;
-DBusConnection *einit_dbus_connection;
+DBusConnection *einit_dbus_connection = NULL;
 
 char einit_connect() {
  dbus_error_init(&einit_dbus_error);
@@ -115,7 +117,7 @@ char *einit_ipc(char *command) {
 }
 
 char *einit_ipc_request(char *command) {
- if (einit_connect()) {
+ if (einit_dbus_connection || einit_connect()) {
   return einit_ipc(command);
  }
 
@@ -124,6 +126,7 @@ char *einit_ipc_request(char *command) {
 
 char *einit_ipc_request_xml(char *command) {
  char *tmp;
+ char *rv;
  uint32_t len;
 
  if (!command) return NULL;
@@ -131,5 +134,219 @@ char *einit_ipc_request_xml(char *command) {
 
  esprintf (tmp, len, "%s --xml", command);
 
- return einit_ipc_request(tmp);
+ rv = einit_ipc_request(tmp);
+
+ free (tmp);
+
+ return rv;
+}
+
+struct einit_xml2stree_parser_data {
+ struct stree *node;
+ struct stree *rootnode;
+};
+
+void einit_xml2stree_handler_tag_start (struct einit_xml2stree_parser_data *data, const XML_Char *name, const XML_Char **atts) {
+ struct einit_xml_tree_node nnode_value;
+
+ memset (&nnode_value, 0, sizeof (struct einit_xml_tree_node));
+
+ nnode_value.parent = data->node;
+
+ if (atts) {
+  uint32_t i = 0;
+  for (; atts[i]; i+=2) {
+   nnode_value.attributes = streeadd (nnode_value.attributes, atts[i], atts[i+1], SET_TYPE_STRING, NULL);
+  }
+ }
+
+ if (data->node) {
+  ((struct einit_xml_tree_node *)(data->node->value))->elements = streeadd (((struct einit_xml_tree_node *)(data->node->value))->elements, name, &nnode_value, sizeof (struct einit_xml_tree_node), NULL);
+
+  data->node = ((struct einit_xml_tree_node *)(data->node->value))->elements;
+ } else {
+  data->node = streeadd (data->node, name, &nnode_value, sizeof (struct einit_xml_tree_node), NULL);
+ }
+
+ if (!data->rootnode) data->rootnode = data->node;
+}
+
+void einit_xml2stree_handler_tag_end (struct einit_xml2stree_parser_data *data, const XML_Char *name) {
+ if (data->node) {
+  data->node = ((struct einit_xml_tree_node *)(data->node->value))->parent;
+ }
+}
+
+struct stree *xml2stree (char *data) {
+ if (data) {
+  XML_Parser par = XML_ParserCreate (NULL);
+
+  if (par) {
+   struct einit_xml2stree_parser_data expatuserdata = {
+    .node = NULL, .rootnode = NULL
+   };
+
+   XML_SetUserData (par, (void *)&expatuserdata);
+   XML_SetElementHandler (par, (void (*)(void *, const XML_Char *, const XML_Char **))einit_xml2stree_handler_tag_start, (void (*)(void *, const XML_Char *))einit_xml2stree_handler_tag_end);
+
+   if (XML_Parse (par, data, strlen(data), 1) == XML_STATUS_ERROR) {
+    bitch (bitch_expat, 0, "XML Parser could not parse XML data");
+   }
+
+   XML_ParserFree (par);
+
+   return expatuserdata.rootnode;
+  } else {
+   bitch (bitch_expat, 0, "XML Parser could not be created");
+  }
+ }
+
+ return NULL;
+}
+
+void xmlstree_free (struct stree *tree) {
+ static int recursion = 0;
+ if (!tree) return;
+
+ if (tree->value) {
+  if (((struct einit_xml_tree_node *)(tree->value))->elements) {
+   struct stree *cur = ((struct einit_xml_tree_node *)(tree->value))->elements;
+   while (cur) {
+    recursion++;
+    xmlstree_free (cur);
+    recursion--;
+
+    cur = cur->next;
+   }
+
+   streefree (((struct einit_xml_tree_node *)(tree->value))->elements);
+  }
+
+  if (((struct einit_xml_tree_node *)(tree->value))->attributes) {
+   streefree (((struct einit_xml_tree_node *)(tree->value))->attributes);
+  }
+ }
+
+ if (!recursion)
+  streefree (tree);
+}
+
+/*
+void print_xmlstree (struct stree *node) {
+ if (node) {
+  struct einit_xml_tree_node *da = node->value;
+
+  eprintf (stderr, "element: %s {\n", node->key);
+  if (da && da->attributes) {
+   struct stree *cur = da->attributes;
+   while (cur) {
+    fprintf (stderr, " .%s = \"%s\";\n", cur->key, (char *)cur->value);
+    cur = streenext(cur);
+   }
+  }
+
+  if (da && da->elements) {
+   struct stree *cur = da->elements;
+   while (cur) {
+    print_xmlstree(cur);
+    cur = streenext(cur);
+   }
+  }
+
+  eputs ("}\n", stderr);
+ }
+}*/
+
+struct stree *einit_get_all_modules () {
+ struct stree *rtree = NULL;
+ char *module_data = einit_ipc_request_xml ("list modules");
+
+ if (module_data) {
+  struct stree *tree = xml2stree (module_data);
+
+  if (tree) {
+//   print_xmlstree(tree);
+
+   struct stree *rootnode = streefind (tree, "einit-ipc", tree_find_first);
+   if (rootnode && rootnode->value && ((struct einit_xml_tree_node *)(tree->value))->elements) {
+    struct stree *modulenode;
+
+    if ((modulenode = streefind (((struct einit_xml_tree_node *)(tree->value))->elements, "module", tree_find_first))) {
+     do {
+      struct einit_module module;
+      struct stree *attributes = ((struct einit_xml_tree_node *)(modulenode->value))->attributes;
+      struct stree *sres;
+
+      memset (&module, 0, sizeof (struct einit_module));
+
+      if ((sres = streefind (attributes, "id", tree_find_first))) {
+       module.id = estrdup(sres->value);
+
+       if ((sres = streefind (attributes, "name", tree_find_first)))
+        module.name = estrdup(sres->value);
+
+       if ((sres = streefind (attributes, "requires", tree_find_first)))
+        module.requires = str2set (':', sres->value);
+
+       if ((sres = streefind (attributes, "provides", tree_find_first)))
+        module.provides = str2set (':', sres->value);
+
+       if ((sres = streefind (attributes, "after", tree_find_first)))
+        module.after = str2set (':', sres->value);
+
+       if ((sres = streefind (attributes, "before", tree_find_first)))
+        module.before = str2set (':', sres->value);
+
+       if ((sres = streefind (attributes, "status", tree_find_first))) {
+        char **statusbits = str2set (':', sres->value);
+
+        if (statusbits) {
+         if (inset ((const void **)statusbits, (void *)"enabled", SET_TYPE_STRING)) {
+          module.status |= status_enabled;
+         }
+         if (inset ((const void **)statusbits, (void *)"disabled", SET_TYPE_STRING)) {
+          module.status |= status_disabled;
+         }
+         if (inset ((const void **)statusbits, (void *)"working", SET_TYPE_STRING)) {
+          module.status |= status_working;
+         }
+         free (statusbits);
+        }
+       }
+
+       rtree = streeadd (rtree, module.id, &module, sizeof (struct einit_module), NULL);
+      }
+     } while ((modulenode = streefind (modulenode, "module", tree_find_next)));
+    }
+   }
+
+   xmlstree_free (tree);
+  }
+
+  free (module_data);
+ }
+
+ return rtree;
+}
+
+void modulestree_free(struct stree *tree) {
+ if (!tree) return;
+
+ struct stree *cur = tree;
+ do {
+  struct einit_module *module = cur->value;
+
+  if (module) {
+   if (module->id) free (module->id);
+   if (module->name) free (module->name);
+   if (module->requires) free (module->requires);
+   if (module->provides) free (module->provides);
+   if (module->after) free (module->after);
+   if (module->before) free (module->before);
+  }
+
+  cur = streenext (cur);
+ } while (cur);
+
+ streefree (tree);
 }

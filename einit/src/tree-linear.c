@@ -146,6 +146,7 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
 
 void streefree (struct stree *stree) {
  struct stree *c = stree;
+ struct stree **base = stree->lbase;
  if (!stree) return;
  while (c) {
   struct stree *d = c;
@@ -153,4 +154,6 @@ void streefree (struct stree *stree) {
   if (d->luggage) free (d->luggage);
   free (d);
  }
+
+ free (base);
 }

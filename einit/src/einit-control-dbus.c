@@ -59,12 +59,33 @@ int print_usage_info () {
 int send_ipc_dbus (char *command) {
  char *returnvalue = einit_ipc_request(command);
 
- if (returnvalue)
+ if (returnvalue) {
   fputs (returnvalue, stdout);
+
+  free (returnvalue);
+ }
  fputs ("\n", stdout);
 
  return 0;
 }
+
+/*
+void test() {
+ struct stree *modules = einit_get_all_modules();
+
+ if (modules) {
+  struct stree *cur = modules;
+
+  while (cur) {
+   struct einit_module *m = cur->value;
+   fprintf (stdout, "module: %s, status=%i, name=%s, provides=%s, requires=%s, after=%s, before=%s\n", cur->key, m->status, m->name, set2str (':', m->provides), set2str (':', m->requires), set2str (':', m->after), set2str (':', m->before));
+
+   cur = streenext(cur);
+  }
+
+  modulestree_free(modules);
+ }
+}*/
 
 int main(int argc, char **argv) {
  int i, l, ret = 0;
@@ -120,7 +141,14 @@ int main(int argc, char **argv) {
   c = strcat (c, " --ansi");
  }
 
- ret = send_ipc_dbus(c);
+// test();
+
+ if (c) {
+  ret = send_ipc_dbus(c);
+
+  free (c);
+ }
+ free (name);
 
  return 0;
 }
