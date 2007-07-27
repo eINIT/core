@@ -71,6 +71,7 @@ struct einit_group {
 struct einit_service {
  char *name;
  enum einit_service_status status;
+ char **used_in_mode;
 
  struct einit_group *group;
  struct stree *modules;
@@ -96,7 +97,7 @@ struct einit_module *einit_get_module_status (char *);
 struct stree *xml2stree (char *);
 
 struct stree *einit_get_all_services ();
-struct einit_module *einit_get_service_status (char *);
+struct einit_service *einit_get_service_status (char *);
 
 void xmlstree_free(struct stree *);
 void einit_module_free (struct einit_module *);

@@ -234,7 +234,27 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
      }
      cur = cur->next;
     }
-   }
+   }/* else if (strmatch (ev->argv[1], "modes")) {
+    struct stree *modes = NULL;
+    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
+
+    while (cfgn) {
+     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !streefind (modes, cfgn->mode->id, tree_find_first))) {
+      uint32_t i = 0;
+      for (i = 0; cfgn->arbattrs[i]; i+=2) {
+       if (strmatch(cfgn->arbattrs[i], "services")) {
+        char **tmps = str2set (':', cfgn->arbattrs[i+1]);
+
+        modes = streeadd (modes, cfgn->mode->id, tmps, SET_NOALLOC, tmps);
+
+        break;
+       }
+      }
+     }
+
+     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
+    }
+   }*/
   }
 
   if ((ev->argc >= 3)) {

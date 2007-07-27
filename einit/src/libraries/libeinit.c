@@ -325,6 +325,9 @@ struct stree *einit_add_xmlstree_as_service (struct stree *rtree, struct stree *
   if ((sres = streefind (attributes, "provided", tree_find_first)))
    service.status = strmatch (sres->value, "yes") ? service_provided : service_idle;
 
+  if ((sres = streefind (attributes, "used-in", tree_find_first)))
+   service.used_in_mode = (char **)str2set (':', sres->value);
+
   struct stree *modulenode;
 
   if ((modulenode = streefind (((struct einit_xml_tree_node *)(servicenode->value))->elements, "module", tree_find_first))) {
@@ -488,11 +491,74 @@ struct stree *einit_get_all_services () {
  return rtree;
 }
 
-struct einit_module *einit_get_service_status (char *service) {
+void servicestree_free_protect(struct stree *tree, char *pserv) {
+ if (!tree) return;
+
+ struct stree *cur = tree;
+ do {
+  if (!strmatch (pserv, cur->key)) {
+   struct einit_service *service = cur->value;
+
+   if (service) {
+    if (service->name) free (service->name);
+    if (service->used_in_mode) free (service->used_in_mode);
+    if (service->group) {
+     if (service->group->services)
+      free (service->group->services);
+     if (service->group->seq)
+      free (service->group->seq);
+
+     free (service->group);
+    }
+    if (service->modules) modulestree_free (service->modules);
+   }
+  }
+
+  cur = streenext (cur);
+ } while (cur);
+
+ streefree (tree);
+}
+
+
+struct einit_service *einit_get_service_status (char *service) {
+ struct einit_service *rv = NULL;
+
+ struct stree *s = einit_get_all_services();
+
+ if (s) {
+  struct stree *rc = streefind (s, service, tree_find_first);
+
+  if (rc) {
+   struct einit_service *ov = rc->value;
+
+   if (ov) {
+    rv = emalloc (sizeof (struct einit_service));
+
+    memcpy (rv, ov, sizeof (struct einit_service));
+   }
+  }
+
+  servicestree_free_protect(s, service); 
+ }
+
+ return rv;
 }
 
 void einit_service_free (struct einit_service *service) {
- 
+ if (service) {
+  if (service->name) free (service->name);
+  if (service->used_in_mode) free (service->used_in_mode);
+  if (service->group) {
+   if (service->group->services)
+    free (service->group->services);
+   if (service->group->seq)
+    free (service->group->seq);
+
+   free (service->group);
+  }
+  if (service->modules) modulestree_free (service->modules);
+ }
 }
 
 void servicestree_free(struct stree *tree) {
@@ -504,6 +570,7 @@ void servicestree_free(struct stree *tree) {
 
   if (service) {
    if (service->name) free (service->name);
+   if (service->used_in_mode) free (service->used_in_mode);
    if (service->group) {
     if (service->group->services)
      free (service->group->services);
