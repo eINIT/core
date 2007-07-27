@@ -88,6 +88,9 @@ struct stree *xml2stree (char *);
 void xmlstree_free(struct stree *);
 void modulestree_free(struct stree *);
 
+void einit_power_down ();
+void einit_power_reset ();
+
 #ifdef __cplusplus
 }
 #endif

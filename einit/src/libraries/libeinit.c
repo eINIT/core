@@ -350,3 +350,13 @@ void modulestree_free(struct stree *tree) {
 
  streefree (tree);
 }
+
+void einit_power_down () {
+ char *r = einit_ipc_request_xml ("power down");
+ free (r);
+}
+
+void einit_power_reset () {
+ char *r = einit_ipc_request_xml ("power reset");
+ free (r);
+}
