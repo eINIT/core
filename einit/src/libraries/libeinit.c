@@ -394,3 +394,25 @@ void einit_service_enable (char *service) {
 void einit_service_disable (char *service) {
  einit_service_call (service, "disable");
 }
+
+void einit_module_id_call (char *module, char *command) {
+ char *tmp;
+ uint32_t len;
+
+ if (!command || !module) return;
+ tmp = emalloc ((len = (strlen(module) + strlen (command) + 21)));
+
+ esprintf (tmp, len, "module-rc %s %s --detach", module, command);
+
+ einit_ipc_request_xml(tmp);
+
+ free (tmp);
+}
+
+void einit_module_id_enable (char *module) {
+ einit_module_id_call (module, "enable");
+}
+
+void einit_module_id_disable (char *module) {
+ einit_module_id_call (module, "disable");
+}

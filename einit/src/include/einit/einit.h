@@ -96,6 +96,10 @@ void einit_service_call (char *, char *);
 void einit_service_enable (char *);
 void einit_service_disable (char *);
 
+void einit_module_id_call (char *, char *);
+void einit_module_id_enable (char *);
+void einit_module_id_disable (char *);
+
 #ifdef __cplusplus
 }
 #endif
