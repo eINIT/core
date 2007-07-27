@@ -341,6 +341,46 @@ struct stree *einit_get_all_modules () {
  return rtree;
 }
 
+struct einit_module *einit_get_module_status (char *module) {
+ struct stree *md = einit_get_all_modules();
+ struct einit_module *rv = NULL;
+
+ if (md) {
+  struct stree *rc = streefind (md, module, tree_find_first);
+
+  if (rc && rc->value) {
+   rv = emalloc (sizeof (struct einit_module));
+
+   rv->id = estrdup (((struct einit_module *)(rc->value))->id);
+   rv->name = estrdup (((struct einit_module *)(rc->value))->name);
+
+   rv->status = ((struct einit_module *)(rc->value))->status;
+
+   rv->requires = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->requires), SET_TYPE_STRING);
+   rv->provides = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->provides), SET_TYPE_STRING);
+   rv->after = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->after), SET_TYPE_STRING);
+   rv->before = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->before), SET_TYPE_STRING);
+  }
+
+  modulestree_free (md);
+ }
+
+ return rv;
+}
+
+void einit_module_free (struct einit_module *module) {
+ if (module) {
+  if (module->id) free (module->id);
+  if (module->name) free (module->name);
+  if (module->requires) free (module->requires);
+  if (module->provides) free (module->provides);
+  if (module->after) free (module->after);
+  if (module->before) free (module->before);
+
+  free (module);
+ }
+}
+
 void modulestree_free(struct stree *tree) {
  if (!tree) return;
 

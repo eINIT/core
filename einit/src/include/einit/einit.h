@@ -83,10 +83,12 @@ char *einit_ipc_safe(char *);
 char einit_connect();
 
 struct stree *einit_get_all_modules ();
+struct einit_module *einit_get_module_status (char *);
 
 struct stree *xml2stree (char *);
 
 void xmlstree_free(struct stree *);
+void einit_module_free (struct einit_module *);
 void modulestree_free(struct stree *);
 
 void einit_power_down ();
