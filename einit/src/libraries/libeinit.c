@@ -363,12 +363,12 @@ void modulestree_free(struct stree *tree) {
  streefree (tree);
 }
 
-void einit_power_down () {
+void einit_power_down () { // shut down
  char *r = einit_ipc_request_xml ("power down");
  free (r);
 }
 
-void einit_power_reset () {
+void einit_power_reset () { // reboot
  char *r = einit_ipc_request_xml ("power reset");
  free (r);
 }
@@ -415,4 +415,23 @@ void einit_module_id_enable (char *module) {
 
 void einit_module_id_disable (char *module) {
  einit_module_id_call (module, "disable");
+}
+
+void einit_switch_mode (char *mode) { // think "runlevel"
+ char *tmp;
+ uint32_t len;
+
+ if (!mode) return;
+ tmp = emalloc ((len = (strlen(mode) + 25)));
+
+ esprintf (tmp, len, "rc switch-mode %s --detach", mode);
+
+ einit_ipc_request_xml(tmp);
+
+ free (tmp);
+}
+
+void einit_reload_configuration () { // "update configuration"
+ char *r = einit_ipc_request_xml ("update configuration");
+ free (r);
 }

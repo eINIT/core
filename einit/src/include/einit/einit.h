@@ -100,6 +100,9 @@ void einit_module_id_call (char *, char *);
 void einit_module_id_enable (char *);
 void einit_module_id_disable (char *);
 
+void einit_switch_mode (char *);
+void einit_reload_configuration ();
+
 #ifdef __cplusplus
 }
 #endif
