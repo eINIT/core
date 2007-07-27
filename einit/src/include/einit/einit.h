@@ -91,6 +91,10 @@ void modulestree_free(struct stree *);
 void einit_power_down ();
 void einit_power_reset ();
 
+void einit_service_call (char *, char *);
+void einit_service_enable (char *);
+void einit_service_disable (char *);
+
 #ifdef __cplusplus
 }
 #endif

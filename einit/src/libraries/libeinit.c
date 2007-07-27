@@ -360,3 +360,25 @@ void einit_power_reset () {
  char *r = einit_ipc_request_xml ("power reset");
  free (r);
 }
+
+void einit_service_call (char *service, char *command) {
+ char *tmp;
+ uint32_t len;
+
+ if (!command || !service) return;
+ tmp = emalloc ((len = (strlen(service) + strlen (command) + 14)));
+
+ esprintf (tmp, len, "rc %s %s --detach", service, command);
+
+ einit_ipc_request_xml(tmp);
+
+ free (tmp);
+}
+
+void einit_service_enable (char *service) {
+ einit_service_call (service, "enable");
+}
+
+void einit_service_disable (char *service) {
+ einit_service_call (service, "disable");
+}
