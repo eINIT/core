@@ -1128,14 +1128,35 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      }
 
      if (inmodes || (!(ev->ipc_options & einit_ipc_only_relevant))) {
+      struct group_data *gd = mod_group_get_data (cur->key);
+
       if (ev->ipc_options & einit_ipc_output_xml) {
+       if (gd && gd->members) {
+        char *members = set2str (':', gd->members);
+        char *members_escaped = escape_xml (members);
+        eprintf (ev->output, "  <group members=\"%s\" seq=\"%s\" />\n",
+                 members_escaped,
+                 ((gd->options & MOD_PLAN_GROUP_SEQ_ANY) ? "any" :
+                  ((gd->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) ? "any-iop" :
+                   ((gd->options & MOD_PLAN_GROUP_SEQ_MOST) ? "most" :
+                   ((gd->options & MOD_PLAN_GROUP_SEQ_ALL) ? "all" : "unknown")))));
+
+        free (members_escaped);
+        free (members);
+       }
+
        if (cur->value) {
         struct lmodule **xs = cur->value;
         uint32_t u = 0;
         for (u = 0; xs[u]; u++) {
+         char *name = escape_xml (xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown");
+         char *rid = escape_xml (xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+
          eprintf (ev->output, "  <module id=\"%s\" name=\"%s\" />\n",
-                   xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
-                   xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+                   rid, name);
+
+         free (name);
+         free (rid);
         }
        }
 
@@ -1162,8 +1183,89 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
     emutex_unlock(&ml_service_list_mutex);
 
+    emutex_lock (&ml_group_data_mutex);
+
+/* eputs ("got mutex", stderr);
+    fflush (stderr);*/
+
+    cur = module_logics_group_data;
+    while (cur) {
+     struct group_data *gd = (struct group_data *)cur->value;
+
+     emutex_lock(&ml_service_list_mutex);
+     if (streefind (module_logics_service_list, cur->key, tree_find_first)) { // skip entries we already displayed
+      emutex_unlock(&ml_service_list_mutex);
+      cur = streenext (cur);
+      continue;
+     }
+
+     emutex_unlock(&ml_service_list_mutex);
+
+     char **inmodes = NULL;
+     struct stree *mcur = modes;
+
+     while (mcur) {
+      if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
+       inmodes = (char **)setadd((void **)inmodes, (void *)mcur->key, SET_TYPE_STRING);
+      }
+
+      mcur = streenext(mcur);
+     }
+
+     if (inmodes) {
+      char *modestr;
+      if (ev->ipc_options & einit_ipc_output_xml) {
+       modestr = set2str (':', (const char **)inmodes);
+       eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\">\n", cur->key, modestr);
+      } else {
+       modestr = set2str (' ', (const char **)inmodes);
+       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
+                            "\e[1mservice \"%s\" (%s)\n\e[0m" :
+                              "service \"%s\" (%s)\n",
+                            cur->key, modestr);
+      }
+      free (modestr);
+      free (inmodes);
+     } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
+      if (ev->ipc_options & einit_ipc_output_xml) {
+       eprintf (ev->output, " <service id=\"%s\">\n", cur->key);
+      } else {
+       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
+                            "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
+                              "service \"%s\" (not in any mode)\n",
+                            cur->key);
+      }
+     }
+
+     if (inmodes || (!(ev->ipc_options & einit_ipc_only_relevant))) {
+      if (ev->ipc_options & einit_ipc_output_xml) {
+       if (gd && gd->members) {
+        char *members = set2str (':', gd->members);
+        char *members_escaped = escape_xml (members);
+        eprintf (ev->output, "  <group members=\"%s\" seq=\"%s\" />\n",
+                 members_escaped,
+                 ((gd->options & MOD_PLAN_GROUP_SEQ_ANY) ? "any" :
+                  ((gd->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) ? "any-iop" :
+                   ((gd->options & MOD_PLAN_GROUP_SEQ_MOST) ? "most" :
+                   ((gd->options & MOD_PLAN_GROUP_SEQ_ALL) ? "all" : "unknown")))));
+
+        free (members_escaped);
+        free (members);
+       }
+
+       eputs (" </service>\n", ev->output);
+      }
+     }
+
+     cur = streenext (cur);
+    }
+
+    emutex_unlock (&ml_group_data_mutex);
+
     ev->implemented = 1;
    }
+
+
 #ifdef DEBUG
    else if (strmatch (ev->argv[1], "control-blocks")) {
     emutex_lock (&ml_tb_target_state_mutex);

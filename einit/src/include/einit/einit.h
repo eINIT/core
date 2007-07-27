@@ -63,9 +63,17 @@ enum einit_service_status {
  service_provided = 0x0001
 };
 
+struct einit_group {
+ char **services;
+ char *seq;
+}
+
 struct einit_service {
  char *name;
  enum einit_service_status status;
+
+ struct einit_group *group;
+ struct stree *modules;
 };
 
 struct einit_xml_tree_node {
