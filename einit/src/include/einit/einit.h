@@ -95,9 +95,14 @@ struct einit_module *einit_get_module_status (char *);
 
 struct stree *xml2stree (char *);
 
+struct stree *einit_get_all_services ();
+struct einit_module *einit_get_service_status (char *);
+
 void xmlstree_free(struct stree *);
 void einit_module_free (struct einit_module *);
+void einit_service_free (struct einit_service *);
 void modulestree_free(struct stree *);
+void servicestree_free(struct stree *);
 
 void einit_power_down ();
 void einit_power_reset ();

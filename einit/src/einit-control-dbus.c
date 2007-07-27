@@ -86,6 +86,42 @@ int send_ipc_dbus (char *command) {
   modulestree_free(modules);
  }*/ /* works */
 
+// struct stree *services = einit_get_all_services();
+
+// if (services) {
+/*  struct stree *cur = services;
+
+  while (cur) {
+   struct einit_service *s = cur->value;
+
+   fprintf (stdout, "service: %s, status=%i\n", cur->key, s->status);
+
+   struct stree *modules = s->modules;
+
+   if (modules) {
+    struct stree *cur = modules;
+
+    while (cur) {
+     struct einit_module *m = cur->value;
+     fprintf (stdout, " ** module: %s, status=%i, name=%s, provides=%s, requires=%s, after=%s, before=%s\n", cur->key, m->status, m->name, set2str (':', m->provides), set2str (':', m->requires), set2str (':', m->after), set2str (':', m->before));
+
+     cur = streenext(cur);
+    }
+
+    modulestree_free(modules);
+   }
+
+   struct einit_group *g = s->group;
+   if (g) {
+    fprintf (stdout, " ** group: (%s), seq=%s\n", set2str (' ', g->services), g->seq);
+   }
+
+   cur = streenext(cur);
+  }*/
+
+//  servicestree_free(services);
+// } /* works */
+
 // einit_power_reset(); /* works */
 
 // einit_service_enable ("alsa"); /* works */

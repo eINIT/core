@@ -239,8 +239,7 @@ void xmlstree_free (struct stree *tree) {
   streefree (tree);
 }
 
-/*
-void print_xmlstree (struct stree *node) {
+/* void print_xmlstree (struct stree *node) {
  if (node) {
   struct einit_xml_tree_node *da = node->value;
 
@@ -265,6 +264,101 @@ void print_xmlstree (struct stree *node) {
  }
 }*/
 
+struct stree *einit_add_xmlstree_as_module (struct stree *rtree, struct stree *modulenode) {
+ struct einit_module module;
+ struct stree *attributes = ((struct einit_xml_tree_node *)(modulenode->value))->attributes;
+ struct stree *sres;
+
+ memset (&module, 0, sizeof (struct einit_module));
+
+ if ((sres = streefind (attributes, "id", tree_find_first))) {
+  module.id = estrdup(sres->value);
+
+  if ((sres = streefind (attributes, "name", tree_find_first)))
+   module.name = estrdup(sres->value);
+
+  if ((sres = streefind (attributes, "requires", tree_find_first)))
+   module.requires = str2set (':', sres->value);
+
+  if ((sres = streefind (attributes, "provides", tree_find_first)))
+   module.provides = str2set (':', sres->value);
+
+  if ((sres = streefind (attributes, "after", tree_find_first)))
+   module.after = str2set (':', sres->value);
+
+  if ((sres = streefind (attributes, "before", tree_find_first)))
+   module.before = str2set (':', sres->value);
+
+  if ((sres = streefind (attributes, "status", tree_find_first))) {
+   char **statusbits = str2set (':', sres->value);
+
+   if (statusbits) {
+    if (inset ((const void **)statusbits, (void *)"enabled", SET_TYPE_STRING)) {
+     module.status |= status_enabled;
+    }
+    if (inset ((const void **)statusbits, (void *)"disabled", SET_TYPE_STRING)) {
+     module.status |= status_disabled;
+    }
+    if (inset ((const void **)statusbits, (void *)"working", SET_TYPE_STRING)) {
+     module.status |= status_working;
+    }
+    free (statusbits);
+   }
+  }
+
+  rtree = streeadd (rtree, module.id, &module, sizeof (struct einit_module), NULL);
+ }
+
+ return rtree;
+}
+
+struct stree *einit_add_xmlstree_as_service (struct stree *rtree, struct stree *servicenode) {
+ struct einit_service service;
+ struct stree *attributes = ((struct einit_xml_tree_node *)(servicenode->value))->attributes;
+ struct stree *sres;
+
+ memset (&service, 0, sizeof (struct einit_service));
+
+ if ((sres = streefind (attributes, "id", tree_find_first))) {
+  service.name = estrdup(sres->value);
+
+  if ((sres = streefind (attributes, "provided", tree_find_first)))
+   service.status = strmatch (sres->value, "yes") ? service_provided : service_idle;
+
+  struct stree *modulenode;
+
+  if ((modulenode = streefind (((struct einit_xml_tree_node *)(servicenode->value))->elements, "module", tree_find_first))) {
+   do {
+    service.modules = einit_add_xmlstree_as_module(service.modules, modulenode);
+   } while ((modulenode = streefind (modulenode, "module", tree_find_next)));
+  }
+
+  struct stree *groupnode;
+
+  if ((groupnode = streefind (((struct einit_xml_tree_node *)(servicenode->value))->elements, "group", tree_find_first))) {
+   struct einit_group *group = emalloc (sizeof (struct einit_group));
+   struct stree *gattributes = ((struct einit_xml_tree_node *)(groupnode->value))->attributes;
+   struct stree *sres;
+
+   if ((sres = streefind (gattributes, "members", tree_find_first))) {
+    memset (group, 0, sizeof (struct einit_group));
+
+    group->services = str2set(':', sres->value);
+
+    if ((sres = streefind (gattributes, "seq", tree_find_first))) {
+     group->seq = estrdup(sres->value);
+    }
+
+    service.group = group;
+   } else free (group);
+  }
+
+  rtree = streeadd (rtree, service.name, &service, sizeof (struct einit_service), NULL);
+ }
+
+ return rtree;
+}
+
 struct stree *einit_get_all_modules () {
  struct stree *rtree = NULL;
  char *module_data;
@@ -285,49 +379,7 @@ struct stree *einit_get_all_modules () {
 
     if ((modulenode = streefind (((struct einit_xml_tree_node *)(tree->value))->elements, "module", tree_find_first))) {
      do {
-      struct einit_module module;
-      struct stree *attributes = ((struct einit_xml_tree_node *)(modulenode->value))->attributes;
-      struct stree *sres;
-
-      memset (&module, 0, sizeof (struct einit_module));
-
-      if ((sres = streefind (attributes, "id", tree_find_first))) {
-       module.id = estrdup(sres->value);
-
-       if ((sres = streefind (attributes, "name", tree_find_first)))
-        module.name = estrdup(sres->value);
-
-       if ((sres = streefind (attributes, "requires", tree_find_first)))
-        module.requires = str2set (':', sres->value);
-
-       if ((sres = streefind (attributes, "provides", tree_find_first)))
-        module.provides = str2set (':', sres->value);
-
-       if ((sres = streefind (attributes, "after", tree_find_first)))
-        module.after = str2set (':', sres->value);
-
-       if ((sres = streefind (attributes, "before", tree_find_first)))
-        module.before = str2set (':', sres->value);
-
-       if ((sres = streefind (attributes, "status", tree_find_first))) {
-        char **statusbits = str2set (':', sres->value);
-
-        if (statusbits) {
-         if (inset ((const void **)statusbits, (void *)"enabled", SET_TYPE_STRING)) {
-          module.status |= status_enabled;
-         }
-         if (inset ((const void **)statusbits, (void *)"disabled", SET_TYPE_STRING)) {
-          module.status |= status_disabled;
-         }
-         if (inset ((const void **)statusbits, (void *)"working", SET_TYPE_STRING)) {
-          module.status |= status_working;
-         }
-         free (statusbits);
-        }
-       }
-
-       rtree = streeadd (rtree, module.id, &module, sizeof (struct einit_module), NULL);
-      }
+      rtree = einit_add_xmlstree_as_module(rtree, modulenode);
      } while ((modulenode = streefind (modulenode, "module", tree_find_next)));
     }
    }
@@ -402,6 +454,73 @@ void modulestree_free(struct stree *tree) {
 
  streefree (tree);
 }
+
+struct stree *einit_get_all_services () {
+ struct stree *rtree = NULL;
+ char *module_data;
+
+ if (!einit_dbus_connection && !einit_connect()) return NULL;
+
+ module_data = einit_ipc_safe ("list services --xml");
+
+ if (module_data) {
+  struct stree *tree = xml2stree (module_data);
+
+  if (tree) {
+//   print_xmlstree(tree);
+
+   struct stree *rootnode = streefind (tree, "einit-ipc", tree_find_first);
+   if (rootnode && rootnode->value && ((struct einit_xml_tree_node *)(tree->value))->elements) {
+    struct stree *servicenode;
+    if ((servicenode = streefind (((struct einit_xml_tree_node *)(tree->value))->elements, "service", tree_find_first))) {
+     do {
+      rtree = einit_add_xmlstree_as_service(rtree, servicenode);
+     } while ((servicenode = streefind (servicenode, "service", tree_find_next)));
+    }
+   }
+
+   xmlstree_free (tree);
+  }
+
+  free (module_data);
+ }
+
+ return rtree;
+}
+
+struct einit_module *einit_get_service_status (char *service) {
+}
+
+void einit_service_free (struct einit_service *service) {
+ 
+}
+
+void servicestree_free(struct stree *tree) {
+ if (!tree) return;
+
+ struct stree *cur = tree;
+ do {
+  struct einit_service *service = cur->value;
+
+  if (service) {
+   if (service->name) free (service->name);
+   if (service->group) {
+    if (service->group->services)
+     free (service->group->services);
+    if (service->group->seq)
+     free (service->group->seq);
+
+    free (service->group);
+   }
+   if (service->modules) modulestree_free (service->modules);
+  }
+
+  cur = streenext (cur);
+ } while (cur);
+
+ streefree (tree);
+}
+
 
 void einit_power_down () { // shut down
  char *r = einit_ipc_request_xml ("power down");

@@ -255,7 +255,7 @@ void einit_dbus::ipc(DBusMessage *message, char safe) {
   dbus_message_iter_get_basic(&args, &command);
 
   if (safe) { // check for safe requests, answer with "unsafe request" if necessary
-   if (!strmatch (command, "list modules --xml")) {
+   if (!strmatch (command, "list modules --xml") && !strmatch (command, "list services --xml")) {
     reply = dbus_message_new_method_return(message);
 
     if (!returnvalue) returnvalue = "<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
