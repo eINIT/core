@@ -87,6 +87,32 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
  (status & status_working ? "W" : \
  (status & status_enabled ? "E" : "D")))
 
+void *einit_ipc_core_helpers_detached_module_action (char **argv) {
+ struct lmodule *cur = mlist;
+ enum einit_module_task task = 0;
+
+ char *custom = NULL;
+
+ if (strmatch (argv[2], "enable")) task = einit_module_enable;
+ else if (strmatch (argv[2], "disable")) task = einit_module_disable;
+ else {
+  task = einit_module_custom;
+  custom = argv[2];
+ }
+
+ while (cur) {
+  if (strmatch (cur->module->rid, argv[1])) {
+   mod (task, cur, custom);
+  }
+
+  cur = cur->next;
+ }
+
+ free (argv);
+
+ return NULL;
+}
+
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  if (!ev || !ev->argv) return;
 
@@ -208,6 +234,15 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
      }
      cur = cur->next;
     }
+   }
+  }
+
+  if ((ev->argc >= 3)) {
+   if (strmatch (ev->argv[0], "module-rc")) {
+    pthread_t th;
+    ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))einit_ipc_core_helpers_detached_module_action, (void *)setdup ((const void **)ev->argv, SET_TYPE_STRING)); // we must do this detached, so as not to lock up the ipc interface
+
+    ev->implemented = 1;
    }
   }
  }
