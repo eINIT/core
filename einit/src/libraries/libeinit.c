@@ -45,16 +45,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <expat.h>
 
-DBusError einit_dbus_error;
+DBusError *einit_dbus_error = NULL;
 DBusConnection *einit_dbus_connection = NULL;
 
-char einit_connect() {
- dbus_error_init(&einit_dbus_error);
+#ifdef DARWIN
+/* dammit, what's wrong with macos!? */
 
- if (!(einit_dbus_connection = dbus_bus_get(DBUS_BUS_SYSTEM, &einit_dbus_error))) {
-  if (dbus_error_is_set(&einit_dbus_error)) {
-   fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error.message);
-   dbus_error_free(&einit_dbus_error);
+cfg_addnode_t cfg_addnode_fp = NULL;
+cfg_findnode_t cfg_findnode_fp = NULL;
+cfg_getstring_t cfg_getstring_fp = NULL;
+cfg_getnode_t cfg_getnode_fp = NULL;
+cfg_filter_t cfg_filter_fp = NULL;
+cfg_getpath_t cfg_getpath_fp = NULL;
+cfg_prefix_t cfg_prefix_fp = NULL;
+
+struct cfgnode *cmode = NULL, *amode = NULL;
+char *bootstrapmodulepath = NULL;
+time_t boottime = 0;
+enum einit_mode coremode = 0;
+const struct smodule **coremodules[MAXMODULES] = { NULL };
+char **einit_initial_environment = NULL;
+char **einit_global_environment = NULL;
+struct spidcb *cpids = NULL;
+int einit_have_feedback = 1;
+struct stree *service_aliases = NULL;
+struct stree *service_usage = NULL;
+char einit_new_node = 0;
+struct event_function *event_functions = NULL;
+struct stree *exported_functions = NULL;
+unsigned char *gdebug = 0;
+struct stree *hconfiguration = NULL;
+struct utsname osinfo = {};
+pthread_attr_t thread_attribute_detached = {};
+struct spidcb *sched_deadorphans = NULL;
+sched_watch_pid_t sched_watch_pid_fp = NULL;
+
+#endif
+
+char einit_connect() {
+ einit_dbus_error = ecalloc (1, sizeof (DBusError));
+ dbus_error_init(einit_dbus_error);
+
+ if (!(einit_dbus_connection = dbus_bus_get(DBUS_BUS_SYSTEM, einit_dbus_error))) {
+  if (dbus_error_is_set(einit_dbus_error)) {
+   fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error->message);
+   dbus_error_free(einit_dbus_error);
   }
   return 0;
  }

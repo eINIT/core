@@ -368,6 +368,8 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	OS="darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
+	XDYNAMIC_SIMPLE="-dynamiclib"
+# -bundle -flat_namespace -undefined suppress
 	if [ "${COREFILE}" != "" ]; then
 		LLD="-bundle -Wl,-bundle_loader,${COREFILE}";
 	else
@@ -375,12 +377,14 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	fi
 	STATIC="";
 	LIBRT=""
+	SO="dylib"
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
 	OS="linux";
 	XCFLAGS="$XCFLAGS -DPOSIX -DLINUX";
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
+	XDYNAMIC_SIMPLE="-shared"
 	LPA="-lpthread";
 	if test "$STATIC" == "1"; then
 # static linking doesn't work like this, it messes up .so modules :/
@@ -394,15 +398,18 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 		STATIC=""
 	fi
 	LIBRT="-lrt"
+	SO="so"
 else
 	echo "(guess) generic posix-ish unix";
 	OS="unknown";
 	XCFLAGS="$XCFLAGS -DPOSIX";
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
+	XDYNAMIC_SIMPLE="-shared"
 	LPA="-lpthread";
 	STATIC="";
 	LIBRT="-lrt"
+	SO="so"
 fi
 
 echo -n "figuring out what libs need to be linked into the core..."
@@ -458,6 +465,8 @@ SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
 BOOTSTRAPDIR = ${PREFIX}/${BOOTSTRAP_MODULE_PATH}
 
+SO = "${SO}"
+
 INSTALL = install
 IPARAM =
 SOIPARAM = \${IPARAM}
@@ -476,6 +485,7 @@ OPTIONS = $OPTIONS
 INCLUDE = $INCLUDE
 
 XDYNAMIC = $XDYNAMIC
+XDYNAMIC_SIMPLE = $XDYNAMIC_SIMPLE
 BUILDNUMBER = $BUILDNUMBER
 ISSVN = $ISSVN
 
