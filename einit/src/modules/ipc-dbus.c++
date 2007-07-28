@@ -156,8 +156,8 @@ int einit_dbus::enable (struct einit_event *status) {
  char *dbusaddress;
  int ret = 0;
 
- if (!(dbusaddress = cfg_getstring("configuraion-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
- if (!(dbusname = cfg_getstring("configuraion-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.Einit";
+ if (!(dbusaddress = cfg_getstring("configuration-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+ if (!(dbusname = cfg_getstring("configuration-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.Einit";
 
 // this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
  this->connection = dbus_connection_open_private (dbusaddress, &(this->error));
