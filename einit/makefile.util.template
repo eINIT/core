@@ -27,4 +27,4 @@ einit-control-dbus: einit-control-dbus.o bitch.o utility.o libeinit.${SO} $(asmo
 	$(CLD) einit-control-dbus.o bitch.o utility.o $(asmobjects) -o einit-control-dbus $(STATIC) $(DBUS_LIBS) -L. -leinit
 
 libeinit.${SO}: libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o
-	${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o -o libeinit.${SO} $(DBUS_LIBS) -lexpat
+	${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o -o libeinit.${SO} $(DBUS_LIBS) -lexpat ${LPA}
