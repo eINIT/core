@@ -150,6 +150,28 @@ int send_ipc_dbus (char *command) {
 
 //}
 
+/*void event_test (struct einit_remote_event *ev) {
+  if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
+   if (ev->stringset) {
+    char *set = set2str (' ', ev->stringset);
+    fprintf (stderr, "parsed a message: %i; integers: %i, %i, %i, flag=%i, string=%s, set=(%s)\n", ev->type, ev->integer, ev->status, ev->task, ev->flag, ev->string, set);
+	free (set);
+   } else {
+    fprintf (stderr, "parsed a message: %i; integers: %i, %i, %i, flag=%i, string=%s\n", ev->type, ev->integer, ev->status, ev->task, ev->flag, ev->string);
+   }
+  } else {
+   if (ev->argv) {
+    char *set = set2str (' ', ev->argv);
+    fprintf (stderr, "parsed a message: %i; options=%i, argc=%i, command=%s, set=(%s)\n", ev->type, ev->ipc_options, ev->argc, ev->command, set);
+	free (set);
+   } else {
+    fprintf (stderr, "parsed a message: %i; options=%i, argc=%i, command=%s\n", ev->type, ev->ipc_options, ev->argc, ev->command);
+   }
+  }
+
+ fflush (stderr);
+}*/
+
 int main(int argc, char **argv) {
  int i, l, ret = 0;
  char *c = emalloc (1*sizeof (char));
@@ -206,7 +228,8 @@ int main(int argc, char **argv) {
 
 // test();
 
- einit_receive_events();
+// einit_remote_event_listen (einit_event_subsystem_any, event_test);
+// einit_receive_events();
 
  if (c) {
   ret = send_ipc_dbus(c);
@@ -214,6 +237,8 @@ int main(int argc, char **argv) {
   free (c);
  }
  free (name);
+
+// einit_remote_event_ignore (einit_event_subsystem_any, event_test);
 
  return 0;
 }

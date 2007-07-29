@@ -84,14 +84,135 @@ sched_watch_pid_t sched_watch_pid_fp = NULL;
 
 #endif
 
+struct remote_event_function {
+ uint32_t type;                                 /*!< type of function */
+ void (*handler)(struct einit_remote_event *);  /*!< handler function */
+ struct remote_event_function *next;            /*!< next function */
+};
+
+pthread_mutex_t einit_evf_mutex = PTHREAD_MUTEX_INITIALIZER;
+struct remote_event_function *event_remote_event_functions = NULL;
+uint32_t remote_event_cseqid = 1;
+
+#ifdef DARWIN
+pthread_attr_t einit_dbus_thread_attribute_detached = {};
+#else
+pthread_attr_t einit_dbus_thread_attribute_detached;
+#endif
+
+void einit_event_emit_remote (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+ uint32_t subsystem;
+
+ if (!ev || !ev->type) return;
+ subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
+
+/* initialise sequence id and timestamp of the event */
+  ev->seqid = remote_event_cseqid++;
+  ev->timestamp = time(NULL);
+
+  struct remote_event_function *cur = event_remote_event_functions;
+  while (cur) {
+   if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
+    struct einit_remote_event *evd = emalloc (sizeof (struct einit_remote_event));
+    pthread_t threadid;
+
+    memcpy (evd, ev, sizeof (struct einit_remote_event));
+
+    if (ethread_create (&threadid, &einit_dbus_thread_attribute_detached, (void *(*)(void *))cur->handler, evd))
+     cur->handler (evd);
+   }
+   cur = cur->next;
+  }
+
+ return;
+}
+
+struct einit_remote_event *einit_read_remote_event_off_dbus (DBusMessage *message) {
+ struct einit_remote_event *ev = emalloc (sizeof (struct einit_remote_event));
+ DBusMessageIter args;
+ DBusMessageIter sub;
+
+ memset (ev, 0, sizeof (struct einit_remote_event));
+
+  if (!dbus_message_iter_init(message, &args)) { fprintf(stderr, "Message has no arguments!\n"); return NULL; }
+  else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT32) { fprintf(stderr, "Argument has incorrect type (event type).\n"); return NULL; }
+  else dbus_message_iter_get_basic(&args, &(ev->type));
+
+  if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32)) { fprintf(stderr, "Argument has incorrect type (integer).\n"); return NULL; }
+   else dbus_message_iter_get_basic(&args, &(ev->integer));
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32)) { fprintf(stderr, "Argument has incorrect type (status).\n"); return NULL; }
+   else dbus_message_iter_get_basic(&args, &(ev->status));
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32)) { fprintf(stderr, "Argument has incorrect type (task).\n"); return NULL; }
+   else dbus_message_iter_get_basic(&args, &(ev->task));
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT16)) { fprintf(stderr, "Argument has incorrect type (flag).\n"); return NULL; }
+   else { uint16_t r; dbus_message_iter_get_basic(&args, &(r)); ev->flag = r; }
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+
+   if (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_STRING) {
+    dbus_message_iter_get_basic(&args, &(ev->string));
+    ev->string = estrdup (ev->string);
+
+    if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+   }
+   if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_ARRAY) { fprintf(stderr, "Argument has incorrect type (string set).\n"); return NULL; }
+
+   dbus_message_iter_recurse (&args, &sub);
+   while (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_INVALID) {
+    char *value;
+
+    if (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_STRING) { fprintf(stderr, "Argument has incorrect type (string set member).\n"); return NULL; }
+    dbus_message_iter_get_basic(&sub, &(value));
+
+    ev->stringset = (char **)setadd ((void **)ev->stringset, (void *)value, SET_TYPE_STRING);
+
+    dbus_message_iter_next (&sub);
+   }
+  } else {
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT32)) { fprintf(stderr, "Argument has incorrect type (ipc-options).\n"); return NULL; }
+   else dbus_message_iter_get_basic(&args, &(ev->integer));
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+
+   if (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_STRING) {
+    dbus_message_iter_get_basic(&args, &(ev->command));
+    ev->command = estrdup (ev->command);
+
+    if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+   }
+ 
+   if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_ARRAY) { fprintf(stderr, "Argument has incorrect type (ipc argv).\n"); return NULL; }
+   dbus_message_iter_recurse (&args, &sub);
+   while (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_INVALID) {
+    char *value;
+
+    if (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_STRING) { fprintf(stderr, "Argument has incorrect type (ipc argv member).\n"); return NULL; }
+    dbus_message_iter_get_basic(&sub, &(value));
+
+    ev->argv = (char **)setadd ((void **)ev->argv, (void *)value, SET_TYPE_STRING);
+
+    dbus_message_iter_next (&sub);
+   }
+
+   ev->argc = setcount ((const void **)ev->argv);
+  }
+
+ message_read:
+
+ return ev;
+}
 
 DBusHandlerResult einit_incoming_event_handler(DBusConnection *connection, DBusMessage *message, void *user_data) {
- fprintf (stderr, "i've been called...\n");
- fflush (stderr);
-
  if (dbus_message_is_signal(message, "org.einit.Einit.Information", "EventSignal")) {
-  fprintf (stderr, "got a message...\n");
-  fflush (stderr);
+  struct einit_remote_event *ev = einit_read_remote_event_off_dbus (message);
+
+  if (!ev) return DBUS_HANDLER_RESULT_HANDLED;
+
+  einit_event_emit_remote (ev, einit_event_flag_broadcast);
 
   return DBUS_HANDLER_RESULT_HANDLED;
  }
@@ -104,6 +225,7 @@ void *einit_message_thread(void *notused) {
 
  fprintf (stderr, "lost connection...\n");
 
+ einit_dbus_connection_events = NULL;
  return NULL;
 }
 
@@ -134,6 +256,10 @@ char einit_disconnect() {
 
 void einit_receive_events() {
  pthread_t einit_message_thread_id;
+
+ pthread_attr_init (&einit_dbus_thread_attribute_detached);
+ pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);
+ 
  einit_dbus_error_events = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error_events);
 
@@ -832,4 +958,47 @@ void modestree_free(struct stree *tree) {
  } while (cur);
 
  streefree (tree);
+}
+
+void einit_remote_event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_remote_event *)) {
+ struct remote_event_function *fstruct = ecalloc (1, sizeof (struct remote_event_function));
+
+ fstruct->type = type & EVENT_SUBSYSTEM_MASK;
+ fstruct->handler = handler;
+
+ emutex_lock (&einit_evf_mutex);
+  if (event_remote_event_functions)
+   fstruct->next = event_remote_event_functions;
+
+  event_remote_event_functions = fstruct;
+ emutex_unlock (&einit_evf_mutex);
+}
+
+void einit_remote_event_ignore (enum einit_event_subsystems type, void (* handler)(struct einit_remote_event *)) {
+ if (!event_remote_event_functions) return;
+
+ uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
+
+ emutex_lock (&einit_evf_mutex);
+  struct remote_event_function *cur = event_remote_event_functions;
+  struct remote_event_function *prev = NULL;
+  while (cur) {
+   if ((cur->type==ltype) && (cur->handler==handler)) {
+    if (prev == NULL) {
+     event_remote_event_functions = cur->next;
+     free (cur);
+     cur = event_remote_event_functions;
+    } else {
+     prev->next = cur->next;
+     free (cur);
+     cur = prev->next;
+    }
+   } else {
+    prev = cur;
+    cur = cur->next;
+   }
+  }
+ emutex_unlock (&einit_evf_mutex);
+
+ return;
 }

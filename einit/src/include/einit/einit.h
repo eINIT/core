@@ -91,6 +91,34 @@ struct einit_mode_summary {
  char **disable;
 };
 
+struct einit_remote_event {
+ enum einit_event_code type;       /*!< the event or subsystem to watch */
+
+ union {
+/*! these struct elements are for use with non-IPC events */
+  struct {
+   char *string;                 /*!< a string */
+   int32_t integer,              /*!< generic integer */
+           status,               /*!< generic integer */
+           task;                 /*!< generic integer */
+   unsigned char flag;           /*!< flags */
+
+   char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
+  };
+
+/*! these struct elements are for use with IPC events */
+  struct {
+   char **argv;
+   char *command;
+   enum einit_ipc_options ipc_options;
+   int argc;
+  };
+ };
+
+ uint32_t seqid;
+ time_t timestamp;
+};
+
 /* TODO: ... and these functions... */
 
 char *einit_ipc_request(char *);
@@ -131,6 +159,10 @@ void einit_reload_configuration ();
 
 struct stree *einit_get_all_modes();
 void modestree_free(struct stree *);
+
+/* events... */
+void einit_remote_event_listen (enum einit_event_subsystems, void (*)(struct einit_remote_event *));
+void einit_remote_event_ignore (enum einit_event_subsystems, void (*)(struct einit_remote_event *));
 
 #ifdef __cplusplus
 }

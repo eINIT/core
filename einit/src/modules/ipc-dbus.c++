@@ -144,12 +144,12 @@ void einit_dbus::broadcast_event (struct einit_event *ev) {
  dbus_message_iter_init_append(message, &argv);
  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->type))) { return; }
  if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
-  if (ev->string && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->string))) { return; }
   if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->integer))) { return; }
   if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->status))) { return; }
   if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->task))) { return; }
   uint16_t f = ev->flag; // make sure to not get any "static" in this one...
   if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT16, &(f))) { return; }
+  if (ev->string && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->string))) { return; }
   if (ev->stringset) {
    DBusMessageIter sub;
    uint32_t i = 0;
@@ -161,6 +161,7 @@ void einit_dbus::broadcast_event (struct einit_event *ev) {
    if (!dbus_message_iter_close_container (&argv, &sub)) return;
   }
  } else {
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->ipc_options))) { return; }
   if (ev->command && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->command))) { return; }
   if (ev->argv) {
    DBusMessageIter sub;
