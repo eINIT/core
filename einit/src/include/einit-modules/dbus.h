@@ -79,11 +79,14 @@ class einit_dbus {
   DBusConnection* connection;
   dbus_uint32_t sequence;
   char terminate_thread;
+  pthread_mutex_t sequence_mutex;
 
   pthread_t message_thread_id;
 
   static void generic_event_handler (struct einit_event *);
   static void *message_thread_bootstrap(void *);
+  static void *einit_dbus::ipc_spawn_bootstrap (DBusMessage *message);
+  static void *einit_dbus::ipc_spawn_safe_bootstrap (DBusMessage *message);
 
   void ipc_spawn (DBusMessage *);
   void ipc_spawn_safe (DBusMessage *);

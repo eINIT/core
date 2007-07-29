@@ -91,15 +91,16 @@ module_register(einit_dbus_self);
 
 #endif
 
+pthread_attr_t einit_ipc_dbus_thread_attribute_detached;
+
 int einit_dbus_configure (struct lmodule *irr) {
+ int pthread_errno;
  module_init (irr);
 
-#ifdef DARWIN
- int pthread_errno;
- if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
+ pthread_attr_init (&einit_ipc_dbus_thread_attribute_detached);
+ if ((pthread_errno = pthread_attr_setdetachstate (&einit_ipc_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
   bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
  }
-#endif
 
  thismodule->enable = einit_ipc_dbus_enable;
  thismodule->disable = einit_ipc_dbus_disable;
@@ -124,8 +125,10 @@ void einit_dbus::signal_dbus (const char *IN_string) {
  dbus_message_iter_init_append(message, &argv);
  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &IN_string)) { return; }
 
+ emutex_lock (&this->sequence_mutex);
  this->sequence++;
- if (!dbus_connection_send(this->connection, message, &this->sequence)) { return; }
+ if (!dbus_connection_send(this->connection, message, &this->sequence)) { emutex_unlock (&this->sequence_mutex); return; }
+ emutex_unlock (&this->sequence_mutex);
 // dbus_connection_flush(this->connection);
 
  dbus_message_unref(message);
@@ -171,8 +174,10 @@ void einit_dbus::broadcast_event (struct einit_event *ev) {
   }
  }
 
+ emutex_lock (&this->sequence_mutex);
  this->sequence++;
- if (!dbus_connection_send(this->connection, message, &this->sequence)) { return; }
+ if (!dbus_connection_send(this->connection, message, &this->sequence)) { emutex_unlock (&this->sequence_mutex); return; }
+ emutex_unlock (&this->sequence_mutex);
 
  dbus_message_unref(message);
 }
@@ -191,7 +196,9 @@ void einit_dbus::string(const char *IN_string, char ** OUT_result) {
 
 einit_dbus::einit_dbus() {
  dbus_error_init(&(this->error));
- this->sequence = 0;
+ this->sequence = 1;
+ 
+ pthread_mutex_init (&(this->sequence_mutex), NULL);
 
 // this->introspection_data = einit_dbus_introspection_data;
 // dbus_g_object_type_install_info (COM_FOO_TYPE_MY_OBJECT, &(this->introspection_data));
@@ -237,8 +244,8 @@ int einit_dbus::enable (struct einit_event *status) {
  this->terminate_thread = 0;
  notice (2, "message thread creation initiated");
 
- if (pthread_create (&(this->message_thread_id), &thread_attribute_detached, &(einit_dbus::message_thread_bootstrap), NULL)) {
-  fbprintf (status, "could not create detached I/O thread, creating non-detached thread.");
+ if ((errno = pthread_create (&(this->message_thread_id), &einit_ipc_dbus_thread_attribute_detached, &(einit_dbus::message_thread_bootstrap), NULL))) {
+  fbprintf (status, "could not create detached I/O thread, creating non-detached thread. (error = %s)", strerror(errno));
 
   ethread_create (&(this->message_thread_id), NULL, &(einit_dbus::message_thread_bootstrap), NULL);
  }
@@ -280,15 +287,26 @@ void einit_dbus::message_thread() {
 
     dbus_message_iter_init_append(reply, &args);
     if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &this->introspection_data)) { continue; }
+
+    emutex_lock (&this->sequence_mutex);
     this->sequence++;
-    if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { continue; }
+    if (!dbus_connection_send(this->connection, reply, &(this->sequence))) {
+	 emutex_unlock (&this->sequence_mutex);
+     continue; }
+    emutex_unlock (&this->sequence_mutex);
 
     dbus_message_unref(reply);
 // 'old fashioned' ipc via dbus
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC")) {
-    this->ipc_spawn_safe(message);
+    pthread_t th;
+//    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_safe_bootstrap), message)) {
+     this->ipc_spawn_safe_bootstrap(message);
+//    }
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC")) {
-    this->ipc_spawn(message);
+    pthread_t th;
+//    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_bootstrap), message)) {
+     this->ipc_spawn_bootstrap(message);
+//    }
    }
 
    dbus_message_unref(message);
@@ -362,6 +380,14 @@ char *einit_dbus::ipc_request (char *command) {
   return returnvalue;
 }
 
+void *einit_dbus::ipc_spawn_bootstrap (DBusMessage *message) {
+ einit_main_dbus_class.ipc_spawn (message);
+}
+
+void *einit_dbus::ipc_spawn_safe_bootstrap (DBusMessage *message) {
+ einit_main_dbus_class.ipc_spawn_safe (message);
+}
+
 void einit_dbus::ipc_spawn(DBusMessage *message) {
  DBusMessage *reply;
  DBusMessageIter args;
@@ -380,10 +406,13 @@ void einit_dbus::ipc_spawn(DBusMessage *message) {
 
   returnvalue = this->ipc_request (command);
 
-  this->sequence++;
   dbus_message_iter_init_append(reply, &args);
   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
-  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
+
+  emutex_lock (&this->sequence_mutex);
+  this->sequence++;
+  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
+  emutex_unlock (&this->sequence_mutex);
 
   dbus_message_unref(reply);
  }
@@ -408,10 +437,13 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
 
    if (!returnvalue) returnvalue = "<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
 
-   this->sequence++;
    dbus_message_iter_init_append(reply, &args);
    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
-   if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
+
+   emutex_lock (&this->sequence_mutex);
+   this->sequence++;
+   if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
+   emutex_unlock (&this->sequence_mutex);
 
    dbus_message_unref(reply);
 
@@ -422,10 +454,13 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
 
   returnvalue = this->ipc_request (command);
 
-  this->sequence++;
   dbus_message_iter_init_append(reply, &args);
   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
-  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
+
+  emutex_lock (&this->sequence_mutex);
+  this->sequence++;
+  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
+  emutex_unlock (&this->sequence_mutex);
 
   dbus_message_unref(reply);
  }

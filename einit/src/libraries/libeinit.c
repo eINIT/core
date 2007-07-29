@@ -82,7 +82,34 @@ sched_watch_pid_t sched_watch_pid_fp = NULL;
 
 #endif
 
+
+DBusHandlerResult einit_incoming_event_handler(DBusConnection *connection, DBusMessage *message, void *user_data) {
+ if (dbus_message_is_signal(message, "org.einit.Einit.Information", "EventSignal")) {
+  fprintf (stderr, "got a message...\n");
+  fflush (stderr);
+
+  return DBUS_HANDLER_RESULT_HANDLED;
+ }
+
+ return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+void *einit_message_thread(void *notused) {
+ while (dbus_connection_read_write_dispatch(einit_dbus_connection, 100));
+/* while (1) {
+  if (dbus_connection_read_write(einit_dbus_connection, 100) == FALSE) {
+   fprintf (stderr, "got something...\n");
+   dbus_connection_dispatch (einit_dbus_connection);
+  }
+ }*/
+
+ fprintf (stderr, "lost connection...\n");
+
+ return NULL;
+}
+
 char einit_connect() {
+ pthread_t einit_message_thread_id;
  einit_dbus_error = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error);
 
@@ -96,46 +123,49 @@ char einit_connect() {
 
  dbus_connection_set_exit_on_disconnect(einit_dbus_connection, FALSE);
 
+ dbus_connection_add_filter (einit_dbus_connection, einit_incoming_event_handler, NULL, NULL);
+
+ ethread_create (&einit_message_thread_id, NULL, einit_message_thread, NULL);
+
  return 1;
+}
+
+char einit_disconnect() {
+// ethread_join (&einit_message_thread_id);
+
+ return 1;
+}
+
+//   if (dbus_message_is_signal(message, "org.einit.Einit.Information", "EventSignal"))
+
+void einit_receive_events() {
+ if (einit_dbus_connection || einit_connect()) {
+//  return einit_ipc(command);
+   dbus_bus_add_match(einit_dbus_connection, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error);
+ }
 }
 
 char *einit_ipc_i (char *command, char *interface) {
  char *returnvalue;
 
- DBusMessage *message;
+ DBusMessage *message, *call;
  DBusMessageIter args;
- DBusPendingCall *pending;
 
- if (!(message = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", interface, "IPC"))) {
+ if (!(call = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", interface, "IPC"))) {
   fprintf(stderr, "Sending message failed.\n");
   return NULL;
  }
 
- dbus_message_iter_init_append(message, &args);
+ dbus_message_iter_init_append(call, &args);
  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &command)) { 
   fprintf(stderr, "Out Of Memory!\n"); 
   return NULL;
  }
 
- if (!dbus_connection_send_with_reply (einit_dbus_connection, message, &pending, -1)) {
-  fprintf(stderr, "Out Of Memory!\n");
+ if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 500, einit_dbus_error))) {
+  fprintf(stderr, "Error...!\n");
   return NULL;
  }
- if (!pending) { 
-  fprintf(stderr, "No return value?\n"); 
-  return NULL;
- }
- dbus_connection_flush(einit_dbus_connection);
-
- dbus_message_unref(message);
-
- dbus_pending_call_block(pending);
-
- if (!(message = dbus_pending_call_steal_reply(pending))) {
-  fprintf(stderr, "Bad Reply\n");
-  return NULL;
- }
- dbus_pending_call_unref(pending);
 
  if (!dbus_message_iter_init(message, &args))
   fprintf(stderr, "Message has no arguments!\n"); 

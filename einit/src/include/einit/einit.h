@@ -98,6 +98,8 @@ char *einit_ipc_request_xml(char *);
 char *einit_ipc(char *);
 char *einit_ipc_safe(char *);
 char einit_connect();
+char einit_disconnect();
+void einit_receive_events();
 
 struct stree *einit_get_all_modules ();
 struct einit_module *einit_get_module_status (char *);
