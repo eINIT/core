@@ -69,6 +69,8 @@ class einit_dbus {
   int enable (struct einit_event *);
   int disable (struct einit_event *);
 
+  void message_thread();
+
  private:
   DBusError error;
   DBusConnection* connection;
@@ -79,7 +81,6 @@ class einit_dbus {
 
   static void ipc_event_handler (struct einit_event *);
   static void *message_thread_bootstrap(void *);
-  void message_thread();
 
   void ipc(DBusMessage *, char);
 };

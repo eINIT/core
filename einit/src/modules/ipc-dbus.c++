@@ -47,6 +47,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/dbus.h>
 #include <einit-modules/ipc.h>
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -185,7 +189,9 @@ int einit_dbus::enable (struct einit_event *status) {
  event_listen (einit_event_subsystem_ipc, this->ipc_event_handler);
 
  this->terminate_thread = 0;
- ethread_create (&(this->message_thread_id), &thread_attribute_detached, this->message_thread_bootstrap, NULL);
+ notice (2, "message thread creation initiated");
+// ethread_create (&(this->message_thread_id), &thread_attribute_detached, message_thread_bootstrap_g	, NULL);
+ ethread_create (&(this->message_thread_id), NULL, &(einit_dbus::message_thread_bootstrap), NULL);
 
  return status_ok;
 }
@@ -202,6 +208,7 @@ int einit_dbus::disable (struct einit_event *status) {
 }
 
 void *einit_dbus::message_thread_bootstrap(void *e) {
+ notice (2, "message thread creation spawning");
  einit_main_dbus_class.message_thread();
 
  return NULL;
@@ -228,10 +235,11 @@ void einit_dbus::message_thread() {
 
     dbus_message_unref(reply);
 // 'old fashioned' ipc via dbus
-   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC"))
+   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC")) {
     this->ipc(message, 1);
-   else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC"))
+   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC")) {
     this->ipc(message, 0);
+   }
 
    dbus_message_unref(message);
   }
@@ -271,13 +279,18 @@ void einit_dbus::ipc(DBusMessage *message, char safe) {
    }
   }
 
-  if ((rv = pipe (internalpipe)) > 0) {
+/*  if ((rv = pipe (internalpipe)) > 0) {*/
+  if (socketpair (AF_UNIX, SOCK_STREAM, 0, internalpipe)) {
    ipc_process(command, stderr);
-  } else if (rv == 0) {
+  } else /*if (rv == 0)*/ {
    char *buf = NULL;
    uint32_t blen = 0;
    int rn = 0;
    char *data = NULL;
+
+   fcntl (internalpipe[0], F_SETFL, O_NONBLOCK);
+   fcntl (internalpipe[1], F_SETFL, O_NONBLOCK);
+
    FILE *w = fdopen (internalpipe[1], "w");
 //   FILE *r = fdopen (internalpipe[0], "r");
 
@@ -297,7 +310,7 @@ void einit_dbus::ipc(DBusMessage *message, char safe) {
     } while (rn > 0);
 
     if (errno && (errno != EAGAIN))
-     bitch(bitch_stdio, errno, "reading file failed.");
+     bitch(bitch_stdio, errno, "reading pipe failed.");
 
     eclose (internalpipe[0]);
     data = (char *)erealloc (buf, blen+1);
