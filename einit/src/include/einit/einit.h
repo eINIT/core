@@ -83,6 +83,14 @@ struct einit_xml_tree_node {
  struct stree *attributes;
 };
 
+struct einit_mode_summary {
+ char *id;
+ char **base;
+ char **services;
+ char **critical;
+ char **disable;
+};
+
 /* TODO: ... and these functions... */
 
 char *einit_ipc_request(char *);
@@ -118,6 +126,9 @@ void einit_module_id_disable (char *);
 
 void einit_switch_mode (char *);
 void einit_reload_configuration ();
+
+struct stree *einit_get_all_modes();
+void modestree_free(struct stree *);
 
 #ifdef __cplusplus
 }

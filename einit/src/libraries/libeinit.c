@@ -696,3 +696,101 @@ void einit_reload_configuration () { // "update configuration"
  char *r = einit_ipc_request_xml ("update configuration");
  free (r);
 }
+
+struct stree *einit_add_xmlstree_as_mode (struct stree *rtree, struct stree *modenode) {
+ struct einit_mode_summary mode;
+ struct stree *attributes = ((struct einit_xml_tree_node *)(modenode->value))->attributes;
+ struct stree *sres;
+
+ memset (&mode, 0, sizeof (struct einit_mode_summary));
+
+ if ((sres = streefind (attributes, "id", tree_find_first))) {
+  mode.id = estrdup(sres->value);
+
+  if ((sres = streefind (attributes, "base", tree_find_first)))
+   mode.base = str2set(':', sres->value);
+
+  struct stree *rnode;
+
+  if ((rnode = streefind (((struct einit_xml_tree_node *)(modenode->value))->elements, "enable", tree_find_first))) {
+   struct stree *gattributes = ((struct einit_xml_tree_node *)(rnode->value))->attributes;
+   struct stree *sres;
+
+   if ((sres = streefind (gattributes, "services", tree_find_first))) {
+    mode.services = str2set(':', sres->value);
+   }
+
+   if ((sres = streefind (gattributes, "critical", tree_find_first))) {
+    mode.critical = str2set(':', sres->value);
+   }
+  }
+
+  if ((rnode = streefind (((struct einit_xml_tree_node *)(modenode->value))->elements, "disable", tree_find_first))) {
+   struct stree *gattributes = ((struct einit_xml_tree_node *)(rnode->value))->attributes;
+   struct stree *sres;
+
+   if ((sres = streefind (gattributes, "services", tree_find_first))) {
+    mode.disable = str2set(':', sres->value);
+   }
+  }
+
+  rtree = streeadd (rtree, mode.id, &mode, sizeof (struct einit_mode_summary), NULL);
+ }
+
+ return rtree;
+}
+
+struct stree *einit_get_all_modes() {
+ struct stree *rtree = NULL;
+ char *mode_data;
+
+ if (!einit_dbus_connection && !einit_connect()) return NULL;
+
+ mode_data = einit_ipc_safe ("list modes --xml");
+
+ if (mode_data) {
+  struct stree *tree = xml2stree (mode_data);
+
+  if (tree) {
+//   print_xmlstree(tree);
+
+   struct stree *rootnode = streefind (tree, "einit-ipc", tree_find_first);
+   if (rootnode && rootnode->value && ((struct einit_xml_tree_node *)(tree->value))->elements) {
+    struct stree *modenode;
+
+    if ((modenode = streefind (((struct einit_xml_tree_node *)(tree->value))->elements, "mode", tree_find_first))) {
+     do {
+      rtree = einit_add_xmlstree_as_mode(rtree, modenode);
+     } while ((modenode = streefind (modenode, "mode", tree_find_next)));
+    }
+   }
+
+   xmlstree_free (tree);
+  }
+
+  free (mode_data);
+ }
+
+ return rtree;
+}
+
+void modestree_free(struct stree *tree) {
+ if (!tree) return;
+
+ struct stree *cur = tree;
+ do {
+  struct einit_mode_summary *mode = cur->value;
+
+  if (mode) {
+   if (mode->id) free (mode->id);
+   if (mode->base) free (mode->base);
+   if (mode->services) free (mode->services);
+   if (mode->critical) free (mode->critical);
+   if (mode->disable) free (mode->disable);
+  }
+
+  cur = streenext (cur);
+ } while (cur);
+
+ streefree (tree);
+}

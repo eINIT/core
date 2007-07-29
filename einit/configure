@@ -360,6 +360,8 @@ else
 	echo "expat is currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or go to http://expat.sf.net/.";
 fi
 
+# CFLAGS="${CXXFLAGS}"
+
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
 XXL="\${CXX} \${INCLUDE} \${CXXFLAGS} -fPIC"
@@ -500,6 +502,7 @@ CC = $CC ${GCCFLAGS} -fPIC
 ASM = $ASM ${GCCFLAGS}
 
 CFLAGS = $CFLAGS$XCFLAGS
+CXXFLAGS = $CXXFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL

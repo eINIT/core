@@ -410,10 +410,96 @@ void bootstrap_einit_configuration_stree_einit_event_handler (struct einit_event
  }
 }
 
+void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *ev) {
+ if ((ev->argc >= 2) && (ev->ipc_options & einit_ipc_output_xml)) {
+  if (strmatch (ev->argv[0], "list") && strmatch (ev->argv[1], "modes")) {
+   struct stree *cur = hconfiguration;
+   struct cfgnode **modes = NULL;
+
+   ev->implemented = 1;
+
+/* first, we need to find all the modes we have */
+   while (cur) {
+    struct cfgnode *node = cur->value;
+
+    if (node && node->mode) {
+     if (!inset ((const void **)modes, (const void *)node->mode, SET_NOALLOC)) {
+      modes = (struct cfgnode **)setadd ((void **)modes, (void *)node->mode, SET_NOALLOC);
+     }
+    }
+
+    cur = streenext(cur);
+   }
+
+   if (modes) {
+    uint32_t i = 0;
+
+	for (; modes[i]; i++) {
+	 if (!(modes[i]->arbattrs)) {
+      fprintf (ev->output, " <mode id=\"%s\">", modes[i]->id);
+	 } else {
+      uint32_t y = 0;
+//      fprintf (ev->output, " <mode", modes[i]->id);
+      eputs (" <mode", ev->output);
+
+	  for (; modes[i]->arbattrs[y]; y+=2) {
+//	   char *escapedn = escape_xml (modes[i]->arbattrs[y]);
+	   char *escapeda = escape_xml (modes[i]->arbattrs[y+1]);
+
+       fprintf (ev->output, " %s=\"%s\"", modes[i]->arbattrs[y], escapeda);
+
+       free (escapeda);
+	  }
+
+      eputs (">\n", ev->output);
+	 }
+
+	 char *tmp;
+
+     if ((tmp = cfg_getstring ("enable/services", modes[i]))) {
+	  char *escaped_s = escape_xml (tmp);
+      char *tmpx = cfg_getstring ("enable/critical", modes[i]);
+
+      if (tmpx) {
+       char *escaped_x = escape_xml (tmpx);
+       fprintf (ev->output, "  <enable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
+
+       free (tmpx);
+	  } else {
+       fprintf (ev->output, "  <enable services=\"%s\" />\n", escaped_s);
+	  }
+
+	  free (escaped_s);
+     }
+
+     if ((tmp = cfg_getstring ("disable/services", modes[i]))) {
+	  char *escaped_s = escape_xml (tmp);
+      char *tmpx = cfg_getstring ("disable/critical", modes[i]);
+
+      if (tmpx) {
+       char *escaped_x = escape_xml (tmpx);
+       fprintf (ev->output, "  <disable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
+
+       free (tmpx);
+	  } else {
+       fprintf (ev->output, "  <disable services=\"%s\" />\n", escaped_s);
+	  }
+
+	  free (escaped_s);
+     }
+
+     eputs (" </mode>\n", ev->output);
+    }
+   }
+  }
+ }
+}
+
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
  event_ignore (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
+ event_ignore (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
 
  function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
@@ -431,6 +517,7 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 
  thismodule->cleanup = bootstrap_einit_configuration_stree_cleanup;
 
+ event_listen (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_listen (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
 
  function_register ("einit-configuration-node-add", 1, cfg_addnode_f);

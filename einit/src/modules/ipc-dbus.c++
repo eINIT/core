@@ -94,6 +94,13 @@ module_register(einit_dbus_self);
 int einit_dbus_configure (struct lmodule *irr) {
  module_init (irr);
 
+#ifdef DARWIN
+ int pthread_errno;
+ if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
+  bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
+ }
+#endif
+
  thismodule->enable = einit_ipc_dbus_enable;
  thismodule->disable = einit_ipc_dbus_disable;
  thismodule->cleanup = einit_dbus_cleanup;
@@ -190,8 +197,12 @@ int einit_dbus::enable (struct einit_event *status) {
 
  this->terminate_thread = 0;
  notice (2, "message thread creation initiated");
-// ethread_create (&(this->message_thread_id), &thread_attribute_detached, message_thread_bootstrap_g	, NULL);
- ethread_create (&(this->message_thread_id), NULL, &(einit_dbus::message_thread_bootstrap), NULL);
+
+ if (pthread_create (&(this->message_thread_id), &thread_attribute_detached, &(einit_dbus::message_thread_bootstrap), NULL)) {
+  fbprintf (status, "could not create detached I/O thread, creating non-detached thread.");
+
+  ethread_create (&(this->message_thread_id), NULL, &(einit_dbus::message_thread_bootstrap), NULL);
+ }
 
  return status_ok;
 }
@@ -236,9 +247,9 @@ void einit_dbus::message_thread() {
     dbus_message_unref(reply);
 // 'old fashioned' ipc via dbus
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC")) {
-    this->ipc(message, 1);
+    this->ipc_spawn_safe(message);
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC")) {
-    this->ipc(message, 0);
+    this->ipc_spawn(message);
    }
 
    dbus_message_unref(message);
@@ -246,38 +257,11 @@ void einit_dbus::message_thread() {
  }
 }
 
-void einit_dbus::ipc(DBusMessage *message, char safe) {
- DBusMessage *reply;
- DBusMessageIter args;
- bool stat = true;
- char *command = "";
-
- if (!dbus_message_iter_init(message, &args))
-  fprintf(stderr, "Message has no arguments!\n");
- else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING) 
-  fprintf(stderr, "Argument is not string!\n"); 
- else {
+char *einit_dbus::ipc_request (char *command) {
+ if (!command) return NULL;
   int internalpipe[2];
   int rv;
   char *returnvalue = NULL;
-  dbus_message_iter_get_basic(&args, &command);
-
-  if (safe) { // check for safe requests, answer with "unsafe request" if necessary
-   if (!strmatch (command, "list modules --xml") && !strmatch (command, "list services --xml")) {
-    reply = dbus_message_new_method_return(message);
-
-    if (!returnvalue) returnvalue = "<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
-
-    this->sequence++;
-    dbus_message_iter_init_append(reply, &args);
-    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
-    if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
-
-    dbus_message_unref(reply);
-
-    return;
-   }
-  }
 
 /*  if ((rv = pipe (internalpipe)) > 0) {*/
   if (socketpair (AF_UNIX, SOCK_STREAM, 0, internalpipe)) {
@@ -334,9 +318,70 @@ void einit_dbus::ipc(DBusMessage *message, char safe) {
    }
   }
 
+  if (!returnvalue) returnvalue = estrdup("meow!\n");
+  
+  return returnvalue;
+}
+
+void einit_dbus::ipc_spawn(DBusMessage *message) {
+ DBusMessage *reply;
+ DBusMessageIter args;
+ bool stat = true;
+ char *command = "";
+
+ if (!dbus_message_iter_init(message, &args))
+  fprintf(stderr, "Message has no arguments!\n");
+ else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING) 
+  fprintf(stderr, "Argument is not string!\n"); 
+ else {
+  char *returnvalue = NULL;
+  dbus_message_iter_get_basic(&args, &command);
+
   reply = dbus_message_new_method_return(message);
 
-  if (!returnvalue) returnvalue = "meow!\n";
+  returnvalue = this->ipc_request (command);
+
+  this->sequence++;
+  dbus_message_iter_init_append(reply, &args);
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
+
+  dbus_message_unref(reply);
+ }
+}
+
+void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
+ DBusMessage *reply;
+ DBusMessageIter args;
+ bool stat = true;
+ char *command = "";
+
+ if (!dbus_message_iter_init(message, &args))
+  fprintf(stderr, "Message has no arguments!\n");
+ else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_STRING) 
+  fprintf(stderr, "Argument is not string!\n"); 
+ else {
+  char *returnvalue = NULL;
+  dbus_message_iter_get_basic(&args, &command);
+
+  if (!strmatch (command, "list modules --xml") && !strmatch (command, "list services --xml")) {
+   reply = dbus_message_new_method_return(message);
+
+   if (!returnvalue) returnvalue = "<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
+
+   this->sequence++;
+   dbus_message_iter_init_append(reply, &args);
+   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+   if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { return; }
+
+   dbus_message_unref(reply);
+
+   return;
+  }
+
+  reply = dbus_message_new_method_return(message);
+
+  returnvalue = this->ipc_request (command);
 
   this->sequence++;
   dbus_message_iter_init_append(reply, &args);
