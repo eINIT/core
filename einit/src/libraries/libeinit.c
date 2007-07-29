@@ -46,7 +46,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <expat.h>
 
 DBusError *einit_dbus_error = NULL;
+DBusError *einit_dbus_error_events = NULL;
 DBusConnection *einit_dbus_connection = NULL;
+DBusConnection *einit_dbus_connection_events = NULL;
 
 #ifdef DARWIN
 /* dammit, what's wrong with macos!? */
@@ -95,13 +97,7 @@ DBusHandlerResult einit_incoming_event_handler(DBusConnection *connection, DBusM
 }
 
 void *einit_message_thread(void *notused) {
- while (dbus_connection_read_write_dispatch(einit_dbus_connection, 100));
-/* while (1) {
-  if (dbus_connection_read_write(einit_dbus_connection, 100) == FALSE) {
-   fprintf (stderr, "got something...\n");
-   dbus_connection_dispatch (einit_dbus_connection);
-  }
- }*/
+ while (dbus_connection_read_write_dispatch(einit_dbus_connection_events, 100));
 
  fprintf (stderr, "lost connection...\n");
 
@@ -109,7 +105,6 @@ void *einit_message_thread(void *notused) {
 }
 
 char einit_connect() {
- pthread_t einit_message_thread_id;
  einit_dbus_error = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error);
 
@@ -123,10 +118,6 @@ char einit_connect() {
 
  dbus_connection_set_exit_on_disconnect(einit_dbus_connection, FALSE);
 
- dbus_connection_add_filter (einit_dbus_connection, einit_incoming_event_handler, NULL, NULL);
-
- ethread_create (&einit_message_thread_id, NULL, einit_message_thread, NULL);
-
  return 1;
 }
 
@@ -139,10 +130,25 @@ char einit_disconnect() {
 //   if (dbus_message_is_signal(message, "org.einit.Einit.Information", "EventSignal"))
 
 void einit_receive_events() {
- if (einit_dbus_connection || einit_connect()) {
-//  return einit_ipc(command);
-   dbus_bus_add_match(einit_dbus_connection, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error);
+ pthread_t einit_message_thread_id;
+ einit_dbus_error_events = ecalloc (1, sizeof (DBusError));
+ dbus_error_init(einit_dbus_error_events);
+
+ if (!einit_dbus_connection_events) {
+  if (!(einit_dbus_connection_events = dbus_bus_get(DBUS_BUS_SYSTEM, einit_dbus_error_events))) {
+   if (dbus_error_is_set(einit_dbus_error)) {
+    fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error->message);
+    dbus_error_free(einit_dbus_error);
+   }
+   return;
+  }
+  dbus_connection_set_exit_on_disconnect(einit_dbus_connection_events, FALSE);
+  dbus_connection_add_filter (einit_dbus_connection_events, einit_incoming_event_handler, NULL, NULL);
+
+  ethread_create (&einit_message_thread_id, NULL, einit_message_thread, NULL);
  }
+
+ dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
 }
 
 char *einit_ipc_i (char *command, char *interface) {
