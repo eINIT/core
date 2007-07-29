@@ -288,8 +288,16 @@ void einit_dbus::ipc(DBusMessage *message, char safe) {
    int rn = 0;
    char *data = NULL;
 
+// c'mon, don't tell me you're going to send data fragments > 40kb using the IPC interface!
+   int socket_buffer_size = 40960;
+
    fcntl (internalpipe[0], F_SETFL, O_NONBLOCK);
    fcntl (internalpipe[1], F_SETFL, O_NONBLOCK);
+
+   setsockopt (internalpipe[0], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
+   setsockopt (internalpipe[1], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
+   setsockopt (internalpipe[0], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
+   setsockopt (internalpipe[1], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
 
    FILE *w = fdopen (internalpipe[1], "w");
 //   FILE *r = fdopen (internalpipe[0], "r");
