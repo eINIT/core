@@ -86,6 +86,9 @@ sched_watch_pid_t sched_watch_pid_fp = NULL;
 
 
 DBusHandlerResult einit_incoming_event_handler(DBusConnection *connection, DBusMessage *message, void *user_data) {
+ fprintf (stderr, "i've been called...\n");
+ fflush (stderr);
+
  if (dbus_message_is_signal(message, "org.einit.Einit.Information", "EventSignal")) {
   fprintf (stderr, "got a message...\n");
   fflush (stderr);
@@ -143,12 +146,12 @@ void einit_receive_events() {
    return;
   }
   dbus_connection_set_exit_on_disconnect(einit_dbus_connection_events, FALSE);
+  dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
+
   dbus_connection_add_filter (einit_dbus_connection_events, einit_incoming_event_handler, NULL, NULL);
-
   ethread_create (&einit_message_thread_id, NULL, einit_message_thread, NULL);
- }
-
- dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
+ } else
+  dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
 }
 
 char *einit_ipc_i (char *command, char *interface) {

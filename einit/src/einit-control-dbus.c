@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 
 // test();
 
-// void einit_receive_events();
+ einit_receive_events();
 
  if (c) {
   ret = send_ipc_dbus(c);
