@@ -171,8 +171,8 @@ char *einit_ipc_i (char *command, char *interface) {
   return NULL;
  }
 
- if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 500, einit_dbus_error))) {
-  fprintf(stderr, "Error...!\n");
+ if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
+  fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
   return NULL;
  }
 
