@@ -212,6 +212,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   eem.task = task;
   eem.status = status_working;
   eem.para = (void *)module;
+  eem.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
   event_emit (&eem, einit_event_flag_broadcast);
   evstaticdestroy (eem);
 
@@ -236,6 +237,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   fb->status = status_working;
   fb->flag = 0;
   fb->string = NULL;
+  fb->stringset = (char **)setadd ((void **)NULL, (module->module && module->module->rid) ? module->module->rid : module->si->provides[0], SET_TYPE_STRING);
   fb->integer = module->fbseq+1;
   status_update (fb);
 
@@ -277,6 +279,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    eem.task = task;
    eem.status = fb->status;
    eem.para = (void *)module;
+   eem.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
    event_emit (&eem, einit_event_flag_broadcast);
    evstaticdestroy (eem);
 
@@ -293,6 +296,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    }
   }
 
+  free (fb->stringset);
   evdestroy (fb);
 
   service_usage_query(service_update, module, NULL);

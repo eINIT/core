@@ -65,6 +65,7 @@ class einit_dbus {
 
   void string(const char *IN_string, char ** OUT_result);
   void signal_dbus (const char *IN_string);
+  void broadcast_event (struct einit_event *);
 
   int enable (struct einit_event *);
   int disable (struct einit_event *);
@@ -81,7 +82,7 @@ class einit_dbus {
 
   pthread_t message_thread_id;
 
-  static void ipc_event_handler (struct einit_event *);
+  static void generic_event_handler (struct einit_event *);
   static void *message_thread_bootstrap(void *);
 
   void ipc_spawn (DBusMessage *);

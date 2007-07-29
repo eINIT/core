@@ -65,7 +65,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 
   struct event_function *cur = event_functions;
   while (cur) {
-   if ((cur->type == subsystem) && cur->handler) {
+   if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
     if (flags & einit_event_flag_spawn_thread) {
      pthread_t threadid;
      if (flags & einit_event_flag_duplicate) {

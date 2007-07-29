@@ -332,6 +332,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
    } else {
     struct einit_event ee = evstaticinit(einit_core_change_service_status);
     ee.set = (void **)setdup ((const void **)ev->argv+1, SET_TYPE_STRING);
+	ee.stringset = (char **)ee.set;
     if (ev->ipc_options & einit_ipc_detach) {
      event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
      eputs (" >> status change queued\n", ev->output);

@@ -1483,6 +1483,7 @@ void mod_commits_dec () {
  if (broken) {
   struct einit_event ee = evstaticinit(einit_feedback_broken_services);
   ee.set = (void **)broken;
+  ee.stringset = broken;
 
   event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);
@@ -1492,6 +1493,7 @@ void mod_commits_dec () {
  if (unresolved) {
   struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
   ee.set = (void **)unresolved;
+  ee.stringset = unresolved;
 
   event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);

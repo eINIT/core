@@ -118,7 +118,7 @@ void einit_dbus::signal_dbus (const char *IN_string) {
  DBusMessage *message;
  DBusMessageIter argv;
 
- message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit.Information", "SignalIPC");
+ message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit.Information", "EventString");
  if (!message) { return; }
 
  dbus_message_iter_init_append(message, &argv);
@@ -131,15 +131,54 @@ void einit_dbus::signal_dbus (const char *IN_string) {
  dbus_message_unref(message);
 }
 
-void einit_dbus::ipc_event_handler (struct einit_event *ev) {
- einit_main_dbus_class.signal_dbus (ev->string);
+void einit_dbus::broadcast_event (struct einit_event *ev) {
+ DBusMessage *message;
+ DBusMessageIter argv;
 
- if (ev->argc >= 2) {
-  if (strmatch(ev->argv[0], "test") && strmatch(ev->argv[1], "ipc")) {
-   fprintf (ev->output, "meow!!\n");
-   ev->implemented = 1;
+ message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit.Information", "EventSignal");
+ if (!message) { return; }
+
+ dbus_message_iter_init_append(message, &argv);
+ if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->type))) { return; }
+ if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
+  if (ev->string && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->string))) { return; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->integer))) { return; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->status))) { return; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->task))) { return; }
+  uint16_t f = ev->flag; // make sure to not get any "static" in this one...
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT16, &(f))) { return; }
+  if (ev->stringset) {
+   DBusMessageIter sub;
+   uint32_t i = 0;
+   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return;
+
+   for (; ev->stringset[i]; i++) {
+    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->stringset[i]))) { return; }
+   }
+   if (!dbus_message_iter_close_container (&argv, &sub)) return;
+  }
+ } else {
+  if (ev->command && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->command))) { return; }
+  if (ev->argv) {
+   DBusMessageIter sub;
+   uint32_t i = 0;
+   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return;
+
+   for (; ev->argv[i]; i++) {
+    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->argv[i]))) { return; }
+   }
+   if (!dbus_message_iter_close_container (&argv, &sub)) return;
   }
  }
+
+ this->sequence++;
+ if (!dbus_connection_send(this->connection, message, &this->sequence)) { return; }
+
+ dbus_message_unref(message);
+}
+
+void einit_dbus::generic_event_handler (struct einit_event *ev) {
+ einit_main_dbus_class.broadcast_event (ev);
 
  return;
 }
@@ -193,7 +232,7 @@ int einit_dbus::enable (struct einit_event *status) {
  }
  if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return status_failed;
 
- event_listen (einit_event_subsystem_ipc, this->ipc_event_handler);
+ event_listen (einit_event_subsystem_any, this->generic_event_handler);
 
  this->terminate_thread = 0;
  notice (2, "message thread creation initiated");
@@ -208,7 +247,7 @@ int einit_dbus::enable (struct einit_event *status) {
 }
 
 int einit_dbus::disable (struct einit_event *status) {
- event_ignore (einit_event_subsystem_ipc, this->ipc_event_handler);
+ event_ignore (einit_event_subsystem_any, this->generic_event_handler);
 
 /* dbus_connection_flush(this->connection);*/
  this->terminate_thread = 1;
