@@ -66,6 +66,8 @@ int send_ipc_dbus (char *command) {
  }
  fputs ("\n", stdout);
 
+ einit_disconnect();
+
  return 0;
 }
 
@@ -155,7 +157,7 @@ int send_ipc_dbus (char *command) {
    if (ev->stringset) {
     char *set = set2str (' ', ev->stringset);
     fprintf (stderr, "parsed a message: %i; integers: %i, %i, %i, flag=%i, string=%s, set=(%s)\n", ev->type, ev->integer, ev->status, ev->task, ev->flag, ev->string, set);
-	free (set);
+    free (set);
    } else {
     fprintf (stderr, "parsed a message: %i; integers: %i, %i, %i, flag=%i, string=%s\n", ev->type, ev->integer, ev->status, ev->task, ev->flag, ev->string);
    }
@@ -163,7 +165,7 @@ int send_ipc_dbus (char *command) {
    if (ev->argv) {
     char *set = set2str (' ', ev->argv);
     fprintf (stderr, "parsed a message: %i; options=%i, argc=%i, command=%s, set=(%s)\n", ev->type, ev->ipc_options, ev->argc, ev->command, set);
-	free (set);
+    free (set);
    } else {
     fprintf (stderr, "parsed a message: %i; options=%i, argc=%i, command=%s\n", ev->type, ev->ipc_options, ev->argc, ev->command);
    }

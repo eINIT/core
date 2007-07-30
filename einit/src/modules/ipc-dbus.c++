@@ -300,17 +300,15 @@ void einit_dbus::message_thread() {
 // 'old fashioned' ipc via dbus
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC")) {
     pthread_t th;
-//    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_safe_bootstrap), message)) {
+    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_safe_bootstrap), message)) {
      this->ipc_spawn_safe_bootstrap(message);
-//    }
+    }
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC")) {
     pthread_t th;
-//    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_bootstrap), message)) {
+    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_bootstrap), message)) {
      this->ipc_spawn_bootstrap(message);
-//    }
+    }
    }
-
-   dbus_message_unref(message);
   }
  }
 }
@@ -383,10 +381,14 @@ char *einit_dbus::ipc_request (char *command) {
 
 void *einit_dbus::ipc_spawn_bootstrap (DBusMessage *message) {
  einit_main_dbus_class.ipc_spawn (message);
+
+ dbus_message_unref(message);
 }
 
 void *einit_dbus::ipc_spawn_safe_bootstrap (DBusMessage *message) {
  einit_main_dbus_class.ipc_spawn_safe (message);
+
+ dbus_message_unref(message);
 }
 
 void einit_dbus::ipc_spawn(DBusMessage *message) {

@@ -230,10 +230,12 @@ void *einit_message_thread(void *notused) {
 }
 
 char einit_connect() {
+// char *dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+
  einit_dbus_error = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error);
 
- if (!(einit_dbus_connection = dbus_bus_get(DBUS_BUS_SYSTEM, einit_dbus_error))) {
+ if (!(einit_dbus_connection = dbus_bus_get_private(DBUS_BUS_SYSTEM, einit_dbus_error))) {
   if (dbus_error_is_set(einit_dbus_error)) {
    fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error->message);
    dbus_error_free(einit_dbus_error);
@@ -241,13 +243,34 @@ char einit_connect() {
   return 0;
  }
 
+/* einit_dbus_connection = dbus_connection_open_private (dbusaddress, einit_dbus_error);
+ if (dbus_error_is_set(einit_dbus_error)) {
+  fprintf(stderr, "DBUS: Connection Error (%s)\n", einit_dbus_error->message);
+  dbus_error_free(einit_dbus_error);
+ }
+ if (!einit_dbus_connection) return 0;
+
+ if (dbus_bus_register (einit_dbus_connection, einit_dbus_error) != TRUE) {
+  if (dbus_error_is_set(einit_dbus_error)) { 
+   fprintf(stderr, "DBUS: Registration Error (%s)\n", einit_dbus_error->message); 
+   dbus_error_free(einit_dbus_error);
+  }
+  return 0;
+ }*/
+
  dbus_connection_set_exit_on_disconnect(einit_dbus_connection, FALSE);
+ dbus_connection_ref(einit_dbus_connection);
 
  return 1;
 }
 
 char einit_disconnect() {
 // ethread_join (&einit_message_thread_id);
+
+
+ dbus_connection_unref(einit_dbus_connection);
+
+ dbus_connection_close (einit_dbus_connection);
 
  return 1;
 }
@@ -259,7 +282,7 @@ void einit_receive_events() {
 
  pthread_attr_init (&einit_dbus_thread_attribute_detached);
  pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);
- 
+
  einit_dbus_error_events = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error_events);
 
@@ -272,32 +295,41 @@ void einit_receive_events() {
    return;
   }
   dbus_connection_set_exit_on_disconnect(einit_dbus_connection_events, FALSE);
+  dbus_connection_ref(einit_dbus_connection_events);
+
   dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
 
   dbus_connection_add_filter (einit_dbus_connection_events, einit_incoming_event_handler, NULL, NULL);
   ethread_create (&einit_message_thread_id, NULL, einit_message_thread, NULL);
- } else
+ } else {
+  dbus_connection_ref(einit_dbus_connection_events);
   dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
+ }
 }
 
 char *einit_ipc_i (char *command, char *interface) {
+ dbus_connection_ref(einit_dbus_connection);
+
  char *returnvalue;
 
  DBusMessage *message, *call;
  DBusMessageIter args;
 
  if (!(call = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", interface, "IPC"))) {
+  dbus_connection_unref(einit_dbus_connection);
   fprintf(stderr, "Sending message failed.\n");
   return NULL;
  }
 
  dbus_message_iter_init_append(call, &args);
  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &command)) { 
+  dbus_connection_unref(einit_dbus_connection);
   fprintf(stderr, "Out Of Memory!\n"); 
   return NULL;
  }
 
  if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
+  dbus_connection_unref(einit_dbus_connection);
   fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
   return NULL;
  }
@@ -312,6 +344,7 @@ char *einit_ipc_i (char *command, char *interface) {
  if (returnvalue) returnvalue = estrdup (returnvalue);
 
  dbus_message_unref(message);
+ dbus_connection_unref(einit_dbus_connection);
 
  return returnvalue;
 }
