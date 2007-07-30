@@ -85,8 +85,8 @@ class einit_dbus {
 
   static void generic_event_handler (struct einit_event *);
   static void *message_thread_bootstrap(void *);
-  static void *einit_dbus::ipc_spawn_bootstrap (DBusMessage *message);
-  static void *einit_dbus::ipc_spawn_safe_bootstrap (DBusMessage *message);
+  static void *ipc_spawn_bootstrap (DBusMessage *);
+  static void *ipc_spawn_safe_bootstrap (DBusMessage *);
 
   void ipc_spawn (DBusMessage *);
   void ipc_spawn_safe (DBusMessage *);
