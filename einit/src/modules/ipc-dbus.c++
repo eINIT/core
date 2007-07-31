@@ -249,7 +249,7 @@ int einit_dbus::enable (struct einit_event *status) {
  this->active = 1;
  notice (2, "message thread creation initiated");
 
- if ((errno = pthread_create (&(this->message_thread_id), &einit_ipc_dbus_thread_attribute_detached, &(einit_dbus::message_thread_bootstrap), NULL))) {
+ if ((errno = pthread_create (&(this->message_thread_id), /*&einit_ipc_dbus_thread_attribute_detached*/ NULL, &(einit_dbus::message_thread_bootstrap), NULL))) {
   fbprintf (status, "could not create detached I/O thread, creating non-detached thread. (error = %s)", strerror(errno));
 
   ethread_create (&(this->message_thread_id), NULL, &(einit_dbus::message_thread_bootstrap), NULL);
@@ -264,9 +264,7 @@ int einit_dbus::disable (struct einit_event *status) {
  this->terminate_thread = 1;
  this->active = 0;
 
- dbus_connection_close(this->connection); // close the connection after looping
-
- dbus_connection_ref (this->connection);
+ pthread_join (this->message_thread_id, NULL);
 
  return status_ok;
 }
@@ -315,6 +313,17 @@ void einit_dbus::message_thread() {
      this->ipc_spawn_bootstrap(message);
     }
    }
+  }
+
+  if (this->terminate_thread) {
+   this->active = 0;
+
+   usleep (300);
+
+   dbus_connection_close(this->connection); // close the connection after looping
+
+   this->connection = NULL;
+   return;
   }
  }
 
