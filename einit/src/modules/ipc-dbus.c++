@@ -112,6 +112,8 @@ int einit_dbus_configure (struct lmodule *irr) {
 }
 
 int einit_dbus::configure() {
+ event_listen (einit_event_subsystem_any, this->generic_event_handler);
+
  return 0;
 }
 
@@ -184,7 +186,9 @@ void einit_dbus::broadcast_event (struct einit_event *ev) {
 }
 
 void einit_dbus::generic_event_handler (struct einit_event *ev) {
- einit_main_dbus_class.broadcast_event (ev);
+ if (einit_main_dbus_class.active) {
+  einit_main_dbus_class.broadcast_event (ev);
+ }
 
  return;
 }
@@ -198,7 +202,8 @@ void einit_dbus::string(const char *IN_string, char ** OUT_result) {
 einit_dbus::einit_dbus() {
  dbus_error_init(&(this->error));
  this->sequence = 1;
- 
+ this->active = 0;
+
  pthread_mutex_init (&(this->sequence_mutex), NULL);
 
 // this->introspection_data = einit_dbus_introspection_data;
@@ -240,9 +245,8 @@ int einit_dbus::enable (struct einit_event *status) {
  }
  if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return status_failed;
 
- event_listen (einit_event_subsystem_any, this->generic_event_handler);
-
  this->terminate_thread = 0;
+ this->active = 1;
  notice (2, "message thread creation initiated");
 
  if ((errno = pthread_create (&(this->message_thread_id), &einit_ipc_dbus_thread_attribute_detached, &(einit_dbus::message_thread_bootstrap), NULL))) {
@@ -255,12 +259,14 @@ int einit_dbus::enable (struct einit_event *status) {
 }
 
 int einit_dbus::disable (struct einit_event *status) {
- event_ignore (einit_event_subsystem_any, this->generic_event_handler);
 
 /* dbus_connection_flush(this->connection);*/
  this->terminate_thread = 1;
+ this->active = 0;
 
  dbus_connection_close(this->connection); // close the connection after looping
+
+ dbus_connection_ref (this->connection);
 
  return status_ok;
 }
@@ -311,6 +317,8 @@ void einit_dbus::message_thread() {
    }
   }
  }
+
+ this->connection = NULL;
 }
 
 char *einit_dbus::ipc_request (char *command) {
@@ -478,5 +486,7 @@ int einit_ipc_dbus_disable (void *pa, struct einit_event *status) {
 }
 
 int einit_dbus_cleanup (struct lmodule *) {
+ event_ignore (einit_event_subsystem_any, einit_main_dbus_class.generic_event_handler);
+
  return 0;
 }

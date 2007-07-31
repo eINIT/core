@@ -79,6 +79,9 @@ class einit_dbus {
   DBusConnection* connection;
   dbus_uint32_t sequence;
   char terminate_thread;
+
+  char active;
+
   pthread_mutex_t sequence_mutex;
 
   pthread_t message_thread_id;
