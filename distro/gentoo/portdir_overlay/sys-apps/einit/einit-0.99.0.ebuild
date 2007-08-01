@@ -3,7 +3,7 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v27)
+# eINIT SVN ebuild (v28)
 #
 
 inherit subversion
@@ -18,11 +18,13 @@ LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
 
-IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural dbus"
+IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural dbus gtk"
 
 RDEPEND="dev-libs/expat
 	sys-apps/iproute2
-	dbus? ( >=sys-apps/dbus-1.0.2-r2 )"
+	dbus? ( >=sys-apps/dbus-1.0.2-r2 )
+	gtk? (	>=sys-apps/dbus-1.0.2-r2
+		>=dev-cpp/gtkmm-2.8 )"
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
@@ -50,7 +52,14 @@ src_compile() {
 		local myconf="${myconf} --nowtf"
 	fi
 	if use dbus ; then
-		local myconf="${myconf} --enable-ipc-dbus"
+		myconf="${myconf} --enable-ipc-dbus"
+	fi
+	if use gtk ; then
+		if ! use dbus ; then
+			ewarn "Using the GTK GUI requires D-Bus support, so this will be enabled, too."
+			local myconf="${myconf} --enable-ipc-dbus"
+		fi
+		local myconf="${myconf} --enable-gtk"
 	fi
 	if use externalise ; then
 		local myconf="${myconf} --externalise"
