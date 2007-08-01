@@ -1114,3 +1114,15 @@ void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_em
 
  return;
 }
+
+struct einit_remote_event *einit_remote_event_create (uint32_t type) {
+ struct einit_remote_event *nev = ecalloc (1, sizeof (struct einit_remote_event));
+
+ nev->type = type;
+
+ return nev;
+}
+
+void einit_remote_event_destroy (struct einit_remote_event *ev) {
+ free (ev);
+}
