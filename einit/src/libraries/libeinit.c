@@ -50,6 +50,8 @@ DBusError *einit_dbus_error_events = NULL;
 DBusConnection *einit_dbus_connection = NULL;
 DBusConnection *einit_dbus_connection_events = NULL;
 
+char einit_dbus_disconnect = 0;
+
 #ifdef DARWIN
 /* dammit, what's wrong with macos!? */
 
@@ -231,8 +233,41 @@ DBusHandlerResult einit_incoming_event_handler(DBusConnection *connection, DBusM
  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+void einit_message_thread_reconnect () {
+ if (!(einit_dbus_connection_events = dbus_bus_get(DBUS_BUS_SYSTEM, einit_dbus_error_events))) {
+  if (dbus_error_is_set(einit_dbus_error_events)) {
+   fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error_events->message);
+   dbus_error_free(einit_dbus_error_events);
+  }
+  return;
+ }
+ dbus_connection_set_exit_on_disconnect(einit_dbus_connection_events, FALSE);
+ dbus_connection_ref(einit_dbus_connection_events);
+
+ dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
+ if (dbus_error_is_set(einit_dbus_error_events)) {
+  fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error_events->message);
+  dbus_error_free(einit_dbus_error_events);
+ }
+
+ dbus_connection_add_filter (einit_dbus_connection_events, einit_incoming_event_handler, NULL, NULL);
+}
+
 void *einit_message_thread(void *notused) {
- while (dbus_connection_read_write_dispatch(einit_dbus_connection_events, 100));
+ while (1) {
+  int s = 5;
+
+  while (dbus_connection_read_write_dispatch(einit_dbus_connection_events, -1)) {
+   if (einit_dbus_disconnect) {
+    einit_dbus_connection_events = NULL;
+    return NULL;
+   }
+  }
+
+  while ((s = sleep (s))); // wait 5 seconds to cool down
+
+  einit_message_thread_reconnect();
+ }
 
  fprintf (stderr, "lost connection...\n");
 
@@ -279,7 +314,7 @@ char einit_connect() {
 
 char einit_disconnect() {
 // ethread_join (&einit_message_thread_id);
-
+ einit_dbus_disconnect = 1;
 
  dbus_connection_unref(einit_dbus_connection);
 

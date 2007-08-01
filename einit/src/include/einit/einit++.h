@@ -36,8 +36,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <einit/einit.h>
+#include <string>
+using std::string;
 
 class Einit {
- Einit();
- ~Einit();
+ public:
+  Einit();
+  ~Einit();
+};
+
+class EinitService {
+ public:
+  EinitService (Einit, string);
+  ~EinitService ();
+};
+
+class EinitModule {
+ public:
+  EinitModule (Einit, string);
+  ~EinitModule ();
+};
+
+class EinitMode {
+ public:
+  EinitMode (Einit, string);
+  ~EinitMode ();
 };

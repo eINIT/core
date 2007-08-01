@@ -38,7 +38,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/einit++.h>
 
 Einit::Einit() {
+ einit_connect();
 }
 
 Einit::~Einit() {
+ einit_disconnect();
+}
+
+EinitService::EinitService (Einit e, string s) {
+}
+
+EinitService::~EinitService () {
+}
+
+EinitModule::EinitModule (Einit e, string s) {
+}
+
+EinitModule::~EinitModule () {
+}
+
+EinitMode::EinitMode (Einit e, string s) {
+}
+
+EinitMode::~EinitMode () {
 }
