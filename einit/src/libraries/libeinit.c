@@ -1035,3 +1035,82 @@ void einit_remote_event_ignore (enum einit_event_subsystems type, void (* handle
 
  return;
 }
+
+DBusMessage *einit_create_event_message (DBusMessage *message, struct einit_remote_event *ev) {
+ DBusMessageIter argv;
+
+ dbus_message_iter_init_append(message, &argv);
+ if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->type))) { return NULL; }
+ if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->integer))) { return NULL; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->status))) { return NULL; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->task))) { return NULL; }
+  uint16_t f = ev->flag; // make sure to not get any "static" in this one...
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT16, &(f))) { return NULL; }
+  if (ev->string && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->string))) { return NULL; }
+  if (ev->stringset) {
+   DBusMessageIter sub;
+   uint32_t i = 0;
+   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return NULL;
+
+   for (; ev->stringset[i]; i++) {
+    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->stringset[i]))) { return NULL; }
+   }
+   if (!dbus_message_iter_close_container (&argv, &sub)) return NULL;
+  }
+ } else {
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->ipc_options))) { return NULL; }
+  if (ev->command && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->command))) { return NULL; }
+  if (ev->argv) {
+   DBusMessageIter sub;
+   uint32_t i = 0;
+   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return NULL;
+
+   for (; ev->argv[i]; i++) {
+    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->argv[i]))) { return NULL; }
+   }
+   if (!dbus_message_iter_close_container (&argv, &sub)) return NULL;
+  }
+ }
+
+ return message;
+}
+
+void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+ dbus_connection_ref(einit_dbus_connection);
+ struct einit_remote_event *rv;
+
+ DBusMessage *message, *call;
+
+ if (!(call = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", "org.einit.Einit.Command", "EmitEvent"))) {
+  dbus_connection_unref(einit_dbus_connection);
+  fprintf(stderr, "Sending message failed.\n");
+  return;
+ }
+
+ if (!(call = einit_create_event_message(call, ev))) { 
+  dbus_connection_unref(einit_dbus_connection);
+  fprintf(stderr, "Out Of Memory!\n"); 
+  return;
+ }
+
+ if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
+  dbus_connection_unref(einit_dbus_connection);
+  fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+  return;
+ }
+
+ if (!(rv = einit_read_remote_event_off_dbus (message))) {
+  dbus_connection_unref(einit_dbus_connection);
+  fprintf (stderr, "Error Parsing Message Reply.");
+  return;
+ }
+
+ memcpy (rv, ev, sizeof (struct einit_remote_event));
+
+ dbus_message_unref(call);
+ dbus_message_unref(message);
+ dbus_connection_unref(einit_dbus_connection);
+
+ return;
+}

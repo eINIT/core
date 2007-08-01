@@ -138,44 +138,12 @@ void einit_dbus::signal_dbus (const char *IN_string) {
 
 void einit_dbus::broadcast_event (struct einit_event *ev) {
  DBusMessage *message;
- DBusMessageIter argv;
 
  message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit.Information", "EventSignal");
  if (!message) { return; }
 
- dbus_message_iter_init_append(message, &argv);
- if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->type))) { return; }
- if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
-  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->integer))) { return; }
-  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->status))) { return; }
-  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->task))) { return; }
-  uint16_t f = ev->flag; // make sure to not get any "static" in this one...
-  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT16, &(f))) { return; }
-  if (ev->string && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->string))) { return; }
-  if (ev->stringset) {
-   DBusMessageIter sub;
-   uint32_t i = 0;
-   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return;
-
-   for (; ev->stringset[i]; i++) {
-    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->stringset[i]))) { return; }
-   }
-   if (!dbus_message_iter_close_container (&argv, &sub)) return;
-  }
- } else {
-  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->ipc_options))) { return; }
-  if (ev->command && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->command))) { return; }
-  if (ev->argv) {
-   DBusMessageIter sub;
-   uint32_t i = 0;
-   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return;
-
-   for (; ev->argv[i]; i++) {
-    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->argv[i]))) { return; }
-   }
-   if (!dbus_message_iter_close_container (&argv, &sub)) return;
-  }
- }
+ message = this->create_event_message (message, ev);
+ if (!message) { return; }
 
  emutex_lock (&this->sequence_mutex);
  this->sequence++;
@@ -311,6 +279,11 @@ void einit_dbus::message_thread() {
     pthread_t th;
     if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_bootstrap), message)) {
      this->ipc_spawn_bootstrap(message);
+    }
+   } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "EmitEvent")) {
+    pthread_t th;
+    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::handle_event_bootstrap), message)) {
+     this->handle_event(message);
     }
    }
   }
@@ -484,6 +457,157 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
 
   dbus_message_unref(reply);
  }
+}
+
+struct einit_event *einit_dbus::read_event (DBusMessage *message) {
+ struct einit_event *ev = evinit (0);
+ DBusMessageIter args;
+ DBusMessageIter sub;
+
+ emutex_init (&(ev->mutex), NULL);
+
+ if (!dbus_message_iter_init(message, &args)) { fprintf(stderr, "Message has no arguments!\n"); evdestroy(ev); return NULL; }
+ else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT32) { fprintf(stderr, "Argument has incorrect type (event type).\n"); evdestroy(ev); return NULL; }
+ else dbus_message_iter_get_basic(&args, &(ev->type));
+
+ if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32)) { fprintf(stderr, "Argument has incorrect type (integer).\n"); evdestroy(ev); return NULL; }
+  else dbus_message_iter_get_basic(&args, &(ev->integer));
+
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32)) { fprintf(stderr, "Argument has incorrect type (status).\n"); evdestroy(ev); return NULL; }
+  else dbus_message_iter_get_basic(&args, &(ev->status));
+
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32)) { fprintf(stderr, "Argument has incorrect type (task).\n"); evdestroy(ev); return NULL; }
+  else dbus_message_iter_get_basic(&args, &(ev->task));
+
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT16)) { fprintf(stderr, "Argument has incorrect type (flag).\n"); evdestroy(ev); return NULL; }
+  else { uint16_t r; dbus_message_iter_get_basic(&args, &(r)); ev->flag = r; }
+
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+
+  if (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_STRING) {
+   dbus_message_iter_get_basic(&args, &(ev->string));
+   ev->string = estrdup (ev->string);
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+  }
+  if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_ARRAY) { fprintf(stderr, "Argument has incorrect type (string set).\n"); evdestroy(ev); return NULL; }
+
+  dbus_message_iter_recurse (&args, &sub);
+  while (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_INVALID) {
+   char *value;
+
+   if (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_STRING) { fprintf(stderr, "Argument has incorrect type (string set member).\n"); evdestroy(ev); return NULL; }
+   dbus_message_iter_get_basic(&sub, &(value));
+
+   ev->stringset = (char **)setadd ((void **)ev->stringset, (void *)value, SET_TYPE_STRING);
+
+   dbus_message_iter_next (&sub);
+  }
+ } else {
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT32)) { fprintf(stderr, "Argument has incorrect type (ipc-options).\n"); evdestroy(ev); return NULL; }
+  else dbus_message_iter_get_basic(&args, &(ev->integer));
+
+  if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+
+  if (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_STRING) {
+   dbus_message_iter_get_basic(&args, &(ev->command));
+   ev->command = estrdup (ev->command);
+
+   if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
+  }
+ 
+  if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_ARRAY) { fprintf(stderr, "Argument has incorrect type (ipc argv).\n"); evdestroy(ev); return NULL; }
+  dbus_message_iter_recurse (&args, &sub);
+  while (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_INVALID) {
+   char *value;
+
+   if (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_STRING) { fprintf(stderr, "Argument has incorrect type (ipc argv member).\n"); evdestroy(ev); return NULL; }
+   dbus_message_iter_get_basic(&sub, &(value));
+
+   ev->argv = (char **)setadd ((void **)ev->argv, (void *)value, SET_TYPE_STRING);
+
+   dbus_message_iter_next (&sub);
+  }
+
+  ev->argc = setcount ((const void **)ev->argv);
+ }
+
+ message_read:
+
+ return ev;
+}
+
+DBusMessage *einit_dbus::create_event_message (DBusMessage *message, struct einit_event *ev) {
+ DBusMessageIter argv;
+
+ dbus_message_iter_init_append(message, &argv);
+ if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->type))) { return NULL; }
+ if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->integer))) { return NULL; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->status))) { return NULL; }
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_INT32, &(ev->task))) { return NULL; }
+  uint16_t f = ev->flag; // make sure to not get any "static" in this one...
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT16, &(f))) { return NULL; }
+  if (ev->string && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->string))) { return NULL; }
+  if (ev->stringset) {
+   DBusMessageIter sub;
+   uint32_t i = 0;
+   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return NULL;
+
+   for (; ev->stringset[i]; i++) {
+    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->stringset[i]))) { return NULL; }
+   }
+   if (!dbus_message_iter_close_container (&argv, &sub)) return NULL;
+  }
+ } else {
+  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_UINT32, &(ev->ipc_options))) { return NULL; }
+  if (ev->command && !dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &(ev->command))) { return NULL; }
+  if (ev->argv) {
+   DBusMessageIter sub;
+   uint32_t i = 0;
+   if (!dbus_message_iter_open_container (&argv, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &sub)) return NULL;
+
+   for (; ev->argv[i]; i++) {
+    if (!dbus_message_iter_append_basic (&sub, DBUS_TYPE_STRING, &(ev->argv[i]))) { return NULL; }
+   }
+   if (!dbus_message_iter_close_container (&argv, &sub)) return NULL;
+  }
+ }
+
+ return message;
+}
+
+void einit_dbus::handle_event (DBusMessage *message) {
+ DBusMessage *reply;
+
+ if (!message) return;
+
+ struct einit_event *ev = this->read_event (message);
+
+ if (!ev) return;
+
+ event_emit (ev, einit_event_flag_broadcast);
+
+ reply = dbus_message_new_method_return(message);
+ if (!reply) { return; }
+
+ reply = this->create_event_message (reply, ev);
+ if (!reply) { return; }
+
+ emutex_lock (&this->sequence_mutex);
+ this->sequence++;
+ if (!dbus_connection_send(this->connection, reply, &this->sequence)) { emutex_unlock (&this->sequence_mutex); return; }
+ emutex_unlock (&this->sequence_mutex);
+
+ dbus_message_unref(message);
+ dbus_message_unref(reply);
+}
+
+void *einit_dbus::handle_event_bootstrap (DBusMessage *message) {
+ einit_main_dbus_class.handle_event (message);
+
+ return NULL;
 }
 
 int einit_ipc_dbus_enable (void *pa, struct einit_event *status) {

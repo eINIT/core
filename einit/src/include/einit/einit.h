@@ -163,6 +163,8 @@ void modestree_free(struct stree *);
 /* events... */
 void einit_remote_event_listen (enum einit_event_subsystems, void (*)(struct einit_remote_event *));
 void einit_remote_event_ignore (enum einit_event_subsystems, void (*)(struct einit_remote_event *));
+void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags);
+
 
 #ifdef __cplusplus
 }
