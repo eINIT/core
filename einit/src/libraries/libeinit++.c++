@@ -36,7 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <einit/einit++.h>
-
+#include <map>
+using std::pair;
 
 /* our primary einit class */
 
@@ -148,7 +149,7 @@ bool Einit::powerReset() {
  return true;
 }
 
-void Einit::updateData() {
+void Einit::update() {
  if (this->servicesRaw) {
   struct stree *services = einit_get_all_services();
   struct stree *cur = services;
@@ -161,6 +162,9 @@ void Einit::updateData() {
 
    cur = streenext (cur);
   }
+
+  servicestree_free (this->servicesRaw);
+  this->servicesRaw = services;
  }
 
  if (this->modulesRaw) {
@@ -175,6 +179,9 @@ void Einit::updateData() {
 
    cur = streenext (cur);
   }
+
+  modulestree_free (this->modulesRaw);
+  this->modulesRaw = modules;
  }
 
  if (this->modesRaw) {
@@ -189,6 +196,9 @@ void Einit::updateData() {
 
    cur = streenext (cur);
   }
+
+  modestree_free (this->modesRaw);
+  this->modesRaw = modes;
  }
 }
 
@@ -203,6 +213,7 @@ EinitOffspring::EinitOffspring (Einit *e) {
 /* services */
 
 EinitService::EinitService (Einit *e, struct einit_service *t) : EinitOffspring (e) {
+ this->update (t);
 }
 
 EinitService::~EinitService () {
@@ -227,12 +238,73 @@ bool EinitService::call(string s) {
 }
 
 bool EinitService::update(struct einit_service *s) {
+ this->id = s->name;
+
+ this->provided = (s->status & service_provided) ? true : false;
+
+ if (s->group && s->group->seq && s->group->services) {
+  uint32_t i = 0;
+
+  this->groupType = s->group->seq;
+
+  for (; s->group->services[i]; i++) {
+   EinitService *sp = this->main->getService (s->group->services[i]);
+
+   if (sp) {
+    map<string, EinitService *>::iterator it = this->group.find (s->group->services[i]);
+    if (it != this->group.end()) {
+     this->group.erase (it);
+    }
+
+    this->group.insert(pair<string, EinitService *>(s->group->services[i], sp));
+   }
+  }
+ }
+
+ if (s->modules) {
+  struct stree *cur = s->modules;
+
+  while (cur) {
+   EinitModule *sp = this->main->getModule (cur->key);
+
+   if (sp) {
+    map<string, EinitModule *>::iterator it = this->modules.find (cur->key);
+    if (it != this->modules.end()) {
+     this->modules.erase (it);
+    }
+
+    this->modules.insert(pair<string, EinitModule *>(cur->key, sp));
+   }
+
+   cur = streenext (cur);
+  }
+ }
+
+ if (s->used_in_mode) {
+  uint32_t i = 0;
+
+  for (; s->used_in_mode[i]; i++) {
+   EinitMode *sp = this->main->getMode (s->used_in_mode[i]);
+
+   if (sp) {
+    map<string, EinitMode *>::iterator it = this->modes.find (s->used_in_mode[i]);
+    if (it != this->modes.end()) {
+     this->modes.erase (it);
+    }
+
+    this->modes.insert(pair<string, EinitMode *>(s->used_in_mode[i], sp));
+   }
+  }
+ }
+
+ return true;
 }
 
 
 /* modules */
 
 EinitModule::EinitModule (Einit *e, struct einit_module *t) : EinitOffspring (e) {
+ this->update (t);
 }
 
 EinitModule::~EinitModule () {
@@ -257,12 +329,55 @@ bool EinitModule::call(string s) {
 }
 
 bool EinitModule::update(struct einit_module *s) {
+ this->id = s->id;
+ this->name = s->name ? s->name : "unknown";
+
+ this->enabled = (s->status & status_enabled) ? true : false;
+ this->idle = (s->status == status_idle) ? true : false;
+ this->error = (s->status & status_failed) ? true : false;
+
+ if (s->requires) {
+  uint32_t i = 0;
+
+  for (; s->requires[i]; i++) {
+   EinitService *sp = this->main->getService (s->requires[i]);
+
+   if (sp) {
+    map<string, EinitService *>::iterator it = this->requires.find (s->requires[i]);
+    if (it != this->requires.end()) {
+     this->requires.erase (it);
+    }
+
+    this->requires.insert(pair<string, EinitService *>(s->requires[i], sp));
+   }
+  }
+ }
+
+ if (s->provides) {
+  uint32_t i = 0;
+
+  for (; s->provides[i]; i++) {
+   EinitService *sp = this->main->getService (s->provides[i]);
+
+   if (sp) {
+    map<string, EinitService *>::iterator it = this->provides.find (s->provides[i]);
+    if (it != this->provides.end()) {
+     this->provides.erase (it);
+    }
+
+    this->provides.insert(pair<string, EinitService *>(s->provides[i], sp));
+   }
+  }
+ }
+
+ return true;
 }
 
 
 /* modes */
 
 EinitMode::EinitMode (Einit *e, struct einit_mode_summary *t) : EinitOffspring (e) {
+ this->update (t);
 }
 
 EinitMode::~EinitMode () {
@@ -274,5 +389,76 @@ bool EinitMode::switchTo() {
  return true;
 }
 
-bool update(struct einit_mode_summary *) {
+bool EinitMode::update(struct einit_mode_summary *s) {
+ this->id = s->id;
+
+ if (s->services) {
+  uint32_t i = 0;
+
+  for (; s->services[i]; i++) {
+   EinitService *sp = this->main->getService (s->services[i]);
+
+   if (sp) {
+    map<string, EinitService *>::iterator it = this->services.find (s->services[i]);
+    if (it != this->services.end()) {
+     this->services.erase (it);
+    }
+
+    this->services.insert(pair<string, EinitService *>(s->services[i], sp));
+   }
+  }
+ }
+
+ if (s->critical) {
+  uint32_t i = 0;
+
+  for (; s->critical[i]; i++) {
+   EinitService *sp = this->main->getService (s->critical[i]);
+
+   if (sp) {
+    map<string, EinitService *>::iterator it = this->critical.find (s->critical[i]);
+    if (it != this->critical.end()) {
+     this->critical.erase (it);
+    }
+
+    this->critical.insert(pair<string, EinitService *>(s->critical[i], sp));
+   }
+  }
+ }
+
+ if (s->disable) {
+  uint32_t i = 0;
+
+  for (; s->disable[i]; i++) {
+   EinitService *sp = this->main->getService (s->disable[i]);
+
+   if (sp) {
+    map<string, EinitService *>::iterator it = this->disable.find (s->disable[i]);
+    if (it != this->disable.end()) {
+     this->disable.erase (it);
+    }
+
+    this->disable.insert(pair<string, EinitService *>(s->disable[i], sp));
+   }
+  }
+ }
+
+ if (s->base) {
+  uint32_t i = 0;
+
+  for (; s->base[i]; i++) {
+   EinitMode *sp = this->main->getMode (s->base[i]);
+
+   if (sp) {
+    map<string, EinitMode *>::iterator it = this->base.find (s->base[i]);
+    if (it != this->base.end()) {
+     this->base.erase (it);
+    }
+
+    this->base.insert(pair<string, EinitMode *>(s->base[i], sp));
+   }
+  }
+ }
+
+ return true;
 }

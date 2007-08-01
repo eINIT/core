@@ -61,7 +61,7 @@ class Einit {
   bool powerDown();
   bool powerReset();
 
-  void updateData();
+  void update();
 
  private:
   bool listening;
@@ -80,8 +80,9 @@ class EinitOffspring {
   EinitOffspring (Einit *);
   ~EinitOffspring ();
 
- private:
   Einit *main;
+
+ private:
 };
 
 class EinitService : public EinitOffspring {
@@ -95,12 +96,15 @@ class EinitService : public EinitOffspring {
 
   bool update(struct einit_service *);
 
- private:
   string id;
   bool provided;
 
-  map<string, EinitModule *> providers;
+  map<string, EinitModule *> modules;
   map<string, EinitService *> group;
+  char *groupType;
+  map<string, EinitMode *> modes;
+
+ private:
 };
 
 class EinitModule : public EinitOffspring {
@@ -114,7 +118,6 @@ class EinitModule : public EinitOffspring {
 
   bool update(struct einit_module *);
 
- private:
   string id;
   string name;
 
@@ -122,7 +125,10 @@ class EinitModule : public EinitOffspring {
   bool idle;
   bool error;
 
+  map<string, EinitService *> provides;
   map<string, EinitService *> requires;
+
+ private:
 };
 
 class EinitMode : public EinitOffspring {
@@ -134,11 +140,12 @@ class EinitMode : public EinitOffspring {
 
   bool update(struct einit_mode_summary *);
 
- private:
   string id;
 
   map<string, EinitService *> services;
   map<string, EinitService *> critical;
   map<string, EinitService *> disable;
   map<string, EinitMode *> base;
+
+ private:
 };
