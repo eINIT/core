@@ -400,7 +400,9 @@ void einit_dbus::ipc_spawn(DBusMessage *message) {
   returnvalue = this->ipc_request (command);
 
   dbus_message_iter_init_append(reply, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
+
+  free (returnvalue);
 
   emutex_lock (&this->sequence_mutex);
   this->sequence++;
@@ -448,7 +450,9 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
   returnvalue = this->ipc_request (command);
 
   dbus_message_iter_init_append(reply, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
+
+  free (returnvalue);
 
   emutex_lock (&this->sequence_mutex);
   this->sequence++;

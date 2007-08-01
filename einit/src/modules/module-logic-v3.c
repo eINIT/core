@@ -720,7 +720,7 @@ int mod_modaction (char **argv, FILE *output) {
   struct group_data *gd = mod_group_get_data (argv[0]);
   if (strmatch (argv[1], "status") && output && gd) {
    char *members = set2str (' ', gd->members);
-  
+
    ret = 0;
 
    eprintf (output, "%s: \e[34mgroup\e[0m\n", argv[0]);
@@ -3214,11 +3214,6 @@ void mod_commit_and_wait (char **en, char **dis) {
 
   if (remainder <= 0) {
    mod_commits_dec();
-
-#ifdef DEBUG
-   notice (4, "finished: enable=%s; disable=%s\n", en ? set2str (' ', en) : "none", dis ? set2str (' ', dis) : "none");
-   fflush (stderr);
-#endif
 
 //   pthread_mutex_destroy (&ml_service_update_mutex);
    return;

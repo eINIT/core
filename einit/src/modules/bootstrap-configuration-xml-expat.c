@@ -411,6 +411,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
         recursion--;
        }
       }
+
+      free (includefile);
       eclosedir (dir);
      } else {
       if (xml_parser_auto_create_missing_directories) {
