@@ -203,6 +203,7 @@ int einit_dbus::enable (struct einit_event *status) {
    fbprintf(status, "DBUS: Registration Error (%s)\n", this->error.message); 
    dbus_error_free(&(this->error));
   }
+
   return status_failed;
  }
 
@@ -597,7 +598,9 @@ void einit_dbus::handle_event (DBusMessage *message) {
  if (!reply) { return; }
 
  reply = this->create_event_message (reply, ev);
- if (!reply) { return; }
+ if (!reply) { evdestroy (ev); return; }
+
+ evdestroy (ev);
 
  emutex_lock (&this->sequence_mutex);
  this->sequence++;

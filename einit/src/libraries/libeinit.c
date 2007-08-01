@@ -100,31 +100,42 @@ pthread_attr_t einit_dbus_thread_attribute_detached = {};
 pthread_attr_t einit_dbus_thread_attribute_detached;
 #endif
 
-void einit_event_emit_remote (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+void *einit_event_emit_remote_dispatch (struct einit_remote_event *ev) {
  uint32_t subsystem;
 
- if (!ev || !ev->type) return;
+ if (!ev || !ev->type) return NULL;
  subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
 
-/* initialise sequence id and timestamp of the event */
-  ev->seqid = remote_event_cseqid++;
-  ev->timestamp = time(NULL);
+ /* initialise sequence id and timestamp of the event */
+ ev->seqid = remote_event_cseqid++;
+ ev->timestamp = time(NULL);
 
-  struct remote_event_function *cur = event_remote_event_functions;
-  while (cur) {
-   if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
-    struct einit_remote_event *evd = emalloc (sizeof (struct einit_remote_event));
-    pthread_t threadid;
-
-    memcpy (evd, ev, sizeof (struct einit_remote_event));
-
-    if (ethread_create (&threadid, &einit_dbus_thread_attribute_detached, (void *(*)(void *))cur->handler, evd))
-     cur->handler (evd);
-   }
-   cur = cur->next;
+ struct remote_event_function *cur = event_remote_event_functions;
+ while (cur) {
+  if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
+   cur->handler (ev);
   }
+  cur = cur->next;
+ }
 
- return;
+ if (subsystem == einit_event_subsystem_ipc) {
+  if (ev->argv) free (ev->argv);
+  if (ev->command) free (ev->command);
+ } else {
+  if (ev->string) free (ev->string);
+  if (ev->stringset) free (ev->stringset);
+ }
+
+ free (ev);
+
+ return NULL;
+}
+
+void einit_event_emit_remote (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+ pthread_t threadid;
+
+ if (ethread_create (&threadid, &einit_dbus_thread_attribute_detached, (void *(*)(void *))einit_event_emit_remote_dispatch, ev))
+  einit_event_emit_remote_dispatch (ev);
 }
 
 struct einit_remote_event *einit_read_remote_event_off_dbus (DBusMessage *message) {
@@ -231,6 +242,8 @@ void *einit_message_thread(void *notused) {
 
 char einit_connect() {
 // char *dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+ pthread_attr_init (&einit_dbus_thread_attribute_detached);
+ pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);
 
  einit_dbus_error = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error);
@@ -280,9 +293,6 @@ char einit_disconnect() {
 void einit_receive_events() {
  pthread_t einit_message_thread_id;
 
- pthread_attr_init (&einit_dbus_thread_attribute_detached);
- pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);
-
  einit_dbus_error_events = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error_events);
 
@@ -300,7 +310,7 @@ void einit_receive_events() {
   dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
 
   dbus_connection_add_filter (einit_dbus_connection_events, einit_incoming_event_handler, NULL, NULL);
-  ethread_create (&einit_message_thread_id, NULL, einit_message_thread, NULL);
+  ethread_create (&einit_message_thread_id, &einit_dbus_thread_attribute_detached, einit_message_thread, NULL);
  } else {
   dbus_connection_ref(einit_dbus_connection_events);
   dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
@@ -1076,9 +1086,8 @@ DBusMessage *einit_create_event_message (DBusMessage *message, struct einit_remo
  return message;
 }
 
-void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
  dbus_connection_ref(einit_dbus_connection);
- struct einit_remote_event *rv;
 
  DBusMessage *message, *call;
 
@@ -1100,19 +1109,82 @@ void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_em
   return;
  }
 
- if (!(rv = einit_read_remote_event_off_dbus (message))) {
-  dbus_connection_unref(einit_dbus_connection);
-  fprintf (stderr, "Error Parsing Message Reply.");
-  return;
+ uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
+
+ if (subsystem == einit_event_subsystem_ipc) {
+  if (ev->argv) free (ev->argv);
+  if (ev->command) free (ev->command);
+ } else {
+  if (ev->string) free (ev->string);
+  if (ev->stringset) free (ev->stringset);
  }
 
- memcpy (rv, ev, sizeof (struct einit_remote_event));
+ free (ev);
 
  dbus_message_unref(call);
  dbus_message_unref(message);
  dbus_connection_unref(einit_dbus_connection);
 
  return;
+}
+
+void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+ pthread_t threadid;
+
+ if (flags & einit_event_flag_spawn_thread) {
+  struct einit_remote_event *rev = emalloc (sizeof (struct einit_remote_event));
+  memcpy (rev, ev, sizeof (struct einit_remote_event));
+  uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
+
+  if (subsystem == einit_event_subsystem_ipc) {
+   if (ev->command) rev->string = estrdup (ev->command);
+   if (ev->argv) rev->argv = (char **)setdup ((const void **)ev->argv, SET_TYPE_STRING);
+  } else {
+   if (ev->string) rev->string = estrdup (ev->string);
+   if (ev->stringset) rev->stringset = (char **)setdup ((const void **)ev->stringset, SET_TYPE_STRING);
+  }
+
+  if (ethread_create (&threadid, &einit_dbus_thread_attribute_detached, (void *(*)(void *))einit_remote_event_emit_dispatch, rev))
+   einit_remote_event_emit_dispatch (rev);
+ } else {
+  dbus_connection_ref(einit_dbus_connection);
+  struct einit_remote_event *rv;
+
+  DBusMessage *message, *call;
+
+  if (!(call = dbus_message_new_method_call("org.einit.Einit", "/org/einit/einit", "org.einit.Einit.Command", "EmitEvent"))) {
+   dbus_connection_unref(einit_dbus_connection);
+   fprintf(stderr, "Sending message failed.\n");
+   return;
+  }
+
+  if (!(call = einit_create_event_message(call, ev))) { 
+   dbus_connection_unref(einit_dbus_connection);
+   fprintf(stderr, "Out Of Memory!\n"); 
+   return;
+  }
+
+  if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
+   dbus_connection_unref(einit_dbus_connection);
+   fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+   return;
+  }
+
+  if (!(rv = einit_read_remote_event_off_dbus (message))) {
+   dbus_connection_unref(einit_dbus_connection);
+   fprintf (stderr, "Error Parsing Message Reply.");
+   return;
+  }
+
+  memcpy (ev, rv, sizeof (struct einit_remote_event));
+  free (rv);
+
+  dbus_message_unref(call);
+  dbus_message_unref(message);
+  dbus_connection_unref(einit_dbus_connection);
+
+  return;
+ }
 }
 
 struct einit_remote_event *einit_remote_event_create (uint32_t type) {

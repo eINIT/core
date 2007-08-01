@@ -152,7 +152,7 @@ int send_ipc_dbus (char *command) {
 
 //}
 
-void event_test (struct einit_remote_event *ev) {
+/*void event_test (struct einit_remote_event *ev) {
   if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
    if (ev->stringset) {
     char *set = set2str (' ', ev->stringset);
@@ -172,7 +172,7 @@ void event_test (struct einit_remote_event *ev) {
   }
 
  fflush (stderr);
-}
+}*/
 
 int main(int argc, char **argv) {
  int i, l, ret = 0;
@@ -230,8 +230,9 @@ int main(int argc, char **argv) {
 
 // test();
 
- einit_remote_event_listen (einit_event_subsystem_any, event_test);
  einit_connect();
+
+/* einit_remote_event_listen (einit_event_subsystem_any, event_test);
  einit_receive_events();
 
 
@@ -241,7 +242,9 @@ int main(int argc, char **argv) {
 
  einit_remote_event_emit (ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
 
- einit_remote_event_destroy(ev);
+// if (ev->string) free (ev->string);
+
+ einit_remote_event_destroy(ev);*/
 
  if (c) {
   ret = send_ipc_dbus(c);
@@ -250,7 +253,7 @@ int main(int argc, char **argv) {
  }
  free (name);
 
- einit_remote_event_ignore (einit_event_subsystem_any, event_test);
+// einit_remote_event_ignore (einit_event_subsystem_any, event_test);
 
  return 0;
 }

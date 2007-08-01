@@ -345,6 +345,8 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
     }
     cur = streenext (cur);
    }
+
+   regfree (&pattern);
   }
  }
 #endif
