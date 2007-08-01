@@ -146,15 +146,15 @@ void servicestree_free(struct stree *);
 void einit_power_down ();
 void einit_power_reset ();
 
-void einit_service_call (char *, char *);
-void einit_service_enable (char *);
-void einit_service_disable (char *);
+void einit_service_call (const char *, const char *);
+void einit_service_enable (const char *);
+void einit_service_disable (const char *);
 
-void einit_module_id_call (char *, char *);
-void einit_module_id_enable (char *);
-void einit_module_id_disable (char *);
+void einit_module_id_call (const char *, const char *);
+void einit_module_id_enable (const char *);
+void einit_module_id_disable (const char *);
 
-void einit_switch_mode (char *);
+void einit_switch_mode (const char *);
 void einit_reload_configuration ();
 
 struct stree *einit_get_all_modes();

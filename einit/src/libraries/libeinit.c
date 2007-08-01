@@ -893,7 +893,7 @@ void einit_power_reset () { // reboot
  free (r);
 }
 
-void einit_service_call (char *service, char *command) {
+void einit_service_call (const char *service, const char *command) {
  char *tmp;
  uint32_t len;
 
@@ -907,15 +907,15 @@ void einit_service_call (char *service, char *command) {
  free (tmp);
 }
 
-void einit_service_enable (char *service) {
+void einit_service_enable (const char *service) {
  einit_service_call (service, "enable");
 }
 
-void einit_service_disable (char *service) {
+void einit_service_disable (const char *service) {
  einit_service_call (service, "disable");
 }
 
-void einit_module_id_call (char *module, char *command) {
+void einit_module_id_call (const char *module, const char *command) {
  char *tmp;
  uint32_t len;
 
@@ -929,15 +929,15 @@ void einit_module_id_call (char *module, char *command) {
  free (tmp);
 }
 
-void einit_module_id_enable (char *module) {
+void einit_module_id_enable (const char *module) {
  einit_module_id_call (module, "enable");
 }
 
-void einit_module_id_disable (char *module) {
+void einit_module_id_disable (const char *module) {
  einit_module_id_call (module, "disable");
 }
 
-void einit_switch_mode (char *mode) { // think "runlevel"
+void einit_switch_mode (const char *mode) { // think "runlevel"
  char *tmp;
  uint32_t len;
 
