@@ -153,7 +153,11 @@ for param in $@; do
 		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
 		DBUS="dbus";
 		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit libeinit++";
-	elif test "$shortd" = ""; then
+	elif test "$param" = "--enable-gtk"; then
+		UTILOBJECTS="${UTILOBJECTS} einit-gui-gtk";
+		GUI="${GTK} gtk"
+		GTK="gtk"
+		elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
 	elif test "$shorte" = ""; then
 		EXTERNALMODULES="${EXTERNALMODULES} ${param#*--enable-}";
@@ -455,6 +459,12 @@ if [ "${DBUS}" = "dbus" ]; then
 	DBUS_LIBS=$(pkg-config --libs dbus-1)
 fi
 
+if [ "${GTK}" = "gtk" ]; then
+	echo "getting gtkmm flags off pkg-config..."
+	GTK_CFLAGS=$(pkg-config --cflags gtkmm-2.4)
+	GTK_LIBS=$(pkg-config --libs gtkmm-2.4)
+fi
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
@@ -463,6 +473,7 @@ LIBDIR = ${PREFIX}/lib/einit
 MODDIR = ${PREFIX}/lib/einit/modules
 ULIBDIR = ${UPREFIX}/lib
 BINDIR = ${PREFIX}/bin
+UBINDIR = ${UPREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
 BOOTSTRAPDIR = ${PREFIX}/${BOOTSTRAP_MODULE_PATH}
@@ -522,6 +533,12 @@ LXXLD = \${CXXC} \${LDFLAGS} $LLD
 DBUS_CFLAGS = ${DBUS_CFLAGS}
 DBUS_LIBS = ${DBUS_LIBS}
 DBUS = ${DBUS}
+
+GTK_CFLAGS = ${GTK_CFLAGS}
+GTK_LIBS = ${GTK_LIBS}
+GTK = ${GTK}
+
+GUI = ${GUI}
 " > config.mk
 
 echo "creating config.sh..."

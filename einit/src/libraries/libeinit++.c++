@@ -209,6 +209,8 @@ EinitOffspring::EinitOffspring (Einit *e) {
  this->main = e;
 }
 
+EinitOffspring::~EinitOffspring () {
+}
 
 /* services */
 

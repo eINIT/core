@@ -1,6 +1,6 @@
 util: einit-control
 
-install: einit-control crash-handler $(DBUS)
+install: einit-control crash-handler $(DBUS) $(GUI)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
@@ -27,8 +27,15 @@ dbus: einit-control-dbus libeinit.${SO} libeinit++.${SO}
 einit-control-dbus: einit-control-dbus.o bitch.o utility.o libeinit.${SO} $(asmobjects)
 	$(CLD) einit-control-dbus.o bitch.o utility.o $(asmobjects) -o einit-control-dbus $(STATIC) $(DBUS_LIBS) -L. -leinit
 
-libeinit.${SO}: libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o
-	${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o -o libeinit.${SO} $(DBUS_LIBS) -lexpat ${LPA}
+libeinit.${SO}: libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects)
+	${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO} $(DBUS_LIBS) -lexpat ${LPA}
 
 libeinit++.${SO}: libeinit.${SO} libeinit++.o
-	${CXXLD} ${XDYNAMIC_SIMPLE} libeinit++.o -o libeinit++.${SO} -L . -leinit
+	${CXXLD} ${XDYNAMIC_SIMPLE} libeinit++.o -o libeinit++.${SO} -L. -leinit
+
+gtk: einit-gui-gtk
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${UBINDIR}
+	${INSTALL} ${BINIPARAM} einit-gui-gtk ${DESTDIR}/${UBINDIR}
+
+einit-gui-gtk: libeinit++.${SO} einit-gui-gtk.o
+	$(CXXLD) einit-gui-gtk.o -o einit-gui-gtk $(STATIC) $(GTK_LIBS) -L. -leinit -leinit++
