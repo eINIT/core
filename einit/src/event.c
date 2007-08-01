@@ -53,11 +53,55 @@ pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 uint32_t cseqid = 0;
 
-void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
- uint32_t subsystem;
+void *event_subthread (struct einit_event *event) {
+ static char recurse = 0;
+ if (!event) return NULL;
 
+ uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
+
+ /* initialise sequence id and timestamp of the event */
+ event->seqid = cseqid++;
+ event->timestamp = time(NULL);
+
+ struct event_function *cur = event_functions;
+ while (cur) {
+  if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
+   cur->handler (event);
+  }
+  cur = cur->next;
+ }
+
+ if (event->chain_type) {
+  event->type = event->chain_type;
+  event->chain_type = 0;
+
+  recurse++;
+  event_subthread (event);
+  recurse--;
+ }
+
+ if (!recurse) free (event);
+
+ return NULL;
+}
+
+void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
  if (!event || !event->type) return NULL;
- subsystem = event->type & EVENT_SUBSYSTEM_MASK;
+
+ if (flags & einit_event_flag_spawn_thread) {
+  pthread_t threadid;
+
+  struct einit_event *ev = evdup(event);
+  if (!ev) return NULL;
+
+  if (ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))event_subthread, ev)) {
+   event_subthread (ev);
+  }
+
+  return NULL;
+ }
+
+ uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
 /* initialise sequence id and timestamp of the event */
   event->seqid = cseqid++;
@@ -66,7 +110,9 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   struct event_function *cur = event_functions;
   while (cur) {
    if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
-    if (flags & einit_event_flag_spawn_thread) {
+    cur->handler (event);
+
+/*    if (flags & einit_event_flag_spawn_thread) {
      pthread_t threadid;
      if (flags & einit_event_flag_duplicate) {
       struct einit_event *ev = evdup(event);
@@ -79,7 +125,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
       cur->handler (ev);
      } else
       cur->handler (event);
-    }
+    } */
    }
    cur = cur->next;
   }
