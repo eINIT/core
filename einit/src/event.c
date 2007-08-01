@@ -80,7 +80,15 @@ void *event_subthread (struct einit_event *event) {
   recurse--;
  }
 
- if (!recurse) free (event);
+ if (!recurse) {
+  if (subsystem == einit_event_subsystem_ipc) {
+   if (event->argv) free (event->argv);
+  } else {
+   if (event->stringset) free (event->stringset);
+  }
+
+  free (event);
+ }
 
  return NULL;
 }

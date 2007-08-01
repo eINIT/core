@@ -189,6 +189,8 @@ struct einit_event *evinit (uint32_t type);
 void evdestroy (struct einit_event *ev);
 /*!\}*/
 
+void evpurge (struct einit_event *ev);
+
 /* user/group functions */
 int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group);
 

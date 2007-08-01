@@ -298,9 +298,9 @@ void einit_receive_events() {
 
  if (!einit_dbus_connection_events) {
   if (!(einit_dbus_connection_events = dbus_bus_get(DBUS_BUS_SYSTEM, einit_dbus_error_events))) {
-   if (dbus_error_is_set(einit_dbus_error)) {
-    fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error->message);
-    dbus_error_free(einit_dbus_error);
+   if (dbus_error_is_set(einit_dbus_error_events)) {
+    fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error_events->message);
+    dbus_error_free(einit_dbus_error_events);
    }
    return;
   }
@@ -308,12 +308,20 @@ void einit_receive_events() {
   dbus_connection_ref(einit_dbus_connection_events);
 
   dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
+  if (dbus_error_is_set(einit_dbus_error_events)) {
+   fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error_events->message);
+   dbus_error_free(einit_dbus_error_events);
+  }
 
   dbus_connection_add_filter (einit_dbus_connection_events, einit_incoming_event_handler, NULL, NULL);
   ethread_create (&einit_message_thread_id, &einit_dbus_thread_attribute_detached, einit_message_thread, NULL);
  } else {
   dbus_connection_ref(einit_dbus_connection_events);
   dbus_bus_add_match(einit_dbus_connection_events, "type='signal',interface='org.einit.Einit.Information'", einit_dbus_error_events);
+  if (dbus_error_is_set(einit_dbus_error_events)) {
+   fprintf(stderr, "Connection Error (%s)\n", einit_dbus_error_events->message);
+   dbus_error_free(einit_dbus_error_events);
+  }
  }
 }
 
@@ -338,9 +346,17 @@ char *einit_ipc_i (char *command, char *interface) {
   return NULL;
  }
 
+ if (dbus_error_is_set(einit_dbus_error)) {
+  fprintf(stderr, "had an error before... (%s)\n", einit_dbus_error->message);
+  dbus_error_free(einit_dbus_error);
+ }
+
  if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
   dbus_connection_unref(einit_dbus_connection);
-  fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+  if (dbus_error_is_set(einit_dbus_error)) {
+   fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+   dbus_error_free(einit_dbus_error);
+  }
   return NULL;
  }
 
@@ -1105,7 +1121,10 @@ void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
 
  if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
   dbus_connection_unref(einit_dbus_connection);
-  fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+  if (dbus_error_is_set(einit_dbus_error)) {
+   fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+   dbus_error_free(einit_dbus_error);
+  }
   return;
  }
 
@@ -1166,7 +1185,10 @@ void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_em
 
   if (!(message = dbus_connection_send_with_reply_and_block (einit_dbus_connection, call, 5000, einit_dbus_error))) {
    dbus_connection_unref(einit_dbus_connection);
-   fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+   if (dbus_error_is_set(einit_dbus_error)) {
+    fprintf(stderr, "DBus Error (%s)\n", einit_dbus_error->message);
+    dbus_error_free(einit_dbus_error);
+   }
    return;
   }
 

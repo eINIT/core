@@ -63,7 +63,6 @@ class einit_dbus {
   einit_dbus();
   ~einit_dbus();
 
-  void string(const char *IN_string, char ** OUT_result);
   void signal_dbus (const char *IN_string);
   void broadcast_event (struct einit_event *);
 
@@ -95,6 +94,8 @@ class einit_dbus {
   static void *ipc_spawn_bootstrap (DBusMessage *);
   static void *ipc_spawn_safe_bootstrap (DBusMessage *);
   static void *handle_event_bootstrap (DBusMessage *);
+
+  int dbus_connect ();
 
   void ipc_spawn (DBusMessage *);
   void ipc_spawn_safe (DBusMessage *);

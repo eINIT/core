@@ -307,6 +307,8 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
    }
   }
 
+  free (tmpnodename);
+
   tmpnodename = emalloc (16+strlen (id));
   *tmpnodename = 0;
 

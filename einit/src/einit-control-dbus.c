@@ -152,7 +152,7 @@ int send_ipc_dbus (char *command) {
 
 //}
 
-/*void event_test (struct einit_remote_event *ev) {
+void event_test (struct einit_remote_event *ev) {
   if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
    if (ev->stringset) {
     char *set = set2str (' ', ev->stringset);
@@ -172,7 +172,7 @@ int send_ipc_dbus (char *command) {
   }
 
  fflush (stderr);
-}*/
+}
 
 int main(int argc, char **argv) {
  int i, l, ret = 0;
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 
  einit_connect();
 
-/* einit_remote_event_listen (einit_event_subsystem_any, event_test);
+ einit_remote_event_listen (einit_event_subsystem_any, event_test);
  einit_receive_events();
 
 
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
 
 // if (ev->string) free (ev->string);
 
- einit_remote_event_destroy(ev);*/
+ einit_remote_event_destroy(ev);
 
  if (c) {
   ret = send_ipc_dbus(c);
