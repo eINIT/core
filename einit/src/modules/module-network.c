@@ -558,14 +558,15 @@ int bridge_enable (struct interface_descriptor *id, struct einit_event *status) 
    } else {
     struct einit_event ev = evstaticinit(einit_core_change_service_status);
     char tmp[BUFFERSIZE];
-    char *evs[] = { "", "enable", NULL };
     fbprintf (status, "suppressing ip controller on interface %s", cur->key);
     return mod (einit_module_custom, cur->value, "block-ip");
     fbprintf (status, "enabling network interface %s", cur->key);
     esprintf (tmp, BUFFERSIZE, "net-%s", cur->key);
-    evs[0] = tmp;
-    ev.set = (void **)evs;
+    ev.set = setadd (ev.set, tmp, SET_TYPE_STRING);
+    ev.set = setadd (ev.set, "enable", SET_TYPE_STRING);
+    ev.stringset = (char **)ev.set;
     event_emit (&ev, einit_event_flag_broadcast);
+    free (ev.set);
     evstaticdestroy (ev);
    }
   } else {

@@ -41,8 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int main(int argc, char *argv[])
 {
  Gtk::Main kit(argc, argv);
-
  Gtk::Window window;
+
+ Einit einit;
 
  Gtk::Main::run(window);
 
