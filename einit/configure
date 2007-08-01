@@ -152,7 +152,7 @@ for param in $@; do
         elif test "$param" = "--enable-ipc-dbus"; then
 		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
 		DBUS="dbus";
-		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit";
+		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit libeinit++";
 	elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
 	elif test "$shorte" = ""; then

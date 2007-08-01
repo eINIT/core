@@ -71,109 +71,6 @@ int send_ipc_dbus (char *command) {
  return 0;
 }
 
-
-//void test() {
-/* struct stree *modules = einit_get_all_modules();
-
- if (modules) {
-  struct stree *cur = modules;
-
-  while (cur) {
-   struct einit_module *m = cur->value;
-   fprintf (stdout, "module: %s, status=%i, name=%s, provides=%s, requires=%s, after=%s, before=%s\n", cur->key, m->status, m->name, set2str (':', m->provides), set2str (':', m->requires), set2str (':', m->after), set2str (':', m->before));
-
-   cur = streenext(cur);
-  }
-
-  modulestree_free(modules);
- }*/ /* works */
-
-/* struct stree *services = einit_get_all_services();
-
- if (services) {
-  struct stree *cur = services;
-
-  while (cur) {
-   struct einit_service *s = cur->value;
-
-   fprintf (stdout, "service: %s, status=%i\n", cur->key, s->status);
-
-   struct stree *modules = s->modules;
-
-   if (modules) {
-    struct stree *cur = modules;
-
-    while (cur) {
-     struct einit_module *m = cur->value;
-     fprintf (stdout, " ** module: %s, status=%i, name=%s, provides=%s, requires=%s, after=%s, before=%s\n", cur->key, m->status, m->name, set2str (':', m->provides), set2str (':', m->requires), set2str (':', m->after), set2str (':', m->before));
-
-     cur = streenext(cur);
-    }
-   }
-
-   struct einit_group *g = s->group;
-   if (g) {
-    fprintf (stdout, " ** group: (%s), seq=%s\n", set2str (' ', g->services), g->seq);
-   }
-
-   cur = streenext(cur);
-  }
-
-  servicestree_free(services);
- }*/ /* works */
-
-// einit_power_reset(); /* works */
-
-// einit_service_enable ("alsa"); /* works */
-
-/* struct einit_service *s = einit_get_service_status ("mount-system");
-
- fprintf (stdout, "service: %s, status=%i\n", s->name, s->status);
-
- struct stree *modules = s->modules;
-
- if (modules) {
-  struct stree *cur = modules;
-
-  while (cur) {
-   struct einit_module *m = cur->value;
-   fprintf (stdout, " ** module: %s, status=%i, name=%s, provides=%s, requires=%s, after=%s, before=%s\n", cur->key, m->status, m->name, set2str (':', m->provides), set2str (':', m->requires), set2str (':', m->after), set2str (':', m->before));
-
-   cur = streenext(cur);
-  }
- }
-
- struct einit_group *g = s->group;
- if (g) {
-  fprintf (stdout, " ** group: (%s), seq=%s\n", set2str (' ', g->services), g->seq);
- }
-
- einit_service_free(s);*/
-
-//}
-
-void event_test (struct einit_remote_event *ev) {
-  if ((ev->type & EVENT_SUBSYSTEM_MASK) != einit_event_subsystem_ipc) {
-   if (ev->stringset) {
-    char *set = set2str (' ', ev->stringset);
-    fprintf (stderr, "parsed a message: %i; integers: %i, %i, %i, flag=%i, string=%s, set=(%s)\n", ev->type, ev->integer, ev->status, ev->task, ev->flag, ev->string, set);
-    free (set);
-   } else {
-    fprintf (stderr, "parsed a message: %i; integers: %i, %i, %i, flag=%i, string=%s\n", ev->type, ev->integer, ev->status, ev->task, ev->flag, ev->string);
-   }
-  } else {
-   if (ev->argv) {
-    char *set = set2str (' ', ev->argv);
-    fprintf (stderr, "parsed a message: %i; options=%i, argc=%i, command=%s, set=(%s)\n", ev->type, ev->ipc_options, ev->argc, ev->command, set);
-    free (set);
-   } else {
-    fprintf (stderr, "parsed a message: %i; options=%i, argc=%i, command=%s\n", ev->type, ev->ipc_options, ev->argc, ev->command);
-   }
-  }
-
- fflush (stderr);
-}
-
 int main(int argc, char **argv) {
  int i, l, ret = 0;
  char *c = emalloc (1*sizeof (char));
@@ -228,32 +125,12 @@ int main(int argc, char **argv) {
   c = strcat (c, " --ansi");
  }
 
-// test();
-
- einit_connect();
-
- einit_remote_event_listen (einit_event_subsystem_any, event_test);
- einit_receive_events();
-
-
- struct einit_remote_event *ev = einit_remote_event_create (einit_feedback_notice);
- ev->flag = 4;
- ev->string = "hello world!!!";
-
- einit_remote_event_emit (ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
-
-// if (ev->string) free (ev->string);
-
- einit_remote_event_destroy(ev);
-
  if (c) {
   ret = send_ipc_dbus(c);
 
   free (c);
  }
  free (name);
-
-// einit_remote_event_ignore (einit_event_subsystem_any, event_test);
 
  return 0;
 }

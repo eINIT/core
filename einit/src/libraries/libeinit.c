@@ -8,7 +8,7 @@
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
