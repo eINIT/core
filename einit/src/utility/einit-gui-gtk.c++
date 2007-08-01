@@ -35,17 +35,105 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <gtkmm.h>
 #include <einit/einit++.h>
 
-int main(int argc, char *argv[])
-{
+#include <gtkmm.h>
+#include <iostream>
+
+class EinitGTK : public Gtk::Window {
+ public:
+  EinitGTK();
+  virtual ~EinitGTK();
+
+  Einit einit;
+
+ protected:
+  virtual void updateInformation();
+
+  //Signal handlers:
+  virtual void on_button_quit();
+  virtual void on_button_buffer1();
+
+  //Child widgets:
+  Gtk::VBox m_VBox;
+
+  Gtk::ScrolledWindow m_ScrolledWindow;
+  Gtk::TextView m_TextView;
+
+  Glib::RefPtr<Gtk::TextBuffer> m_refTextBuffer1;
+
+  Gtk::HButtonBox m_ButtonBox;
+  Gtk::Button m_Button_Quit, m_Button_Buffer1;
+};
+
+EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"), einit() {
+ set_title("eINIT GTK GUI");
+ set_border_width(5);
+ set_default_size(400, 200);
+
+
+ add(m_VBox);
+
+  //Add the TreeView, inside a ScrolledWindow, with the button underneath:
+ m_ScrolledWindow.add(m_TextView);
+
+  //Only show the scrollbars when they are necessary:
+ m_ScrolledWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+
+ m_VBox.pack_start(m_ScrolledWindow);
+
+  //Add buttons:
+ m_VBox.pack_start(m_ButtonBox, Gtk::PACK_SHRINK);
+
+ m_ButtonBox.pack_start(m_Button_Buffer1, Gtk::PACK_SHRINK);
+ m_ButtonBox.pack_start(m_Button_Quit, Gtk::PACK_SHRINK);
+ m_ButtonBox.set_border_width(5);
+ m_ButtonBox.set_spacing(5);
+ m_ButtonBox.set_layout(Gtk::BUTTONBOX_END);
+
+  //Connect signals:
+ m_Button_Quit.signal_clicked().connect(sigc::mem_fun(*this,
+ &EinitGTK::on_button_quit) );
+ m_Button_Buffer1.signal_clicked().connect(sigc::mem_fun(*this,
+ &EinitGTK::on_button_buffer1) );
+
+ m_refTextBuffer1 = Gtk::TextBuffer::create();
+
+ updateInformation();
+
+ show_all_children();
+}
+
+void EinitGTK::updateInformation() {
+ this->einit.update();
+ einit_connect();
+ char *services = einit_ipc ("list services");
+
+ if (services) {
+  m_refTextBuffer1->set_text(services);
+ } else {
+  m_refTextBuffer1->set_text("Connection Failed");
+}
+
+ m_TextView.set_buffer(m_refTextBuffer1);
+}
+
+EinitGTK::~EinitGTK() {
+}
+
+void EinitGTK::on_button_quit() {
+ hide();
+}
+
+void EinitGTK::on_button_buffer1() {
+ this->updateInformation();
+}
+
+int main (int argc, char *argv[]) {
  Gtk::Main kit(argc, argv);
- Gtk::Window window;
 
- Einit einit;
-
- Gtk::Main::run(window);
+ EinitGTK helloworld;
+ Gtk::Main::run(helloworld);
 
  return 0;
 }
