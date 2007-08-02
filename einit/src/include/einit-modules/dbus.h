@@ -77,6 +77,8 @@ class einit_dbus {
 
   char *ipc_request (char *);
 
+  static void generic_event_handler (struct einit_event *);
+
  private:
   DBusError error;
   DBusConnection* connection;
@@ -89,7 +91,6 @@ class einit_dbus {
 
   pthread_t message_thread_id;
 
-  static void generic_event_handler (struct einit_event *);
   static void *message_thread_bootstrap(void *);
   static void *ipc_spawn_bootstrap (DBusMessage *);
   static void *ipc_spawn_safe_bootstrap (DBusMessage *);
