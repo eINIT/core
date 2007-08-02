@@ -580,6 +580,9 @@ struct stree *einit_add_xmlstree_as_module (struct stree *rtree, struct stree *m
   if ((sres = streefind (attributes, "after", tree_find_first)))
    module.after = str2set (':', sres->value);
 
+  if ((sres = streefind (attributes, "functions", tree_find_first)))
+   module.functions = str2set (':', sres->value);
+
   if ((sres = streefind (attributes, "before", tree_find_first)))
    module.before = str2set (':', sres->value);
 
@@ -708,6 +711,9 @@ struct einit_module *einit_get_module_status (char *module) {
    rv->requires = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->requires), SET_TYPE_STRING);
    rv->provides = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->provides), SET_TYPE_STRING);
    rv->after = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->after), SET_TYPE_STRING);
+
+   rv->functions = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->functions), SET_TYPE_STRING);
+
    rv->before = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->before), SET_TYPE_STRING);
   }
 
@@ -724,6 +730,7 @@ void einit_module_free (struct einit_module *module) {
   if (module->requires) free (module->requires);
   if (module->provides) free (module->provides);
   if (module->after) free (module->after);
+  if (module->functions) free (module->functions);
   if (module->before) free (module->before);
 
   free (module);
@@ -743,6 +750,7 @@ void modulestree_free(struct stree *tree) {
    if (module->requires) free (module->requires);
    if (module->provides) free (module->provides);
    if (module->after) free (module->after);
+   if (module->functions) free (module->functions);
    if (module->before) free (module->before);
   }
 
