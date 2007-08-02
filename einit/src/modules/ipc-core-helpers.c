@@ -227,6 +227,24 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
       }
 
       if (ev->ipc_options & einit_ipc_output_xml) {
+       char **functions = (char **)setdup ((const void **)cur->functions, SET_TYPE_STRING);
+       if (cur->enable) functions = (char **)setadd ((void **)functions, "enable", SET_TYPE_STRING);
+       if (cur->disable) functions = (char **)setadd ((void **)functions, "disable", SET_TYPE_STRING);
+       functions = (char **)setadd ((void **)functions, "zap", SET_TYPE_STRING);
+
+       if (functions) {
+        char *x = set2str(':', (const char **)functions);
+        char *y = escape_xml (x);
+        eprintf (ev->output, "\n  functions=\"%s\"", y);
+        free (y);
+        free (x);
+
+        free (functions);
+       }
+      }
+
+
+      if (ev->ipc_options & einit_ipc_output_xml) {
        eputs (" />\n", ev->output);
       } else {
        eputs ("\n", ev->output);

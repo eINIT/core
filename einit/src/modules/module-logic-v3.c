@@ -1194,6 +1194,21 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
           }
          }
 
+         char **functions = (char **)setdup ((const void **)xs[u]->functions, SET_TYPE_STRING);
+         if (xs[u]->enable) functions = (char **)setadd ((void **)functions, "enable", SET_TYPE_STRING);
+         if (xs[u]->disable) functions = (char **)setadd ((void **)functions, "disable", SET_TYPE_STRING);
+         functions = (char **)setadd ((void **)functions, "zap", SET_TYPE_STRING);
+
+         if (functions) {
+          char *x = set2str(':', (const char **)functions);
+          char *y = escape_xml (x);
+          eprintf (ev->output, "\n  functions=\"%s\"", y);
+          free (y);
+          free (x);
+
+          free (functions);
+         }
+
          eputs (" />\n", ev->output);
         }
        }
