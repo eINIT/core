@@ -262,6 +262,9 @@ struct lmodule {
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  uint32_t fbseq;                                /*!< Feedback sequence-number */
  struct service_information *si;
+
+ char **functions;                              /*!< field for custom functions */
+
  void *resumedata;
 
  int (*suspend) (struct lmodule *);             /*!< Pointer to the module's suspend()-function */

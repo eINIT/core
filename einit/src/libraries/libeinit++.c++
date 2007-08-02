@@ -418,6 +418,10 @@ bool EinitModule::update(struct einit_module *s) {
   }
  }
 
+ this->after = s->after ? (char **)setdup ((const void **)s->after, SET_TYPE_STRING) : NULL;
+ this->before = s->before ? (char **)setdup ((const void **)s->before, SET_TYPE_STRING) : NULL;
+ this->functions = s->functions ? (char **)setdup ((const void **)s->functions, SET_TYPE_STRING) : NULL;
+
  return true;
 }
 

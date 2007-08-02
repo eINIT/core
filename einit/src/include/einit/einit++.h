@@ -132,6 +132,10 @@ class EinitModule : public EinitOffspring {
   map<string, EinitService *> provides;
   map<string, EinitService *> requires;
 
+  char **functions;
+  char **before;
+  char **after;
+
  private:
 };
 

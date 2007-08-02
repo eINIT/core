@@ -56,6 +56,8 @@ struct einit_module {
  char **requires;
  char **after;
  char **before;
+
+ char **functions;
 };
 
 enum einit_service_status {
