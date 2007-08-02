@@ -285,6 +285,19 @@ bool EinitService::call(string s) {
  return true;
 }
 
+vector<string> EinitService::getCommonFunctions() {
+ vector<string> rv;
+
+ return rv;
+}
+
+vector<string> EinitService::getAllFunctions() {
+ vector<string> rv;
+
+ return rv;
+}
+
+
 bool EinitService::update(struct einit_service *s) {
  this->id = s->name;
 

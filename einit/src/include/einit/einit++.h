@@ -38,9 +38,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/einit.h>
 #include <string>
 #include <map>
+#include <vector>
 
 using std::string;
 using std::map;
+using std::vector;
 
 class EinitService;
 class EinitModule;
@@ -99,6 +101,9 @@ class EinitService : public EinitOffspring {
   bool call(string);
 
   bool update(struct einit_service *);
+
+  vector<string> getCommonFunctions();
+  vector<string> getAllFunctions();
 
   string id;
   bool provided;
