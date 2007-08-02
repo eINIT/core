@@ -363,7 +363,7 @@ void *sched_pidthread_processor(FILE *pipe) {
   while (fgets (buffer, BUFFERSIZE, pipe) != NULL) {
    if (strmatch (buffer, "\n")) { // message complete
     if (message) {
-	 if (message[0] && !message[1]) {
+     if (message[0] && !message[1]) {
       char **command = str2set (' ', message[0]);
 
 // parse the pid X (died|terminated) messages
@@ -372,15 +372,15 @@ void *sched_pidthread_processor(FILE *pipe) {
 
        struct einit_event ev = evstaticinit (einit_process_died);
 
-       ev.source_pid = parse_integer (command[1]);
+       ev.integer = parse_integer (command[1]);
 
        event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_duplicate | einit_event_flag_spawn_thread);
 
-	   evstaticdestroy(ev);
-	  }
+       evstaticdestroy(ev);
+      }
 
-	  free (command);
-	 } else {
+      free (command);
+     } else {
       char *noticebuffer = set2str ('\n', (const char **)message);
 
       free (noticebuffer);
@@ -599,6 +599,8 @@ void *sched_run_sigchild (void *p) {
    }
   }
  }
+
+ return NULL;
 }
 
 void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
