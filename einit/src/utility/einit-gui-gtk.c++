@@ -53,6 +53,11 @@ class EinitGTK : public Gtk::Window {
   //Signal handlers:
   virtual void on_button_quit();
   virtual void on_button_buffer1();
+  static void     on_statusicon_popup  (GtkStatusIcon* widget,
+				        guint          button, 
+				        guint            time, 
+				        gpointer       object);
+  static  void on_menuitem_selected (const Glib::ustring& item_name);
 
   //Child widgets:
   Gtk::VBox m_VBox;
@@ -66,6 +71,7 @@ class EinitGTK : public Gtk::Window {
   Gtk::Button m_Button_Quit, m_Button_Buffer1;
 
   Glib::RefPtr<Gtk::StatusIcon> m_refStatusIcon;
+  Glib::RefPtr<Gtk::UIManager> m_refUIManager;
 };
 
 EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"), einit() {
@@ -101,11 +107,62 @@ EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"
 
  m_refTextBuffer1 = Gtk::TextBuffer::create();
 
- m_refStatusIcon = Gtk::StatusIcon::create(Gtk::Stock::HOME);
+ Glib::RefPtr<Gtk::ActionGroup> refActionGroup = Gtk::ActionGroup::create();
+ refActionGroup->add( Gtk::ToggleAction::create("Toggle0", "enable something", "", true) );
+ refActionGroup->add( Gtk::ToggleAction::create("Toggle1", "enable something else") );
+ refActionGroup->add( Gtk::Action::create("Preferences", Gtk::Stock::PREFERENCES),
+	       sigc::bind(sigc::ptr_fun(&EinitGTK::on_menuitem_selected),
+			  "Preferences") );
+ refActionGroup->add( Gtk::Action::create("Info", Gtk::Stock::INFO),
+	       sigc::bind(sigc::ptr_fun(&EinitGTK::on_menuitem_selected),
+			  "Information") );
+ refActionGroup->add( Gtk::Action::create("Help", Gtk::Stock::HELP),
+	       sigc::bind(sigc::ptr_fun(&EinitGTK::on_menuitem_selected),
+			  "Help") );
+ refActionGroup->add( Gtk::Action::create("Quit", Gtk::Stock::QUIT),
+	       sigc::mem_fun(*this, &EinitGTK::hide) );
 
+ m_refUIManager = Gtk::UIManager::create();
+ m_refUIManager->insert_action_group(refActionGroup);
+
+ Glib::ustring ui_info =
+  "<ui>"
+  "  <popup name='Popup'>"
+  "    <menuitem action='Toggle0' />"
+  "    <menuitem action='Toggle1' />"
+  "    <menuitem action='Preferences' />"
+  "    <separator/>"
+  "    <menuitem action='Info' />"
+  "    <menuitem action='Help' />"
+  "    <separator/>"
+  "    <menuitem action='Quit' />"
+  "  </popup>"
+  "</ui>";
+
+ m_refUIManager->add_ui_from_string(ui_info);
+
+ m_refStatusIcon = Gtk::StatusIcon::create(Gtk::Stock::HOME);
+ m_refStatusIcon->set_tooltip("eINIT gtk++ gui");
+ GtkStatusIcon* gobj_StatusIcon = m_refStatusIcon->gobj();
+ g_signal_connect(G_OBJECT(gobj_StatusIcon), "popup-menu", G_CALLBACK(on_statusicon_popup), this);
  updateInformation();
 
  show_all_children();
+}
+
+void EinitGTK::on_statusicon_popup(GtkStatusIcon* status_icon, guint button,
+					guint time, gpointer object)
+{
+	EinitGTK* win = static_cast<EinitGTK*>(object);
+	Gtk::Menu* pMenu = static_cast<Gtk::Menu*>( win->m_refUIManager->get_widget("/Popup") );
+  
+	if(pMenu)
+		pMenu->popup(button, time);
+}
+
+void EinitGTK::on_menuitem_selected(const Glib::ustring& item) //static
+{
+  g_print("You have selected `%s'\n", item.data());
 }
 
 void EinitGTK::updateInformation() {
