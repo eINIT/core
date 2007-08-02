@@ -286,13 +286,30 @@ bool EinitService::call(string s) {
 }
 
 vector<string> EinitService::getCommonFunctions() {
- vector<string> rv;
+ vector<string> rv = this->getAllFunctions();
 
  return rv;
 }
 
 vector<string> EinitService::getAllFunctions() {
  vector<string> rv;
+ map<string,EinitModule *>::iterator it;
+
+ for ( it=this->modules.begin() ; it != this->modules.end(); it++ ) {
+  if (it->second->functions) {
+   uint32_t i = 0;
+   for ( ; it->second->functions[i]; i++ ) {
+    bool have = false;
+    string toadd = it->second->functions[i];
+
+    for (i=0; i<rv.size(); i++) if (rv.at(i) == toadd) have = true;
+
+    if (!have) {
+     rv.push_back (toadd);
+    }
+   }
+  }
+ }
 
  return rv;
 }
