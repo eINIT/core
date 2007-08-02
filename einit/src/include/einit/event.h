@@ -72,7 +72,9 @@ enum einit_event_subsystems {
 /*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
  einit_event_subsystem_network  = 0x00007000,
  einit_event_subsystem_process  = 0x00008000,
+
  einit_event_subsystem_any      = 0xffffe000,
+/*!< match any subsystem... mostly intended to be used for rebroadcasting, e.g. via D-Bus */
  einit_event_subsystem_custom   = 0xfffff000
 /*!< custom events; not yet implemented */
 };
@@ -202,6 +204,7 @@ struct einit_event {
   struct cfgnode *node;
   struct lmodule *module;
   void *para;
+  void *file;
  };
 
  pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */

@@ -355,8 +355,58 @@ void sched_ipc_event_handler(struct einit_event *ev) {
  }
 }
 
+void *sched_pidthread_processor(FILE *pipe) {
+ char buffer [BUFFERSIZE];
+ char **message = NULL;
+
+ do {
+  while (fgets (buffer, BUFFERSIZE, pipe) != NULL) {
+   if (strmatch (buffer, "\n")) { // message complete
+    if (message) {
+	 if (message[0] && !message[1]) {
+      char **command = str2set (' ', message[0]);
+
+// parse the pid X (died|terminated) messages
+      if (strmatch (command [0], "pid") && command[1] && command [2] &&
+	      (strmatch (command[2], "terminated") || strmatch (command[2], "died"))) {
+
+       struct einit_event ev = evstaticinit (einit_process_died);
+
+       ev.source_pid = parse_integer (command[1]);
+
+       event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_duplicate | einit_event_flag_spawn_thread);
+
+	   evstaticdestroy(ev);
+	  }
+
+	  free (command);
+	 } else {
+      char *noticebuffer = set2str ('\n', (const char **)message);
+
+      free (noticebuffer);
+     }
+
+     free (message);
+     message = NULL;
+    }
+   } else { // continue constructing
+    strtrim(buffer);
+
+    message = (char **)setadd ((void **)message, buffer, SET_TYPE_STRING);
+   }
+  }
+ } while (1);
+
+ return NULL;
+}
+
 void sched_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_main_loop_reached) {
+  if (ev->file) {
+   pthread_t thread;
+   ethread_create (&thread, &thread_attribute_detached, (void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
+  }
+
   sched_run_sigchild(NULL);
  }
 }

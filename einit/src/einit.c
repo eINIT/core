@@ -208,6 +208,8 @@ int main(int argc, char **argv) {
  pid_t pid = getpid(), wpid = 0;
  char **ipccommands = NULL;
  int pthread_errno;
+ FILE *commandpipe_in, *commandpipe_out;
+ int commandpipe[2];
 
  boottime = time(NULL);
 
@@ -312,9 +314,14 @@ int main(int argc, char **argv) {
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
  if (!einit_startup_configuration_files) einit_startup_configuration_files = einit_default_startup_configuration_files;
 
+ respawn:
 
-// if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
- if (pid == 1) {
+ pipe (commandpipe);
+ commandpipe_in = fdopen (commandpipe[0], "r");
+ commandpipe_out = fdopen (commandpipe[1], "w");
+
+ if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
+// if (pid == 1) {
   initoverride = 1;
   if ((einit_sub = fork()) < 0) {
    bitch (bitch_stdio, errno, "Could not fork()");
@@ -333,10 +340,20 @@ int main(int argc, char **argv) {
   action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER;
   if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
+/* ignore sigpipe */
+  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+
+  if ( sigaction (SIGPIPE, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
+
   while (1) {
    wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
 
    if (wpid == einit_sub) {
+//    goto respawn; /* try to recover by re-booting */
+    if (commandpipe_in) fclose (commandpipe_in);
+    if (commandpipe_out) fclose (commandpipe_out);
+
     if (WIFEXITED(rstatus)) {
      char tmp[BUFFERSIZE];
      esprintf (tmp, BUFFERSIZE, "%i", WEXITSTATUS(rstatus));
@@ -350,6 +367,15 @@ int main(int argc, char **argv) {
      eprintf (stderr, "eINIT was killed by a signal and I couldn't invoke the crash-handler...\n(%s)\n", EINIT_LIB_BASE "/bin/crash-handler");
      exit (EXIT_FAILURE);
     }
+   } else {
+    if (commandpipe_out) {
+     if (WIFEXITED(rstatus)) {
+      fprintf (commandpipe_out, "pid %i terminated\n\n", wpid);
+     } else {
+      fprintf (commandpipe_out, "pid %i died\n\n", wpid);
+     }
+     fflush (commandpipe_out);
+	}
    }
   }
  } else {
@@ -440,6 +466,7 @@ int main(int argc, char **argv) {
    }
 
    struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
+   eml.file = commandpipe_in;
    event_emit (&eml, einit_event_flag_broadcast);
    evstaticdestroy(eml);
   }
