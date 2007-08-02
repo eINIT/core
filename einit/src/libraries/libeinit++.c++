@@ -137,6 +137,52 @@ EinitMode *Einit::getMode (string s) {
  }
 }
 
+map<string, EinitModule *> Einit::getAllModules() {
+ if (!this->modulesRaw) {
+  this->modulesRaw = einit_get_all_modules();
+ }
+ struct stree *cur = this->modulesRaw;
+
+ while (cur) {
+  this->getModule(cur->key);
+
+  cur = streenext (cur);
+ }
+
+ return this->modules;
+}
+
+map<string, EinitService *> Einit::getAllServices() {
+ if (!this->servicesRaw) {
+  this->servicesRaw = einit_get_all_services();
+ }
+ struct stree *cur = this->servicesRaw;
+
+ while (cur) {
+  this->getService(cur->key);
+
+  cur = streenext (cur);
+ }
+
+ return this->services;
+}
+
+map<string, EinitMode *> Einit::getAllModes() {
+ if (!this->modesRaw) {
+  this->modesRaw = einit_get_all_modes();
+ }
+ struct stree *cur = this->modesRaw;
+
+ while (cur) {
+  this->getMode(cur->key);
+
+  cur = streenext (cur);
+ }
+
+ return this->modes;
+}
+
+
 bool Einit::powerDown() {
  einit_power_down();
 
