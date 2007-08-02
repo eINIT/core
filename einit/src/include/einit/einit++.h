@@ -58,14 +58,18 @@ class Einit {
   EinitService *getService (string);
   EinitMode *getMode (string);
 
-  map<string, EinitModule *>getAllModules();
-  map<string, EinitService *>getAllServices();
-  map<string, EinitMode *>getAllModes();
+  map<string, EinitModule *> getAllModules();
+  map<string, EinitService *> getAllServices();
+  map<string, EinitMode *> getAllModes();
 
   bool powerDown();
   bool powerReset();
 
   void update();
+
+  map<string, EinitService *> services;
+  map<string, EinitModule *> modules;
+  map<string, EinitMode *> modes;
 
  private:
   bool listening;
@@ -73,10 +77,6 @@ class Einit {
   struct stree *servicesRaw;
   struct stree *modulesRaw;
   struct stree *modesRaw;
-
-  map<string, EinitService *> services;
-  map<string, EinitModule *> modules;
-  map<string, EinitMode *> modes;
 };
 
 class EinitOffspring {
