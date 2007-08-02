@@ -360,7 +360,7 @@ void einit_receive_events() {
  }
 }
 
-char *einit_ipc_i (char *command, char *interface) {
+char *einit_ipc_i (const char *command, const char *interface) {
  dbus_connection_ref(einit_dbus_connection);
 
  char *returnvalue;
@@ -410,15 +410,15 @@ char *einit_ipc_i (char *command, char *interface) {
  return returnvalue;
 }
 
-char *einit_ipc(char *command) {
+char *einit_ipc(const char *command) {
  return einit_ipc_i (command, "org.einit.Einit.Command");
 }
 
-char *einit_ipc_safe(char *command) {
+char *einit_ipc_safe(const char *command) {
  return einit_ipc_i (command, "org.einit.Einit.Information");
 }
 
-char *einit_ipc_request(char *command) {
+char *einit_ipc_request(const char *command) {
  if (einit_dbus_connection || einit_connect()) {
   return einit_ipc(command);
  }
@@ -426,7 +426,7 @@ char *einit_ipc_request(char *command) {
  return NULL;
 }
 
-char *einit_ipc_request_xml(char *command) {
+char *einit_ipc_request_xml(const char *command) {
  char *tmp;
  char *rv;
  uint32_t len;

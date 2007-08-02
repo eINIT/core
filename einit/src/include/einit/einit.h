@@ -121,10 +121,10 @@ struct einit_remote_event {
 
 /* TODO: ... and these functions... */
 
-char *einit_ipc_request(char *);
-char *einit_ipc_request_xml(char *);
-char *einit_ipc(char *);
-char *einit_ipc_safe(char *);
+char *einit_ipc_request(const char *);
+char *einit_ipc_request_xml(const char *);
+char *einit_ipc(const char *);
+char *einit_ipc_safe(const char *);
 char einit_connect();
 char einit_disconnect();
 void einit_receive_events();

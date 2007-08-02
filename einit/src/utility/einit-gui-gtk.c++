@@ -50,12 +50,12 @@ class EinitGTK : public Gtk::Window {
  protected:
   virtual void updateInformation();
 
-  //Signal handlers:
   virtual void on_button_quit();
   virtual void on_button_buffer1();
 
   //Child widgets:
   Gtk::VBox m_VBox;
+  Gtk::HBox inputBox;
 
   Gtk::ScrolledWindow m_ScrolledWindow;
   Gtk::TextView m_TextView;
@@ -64,23 +64,28 @@ class EinitGTK : public Gtk::Window {
 
   Gtk::HButtonBox m_ButtonBox;
   Gtk::Button m_Button_Quit, m_Button_Buffer1;
+
+  Gtk::Entry entryBox;
 };
 
-EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"), einit() {
+EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"), entryBox() {
  set_title("eINIT GTK GUI");
  set_border_width(5);
- set_default_size(400, 200);
-
+ set_default_size(500, 600);
 
  add(m_VBox);
 
   //Add the TreeView, inside a ScrolledWindow, with the button underneath:
  m_ScrolledWindow.add(m_TextView);
+ this->m_TextView.set_editable(false);
 
   //Only show the scrollbars when they are necessary:
  m_ScrolledWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 
  m_VBox.pack_start(m_ScrolledWindow);
+
+ m_VBox.pack_start(inputBox, Gtk::PACK_SHRINK);
+ inputBox.pack_start(entryBox);
 
   //Add buttons:
  m_VBox.pack_start(m_ButtonBox, Gtk::PACK_SHRINK);
@@ -97,6 +102,13 @@ EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"
  m_Button_Buffer1.signal_clicked().connect(sigc::mem_fun(*this,
  &EinitGTK::on_button_buffer1) );
 
+ m_Button_Buffer1.set_flags(Gtk::CAN_DEFAULT);
+ m_Button_Buffer1.grab_default();
+ set_default ( m_Button_Buffer1 );
+
+ entryBox.grab_focus();
+ entryBox.set_activates_default (true);
+
  m_refTextBuffer1 = Gtk::TextBuffer::create();
 
  updateInformation();
@@ -106,16 +118,19 @@ EinitGTK::EinitGTK(): m_Button_Quit(Gtk::Stock::QUIT), m_Button_Buffer1("Update"
 
 void EinitGTK::updateInformation() {
  this->einit.update();
- einit_connect();
- char *services = einit_ipc ("list services");
+ if (this->entryBox.get_text() != "") {
+  char *data = einit_ipc (this->entryBox.get_text().c_str());
+  this->entryBox.set_text("");
 
- if (services) {
-  m_refTextBuffer1->set_text(services);
- } else {
-  m_refTextBuffer1->set_text("Connection Failed");
-}
+  if (data) {
+//  m_refTextBuffer1->insert(m_refTextBuffer1->end(), services);
+   m_refTextBuffer1->set_text (data);
+  } else {
+   m_refTextBuffer1->set_text("Connection Failed");
+  }
 
- m_TextView.set_buffer(m_refTextBuffer1);
+  m_TextView.set_buffer(m_refTextBuffer1);
+ }
 }
 
 EinitGTK::~EinitGTK() {
