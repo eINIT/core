@@ -134,6 +134,8 @@ class EinitModule : public EinitOffspring {
   bool idle;
   bool error;
 
+  vector<string> getAllFunctions();
+
   map<string, EinitService *> provides;
   map<string, EinitService *> requires;
 

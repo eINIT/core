@@ -406,6 +406,19 @@ bool EinitModule::call(string s) {
  return true;
 }
 
+vector<string> EinitModule::getAllFunctions() {
+ vector<string> rv;
+
+ if (this->functions) {
+  uint32_t i = 0;
+  for ( ; this->functions[i]; i++ ) {
+   rv.push_back (this->functions[i]);
+  }
+ }
+
+ return rv;
+}
+
 bool EinitModule::update(struct einit_module *s) {
  this->id = s->id;
  this->name = s->name ? s->name : "unknown";
