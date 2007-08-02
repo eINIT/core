@@ -214,6 +214,7 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
     struct dexecinfo *dexec = type_daemon ? ecalloc (1, sizeof (struct dexecinfo)) : NULL;
     uint32_t i = 0;
     char doop = 1, shutdownaction = 0;
+    char **custom_hooks = NULL;
     struct lmodule *new;
 
     memset (modinfo, 0, sizeof (struct smodule));
@@ -228,6 +229,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
      if (strstr (node->arbattrs[i], "execute:") == node->arbattrs[i]) {
       if (strmatch (node->arbattrs[i], "execute:on-shutdown"))
        shutdownaction = 1;
+
+      custom_hooks = (char **)setadd ((void **)custom_hooks, (node->arbattrs[i]) + 8, SET_TYPE_STRING);
 
       continue;
      } else if (strmatch (node->arbattrs[i], "id")) {
@@ -369,6 +372,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
       }
       lm->module = modinfo;
 
+      lm->functions = custom_hooks ? (char **)setdup((const void **)custom_hooks, SET_TYPE_STRING) : NULL;
+
       lm = mod_update (lm);
       doop = 0;
 
@@ -398,6 +403,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
        new->custom = (int (*)(void *, char *, struct einit_event *))einit_module_xml_daemon_custom;
        new->cleanup = einit_module_xml_daemon_cleanup_after_module;
       }
+
+      new->functions = custom_hooks ? (char **)setdup((const void **)custom_hooks, SET_TYPE_STRING) : NULL;
 
       if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC)) {
        einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC);
