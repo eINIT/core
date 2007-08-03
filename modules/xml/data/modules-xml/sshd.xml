@@ -6,5 +6,6 @@
   command="/usr/sbin/sshd -D ${configuration_services_sshd_options}"
   restart="yes"
   need-files="/usr/sbin/sshd"
-  variables="configuration-services-sshd/.*" />
+  variables="configuration-services-sshd/.*"
+  pid="/var/run/sshd.pid" />
 </einit>

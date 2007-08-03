@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/utility.h>
 #include <einit-modules/scheduler.h>
+#include <einit-modules/process.h>
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
@@ -113,6 +114,13 @@ struct mexecinfo **einit_module_xml_mxdata = NULL;
 struct dexecinfo **einit_mod_daemon_dxdata = NULL;
 struct lmodule **einit_module_xml_shutdown = NULL;
 
+/*void einit_module_xml_einit_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_recover:
+  default: break;
+ }
+}*/
+
 void einit_module_xml_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
   if (!cfg_getnode("configuration-system-shell", NULL)) {
@@ -159,6 +167,7 @@ void einit_module_xml_power_event_handler (struct einit_event *ev) {
 int einit_module_xml_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
  event_ignore (einit_event_subsystem_ipc, einit_module_xml_ipc_event_handler);
+// event_ignore (einit_event_subsystem_core, einit_module_xml_einit_event_handler);
  event_ignore (einit_event_subsystem_power, einit_module_xml_power_event_handler);
 
  return 0;
@@ -197,6 +206,44 @@ int einit_module_xml_daemon_cleanup_after_module (struct lmodule *this) {
 #endif
 
  return 0;
+}
+
+int einit_module_xml_recover_shell (struct lmodule *module) {
+ struct mexecinfo *data = module->param;
+ char *pidfile;
+
+ if (!data) return status_failed;
+
+ if (data->pidfile && (pidfile = readfile (data->pidfile))) {
+  pid_t pid = parse_integer (pidfile);
+
+  if (pidexists (pid)) {
+   mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
+  }
+
+  free (pidfile);
+ }
+
+ return status_ok;
+}
+
+int einit_module_xml_recover_daemon (struct lmodule *module) {
+ struct dexecinfo *data = module->param;
+ char *pidfile;
+
+ if (!data) return status_failed;
+
+ if (data->pidfile && (pidfile = readfile (data->pidfile))) {
+  pid_t pid = parse_integer (pidfile);
+
+  if (pidexists (pid)) {
+   mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
+  }
+
+  free (pidfile);
+ }
+
+ return status_ok;
 }
 
 int einit_module_xml_scanmodules (struct lmodule *modchain) {
@@ -374,6 +421,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
 
       lm->functions = custom_hooks ? (char **)setdup((const void **)custom_hooks, SET_TYPE_STRING) : NULL;
 
+      lm->recover = type_shell ? einit_module_xml_recover_shell : einit_module_xml_recover_daemon;
+
       lm = mod_update (lm);
       doop = 0;
 
@@ -409,6 +458,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
       if (shutdownaction && !inset ((const void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC)) {
        einit_module_xml_shutdown = (struct lmodule **)setadd ((void **)einit_module_xml_shutdown, (void *)new, SET_NOALLOC);
       }
+
+      new->recover = type_shell ? einit_module_xml_recover_shell : einit_module_xml_recover_daemon;
      }
     }
    }
@@ -480,6 +531,20 @@ int einit_module_xml_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_eve
    }
   }
   if (task & einit_module_enable) {
+   char *pidfile = NULL;
+   if (shellcmd->pidfile && (pidfile = readfile (shellcmd->pidfile))) {
+    pid_t pid = parse_integer (pidfile);
+
+    free (pidfile);
+    pidfile = NULL;
+
+    if (pidexists (pid)) {
+     fbprintf (status, "Module's PID-file already exists and is valid.");
+
+     return status_ok;
+    }
+   }
+
    if (shellcmd->enable) {
     if (shellcmd->pidfile) {
      unlink (shellcmd->pidfile);
@@ -509,6 +574,7 @@ int einit_module_xml_configure (struct lmodule *pa) {
 
  exec_configure (pa);
  event_listen (einit_event_subsystem_ipc, einit_module_xml_ipc_event_handler);
+// event_listen (einit_event_subsystem_core, einit_module_xml_einit_event_handler);
  event_listen (einit_event_subsystem_power, einit_module_xml_power_event_handler);
 
  return 0;

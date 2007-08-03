@@ -203,9 +203,18 @@ pid_t *filter_processes_files_below (struct pc_conditional * cond, pid_t * ret, 
  return ret;
 }
 
+char process_linux_pid_is_running (pid_t pid) {
+ char tmp[BUFFERSIZE];
+ struct stat st;
+ esprintf (tmp, BUFFERSIZE, "/proc/%i", pid);
+
+ return (!stat (tmp, &st));
+}
+
 int linux_process_cleanup (struct lmodule *this) {
  function_unregister ("einit-process-status-updater", 1, update_processes_proc_linux);
  function_unregister ("einit-process-filter-files-below", 1, filter_processes_files_below);
+ function_unregister ("einit-process-is-running", 1, process_linux_pid_is_running);
  process_cleanup (irr);
 
  return 0;
@@ -219,6 +228,7 @@ int linux_process_configure (struct lmodule *irr) {
  process_configure (irr);
  function_register ("einit-process-status-updater", 1, update_processes_proc_linux);
  function_register ("einit-process-filter-files-below", 1, filter_processes_files_below);
+ function_register ("einit-process-is-running", 1, process_linux_pid_is_running);
 
  return 0;
 }

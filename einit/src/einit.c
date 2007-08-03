@@ -195,6 +195,16 @@ void core_einit_event_handler (struct einit_event *ev) {
   update_event.para = mlist;
   event_emit (&update_event, einit_event_flag_broadcast);
   evstaticdestroy(update_event);
+ } else if (ev->type == einit_core_recover) { // call everone's recover-function (if defined)
+  struct lmodule *lm = mlist;
+
+  while (lm) {
+   if (lm->recover) {
+    lm->recover (lm);
+   }
+
+   lm = lm->next;
+  }
  }
 }
 
@@ -356,7 +366,7 @@ int main(int argc, char **argv) {
     if (commandpipe_in) fclose (commandpipe_in);
     if (commandpipe_out) fclose (commandpipe_out);
 
-    if (WIFEXITED(rstatus)) {
+/*    if (WIFEXITED(rstatus)) {
      char tmp[BUFFERSIZE];
      esprintf (tmp, BUFFERSIZE, "%i", WEXITSTATUS(rstatus));
 
@@ -368,7 +378,15 @@ int main(int argc, char **argv) {
 
      eprintf (stderr, "eINIT was killed by a signal and I couldn't invoke the crash-handler...\n(%s)\n", EINIT_LIB_BASE "/bin/crash-handler");
      exit (EXIT_FAILURE);
-    }
+    }*/
+
+    int n = 5;
+    fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.");
+    while ((n = sleep (n)));
+    fprintf (stderr, "Respawning secondary eINIT process.");
+
+    need_recovery = 1;
+    goto respawn;
    } else {
     if (commandpipe_out) {
      if (WIFEXITED(rstatus)) {
@@ -461,7 +479,6 @@ int main(int argc, char **argv) {
     notice (1, "need to recover from something...");
 
     struct einit_event eml = evstaticinit(einit_core_recover);
-    eml.file = commandpipe_in;
     event_emit (&eml, einit_event_flag_broadcast);
     evstaticdestroy(eml);
    }

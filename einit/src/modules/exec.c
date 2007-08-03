@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <einit-modules/exec.h>
 #include <einit-modules/scheduler.h>
+#include <einit-modules/process.h>
 #include <ctype.h>
 #include <sys/stat.h> 
 
@@ -808,6 +809,20 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 // char *cmddup;
 
  if (!shellcmd) return status_failed;
+
+ char *pidfile = NULL;
+ if (shellcmd->pidfile && (pidfile = readfile (shellcmd->pidfile))) {
+  pid_t pid = parse_integer (pidfile);
+
+  free (pidfile);
+  pidfile = NULL;
+
+  if (pidexists (pid)) {
+   fbprintf (status, "Module's PID-file already exists and is valid.");
+
+   return status_ok;
+  }
+ }
 
 /* check if needed files are available */
  if (shellcmd->need_files) {
