@@ -124,8 +124,8 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-check-variables", 1, check_variables_f);
  function_unregister ("einit-apply-envfile", 1, apply_envfile_f);
 
- event_ignore (einit_event_subsystem_power, einit_exec_process_event_handler);
  event_ignore (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
+ event_ignore (einit_event_subsystem_process, einit_exec_process_event_handler);
  event_ignore (einit_event_subsystem_core, einit_exec_einit_event_handler);
 
  sched_cleanup(irr);
@@ -141,6 +141,12 @@ void einit_exec_einit_event_handler (struct einit_event *ev) {
 }
 
 void einit_exec_process_event_handler (struct einit_event *ev) {
+ if (ev->type == einit_process_died) {
+/* something needs to be done right here */
+  pid_t pid = ev->integer;
+
+  
+ }
 }
 
 void einit_exec_ipc_event_handler (struct einit_event *ev) {
@@ -1004,7 +1010,7 @@ int einit_exec_configure (struct lmodule *irr) {
 
  event_listen (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
  event_listen (einit_event_subsystem_core, einit_exec_einit_event_handler);
- event_listen (einit_event_subsystem_power, einit_exec_process_event_handler);
+ event_ignore (einit_event_subsystem_process, einit_exec_process_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);
