@@ -58,7 +58,7 @@ XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 
 DBUS=""
 
-source configure.options
+. ./configure.options
 
 echo -n "checking options [";
 for param in $@; do
