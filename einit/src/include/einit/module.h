@@ -268,6 +268,8 @@ struct lmodule {
  void *resumedata;
 
  int (*suspend) (struct lmodule *);             /*!< Pointer to the module's suspend()-function */
+ int (*resume) (struct lmodule *, void *);      /*!< Pointer to the module's resume()-function */
+ int (*recover) (struct lmodule *);             /*!< Pointer to the module's recover()-function */
 };
 
 /*!\brief Service-usage information.

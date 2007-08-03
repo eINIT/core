@@ -110,6 +110,7 @@ enum einit_event_code {
  einit_core_mode_switching          = einit_event_subsystem_core     | 0x201,
  einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,
 
+ einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
 
 /* einit_event_subsystem_mount: */
@@ -162,7 +163,7 @@ enum einit_ipc_options {
  einit_ipc_implemented   = 0x1000
 };
 
-#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, PTHREAD_MUTEX_INITIALIZER }
+#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
@@ -178,8 +179,6 @@ struct einit_event {
            status,               /*!< generic integer */
            task;                 /*!< generic integer */
    unsigned char flag;           /*!< flags */
-
-   pid_t source_pid;             /*!< source's pid (if known) */
 
    char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
   };

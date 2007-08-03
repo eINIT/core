@@ -210,6 +210,7 @@ int main(int argc, char **argv) {
  int pthread_errno;
  FILE *commandpipe_in, *commandpipe_out;
  int commandpipe[2];
+ char need_recovery = 0;
 
  boottime = time(NULL);
 
@@ -256,6 +257,7 @@ int main(int argc, char **argv) {
      else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       coremode = einit_mode_sandbox;
+	  need_recovery = 1;
      } else if (strmatch(argv[i], "--metadaemon")) {
       coremode = einit_mode_metadaemon;
      } else if (strmatch(argv[i], "--bootstrap-modules")) {
@@ -454,6 +456,15 @@ int main(int argc, char **argv) {
    exit (EXIT_FAILURE);
   } else {
    uint32_t e = 0;
+
+   if (need_recovery) {
+    notice (1, "need to recover from something...");
+
+    struct einit_event eml = evstaticinit(einit_core_recover);
+    eml.file = commandpipe_in;
+    event_emit (&eml, einit_event_flag_broadcast);
+    evstaticdestroy(eml);
+   }
 
    notice (2, "scheduling startup switches.\n");
 

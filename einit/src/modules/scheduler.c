@@ -427,7 +427,7 @@ void *sched_run_sigchild (void *p) {
    pid = cur->pid;
    if (cur->dead) {
     struct einit_event ee = evstaticinit(einit_process_died);
-    ee.source_pid = cur->pid;
+    ee.integer = cur->pid;
     event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
     evstaticdestroy (ee);
 
@@ -548,7 +548,7 @@ void *sched_run_sigchild (void *p) {
 
    if (cur->dead) {
     struct einit_event ee = evstaticinit(einit_process_died);
-    ee.source_pid = cur->pid;
+    ee.integer = cur->pid;
     event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
     evstaticdestroy (ee);
 
