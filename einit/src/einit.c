@@ -381,9 +381,9 @@ int main(int argc, char **argv) {
     }*/
 
     int n = 5;
-    fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.");
+    fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.\n");
     while ((n = sleep (n)));
-    fprintf (stderr, "Respawning secondary eINIT process.");
+    fprintf (stderr, "Respawning secondary eINIT process.\n");
 
     need_recovery = 1;
     goto respawn;

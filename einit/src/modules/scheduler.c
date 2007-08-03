@@ -176,6 +176,7 @@ void sched_reset_event_handlers () {
 
 }
 
+/*
 int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
  struct spidcb *nele;
  emutex_lock (&schedcpidmutex);
@@ -209,6 +210,52 @@ int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
   nele->dead = 0;
   nele->status = 0;
   nele->next = cpids;
+ cpids = nele;
+
+ emutex_unlock (&schedcpidmutex);
+ if (!(coremode & einit_core_exiting) && signal_semaphore) {
+  if (sem_post (signal_semaphore)) {
+   bitch(bitch_stdio, 0, "sem_post() failed.");
+  }
+ }
+
+ return 0;
+}
+*/
+
+int __sched_watch_pid (pid_t pid) {
+ struct spidcb *nele;
+ emutex_lock (&schedcpidmutex);
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
+ if (sched_deadorphans) {
+  struct spidcb *start = sched_deadorphans, *prev = NULL, *cur = start;
+  for (; cur; cur = cur->next) {
+   if (cur->pid == (pid_t)pid) {
+//    cur->cfunc = function;
+    if (prev)
+     prev->next = cur->next;
+    else
+     sched_deadorphans = cur->next;
+    cur->next = cpids;
+    cpids = cur;
+    emutex_unlock (&schedcpidmutex);
+    return 0;
+   }
+   if (start != sched_deadorphans) {
+    cur = sched_deadorphans;
+    start = cur;
+    prev = NULL;
+   } else
+    prev = cur;
+  }
+ }
+#endif
+ nele = ecalloc (1, sizeof (struct spidcb));
+ nele->pid = pid;
+ nele->cfunc = NULL;
+ nele->dead = 0;
+ nele->status = 0;
+ nele->next = cpids;
  cpids = nele;
 
  emutex_unlock (&schedcpidmutex);
@@ -428,15 +475,16 @@ void *sched_run_sigchild (void *p) {
    if (cur->dead) {
     struct einit_event ee = evstaticinit(einit_process_died);
     ee.integer = cur->pid;
+    ee.status = cur->status;
     event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
     evstaticdestroy (ee);
 
     check++;
 
-    if (cur->cfunc) {
+/*    if (cur->cfunc) {
      pthread_t th;
      ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
-    }
+    }*/
 
     if (prev)
      prev->next = cur->next;
@@ -549,14 +597,15 @@ void *sched_run_sigchild (void *p) {
    if (cur->dead) {
     struct einit_event ee = evstaticinit(einit_process_died);
     ee.integer = cur->pid;
+    ee.status = cur->status;
     event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
     evstaticdestroy (ee);
 
     check++;
-    if (cur->cfunc) {
+/*    if (cur->cfunc) {
      pthread_t th;
      ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
-    }
+    }*/
 
     if (prev)
      prev->next = cur->next;

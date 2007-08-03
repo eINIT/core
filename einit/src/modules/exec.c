@@ -113,6 +113,11 @@ void einit_exec_ipc_event_handler (struct einit_event *);
 void einit_exec_einit_event_handler (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
+void *pexec_watcher (struct spidcb *spid);
+#endif
+void *dexec_watcher (struct spidcb *spid);
+
 int einit_exec_cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) free (shell);
  exec_cleanup (irr);
@@ -143,9 +148,20 @@ void einit_exec_einit_event_handler (struct einit_event *ev) {
 void einit_exec_process_event_handler (struct einit_event *ev) {
  if (ev->type == einit_process_died) {
 /* something needs to be done right here */
-  pid_t pid = ev->integer;
+  struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
+  spid->pid = ev->integer;
+  spid->status = ev->status;
 
-  
+//  pthread_t th;
+
+#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
+//  ethread_create (&th, &thread_attribute_detached, pexec_watcher, spid);
+  pexec_watcher(spid);
+#endif
+//  ethread_create (&th, &thread_attribute_detached, dexec_watcher, spid);
+  dexec_watcher(spid);
+
+  free (spid);
  }
 }
 
@@ -494,7 +510,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   ssize_t i;
   new->pid = child;
 // this loop can be used to create a race-condition
-  sched_watch_pid (child, pexec_watcher);
+//  sched_watch_pid (child, pexec_watcher);
+  sched_watch_pid (child);
 
   char buf[BUFFERSIZE+1];
   char lbuf[BUFFERSIZE+1];
@@ -919,7 +936,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   exit (EXIT_FAILURE);
  } else {
   new->pid = child;
-  sched_watch_pid (child, dexec_watcher);
+//  sched_watch_pid (child, dexec_watcher);
+  sched_watch_pid (child);
  }
  emutex_unlock (&running_mutex);
 

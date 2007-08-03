@@ -114,10 +114,14 @@ pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int einit_tty_texec (struct cfgnode *);
 
+void einit_tty_process_event_handler (struct einit_event *);
+
 int einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
  sched_configure(this);
+
+ event_ignore (einit_event_subsystem_process, einit_tty_process_event_handler);
 
  return 0;
 }
@@ -163,6 +167,18 @@ void *einit_tty_watcher (struct spidcb *spid) {
  }
 
  return 0;
+}
+
+void einit_tty_process_event_handler (struct einit_event *ev) {
+ if (ev->type == einit_process_died) {
+  struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
+  spid->pid = ev->integer;
+  spid->status = ev->status;
+
+  einit_tty_watcher(spid);
+
+  free (spid);
+ }
 }
 
 int einit_tty_texec (struct cfgnode *node) {
@@ -222,7 +238,8 @@ int einit_tty_texec (struct cfgnode *node) {
      update_utmp (utmp_add, &utmprecord);
     }
 
-    sched_watch_pid (cpid, einit_tty_watcher);
+//    sched_watch_pid (cpid, einit_tty_watcher);
+    sched_watch_pid (cpid);
 
     setpgid (cpid, cpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
@@ -351,6 +368,8 @@ int einit_tty_configure (struct lmodule *this) {
 
  utmp_configure(this);
  exec_configure(this);
+
+ event_listen (einit_event_subsystem_process, einit_tty_process_event_handler);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)

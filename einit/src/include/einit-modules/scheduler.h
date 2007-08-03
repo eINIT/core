@@ -75,11 +75,19 @@ void sched_event_handler(struct einit_event *);
 
 #if (! defined(einit_modules_scheduler)) || (einit_modules_scheduler == 'm') || (einit_modules_scheduler == 'n')
 
+#if 0
 typedef int (*sched_watch_pid_t)(pid_t, void *(*)(struct spidcb *));
 
 sched_watch_pid_t sched_watch_pid_fp;
 
 #define sched_watch_pid(pid, callback) ((sched_watch_pid_fp || (sched_watch_pid_fp = function_find_one("einit-scheduler-watch-pid", 1, NULL))) ? sched_watch_pid_fp(pid, callback) : -1)
+#else
+typedef int (*sched_watch_pid_t)(pid_t);
+
+sched_watch_pid_t sched_watch_pid_fp;
+
+#define sched_watch_pid(pid) ((sched_watch_pid_fp || (sched_watch_pid_fp = function_find_one("einit-scheduler-watch-pid", 1, NULL))) ? sched_watch_pid_fp(pid) : -1)
+#endif
 
 #define sched_configure(mod) sched_watch_pid_fp = NULL;
 #define sched_cleanup(mod) sched_watch_pid_fp = NULL;
