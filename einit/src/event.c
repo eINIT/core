@@ -358,6 +358,16 @@ time_t event_timer_register (struct tm *t) {
 }
 
 time_t event_timer_register_timeout (time_t t) {
+ struct einit_event ev = evstaticinit (einit_timer_set);
+ time_t tr = time (NULL) + t;
+
+ ev.integer = tr;
+
+ event_emit (&ev, einit_event_flag_broadcast);
+
+ evstaticdestroy (ev);
+
+ return tr;
 }
 
 void event_timer_cancel (time_t t) {

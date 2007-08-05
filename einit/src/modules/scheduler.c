@@ -130,24 +130,23 @@ int scheduler_cleanup () {
 
 time_t *sched_timer_data = NULL;
 
+int scheduler_compare_time (time_t a, time_t b) {
+ if (!a) return -1;
+ if (!b) return 1;
+
+ double d = difftime (a, b);
+
+ if (d < 0) return 1;
+ if (d > 0) return -1;
+ return 0;
+}
+
 time_t scheduler_get_next_tick () {
  time_t next = 0;
 
  emutex_lock (&sched_timer_data_mutex);
 
- if (sched_timer_data) {
-  uint32_t i = 0;
-
-  for (; sched_timer_data[i]; i++) {
-   if (!next) next = sched_timer_data[i];
-   else {
-    double l = difftime (next, sched_timer_data[i]);
-    if (l > 0) {
-     next = sched_timer_data[i];
-    }
-   }
-  }
- }
+ if (sched_timer_data) next = sched_timer_data[0];
 
  emutex_unlock (&sched_timer_data_mutex);
 
@@ -155,10 +154,60 @@ time_t scheduler_get_next_tick () {
 }
 
 void sched_handle_timers () {
+ time_t next_tick = scheduler_get_next_tick();
+ time_t now = time(NULL);
+
+ if (!next_tick) {
+//  notice (1, "no more timers left.\n");
+
+  return;
+ }
+
+ if (next_tick <= now) {
+//  notice (1, "next timer NAO\n");
+
+  struct einit_event ev = evstaticinit (einit_timer_tick);
+
+  ev.integer = next_tick;
+
+  event_emit (&ev, einit_event_flag_broadcast);
+
+  evstaticdestroy (ev);
+
+  sched_timer_data = (time_t *)setdel ((void **)sched_timer_data, (void *)ev.integer);
+
+  sched_handle_timers();
+ } else {
+  if (next_tick > now) {
+//   notice (1, "next timer in %i seconds\n", (next_tick - now));
+
+   alarm (next_tick - now);
+  }
+ }
 }
 
 void sched_timer_event_handler(struct einit_event *ev) {
  if (ev->type == einit_timer_set) {
+  notice (1, "setting timer...");
+
+  emutex_lock (&sched_timer_data_mutex);
+
+  sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)ev->integer, SET_NOALLOC);
+  setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
+
+  if (sched_timer_data) {
+   uint32_t i = 0;
+
+   notice (1, "timestamps:\n");
+
+   for (; sched_timer_data[i]; i++) {
+    notice (1, " * %i\n", sched_timer_data[i]);
+   }
+  }
+
+  emutex_unlock (&sched_timer_data_mutex);
+
+  sched_handle_timers();
  }
 }
 
