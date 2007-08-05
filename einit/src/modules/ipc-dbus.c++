@@ -155,9 +155,9 @@ void einit_dbus::broadcast_event (struct einit_event *ev) {
 
 void einit_dbus::generic_event_handler (struct einit_event *ev) {
  if (einit_main_dbus_class.active) {
-/*  uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
+  uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
 
-  if (subsystem != einit_event_subsystem_ipc)*/
+  if (subsystem != einit_event_subsystem_timer) // don't broadcast timer events.
    einit_main_dbus_class.broadcast_event (ev);
  }
 
@@ -171,7 +171,7 @@ einit_dbus::einit_dbus() {
 
  pthread_mutex_init (&(this->sequence_mutex), NULL);
 
-// this->introspection_data = einit_dbus_introspection_data;
+ this->introspection_data = einit_dbus_introspection_data;
 // dbus_g_object_type_install_info (COM_FOO_TYPE_MY_OBJECT, &(this->introspection_data));
 }
 

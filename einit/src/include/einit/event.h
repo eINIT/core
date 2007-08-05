@@ -69,7 +69,7 @@ enum einit_event_subsystems {
  einit_event_subsystem_power    = 0x00005000,
 /*!< notify others that the power is failing, has been restored or similar */
  einit_event_subsystem_timer    = 0x00006000,
-/*!< set/receive timer. integer is interpreted as absolute callback time, task as relative */
+/*!< set/receive timer ticks */
  einit_event_subsystem_network  = 0x00007000,
  einit_event_subsystem_process  = 0x00008000,
 
@@ -147,6 +147,11 @@ enum einit_event_code {
  einit_power_restored               = einit_event_subsystem_power    | 0x023,
 /*!< power was restored */
 
+ einit_timer_tick                   = einit_event_subsystem_timer    | 0x001,
+/*!< tick.tick.tick. */
+ einit_timer_set                    = einit_event_subsystem_timer    | 0x002,
+ einit_timer_cancel                 = einit_event_subsystem_timer    | 0x003,
+
 /* einit_event_subsystem_network: */
  einit_network_do_update            = einit_event_subsystem_network  | 0x001,
 
@@ -220,6 +225,11 @@ struct exported_function {
  void const *function;                   /*!< pointer to the function */
 };
 
+enum einit_timer_options {
+ einit_timer_once = 0x0001,
+ einit_timer_until_cancelled = 0x0002
+};
+
 void *event_emit (struct einit_event *, enum einit_event_emit_flags);
 void event_listen (enum einit_event_subsystems, void (*)(struct einit_event *));
 void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
@@ -234,6 +244,10 @@ struct stree *exported_functions;
 
 char *event_code_to_string (const uint32_t);
 uint32_t event_string_to_code (const char *);
+
+time_t event_timer_register (struct tm *);
+time_t event_timer_register_timeout (time_t);
+void event_timer_cancel (time_t);
 
 #endif
 

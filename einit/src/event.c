@@ -343,3 +343,29 @@ uint32_t event_string_to_code (const char *code) {
 
  return ret;
 }
+
+time_t event_timer_register (struct tm *t) {
+ struct einit_event ev = evstaticinit (einit_timer_set);
+ time_t tr = timegm (t);
+
+ ev.integer = tr;
+
+ event_emit (&ev, einit_event_flag_broadcast);
+
+ evstaticdestroy (ev);
+
+ return tr;
+}
+
+time_t event_timer_register_timeout (time_t t) {
+}
+
+void event_timer_cancel (time_t t) {
+ struct einit_event ev = evstaticinit (einit_timer_cancel);
+
+ ev.integer = t;
+
+ event_emit (&ev, einit_event_flag_broadcast);
+
+ evstaticdestroy (ev);
+}
