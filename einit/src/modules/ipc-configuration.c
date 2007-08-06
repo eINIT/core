@@ -89,6 +89,11 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    }
    event_emit (&nev, einit_event_flag_broadcast);
 
+//   if (nev.type != einit_core_configuration_update) { // force update-info
+//   nev.type = einit_core_configuration_update;
+//   event_emit (&nev, einit_event_flag_broadcast);
+//   }
+
    evstaticdestroy(nev);
 
    ev->implemented = 1;

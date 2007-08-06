@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
 
 #define EXPECTED_EIV 1
 
@@ -76,12 +77,180 @@ module_register(einit_cron_self);
 
 #endif
 
+struct einit_cron_job {
+ uintptr_t *years;
+ uintptr_t *months;
+ uintptr_t *days;
+ uintptr_t *weekdays;
+ uintptr_t *hours;
+ uintptr_t *minutes;
+ uintptr_t *seconds;
+
+ char *id;
+ char *command;
+};
+
+struct stree *einit_cron_jobs = NULL;
+pthread_mutex_t einit_cron_jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
+ if (!attributes) return NULL;
+
+ struct einit_cron_job *cj = emalloc (sizeof (struct einit_cron_job));
+ uint32_t i = 0;
+ memset (cj, 0, sizeof (struct einit_cron_job));
+
+ for (; attributes[i]; i+=2) {
+  if (strmatch (attributes[i], "command")) {
+   cj->command = estrdup(attributes[i+1]);
+  } else if (strmatch (attributes[i], "id")) {
+   cj->id = estrdup(attributes[i+1]);
+  } else if (strmatch (attributes[i], "years") || strmatch (attributes[i], "year")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    uintptr_t num = parse_integer (x[j]);
+
+    if (num) {
+     cj->years = (uintptr_t *)setadd ((void **)cj->years, (void *)num, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  } else if (strmatch (attributes[i], "months") || strmatch (attributes[i], "month")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    uintptr_t num = parse_integer (x[j]);
+
+    if (num) {
+     cj->months = (uintptr_t *)setadd ((void **)cj->months, (void *)num, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  } else if (strmatch (attributes[i], "days") || strmatch (attributes[i], "day")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    uintptr_t num = parse_integer (x[j]);
+
+    if (num) {
+     cj->days = (uintptr_t *)setadd ((void **)cj->days, (void *)num, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  } else if (strmatch (attributes[i], "hours") || strmatch (attributes[i], "hour")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    uintptr_t num = parse_integer (x[j]);
+
+    if (num) {
+     cj->hours = (uintptr_t *)setadd ((void **)cj->hours, (void *)num, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  } else if (strmatch (attributes[i], "minutes") || strmatch (attributes[i], "minute")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    uintptr_t num = parse_integer (x[j]);
+
+    if (num) {
+     cj->minutes = (uintptr_t *)setadd ((void **)cj->minutes, (void *)num, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  } else if (strmatch (attributes[i], "seconds") || strmatch (attributes[i], "second")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    uintptr_t num = parse_integer (x[j]);
+
+    if (num) {
+     cj->seconds = (uintptr_t *)setadd ((void **)cj->seconds, (void *)num, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  } else if (strmatch (attributes[i], "weekdays") || strmatch (attributes[i], "weekday")) {
+   char **x = str2set (':', attributes[i+1]);
+   uint32_t j = 0;
+
+   for (; x[j]; j++) {
+    if (strmatch (x[j], "sunday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)0, SET_NOALLOC);
+	} else if (strmatch (x[j], "monday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)1, SET_NOALLOC);
+	} else if (strmatch (x[j], "tuesday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)2, SET_NOALLOC);
+	} else if (strmatch (x[j], "wednesday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)3, SET_NOALLOC);
+	} else if (strmatch (x[j], "thursday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)4, SET_NOALLOC);
+	} else if (strmatch (x[j], "friday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)5, SET_NOALLOC);
+	} else if (strmatch (x[j], "saturday")) {
+     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)6, SET_NOALLOC);
+	}
+   }
+
+   free (x);
+  }
+ }
+
+ return cj;
+}
+
+void einit_cron_einit_event_handler (struct einit_event *ev) {
+ if (ev->type == einit_core_configuration_update) {
+  struct cfgnode *node = NULL;
+
+  notice (1, "meow");
+
+  while ((node = cfg_findnode ("services-cron-job", 0, node))) {
+   struct einit_cron_job *cj = einit_cron_parse_attrs_to_cron_job (node->arbattrs);
+
+   if (cj->id) {
+    emutex_lock (&einit_cron_jobs_mutex);
+
+    struct stree *cur = streefind (einit_cron_jobs, cj->id, tree_find_first);
+	if (cur) {
+     cur->value = cj;
+	 cur->luggage = cj;
+
+     notice (2, "updated job with id=%s", cj->id);
+	} else {
+	 einit_cron_jobs = streeadd (einit_cron_jobs, cj->id, cj, SET_NOALLOC, cj);
+
+     notice (2, "new job with id=%s", cj->id);
+	}
+
+    emutex_unlock (&einit_cron_jobs_mutex);
+   } else {
+    notice (2, "what's this?");
+   }
+  }
+ }
+}
+
 void einit_cron_timer_event_handler (struct einit_event *ev) {
  notice (1, "timer PING");
 }
 
 int einit_cron_cleanup (struct lmodule *this) {
  event_ignore (einit_event_subsystem_timer, einit_cron_timer_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_cron_einit_event_handler);
 
  return 0;
 }
@@ -107,6 +276,7 @@ int einit_cron_configure (struct lmodule *irr) {
  thismodule->disable = einit_cron_disable;
 
  event_listen (einit_event_subsystem_timer, einit_cron_timer_event_handler);
+ event_listen (einit_event_subsystem_core, einit_cron_einit_event_handler);
 
  return 0;
 }
