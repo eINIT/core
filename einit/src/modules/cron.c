@@ -55,7 +55,7 @@ int einit_cron_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_cron_provides[] = {"cron", "ecron", NULL};
+char * einit_cron_provides[] = { "ecron", NULL};
 
 const struct smodule einit_cron_self = {
  .eiversion = EINIT_VERSION,
