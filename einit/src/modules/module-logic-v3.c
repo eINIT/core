@@ -79,6 +79,8 @@ module_register(einit_module_logic_v3_self);
 
 char shutting_down = 0;
 
+struct stree *module_logic_rid_list = NULL;
+
 void module_logic_ipc_event_handler (struct einit_event *);
 void module_logic_einit_event_handler (struct einit_event *);
 double mod_get_plan_progress_f (struct mloadplan *);
@@ -118,7 +120,8 @@ pthread_mutex_t
   ml_group_data_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_currently_provided_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER;
+  ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER,
+  ml_rid_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t
   ml_cond_service_update = PTHREAD_COND_INITIALIZER;
 
@@ -139,6 +142,65 @@ struct group_data {
 #define MARK_UNRESOLVED            0x02
 
 /* module header functions */
+
+char mod_is_rid (char *rid) {
+ char rv = 0;
+
+ emutex_lock (&ml_rid_list_mutex);
+
+ rv = streefind (module_logic_rid_list, rid, tree_find_first) ? 1 : 0;
+
+ emutex_unlock (&ml_rid_list_mutex);
+
+ return rv;
+}
+
+struct lmodule *mod_find_by_rid (char *rid) {
+ struct stree *rv = NULL;
+
+ emutex_lock (&ml_rid_list_mutex);
+
+ rv = streefind (module_logic_rid_list, rid, tree_find_first);
+
+ emutex_unlock (&ml_rid_list_mutex);
+
+ return rv ? rv->value : NULL;
+}
+
+char mod_is_requested (char *service) {
+ char rv = 0;
+ uint32_t i = 0;
+
+ emutex_lock (&ml_tb_current_mutex);
+
+ if (current.enable) {
+  for (i = 0; current.enable[i]; i++) {
+   if (strmatch (service, current.enable[i])) {
+    rv = 1;
+	break;
+   }
+  }
+ }
+
+ if (!rv && current.disable) {
+  for (i = 0; current.disable[i]; i++) {
+   if (strmatch (service, current.disable[i])) {
+    rv = 1;
+    break;
+   }
+  }
+ }
+
+ emutex_unlock (&ml_tb_current_mutex);
+
+ return rv;
+}
+
+char mod_is_requested_rid (char *rid) {
+ if (!mod_is_rid(rid)) return 0;
+
+ return mod_is_requested (rid);
+}
 
 int einit_module_logic_v3_cleanup (struct lmodule *this) {
  function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
@@ -636,6 +698,7 @@ void mod_sort_service_list_items_by_preference() {
    }
 
    /* now to the sorting bit... */
+   /* step 1: sort everything using <services-prefer></services-prefer> nodes */
    pnode = emalloc (strlen (cur->key)+18);
    pnode[0] = 0;
    strcat (pnode, "services-prefer-");
@@ -660,6 +723,33 @@ void mod_sort_service_list_items_by_preference() {
    }
 
    free (pnode);
+
+   /* step 2: sort using the names of services specified (to get "virtual" services sorted properly) */
+   mpz = 0;
+   for (mpy = 0; lm[mpy]; mpy++) {
+    if (lm[mpy]->module && lm[mpy]->module->rid && mod_is_requested(lm[mpy]->module->rid)) {
+     struct lmodule *tm = lm[mpy];
+
+     lm[mpy] = lm[mpz];
+     lm[mpz] = tm;
+
+     mpz++;
+    }
+   }
+
+   /* step 3: make sure to prefer anything that has a requested RID */
+   mpz = 0;
+   for (mpy = 0; lm[mpy]; mpy++) {
+    if (lm[mpy]->module && lm[mpy]->module->rid && mod_is_requested_rid(lm[mpy]->module->rid)) {
+     struct lmodule *tm = lm[mpy];
+
+     lm[mpy] = lm[mpz];
+     lm[mpz] = tm;
+
+     mpz++;
+    }
+   }
+
   }
 
   cur = streenext(cur);
@@ -827,9 +917,27 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   struct stree *new_service_list = NULL;
   struct lmodule *cur = ev->para;
 
+  emutex_lock (&ml_rid_list_mutex);
+  if (module_logic_rid_list) {
+   free (module_logic_rid_list);
+   module_logic_rid_list = NULL;
+  }
+  emutex_unlock (&ml_rid_list_mutex);
+
   emutex_lock (&ml_service_list_mutex);
 
   while (cur) {
+   if (cur->module && cur->module->rid) {
+    emutex_lock (&ml_rid_list_mutex);
+    module_logic_rid_list = streeadd (module_logic_rid_list, cur->module->rid, cur, SET_NOALLOC, NULL);
+    emutex_unlock (&ml_rid_list_mutex);
+
+    struct lmodule **t = NULL;
+    t = (struct lnode **)setadd ((void **)t, cur, SET_NOALLOC);
+
+    new_service_list = streeadd (new_service_list, cur->module->rid, (void *)t, SET_NOALLOC, (void *)t);
+   }
+
    if (cur->si && cur->si->provides) {
     ssize_t i = 0;
 
@@ -3147,6 +3255,8 @@ void mod_commit_and_wait (char **en, char **dis) {
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
 #endif
+
+ mod_sort_service_list_items_by_preference();
 
  pthread_cond_broadcast (&ml_cond_service_update);
 #endif

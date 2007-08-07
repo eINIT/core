@@ -366,6 +366,11 @@ int main(int argc, char **argv) {
     if (commandpipe_in) fclose (commandpipe_in);
     if (commandpipe_out) fclose (commandpipe_out);
 
+    if ((coremode & einit_mode_sandbox) && WIFEXITED(rstatus)) {
+     fprintf (stderr, "eINIT has quit properly.\n");
+     exit (EXIT_SUCCESS);
+	}
+
 /*    if (WIFEXITED(rstatus)) {
      char tmp[BUFFERSIZE];
      esprintf (tmp, BUFFERSIZE, "%i", WEXITSTATUS(rstatus));
