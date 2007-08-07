@@ -168,7 +168,7 @@ enum einit_ipc_options {
  einit_ipc_implemented   = 0x1000
 };
 
-#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, PTHREAD_MUTEX_INITIALIZER }
+#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, NULL, PTHREAD_MUTEX_INITIALIZER }
 #define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
 
 struct einit_event {
@@ -196,7 +196,6 @@ struct einit_event {
    int argc,
        ipc_return;
    char implemented;
-   FILE *output;
   };
  };
 
@@ -210,6 +209,8 @@ struct einit_event {
   void *para;
   void *file;
  };
+
+ FILE *output;
 
  pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */
 };
