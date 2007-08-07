@@ -221,6 +221,8 @@ int main(int argc, char **argv) {
  FILE *commandpipe_in, *commandpipe_out;
  int commandpipe[2];
  char need_recovery = 0;
+ char debug = 0;
+ int debugme_pipe = 0;
 
  boottime = time(NULL);
 
@@ -267,11 +269,17 @@ int main(int argc, char **argv) {
      else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       coremode = einit_mode_sandbox;
-	  need_recovery = 1;
+      need_recovery = 1;
      } else if (strmatch(argv[i], "--metadaemon")) {
       coremode = einit_mode_metadaemon;
      } else if (strmatch(argv[i], "--bootstrap-modules")) {
       bootstrapmodulepath = argv[i+1];
+     } else if (strmatch(argv[i], "--debugme")) {
+      debugme_pipe = parse_integer (argv[i+1]);
+      i++;
+      initoverride = 1;
+     } else if (strmatch(argv[i], "--debug")) {
+      debug = 1;
      }
 
      break;
@@ -329,10 +337,11 @@ int main(int argc, char **argv) {
  respawn:
 
  pipe (commandpipe);
- commandpipe_in = fdopen (commandpipe[0], "r");
+ if (!debug)
+  commandpipe_in = fdopen (commandpipe[0], "r");
  commandpipe_out = fdopen (commandpipe[1], "w");
 
- if ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands)) {
+ if (!initoverride && ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands))) {
 // if (pid == 1) {
   initoverride = 1;
   if ((einit_sub = fork()) < 0) {
@@ -363,13 +372,13 @@ int main(int argc, char **argv) {
 
    if (wpid == einit_sub) {
 //    goto respawn; /* try to recover by re-booting */
-    if (commandpipe_in) fclose (commandpipe_in);
+    if (!debug) if (commandpipe_in) fclose (commandpipe_in);
     if (commandpipe_out) fclose (commandpipe_out);
 
     if ((coremode & einit_mode_sandbox) && WIFEXITED(rstatus)) {
      fprintf (stderr, "eINIT has quit properly.\n");
      exit (EXIT_SUCCESS);
-	}
+    }
 
 /*    if (WIFEXITED(rstatus)) {
      char tmp[BUFFERSIZE];
@@ -390,7 +399,10 @@ int main(int argc, char **argv) {
     while ((n = sleep (n)));
     fprintf (stderr, "Respawning secondary eINIT process.\n");
 
+    /*if (need_recovery)*/ debug = 1;
     need_recovery = 1;
+    initoverride = 0;
+
     goto respawn;
    } else {
     if (commandpipe_out) {
@@ -400,10 +412,47 @@ int main(int argc, char **argv) {
       fprintf (commandpipe_out, "pid %i died\n\n", wpid);
      }
      fflush (commandpipe_out);
-	}
+    }
    }
   }
  } else {
+  if (debug) {
+   char **xargv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
+   char tbuffer[BUFFERSIZE];
+   struct stat st;
+   char have_valgrind = 0;
+   char have_gdb = 0;
+
+   fputs ("eINIT needs to be debugged, starting in debugger mode\n.", stderr);
+
+   xargv = (char **)setadd ((void **)xargv, (void *)"--debugme", SET_TYPE_STRING);
+   snprintf (tbuffer, BUFFERSIZE, "%i", commandpipe[0]);
+   xargv = (char **)setadd ((void **)xargv, (void *)tbuffer, SET_TYPE_STRING);
+
+   xargv = strsetdel (xargv, "--debug"); // don't keep the --debug flag
+
+   if (!stat ("/usr/bin/valgrind", &st)) have_valgrind = 1;
+   if (!stat ("/usr/bin/gdb", &st)) have_gdb = 1;
+
+   if (have_valgrind) {
+    char **nargv = NULL;
+    uint32_t i = 1;
+    nargv = (char **)setadd ((void **)nargv, "/usr/bin/valgrind", SET_TYPE_STRING);
+    nargv = (char **)setadd ((void **)nargv, (coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", SET_TYPE_STRING);
+
+    for (; xargv[i]; i++) {
+     nargv = (char **)setadd ((void **)nargv, xargv[i], SET_TYPE_STRING);
+    }
+
+    execv ("/usr/bin/valgrind", nargv);
+   } else {
+    execv ((coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", xargv);
+   }
+  }
+
+  if (debugme_pipe) // commandpipe[0]
+   commandpipe_in = fdopen (debugme_pipe, "r");
+
 /* actual system initialisation */
   struct einit_event cev = evstaticinit(einit_core_update_configuration);
 
