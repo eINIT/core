@@ -405,6 +405,7 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	fi
 	LIBRT="-lrt"
 	SO="so"
+	NETLINK="netlink"
 else
 	echo "(guess) generic posix-ish unix";
 	OS="unknown";
@@ -418,10 +419,20 @@ else
 	SO="so"
 fi
 
+if [ "${NETLINK}" = "netlink" ]; then
+	echo "getting libnl-1 flags off pkg-config..."
+	NETLINK_CFLAGS=$(pkg-config --cflags libnl-1)
+	NETLINK_LIBS=$(pkg-config --libs libnl-1)
+fi
+
 echo -n "figuring out what libs need to be linked into the core..."
 if test -n "`echo ${INTERNALMODULES}|grep bootstrap-configuration-xml-expat`"; then
  echo -n " -lexpat"
  CORELIBS="${CORELIBS} -lexpat"
+fi;
+if test -n "`echo ${INTERNALMODULES}|grep linux-netlink`"; then
+ echo -n " -lnl"
+ CORELIBS="${CORELIBS} ${NETLINK_LIBS}"
 fi;
 if test -n "`echo ${INTERNALMODULES}|grep module-logic-v3`"; then
  echo -n " -lrt"
@@ -537,6 +548,9 @@ DBUS = ${DBUS}
 GTK_CFLAGS = ${GTK_CFLAGS}
 GTK_LIBS = ${GTK_LIBS}
 GTK = ${GTK}
+
+NETLINK_CFLAGS = ${NETLINK_CFLAGS}
+NETLINK_LIBS = ${NETLINK_LIBS}
 
 GUI = ${GUI}
 " > config.mk

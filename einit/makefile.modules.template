@@ -13,3 +13,6 @@ module-logic-v3.so: module-logic-v3.o
 
 feedback-visual-textual.so: feedback-visual-textual.o
 	${LLD} feedback-visual-textual.o ${LIBRT} -o feedback-visual-textual.so
+
+linux-netlink.so: linux-netlink.o
+	${LLD} linux-netlink.o ${NETLINK_LIBS} -o linux-netlink.so
