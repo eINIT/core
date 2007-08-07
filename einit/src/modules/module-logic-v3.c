@@ -1884,6 +1884,12 @@ char mod_isprovided(char *service) {
 
  emutex_unlock (&ml_currently_provided_mutex);*/
 
+ struct lmodule *lm;
+
+ if (lm = mod_find_by_rid (service)) {
+  return (lm->status & status_enabled);
+ }
+
  return service_usage_query (service_is_provided, NULL, service);
 }
 
