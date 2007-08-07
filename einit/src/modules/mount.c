@@ -1815,7 +1815,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
  evstaticdestroy (rev);
 
 // scan for new modules after mounting all critical filesystems
- if (p == MOUNT_CRITICAL) {
+/* if (p == MOUNT_CRITICAL) {
   struct einit_event ev = evstaticinit(einit_core_update_modules);
 
   fbprintf (status, "updating list of modules");
@@ -1823,7 +1823,7 @@ int einit_mount_enable (enum mounttask p, struct einit_event *status) {
   event_emit (&ev, einit_event_flag_broadcast);
 
   evstaticdestroy(ev);
- }
+ }*/
 
  update_real_mtab();
 
