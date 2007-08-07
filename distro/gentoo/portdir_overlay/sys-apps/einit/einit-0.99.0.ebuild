@@ -22,6 +22,7 @@ IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural dbus gtk"
 
 RDEPEND="dev-libs/expat
 	sys-apps/iproute2
+	>=dev-libs/libnl-1.0_pre6
 	dbus? ( >=sys-apps/dbus-1.0.2-r2 )
 	gtk? (	>=sys-apps/dbus-1.0.2-r2
 		>=dev-cpp/gtkmm-2.10 )"
