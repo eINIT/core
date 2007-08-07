@@ -1204,6 +1204,11 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     cur = module_logics_service_list;
 
     while (cur) {
+     if (mod_is_rid (cur->key)) {
+      cur = streenext (cur);
+	  continue;
+	 }
+
      char **inmodes = NULL;
      struct stree *mcur = modes;
 
