@@ -275,14 +275,14 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
    }*/
   }
 
-  if ((ev->argc >= 3)) {
+/*  if ((ev->argc >= 3)) {
    if (strmatch (ev->argv[0], "module-rc")) {
     pthread_t th;
     ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))einit_ipc_core_helpers_detached_module_action, (void *)setdup ((const void **)ev->argv, SET_TYPE_STRING)); // we must do this detached, so as not to lock up the ipc interface
 
     ev->implemented = 1;
    }
-  }
+  }*/
  }
 }
 

@@ -930,7 +930,8 @@ void einit_module_id_call (const char *module, const char *command) {
  if (!command || !module) return;
  tmp = emalloc ((len = (strlen(module) + strlen (command) + 21)));
 
- esprintf (tmp, len, "module-rc %s %s --detach", module, command);
+// esprintf (tmp, len, "module-rc %s %s --detach", module, command);
+ esprintf (tmp, len, "rc %s %s --detach", module, command);
 
  einit_ipc_request_xml(tmp);
 
