@@ -223,6 +223,7 @@ int main(int argc, char **argv) {
  char need_recovery = 0;
  char debug = 0;
  int debugme_pipe = 0;
+ char crash_threshold = 5;
 
  boottime = time(NULL);
 
@@ -399,7 +400,8 @@ int main(int argc, char **argv) {
     while ((n = sleep (n)));
     fprintf (stderr, "Respawning secondary eINIT process.\n");
 
-    /*if (need_recovery)*/ debug = 1;
+    if (crash_threshold) crash_threshold--;
+    else debug = 1;
     need_recovery = 1;
     initoverride = 0;
 
