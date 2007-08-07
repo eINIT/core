@@ -727,13 +727,15 @@ void mod_sort_service_list_items_by_preference() {
    /* step 2: sort using the names of services specified (to get "virtual" services sorted properly) */
    mpz = 0;
    for (mpy = 0; lm[mpy]; mpy++) {
-    if (lm[mpy]->module && lm[mpy]->module->rid && mod_is_requested(lm[mpy]->module->rid)) {
-     struct lmodule *tm = lm[mpy];
+    if (lm[mpy]->si && lm[mpy]->si->provides) for (mpx = 0; lm[mpy]->si->provides[mpx]; mpx++) {
+     if (mod_is_requested(lm[mpy]->si->provides[mpx])) {
+      struct lmodule *tm = lm[mpy];
 
-     lm[mpy] = lm[mpz];
-     lm[mpz] = tm;
+      lm[mpy] = lm[mpz];
+      lm[mpz] = tm;
 
-     mpz++;
+      mpz++;
+     }
     }
    }
 
