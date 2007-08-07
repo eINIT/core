@@ -50,7 +50,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dirent.h>
 #include <ctype.h>
 
+#include <netlink/handlers.h>
 #include <netlink/netlink.h>
+#include <pthread.h>
 
 #define EXPECTED_EIV 1
 
@@ -81,14 +83,45 @@ module_register(module_linux_netlink_self);
 
 #endif
 
+struct nl_handle *linux_netlink_handle;
+
 int linux_netlink_cleanup (struct lmodule *this) {
+ nl_close (linux_netlink_handle);
+ nl_handle_destroy(linux_netlink_handle);
+
  return 0;
 }
 
+void *linux_netlink_read_thread (void *irrelevant) {
+/* while (1) {
+ }*/
+ nl_close (linux_netlink_handle);
+ nl_handle_destroy(linux_netlink_handle);
+
+ return NULL;
+}
+
+int linux_netlink_connect() {
+ linux_netlink_handle = nl_handle_alloc();
+ nl_handle_set_pid(linux_netlink_handle, getpid());
+ nl_disable_sequence_check(linux_netlink_handle);
+ return nl_connect(linux_netlink_handle, NETLINK_GENERIC);
+}
+
 int linux_netlink_configure (struct lmodule *irr) {
+ pthread_t thread;
+
  module_init (irr);
 
  thismodule->cleanup = linux_netlink_cleanup;
+
+ if (linux_netlink_connect()) {
+  notice (2, "eINIT <-> NetLink: could not connect");
+  perror ("netlink NOT connected (%s)");
+ } else {
+  notice (2, "eINIT <-> NetLink: connected");
+  ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
+ }
 
  return 0;
 }
