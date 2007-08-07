@@ -941,7 +941,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   emutex_lock (&ml_service_list_mutex);
 
   while (cur) {
-   if (cur->module && cur->module->rid) {
+/*   if (cur->module && cur->module->rid) {
     emutex_lock (&ml_rid_list_mutex);
     module_logic_rid_list = streeadd (module_logic_rid_list, cur->module->rid, cur, SET_NOALLOC, NULL);
     emutex_unlock (&ml_rid_list_mutex);
@@ -950,7 +950,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     t = (struct lmodule **)setadd ((void **)t, cur, SET_NOALLOC);
 
     new_service_list = streeadd (new_service_list, cur->module->rid, (void *)t, SET_NOALLOC, (void *)t);
-   }
+   }*/
 
    if (cur->si && cur->si->provides) {
     ssize_t i = 0;
