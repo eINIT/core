@@ -146,9 +146,13 @@ struct group_data {
 char mod_is_rid (char *rid) {
  char rv = 0;
 
+ if (!rid) return 0;
+
  emutex_lock (&ml_rid_list_mutex);
 
- rv = streefind (module_logic_rid_list, rid, tree_find_first) ? 1 : 0;
+ if (module_logic_rid_list) { 
+  rv = (streefind (module_logic_rid_list, rid, tree_find_first)) ? 1 : 0;
+ }
 
  emutex_unlock (&ml_rid_list_mutex);
 
@@ -158,9 +162,13 @@ char mod_is_rid (char *rid) {
 struct lmodule *mod_find_by_rid (char *rid) {
  struct stree *rv = NULL;
 
+ if (!rid) return 0;
+
  emutex_lock (&ml_rid_list_mutex);
 
- rv = streefind (module_logic_rid_list, rid, tree_find_first);
+ if (module_logic_rid_list) { 
+  rv = streefind (module_logic_rid_list, rid, tree_find_first);
+ }
 
  emutex_unlock (&ml_rid_list_mutex);
 
@@ -171,13 +179,15 @@ char mod_is_requested (char *service) {
  char rv = 0;
  uint32_t i = 0;
 
+ if (!service) return 0;
+
  emutex_lock (&ml_tb_current_mutex);
 
  if (current.enable) {
   for (i = 0; current.enable[i]; i++) {
    if (strmatch (service, current.enable[i])) {
     rv = 1;
-	break;
+    break;
    }
   }
  }
@@ -197,6 +207,8 @@ char mod_is_requested (char *service) {
 }
 
 char mod_is_requested_rid (char *rid) {
+ if (!rid) return 0;
+
  if (!mod_is_rid(rid)) return 0;
 
  return mod_is_requested (rid);
@@ -811,7 +823,7 @@ int mod_modaction (char **argv, FILE *output) {
 
   struct group_data *gd = mod_group_get_data (argv[0]);
   if (strmatch (argv[1], "status") && output && gd) {
-   char *members = set2str (' ', gd->members);
+   char *members = set2str (' ', (const char **)gd->members);
 
    ret = 0;
 
@@ -921,7 +933,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
   emutex_lock (&ml_rid_list_mutex);
   if (module_logic_rid_list) {
-   free (module_logic_rid_list);
+   streefree (module_logic_rid_list);
    module_logic_rid_list = NULL;
   }
   emutex_unlock (&ml_rid_list_mutex);
@@ -935,7 +947,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     emutex_unlock (&ml_rid_list_mutex);
 
     struct lmodule **t = NULL;
-    t = (struct lnode **)setadd ((void **)t, cur, SET_NOALLOC);
+    t = (struct lmodule **)setadd ((void **)t, cur, SET_NOALLOC);
 
     new_service_list = streeadd (new_service_list, cur->module->rid, (void *)t, SET_NOALLOC, (void *)t);
    }
@@ -1252,7 +1264,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
       if (ev->ipc_options & einit_ipc_output_xml) {
        if (gd && gd->members) {
-        char *members = set2str (':', gd->members);
+        char *members = set2str (':', (const char **)gd->members);
         char *members_escaped = escape_xml (members);
         eprintf (ev->output, "  <group members=\"%s\" seq=\"%s\" />\n",
                  members_escaped,
@@ -1408,7 +1420,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      if (inmodes || (!(ev->ipc_options & einit_ipc_only_relevant))) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        if (gd && gd->members) {
-        char *members = set2str (':', gd->members);
+        char *members = set2str (':', (const char **)gd->members);
         char *members_escaped = escape_xml (members);
         eprintf (ev->output, "  <group members=\"%s\" seq=\"%s\" />\n",
                  members_escaped,
@@ -1891,11 +1903,13 @@ char mod_isprovided(char *service) {
 
  emutex_unlock (&ml_currently_provided_mutex);*/
 
+ if (!service) return 0;
+
  if (service_usage_query (service_is_provided, NULL, service)) return 1;
 
  struct lmodule *lm;
 
- if (lm = mod_find_by_rid (service)) {
+ if ((lm = mod_find_by_rid (service))) {
   if (lm->status & status_enabled) return 1;
  }
 
@@ -2490,7 +2504,7 @@ char mod_enable_requirements (struct lmodule *module) {
      emutex_lock (&ml_tb_current_mutex);
 
 #ifdef DEBUG
-     notice (4, "(%s) still need %s:", set2str(' ', module->si->provides), module->si->requires[i]);
+     notice (4, "(%s) still need %s:", set2str(' ', (const char **)module->si->provides), module->si->requires[i]);
 #endif
 
      if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
@@ -2782,7 +2796,7 @@ char mod_examine_group (char *groupname) {
          providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
 
 #ifdef DEBUG
-         eprintf (stderr, " ** group %s provided by %s (groupc=%i)", groupname, lm[y]->module->name, groupc);
+         eprintf (stderr, " ** group %s provided by %s (groupc=%i)", groupname, lm[y]->module->name, (int)groupc);
 #endif
         }
        }
@@ -3186,7 +3200,7 @@ void mod_spawn_batch(char **batch, int task) {
  }
 
 #ifdef DEBUG
- char *alist = set2str (' ', batch);
+ char *alist = set2str (' ', (const char **)batch);
 
  eprintf (stderr, "i=%i (%s), broken=%i, deferred=%i, groups=%i\n", i, alist ? alist : "none", broken, deferred, groupc);
 
@@ -3304,7 +3318,7 @@ void mod_commit_and_wait (char **en, char **dis) {
     if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
 #ifdef DEBUG
      eprintf (stderr, "not yet provided: %s\n", en[i]);
-     stillneed = setadd (stillneed, en[i], SET_TYPE_STRING);
+     stillneed = (char **)setadd ((void **)stillneed, en[i], SET_TYPE_STRING);
 #endif
 
      remainder++;
@@ -3331,7 +3345,7 @@ void mod_commit_and_wait (char **en, char **dis) {
     if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
 #ifdef DEBUG
      eprintf (stderr, "still provided: %s\n", dis[i]);
-     stillneed = setadd (stillneed, dis[i], SET_TYPE_STRING);
+     stillneed = (char **)setadd ((void **)stillneed, dis[i], SET_TYPE_STRING);
 #endif
 
      remainder++;
@@ -3363,13 +3377,13 @@ void mod_commit_and_wait (char **en, char **dis) {
   if (!stillneed) {
    notice (4, "still need %i services\n", remainder);
   } else {
-   notice (4, "still need %i services (%s)\n", remainder, set2str (' ', stillneed));
+   notice (4, "still need %i services (%s)\n", remainder, set2str (' ', (const char **)stillneed));
   }
   fflush (stderr);
 
   emutex_lock (&ml_workthreads_mutex);
 
-  notice (4, "workthreads: %i (%s)\n", ml_workthreads, set2str (' ', lm_workthreads_list));
+  notice (4, "workthreads: %i (%s)\n", ml_workthreads, set2str (' ', (const char **)lm_workthreads_list));
   emutex_unlock (&ml_workthreads_mutex);
 #endif
 
@@ -3377,7 +3391,7 @@ void mod_commit_and_wait (char **en, char **dis) {
    notice (1, "plan aborted (too many iterations: %i).\n", iterations);
 
 #ifdef DEBUG
-   notice (4, "aborted: enable=%s; disable=%s\n", en ? set2str (' ', en) : "none", dis ? set2str (' ', dis) : "none");
+   notice (4, "aborted: enable=%s; disable=%s\n", en ? set2str (' ', (const char **)en) : "none", dis ? set2str (' ', (const char **)dis) : "none");
    fflush (stderr);
 #endif
 

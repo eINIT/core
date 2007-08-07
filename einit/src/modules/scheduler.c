@@ -174,7 +174,8 @@ void sched_handle_timers () {
 
   evstaticdestroy (ev);
 
-  sched_timer_data = (time_t *)setdel ((void **)sched_timer_data, (void *)ev.integer);
+  uintptr_t tmpinteger = ev.integer;
+  sched_timer_data = (time_t *)setdel ((void **)sched_timer_data, (void *)tmpinteger);
 
   sched_handle_timers();
  } else {
@@ -192,7 +193,8 @@ void sched_timer_event_handler(struct einit_event *ev) {
 
   emutex_lock (&sched_timer_data_mutex);
 
-  sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)ev->integer, SET_NOALLOC);
+  uintptr_t tmpinteger = ev->integer;
+  sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)tmpinteger, SET_NOALLOC);
   setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
 
   if (sched_timer_data) {
@@ -201,7 +203,7 @@ void sched_timer_event_handler(struct einit_event *ev) {
    notice (1, "timestamps:\n");
 
    for (; sched_timer_data[i]; i++) {
-    notice (1, " * %i\n", sched_timer_data[i]);
+    notice (1, " * %i\n", (int)sched_timer_data[i]);
    }
   }
 

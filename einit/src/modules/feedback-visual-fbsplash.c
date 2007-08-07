@@ -200,14 +200,14 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
    if (start_splash) {
     struct einit_event ee = evstaticinit(einit_core_change_service_status);
 
-    ee.argv = setadd (ee.set, "feedback-fbsplash", SET_TYPE_STRING);
-    ee.argv = setadd (ee.set, "enable", SET_TYPE_STRING);
+    ee.argv = (char **)setadd ((void **)ee.set, "feedback-fbsplash", SET_TYPE_STRING);
+    ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
 
     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
     ee.argv = NULL;
 
-    ee.argv = setadd (ee.set, "feedback-textual", SET_TYPE_STRING);
-    ee.argv = setadd (ee.set, "enable", SET_TYPE_STRING);
+    ee.argv = (char **)setadd ((void **)ee.set, "feedback-textual", SET_TYPE_STRING);
+    ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
 
     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
 
