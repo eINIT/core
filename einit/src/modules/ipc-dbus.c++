@@ -77,7 +77,7 @@ const struct smodule einit_dbus_self = {
  1,
  einit_module_generic,
  "eINIT <-> DBUS connector",
- "ipc-dbus",
+ "einit-ipc-dbus",
  {
   einit_dbus_provides,
   einit_dbus_requires,
