@@ -114,6 +114,8 @@ int einit_dbus_configure (struct lmodule *irr) {
 int einit_dbus::configure() {
  event_listen (einit_event_subsystem_any, this->generic_event_handler);
 
+ dbus_threads_init_default();
+
  return 0;
 }
 
@@ -287,7 +289,7 @@ void einit_dbus::message_thread() {
 
  while (1) {
 
- while (this->connection && dbus_connection_read_write_dispatch(this->connection, 500)) {
+ while (this->connection && dbus_connection_read_write_dispatch(this->connection, 100)) {
   if (!dbus_connection_get_is_connected (this->connection)) break;
   message = dbus_connection_pop_message(this->connection);
 
