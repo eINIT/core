@@ -453,21 +453,24 @@ void einit_dbus::ipc_spawn(DBusMessage *message) {
   char *returnvalue = NULL;
   dbus_message_iter_get_basic(&args, &command);
 
-  reply = dbus_message_new_method_return(message);
-
   returnvalue = this->ipc_request (command);
 
-  dbus_message_iter_init_append(reply, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
+  if (this->connection) { /* make sure we're still connected after the ipc command */
 
-  free (returnvalue);
+   reply = dbus_message_new_method_return(message);
 
-  emutex_lock (&this->sequence_mutex);
-  this->sequence++;
-  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
-  emutex_unlock (&this->sequence_mutex);
+   dbus_message_iter_init_append(reply, &args);
+   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
 
-  dbus_message_unref(reply);
+   free (returnvalue);
+
+   emutex_lock (&this->sequence_mutex);
+   this->sequence++;
+   if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
+   emutex_unlock (&this->sequence_mutex);
+
+   dbus_message_unref(reply);
+  }
  }
 }
 
