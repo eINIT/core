@@ -280,6 +280,8 @@ char einit_connect() {
  pthread_attr_init (&einit_dbus_thread_attribute_detached);
  pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);
 
+ dbus_threads_init_default();
+
  einit_dbus_error = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error);
 
@@ -327,6 +329,7 @@ char einit_disconnect() {
 
 void einit_receive_events() {
  pthread_t einit_message_thread_id;
+ dbus_threads_init_default();
 
  einit_dbus_error_events = ecalloc (1, sizeof (DBusError));
  dbus_error_init(einit_dbus_error_events);
