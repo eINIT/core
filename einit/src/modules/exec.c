@@ -784,7 +784,7 @@ void *dexec_watcher (struct spidcb *spid) {
  }
  emutex_unlock (&running_mutex);
 
- if (dx) {
+ if (dx && cur && (cur->pid == pid)) {
   char *rid = (module && module->module && module->module->rid ? module->module->rid : "unknown");
 /* if we're already deactivating this daemon, resume the original function */
   if (pthread_mutex_trylock (&cur->mutex)) {
