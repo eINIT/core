@@ -759,9 +759,12 @@ void *dexec_watcher (struct spidcb *spid) {
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
  struct lmodule *module = NULL;
+ char stmp[BUFFERSIZE];
+
+ notice (1, "trying to find out if we know about %i.", pid);
+
  emutex_lock (&running_mutex);
  struct daemonst *cur = running;
- char stmp[BUFFERSIZE];
 
  while (cur) {
   dx = cur->dx;
@@ -1028,7 +1031,7 @@ int einit_exec_configure (struct lmodule *irr) {
 
  event_listen (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
  event_listen (einit_event_subsystem_core, einit_exec_einit_event_handler);
- event_ignore (einit_event_subsystem_process, einit_exec_process_event_handler);
+ event_listen (einit_event_subsystem_process, einit_exec_process_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);
