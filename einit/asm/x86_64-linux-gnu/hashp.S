@@ -1,5 +1,5 @@
 //
-// strlen.s
+// hashp.s
 // einit
 //
 // return the number of characters in a string
@@ -31,14 +31,18 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl strlen
-strlen:
-	mov %rdi,%r8;         /* save original pointer */
-	mov $0xffffffff,%rcx; /* the equivalent of "do indefinitely" */
-	mov $0x0,%al;         /* set al to zero */
-	cld;
-	repne scasb;          /* scan for al, i.e. zero */
-	sub %r8,%rdi;
-	mov %rdi,%rax;
-	dec %rax;
-	ret;
+.globl hashp
+hashp:
+	xor %rax,%rax;
+	xor %r8,%r8;
+repeat:	cmpb $0x0,(%rdi)
+	je bail;
+	movb (%rdi),%r8b;
+	add %r8,%rax;
+	inc %rdi;
+	jmp repeat;
+bail:	ret;
+
+#if defined(__ELF__)
+          .section .note.GNU-stack,"",%progbits
+#endif

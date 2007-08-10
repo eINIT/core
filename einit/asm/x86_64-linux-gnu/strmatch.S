@@ -1,8 +1,8 @@
 //
-// memset.s
+// strmatch.s
 // einit
 //
-// set a region of mem to a certain value
+// match two strings and return either 0 or 1
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,13 +31,21 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl memset
-memset:
-	mov %edx,%ecx;
-	mov %rdi,%r8;   /* copy arg1 for return value, see man:memset */
-	mov %rsi,%rax;
-	cld;
-	rep stosb;      /* copy byte to (%rdi), increment */
-	mov %r8,%rax;
-	xor %rax,%rax;
+.globl strmatch
+strmatch:
+	mov (%rsi),%r8b;
+	cmpb (%rdi),%r8b;   // initial check
+	jne end;
+repeat:	inc %rsi;           // increase our pointers
+	inc %rdi;
+	mov (%rsi),%r8b;
+	cmpb (%rdi),%r8b;   // see if the target of the pointers match
+	jne end;
+	test %r8b,%r8b;
+	jne repeat;
+end:	setz %al;
 	ret;
+
+#if defined(__ELF__)
+          .section .note.GNU-stack,"",%progbits
+#endif

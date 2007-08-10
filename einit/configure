@@ -40,7 +40,7 @@ fi
 
 BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
-SOURCESUFFIXES="c s c++"
+SOURCESUFFIXES="c s c++ S"
 HEADERSUFFIXES="h"
 
 COMPILER=gnu
@@ -639,6 +639,10 @@ collect_objects () {
 				if test "${suffix}" = "s"; then
 					asmobjects="${asmobjects} ${i}.o";
 				fi
+				if test "${suffix}" = "S"; then
+					asmobjects="${asmobjects} ${i}.o";
+				fi
+
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
 					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
@@ -770,6 +774,9 @@ collect_and_install_headers() {
 
 	for i in ${ASMFUNCTIONS}; do
 		if test -e "${ASMDIR}/${i}.s"; then
+			echo "#define _have_asm_${i}" >> build/headers/einit/configuration.h;
+		fi
+		if test -e "${ASMDIR}/${i}.S"; then
 			echo "#define _have_asm_${i}" >> build/headers/einit/configuration.h;
 		fi
 	done

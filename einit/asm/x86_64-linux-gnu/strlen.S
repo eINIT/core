@@ -1,8 +1,8 @@
 //
-// memcpy.s
+// strlen.s
 // einit
 //
-// why's the libc version of this so... "big"?
+// return the number of characters in a string
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,10 +31,18 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl memcpy
-memcpy:
-	mov %edx,%ecx;
-	mov %rdi,%rax;  /* copy arg1 to return value, see man:memcpy */
+.globl strlen
+strlen:
+	mov %rdi,%r8;         /* save original pointer */
+	mov $0xffffffff,%rcx; /* the equivalent of "do indefinitely" */
+	mov $0x0,%al;         /* set al to zero */
 	cld;
-	rep movsb;      /* copy byte at %rsi to %rdi, cx times */
+	repne scasb;          /* scan for al, i.e. zero */
+	sub %r8,%rdi;
+	mov %rdi,%rax;
+	dec %rax;
 	ret;
+
+#if defined(__ELF__)
+          .section .note.GNU-stack,"",%progbits
+#endif

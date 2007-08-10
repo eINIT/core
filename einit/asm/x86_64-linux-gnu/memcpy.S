@@ -1,8 +1,8 @@
 //
-// strmatch.s
+// memcpy.s
 // einit
 //
-// match two strings and return either 0 or 1
+// why's the libc version of this so... "big"?
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,17 +31,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl strmatch
-strmatch:
-	mov (%rsi),%r8b;
-	cmpb (%rdi),%r8b;   // initial check
-	jne end;
-repeat:	inc %rsi;           // increase our pointers
-	inc %rdi;
-	mov (%rsi),%r8b;
-	cmpb (%rdi),%r8b;   // see if the target of the pointers match
-	jne end;
-	test %r8b,%r8b;
-	jne repeat;
-end:	setz %al;
+.globl memcpy
+memcpy:
+	mov %edx,%ecx;
+	mov %rdi,%rax;  /* copy arg1 to return value, see man:memcpy */
+	cld;
+	rep movsb;      /* copy byte at %rsi to %rdi, cx times */
 	ret;
+
+#if defined(__ELF__)
+          .section .note.GNU-stack,"",%progbits
+#endif

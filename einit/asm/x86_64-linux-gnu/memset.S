@@ -1,8 +1,8 @@
 //
-// hashp.s
+// memset.s
 // einit
 //
-// return the number of characters in a string
+// set a region of mem to a certain value
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,14 +31,17 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl hashp
-hashp:
+.globl memset
+memset:
+	mov %edx,%ecx;
+	mov %rdi,%r8;   /* copy arg1 for return value, see man:memset */
+	mov %rsi,%rax;
+	cld;
+	rep stosb;      /* copy byte to (%rdi), increment */
+	mov %r8,%rax;
 	xor %rax,%rax;
-	xor %r8,%r8;
-repeat:	cmpb $0x0,(%rdi)
-	je bail;
-	movb (%rdi),%r8b;
-	add %r8,%rax;
-	inc %rdi;
-	jmp repeat;
-bail:	ret;
+	ret;
+
+#if defined(__ELF__)
+          .section .note.GNU-stack,"",%progbits
+#endif
