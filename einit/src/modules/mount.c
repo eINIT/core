@@ -1147,6 +1147,8 @@ int emount (char *mountpoint, struct einit_event *status) {
      {
       mount_panic:
 
+        notice (1, "einit-mount: could not mount node %s, error code was %s", mountpoint, strerror(errno));
+
         status->string = (char *)strerror(errno);
       status_update (status);
       if (fse->after_umount)

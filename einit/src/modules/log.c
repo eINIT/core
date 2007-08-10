@@ -96,7 +96,7 @@ void einit_log_ipc_event_handler(struct einit_event *);
 void einit_log_event_event_handler(struct einit_event *);
 signed int logsort (struct log_entry *, struct log_entry *);
 
-void flush_log_buffer () {
+void flush_log_buffer_to_file () {
  struct log_entry **slog = NULL;
  uint32_t i = 0;
  struct cfgnode *lognode = cfg_getnode("configuration-system-log", NULL);
@@ -158,8 +158,39 @@ void flush_log_buffer () {
   free (logbuffer);
   logbuffer = NULL;
 
-  dolog = 0;
   emutex_unlock(&logmutex);
+ }
+}
+
+char flush_log_buffer_to_syslog() {
+ struct cfgnode *lognode = cfg_getnode("configuration-system-log", NULL);
+
+ dolog = !lognode || lognode->flag;
+
+ if (!logbuffer) return 1;
+
+ if (dolog) {
+  return 0;
+ } else {
+  uint32_t i = 0;
+
+  emutex_lock(&logmutex);
+  for (; logbuffer[i]; i++) {
+   if (logbuffer[i]->message) free (logbuffer[i]->message);
+  }
+
+  free (logbuffer);
+  logbuffer = NULL;
+
+  emutex_unlock(&logmutex);
+ }
+
+ return 1;
+}
+
+void flush_log_buffer() {
+ if (!flush_log_buffer_to_syslog()) {
+  flush_log_buffer_to_file();
  }
 }
 
