@@ -421,8 +421,8 @@ char *einit_dbus::ipc_request (char *command) {
    }
   }
 
-  if (!returnvalue) returnvalue = estrdup("meow!\n");
-  
+  if (!returnvalue) returnvalue = estrdup("<einit-ipc><warning type=\"no-return-value\" /></einit-ipc>\n");
+
   return returnvalue;
 }
 

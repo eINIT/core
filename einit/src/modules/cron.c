@@ -216,7 +216,7 @@ void einit_cron_einit_event_handler (struct einit_event *ev) {
  if (ev->type == einit_core_configuration_update) {
   struct cfgnode *node = NULL;
 
-  notice (1, "meow");
+//  notice (1, "meow");
 
   while ((node = cfg_findnode ("services-cron-job", 0, node))) {
    struct einit_cron_job *cj = einit_cron_parse_attrs_to_cron_job (node->arbattrs);
