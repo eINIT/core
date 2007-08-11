@@ -281,7 +281,7 @@ signed int feedback_log_sort (struct message_log *st1, struct message_log *st2) 
 #if 0
  return (st2->seqid - st1->seqid);
 #else
- if (st2->seqid > st1->seqid)
+ if (st2->seqid < st1->seqid)
   return -1;
  return 1;
 #endif
