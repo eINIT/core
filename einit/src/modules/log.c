@@ -101,6 +101,8 @@ void einit_log_einit_event_handler(struct einit_event *);
 signed int logsort (struct log_entry *, struct log_entry *);
 
 void flush_log_buffer_to_file () {
+ if (!logbuffer) return;
+
  struct log_entry **slog = NULL;
  uint32_t i = 0;
  struct cfgnode *lognode = cfg_getnode("configuration-system-log", NULL);
@@ -108,9 +110,7 @@ void flush_log_buffer_to_file () {
 
  dolog = !lognode || lognode->flag;
 
- if (!logbuffer) return;
-
- if (dolog) {
+if (dolog) {
 
   if (!lognode || !lognode->svalue || !(logfile = fopen (lognode->svalue, "a")))
    logfile = fopen ("/tmp/einit.log", "a");
@@ -167,46 +167,32 @@ void flush_log_buffer_to_file () {
 }
 
 char flush_log_buffer_to_syslog() {
- struct cfgnode *lognode = cfg_getnode("configuration-system-log", NULL);
-
- dolog = !lognode || lognode->flag;
-
  if (!logbuffer) return 1;
 
- if (dolog) {
+ if (have_syslog) {
   uint32_t i = 0;
 
   emutex_lock(&logmutex);
-  for (; logbuffer[i]; i++) {
-   if (logbuffer[i]->message) {
+  if (logbuffer) {
+   for (; logbuffer[i]; i++) {
+    if (logbuffer[i]->message) {
     syslog(((logbuffer[i]->severity <= 2) ? LOG_CRIT :
            ((logbuffer[i]->severity <= 5) ? LOG_WARNING :
            ((logbuffer[i]->severity <= 8) ? LOG_NOTICE :
-           LOG_DEBUG))),
-           logbuffer[i]->message);
+      LOG_DEBUG))),
+    logbuffer[i]->message);
 
     free (logbuffer[i]->message);
+    }
    }
-  }
 
-  free (logbuffer);
-  logbuffer = NULL;
+   free (logbuffer);
+   logbuffer = NULL;
+  }
 
   emutex_unlock(&logmutex);
 
   return 0;
- } else {
-  uint32_t i = 0;
-
-  emutex_lock(&logmutex);
-  for (; logbuffer[i]; i++) {
-   if (logbuffer[i]->message) free (logbuffer[i]->message);
-  }
-
-  free (logbuffer);
-  logbuffer = NULL;
-
-  emutex_unlock(&logmutex);
  }
 
  return 1;
