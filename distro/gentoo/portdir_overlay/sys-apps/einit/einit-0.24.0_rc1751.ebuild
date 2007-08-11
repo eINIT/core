@@ -25,7 +25,9 @@ PDEPEND="sys-apps/einit-modules-xml"
 
 S=${WORKDIR}/${PN}
 
-ESVN_OPTIONS="r ${PV/*_rc}"
+SVN_REVISION="${PV/*_rc}"
+
+ESVN_OPTIONS="r${SVN_REVISION}"
 
 src_unpack() {
 	subversion_src_unpack
@@ -91,7 +93,7 @@ src_install() {
 
 pkg_postinst() {
 	ewarn
-	ewarn "This is a live SVN build and as such may be subject to weird errors."
+	ewarn "This is an SVN build for revision ${SVN_REVISION} and as such may be subject to weird errors."
 	ewarn
 	einfo "eINIT is now installed, but you will still need to configure it."
 	if use doc ; then
