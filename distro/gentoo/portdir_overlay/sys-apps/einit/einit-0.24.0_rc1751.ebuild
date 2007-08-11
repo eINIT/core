@@ -25,7 +25,7 @@ PDEPEND="sys-apps/einit-modules-xml"
 
 S=${WORKDIR}/${PN}
 
-ESVN_OPTIONS="r{${PV/*_rc}}"
+ESVN_OPTIONS="r ${PV/*_rc}"
 
 src_unpack() {
 	subversion_src_unpack
