@@ -2034,6 +2034,9 @@ int mount_mount (char *, struct device_data *, struct mountpoint_data *, struct 
 int mount_umount (char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
 int mount_do_mount_generic (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
 int mount_do_umount_generic (char *, char *, char, struct device_data *, struct mountpoint_data *, struct einit_event *);
+
+int mount_recover (struct lmodule *);
+
 void einit_mount_mount_ipc_handler(struct einit_event *);
 void einit_mount_mount_handler(struct einit_event *);
 void einit_mount_einit_event_handler(struct einit_event *);
@@ -3229,11 +3232,16 @@ int einit_mount_cleanup (struct lmodule *tm) {
  return 0;
 }
 
+int mount_recover (struct lmodule *lm) {
+ return status_ok;
+}
+
 int einit_mount_configure (struct lmodule *r) {
  module_init (r);
 
  thismodule->scanmodules = einit_mount_scanmodules;
  thismodule->cleanup = einit_mount_cleanup;
+ thismodule->recover = mount_recover;
 
  /* pexec configuration */
  exec_configure (this);
