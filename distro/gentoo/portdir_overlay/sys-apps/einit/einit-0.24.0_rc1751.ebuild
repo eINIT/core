@@ -27,7 +27,7 @@ S=${WORKDIR}/${PN}
 
 SVN_REVISION="${PV/*_rc}"
 
-ESVN_OPTIONS="r${SVN_REVISION}"
+ESVN_OPTIONS="-r${SVN_REVISION}"
 
 src_unpack() {
 	subversion_src_unpack
