@@ -145,8 +145,45 @@ void einit_exec_einit_event_handler (struct einit_event *ev) {
  }
 }
 
+void einit_exec_update_daemons_from_pidfiles() {
+ emutex_lock (&running_mutex);
+ struct daemonst *cur = running;
+
+ while (cur) {
+  struct dexecinfo *dx = cur->dx;
+
+  if (dx) {
+   struct stat st;
+   if (dx->pidfile && !stat (dx->pidfile, &st)) {
+    if (st.st_mtime > dx->pidfiles_last_update) {
+     char *contents = readfile (dx->pidfile);
+     if (contents) {
+      pid_t daemon_pid = parse_integer (contents);
+
+      cur->pid = daemon_pid;
+      dx->pidfiles_last_update = st.st_mtime;
+
+      free (contents);
+
+      if (cur->module && cur->module->module && cur->module->module->rid) {
+       notice (2, "exec: modules %s updated and is now known with pid %i.", cur->module->module->rid, cur->pid);
+      } else {
+       notice (2, "exec: anonymous daemon updated and is now known with pid %i.", cur->pid);
+      }
+     }
+    }
+   }
+  }
+
+  cur = cur->next;
+ }
+ emutex_unlock (&running_mutex);
+}
+
 void einit_exec_process_event_handler (struct einit_event *ev) {
  if (ev->type == einit_process_died) {
+  einit_exec_update_daemons_from_pidfiles();
+
 /* something needs to be done right here */
   struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
   spid->pid = ev->integer;
@@ -845,6 +882,24 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   if (pidexists (pid)) {
    fbprintf (status, "Module's PID-file already exists and is valid.");
+   status_update (status);
+
+   struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
+   new->starttime = time (NULL);
+   new->dx = shellcmd;
+   if (status)
+    new->module = (struct lmodule*)status->para;
+   else
+    new->module = NULL;
+   emutex_init (&new->mutex, NULL);
+   emutex_lock (&running_mutex);
+   new->next = running;
+   running = new;
+
+   shellcmd->cb = new;
+   new->pid = pid;
+
+   emutex_unlock (&running_mutex);
 
    return status_ok;
   }
@@ -886,69 +941,106 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
  lookupuidgid (&uid, &gid, shellcmd->user, shellcmd->group);
 
- struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
- new->starttime = time (NULL);
- new->dx = shellcmd;
- if (status)
-  new->module = (struct lmodule*)status->para;
- else
-  new->module = NULL;
- emutex_init (&new->mutex, NULL);
- emutex_lock (&running_mutex);
- new->next = running;
- running = new;
-
- shellcmd->cb = new;
-
- if (status) {
-  status->string = shellcmd->command;
-  status_update (status);
- }
-
- if ((child = fork()) < 0) {
+ if (shellcmd->options & daemon_model_forking) {
   if (status) {
-   status->string = strerror (errno);
+   fbprintf (status, "forking daemon");
+   status_update (status);
   }
-  return status_failed;
- } else if (child == 0) {
-  char **cmd;
-  char **cmdsetdup;
-  char **daemon_environment;
 
-  if (gid && (setgid (gid) == -1))
-   perror ("setting gid");
-  if (uid && (setuid (uid) == -1))
-   perror ("setting uid");
+  if (pexec_f (shellcmd->command, (const char **)shellcmd->variables, uid, gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_ok) {
+   struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
+   new->starttime = time (NULL);
+   new->dx = shellcmd;
+   if (status)
+    new->module = (struct lmodule*)status->para;
+   else
+    new->module = NULL;
+   emutex_init (&new->mutex, NULL);
+   emutex_lock (&running_mutex);
+   new->next = running;
+   running = new;
 
-  daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
-  daemon_environment = create_environment_f (daemon_environment, (const char **)shellcmd->variables);
+   shellcmd->cb = new;
 
-  shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
+   shellcmd->pidfiles_last_update = 0;
 
-  cmdsetdup = str2set ('\0', shellcmd->command);
-  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
+   emutex_unlock (&running_mutex);
+
+   einit_exec_update_daemons_from_pidfiles();
+
+   if (status) {
+    fbprintf (status, "daemon started OK");
+    status_update (status);
+   }
+
+   return status_ok;
+  } else
+   return status_failed;
+ } else {
+  struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
+  new->starttime = time (NULL);
+  new->dx = shellcmd;
+  if (status)
+   new->module = (struct lmodule*)status->para;
+  else
+   new->module = NULL;
+  emutex_init (&new->mutex, NULL);
+  emutex_lock (&running_mutex);
+  new->next = running;
+  running = new;
+
+  shellcmd->cb = new;
+
+  if (status) {
+   status->string = shellcmd->command;
+   status_update (status);
+  }
+
+  if ((child = fork()) < 0) {
+   if (status) {
+    status->string = strerror (errno);
+   }
+   return status_failed;
+  } else if (child == 0) {
+   char **cmd;
+   char **cmdsetdup;
+   char **daemon_environment;
+
+   if (gid && (setgid (gid) == -1))
+    perror ("setting gid");
+   if (uid && (setuid (uid) == -1))
+    perror ("setting uid");
+
+   daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
+   daemon_environment = create_environment_f (daemon_environment, (const char **)shellcmd->variables);
+
+   shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
+
+   cmdsetdup = str2set ('\0', shellcmd->command);
+   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
 //  close (0);
 //  close (1);
 //  close (2);
-  eclose (1);
-  dup2 (2, 1);
+   eclose (1);
+   dup2 (2, 1);
 
-  execve (cmd[0], cmd, daemon_environment);
-  free (cmd);
-  free (cmdsetdup);
-  exit (EXIT_FAILURE);
- } else {
-  new->pid = child;
+   execve (cmd[0], cmd, daemon_environment);
+   free (cmd);
+   free (cmdsetdup);
+   exit (EXIT_FAILURE);
+  } else {
+   new->pid = child;
 //  sched_watch_pid (child, dexec_watcher);
-  sched_watch_pid (child);
- }
- emutex_unlock (&running_mutex);
+   sched_watch_pid (child);
+  }
+  emutex_unlock (&running_mutex);
 
- if (shellcmd->is_up) {
-  return pexec (shellcmd->is_up, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
- }
+  if (shellcmd->is_up) {
+   return pexec (shellcmd->is_up, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+  }
 
- return status_ok;
+  return status_ok;
+ }
 }
 
 void dexec_resume_timer (struct dexecinfo *dx) {
@@ -964,32 +1056,52 @@ void dexec_resume_timer (struct dexecinfo *dx) {
 }
 
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
- if (shellcmd->cb) {
+ pid_t pid = shellcmd->cb ? shellcmd->cb->pid : 0;
+ if (shellcmd->cb && pidexists(pid)) {
   pthread_t th;
   pthread_mutex_trylock (&shellcmd->cb->mutex);
   shellcmd->cb->timer = kill_timeout_primary;
-  kill (shellcmd->cb->pid, SIGTERM);
+
+  fbprintf (status, "sending SIGTERM, daemon has %i seconds to exit...", kill_timeout_primary);
+  status_update (status);
+  if (kill (shellcmd->cb->pid, SIGTERM)) {
+   fbprintf (status, "failed to send SIGTERM: %s", strerror (errno));
+   status_update (status);
+   notice (1, "failed to send SIGTERM to a daemon: %s; assuming it's dead.", strerror (errno));
+
+   goto assume_dead;
+  }
 
   ethread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
   emutex_lock (&shellcmd->cb->mutex);
 
-  if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
-   status->string = "SIGTERM timer ran out, killing...";
+  if (pidexists(pid)) { // still up?
+   if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
+    status->string = "SIGTERM timer ran out, killing...";
+    status_update (status);
+
+    ethread_cancel (th);
+    pthread_mutex_trylock (&shellcmd->cb->mutex);
+    shellcmd->cb->timer = kill_timeout_secondary;
+    kill (shellcmd->cb->pid, SIGKILL);
+
+    ethread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
+    emutex_lock (&shellcmd->cb->mutex);
+   }
+  } else {
+   fbprintf (status, "daemon seems to have exited gracefully.");
    status_update (status);
-
-   ethread_cancel (th);
-   pthread_mutex_trylock (&shellcmd->cb->mutex);
-   shellcmd->cb->timer = kill_timeout_secondary;
-   kill (shellcmd->cb->pid, SIGKILL);
-
-   ethread_create (&th, NULL, (void *(*)(void *))dexec_resume_timer, shellcmd);
-   emutex_lock (&shellcmd->cb->mutex);
   }
   ethread_cancel (th);
 
   emutex_unlock (&shellcmd->cb->mutex); // just in case
   emutex_destroy (&shellcmd->cb->mutex);
+ } else {
+  fbprintf (status, "No control block or PID invalid, skipping the killing.");
+  status_update (status);
  }
+
+ assume_dead:
 
  shellcmd->cb = NULL;
 

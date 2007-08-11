@@ -334,6 +334,13 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
        if (strmatch (opt[ri], "feedback"))
         modinfo->mode |= einit_module_feedback;
       }
+
+      if (type_daemon) {
+       for (ri = 0; opt[ri]; ri++) {
+        if (strmatch (opt[ri], "forking"))
+         dexec->options |= daemon_model_forking;
+       }
+      }
      }
 
      else if (strmatch (node->arbattrs[i], "requires"))

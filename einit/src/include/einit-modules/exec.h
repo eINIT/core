@@ -56,6 +56,10 @@ enum pexec_options {
  pexec_option_dont_close_stdin = 0x4,
 };
 
+enum daemon_options {
+ daemon_model_forking = 0x0001
+};
+
 /* structures */
 struct dexecinfo {
  char *id;
@@ -74,6 +78,10 @@ struct dexecinfo {
  char *pidfile;
  char **need_files;
  char **oattrs;
+
+ enum daemon_options options;
+
+ time_t pidfiles_last_update;
 };
 
 struct daemonst {
