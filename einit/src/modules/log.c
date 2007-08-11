@@ -49,6 +49,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <errno.h>
 
+#include <syslog.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -87,13 +89,15 @@ struct log_entry {
  unsigned char severity;
 };
 
+char have_syslog = 0;
+
 struct log_entry **logbuffer = NULL;
 pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
 char dolog = 1, log_notices_to_stderr = 1;
 
 void einit_log_feedback_event_handler(struct einit_event *);
 void einit_log_ipc_event_handler(struct einit_event *);
-void einit_log_event_event_handler(struct einit_event *);
+void einit_log_einit_event_handler(struct einit_event *);
 signed int logsort (struct log_entry *, struct log_entry *);
 
 void flush_log_buffer_to_file () {
@@ -170,6 +174,26 @@ char flush_log_buffer_to_syslog() {
  if (!logbuffer) return 1;
 
  if (dolog) {
+  uint32_t i = 0;
+
+  emutex_lock(&logmutex);
+  for (; logbuffer[i]; i++) {
+   if (logbuffer[i]->message) {
+    syslog(((logbuffer[i]->severity <= 2) ? LOG_CRIT :
+           ((logbuffer[i]->severity <= 5) ? LOG_WARNING :
+           ((logbuffer[i]->severity <= 8) ? LOG_NOTICE :
+           LOG_DEBUG))),
+           logbuffer[i]->message);
+
+    free (logbuffer[i]->message);
+   }
+  }
+
+  free (logbuffer);
+  logbuffer = NULL;
+
+  emutex_unlock(&logmutex);
+
   return 0;
  } else {
   uint32_t i = 0;
@@ -189,9 +213,9 @@ char flush_log_buffer_to_syslog() {
 }
 
 void flush_log_buffer() {
- if (!flush_log_buffer_to_syslog()) {
-  flush_log_buffer_to_file();
- }
+ if (have_syslog) { flush_log_buffer_to_syslog(); }
+
+ flush_log_buffer_to_file();
 }
 
 signed int logsort (struct log_entry *st1, struct log_entry *st2) {
@@ -212,6 +236,26 @@ void einit_log_ipc_event_handler (struct einit_event *ev) {
 void einit_log_einit_event_handler(struct einit_event *ev) {
  if (!dolog) return;
 
+ if (ev->type == einit_core_service_update) {
+  if (ev->status & status_enabled) {
+   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "logger", SET_TYPE_STRING)) {
+    have_syslog = 1;
+
+    openlog ("einit", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+    flush_log_buffer();
+   }
+  } else if (!(ev->status & status_enabled)) {
+   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides,"logger", SET_TYPE_STRING)) {
+    have_syslog = 0;
+
+    closelog();
+
+    flush_log_buffer();
+   }
+  }
+ }
+
  if (ev->type == einit_core_mode_switching) {
   char logentry[BUFFERSIZE];
 
@@ -227,6 +271,8 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
   emutex_lock(&logmutex);
   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
   emutex_unlock(&logmutex);
+
+  if (have_syslog) flush_log_buffer();
  } else if (ev->type == einit_core_mode_switch_done) {
   char logentry[BUFFERSIZE];
 
@@ -272,6 +318,8 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    emutex_lock(&logmutex);
    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
    emutex_unlock(&logmutex);
+
+   if (have_syslog) flush_log_buffer();
 
    free (tmp);
   }
@@ -334,6 +382,8 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    emutex_lock(&logmutex);
    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
    emutex_unlock(&logmutex);
+
+   if (have_syslog) flush_log_buffer();
   }
  } else if ((ev->type == einit_feedback_notice) && ev->string) {
   strtrim (ev->string);
@@ -359,6 +409,8 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
 
   if (log_notices_to_stderr) {
   }
+
+  if (have_syslog) flush_log_buffer();
  }
 
  return;
@@ -380,6 +432,8 @@ int einit_log_configure (struct lmodule *r) {
  event_listen (einit_event_subsystem_ipc, einit_log_ipc_event_handler);
  event_listen (einit_event_subsystem_feedback, einit_log_feedback_event_handler);
  event_listen (einit_event_subsystem_core, einit_log_einit_event_handler);
+
+ setlogmask (LOG_UPTO (LOG_NOTICE));
 
  return 0;
 }
