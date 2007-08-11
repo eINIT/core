@@ -281,7 +281,7 @@ signed int feedback_log_sort (struct message_log *st1, struct message_log *st2) 
 #if 0
  return (st2->seqid - st1->seqid);
 #else
- if (st2->seqid < st1->seqid)
+ if (st2->seqid > st1->seqid)
   return -1;
  return 1;
 #endif
@@ -330,14 +330,16 @@ void feedback_process_textual_noansi(struct feedback_textual_module_status *st) 
  }
 
  if (st->log) {
-  uint32_t y = 0;
+/*  uint32_t y = 0;
 
   for (; st->log[y]; y++) ;
 
   if (y != 0) {
    y--;
    eprintf (stdout, "%s %s (%s): %s\n", statuscode, name, rid, st->log[y]->message);
-  }
+  }*/
+  if (st->log[0])
+   eprintf (stdout, "%s %s (%s): %s\n", statuscode, name, rid, st->log[0]->message);
  } else {
   eprintf (stdout, "%s %s (%s)\n", statuscode, name, rid);
  }
@@ -414,7 +416,7 @@ void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
   } else if (y != 0) {
    y--;
 
-   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s: %s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name, st->log[y]->message);
+   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s: %s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name, st->log[0]->message);
   } else {
    eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
   }
