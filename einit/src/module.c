@@ -243,8 +243,12 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   if (task & einit_module_custom) {
    if (strmatch (custom_command, "zap")) {
+    char zerror = module->status & status_failed ? 1 : 0;
     fb->string = "module ZAP'd.";
     module->status = status_idle;
+	module->status = status_disabled;
+	if (zerror)
+	 module->status |= status_failed;
    } else if (module->custom) {
     module->status = module->custom(module->param, custom_command, fb);
    } else {
