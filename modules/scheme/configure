@@ -29,6 +29,10 @@
 
 alias source=.
 
+if [ "$(readlink /bin/sh)" != "dash" ]; then
+alias echo="echo -e"
+fi
+
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
 	ISSVN=1
@@ -40,7 +44,7 @@ fi
 
 BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
 
-SOURCESUFFIXES="c s c++"
+SOURCESUFFIXES="c s c++ S"
 HEADERSUFFIXES="h"
 
 COMPILER=gnu
@@ -56,12 +60,23 @@ nomodule=""
 
 XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 
-source configure.options
+DBUS=""
+
+. ./configure.options
+
+echo -n "checking automatic options [";
+
+if test -n "`uname -a|grep -i 'Linux'`"; then
+ echo -n " LINUX";
+ EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+fi
+echo " ]";
 
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
 	shortd=${param%%--no-*};
+	shorte=${param%%--enable-*};
 	if test "$short" = "--internal-modules"; then
 		echo -n " INTERNAL";
 		INTERNALMODULES=${param#*=};
@@ -146,8 +161,18 @@ for param in $@; do
                 echo -n " EBUILD";
                 EBUILD="1";
                 CONFIGINSTALLMETHOD="ebuild";
-	elif test "$shortd" = ""; then
+        elif test "$param" = "--enable-ipc-dbus"; then
+		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
+		DBUS="dbus";
+		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit libeinit++";
+	elif test "$param" = "--enable-gtk"; then
+		UTILOBJECTS="${UTILOBJECTS} einit-gui-gtk";
+		GUI="${GTK} gtk"
+		GTK="gtk"
+		elif test "$shortd" = ""; then
 		nomodule="${nomodule} ${param#*--no-}";
+	elif test "$shorte" = ""; then
+		EXTERNALMODULES="${EXTERNALMODULES} ${param#*--enable-}";
 	fi;
 done;
 echo " ]";
@@ -351,6 +376,8 @@ else
 	echo "expat is currectly a critical requirement, you need to install it for einit to compile and work. Check your OS-distribution's package repository, or go to http://expat.sf.net/.";
 fi
 
+# CFLAGS="${CXXFLAGS}"
+
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
 XXL="\${CXX} \${INCLUDE} \${CXXFLAGS} -fPIC"
@@ -359,6 +386,8 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	OS="darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
 	XDYNAMIC="";
+	XDYNAMIC_SIMPLE="-dynamiclib"
+# -bundle -flat_namespace -undefined suppress
 	if [ "${COREFILE}" != "" ]; then
 		LLD="-bundle -Wl,-bundle_loader,${COREFILE}";
 	else
@@ -366,14 +395,16 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	fi
 	STATIC="";
 	LIBRT=""
+	SO="dylib"
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
 	OS="linux";
 	XCFLAGS="$XCFLAGS -DPOSIX -DLINUX";
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
+	XDYNAMIC_SIMPLE="-shared"
 	LPA="-lpthread";
-	if test "$STATIC" == "1"; then
+	if test "$STATIC" = "1"; then
 # static linking doesn't work like this, it messes up .so modules :/
 		STATIC="-static"
 #		STATIC=""
@@ -385,21 +416,35 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 		STATIC=""
 	fi
 	LIBRT="-lrt"
+	SO="so"
+	NETLINK="netlink"
 else
 	echo "(guess) generic posix-ish unix";
 	OS="unknown";
 	XCFLAGS="$XCFLAGS -DPOSIX";
 	LLD="-shared";
 	XDYNAMIC="-Wl,-export-dynamic";
+	XDYNAMIC_SIMPLE="-shared"
 	LPA="-lpthread";
 	STATIC="";
 	LIBRT="-lrt"
+	SO="so"
+fi
+
+if [ "${NETLINK}" = "netlink" ]; then
+	echo "getting libnl-1 flags off pkg-config..."
+	NETLINK_CFLAGS=$(pkg-config --cflags libnl-1)
+	NETLINK_LIBS=$(pkg-config --libs libnl-1)
 fi
 
 echo -n "figuring out what libs need to be linked into the core..."
 if test -n "`echo ${INTERNALMODULES}|grep bootstrap-configuration-xml-expat`"; then
  echo -n " -lexpat"
  CORELIBS="${CORELIBS} -lexpat"
+fi;
+if test -n "`echo ${INTERNALMODULES}|grep linux-netlink`"; then
+ echo -n " -lnl"
+ CORELIBS="${CORELIBS} ${NETLINK_LIBS}"
 fi;
 if test -n "`echo ${INTERNALMODULES}|grep module-logic-v3`"; then
  echo -n " -lrt"
@@ -431,16 +476,32 @@ echo "done.";
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
 
+if [ "${DBUS}" = "dbus" ]; then
+	echo "getting dbus flags off pkg-config..."
+	DBUS_CFLAGS=$(pkg-config --cflags dbus-1)
+	DBUS_LIBS=$(pkg-config --libs dbus-1)
+fi
+
+if [ "${GTK}" = "gtk" ]; then
+	echo "getting gtkmm flags off pkg-config..."
+	GTK_CFLAGS=$(pkg-config --cflags gtkmm-2.4)
+	GTK_LIBS=$(pkg-config --libs gtkmm-2.4)
+fi
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
 ETCXDIR = ${PREFIX}/etc
 LIBDIR = ${PREFIX}/lib/einit
 MODDIR = ${PREFIX}/lib/einit/modules
+ULIBDIR = ${UPREFIX}/lib
 BINDIR = ${PREFIX}/bin
+UBINDIR = ${UPREFIX}/bin
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
 BOOTSTRAPDIR = ${PREFIX}/${BOOTSTRAP_MODULE_PATH}
+
+SO = "${SO}"
 
 INSTALL = install
 IPARAM =
@@ -460,6 +521,7 @@ OPTIONS = $OPTIONS
 INCLUDE = $INCLUDE
 
 XDYNAMIC = $XDYNAMIC
+XDYNAMIC_SIMPLE = $XDYNAMIC_SIMPLE
 BUILDNUMBER = $BUILDNUMBER
 ISSVN = $ISSVN
 
@@ -470,10 +532,11 @@ CORELIBS = ${CORELIBS}
 
 BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 
-CC = $CC ${GCCFLAGS}
+CC = $CC ${GCCFLAGS} -fPIC
 ASM = $ASM ${GCCFLAGS}
 
 CFLAGS = $CFLAGS$XCFLAGS
+CXXFLAGS = $CXXFLAGS$XCFLAGS
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL
@@ -483,12 +546,25 @@ XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA
 
-CXX = $CXX
+CXX = $CXX ${GCCFLAGS}
 CXXC = \${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}
 XXL = $XXL -DISSVN=\${ISSVN}
 CXXLD = \${CXX} \${LDFLAGS}
 CXXLD = \${CXXC} \${LDFLAGS}
 LXXLD = \${CXXC} \${LDFLAGS} $LLD
+
+DBUS_CFLAGS = ${DBUS_CFLAGS}
+DBUS_LIBS = ${DBUS_LIBS}
+DBUS = ${DBUS}
+
+GTK_CFLAGS = ${GTK_CFLAGS}
+GTK_LIBS = ${GTK_LIBS}
+GTK = ${GTK}
+
+NETLINK_CFLAGS = ${NETLINK_CFLAGS}
+NETLINK_LIBS = ${NETLINK_LIBS}
+
+GUI = ${GUI}
 " > config.mk
 
 echo "creating config.sh..."
@@ -496,6 +572,7 @@ echo "PREFIX=\"$PREFIX\"
 ETCDIR=\"${PREFIX}/etc/einit\"
 ETCXDIR=\"${PREFIX}/etc\"
 LIBDIR=\"${PREFIX}/lib/einit\"
+ULIBDIR=\"${UPREFIX}/lib\"
 MODDIR=\"${PREFIX}/lib/einit/modules\"
 BINDIR=\"${PREFIX}/bin\"
 SBINDIR=\"${PREFIX}/sbin\"
@@ -549,6 +626,10 @@ XXL=\"$XXL -DISSVN=\${ISSVN}\"
 CXXLD=\"\${CXX} \${LDFLAGS}\"
 CXXLD=\"\${CXXC} \${LDFLAGS}\"
 LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
+
+DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
+DBUS_LIBS=\"${DBUS_LIBS}\"
+DBUS=\"${DBUS}\"
 " > config.sh
 
 collect_objects () {
@@ -563,15 +644,22 @@ collect_objects () {
 					subobjects="${subobjects} ${pwd}/${y}"
 				done
 				objects="${objects} ${i}.o";
+				
+				if [ -e "object.${i}.defines" ]; then LOCALDEF=$(cat "object.${i}.defines");
+				else LOCALDEF=""; fi
 
 				if test "${suffix}" = "s"; then
 					asmobjects="${asmobjects} ${i}.o";
 				fi
+				if test "${suffix}" = "S"; then
+					asmobjects="${asmobjects} ${i}.o";
+				fi
+
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
+					echo "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
 				else
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} -c ${subobjects} -o ${i}.o\n"
+					echo "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o\n"
 				fi
 			fi
 		done
@@ -594,16 +682,16 @@ collect_modules() {
 				else LOCALDEF=""; fi
 
 				if test "${suffix}" = "c++"; then
-					echo -e "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
+					echo "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
 				else
-					echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
+					echo "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
 				fi
 
 				if test -z "$(grep ${i}.so\:\  ${template})"; then
 					if test "${suffix}" = "c++"; then
-						echo -e "${i}.so: ${i}.o\n	\${LXXLD} ${i}.o -o ${i}.so\n";
+						echo "${i}.so: ${i}.o\n	\${LXXLD} ${i}.o -o ${i}.so\n";
 					else
-						echo -e "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n";
+						echo "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n";
 					fi
 				fi
 			fi
@@ -617,9 +705,9 @@ install_modules() {
 	\${INSTALL} \${SOIPARAM} -d \${DESTDIR}/\${BOOTSTRAPDIR};";
 	for i in $@; do
 		if test -n "$(echo ${i}|grep bootstrap-)"; then
-			echo -e "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${BOOTSTRAPDIR}"
+			echo "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${BOOTSTRAPDIR}"
 		else
-			echo -e "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${MODDIR}"
+			echo "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${MODDIR}"
 		fi
 	done
 }
@@ -630,7 +718,7 @@ collect_and_install_headers() {
 	main="no"
 
 	for i in $@; do
-		if [ "${i}" == "src/include/einit" ]; then
+		if [ "${i}" = "src/include/einit" ]; then
 			main="yes"
 		fi
 
@@ -647,9 +735,9 @@ collect_and_install_headers() {
 			done
 		done
 	done
-	echo -e "install-auto:${install}"
+	echo "install-auto:${install}"
 
-	if [ "${main}" == "no" ]; then return; fi
+	if [ "${main}" = "no" ]; then return; fi
 	
 	echo "/* created by the configure-script, you shouldn't modify this */
 
@@ -700,6 +788,9 @@ collect_and_install_headers() {
 		if test -e "${ASMDIR}/${i}.s"; then
 			echo "#define _have_asm_${i}" >> build/headers/einit/configuration.h;
 		fi
+		if test -e "${ASMDIR}/${i}.S"; then
+			echo "#define _have_asm_${i}" >> build/headers/einit/configuration.h;
+		fi
 	done
 
 	echo "#endif
@@ -721,7 +812,7 @@ for z in ${BUILDCOMPONENTS}; do
 	echo -n "${z} ";
 	mkdir -p build/${z};
 	cat config.mk > build/${z}/Makefile
-	echo -e "\nall: ${z}\n" >> build/${z}/Makefile
+	echo "\nall: ${z}\n" >> build/${z}/Makefile
 
 	inobjects=""
 	inmodules=""
@@ -773,18 +864,18 @@ for z in ${BUILDCOMPONENTS}; do
 			echo  "" >> build/core/module-configuration.c
 		fi;
 
-		echo -e "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
+		echo "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
 	fi
 
-	echo -e "\nobjects = ${objects}\n" >> build/${z}/Makefile
-	echo -e "\nasmobjects = ${asmobjects}\n" >> build/${z}/Makefile
+	echo "\nobjects = ${objects}\n" >> build/${z}/Makefile
+	echo "\nasmobjects = ${asmobjects}\n" >> build/${z}/Makefile
 	cat makefile.${z}.template >> build/${z}/Makefile
 done
 
 echo "# makefiles below here are auto-created, it's not gonna help much if you modify any of them." > build/Makefile;
 
 for y in ${MAKEFILETASKS}; do
-	echo -e "\n${y}:" >> build/Makefile
+	echo "\n${y}:" >> build/Makefile
 	for i in ${components}; do
 		echo "	cd ${i} && \${MAKE} ${y}" >> build/Makefile
 	done
