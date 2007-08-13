@@ -29,9 +29,10 @@
 
 alias source=.
 
-#if [ "${SHELL}" != "/bin/dash" ]; then
-#alias echo="echo -e"
-#fi
+if [ "$(echo \n)" != "\
+" ]; then
+alias echo="echo -e"
+fi
 
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
