@@ -46,6 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
+#include <pthread.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -77,7 +79,11 @@ module_register(einit_process_self);
 
 struct process_status **ps = NULL;
 
+pthread_mutex_t process_kill_command_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 pid_t *collect_processes(struct pc_conditional **pcc) {
+ emutex_lock (&process_kill_command_mutex);
+
  pid_t *ret = NULL;
  process_status_updater pse = function_find_one("einit-process-status-updater", 1, NULL);
  uint32_t i;
@@ -100,6 +106,7 @@ pid_t *collect_processes(struct pc_conditional **pcc) {
   if (pf) ret = pf (pcc[i], ret, ps);
  }
 
+ emutex_unlock (&process_kill_command_mutex);
  return ret;
 }
 
@@ -165,6 +172,7 @@ void einit_process_ipc_event_handler (struct einit_event *ev) {
 
 int ekill_f (struct pc_conditional **pcc, int sign) {
  pid_t *pl = pcollect (pcc);
+
  uint32_t i = 0;
 
  if (!pl) return -1;

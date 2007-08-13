@@ -108,7 +108,7 @@ module_register(einit_mount_self);
 
 #endif
 
-#if 1
+#if 0
 
 
 char *provides_mountlocal[] = {"mount-local", NULL};
@@ -2072,6 +2072,96 @@ pthread_mutex_t
 
 struct stree *mount_filesystems = NULL;
 
+char *generate_legacy_mtab ();
+
+/* macro definitions */
+#define update_real_mtab() {\
+ if (mount_mtab_file) {\
+  char *tmpmtab = generate_legacy_mtab ();\
+\
+  if (tmpmtab) {\
+   unlink (mount_mtab_file);\
+\
+   FILE *mtabfile = efopen (mount_mtab_file, "w");\
+\
+   if (mtabfile) {\
+    eputs (tmpmtab, mtabfile);\
+    efclose (mtabfile);\
+}\
+\
+   free (tmpmtab);\
+}\
+}\
+}
+
+char *generate_legacy_mtab () {
+ char *ret = NULL;
+ ssize_t retlen = 0;
+
+ struct device_data *dd = NULL;
+ struct stree *t;
+
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
+ t = mounter_dd_by_mountpoint;
+
+ while (t) {
+  dd = t->value;
+
+  if (dd) {
+   struct stree *st = streefind (dd->mountpoints, t->key, tree_find_first);
+
+   if (st) {
+    struct mountpoint_data *mp = st->value;
+
+    if (mp && (mp->status & device_status_mounted)) {
+     char tmp[BUFFERSIZE];
+     char *tset = set2str (',', (const char **)mp->options); 
+
+     if (tset)
+      esprintf (tmp, BUFFERSIZE, "%s %s %s %s,%s 0 0\n", dd->device, mp->mountpoint, mp->fs,
+#ifdef MS_RDONLY
+                mp->mountflags & MS_RDONLY
+#else
+                  0
+#endif
+                  ? "ro" : "rw", tset);
+     else
+      esprintf (tmp, BUFFERSIZE, "%s %s %s %s 0 0\n", dd->device, mp->mountpoint, mp->fs,
+#ifdef MS_RDONLY
+                mp->mountflags & MS_RDONLY
+#else
+                  0
+#endif
+                  ? "ro" : "rw");
+
+     ssize_t nlen = strlen(tmp);
+
+     if (retlen == 0) {
+      ret = emalloc (nlen +1);
+      *ret = 0;
+
+      retlen += 1;
+     } else {
+      ret = erealloc (ret, retlen + nlen);
+     }
+
+     retlen += nlen;
+
+     strcat (ret, tmp);
+
+     if (tset) free (tset);
+    }
+   }
+  }
+
+  t = streenext(t);
+ }
+
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+
+ return ret;
+}
+
 unsigned char read_filesystem_flags_from_configuration (void *na) {
  struct cfgnode *node = NULL;
  uint32_t i;
@@ -2423,14 +2513,10 @@ void mount_update_fstab_nodes () {
 }
 
 void mount_update_nodes_from_mtab () {
-#if 0
 #ifdef LINUX
  struct stree *workstree = read_fsspec_file ("/proc/mounts");
 #else
  struct stree *workstree = read_fsspec_file ("/etc/mtab");
-#endif
-#else
- struct stree *workstree = read_fsspec_file ("proc/mounts");
 #endif
  struct stree *cur = workstree;
 
@@ -2975,6 +3061,8 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 
     mp->status |= device_status_mounted;
 
+    update_real_mtab();
+
     return status_ok;
    }
   }
@@ -2999,6 +3087,8 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
    if (f (mountpoint, mp->fs, step, dd, mp, status) == status_ok) {
     free (functions);
     free (fnames);
+
+    update_real_mtab();
     return status_ok;
    }
   }
@@ -3330,6 +3420,8 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
  event_emit (&eem, einit_event_flag_broadcast);
  evstaticdestroy (eem);
 
+ update_real_mtab();
+
  return status_ok;
 }
 
@@ -3344,6 +3436,7 @@ int emount (char *mountpoint, struct einit_event *status) {
    struct mountpoint_data *mp = t->value;
 
    if (mp->status & device_status_mounted) {
+    update_real_mtab();
     return status_ok;
    }
 
@@ -3394,6 +3487,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
    struct mountpoint_data *mp = t->value;
 
    if (!(mp->status & device_status_mounted)) {
+    update_real_mtab();
     return status_ok;
    }
 
