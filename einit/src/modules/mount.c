@@ -2748,6 +2748,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   char *servicename = mount_mp_to_service_name(s->key);
   char tmp[BUFFERSIZE];
   char **after = NULL;
+  char **requires = NULL;
   struct lmodule *lm = ml;
 
   if (strcmp (s->key, "/")) {
@@ -2786,6 +2787,12 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   if (t) {
    struct mountpoint_data *mp = t->value; 
 
+   enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
+   if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
+    requires = (char **)setadd ((void **)requires, (void *)"network", SET_TYPE_STRING);
+    requires = (char **)setadd ((void **)requires, (void *)"portmap", SET_TYPE_STRING);
+   }
+
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
     if (inset ((const void **)mount_system, s->key, SET_TYPE_STRING)) {
      ssystem = (char **)setadd ((void **)ssystem, (void *)servicename, SET_TYPE_STRING);
@@ -2807,7 +2814,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
      if (!ad) {
       enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
 
-      if (capa & filesystem_capability_network) {
+      if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
        sremote = (char **)setadd ((void **)sremote, (void *)servicename, SET_TYPE_STRING);
        ad = 1;
       }
@@ -2826,6 +2833,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    if (lm->source && strmatch(lm->source, tmp)) {
     struct smodule *sm = (struct smodule *)lm->module;
     sm->si.after = after;
+    sm->si.requires = requires;
 
     lm = mod_update (lm);
 
@@ -2850,6 +2858,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   newmodule->name = estrdup (tmp);
 
   newmodule->si.after = after;
+  newmodule->si.requires = requires;
 
   lm = mod_add (NULL, newmodule);
 
@@ -2994,6 +3003,8 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
    if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
   else
 #endif
+   if (strmatch (options[fi], "system") || strmatch (options[fi], "critical") || strmatch (options[fi], "network")) ; // ignore our own specifiers
+  else
 
    if (!ret) {
    uint32_t slen = strlen (options[fi])+1;
