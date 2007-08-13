@@ -29,6 +29,10 @@
 
 alias source=.
 
+if [ "${SHELL}" != "/bin/dash" ]; then
+alias echo="echo -e"
+fi
+
 BUILDNUMBER=`cat buildnumber`
 if test -d .svn; then
 	ISSVN=1
@@ -653,9 +657,9 @@ collect_objects () {
 
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
+					echo "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
 				else
-					echo -e "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o\n"
+					echo "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o\n"
 				fi
 			fi
 		done
@@ -678,16 +682,16 @@ collect_modules() {
 				else LOCALDEF=""; fi
 
 				if test "${suffix}" = "c++"; then
-					echo -e "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
+					echo "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
 				else
-					echo -e "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
+					echo "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
 				fi
 
 				if test -z "$(grep ${i}.so\:\  ${template})"; then
 					if test "${suffix}" = "c++"; then
-						echo -e "${i}.so: ${i}.o\n	\${LXXLD} ${i}.o -o ${i}.so\n";
+						echo "${i}.so: ${i}.o\n	\${LXXLD} ${i}.o -o ${i}.so\n";
 					else
-						echo -e "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n";
+						echo "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n";
 					fi
 				fi
 			fi
@@ -701,9 +705,9 @@ install_modules() {
 	\${INSTALL} \${SOIPARAM} -d \${DESTDIR}/\${BOOTSTRAPDIR};";
 	for i in $@; do
 		if test -n "$(echo ${i}|grep bootstrap-)"; then
-			echo -e "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${BOOTSTRAPDIR}"
+			echo "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${BOOTSTRAPDIR}"
 		else
-			echo -e "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${MODDIR}"
+			echo "	\${INSTALL} \${SOIPARAM} ${i} \${DESTDIR}/\${MODDIR}"
 		fi
 	done
 }
@@ -731,7 +735,7 @@ collect_and_install_headers() {
 			done
 		done
 	done
-	echo -e "install-auto:${install}"
+	echo "install-auto:${install}"
 
 	if [ "${main}" = "no" ]; then return; fi
 	
@@ -808,7 +812,7 @@ for z in ${BUILDCOMPONENTS}; do
 	echo -n "${z} ";
 	mkdir -p build/${z};
 	cat config.mk > build/${z}/Makefile
-	echo -e "\nall: ${z}\n" >> build/${z}/Makefile
+	echo "\nall: ${z}\n" >> build/${z}/Makefile
 
 	inobjects=""
 	inmodules=""
@@ -860,18 +864,18 @@ for z in ${BUILDCOMPONENTS}; do
 			echo  "" >> build/core/module-configuration.c
 		fi;
 
-		echo -e "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
+		echo "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
 	fi
 
-	echo -e "\nobjects = ${objects}\n" >> build/${z}/Makefile
-	echo -e "\nasmobjects = ${asmobjects}\n" >> build/${z}/Makefile
+	echo "\nobjects = ${objects}\n" >> build/${z}/Makefile
+	echo "\nasmobjects = ${asmobjects}\n" >> build/${z}/Makefile
 	cat makefile.${z}.template >> build/${z}/Makefile
 done
 
 echo "# makefiles below here are auto-created, it's not gonna help much if you modify any of them." > build/Makefile;
 
 for y in ${MAKEFILETASKS}; do
-	echo -e "\n${y}:" >> build/Makefile
+	echo "\n${y}:" >> build/Makefile
 	for i in ${components}; do
 		echo "	cd ${i} && \${MAKE} ${y}" >> build/Makefile
 	done
