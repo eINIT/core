@@ -7,5 +7,5 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -m 0755 install-config ${DESTDIR}/${LIBDIR}/scripts
-	echo -e "PREFIX=\"${PREFIX}\"\nLIBDIR=\"${LIBDIR}\"\nETCDIR=\"${ETCDIR}\"" > ${DESTDIR}/${LIBDIR}/scripts/configuration
+	echo "PREFIX=\"${PREFIX}\"\nLIBDIR=\"${LIBDIR}\"\nETCDIR=\"${ETCDIR}\"" > ${DESTDIR}/${LIBDIR}/scripts/configuration
 	if test -n "$$(echo '${CFLAGS}'|grep DEBUG)"; then ${INSTALL} ${IPARAM} -m 0755 debug/einit.vg ${DESTDIR}/${SBINDIR}; fi;
