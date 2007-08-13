@@ -1,5 +1,7 @@
 <einit prefix="configuration-storage-fstab">
- <source s="configuration" />
+<!-- change this to 'yes' if you wish to use /etc/fstab. nodes in here still override those in /etc/fstab -->
+ <use-legacy-fstab b="no" />
+
  <!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
  <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
 

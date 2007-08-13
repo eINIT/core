@@ -389,7 +389,7 @@ void mount_update_device (struct device_data *d) {
 void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags) {
  struct stree *st = (dd->mountpoints ? streefind (dd->mountpoints, mountpoint, tree_find_first) : NULL);
  struct mountpoint_data *mp = st ? st->value : ecalloc (1, sizeof (struct mountpoint_data));
- char *device = dd->device;
+// char *device = dd->device;
 
  mp->mountpoint = mountpoint;
  mp->fs = fs ? fs : estrdup("auto");
@@ -412,10 +412,10 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
 
  mp->flatoptions = options_string_to_mountflags (mp->options, &(mp->mountflags), mountpoint);
 
- if (st) {
-  eprintf (stderr, " >> have mountpoint_data node for %s, device %s, fs %s: updating\n", mountpoint, device, fs);
+ if (!st) {
+/*  eprintf (stderr, " >> have mountpoint_data node for %s, device %s, fs %s: updating\n", mountpoint, device, fs);
  } else {
-  eprintf (stderr, " >> inserting new mountpoint_data node for %s, device %s, fs %s\n", mountpoint, device, fs);
+  eprintf (stderr, " >> inserting new mountpoint_data node for %s, device %s, fs %s\n", mountpoint, device, fs);*/
 
   dd->mountpoints = streeadd (dd->mountpoints, mountpoint, mp, SET_NOALLOC, mp);
 
@@ -432,11 +432,11 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
 
  if (!fs) fs = estrdup ("auto");
 
- emutex_lock (&mounter_dd_by_mountpoint_mutex);
+/* emutex_lock (&mounter_dd_by_mountpoint_mutex);
  if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, mountpoint, tree_find_first))) {
   dd = t->value;
  }
- emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);*/
 
  if (!dd && (device || (device = fs) || (device = "(none)"))) {
   emutex_lock (&mounter_dd_by_devicefile_mutex);
@@ -456,7 +456,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
 
   if (device || (device = fs) || (device = "(none)")) d->device = estrdup (device);
 
-  eprintf (stderr, " >> inserting new device_data node for %s, device %s\n", mountpoint, device);
+//  eprintf (stderr, " >> inserting new device_data node for %s, device %s\n", mountpoint, device);
 
   d->device_status = device_status_has_medium | device_status_error_notint;
 
@@ -592,6 +592,33 @@ void mount_update_fstab_nodes () {
  }
 }
 
+void mount_update_fstab_nodes_from_fstab () {
+ struct cfgnode *node = cfg_getnode ("configuration-storage-fstab-use-legacy-fstab", NULL);
+ if (node && node->flag) {
+  struct stree *workstree = read_fsspec_file ("/etc/fstab");
+  struct stree *cur = workstree;
+
+  if (workstree) {
+   mount_clear_all_mounted_flags();
+
+   while (cur) {
+    struct legacy_fstab_entry * val = (struct legacy_fstab_entry *)cur->value;
+
+    if (val->fs_file) {
+     char **options = val->fs_mntops ? str2set (',', val->fs_mntops): NULL;
+
+     mount_add_update_fstab (estrdup(val->fs_file), estrdup(val->fs_spec), estrdup(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+    }
+
+    cur = streenext (cur);
+   }
+
+   streefree(workstree);
+  }
+  return;
+ }
+}
+
 void mount_update_nodes_from_mtab () {
 #ifdef LINUX
  struct stree *workstree = read_fsspec_file ("/proc/mounts");
@@ -686,7 +713,9 @@ void mount_update_devices () {
   }
  }
 
+ mount_update_fstab_nodes_from_fstab ();
  mount_update_fstab_nodes ();
+
  mount_update_nodes_from_mtab ();
 
  emutex_unlock (&mount_device_data_mutex);
@@ -1199,128 +1228,6 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
  free (fnames);
 
  return status_failed;
-
-#if 0
- struct stree *he = mcb.fstab;
- struct fstab_entry *fse = NULL;
-
- if (!mountpoint) return status_failed;
-
- notice (4, "unmounting %s", mountpoint);
-
- if (coremode & einit_mode_sandbox) return status_ok;
-
- char textbuffer[BUFFERSIZE];
- errno = 0;
- uint32_t retry = 0;
-
- if (inset ((const void **)mcb.noumount, (void *)mountpoint, SET_TYPE_STRING)) return status_ok;
-
- if (he && (he = streefind (he, mountpoint, tree_find_first))) fse = (struct fstab_entry *)he->value;
-
- if (fse && !(fse->status & device_status_mounted))
-  esprintf (textbuffer, BUFFERSIZE, "unmounting %s: seems not to be mounted", mountpoint);
- else
-  esprintf (textbuffer, BUFFERSIZE, "unmounting %s", mountpoint);
-
- if (fse && fse->manager)
-  stopdaemon (fse->manager, status);
-
- status->string = textbuffer;
- status_update (status);
-
- while (1) {
-  retry++;
-
-#if defined(DARWIN) || defined(__FreeBSD__)
-  if (unmount (mountpoint, 0) != -1)
-#else
-   if (umount (mountpoint) != -1)
-#endif
-  {
-   goto umount_ok;
-  } else {
-   struct pc_conditional pcc = {.match = "cwd-below", .para = mountpoint, .match_options = einit_pmo_additive},
-   pcf = {.match = "files-below", .para = mountpoint, .match_options = einit_pmo_additive},
-   *pcl[3] = { &pcc, &pcf, NULL };
-
-   esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount() failed: %s", mountpoint, retry, strerror(errno));
-   errno = 0;
-   status->string = textbuffer;
-   status_update (status);
-
-   pekill (pcl);
-#ifdef LINUX
-   if (retry >= 2) {
-    if (umount2 (mountpoint, MNT_FORCE) != -1) {
-     goto umount_ok;
-    } else {
-     esprintf (textbuffer, BUFFERSIZE, "%s#%i: umount2() failed: %s", mountpoint, retry, strerror(errno));
-     errno = 0;
-     status->string = textbuffer;
-     status_update (status);
-    }
-
-    if (fse) {
-     if (retry >= 3) {
-      if (mount (fse->adevice, mountpoint, fse->afs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-       esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounting r/o failed: %s", mountpoint, retry, strerror(errno));
-       errno = 0;
-       status->string = textbuffer;
-       status_update (status);
-       goto umount_fail;
-      } else {
-       if (umount2 (mountpoint, MNT_DETACH) == -1) {
-        esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, retry, strerror(errno));
-        errno = 0;
-        status->string = textbuffer;
-        status_update (status);
-        goto umount_ok;
-       } else {
-        esprintf (textbuffer, BUFFERSIZE, "%s#%i: remounted r/o and detached", mountpoint, retry);
-        status->string = textbuffer;
-        status_update (status);
-        goto umount_ok;
-       }
-      }
-     }
-    } else {
-     esprintf (textbuffer, BUFFERSIZE, "%s#%i: device mounted but I don't know anything more; bailing out", mountpoint, retry);
-     status->string = textbuffer;
-     status_update (status);
-     goto umount_fail;
-    }
-   }
-#else
-   goto umount_fail;
-#endif
-  }
-
-  umount_fail:
-
-    status->flag++;
-  if (retry > 3) {
-   return status_failed;
-  }
-  sleep (1);
- }
-
- umount_ok:
-   if (!(coremode & einit_mode_sandbox)) {
-  if (fse && fse->after_umount)
-   pexec_v1 (fse->after_umount, (const char **)fse->variables, NULL, status);
-   }
-   if (fse && (fse->status & device_status_mounted))
-    fse->status ^= device_status_mounted;
-
-   struct einit_event eem = evstaticinit (einit_mount_node_unmounted);
-   eem.string = mountpoint;
-   event_emit (&eem, einit_event_flag_broadcast);
-   evstaticdestroy (eem);
-
-   return status_ok;
-#endif
- return status_ok;
 }
 
 int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
