@@ -376,7 +376,8 @@ int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *d
  if (mp->options) {
   int fi = 0;
   for (; mp->options[fi]; fi++) {
-   if (!fsdata) {
+   if (strmatch (mp->options[fi], "system") || strmatch (mp->options[fi], "critical") || strmatch (mp->options[fi], "network")) ; // ignore our own specifiers
+   else if (!fsdata) {
     uint32_t slen = strlen (mp->options[fi])+1;
     fsdata = ecalloc (1, slen);
     memcpy (fsdata, mp->options[fi], slen);
