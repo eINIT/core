@@ -60,6 +60,14 @@ DBUS=""
 
 . ./configure.options
 
+echo -n "checking automatic options [";
+
+if test -n "`uname -a|grep -i 'Linux'`"; then
+ echo -n " LINUX";
+ EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+fi
+echo " ]";
+
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
