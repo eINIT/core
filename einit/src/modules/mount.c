@@ -2154,6 +2154,65 @@ char **mount_get_device_files () {
  return NULL;
 }
 
+char **mount_get_mounted_mountpoints () {
+ struct device_data *dd = NULL;
+ struct stree *t;
+ char **rv = NULL;
+
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
+ t = mounter_dd_by_mountpoint;
+
+ while (t) {
+  dd = t->value;
+
+  if (dd) {
+   struct stree *st = streefind (dd->mountpoints, t->key, tree_find_first);
+
+   if (st) {
+    struct mountpoint_data *mp = st->value;
+
+    if (mp && (mp->status & device_status_mounted)) {
+     rv = (char **)setadd((void **)rv, (char *)t->key, SET_TYPE_STRING);
+    }
+   }
+  }
+
+  t = streenext(t);
+ }
+
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+
+ return rv;
+}
+
+void mount_clear_all_mounted_flags () {
+ struct device_data *dd = NULL;
+ struct stree *t;
+
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
+ t = mounter_dd_by_mountpoint;
+
+ while (t) {
+  dd = t->value;
+
+  if (dd) {
+   struct stree *st = streefind (dd->mountpoints, t->key, tree_find_first);
+
+   if (st) {
+    struct mountpoint_data *mp = st->value;
+
+    if (mp && (mp->status & device_status_mounted)) {
+     mp->status ^= device_status_mounted;
+    }
+   }
+  }
+
+  t = streenext(t);
+ }
+
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+}
+
 void mount_update_device (struct device_data *d) {
 }
 
@@ -2376,6 +2435,8 @@ void mount_update_nodes_from_mtab () {
  struct stree *cur = workstree;
 
  if (workstree) {
+  mount_clear_all_mounted_flags();
+
   while (cur) {
    struct legacy_fstab_entry * val = (struct legacy_fstab_entry *)cur->value;
 //   add_mtab_entry (val->fs_spec, val->fs_file, val->fs_vfstype, val->fs_mntops, val->fs_freq, val->fs_passno);
@@ -2387,7 +2448,7 @@ void mount_update_nodes_from_mtab () {
     struct stree *t;
     char **options = val->fs_mntops ? str2set (',', val->fs_mntops): NULL;
 
-    mount_add_update_fstab (val->fs_file, val->fs_spec, val->fs_vfstype, options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+    mount_add_update_fstab (estrdup(val->fs_file), estrdup(val->fs_spec), estrdup(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
     emutex_lock (&mounter_dd_by_mountpoint_mutex);
     if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, val->fs_file, tree_find_first))) {
@@ -2935,10 +2996,6 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
   for (; functions[r]; r++) {
    einit_umount_function f = functions[r];
 
-// int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status);
-
-   notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
-
    if (f (mountpoint, mp->fs, step, dd, mp, status) == status_ok) {
     free (functions);
     free (fnames);
@@ -3305,6 +3362,29 @@ int emount (char *mountpoint, struct einit_event *status) {
 
 int eumount (char *mountpoint, struct einit_event *status) {
 // return status_ok;
+ emutex_lock (&mount_device_data_mutex);
+ mount_update_nodes_from_mtab();
+ emutex_unlock (&mount_device_data_mutex);
+
+ char **cm = mount_get_mounted_mountpoints();
+
+ if (cm) {
+  uint32_t i = 0;
+
+  for (; cm[i]; i++) {
+   if (strstr (cm[i], mountpoint) == cm[i]) { // find mountpoints below this one that are still mounted
+    uint32_t n = strlen (mountpoint);
+
+    if (cm[i][n] == '/') {
+     notice (2, "unmounting %s: have to umount(%s) first.", mountpoint, cm[i]);
+
+     eumount (cm[i], status);
+    }
+   }
+  }
+
+  free (cm);
+ }
 
  struct device_data *dd = mount_get_device_data (mountpoint, NULL);
  if (dd && dd->mountpoints) {
