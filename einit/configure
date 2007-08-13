@@ -29,8 +29,7 @@
 
 alias source=.
 
-if [ "$(echo \n)" != "\
-" ]; then
+if [ "$(readlink /bin/sh)" != "dash" ]; then
 alias echo="echo -e"
 fi
 
