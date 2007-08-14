@@ -1340,7 +1340,7 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
  int retval = status_failed;
  char step = 0;
 
- while ((step <= 3) && !(retval & status_ok)) {
+ while ((step <= 4) && !(retval & status_ok)) {
   retval = mount_try_umount (mountpoint, mp->fs, step, dd, mp, status);
   step++;
 

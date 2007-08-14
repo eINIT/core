@@ -1535,10 +1535,8 @@ char **lm_workthreads_list = NULL;
 
 char mod_workthreads_dec (char *service) {
 /* force re-examination of deferred services */
- if (mod_isprovided (service))
-  mod_post_examine (service);
- else
-  mod_pre_examine (service);
+ char *donext = NULL;
+ uint32_t i = 0;
 
  emutex_lock (&ml_workthreads_mutex);
 
@@ -1546,12 +1544,59 @@ char mod_workthreads_dec (char *service) {
 
  ml_workthreads--;
 
+ emutex_unlock (&ml_workthreads_mutex);
+
+ if (mod_isprovided (service))
+  mod_post_examine (service);
+ else
+  mod_pre_examine (service);
+
+// eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
+// fflush (stderr);
+
+ emutex_lock (&ml_workthreads_mutex);
+ if (ml_workthreads) { // try to make this thread useful if there's still some others
+  emutex_lock (&ml_tb_current_mutex);
+
+  if (current.enable) {
+   for (i = 0; current.enable[i]; i++) {
+    if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i])) {
+     if (!inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING)) {
+      donext = estrdup (current.enable[i]);
+     }/* else {
+     notice (4, "might spawn thread for %s now, but someone's already doing that");
+    }*/
+     break;
+    }
+   }
+  }
+/*  if (!donext && current.disable) {
+   for (i = 0; current.disable[i]; i++) {
+    if (mod_isprovided (current.disable[i]) && !mod_isbroken(current.disable[i])) {
+     if (!inset ((const void **)lm_workthreads_list, current.disable[i], SET_TYPE_STRING)) {
+      donext = estrdup (current.disable[i]);
+     }
+     break;
+    }
+   }
+  }*/
+
+  emutex_unlock (&ml_tb_current_mutex);
+ }
+ emutex_unlock (&ml_workthreads_mutex);
+
+ if (donext) {
+  workthread_examine (donext);
+//  free (donext);
+ }
+
+ emutex_lock (&ml_workthreads_mutex);
+
 // eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
 // fflush (stderr);
 
  if (!ml_workthreads) {
   char spawn = 0;
-  uint32_t i = 0;
   emutex_unlock (&ml_workthreads_mutex);
 
   emutex_lock (&ml_tb_current_mutex);
@@ -1597,7 +1642,7 @@ char mod_workthreads_inc (char *service) {
 
  if (inset ((const void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING)) {
 //  eprintf (stderr, " XX someone's already working on %s...\n", service);
-  fflush (stderr);
+//  fflush (stderr);
   retval = 1;
  } else {
   lm_workthreads_list = (char **)setadd((void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING);
