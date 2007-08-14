@@ -583,6 +583,20 @@ void mount_update_fstab_nodes () {
      manager = estrdup (node->arbattrs[i+1]);
     } else if (strmatch(node->arbattrs[i], "variables"))
      variables = str2set (':', node->arbattrs[i+1]);
+
+    else if (strmatch(node->arbattrs[i], "label")) {
+     char tmp[BUFFERSIZE];
+
+     esprintf (tmp, BUFFERSIZE, "/dev/disk/by-label/%s", node->arbattrs[i+1]);
+     if (device) free (device);
+     device = estrdup(tmp);
+    } else if (strmatch(node->arbattrs[i], "uuid")) {
+     char tmp[BUFFERSIZE];
+
+     esprintf (tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s", node->arbattrs[i+1]);
+     if (device) free (device);
+     device = estrdup(tmp);
+    }
    }
 
    if (mountpoint) mount_add_update_fstab (mountpoint, device, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
