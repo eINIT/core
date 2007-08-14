@@ -606,8 +606,23 @@ void mount_update_fstab_nodes_from_fstab () {
 
     if (val->fs_file) {
      char **options = val->fs_mntops ? str2set (',', val->fs_mntops): NULL;
+     char *fs_spec = NULL;
 
-     mount_add_update_fstab (estrdup(val->fs_file), estrdup(val->fs_spec), estrdup(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+     if (strstr (val->fs_spec, "UUID=") == val->fs_spec) {
+      char tmp[BUFFERSIZE];
+
+      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s", val->fs_spec + 5);
+      fs_spec = estrdup(tmp);
+     } else if (strstr (val->fs_spec, "LABEL=") == val->fs_spec) {
+      char tmp[BUFFERSIZE];
+
+      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-label/%s", val->fs_spec + 6);
+      fs_spec = estrdup(tmp);
+     } else {
+      fs_spec = estrdup(val->fs_spec);
+     }
+
+     mount_add_update_fstab (estrdup(val->fs_file), fs_spec, estrdup(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     }
 
     cur = streenext (cur);
