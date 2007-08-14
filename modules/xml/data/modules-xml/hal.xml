@@ -4,7 +4,7 @@
   provides="hal"
   after="logger"
   requires="mount-critical:dbus"
-  command="dbus-launch --exit-with-session /usr/sbin/hald --daemon=no --use-syslog"
-  restart="yes"
-  need-files="/usr/sbin/hald" />
+  command="/usr/sbin/hald --daemon=no --use-syslog --verbose=yes"
+  need-files="/usr/sbin/hald"
+  restart="yes" />
 </einit>
