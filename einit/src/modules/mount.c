@@ -1296,8 +1296,6 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
 
  free (fnames);
 
- fbprintf (status, "none of the functions worked, giving up.");
-
  return status_failed;
 }
 
@@ -1342,7 +1340,7 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
  int retval = status_failed;
  char step = 0;
 
- while ((step < 3) && (retval == status_failed)) {
+ while ((step <= 3) && !(retval & status_ok)) {
   retval = mount_try_umount (mountpoint, mp->fs, step, dd, mp, status);
   step++;
 
@@ -1352,20 +1350,22 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
     pcf = {.match = "files-below", .para = mountpoint, .match_options = einit_pmo_additive},
     *pcl[3] = { &pcc, &pcf, NULL };
 
-   fbprintf (status, "umount() failed, killing some proceses");
+   if (step <= 3) {
+    fbprintf (status, "umount() failed, killing some proceses and waiting for three seconds");
 
-   pekill (pcl);
+    pekill (pcl);
 
-   fbprintf (status, "sleeping for three seconds, maybe things will cool down");
-
-   {
-    int n = 3;
-    while ((n = sleep (n)));
+    {
+     int n = 3;
+     while ((n = sleep (n)));
+    }
    }
   } else {
    return status_ok;
   }
  }
+
+ fbprintf (status, "none of the functions worked, giving up.");
 
  return status_failed;
 }
