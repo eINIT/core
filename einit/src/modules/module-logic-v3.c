@@ -1561,7 +1561,7 @@ char mod_workthreads_dec (char *service) {
   if (current.enable) {
    for (i = 0; current.enable[i]; i++) {
     if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i])) {
-     if (!inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING)) {
+     if (strcmp (service, current.enable[i]) && !inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING)) {
       donext = estrdup (current.enable[i]);
      }/* else {
      notice (4, "might spawn thread for %s now, but someone's already doing that");
