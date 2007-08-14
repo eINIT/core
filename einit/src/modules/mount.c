@@ -1268,6 +1268,8 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 
  free (fnames);
 
+ fbprintf (status, "none of the functions worked, giving up.");
+
  return status_failed;
 }
 
@@ -1293,6 +1295,8 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
  }
 
  free (fnames);
+
+ fbprintf (status, "none of the functions worked, giving up.");
 
  return status_failed;
 }
@@ -1351,6 +1355,13 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
    fbprintf (status, "umount() failed, killing some proceses");
 
    pekill (pcl);
+
+   fbprintf (status, "sleeping for three seconds, maybe things will cool down");
+
+   {
+    int n = 3;
+    while ((n = sleep (n)));
+   }
   } else {
    return status_ok;
   }
