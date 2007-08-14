@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 #   install-config
 #   einit
@@ -33,6 +33,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+if [ "$(readlink /bin/sh)" != "dash" ]; then
+alias echo="echo -e"
+fi
+
 . $(dirname $0)/configuration
 
 file=$1
@@ -42,7 +46,7 @@ method=$3
 
 echo "installing $file to $DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
 
-if [ "${method}" == "ebuild" ]; then
+if [ "${method}" = "ebuild" ]; then
 # gentoo's ebuilds do internal handling for configuration updates, no need to
 # mess with diff and patch ourselves
  if [ -e "$ETCDIR/${subsystem}/${fileshort}" ]; then
