@@ -412,17 +412,19 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
 
  mp->flatoptions = options_string_to_mountflags (mp->options, &(mp->mountflags), mountpoint);
 
+ struct stree *t = NULL;
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
+ if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, mountpoint, tree_find_first))) {
+  t->value = dd;
+ } else mounter_dd_by_mountpoint = streeadd (mounter_dd_by_mountpoint, mountpoint, dd, SET_NOALLOC, NULL);
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+
  if (!st) {
 /*  eprintf (stderr, " >> have mountpoint_data node for %s, device %s, fs %s: updating\n", mountpoint, device, fs);
  } else {
   eprintf (stderr, " >> inserting new mountpoint_data node for %s, device %s, fs %s\n", mountpoint, device, fs);*/
 
   dd->mountpoints = streeadd (dd->mountpoints, mountpoint, mp, SET_NOALLOC, mp);
-
-  emutex_lock (&mounter_dd_by_mountpoint_mutex);
-  mounter_dd_by_mountpoint =
-    streeadd (mounter_dd_by_mountpoint, mountpoint, dd, SET_NOALLOC, NULL);
-  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
  }
 }
 
@@ -874,10 +876,12 @@ int einit_mount_scanmodules (struct lmodule *ml) {
  struct stree *s = NULL;
  char **scritical = NULL, **ssystem = NULL, **slocal = NULL, **sremote = NULL;
 
- ssystem = (char **)setadd ((void **)ssystem, (void *)"fs-root", SET_TYPE_STRING);
- scritical = (char **)setadd ((void **)scritical, (void *)"mount-system", SET_TYPE_STRING);
- slocal = (char **)setadd ((void **)slocal, (void *)"mount-critical", SET_TYPE_STRING);
- sremote = (char **)setadd ((void **)sremote, (void *)"mount-critical", SET_TYPE_STRING);
+ if (!mount_filesystems) return 0;
+
+ ssystem = (char **)setadd ((void **)NULL, (void *)"fs-root", SET_TYPE_STRING);
+ scritical = (char **)setadd ((void **)NULL, (void *)"mount-system", SET_TYPE_STRING);
+ slocal = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
+ sremote = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
@@ -936,12 +940,16 @@ int einit_mount_scanmodules (struct lmodule *ml) {
      ssystem = (char **)setadd ((void **)ssystem, (void *)servicename, SET_TYPE_STRING);
     } else if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING)) {
      scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
+
+     requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
     } else {
      char ad = 0;
 
      if (inset ((const void **)mp->options, "critical", SET_TYPE_STRING)) {
       scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
       ad = 1;
+
+      requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
      }
 
      if (inset ((const void **)mp->options, "system", SET_TYPE_STRING)) {
@@ -955,17 +963,26 @@ int einit_mount_scanmodules (struct lmodule *ml) {
       if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
        sremote = (char **)setadd ((void **)sremote, (void *)servicename, SET_TYPE_STRING);
        ad = 1;
+
+       requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
       }
      }
 
      if (!ad) {
       slocal = (char **)setadd ((void **)slocal, (void *)servicename, SET_TYPE_STRING);
+      requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
      }
     }
    }
   }
 
   esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+
+  if (inset ((const void **)ssystem, servicename, SET_TYPE_STRING)) {
+//   notice (1, "%s is in ssystem (%s), not making it require that", servicename, set2str (' ', ssystem));
+
+   requires = strsetdel (requires, "mount-system");
+  }
 
   while (lm) {
    if (lm->source && strmatch(lm->source, tmp)) {
@@ -996,11 +1013,13 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   newmodule->name = estrdup (tmp);
 
   newmodule->si.after = after;
+
   newmodule->si.requires = requires;
 
   lm = mod_add (NULL, newmodule);
 
   do_next:
+
   s = s->next;
  }
 
