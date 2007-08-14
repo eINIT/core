@@ -204,7 +204,8 @@ int network_scanmodules (struct lmodule *mainlist) {
      struct cfgnode *node = cur->value;
      uint32_t y = 0;
 
-     req = (char **)setadd ((void **)req, (void *)"mount-critical", SET_TYPE_STRING);
+/* this was mount-critical before, but actually ALL network maintenance tools are in /sbin */
+     req = (char **)setadd ((void **)req, (void *)"mount-system", SET_TYPE_STRING);
 
      for (; node->arbattrs[y]; y+=2) {
       if (strmatch (node->arbattrs[y], "bridge")) {
