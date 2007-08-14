@@ -1,9 +1,17 @@
 <einit prefix="configuration-storage-fstab">
-<!-- change this to 'yes' if you wish to use /etc/fstab. nodes in here still override those in /etc/fstab -->
- <use-legacy-fstab b="no" />
+ <!-- with the following element, you decide whether or not to use /etc/fstab.
+      b='yes' means 'do it', b='no' means 'no /etc/fstab' -->
+ <!-- the default has changed, because, actually i guess it's better to
+      K.I.S.S., and the fstab reader is working OK by now -->
+ <use-legacy-fstab b="yes" />
+
+ <!-- if there's any conflicts between stuff in here and the fstab, stuff in
+      any of einit's .xml files takes preference -->
 
  <!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
  <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
+
+ <!-- legacy-fstab or not, these nodes are still required -->
 
  <node mountpoint="/dev/shm" fs="tmpfs" device="shm" before-mount="mkdir -p /dev/shm" options="critical" />
  <node mountpoint="/dev/pts" fs="devpts" before-mount="mkdir -p /dev/pts" options="critical" />

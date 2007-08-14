@@ -1150,6 +1150,25 @@ char **mount_generate_mount_function_suffixes (char *fs) {
  ret = (char **)setadd ((void **)ret, tmp, SET_TYPE_STRING);
  ret = (char **)setadd ((void **)ret, "generic-any", SET_TYPE_STRING);
 
+/* and we also need backups, of course */
+/* NOTE: the *-backup functions are used when shit goes weird. right now that
+         'give the system's native mount-command a chance to mess with this */
+#ifdef LINUX
+ esprintf (tmp, BUFFERSIZE, "linux-%s-backup", fs);
+ ret = (char **)setadd ((void **)ret, tmp, SET_TYPE_STRING);
+#endif
+ esprintf (tmp, BUFFERSIZE, "%s-%s-backup", osinfo.sysname, fs);
+ ret = (char **)setadd ((void **)ret, tmp, SET_TYPE_STRING);
+ esprintf (tmp, BUFFERSIZE, "generic-%s-backup", fs);
+ ret = (char **)setadd ((void **)ret, tmp, SET_TYPE_STRING);
+
+#ifdef LINUX
+ ret = (char **)setadd ((void **)ret, "linux-any-backup", SET_TYPE_STRING);
+#endif
+ esprintf (tmp, BUFFERSIZE, "%s-any-backup", osinfo.sysname);
+ ret = (char **)setadd ((void **)ret, tmp, SET_TYPE_STRING);
+ ret = (char **)setadd ((void **)ret, "generic-any-backup", SET_TYPE_STRING);
+
  return ret;
 }
 
@@ -1191,7 +1210,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
      event_emit (&ev, einit_event_flag_broadcast);
 
      evstaticdestroy(ev);
-	}
+    }
 
     return status_ok;
    }

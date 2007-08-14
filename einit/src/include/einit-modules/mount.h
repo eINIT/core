@@ -117,62 +117,9 @@ enum mount_options {
  mount_maintain_mtab        = 0x10
 };
 
-/* definitions */
-enum update_task {
- UPDATE_METADATA      = 0x01,
- UPDATE_BLOCK_DEVICES = 0x02,
- UPDATE_FSTAB         = 0x03,
- UPDATE_MTAB          = 0x04
-};
 /*!\}*/
-
-/*!\name Mount module parametres
- \{*/
-enum mounttask {
- MOUNT_SYSTEM = 4,
- MOUNT_LOCAL = 5,
- MOUNT_REMOTE = 6,
- MOUNT_CRITICAL = 8
-};
-/*!\}*/
-
-enum known_filesystems {
- FILESYSTEM_UNKNOWN = 0x0000,
- FILESYSTEM_EXT2 = 0x0001,
- FILESYSTEM_EXT3 = 0x0002,
- FILESYSTEM_REISERFS = 0x0003,
- FILESYSTEM_REISER4 = 0x0004,
- FILESYSTEM_JFS = 0x0005,
- FILESYSTEM_XFS = 0x0006,
- FILESYSTEM_UFS = 0x0007,
- FILESYSTEM_OTHER = 0xffff
-};
 
 /* struct definitions */
-struct bd_info {
- char *label, *uuid, *fs;
- uint32_t major, minor;
- enum known_filesystems fs_type;
- enum device_status status;
-};
-
-struct fstab_entry {
- char *mountpoint, *device, *fs;
- char **options;
- uint32_t mountflags;
- char *before_mount;
- char *after_mount;
- char *before_umount;
- char *after_umount;
- struct dexecinfo *manager;
- char **variables;
- uint32_t status;
-
- char *afs;
- char *adevice;
- uint32_t aflags;
-};
-
 struct legacy_fstab_entry {
  char *fs_spec;
  char *fs_file;
