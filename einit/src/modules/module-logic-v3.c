@@ -1546,10 +1546,10 @@ char mod_workthreads_dec (char *service) {
 
  emutex_unlock (&ml_workthreads_mutex);
 
- if (mod_isprovided (service))
-  mod_post_examine (service);
- else
-  mod_pre_examine (service);
+// if (mod_isprovided (service))
+//  mod_post_examine (service);
+// else
+//  mod_pre_examine (service);
 
 // eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
 // fflush (stderr);
