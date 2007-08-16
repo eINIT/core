@@ -79,9 +79,14 @@ struct init_command {
 
 int compatibility_sysv_initctl_configure (struct lmodule *);
 
+struct einit_cfgvar_info
+  compatibility_sysv_initctl_cfgvar_initctl = {
+   .options = eco_optional,
+   .variable = "configuration-compatibility-sysv-initctl",
+   .description = "Location for the initctl interface, and whether or not to use it." },
+  *compatibility_sysv_initctl_configuration[] = { &compatibility_sysv_initctl_cfgvar_initctl, NULL };
+
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-char * compatibility_sysv_initctl_provides[] = {"initctl", NULL};
-char * compatibility_sysv_initctl_requires[] = {"mount-system", NULL};
 const struct smodule module_compatibility_sysv_initctl_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -90,12 +95,13 @@ const struct smodule module_compatibility_sysv_initctl_self = {
  .name      = "System-V Compatibility: initctl",
  .rid       = "compatibility-sysv-initctl",
  .si        = {
-  .provides = compatibility_sysv_initctl_provides,
-  .requires = compatibility_sysv_initctl_requires,
+  .provides = NULL,
+  .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = compatibility_sysv_initctl_configure
+ .configure = compatibility_sysv_initctl_configure,
+ .configuration = compatibility_sysv_initctl_configuration
 };
 
 module_register(module_compatibility_sysv_initctl_self);
@@ -106,21 +112,60 @@ char compatibility_sysv_initctl_running = 0;
 
 pthread_t initctl_thread;
 
-void compatibility_sysv_initctl_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
-  if (!cfg_getnode("configuration-compatibility-sysv-initctl", NULL)) {
-   eputs (" * configuration variable \"configuration-compatibility-sysv-initctl\" not found.\n", ev->output);
+void * initctl_wait (char *);
 
-   ev->ipc_return++;
+void compatibility_sysv_initctl_einit_event_handler(struct einit_event *ev) {
+ if (ev->type == einit_core_service_update) {
+  if (ev->status & status_enabled) {
+   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "mount-system", SET_TYPE_STRING)) {
+    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
+
+    if (node && !node->flag) return; // check if initctl should actually be used
+
+    char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
+    mode_t fifomode = (node && node->value ? node->value : 0600);
+
+    if (mkfifo (fifo, fifomode)) {
+     if (errno == EEXIST) {
+      if (unlink (fifo)) {
+       notice (3, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
+       return;
+      }
+      if (mkfifo (fifo, fifomode)) {
+       notice (3, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
+      }
+     } else {
+      notice (3, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
+      return;
+     }
+    }
+
+    ethread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
+
+   }
+  } else if (!(ev->status & status_enabled)) {
+   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides,"mount-system", SET_TYPE_STRING)) {
+
+    char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
+    if (!fifo) fifo =  "/dev/initctl";
+
+    if (compatibility_sysv_initctl_running)
+     ethread_cancel (initctl_thread);
+
+    if (unlink (fifo)) {
+     notice (3, "could not remove stale fifo \"%s\": %s", fifo, strerror (errno));
+    }
+
+    compatibility_sysv_initctl_running = 0;
+
+   }
   }
-
-  ev->implemented = 1;
  }
 }
 
 int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
- event_ignore (einit_event_subsystem_ipc, compatibility_sysv_initctl_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, compatibility_sysv_initctl_einit_event_handler);
 
  return 0;
 }
@@ -227,38 +272,6 @@ void * initctl_wait (char *fifo) {
  return NULL;
 }
 
-int compatibility_sysv_initctl_enable (void *pa, struct einit_event *status) {
- char tmp[BUFFERSIZE];
- struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
- char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
- mode_t fifomode = (node && node->value ? node->value : 0600);
-
- if (mkfifo (fifo, fifomode)) {
-  if (errno == EEXIST) {
-   if (unlink (fifo)) {
-    esprintf (tmp, BUFFERSIZE, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
-    status->string = tmp;
-    status_update (status);
-    return status_failed;
-   }
-   if (mkfifo (fifo, fifomode)) {
-    esprintf (tmp, BUFFERSIZE, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
-    status->string = tmp;
-    status->flag++;
-    status_update (status);
-   }
-  } else {
-   esprintf (tmp, BUFFERSIZE, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
-   status->string = tmp;
-   status_update (status);
-   return status_failed;
-  }
- }
-
- ethread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
- return status_ok;
-}
-
 int compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
  char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
  if (!fifo) fifo =  "/dev/initctl";
@@ -282,11 +295,9 @@ int compatibility_sysv_initctl_configure (struct lmodule *r) {
  module_init (r);
 
  thismodule->cleanup = compatibility_sysv_initctl_cleanup;
- thismodule->enable = compatibility_sysv_initctl_enable;
- thismodule->disable = compatibility_sysv_initctl_disable;
 
  ipc_configure (r);
- event_listen (einit_event_subsystem_ipc, compatibility_sysv_initctl_ipc_event_handler);
+ event_listen (einit_event_subsystem_core, compatibility_sysv_initctl_einit_event_handler);
 
  return 0;
 }

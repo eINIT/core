@@ -2,12 +2,7 @@
  <!-- options relevant to the sysv compatibility modules -->
  <sysv utmp="yes" wtmp="yes">
   <simulate-runlevel now="3" />
-  <if match="core-mode:sandbox">
-   <initctl s="etc/.initctl" i="0600" />
-   <else>
-    <initctl s="/dev/initctl" i="0600" />
-   </else>
-  </if>
+  <initctl s="/dev/initctl" i="0600" b="yes" />
 
   <!-- this variable is used to bind runlevels to einit modes -->
   <runlevel-mode-relations runlevel0="power-down" runlevel1="single" runlevel2="default" runlevel3="default" runlevel4="default" runlevel5="default" runlevel6="power-reset" runlevelS="single" runlevels="single" />
