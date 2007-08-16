@@ -106,7 +106,6 @@
    <shell-exec-timeout i="20" />
    <exec-envfile-base s="/etc/einit/conf.d" />
    <proc-path s="/proc" />
-   <swap device="-a" affinity="0" />
    <log b="true" s="/var/log/einit.log" />
   </system>
 

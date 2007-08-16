@@ -1,9 +1,0 @@
-<einit prefix="services-virtual-module">
- <shell id="shell-swap"
-  name="Swap-Device(s)"
-  provides="swap"
-  requires="mount-system"
-  enable="swapon ${configuration_system_swap_device}"
-  disable="swapoff ${configuration_system_swap_device}"
-  variables="configuration-system-swap/device" />
-</einit>
