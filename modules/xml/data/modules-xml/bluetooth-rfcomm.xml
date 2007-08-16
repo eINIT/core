@@ -2,7 +2,8 @@
  <shell id="shell-bluez-rfcomm"
   name="Bluetooth (RFCOMM)"
   provides="bluetooth-rfcomm"
-  requires="mount-local:kern-bluetooth:bluetooth-hci"
+  requires="mount-local:bluetooth-hci"
+  after="^(kern-|modules)"
   enable="/usr/bin/rfcomm -f ${configuration_services_bluetooth_rfcomm_file} bind all"
   disable="/usr/bin/rfcomm release all"
   variables="configuration-services-bluetooth-rfcomm/.*" />
