@@ -104,6 +104,8 @@ void workthread_examine (char *service);
 void mod_post_examine (char *service);
 void mod_pre_examine (char *service);
 
+char mod_isdeferred (char *service);
+
 int einit_module_logic_list_revision = 0;
 
 #ifdef DEBUG
@@ -1590,7 +1592,7 @@ char mod_workthreads_dec (char *service) {
 #endif
 
 /* force re-examination of deferred services */
- char *donext = NULL;
+ char **donext = NULL;
  uint32_t i = 0;
 
 #ifdef DEBUG
@@ -1621,7 +1623,8 @@ char mod_workthreads_dec (char *service) {
    for (i = 0; current.enable[i]; i++) {
     if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i])) {
      if (strcmp (service, current.enable[i]) && !inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING)) {
-      donext = estrdup (current.enable[i]);
+	  if (!mod_isdeferred (current.enable[i]))
+      donext = (char **)setadd ((void **)donext, current.enable[i], SET_TYPE_STRING);
      }/* else {
      notice (4, "might spawn thread for %s now, but someone's already doing that");
     }*/
@@ -1645,8 +1648,17 @@ char mod_workthreads_dec (char *service) {
  emutex_unlock (&ml_workthreads_mutex);
 
  if (donext) {
-  workthread_examine (donext);
-//  free (donext);
+  for (i = 0; donext[i]; i++) {
+//   if (!is
+   char *drx = estrdup (donext[i]);
+
+   if (donext[i+1]) {
+    pthread_t th;
+    ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, drx);
+   } else
+    workthread_examine (drx);
+  }
+  free (donext);
  }
 
  emutex_lock (&ml_workthreads_mutex);
