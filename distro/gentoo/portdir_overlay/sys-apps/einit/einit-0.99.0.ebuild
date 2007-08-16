@@ -18,7 +18,7 @@ LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
 
-IUSE="doc static debug nowtf externalise fbsplash sysv-compat aural dbus gtk"
+IUSE="doc static debug nowtf externalise fbsplash aural dbus gtk"
 
 RDEPEND="dev-libs/expat
 	sys-apps/iproute2
@@ -67,9 +67,6 @@ src_compile() {
 	fi
 	if ! use fbsplash ; then
 		local myconf="${myconf} --no-feedback-visual-fbsplash"
-	fi
-	if ! use sysv-compat ; then
-		local myconf="${myconf} --no-compatibility-sysv-initctl --no-compatibility-sysv-utmp"
 	fi
 	if ! use aural ; then
 		local myconf="${myconf} --no-feedback-aural --no-feedback-aural-festival"
