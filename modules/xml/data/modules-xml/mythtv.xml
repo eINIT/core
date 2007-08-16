@@ -2,7 +2,8 @@
  <shell id="shell-mythtv-backend"
   name="MythTV Backend"
   provides="mythtv"
-  requires="network:mount-critical:kern-dvb"
+  requires="network:mount-critical"
+  after="^(kern-|modules)"
   enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
   disable="killall mythbackend; /bin/true"
   HOME="/etc/mythtv"/>

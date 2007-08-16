@@ -2,43 +2,12 @@
 <einit>
 <!-- you will need to modify this file -->
  <configuration>
-  <network>
-   <hostname s="localhost" />
-   <domainname s="local" />
 
-   <wireless>
-    <ssid s="default" />
-   </wireless>
-
-<!-- interface configuration moved to network.xml, please modify that file -->
-
-<!--   <interfaces> -->
-<!-- examples for "new" network configuration:
-     just add nodes like the ones below for interface X and add net-X to
-     the network group below. no need to mess with templates no more =) -->
-<!--    <lo control="none" ip="iproute2" address="127.0.0.1/8" network="127.0.0.0/8" />
-    <eth0 control="none" ip="pump" kernel-module="e1000" />
-    <wlan0 control="wpa_supplicant" driver="wext" config="/etc/wpa_supplicant/wpa_supplicant.conf" ip="pump" kernel-module="ipw3945" /> -->
-<!--    <ppp0 control="wvdial" profile="m610" kernel-module="cdc_acm" /> -->
-<!--   </interfaces> -->
-  </network>
-
+<!-- you may or may not need something like the following: -->
   <kernel>
    <modules>
-    <usb s="" />
-    <bluetooth s="" />
-    <hid s="" />
-    <sound s="" />
-    <video s="" />
-    <sensors s="i2c-isa:eeprom:w83627ehf" />
-    <dvb s="b2c2-flexcop-pci" />
-    <ethernet s="uli526x" />
-    <arbitrary s="evdev:psmouse" />
+    <arbitrary s="evdev" />
    </modules>
-
-   <module>
-    <ath0 s="ath_pci" />
-   </module>
   </kernel>
 
   <compatibility>
@@ -83,12 +52,5 @@
  <module id="einit-tty" requires="mount-critical" />
   </override> -->
 
-<!-- example override, probably useful for lvm users:
-     this should make einit mount mount-system-nodes, i.e. /dev, /sys and /proc
-     before trying to mount the root-filesystem -->
-<!--  <override>
- <module id="einit-mount-root" requires="mount-system" />
-   <module id="einit-mount-system" requires="sysconf" />
-  </override> -->
  </services>
 </einit>
