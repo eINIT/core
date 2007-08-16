@@ -117,7 +117,7 @@ void * initctl_wait (char *);
 void compatibility_sysv_initctl_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_service_update) {
   if (ev->status & status_enabled) {
-   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "mount-system", SET_TYPE_STRING)) {
+   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "ipc", SET_TYPE_STRING)) {
     struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
 
     if (node && !node->flag) return; // check if initctl should actually be used
@@ -144,7 +144,7 @@ void compatibility_sysv_initctl_einit_event_handler(struct einit_event *ev) {
 
    }
   } else if (!(ev->status & status_enabled)) {
-   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides,"mount-system", SET_TYPE_STRING)) {
+   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides,"ipc", SET_TYPE_STRING)) {
 
     char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
     if (!fifo) fifo =  "/dev/initctl";
