@@ -2848,6 +2848,18 @@ int mod_gettask (char * service) {
   task = einit_module_disable;
  else if (inset ((const void **)current.enable, service, SET_TYPE_STRING))
   task = einit_module_enable;
+ else {
+  emutex_unlock (&ml_tb_current_mutex);
+
+  emutex_lock (&ml_tb_target_state_mutex);
+  if (inset ((const void **)target_state.disable, service, SET_TYPE_STRING))
+   task = einit_module_disable;
+  else if (inset ((const void **)target_state.enable, service, SET_TYPE_STRING))
+   task = einit_module_enable;
+  emutex_unlock (&ml_tb_target_state_mutex);
+
+  return task;
+ }
  emutex_unlock (&ml_tb_current_mutex);
 
  return task;
