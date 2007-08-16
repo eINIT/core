@@ -158,7 +158,8 @@ void einit_module_xml_power_event_handler (struct einit_event *ev) {
    notice (1, "shutdown initiated, calling pre-shutdown scripts");
 
    for (; einit_module_xml_shutdown[i]; i++) {
-    mod(einit_module_custom, einit_module_xml_shutdown[i], "on-shutdown");
+    if (einit_module_xml_shutdown[i]->status & status_enabled)
+     mod(einit_module_custom, einit_module_xml_shutdown[i], "on-shutdown");
    }
   }
  }
