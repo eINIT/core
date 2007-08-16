@@ -106,6 +106,10 @@ void mod_pre_examine (char *service);
 
 int einit_module_logic_list_revision = 0;
 
+#ifdef DEBUG
+FILE *debugfile = NULL;
+#endif
+
 struct module_taskblock
   current = { NULL, NULL, NULL },
   target_state = { NULL, NULL, NULL };
@@ -232,6 +236,11 @@ int einit_module_logic_v3_configure (struct lmodule *this) {
  event_listen (einit_event_subsystem_core, module_logic_einit_event_handler);
 
  function_register ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
+
+#ifdef DEBUGFILE
+ debugfile = fopen ("debug", "a");
+ if (!debugfile) debugfile = stderr;
+#endif
 
  return 0;
 }
@@ -1533,10 +1542,60 @@ int32_t ignorereorderfor = 0;
 
 char **lm_workthreads_list = NULL;
 
+#ifdef DEBUG
+void print_defer_lists() {
+ emutex_lock(&ml_chain_examine);
+
+ if (module_logics_chain_examine_reverse) {
+  struct stree *st = module_logics_chain_examine_reverse;
+
+  eputs ("module_logics_chain_examine_reverse:\n", debugfile);
+  
+  do {
+   char *val = set2str (' ', st->value);
+   eprintf (debugfile, "%s: (%s)\n", st->key, val);
+   free (val);
+
+   st = streenext (st);
+  } while (st);
+ } else {
+  eputs ("module_logics_chain_examine_reverse is empty.\n", debugfile);
+ }
+
+ if (module_logics_chain_examine) {
+  struct stree *st = module_logics_chain_examine;
+
+  eputs ("module_logics_chain_examine:\n", debugfile);
+  
+  do {
+   char *val = set2str (' ', st->value);
+   eprintf (debugfile, "%s: (%s)\n", st->key, val);
+   free (val);
+
+   st = streenext (st);
+  } while (st);
+ } else {
+  eputs ("module_logics_chain_examine is empty.\n", debugfile);
+ }
+
+ emutex_unlock(&ml_chain_examine);
+
+ fflush (debugfile);
+}
+#endif
+
 char mod_workthreads_dec (char *service) {
+#ifdef DEBUG
+ eprintf (debugfile, "\ndone with: %s\n", service);
+#endif
+
 /* force re-examination of deferred services */
  char *donext = NULL;
  uint32_t i = 0;
+
+#ifdef DEBUG
+ print_defer_lists();
+#endif
 
  emutex_lock (&ml_workthreads_mutex);
 
@@ -1547,7 +1606,7 @@ char mod_workthreads_dec (char *service) {
  emutex_unlock (&ml_workthreads_mutex);
 
 // if (mod_isprovided (service))
-//  mod_post_examine (service);
+  mod_post_examine (service);
 // else
 //  mod_pre_examine (service);
 
@@ -1774,7 +1833,7 @@ void mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
 
 #ifdef DEBUG
- eprintf (stderr, " ** deferring %s until after %s\n", service, after);
+ eprintf (debugfile, "\n ** deferring %s until after %s\n", service, after);
 #endif
 
  emutex_lock(&ml_chain_examine);
@@ -1809,6 +1868,10 @@ void mod_defer_until (char *service, char *after) {
 
  emutex_unlock(&ml_chain_examine);
 
+#ifdef DEBUG
+ print_defer_lists();
+#endif
+
 #if 0
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
@@ -1820,6 +1883,11 @@ void mod_defer_until (char *service, char *after) {
 
 void mod_remove_defer (char *service) {
  struct stree *xn = NULL;
+
+#ifdef DEBUG
+ eprintf (debugfile, "\n ** removing deferred-status from %s\n", service);
+#endif
+
  emutex_lock(&ml_chain_examine);
 
  if ((xn = streefind (module_logics_chain_examine_reverse, service, tree_find_first))) {
@@ -1845,6 +1913,10 @@ void mod_remove_defer (char *service) {
  }
 
  emutex_unlock(&ml_chain_examine);
+
+#ifdef DEBUG
+ print_defer_lists();
+#endif
 }
 
 void mod_decrease_deferred_by (char *service) {
@@ -2498,12 +2570,12 @@ char mod_disable_users (struct lmodule *module) {
      if (!inset ((const void **)current.disable, (void *)t[i], SET_TYPE_STRING)) {
       retval = 2;
       need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+     }
 
-      if (module->si && module->si->provides) {
-       uint32_t y = 0;
-       for (; module->si->provides[y]; y++) {
-        mod_defer_until (module->si->provides[y], t[i]);
-       }
+     if (module->si && module->si->provides) {
+      uint32_t y = 0;
+      for (; module->si->provides[y]; y++) {
+       mod_defer_until (module->si->provides[y], t[i]);
       }
      }
 
@@ -2556,11 +2628,12 @@ char mod_enable_requirements (struct lmodule *module) {
       retval = 2;
       need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
 
-      if (module->si && module->si->provides) {
-       uint32_t y = 0;
-       for (; module->si->provides[y]; y++) {
-        mod_defer_until (module->si->provides[y], module->si->requires[i]);
-       }
+     }
+
+     if (module->si && module->si->provides) {
+      uint32_t y = 0;
+      for (; module->si->provides[y]; y++) {
+       mod_defer_until (module->si->provides[y], module->si->requires[i]);
       }
      }
 
