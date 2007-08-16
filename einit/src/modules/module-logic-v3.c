@@ -837,6 +837,21 @@ int mod_modaction (char **argv, FILE *output) {
   ret = 1;
 
   struct group_data *gd = mod_group_get_data (argv[0]);
+
+  if (strmatch (argv[1], "zap")) {
+   emutex_lock (&ml_tb_current_mutex);
+   current.enable = strsetdel (current.enable, argv[0]);
+   current.disable = strsetdel (current.disable, argv[0]);
+   current.critical = strsetdel (current.critical, argv[0]);
+   emutex_unlock (&ml_tb_current_mutex);
+
+   emutex_lock (&ml_tb_target_state_mutex);
+   target_state.enable = strsetdel (target_state.enable, argv[0]);
+   target_state.disable = strsetdel (target_state.disable, argv[0]);
+   target_state.critical = strsetdel (target_state.critical, argv[0]);
+   emutex_unlock (&ml_tb_target_state_mutex);
+  }
+
   if (strmatch (argv[1], "status") && output && gd) {
    char *members = set2str (' ', (const char **)gd->members);
 
