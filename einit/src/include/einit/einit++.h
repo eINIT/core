@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * \brief eINIT C++ Client Library
  * \author Magnus Deininger
  *
- * Bindings for libeinit in C++ (libeinit++)
+ * Bindings for libeinit in C++ (libeinit++). You'll very likely want to use this and not libeinit (einit/einit.h) for your client applications. It's also a lot cleaner and you don't need to worry about nearly as much.
  */
 
 #include <einit/einit.h>
@@ -55,119 +55,272 @@ class EinitService;
 class EinitModule;
 class EinitMode;
 
+/*!\brief The Main eINIT Object
+ *
+ * This is the main object to manipulate eINIT with. You should only have one instance of this in your program.
+ */
 class Einit {
  public:
-  Einit();
-  ~Einit();
+  Einit(); /*!<\brief Regular constructor, as a side-effect this'll initate the connection to eINIT. */
+  ~Einit(); /*!<\brief Regular destructor, as a side-effect this'll terminate the connection to eINIT. */
 
-  void listen (enum einit_event_subsystems, void (*)(struct einit_remote_event *));
-  void ignore (enum einit_event_subsystems, void (*)(struct einit_remote_event *));
+/*!\brief Listen in on remote events
+ * \param[in] type     A subsystem-ID to listen in on.
+ * \param[in] callback The function you wish called
+ *
+ * Tell the core you wish to receive a specific <type> of events. If an appropriate event is received, your <callback> is called. Note that you can't change any elements of an event using this callback, as opposed to the core, where you can do this. Changes are not propagated back to the core.
+ */
+  void listen (enum einit_event_subsystems type, void (*callback)(struct einit_remote_event *));
 
-  EinitModule *getModule (string);
-  EinitService *getService (string);
-  EinitMode *getMode (string);
+/*!\brief Stop listening in on remote events
+ * \param[in] type     A subsystem-ID that the callback is registered with.
+ * \param[in] callback The function
+ *
+ * Tell the core you you no longer wish to receive a specific <type> of events using <callback>.
+ */
+  void ignore (enum einit_event_subsystems type, void (*callback)(struct einit_remote_event *));
 
+
+/*!\brief Get an Object to manipulate a Module with
+ * \param[in] id The module to look up.
+ *
+ * Returns an object that can be used to manipulate a specific module.
+ */
+  EinitModule *getModule (string id);
+
+/*!\brief Get an Object to manipulate a Service with
+ * \param[in] id The service to look up.
+ *
+ * Returns an object that can be used to manipulate a specific service.
+ */
+  EinitService *getService (string id);
+
+/*!\brief Get an Object to manipulate a mode with
+ * \param[in] id The mode to look up.
+ *
+ * Returns an object that can be used to manipulate a specific mode.
+ */
+  EinitMode *getMode (string id);
+
+/*!\brief Get all current Modules
+ *
+ * Returns a map with pointers to all of eINIT's current modules.
+ */
   map<string, EinitModule *> getAllModules();
+
+/*!\brief Get all current Services
+ *
+ * Returns a map with pointers to all of eINIT's current services.
+ */
   map<string, EinitService *> getAllServices();
+
+/*!\brief Get all current Modes
+ *
+ * Returns a map with pointers to all of eINIT's current modes.
+ */
   map<string, EinitMode *> getAllModes();
 
+/*!\brief Power Down the System
+ *
+ * Tell eINIT to initiate a system shutdown. You're likely to die soon after this, so better start cleaning up ASAP.
+ */
   bool powerDown();
+
+/*!\brief Reset the System
+ *
+ * Tell eINIT to initiate a system reboot. You're likely to die soon after this, so better start cleaning up ASAP.
+ */
   bool powerReset();
 
+/*!\brief Update current Information from the core.
+ *
+ * Update all the information we have from eINIT.
+ */
   void update();
+
+ private:
+  bool listening;
 
   map<string, EinitService *> services;
   map<string, EinitModule *> modules;
   map<string, EinitMode *> modes;
-
- private:
-  bool listening;
 
   struct stree *servicesRaw;
   struct stree *modulesRaw;
   struct stree *modesRaw;
 };
 
+/*!\brief Base-class for Einit's "Offspring"-classes
+ *
+ * You won't really need to deal with this.
+ */
 class EinitOffspring {
- public:
-  EinitOffspring (Einit *);
-  ~EinitOffspring ();
+ friend class Einit;
 
-  Einit *main;
+ public:
+
+ protected:
+  EinitOffspring (Einit *); /*!<\brief Constructor. The argument is the main instance of eINIT to connect this to */
+  ~EinitOffspring (); /*!<\brief Destructor. Nothing fancy... move along... */
+
+  Einit *main; /*!<\brief The main instance of Einit that this is connected with */
 
  private:
 };
 
+/*!\brief An eINIT Service
+ *
+ * This object is used to manipulate the state of a Service in eINIT's core.
+ */
 class EinitService : public EinitOffspring {
+ friend class Einit;
+
  public:
-  EinitService (Einit *, struct einit_service *);
-  ~EinitService ();
 
+/*!\brief Enable this Service
+ *
+ * This function makes eINIT try to enable this specific service. It's like calling 'einit-control rc <service> enable'.
+ */
   bool enable();
+
+/*!\brief Disable this Service
+ *
+ * This function makes eINIT try to disable this specific service. It's like calling 'einit-control rc <service> disable'.
+ */
   bool disable();
-  bool call(string);
 
-  bool update(struct einit_service *);
+/*!\brief Invoke a custom action on this Service
+ *
+ * This function makes eINIT try to do <action> on this specific service. It's like calling 'einit-control rc <service> <action>'.
+ */
+  bool call(string action);
 
+/*!\brief Get all the Common Functions of this Service
+ *
+ * This function tries to find all the common functions that can be used for the call() method on this service. "Common functions" are functions that work with all the modules in this service. This function may return all functions, if it can't find out which of them are in the common subset.
+ */
   vector<string> getCommonFunctions();
+
+/*!\brief Get all the Functions of this Service
+ *
+ * This function tries to find all the functions that can be used for the call() method on this service. "All functions" means all functions, regardless of whether they're implemented by all modules that provide this service.
+ */
   vector<string> getAllFunctions();
 
+/*!\brief The ID of this service, for reference and the like. */
   string id;
+/*!\brief Is this service provided? */
   bool provided;
 
+/*!\brief A map with all the modules that make up this service. */
   map<string, EinitModule *> modules;
+/*!\brief A map with all the services that make up this service, if this service is a group or may be seen as one. */
   map<string, EinitService *> group;
-  char *groupType;
+/*!\brief The type of this group, if it is one. */
+  string groupType;
+/*!\brief A map with all the modes that this service is known to be used in. */
   map<string, EinitMode *> modes;
 
  private:
+  EinitService (Einit *, struct einit_service *);
+  ~EinitService ();
+
+  bool update(struct einit_service *);
 };
 
+/*!\brief An eINIT Module
+ *
+ * This object is used to manipulate the state of a Module in eINIT's core.
+ */
 class EinitModule : public EinitOffspring {
- public:
-  EinitModule (Einit *, struct einit_module *);
-  ~EinitModule ();
+ friend class Einit;
 
+ public:
+/*!\brief Enable this Module
+ *
+ * This function makes eINIT try to enable this specific module. It's like calling 'einit-control rc <module> enable'.
+ */
   bool enable();
+
+/*!\brief Disable this Module
+ *
+ * This function makes eINIT try to disable this specific module. It's like calling 'einit-control rc <module> disable'.
+ */
   bool disable();
+
+/*!\brief Invoke a custom action on this Module
+ *
+ * This function makes eINIT try to do <action> on this specific module. It's like calling 'einit-control rc <module> <action>'.
+ */
   bool call(string);
 
-  bool update(struct einit_module *);
-
-  string id;
-  string name;
-
-  bool enabled;
-  bool idle;
-  bool error;
-
+/*!\brief Get all the Functions of this Module
+ *
+ * This function tries to find all the functions that can be used for the call() method on this module. This needs some cooperation from the module.
+ */
   vector<string> getAllFunctions();
 
+/*!\brief The ID of this module, just in case */
+  string id;
+/*!\brief A name for this module, so you got something to display to users */
+  string name;
+
+/*!\brief Is this module enabled? */
+  bool enabled;
+/*!\brief Is this module idle (i.e. zapped or has never been called)? */
+  bool idle;
+/*!\brief Has there been an error? */
+  bool error;
+
+/*!\brief A map with the services provided by this module. */
   map<string, EinitService *> provides;
+/*!\brief A map with the services required by this module. */
   map<string, EinitService *> requires;
 
-  char **functions;
+/*!\brief Regular expresions that indicate before what other services or modules this module will be loaded. Kinda ugly since it's a (char **). */
   char **before;
+/*!\brief Regular expresions that indicate after what other services or modules this module will be loaded. Kinda ugly since it's a (char **). */
   char **after;
 
  private:
+  EinitModule (Einit *, struct einit_module *);
+  ~EinitModule ();
+
+  bool update(struct einit_module *);
+
+  char **functions;
 };
 
+/*!\brief An eINIT Mode
+ *
+ * This object is used to manipulate the state of a Mode in eINIT's core.
+ */
 class EinitMode : public EinitOffspring {
- public:
-  EinitMode (Einit *, struct einit_mode_summary *);
-  ~EinitMode ();
+ friend class Einit;
 
+ public:
+
+/*!\brief Switch to this Mode
+ *
+ * Tell eINIT it should switch to this mode.
+ */
   bool switchTo();
 
-  bool update(struct einit_mode_summary *);
-
+/*!\brief The ID of this mode, just for cakes. */
   string id;
 
+/*!\brief A map with the services to enable in this mode. */
   map<string, EinitService *> services;
+/*!\brief A map with the services that are crucial in this mode. */
   map<string, EinitService *> critical;
+/*!\brief A map with the services to disable in this mode. */
   map<string, EinitService *> disable;
+/*!\brief A map with the base-modes of this mode. */
   map<string, EinitMode *> base;
 
  private:
+  EinitMode (Einit *, struct einit_mode_summary *);
+  ~EinitMode ();
+
+  bool update(struct einit_mode_summary *);
 };
