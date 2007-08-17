@@ -35,6 +35,13 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*!\file einit/einit++.h
+ * \brief eINIT C++ Client Library
+ * \author Magnus Deininger
+ *
+ * Bindings for libeinit in C++ (libeinit++)
+ */
+
 #include <einit/einit.h>
 #include <string>
 #include <map>
