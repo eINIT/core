@@ -107,8 +107,8 @@ void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
    eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", ev->output);
    ev->task++;
   }
-  if (!cfg_getstring ("configuration-services-sysctl-config", NULL)) {
-   eputs (" * configuration variable \"configuration-services-sysctl-config\" not found.\n", ev->output);
+  if (!cfg_getstring ("configuration-system-sysctl-file", NULL)) {
+   eputs (" * configuration variable \"configuration-system-sysctl-file\" not found.\n", ev->output);
    ev->ipc_return++;
   }
 
@@ -147,7 +147,11 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
   }
  }
 
+ fbprintf (status, "CTRL-ALT-DEL behaviour configured.");
+
  if ((sfilename = cfg_getstring ("configuration-system-sysctl-file", NULL))) {
+  fbprintf (status, "doing system configuration via %s.", sfilename);
+
   if ((sfile = efopen (sfilename, "r"))) {
    char buffer[BUFFERSIZE], *cptr;
    while (fgets (buffer, BUFFERSIZE, sfile)) {
@@ -204,7 +208,9 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
 
   char *kexec_template = NULL;
 
-  for (; cfg->arbattrs[i]; i+=1) {
+  fbprintf (status, "setting up kexec for reboot.");
+
+  for (; cfg->arbattrs[i]; i+=2) {
    if (strmatch (cfg->arbattrs[i], "use-proc")) {
     use_proc = parse_boolean (cfg->arbattrs[i+1]);
    } else if (strmatch (cfg->arbattrs[i], "kernel-image")) {
@@ -224,6 +230,8 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
   if (kernel_image && kernel_options) {
    char **template_data = NULL;
 
+   fbprintf (status, "configuration looks OK");
+
    if (kernel_initrd) {
     if ((kexec_template = cfg_getstring ("configuration-system-kexec-calls/load-initrd", NULL))) {
      template_data = (char **)setadd ((void **)template_data, "kernel-initrd", SET_TYPE_STRING);
@@ -242,15 +250,29 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
     template_data = (char **)setadd ((void **)template_data, kernel_options, SET_TYPE_STRING);
 
     if ((execdata = apply_variables (kexec_template, (const char **)template_data))) {
+     fbprintf (status, "got a template, executing");
+
      if (pexec(execdata, NULL, 0, 0, NULL, NULL, NULL, status) == status_ok) {
       linux_reboot_use_kexec = 1;
       linux_reboot_use_kexec_command = estrdup(cfg_getstring ("configuration-system-kexec-calls/execute", NULL));
+
+      fbprintf (status, "kexec configured. reboot command will be: %s", linux_reboot_use_kexec_command);
+     } else {
+      status->flag++;
+      status_update (status);
+
+      fbprintf (status, "executing kexec-load command has failed");
      }
     }
 
     free (template_data);
-   }
+   } else
+    fbprintf (status, "no template for kexec");
+  } else {
+   fbprintf (status, "bad configuration: (%s:%s:%s)", kernel_image ? kernel_image : "NULL", kernel_options ? kernel_options : "NULL", kernel_initrd ? kernel_initrd : "NULL");
   }
+ } else {
+  fbprintf (status, "not setting up kexec for reboot.");
  }
 
  return status_ok;
