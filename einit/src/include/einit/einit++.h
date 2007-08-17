@@ -234,6 +234,7 @@ class EinitService : public EinitOffspring {
  */
 class EinitModule : public EinitOffspring {
  friend class Einit;
+ friend class EinitService;
 
  public:
 /*!\brief Enable this Module
