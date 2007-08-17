@@ -263,8 +263,10 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
       status->flag++;
       status_update (status);
 
-      fbprintf (status, "executing kexec-load command has failed");
+      fbprintf (status, "executing kexec-load command has failed (%s)", execdata);
      }
+
+     free (execdata);
     }
 
     free (template_data);
