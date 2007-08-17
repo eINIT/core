@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <sys/reboot.h>
 #include <linux/reboot.h>
+#include <syscall.h>
+#include <sys/syscall.h>
 #include <errno.h>
 #include <string.h>
 
@@ -84,10 +86,16 @@ char linux_reboot_use_kexec = 0;
 char *linux_reboot_use_kexec_command = NULL;
 
 void linux_reboot () {
- if (linux_reboot_use_kexec && linux_reboot_use_kexec_command) {
+ if (linux_reboot_use_kexec) {
   eputs ("rebooting via kexec\n", stderr);
 
-  system (linux_reboot_use_kexec_command);
+  if (linux_reboot_use_kexec_command) {
+   system (linux_reboot_use_kexec_command);
+
+   eputs ("calling the kexec binary failed, trying the hard way\n", stderr);
+  }
+
+  syscall(__NR_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, 0);
 
   eputs ("whoops, looks like the kexec failed!\n", stderr);
  }
