@@ -46,6 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
+#include <einit-modules/exec.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -76,7 +78,18 @@ module_register(module_linux_sysconf_self);
 
 #endif
 
+char linux_reboot_use_kexec = 0;
+char *linux_reboot_use_kexec_command = NULL;
+
 void linux_reboot () {
+ if (linux_reboot_use_kexec && linux_reboot_use_kexec_command) {
+  eputs ("rebooting via kexec\n", stderr);
+
+  system (linux_reboot_use_kexec_command);
+
+  eputs ("whoops, looks like the kexec failed!\n", stderr);
+ }
+
  reboot (LINUX_REBOOT_CMD_RESTART);
  notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
@@ -178,6 +191,65 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
    }
 
    efclose (sfile);
+  }
+ }
+
+ if ((cfg = cfg_getnode ("configuration-system-kexec-to-reboot", NULL)) && cfg->flag && cfg->arbattrs) {
+  uint32_t i = 0;
+
+  char use_proc = 0;
+  char *kernel_image = NULL;
+  char *kernel_options = NULL;
+  char *kernel_initrd = NULL;
+
+  char *kexec_template = NULL;
+
+  for (; cfg->arbattrs[i]; i+=1) {
+   if (strmatch (cfg->arbattrs[i], "use-proc")) {
+    use_proc = parse_boolean (cfg->arbattrs[i+1]);
+   } else if (strmatch (cfg->arbattrs[i], "kernel-image")) {
+    kernel_image = cfg->arbattrs[i+1];
+   } else if (strmatch (cfg->arbattrs[i], "kernel-options")) {
+    kernel_options = cfg->arbattrs[i+1];
+   } else if (strmatch (cfg->arbattrs[i], "kernel-initrd")) {
+    kernel_initrd = cfg->arbattrs[i+1];
+   }
+  }
+
+  if (use_proc) {
+   if (!kernel_image) kernel_image = "/proc/kcore";
+   if (!kernel_options) kernel_options = readfile ("/proc/cmdline");
+  }
+
+  if (kernel_image && kernel_options) {
+   char **template_data = NULL;
+
+   if (kernel_initrd) {
+    if ((kexec_template = cfg_getstring ("configuration-system-kexec-calls/load-initrd", NULL))) {
+     template_data = (char **)setadd ((void **)template_data, "kernel-initrd", SET_TYPE_STRING);
+     template_data = (char **)setadd ((void **)template_data, kernel_initrd, SET_TYPE_STRING);
+    }
+   } else {
+    kexec_template = cfg_getstring ("configuration-system-kexec-calls/load", NULL);
+   }
+
+   if (kexec_template) {
+    char *execdata;
+    template_data = (char **)setadd ((void **)template_data, "kernel-image", SET_TYPE_STRING);
+    template_data = (char **)setadd ((void **)template_data, kernel_image, SET_TYPE_STRING);
+
+    template_data = (char **)setadd ((void **)template_data, "kernel-options", SET_TYPE_STRING);
+    template_data = (char **)setadd ((void **)template_data, kernel_options, SET_TYPE_STRING);
+
+    if ((execdata = apply_variables (kexec_template, (const char **)template_data))) {
+     if (pexec(execdata, NULL, 0, 0, NULL, NULL, NULL, status) == status_ok) {
+      linux_reboot_use_kexec = 1;
+      linux_reboot_use_kexec_command = estrdup(cfg_getstring ("configuration-system-kexec-calls/execute", NULL));
+     }
+    }
+
+    free (template_data);
+   }
   }
  }
 

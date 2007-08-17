@@ -107,6 +107,12 @@
    <exec-envfile-base s="/etc/einit/conf.d" />
    <proc-path s="/proc" />
    <log b="true" s="/var/log/einit.log" />
+
+   <kexec-to-reboot b="no" />
+   <kexec-calls
+     load="/sbin/kexec -l ${kernel-image} --append=&quot;${kernel-options}&quot;"
+     load-initrd="/sbin/kexec -l ${kernel-image} --append=&quot;${kernel-options}&quot; --initrd=&quot;${kernel-initrd}&quot;"
+     execute="kexec -e" />
   </system>
 
   <environment>
