@@ -58,6 +58,7 @@ int linux_sysconf_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 char * linux_sysconf_provides[] = {"sysconf", NULL};
+char * linux_sysconf_requires[] = {"fs-proc", NULL};
 const struct smodule module_linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -67,7 +68,7 @@ const struct smodule module_linux_sysconf_self = {
  .rid       = "linux-sysconf",
  .si        = {
   .provides = linux_sysconf_provides,
-  .requires = NULL,
+  .requires = linux_sysconf_requires,
   .after    = NULL,
   .before   = NULL
  },
