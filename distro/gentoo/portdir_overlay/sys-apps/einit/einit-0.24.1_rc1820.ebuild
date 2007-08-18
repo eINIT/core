@@ -1,11 +1,3 @@
-# Copyright 1999-2006 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: $
-
-#
-# eINIT SVN ebuild (v29)
-#
-
 inherit subversion
 
 ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/${PN}"
@@ -16,7 +8,7 @@ HOMEPAGE="http://einit.org/"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="-*"
+KEYWORDS="~x86 ~amd64 ~ppc"
 
 IUSE="doc static debug nowtf externalise fbsplash aural dbus gtk"
 
@@ -29,9 +21,13 @@ RDEPEND="dev-libs/expat
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
-PDEPEND="sys-apps/einit-modules-xml"
+PDEPEND=">=sys-apps/einit-modules-xml-0.61.0_rc1816"
 
 S=${WORKDIR}/${PN}
+
+SVN_REVISION="${PV/*_rc}"
+
+ESVN_OPTIONS="-r${SVN_REVISION}"
 
 src_unpack() {
 	subversion_src_unpack
@@ -94,7 +90,7 @@ src_install() {
 
 pkg_postinst() {
 	ewarn
-	ewarn "This is a live SVN build and as such may be subject to weird errors."
+	ewarn "This is an SVN build for revision ${SVN_REVISION} and as such may be subject to weird errors."
 	ewarn
 	einfo "eINIT is now installed, but you will still need to configure it."
 	if use doc ; then
