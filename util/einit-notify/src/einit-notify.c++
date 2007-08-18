@@ -41,11 +41,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 
 #include <libnotify/notify.h>
+#include <pthread.h>
 
 Einit einit;
+pthread_mutex_t notificationmutex = PTHREAD_MUTEX_INITIALIZER;
 
 void einit_feedback_event_handler (struct einit_remote_event *ev) {
  if ((ev->type == einit_feedback_notice) && ev->string) {
+  pthread_mutex_lock (&notificationmutex);
+
   gint to = 3000;
   NotifyNotification *nitem = notify_notification_new("eINIT Notification", ev->string, USHAREDIR "/images/einit.png", NULL);
 
@@ -55,11 +59,15 @@ void einit_feedback_event_handler (struct einit_remote_event *ev) {
 
   notify_notification_set_timeout(nitem, to);
   notify_notification_show (nitem, NULL);
+
+  pthread_mutex_unlock (&notificationmutex);
  }
 }
 
 void einit_core_event_handler (struct einit_remote_event *ev) {
  if ((ev->type == einit_core_service_update) && ev->string) {
+  pthread_mutex_lock (&notificationmutex);
+
   if (ev->status & status_failed) {
    NotifyNotification *nitem = notify_notification_new("eINIT: Service Command Failed", ev->string, USHAREDIR "/images/einit.png", NULL);
 
@@ -83,6 +91,7 @@ void einit_core_event_handler (struct einit_remote_event *ev) {
    notify_notification_show (nitem, NULL);
   }
 
+  pthread_mutex_unlock (&notificationmutex);
  }
 }
 
