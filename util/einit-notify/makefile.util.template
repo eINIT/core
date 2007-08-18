@@ -5,4 +5,4 @@ install: util
 	${INSTALL} ${BINIPARAM} einit-notify ${DESTDIR}/${UBINDIR}
 
 einit-notify: einit-notify.o
-	$(CXXLD) einit-notify.o -o einit-notify $(STATIC) $(GTK_LIBS) $(NOTIFY_LIBS) -leinit -leinit++
+	$(CXXLD) einit-notify.o -o einit-notify $(STATIC) $(GTK_LIBS) $(LIBNOTIFY_LIBS) -leinit -leinit++

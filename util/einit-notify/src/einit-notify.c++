@@ -44,6 +44,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Einit einit;
 
+void einit_feedback_event_handler (struct einit_remote_event *ev) {
+ if ((ev->type == einit_feedback_notice) && ev->string) {
+  NotifyNotification *nitem = notify_notification_new("eINIT Notification", ev->string, USHAREDIR "/images/einit.png", NULL);
+
+  if (ev->flag < 4) { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_CRITICAL); }
+  else if (ev->flag < 6) { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL); }
+  else { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_LOW); }
+
+  notify_notification_set_timeout(nitem, 30000);
+  notify_notification_show (nitem, NULL);
+ }
+}
+
 class EinitGTK : public Gtk::Window {
  public:
   EinitGTK();
@@ -93,6 +106,7 @@ EinitGTK::EinitGTK() {
  GtkStatusIcon* gobj_StatusIcon = m_refStatusIcon->gobj();
  g_signal_connect(G_OBJECT(gobj_StatusIcon), "popup-menu", G_CALLBACK(on_statusicon_popup), this);
 
+ einit.listen (einit_event_subsystem_feedback, einit_feedback_event_handler);
 }
 
 void EinitGTK::on_statusicon_popup(GtkStatusIcon* status_icon, guint button,
@@ -122,10 +136,14 @@ EinitGTK::~EinitGTK() {
 }
 
 int main (int argc, char *argv[]) {
- Gtk::Main kit(argc, argv);
+ notify_init ("eINIT");
 
- EinitGTK trayicon;
- Gtk::Main::run();
+ {
+  Gtk::Main kit(argc, argv);
+
+  EinitGTK trayicon;
+  Gtk::Main::run();
+ }
 
  return 0;
 }

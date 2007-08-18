@@ -255,7 +255,6 @@ int einit_dbus::enable (struct einit_event *status) {
 
  this->terminate_thread = 0;
  this->active = 1;
- notice (2, "message thread creation initiated");
 
  if ((errno = pthread_create (&(this->message_thread_id), /*&einit_ipc_dbus_thread_attribute_detached*/ NULL, &(einit_dbus::message_thread_bootstrap), NULL))) {
   fbprintf (status, "could not create detached I/O thread, creating non-detached thread. (error = %s)", strerror(errno));
@@ -278,7 +277,6 @@ int einit_dbus::disable (struct einit_event *status) {
 }
 
 void *einit_dbus::message_thread_bootstrap(void *e) {
- notice (2, "message thread creation spawning");
  einit_main_dbus_class.message_thread();
 
  return NULL;
