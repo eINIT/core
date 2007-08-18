@@ -72,14 +72,14 @@ void einit_core_event_handler (struct einit_remote_event *ev) {
 
    notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL);
 
-   notify_notification_set_timeout(nitem, 30000);
+   notify_notification_set_timeout(nitem, 5000);
    notify_notification_show (nitem, NULL);
   } else  if (ev->status & status_disabled) {
    NotifyNotification *nitem = notify_notification_new("eINIT: Module Disabled", ev->string, USHAREDIR "/images/einit.png", NULL);
 
    notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL);
 
-   notify_notification_set_timeout(nitem, 30000);
+   notify_notification_set_timeout(nitem, 5000);
    notify_notification_show (nitem, NULL);
   }
 
