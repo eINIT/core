@@ -510,6 +510,8 @@ if [ "${GTK}" = "gtk" ]; then
 	GTK_LIBS=$(pkg-config --libs gtkmm-2.4)
 fi
 
+XCFLAGS="${XCFLAGS} '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'"
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
@@ -519,6 +521,7 @@ MODDIR = ${PREFIX}/lib/einit/modules
 ULIBDIR = ${UPREFIX}/lib
 BINDIR = ${PREFIX}/bin
 UBINDIR = ${UPREFIX}/bin
+USHAREDIR = ${UPREFIX}/share/einit
 SBINDIR = ${PREFIX}/sbin
 INCLUDEDIR = ${UPREFIX}/include
 BOOTSTRAPDIR = ${PREFIX}/${BOOTSTRAP_MODULE_PATH}
