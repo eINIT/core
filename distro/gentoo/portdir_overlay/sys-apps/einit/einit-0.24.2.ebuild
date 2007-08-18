@@ -17,7 +17,7 @@ RDEPEND="dev-libs/expat
 DEPEND="${RDEPEND}
         doc? ( app-text/docbook-sgml app-doc/doxygen )
         >=sys-apps/portage-2.1.2-r11"
-PDEPEND="sys-apps/einit-modules-xml"
+PDEPEND=">=sys-apps/einit-modules-xml-0.61.0"
 
 src_unpack() {
 	unpack ${P}.tar.bz2
