@@ -12,4 +12,4 @@ export UTILOBJECTS="einit-notify"
 
 export GUI="${GTK} gtk"
 export GTK="gtk"
-
+export NOTIFY="notify"

@@ -436,6 +436,12 @@ if [ "${NETLINK}" = "netlink" ]; then
 	NETLINK_LIBS=$(pkg-config --libs libnl-1)
 fi
 
+if [ "${NOTIFY}" = "notify" ]; then
+	echo "getting libnotify flags off pkg-config..."
+	LIBNOTIFY_CFLAGS=$(pkg-config --cflags libnotify)
+	LIBNOTIFY_LIBS=$(pkg-config --libs libnotify)
+fi
+
 if [ -e "${EXPAT_CFGD_LIB}" ]; then
  EXPAT_LIBS="${EXPAT_CFGD_LIB}"
 elif [ "${EXUSR}" = "yes" ]; then
@@ -579,6 +585,9 @@ GTK = ${GTK}
 
 NETLINK_CFLAGS = ${NETLINK_CFLAGS}
 NETLINK_LIBS = ${NETLINK_LIBS}
+
+LIBNOTIFY_CFLAGS = ${LIBNOTIFY_CFLAGS}
+LIBNOTIFY_LIBS = ${LIBNOTIFY_LIBS}
 
 EXPAT_LIBS= ${EXPAT_LIBS}
 

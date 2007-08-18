@@ -1,7 +1,3 @@
-# Copyright 1999-2006 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: $
-
 inherit subversion
 
 ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/util/einit-notify"
@@ -17,11 +13,12 @@ IUSE="doc"
 
 RDEPEND=">=sys-apps/einit-0.24.1_rc1816
 	>=dev-cpp/gtkmm-2.10
+	>=x11-libs/libnotify-0.4.3
 	doc? ( app-text/docbook-sgml app-doc/doxygen )"
 DEPEND="${RDEPEND}
 	>=sys-apps/portage-2.1.2-r11"
 
-S=${WORKDIR}/gentoo
+S=${WORKDIR}/einit-notify
 
 src_unpack() {
 	subversion_src_unpack
