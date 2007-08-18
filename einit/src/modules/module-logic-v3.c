@@ -574,7 +574,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  do {
   currentlistrev = einit_module_logic_list_revision;
 
+#ifdef DEBUG
   notice (2, "plan iteration");
+#endif
 
   emutex_lock (&ml_tb_target_state_mutex);
 
@@ -1146,7 +1148,9 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 void module_logic_update_init_d () {
  struct cfgnode *einit_d = cfg_getnode ("core-module-logic-maintain-init.d", NULL);
 
+#ifdef DEBUG
  notice (2, "module_logic_update_init_d(): regenerating list of services in init.d.");
+#endif
 
  if (einit_d && einit_d->flag && einit_d->svalue) {
   char *init_d_path = cfg_getstring ("core-module-logic-init.d-path", NULL);
@@ -1754,7 +1758,9 @@ char mod_workthreads_inc (char *service) {
 }
 
 void mod_commits_dec () {
+#ifdef DEBUG
  notice (5, "plan finished.");
+#endif
 
  char clean_broken = 0, **unresolved = NULL, **broken = NULL;
  emutex_lock (&ml_unresolved_mutex);
@@ -1834,7 +1840,9 @@ void mod_commits_dec () {
 
 void mod_commits_inc () {
 // char spawn = 0;
+#ifdef DEBUG
  notice (5, "plan started.");
+#endif
 
  emutex_lock (&ml_commits_mutex);
  ml_commits++;
@@ -2750,7 +2758,9 @@ void mod_apply_enable (struct stree *des) {
     if ((lm[0] == current) && lm[1]) {
      ssize_t rx = 1;
 
+#ifdef DEBUG
      notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+#endif
 
      for (; lm[rx]; rx++) {
       lm[rx-1] = lm[rx];
@@ -3005,7 +3015,9 @@ char mod_examine_group (char *groupname) {
      changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
     emutex_unlock (&ml_changed_mutex);
 
+#ifdef DEBUG
     notice (2, "marking group %s off", groupname);
+#endif
 
     post_examine = 1;
 
@@ -3038,7 +3050,9 @@ char mod_examine_group (char *groupname) {
       group_failed = 1;
      }
     } else {
+#ifdef DEBUG
      notice (2, "marking group %s broken (bad group type)", groupname);
+#endif
 
      mod_mark (groupname, MARK_BROKEN);
     }
@@ -3049,7 +3063,7 @@ char mod_examine_group (char *groupname) {
    }
 
    if (group_ok) {
-    notice (2, "marking group %s up", groupname);
+    notice (5, "marking group %s up", groupname);
 
     emutex_lock (&ml_tb_current_mutex);
     current.enable = strsetdel (current.enable, groupname);

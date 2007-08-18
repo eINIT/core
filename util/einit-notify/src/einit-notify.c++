@@ -46,14 +46,43 @@ Einit einit;
 
 void einit_feedback_event_handler (struct einit_remote_event *ev) {
  if ((ev->type == einit_feedback_notice) && ev->string) {
+  gint to = 3000;
   NotifyNotification *nitem = notify_notification_new("eINIT Notification", ev->string, USHAREDIR "/images/einit.png", NULL);
 
-  if (ev->flag < 4) { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_CRITICAL); }
-  else if (ev->flag < 6) { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL); }
+  if (ev->flag < 4) { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_CRITICAL); to = 60000; }
+  else if (ev->flag < 6) { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL); to = 20000; }
   else { notify_notification_set_urgency (nitem, NOTIFY_URGENCY_LOW); }
 
-  notify_notification_set_timeout(nitem, 30000);
+  notify_notification_set_timeout(nitem, to);
   notify_notification_show (nitem, NULL);
+ }
+}
+
+void einit_core_event_handler (struct einit_remote_event *ev) {
+ if ((ev->type == einit_core_service_update) && ev->string) {
+  if (ev->status & status_failed) {
+   NotifyNotification *nitem = notify_notification_new("eINIT: Service Command Failed", ev->string, USHAREDIR "/images/einit.png", NULL);
+
+   notify_notification_set_urgency (nitem, NOTIFY_URGENCY_CRITICAL);
+
+   notify_notification_set_timeout(nitem, 30000);
+   notify_notification_show (nitem, NULL);
+  } else if (ev->status & status_enabled) {
+   NotifyNotification *nitem = notify_notification_new("eINIT: Module Enabled", ev->string, USHAREDIR "/images/einit.png", NULL);
+
+   notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL);
+
+   notify_notification_set_timeout(nitem, 30000);
+   notify_notification_show (nitem, NULL);
+  } else  if (ev->status & status_disabled) {
+   NotifyNotification *nitem = notify_notification_new("eINIT: Module Disabled", ev->string, USHAREDIR "/images/einit.png", NULL);
+
+   notify_notification_set_urgency (nitem, NOTIFY_URGENCY_NORMAL);
+
+   notify_notification_set_timeout(nitem, 30000);
+   notify_notification_show (nitem, NULL);
+  }
+
  }
 }
 
@@ -107,6 +136,7 @@ EinitGTK::EinitGTK() {
  g_signal_connect(G_OBJECT(gobj_StatusIcon), "popup-menu", G_CALLBACK(on_statusicon_popup), this);
 
  einit.listen (einit_event_subsystem_feedback, einit_feedback_event_handler);
+ einit.listen (einit_event_subsystem_core, einit_core_event_handler);
 }
 
 void EinitGTK::on_statusicon_popup(GtkStatusIcon* status_icon, guint button,

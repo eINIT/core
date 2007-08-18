@@ -264,7 +264,9 @@ void feedback_textual_wait_for_commandQ_to_finish() {
 #endif
   emutex_unlock (&feedback_textual_all_done_cond_mutex);
 
+#ifdef DEBUG
   notice (12, "feedback_textual_wait_for_commandQ_to_finish(): re-evaluation");
+#endif
  }
 
  return;

@@ -1394,7 +1394,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
 int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
 
  fbprintf (status, "mounting %s on %s (fs=%s)", dd->device, mountpoint, fs);
- notice (1, "mounting %s on %s (fs=%s)", dd->device, mountpoint, fs);
+// notice (1, "mounting %s on %s (fs=%s)", dd->device, mountpoint, fs);
 
  if (!(coremode & einit_mode_sandbox)) {
   if (strmatch ("/", mountpoint)) goto attempt_remount;
@@ -1445,7 +1445,7 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
 
  fbprintf (status, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
- notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
+// notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 
 #if defined(DARWIN) || defined(__FreeBSD__)
  if (unmount (mountpoint, 0) != -1)
@@ -1557,7 +1557,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
     uint32_t n = strlen (mountpoint);
 
     if (cm[i][n] == '/') {
-     notice (2, "unmounting %s: have to umount(%s) first.", mountpoint, cm[i]);
+     notice (8, "unmounting %s: have to umount(%s) first.", mountpoint, cm[i]);
 
      eumount (cm[i], status);
     }
