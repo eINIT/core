@@ -64,14 +64,6 @@ DBUS=""
 
 . ./configure.options
 
-echo -n "checking automatic options [";
-
-if test -n "`uname -a|grep -i 'Linux'`"; then
- echo -n " LINUX";
- EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
-fi
-echo " ]";
-
 echo -n "checking options [";
 for param in $@; do
 	short=${param%%=*};
@@ -151,6 +143,12 @@ for param in $@; do
 	elif test "$param" = "--no-nix-environ"; then
 		echo -n " NO-NIX-ENVIRON";
 		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
+	elif test "$param" = "--avoid-usr"; then
+		echo -n " EXUSR";
+		EXUSR="yes";
+	elif test "$short" = "--with-expat"; then
+		echo -n " EXPAT";
+		EXPAT_CFGD_LIB="${param#*=}";
         elif test "$param" = "--svn"; then
                 echo -n " SVN";
                 ISSVN=1;
@@ -175,6 +173,13 @@ for param in $@; do
 		EXTERNALMODULES="${EXTERNALMODULES} ${param#*--enable-}";
 	fi;
 done;
+echo " ]";
+
+echo -n "checking automatic options [";
+if test -n "`uname -a|grep -i 'Linux'`"; then
+	echo -n " LINUX";
+	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+fi
 echo " ]";
 
 echo "skipping modules: ${nomodule}"
@@ -437,11 +442,24 @@ if [ "${NETLINK}" = "netlink" ]; then
 	NETLINK_LIBS=$(pkg-config --libs libnl-1)
 fi
 
-echo -n "figuring out what libs need to be linked into the core..."
-if test -n "`echo ${INTERNALMODULES}|grep bootstrap-configuration-xml-expat`"; then
- echo -n " -lexpat"
- CORELIBS="${CORELIBS} -lexpat"
+if [ -e "${EXPAT_CFGD_LIB}" ]; then
+ EXPAT_LIBS="${EXPAT_CFGD_LIB}"
+elif [ "${EXUSR}" = "yes" ]; then
+ if [ -e "/usr/lib/libexpat.a" ]; then
+  EXPAT_LIBS="/usr/lib/libexpat.a"
+ elif [ -e "/usr/local/lib/libexpat.a" ]; then
+  EXPAT_LIBS="/usr/local/lib/libexpat.a"
+ elif [ -e "/lib/libexpat.a" ]; then
+  EXPAT_LIBS="/lib/libexpat.a"
+ else
+  EXPAT_LIBS="-lexpat"
+ fi;
+else
+ EXPAT_LIBS="-lexpat"
 fi;
+echo "will use this expat library: ${EXPAT_LIBS}"
+
+echo -n "figuring out what libs need to be linked into the core..."
 if test -n "`echo ${INTERNALMODULES}|grep linux-netlink`"; then
  echo -n " -lnl"
  CORELIBS="${CORELIBS} ${NETLINK_LIBS}"
@@ -455,6 +473,10 @@ if test -n "`echo ${INTERNALMODULES}|grep module-so`"; then
 		echo -n " -ldl";
 		CORELIBS="${CORELIBS} -ldl"
 	fi
+fi;
+if test -n "`echo ${INTERNALMODULES}|grep bootstrap-configuration-xml-expat`"; then
+ echo -n " -lexpat"
+ CORELIBS="${CORELIBS} ${EXPAT_LIBS}"
 fi;
 echo " done"
 
@@ -563,6 +585,8 @@ GTK = ${GTK}
 
 NETLINK_CFLAGS = ${NETLINK_CFLAGS}
 NETLINK_LIBS = ${NETLINK_LIBS}
+
+EXPAT_LIBS= ${EXPAT_LIBS}
 
 GUI = ${GUI}
 " > config.mk
