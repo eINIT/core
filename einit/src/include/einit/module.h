@@ -178,7 +178,8 @@ enum einit_usage_query {
  service_set_group_providers   = 0x0400,
 /*!< Service-usage-query: "These modules provide this service" */
 
- service_get_providers         = 0x0800
+ service_get_providers         = 0x0800,
+ service_list_services         = 0x1000
 };
 /*!\} */
 

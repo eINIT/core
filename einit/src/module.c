@@ -526,6 +526,14 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
   }
  }
 
+ if (task & service_list_services) {
+  struct stree *ha = service_usage;
+
+  while (ha) {
+   ret = (char **)setadd ((void **)ret, ha->key, SET_TYPE_STRING);
+   ha = streenext(ha);
+  }
+ }
 
  emutex_unlock (&service_usage_mutex);
  return ret;

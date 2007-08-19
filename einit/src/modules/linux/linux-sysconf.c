@@ -157,8 +157,6 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
   }
  }
 
- fbprintf (status, "CTRL-ALT-DEL behaviour configured.");
-
  if ((sfilename = cfg_getstring ("configuration-services-sysctl/config", NULL))) {
   fbprintf (status, "doing system configuration via %s.", sfilename);
 
@@ -240,8 +238,6 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
   if (kernel_image && kernel_options) {
    char **template_data = NULL;
 
-   fbprintf (status, "configuration looks OK");
-
    if (kernel_initrd) {
     if ((kexec_template = cfg_getstring ("configuration-system-kexec-calls/load-initrd", NULL))) {
      template_data = (char **)setadd ((void **)template_data, "kernel-initrd", SET_TYPE_STRING);
@@ -260,8 +256,6 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
     template_data = (char **)setadd ((void **)template_data, kernel_options, SET_TYPE_STRING);
 
     if ((execdata = apply_variables (kexec_template, (const char **)template_data))) {
-     fbprintf (status, "got a template, executing");
-
      if (pexec(execdata, NULL, 0, 0, NULL, NULL, NULL, status) == status_ok) {
       linux_reboot_use_kexec = 1;
       linux_reboot_use_kexec_command = estrdup(cfg_getstring ("configuration-system-kexec-calls/execute", NULL));

@@ -143,6 +143,9 @@
     <broadcast-constraints s="/dev/(tty[1-8][12]?|pts/.*)" />
     <reset-shutdown-broadcast-messages b="true" />
 
+    <suppress-messages b="no" />
+    <suppress-status-notices b="no" />
+
     <fbsplash>
      <ttys s="1 2 3 4 5 6" />
      <theme s="gentoo" />

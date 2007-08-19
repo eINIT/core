@@ -101,8 +101,10 @@ module_register(einit_feedback_visual_self);
 
 #endif
 
+char *feedback_textual_statusline = NULL;
+
 uint32_t shutdownfailuretimeout = 10;
-char enableansicodes = 1;
+char enableansicodes = 1, suppress_messages = 0, suppress_status_notices = 0;
 
 enum feedback_textual_commands {
  ftc_module_update,
@@ -149,6 +151,8 @@ struct feedback_stream {
  uint32_t seqid;
  uint32_t last_seqid;
  enum einit_ipc_options options;
+
+ uint32_t width;
 };
 
 struct feedback_textual_command **feedback_textual_commandQ = NULL;
@@ -164,22 +168,6 @@ pthread_mutex_t
  pthread_cond_t
  feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER,
  feedback_textual_all_done_cond = PTHREAD_COND_INITIALIZER;
-
-char *feedback_textual_statusline = "[ \e[31m....\e[0m ] \e[34minitialising\e[0m\e[0K\n";
-
-void *feedback_textual_io_handler_thread (void *irr) {
- int rchar;
-
- while (1) {
-  rchar = fgetc(stdin);
-  if (rchar == EOF) {
-  }
-
-  eprintf (stdout, "read character: %c", rchar);
- }
-
- return irr;
-}
 
 void feedback_textual_queue_fd_command (enum feedback_textual_commands command, FILE *fd, enum einit_ipc_options fd_options, uint32_t seqid) {
  struct feedback_textual_command tnc;
@@ -304,129 +292,6 @@ signed int feedback_name_sort (struct feedback_textual_module_status *st1, struc
  return strcmp (st1->module->module->name, st2->module->module->name) * -1;
 }
 
-void feedback_process_textual_noansi(struct feedback_textual_module_status *st) {
- char statuscode[] = { '(', '-', '-', '-', '-', ')', 0 };
- char *rid = (st->module->module && st->module->module->rid) ? st->module->module->rid : "no idea";
- char *name = (st->module->module && st->module->module->name) ? st->module->module->name : "no name";
-
- if (st->module->status == status_idle) {
-  statuscode[1] = 'I';
- } else {
-  if (st->module->status & status_enabled) {
-   statuscode[2] = 'E';
-  }
-  if (st->module->status & status_disabled) {
-   statuscode[3] = 'D';
-  }
-  if (st->module->status & status_working) {
-   statuscode[4] = 'w';
-  }
-  if (st->module->status & status_deferred) {
-   statuscode[4] = 's';
-  }
-
-  if (st->module->status & status_failed) {
-   statuscode[0] = '!';
-   statuscode[5] = '!';
-  }
- }
-
- if (st->log) {
-/*  uint32_t y = 0;
-
-  for (; st->log[y]; y++) ;
-
-  if (y != 0) {
-   y--;
-   eprintf (stdout, "%s %s (%s): %s\n", statuscode, name, rid, st->log[y]->message);
-  }*/
-  if (st->log[0])
-   eprintf (stdout, "%s %s (%s): %s\n", statuscode, name, rid, st->log[0]->message);
- } else {
-  eprintf (stdout, "%s %s (%s)\n", statuscode, name, rid);
- }
-}
-
-void feedback_process_textual_ansi(struct feedback_textual_module_status *st) {
- char *defcode = "0";
- char *name = (st->module->module && st->module->module->name) ? st->module->module->name : "no name";
-
- char *wmarker = "";
- char *emarker = "";
- char *rmarker = " ";
- char *status = "<FIXME!> \e[31m----\e[0m";
- char wmbuffer[BUFFERSIZE];
- char embuffer[BUFFERSIZE];
- char stbuffer[BUFFERSIZE];
- char do_details = 0;
-
- if (st->module->status & status_working) {
-  defcode = "30;1";
- } if ((st->module->status & status_disabled) || (st->module->status == status_idle)) {
-  defcode = "36";
- }
-
- if (st->module->status == status_idle) {
-  status = stbuffer;
-  esprintf (stbuffer, BUFFERSIZE, "\e[31midle\e[%sm", defcode);
- } else {
-  if (st->module->status & status_enabled) {
-   status = stbuffer;
-   esprintf (stbuffer, BUFFERSIZE, "\e[32menab\e[%sm", defcode);
-  }
-  if (st->module->status & status_disabled) {
-   status = stbuffer;
-   esprintf (stbuffer, BUFFERSIZE, "\e[33mdisa\e[%sm", defcode);
-  }
-  if (st->module->status & status_deferred) {
-   status = stbuffer;
-   esprintf (stbuffer, BUFFERSIZE, "\e[33mschd\e[%sm", defcode);
-  }
-  if (st->module->status & status_working) {
-   status = stbuffer;
-   esprintf (stbuffer, BUFFERSIZE, "\e[31m....\e[%sm", defcode);
-  }
-
-  if (st->module->status & status_failed) {
-   esprintf (embuffer, BUFFERSIZE, " \e[31m(failed)\e[%sm", defcode);
-   emarker = embuffer;
-   do_details = 1;
-  }
- }
-
- if (st->warnings > 1) {
-  wmarker = wmbuffer;
-  esprintf (wmbuffer, BUFFERSIZE, "\e[36m(%i warnings)\e[%sm ", st->warnings, defcode);
-  do_details = 1;
- } else if (st->warnings == 1) {
-  wmarker = wmbuffer;
-  esprintf (wmbuffer, BUFFERSIZE, "\e[36m(one warning)\e[%sm ", defcode);
-  do_details = 1;
- }
-
- if (st->log) {
-  uint32_t y = 0;
-
-  for (; st->log[y]; y++) ;
-
-  if (do_details && (y > 1)) {
-   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s; messages:\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
-
-   y = 0;
-   for (; st->log[y] && y < 3; y++)
-    eprintf (stdout, "\e[%sm  \e[37m*\e[0m %i: %s\e[0m\e[0K\n", defcode, st->log[y]->seqid, st->log[y]->message);
-  } else if (y != 0) {
-   y--;
-
-   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s: %s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name, st->log[0]->message);
-  } else {
-   eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
-  }
- } else {
-  eprintf (stdout, "\e[%sm%s[ %s ]%s %s%s\e[0m\e[0K\n", defcode, rmarker, status, emarker, wmarker, name);
- }
-}
-
 void feedback_textual_update_streams () {
  uint32_t i = 0;
 
@@ -441,47 +306,38 @@ void feedback_textual_update_streams () {
 
   for (y = 0; feedback_textual_modules[y]; y++) {
    if (feedback_textual_modules[y]->seqid > feedback_streams[i]->last_seqid) {
-    char *status = "";
-    char *emarker = "";
-    char *wmarker = "";
-    char wmbuffer[BUFFERSIZE];
-    char did_display = 0;
+    if (!suppress_messages) {
+     char *emarker = "";
+     char *wmarker = "";
+     char wmbuffer[BUFFERSIZE];
+     char did_display = 0;
 
-    if (feedback_textual_modules[y]->module->status == status_idle) {
-     status = "\e[31midle\e[0m";
-    } else {
-     if (feedback_textual_modules[y]->module->status & status_enabled) {
-      status = "\e[32menab\e[0m";
-     }
-     if (feedback_textual_modules[y]->module->status & status_disabled) {
-      status = "\e[33mdisa\e[0m";
-     }
-     if (feedback_textual_modules[y]->module->status & status_working) {
-      status = "\e[31m....\e[0m";
+     if (!(feedback_textual_modules[y]->module->status & (status_enabled | status_disabled | status_failed | status_working))) {
+      continue;
      }
 
-     if (feedback_textual_modules[y]->module->status & status_failed) {
+/*     if (feedback_textual_modules[y]->module->status & status_failed) {
       emarker = " \e[31m(failed)\e[0m";
      }
-    }
 
-    if (feedback_textual_modules[y]->warnings > 1) {
-     wmarker = wmbuffer;
-     esprintf (wmbuffer, BUFFERSIZE, "\e[36m(%i warnings)\e[0m ", feedback_textual_modules[y]->warnings);
-    } else if (feedback_textual_modules[y]->warnings == 1) {
-     wmarker = "\e[36m(1 warning)\e[0m ";
-    }
+     if (feedback_textual_modules[y]->warnings > 1) {
+      wmarker = wmbuffer;
+      esprintf (wmbuffer, BUFFERSIZE, " \e[36m(%i warnings)\e[0m", feedback_textual_modules[y]->warnings);
+     } else if (feedback_textual_modules[y]->warnings == 1) {
+      wmarker = " \e[36m(1 warning)\e[0m";
+     }*/
 
-    if (feedback_textual_modules[y]->log) {
-     uint32_t x = 0;
+     if (feedback_textual_modules[y]->log) {
+      uint32_t x = 0;
 
-     for (; feedback_textual_modules[y]->log[x]; x++) {
-      if (feedback_textual_modules[y]->log[x]->seqid > feedback_streams[i]->last_seqid) {
-       if (!did_display) {
-        eprintf (feedback_streams[i]->stream, "  [ %s ] %s%s %s: %s\n", status, wmarker, emarker, feedback_textual_modules[y]->module->module->name, feedback_textual_modules[y]->log[x]->message);
-        did_display = 1;
-       } else {
-        eprintf (feedback_streams[i]->stream, " >> %s\n", feedback_textual_modules[y]->log[x]->message);
+      for (; feedback_textual_modules[y]->log[x]; x++) {
+       if (feedback_textual_modules[y]->log[x]->seqid > feedback_streams[i]->last_seqid) {
+        if (!did_display) {
+         eprintf (feedback_streams[i]->stream, "  \e[34m>\e[m%s%s %s: %s\n", wmarker, emarker, feedback_textual_modules[y]->module->module->name, feedback_textual_modules[y]->log[x]->message);
+         did_display = 1;
+        } else {
+         eprintf (feedback_streams[i]->stream, "  >> %s\n", feedback_textual_modules[y]->log[x]->message);
+        }
        }
       }
      }
@@ -489,9 +345,49 @@ void feedback_textual_update_streams () {
 
     hseq = (feedback_textual_modules[y]->seqid > hseq) ? feedback_textual_modules[y]->seqid : hseq;
 
-    if (!(feedback_textual_modules[y]->module->status & status_working)) {
-     if (!did_display) {
-      eprintf (feedback_streams[i]->stream, "  [ %s ] %s%s %s\n", status, wmarker, emarker, feedback_textual_modules[y]->module->module->name);
+    if (!suppress_status_notices && !(feedback_textual_modules[y]->module->status & status_working) && (feedback_textual_modules[y]->laststatus != feedback_textual_modules[y]->module->status)) {
+     if (feedback_textual_modules[y]->module->status & status_enabled) {
+
+      if (feedback_textual_modules[y]->module->status & status_failed) {
+       eprintf (feedback_streams[i]->stream, " [ \e[31mfail\e[0m ] %s: command failed, module is enabled\n", feedback_textual_modules[y]->module->module->name);
+      } else {
+       eprintf (feedback_streams[i]->stream, " [ \e[32menab\e[0m ] %s\n", feedback_textual_modules[y]->module->module->name);
+      }
+
+      feedback_textual_modules[y]->laststatus = feedback_textual_modules[y]->module->status;
+     }
+
+     if (feedback_textual_modules[y]->module->status & status_disabled) {
+
+      if (feedback_textual_modules[y]->module->status & status_failed) {
+       eprintf (feedback_streams[i]->stream, " [ \e[31mfail\e[0m ] %s: command failed, module is disabled\n", feedback_textual_modules[y]->module->module->name);
+      } else {
+       eprintf (feedback_streams[i]->stream, " [ \e[32mdisa\e[0m ] %s\n", feedback_textual_modules[y]->module->module->name);
+      }
+
+      feedback_textual_modules[y]->laststatus = feedback_textual_modules[y]->module->status;
+     }
+    }
+   }
+  }
+
+
+  if (feedback_textual_statusline) {
+   fputs (feedback_textual_statusline, feedback_streams[i]->stream);
+
+   if (feedback_textual_statusline[0] && feedback_textual_statusline[1] && (feedback_textual_statusline[2] == '[') && feedback_textual_modules) {
+    char errorheader = 0;
+    uint32_t y = 0;
+
+    for (; feedback_textual_modules[y]; y++) {
+     if (feedback_textual_modules[y]->module && feedback_textual_modules[y]->module->module && ( (feedback_textual_modules[y]->module->status & status_failed))) {
+      if (!errorheader) {
+       eputs ("\e[31m >> WARNING: The following modules are tagged as FAILED:\e[0m\n", feedback_streams[i]->stream);
+
+       errorheader = 1;
+      }
+
+      eprintf (feedback_streams[i]->stream, "   \e[31m*\e[0m %s (%s)\n", feedback_textual_modules[y]->module->module->name, feedback_textual_modules[y]->module->module->rid);
      }
     }
    }
@@ -502,11 +398,40 @@ void feedback_textual_update_streams () {
 /* display all workers: */
 //  eputs ("working on:", feedback_streams[i]->stream);
 
+  uint32_t used_width = 0;
+  char started = 0;
+
   for (y = 0; feedback_textual_modules[y]; y++) {
    if (feedback_textual_modules[y]->module && feedback_textual_modules[y]->module->module &&
        (feedback_textual_modules[y]->module->status & status_working)) {
-    eprintf (feedback_streams[i]->stream, "[ %s (%i) ]", feedback_textual_modules[y]->module->module->rid, feedback_textual_modules[y]->warnings);
+    if (!started) {
+     started = 1;
+     used_width += 2 + strlen (feedback_textual_modules[y]->module->module->rid);
+
+     eprintf (feedback_streams[i]->stream, "[ %s", feedback_textual_modules[y]->module->module->rid);
+    } else {
+//     eprintf (feedback_streams[i]->stream, " | %s (%i)", feedback_textual_modules[y]->module->module->rid, feedback_textual_modules[y]->warnings);
+     used_width += 3 + strlen (feedback_textual_modules[y]->module->module->rid);
+
+     if (used_width > (feedback_streams[i]->width - 8)) {
+      eputs (" | ++", feedback_streams[i]->stream);
+
+      used_width -= strlen (feedback_textual_modules[y]->module->module->rid) -2;
+
+      break;
+     } else {
+      eprintf (feedback_streams[i]->stream, " | %s", feedback_textual_modules[y]->module->module->rid);
+     }
+    }
    }
+  }
+
+  if (started) {
+   while (used_width < (feedback_streams[i]->width -2)) {
+    eputs (" ", feedback_streams[i]->stream);
+    used_width++;
+   }
+   eputs (" ]", feedback_streams[i]->stream);
   }
 
   feedback_streams[i]->last_seqid = hseq;
@@ -516,41 +441,14 @@ void feedback_textual_update_streams () {
 
   fflush (feedback_streams[i]->stream);
  }
+
+ if (feedback_textual_statusline) {
+  feedback_textual_statusline = NULL;
+ }
 }
 
 void feedback_textual_update_screen () {
  emutex_lock (&feedback_textual_modules_mutex);
-
- if (enableansicodes) {
-  eputs ("\e[0;0H\e[47;30m \e[34;1m[\e[30m Misc \e[34m]\e[90;22m    Network    Mountpoints\e[K\e[0m\n\n ", stdout);
-
-  eputs (feedback_textual_statusline, stdout);
- } else
-  eputs ("\n", stdout);
-
- if (feedback_textual_modules) {
-  uint32_t i = 0;
-
-/*  setsort ((void **)feedback_textual_modules, 0, (signed int(*)(const void *, const void*))feedback_time_sort);*/
-
-  time_t tt = time(NULL) - 10;
-
-  for (; feedback_textual_modules[i]; i++) {
-   if (feedback_textual_modules[i]->module && ((feedback_textual_modules[i]->lastchange) < tt) &&
-       !(feedback_textual_modules[i]->module->status & (status_enabled | status_working))) {
-    continue;
-   } else {
-    if (enableansicodes)
-     feedback_process_textual_ansi(feedback_textual_modules[i]);
-    else
-     feedback_process_textual_noansi(feedback_textual_modules[i]);
-   }
-  }
- }
-
- if (enableansicodes) {
-  eputs ("\e[0J\n", stdout);
- }
 
  emutex_lock (&feedback_textual_streams_mutex);
  if (feedback_streams && feedback_textual_modules) {
@@ -633,6 +531,7 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
 void feedback_textual_process_command (struct feedback_textual_command *command) {
  if (command->statusline) {
   feedback_textual_statusline = command->statusline;
+
   feedback_textual_update_screen ();
  }
 
@@ -693,6 +592,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
        st.options = command->fd_options;
        st.seqid = command->seqid;
        st.last_seqid = st.seqid;
+       st.width = 80;
 
        if (st.options & einit_ipc_output_ansi)
         eputs ("working on your request...\n", st.stream);
@@ -746,15 +646,25 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
 void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
  if (ev->type == einit_feedback_broken_services) {
   char *tmp = set2str (' ', (const char **)ev->set);
+  char tmp2[BUFFERSIZE];
+
   if (tmp) {
    eprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
+
+   esprintf (tmp2, BUFFERSIZE, "\e[31m ** BROKEN SERVICES:\e[0m %s\n", tmp);
+   feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp2), 0);
 
    free (tmp);
   }
  } else if (ev->type == einit_feedback_unresolved_services) {
   char *tmp = set2str (' ', (const char **)ev->set);
+  char tmp2[BUFFERSIZE];
+
   if (tmp) {
    eprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
+
+   esprintf (tmp2, BUFFERSIZE, "\e[31m ** UNRESOLVED SERVICES:\e[0m %s\n", tmp);
+   feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp2), 0);
 
    free (tmp);
   }
@@ -794,13 +704,13 @@ void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
  } else if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
 
-  esprintf (tmp, BUFFERSIZE, "[ \e[31m....\e[0m ] \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
+  esprintf (tmp, BUFFERSIZE, " \e[34m**\e[0m \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
   feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  } else if (ev->type == einit_core_mode_switch_done) {
   char tmp[BUFFERSIZE];
 
-  esprintf (tmp, BUFFERSIZE, "[ \e[32mdone\e[0m ] \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
+  esprintf (tmp, BUFFERSIZE, " \e[32m**\e[0m \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
   feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
  }
@@ -890,6 +800,14 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  if (node)
   enableansicodes = node->flag;
 
+ node = cfg_getnode ("configuration-feedback-visual-suppress-messages", NULL);
+ if (node)
+  suppress_messages = node->flag;
+
+ node = cfg_getnode ("configuration-feedback-visual-suppress-status-notices", NULL);
+ if (node)
+  suppress_status_notices = node->flag;
+
  if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
   shutdownfailuretimeout = node->value;
 
@@ -968,14 +886,35 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
   }
  }
 
-#if 0
- pthread_t th;
- ethread_create (&th, &thread_attribute_detached, feedback_textual_io_handler_thread, NULL);
+/* if (enableansicodes) {
+  eputs ("\e[2J\e[0;0H", stdout);
+ }*/
+
+/* register our default output feedback-stream */
+ struct feedback_stream st;
+ memset (&st, 0, sizeof (struct feedback_stream));
+
+ st.stream = stdout;
+ st.options = enableansicodes ? einit_ipc_output_ansi : 0;
+ st.seqid = 0;
+ st.last_seqid = 0;
+
+#ifdef TIOCGWINSZ
+ struct winsize size;
+
+ if (!ioctl (STDOUT_FILENO, TIOCGWINSZ, &size)) {
+  st.width = size.ws_col;
+ } else {
+  st.width = 80;
+ }
+
+#else
+ st.width = 80;
 #endif
 
- if (enableansicodes) {
-  eputs ("\e[2J\e[0;0H", stdout);
- }
+ emutex_lock (&feedback_textual_streams_mutex);
+ feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
+ emutex_unlock (&feedback_textual_streams_mutex);
 
  emutex_unlock (&thismodule->imutex);
  return status_ok;
