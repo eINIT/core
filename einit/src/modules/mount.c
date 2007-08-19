@@ -1160,7 +1160,7 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
    if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
   else
 #endif
-   if (strmatch (options[fi], "system") || strmatch (options[fi], "critical") || strmatch (options[fi], "network")) ; // ignore our own specifiers
+   if (strmatch (options[fi], "system") || strmatch (options[fi], "critical") || strmatch (options[fi], "network") || strmatch (options[fi], "skip-fsck")) ; // ignore our own specifiers
   else
 
    if (!ret) {
@@ -1301,7 +1301,7 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
 
 int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
  if (!(coremode & einit_mode_sandbox)) {
-  if (dd->device_status & (device_status_dirty | device_status_error_notint))
+  if ((dd->device_status & (device_status_dirty | device_status_error_notint)) && (!inset ((const void **)mp->options, "skip-fsck", SET_TYPE_STRING)))
    mount_fsck (mp->fs, dd->device, status);
 
   if (mp->before_mount)
