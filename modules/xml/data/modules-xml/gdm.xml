@@ -5,7 +5,8 @@
   requires="mount-critical:network-minimal"
   pid="/var/run/gdm.pid"
   prepare="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; /bin/true"
-  enable="/usr/bin/gdm -nodaemon"
+  command="/usr/bin/gdm"
   need-files="/usr/bin/gdm"
+  options="forking"
   restart="yes" />
 </einit>
