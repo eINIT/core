@@ -1,6 +1,6 @@
 util: einit-control
 
-install: einit-control crash-handler $(DBUS) $(GUI)
+install: einit-control crash-handler $(DBUS)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
@@ -44,10 +44,3 @@ libeinit++.${SO}.1.0.0: libeinit.${SO}.1.0.0 libeinit++.o
 	if test "${SO}" = "so"; then ${CXXLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,einit++.so.1 libeinit++.o -o libeinit++.${SO}.1.0.0 -L. -leinit; else ${CXXLD} ${XDYNAMIC_SIMPLE} libeinit++.o -o libeinit++.${SO}.1.0.0 -L. -leinit; fi
 	ln -fs libeinit++.${SO}.1.0.0 libeinit++.${SO}.1
 	ln -fs libeinit++.${SO}.1 libeinit++.${SO}
-
-gtk: einit-gui-gtk
-	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${UBINDIR}
-	${INSTALL} ${BINIPARAM} einit-gui-gtk ${DESTDIR}/${UBINDIR}
-
-einit-gui-gtk: libeinit++.${SO}.1.0.0 einit-gui-gtk.o
-	$(CXXLD) einit-gui-gtk.o -o einit-gui-gtk $(STATIC) $(GTK_LIBS) -L. -leinit -leinit++
