@@ -17,7 +17,7 @@
 <!-- use this to make einit parse gentoo's runlevels as einit modes.
      NOTE: some aliases/transformations are still missing...
      NOTE.2: it's broken atm... somewhat -->
-<!--    <runlevels path="/etc/runlevels" exclusive="false" /> -->
+    <runlevels path="/etc/runlevels" exclusive="false" />
     <parse-env.d b="true" />
     <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
 
@@ -48,6 +48,8 @@
 
  </configuration>
 
+<!-- the rest of this file deals with aliases that are needed to translate
+     between einit names and gentoo's baselayout's names -->
  <services>
   <alias id="localmount" s="mount-local" />
   <alias id="checkroot" s="mount-system" />

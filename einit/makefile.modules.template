@@ -16,3 +16,6 @@ feedback-visual-textual.so: feedback-visual-textual.o
 
 linux-netlink.so: linux-netlink.o
 	${LLD} linux-netlink.o ${NETLINK_LIBS} -o linux-netlink.so
+
+distro-gentoo.so: distro-gentoo.o
+	${LLD} distro-gentoo.o -leinfo -lrc -o distro-gentoo.so

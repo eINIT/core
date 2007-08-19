@@ -1,8 +1,9 @@
 /*
- *  compatibility-sysv-gentoo.c
+ *  distro-gentoo.c
  *  einit
  *
  *  Created by Magnus Deininger on 10/11/2006.
+ *  Renamed from compatibility-sysv-gentoo.c on 19/08/2007.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -34,8 +35,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-#define EINIT_MODULE
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -76,8 +75,8 @@ const struct smodule compatibility_sysv_gentoo_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = einit_module_loader,
- .name      = "System-V Compatibility: Gentoo Support",
- .rid       = "compatibility-sysv-gentoo",
+ .name      = "Distribution Support: Gentoo",
+ .rid       = "distro-gentoo",
  .si        = {
   .provides = NULL,
   .requires = NULL,
@@ -533,7 +532,7 @@ void einit_event_handler (struct einit_event *ev) {
 #endif
  } else if (ev->type == einit_core_service_update) { // update service status
   uint32_t i = 0;
-  eputs ("marking service status!\n", stderr);
+//  eputs ("marking service status!\n", stderr);
   if (!ev->set) return;
   if (ev->status & status_working) {
    if (ev->task & einit_module_enable) {

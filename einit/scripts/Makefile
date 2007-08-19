@@ -1,6 +1,7 @@
 include ../config.mk
 
 all:
+	if test -e /etc/gentoo-release; then cd gentoo && ${MAKE} all; fi
 
 install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
@@ -9,3 +10,4 @@ install:
 	${INSTALL} ${IPARAM} -m 0755 install-config ${DESTDIR}/${LIBDIR}/scripts
 	if [ "$(readlink /bin/sh)" != "dash" ]; then echo -e "PREFIX=\"${PREFIX}\"\nLIBDIR=\"${LIBDIR}\"\nETCDIR=\"${ETCDIR}\"" > ${DESTDIR}/${LIBDIR}/scripts/configuration; else echo "PREFIX=\"${PREFIX}\"\nLIBDIR=\"${LIBDIR}\"\nETCDIR=\"${ETCDIR}\"" > ${DESTDIR}/${LIBDIR}/scripts/configuration; fi
 	if test -n "$$(echo '${CFLAGS}'|grep DEBUG)"; then ${INSTALL} ${IPARAM} -m 0755 debug/einit.vg ${DESTDIR}/${SBINDIR}; fi;
+	if test -e /etc/gentoo-release; then cd gentoo && ${MAKE} install; fi

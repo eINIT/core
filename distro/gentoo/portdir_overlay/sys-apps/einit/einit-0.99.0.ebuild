@@ -18,16 +18,18 @@ LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
 
-IUSE="doc static debug nowtf externalise fbsplash aural dbus"
+IUSE="doc static debug nowtf externalise fbsplash aural dbus noxml baselayout2"
 
 RDEPEND="dev-libs/expat
 	sys-apps/iproute2
 	>=dev-libs/libnl-1.0_pre6
-	dbus? ( >=sys-apps/dbus-1.0.2-r2 )"
+	dbus? ( >=sys-apps/dbus-1.0.2-r2 )
+	baselayout2? ( >=sys-apps/baselayout-2.0.0_rc2-r1 )
+	!sys-apps/einit-modules-gentoo"
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
-PDEPEND="sys-apps/einit-modules-xml"
+PDEPEND="!noxml? ( sys-apps/einit-modules-xml )"
 
 S=${WORKDIR}/${PN}
 
@@ -52,6 +54,9 @@ src_compile() {
 	fi
 	if use dbus ; then
 		myconf="${myconf} --enable-ipc-dbus"
+	fi
+	if use baselayout2 ; then
+		myconf="${myconf} --distro-support=gentoo"
 	fi
 	if use externalise ; then
 		local myconf="${myconf} --externalise"
