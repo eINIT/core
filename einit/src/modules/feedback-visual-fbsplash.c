@@ -204,12 +204,25 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
     ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
 
     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
-    ee.argv = NULL;
 
-    ee.argv = (char **)setadd ((void **)ee.set, "feedback-textual", SET_TYPE_STRING);
-    ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
+    char *extrafeedback;
+    if ((extrafeedback = cfg_getstring ("configuration-feedback-visual-fbsplash-chain-feedback", NULL))) {
+     char **fbtoenable = str2set (':', extrafeedback);
+     uint32_t r = 0;
 
-    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+     if (fbtoenable) {
+      for (; fbtoenable[r]; r++) {
+       ee.argv = NULL;
+
+       ee.argv = (char **)setadd ((void **)ee.set, fbtoenable[r], SET_TYPE_STRING);
+       ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
+
+       event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+      }
+
+      free (fbtoenable);
+     }
+    }
 
     evstaticdestroy(ee);
    }
