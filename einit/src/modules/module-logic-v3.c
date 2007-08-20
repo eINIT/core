@@ -1757,6 +1757,18 @@ char mod_workthreads_inc (char *service) {
  return retval;
 }
 
+char mod_have_workthread (char *service) {
+ char retval = 0;
+ emutex_lock (&ml_workthreads_mutex);
+
+ if (inset ((const void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING)) {
+  retval = 1;
+ }
+ emutex_unlock (&ml_workthreads_mutex);
+
+ return retval;
+}
+
 void mod_commits_dec () {
 #ifdef DEBUG
  notice (5, "plan finished.");
@@ -2002,7 +2014,9 @@ void mod_decrease_deferred_by (char *service) {
   uint32_t i = 0;
 
   for (; do_examine[i]; i++) {
-   mod_examine (do_examine[i]);
+   pthread_t th;
+   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, estrdup (do_examine[i]));
+//   mod_examine (do_examine[i]);
   }
   free (do_examine);
  }*/
@@ -2196,13 +2210,13 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      eprintf (stderr, "%s: deferring after %s\n", service, gd->members[i]);
 #endif
 
-     mod_defer_until(service, gd->members[i]);
-
      if (task & einit_module_enable) {
       current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
      } else {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
      }
+
+     mod_defer_until(service, gd->members[i]);
     }
    }
 
@@ -2383,7 +2397,7 @@ void mod_flatten_current_tb () {
 
    if (!mod_group_get_data (current.enable[i]) && xn && xn->value) {
     struct lmodule **lm = xn->value;
-    mod_defer_notice (lm[0], NULL);
+//    mod_defer_notice (lm[0], NULL);
    }
   }
  }
@@ -2431,7 +2445,7 @@ void mod_flatten_current_tb () {
 
    if (!mod_group_get_data (current.disable[i]) && xn && xn->value) {
     struct lmodule **lm = xn->value;
-    mod_defer_notice (lm[0], NULL);
+//    mod_defer_notice (lm[0], NULL);
    }
   }
  }
@@ -2492,7 +2506,8 @@ void mod_examine_module (struct lmodule *module) {
    }
 
    for (; module->si->provides[i]; i++) {
-    mod_examine (module->si->provides[i]);
+//    mod_examine (module->si->provides[i]);
+    mod_post_examine (module->si->provides[i]);
    }
   }
  }
@@ -2529,20 +2544,26 @@ void mod_post_examine (char *service) {
 
   for (; pex[j]; j++) {
 //   if (pex[j+1]) {
-   mod_remove_defer (pex[j]);
+//   mod_remove_defer (pex[j]);
 
     char *sc = estrdup (pex[j]);
     pthread_t th;
 
+    if (!mod_have_workthread (pex[j])) {
 #ifdef DEBUG
-    eprintf (stderr, " XX spawning thread for %s\n", pex[j]);
+     eprintf (stderr, " XX spawning thread for %s\n", pex[j]);
 #endif
 
-    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
-     emutex_unlock (&ml_tb_current_mutex);
-     workthread_examine (sc);
-     emutex_lock (&ml_tb_current_mutex);
-    }
+     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
+      emutex_unlock (&ml_tb_current_mutex);
+      workthread_examine (sc);
+      emutex_lock (&ml_tb_current_mutex);
+     }
+	} else {
+#ifdef DEBUG
+     eprintf (stderr, " XX NOT spawning thread for %s\n", pex[j]);
+#endif
+	}
 //   } else
 //    mod_examine (pex[j]);
   }
@@ -2577,6 +2598,7 @@ void mod_pre_examine (char *service) {
         ((task & einit_module_disable) && !mod_isprovided (pex[j]))) {
      done++;
 
+//     mod_decrease_deferred_by (pex[j]);
      mod_post_examine (pex[j]);
     }
 
@@ -2638,7 +2660,7 @@ char mod_disable_users (struct lmodule *module) {
    }
 
    if (retval == 2) {
-    mod_defer_notice (module, need);
+//    mod_defer_notice (module, need);
 
     emutex_lock (&ml_tb_current_mutex);
 
@@ -2681,22 +2703,21 @@ char mod_enable_requirements (struct lmodule *module) {
      if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
       retval = 2;
       need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
-
-     }
-
-     if (module->si && module->si->provides) {
-      uint32_t y = 0;
-      for (; module->si->provides[y]; y++) {
-       mod_defer_until (module->si->provides[y], module->si->requires[i]);
-      }
      }
 
      emutex_unlock (&ml_tb_current_mutex);
     }
+
+    if (module->si && module->si->provides) {
+     uint32_t y = 0;
+     for (; module->si->provides[y]; y++) {
+      mod_defer_until (module->si->provides[y], module->si->requires[i]);
+     }
+    }
    }
 
    if (retval == 2) {
-    mod_defer_notice (module, need);
+//    mod_defer_notice (module, need);
 
     emutex_lock (&ml_tb_current_mutex);
 
@@ -2728,10 +2749,22 @@ void mod_apply_enable (struct stree *des) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((current->status & status_enabled) || mod_enable_requirements (current)) {
+    if (current->status & status_enabled) {
+#ifdef DEBUG
+     notice (4, "not spawning thread thread for %s; (already up)", des->key);
+#endif
+
+     mod_post_examine(des->key);
+
+     mod_workthreads_dec(des->key);
+     return;
+    }
+
+    if (mod_enable_requirements (current)) {
 #ifdef DEBUG
      notice (4, "not spawning thread thread for %s; exiting (not quite there yet)", des->key);
 #endif
+     mod_pre_examine(des->key);
 
      mod_workthreads_dec(des->key);
      return;
@@ -2742,7 +2775,7 @@ void mod_apply_enable (struct stree *des) {
 /* check module status or return value to find out if it's appropriate for the task */
     if (current->status & status_enabled) {
 #ifdef DEBUG
-     notice (4, "not spawning thread thread for %s; exiting (already up)", des->key);
+     notice (4, "%s; exiting (is up)", des->key);
 #endif
 
      mod_post_examine(des->key);
@@ -2787,6 +2820,7 @@ void mod_apply_enable (struct stree *des) {
 #ifdef DEBUG
   notice (4, "not spawning thread thread for %s; exiting (end of function)", des->key);
 #endif
+  mod_post_examine(des->key);
 
   mod_workthreads_dec(des->key);
   return;
@@ -2813,7 +2847,7 @@ void mod_apply_disable (struct stree *des) {
     if (mod_disable_users (current)) {
 //     eprintf (stderr, "cannot disable %s yet...", des->key);
 
-     mod_post_examine(des->key);
+     mod_pre_examine(des->key);
 
      mod_workthreads_dec(des->key);
      return;
@@ -2887,6 +2921,8 @@ void mod_apply_disable (struct stree *des) {
    emutex_unlock (&ml_tb_current_mutex);
 
    if (any_ok) {
+    mod_post_examine(des->key);
+
     mod_workthreads_dec(des->key);
     return;
    }
@@ -2896,6 +2932,8 @@ void mod_apply_disable (struct stree *des) {
 
    mod_mark (des->key, MARK_BROKEN);
   }
+
+  mod_post_examine(des->key);
 
   mod_workthreads_dec(des->key);
   return;
@@ -2942,6 +2980,10 @@ char mod_examine_group (char *groupname) {
 
  if (members) {
   int task = mod_gettask (groupname);
+
+  if ((task & einit_module_enable) && mod_isprovided (groupname)) {
+   mod_post_examine (groupname);
+  }
 
 //  notice (2, "group %s: examining members", groupname);
 
@@ -3238,7 +3280,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
      }
     }
 
-    mod_defer_notice (lm, d);
+//    mod_defer_notice (lm, d);
 
     free (d);
    } else {
@@ -3274,7 +3316,7 @@ void mod_examine (char *service) {
   mod_post_examine(service);
 
   return;
- } else if (mod_isdeferred (service)) {
+ }/* else if (mod_isdeferred (service)) {
   mod_pre_examine(service);
 
 #ifdef DEBUG
@@ -3284,7 +3326,7 @@ void mod_examine (char *service) {
   if (mod_workthreads_dec(service)) return;
 
   return;
- } else if (mod_examine_group (service)) {
+ }*/ else if (mod_examine_group (service)) {
 #ifdef DEBUG
   notice (2, "service %s: group examination complete", service);
 #endif
@@ -3609,14 +3651,19 @@ void mod_commit_and_wait (char **en, char **dis) {
 
   e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
 #elif defined(DARWIN)
+#if 0
   struct timespec ts;
   struct timeval tv;
 
   gettimeofday (&tv, NULL);
 
-  ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
+  ts.tv_sec = tv.tv_sec + 4; /* max wait before re-evaluate */
 
   e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
+#else
+//  notice (2, "warning: un-timed lock.");
+  e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
+#endif
 #else
   notice (2, "warning: un-timed lock.");
   e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
