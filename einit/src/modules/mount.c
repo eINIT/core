@@ -1372,6 +1372,10 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
 }
 
 int mount_fsck (char *fs, char *device, struct einit_event *status) {
+ if (mount_fastboot) {
+  return status_ok;
+ }
+
  if (mount_fsck_template) {
   char tmp[BUFFERSIZE];
   status->string = "filesystem might be dirty; running fsck";
