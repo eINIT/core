@@ -42,6 +42,7 @@
      same for specifying both "logger" and "daemon-metalog". the latter form
      may be more reliable (since daemon-metalog is always unambiguous, whereas
      "metalog" is not). -->
+
 <!--  <prefer>
    <displaymanager s="daemon-kdm:daemon-entrance" />
    <logger s="daemon-metalog:daemon-syslog-ng:daemon-syslog" />
