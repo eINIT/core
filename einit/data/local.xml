@@ -15,7 +15,8 @@
 <!-- you may or may not need something like the following: -->
   <kernel>
    <modules>
-    <arbitrary s="evdev" />
+<!-- these are fairly arbitrary, <X s="" /> creates kern-X to load modules and stuffs them into the 'modules' group for you -->
+    <mouse s="evdev" />
    </modules>
   </kernel>
 
@@ -27,14 +28,27 @@
  </configuration>
 
  <services>
-  <prefer>
+<!-- the following are a couple of examples for 'prefer lines'.
+     using that technique, you can prefer some modules for services that are
+     provided by multiple services, however, you may find it easier to just use
+     a module's RID instead of a multi-call service name. for example, instead
+     of specifying "displaymanager" when all you want is gdm, you may instead
+     want to specify "daemon-gdm" in your modes.xml, whereever you keep your
+     modes. alternatively, you can specify 'inderect' preferences on multi-
+     service module(-sets). an example of this would be the 'logger' service,
+     which is (among others) provided by daemon-metalog, which also provides
+     'metalog' as a service. by specifying both 'logger' and 'metalog', you're
+     indirectly adding a prefer-line like <logger s="daemon-metalog" />.
+     same for specifying both "logger" and "daemon-metalog". the latter form
+     may be more reliable (since daemon-metalog is always unambiguous, whereas
+     "metalog" is not). -->
+<!--  <prefer>
    <displaymanager s="daemon-kdm:daemon-entrance" />
    <logger s="daemon-metalog:daemon-syslog-ng:daemon-syslog" />
    <kern-alsa s="shell-kern-audio-alsa" />
-<!-- use /etc/modules.autoload.d/kernel-2.6 to autoload modules: -->
    <kern-arbitrary s="shell-kern-module-autoload.d" />
    <antivirus s="shell-clamd" />
-  </prefer>
+  </prefer> -->
 
   <alias>
 <!-- service groups -->
