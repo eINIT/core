@@ -191,27 +191,27 @@ char mod_is_requested (char *service) {
 
  if (!service) return 0;
 
- emutex_lock (&ml_tb_current_mutex);
+ emutex_lock (&ml_tb_target_state_mutex);
 
- if (current.enable) {
-  for (i = 0; current.enable[i]; i++) {
-   if (strmatch (service, current.enable[i])) {
+ if (target_state.enable) {
+  for (i = 0; target_state.enable[i]; i++) {
+   if (strmatch (service, target_state.enable[i])) {
     rv = 1;
     break;
    }
   }
  }
 
- if (!rv && current.disable) {
-  for (i = 0; current.disable[i]; i++) {
-   if (strmatch (service, current.disable[i])) {
+ if (!rv && target_state.disable) {
+  for (i = 0; target_state.disable[i]; i++) {
+   if (strmatch (service, target_state.disable[i])) {
     rv = 1;
     break;
    }
   }
  }
 
- emutex_unlock (&ml_tb_current_mutex);
+ emutex_unlock (&ml_tb_target_state_mutex);
 
  return rv;
 }
@@ -764,8 +764,12 @@ void mod_sort_service_list_items_by_preference() {
       lm[mpz] = tm;
 
       mpz++;
+
+      goto step2_skip;
      }
     }
+
+    step2_skip:;
    }
 
    /* step 3: make sure to prefer anything that has a requested RID */
@@ -3524,10 +3528,10 @@ void mod_commit_and_wait (char **en, char **dis) {
  sched_yield();
 #endif
 
- mod_sort_service_list_items_by_preference();
-
  pthread_cond_broadcast (&ml_cond_service_update);
 #endif
+
+ mod_sort_service_list_items_by_preference();
 
 #ifdef DEBUG
  eputs ("flattening...\n", stderr);
