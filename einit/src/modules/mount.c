@@ -896,18 +896,36 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
   if (strcmp (s->key, "/")) {
    char *tmpx = NULL;
-   char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;
    uint32_t r = 0;
+   char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;
+   struct device_data *tmpdd = s->value;
 
-   for (; tmp_split[r]; r++);
-
+   for (r = 0; tmp_split[r]; r++);
    for (r--; tmp_split[r] && r > 0; r--) {
     tmp_split[r] = 0;
     char *comb = set2str ('-', (const char **)tmp_split);
 
     tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
    }
+
+/* same game, but with the device and not the mountpoint */
+   if (tmpdd->device) {
+    tmp_split = (tmpdd->device[0] == '/') ? str2set ('/', tmpdd->device+1) : str2set ('/', tmpdd->device);
+
+    for (r = 0; tmp_split[r]; r++);
+    for (r--; tmp_split[r] && r > 0; r--) {
+     tmp_split[r] = 0;
+     char *comb = set2str ('-', (const char **)tmp_split);
+
+     if (!inset ((const void **)tmpxt, comb, SET_TYPE_STRING)) {
+      tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
+     }
+    }
+   }
+
    tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+
+
    if (tmpxt) {
     tmpx = set2str ('|', (const char **)tmpxt);
    }

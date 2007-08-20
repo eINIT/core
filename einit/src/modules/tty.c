@@ -87,7 +87,7 @@ int einit_tty_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * einit_tty_provides[] = {"tty", NULL};
-char * einit_tty_requires[] = {"mount-system", NULL};
+char * einit_tty_after[] = {"^(fs-(dev|proc|sys)|udev)$", NULL};
 const struct smodule einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -97,8 +97,8 @@ const struct smodule einit_tty_self = {
  .rid       = "einit-tty",
  .si        = {
   .provides = einit_tty_provides,
-  .requires = einit_tty_requires,
-  .after    = NULL,
+  .requires = NULL,
+  .after    = einit_tty_after,
   .before   = NULL
  },
  .configure = einit_tty_configure
