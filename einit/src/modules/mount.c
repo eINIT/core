@@ -153,6 +153,7 @@ pthread_mutex_t
 struct stree *mount_filesystems = NULL;
 
 char *generate_legacy_mtab ();
+char mount_fastboot = 0;
 
 /* macro definitions */
 #define update_real_mtab() {\
@@ -1439,6 +1440,10 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
   mp->fs = estrdup (fs);
  }
 
+ if (strmatch (mountpoint, "/")) {
+  unlink ("/fastboot"); /* make sure to remove the fastboot-file if we successfully mount / */
+ }
+
  return status_ok;
 }
 
@@ -1670,6 +1675,7 @@ int einit_mount_recover_module (struct lmodule *lm) {
 }
 
 int einit_mount_configure (struct lmodule *r) {
+ struct stat st;
  module_init (r);
 
  thismodule->scanmodules = einit_mount_scanmodules;
@@ -1690,6 +1696,10 @@ int einit_mount_configure (struct lmodule *r) {
  function_register ("fs-umount-generic-any", 1, (void *)mount_do_umount_generic);
 
  einit_mount_update_configuration();
+
+ if (!stat ("/fastboot", &st)) {
+  mount_fastboot = 1;
+ }
 
  return 0;
 }
