@@ -6,7 +6,8 @@
   after="fqdn"
   pid="/var/run/dbus.pid"
   prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
-  command="dbus-daemon --system --nofork"
+  command="pexec-options dont-close-stdin; dbus-daemon --system --fork"
   cleanup="if [ -S /var/run/dbus/system_bus_socket ]; then rm -f /var/run/dbus/system_bus_socket; fi"
+  options="forking"
   restart="yes" />
 </einit>
