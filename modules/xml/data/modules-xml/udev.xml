@@ -3,6 +3,7 @@
   name="Mount ( /dev )"
   provides="udev"
   requires="fs-sys:fs-proc"
+  before="^fs-dev"
   enable="pexec-options dont-close-stdin ;
 	echo 'feedback|notice|Using udev to manage /dev' ;
 	udev=$(cat /proc/mounts | grep udev) ;
