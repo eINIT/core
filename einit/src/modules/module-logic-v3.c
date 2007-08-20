@@ -112,6 +112,8 @@ char mod_isdeferred (char *service);
 
 int einit_module_logic_list_revision = 0;
 
+char mod_reorder (struct lmodule *, int, char *, char);
+
 #ifdef DEBUG
 FILE *debugfile = NULL;
 #endif
@@ -2681,6 +2683,17 @@ char mod_disable_users (struct lmodule *module) {
   }
 
   return retval;
+ } else {
+  char hd = 0;
+  if (module && module->si && module->si->provides) {
+   uint32_t r = 0;
+
+   for (; module->si->provides[r]; r++) {
+    if (mod_reorder (module, einit_module_disable, module->si->provides[r], 1)) hd = 2;
+   }
+  }
+
+  return hd;
  }
 
  return 0;
@@ -3210,6 +3223,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
   for (; before[i]; i++) {
    char **d;
+
    if (dolock) emutex_lock (&ml_tb_current_mutex);
    if ((d = inset_pattern ((const void **)(task & einit_module_enable ? current.enable : current.disable), before[i], SET_TYPE_STRING)) && (d = strsetdel (d, service))) {
     uint32_t y = 0;
@@ -3235,7 +3249,10 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
+//      notice (1, "%s is before: %s", service, d[y]);
+
       mod_defer_until (d[y], service);
+//      mod_defer_until (service, d[y]);
 
       xbefore = (char **)setadd ((void **)xbefore, (void *)d[y], SET_TYPE_STRING);
      }
@@ -3320,7 +3337,7 @@ void mod_examine (char *service) {
   mod_post_examine(service);
 
   return;
- }/* else if (mod_isdeferred (service)) {
+ } else if (mod_isdeferred (service)) {
   mod_pre_examine(service);
 
 #ifdef DEBUG
@@ -3330,7 +3347,7 @@ void mod_examine (char *service) {
   if (mod_workthreads_dec(service)) return;
 
   return;
- }*/ else if (mod_examine_group (service)) {
+ } else if (mod_examine_group (service)) {
 #ifdef DEBUG
   notice (2, "service %s: group examination complete", service);
 #endif
@@ -3372,6 +3389,7 @@ void mod_examine (char *service) {
 
     return;
     }
+
    if (task & einit_module_enable) {
     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
      mod_apply_enable(v);

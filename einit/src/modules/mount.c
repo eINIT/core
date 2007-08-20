@@ -902,7 +902,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
     for (; tcnode->arbattrs[n]; n+=2) {
      if (strmatch (tcnode->arbattrs[n], "after") && tcnode->arbattrs[n+1][0]) {
-	  after = str2set (':', tcnode->arbattrs[n+1]);
+      after = str2set (':', tcnode->arbattrs[n+1]);
      }
     }
 
@@ -927,16 +927,23 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
 
 /* same game, but with the device and not the mountpoint */
-   if (tmpdd->device) {
-    tmp_split = (tmpdd->device[0] == '/') ? str2set ('/', tmpdd->device+1) : str2set ('/', tmpdd->device);
+   struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
+   if (t) {
+    struct mountpoint_data *mp = t->value; 
+    enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
+    if (!((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING))) {
+     if (tmpdd->device) {
+      tmp_split = (tmpdd->device[0] == '/') ? str2set ('/', tmpdd->device+1) : str2set ('/', tmpdd->device);
 
-    for (r = 0; tmp_split[r]; r++);
-    for (r--; tmp_split[r] && r > 0; r--) {
-     tmp_split[r] = 0;
-     char *comb = set2str ('-', (const char **)tmp_split);
+      for (r = 0; tmp_split[r]; r++);
+      for (r--; tmp_split[r] && r > 0; r--) {
+       tmp_split[r] = 0;
+       char *comb = set2str ('-', (const char **)tmp_split);
 
-     if (!inset ((const void **)tmpxt, comb, SET_TYPE_STRING)) {
-      tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
+       if (!inset ((const void **)tmpxt, comb, SET_TYPE_STRING)) {
+        tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
+       }
+      }
      }
     }
    }
@@ -1689,24 +1696,25 @@ int einit_mount_recover (struct lmodule *lm) {
  return status_ok;
 }
 
-int einit_mount_recover_module (struct lmodule *lm) {
+int einit_mount_recover_module (struct lmodule *module) {
  struct device_data *dd = NULL;
  struct stree *t;
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
- if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, lm->param, tree_find_first))) {
+ if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, module->param, tree_find_first))) {
   dd = t->value;
  }
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
 
  if (dd) {
-  struct stree *st = streefind (dd->mountpoints, lm->param, tree_find_first);
+  struct stree *st = streefind (dd->mountpoints, module->param, tree_find_first);
 
   if (st) {
    struct mountpoint_data *mp = st->value;
 
    if (mp && (mp->status & device_status_mounted)) {
-    mod (einit_module_enable, lm, NULL);
+    notice (3, "recovering %s", module->module->rid);
+    mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
    }
   }
  }

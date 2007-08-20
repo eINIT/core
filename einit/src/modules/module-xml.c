@@ -219,6 +219,7 @@ int einit_module_xml_recover_shell (struct lmodule *module) {
   pid_t pid = parse_integer (pidfile);
 
   if (pidexists (pid)) {
+   notice (3, "recovering %s", module->module->rid);
    mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
   }
 
@@ -238,6 +239,7 @@ int einit_module_xml_recover_daemon (struct lmodule *module) {
   pid_t pid = parse_integer (pidfile);
 
   if (pidexists (pid)) {
+   notice (3, "recovering %s", module->module->rid);
    mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
   }
 
