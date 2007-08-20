@@ -893,8 +893,26 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   char **after = NULL;
   char **requires = NULL;
   struct lmodule *lm = ml;
+  struct cfgnode *tcnode = cfg_findnode ("configuration-storage-fstab-node-order", 0, NULL);
+  char special_order = 0;
 
-  if (strcmp (s->key, "/")) {
+  while (tcnode) {
+   if (strmatch (s->key, tcnode->idattr)) {
+    uint32_t n = 0;
+
+    for (; tcnode->arbattrs[n]; n+=2) {
+     if (strmatch (tcnode->arbattrs[n], "after") && tcnode->arbattrs[n+1][0]) {
+	  after = str2set (':', tcnode->arbattrs[n+1]);
+     }
+    }
+
+    special_order = 1;
+   }
+
+   tcnode = cfg_findnode ("configuration-storage-fstab-node-order", 0, tcnode);
+  }
+
+  if (!special_order) {
    char *tmpx = NULL;
    uint32_t r = 0;
    char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;

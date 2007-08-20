@@ -22,6 +22,10 @@
 
     <node mountpoint="/sys" device="sysfs" fs="sysfs" />
     <node mountpoint="/proc" device="proc" fs="proc" />
+
+    <node-order id="/sys" after="" />
+    <node-order id="/proc" after="" />
+    <node-order id="/" after="^(fs-(proc|sys|dev)|udev)$" />
    </fstab>
   </storage>
  </configuration>
