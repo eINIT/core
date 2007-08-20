@@ -187,6 +187,24 @@ struct lmodule *mod_find_by_rid (char *rid) {
  return rv ? rv->value : NULL;
 }
 
+char mod_is_unambiguous (char *service) {
+ char rv = 0;
+
+ if (!service) return 0;
+
+ if (module_logics_service_list) { 
+  struct stree *t = streefind (module_logics_service_list, service, tree_find_first);
+
+  if (t) {
+   struct lmodule **lm = t->value;
+
+   if (lm[0] && !lm[1]) rv = 1;
+  }
+ }
+
+ return rv;
+}
+
 char mod_is_requested (char *service) {
  char rv = 0;
  uint32_t i = 0;
@@ -759,7 +777,9 @@ void mod_sort_service_list_items_by_preference() {
    mpz = 0;
    for (mpy = 0; lm[mpy]; mpy++) {
     if (lm[mpy]->si && lm[mpy]->si->provides) for (mpx = 0; lm[mpy]->si->provides[mpx]; mpx++) {
-     if (mod_is_requested(lm[mpy]->si->provides[mpx])) {
+     if (mod_is_requested(lm[mpy]->si->provides[mpx]) && mod_is_unambiguous(lm[mpy]->si->provides[mpx])) {
+//      notice (2, "reordering %s to %s (indirect)", cur->key, lm[mpy]->si->provides[mpx]);
+
       struct lmodule *tm = lm[mpy];
 
       lm[mpy] = lm[mpz];
