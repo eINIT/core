@@ -168,8 +168,6 @@ int unmount_everything() {
   fclose (fp);
  }
 
- if (positives) sleep (5);
-
  return errors;
 }
 
@@ -229,8 +227,6 @@ int main(int argc, char **argv) {
    "###############################################################################\n");
 
  lastrites();
-
- sleep (5);
 
  switch (action) {
   case 'k':
