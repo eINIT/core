@@ -1655,7 +1655,7 @@ char mod_workthreads_dec (char *service) {
 
  emutex_unlock (&ml_workthreads_mutex);
 
-#if 0
+#if 1
  emutex_lock (&ml_workthreads_mutex);
  if (ml_workthreads) { // try to make this thread useful if there's still some others
   emutex_lock (&ml_tb_current_mutex);
@@ -1686,14 +1686,13 @@ char mod_workthreads_dec (char *service) {
 
  if (donext) {
   for (i = 0; donext[i]; i++) {
-//   if (!is
    char *drx = estrdup (donext[i]);
 
-//   if (donext[i+1]) {
+   if (donext[i+1]) {
     pthread_t th;
     ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, drx);
-//   } else
-//    workthread_examine (drx);
+   } else
+    workthread_examine (drx);
   }
   free (donext);
  }
