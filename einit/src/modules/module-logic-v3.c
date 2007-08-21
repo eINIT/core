@@ -114,8 +114,9 @@ int einit_module_logic_list_revision = 0;
 
 char mod_reorder (struct lmodule *, int, char *, char);
 
-#ifdef DEBUG
-FILE *debugfile = NULL;
+#ifndef DEBUG
+#define debugfile stderr
+// FILE *debugfile = stderr;
 #endif
 
 struct module_taskblock
@@ -1593,7 +1594,7 @@ int32_t ignorereorderfor = 0;
 
 char **lm_workthreads_list = NULL;
 
-#ifdef DEBUG
+#ifndef DEBUG
 void print_defer_lists() {
  emutex_lock(&ml_chain_examine);
 
@@ -1636,14 +1637,14 @@ void print_defer_lists() {
 #endif
 
 char mod_workthreads_dec (char *service) {
-#ifdef DEBUG
+#ifndef DEBUG
  eprintf (debugfile, "\ndone with: %s\n", service);
 #endif
 
  char **donext = NULL;
  uint32_t i = 0;
 
-#ifdef DEBUG
+#ifndef DEBUG
  print_defer_lists();
 #endif
 
@@ -1655,7 +1656,7 @@ char mod_workthreads_dec (char *service) {
 
  emutex_unlock (&ml_workthreads_mutex);
 
-#if 1
+#if 0
  emutex_lock (&ml_workthreads_mutex);
  if (ml_workthreads) { // try to make this thread useful if there's still some others
   emutex_lock (&ml_tb_current_mutex);
