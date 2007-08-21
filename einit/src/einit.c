@@ -376,7 +376,7 @@ int main(int argc, char **argv) {
     if (!debug) if (commandpipe_in) fclose (commandpipe_in);
     if (commandpipe_out) fclose (commandpipe_out);
 
-    if ((coremode & einit_mode_sandbox) && WIFEXITED(rstatus)) {
+    if (WIFEXITED(rstatus)) {
      fprintf (stderr, "eINIT has quit properly.\n");
 
      if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_halt) {
