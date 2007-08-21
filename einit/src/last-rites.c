@@ -133,12 +133,17 @@ int unmount_everything() {
      }
 
      if (fs_spec && strstr (fs_file, "/old") == fs_file) {
+      fprintf (stderr, "still mounted: %s\n", fs_file);
+
       if (umount (fs_file) && umount2(fs_file, MNT_FORCE)) {
        fprintf (stderr, "couldn't unmount %s\n", fs_file);
        errors++;
 
-       if (fs_spec && fs_file && fs_vfstype && (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, ""))) {
-        fprintf (stderr, "couldn't remount %s either\n", fs_file);
+       if (fs_spec && fs_file && fs_vfstype) {
+	    if (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, ""))) {
+         fprintf (stderr, "couldn't remount %s either\n", fs_file);
+        } else
+         fprintf (stderr, "remounted %s read-only\n", fs_file);
        }
 
 #ifdef MNT_EXPIRE
@@ -146,11 +151,11 @@ int unmount_everything() {
        umount2(fs_file, MNT_EXPIRE);
        umount2(fs_file, MNT_EXPIRE);
 #endif
-      }
-     } else {
-      positives = 1;
-      fprintf (stderr, "unmounted %s\n", fs_file);
-	 }
+      } else {
+       positives = 1;
+       fprintf (stderr, "unmounted %s\n", fs_file);
+	  }
+     }
 
      errno = 0;
     }
