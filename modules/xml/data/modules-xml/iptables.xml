@@ -1,0 +1,16 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-iptables"
+  name="Ipv4 Linux firewall, NAT and packet mangling tools"
+  provides="iptables"
+  requires="network"
+  prepare="touch ${configuration_services_iptables_rules_file} ;
+           chmod 0600 ${configuration_services_iptables_rules_file}"
+  enable="/sbin/iptables-restore ${configuration_services_iptables_options} &lt; ${configuration_services_iptables_rules_file}"
+  disable="if [ &quot;${configuration_services_iptables_save_on_stop}&quot; = &quot;yes&quot; ];then
+		   		 /sbin/iptables-save ${configuration_services_iptables_options} &gt; ${configuration_services_iptables_rules_file} ;
+		   else 
+				/dev/true ;
+		   fi"
+  need-files="/sbin/iptables-save:/sbin/iptables-restore"
+  variables="configuration-services-iptables/.*"/>
+</einit>
