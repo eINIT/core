@@ -204,9 +204,11 @@ int lastrites () {
  if (mount ("lastrites-proc", LRTMPPATH "/proc", "proc", 0, "")) perror ("couldn't mount another 'proc' at '" LRTMPPATH "/proc'");
 // if (mount ("/dev", LRTMPPATH "/dev", "", MS_BIND, "")) perror ("couldn't bind another 'dev'");
 
+ if (chdir (LRTMPPATH "/old")) perror ("chdir failed");
+
  if (pivot_root (LRTMPPATH, LRTMPPATH "/old")) perror ("couldn't pivot_root('" LRTMPPATH "', '" LRTMPPATH "/old')");
 
- chdir ("/");
+ if (chdir ("/")) perror ("chdir failed");
 
  char max_retries = 20;
 
@@ -223,8 +225,8 @@ int lastrites () {
 int main(int argc, char **argv) {
  char action = argv[1] ? argv[1][0] : '?';
 
- fprintf (stderr, "\e[2J >> eINIT " EINIT_VERSION_LITERAL " | last rites <<\n"
-   "###############################################################################\n");
+ fprintf (stderr, "\e[2J >> eINIT " EINIT_VERSION_LITERAL " | last rites (%i) <<\n"
+   "###############################################################################\n", getpid());
 
  lastrites();
 
