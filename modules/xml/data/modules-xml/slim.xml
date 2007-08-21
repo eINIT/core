@@ -2,7 +2,8 @@
  <shell id="shell-slim"
   name="Simple LogIn Manager (slim)"
   provides="x11:displaymanager"
-  requires="network-minimal:mount-critical"
+  requires="mount-critical:fqdn"
+  after="^net-lo$"
   enable="slim -d"
   disable="killall -9 slim"
   restart="yes" />
