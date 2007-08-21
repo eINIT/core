@@ -85,6 +85,7 @@ module_register(module_linux_sysconf_self);
 char linux_reboot_use_kexec = 0;
 char *linux_reboot_use_kexec_command = NULL;
 
+#if 0
 void linux_reboot () {
  if (linux_reboot_use_kexec) {
   eputs ("rebooting via kexec\n", stderr);
@@ -110,6 +111,19 @@ void linux_power_off () {
  notice (1, "\naight, who hasn't eaten his cereals this morning?");
  exit (EXIT_FAILURE);
 }
+#else
+void linux_reboot () {
+  if (linux_reboot_use_kexec) {
+   exit (einit_exit_status_last_rites_kexec);
+  }
+
+  exit (einit_exit_status_last_rites_reboot);
+}
+
+void linux_power_off () {
+ exit (einit_exit_status_last_rites_halt);
+}
+#endif
 
 void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
  if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
