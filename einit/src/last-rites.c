@@ -221,6 +221,8 @@ int main(int argc, char **argv) {
 
  lastrites();
 
+ sleep (5);
+
  switch (action) {
   case 'k':
 
