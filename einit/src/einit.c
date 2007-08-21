@@ -379,12 +379,14 @@ int main(int argc, char **argv) {
     if (WIFEXITED(rstatus)) {
      fprintf (stderr, "eINIT has quit properly.\n");
 
-     if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_halt) {
-      execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "h", NULL);
-     } else if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_reboot) {
-      execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "r", NULL);
-     } else if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_kexec) {
-      execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "k", NULL);
+     if (!(coremode & einit_mode_sandbox)) {
+      if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_halt) {
+       execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "h", NULL);
+      } else if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_reboot) {
+       execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "r", NULL);
+      } else if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_kexec) {
+       execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "k", NULL);
+      }
      }
 
      exit (EXIT_SUCCESS);

@@ -886,9 +886,9 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
   }
  }
 
-/* if (enableansicodes) {
-  eputs ("\e[2J\e[0;0H", stdout);
- }*/
+ if (enableansicodes) {
+  eputs ("\e[2J\e[0;0H eINIT " EINIT_VERSION_LITERAL " | booting...\n", stdout);
+ }
 
 /* register our default output feedback-stream */
  struct feedback_stream st;
@@ -911,6 +911,13 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
 #else
  st.width = 80;
 #endif
+
+ uint32_t r = 0;
+ for (; r < st.width; r++) {
+  fputs ("#", stdout);
+ }
+
+ fputs ("\n\n", stdout);
 
  emutex_lock (&feedback_textual_streams_mutex);
  feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
