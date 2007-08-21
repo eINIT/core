@@ -1655,27 +1655,6 @@ char mod_workthreads_dec (char *service) {
 
  emutex_unlock (&ml_workthreads_mutex);
 
-/* int task = mod_gettask (service);
-
- if (task & einit_module_enable) {
-  if (mod_isprovided (service)) {
-   mod_decrease_deferred_by (service);
-  }
- }*/
-/* force re-examination of deferred services */
-
-// if (mod_isprovided (service))
-//  mod_post_examine (service);
-// else
-//  mod_pre_examine (service);
-
-// mod_decrease_deferred_by (service);
-
-// eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
-// fflush (stderr);
-
-/* make sure to start stuff that we may have forgotten */
-
 #if 0
  emutex_lock (&ml_workthreads_mutex);
  if (ml_workthreads) { // try to make this thread useful if there's still some others
@@ -1683,21 +1662,23 @@ char mod_workthreads_dec (char *service) {
 
   if (current.enable) {
    for (i = 0; current.enable[i]; i++) {
-    if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i]) && strcmp (service, current.enable[i]) && !inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING) && !mod_isdeferred (current.enable[i]))
+    if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i]) && strcmp (service, current.enable[i]) && !inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING) && !mod_isdeferred (current.enable[i]) && !mod_group_get_data(current.enable[i]))
      donext = (char **)setadd ((void **)donext, current.enable[i], SET_TYPE_STRING);
 //    else
 //     notice (4, "might spawn thread for %s now, but someone's already doing that");
    }
   }
 
+#if 0
   if (current.disable) {
    for (i = 0; current.disable[i]; i++) {
-    if (mod_isprovided (current.disable[i]) && !mod_isbroken(current.disable[i]) && strcmp (service, current.disable[i]) && !inset ((const void **)lm_workthreads_list, current.disable[i], SET_TYPE_STRING) && !mod_isdeferred (current.disable[i]))
+    if (mod_isprovided (current.disable[i]) && !mod_isbroken(current.disable[i]) && strcmp (service, current.disable[i]) && !inset ((const void **)lm_workthreads_list, current.disable[i], SET_TYPE_STRING) && !mod_isdeferred (current.disable[i]) && !mod_group_get_data(current.disable[i]))
      donext = (char **)setadd ((void **)donext, current.disable[i], SET_TYPE_STRING);
 //    else
 //     notice (4, "might spawn thread for %s now, but someone's already doing that");
    }
   }
+#endif
 
   emutex_unlock (&ml_tb_current_mutex);
  }
@@ -2056,20 +2037,23 @@ char mod_isdeferred (char *service) {
  struct stree *r =
   streefind (module_logics_chain_examine_reverse, service, tree_find_first);
 
-#if 0
  if (r) {
   char **deferrees = r->value;
   uint32_t i = 0;
 
   for (; deferrees[i]; i++) {
-   eprintf (stderr, " -- %s: deferred by %s\n", service, deferrees[i]);
+   if (!mod_haschanged(deferrees[i])) {
+    ret++;
+//    eprintf (debugfile, " -- %s: deferred by %s\n", service, deferrees[i]);
+   }/* else {
+    eprintf (debugfile, " -- %s: invalid defer: %s\n", service, deferrees[i]);
+   }*/
   }
  }
-#endif
 
  emutex_unlock(&ml_chain_examine);
 
- ret = r != NULL;
+ ret = (ret > 0);
 
  return ret;
 }
@@ -2184,6 +2168,8 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      continue;
     }
 
+    mod_defer_until(service, gd->members[i]);
+
     if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
 
@@ -2192,8 +2178,6 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      } else {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
      }
-
-     mod_defer_until(service, gd->members[i]);
 
      free (service);
      return 1;
@@ -2229,6 +2213,8 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      continue;
     }
 
+    mod_defer_until(service, gd->members[i]);
+
     if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
 
@@ -2241,8 +2227,6 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      } else {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
      }
-
-     mod_defer_until(service, gd->members[i]);
     }
    }
 
