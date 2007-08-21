@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef LINUX
 
 int main(int argc, char **argv) {
- char action = argv[1][0] : '?';
+ char action = argv[1] ? argv[1][0] : '?';
 
  switch (action) {
   case 'h':
