@@ -874,7 +874,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  if (!shellcmd) return status_failed;
 
  char *pidfile = NULL;
- if (shellcmd->pidfile && (pidfile = readfile (shellcmd->pidfile))) {
+ if ((shellcmd->options & daemon_did_recovery) && shellcmd->pidfile && (pidfile = readfile (shellcmd->pidfile))) {
   pid_t pid = parse_integer (pidfile);
 
   free (pidfile);

@@ -57,7 +57,8 @@ enum pexec_options {
 };
 
 enum daemon_options {
- daemon_model_forking = 0x0001
+ daemon_model_forking = 0x0001,
+ daemon_did_recovery  = 0x0002
 };
 
 /* structures */

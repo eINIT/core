@@ -210,6 +210,7 @@ int einit_module_xml_daemon_cleanup_after_module (struct lmodule *this) {
 }
 
 int einit_module_xml_recover_shell (struct lmodule *module) {
+#if 0
  struct mexecinfo *data = module->param;
  char *pidfile;
 
@@ -226,6 +227,7 @@ int einit_module_xml_recover_shell (struct lmodule *module) {
   free (pidfile);
  }
 
+#endif
  return status_ok;
 }
 
@@ -240,6 +242,7 @@ int einit_module_xml_recover_daemon (struct lmodule *module) {
 
   if (pidexists (pid)) {
    notice (3, "recovering %s", module->module->rid);
+   ((struct dexecinfo *)module->param)->options |= daemon_did_recovery;
    mod (einit_module_enable | einit_module_ignore_dependencies, module, NULL);
   }
 
