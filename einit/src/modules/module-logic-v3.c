@@ -1704,7 +1704,7 @@ char mod_workthreads_dec (char *service) {
 // eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
 // fflush (stderr);
 
- if (!ml_workthreads && !donext) {
+ if (!ml_workthreads) {
   char spawn = 0;
   emutex_unlock (&ml_workthreads_mutex);
 
