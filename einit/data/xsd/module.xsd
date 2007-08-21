@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!--This is the virtual-modules xsd file -->
+  <!-- All credits to nikolavp for this file -->
+ 
+  <!--Starting with the definition of the attribute Group-->
+  <xs:attributeGroup name="module">
+	<xs:attribute name="name" type="xs:string" use="required" />
+	<xs:attribute name="provides" type="xs:string" use="required" />
+	<xs:attribute name="requires" use="required"/>
+	<xs:attribute name="need-files" use="required" />
+	<xs:attribute name="pid" />
+	<xs:attribute name="id" use="required" />
+	<xs:attribute name="restart" />
+	<xs:attribute name="variable" />
+	<xs:attribute name="options" />
+  </xs:attributeGroup>
+  <!-- Making 2 base types from the group (shell,daemon) -->
+ 
+  <xs:complexType name="daemon">
+	<xs:attributeGroup ref="module" />
+	<xs:attribute name="command" type="xs:string" />
+  </xs:complexType>
+ 
+  <xs:complexType name="shell">
+	<xs:attributeGroup ref="module" />
+		<xs:attribute name="enable" type="xs:string" />
+		<xs:attribute name="disable" type="xs:string" />
+  </xs:complexType>
+ 
+  <!-- Simple type for the prefix attribute,so we can force the module writer to use those as default -->
+  <xs:simpleType name="prefix">
+	<xs:restriction base="xs:string">
+	  <xs:enumeration value="services-virtual-module"/>
+	</xs:restriction>
+  </xs:simpleType>
+ 
+ 
+  <!--This is the base einit tag and there is a choice between daemon, shell children-->
+ 
+  <xs:element name="einit">
+	<xs:complexType>
+	  <xs:choice>
+		<xs:element name="daemon" type="daemon" />
+		<xs:element name="shell" type="shell" />
+	  </xs:choice>
+	  <xs:attribute name="prefix" use="required" type="prefix" />
+ 
+	</xs:complexType>
+  </xs:element>
+</xs:schema>
