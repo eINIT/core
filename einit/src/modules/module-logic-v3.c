@@ -114,7 +114,7 @@ int einit_module_logic_list_revision = 0;
 
 char mod_reorder (struct lmodule *, int, char *, char);
 
-#ifndef DEBUG
+#ifdef DEBUG
 #define debugfile stderr
 // FILE *debugfile = stderr;
 #endif
@@ -1594,7 +1594,7 @@ int32_t ignorereorderfor = 0;
 
 char **lm_workthreads_list = NULL;
 
-#ifndef DEBUG
+#ifdef DEBUG
 void print_defer_lists() {
  emutex_lock(&ml_chain_examine);
 
@@ -1637,14 +1637,14 @@ void print_defer_lists() {
 #endif
 
 char mod_workthreads_dec (char *service) {
-#ifndef DEBUG
+#ifdef DEBUG
  eprintf (debugfile, "\ndone with: %s\n", service);
 #endif
 
  char **donext = NULL;
  uint32_t i = 0;
 
-#ifndef DEBUG
+#ifdef DEBUG
  print_defer_lists();
 #endif
 

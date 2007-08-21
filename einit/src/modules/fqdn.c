@@ -55,8 +55,7 @@ int einit_fqdn_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * einit_fqdn_provides[] = {"fqdn", NULL};
-char * einit_fqdn_requires[] = {"mount-system", NULL};
-char * einit_fqdn_before[] = {"displaymanager", NULL};
+// char * einit_fqdn_requires[] = {"mount-system", NULL}; /* maybe fs-proc, if i ever implement it like that */
 
 struct einit_cfgvar_info
   einit_fqdn_cfgvar_hostname = {
@@ -80,9 +79,9 @@ const struct smodule einit_fqdn_self = {
  .rid       = "einit-fqdn",
  .si        = {
   .provides = einit_fqdn_provides,
-  .requires = einit_fqdn_requires,
+  .requires = NULL,
   .after    = NULL,
-  .before   = einit_fqdn_before
+  .before   = NULL
  },
  .configure = einit_fqdn_configure,
  .configuration = einit_fqdn_cfgvar_configuration
