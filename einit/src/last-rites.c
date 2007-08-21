@@ -136,15 +136,18 @@ int unmount_everything() {
       fprintf (stderr, "still mounted: %s\n", fs_file);
 
       if (umount (fs_file) && umount2(fs_file, MNT_FORCE)) {
-       fprintf (stderr, "couldn't unmount %s\n", fs_file);
+       perror (fs_file);
        errors++;
 
        if (fs_spec && fs_file && fs_vfstype) {
 	    if (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, "")) {
          fprintf (stderr, "couldn't remount %s either\n", fs_file);
+         perror (fs_file);
         } else
          fprintf (stderr, "remounted %s read-only\n", fs_file);
-       }
+       } else {
+        fprintf (stderr, "can't remount: bad data\n");
+	   }
 
 #ifdef MNT_EXPIRE
        /* can't hurt to try this one */
@@ -213,6 +216,7 @@ int lastrites () {
   max_retries--;
 
   kill_everything();
+  sync();
  } while (unmount_everything() && max_retries);
 
  return 0;
