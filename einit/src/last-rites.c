@@ -69,6 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int unmount_everything() {
  int errors = 0;
+ int positives = 0;
  FILE *fp;
 
  if ((fp = fopen ("/proc/mounts", "r"))) {
@@ -146,7 +147,10 @@ int unmount_everything() {
        umount2(fs_file, MNT_EXPIRE);
 #endif
       }
-     }
+     } else {
+      positives = 1;
+      fprintf (stderr, "unmounted %s\n", fs_file);
+	 }
 
      errno = 0;
     }
@@ -155,6 +159,8 @@ int unmount_everything() {
   done_parsing_file:
   fclose (fp);
  }
+
+ if (positives) sleep (5);
 
  return errors;
 }
