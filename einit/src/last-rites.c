@@ -196,9 +196,13 @@ int lastrites () {
 
  chdir ("/");
 
+ char max_retries = 20;
+
  do {
+  max_retries--;
+
   kill_everything();
- } while (unmount_everything());
+ } while (unmount_everything() && max_retries);
 
  return 0;
 }
