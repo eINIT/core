@@ -205,7 +205,8 @@ int network_scanmodules (struct lmodule *mainlist) {
      uint32_t y = 0;
 
 /* this was mount-critical before, but actually ALL network maintenance tools are in /sbin */
-     req = (char **)setadd ((void **)req, (void *)"mount-system", SET_TYPE_STRING);
+/* actually, only needs to be after=fs-proc... */
+//     req = (char **)setadd ((void **)req, (void *)"mount-system", SET_TYPE_STRING);
 
      for (; node->arbattrs[y]; y+=2) {
       if (strmatch (node->arbattrs[y], "bridge")) {
@@ -239,6 +240,9 @@ int network_scanmodules (struct lmodule *mainlist) {
        before = str2set (':', node->arbattrs[y+1]);
       }
      }
+
+// this should be all they need
+     after = (char **)setadd ((void **)after, (void *)"^fs-proc$", SET_TYPE_STRING);
 
      memset (newmodule, 0, sizeof (struct smodule));
 
