@@ -140,7 +140,7 @@ int unmount_everything() {
        errors++;
 
        if (fs_spec && fs_file && fs_vfstype) {
-	    if (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, ""))) {
+	    if (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, "")) {
          fprintf (stderr, "couldn't remount %s either\n", fs_file);
         } else
          fprintf (stderr, "remounted %s read-only\n", fs_file);
