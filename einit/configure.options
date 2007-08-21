@@ -18,7 +18,7 @@ export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
 export COREOBJECTS="einit module bitch utility event tree-linear set-lowmem ${ASMFUNCTIONS}"
-export UTILOBJECTS="einit-control bitch utility crash-handler tree-linear set-lowmem ${ASMFUNCTIONS}"
+export UTILOBJECTS="einit-control bitch utility crash-handler tree-linear set-lowmem ${ASMFUNCTIONS} last-rites"
 
 export BUILDCOMPONENTS="core util modules headers"
 

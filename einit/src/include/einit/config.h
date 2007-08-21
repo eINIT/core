@@ -88,6 +88,10 @@ struct cfgnode;
 
 #define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER EINIT_VERSION_LITERAL_SUFFIX
 
+#define einit_exit_status_last_rites_halt 42
+#define einit_exit_status_last_rites_reboot 43
+#define einit_exit_status_last_rites_kexec 44
+
 enum einit_cfg_node_options {
  einit_node_regular = 0x02,
  einit_node_mode = 0x08,
