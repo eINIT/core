@@ -800,13 +800,21 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  if (node)
   enableansicodes = node->flag;
 
- node = cfg_getnode ("configuration-feedback-visual-suppress-messages", NULL);
- if (node)
-  suppress_messages = node->flag;
+ if (einit_quietness < 1) {
+  node = cfg_getnode ("configuration-feedback-visual-suppress-messages", NULL);
+  if (node)
+   suppress_messages = node->flag;
+ } else {
+  suppress_messages = 1;
+ }
 
- node = cfg_getnode ("configuration-feedback-visual-suppress-status-notices", NULL);
- if (node)
-  suppress_status_notices = node->flag;
+ if (einit_quietness < 2) {
+  node = cfg_getnode ("configuration-feedback-visual-suppress-status-notices", NULL);
+  if (node)
+   suppress_status_notices = node->flag;
+ } else {
+  suppress_status_notices = 1;
+ }
 
  if ((node = cfg_getnode ("configuration-feedback-visual-shutdown-failure-timeout", NULL)))
   shutdownfailuretimeout = node->value;
@@ -919,9 +927,11 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
 
  fputs ("\n\n", stdout);
 
- emutex_lock (&feedback_textual_streams_mutex);
- feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
- emutex_unlock (&feedback_textual_streams_mutex);
+ if (einit_quietness < 3) {
+  emutex_lock (&feedback_textual_streams_mutex);
+  feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
+  emutex_unlock (&feedback_textual_streams_mutex);
+ }
 
  emutex_unlock (&thismodule->imutex);
  return status_ok;

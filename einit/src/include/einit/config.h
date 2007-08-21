@@ -141,6 +141,8 @@ char **einit_global_environment,
 
 int einit_have_feedback;
 
+char einit_quietness;
+
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
 

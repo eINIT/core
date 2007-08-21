@@ -73,6 +73,7 @@ struct stree *hconfiguration = NULL;
 struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
+char einit_quietness = 0;
 
 /* some more variables that are only of relevance to main() */
 char **einit_startup_mode_switches = NULL;
@@ -318,6 +319,12 @@ int main(int argc, char **argv) {
 /* specify mode-switches */
       einit_startup_mode_switches = (char **)setdup ((const void **)atom, SET_TYPE_STRING);
       einit_startup_mode_switches = (char **)strsetdel (einit_startup_mode_switches, (void *)"mode");
+     } else if (strmatch (atom[0], "stfu")) {
+      einit_quietness = 3;
+     } else if (strmatch (atom[0], "silent")) {
+      einit_quietness = 2;
+     } else if (strmatch (atom[0], "quiet")) {
+      einit_quietness = 1;
      }
 
      free (atom);
