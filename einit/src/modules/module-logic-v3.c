@@ -2764,6 +2764,7 @@ void mod_apply_enable (struct stree *des) {
      return;
     }
 
+//    if (mod_isprovided (des->key) || mod_haschanged(des->key) || mod_isbroken(des->key)) {
     if (mod_isprovided (des->key)) {
 #ifdef DEBUG
      notice (4, "%s; exiting (is already up)", des->key);
@@ -2853,7 +2854,7 @@ void mod_apply_disable (struct stree *des) {
    do {
     struct lmodule *current = lm[0];
 
-    if (!mod_isprovided (des->key)) {
+    if (!mod_isprovided (des->key) || mod_haschanged(des->key) || mod_isbroken(des->key)) {
 #ifndef DEBUG
      notice (4, "%s; exiting (not up yet)", des->key);
 #endif
@@ -3373,7 +3374,7 @@ void mod_examine (char *service) {
 #endif
 
   if (!mod_haschanged (service)) {
-   char retries = 1;
+   char retries = 5;
 
    do {
 //    mod_pre_examine(service);
@@ -3399,7 +3400,7 @@ void mod_examine (char *service) {
 
   recycle_wait:
   { /* try to save some threads */
-   char retries = 1;
+   char retries = 5;
 
    do {
 
