@@ -2068,11 +2068,13 @@ char mod_isdeferred (char *service) {
 
 // ret = (ret > 0);
 
+#ifdef DEBUG
  if (ret) {
   notice (1, "service %s is deferred! (%i)", service, ret);
  } else {
   notice (1, "service %s is NOT deferred! (%i)", service, ret);
  }
+#endif
 
  return ret;
 }
@@ -3430,7 +3432,9 @@ void mod_examine (char *service) {
       ((task & einit_module_enable) && mod_isprovided (service)) ||
       ((task & einit_module_disable) && !mod_isprovided (service))) {
 
+#ifdef DEBUG
    notice (1, "service %s is already in the right state", service);
+#endif
 
    mod_post_examine (service);
 
@@ -3438,10 +3442,12 @@ void mod_examine (char *service) {
 
    return;
   } else {
+#ifdef DEBUG
    notice (1, "service %s is not in the right state", service);
+#endif
   }
 
-#ifndef DEBUG
+#ifdef DEBUG
   notice (1, " ** examining service %s (%s).\n", service,
                    task & einit_module_enable ? "enable" : "disable");
 #endif
@@ -3458,11 +3464,15 @@ void mod_examine (char *service) {
 
    if (hd) {
     if (rdloops > 0) {
+#ifdef DEBUG
      notice (1, "service %s: jumping back", service);
+#endif
      rdloops--;
      goto recycle_wait;
     } else {
+#ifdef DEBUG
      notice (1, "service %s: giving up", service);
+#endif
 
      if (mod_workthreads_dec(service)) return;
 
@@ -3470,7 +3480,9 @@ void mod_examine (char *service) {
     }
    }
 
+#ifdef DEBUG
    notice (1, "service %s: spawning thread", service);
+#endif
 
    if (task & einit_module_enable) {
     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
