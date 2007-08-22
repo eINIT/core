@@ -512,7 +512,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   free (new);
   return status_failed;
  } else if (child == 0) {
-  char **exec_environment;
+  char **exec_environment = NULL;
 
   if (gid && (setgid (gid) == -1))
    perror ("setting gid");
@@ -523,10 +523,19 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   dup2 (2, 1);
 // we can safely play with the global environment here, since we fork()-ed earlier
-  exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
-  exec_environment = create_environment_f (exec_environment, variables);
+  if (einit_global_environment) {
+   if (local_environment)
+    exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
+   else
+    exec_environment = einit_global_environment;
+  } else
+   exec_environment = local_environment;
 
-  command = apply_envfile_f ((char *)command, (const char **)exec_environment);
+  if (variables)
+   exec_environment = create_environment_f (exec_environment, variables);
+
+  if (exec_environment)
+   command = apply_envfile_f ((char *)command, (const char **)exec_environment);
 
   cmdsetdup = str2set ('\0', command);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);

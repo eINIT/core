@@ -186,7 +186,7 @@ int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *d
   esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", dd->device, mountpoint, fs);
  }
 
- return pexec_v1 (command, NULL, NULL, status);
+ return pexec (command, NULL, NULL, 0, 0, NULL, NULL, NULL, status);
 }
 
 int linux_mount_do_mount_swap (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
