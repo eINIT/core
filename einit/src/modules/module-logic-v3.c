@@ -2751,22 +2751,22 @@ void mod_apply_enable (struct stree *des) {
      return;
     }
 
-    if (mod_enable_requirements (current)) {
-#ifdef DEBUG
-     notice (4, "not spawning thread thread for %s; exiting (not quite there yet)", des->key);
-#endif
-     mod_pre_examine(des->key);
-
-     mod_workthreads_dec(des->key);
-     return;
-    }
-
     if (mod_isprovided (des->key)) {
 #ifdef DEBUG
      notice (4, "%s; exiting (is already up)", des->key);
 #endif
 
      mod_post_examine(des->key);
+
+     mod_workthreads_dec(des->key);
+     return;
+    }
+
+    if (mod_enable_requirements (current)) {
+#ifdef DEBUG
+     notice (4, "not spawning thread thread for %s; exiting (not quite there yet)", des->key);
+#endif
+     mod_pre_examine(des->key);
 
      mod_workthreads_dec(des->key);
      return;
@@ -2844,6 +2844,17 @@ void mod_apply_disable (struct stree *des) {
 //     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
      any_ok = 1;
      goto skip_module;
+    }
+
+    if (!mod_isprovided (des->key)) {
+#ifdef DEBUG
+     notice (4, "%s; exiting (not up yet)", des->key);
+#endif
+
+     mod_post_examine(des->key);
+
+     mod_workthreads_dec(des->key);
+     return;
     }
 
     if (mod_disable_users (current)) {
