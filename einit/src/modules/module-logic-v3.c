@@ -2761,6 +2761,17 @@ void mod_apply_enable (struct stree *des) {
      return;
     }
 
+    if (mod_isprovided (des->key)) {
+#ifdef DEBUG
+     notice (4, "%s; exiting (is already up)", des->key);
+#endif
+
+     mod_post_examine(des->key);
+
+     mod_workthreads_dec(des->key);
+     return;
+    }
+
     mod (einit_module_enable, current, NULL);
 
 /* check module status or return value to find out if it's appropriate for the task */

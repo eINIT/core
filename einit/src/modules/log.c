@@ -271,7 +271,8 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
    .severity = 1
   };
 
-  eprintf (stderr, " ** %s\n", logentry);
+  if (einit_quietness < 2)
+   eprintf (stderr, " ** %s\n", logentry);
 
   emutex_lock(&logmutex);
   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
@@ -385,13 +386,14 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
   emutex_unlock(&logmutex);
 
-  if (ev->flag < 3) {
-   eprintf (stderr, " ** %s\n", ev->string);
-  } else if (ev->flag < 6) {
-   eprintf (stderr, " >> %s\n", ev->string);
+  if (einit_quietness < 2) {
+   if (ev->flag < 3) {
+    eprintf (stderr, " ** %s\n", ev->string);
+   } else if (ev->flag < 6) {
+    eprintf (stderr, " >> %s\n", ev->string);
+   }
+   fflush (stderr);
   }
-
-  fflush (stderr);
 
   if (log_notices_to_stderr) {
   }
