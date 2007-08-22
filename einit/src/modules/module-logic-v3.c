@@ -2614,6 +2614,7 @@ char mod_disable_users (struct lmodule *module) {
   char **need = NULL;
   char **t = service_usage_query_cr (service_get_services_that_use, module, NULL);
   char retval = 1;
+  char def = 0;
 
   if (t) {
    for (; t[i]; i++) {
@@ -2630,9 +2631,14 @@ char mod_disable_users (struct lmodule *module) {
 
      if (module->si && module->si->provides) {
       uint32_t y = 0;
-      for (; module->si->provides[y]; y++) {
-       mod_defer_until (module->si->provides[y], t[i]);
-      }
+      for (; module->si->provides[y]; y++)
+	   if (!mod_haschanged (t[i])) {
+        retval = 2;
+		def++;
+        need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+        mod_defer_until (module->si->provides[y], t[i]);
+        notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
+       }
      }
 
      emutex_unlock (&ml_tb_current_mutex);
@@ -2641,6 +2647,7 @@ char mod_disable_users (struct lmodule *module) {
 
    if (retval == 2) {
 //    mod_defer_notice (module, need);
+    notice (2, "%s: still need to disable %s!", module->module->rid, set2str(':', need));
 
     emutex_lock (&ml_tb_current_mutex);
 
@@ -2653,6 +2660,12 @@ char mod_disable_users (struct lmodule *module) {
     for (i = 0; need[i]; i++) {
      mod_workthread_create (need[i]);
     }
+   }
+
+   if (!def) {
+    notice (2, "%s: wtf!?", module->module->rid);
+
+	return 0;
    }
   }
 
@@ -2841,7 +2854,7 @@ void mod_apply_disable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if (!mod_isprovided (des->key)) {
-#ifdef DEBUG
+#ifndef DEBUG
      notice (4, "%s; exiting (not up yet)", des->key);
 #endif
 
@@ -2852,13 +2865,13 @@ void mod_apply_disable (struct stree *des) {
     }
 
     if ((current->status & status_disabled) || (current->status == status_idle)) {
-//     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
+     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
      any_ok = 1;
      goto skip_module;
     }
 
     if (mod_disable_users (current)) {
-//     eprintf (stderr, "cannot disable %s yet...", des->key);
+     eprintf (stderr, "cannot disable %s yet...", des->key);
 
      mod_pre_examine(des->key);
 
@@ -3007,7 +3020,7 @@ char mod_examine_group (char *groupname) {
   char group_failed = 0, group_ok = 0;
 
   for (; members[x]; x++) {
-   if (mod_haschanged (members[x]))
+   if (mod_haschanged (members[x]) || mod_isbroken (members[x]))
     changed++;
 
    if (mod_isbroken (members[x])) {
@@ -3059,7 +3072,7 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_service_list_mutex);
   }
 
-  if (changed >= mem) { // well, no matter what's gonna happen, if all members changed this changed too
+  if (changed >= mem) { // well, no matter what's gonna happen, if all members changed or are broken, then this changed too
    emutex_lock (&ml_changed_mutex);
    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
@@ -3360,7 +3373,7 @@ void mod_examine (char *service) {
 #endif
 
   if (!mod_haschanged (service)) {
-   char retries = 20;
+   char retries = 1;
 
    do {
 //    mod_pre_examine(service);
@@ -3368,6 +3381,8 @@ void mod_examine (char *service) {
     mod_wait_for_ping();
 
 	mod_examine_group (service);
+
+    retries--;
 
     if (retries <= 0) {
      mod_workthreads_dec(service);
@@ -3384,7 +3399,7 @@ void mod_examine (char *service) {
 
   recycle_wait:
   { /* try to save some threads */
-   char retries = 20;
+   char retries = 1;
 
    do {
 
@@ -3414,17 +3429,19 @@ void mod_examine (char *service) {
       ((task & einit_module_enable) && mod_isprovided (service)) ||
       ((task & einit_module_disable) && !mod_isprovided (service))) {
 
-//   notice (1, "service %s is already in the right state", service);
+   notice (1, "service %s is already in the right state", service);
 
    mod_post_examine (service);
 
    if (mod_workthreads_dec(service)) return;
 
    return;
+  } else {
+   notice (1, "service %s is not in the right state", service);
   }
 
-#ifdef DEBUG
-  eprintf (stderr, " ** examining service %s (%s).\n", service,
+#ifndef DEBUG
+  notice (1, " ** examining service %s (%s).\n", service,
                    task & einit_module_enable ? "enable" : "disable");
 #endif
 
@@ -3440,14 +3457,19 @@ void mod_examine (char *service) {
 
    if (hd) {
     if (rdloops > 0) {
+     notice (1, "service %s: jumping back", service);
      rdloops--;
      goto recycle_wait;
     } else {
+     notice (1, "service %s: giving up", service);
+
      if (mod_workthreads_dec(service)) return;
 
      return;
     }
    }
+
+   notice (1, "service %s: spawning thread", service);
 
    if (task & einit_module_enable) {
     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
