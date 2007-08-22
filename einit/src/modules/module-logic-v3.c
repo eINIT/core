@@ -709,6 +709,8 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
   evstaticdestroy (eex);
 
   if (amode->id) {
+//   notice (1, "emitting feedback notice");
+
    struct einit_event eema = evstaticinit (einit_core_plan_update);
    eema.string = estrdup(amode->id);
    eema.para   = (void *)amode;
@@ -717,13 +719,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    evstaticdestroy (eema);
   }
 
-  if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
-   struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
-   event_emit (&ee, einit_event_flag_broadcast);
-   evstaticdestroy (ee);
-  }
-
   if ((cmdt = cfg_getstring ("after-switch/ipc", amode))) {
+//   notice (1, "doing ipc");
+
    char **cmdts = str2set (':', cmdt);
    uint32_t in = 0;
 
@@ -733,6 +731,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
     }
     free (cmdts);
    }
+  }
+
+  if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
+//   notice (1, "emitting event");
+   struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   event_emit (&ee, einit_event_flag_broadcast);
+   evstaticdestroy (ee);
   }
  }
 
@@ -3032,7 +3037,14 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_service_list_mutex);
   }
 
-  if (!on || ((task & einit_module_disable) && (on == groupc))) {
+  if (changed >= mem) { // well, no matter what's gonna happen, if all members changed this changed too
+   emutex_lock (&ml_changed_mutex);
+   if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
+    changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
+   emutex_unlock (&ml_changed_mutex);
+  }
+
+  if (!on || ((task & einit_module_disable) && ((changed >= mem) || (on == groupc)))) {
    if (task & einit_module_disable) {
     emutex_lock (&ml_changed_mutex);
     if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
