@@ -114,6 +114,7 @@ int einit_module_logic_list_revision = 0;
 
 void mod_ping_all_threads();
 void mod_wait_for_ping();
+void mod_workthread_create(char *);
 
 char mod_reorder (struct lmodule *, int, char *, char);
 
@@ -181,13 +182,13 @@ void mod_wait_for_ping() {
 
  e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
 #elif defined(DARWIN)
-#if 0
+#if 1
  struct timespec ts;
  struct timeval tv;
 
  gettimeofday (&tv, NULL);
 
- ts.tv_sec = tv.tv_sec + 4; /* max wait before re-evaluate */
+ ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
 
  e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
 #else
@@ -1711,50 +1712,6 @@ char mod_workthreads_dec (char *service) {
 
  emutex_unlock (&ml_workthreads_mutex);
 
-#if 0
- emutex_lock (&ml_workthreads_mutex);
- if (ml_workthreads) { // try to make this thread useful if there's still some others
-  emutex_lock (&ml_tb_current_mutex);
-
-  if (current.enable) {
-   for (i = 0; current.enable[i]; i++) {
-    if (!mod_isprovided (current.enable[i]) && !mod_isbroken(current.enable[i]) && strcmp (service, current.enable[i]) && !inset ((const void **)lm_workthreads_list, current.enable[i], SET_TYPE_STRING) && !mod_isdeferred (current.enable[i]) && !mod_group_get_data(current.enable[i]))
-     donext = (char **)setadd ((void **)donext, current.enable[i], SET_TYPE_STRING);
-//    else
-//     notice (4, "might spawn thread for %s now, but someone's already doing that");
-   }
-  }
-
-#if 0
-  if (current.disable) {
-   for (i = 0; current.disable[i]; i++) {
-    if (mod_isprovided (current.disable[i]) && !mod_isbroken(current.disable[i]) && strcmp (service, current.disable[i]) && !inset ((const void **)lm_workthreads_list, current.disable[i], SET_TYPE_STRING) && !mod_isdeferred (current.disable[i]) && !mod_group_get_data(current.disable[i]))
-     donext = (char **)setadd ((void **)donext, current.disable[i], SET_TYPE_STRING);
-//    else
-//     notice (4, "might spawn thread for %s now, but someone's already doing that");
-   }
-  }
-#endif
-
-  emutex_unlock (&ml_tb_current_mutex);
- }
- emutex_unlock (&ml_workthreads_mutex);
-
- if (donext) {
-  for (i = 0; donext[i]; i++) {
-   char *drx = estrdup (donext[i]);
-
-//   if (donext[i+1]) {
-    pthread_t th;
-    ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, drx);
-//   } else
-//    workthread_examine (drx);
-  }
-  free (donext);
- }
-
-#endif
-
  emutex_lock (&ml_workthreads_mutex);
 
 // eprintf (stderr, "%s: workthreads: %i (%s)\n", service, ml_workthreads, set2str (' ', lm_workthreads_list));
@@ -1790,7 +1747,7 @@ char mod_workthreads_dec (char *service) {
   emutex_unlock (&ml_workthreads_mutex);
  }
 
-#if 0
+#if 1
  mod_ping_all_threads();
 #endif
 
@@ -1811,6 +1768,8 @@ char mod_workthreads_inc (char *service) {
   ml_workthreads++;
  }
  emutex_unlock (&ml_workthreads_mutex);
+
+ if (retval) mod_ping_all_threads ();
 
  return retval;
 }
@@ -2074,6 +2033,7 @@ void mod_decrease_deferred_by (char *service) {
 
 char mod_isdeferred (char *service) {
  char ret = 0;
+ char **deferrees = NULL;
 
  emutex_lock(&ml_chain_examine);
 
@@ -2081,22 +2041,33 @@ char mod_isdeferred (char *service) {
   streefind (module_logics_chain_examine_reverse, service, tree_find_first);
 
  if (r) {
-  char **deferrees = r->value;
-  uint32_t i = 0;
-
-  for (; deferrees[i]; i++) {
-   if (!mod_haschanged(deferrees[i])) {
-    ret++;
-//    eprintf (debugfile, " -- %s: deferred by %s\n", service, deferrees[i]);
-   }/* else {
-    eprintf (debugfile, " -- %s: invalid defer: %s\n", service, deferrees[i]);
-   }*/
-  }
+  deferrees = (char **)setdup ((const void **)r->value, SET_TYPE_STRING);
  }
 
  emutex_unlock(&ml_chain_examine);
 
- ret = (ret > 0);
+ if (deferrees) {
+  uint32_t i = 0;
+
+  for (; deferrees[i]; i++) {
+   if (!mod_haschanged(deferrees[i]) && !mod_isbroken(deferrees[i])) {
+    ret++;
+//    notice (1, " -- %s: deferred by %s\n", service, deferrees[i]);
+   }/* else {
+    notice (1, " -- %s: invalid defer: %s\n", service, deferrees[i]);
+   }*/
+
+   mod_workthread_create (deferrees[i]);
+  }
+ }
+
+// ret = (ret > 0);
+
+/* if (ret) {
+  notice (1, "service %s is deferred! (%i)", service, ret);
+ } else {
+  notice (1, "service %s is NOT deferred! (%i)", service, ret);
+ }*/
 
  return ret;
 }
@@ -2164,7 +2135,7 @@ void mod_queue_enable (char *service) {
 
  emutex_unlock (&ml_tb_current_mutex);
 
- mod_examine (service);
+ mod_workthread_create (service);
 }
 
 void mod_queue_disable (char *service) {
@@ -2175,7 +2146,7 @@ void mod_queue_disable (char *service) {
 
  emutex_unlock (&ml_tb_current_mutex);
 
- mod_examine (service);
+ mod_workthread_create (service);
 }
 
 signed char mod_flatten_current_tb_group(char *serv, char task) {
@@ -2441,6 +2412,7 @@ void mod_flatten_current_tb () {
 #endif
   }
 
+#if 0
   for (i = 0; current.enable[i]; i++) {
    struct stree *xn = streefind (module_logics_service_list, current.enable[i], tree_find_first);
 
@@ -2449,6 +2421,7 @@ void mod_flatten_current_tb () {
 //    mod_defer_notice (lm[0], NULL);
    }
   }
+#endif
  }
 
  repeat_disa:
@@ -2547,7 +2520,6 @@ void mod_examine_module (struct lmodule *module) {
    }
 
    for (; module->si->provides[i]; i++) {
-//    mod_examine (module->si->provides[i]);
     mod_post_examine (module->si->provides[i]);
    }
   }
@@ -2583,26 +2555,7 @@ void mod_post_examine (char *service) {
 //   if (pex[j+1]) {
 //   mod_remove_defer (pex[j]);
 
-    char *sc = estrdup (pex[j]);
-    pthread_t th;
-
-    if (!mod_have_workthread (pex[j])) {
-#ifdef DEBUG
-     eprintf (stderr, " XX spawning thread for %s\n", pex[j]);
-#endif
-
-     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
-      emutex_unlock (&ml_tb_current_mutex);
-      workthread_examine (sc);
-      emutex_lock (&ml_tb_current_mutex);
-     }
-	} else {
-#ifdef DEBUG
-     eprintf (stderr, " XX NOT spawning thread for %s\n", pex[j]);
-#endif
-	}
-//   } else
-//    mod_examine (pex[j]);
+    mod_workthread_create (pex[j]);
   }
 
   free (pex);
@@ -2635,32 +2588,17 @@ void mod_pre_examine (char *service) {
         ((task & einit_module_disable) && !mod_isprovided (pex[j]))) {
      done++;
 
-//     mod_decrease_deferred_by (pex[j]);
      mod_post_examine (pex[j]);
     }
 
-    if (pex[j+1]) {
-     char *sc = estrdup (pex[j]);
-     pthread_t th;
-
-#ifdef DEBUG
-     eprintf (stderr, " XX spawning thread for %s\n", pex[j]);
-#endif
-
-     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
-      emutex_unlock (&ml_tb_current_mutex);
-      workthread_examine (sc);
-      emutex_lock (&ml_tb_current_mutex);
-     }
-    } else
-     mod_examine (pex[j]);
+    mod_workthread_create (pex[j]);
    }
   }
   free (pex);
 
   if ((broken + done) == j) {
    mod_remove_defer (service);
-   mod_examine (service);
+   mod_workthread_create (service);
   }
  }
 }
@@ -2708,7 +2646,7 @@ char mod_disable_users (struct lmodule *module) {
     emutex_unlock (&ml_tb_current_mutex);
 
     for (i = 0; need[i]; i++) {
-     mod_examine (need[i]);
+     mod_workthread_create (need[i]);
     }
    }
   }
@@ -2776,7 +2714,7 @@ char mod_enable_requirements (struct lmodule *module) {
     emutex_unlock (&ml_tb_current_mutex);
 
     for (i = 0; need[i]; i++) {
-     mod_examine (need[i]);
+     mod_workthread_create (need[i]);
     }
    }
   }
@@ -3031,15 +2969,20 @@ char mod_examine_group (char *groupname) {
 
   if ((task & einit_module_enable) && mod_isprovided (groupname)) {
    mod_post_examine (groupname);
+
+   return 1;
   }
 
 //  notice (2, "group %s: examining members", groupname);
 
-  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0, off = 0, groupc = 0;
+  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0, changed = 0, groupc = 0;
   struct lmodule **providers = NULL;
   char group_failed = 0, group_ok = 0;
 
   for (; members[x]; x++) {
+   if (mod_haschanged (members[x]))
+    changed++;
+
    if (mod_isbroken (members[x])) {
     failed++;
    } else {
@@ -3090,6 +3033,13 @@ char mod_examine_group (char *groupname) {
   }
 
   if (!on || ((task & einit_module_disable) && (on == groupc))) {
+   if (task & einit_module_disable) {
+    emutex_lock (&ml_changed_mutex);
+    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
+     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
+    emutex_unlock (&ml_changed_mutex);
+   }
+
    if (mod_isprovided (groupname)) {
     emutex_lock (&ml_currently_provided_mutex);
     currently_provided = (char **)strsetdel ((char **)currently_provided, (char *)groupname);
@@ -3126,9 +3076,12 @@ char mod_examine_group (char *groupname) {
       group_ok = 1;
      }
     } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
-     if (on && ((on + off + failed) >= mem)) {
+     if (on && ((on + failed) >= mem)) {
       group_ok = 1;
-     }
+     } else if (changed >= mem) {
+	  if (on) group_ok = 1;
+	  else group_failed = 1;
+	 }
     } else if (options & MOD_PLAN_GROUP_SEQ_ALL) {
      if (on >= mem) {
       group_ok = 1;
@@ -3265,6 +3218,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
     }
 
     for (y = 0; d[y]; y++) {
+	 if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
@@ -3310,11 +3264,14 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
     }
 
     for (y = 0; d[y]; y++) {
+	 if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
            (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
       mod_defer_until (service, d[y]);
+	  
+	  notice (1, "%s goes after %s", service, d[y]);
 
       hd = 1;
      }
@@ -3333,9 +3290,16 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 }
 
 void mod_examine (char *service) {
- if (mod_workthreads_inc(service)) return;
+ char rdloops = 5;
+
+/* if (mod_haschanged (service)) {
+  mod_post_examine (service);
+  
+ }*/
 
  if (mod_isbroken (service)) {
+  is_broken:
+
   notice (2, "service %s marked as being broken", service);
 
   mod_workthreads_dec(service);
@@ -3356,31 +3320,66 @@ void mod_examine (char *service) {
   mod_post_examine(service);
 
   return;
- } else if (mod_isdeferred (service)) {
-  mod_pre_examine(service);
-
-#ifdef DEBUG
-  notice (2, "service %s still marked as deferred", service);
-#endif
-
-  if (mod_workthreads_dec(service)) return;
-
-  return;
  } else if (mod_examine_group (service)) {
 #ifdef DEBUG
   notice (2, "service %s: group examination complete", service);
 #endif
 
-  if (mod_workthreads_dec(service)) return;
+  if (!mod_haschanged (service)) {
+   do {
+//    mod_pre_examine(service);
+
+    mod_wait_for_ping();
+
+	mod_examine_group (service);
+
+/*    if (retries <= 0) {
+     mod_workthreads_dec(service);
+
+     return;
+	}*/
+   } while ((mod_isdeferred(service) || !mod_haschanged (service)) && !mod_isbroken (service));
+  }
+
+  mod_workthreads_dec(service);
 
   return;
+ } else if (mod_isdeferred (service)) {
+
+  recycle_wait:
+  { /* try to save some threads */
+   char retries = 3;
+
+   do {
+
+//    mod_pre_examine(service);
+
+    mod_wait_for_ping();
+
+    if (mod_isbroken (service) || mod_haschanged (service)) {
+     goto is_broken;
+	}
+
+	retries--;
+
+    if (retries <= 0) {
+     mod_workthreads_dec(service);
+
+     return;
+	}
+   } while (mod_isdeferred (service));
+  }
  }
+
  {
   int task = mod_gettask (service);
 
   if (!task ||
       ((task & einit_module_enable) && mod_isprovided (service)) ||
       ((task & einit_module_disable) && !mod_isprovided (service))) {
+
+//   notice (1, "service %s is already in the right state", service);
+
    mod_post_examine (service);
 
    if (mod_workthreads_dec(service)) return;
@@ -3404,10 +3403,15 @@ void mod_examine (char *service) {
    hd = mod_reorder (lm[0], task, service, 1);
 
    if (hd) {
-    if (mod_workthreads_dec(service)) return;
+    if (rdloops > 0) {
+     rdloops--;
+     goto recycle_wait;
+    } else {
+     if (mod_workthreads_dec(service)) return;
 
-    return;
+     return;
     }
+   }
 
    if (task & einit_module_enable) {
     if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
@@ -3432,12 +3436,21 @@ void mod_examine (char *service) {
 }
 
 void workthread_examine (char *service) {
-// if (mod_workthreads_inc(service)) return;
-
  mod_examine (service);
  free (service);
+}
 
-// mod_workthreads_dec(service);
+void mod_workthread_create(char *service) {
+ if (mod_haschanged (service) || mod_isbroken(service)) {
+  mod_post_examine (service);  
+ } else if (mod_workthreads_inc(service)) {
+  mod_ping_all_threads();
+ } else {
+  char *drx = estrdup (service);
+  pthread_t th;
+
+  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, drx);
+ }
 }
 
 void mod_spawn_batch(char **batch, int task) {
@@ -3503,6 +3516,7 @@ void mod_spawn_batch(char **batch, int task) {
 
  if (dospawn) {
   for (i = 0; dospawn[i]; i++) {
+#if 0
    char *sc = estrdup (dospawn[i]);
    pthread_t th;
 
@@ -3516,6 +3530,9 @@ void mod_spawn_batch(char **batch, int task) {
     emutex_lock (&ml_tb_current_mutex);
 //    notice (1, "couldn't create thread!!");
    }
+#else
+   mod_workthread_create (dospawn[i]);
+#endif
   }
 
   free (dospawn);
@@ -3554,7 +3571,7 @@ void mod_spawn_workthreads () {
 
 void mod_commit_and_wait (char **en, char **dis) {
  int remainder;
- uint32_t iterations = 0;
+// uint32_t iterations = 0;
 
 #if 0
  mod_ping_all_threads();
@@ -3577,7 +3594,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  while (1) {
   remainder = 0;
-  iterations++;
+//  iterations++;
 
 #ifdef DEBUG
   char **stillneed = NULL;
@@ -3659,6 +3676,7 @@ void mod_commit_and_wait (char **en, char **dis) {
   emutex_unlock (&ml_workthreads_mutex);
 #endif
 
+#if 0
   if (iterations >= MAX_ITERATIONS) {
    notice (1, "plan aborted (too many iterations: %i).\n", iterations);
 
@@ -3671,8 +3689,11 @@ void mod_commit_and_wait (char **en, char **dis) {
 //   pthread_mutex_destroy (&ml_service_update_mutex);
    return;
   }
+#endif
 
+//  notice (1, "waiting for ping...");
   mod_wait_for_ping();
+//  notice (1, "got ping...");
  };
 
 /* never reached */
