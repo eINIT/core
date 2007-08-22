@@ -2840,12 +2840,6 @@ void mod_apply_disable (struct stree *des) {
    do {
     struct lmodule *current = lm[0];
 
-    if ((current->status & status_disabled) || (current->status == status_idle)) {
-//     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
-     any_ok = 1;
-     goto skip_module;
-    }
-
     if (!mod_isprovided (des->key)) {
 #ifdef DEBUG
      notice (4, "%s; exiting (not up yet)", des->key);
@@ -2855,6 +2849,12 @@ void mod_apply_disable (struct stree *des) {
 
      mod_workthreads_dec(des->key);
      return;
+    }
+
+    if ((current->status & status_disabled) || (current->status == status_idle)) {
+//     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
+     any_ok = 1;
+     goto skip_module;
     }
 
     if (mod_disable_users (current)) {
@@ -3360,6 +3360,8 @@ void mod_examine (char *service) {
 #endif
 
   if (!mod_haschanged (service)) {
+   char retries = 20;
+
    do {
 //    mod_pre_examine(service);
 
@@ -3367,11 +3369,11 @@ void mod_examine (char *service) {
 
 	mod_examine_group (service);
 
-/*    if (retries <= 0) {
+    if (retries <= 0) {
      mod_workthreads_dec(service);
 
      return;
-	}*/
+	}
    } while ((mod_isdeferred(service) || !mod_haschanged (service)) && !mod_isbroken (service));
   }
 
@@ -3382,7 +3384,7 @@ void mod_examine (char *service) {
 
   recycle_wait:
   { /* try to save some threads */
-   char retries = 3;
+   char retries = 20;
 
    do {
 
