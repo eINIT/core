@@ -52,8 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sched.h>
 #endif
 
-#ifdef DEBUG
-#undef DEBUG
+#ifndef DEBUG
+#define DEBUG
 #endif
 
 #define MAX_ITERATIONS 1000
@@ -319,11 +319,6 @@ int einit_module_logic_v3_configure (struct lmodule *this) {
  event_listen (einit_event_subsystem_core, module_logic_einit_event_handler);
 
  function_register ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
-
-#ifdef DEBUG
- debugfile = fopen ("debug", "a");
- if (!debugfile) debugfile = stderr;
-#endif
 
  return 0;
 }
@@ -2057,10 +2052,15 @@ char mod_isdeferred (char *service) {
   for (; deferrees[i]; i++) {
    if (!mod_haschanged(deferrees[i]) && !mod_isbroken(deferrees[i])) {
     ret++;
-//    notice (1, " -- %s: deferred by %s\n", service, deferrees[i]);
-   }/* else {
+#ifdef DEBUG
+    notice (1, " -- %s: deferred by %s\n", service, deferrees[i]);
+#endif
+   }
+#ifdef DEBUG
+   else {
     notice (1, " -- %s: invalid defer: %s\n", service, deferrees[i]);
-   }*/
+   }
+#endif
 
    mod_workthread_create (deferrees[i]);
   }
@@ -2068,11 +2068,11 @@ char mod_isdeferred (char *service) {
 
 // ret = (ret > 0);
 
-/* if (ret) {
+ if (ret) {
   notice (1, "service %s is deferred! (%i)", service, ret);
  } else {
   notice (1, "service %s is NOT deferred! (%i)", service, ret);
- }*/
+ }
 
  return ret;
 }
