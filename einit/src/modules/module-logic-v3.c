@@ -112,6 +112,9 @@ char mod_isdeferred (char *service);
 
 int einit_module_logic_list_revision = 0;
 
+void mod_ping_all_threads();
+void mod_wait_for_ping();
+
 char mod_reorder (struct lmodule *, int, char *, char);
 
 #ifdef DEBUG
@@ -155,6 +158,58 @@ struct group_data {
 #define MARK_UNRESOLVED            0x02
 
 /* module header functions */
+
+void mod_ping_all_threads() {
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&ml_cond_service_update);
+}
+
+void mod_wait_for_ping() {
+ int e;
+
+ emutex_lock (&ml_service_update_mutex);
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+ struct timespec ts;
+
+ if (clock_gettime(CLOCK_REALTIME, &ts))
+  bitch (bitch_stdio, errno, "gettime failed!");
+
+ ts.tv_sec += 1; /* max wait before re-evaluate */
+
+ e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
+#elif defined(DARWIN)
+#if 0
+ struct timespec ts;
+ struct timeval tv;
+
+ gettimeofday (&tv, NULL);
+
+ ts.tv_sec = tv.tv_sec + 4; /* max wait before re-evaluate */
+
+ e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
+#else
+// notice (2, "warning: un-timed lock.");
+ e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
+#endif
+#else
+ notice (2, "warning: un-timed lock.");
+ e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
+#endif
+ emutex_unlock (&ml_service_update_mutex);
+
+ if (e
+#ifdef ETIMEDOUT
+     && (e != ETIMEDOUT)
+#endif
+    ) {
+  bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
+ }/* else {
+  notice (1, "woke up, checking plan.\n");
+ }*/
+}
 
 char mod_is_rid (char *rid) {
  char rv = 0;
@@ -1736,11 +1791,7 @@ char mod_workthreads_dec (char *service) {
  }
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
 
  return 0;
@@ -1849,11 +1900,7 @@ void mod_commits_dec () {
  }
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
 }
 
@@ -1940,11 +1987,7 @@ void mod_defer_until (char *service, char *after) {
 #endif
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
 }
 
@@ -2074,11 +2117,7 @@ char mod_mark (char *service, char task) {
 
  mod_remove_defer (service);
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 
  return retval;
 }
@@ -2488,11 +2527,7 @@ void mod_examine_module (struct lmodule *module) {
     changed_recently = (char **)setcombine_nc ((void **)changed_recently, (const void **)module->si->provides, SET_TYPE_STRING);
     emutex_unlock (&ml_changed_mutex);
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
-    sched_yield();
-#endif
-
-    pthread_cond_broadcast (&ml_cond_service_update);
+    mod_ping_all_threads();
    } else if ((module->status & status_disabled) || (module->status == status_idle)) {
 //    eputs ("service disabled...\n", stderr);
 
@@ -2508,11 +2543,7 @@ void mod_examine_module (struct lmodule *module) {
     changed_recently = (char **)setcombine_nc ((void **)changed_recently, (const void **)module->si->provides, SET_TYPE_STRING);
     emutex_unlock (&ml_changed_mutex);
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
-    sched_yield();
-#endif
-
-    pthread_cond_broadcast (&ml_cond_service_update);
+    mod_ping_all_threads();
    }
 
    for (; module->si->provides[i]; i++) {
@@ -2523,11 +2554,7 @@ void mod_examine_module (struct lmodule *module) {
  }
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
 }
 
@@ -3084,11 +3111,7 @@ char mod_examine_group (char *groupname) {
 
     post_examine = 1;
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
-    sched_yield();
-#endif
-
-    pthread_cond_broadcast (&ml_cond_service_update);
+    mod_ping_all_threads();
    }
 
    if (task & einit_module_disable) {
@@ -3148,11 +3171,7 @@ char mod_examine_group (char *groupname) {
 
     post_examine = 1;
 
-#ifdef _POSIX_PRIORITY_SCHEDULING
-    sched_yield();
-#endif
-
-    pthread_cond_broadcast (&ml_cond_service_update);
+    mod_ping_all_threads();
    } else if (group_failed) {
     notice (2, "marking group %s broken (group requirements failed)", groupname);
 
@@ -3180,11 +3199,7 @@ char mod_examine_group (char *groupname) {
  }
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
  return 1;
 }
@@ -3533,11 +3548,7 @@ void mod_spawn_workthreads () {
  emutex_unlock (&ml_tb_current_mutex);
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
 }
 
@@ -3546,11 +3557,7 @@ void mod_commit_and_wait (char **en, char **dis) {
  uint32_t iterations = 0;
 
 #if 0
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&ml_cond_service_update);
+ mod_ping_all_threads();
 #endif
 
  mod_sort_service_list_items_by_preference();
@@ -3665,46 +3672,7 @@ void mod_commit_and_wait (char **en, char **dis) {
    return;
   }
 
-  emutex_lock (&ml_service_update_mutex);
-  int e;
-#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
-  struct timespec ts;
-
-  if (clock_gettime(CLOCK_REALTIME, &ts))
-   bitch (bitch_stdio, errno, "gettime failed!");
-
-  ts.tv_sec += 1; /* max wait before re-evaluate */
-
-  e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
-#elif defined(DARWIN)
-#if 0
-  struct timespec ts;
-  struct timeval tv;
-
-  gettimeofday (&tv, NULL);
-
-  ts.tv_sec = tv.tv_sec + 4; /* max wait before re-evaluate */
-
-  e = pthread_cond_timedwait (&ml_cond_service_update, &ml_service_update_mutex, &ts);
-#else
-//  notice (2, "warning: un-timed lock.");
-  e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
-#endif
-#else
-  notice (2, "warning: un-timed lock.");
-  e = pthread_cond_wait (&ml_cond_service_update, &ml_service_update_mutex);
-#endif
-  emutex_unlock (&ml_service_update_mutex);
-
-  if (e
-#ifdef ETIMEDOUT
-      && (e != ETIMEDOUT)
-#endif
-     ) {
-   bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
-  }/* else {
-   notice (1, "woke up, checking plan.\n");
-  }*/
+  mod_wait_for_ping();
  };
 
 /* never reached */
