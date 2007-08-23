@@ -1,0 +1,5 @@
+<einit prefix="configuration-services">
+
+ <microcode-ctl dev="/dev/cpu/microcode" />
+
+</einit>
