@@ -81,6 +81,7 @@ int einit_feedback_visual_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * einit_feedback_visual_provides[] = {"feedback-textual", NULL};
+char * einit_feedback_visual_after[] = {"^(fs-dev|udev)$", NULL};
 const struct smodule einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -91,7 +92,7 @@ const struct smodule einit_feedback_visual_self = {
  .si        = {
   .provides = einit_feedback_visual_provides,
   .requires = NULL,
-  .after    = NULL,
+  .after    = einit_feedback_visual_after,
   .before   = NULL
  },
  .configure = einit_feedback_visual_configure
@@ -300,10 +301,13 @@ void feedback_textual_update_streams () {
   uint32_t y = 0;
   uint32_t hseq = feedback_streams[i]->last_seqid;
 
-  if (feedback_streams[i]->options & einit_ipc_output_ansi) while (feedback_streams[i]->erase_lines) {
-   feedback_streams[i]->erase_lines--;
+  if (feedback_streams[i]->options & einit_ipc_output_ansi) {
+   while (feedback_streams[i]->erase_lines) {
+    feedback_streams[i]->erase_lines--;
 
-   eputs ("\e[F\e[2K", feedback_streams[i]->stream);
+    eputs ("\e[F", feedback_streams[i]->stream);
+   }
+   eputs ("\e[2K", feedback_streams[i]->stream);
   } else
    eputs ("\r", feedback_streams[i]->stream);
 
