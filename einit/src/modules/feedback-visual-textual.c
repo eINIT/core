@@ -153,6 +153,7 @@ struct feedback_stream {
  enum einit_ipc_options options;
 
  uint32_t width;
+ uint32_t erase_lines;
 };
 
 struct feedback_textual_command **feedback_textual_commandQ = NULL;
@@ -299,10 +300,13 @@ void feedback_textual_update_streams () {
   uint32_t y = 0;
   uint32_t hseq = feedback_streams[i]->last_seqid;
 
-  if (feedback_streams[i]->options & einit_ipc_output_ansi)
+  if (feedback_streams[i]->options & einit_ipc_output_ansi) while (feedback_streams[i]->erase_lines) {
+   feedback_streams[i]->erase_lines--;
+
    eputs ("\e[F\e[2K", feedback_streams[i]->stream);
-  else
+  } else
    eputs ("\r", feedback_streams[i]->stream);
+
 
   for (y = 0; feedback_textual_modules[y]; y++) {
    if (feedback_textual_modules[y]->seqid > feedback_streams[i]->last_seqid) {
@@ -436,8 +440,10 @@ void feedback_textual_update_streams () {
 
   feedback_streams[i]->last_seqid = hseq;
 
-  if (feedback_streams[i]->options & einit_ipc_output_ansi)
+  if (feedback_streams[i]->options & einit_ipc_output_ansi) {
    eputs ("\n", feedback_streams[i]->stream);
+   feedback_streams[i]->erase_lines++;
+  }
 
   fflush (feedback_streams[i]->stream);
  }
@@ -593,6 +599,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
        st.seqid = command->seqid;
        st.last_seqid = st.seqid;
        st.width = 80;
+       st.erase_lines = 1;
 
        if (st.options & einit_ipc_output_ansi)
         eputs ("working on your request...\n", st.stream);
@@ -906,6 +913,7 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  st.options = enableansicodes ? einit_ipc_output_ansi : 0;
  st.seqid = 0;
  st.last_seqid = 0;
+ st.erase_lines = 1;
 
 #ifdef TIOCGWINSZ
  struct winsize size;

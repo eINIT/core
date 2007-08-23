@@ -2874,7 +2874,9 @@ void mod_apply_disable (struct stree *des) {
     }
 
     if (mod_disable_users (current)) {
+#ifdef DEBUG
      eprintf (stderr, "cannot disable %s yet...", des->key);
+#endif
 
      mod_pre_examine(des->key);
 

@@ -807,7 +807,7 @@ void *dexec_watcher (struct spidcb *spid) {
  struct lmodule *module = NULL;
  char stmp[BUFFERSIZE];
 
- notice (1, "trying to find out if we know about %i.", pid);
+// notice (1, "trying to find out if we know about %i.", pid);
 
  emutex_lock (&running_mutex);
  struct daemonst *cur = running;
