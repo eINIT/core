@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 
+
 #include <einit/config.h>
 #include <einit/utility.h>
 
@@ -57,8 +58,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dirent.h>
 #include <string.h>
 #include <sys/mount.h>
+#include <fcntl.h>
 
 #include <ctype.h>
+
+#include <linux/loop.h>
+#include <sys/ioctl.h>
 
 // let's be serious, /sbin is gonna exist
 #define LRTMPPATH "/sbin"
@@ -140,14 +145,14 @@ int unmount_everything() {
        errors++;
 
        if (fs_spec && fs_file && fs_vfstype) {
-	    if (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, "")) {
+        if (mount(fs_spec, fs_file, fs_vfstype, MS_REMOUNT | MS_RDONLY, "")) {
          fprintf (stderr, "couldn't remount %s either\n", fs_file);
          perror (fs_file);
         } else
          fprintf (stderr, "remounted %s read-only\n", fs_file);
        } else {
         fprintf (stderr, "can't remount: bad data\n");
-	   }
+       }
 
 #ifdef MNT_EXPIRE
        /* can't hurt to try this one */
@@ -191,7 +196,32 @@ void kill_everything() {
  }
 }
 
+void close_all_loops() {
+ DIR *d = opendir("/dev/loop");
+
+ if (d) {
+  struct dirent *e;
+
+  while ((e = readdir(d))) {
+   char filename [1024];
+   int loopfd;
+
+   snprintf (filename, 1024, "/dev/loop/%s", e->d_name);
+
+   if ((loopfd = open(filename, O_RDONLY)) >= 0) {
+    ioctl (loopfd, LOOP_CLR_FD, 0);
+
+    close (loopfd);
+   }
+  }
+
+  closedir (d);
+ }
+}
+
 int lastrites () {
+ unsigned char i;
+
  if (mount ("lastrites", LRTMPPATH, "tmpfs", 0, "")) {
   perror ("couldn't mount my tmpfs at " LRTMPPATH);
 //  return -1;
@@ -199,7 +229,18 @@ int lastrites () {
 
  if (mkdir (LRTMPPATH "/old", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/old'");
  if (mkdir (LRTMPPATH "/proc", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/proc'");
-// if (mkdir (LRTMPPATH "/dev", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/dev'");
+ if (mkdir (LRTMPPATH "/dev", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/dev'");
+ if (mkdir (LRTMPPATH "/dev/loop", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/dev/loop'");
+
+
+ for (i = 0; i < 9; i++) {
+  dev_t ldev = (((7) << 8) | (i));
+  char tmppath[256];
+  uint32_t ni = i;
+
+  snprintf (tmppath, 256, LRTMPPATH "/dev/loop/%i", ni);
+  mknod (tmppath, S_IFBLK, ldev);
+ }
 
  if (mount ("lastrites-proc", LRTMPPATH "/proc", "proc", 0, "")) perror ("couldn't mount another 'proc' at '" LRTMPPATH "/proc'");
 // if (mount ("/dev", LRTMPPATH "/dev", "", MS_BIND, "")) perror ("couldn't bind another 'dev'");
@@ -216,6 +257,8 @@ int lastrites () {
   max_retries--;
 
   kill_everything();
+  sync();
+  close_all_loops();
   sync();
  } while (unmount_everything() && max_retries);
 
