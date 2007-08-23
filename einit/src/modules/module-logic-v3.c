@@ -1754,6 +1754,15 @@ char mod_workthreads_dec (char *service) {
  return 0;
 }
 
+char mod_workthreads_dec_changed (char *service) {
+ emutex_lock (&ml_changed_mutex);
+ if (!inset ((const void **)changed_recently, (const void *)service, SET_TYPE_STRING))
+  changed_recently = (char **)setadd ((void **)changed_recently, (const void *)service, SET_TYPE_STRING);
+ emutex_unlock (&ml_changed_mutex);
+
+ return mod_workthreads_dec (service);
+}
+
 char mod_workthreads_inc (char *service) {
  char retval = 0;
  emutex_lock (&ml_workthreads_mutex);
@@ -2130,6 +2139,8 @@ char mod_haschanged(char *service) {
  ret = inset ((const void **)changed_recently, (const void *)service, SET_TYPE_STRING);
 
  emutex_unlock (&ml_changed_mutex);
+
+// if (!ret) ret = mod_isbroken (service);
 
  return ret;
 }
@@ -2762,7 +2773,7 @@ void mod_apply_enable (struct stree *des) {
 
      mod_post_examine(des->key);
 
-     mod_workthreads_dec(des->key);
+     mod_workthreads_dec_changed(des->key);
      return;
     }
 
@@ -2774,7 +2785,7 @@ void mod_apply_enable (struct stree *des) {
 
      mod_post_examine(des->key);
 
-     mod_workthreads_dec(des->key);
+     mod_workthreads_dec_changed(des->key);
      return;
     }
 
@@ -2798,7 +2809,7 @@ void mod_apply_enable (struct stree *des) {
 
      mod_post_examine(des->key);
 
-     mod_workthreads_dec(des->key);
+     mod_workthreads_dec_changed(des->key);
      return;
     }
 
@@ -2863,7 +2874,7 @@ void mod_apply_disable (struct stree *des) {
 
      mod_post_examine(des->key);
 
-     mod_workthreads_dec(des->key);
+     mod_workthreads_dec_changed(des->key);
      return;
     }
 
@@ -2954,7 +2965,7 @@ void mod_apply_disable (struct stree *des) {
    if (any_ok) {
     mod_post_examine(des->key);
 
-    mod_workthreads_dec(des->key);
+    mod_workthreads_dec_changed(des->key);
     return;
    }
 
@@ -3077,14 +3088,14 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_service_list_mutex);
   }
 
-  if (changed >= mem) { // well, no matter what's gonna happen, if all members changed or are broken, then this changed too
+  if ((changed + failed) >= mem) { // well, no matter what's gonna happen, if all members changed or are broken, then this changed too
    emutex_lock (&ml_changed_mutex);
    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
    emutex_unlock (&ml_changed_mutex);
   }
 
-  if (!on || ((task & einit_module_disable) && ((changed >= mem) || (on == groupc)))) {
+  if (!on || ((task & einit_module_disable) && (((changed + failed) >= mem) || (on == groupc)))) {
    if (task & einit_module_disable) {
     emutex_lock (&ml_changed_mutex);
     if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
@@ -3130,10 +3141,10 @@ char mod_examine_group (char *groupname) {
     } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
      if (on && ((on + failed) >= mem)) {
       group_ok = 1;
-     } else if (changed >= mem) {
-	  if (on) group_ok = 1;
-	  else group_failed = 1;
-	 }
+     } else if ((changed + failed) >= mem) {
+      if (on) group_ok = 1;
+      else group_failed = 1;
+     }
     } else if (options & MOD_PLAN_GROUP_SEQ_ALL) {
      if (on >= mem) {
       group_ok = 1;
@@ -3270,7 +3281,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
     }
 
     for (y = 0; d[y]; y++) {
-	 if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
+    if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
@@ -3385,7 +3396,7 @@ void mod_examine (char *service) {
 
     mod_wait_for_ping();
 
-	mod_examine_group (service);
+    mod_examine_group (service);
 
     retries--;
 
@@ -3393,7 +3404,7 @@ void mod_examine (char *service) {
      mod_workthreads_dec(service);
 
      return;
-	}
+    }
    } while ((mod_isdeferred(service) || !mod_haschanged (service)) && !mod_isbroken (service));
   }
 
@@ -3414,15 +3425,15 @@ void mod_examine (char *service) {
 
     if (mod_isbroken (service) || mod_haschanged (service)) {
      goto is_broken;
-	}
+    }
 
-	retries--;
+    retries--;
 
     if (retries <= 0) {
      mod_workthreads_dec(service);
 
      return;
-	}
+    }
    } while (mod_isdeferred (service));
   }
  }
@@ -3440,7 +3451,7 @@ void mod_examine (char *service) {
 
    mod_post_examine (service);
 
-   if (mod_workthreads_dec(service)) return;
+   mod_workthreads_dec_changed(service);
 
    return;
   } else {

@@ -582,6 +582,9 @@ int bridge_enable (struct interface_descriptor *id, struct einit_event *status) 
 }
 
 int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
+ if ((coremode & einit_mode_sandbox))
+  return status_ok;
+
  char *ip_flush = cfg_getstring ("configuration-command-ip-flush/with-env", NULL);
  if (ip_flush) {
   fbprintf (status, "flushing routes and addresses");
