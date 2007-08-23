@@ -144,6 +144,8 @@ char *mount_fsck_template = NULL;
 char *mount_mtab_file = NULL;
 enum mount_options mount_options;
 
+extern char shutting_down;
+
 pthread_mutex_t
  mount_fs_mutex = PTHREAD_MUTEX_INITIALIZER,
  mount_device_data_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -1541,7 +1543,7 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
  umount_fail:
 
- status->flag++;
+ if (!shutting_down) status->flag++;
  return status_failed;
 
  umount_ok:
@@ -1630,9 +1632,18 @@ int eumount (char *mountpoint, struct einit_event *status) {
    if (!(mp->status & device_status_mounted)) {
     update_real_mtab();
     return status_ok;
-   }
+   } else {
+    int r = mount_umount (mountpoint, dd, mp, status);
 
-   return mount_umount (mountpoint, dd, mp, status);
+    if (shutting_down) {
+	 if (r == status_failed) {
+      fbprintf (status, "we're shutting down, so there's not much to worry about if umounting failed: last-rites will fix it later");
+	  return status_ok;
+	 }
+	}
+
+    return r;
+   }
   } else {
    fbprintf (status, "can't find details for mountpoint \"%s\".", mountpoint);
 

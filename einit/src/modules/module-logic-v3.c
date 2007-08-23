@@ -81,7 +81,7 @@ module_register(einit_module_logic_v3_self);
 
 #endif
 
-char shutting_down = 0;
+extern char shutting_down;
 
 struct stree *module_logic_rid_list = NULL;
 
@@ -605,8 +605,9 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
  if (!plan) return 0;
 
- if (plan->options & plan_option_shutdown)
+ if (plan->options & plan_option_shutdown) {
   shutting_down = 1;
+ }
 
 // do some extra work if the plan was derived from a mode
  if (plan->mode) {

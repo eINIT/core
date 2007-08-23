@@ -56,6 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
 
+char shutting_down = 0;
+
 #ifndef NONIXENVIRON
 int main(int, char **, char **);
 #else
