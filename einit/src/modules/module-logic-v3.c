@@ -2983,7 +2983,7 @@ void mod_apply_disable (struct stree *des) {
 }
 
 int mod_gettask (char * service) {
- int task = einit_module_enable;
+ int task = shutting_down ? einit_module_disable : einit_module_enable;
 
  emutex_lock (&ml_tb_current_mutex);
  if (inset ((const void **)current.disable, service, SET_TYPE_STRING))
