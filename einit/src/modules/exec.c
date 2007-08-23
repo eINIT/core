@@ -95,6 +95,8 @@ char *envfilebase = "/etc/econf.d/";
 
 char *safe_environment[] = { "PATH=/bin:/sbin:/usr/bin:/usr/sbin", "TERM=dumb", NULL };
 
+extern char shutting_down;
+
 #ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
 struct execst * pexec_running = NULL;
 pthread_mutex_t pexec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -837,8 +839,9 @@ void *dexec_watcher (struct spidcb *spid) {
    esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: \"%s\" has died nicely, resuming.\n", rid);
    notice (8, stmp);
    emutex_unlock (&cur->mutex);
-  } else if (dx->restart) {
+  } else if (!shutting_down && (dx->restart)) {
 /* don't try to restart if the daemon died too swiftly */
+/* also make sure to NOT respawn shit when shutting down */
    emutex_unlock (&cur->mutex);
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb = evstaticinit(einit_feedback_module_status);
