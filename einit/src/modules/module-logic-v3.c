@@ -3334,7 +3334,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
            (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
       mod_defer_until (service, d[y]);
 	  
-	  notice (1, "%s goes after %s", service, d[y]);
+//	  notice (1, "%s goes after %s", service, d[y]);
 
       hd = 1;
      }
