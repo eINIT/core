@@ -2651,7 +2651,7 @@ char mod_disable_users (struct lmodule *module) {
 		def++;
         need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
         mod_defer_until (module->si->provides[y], t[i]);
-        notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
+//        notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
        }
      }
 
@@ -2677,10 +2677,11 @@ char mod_disable_users (struct lmodule *module) {
    }
 
    if (!def) {
-    notice (2, "%s: wtf!?", module->module->rid);
+//    notice (2, "%s: wtf!?", module->module->rid);
 
 	return 0;
    }
+
   }
 
   return retval;
@@ -2880,7 +2881,9 @@ void mod_apply_disable (struct stree *des) {
     }
 
     if ((current->status & status_disabled) || (current->status == status_idle)) {
+#ifdef DEBUG
      eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
+#endif
      any_ok = 1;
      goto skip_module;
     }
@@ -2906,6 +2909,17 @@ void mod_apply_disable (struct stree *des) {
      failures = 1;
     }
 
+    if (!mod_isprovided (des->key)) {
+#ifndef DEBUG
+     notice (4, "%s; exiting (done already)", des->key);
+#endif
+
+     mod_post_examine(des->key);
+
+     mod_workthreads_dec_changed(des->key);
+     return;
+    }
+
     skip_module:
 /* next module */
     emutex_lock (&ml_service_list_mutex);
@@ -2925,14 +2939,14 @@ void mod_apply_disable (struct stree *des) {
 
     emutex_unlock (&ml_service_list_mutex);
    } while (lm[0] != first);
-/* if we tried to enable something and end up here, it means we did a complete
+/* if we tried to disable something and end up here, it means we did a complete
    round-trip and nothing worked */
 
 /* zap stuff that's broken */
 /*   if (failures) {
     eputs ("ZAPP...?\n", stderr);
    }*/
-   if (shutting_down && failures) {
+   if (shutting_down && mod_isprovided (des->key)) {
     struct lmodule *first = lm[0];
 
     notice (1, "was forced to ZAPP! %s", des->key);
