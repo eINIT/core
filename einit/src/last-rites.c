@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/reboot.h>
 #include <syscall.h>
 #include <sys/syscall.h>
-#include <linux/unistd.h> 
+#include <linux/unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -70,6 +70,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if 0
 #define kill(a,b) 1
+#endif
+
+#ifdef __NR_pivot_root
+#define pivot_root(new_root,put_old) syscall(__NR_pivot_root, new_root, put_old)
 #endif
 
 int unmount_everything() {
