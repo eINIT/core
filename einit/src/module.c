@@ -160,7 +160,12 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   emutex_lock (&module->mutex);
 
  if (task & einit_module_custom) {
-  if (!custom_command) return status_failed;
+  if (!custom_command) {
+   if (!(task & einit_module_ignore_mutex))
+    emutex_unlock (&module->mutex);
+
+   return status_failed;
+  }
 
   goto skipdependencies;
  }
@@ -246,9 +251,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
     char zerror = module->status & status_failed ? 1 : 0;
     fb->string = "module ZAP'd.";
     module->status = status_idle;
-	module->status = status_disabled;
-	if (zerror)
-	 module->status |= status_failed;
+    module->status = status_disabled;
+    if (zerror)
+     module->status |= status_failed;
    } else if (module->custom) {
     module->status = module->custom(module->param, custom_command, fb);
    } else {
@@ -305,10 +310,11 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   service_usage_query(service_update, module, NULL);
 
-  if (!(task & einit_module_ignore_mutex))
-   emutex_unlock (&module->mutex);
-
  }
+
+ if (!(task & einit_module_ignore_mutex))
+  emutex_unlock (&module->mutex);
+
  return module->status;
 }
 

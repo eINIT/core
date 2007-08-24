@@ -138,12 +138,14 @@ pthread_mutex_t
   ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_currently_provided_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_rid_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+  ml_rid_list_mutex = PTHREAD_MUTEX_INITIALIZER,
+  ml_current_switches_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t
   ml_cond_service_update = PTHREAD_COND_INITIALIZER;
 
 char **unresolved_services = NULL;
 char **broken_services = NULL;
+char **current_switches = NULL;
 
 struct group_data {
  char **members;
@@ -582,7 +584,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
        }
       }
      }
-    } else if (!service_usage_query (service_is_provided, NULL, tmp[i])) {
+    } else if (!mod_isprovided (tmp[i])) {
      add = 0;
     }
 
@@ -874,6 +876,22 @@ void mod_sort_service_list_items_by_preference() {
 }
 
 int mod_switchmode (char *mode) {
+ char reject;
+
+ emutex_lock (&ml_current_switches_mutex);
+ if (inset ((const void **)current_switches, mode, SET_TYPE_STRING)) {
+  reject = 1;
+ } else {
+  reject = 0;
+  current_switches = (char **)setadd ((void **)current_switches, mode, SET_TYPE_STRING);
+ }
+ emutex_unlock (&ml_current_switches_mutex);
+
+ if (reject) {
+  notice (1, "rejecting mode-switch to %s: already switching to that mode", mode);
+  return 0;
+ }
+
  if (!mode) return -1;
  struct cfgnode *cur = cfg_findnode (mode, einit_node_mode, NULL);
  struct mloadplan *plan = NULL;
@@ -892,6 +910,10 @@ int mod_switchmode (char *mode) {
   /* make it so that the erase operation will not disturb the flow of the program */
   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
  }
+
+ emutex_lock (&ml_current_switches_mutex);
+ current_switches = strsetdel (current_switches, mode);
+ emutex_unlock (&ml_current_switches_mutex);
 
  return 0;
 }
@@ -1695,7 +1717,7 @@ void print_defer_lists() {
 
 char mod_workthreads_dec (char *service) {
 #ifdef DEBUG
- eprintf (debugfile, "\ndone with: %s\n", service);
+ notice (1, "\ndone with: %s\n", service);
 #endif
 
  char **donext = NULL;
@@ -2632,7 +2654,7 @@ char mod_disable_users (struct lmodule *module) {
 
   if (t) {
    for (; t[i]; i++) {
-    if (mod_isbroken (t[i])) {
+    if (mod_isbroken (t[i]) && !shutting_down) { /* the is-broken rule actually only holds true if we're not shutting down (if we are, then broken services get zapp'd, so they're still gone */
      if (need) free (need);
      return 0;
     } else {
@@ -2646,9 +2668,9 @@ char mod_disable_users (struct lmodule *module) {
      if (module->si && module->si->provides) {
       uint32_t y = 0;
       for (; module->si->provides[y]; y++)
-	   if (!mod_haschanged (t[i])) {
+       if (!mod_haschanged (t[i])) {
         retval = 2;
-		def++;
+        def++;
         need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
         mod_defer_until (module->si->provides[y], t[i]);
 //        notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
@@ -2661,7 +2683,7 @@ char mod_disable_users (struct lmodule *module) {
 
    if (retval == 2) {
 //    mod_defer_notice (module, need);
-    notice (2, "%s: still need to disable %s!", module->module->rid, set2str(':', need));
+//    notice (2, "%s: still need to disable %s!", module->module->rid, set2str(':', need));
 
     emutex_lock (&ml_tb_current_mutex);
 
@@ -2679,7 +2701,7 @@ char mod_disable_users (struct lmodule *module) {
    if (!def) {
 //    notice (2, "%s: wtf!?", module->module->rid);
 
-	return 0;
+    return 0;
    }
 
   }
@@ -2717,6 +2739,10 @@ char mod_enable_requirements (struct lmodule *module) {
 
 #ifdef DEBUG
      notice (4, "(%s) still need %s:", set2str(' ', (const char **)module->si->provides), module->si->requires[i]);
+
+     if (mod_haschanged (module->si->requires[i])) {
+      notice (4, "not provided but still has changed?");
+     }
 #endif
 
      if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
@@ -2804,7 +2830,7 @@ void mod_apply_enable (struct stree *des) {
     mod (einit_module_enable, current, NULL);
 
 /* check module status or return value to find out if it's appropriate for the task */
-    if (current->status & status_enabled) {
+    if ((current->status & status_enabled) || mod_isprovided (des->key)) {
 #ifdef DEBUG
      notice (4, "%s; exiting (is up)", des->key);
 #endif
@@ -2870,7 +2896,7 @@ void mod_apply_disable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if (!mod_isprovided (des->key) || mod_haschanged(des->key) || mod_isbroken(des->key)) {
-#ifndef DEBUG
+#ifdef DEBUG
      notice (4, "%s; exiting (not up yet)", des->key);
 #endif
 
@@ -2910,7 +2936,7 @@ void mod_apply_disable (struct stree *des) {
     }
 
     if (!mod_isprovided (des->key)) {
-#ifndef DEBUG
+#ifdef DEBUG
      notice (4, "%s; exiting (done already)", des->key);
 #endif
 
@@ -2928,7 +2954,9 @@ void mod_apply_disable (struct stree *des) {
     if ((lm[0] == current) && lm[1]) {
      ssize_t rx = 1;
 
+#ifdef DEBUG
      notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+#endif
 
      for (; lm[rx]; rx++) {
       lm[rx-1] = lm[rx];
@@ -2961,7 +2989,9 @@ void mod_apply_disable (struct stree *des) {
      if ((lm[0] == current) && lm[1]) {
       ssize_t rx = 1;
 
+#ifdef DEBUG
       notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
+#endif
 
       for (; lm[rx]; rx++) {
        lm[rx-1] = lm[rx];
@@ -3103,14 +3133,16 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_service_list_mutex);
   }
 
+#if 0
   if ((changed + failed) >= mem) { // well, no matter what's gonna happen, if all members changed or are broken, then this changed too
    emutex_lock (&ml_changed_mutex);
    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
    emutex_unlock (&ml_changed_mutex);
   }
+#endif
 
-  if (!on || ((task & einit_module_disable) && (((changed + failed) >= mem) || (on == groupc)))) {
+  if (!on || ((task & einit_module_disable) && ((changed >= mem) || (on == groupc)))) {
    if (task & einit_module_disable) {
     emutex_lock (&ml_changed_mutex);
     if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
@@ -3156,7 +3188,7 @@ char mod_examine_group (char *groupname) {
     } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
      if (on && ((on + failed) >= mem)) {
       group_ok = 1;
-     } else if ((changed + failed) >= mem) {
+     } else if (changed >= mem) {
       if (on) group_ok = 1;
       else group_failed = 1;
      }
@@ -3342,14 +3374,13 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
     }
 
     for (y = 0; d[y]; y++) {
-	 if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
+     if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
      struct group_data *gd = mod_group_get_data(d[y]);
 
      if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
            (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
       mod_defer_until (service, d[y]);
-	  
-//	  notice (1, "%s goes after %s", service, d[y]);
+//      notice (1, "%s goes after %s", service, d[y]);
 
       hd = 1;
      }

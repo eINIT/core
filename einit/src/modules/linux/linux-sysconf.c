@@ -114,14 +114,14 @@ void linux_power_off () {
 #else
 void linux_reboot () {
   if (linux_reboot_use_kexec) {
-   exit (einit_exit_status_last_rites_kexec);
+   _exit (einit_exit_status_last_rites_kexec);
   }
 
-  exit (einit_exit_status_last_rites_reboot);
+  _exit (einit_exit_status_last_rites_reboot);
 }
 
 void linux_power_off () {
- exit (einit_exit_status_last_rites_halt);
+ _exit (einit_exit_status_last_rites_halt);
 }
 #endif
 

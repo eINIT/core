@@ -442,14 +442,14 @@ void sched_ipc_event_handler(struct einit_event *ev) {
      } else {
       eputs ("scheduler: no (accepted) functions found, exiting\n", stderr);
 //      exit (EXIT_SUCCESS);
-      exit (einit_exit_status_last_rites_halt);
+      _exit (einit_exit_status_last_rites_halt);
      }
 
      if (shutdownfunctionsubnames) free (shutdownfunctionsubnames);
 
 // if we still live here, something's twocked
      eputs ("scheduler: failed, exiting\n", stderr);
-     exit (einit_exit_status_last_rites_halt);
+     _exit (einit_exit_status_last_rites_halt);
 //     exit (EXIT_FAILURE);
    }
   }

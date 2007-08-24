@@ -93,6 +93,7 @@ char have_syslog = 0;
 
 struct log_entry **logbuffer = NULL;
 pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t log_flushmutex = PTHREAD_MUTEX_INITIALIZER;
 char dolog = 1, log_notices_to_stderr = 1;
 
 void einit_log_feedback_event_handler(struct einit_event *);
@@ -100,97 +101,34 @@ void einit_log_ipc_event_handler(struct einit_event *);
 void einit_log_einit_event_handler(struct einit_event *);
 signed int logsort (struct log_entry *, struct log_entry *);
 
-void flush_log_buffer_to_file () {
- if (!logbuffer) return;
-
- struct log_entry **slog = NULL;
- uint32_t i = 0;
- struct cfgnode *lognode = cfg_getnode("configuration-system-log", NULL);
- FILE *logfile;
-
- dolog = !lognode || lognode->flag;
-
-if (dolog) {
-
-  if (!lognode || !lognode->svalue || !(logfile = fopen (lognode->svalue, "a")))
-   logfile = fopen ("/tmp/einit.log", "a");
-
-  if (logfile) {
-   emutex_lock(&logmutex);
-
-   if (logbuffer) {
-    slog = (struct log_entry **)setdup ((const void **)logbuffer, SET_NOALLOC);
-    setsort ((void **)logbuffer, 0, (signed int(*)(const void *, const void*))logsort);
-
-    for (; slog[i]; i++) {
-     char timebuffer[50];
-     char txbuffer[BUFFERSIZE];
-     struct tm *tb = localtime (&(slog[i]->timestamp));
-
-     *txbuffer = 0;
-
-     strftime (timebuffer, 50, "%c", tb);
-
-     if (slog[i]->message) {
-      strtrim (slog[i]->message);
-      esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) %s\n", timebuffer, slog[i]->seqid, slog[i]->severity, slog[i]->message);
-     } else
-      esprintf (txbuffer, BUFFERSIZE, "%s; (event-seq=+%i, priority+%i) <no message>\n", timebuffer, slog[i]->seqid, slog[i]->severity);
-
-     eputs (txbuffer, logfile);
-    }
-
-    for (i = 0; logbuffer[i]; i++) {
-     if (logbuffer[i]->message) free (logbuffer[i]->message);
-    }
-
-    free (logbuffer);
-    logbuffer = NULL;
-   }
-   emutex_unlock(&logmutex);
-
-   fclose (logfile);
-  } else {
-   bitch (bitch_stdio, errno, "could not open logfile for saving.");
-  }
- } else {
-  emutex_lock(&logmutex);
-  for (; logbuffer[i]; i++) {
-   if (logbuffer[i]->message) free (logbuffer[i]->message);
-  }
-
-  free (logbuffer);
-  logbuffer = NULL;
-
-  emutex_unlock(&logmutex);
- }
-}
-
 char flush_log_buffer_to_syslog() {
  if (!logbuffer) return 1;
 
  if (have_syslog) {
-  uint32_t i = 0;
+  if (pthread_mutex_trylock(&logmutex)) return -1;
 
-  emutex_lock(&logmutex);
-  if (logbuffer) {
-   for (; logbuffer[i]; i++) {
-    if (logbuffer[i]->message) {
-    syslog(((logbuffer[i]->severity <= 2) ? LOG_CRIT :
-           ((logbuffer[i]->severity <= 5) ? LOG_WARNING :
-           ((logbuffer[i]->severity <= 8) ? LOG_NOTICE :
+  while (logbuffer && logbuffer[0]) {
+
+   char *slmessage = logbuffer[0]->message;
+   char severity = logbuffer[0]->severity;
+
+   logbuffer = (struct log_entry **)setdel ((void **)logbuffer, (void *)logbuffer[0]);
+
+   pthread_mutex_unlock(&logmutex);
+
+   if (slmessage) {
+    syslog(((severity <= 2) ? LOG_CRIT :
+           ((severity <= 5) ? LOG_WARNING :
+           ((severity <= 8) ? LOG_NOTICE :
       LOG_DEBUG))),
-    logbuffer[i]->message);
-
-    free (logbuffer[i]->message);
-    }
+    slmessage);
+    free (slmessage);
    }
 
-   free (logbuffer);
-   logbuffer = NULL;
+   if (pthread_mutex_trylock(&logmutex)) return -1;
   }
 
-  emutex_unlock(&logmutex);
+  pthread_mutex_unlock(&logmutex);
 
   return 0;
  }
@@ -199,9 +137,11 @@ char flush_log_buffer_to_syslog() {
 }
 
 void flush_log_buffer() {
+ if (pthread_mutex_trylock (&log_flushmutex)) return;
+
  if (have_syslog) { flush_log_buffer_to_syslog(); }
 
- flush_log_buffer_to_file();
+ pthread_mutex_unlock (&log_flushmutex);
 }
 
 signed int logsort (struct log_entry *st1, struct log_entry *st2) {
@@ -225,9 +165,9 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_service_update) {
   if (ev->status & status_enabled) {
    if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "logger", SET_TYPE_STRING)) {
-    have_syslog = 1;
-
     openlog ("einit", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+    have_syslog = 1;
 
     flush_log_buffer();
    }
@@ -247,38 +187,46 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
 
   esprintf (logentry, BUFFERSIZE, "Now switching to mode \"%s\".", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
 
-  struct log_entry ne = {
-   .seqid = ev->seqid,
-   .timestamp = ev->timestamp,
-   .message = estrdup (logentry),
-   .severity = 0
-  };
+  if (!have_syslog) {
+   struct log_entry ne = {
+    .seqid = ev->seqid,
+    .timestamp = ev->timestamp,
+    .message = estrdup (logentry),
+    .severity = 0
+   };
 
-  emutex_lock(&logmutex);
-  logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
-  emutex_unlock(&logmutex);
+   pthread_mutex_lock(&logmutex);
+   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+   pthread_mutex_unlock(&logmutex);
+  } else {
+   syslog(LOG_NOTICE, logentry);
+  }
 
-  if (have_syslog) flush_log_buffer();
+//  if (have_syslog) flush_log_buffer();
  } else if (ev->type == einit_core_mode_switch_done) {
   char logentry[BUFFERSIZE];
 
   esprintf (logentry, BUFFERSIZE, "Mode \"%s\" is now in effect.", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
 
-  struct log_entry ne = {
-   .seqid = ev->seqid,
-   .timestamp = ev->timestamp,
-   .message = estrdup (logentry),
-   .severity = 1
-  };
+  if (!have_syslog) {
+   struct log_entry ne = {
+    .seqid = ev->seqid,
+    .timestamp = ev->timestamp,
+    .message = estrdup (logentry),
+    .severity = 1
+   };
 
-  if (einit_quietness < 2)
-   eprintf (stderr, " ** %s\n", logentry);
+   if (einit_quietness < 2)
+    eprintf (stderr, " ** %s\n", logentry);
 
-  emutex_lock(&logmutex);
-  logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
-  emutex_unlock(&logmutex);
+   pthread_mutex_lock(&logmutex);
+   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+   pthread_mutex_unlock(&logmutex);
+   flush_log_buffer();
+  } else {
+   syslog(LOG_NOTICE, logentry);
+  }
 
-  flush_log_buffer();
  }
 }
 
@@ -295,43 +243,52 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    else
     esprintf (logentry, BUFFERSIZE, ev->set[1] ? "unresolved services: %s\n" : "unresolved service: %s\n", tmp);
 
-   struct log_entry ne = {
-    .seqid = ev->seqid,
-    .timestamp = ev->timestamp,
-    .message = estrdup (logentry),
-    .severity = 0
-   };
+   if (!have_syslog) {
+    struct log_entry ne = {
+     .seqid = ev->seqid,
+     .timestamp = ev->timestamp,
+     .message = estrdup (logentry),
+     .severity = 0
+    };
 
-   emutex_lock(&logmutex);
-   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
-   emutex_unlock(&logmutex);
+    pthread_mutex_lock(&logmutex);
+    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+    pthread_mutex_unlock(&logmutex);
+   } else {
+    syslog(LOG_NOTICE, logentry);
+   }
 
-   if (have_syslog) flush_log_buffer();
+//   if (have_syslog) flush_log_buffer();
 
    free (tmp);
   }
  } else if (ev->type == einit_feedback_module_status) {
   if (ev->string) {
    char logentry[BUFFERSIZE];
-
    esprintf (logentry, BUFFERSIZE, "module \"%s\": %s",
              (ev->para && ((struct lmodule *)(ev->para))->module && ((struct lmodule *)(ev->para))->module->rid ? ((struct lmodule *)(ev->para))->module->rid : "unknown"), ev->string);
 
-   struct log_entry ne = {
-    .seqid = ev->seqid,
-    .timestamp = ev->timestamp,
-    .message = estrdup (logentry),
-    .severity = 0
-   };
+   if (!have_syslog) {
 
-   emutex_lock(&logmutex);
-   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
-   emutex_unlock(&logmutex);
+    struct log_entry ne = {
+     .seqid = ev->seqid,
+     .timestamp = ev->timestamp,
+     .message = estrdup (logentry),
+     .severity = 0
+    };
+
+    pthread_mutex_lock(&logmutex);
+    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+    pthread_mutex_unlock(&logmutex);
+
+   } else {
+    syslog(LOG_NOTICE, logentry);
+   }
   }
 
   if ((ev->status & status_ok) || (ev->task & einit_module_feedback_show)){
    char logentry[BUFFERSIZE];
-   char *action = "uknown";
+   char *action = "unknown";
 
    if ((ev->task & einit_module_feedback_show)) {
     if (ev->task & einit_module_enable) {
@@ -359,32 +316,44 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
               (ev->para && ((struct lmodule *)(ev->para))->module && ((struct lmodule *)(ev->para))->module->rid ? ((struct lmodule *)(ev->para))->module->rid : "unknown"), action);
    }
 
-   struct log_entry ne = {
-    .seqid = ev->seqid,
-    .timestamp = ev->timestamp,
-    .message = estrdup (logentry),
-    .severity = 0
-   };
+   if (!have_syslog) {
+    struct log_entry ne = {
+     .seqid = ev->seqid,
+     .timestamp = ev->timestamp,
+     .message = estrdup (logentry),
+     .severity = 0
+    };
 
-   emutex_lock(&logmutex);
-   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
-   emutex_unlock(&logmutex);
+    pthread_mutex_lock(&logmutex);
+    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+    pthread_mutex_unlock(&logmutex);
+   } else {
+    syslog(LOG_NOTICE, logentry);
+   }
 
-   if (have_syslog) flush_log_buffer();
+//   if (have_syslog) flush_log_buffer();
   }
  } else if ((ev->type == einit_feedback_notice) && ev->string) {
   strtrim (ev->string);
 
-  struct log_entry ne = {
-   .seqid = ev->seqid,
-   .timestamp = ev->timestamp,
-   .message = estrdup (ev->string),
-   .severity = ev->flag
-  };
+  if (!have_syslog) {
+   struct log_entry ne = {
+    .seqid = ev->seqid,
+    .timestamp = ev->timestamp,
+    .message = estrdup (ev->string),
+    .severity = ev->flag
+   };
 
-  emutex_lock(&logmutex);
-  logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
-  emutex_unlock(&logmutex);
+   pthread_mutex_lock(&logmutex);
+   logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
+   pthread_mutex_unlock(&logmutex);
+  } else {
+   syslog(((ev->flag <= 2) ? LOG_CRIT :
+          ((ev->flag <= 5) ? LOG_WARNING :
+          ((ev->flag <= 8) ? LOG_NOTICE :
+     LOG_DEBUG))),
+     ev->string);
+  }
 
   if (einit_quietness < 2) {
    if (ev->flag < 3) {
@@ -395,10 +364,7 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    fflush (stderr);
   }
 
-  if (log_notices_to_stderr) {
-  }
-
-  if (have_syslog) flush_log_buffer();
+//  if (have_syslog) flush_log_buffer();
  }
 
  return;

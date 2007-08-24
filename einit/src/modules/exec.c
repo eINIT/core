@@ -489,10 +489,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  }
  emutex_unlock (&pexec_running_mutex);
 
-/* if (status) {
-  status->string = command;
-  status_update (status);
- }*/
+ if (status) {
+  fbprintf (status, "executing: %s", command);
+/*  status->string = command;
+  status_update (status);*/
+ }
  notice (10, (char *)command);
 
  if ((child = fork()) < 0) {
@@ -676,12 +677,12 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    perror ("setting uid");
 
   if (!(options & pexec_option_dont_close_stdin))
-   eclose (0);
+   close (0);
 
-  eclose (1);
+  close (1);
   if (!(options & pexec_option_nopipe)) {
-   eclose (2);
-   eclose (pipefderr [0]);
+   close (2);
+   close (pipefderr [0]);
    dup2 (pipefderr [1], 1);
    dup2 (pipefderr [1], 2);
   } else {
@@ -978,7 +979,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
    emutex_unlock (&running_mutex);
 
-   einit_exec_update_daemons_from_pidfiles();
+//   einit_exec_update_daemons_from_pidfiles(); /* <-- that one didn't make sense? */
 
    if (status) {
     fbprintf (status, "daemon started OK");
@@ -997,9 +998,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   else
    new->module = NULL;
   emutex_init (&new->mutex, NULL);
-  emutex_lock (&running_mutex);
-  new->next = running;
-  running = new;
 
   shellcmd->cb = new;
 
@@ -1043,9 +1041,14 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   } else {
    new->pid = child;
 //  sched_watch_pid (child, dexec_watcher);
+
+   emutex_lock (&running_mutex);
+   new->next = running;
+   running = new;
+   emutex_unlock (&running_mutex);
+
    sched_watch_pid (child);
   }
-  emutex_unlock (&running_mutex);
 
   if (shellcmd->is_up) {
    return pexec (shellcmd->is_up, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
