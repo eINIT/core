@@ -1934,7 +1934,7 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
  if (s) free (s);
 }
 
-void mod_defer_until (char *service, char *after) {
+char mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
 
 #ifdef DEBUG
@@ -1980,6 +1980,7 @@ void mod_defer_until (char *service, char *after) {
 #if 0
  mod_ping_all_threads();
 #endif
+ return 0;
 }
 
 void mod_remove_defer (char *service) {
@@ -2644,7 +2645,7 @@ void mod_pre_examine (char *service) {
  }
 }
 
-char mod_disable_users (struct lmodule *module) {
+char mod_disable_users (struct lmodule *module, char *sname) {
  if (!service_usage_query(service_not_in_use, module, NULL)) {
   ssize_t i = 0;
   char **need = NULL;
@@ -2665,16 +2666,24 @@ char mod_disable_users (struct lmodule *module) {
       need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
      }
 
-     if (module->si && module->si->provides) {
+/*     if (module->si && module->si->provides) {
       uint32_t y = 0;
       for (; module->si->provides[y]; y++)
        if (!mod_haschanged (t[i])) {
         retval = 2;
         def++;
         need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
-        mod_defer_until (module->si->provides[y], t[i]);
+        mod_defer_until (sname, t[i]);
 //        notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
        }
+     }*/
+
+     if (!mod_haschanged (t[i])) {
+      retval = 2;
+      def++;
+      need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
+      mod_defer_until (sname, t[i]);
+//      notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
      }
 
      emutex_unlock (&ml_tb_current_mutex);
@@ -2723,7 +2732,7 @@ char mod_disable_users (struct lmodule *module) {
  return 0;
 }
 
-char mod_enable_requirements (struct lmodule *module) {
+char mod_enable_requirements (struct lmodule *module, char *sname) {
  if (!service_usage_query(service_requirements_met, module, NULL)) {
   char retval = 1;
   if (module->si && module->si->requires) {
@@ -2753,12 +2762,14 @@ char mod_enable_requirements (struct lmodule *module) {
      emutex_unlock (&ml_tb_current_mutex);
     }
 
-    if (module->si && module->si->provides) {
+    mod_defer_until (sname, module->si->requires[i]);
+
+/*    if (module->si && module->si->provides) {
      uint32_t y = 0;
-     for (; module->si->provides[y]; y++) {
-      mod_defer_until (module->si->provides[y], module->si->requires[i]);
-     }
-    }
+//     for (; module->si->provides[y]; y++) {
+      mod_defer_until (sname, module->si->requires[i]);
+//     }
+    }*/
    }
 
    if (retval == 2) {
@@ -2817,7 +2828,7 @@ void mod_apply_enable (struct stree *des) {
      return;
     }
 
-    if (mod_enable_requirements (current)) {
+    if (mod_enable_requirements (current, des->key)) {
 #ifdef DEBUG
      notice (4, "not spawning thread thread for %s; exiting (not quite there yet)", des->key);
 #endif
@@ -2914,7 +2925,7 @@ void mod_apply_disable (struct stree *des) {
      goto skip_module;
     }
 
-    if (mod_disable_users (current)) {
+    if (mod_disable_users (current, des->key)) {
 #ifdef DEBUG
      eprintf (stderr, "cannot disable %s yet...", des->key);
 #endif
