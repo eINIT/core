@@ -1934,9 +1934,18 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
  if (s) free (s);
 }
 
+char mod_check_circular_defer (char *service, char *after) {
+ return 0;
+}
+
 char mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
 
+ if (mod_check_circular_defer (service, after)) {
+  notice (2, "Circular Dependency detected, not deferring %s after %s", service, after);
+
+  return 1;
+ }
 #ifdef DEBUG
  eprintf (debugfile, "\n ** deferring %s until after %s\n", service, after);
 #endif
