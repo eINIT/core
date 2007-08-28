@@ -3228,7 +3228,9 @@ char mod_examine_group (char *groupname) {
    } else {
     if (failed >= mem) {
      group_failed = 1;
-    }
+    }/* else if (changed >= mem) {
+     group_failed = 1;
+    }*/
    }
 
    if (group_ok) {
