@@ -366,6 +366,9 @@ uint16_t service_usage_query_group (enum einit_usage_query task, const struct lm
 */
 void mod_event_handler(struct einit_event *event);
 
+extern int    modules_work_count;
+extern time_t modules_last_change;
+
 /*!\brief Update status information.
  * \ingroup statusinformation
  * \param[in] a The status information that is to be updated. Use your module-function's second parametre here.

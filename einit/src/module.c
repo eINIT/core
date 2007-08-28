@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <pthread.h>
 #include <errno.h>
+#include <time.h>
 
 struct lmodule *mlist = NULL;
 
@@ -55,6 +56,8 @@ pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
+int modules_work_count = 0;
+time_t modules_last_change = 0;
 
 void mod_freedesc (struct lmodule *m) {
  emutex_lock (&m->mutex);
@@ -214,6 +217,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 /* inform everyone about what's going to happen */
  {
   struct einit_event eem = evstaticinit (einit_core_module_update);
+
+  modules_work_count++;
+
   eem.task = task;
   eem.status = status_working;
   eem.para = (void *)module;
@@ -283,7 +289,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 //  if (fb->task & einit_module_feedback_show) fb->task ^= einit_module_feedback_show; fb->string = NULL;
 
 /* module status update */
-  if (module) {
+  {
+   modules_work_count--;
+
    struct einit_event eem = evstaticinit (einit_core_module_update);
    eem.task = task;
    eem.status = fb->status;
@@ -379,6 +387,8 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
    }
   }
  } else if (task & service_update) {
+  modules_last_change = time(NULL);
+
   if (module->status & status_enabled) {
    if (module->si && (t = module->si->requires)) {
     for (i = 0; t[i]; i++) {

@@ -57,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #define MAX_ITERATIONS 1000
+#define EINIT_PLAN_CHANGE_STALL_TIMEOUT 10
 
 int einit_module_logic_v3_configure (struct lmodule *);
 
@@ -2603,10 +2604,7 @@ void mod_post_examine (char *service) {
   uint32_t j = 0;
 
   for (; pex[j]; j++) {
-//   if (pex[j+1]) {
-//   mod_remove_defer (pex[j]);
-
-    mod_workthread_create (pex[j]);
+   mod_workthread_create (pex[j]);
   }
 
   free (pex);
@@ -3466,7 +3464,7 @@ void mod_examine (char *service) {
 
     retries--;
 
-    if (retries <= 0) {
+    if ((retries <= 0) || mod_isbroken (service)) {
      mod_workthreads_dec(service);
 
      return;
@@ -3495,7 +3493,7 @@ void mod_examine (char *service) {
 
     retries--;
 
-    if (retries <= 0) {
+    if ((retries <= 0) || mod_isbroken (service)) {
      mod_workthreads_dec(service);
 
      return;
@@ -3666,23 +3664,7 @@ void mod_spawn_batch(char **batch, int task) {
 
  if (dospawn) {
   for (i = 0; dospawn[i]; i++) {
-#if 0
-   char *sc = estrdup (dospawn[i]);
-   pthread_t th;
-
-#ifdef DEBUG
-   eprintf (stderr, " XX spawning thread for %s\n", dospawn[i]);
-#endif
-
-   if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, sc)) {
-    emutex_unlock (&ml_tb_current_mutex);
-    workthread_examine (sc);
-    emutex_lock (&ml_tb_current_mutex);
-//    notice (1, "couldn't create thread!!");
-   }
-#else
    mod_workthread_create (dospawn[i]);
-#endif
   }
 
   free (dospawn);
@@ -3844,6 +3826,49 @@ void mod_commit_and_wait (char **en, char **dis) {
 //  notice (1, "waiting for ping...");
   mod_wait_for_ping();
 //  notice (1, "got ping...");
+
+  if (!modules_work_count && modules_last_change) {
+   if ((modules_last_change + EINIT_PLAN_CHANGE_STALL_TIMEOUT) < time(NULL)) {
+    notice (1, "PLAN ABORTED: didn't do anything at all for too long");
+
+    if (en) {
+     uint32_t i = 0;
+
+     for (; en[i]; i++) {
+      if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
+       mod_mark (en[i], MARK_BROKEN);
+      }
+     }
+    }
+
+    if (dis) {
+     uint32_t i = 0;
+
+     for (; dis[i]; i++) {
+      if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(en[i])) {
+       mod_mark (dis[i], MARK_BROKEN);
+      }
+     }
+    }
+
+    while (ml_workthreads) {
+     emutex_lock (&ml_workthreads_mutex);
+     if (lm_workthreads_list) {
+      uint32_t i = 0;
+
+      for (; lm_workthreads_list[i]; i++) {
+       mod_mark (lm_workthreads_list[i], MARK_BROKEN);
+      }
+     }
+     emutex_unlock (&ml_workthreads_mutex);
+
+     mod_ping_all_threads();
+     sleep (1);
+    }
+
+    mod_commits_dec();
+   }
+  }
  };
 
 /* never reached */
