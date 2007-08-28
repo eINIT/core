@@ -74,6 +74,8 @@ module_register(einit_random_self);
 #define RANDOM_SEED 200
 #define RANDOM_DEPENDENCIES 4
 #define RANDOM_SLEEP_MAX 3
+#define RANDOM_GROUPS 10
+#define RANDOM_GROUPELEMENTS 20
 
 char random_haverun = 0;
 
@@ -182,7 +184,7 @@ int random_scanmodules (struct lmodule *list) {
  char **randommodules = NULL;
  uint32_t r = 0;
 
- for (; r < RANDOM_MODULES; r++) {
+ for (; r < RANDOM_MODULES; r++) if (r < (RANDOM_MODULES - RANDOM_GROUPS)) {
   char module_name[BUFFERSIZE];
   char tmp[BUFFERSIZE];
   char module_rid[BUFFERSIZE];
@@ -215,6 +217,26 @@ int random_scanmodules (struct lmodule *list) {
   }
 
   mod_add (NULL, nsm);
+ } else {
+  char groupname[BUFFERSIZE];
+  char **elements = NULL;
+
+  esprintf (groupname, BUFFERSIZE, "random%i", r);
+
+  uint32_t n = 0;
+  uint32_t n_limit = random_int (RANDOM_GROUPELEMENTS);
+
+  for (; n < n_limit; n++) {
+   char tmp[BUFFERSIZE];
+
+   esprintf (tmp, BUFFERSIZE, "random%i", random_int (RANDOM_MODULES - RANDOM_GROUPS -1));
+   elements = (char **)setadd ((void **)elements, tmp, SET_TYPE_STRING);
+  }
+
+  randommodules = (char **)setadd ((void **)randommodules, groupname, SET_TYPE_STRING);
+
+  if (elements)
+   random_add_update_group (groupname, elements, "most");
  }
 
 
