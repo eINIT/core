@@ -3961,6 +3961,8 @@ void mod_commit_and_wait (char **en, char **dis) {
     }
 
     mod_commits_dec();
+
+    return;
    }
   }
  };

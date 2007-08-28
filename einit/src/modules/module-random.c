@@ -70,9 +70,9 @@ module_register(einit_random_self);
 
 #endif
 
-#define RANDOM_MODULES 50
+#define RANDOM_MODULES 70
 #define RANDOM_SEED 200
-#define RANDOM_DEPENDENCIES 4
+#define RANDOM_DEPENDENCIES 3
 #define RANDOM_SLEEP_MAX 3
 #define RANDOM_GROUPS 10
 #define RANDOM_GROUPELEMENTS 20
@@ -253,7 +253,7 @@ int random_configure (struct lmodule *me) {
  me->scanmodules = random_scanmodules;
  me->cleanup = random_cleanup;
 
-// srandom(RANDOM_SEED);
+ srandom(RANDOM_SEED);
 // srandomdev();
 
  return status_ok;
