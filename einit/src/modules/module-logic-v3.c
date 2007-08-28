@@ -1936,7 +1936,39 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
 }
 
 char mod_check_circular_defer (char *service, char *after) {
- return 0;
+ char ret = 0;
+ char **deferrees = NULL;
+
+ if (strmatch (after, service)) return 1;
+
+ emutex_lock(&ml_chain_examine);
+
+ struct stree *r =
+   streefind (module_logics_chain_examine_reverse, after, tree_find_first);
+
+ if (r) {
+  deferrees = (char **)setdup ((const void **)r->value, SET_TYPE_STRING);
+ }
+
+ emutex_unlock(&ml_chain_examine);
+
+ if (deferrees) {
+  uint32_t i = 0;
+
+  for (; deferrees[i]; i++) {
+   if (strmatch (deferrees[i], service)) {
+    ret = 1;
+    break;
+   } else if (mod_check_circular_defer (service, deferrees[i])) {
+    ret = 1;
+    break;
+   }
+  }
+
+  free (deferrees);
+ }
+
+ return ret;
 }
 
 char mod_defer_until (char *service, char *after) {
@@ -2232,7 +2264,11 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      continue;
     }
 
-    mod_defer_until(service, gd->members[i]);
+    if (mod_defer_until(service, gd->members[i])) {
+     mod_mark (gd->members[i], MARK_BROKEN);
+
+     continue;
+    }
 
     if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
@@ -2277,7 +2313,12 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
      continue;
     }
 
-    mod_defer_until(service, gd->members[i]);
+    if (mod_defer_until(service, gd->members[i])) {
+     mod_mark (gd->members[i], MARK_BROKEN);
+
+     bc++;
+     continue;
+    }
 
     if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
      changes++;
@@ -2691,7 +2732,7 @@ char mod_disable_users (struct lmodule *module, char *sname) {
       retval = 2;
       def++;
       need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
-      mod_defer_until (sname, t[i]);
+      if (mod_defer_until (sname, t[i])) return 0; /* circular dependency, we'll just bail out */
 //      notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
      }
 
@@ -2771,7 +2812,8 @@ char mod_enable_requirements (struct lmodule *module, char *sname) {
      emutex_unlock (&ml_tb_current_mutex);
     }
 
-    mod_defer_until (sname, module->si->requires[i]);
+//    mod_defer_until (sname, module->si->requires[i]);
+    if (mod_defer_until (sname, module->si->requires[i])) return 0; /* circular dependency, we'll just bail out */
 
 /*    if (module->si && module->si->provides) {
      uint32_t y = 0;
