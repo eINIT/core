@@ -2107,6 +2107,8 @@ char mod_isdeferred (char *service) {
 
    mod_workthread_create (deferrees[i]);
   }
+
+  free (deferrees);
  }
 
 // ret = (ret > 0);
