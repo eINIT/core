@@ -1721,7 +1721,7 @@ char mod_workthreads_dec (char *service) {
  notice (1, "\ndone with: %s\n", service);
 #endif
 
- char **donext = NULL;
+// char **donext = NULL;
  uint32_t i = 0;
 
 #ifdef DEBUG
@@ -1966,11 +1966,17 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
  if (s) free (s);
 }
 
-char mod_check_circular_defer (char *service, char *after) {
+char mod_check_circular_defer_rec (char *service, char *after, int depth) {
  char ret = 0;
  char **deferrees = NULL;
 
- if (strmatch (after, service)) return 1;
+ if (strmatch (after, service)) {
+  return 1;
+ }
+
+ if (depth > 200) {
+  return 1;
+ }
 
  emutex_lock(&ml_chain_examine);
 
@@ -1990,7 +1996,7 @@ char mod_check_circular_defer (char *service, char *after) {
    if (strmatch (deferrees[i], service)) {
     ret = 1;
     break;
-   } else if (mod_check_circular_defer (service, deferrees[i])) {
+   } else if (mod_check_circular_defer_rec (service, deferrees[i], depth + 1)) {
     ret = 1;
     break;
    }
@@ -2001,6 +2007,8 @@ char mod_check_circular_defer (char *service, char *after) {
 
  return ret;
 }
+
+#define mod_check_circular_defer(a,b) mod_check_circular_defer_rec (a, b, 0)
 
 char mod_defer_until (char *service, char *after) {
  struct stree *xn = NULL;
@@ -2588,14 +2596,14 @@ void mod_flatten_current_tb () {
 #endif
   }
 
-  for (i = 0; current.disable[i]; i++) {
+/*  for (i = 0; current.disable[i]; i++) {
    struct stree *xn = streefind (module_logics_service_list, current.disable[i], tree_find_first);
 
    if (!mod_group_get_data (current.disable[i]) && xn && xn->value) {
     struct lmodule **lm = xn->value;
 //    mod_defer_notice (lm[0], NULL);
    }
-  }
+  }*/
  }
 
 #ifdef DEBUG
@@ -2763,7 +2771,10 @@ char mod_disable_users (struct lmodule *module, char *sname) {
       retval = 2;
       def++;
       need = (char **)setadd ((void **)need, t[i], SET_TYPE_STRING);
-      if (mod_defer_until (sname, t[i])) return 0; /* circular dependency, we'll just bail out */
+      if (mod_defer_until (sname, t[i])) {
+       emutex_unlock (&ml_tb_current_mutex);
+       return 0; /* circular dependency, we'll just bail out */
+      }
 //      notice (2, "%s: goes after %s!", module->si->provides[y], t[i]);
      }
 
@@ -3551,7 +3562,7 @@ void mod_examine (char *service) {
 
      return;
     }
-   } while ((mod_isdeferred(service) || (!mod_haschanged (service)) && !mod_isbroken (service)));
+   } while ((mod_isdeferred(service) || (!mod_haschanged (service) && !mod_isbroken (service))));
   }
 
   mod_workthreads_dec(service);

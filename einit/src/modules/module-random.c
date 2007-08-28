@@ -70,7 +70,7 @@ module_register(einit_random_self);
 
 #endif
 
-#define RANDOM_MODULES 200
+#define RANDOM_MODULES 50
 #define RANDOM_SEED 200
 #define RANDOM_DEPENDENCIES 4
 #define RANDOM_SLEEP_MAX 3
@@ -151,7 +151,7 @@ int random_int (int max) {
 int random_module_enable (void *ignored, struct einit_event *status) {
  char sleeptime = random_int (10);
 
- while ((sleeptime = sleep (sleeptime)));
+// while ((sleeptime = sleep (sleeptime)));
 
  return (random_int (10) <= 6) ? status_ok : status_failed;
 }
@@ -159,7 +159,7 @@ int random_module_enable (void *ignored, struct einit_event *status) {
 int random_module_disable (void *ignored, struct einit_event *status) {
  char sleeptime = random_int (10);
 
- while ((sleeptime = sleep (sleeptime)));
+// while ((sleeptime = sleep (sleeptime)));
 
  return (random_int (10) <= 6) ? status_ok : status_failed;
 }

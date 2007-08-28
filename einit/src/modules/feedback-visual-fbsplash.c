@@ -91,6 +91,7 @@ char einit_feedback_visual_fbsplash_worker_thread_running = 0,
 char **fbsplash_commandQ = NULL;
 
 char *fbsplash_fifo = "/lib/splash/cache/.splash";
+char fbsplash_disabled = 0;
 
 pthread_mutex_t
  fbsplash_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -167,7 +168,8 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
     }
 /*    if (fbmode) {
     }*/
-   }
+   } else
+    fbsplash_disabled = 1;
 
    if (ttypatch && *ttypatch) {
     struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
@@ -229,7 +231,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   }
  }
 
- if (ev->type == einit_core_mode_switching) {
+ if ((ev->type == einit_core_mode_switching) && !fbsplash_disabled) {
   char tmp[BUFFERSIZE];
 
   fbsplash_queue_comand("set mode silent");
@@ -241,7 +243,7 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
 
   fbsplash_queue_comand("repaint");
  }
- if (ev->type == einit_core_mode_switch_done) {
+ if ((ev->type == einit_core_mode_switch_done) && !fbsplash_disabled) {
   char tmp[BUFFERSIZE];
 
   if (ev->para && ((struct cfgnode *)ev->para)->id) {
@@ -252,7 +254,8 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   fbsplash_queue_comand("repaint");
 //  fbsplash_queue_comand("set mode verbose");
  }
- if ((ev->type == einit_core_service_update) && ev->set) {
+
+ if ((ev->type == einit_core_service_update) && ev->set && !fbsplash_disabled) {
   char tmp[BUFFERSIZE];
   uint32_t i = 0;
 
