@@ -3845,7 +3845,7 @@ void mod_commit_and_wait (char **en, char **dis) {
      uint32_t i = 0;
 
      for (; dis[i]; i++) {
-      if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(en[i])) {
+      if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
        mod_mark (dis[i], MARK_BROKEN);
       }
      }
