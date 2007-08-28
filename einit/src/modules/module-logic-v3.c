@@ -3270,9 +3270,9 @@ char mod_examine_group (char *groupname) {
    } else {
     if (failed >= mem) {
      group_failed = 1;
-    }/* else if (changed >= mem) {
+    } else if (changed >= mem) {
      group_failed = 1;
-    }*/
+    }
    }
 
    if (group_ok) {
@@ -3443,10 +3443,10 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
      if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
            (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
-      mod_defer_until (service, d[y]);
+      if (!mod_defer_until (service, d[y])) {
 //      notice (1, "%s goes after %s", service, d[y]);
-
-      hd = 1;
+       hd = 1;
+      }
      }
     }
 
