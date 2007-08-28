@@ -1857,7 +1857,7 @@ void mod_commits_dec () {
 
  emutex_lock (&ml_commits_mutex);
  ml_commits--;
- clean_broken = (ml_commits == 0);
+ clean_broken = (ml_commits <= 0);
  emutex_unlock (&ml_commits_mutex);
 
  if (clean_broken) {
@@ -1897,20 +1897,51 @@ void mod_commits_dec () {
 }
 
 void mod_commits_inc () {
+ char clean_broken = 0;
+
+ modules_last_change = time (NULL);
+
 // char spawn = 0;
 #ifdef DEBUG
  notice (5, "plan started.");
 #endif
 
  emutex_lock (&ml_commits_mutex);
+ clean_broken = (ml_commits <= 0);
  ml_commits++;
  emutex_unlock (&ml_commits_mutex);
 
-// emutex_lock (&ml_workthreads_mutex);
-// spawn = (ml_workthreads == 0);
-// emutex_unlock (&ml_workthreads_mutex);
+ if (clean_broken) {
+  emutex_lock (&ml_unresolved_mutex);
+  if (unresolved_services) {
+   free (unresolved_services);
+   unresolved_services = NULL;
+  }
+  if (broken_services) {
+   free (broken_services);
+   broken_services = NULL;
+  }
+  emutex_unlock (&ml_unresolved_mutex);
 
-// if (spawn)
+  emutex_lock (&ml_changed_mutex);
+  if (changed_recently) {
+   free (changed_recently);
+   changed_recently = NULL;
+  }
+  emutex_unlock (&ml_changed_mutex);
+
+  emutex_lock(&ml_chain_examine);
+  if (module_logics_chain_examine) {
+   streefree (module_logics_chain_examine);
+   module_logics_chain_examine = NULL;
+  }
+  if (module_logics_chain_examine_reverse) {
+   streefree (module_logics_chain_examine_reverse);
+   module_logics_chain_examine_reverse = NULL;
+  }
+  emutex_unlock(&ml_chain_examine);
+ }
+
  mod_spawn_workthreads ();
 }
 
@@ -3131,6 +3162,11 @@ char mod_examine_group (char *groupname) {
   int task = mod_gettask (groupname);
 
   if ((task & einit_module_enable) && mod_isprovided (groupname)) {
+   emutex_lock (&ml_changed_mutex);
+   if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
+    changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
+   emutex_unlock (&ml_changed_mutex);
+
    mod_post_examine (groupname);
 
    return 1;
@@ -3515,7 +3551,7 @@ void mod_examine (char *service) {
 
      return;
     }
-   } while ((mod_isdeferred(service) || !mod_haschanged (service)) && !mod_isbroken (service));
+   } while ((mod_isdeferred(service) || (!mod_haschanged (service)) && !mod_isbroken (service)));
   }
 
   mod_workthreads_dec(service);
