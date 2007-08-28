@@ -253,7 +253,7 @@ int random_configure (struct lmodule *me) {
  me->scanmodules = random_scanmodules;
  me->cleanup = random_cleanup;
 
- srandom(RANDOM_SEED);
+// srandom(RANDOM_SEED);
 // srandomdev();
 
  return status_ok;

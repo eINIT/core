@@ -3237,9 +3237,10 @@ char mod_examine_group (char *groupname) {
       }
      }
     }
-   }
 
-   emutex_unlock (&ml_service_list_mutex);
+    emutex_unlock (&ml_service_list_mutex);
+
+   }
   }
 
 #if 0
