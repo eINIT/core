@@ -14,6 +14,7 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-c-compiled
 	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -m 0644 einit.conf ${DESTDIR}/${ETCDIR}/../dbus-1/system.d

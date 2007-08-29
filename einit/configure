@@ -515,7 +515,7 @@ if [ "${GTK}" = "gtk" ]; then
 	GTK_LIBS=$(pkg-config --libs gtkmm-2.4)
 fi
 
-XCFLAGS="${XCFLAGS} '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'"
+XCFLAGS="${XCFLAGS}"
 
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
@@ -565,8 +565,8 @@ BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 CC = $CC ${GCCFLAGS} -fPIC
 ASM = $ASM ${GCCFLAGS}
 
-CFLAGS = $CFLAGS$XCFLAGS
-CXXFLAGS = $CXXFLAGS$XCFLAGS
+CFLAGS = $CFLAGS$XCFLAGS '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'
+CXXFLAGS = $CXXFLAGS$XCFLAGS '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL
@@ -645,7 +645,8 @@ BOOTSTRAP_MODULE_PATH=\"${BOOTSTRAP_MODULE_PATH}\"
 CC=\"$CC ${GCCFLAGS}\"
 ASM=\"$ASM ${GCCFLAGS}\"
 
-CFLAGS=\"$CFLAGS$XCFLAGS\"
+CFLAGS=\"$CFLAGS$XCFLAGS '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'\"
+CXXFLAGS=\"$CXXFLAGS$XCFLAGS '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'\"
 LDFLAGS=\"$LDFLAGS\"
 CCC=\"\${CC} \${INCLUDE} \${CFLAGS}\"
 CCL=\"$CCL\"
@@ -665,7 +666,108 @@ LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
 DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
 DBUS_LIBS=\"${DBUS_LIBS}\"
 DBUS=\"${DBUS}\"
+
+GTK_CFLAGS=\"${GTK_CFLAGS}\"
+GTK_LIBS=\"${GTK_LIBS}\"
+GTK=\"${GTK}\"
+
+NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
+NETLINK_LIBS=\"${NETLINK_LIBS}\"
+
+LIBNOTIFY_CFLAGS=\"${LIBNOTIFY_CFLAGS}\"
+LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
+
+EXPAT_LIBS=\"${EXPAT_LIBS}\"
+
+GUI=\"${GUI}\"
 " > config.sh
+
+echo "creating config.xml..."
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<einit>
+ <configuration>
+  <compiler>
+   <build-configuration id=\"primus\"
+    PREFIX=\"$PREFIX\"
+    ETCDIR=\"${PREFIX}/etc/einit\"
+    ETCXDIR=\"${PREFIX}/etc\"
+    LIBDIR=\"${PREFIX}/lib/einit\"
+    ULIBDIR=\"${UPREFIX}/lib\"
+    MODDIR=\"${PREFIX}/lib/einit/modules\"
+    BINDIR=\"${PREFIX}/bin\"
+    SBINDIR=\"${PREFIX}/sbin\"
+    INCLUDEDIR=\"${UPREFIX}/include\"
+    BOOTSTRAPDIR=\"${PREFIX}/${BOOTSTRAP_MODULE_PATH}\"
+
+    INSTALL=\"install\"
+    IPARAM=\"\"
+    SOIPARAM=\"\"
+    BINIPARAM=\"\"
+    CONFIGINSTALLMETHOD=\"${CONFIGINSTALLMETHOD}\"
+
+    COMPILER=\"${COMPILER}\"
+    OS=\"${OS}\"
+    ARCH=\"${ARCH}\"
+    ASMDIR=\"${ASMDIR}\"
+
+    LIBRT=\"${LIBRT}\"
+
+    PMODULES=\"$PMODULES\"
+    OPTIONS=\"$OPTIONS\"
+    INCLUDE=\"$INCLUDE\"
+
+    XDYNAMIC=\"$XDYNAMIC\"
+    BUILDNUMBER=\"$BUILDNUMBER\"
+    ISSVN=\"$ISSVN\"
+
+    INTERNALMODULES=\"${INTERNALMODULES}\"
+    EXTERNALMODULES=\"${EXTERNALMODULES}\"
+
+    CORELIBS=\"${CORELIBS}\"
+
+    BOOTSTRAP_MODULE_PATH=\"${BOOTSTRAP_MODULE_PATH}\"
+
+    CC=\"$CC ${GCCFLAGS}\"
+    ASM=\"$ASM ${GCCFLAGS}\"
+
+    CFLAGS=\"$CFLAGS$XCFLAGS\"
+    CXXFLAGS=\"$CXXFLAGS$XCFLAGS\"
+    LDFLAGS=\"$LDFLAGS\"
+    CCC=\"${CC} \${INCLUDE} \${CFLAGS}\"
+    CCL=\"$CCL\"
+    CLD=\"${CC} \${LDFLAGS} ${LIBRARIES}\"
+    LLD=\"${CC} \${LDFLAGS} $LLD ${LIBRARIES}\"
+    XLLD=\"$LLD\"
+    STATIC=\"$STATIC\"
+    LPA=\"$LPA\"
+
+    CXX=\"$CXX\"
+    CXXC=\"${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}\"
+    XXL=\"$XXL -DISSVN=\${ISSVN}\"
+    CXXLD=\"${CXX} \${LDFLAGS}\"
+    CXXLD=\"${CXXC} \${LDFLAGS}\"
+    LXXLD=\"${CXXC} \${LDFLAGS} $LLD\"
+
+    DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
+    DBUS_LIBS=\"${DBUS_LIBS}\"
+    DBUS=\"${DBUS}\"
+
+    GTK_CFLAGS=\"${GTK_CFLAGS}\"
+    GTK_LIBS=\"${GTK_LIBS}\"
+    GTK=\"${GTK}\"
+
+    NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
+    NETLINK_LIBS=\"${NETLINK_LIBS}\"
+
+    LIBNOTIFY_CFLAGS=\"${LIBNOTIFY_CFLAGS}\"
+    LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
+
+    EXPAT_LIBS=\"${EXPAT_LIBS}\"
+
+    GUI=\"${GUI}\" />
+  </compiler>
+ </configuration>
+</einit>" > config.xml
 
 collect_objects () {
 	objects=""
