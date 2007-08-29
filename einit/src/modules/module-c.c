@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 
 #define EXPECTED_EIV 1
