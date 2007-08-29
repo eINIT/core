@@ -133,7 +133,7 @@ for param in $@; do
 		XCFLAGS="$XCFLAGS -DBITCHY";
 	elif test "$param" = "--use-posix-regex"; then
 		echo -n " REGEX";
-		XCFLAGS='$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS}) -DPOSIXREGEX';
+		XCFLAGS="$(sed 's/-DPOSIXREGEX//' < echo ${XCFLAGS}) -DPOSIXREGEX";
 	elif test "$param" = "--no-posix-regex"; then
 		echo -n " NOREGEX";
 		XCFLAGS=$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS});
