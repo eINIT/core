@@ -21,8 +21,8 @@
 
   <settings>
 <!-- example: use this to disable the compatibility modules -->
-<!-- <modules path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
-   <modules path="/lib/einit/modules" pattern-allow=".*\.so" />
+<!-- <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
+   <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" />
   </settings>
 
   <if match="core-mode:sandbox">

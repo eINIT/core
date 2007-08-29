@@ -94,16 +94,27 @@ int einit_mod_so_cleanup (struct lmodule *pa) {
 int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  void *sohandle;
  char **modules = NULL;
+ struct cfgnode *node = NULL;
 
  emutex_lock (&modules_update_mutex);
 
- modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
+ while ((node = cfg_findnode ("core-settings-modules", 0, node))) {
+  char **nmodules = readdirfilter(node, "/lib/einit/modules/", ".*\\.so", NULL, 0);
+
+  if (nmodules) {
+   modules = (char **)setcombine ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
+  }
+ }
+
+ if (!modules) {
+  modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
 #ifdef DO_BOOTSTRAP
-                                bootstrapmodulepath
+                                 bootstrapmodulepath
 #else
-                                "/lib/einit/modules/"
+                                 "/lib/einit/modules/"
 #endif
-                                , ".*\\.so", NULL, 0);
+                                 , ".*\\.so", NULL, 0);
+ }
 
  if (modules) {
   uint32_t z = 0;
