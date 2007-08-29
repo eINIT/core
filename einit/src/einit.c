@@ -69,7 +69,7 @@ int cleanup ();
 pid_t einit_sub = 0;
 char isinit = 1, initoverride = 0;
 
-char **einit_global_environment = NULL, **einit_initial_environment = NULL;
+char **einit_global_environment = NULL, **einit_initial_environment = NULL, **einit_argv = NULL;
 struct stree *hconfiguration = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
@@ -240,6 +240,8 @@ int main(int argc, char **argv) {
  isinit = getpid() == 1;
 
  event_listen (einit_event_subsystem_core, core_einit_event_handler);
+
+ if (argv) einit_argv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
 
 /* check command line arguments */
  for (i = 1; i < argc; i++) {

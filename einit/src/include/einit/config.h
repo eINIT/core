@@ -139,6 +139,8 @@ unsigned char *gdebug;
 char **einit_global_environment,
      **einit_initial_environment;
 
+extern char **einit_argv;
+
 int einit_have_feedback;
 
 char einit_quietness;

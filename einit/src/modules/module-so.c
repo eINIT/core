@@ -102,7 +102,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   char **nmodules = readdirfilter(node, "/lib/einit/modules/", ".*\\.so", NULL, 0);
 
   if (nmodules) {
-   modules = (char **)setcombine ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
+   modules = (char **)setcombine_nc ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
   }
  }
 
