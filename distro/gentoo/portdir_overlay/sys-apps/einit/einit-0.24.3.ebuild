@@ -1,22 +1,12 @@
-# Copyright 1999-2006 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: $
-
-#
-# eINIT SVN ebuild (v29)
-#
-
-inherit subversion
-
-ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/${PN}"
-SRC_URI=""
+inherit eutils toolchain-funcs flag-o-matic
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.org/"
+SRC_URI="mirror://berlios/${PN}/${P}.tar.bz2"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="-*"
+KEYWORDS="~x86 ~amd64 ~ppc"
 
 IUSE="doc static debug nowtf externalise fbsplash aural dbus noxml baselayout2"
 
@@ -31,17 +21,14 @@ DEPEND="${RDEPEND}
 	>=sys-apps/portage-2.1.2-r11"
 PDEPEND="!noxml? ( sys-apps/einit-modules-xml )"
 
-S=${WORKDIR}/${PN}
-
 src_unpack() {
-	subversion_src_unpack
-	cd "${S}"
+	unpack ${P}.tar.bz2
 }
 
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --prefix=/ --with-expat=/usr/lib/libexpat.a"
+        myconf="--ebuild --prefix=/ --with-expat=/usr/lib/libexpat.a"
 
 	if use static ; then
 		local myconf="${myconf} --static"
@@ -89,8 +76,6 @@ src_install() {
 }
 
 pkg_postinst() {
-	ewarn
-	ewarn "This is a live SVN build and as such may be subject to weird errors."
 	ewarn
 	einfo "eINIT is now installed, but you will still need to configure it."
 	if use doc ; then
