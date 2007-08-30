@@ -29,17 +29,14 @@
      (literal "hosting provided by:")
      (make empty-element gi: "br")
      (make element gi: "a"
-       attributes: (list (list "href" "http://sourceforge.net"))
+       attributes: (list (list "href" "http://developer.berlios.de"))
      (make empty-element gi: "img"
        attributes: (list 
-                     (list "src" (string-append "http://sflogo.sourceforge.net/sflogo.php?group_id=159321" "&" "type=2"))
-                     (list "width" "125")
-                     (list "height" "37")
+                     (list "src" "http://developer.berlios.de/bslogo.php?group_id=8423")
+                     (list "width" "124")
+                     (list "height" "32")
                      (list "border" "0")
-                     (list "alt" "SourceForge.net Logo")
-))
-)
-))
+                     (list "alt" "BerliOS Logo"))))))
 
    (define ($html-body-end$)
     (if (equal? $footer$ (normalize ""))

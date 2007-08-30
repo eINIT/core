@@ -1,0 +1,228 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+<book lang="en">
+ <bookinfo>
+  <date>2007-08-30</date>
+  <title>eINIT 0.24.4: Documentation</title>
+  <authorgroup>
+   <author>
+    <firstname>Magnus</firstname>
+    <surname>Deininger</surname>
+   </author>
+  </authorgroup>
+  <copyright>
+   <year>2007</year>
+   <holder>Magnus Deininger</holder>
+  </copyright>
+  <legalnotice>
+   <para>(C) 2007 Magnus Deininger, All rights reserved.</para>
+   <para>Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:</para>
+   <itemizedlist>
+    <listitem><para>Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.</para></listitem>
+    <listitem><para>Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.</para></listitem>
+    <listitem><para>Neither the name of the project nor the names of its contributors may be
+     used to endorse or promote products derived from this software without
+     specific prior written permission.</para></listitem>
+   </itemizedlist>
+   <para>
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+    ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+   </para>
+  </legalnotice>
+  <abstract>
+   <para>This is an attempt at documenting eINIT as of version 0.24.4.</para>
+  </abstract>
+ </bookinfo>
+
+ <chapter id="introduction">
+  <title>Introduction</title>
+  <sect1 id="introduction-what-is-einit">
+   <title>What is eINIT?</title>
+   <titleabbrev>About</titleabbrev>
+   <para></para>
+  </sect1>
+ </chapter>
+
+ <chapter id="users">
+  <title>User's Guide</title>
+  <sect1 id="users-installation">
+   <title>Installing eINIT</title>
+   <titleabbrev>Installation</titleabbrev>
+   <para></para>
+  </sect1>
+  <sect1 id="users-configuration">
+   <title>Configuring eINIT</title>
+   <titleabbrev>Configuration</titleabbrev>
+   <para></para>
+   <sect2 id="users-configuration-etc-einit">
+    <title>The Configuration Files: /etc/einit</title>
+    <titleabbrev>/etc/einit</titleabbrev>
+    <para></para>
+    <sect3 id="users-configuration-etc-einit-network-xml">
+     <title>Network Configuration: /etc/einit/network.xml</title>
+     <titleabbrev>/etc/einit/network.xml</titleabbrev>
+     <para></para>
+    </sect3>
+    <sect3 id="users-configuration-etc-einit-modes-xml">
+     <title>What Services to start: /etc/einit/modes.xml</title>
+     <titleabbrev>/etc/einit/modes.xml</titleabbrev>
+     <para></para>
+    </sect3>
+    <sect3 id="users-configuration-etc-einit-conf-d">
+     <title>Service-Configuration: /etc/einit/conf.d</title>
+     <titleabbrev>/etc/einit/conf.d</titleabbrev>
+     <para></para>
+    </sect3>
+    <sect3 id="users-configuration-etc-einit-fstab-xml">
+     <title>(Optional) Advanced fstab: /etc/einit/fstab.xml</title>
+     <titleabbrev>/etc/einit/fstab.xml</titleabbrev>
+     <para></para>
+    </sect3>
+   </sect2>
+  </sect1>
+  <sect1 id="users-using">
+   <title>Using eINIT</title>
+   <titleabbrev>Using</titleabbrev>
+   <para></para>
+   <sect2 id="users-using-einit-control">
+    <title>The "einit-control"-Command</title>
+    <titleabbrev>einit-control</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="users-using-erc">
+    <title>The "erc"-Command</title>
+    <titleabbrev>erc</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="users-using-power">
+    <title>The "power"-Command</title>
+    <titleabbrev>power</titleabbrev>
+    <para></para>
+   </sect2>
+  </sect1>
+ </chapter>
+
+ <chapter id="developers">
+  <title>Developer's Guide</title>
+  <sect1 id="developers-intro">
+   <title>Introduction</title>
+   <titleabbrev>Introduction</titleabbrev>
+   <para></para>
+  </sect1>
+  <sect1 id="developers-writing-modules">
+   <title>Writing Modules</title>
+   <titleabbrev>Writing Modules</titleabbrev>
+   <para></para>
+   <sect2 id="developers-writing-modules-c">
+    <title>C Modules</title>
+    <titleabbrev>C Modules</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="developers-writing-modules-xml">
+    <title>XML/SH Modules</title>
+    <titleabbrev>XML</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="developers-writing-modules-scheme">
+    <title>Scheme Modules</title>
+    <titleabbrev>Scheme Modules</titleabbrev>
+    <para>At the time of this writing, Scheme modules are not fully implemented yet.
+     We've got an additional developer working on this, or at least looking into it,
+     so it shouldn't be long before these can be used properly.</para>
+    <para>Even so, some things can already be done a lot better in Scheme modules than
+	 in C or XML modules, most notably everything related to manipulating eINIT
+	 variables/configuration data.</para>
+   </sect2>
+  </sect1>
+ </chapter>
+
+ <appendix id="concepts">
+  <title>Terms and Concepts</title>
+  <sect1 id="concepts-modules">
+   <title>Modules</title>
+   <titleabbrev>Modules</titleabbrev>
+   <para></para>
+   <sect2 id="concepts-modules-shadows">
+    <title>Shadow Modules</title>
+    <titleabbrev>Shadows</titleabbrev>
+    <para></para>
+   </sect2>
+  </sect1>
+  <sect1 id="concepts-variables">
+   <title>Variables / Configuration Data</title>
+   <titleabbrev>Variables</titleabbrev>
+   <para></para>
+   <sect2 id="concepts-variables-xml">
+    <title>What is the 'native' Configuration Format? It's XML, right?</title>
+    <titleabbrev>Native Configuration</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="concepts-variables-xml-why">
+    <title>Why does eINIT use XML by default?</title>
+    <titleabbrev>Why XML?</titleabbrev>
+    <para></para>
+   </sect2>
+  </sect1>
+  <sect1 id="concepts-dependencies">
+   <title>Dependencies</title>
+   <titleabbrev>Dependencies</titleabbrev>
+   <para></para>
+   <sect2 id="concepts-dependencies-overrides">
+    <title>Dependency Overrides</title>
+    <titleabbrev>Overrides</titleabbrev>
+    <para></para>
+   </sect2>
+  </sect1>
+  <sect1 id="concepts-services">
+   <title>Services</title>
+   <titleabbrev>Services</titleabbrev>
+   <para></para>
+   <sect2 id="concepts-services-backups">
+    <title>Backup-Modules</title>
+    <titleabbrev>Backups</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="concepts-services-rid-vs-service">
+    <title>Module-IDs v.s. Service Names</title>
+    <titleabbrev>RID vs Services</titleabbrev>
+    <para></para>
+   </sect2>
+  </sect1>
+  <sect1 id="concepts-groups">
+   <title>Service Groups</title>
+   <titleabbrev>Service Groups</titleabbrev>
+   <para></para>
+  </sect1>
+  <sect1 id="concepts-modes">
+   <title>Modes</title>
+   <titleabbrev>Modes</titleabbrev>
+   <para></para>
+
+   <sect2 id="concepts-modes-switches">
+    <title>Mode-Switches</title>
+    <titleabbrev>Mode-Switches</titleabbrev>
+    <para></para>
+   </sect2>
+  </sect1>
+ </appendix>
+
+ <appendix id="credits">
+  <title>Credits and Legalities</title>
+  <sect1 id="credits-expat">
+   <title>eXpat</title>
+   <titleabbrev>eXpat</titleabbrev>
+   <para></para>
+  </sect1>
+ </appendix>
+</book>
