@@ -190,9 +190,6 @@
 	C-Modules for details on what function pointers need to be provided. Additionally, the core descriptor keeps
 	track of a module's "status", that is, whether it's enabled, disabled, broken, etc...</para>
 
-   <note><para>Remember that none of these names are normative or absolute. They're not mutually exclusive either,
-    they're just here to help you get started.</para></note>
-
    <figure id="concepts-modules-core-interaction" float="1" pgwide="0" floatstyle="right">
     <title>Modules, Module Loaders and the Core</title>
     <mediaobject>
@@ -204,55 +201,185 @@
      </imageobject>
     </mediaobject>
    </figure>
+
+   <note><para>Remember that none of these names are normative or absolute. They're not mutually exclusive either,
+    they're just here to help you get started.</para></note>
+
+   <para>Now that you've gotten a little heads-up on modules, let's get a wee bit dirty with them, shall we?</para>
+
    <sect2 id="concepts-modules-service">
     <title>Modules that provide Services</title>
     <titleabbrev>Regular Modules</titleabbrev>
-    <para></para>
+
+    <para>This is the easy type of modules. Anything that has something in the "provides"-field of its dependency-
+	 descriptor falls in this category. A lot of these modules are XML-modules, simply because a lot of services
+     aren't provided by einit itself, but some other program, which needs to be executed. XML modules were designed
+     for this task. Examples for such modules are the whole series of "displaymanager-modules", such as daemon-kdm
+	 and daemon-gdm, logger/syslog modules like daemon-metalog, or plain ol' apache and gpm.</para>
+
+    <para>That's not to say that there weren't any C-Modules dealing with this. Some things provide these services,
+     but they don't just "simply" start a daemon. Examples for this are the "tty" and "ipc" services: the tty-module
+     provides you with gettys on your virtual terminals ((ctrl+)alt+f1 to (ctrl+)alt-f6), and makes sure the started
+     gettys will respawn, should they die (because maybe someone logged in and then back out). The "ipc"-service,
+	 on the other hand, is responsible for getting all the external programs to work that interact with eINIT:
+	 einit-control, erc, power, etc.</para>
+
+    <para>Logics dictate that since this type of module provides something, it also inevitably needs enable()- and
+     disable()-functions, which are described in the Developer's Guide.</para>
+
+    <para>In essence, this is any type of module that is most likely optional, provides a service and which will
+     usually participate in global depedency resolution.</para>
    </sect2>
    <sect2 id="concepts-modules-loaders">
-    <title>Modules that provide Modules</title>
+    <title>Modules that provide Modules ("Module Loaders")</title>
     <titleabbrev>Module Loaders</titleabbrev>
-    <para></para>
+
+    <para>This is part of the magic that makes everything tick. These modules are usually passive (or mostly
+     passive), since the scanmodules()-function (which should at least be part of their primary function) is out
+     of dependency resolution's scope entirely.</para>
+
+    <para>Examples for this module type are module-so, module-xml, module-scheme and distro-gentoo (not module-c,
+     however). As is demonstrated by the distro-gentoo module, this type of module is not limited to providing
+     other modules, but other functions are often appropriate there as well. In distro-gentoo, there is also
+     "glue code", which makes gentoo-baselayout modules aware of dependencies that are already fulfilled, so
+     that they won't try to bring up dependencies by themselves.</para>
+
+    <para>Obviously, this type of module is a good starting point for any form of compatibility module, for example
+     for distro-specific sysv-initscripts, or other alternative init systems. It's conceivable that one might write
+     complete compatibility modules for InitNG, Upstart, Launchd and the like.</para>
+
+    <para>Requirements for this type of module are at least a scanmodules()-function.</para>
    </sect2>
    <sect2 id="concepts-modules-passive">
     <title>Passive Modules</title>
     <titleabbrev>Passive Modules</titleabbrev>
-    <para></para>
+
+    <para>"Passive" modules are modules that do whatever they're supposed to do with the user knowing little
+     or nothing of their existance. Most of them have no use for enable()- and disable()-functions.</para>
+
+    <para>Examples include the compat module for initctl (which makes sysv shutdown/reboot/halt commands work),
+     and various parts of the mounter and process manipulation code, as well as the modules that deal with reading,
+     storing and retrieving configuration data. (yes, those are modules as well, they're not hardcoded in any way).
+     Most "module loaders" are passive modules as well.</para>
    </sect2>
    <sect2 id="concepts-modules-shadows">
     <title>Shadow Modules</title>
     <titleabbrev>Shadows</titleabbrev>
-    <para></para>
+
+    <para>This is what Ryan dubbed a type of module that can execute things "around" other modules, for example
+     when they're enabled and disabled. There's an interface for writing this type of module with XML, and after
+     that they need to be specifically enabled. This is mostly intended for "hotfixes", along with dependency
+     overrides.</para>
+
+    <para>Another example of this are the initctl and logger-modules, which get automatically enabled along with
+     appropriate mountpoints.</para>
    </sect2>
    <sect2 id="concepts-modules-core">
     <title>Modules that provide Core Functionality</title>
     <titleabbrev>Core Modules</titleabbrev>
-    <para></para>
+
+    <para>This describes all modules that provide essential core functionality, like the whole configuration data
+     parsing, or the module for dependency resolution.</para>
    </sect2>
   </sect1>
+
   <sect1 id="concepts-variables">
    <title>Variables / Configuration Data</title>
    <titleabbrev>Variables</titleabbrev>
-   <para></para>
+
+   <para>All configuration from all sources is merged together by eINIT into a single big lookup table. Since all
+    the entries in this table tend to have name/value pairs, they're dubbed "variables". Variables are name/value
+    pairs themselves, so in eINIT you could think of the whole configuration thing as one big associative array of
+    of associative arrays. With the difference that in the primary array keys may occur more than once.</para>
+
    <sect2 id="concepts-variables-xml">
     <title>What is the 'native' Configuration Format? It's XML, right?</title>
     <titleabbrev>Native Configuration</titleabbrev>
-    <para></para>
+
+    <para>Nope, XML is not the native format of eINIT configuration data. The native format is an associative array
+     (that allows colliding keys) that maps strings to associative arrays (which in turn does not allow colloding
+     keys). The latter array maps strings to strings.</para>
+
+    <para><xref linkend="concepts-variables-format" /> should illustrate this. Actually, we're just misusing XML as
+     a pretty clear carrier for our data. I guess a lot of people would want to kill me for the ways I'm using XML
+     data. For one thing, I'm not using the whole concept of "element values" at all, because it's somewhat awkward
+     for eINIT's native data format, but on the other hand it's pretty much essential to XML, since it is actually
+     supposed to be a markup language for... well, those same element values. I just know I'm going to get flames
+     from both XML proponents and opponents alike.</para>
+
+    <figure id="concepts-variables-format" float="1" pgwide="0" floatstyle="right">
+     <title>'native' eINIT Configuration Data Format</title>
+     <mediaobject>
+      <textobject>
+       <para>illustrate all this right here.</para>
+      </textobject>
+     </mediaobject>
+    </figure>
    </sect2>
    <sect2 id="concepts-variables-xml-why">
     <title>Why does eINIT use XML by default?</title>
     <titleabbrev>Why XML?</titleabbrev>
-    <para></para>
+
+    <para>Mostly because XML is easy to parse and quite well defined. Seriously, pretty much any language has at
+     least one parser library for XML data, including most scripting languages (with the possible exception of
+     sh/bash, but to be honest, I wouldn't be suprised if there really was a parser library for xml in sh).</para>
+
+    <para>"Easy to parse" as in "easy to parse for a machine", because there's very few rules to implement, and
+     they're well-defined with little ambiguity. "Easy to parse" also applies to humans, however. Yeah I know,
+     people despise editing XML files by hand, but at least it's possible, isn't it? Better than being stuck with
+     a binary format and needing to resort to arcane tools that hopefully work to get the job done. No automated
+     text processing macros either... that'd suck. Especially if you somehow messed the data up and then somehow
+     the tools would stop working. That'd be great, wouldn't it? Well, luckily XML is hand-editable with any
+     common text editor, and the formatting rules are dead-simple.</para>
+
+    <para>Additionally, Eliminating the need for my own parser library obviously has the advantage of making sure
+     I can't screw one up myself, thus eliminating a whole class of nasty potential errors as well.</para>
    </sect2>
   </sect1>
   <sect1 id="concepts-dependencies">
    <title>Dependencies</title>
    <titleabbrev>Dependencies</titleabbrev>
-   <para></para>
+
+   <para>Dependencies are intended for service-providing modules. They express what a module needs, what it works
+    with and when it should start.</para>
+
+   <para>Right now there are four majour types of dependencies: the "provides"- and then "requires"-dependencies,
+    and the "before"- and "after"-dependencies. <xref linkend="concepts-dependencies-explained" /> should serve as
+    a quick sum-up of the possible dependency-types.</para>
+
+   <para>What a module "provides" isn't actually a dependency per-se, but it's what other modules can "require",
+    so it's explained here. By telling eINIT and the user what it provides, a module can express abstract services
+    to the user. For example the apache module would provide an "httpd" service, while gdm and kdm modules would
+    provide a "displaymanager". Note how they don't explicitly provide apache or gdm/kdm: they provide what they do
+    <emphasis>in general</emphasis>, not their exact implementation of that general thing.</para>
+
+   <para>"Requirements" are a set of things that a module really needs. For example the music player daemon will
+    always need one sound system or another, and network daemons will inevitably need some form of networking
+    available to them. Things that a module "requires" must be aforementioned abstract service names. If one of the
+    requirements can't be fulfilled, then a module that requires them is considered "broken", and it will not be
+    started.</para>
+
+   <para>"Before"- and "after"-dependencies can be used to hint eINIT about the order in which things should start.
+    These dependencies are not expressed as service names, but instead they're regular expressions that match against
+    service names that would be started alongside a module.</para>
+
+   <figure id="concepts-dependencies-explained" float="1" pgwide="0" floatstyle="right">
+    <title>eINIT Dependencies</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
+
    <sect2 id="concepts-dependencies-overrides">
     <title>Dependency Overrides</title>
     <titleabbrev>Overrides</titleabbrev>
-    <para></para>
+
+    <para>Dependencies can be overriden in configuration files. Actually they can even have complex manipulations
+     applied to them, which is intended to be used by module loaders that provide compatibility to alternative init
+     systems or sysv distribution data. Doing this is called a "dependency override". The User's Guide should have
+     more data on this.</para>
    </sect2>
   </sect1>
   <sect1 id="concepts-services">
