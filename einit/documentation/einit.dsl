@@ -6,12 +6,6 @@
 ]>
 
 <style-sheet>
- <style-specification id="print" use="print-stylesheet">
-  <style-specification-body> 
-
-;; customize the print stylesheet
-  </style-specification-body>
- </style-specification>
  <style-specification id="html" use="html-stylesheet">
   <style-specification-body> 
 
@@ -23,32 +17,32 @@
 
 <!-- some portions of this were inspired by the freebsd stylesheet, see
  http://www.freebsd.org/cgi/cvsweb.cgi/doc/share/sgml/freebsd.dsl?rev=1.91&content-type=text/x-cvsweb-markup -->
-   (define ($footer$)
+   (define ($html-body-content-start$)
     (make sequence
-     (make empty-element gi: "hr")
-     (literal "hosting provided by:")
-     (make empty-element gi: "br")
-     (make element gi: "a"
-       attributes: (list (list "href" "http://developer.berlios.de"))
-     (make empty-element gi: "img"
-       attributes: (list 
-                     (list "src" "http://developer.berlios.de/bslogo.php?group_id=8423")
-                     (list "width" "124")
-                     (list "height" "32")
-                     (list "border" "0")
-                     (list "alt" "BerliOS Logo"))))))
+     (make element gi: "div"
+       attributes: (list (list "id" "sidebar"))
+       (literal "hosting provided by:")
+       (make empty-element gi: "br")
+       (make element gi: "a"
+         attributes: (list (list "href" "http://developer.berlios.de"))
+       (make empty-element gi: "img"
+         attributes: (list
+                       (list "src" "http://developer.berlios.de/bslogo.php?group_id=8423")
+                       (list "width" "124")
+                       (list "height" "32")
+                       (list "border" "0")
+                       (list "alt" "BerliOS Logo")))))))
 
-   (define ($html-body-end$)
-    (if (equal? $footer$ (normalize ""))
+   (define ($user-html-header$)
+    (make sequence
      (empty-sosofo)
-     (make sequence
-      (if nochunks
-       (make empty-element gi: "hr")
-       (empty-sosofo))
-       ($footer$))))
+     (make empty-element gi: "link"
+       attributes: (list
+                     (list "rel" "stylesheet")
+                     (list "href" "css/einit.css")))))
 
   </style-specification-body>
  </style-specification>
- <external-specification id="print-stylesheet" document="print-ss">
+
  <external-specification id="html-stylesheet" document="html-ss">
 </style-sheet>

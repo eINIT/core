@@ -1,4 +1,7 @@
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+<?xml version='1.0'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+
 <book lang="en">
  <bookinfo>
   <date>2007-08-30</date>
@@ -42,6 +45,7 @@
   </legalnotice>
   <abstract>
    <para>This is an attempt at documenting eINIT as of version 0.24.4.</para>
+   <para>Right now this is only a rough draft of a TOC, there's no actual information yet.</para>
   </abstract>
  </bookinfo>
 
@@ -50,6 +54,11 @@
   <sect1 id="introduction-what-is-einit">
    <title>What is eINIT?</title>
    <titleabbrev>About</titleabbrev>
+   <para></para>
+  </sect1>
+  <sect1 id="introduction-why-einit">
+   <title>Why would I want to use eINIT?</title>
+   <titleabbrev>Why</titleabbrev>
    <para></para>
   </sect1>
  </chapter>
@@ -96,17 +105,17 @@
    <titleabbrev>Using</titleabbrev>
    <para></para>
    <sect2 id="users-using-einit-control">
-    <title>The "einit-control"-Command</title>
+    <title>The "einit-control"-Command: Have a chat with eINIT</title>
     <titleabbrev>einit-control</titleabbrev>
     <para></para>
    </sect2>
    <sect2 id="users-using-erc">
-    <title>The "erc"-Command</title>
+    <title>The "erc"-Command: Manipulating Services' Status</title>
     <titleabbrev>erc</titleabbrev>
     <para></para>
    </sect2>
    <sect2 id="users-using-power">
-    <title>The "power"-Command</title>
+    <title>The "power"-Command: Shutting Down and Rebooting</title>
     <titleabbrev>power</titleabbrev>
     <para></para>
    </sect2>
@@ -145,6 +154,11 @@
 	 variables/configuration data.</para>
    </sect2>
   </sect1>
+  <sect1 id="developers-sandbox">
+   <title>Testing Code: Sandbox-Mode</title>
+   <titleabbrev>Sandbox Mode</titleabbrev>
+   <para></para>
+  </sect1>
  </chapter>
 
  <appendix id="concepts">
@@ -152,10 +166,67 @@
   <sect1 id="concepts-modules">
    <title>Modules</title>
    <titleabbrev>Modules</titleabbrev>
-   <para></para>
+   <para>Modules are the "building blocks" for eINIT. They can be a lot of things, ranging from simple
+    "start-this-program-when-you're-called" modules to more complex "store-and-retrieve-configuration-data" ones
+	or even more complex managers that determine the order in which modules are started or that tackle
+	the whole issue of mounting things while booting.</para>
+
+   <para>Since modules are pretty much everything, some people will long for a way to categorise them,
+    (even though this is blatantly contradictory to everything tought in books like Lao Tse's "Tao Te King").</para>
+
+   <para><xref linkend="concepts-modules-core-interaction" /> illustrates the interaction between the core
+    and the modules. All the modules (middle column) are loaded by a module loader (left column). This loading
+    is requested by the core itself, when it invokes the scanmodules()-function of the module loader. The
+    "code"-section spans both the module loader and the module itself, because many types of modules require
+    wrapper-code from the module-loader to function as intended (e.g. XML-Modules need a wrapper like this,
+    since XML is definitely not compiled object code, and thus the core cannot execute functions of these
+    modules directly).</para>
+
+   <para>As indicated in the figure, there's two kinds of descriptors around for every eINIT module: one "static
+    descriptor", and another one called the "core descriptor" (the figure has two static descriptors, because
+	the module loader to the left is just a module too, albeit one with a scanmodules()-function). The reason
+    for two descriptors is simple, the static one acts as a reference entry (especially for the dependencies),
+	and the core descriptor lists the "current" data and some function pointers as shortcuts. See the guide on
+	C-Modules for details on what function pointers need to be provided. Additionally, the core descriptor keeps
+	track of a module's "status", that is, whether it's enabled, disabled, broken, etc...</para>
+
+   <note><para>Remember that none of these names are normative or absolute. They're not mutually exclusive either,
+    they're just here to help you get started.</para></note>
+
+   <figure id="concepts-modules-core-interaction" float="1" pgwide="0" floatstyle="right">
+    <title>Modules, Module Loaders and the Core</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/module.svg" format="SVG" />
+     </imageobject>
+     <imageobject>
+      <imagedata fileref="images/module.png" format="PNG" />
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <sect2 id="concepts-modules-service">
+    <title>Modules that provide Services</title>
+    <titleabbrev>Regular Modules</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="concepts-modules-loaders">
+    <title>Modules that provide Modules</title>
+    <titleabbrev>Module Loaders</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="concepts-modules-passive">
+    <title>Passive Modules</title>
+    <titleabbrev>Passive Modules</titleabbrev>
+    <para></para>
+   </sect2>
    <sect2 id="concepts-modules-shadows">
     <title>Shadow Modules</title>
     <titleabbrev>Shadows</titleabbrev>
+    <para></para>
+   </sect2>
+   <sect2 id="concepts-modules-core">
+    <title>Modules that provide Core Functionality</title>
+    <titleabbrev>Core Modules</titleabbrev>
     <para></para>
    </sect2>
   </sect1>

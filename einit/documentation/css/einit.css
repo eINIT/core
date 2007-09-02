@@ -1,0 +1,46 @@
+body, p, h1, h2, h3, h4, h5, h6, div, span {
+ font: normal normal 12px sans-serif;
+}
+
+h1 {
+ font: bold 20px Verdana, sans-serif;
+}
+
+h2 {
+ font: bold 18px Verdana, sans-serif;
+}
+
+h3 {
+ font: bold 16px Verdana, sans-serif;
+}
+
+h4 {
+ font: bold 14px Verdana, sans-serif;
+}
+
+h5 {
+ font: italic 12px Verdana, sans-serif;
+}
+
+h6 {
+ font: underline 12px Verdana, sans-serif;
+}
+
+p {
+ text-align: justify;
+}
+
+div#sidebar {
+ background: #eeeeff;
+ padding: 2px;
+ border: 1px dotted black;
+ float: right;
+}   
+
+a {
+ text-decoration: none;
+}   
+
+a:hover {
+ text-decoration: underline;
+}
