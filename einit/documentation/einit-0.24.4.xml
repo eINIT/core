@@ -45,7 +45,9 @@
   </legalnotice>
   <abstract>
    <para>This is an attempt at documenting eINIT as of version 0.24.4.</para>
-   <para>Right now this is only a rough draft of a TOC, there's no actual information yet.</para>
+   <para>This is currently a WIP ("Work in Progress"), but your feedback is greatly appreciated. If you'd like to
+    point out flaws, shortcomings or ideas, please file an issue on einit.org, or join #einit on freenode. We're
+    eager to hear from you. :)</para>
   </abstract>
  </bookinfo>
 
@@ -204,6 +206,9 @@
 
    <note><para>Remember that none of these names are normative or absolute. They're not mutually exclusive either,
     they're just here to help you get started.</para></note>
+
+   <para>One thing that all these modules have in common, is that there absolutely <emphasis>must</emphasis> be an
+    "RID" (the unique identifier for a module) and a name for each and every one of them.</para>
 
    <para>Now that you've gotten a little heads-up on modules, let's get a wee bit dirty with them, shall we?</para>
 
@@ -385,31 +390,191 @@
   <sect1 id="concepts-services">
    <title>Services</title>
    <titleabbrev>Services</titleabbrev>
-   <para></para>
+
+   <para>A "service" is an abstract name for something that is done by a module. "Abstract" as in <emphasis>the
+    general thing</emphasis>. That means that, for example, the service provided by all of gdm, xdm, kdm and
+    entranced is "displaymanager", and not their respective service names.</para>
+
+   <para>Now, why would we want to do that? It's fairly simple, really. The advantage is that using this method
+    we can easily arrange for "backups" (see <xref linkend="concepts-services-backups" />). This has the handy
+    side-effect of allowing us some degree of auto-detection.</para>
+
+   <para>The other advantage is that modules don't need to be hard-coded to work for every possible combination
+    of daemons that all essentially provide the same thing. A lot of services, for example, will require (or at
+    least use) some form of syslog daemon. If we required specific syslog daemons, then things would get nasty
+    fairly soon, since we'd need to write different editions of that one same module for all the different types
+    of system loggers. Then when a new one comes around, we'd have to write new modules for all syslog-users.
+    That's not very practical.</para>
+
+   <para>The idea isn't entirely new either, while a lot of other systems provide very specific service names, most
+    of them also seem to use "virtual" service-names for special services (especially syslog/syslog-ng/metalog,
+    which get grouped together as "syslog" or "logger"). eINIT is just taking it a little farther by making this
+    the native form right away.</para>
+
+   <figure id="concepts-services-explained" float="1" pgwide="0" floatstyle="right">
+    <title>eINIT Services: The Big Picture</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
+
    <sect2 id="concepts-services-backups">
     <title>Backup-Modules</title>
     <titleabbrev>Backups</titleabbrev>
-    <para></para>
+
+    <para>One of the advantages of this abstraction is that eINIT has a list of possible modules to choose from for
+     some modules. As in last chapter's example, if eINIT can't bring up metalog (maybe because it's broken, or
+     because it's not even installed), it can try to bring up alternatives that still do the same thing: syslog-ng,
+     for example.</para>
+
+    <para>A more practical example would be a webserver. If, for some reason (broken config, we don't know how it
+     happened), Apache cannot start, and there's a module providing the same service, maybe tinyhttpd, then eINIT
+     would try to fall back to the latter. This could be used to provide a simpler service to users while apache is
+     under maintenance, or to at least provide a warning message ("This server is currently down for scheduled
+     maintenance. This is normal, our Tech Department did not screw up!"). Something like that could be beneficial,
+     since instead of an annoying timeout, followed by a "page cannot be displayed"-warning from the browser, which
+     looks rather unprofessional, any user would instead see a (possibly fancy-looking) "maintenance notice", which
+     at least looks somewhat more professional, and should result in less people calling in.</para>
+
+    <para>Using and relying on backup services will almost inevitably also rely on preferring services, see
+     <xref linkend="concepts-services-preferences" /> for more on this.</para>
    </sect2>
    <sect2 id="concepts-services-rid-vs-service">
     <title>Module-IDs v.s. Service Names</title>
     <titleabbrev>RID vs Services</titleabbrev>
-    <para></para>
+
+    <para>This distinction may be a bit unclear to some. The Module-ID, or "RID", is that long name a module has,
+     usually prefixed with the subsystem name (for example daemon-gdm or gentoo-acpid). The Service Name is that
+     shorter one that can refer to more than one specific module, like with all the displaymanagers. You can't
+     have a module-id as any form of dependency, other than specifying it in a mode to enable or disable it.</para>
+
+    <para>Conversely, you can't specify an RID as something that a module provides, since then the RID wouldn't
+     be unique anymore, and you'd instead be specifying a service name.</para>
+
+    <para>Don't mix these two up. When it says RID, don't place service names in there, and if it says service names,
+     don't use an RID!</para>
+   </sect2>
+   <sect2 id="concepts-services-preferences">
+    <title>"Preferring" Modules for Services</title>
+    <titleabbrev>Service-Preferences</titleabbrev>
+
+    <para>Preferring services is quite straightforward, and works in the way described in
+     <xref linkend="concepts-services-explained" />. Unless something is preferred, the order in which modules are
+     attempted to be enabled for any given service is essentially random. However, with preferences you can specify
+     the order in which things are attempted. Usually, you will only prefer one service, maybe two, and then don't
+     really care about the remaining modules.</para>
+
+    <para>There's three ways of specifying these preferences: Directly, by using "prefer-lines" (see the User's
+     Guide). The other two ways are indirect. They work by specifying either an "unambiguous" additional service
+     provided by a module, or by specifying a module's RID as a service name, along with the service name (in the
+     same mode, for example). All of this should be explained well in
+     <xref linkend="concepts-services-preferences-explained" />.</para>
+
+    <figure id="concepts-services-preferences-explained" float="1" pgwide="0" floatstyle="right">
+     <title>eINIT Services and Service Preferences</title>
+     <mediaobject>
+      <textobject>
+       <para>illustrate all this right here.</para>
+      </textobject>
+     </mediaobject>
+    </figure>
+
+    <para>So, to be clear about which displaymanager to start, for example "GDM", in your mode you would put
+     <emphasis>both</emphasis> "displaymanager", being the abstract service to start, and "daemon-gdm", which is
+     the RID, or the unique module-ID for the gdm daemon. (this is the second indirect method, and usually the
+     easiest method as well).</para>
    </sect2>
   </sect1>
   <sect1 id="concepts-groups">
    <title>Service Groups</title>
    <titleabbrev>Service Groups</titleabbrev>
-   <para></para>
+
+   <para>Service groups are collections of other services under a common name. An example here is the "network"
+    group, which is used to sum up all the network interfaces that should start automatically (like net-eth0).</para>
+
+   <para>These groups will usually have members (in XML that's what's in the group= attribute) and a "sequence
+    identifier" (seq=). The latter is either of "any", "any-iop", "most" and "all", which determines how many
+    members of the group need to be enabled for the group to be considered "up", or "enabled".</para>
+
+   <para>"All" means that unless every single one of the services is enabled, the group is not. "Most" means that
+    eINIT will try to bring up everything, but in general the group is considered good if one of them ran fine.
+	"Any" means just that: any of the services OK means the group is as well. For these groups eINIT will try to
+    only bring one member up, unless one of them is already up. "Any-iop" means "any, in order of preference", which
+    tells eINIT that it really should try to start any of the members of the group, but the order you specified is
+    the order you expect eINIT to try the services in, until one succeeds.</para>
+
+   <note><para>As of version 0.24.3, there is no difference between seq="any" and seq="any-iop" in groups, but this
+    is intended to change with a future release, effectively making seq="any" always try the service that needs the
+    least changes to get up.</para></note>
+
+   <para>See the User's Guide for more details on specifying service groups.</para>
   </sect1>
   <sect1 id="concepts-modes">
    <title>Modes</title>
    <titleabbrev>Modes</titleabbrev>
-   <para></para>
+
+   <para>A "mode" is what anyone would use to tell eINIT what to start at boot-time.</para>
+
+   <para>Modes are related to runlevels. In their easiest form, they're just named runlevels, but they can also
+    contain other special attributes, inherit other runlevels' data and have their own variables that come with them
+    and which are only valid in that specific mode. Especially the latter is an important difference to a runlevel,
+    since it allows for completely different usage profiles depending on the mode, and actually even drastically
+    different configuration data as well.</para>
+
+   <para><xref linkend="concepts-modes-explained" /> should explain this in greater detail. For information on how
+    to specify modes, see the User's Guide.</para>
+
+   <figure id="concepts-modes-explained" float="1" pgwide="0" floatstyle="right">
+    <title>Modes: nicer Runlevels</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
 
    <sect2 id="concepts-modes-switches">
-    <title>Mode-Switches</title>
-    <titleabbrev>Mode-Switches</titleabbrev>
+    <title>Mode Switches</title>
+    <titleabbrev>Mode Switches</titleabbrev>
+
+    <para>A "Mode Switch" is what happens when you tell eINIT to go from one mode to another, for example if you
+     tell eINIT to boot, it performs such a "Mode Switch" from nothing to "default". Shutting down and rebooting are
+     also implemented as mode switches, in those cases they're from anything that is currently active to "power-down"
+     or "power-reset", respectively. If you have a close look at modes.xml, you'll see that the latter two modes
+     aren't even anything special, they're just tagged with some extra commands to run that will make eINIT do those
+     special actions.</para>
+   </sect2>
+  </sect1>
+
+  <sect1 id="concepts-events">
+   <title>Events</title>
+   <titleabbrev>Events</titleabbrev>
+
+   <para>eINIT has a rather strong event-system that works a lot of the magic in the background. Events are all sorts
+    of things that eINIT would want to act on, they include, but aren't limited to, notifications for module status
+    changes, IPC requests from the user or other parts of eINIT, various requests (i.e. for switching modes, shutting
+    down, etc.), module feedback, etc...</para>
+
+   <sect2 id="concepts-events-subsystems">
+    <title>Events and Event Subsystems</title>
+    <titleabbrev>Subsystems</titleabbrev>
+
+    <para></para>
+   </sect2>
+
+   <sect2 id="concepts-events-ipc">
+    <title>IPC Events, regular and via D-Bus.</title>
+    <titleabbrev>IPC Events</titleabbrev>
+
+    <para></para>
+   </sect2>
+
+   <sect2 id="concepts-events-relays">
+    <title>Event Relays (e.g. via D-Bus)</title>
+    <titleabbrev>Event Relays</titleabbrev>
+
     <para></para>
    </sect2>
   </sect1>
