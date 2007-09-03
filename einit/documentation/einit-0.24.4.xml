@@ -467,7 +467,8 @@
      really care about the remaining modules.</para>
 
     <para>There's three ways of specifying these preferences: Directly, by using "prefer-lines" (see the User's
-     Guide). The other two ways are indirect. They work by specifying either an "unambiguous" additional service
+     Guide) used to be the primary one, but maybe you shouldn't use it that much anymore, since it's harder to dig.
+	 The other two ways are indirect. They work by specifying either an "unambiguous" additional service
      provided by a module, or by specifying a module's RID as a service name, along with the service name (in the
      same mode, for example). All of this should be explained well in
      <xref linkend="concepts-services-preferences-explained" />.</para>
@@ -483,8 +484,8 @@
 
     <para>So, to be clear about which displaymanager to start, for example "GDM", in your mode you would put
      <emphasis>both</emphasis> "displaymanager", being the abstract service to start, and "daemon-gdm", which is
-     the RID, or the unique module-ID for the gdm daemon. (this is the second indirect method, and usually the
-     easiest method as well).</para>
+     the RID, a.k.a. the unique module-ID, for the gdm daemon. (this is the second indirect method, and usually the
+     easiest one as well).</para>
    </sect2>
   </sect1>
   <sect1 id="concepts-groups">
@@ -515,7 +516,7 @@
    <title>Modes</title>
    <titleabbrev>Modes</titleabbrev>
 
-   <para>A "mode" is what anyone would use to tell eINIT what to start at boot-time.</para>
+   <para>A "mode" is what is used to tell eINIT what to start at boot-time, among other things.</para>
 
    <para>Modes are related to runlevels. In their easiest form, they're just named runlevels, but they can also
     contain other special attributes, inherit other runlevels' data and have their own variables that come with them
