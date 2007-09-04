@@ -379,17 +379,23 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
       } else 
        scriptpath = estrdup (node->arbattrs[i+1]);
 
-      notice (1, "script file: %s", scriptpath);
+//      notice (1, "script file: %s", scriptpath);
 
       if (type_shell)
        mexec->script = scriptpath;
       else
        dexec->script = scriptpath;
      } else if (strmatch (node->arbattrs[i], "script-actions")) {
+      char **ractions = str2set (':', node->arbattrs[i+1]);
+
+      if (inset ((const void **)ractions, "on-shutdown", SET_TYPE_STRING)) {
+       shutdownaction = 1;
+      }
+
       if (type_shell)
-       mexec->script_actions = str2set (':', node->arbattrs[i+1]);
+       mexec->script_actions = ractions;
       else
-       dexec->script_actions = str2set (':', node->arbattrs[i+1]);
+       dexec->script_actions = ractions;
      } else if (strmatch (node->arbattrs[i], "after"))
       modinfo->si.after = str2set (':', node->arbattrs[i+1]);
      else if (strmatch (node->arbattrs[i], "shutdown-after"))
