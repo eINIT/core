@@ -112,6 +112,8 @@ char flush_log_buffer_to_syslog() {
    char *slmessage = logbuffer[0]->message;
    char severity = logbuffer[0]->severity;
 
+   fprintf (stderr, "message: %s\n", slmessage);
+
    logbuffer = (struct log_entry **)setdel ((void **)logbuffer, (void *)logbuffer[0]);
 
    pthread_mutex_unlock(&logmutex);
@@ -166,6 +168,8 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
   if (ev->status & status_enabled) {
    if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "logger", SET_TYPE_STRING)) {
     openlog ("einit", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+    fprintf (stderr, "opened syslog connection\n");
 
     have_syslog = 1;
 
@@ -387,7 +391,7 @@ int einit_log_configure (struct lmodule *r) {
  event_listen (einit_event_subsystem_feedback, einit_log_feedback_event_handler);
  event_listen (einit_event_subsystem_core, einit_log_einit_event_handler);
 
- setlogmask (LOG_UPTO (LOG_NOTICE));
+// setlogmask (LOG_UPTO (LOG_NOTICE));
 
  return 0;
 }
