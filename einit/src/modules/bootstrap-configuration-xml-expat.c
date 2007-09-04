@@ -360,76 +360,22 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
    while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-directory", tree_find_first))) {
     node = (struct cfgnode *)hnode->value;
+    char **files = readdirfilter (node, NULL, "\\.xml$", NULL, 0);
 
-    if (node->svalue) {
-     char *includedir = NULL;
-     DIR *dir;
-     struct dirent *entry;
-     uint32_t bdlen = strlen(node->svalue)+1;
+    if (files) {
+     int ixx = 0;
 
-     if (node->svalue[0] == '/') {
-      if (node->svalue[bdlen-2] == '/')
-       includedir = estrdup (node->svalue);
-      else {
-       bdlen++;
-       includedir = ecalloc (1, sizeof(char)*(bdlen));
-       includedir = strcat (includedir, node->svalue);
-       includedir[bdlen-2] = '/';
-       includedir[bdlen-1] = 0;
-      }
-     } else {
-      char tb = 1;
-      if ((tb = (node->svalue[bdlen-2] == '/')))
-       bdlen += cfgplen - 1;
-      else
-       bdlen += cfgplen;
+     for (; files[ixx]; ixx++) {
+      recursion++;
+      einit_config_xml_expat_parse_configuration_file (files[ixx]);
+      recursion--;
+	 }
 
-      includedir = ecalloc (1, sizeof(char)*(bdlen));
-      includedir = strcat (includedir, confpath);
-      includedir = strcat (includedir, node->svalue);
-
-      if (!tb) {
-       includedir[bdlen-2] = '/';
-       includedir[bdlen-1] = 0;
-      }
-     }
-
-     if ((dir = eopendir (includedir))) {
-      char *includefile = (char *)emalloc (bdlen);
-      memcpy (includefile, includedir, bdlen-1);
-      struct stat statres;
-
-      while ((entry = ereaddir (dir))) {
-       includefile[bdlen-1] = 0;
-
-       includefile = erealloc (includefile, bdlen+strlen(entry->d_name));
-       strcat (includefile, entry->d_name);
-
-       if (!stat (includefile, &statres) && !S_ISDIR(statres.st_mode)) {
-        recursion++;
-        einit_config_xml_expat_parse_configuration_file (includefile);
-        recursion--;
-       }
-      }
-
-      free (includefile);
-      eclosedir (dir);
-     } else {
-      if (xml_parser_auto_create_missing_directories) {
-       if (mkdir (includedir, 0777)) {
-        bitch(bitch_stdio, errno, (char *)includedir);
-       } else {
-        notice (5, "created missing directory \"%s\"\n", includedir);
-       }
-      }
-     }
-
-     free (includedir);
-     if (node->id) free (node->id);
-//     streedel (hconfiguration, hnode);
-     streedel (hnode);
-     goto rescan_node;
+     free (files);
     }
+
+    streedel (hnode);
+    goto rescan_node;
    }
 
    while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-file", tree_find_first))) {
