@@ -179,31 +179,33 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
   struct lmodule *module = ev->para;
   struct cfgnode *lnode = NULL;
 
+/* for the record: setting a pointer is apparently atomic, so we don't need any locks */
+
   while ((lnode = cfg_findnode ("services-override-module", 0, lnode)))
    if (lnode->idattr && module->module->rid && strmatch(lnode->idattr, module->module->rid)) {
-   struct service_information *esi = ecalloc (1, sizeof (struct service_information));
-   uint32_t i = 0;
+    struct service_information *esi = ecalloc (1, sizeof (struct service_information));
+    uint32_t i = 0;
 
-   if (module->si) {
-    esi->requires = module->si->requires;
-    esi->provides = module->si->provides;
-    esi->after = module->si->after;
-    esi->before = module->si->before;
-    esi->shutdown_after = module->si->shutdown_after;
-    esi->shutdown_before = module->si->shutdown_before;
-   }
+    if (module->si) {
+     esi->requires = module->si->requires;
+     esi->provides = module->si->provides;
+     esi->after = module->si->after;
+     esi->before = module->si->before;
+     esi->shutdown_after = module->si->shutdown_after;
+     esi->shutdown_before = module->si->shutdown_before;
+    }
 
-   for (; lnode->arbattrs[i]; i+=2) {
-    if (strmatch (lnode->arbattrs[i], "requires")) esi->requires = str2set (':', lnode->arbattrs[i+1]);
-    else if (strmatch (lnode->arbattrs[i], "provides")) esi->provides = str2set (':', lnode->arbattrs[i+1]);
-    else if (strmatch (lnode->arbattrs[i], "after")) esi->after = str2set (':', lnode->arbattrs[i+1]);
-    else if (strmatch (lnode->arbattrs[i], "before")) esi->before = str2set (':', lnode->arbattrs[i+1]);
-    else if (strmatch (lnode->arbattrs[i], "shutdown-before")) esi->shutdown_before = str2set (':', lnode->arbattrs[i+1]);
-    else if (strmatch (lnode->arbattrs[i], "shutdown-after")) esi->shutdown_after = str2set (':', lnode->arbattrs[i+1]);
-   }
+    for (; lnode->arbattrs[i]; i+=2) {
+     if (strmatch (lnode->arbattrs[i], "requires")) esi->requires = str2set (':', lnode->arbattrs[i+1]);
+     else if (strmatch (lnode->arbattrs[i], "provides")) esi->provides = str2set (':', lnode->arbattrs[i+1]);
+     else if (strmatch (lnode->arbattrs[i], "after")) esi->after = str2set (':', lnode->arbattrs[i+1]);
+     else if (strmatch (lnode->arbattrs[i], "before")) esi->before = str2set (':', lnode->arbattrs[i+1]);
+     else if (strmatch (lnode->arbattrs[i], "shutdown-before")) esi->shutdown_before = str2set (':', lnode->arbattrs[i+1]);
+     else if (strmatch (lnode->arbattrs[i], "shutdown-after")) esi->shutdown_after = str2set (':', lnode->arbattrs[i+1]);
+    }
 
-   module->si = esi;
-   break;
+    module->si = esi;
+    break;
    }
 
    if (service_aliases && module->si &&module->si->provides) {

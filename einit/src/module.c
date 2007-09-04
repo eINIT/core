@@ -99,17 +99,10 @@ int mod_freemodules ( void ) {
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
 
- if (pthread_mutex_trylock (&module->mutex)) {
-  perror ("mod_update(): locking mutex");
-  return module;
- }
-
  struct einit_event ee = evstaticinit (einit_core_update_module);
  ee.para = (void *)module;
  event_emit (&ee, einit_event_flag_broadcast);
  evstaticdestroy(ee);
-
- emutex_unlock (&module->mutex);
 
  return module;
 }
