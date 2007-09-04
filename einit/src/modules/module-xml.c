@@ -76,6 +76,9 @@ struct mexecinfo {
  char *user, *group;
  char *pidfile;
  char **oattrs;
+
+ char *script;
+ char **script_actions;
 };
 
 int einit_module_xml_configure (struct lmodule *);
@@ -358,6 +361,16 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
        mexec->environment = straddtoenviron (mexec->environment, "services", node->arbattrs[i+1]);
       else
        dexec->environment = straddtoenviron (dexec->environment, "services", node->arbattrs[i+1]);
+     } else if (strmatch (node->arbattrs[i], "script")) {
+      if (type_shell)
+       mexec->script = estrdup (node->arbattrs[i+1]);
+      else
+       dexec->script = estrdup (node->arbattrs[i+1]);
+     } else if (strmatch (node->arbattrs[i], "script-actions")) {
+      if (type_shell)
+       mexec->script_actions = str2set (':', node->arbattrs[i+1]);
+      else
+       dexec->script_actions = str2set (':', node->arbattrs[i+1]);
      } else if (strmatch (node->arbattrs[i], "after"))
       modinfo->si.after = str2set (':', node->arbattrs[i+1]);
      else if (strmatch (node->arbattrs[i], "shutdown-after"))
@@ -513,11 +526,35 @@ int einit_module_xml_custom (char **arbattrs, char *command, struct einit_event 
 }
 
 int einit_module_xml_daemon_custom (struct dexecinfo *dexec, char *command, struct einit_event *status) {
- return ((status->module->status & status_enabled) ? status_enabled : status_disabled) | einit_module_xml_custom (dexec->oattrs, command, status, dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment);
+ if (dexec && command && dexec->script && dexec->script_actions && inset ((const void **)dexec->script_actions, command, SET_TYPE_STRING)) {
+  int retval;
+  ssize_t nclen = strlen (dexec->script) + strlen (command) + 2; /* one for a space and one for \0 */
+  char *ncommand = emalloc (nclen);
+
+  esprintf (ncommand, nclen, "%s %s", dexec->script, command);
+
+  retval = ((status->module->status & status_enabled) ? status_enabled : status_disabled) | pexec (ncommand, (const char **)dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment, status);
+
+  free (ncommand);
+
+  return retval;
+ } else return ((status->module->status & status_enabled) ? status_enabled : status_disabled) | einit_module_xml_custom (dexec->oattrs, command, status, dexec->variables, dexec->uid, dexec->gid, dexec->user, dexec->group, dexec->environment);
 }
 
 int einit_module_xml_pexec_wrapper_custom (struct mexecinfo *shellcmd, char *command, struct einit_event *status) {
- return ((status->module->status & status_enabled) ? status_enabled : status_disabled) | einit_module_xml_custom (shellcmd->oattrs, command, status, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment);
+ if (shellcmd && command && shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, command, SET_TYPE_STRING)) {
+  int retval;
+  ssize_t nclen = strlen (shellcmd->script) + strlen (command) + 2; /* one for a space and one for \0 */
+  char *ncommand = emalloc (nclen);
+
+  esprintf (ncommand, nclen, "%s %s", shellcmd->script, command);
+
+  retval = ((status->module->status & status_enabled) ? status_enabled : status_disabled) | pexec (ncommand, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+  free (ncommand);
+
+  return retval;
+ } else return ((status->module->status & status_enabled) ? status_enabled : status_disabled) | einit_module_xml_custom (shellcmd->oattrs, command, status, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment);
 }
 
 
@@ -528,7 +565,21 @@ int einit_module_xml_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_eve
   int32_t task = status->task;
 
   if (task & einit_module_disable) {
-   if (shellcmd->disable) {
+   if (shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "disable", SET_TYPE_STRING)) {
+    ssize_t nclen = strlen (shellcmd->script) + 9; /* 7 for disable, one for a space and one for \0 */
+    char *ncommand = emalloc (nclen);
+
+    esprintf (ncommand, nclen, "%s %s", shellcmd->script, "disable");
+
+    retval = pexec (ncommand, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+    free (ncommand);
+
+    if (retval & status_ok) {
+     unlink (shellcmd->pidfile);
+     errno = 0;
+    }
+   } else if (shellcmd->disable) {
     retval = pexec (shellcmd->disable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
     if (retval & status_ok) {
@@ -558,7 +609,21 @@ int einit_module_xml_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_eve
     }
    }
 
-   if (shellcmd->enable) {
+   if (shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "enable", SET_TYPE_STRING)) {
+    ssize_t nclen = strlen (shellcmd->script) + 8; /* 6 for enable, one for a space and one for \0 */
+    char *ncommand = emalloc (nclen);
+
+    esprintf (ncommand, nclen, "%s %s", shellcmd->script, "enable");
+
+    if (shellcmd->pidfile) {
+     unlink (shellcmd->pidfile);
+     errno = 0;
+    }
+
+    retval = pexec (ncommand, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+    free (ncommand);
+   } else if (shellcmd->enable) {
     if (shellcmd->pidfile) {
      unlink (shellcmd->pidfile);
      errno = 0;

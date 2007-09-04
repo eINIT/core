@@ -937,7 +937,19 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   errno = 0;
  }
 
- if (shellcmd->prepare) {
+ if (shellcmd && shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "prepare", SET_TYPE_STRING)) {
+  int retval;
+  ssize_t nclen = strlen (shellcmd->script) + 9;
+  char *ncommand = emalloc (nclen);
+
+  esprintf (ncommand, nclen, "%s %s", shellcmd->script, "prepare");
+
+  retval = pexec (ncommand, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+
+  free (ncommand);
+
+  if (retval == status_failed) return status_failed;
+ } else if (shellcmd->prepare) {
 //  if (pexec (shellcmd->prepare, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_failed) return status_failed;
   if (pexec (shellcmd->prepare, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == status_failed) return status_failed;
  }
@@ -955,12 +967,24 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  lookupuidgid (&uid, &gid, shellcmd->user, shellcmd->group);
 
  if (shellcmd->options & daemon_model_forking) {
+  int retval;
   if (status) {
    fbprintf (status, "forking daemon");
    status_update (status);
   }
 
-  if (pexec_f (shellcmd->command, (const char **)shellcmd->variables, uid, gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_ok) {
+  if (shellcmd && shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "daemon", SET_TYPE_STRING)) {
+   ssize_t nclen = strlen (shellcmd->script) + 8;
+   char *ncommand = emalloc (nclen);
+
+   esprintf (ncommand, nclen, "%s %s", shellcmd->script, "daemon");
+
+   retval = pexec (ncommand, (const char **)shellcmd->variables, uid, gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+   free (ncommand);
+  } else retval = pexec_f (shellcmd->command, (const char **)shellcmd->variables, uid, gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
+
+  if (retval == status_ok) {
    struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
    new->starttime = time (NULL);
    new->dx = shellcmd;
@@ -1125,7 +1149,19 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   errno = 0;
  }
 
- if (shellcmd->cleanup) {
+ if (shellcmd && shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "cleanup", SET_TYPE_STRING)) {
+  int retval;
+  ssize_t nclen = strlen (shellcmd->script) + 9;
+  char *ncommand = emalloc (nclen);
+
+  esprintf (ncommand, nclen, "%s %s", shellcmd->script, "cleanup");
+
+  retval = pexec (ncommand, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
+
+  free (ncommand);
+
+  if (retval == status_failed) return status_ok;
+ } else if (shellcmd->cleanup) {
  // if (pexec (shellcmd->cleanup, shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status) == status_failed) return status_ok;
   if (pexec (shellcmd->cleanup, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status) == status_failed) return status_ok;
  }

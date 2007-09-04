@@ -83,6 +83,9 @@ struct dexecinfo {
  enum daemon_options options;
 
  time_t pidfiles_last_update;
+
+ char *script;
+ char **script_actions;
 };
 
 struct daemonst {
@@ -125,6 +128,7 @@ variable_checkup_function f_check_variables;
 
 #define pexec(command, variables, uid, gid, user, group, local_environment, status) ((f_pxe || (f_pxe = function_find_one("einit-execute-command", 1, NULL)))? f_pxe(command, variables, uid, gid, user, group, local_environment, status) : status_failed)
 #define pexec_v1(command,variables,env,status) pexec (command, variables, 0, 0, NULL, NULL, env, status)
+#define pexec_simple(command, status) pexec (command, NULL, 0, 0, NULL, NULL, NULL, status);
 
 #define startdaemon(execheader, status) ((f_start_daemon || (f_start_daemon = function_find_one("einit-execute-daemon", 1, NULL)))? f_start_daemon(execheader, status) : status_failed)
 #define stopdaemon(execheader, status) ((f_stop_daemon || (f_stop_daemon = function_find_one("einit-stop-daemon", 1, NULL)))? f_stop_daemon(execheader, status) : status_failed)
