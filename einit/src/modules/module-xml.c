@@ -55,6 +55,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 #include <pthread.h>
 
+#include <libgen.h>
+
 #include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
@@ -362,10 +364,21 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
       else
        dexec->environment = straddtoenviron (dexec->environment, "services", node->arbattrs[i+1]);
      } else if (strmatch (node->arbattrs[i], "script")) {
+      char *scriptpath;
+      if ((node->arbattrs[i+1][0] != '/') && node->source_file) {
+       char spbuffer[BUFFERSIZE];
+       char *scriptbase = dirname (node->source_file);
+
+       esprintf (spbuffer, BUFFERSIZE, "%s/%s", scriptbase, node->arbattrs[i+1]);
+
+       scriptpath = estrdup (spbuffer);
+      } else 
+       scriptpath = estrdup (node->arbattrs[i+1]);
+
       if (type_shell)
-       mexec->script = estrdup (node->arbattrs[i+1]);
+       mexec->script = scriptpath;
       else
-       dexec->script = estrdup (node->arbattrs[i+1]);
+       dexec->script = scriptpath;
      } else if (strmatch (node->arbattrs[i], "script-actions")) {
       if (type_shell)
        mexec->script_actions = str2set (':', node->arbattrs[i+1]);
