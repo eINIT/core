@@ -73,7 +73,7 @@ elif [ $1 = "on-shutdown" ]; then
   rm -rf '${save_tmp_base}'
   mkdir '${save_tmp_base}'
   touch '${devices_udev}' '${devices_real}' '${devices_totar}' '${device_tarball}'
-  if [[ -f ${devices_udev} ] -a [ -f ${devices_real} ] -a [ -f ${devices_totar} ] -a [ -f ${device_tarball} ]] ; then
+  if [ -f ${devices_udev} -a -f ${devices_real} -a -f ${devices_totar} -a -f ${device_tarball} ] ; then
    cd /dev
    find . -xdev -type b -or -type c -or -type l | cut -d/ -f2- > '${devices_real}'
    udevinfo=$(udevinfo --export-db)
