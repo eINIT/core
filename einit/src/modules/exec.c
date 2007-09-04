@@ -643,9 +643,12 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    }
    return status_failed;
   }
+/* make sure the read end won't survive an exec*() */
+  fcntl (pipefderr[0], F_SETFD, FD_CLOEXEC);
   if (fcntl (pipefderr[0], F_SETFL, O_NONBLOCK) == -1) {
    bitch (bitch_stdio, errno, "can't set pipe (read end) to non-blocking mode!");
   }
+/* can't close the write end, we still need that */
   if (fcntl (pipefderr[1], F_SETFL, O_NONBLOCK) == -1) {
    bitch (bitch_stdio, errno, "can't set pipe (write end) to non-blocking mode!");
   }
@@ -711,6 +714,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   FILE *fx;
 
   if (!(options & pexec_option_nopipe) && status) {
+/* tag the fd as close-on-exec, just in case */
+   fcntl (pipefderr[1], F_SETFD, FD_CLOEXEC);
    eclose (pipefderr[1]);
    errno = 0;
 

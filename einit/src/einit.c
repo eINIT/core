@@ -56,6 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
 
+#include <fcntl.h>
+
 char shutting_down = 0;
 
 #ifndef NONIXENVIRON
@@ -349,8 +351,13 @@ int main(int argc, char **argv) {
  respawn:
 
  pipe (commandpipe);
- if (!debug)
+
+ fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC);
+
+ if (!debug) {
+  fcntl (commandpipe[0], F_SETFD, FD_CLOEXEC);
   commandpipe_in = fdopen (commandpipe[0], "r");
+ }
  commandpipe_out = fdopen (commandpipe[1], "w");
 
  if (!initoverride && ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands))) {
@@ -474,8 +481,10 @@ int main(int argc, char **argv) {
    }
   }
 
-  if (debugme_pipe) // commandpipe[0]
+  if (debugme_pipe) { // commandpipe[0]
+   fcntl (commandpipe[0], F_SETFD, FD_CLOEXEC);
    commandpipe_in = fdopen (debugme_pipe, "r");
+  }
 
 /* actual system initialisation */
   struct einit_event cev = evstaticinit(einit_core_update_configuration);

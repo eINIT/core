@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <stdlib.h>
 #include <einit/bitch.h>
+#include <fcntl.h>
 
 #include <einit-modules/ipc.h>
 
@@ -252,6 +253,8 @@ void * ipc_wait (void *unused_parameter) {
  struct sockaddr_un saddr;
 
  einit_ipc_running = 1;
+/* tag the fd as close-on-exec, just in case */
+ fcntl (sock, F_SETFD, FD_CLOEXEC);
 
  if (sock == -1) {
   perror ("einit-ipc: initialising socket");

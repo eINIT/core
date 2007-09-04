@@ -378,6 +378,9 @@ char *einit_dbus::ipc_request (char *command) {
 
    fcntl (internalpipe[0], F_SETFL, O_NONBLOCK);
    fcntl (internalpipe[1], F_SETFL, O_NONBLOCK);
+/* tag the fds as close-on-exec, just in case */
+   fcntl (internalpipe[0], F_SETFD, FD_CLOEXEC);
+   fcntl (internalpipe[1], F_SETFD, FD_CLOEXEC);
 
    setsockopt (internalpipe[0], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
    setsockopt (internalpipe[1], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
