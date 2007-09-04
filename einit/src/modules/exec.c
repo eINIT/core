@@ -648,7 +648,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   if (fcntl (pipefderr[0], F_SETFL, O_NONBLOCK) == -1) {
    bitch (bitch_stdio, errno, "can't set pipe (read end) to non-blocking mode!");
   }
-/* can't close the write end, we still need that */
+/* make sure we unset this flag after fork()-ing */
+  fcntl (pipefderr[1], F_SETFD, FD_CLOEXEC);
   if (fcntl (pipefderr[1], F_SETFL, O_NONBLOCK) == -1) {
    bitch (bitch_stdio, errno, "can't set pipe (write end) to non-blocking mode!");
   }
@@ -684,6 +685,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   close (1);
   if (!(options & pexec_option_nopipe)) {
+/* unset this flag after fork()-ing */
+   fcntl (pipefderr[1], F_SETFD, 0);
    close (2);
    close (pipefderr [0]);
    dup2 (pipefderr [1], 1);
