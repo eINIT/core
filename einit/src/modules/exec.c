@@ -691,6 +691,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    close (pipefderr [0]);
    dup2 (pipefderr [1], 1);
    dup2 (pipefderr [1], 2);
+   close (pipefderr [1]);
   } else {
    dup2 (2, 1);
   }
