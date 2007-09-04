@@ -56,17 +56,17 @@
      <file s="modes.xml" />
     </commands-include>
    </else>
-
-   <commands-include>
-    <directory path="/etc/einit/conf.d" />
-    <directory path="/etc/einit/subsystems.d" />
-    <directory path="/etc/einit/local" />
-    <directory path="/etc/einit/modules" />
-
-    <directory path="/lib/einit/modules-xml" />
-    <directory path="/lib/einit/modules-xml/network" />
-   </commands-include>
   </if>
+
+  <commands-include>
+   <directory path="/etc/einit/conf.d" />
+   <directory path="/etc/einit/subsystems.d" />
+   <directory path="/etc/einit/local" />
+   <directory path="/etc/einit/modules" />
+
+   <directory path="/lib/einit/modules-xml" />
+   <directory path="/lib/einit/modules-xml/network" />
+  </commands-include>
 
 <!-- These settings control the "error correction" settings, i.e. how likely
      einit is to kill itself over a (potentially recoverable) problem.
