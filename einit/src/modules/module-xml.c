@@ -367,13 +367,19 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
       char *scriptpath;
       if ((node->arbattrs[i+1][0] != '/') && node->source_file) {
        char spbuffer[BUFFERSIZE];
-       char *scriptbase = dirname (node->source_file);
+       char spbuffer2[BUFFERSIZE];
+
+       strncpy (spbuffer2, node->source_file, BUFFERSIZE);
+
+       char *scriptbase = dirname (spbuffer2);
 
        esprintf (spbuffer, BUFFERSIZE, "%s/%s", scriptbase, node->arbattrs[i+1]);
 
        scriptpath = estrdup (spbuffer);
       } else 
        scriptpath = estrdup (node->arbattrs[i+1]);
+
+      notice (1, "script file: %s", scriptpath);
 
       if (type_shell)
        mexec->script = scriptpath;
@@ -589,8 +595,10 @@ int einit_module_xml_pexec_wrapper (struct mexecinfo *shellcmd, struct einit_eve
     free (ncommand);
 
     if (retval & status_ok) {
-     unlink (shellcmd->pidfile);
-     errno = 0;
+     if (shellcmd->pidfile) {
+      unlink (shellcmd->pidfile);
+      errno = 0;
+     }
     }
    } else if (shellcmd->disable) {
     retval = pexec (shellcmd->disable, (const char **)shellcmd->variables, shellcmd->uid, shellcmd->gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
