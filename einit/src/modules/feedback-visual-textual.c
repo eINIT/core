@@ -868,8 +868,10 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
 #ifdef LINUX
      int tfd = 0;
      errno = 0;
-     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0)))
+     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0))) {
+      fcntl (tfd, F_SETFD, FD_CLOEXEC);
       ioctl (tfd, TIOCCONS, 0);
+     }
      if (errno)
       perror (filenode->arbattrs[i+1]);
 
@@ -892,8 +894,10 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
      uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
      int tfd = 0;
      errno = 0;
-     if ((tfd = open ("/dev/tty1", O_RDWR, 0)))
+     if ((tfd = open ("/dev/tty1", O_RDWR, 0))) {
+      fcntl (tfd, F_SETFD, FD_CLOEXEC);
       ioctl (tfd, VT_ACTIVATE, vtn);
+     }
      if (errno)
       perror ("einit-feedback-visual-textual: activate terminal");
      if (tfd > 0) close (tfd);
