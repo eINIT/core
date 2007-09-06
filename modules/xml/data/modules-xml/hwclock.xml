@@ -5,15 +5,15 @@
   requires="mount-system"
   enable="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
           if [[ $? == &quot;0&quot; ]]; then
-          	echo 'feedback|notice|time read from hardware clock';
+                echo 'feedback|notice|time read from hardware clock';
           else
-         	echo 'feedback|warning|failed to read time from hardware clock';
+                echo 'feedback|warning|failed to read time from hardware clock';
           fi"
   disable="/sbin/hwclock --systohc ${configuration_services_hwclock_options};
            if [[ $? == &quot;0&quot; ]]; then
-           	echo 'feedback|notice|time written to hardware clock';
+                echo 'feedback|notice|time written to hardware clock';
            else
-           	echo 'feedback|warning|failed to write time to hardware clock';
+                echo 'feedback|warning|failed to write time to hardware clock';
            fi"
   variables="configuration-services-hwclock/.*" />
 </einit>
