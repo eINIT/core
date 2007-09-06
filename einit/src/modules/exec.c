@@ -517,6 +517,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  } else if (child == 0) {
   char **exec_environment = NULL;
 
+  disable_core_dumps ();
+
   if (gid && (setgid (gid) == -1))
    perror ("setting gid");
   if (uid && (setuid (uid) == -1))
@@ -674,6 +676,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   sched_yield();
 
   char **exec_environment;
+
+  disable_core_dumps ();
 
   if (gid && (setgid (gid) == -1))
    perror ("setting gid");
@@ -1048,6 +1052,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    char **cmd;
    char **cmdsetdup;
    char **daemon_environment;
+
+   disable_core_dumps ();
 
    if (gid && (setgid (gid) == -1))
     perror ("setting gid");

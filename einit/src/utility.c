@@ -55,6 +55,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/time.h> 
+#include <sys/resource.h>
 
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
@@ -706,3 +708,21 @@ uintptr_t hashp (const char *str) {
  return rv;
 }
 #endif
+
+void enable_core_dumps() {
+ const struct rlimit infinite = {
+  .rlim_cur = RLIM_INFINITY,
+  .rlim_max = RLIM_INFINITY
+ };
+
+ setrlimit(RLIMIT_CORE, &infinite);
+}
+
+void disable_core_dumps() {
+ const struct rlimit zero = {
+  .rlim_cur = 0,
+  .rlim_max = 0
+ };
+
+ setrlimit(RLIMIT_CORE, &zero);
+}

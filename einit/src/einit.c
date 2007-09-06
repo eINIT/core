@@ -447,6 +447,8 @@ int main(int argc, char **argv) {
    }
   }
  } else {
+  enable_core_dumps ();
+
   if (debug) {
    char **xargv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
    char tbuffer[BUFFERSIZE];
