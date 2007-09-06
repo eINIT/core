@@ -1,13 +1,17 @@
-<einit prefix="services-virtual-module"> 
+<einit prefix="services-virtual-module">
  <daemon id="daemon-acpi"
   name="Advanced Configuration and Power Interface daemon"
   provides="acpid"
   requires="mount-critical"
+  pid="/var/run/acpid.pid"
   prepare="if [ ! -e /proc/acpi ]; then
                 echo 'feedback|error|ACPI support has not been compiled into the kernel!';
            fi"
-  command="/usr/sbin/acpid --foreground ${configuration_services_acpid_options}"
+  command="pexec-options dont-close-stdin;if /usr/sbin/acpid ${configuration_services_acpid_options}; then
+                 pidof acpid &gt; /var/run/acpid.pid;
+           fi"
   execute:reload="killall acpid -HUP &amp;&gt;/dev/null"
+  options="forking"
   restart="yes"
   need-files="/usr/sbin/acpid"
   variables="configuration-services-acpid/.*" />
