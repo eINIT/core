@@ -283,8 +283,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
 /* module status update */
   {
-   modules_work_count--;
-
    struct einit_event eem = evstaticinit (einit_core_module_update);
    eem.task = task;
    eem.status = fb->status;
@@ -310,7 +308,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   evdestroy (fb);
 
   service_usage_query(service_update, module, NULL);
-
+  modules_work_count--;
  }
 
  if (!(task & einit_module_ignore_mutex))
