@@ -214,6 +214,8 @@ int einit_tty_texec (struct cfgnode *node) {
     esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else if (!(cpid = fork())) {
+    disable_core_dumps ();
+
     if (device) {
      int newfd = eopen(device, O_RDWR);
      if (newfd) {
