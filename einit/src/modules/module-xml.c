@@ -344,6 +344,8 @@ int einit_module_xml_scanmodules (struct lmodule *modchain) {
       for (; opt[ri]; ri++) {
        if (strmatch (opt[ri], "feedback"))
         modinfo->mode |= einit_module_feedback;
+       else if (strmatch (opt[ri], "deprecated"))
+        modinfo->mode |= einit_module_deprecated;
       }
 
       if (type_daemon) {

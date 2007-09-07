@@ -4,6 +4,7 @@
   provides="hwclock:ntp-client"
   requires="network-minimal:mount-critical"
   after="network"
+  options="deprecated"
   enable="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
           ${configuration_services_ntp_client_command} ${configuration_services_ntp_client_options};
           if [[ $? == &quot;0&quot; ]]; then
