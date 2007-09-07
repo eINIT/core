@@ -804,9 +804,6 @@ int einit_feedback_visual_cleanup (struct lmodule *this) {
 int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  emutex_lock (&thismodule->imutex);
 
- einit_feedback_visual_textual_worker_thread_keep_running = 1;
- ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
-
  struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
  if (node)
   enableansicodes = node->flag;
@@ -955,6 +952,10 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
  }
 
  emutex_unlock (&thismodule->imutex);
+
+ einit_feedback_visual_textual_worker_thread_keep_running = 1;
+ ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
+
  return status_ok;
 }
 

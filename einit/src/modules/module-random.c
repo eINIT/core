@@ -151,7 +151,7 @@ int random_int (int max) {
 int random_module_enable (void *ignored, struct einit_event *status) {
  char sleeptime = random_int (10);
 
-// while ((sleeptime = sleep (sleeptime)));
+ while ((sleeptime = sleep (sleeptime)));
 
  return (random_int (10) <= 6) ? status_ok : status_failed;
 }
@@ -159,7 +159,7 @@ int random_module_enable (void *ignored, struct einit_event *status) {
 int random_module_disable (void *ignored, struct einit_event *status) {
  char sleeptime = random_int (10);
 
-// while ((sleeptime = sleep (sleeptime)));
+ while ((sleeptime = sleep (sleeptime)));
 
  return (random_int (10) <= 6) ? status_ok : status_failed;
 }
