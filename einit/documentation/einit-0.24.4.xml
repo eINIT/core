@@ -126,39 +126,67 @@
 
  <chapter id="developers">
   <title>Developer's Guide</title>
+
   <sect1 id="developers-intro">
    <title>Introduction</title>
    <titleabbrev>Introduction</titleabbrev>
+
    <para></para>
   </sect1>
+
   <sect1 id="developers-writing-modules">
    <title>Writing Modules</title>
    <titleabbrev>Writing Modules</titleabbrev>
+
    <para></para>
-   <sect2 id="developers-writing-modules-c">
-    <title>C Modules</title>
-    <titleabbrev>C Modules</titleabbrev>
-    <para></para>
-   </sect2>
-   <sect2 id="developers-writing-modules-xml">
-    <title>XML/SH Modules</title>
-    <titleabbrev>XML</titleabbrev>
-    <para></para>
-   </sect2>
-   <sect2 id="developers-writing-modules-scheme">
-    <title>Scheme Modules</title>
-    <titleabbrev>Scheme Modules</titleabbrev>
-    <para>At the time of this writing, Scheme modules are not fully implemented yet.
-     We've got an additional developer working on this, or at least looking into it,
-     so it shouldn't be long before these can be used properly.</para>
-    <para>Even so, some things can already be done a lot better in Scheme modules than
-	 in C or XML modules, most notably everything related to manipulating eINIT
-	 variables/configuration data.</para>
-   </sect2>
   </sect1>
+
+  <sect1 id="developers-writing-modules-c">
+   <title>C Modules</title>
+   <titleabbrev>C Modules</titleabbrev>
+
+   <para>This is the "mother of all modules". It's eINIT's native module format, so to speak; as native as it gets,
+    anyway (writing your code in C++ or pascal or anything like that is as native as C-Modules are, provided you stick
+    to the right calling conventions and can generate either a .o file to link into eINIT or a .so file to load).</para>
+
+   <para><xref linkend="developers-writing-modules-c-format" /> sums up the generic form of C modules. It all starts
+    with a static module descriptor, which has contains a reference entry for the dependencies, and RID, a name
+    some options and a pointer to a configure()-function.</para>
+
+   <figure id="developers-writing-modules-c-format" float="1" pgwide="0" floatstyle="right">
+    <title>C-Module Format</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
+  </sect1>
+
+  <sect1 id="developers-writing-modules-xml">
+   <title>XML/SH Modules</title>
+   <titleabbrev>XML</titleabbrev>
+
+   <para>XML modules are more-or-less bindings to run commands through sh. They only offer a small subset of the
+    C-Modules' functionality, but usually it's adequate. From a technical point of view, these modules should rather
+    be called "Configuration Modules", since the governing module-loader doesn't care if the configuration-data it
+    uses to genereate these modules actually comes from an XML file or not.</para>
+  </sect1>
+
+  <sect1 id="developers-writing-modules-scheme">
+   <title>Scheme Modules</title>
+   <titleabbrev>Scheme Modules</titleabbrev>
+
+   <para>At the time of this writing, Scheme modules are not fully implemented yet. We've got an additional developer
+    working on this, or at least looking into it, so it shouldn't be long before these can be used properly.</para>
+   <para>Even so, some things can already be done a lot better in Scheme modules than in C or XML modules, most notably
+    everything related to manipulating eINIT variables/configuration data.</para>
+  </sect1>
+
   <sect1 id="developers-sandbox">
    <title>Testing Code: Sandbox-Mode</title>
    <titleabbrev>Sandbox Mode</titleabbrev>
+
    <para></para>
   </sect1>
  </chapter>
@@ -557,6 +585,12 @@
     of things that eINIT would want to act on, they include, but aren't limited to, notifications for module status
     changes, IPC requests from the user or other parts of eINIT, various requests (i.e. for switching modes, shutting
     down, etc.), module feedback, etc...</para>
+
+   <para>Events work by having some modules register "handlers" or "listeners" for event subsystems. These handlers
+    are functions, which get called whenever an event of that specific subsystem is emitted. Events can be emitted
+    by any portion of the code, including code from modules.</para>
+
+   <para><xref linkend="concepts-events-details" /> contains some details on the internals of this.</para>
 
    <figure id="concepts-events-details" float="1" pgwide="0" floatstyle="right">
     <title>Events</title>
