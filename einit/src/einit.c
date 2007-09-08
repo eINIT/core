@@ -541,7 +541,7 @@ int main(int argc, char **argv) {
 
 // make sure we keep updating until everything is sorted out
   while (cev.type == einit_core_configuration_update) {
-   notice (2, "stuff changed, updating configuration.");
+//   notice (2, "stuff changed, updating configuration.");
 
    cev.type = einit_core_update_configuration;
    event_emit (&cev, einit_event_flag_broadcast);
