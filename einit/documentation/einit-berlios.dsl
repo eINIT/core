@@ -17,7 +17,21 @@
 
 <!-- some portions of this were inspired by the freebsd stylesheet, see
  http://www.freebsd.org/cgi/cvsweb.cgi/doc/share/sgml/freebsd.dsl?rev=1.91&content-type=text/x-cvsweb-markup -->
-   (define ($html-body-content-start$) (empty-sosofo))
+   (define ($html-body-content-start$)
+    (make sequence
+     (make element gi: "div"
+       attributes: (list (list "id" "sidebar"))
+       (literal "hosting provided by:")
+       (make empty-element gi: "br")
+       (make element gi: "a"
+         attributes: (list (list "href" "http://developer.berlios.de"))
+       (make empty-element gi: "img"
+         attributes: (list
+                       (list "src" "http://developer.berlios.de/bslogo.php?group_id=8423")
+                       (list "width" "124")
+                       (list "height" "32")
+                       (list "border" "0")
+                       (list "alt" "BerliOS Logo")))))))
 
    (define ($user-html-header$)
     (make sequence
