@@ -171,6 +171,8 @@ pthread_mutex_t
  feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER,
  feedback_textual_all_done_cond = PTHREAD_COND_INITIALIZER;
 
+extern int einit_have_feedback;
+
 void feedback_textual_queue_fd_command (enum feedback_textual_commands command, FILE *fd, enum einit_ipc_options fd_options, uint32_t seqid) {
  struct feedback_textual_command tnc;
  memset (&tnc, 0, sizeof (struct feedback_textual_command));
@@ -192,6 +194,26 @@ void feedback_textual_queue_fd_command (enum feedback_textual_commands command, 
 
 void feedback_textual_queue_update (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
  struct feedback_textual_command tnc;
+
+ if (!einit_have_feedback && (einit_quietness < 3)) {
+  if (message) {
+   eprintf (stderr, " > %s\n", message);
+  }
+  if (statusline) {
+   eprintf (stderr, " s %s\n", statusline);
+  }
+  if (module && (module->status & status_failed) && module->module) {
+   eprintf (stderr, " f %s (%s)\n", module->module->name ? module->module->name : "?", module->module->name ? module->module->name : "?");
+  }
+  if (module && (module->status & status_enabled) && module->module) {
+   eprintf (stderr, " e %s (%s)\n", module->module->name ? module->module->name : "?", module->module->name ? module->module->name : "?");
+  }
+  if (module && (module->status & status_working) && module->module) {
+   eprintf (stderr, " w %s (%s)\n", module->module->name ? module->module->name : "?", module->module->name ? module->module->name : "?");
+  }
+  fflush(stderr);
+ }
+
  memset (&tnc, 0, sizeof (struct feedback_textual_command));
 
  tnc.command = ftc_module_update;
@@ -559,6 +581,7 @@ signed int feedback_command_sort (struct feedback_textual_command *st1, struct f
 
 void *einit_feedback_visual_textual_worker_thread (void *irr) {
  einit_feedback_visual_textual_worker_thread_running = 1;
+ einit_have_feedback = 1;
 
  while (einit_feedback_visual_textual_worker_thread_keep_running) {
   char cs = 0;
