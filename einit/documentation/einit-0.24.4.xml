@@ -558,25 +558,56 @@
     changes, IPC requests from the user or other parts of eINIT, various requests (i.e. for switching modes, shutting
     down, etc.), module feedback, etc...</para>
 
+   <figure id="concepts-events-details" float="1" pgwide="0" floatstyle="right">
+    <title>Events</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
+
    <sect2 id="concepts-events-subsystems">
     <title>Events and Event Subsystems</title>
     <titleabbrev>Subsystems</titleabbrev>
 
-    <para></para>
+    <para>As indicated in <xref linkend="concepts-events-details" />, all events have an ID that determine their type.
+	 This ID is an integer, with the upper bits indicating a subsystem. Subsystems aren't actual subsystems of any form,
+     they're just there to group certain types of events together.</para>
+
+    <para>These subsystems are things such as "power", "ipc" and "core", and then events are things like "power failure
+     imminent", "ipc request" or "request for core mode-switch".</para>
    </sect2>
 
    <sect2 id="concepts-events-ipc">
-    <title>IPC Events, regular and via D-Bus.</title>
+    <title>IPC Events</title>
     <titleabbrev>IPC Events</titleabbrev>
 
-    <para></para>
+    <para>IPC events are a form of "catchall" for events. Like regular events, they have a subsystem: ipc. Unlike other
+	 events, however, they don't have any meaningful byte-code for the actual request. Instead they require a string,
+     which tells the event listeners what the ipc request is all about, and they turn that into a reply string.</para>
+
+    <para>All listeners write their output (if any) to a FILE* structure that they get in the event-header. This pointer
+     will either refer to stderr, to the stdout of an einit-control instance that caused the request, or to a pipe or
+     a socket. The latter is a trick used by ipc-dbus to grab the output of ipc commands as strings.</para>
+
+    <para>The command "einit-control" in all its forms (also including "power", "erc" and "einit-control-dbus", as well
+     as most functions from libeinit) is used to create "raw" IPC requests: the command connects to einit in some form,
+     requests an IPC to be emitted and the output of that is redirected to the client, which will most likely write it
+     to stdout.</para>
+
+    <para>One other curiousity of IPC requests is that they have a flag in the event handler,
+     (struct einit_event *)->implemented, which must be set to anything but 0 to tell eINIT that an IPC command has been
+     handled and was implemented.</para>
    </sect2>
 
    <sect2 id="concepts-events-relays">
     <title>Event Relays (e.g. via D-Bus)</title>
     <titleabbrev>Event Relays</titleabbrev>
 
-    <para></para>
+    <para>An event "relay" is something that takes internal events and puts them onto some other system for other
+     programs to play with. The only current example for this is the eINIT-D-Bus connector, which, among other things,
+     can take internal events and push them to other programs on the system via dbus-signals.</para>
    </sect2>
   </sect1>
  </appendix>
