@@ -627,13 +627,27 @@ int my_module_configure (struct lmodule *me) {
    <title>Submitting Modules</title>
    <titleabbrev>Submitting</titleabbrev>
 
-   <para></para>
+   <para>If you wish to submit any modules you write, you're very much encouraged to do so. Submissions through #einit
+    on freenode would probably be best, but if you don't want to do that then there's always einit.org's issue tracker,
+    various threads on fgo or you could mail us. Your submission will of course also lead to you being mentioned in
+    the contributors section.</para>
 
    <sect2 id="developers-submitting-modules-license">
     <title>License and License Issues</title>
     <titleabbrev>License</titleabbrev>
 
-    <para></para>
+    <para>One thing first: I personally don't really care what license you'd want to place your modules under. Really,
+     I don't care. Ideally it'd be a BSD-style license, of course, but which license you choose is your thing. Now,
+     As you've probably noticed, the core is under a BSD-style license. That means that in order to get your submissions
+     into the actual core-distribution, you need to put your code under a BSD-compatible license. There's a lot of
+     those, but unfortunately the GNU GPL is not one of them.</para>
+
+    <para>Now, I have nothing against the GNU GPL in and of itself, but unfortunately if I bundled GPL'd code with BSD'd
+     code, then the GPL'd code would probably override the BSD license, which means that all GPL'd code will have to be
+     bundled in a separate package. Users would probably not even notice anything of this, however, since most package
+     managers should be able to merge this stuff together before installing, but the core tarball won't be able to
+     include code that is under a license which is not compatible with the BSD license. I'm sorry, but I can't change
+     the license details :/. (Just google for the issue if you want details.)</para>
    </sect2>
   </sect1>
  </chapter>
