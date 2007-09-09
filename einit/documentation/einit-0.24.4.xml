@@ -349,6 +349,91 @@ int my_module_configure (struct lmodule *me) {
       failure, the service might still get provided eventually by some other module.</para></note>
 
     </sect3>
+
+    <sect3 id="developers-writing-modules-c-functions-disable">
+     <title>disable()</title>
+     <titleabbrev>disable()</titleabbrev>
+
+     <para>This function is used to "disable" a service. It's analogous to enable()-functions, it just does the exact
+      opposite. Even the parameters and expected return-values are the same.</para>
+
+     <example id="developers-writing-modules-c-functions-disable-definition">
+      <title>A disable()-function in C that gets registered in the configure()-function</title>
+      <programlisting language="C"><![CDATA[int my_module_disable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not enable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->disable = my_module_disable;
+ me->param = NULL;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+     </example>
+
+     <para>All the notes that apply to an enable-function apply to disable-functions as well. There is only one
+      important difference: if your disable-function for a service fails, and the system is shutting down, then your
+      module will get "zapped". This is done without even informing you, so you really should make sure to clean up
+      properly.</para>
+
+     <note><para>Disable functions will only ever be called for modules that are actually enabled in the first place.
+      This should be kind of obvious, but it may be good to know when it comes to services that have multiple modules
+      to provide it.</para></note>
+    </sect3>
+
+    <sect3 id="developers-writing-modules-c-functions-scanmodules">
+     <title>scanmodules()</title>
+     <titleabbrev>scanmodules()</titleabbrev>
+
+     <para>This function gets called by the core whenever your module is supposed to give the core a list of modules.
+      Obviously, this only makes sense for module-loaders. Unless you're writing a specialised .so module loader, this
+      function will also need to generate a static module-descriptor and maybe substitute wrapper functions for your
+      new module's functionality.</para>
+
+     <example id="developers-writing-modules-c-functions-scanmodules-definition">
+      <title>A scanmodules()-function in C that gets registered in the configure()-function</title>
+      <programlisting language="C"><![CDATA[int my_module_scanmodules (struct lmodule *modules) {
+ /* cleanup code here */
+
+ return 0;
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->scanmodules = my_module_scanmodules;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+     </example>
+
+     <para>This module is supposed to get a list of modules off an applicable source and to register those modules with
+      the core using the core's mod_add() function, or to update the module's data that the core has and to tell the
+      core about such an update.</para>
+
+     <note><para>This function will only ever be called if your module's static descriptor has the option
+      'einit_module_loader' in its mode-field.</para></note>
+
+    </sect3>
    </sect2>
 
    <sect2 id="developers-writing-modules-c-templates">
