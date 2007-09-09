@@ -15,6 +15,8 @@
 
    (define %generate-legalnotice-link% #t)
 
+   (define (toc-depth n) 6)
+
 <!-- some portions of this were inspired by the freebsd stylesheet, see
  http://www.freebsd.org/cgi/cvsweb.cgi/doc/share/sgml/freebsd.dsl?rev=1.91&content-type=text/x-cvsweb-markup -->
    (define ($html-body-content-start$) (empty-sosofo))

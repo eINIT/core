@@ -53,73 +53,99 @@
 
  <chapter id="introduction">
   <title>Introduction</title>
+
   <sect1 id="introduction-what-is-einit">
    <title>What is eINIT?</title>
    <titleabbrev>About</titleabbrev>
+
    <para></para>
   </sect1>
+
   <sect1 id="introduction-why-einit">
    <title>Why would I want to use eINIT?</title>
    <titleabbrev>Why</titleabbrev>
+
    <para></para>
   </sect1>
  </chapter>
 
  <chapter id="users">
   <title>User's Guide</title>
+
   <sect1 id="users-installation">
    <title>Installing eINIT</title>
    <titleabbrev>Installation</titleabbrev>
+
    <para></para>
   </sect1>
+
   <sect1 id="users-configuration">
    <title>Configuring eINIT</title>
    <titleabbrev>Configuration</titleabbrev>
+
    <para></para>
+
    <sect2 id="users-configuration-etc-einit">
     <title>The Configuration Files: /etc/einit</title>
     <titleabbrev>/etc/einit</titleabbrev>
+
     <para></para>
+
     <sect3 id="users-configuration-etc-einit-network-xml">
      <title>Network Configuration: /etc/einit/network.xml</title>
      <titleabbrev>/etc/einit/network.xml</titleabbrev>
+
      <para></para>
     </sect3>
+
     <sect3 id="users-configuration-etc-einit-modes-xml">
      <title>What Services to start: /etc/einit/modes.xml</title>
      <titleabbrev>/etc/einit/modes.xml</titleabbrev>
+
      <para></para>
     </sect3>
+
     <sect3 id="users-configuration-etc-einit-conf-d">
      <title>Service-Configuration: /etc/einit/conf.d</title>
      <titleabbrev>/etc/einit/conf.d</titleabbrev>
+
      <para></para>
     </sect3>
+
     <sect3 id="users-configuration-etc-einit-fstab-xml">
      <title>(Optional) Advanced fstab: /etc/einit/fstab.xml</title>
      <titleabbrev>/etc/einit/fstab.xml</titleabbrev>
+
      <para></para>
     </sect3>
    </sect2>
   </sect1>
+
   <sect1 id="users-using">
    <title>Using eINIT</title>
    <titleabbrev>Using</titleabbrev>
+
    <para></para>
+
    <sect2 id="users-using-einit-control">
     <title>The "einit-control"-Command: Have a chat with eINIT</title>
     <titleabbrev>einit-control</titleabbrev>
+
     <para></para>
-   </sect2>
-   <sect2 id="users-using-erc">
-    <title>The "erc"-Command: Manipulating Services' Status</title>
-    <titleabbrev>erc</titleabbrev>
-    <para></para>
-   </sect2>
-   <sect2 id="users-using-power">
-    <title>The "power"-Command: Shutting Down and Rebooting</title>
-    <titleabbrev>power</titleabbrev>
-    <para></para>
+
+    <sect3 id="users-using-erc">
+     <title>The "erc"-Command: Manipulating Services' Status</title>
+     <titleabbrev>erc</titleabbrev>
+
+     <para></para>
+    </sect3>
+
+    <sect3 id="users-using-power">
+     <title>The "power"-Command: Shutting Down and Rebooting</title>
+     <titleabbrev>power</titleabbrev>
+
+     <para></para>
+    </sect3>
    </sect2>
   </sect1>
  </chapter>
@@ -132,13 +158,20 @@
    <titleabbrev>Introduction</titleabbrev>
 
    <para></para>
-  </sect1>
 
-  <sect1 id="developers-writing-modules">
-   <title>Writing Modules</title>
-   <titleabbrev>Writing Modules</titleabbrev>
+   <sect2 id="developers-intro-writing-modules">
+    <title>Writing Modules</title>
+    <titleabbrev>Writing Modules</titleabbrev>
 
-   <para></para>
+    <para></para>
+   </sect2>
+
+   <sect2 id="developers-intro-testing">
+    <title>Testing Modules</title>
+    <titleabbrev>Testing</titleabbrev>
+
+    <para></para>
+   </sect2>
   </sect1>
 
   <sect1 id="developers-writing-modules-c">
@@ -150,8 +183,12 @@
     to the right calling conventions and can generate either a .o file to link into eINIT or a .so file to load).</para>
 
    <para><xref linkend="developers-writing-modules-c-format" /> sums up the generic form of C modules. It all starts
-    with a static module descriptor, which has contains a reference entry for the dependencies, and RID, a name
-    some options and a pointer to a configure()-function.</para>
+    with a static module descriptor, which contains a reference entry for the dependencies, an RID, a name, some options
+    and a pointer to a configure()-function.</para>
+
+   <para>When the module is loaded, the core will call the configure()-function, and pass it the core's module-
+    descriptor of itself, which can then be used to modify the list of functions and some other parameters of a
+    module.</para>
 
    <figure id="developers-writing-modules-c-format" float="1" pgwide="0" floatstyle="right">
     <title>C-Module Format</title>
@@ -161,6 +198,194 @@
      </textobject>
     </mediaobject>
    </figure>
+
+   <sect2 id="developers-writing-modules-c-descriptors">
+    <title>Module Descriptors</title>
+    <titleabbrev>Descriptors</titleabbrev>
+
+    <para></para>
+   </sect2>
+
+   <sect2 id="developers-writing-modules-c-functions">
+    <title>Module Functions</title>
+    <titleabbrev>Functions</titleabbrev>
+
+    <para>The main purpose of any module is <emphasis>doing something</emphasis>, and in C you do things in functions,
+     so the first thing we'll do is explain all the functions a module can have that may get called by the core
+     directly.</para>
+
+    <sect3 id="developers-writing-modules-c-functions-configure">
+     <title>configure()</title>
+     <titleabbrev>configure()</titleabbrev>
+
+     <para>This function is the main entry-point for your module. It gets run as soon as the module is registered to the
+      core, and it gets a pointer to the core's descriptor so that the module can tell the core what it can do.</para>
+
+     <example id="developers-writing-modules-c-functions-configure-definition">
+      <title>A configure()-function in C</title>
+      <programlisting language="C"><![CDATA[int my_module_configure (struct lmodule *me) {
+ /* code */
+
+ return 0;
+}]]></programlisting>
+     </example>
+
+     <para>The configure-function's job is to initialise your module so that it can carry out all the actions you want
+      it to carry out. Such initialisation includes - but is not limited to - setting up libraries that you linked in,
+      setting the core-descriptor's function pointers, reading certain configuration entries or allocating chunks of
+      memory to work with. Do note that the return value is pretty much ignored as of this version of eINIT. You can't
+      really indicate that your module won't work and should thus be ignored, yet.</para>
+
+     <para><xref linkend="developers-writing-modules-c-functions-configure-usage" /> shows a typical configure-function
+      that sets some of the important pointers in the core-descriptor. That example would assume having enable()-,
+      disable()- and cleanup()-functions in your module, of course.</para>
+
+     <example id="developers-writing-modules-c-functions-configure-usage">
+      <title>A configure()-function that initialises parts of the core-descriptor</title>
+      <programlisting language="C"><![CDATA[int my_module_configure (struct lmodule *me) {
+ me->enable = my_module_enable;
+ me->disable = my_module_disable;
+
+ me->cleanup = my_module_cleanup;
+
+ return 0;
+}]]></programlisting>
+     </example>
+    </sect3>
+
+    <sect3 id="developers-writing-modules-c-functions-cleanup">
+     <title>cleanup()</title>
+     <titleabbrev>cleanup()</titleabbrev>
+
+     <para>This function is called whenever a module needs to be unloaded or otherwise de-initialised. This is,
+      admittedly, not done very often yet, but you should still make sure to provide such a function.</para>
+
+     <example id="developers-writing-modules-c-functions-cleanup-definition">
+      <title>A cleanup()-function in C that gets registered in the configure()-function</title>
+      <programlisting language="C"><![CDATA[int my_module_cleanup (struct lmodule *me) {
+ /* cleanup code here */
+
+ return 0;
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->cleanup = my_module_cleanup;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+     </example>
+
+     <para>The cleanup-function's job is to deallocate data structures used by your module and to get rid of event-
+      handlers and the like, so that after this module is done, the module may safely be unloaded. As with the
+      configure-function, the return value is currently ignored.</para>
+
+     <note><para>This function is more of a stub right now, since there are practically no occasions where a module is
+      actually unloaded. This is expected to change soon, however, so you should write this function anyway.</para></note>
+
+    </sect3>
+
+    <sect3 id="developers-writing-modules-c-functions-enable">
+     <title>enable()</title>
+     <titleabbrev>enable()</titleabbrev>
+
+     <para>This function is used to "enable" a service. It's only used in functions that provide a service.</para>
+
+     <example id="developers-writing-modules-c-functions-enable-definition">
+      <title>An enable()-function in C that gets registered in the configure()-function</title>
+      <programlisting language="C"><![CDATA[int my_module_enable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not enable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->enable = my_module_enable;
+ me->param = NULL;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+     </example>
+
+     <para>Enable-functions are very important, since a lot of the modules that need to be written will actually
+      provide a service. In order to provide a service, there must be an enable()-function that arranges for the service
+      to be provided, for example by starting a daemon, by running gettys, by spawning a thread that allows some form
+      of interaction and so on.</para>
+
+     <para>The return value of this type of function is very important: the return code "status_ok" means "all good,
+      the service is now provided", whereas the return code "status_failed" means "no go, something's wrong". You'd
+      use the former if you're at least reasonably sure things worked, and the latter if either you tried your thing
+      and you know it failed, or if you can be sure it'll fail if you tried it (for example a daemon's binary or
+      configuration data is missing, so running it would be pointless).</para>
+
+     <para>Arguments to this functions are a (void *) and a (struct einit_event *) pointer. The former is the same
+      pointer that is also in the core-descriptor's param-field (see
+      <xref linkend="developers-writing-modules-c-functions-enable-definition" /> for how to set that), and the latter
+      is a convenience for module authors that wish to provide feedback for their module's status. For example it's
+      fairly easy to write module output with fbprintf(), as shown in
+	  <xref linkend="developers-writing-modules-c-functions-enable-definition" />.</para>
+
+     <note><para>Make sure you also understand about the whole thing of backup modules for services. Just because your
+      module is providing some service doesn't necessarily mean it's the only candidate and it thus also doesn't mean
+      that it'll be chosen to provide a service if it's requested. That also means that even if your module indicates
+      failure, the service might still get provided eventually by some other module.</para></note>
+
+    </sect3>
+   </sect2>
+
+   <sect2 id="developers-writing-modules-c-templates">
+    <title>Small Module Templates</title>
+    <titleabbrev>Template</titleabbrev>
+
+    <para>To help you get started, I've written a couple of module templates for you to use. They're obviously not
+     doing much, but they should get you started and hacking in no time.</para>
+
+    <sect3 id="developers-writing-modules-c-templates-service">
+     <title>Template for a service-providing Module</title>
+     <titleabbrev>Regular Module Template</titleabbrev>
+
+     <para></para>
+    </sect3>
+
+    <sect3 id="developers-writing-modules-c-templates-passive">
+     <title>Template for a passive Module</title>
+     <titleabbrev>Passive Module Template</titleabbrev>
+
+     <para></para>
+    </sect3>
+
+    <sect3 id="developers-writing-modules-c-templates-loader">
+     <title>Template for a Module-Loader</title>
+     <titleabbrev>Module-Loader Template</titleabbrev>
+
+     <para></para>
+    </sect3>
+
+    <sect3 id="developers-writing-modules-c-templates-shadow">
+     <title>Template for a Shadow Module</title>
+     <titleabbrev>Shadow Module Template</titleabbrev>
+
+     <para></para>
+    </sect3>
+   </sect2>
   </sect1>
 
   <sect1 id="developers-writing-modules-xml">
@@ -171,6 +396,13 @@
     C-Modules' functionality, but usually it's adequate. From a technical point of view, these modules should rather
     be called "Configuration Modules", since the governing module-loader doesn't care if the configuration-data it
     uses to genereate these modules actually comes from an XML file or not.</para>
+
+   <sect2 id="developers-writing-modules-xml-drawbacks">
+    <title>Things you can't do with XML/SH modules</title>
+    <titleabbrev>XML/SH Drawbacks</titleabbrev>
+
+    <para></para>
+   </sect2>
   </sect1>
 
   <sect1 id="developers-writing-modules-scheme">
@@ -181,6 +413,13 @@
     working on this, or at least looking into it, so it shouldn't be long before these can be used properly.</para>
    <para>Even so, some things can already be done a lot better in Scheme modules than in C or XML modules, most notably
     everything related to manipulating eINIT variables/configuration data.</para>
+
+   <sect2 id="developers-writing-modules-scheme-drawbacks">
+    <title>Things you can't do with Scheme modules</title>
+    <titleabbrev>Scheme Drawbacks</titleabbrev>
+
+    <para></para>
+   </sect2>
   </sect1>
 
   <sect1 id="developers-sandbox">
@@ -188,6 +427,20 @@
    <titleabbrev>Sandbox Mode</titleabbrev>
 
    <para></para>
+  </sect1>
+
+  <sect1 id="developers-submitting-modules">
+   <title>Submitting Modules</title>
+   <titleabbrev>Submitting</titleabbrev>
+
+   <para></para>
+
+   <sect2 id="developers-submitting-modules-license">
+    <title>License and License Issues</title>
+    <titleabbrev>License</titleabbrev>
+
+    <para></para>
+   </sect2>
   </sect1>
  </chapter>
 
@@ -257,8 +510,8 @@
 	 on the other hand, is responsible for getting all the external programs to work that interact with eINIT:
 	 einit-control, erc, power, etc.</para>
 
-    <para>Logics dictate that since this type of module provides something, it also inevitably needs enable()- and
-     disable()-functions, which are described in the Developer's Guide.</para>
+    <para>Logics dictate that since this type of module provides something, it also needs enable()- and disable()-
+     functions, which are described in the Developer's Guide.</para>
 
     <para>In essence, this is any type of module that is most likely optional, provides a service and which will
      usually participate in global depedency resolution.</para>
@@ -466,7 +719,7 @@
      looks rather unprofessional, any user would instead see a (possibly fancy-looking) "maintenance notice", which
      at least looks somewhat more professional, and should result in less people calling in.</para>
 
-    <para>Using and relying on backup services will almost inevitably also rely on preferring services, see
+    <para>Using and relying on backup services will almost always also rely on preferring services, see
      <xref linkend="concepts-services-preferences" /> for more on this.</para>
    </sect2>
    <sect2 id="concepts-services-rid-vs-service">
@@ -644,14 +897,98 @@
      can take internal events and push them to other programs on the system via dbus-signals.</para>
    </sect2>
   </sect1>
+
+  <sect1 id="concepts-functions">
+   <title>Registered Functions</title>
+   <titleabbrev>Registered Functions</titleabbrev>
+
+   <para>A "registered function" is way to share code or functions across modules. The main idea here is to allow
+    big modules into smaller parts, for example one generic part and a system-dependant one (like the process-handler
+    code or the mounter-modules).</para>
+
+   <para>These functions get registered (or unregistered) with three attributes: a string, which identifies them,
+    the function itself and a "version code". The latter is just an ordinary integer, but it's there to help you in case
+    you ever decide to change the arguments of a function around: just bump the version number for your function, and
+    all code that hasn't been updated yet won't "see" your function any more.</para>
+
+   <para>For more details on using this, see the developer's guide, especially the part on C-modules.</para>
+  </sect1>
  </appendix>
 
  <appendix id="credits">
   <title>Credits and Legalities</title>
+
+  <para>Yes, we all love those legalities, don't we? Without further ado, here's (hopefully) all of the credits.</para>
+
+  <note><para>If you feel left out, be assured that it wasn't on purpose. Just mail me and I'll add you to the
+   list.</para></note>
+
   <sect1 id="credits-expat">
-   <title>eXpat</title>
-   <titleabbrev>eXpat</titleabbrev>
-   <para></para>
+   <title>&lt;eXpat/&gt;</title>
+   <titleabbrev>expat</titleabbrev>
+
+   <para>This software relies on the expat library for parsing XML files, which is released under the following license
+    terms.</para>
+
+   <para>Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd and Clark Cooper</para>
+   <para>Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat maintainers.</para>
+   <para>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+	rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+	permit persons to whom the Software is furnished to do so, subject to the following conditions:</para>
+   <para>The above copyright notice and this permission notice shall be included in all copies or substantial portions
+    of the Software.</para>
+   <para>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+    TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+	TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.</para>
+
+   <itemizedlist>
+    <listitem><para><ulink url="http://expat.sourceforge.net/">Expat Homepage</ulink></para></listitem>
+   </itemizedlist>
   </sect1>
+
+  <sect1 id="credits-contributors">
+   <title>Contributors</title>
+   <titleabbrev>Contributors</titleabbrev>
+
+   <para>This is in no particular order and might in fact accidentally omit one person or another. If you feel left
+    out, please say so so i can add ya :)</para>
+
+   <itemizedlist>
+    <listitem><para>KKtm</para></listitem>
+    <listitem><para>DieselPower</para></listitem>
+    <listitem><para>AidanJT</para></listitem>
+    <listitem><para>nikolavp</para></listitem>
+    <listitem><para>niick</para></listitem>
+    <listitem><para>teppic</para></listitem>
+    <listitem><para>haader</para></listitem>
+    <listitem><para>olof</para></listitem>
+    <listitem><para>lonn</para></listitem>
+    <listitem><para>yoyo</para></listitem>
+    <listitem><para>Lloeki</para></listitem>
+    <listitem><para>Janax</para></listitem>
+    <listitem><para>shaumux</para></listitem>
+   </itemizedlist>
+  </sect1>
+
+  <sect1 id="credits-authors">
+   <title>Authors/Developers</title>
+   <titleabbrev>Authors</titleabbrev>
+
+   <para>Not many current "real" developers around, but since this is the credits section, might as well list us all.
+    :D</para>
+
+   <para>The order is straight from the "AUTHORS" file shipped with the XML modules, so it's pretty much the order in
+    which people joined up.</para>
+
+   <itemizedlist>
+    <listitem><para>mdeininger/jyujin: Magnus Deininger, dma05@web.de</para></listitem>
+    <listitem><para>rmh3093: Ryan Hope, rmh3093@gmail.com</para></listitem>
+    <listitem><para>creidiki: Leonardo Valeri Manera, l.valerimanera@gmail.com</para></listitem>
+   </itemizedlist>
+  </sect1>
+
  </appendix>
 </book>
