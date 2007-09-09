@@ -436,6 +436,58 @@ int my_module_configure (struct lmodule *me) {
     </sect3>
    </sect2>
 
+   <sect2 id="developers-writing-modules-c-events">
+    <title>Using Events</title>
+    <titleabbrev>Events</titleabbrev>
+
+    <para></para>
+
+    <sect3 id="developers-writing-modules-c-events-handlers">
+     <title>Event Handlers</title>
+     <titleabbrev>Handlers</titleabbrev>
+
+     <para><xref linkend="developers-writing-modules-c-events-handlers-example"/> shows a definition for a typical
+      event-handler. Those handlers return void and get exactly one argument, a (struct einit_event *).</para>
+
+     <example id="developers-writing-modules-c-events-handlers-example">
+      <title>An Event-Handler</title>
+      <programlisting language="C"><![CDATA[void my_module_core_event_handler (struct einit_event *ev) {
+ /* event handler code */
+}]]></programlisting>
+     </example>
+
+     <para>To get these event-handlers called, you need to use event_listen(); to stop them from being called, you'd use
+      event_ignore(), like in <xref linkend="developers-writing-modules-c-events-handlers-registering" />. In that
+      example my_module_core_event_handler() is registered to listen for anything that has the subsystem id of
+      'einit_event_subsystem_core', then some stuff is done and at the end of the function, einit is told to ignore any
+      events from then on.</para>
+
+     <para>That example is fairly synthetic, however, since normally you'd rather register such an event-handler in
+      either the configure()-function or the enable()-function, and you tell einit to ignore it again in the
+      cleanup()-function or the disable()-function.</para>
+
+     <example id="developers-writing-modules-c-events-handlers-registering">
+      <title>An Event-Handler</title>
+      <programlisting language="C"><![CDATA[void somefunction () {
+/* ... some code ... */
+
+/* register event handler */
+ event_listen (einit_event_subsystem_core, my_module_core_event_handler);
+
+/* ... some more code ... */
+
+/* de-register event handler */
+ event_ignore (einit_event_subsystem_core, my_module_core_event_handler);
+
+/* ... yet more code ... */
+
+ return;
+}]]></programlisting>
+     </example>
+
+    </sect3>
+   </sect2>
+
    <sect2 id="developers-writing-modules-c-templates">
     <title>Small Module Templates</title>
     <titleabbrev>Template</titleabbrev>
