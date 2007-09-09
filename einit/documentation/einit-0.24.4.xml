@@ -157,13 +157,15 @@
    <title>Introduction</title>
    <titleabbrev>Introduction</titleabbrev>
 
-   <para></para>
+   <para>So eINIT lacks some feature you want, and you'd like to help us by writing it, eh? Excellent, so then this is
+    exactly the spot to look at! This chapter covers all the details of the core that you need to know about to write
+    your very own eINIT modules.</para>
 
    <sect2 id="developers-intro-writing-modules">
     <title>Writing Modules</title>
     <titleabbrev>Writing Modules</titleabbrev>
 
-    <para></para>
+    <para>This is the most general thing: writing modules.</para>
    </sect2>
 
    <sect2 id="developers-intro-testing">
@@ -203,7 +205,62 @@
     <title>Module Descriptors</title>
     <titleabbrev>Descriptors</titleabbrev>
 
-    <para></para>
+    <para><xref linkend="developers-writing-modules-c-descriptor-example" /> demonstrates how to write a module
+     descriptor in C. Yes I know it's ugly, but you don't usually need to bother with thinking how it works, just copy
+     that one verbatim and modify the my_module_ prefixes to fit your module, then adjust the settings in there.</para>
+
+    <example id="developers-writing-modules-c-descriptor-example">
+     <title>A typical module descriptor</title>
+     <programlisting language="C"><![CDATA[#include <einit/module.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+char * my_module_provides[] = { "coolness", NULL };
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "My Shiny New Module",
+ .rid       = "module-mine",
+ .si        = {
+  .provides = my_module_provides,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif]]></programlisting>
+    </example>
+
+    <para>The reason it looks so ugly is only that bit of preprocessor magic actually. The first #include is fairly
+     obvious: you need to know how to do these structures, so that's why that one is needed. The #define EXPECTED_EIV
+     is there to make it easier to adjust the next test, which checks said macro against EINIT_VERSION. This test is
+     to ensure that you're compiling the module for an appropriate API version of eINIT, and to at least throw a
+     #warning if there's a mismatch. After that there's your typical function declaration for my_module_configure(),
+     which is generally a good idea, and so that you can write the code for that function later but already reference
+     it now. The next preprocessor directive, that second #if, is used to find out if we're clear to define a module
+     header at all. If we are, we're just defining a struct smodule (which needs to be constant, thus the 'const') and
+     we initialise that using the rather convenient C99 way. After that we register this module descriptor as <emphasis>
+     this module's descriptor</emphasis> using module_register(). That last bit is actually some preprocessor magic
+     which makes sure the same module file works for both linking statically into the core and for linking as a .so
+     module.</para>
+
+    <para>Now you know. And also remember that you don't really need to bother with this, just copy it and modify it
+     to suite your needs. ;)</para>
    </sect2>
 
    <sect2 id="developers-writing-modules-c-functions">
@@ -467,7 +524,7 @@ int my_module_configure (struct lmodule *me) {
       cleanup()-function or the disable()-function.</para>
 
      <example id="developers-writing-modules-c-events-handlers-registering">
-      <title>An Event-Handler</title>
+      <title>Registering an Event-Handler</title>
       <programlisting language="C"><![CDATA[void somefunction () {
 /* ... some code ... */
 

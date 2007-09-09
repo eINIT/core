@@ -119,10 +119,10 @@ char flush_log_buffer_to_syslog() {
    pthread_mutex_unlock(&logmutex);
 
    if (slmessage) {
-    syslog(((severity <= 2) ? LOG_CRIT :
+    syslog(/*((severity <= 2) ? LOG_CRIT :
            ((severity <= 5) ? LOG_WARNING :
            ((severity <= 8) ? LOG_NOTICE :
-      LOG_DEBUG))),
+      LOG_DEBUG)))*/ LOG_NOTICE,
     slmessage);
     free (slmessage);
    }
@@ -352,10 +352,10 @@ void einit_log_feedback_event_handler(struct einit_event *ev) {
    logbuffer = (struct log_entry **)setadd((void **)logbuffer, (void *)&ne, sizeof (struct log_entry));
    pthread_mutex_unlock(&logmutex);
   } else {
-   syslog(((ev->flag <= 2) ? LOG_CRIT :
-          ((ev->flag <= 5) ? LOG_WARNING :
-          ((ev->flag <= 8) ? LOG_NOTICE :
-     LOG_DEBUG))),
+   syslog(/*((severity <= 2) ? LOG_CRIT :
+          ((severity <= 5) ? LOG_WARNING :
+          ((severity <= 8) ? LOG_NOTICE :
+     LOG_DEBUG)))*/ LOG_NOTICE,
      ev->string);
   }
 
@@ -391,7 +391,7 @@ int einit_log_configure (struct lmodule *r) {
  event_listen (einit_event_subsystem_feedback, einit_log_feedback_event_handler);
  event_listen (einit_event_subsystem_core, einit_log_einit_event_handler);
 
-// setlogmask (LOG_UPTO (LOG_NOTICE));
+ setlogmask (LOG_UPTO (LOG_INFO));
 
  return 0;
 }
