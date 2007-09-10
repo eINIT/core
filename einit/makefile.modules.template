@@ -19,4 +19,4 @@ linux-netlink.so: linux-netlink.o
 	${LLD} linux-netlink.o ${NETLINK_LIBS} -o linux-netlink.so
 
 distro-gentoo.so: distro-gentoo.o
-	${LLD} distro-gentoo.o -leinfo -lrc -o distro-gentoo.so
+	${LLD} distro-gentoo.o -lrc -leinfo -o distro-gentoo.so
