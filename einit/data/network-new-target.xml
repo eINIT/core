@@ -1,4 +1,4 @@
-<einit prefix="configuration-network">
+<!-- <einit prefix="configuration-network">
  <hostname s="Redman"/>
  <domainname s="brcg.net"/>
  <interfaces>
@@ -19,4 +19,36 @@
    </ip>
   </wlan0>
  </interfaces>
+</einit> -->
+
+<einit prefix="configuration-network">
+ <hostname s="Redman"/>
+ <domainname s="brcg.net"/>
+ <interfaces>
+
+  <eth0>
+   <address>
+    <ipv4 address="dhcp" />
+    <ipv4 address="10.2.0.2" netmask="255.255.0.0" />
+    <ipv4 address="192.168.0.1" netmask="255.255.255.0" />
+    <ipv6 address="fe::01:03" />
+   </address>
+   <dhcp-client s="pump" />
+   <wpa_supplicant>
+    <config s="/etc/wpa_supplicant/wpa_supplicant.conf" />
+    <driver s="wext" />
+   </wpa_supplicant>
+   <ignore b="yes" />
+  </eth0>
+
+  <eth1>
+   <dhcp />
+   <static address="blablabla" netmask="" />
+  </eth1>
+ </interfaces>
+ <routes>
+  <default_gw s="192.168.0.1" />
+  <eth1 s="10.160.0.0" />
+ </routes>
+ <nameservers s="192.168.0.2:10.160.0.2" />
 </einit>
