@@ -221,7 +221,14 @@ struct event_function {
  struct event_function *next;            /*!< next function */
 };
 
+enum function_type {
+ function_type_specific,
+ function_type_generic
+};
+
 struct exported_function {
+ char *name;
+ enum function_type type;
  uint32_t version;                       /*!< API version (for internal use) */
  void const *function;                   /*!< pointer to the function */
 };
@@ -231,14 +238,36 @@ enum einit_timer_options {
  einit_timer_until_cancelled = 0x0002
 };
 
+extern pthread_key_t einit_function_macro_key;
+
 void *event_emit (struct einit_event *, enum einit_event_emit_flags);
 void event_listen (enum einit_event_subsystems, void (*)(struct einit_event *));
 void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
 
-void function_register (const char *, uint32_t, void const *);
-void function_unregister (const char *, uint32_t, void const *);
+void function_register_type (const char *, uint32_t, void const *, enum function_type);
+void function_unregister_type (const char *, uint32_t, void const *, enum function_type);
+
+#define function_register(name,version,function) function_register_type (name, version, function, function_type_specific);
+#define function_unregister(name,version,function) function_unregister_type (name, version, function, function_type_specific);
+
 void **function_find (const char *, const uint32_t, const char **);
 void *function_find_one (const char *, const uint32_t, const char **);
+
+struct exported_function **function_look_up (const char *, const uint32_t, const char **);
+struct exported_function *function_look_up_one (const char *, const uint32_t, const char **);
+
+#define function_call(rv,data,...)\
+ ((rv)(((data) != NULL) && ((data)->function != NULL) ?\
+  *(((rv *(*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
+  0))
+
+#define function_call_by_name(rv,name,version,...)\
+ (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, NULL)),\
+  function_call(rv, (struct exported_function *)pthread_getspecific(einit_function_macro_key), __VA_ARGS__))
+
+#define function_call_by_name_multi(rv,name,version,sub,...)\
+ (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, sub)),\
+  function_call(rv, (struct exported_function *)pthread_getspecific(einit_function_macro_key), __VA_ARGS__))
 
 struct event_function *event_functions;
 struct stree *exported_functions;

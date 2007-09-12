@@ -79,6 +79,8 @@ enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
 char einit_quietness = 0;
 
+pthread_key_t einit_function_macro_key;
+
 /* some more variables that are only of relevance to main() */
 char **einit_startup_mode_switches = NULL;
 char **einit_startup_configuration_files = NULL;
@@ -504,6 +506,11 @@ int main(int argc, char **argv) {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
     bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
    }
+  }
+
+  if ((pthread_errno = pthread_key_create(&einit_function_macro_key, NULL))) {
+   bitch(bitch_epthreads, pthread_errno, "pthread_key_create(einit_function_macro_key) failed.");
+   return -1;
   }
 
 /* this should be a good place to initialise internal modules */

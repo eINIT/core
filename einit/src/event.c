@@ -190,11 +190,12 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
  return;
 }
 
-void function_register (const char *name, uint32_t version, void const *function) {
+void function_register_type (const char *name, uint32_t version, void const *function, enum function_type type) {
  if (!name || !function) return;
  struct exported_function *fstruct = ecalloc (1, sizeof (struct exported_function));
 
- fstruct->version = version;
+ fstruct->type     = type;
+ fstruct->version  = version;
  fstruct->function = function;
 
  emutex_lock (&pof_mutex);
@@ -202,6 +203,25 @@ void function_register (const char *name, uint32_t version, void const *function
  emutex_unlock (&pof_mutex);
 
  free (fstruct);
+}
+
+void function_unregister_type (const char *name, uint32_t version, void const *function, enum function_type type) {
+ if (!exported_functions) return;
+ struct stree *ha = exported_functions;
+
+ emutex_lock (&pof_mutex);
+ ha = streefind (exported_functions, name, tree_find_first);
+ while (ha) {
+  struct exported_function *ef = ha->value;
+  if (ef && (ef->version == version) && (ef->type == type)) {
+   exported_functions = streedel (ha);
+   ha = streefind (exported_functions, name, tree_find_first);
+  } else
+   ha = streefind (exported_functions, name, tree_find_next);
+ }
+ emutex_unlock (&pof_mutex);
+
+ return;
 }
 
 void **function_find (const char *name, const uint32_t version, const char ** sub) {
@@ -256,23 +276,61 @@ void *function_find_one (const char *name, const uint32_t version, const char **
  return f;
 }
 
-void function_unregister (const char *name, uint32_t version, void const *function) {
- if (!exported_functions) return;
+struct exported_function **function_look_up (const char *name, const uint32_t version, const char **sub) {
+ if (!exported_functions || !name) return NULL;
+ struct exported_function **set = NULL;
  struct stree *ha = exported_functions;
 
  emutex_lock (&pof_mutex);
- ha = streefind (exported_functions, name, tree_find_first);
- while (ha) {
-  struct exported_function *ef = ha->value;
-  if (ef && (ef->version == version)) {
-   exported_functions = streedel (ha);
-   ha = streefind (exported_functions, name, tree_find_first);
-  } else
-   ha = streefind (exported_functions, name, tree_find_next);
+ if (!sub) {
+  ha = streefind (exported_functions, name, tree_find_first);
+  while (ha) {
+   struct exported_function *ef = ha->value;
+
+   if (!(ef->name)) ef->name = ha->key;
+
+   if (ef && (ef->version == version)) set = (struct exported_function **)setadd ((void **)set, (struct exported_function *)ef, -1);
+   ha = streefind (ha, name, tree_find_next);
+  }
+ } else {
+  uint32_t i = 0, k = strlen (name)+1;
+  char *n = emalloc (k+1);
+  *n = 0;
+  strcat (n, name);
+  *(n + k - 1) = '-';
+
+  for (; sub[i]; i++) {
+   *(n + k) = 0;
+   n = erealloc (n, k+1+strlen (sub[i]));
+   strcat (n, sub[i]);
+
+   ha = streefind (exported_functions, n, tree_find_first);
+
+   while (ha) {
+    struct exported_function *ef = ha->value;
+
+    if (!(ef->name)) ef->name = ha->key;
+
+    if (ef && (ef->version == version)) set = (struct exported_function **)setadd ((void **)set, (struct exported_function *)ef, -1);
+
+    ha = streefind (ha, n, tree_find_next);
+   }
+  }
+
+  if (n) free (n);
  }
  emutex_unlock (&pof_mutex);
 
- return;
+ return set;
+}
+
+struct exported_function *function_look_up_one (const char *name, const uint32_t version, const char **sub) {
+ struct exported_function **t = function_look_up(name, version, sub);
+ struct exported_function *f = (t? t[0] : NULL);
+
+ if (t) free (t);
+
+ return f;
 }
 
 char *event_code_to_string (const uint32_t code) {

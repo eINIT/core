@@ -559,7 +559,7 @@ int my_module_configure (struct lmodule *me) {
      <para>These are easy, just make sure you have enable() and disable()-functions and don't forget to fill out that
       .provides pointer.</para>
 
-     <example id="developers-writing-modules-c-templates-loader-">
+     <example id="developers-writing-modules-c-service-template">
       <title>A Blank Service-Providing Module</title>
       <programlisting language="C"><![CDATA[/*
  *  my-module.c
@@ -583,7 +583,6 @@ int my_module_configure (struct lmodule *me) {
 #include <einit/bitch.h>
 #include <einit/utility.h>
 #include <errno.h>
-#include <sys/stat.h>
 
 #define EXPECTED_EIV 1
 
@@ -595,7 +594,7 @@ int my_module_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * my_module_provides[] = {"fqdn", NULL};
+char * my_module_provides[] = {"my-service", NULL};
 char * my_module_requires[] = {"mount-system", NULL};
   /* the .requires attribute is optional... */
 char * my_module_after[]    = {"^(fqdn|net-lo)$", NULL};
@@ -611,7 +610,7 @@ const struct smodule my_module_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = einit_module_generic,
- .name      = "Module Support (My Modules)",
+ .name      = "My Modules' Verbose Name",
  .rid       = "my-module",
  .si        = {
   .provides = my_module_provides,
@@ -679,8 +678,7 @@ int my_module_configure (struct lmodule *pa) {
 /* more configure code here */
 
  return 0;
-}
-]]></programlisting>
+}]]></programlisting>
      </example>
     </sect3>
 
@@ -688,8 +686,115 @@ int my_module_configure (struct lmodule *pa) {
      <title>Template for a passive Module</title>
      <titleabbrev>Passive Module Template</titleabbrev>
 
-     <para></para>
-    </sect3>
+     <para>Passive modules tend to not have enable/disable functions, but instead only grab events and register
+      functions for other modules to use.</para>
+
+     <example id="developers-writing-modules-c-passive-template">
+      <title>A Blank Passive Module, which registers two Event Handlers and one Registered Function</title>
+      <programlisting language="C"><![CDATA[/*
+ *  my-module.c
+ *  einit
+ *
+ *  Created on DD/MM/YYYY.
+ *  Copyright 2007 Me - myself - Mineson. All rights reserved.
+ *
+ */
+
+/*
+ LONG LEGAL MUMBO JUMBO APPROPRIATE TO MODULE'S LICENSE
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/utility.h>
+#include <errno.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "My Modules' Verbose Name",
+ .rid       = "my-module",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif
+
+void my_module_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_configuration_update:
+   /* some code */
+   break;
+
+  default:
+   /* default: is necessary to make sure the compiler won't warn us of
+      unhandled events. */
+   break;
+ }
+}
+
+void my_module_ipc_event_handler (struct einit_event *ev) {
+ /* mess with ev->argv here */
+}
+
+void *my_module_some_function (void *arg1, int arg2, char **arg3) {
+ /* do whatever your function is supposed to do */
+
+ /* do note that it's YOUR JOB to make sure the arguments in your function
+    match up with the arguments that the callees think your function will have.
+    neither eINIT nor GCC will complain if there's a mismatch! */
+}
+
+int my_module_cleanup (struct lmodule *pa) {
+ /* cleanup code here */
+
+ function_unregister ("my-fancy-new-function", 1, my_module_some_function);
+
+ event_ignore (einit_event_subsystem_ipc, my_module_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, my_module_core_event_handler);
+
+ return 0;
+}
+
+int my_module_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ pa->cleanup = my_module_cleanup;
+
+ event_listen (einit_event_subsystem_core, my_module_core_event_handler);
+ event_listen (einit_event_subsystem_ipc, my_module_ipc_event_handler);
+
+ function_register ("my-fancy-new-function", 1, my_module_some_function);
+
+ /* more configure code here */
+
+ return 0;
+}]]></programlisting>
+     </example></sect3>
 
     <sect3 id="developers-writing-modules-c-templates-loader">
      <title>Template for a Module-Loader</title>
@@ -698,7 +803,7 @@ int my_module_configure (struct lmodule *pa) {
      <para>Module-loaders can be a bit intriguing, but there's not much magic behind them. Remember to use mod_add()
       and mod_update() and that the .mode = einit_module_loader isn't just for cosmetics. :)</para>
 
-     <example id="developers-writing-modules-c-templates-loader-">
+     <example id="developers-writing-modules-c-loader-template">
       <title>A Blank Module-Loader Module</title>
       <programlisting language="C"><![CDATA[/*
  *  my-module.c
@@ -722,7 +827,6 @@ int my_module_configure (struct lmodule *pa) {
 #include <einit/bitch.h>
 #include <einit/utility.h>
 #include <errno.h>
-#include <sys/stat.h>
 
 #define EXPECTED_EIV 1
 

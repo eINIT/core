@@ -146,6 +146,9 @@
   <external provided="mount-system" />
  </services>
 
+ <functions>
+ </functions>
+
  <mode id="boot">
   <enable services="ipc" critical="mount-critical:tty:whatever" />
   <ttys s="tty1-regular" />
