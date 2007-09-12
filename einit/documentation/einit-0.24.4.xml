@@ -425,7 +425,7 @@ int my_module_configure (struct lmodule *me) {
   return status_ok; /* return this way if your module succeeds */
  } else {
 /* you can provide module-feedback like this: */
-  fbprintf (status, "Could not enable module: %s", strerror (errno));
+  fbprintf (status, "Could not disable module: %s", strerror (errno));
 
   return status_failed; /* return like this if your module screwed up... */
  }
@@ -467,7 +467,7 @@ int my_module_configure (struct lmodule *me) {
      <example id="developers-writing-modules-c-functions-scanmodules-definition">
       <title>A scanmodules()-function in C that gets registered in the configure()-function</title>
       <programlisting language="C"><![CDATA[int my_module_scanmodules (struct lmodule *modules) {
- /* cleanup code here */
+ /* scanmodules code here */
 
  return 0;
 }
@@ -556,7 +556,132 @@ int my_module_configure (struct lmodule *me) {
      <title>Template for a service-providing Module</title>
      <titleabbrev>Regular Module Template</titleabbrev>
 
-     <para></para>
+     <para>These are easy, just make sure you have enable() and disable()-functions and don't forget to fill out that
+      .provides pointer.</para>
+
+     <example id="developers-writing-modules-c-templates-loader-">
+      <title>A Blank Service-Providing Module</title>
+      <programlisting language="C"><![CDATA[/*
+ *  my-module.c
+ *  einit
+ *
+ *  Created on DD/MM/YYYY.
+ *  Copyright 2007 Me - myself - Mineson. All rights reserved.
+ *
+ */
+
+/*
+ LONG LEGAL MUMBO JUMBO APPROPRIATE TO MODULE'S LICENSE
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/utility.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+char * my_module_provides[] = {"fqdn", NULL};
+char * my_module_requires[] = {"mount-system", NULL};
+  /* the .requires attribute is optional... */
+char * my_module_after[]    = {"^(fqdn|net-lo)$", NULL};
+  /* ... as is the .after one... */
+char * my_module_before[]   = {"^displaymanager$", NULL};
+  /* ... and the .before attribute */
+
+/* remember that .after and .before don't specify a set of service names but a
+   set of regular expressions that are supposed to match service names. */
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "Module Support (My Modules)",
+ .rid       = "my-module",
+ .si        = {
+  .provides = my_module_provides,
+  .requires = my_module_requires,
+  .after    = my_module_after,
+  .before   = my_module_before
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif
+
+int my_module_enable  (void *, struct einit_event *);
+int my_module_disable (void *, struct einit_event *);
+
+int my_module_cleanup (struct lmodule *pa) {
+/* cleanup code here */
+
+ return 0;
+}
+
+int my_module_enable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not enable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_disable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not disable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ pa->enable = my_module_enable;
+ pa->disable = my_module_disable; /* yes, ->disable is required! */
+ pa->cleanup = my_module_cleanup;
+
+/* more configure code here */
+
+ return 0;
+}
+]]></programlisting>
+     </example>
     </sect3>
 
     <sect3 id="developers-writing-modules-c-templates-passive">
@@ -570,10 +695,11 @@ int my_module_configure (struct lmodule *me) {
      <title>Template for a Module-Loader</title>
      <titleabbrev>Module-Loader Template</titleabbrev>
 
-     <para>Module-loaders can be a bit intriguing, but there's not much magic behind it.</para>
+     <para>Module-loaders can be a bit intriguing, but there's not much magic behind them. Remember to use mod_add()
+      and mod_update() and that the .mode = einit_module_loader isn't just for cosmetics. :)</para>
 
      <example id="developers-writing-modules-c-templates-loader-">
-      <title>Registering an Event-Handler</title>
+      <title>A Blank Module-Loader Module</title>
       <programlisting language="C"><![CDATA[/*
  *  my-module.c
  *  einit
@@ -627,8 +753,6 @@ const struct smodule my_module_self = {
 module_register(my_module_self);
 
 #endif
-
-pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int my_module_scanmodules (struct lmodule *);
 
