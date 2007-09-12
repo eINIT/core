@@ -241,8 +241,8 @@ int network_scanmodules (struct lmodule *mainlist) {
       }
      }
 
-// this should be all they need
-     after = (char **)setadd ((void **)after, (void *)"^fs-proc$", SET_TYPE_STRING);
+// this should be all they need; root as well because /etc should be writable for resolv.conf
+     after = (char **)setadd ((void **)after, (void *)"^fs-(proc|root)$", SET_TYPE_STRING);
 
      memset (newmodule, 0, sizeof (struct smodule));
 
