@@ -1503,8 +1503,8 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
  if (strmatch (mountpoint, "/")) {
   fbprintf (status, "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts");
-  unlink ("/etc/fstab");
-  symlink ("/proc/mounts", "/etc/fstab");
+  unlink ("/etc/mtab");
+  symlink ("/proc/mounts", "/etc/mtab");
   errno = 0;
  }
 
