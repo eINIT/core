@@ -570,7 +570,112 @@ int my_module_configure (struct lmodule *me) {
      <title>Template for a Module-Loader</title>
      <titleabbrev>Module-Loader Template</titleabbrev>
 
-     <para></para>
+     <para>Module-loaders can be a bit intriguing, but there's not much magic behind it.</para>
+
+     <example id="developers-writing-modules-c-templates-loader-">
+      <title>Registering an Event-Handler</title>
+      <programlisting language="C"><![CDATA[/*
+ *  my-module.c
+ *  einit
+ *
+ *  Created on DD/MM/YYYY.
+ *  Copyright 2007 Me - myself - Mineson. All rights reserved.
+ *
+ */
+
+/*
+ LONG LEGAL MUMBO JUMBO APPROPRIATE TO MODULE'S LICENSE
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/utility.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_loader,
+ .name      = "Module Support (My Modules)",
+ .rid       = "my-module",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif
+
+pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int my_module_scanmodules (struct lmodule *);
+
+int my_module_cleanup (struct lmodule *pa) {
+/* cleanup code here */
+
+ return 0;
+}
+
+int my_module_scanmodules (struct lmodule *modchain) {
+/* You need to get your modules from somewhere, see if they're there, if so invoke mod_update() on them,
+   and if not invoke mod_add() to get them onto the list. */
+
+ while (modchain) {
+  if (modchain->module && modchain->module->rid && see_if_my_module_knows_rid (modchain->module->rid)) {
+/* modify the module if necessary */
+
+   mod_update (modchain);
+   remember_that_we_did_stuff_for_this_rid (modchain->module->rid);
+  }
+
+  modchain = modchain->next;
+ }
+
+ add_all_new_modules_using_mod_add ();
+
+/* Note that the pseudocode above suggests using the rids of modules to remember your own modules.
+   There's also  other ways to do this, like using a set to store their (struct lmodule *) pointers,
+   or using the source field. It's all up to you, really. */
+
+/* remember to construct a (struct smodule *) if necessary */
+
+ return 1;
+}
+
+int my_module_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ pa->scanmodules = my_module_scanmodules;
+ pa->cleanup = my_module_cleanup;
+
+/* more configure code here */
+
+ return 0;
+}
+]]></programlisting>
+     </example>
     </sect3>
 
     <sect3 id="developers-writing-modules-c-templates-shadow">
