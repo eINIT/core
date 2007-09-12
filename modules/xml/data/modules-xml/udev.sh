@@ -9,7 +9,7 @@ if [ $1 = "enable" ]; then
  echo 'feedback|notice|Using udev to manage /dev'
  udev=$(cat /proc/mounts | grep udev)
  if [ -z ${udev} ] ; then
-  mount -t tmpfs -o exec,nosuid,mode=0755 udev /dev
+  mount -n -t tmpfs -o exec,nosuid,mode=0755 udev /dev
   touch /dev/.einit
   if [ '${configuration_services_udev_device_tarball}' = 'yes' ] ; then
    echo 'feedback|notice|Populating /dev with saved device nodes'
