@@ -102,8 +102,8 @@ void einit_functions_xml_core_event_handler (struct einit_event *ev) {
 int einit_functions_xml_cleanup (struct lmodule *pa) {
  event_ignore (einit_event_subsystem_core, einit_functions_xml_core_event_handler);
 
- function_unregister ("function-test-generic-2", 1, einit_functions_xml_generic_wrapper);
- function_unregister ("function-test-generic-1", 1, einit_functions_xml_generic_wrapper);
+ function_unregister_type ("function-test-generic-2", 1, einit_functions_xml_generic_wrapper, function_type_generic);
+ function_unregister_type ("function-test-generic-1", 1, einit_functions_xml_generic_wrapper, function_type_generic);
 
  return 0;
 }
@@ -115,8 +115,8 @@ int einit_functions_xml_configure (struct lmodule *pa) {
 
  event_listen (einit_event_subsystem_core, einit_functions_xml_core_event_handler);
 
- function_register ("function-test-generic-1", 1, einit_functions_xml_generic_wrapper);
- function_register ("function-test-generic-2", 1, einit_functions_xml_generic_wrapper);
+ function_register_type ("function-test-generic-1", 1, einit_functions_xml_generic_wrapper, function_type_generic);
+ function_register_type ("function-test-generic-2", 1, einit_functions_xml_generic_wrapper, function_type_generic);
 
  return 0;
 }
