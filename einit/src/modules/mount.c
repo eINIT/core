@@ -1501,6 +1501,13 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
  fbprintf (status, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 
+ if (strmatch (mountpoint, "/")) {
+  fbprintf (status, "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts");
+  unlink ("/etc/fstab");
+  symlink ("/proc/mounts", "/etc/fstab");
+  errno = 0;
+ }
+
 #if defined(DARWIN) || defined(__FreeBSD__)
  if (unmount (mountpoint, 0) != -1)
 #else
