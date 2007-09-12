@@ -9,7 +9,7 @@
    </ip>
   </eth0>
   <wlan0>
-   <kernel-module s="ipw3945">
+   <kernel-module s="ipw3945"/>
    <control="wpa_supplicant">
     <driver s="wext"/>
     <config="/etc/wpa_supplicant/wpa_supplicant.conf"/>
