@@ -146,8 +146,12 @@
   <external provided="mount-system" />
  </services>
 
- <functions>
- </functions>
+ <special>
+  <function id="function-test-generic-3"
+   version="1"
+   prototype="integer:integer primus:string:integer tertius"
+   code="echo params: ${primus} ${arg2} ${tertius} > testoutput;" />
+ </special>
 
  <mode id="boot">
   <enable services="ipc" critical="mount-critical:tty:whatever" />

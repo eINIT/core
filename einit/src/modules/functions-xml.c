@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <errno.h>
 
+#include <einit-modules/exec.h>
+
 #include <stdarg.h>
 
 #define EXPECTED_EIV 1
@@ -77,15 +79,132 @@ module_register(einit_functions_xml_self);
 
 #endif
 
+struct einit_function_xml_data {
+ int version;
+ char *code;
+ char *prototype;
+};
+
+char **einit_functions_xml_registered = NULL;
+
+struct einit_function_xml_data einit_functions_xml_data_from_attrs (char **attrs) {
+ struct einit_function_xml_data rv;
+ memset (&rv, 0, sizeof (struct einit_function_xml_data));
+
+ if (attrs) {
+  int i = 0;
+
+  for (; attrs[i]; i+=2) {
+   if (strmatch (attrs[i], "version"))
+    rv.version = parse_integer (attrs[i+1]);
+   else if (strmatch (attrs[i], "prototype"))
+    rv.prototype = attrs[i+1];
+   else if (strmatch (attrs[i], "code"))
+    rv.code = attrs[i+1];
+  }
+ }
+
+ return rv;
+}
+
+struct einit_function_xml_data einit_functions_xml_data_get (char *id) {
+ struct cfgnode *node = NULL;
+
+ while ((node = cfg_findnode("special-function", 0, node))) {
+  if (node->idattr && strmatch (node->idattr, id)) {
+   return einit_functions_xml_data_from_attrs(node->arbattrs);
+  }
+ }
+
+ return einit_functions_xml_data_from_attrs(NULL);
+}
+
 void * einit_functions_xml_generic_wrapper (char *name, ...) {
- notice (1, "function called: %s", name);
+ struct einit_function_xml_data d = einit_functions_xml_data_get(name);
+
+ if (d.version && d.prototype && d.code) {
+  char **sprototype = str2set (':', d.prototype);
+  int ai = 0;
+  char *returntype = NULL;
+  va_list rarg;
+  char **call_environment = NULL;
+
+  notice (1, "function called: %s; prototype = %s, code = %s", name, d.prototype, d.code);
+
+  for (; sprototype[ai]; ai++) {
+   if (!ai) {
+    returntype = sprototype[ai];
+   } else {
+    if (ai == 1) {
+     va_start (rarg, name);
+    }
+
+    char **argdefpair = str2set (' ', sprototype[ai]);
+    char *argname = NULL;
+    char argname_tmp[BUFFERSIZE];
+    char *argvalue = NULL;
+    char argvalue_tmp[BUFFERSIZE];
+
+    if (argdefpair[1]) {
+     argname = argdefpair[1];
+     argdefpair[1] = NULL;
+    } else {
+     esprintf (argname_tmp, BUFFERSIZE, "arg%i", ai);
+     argname = argname_tmp;
+    }
+
+    if (strmatch (argdefpair[0], "integer")) {
+     esprintf (argvalue_tmp, BUFFERSIZE, "%i", va_arg (rarg, int));
+     argvalue = argvalue_tmp;
+    } else if (strmatch (argdefpair[0], "string")) {
+     esprintf (argvalue_tmp, BUFFERSIZE, "%s", va_arg (rarg, char*));
+     argvalue = argvalue_tmp;
+    } else {
+     argvalue = function_call_by_name_multi (char*, "einit-function-convert-argument", 1, (const char **)argdefpair, argname, va_arg (rarg, void*));
+
+     if (!argvalue) argvalue = "(null)";
+    }
+
+    call_environment = straddtoenviron (call_environment, argname, argvalue);
+
+    free (argdefpair);
+   }
+  }
+
+  if (ai >= 1) {
+   va_end (rarg);
+  }
+
+  pexec(d.code, NULL, 0, 0, NULL, NULL, call_environment, NULL);
+
+  if (call_environment) {
+   notice (1, "calling function with env=(%s)", set2str (' ', call_environment));
+  }
+
+  free (sprototype);
+ } else {
+  notice (1, "invalid function called: %s", name);
+ }
 
  return 0;
 }
 
 void einit_functions_xml_update_functions () {
- function_call_by_name_multi (int, "function-test-generic", 1, (const char **)str2set (':', "3:2:1"), 1, 2, 3);
- function_call_by_name (int, "function-test-generic-2", 1, 1, 2, 3);
+ struct cfgnode *node = NULL;
+
+ while ((node = cfg_findnode("special-function", 0, node))) {
+  if (node->idattr) {
+   if (!inset ((const void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING)) {
+    struct einit_function_xml_data d = einit_functions_xml_data_from_attrs (node->arbattrs);
+    notice (1, "registering function: %s", node->idattr);
+    einit_functions_xml_registered = (char **)setadd ((void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING);
+
+    function_register_type (node->idattr, d.version, einit_functions_xml_generic_wrapper, function_type_generic);
+   }
+  }
+ }
+
+ function_call_by_name_multi (int, "function-test-generic", 1, (const char **)str2set (':', "3:2:1"), 11, "hello", 42);
 }
 
 void einit_functions_xml_core_event_handler (struct einit_event *ev) {
@@ -102,21 +221,28 @@ void einit_functions_xml_core_event_handler (struct einit_event *ev) {
 int einit_functions_xml_cleanup (struct lmodule *pa) {
  event_ignore (einit_event_subsystem_core, einit_functions_xml_core_event_handler);
 
- function_unregister_type ("function-test-generic-2", 1, einit_functions_xml_generic_wrapper, function_type_generic);
- function_unregister_type ("function-test-generic-1", 1, einit_functions_xml_generic_wrapper, function_type_generic);
+ if (einit_functions_xml_registered) {
+  int i = 0;
+
+  for (; einit_functions_xml_registered[i]; i++) {
+   struct einit_function_xml_data d = einit_functions_xml_data_get (einit_functions_xml_registered[i]);
+
+   function_unregister_type (einit_functions_xml_registered[i], d.version, einit_functions_xml_generic_wrapper, function_type_generic);
+  }
+ }
+
+ exec_cleanup (pa);
 
  return 0;
 }
 
 int einit_functions_xml_configure (struct lmodule *pa) {
  module_init (pa);
+ exec_configure (pa);
 
  pa->cleanup = einit_functions_xml_cleanup;
 
  event_listen (einit_event_subsystem_core, einit_functions_xml_core_event_handler);
-
- function_register_type ("function-test-generic-1", 1, einit_functions_xml_generic_wrapper, function_type_generic);
- function_register_type ("function-test-generic-2", 1, einit_functions_xml_generic_wrapper, function_type_generic);
 
  return 0;
 }
