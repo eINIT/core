@@ -119,8 +119,10 @@ struct einit_function_xml_data einit_functions_xml_data_get (char *id) {
  return einit_functions_xml_data_from_attrs(NULL);
 }
 
-void * einit_functions_xml_generic_wrapper (char *name, ...) {
+int einit_functions_xml_generic_wrapper (char *name, ...) {
  struct einit_function_xml_data d = einit_functions_xml_data_get(name);
+
+ int retval = status_failed;
 
  if (d.version && d.prototype && d.code) {
   char **sprototype = str2set (':', d.prototype);
@@ -129,7 +131,7 @@ void * einit_functions_xml_generic_wrapper (char *name, ...) {
   va_list rarg;
   char **call_environment = NULL;
 
-  notice (1, "function called: %s; prototype = %s, code = %s", name, d.prototype, d.code);
+//  notice (1, "function called: %s; prototype = %s, code = %s", name, d.prototype, d.code);
 
   for (; sprototype[ai]; ai++) {
    if (!ai) {
@@ -175,18 +177,18 @@ void * einit_functions_xml_generic_wrapper (char *name, ...) {
    va_end (rarg);
   }
 
-  pexec(d.code, NULL, 0, 0, NULL, NULL, call_environment, NULL);
+  retval = pexec(d.code, NULL, 0, 0, NULL, NULL, call_environment, NULL);
 
-  if (call_environment) {
+/*  if (call_environment) {
    notice (1, "calling function with env=(%s)", set2str (' ', call_environment));
-  }
+  }*/
 
   free (sprototype);
  } else {
   notice (1, "invalid function called: %s", name);
  }
 
- return 0;
+ return retval;
 }
 
 void einit_functions_xml_update_functions () {
@@ -196,7 +198,7 @@ void einit_functions_xml_update_functions () {
   if (node->idattr) {
    if (!inset ((const void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING)) {
     struct einit_function_xml_data d = einit_functions_xml_data_from_attrs (node->arbattrs);
-    notice (1, "registering function: %s", node->idattr);
+//    notice (1, "registering function: %s", node->idattr);
     einit_functions_xml_registered = (char **)setadd ((void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING);
 
     function_register_type (node->idattr, d.version, einit_functions_xml_generic_wrapper, function_type_generic);
@@ -204,7 +206,11 @@ void einit_functions_xml_update_functions () {
   }
  }
 
- function_call_by_name_multi (int, "function-test-generic", 1, (const char **)str2set (':', "3:2:1"), 11, "hello", 42);
+/* if (function_call_by_name_multi (int, "function-test-generic", 1, (const char **)str2set (':', "3:2:1"), 11, "hello", 42) == status_ok) {
+  notice (1, "function called successfully");
+ } else {
+  notice (1, "function failed");
+ }*/
 }
 
 void einit_functions_xml_core_event_handler (struct einit_event *ev) {

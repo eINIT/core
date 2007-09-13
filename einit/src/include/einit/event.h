@@ -259,8 +259,8 @@ struct exported_function *function_look_up_one (const char *, const uint32_t, co
 #define function_call(rv,data,...)\
  ((rv)(((data) != NULL) && ((data)->function != NULL) ?\
   (((data)->type == function_type_generic) ? \
-  *(((rv *(*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
-  *(((rv *(*)())(data)->function) (__VA_ARGS__))) :\
+  (((rv (*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
+  (((rv (*)())(data)->function) (__VA_ARGS__))) :\
   0))
 
 #define function_call_by_name(rv,name,version,...)\
