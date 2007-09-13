@@ -59,10 +59,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <netlink/route/link.h>
 
 #include <linux/if.h>
-/* somehow this def is there but it isn't being picked up: */
-#ifndef IFF_LOWER_UP
-#define IFF_LOWER_UP 0x10000
-#endif
 
 #include <pthread.h>
 
@@ -138,7 +134,7 @@ struct network_interface *linux_netlink_get_interface_data (char *interface) {
  if (link) {
   unsigned int flags = rtnl_link_get_flags(link);
 
-  if (flags & IFF_LOWER_UP)
+  if (flags & IFF_RUNNING)
    rv->flags |= interface_has_carrier;
   if (flags & IFF_UP)
    rv->flags |= interface_up;
