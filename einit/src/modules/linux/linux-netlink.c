@@ -59,6 +59,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <netlink/route/link.h>
 
 #include <linux/if.h>
+/* somehow this def is there but it isn't being picked up: */
+#ifndef IFF_LOWER_UP
+#define IFF_LOWER_UP 0x10000
+#endif
 
 #include <pthread.h>
 
@@ -96,28 +100,55 @@ char linux_netlink_connected = 0;
 struct nl_cache *linux_netlink_link_cache = NULL;
 struct nl_cb *linux_netlink_callbacks = NULL;
 
-pthread_mutex_t linux_netlink_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+struct nl_cache *linux_netlink_address_cache = NULL;
+
+pthread_mutex_t
+  linux_netlink_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER,
+  linux_netlink_address_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char **linux_netlink_interfaces = NULL;
 
+/* nl_cache_update() seems to cause issues in valgrind, so we better not use that... */
+
 struct network_interface *linux_netlink_get_interface_data (char *interface) {
+ struct network_interface *rv = NULL;
+ ssize_t rvlen = sizeof (struct network_interface) + strlen (interface) + 2;
+ rv = emalloc (rvlen);
+ memset (rv, 0, rvlen);
+
+ memcpy (((char *)rv) + sizeof (struct network_interface), interface, strlen (interface));
+
+ rv->name = ((char *)rv) + sizeof (struct network_interface);
+
  emutex_lock (&linux_netlink_interfaces_mutex);
 
-/* if (linux_netlink_link_cache)
-  nl_cache_update (linux_netlink_handle, linux_netlink_link_cache);*/
+ if (linux_netlink_link_cache) {
+  nl_cache_destroy_and_free (linux_netlink_link_cache);
+  linux_netlink_link_cache = rtnl_link_alloc_cache(linux_netlink_handle);
+ } else
+  linux_netlink_link_cache = rtnl_link_alloc_cache(linux_netlink_handle);
+
+ if (!linux_netlink_link_cache) {
+  emutex_unlock (&linux_netlink_interfaces_mutex);
+  return rv;
+ }
 
  struct rtnl_link *link = rtnl_link_get_by_name(linux_netlink_link_cache, interface);
 
  if (link) {
+  unsigned int flags = rtnl_link_get_flags(link);
 
-  notice (1, "link flags: %i", rtnl_link_get_flags(link));
+  if (flags & IFF_LOWER_UP)
+   rv->flags |= interface_has_carrier;
+  if (flags & IFF_UP)
+   rv->flags |= interface_up;
 
   rtnl_link_put(link);
  }
 
  emutex_unlock (&linux_netlink_interfaces_mutex);
 
- return NULL;
+ return rv;
 }
 
 void linux_netlink_interface_data_collector (struct nl_object *object, void *ignored) {
@@ -130,6 +161,17 @@ void linux_netlink_interface_data_collector (struct nl_object *object, void *ign
 char **linux_netlink_get_all_interfaces () {
  char **retval = NULL;
  emutex_lock (&linux_netlink_interfaces_mutex);
+
+ if (linux_netlink_link_cache) {
+  nl_cache_destroy_and_free (linux_netlink_link_cache);
+  linux_netlink_link_cache = rtnl_link_alloc_cache(linux_netlink_handle);
+ } else
+  linux_netlink_link_cache = rtnl_link_alloc_cache(linux_netlink_handle);
+
+ if (!linux_netlink_link_cache) {
+  emutex_unlock (&linux_netlink_interfaces_mutex);
+  return NULL;
+ }
 
  if (linux_netlink_link_cache) {
   if (linux_netlink_interfaces) {
@@ -153,7 +195,7 @@ int linux_netlink_cleanup (struct lmodule *this) {
  }
 
  if (linux_netlink_link_cache) {
-  nl_cache_destroy (linux_netlink_link_cache);
+  nl_cache_destroy_and_free (linux_netlink_link_cache);
  }
 
  if (linux_netlink_callbacks) {
@@ -182,10 +224,7 @@ int linux_netlink_connect() {
  nl_handle_set_pid(linux_netlink_handle, getpid());
  nl_disable_sequence_check(linux_netlink_handle);
 
-// return nl_connect(linux_netlink_handle, NETLINK_KOBJECT_UEVENT);
  if ((linux_netlink_connected = (nl_connect(linux_netlink_handle, NETLINK_ROUTE) == 0))) {
-  linux_netlink_link_cache = rtnl_link_alloc_cache(linux_netlink_handle);
-
   if ((linux_netlink_callbacks = nl_cb_new (NL_CB_DEFAULT))) {
    nl_cb_set_all(linux_netlink_callbacks, NL_CB_DEFAULT, linux_netlink_main_callback, NULL);
   }
@@ -195,7 +234,7 @@ int linux_netlink_connect() {
 }
 
 int linux_netlink_configure (struct lmodule *irr) {
- pthread_t thread;
+// pthread_t thread;
 
  module_init (irr);
 
@@ -206,7 +245,7 @@ int linux_netlink_configure (struct lmodule *irr) {
   perror ("netlink NOT connected (%s)");
  } else {
   notice (2, "eINIT <-> NetLink: connected");
-  ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
+//  ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
 
   linux_netlink_get_interface_data ("eth1");
 
@@ -221,6 +260,19 @@ int linux_netlink_configure (struct lmodule *irr) {
    if (n) {
     free (n);
    }
+
+   int xr = 0;
+   for (; ifs[xr]; xr++) {
+    struct network_interface *ifd = linux_netlink_get_interface_data (ifs[xr]);
+
+    if (ifd) {
+     notice (2, "network interface: %s, flags=%i", ifd->name, ifd->flags);
+
+     free (ifd);
+    }
+   }
+  } else {
+   notice (2, "error retrieving list of interfaces");
   }
  }
 

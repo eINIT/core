@@ -42,8 +42,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
+enum interface_flags {
+ interface_up          = 0x0001,
+ interface_has_carrier = 0x0002
+};
+
 struct network_interface {
  char *name;
+ enum interface_flags flags;
 };
 
 #ifdef __cplusplus
