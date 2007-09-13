@@ -159,7 +159,12 @@ int einit_functions_xml_generic_wrapper (char *name, ...) {
      esprintf (argvalue_tmp, BUFFERSIZE, "%i", va_arg (rarg, int));
      argvalue = argvalue_tmp;
     } else if (strmatch (argdefpair[0], "string")) {
-     esprintf (argvalue_tmp, BUFFERSIZE, "%s", va_arg (rarg, char*));
+     char *nt = va_arg (rarg, char*);
+     if (nt) {
+      esprintf (argvalue_tmp, BUFFERSIZE, "%s", nt);
+     } else {
+      snprintf (argvalue_tmp, BUFFERSIZE, "(null)");
+     }
      argvalue = argvalue_tmp;
     } else {
      argvalue = function_call_by_name_multi (char*, "einit-function-convert-argument", 1, (const char **)argdefpair, argname, va_arg (rarg, void*));
