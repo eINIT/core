@@ -3,7 +3,7 @@ export INCLUDEPATH="/usr/local/include"
 # modules that need to be enabled manually: ipc-dbus, linux-netlink
 
 export MODULES_GENERIC="feedback-visual-textual feedback-aural feedback-aural-festival fqdn external exec ipc mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler feedback-visual-fbsplash module-lisp module-xml module-network cron module-c module-network-v2 functions-xml"
-export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-module-kernel"
+export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-module-kernel linux-netlink"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 export MODULES_CORE="module-so module-logic-v3 bootstrap-configuration-xml-expat bootstrap-configuration-stree log"
 export MODULES_EXPERIMENTAL="readahead"

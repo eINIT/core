@@ -50,8 +50,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dirent.h>
 #include <ctype.h>
 
+#include <einit-modules/network.h>
+
 #include <netlink/handlers.h>
 #include <netlink/netlink.h>
+#include <netlink/cache.h>
+
+#include <netlink/route/link.h>
+
+#include <linux/if.h>
+
 #include <pthread.h>
 
 #define EXPECTED_EIV 1
@@ -83,29 +91,107 @@ module_register(module_linux_netlink_self);
 
 #endif
 
-struct nl_handle *linux_netlink_handle;
+struct nl_handle *linux_netlink_handle = NULL;
+char linux_netlink_connected = 0;
+struct nl_cache *linux_netlink_link_cache = NULL;
+struct nl_cb *linux_netlink_callbacks = NULL;
+
+pthread_mutex_t linux_netlink_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+char **linux_netlink_interfaces = NULL;
+
+struct network_interface *linux_netlink_get_interface_data (char *interface) {
+ emutex_lock (&linux_netlink_interfaces_mutex);
+
+/* if (linux_netlink_link_cache)
+  nl_cache_update (linux_netlink_handle, linux_netlink_link_cache);*/
+
+ struct rtnl_link *link = rtnl_link_get_by_name(linux_netlink_link_cache, interface);
+
+ if (link) {
+
+  notice (1, "link flags: %i", rtnl_link_get_flags(link));
+
+  rtnl_link_put(link);
+ }
+
+ emutex_unlock (&linux_netlink_interfaces_mutex);
+
+ return NULL;
+}
+
+void linux_netlink_interface_data_collector (struct nl_object *object, void *ignored) {
+ char *name = rtnl_link_get_name((struct rtnl_link *)object);
+ if (name) {
+  linux_netlink_interfaces = (char **)setadd ((void **)linux_netlink_interfaces, name, SET_TYPE_STRING);
+ }
+}
+
+char **linux_netlink_get_all_interfaces () {
+ char **retval = NULL;
+ emutex_lock (&linux_netlink_interfaces_mutex);
+
+ if (linux_netlink_link_cache) {
+  if (linux_netlink_interfaces) {
+   free (linux_netlink_interfaces);
+   linux_netlink_interfaces = NULL;
+  }
+  nl_cache_foreach (linux_netlink_link_cache, linux_netlink_interface_data_collector, NULL);
+ }
+
+ retval = (char **)setdup ((const void **)linux_netlink_interfaces, SET_TYPE_STRING);
+
+ emutex_unlock (&linux_netlink_interfaces_mutex);
+
+ return retval;
+}
 
 int linux_netlink_cleanup (struct lmodule *this) {
- nl_close (linux_netlink_handle);
- nl_handle_destroy(linux_netlink_handle);
+ if (linux_netlink_connected) {
+  nl_close (linux_netlink_handle);
+  nl_handle_destroy(linux_netlink_handle);
+ }
+
+ if (linux_netlink_link_cache) {
+  nl_cache_destroy (linux_netlink_link_cache);
+ }
+
+ if (linux_netlink_callbacks) {
+  nl_cb_destroy (linux_netlink_callbacks);
+ }
 
  return 0;
 }
 
 void *linux_netlink_read_thread (void *irrelevant) {
-/* while (1) {
- }*/
- nl_close (linux_netlink_handle);
- nl_handle_destroy(linux_netlink_handle);
+ while (1) {
+  nl_recvmsgs (linux_netlink_handle, linux_netlink_callbacks);
+ }
 
  return NULL;
+}
+
+int linux_netlink_main_callback (struct nl_msg *message, void *args) {
+ notice (1, "got a netlink message");
+
+ return NL_PROCEED;
 }
 
 int linux_netlink_connect() {
  linux_netlink_handle = nl_handle_alloc();
  nl_handle_set_pid(linux_netlink_handle, getpid());
  nl_disable_sequence_check(linux_netlink_handle);
- return nl_connect(linux_netlink_handle, NETLINK_GENERIC);
+
+// return nl_connect(linux_netlink_handle, NETLINK_KOBJECT_UEVENT);
+ if ((linux_netlink_connected = (nl_connect(linux_netlink_handle, NETLINK_ROUTE) == 0))) {
+  linux_netlink_link_cache = rtnl_link_alloc_cache(linux_netlink_handle);
+
+  if ((linux_netlink_callbacks = nl_cb_new (NL_CB_DEFAULT))) {
+   nl_cb_set_all(linux_netlink_callbacks, NL_CB_DEFAULT, linux_netlink_main_callback, NULL);
+  }
+ }
+
+ return linux_netlink_connected;
 }
 
 int linux_netlink_configure (struct lmodule *irr) {
@@ -115,12 +201,27 @@ int linux_netlink_configure (struct lmodule *irr) {
 
  thismodule->cleanup = linux_netlink_cleanup;
 
- if (linux_netlink_connect()) {
+ if (!linux_netlink_connect()) {
   notice (2, "eINIT <-> NetLink: could not connect");
   perror ("netlink NOT connected (%s)");
  } else {
   notice (2, "eINIT <-> NetLink: connected");
   ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
+
+  linux_netlink_get_interface_data ("eth1");
+
+  linux_netlink_get_all_interfaces();
+  char **ifs = linux_netlink_get_all_interfaces();
+
+  if (ifs) {
+   char *n = set2str (' ', (const char **)ifs);
+
+   notice (2, "found the following interfaces: (%s)", n);
+
+   if (n) {
+    free (n);
+   }
+  }
  }
 
  return 0;
