@@ -91,7 +91,13 @@ module_register(module_linux_netlink_self);
 
 #endif
 
+#define DO_UEVENTS 0
+
 struct nl_handle *linux_netlink_handle = NULL;
+#if DO_UEVENTS
+struct nl_handle *linux_netlink_handle_uevents = NULL;
+#endif
+
 char linux_netlink_connected = 0;
 struct nl_cache *linux_netlink_link_cache = NULL;
 struct nl_cb *linux_netlink_callbacks = NULL;
@@ -201,9 +207,12 @@ int linux_netlink_cleanup (struct lmodule *this) {
  return 0;
 }
 
+#if DO_UEVENTS
 void *linux_netlink_read_thread (void *irrelevant) {
  while (1) {
-  nl_recvmsgs (linux_netlink_handle, linux_netlink_callbacks);
+  nl_recvmsgs (linux_netlink_handle_uevents, linux_netlink_callbacks);
+
+  notice (1, "nl_recvmsgs returned");
  }
 
  return NULL;
@@ -214,23 +223,41 @@ int linux_netlink_main_callback (struct nl_msg *message, void *args) {
 
  return NL_PROCEED;
 }
+#endif
 
 int linux_netlink_connect() {
  linux_netlink_handle = nl_handle_alloc();
- nl_handle_set_pid(linux_netlink_handle, getpid());
+ nl_handle_set_pid(linux_netlink_handle, getpid()-1);
  nl_disable_sequence_check(linux_netlink_handle);
 
- if ((linux_netlink_connected = (nl_connect(linux_netlink_handle, NETLINK_ROUTE) == 0))) {
+#if DO_UEVENTS
+ linux_netlink_handle_uevents = nl_handle_alloc();
+ nl_handle_set_pid(linux_netlink_handle_uevents, getpid());
+ nl_disable_sequence_check(linux_netlink_handle_uevents);
+
+ nl_join_groups(linux_netlink_handle_uevents, 1);
+#endif
+
+ if ((linux_netlink_connected = (
+      (nl_connect(linux_netlink_handle, NETLINK_ROUTE) == 0)
+#if DO_UEVENTS
+       && (nl_connect(linux_netlink_handle_uevents, NETLINK_KOBJECT_UEVENT) == 0)
+#endif
+      ))) {
+#if DO_UEVENTS
   if ((linux_netlink_callbacks = nl_cb_new (NL_CB_DEFAULT))) {
    nl_cb_set_all(linux_netlink_callbacks, NL_CB_DEFAULT, linux_netlink_main_callback, NULL);
   }
+#endif
  }
 
  return linux_netlink_connected;
 }
 
 int linux_netlink_configure (struct lmodule *irr) {
-// pthread_t thread;
+#if DO_UEVENTS
+ pthread_t thread;
+#endif
 
  module_init (irr);
 
@@ -241,7 +268,9 @@ int linux_netlink_configure (struct lmodule *irr) {
   perror ("netlink NOT connected (%s)");
  } else {
   notice (2, "eINIT <-> NetLink: connected");
-//  ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
+#if DO_UEVENTS
+  ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
+#endif
 
   linux_netlink_get_interface_data ("eth1");
 
