@@ -1,14 +1,15 @@
 Network = element network {
- element hostname { StringAttribute } &
- element domainname { StringAttribute } &
+ element hostname { StringAttribute } ,
+ element domainname { StringAttribute } ,
  element interfaces {
   element * {
-   attribute kernel-module { text }? &
-   attribute control { NetworkController } &
-   attribute ip { IPcontroller }
-  }
+   (( attribute control { "wpa_supplicant" } , attribute driver { text } , attribute config { text } ) |
+    ( attribute control { "brctl" } , attribute bridge { text } , attribute options { text } )) ? ,
+   (( attribute ip { "iproute2" } , attribute address { text } , attribute network { text } ) |
+    ( attribute ip { DHCPclient } )) ,
+   attribute kernel-module { text } ?
+  } *
  }
 }
 
-NetworkController = "brctl" | "vconfig" | "wpa_supplicant" | "wvdial"
-IPcontroller = "dhclient" | "dhcpcd" | "pump" | "iproute2"
+DHCPclient = "dhcpcd" | "dhclient" | "pump"
