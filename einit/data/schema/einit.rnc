@@ -18,6 +18,8 @@ eINIT = element einit {
   ( eINITMain )
 }
 
+IDAttribute = attribute id { text }
+
 eINITMain =
   Core ? &
   Configuration ? &
@@ -231,14 +233,14 @@ Mode = element mode {
   IDAttribute &
   attribute base { text }? &
 
-  element enable { attribute services { text }, attribute critical { text }? }? &
+  element enable { attribute services { text } & attribute critical { text }? }? &
   element disable { attribute services { text } }? &
 
   eINITMain &
 
   element overrides {
     eINITMain
-  }
+  }?
 }
 
 TTY = element tty {
@@ -281,7 +283,6 @@ ConfigurationCompatibility =
 
 FSTab =
   element node {
-    attribute id { text }?,
     attribute mountpoint { text }?,
     attribute label { text }?,
     attribute device { text }?,
@@ -317,8 +318,6 @@ BooleanAttribute = attribute b { Boolean }
 StringAttribute = attribute s { text }
 
 IntegerAttribute = attribute i { text }
-
-IDAttribute = attribute id { text }
 
 PathAttributes = attribute path { text }, attribute pattern-allow { text }?, attribute pattern-disallow { text }?
 CommandAttributes = attribute with-env { text }, StringAttribute?
