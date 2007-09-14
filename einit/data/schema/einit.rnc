@@ -115,7 +115,13 @@ Configuration = element configuration {
       element fbsplash {
         element ttys { StringAttribute }? &
         element theme { StringAttribute }? &
-        element chain-feedback { StringAttribute }?
+        element chain-feedback { StringAttribute }? &
+
+        element daemon {
+          element ttys { attribute silent { text }, attribute verbose { text } } ? &
+          element fifo { StringAttribute } ? &
+          element mount-dir { BooleanAttribute, attribute size { text }, attribute path { text } } ?
+        }?
       }*
     }* &
 
