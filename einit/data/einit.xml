@@ -87,6 +87,8 @@
    <bad-pthreads i="1" />
   </mortality>
 <!--  <mode s="init" /> -->
+
+  <validator-command s="rnv lib/einit/schemata/einit.rnc ${xmlfile}" need-file="/usr/bin/rnv" />
  </core>
  <configuration>
 <!-- A note on the configuration variables in this file: If it appears in this file, and it also

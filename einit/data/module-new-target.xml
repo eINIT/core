@@ -1,0 +1,8 @@
+<module>
+ <udevd name="UDEV" provides="udev" requires="fs-proc:fs-sys" before="fs-root">
+  <execute id="enable" user="" group="" code="echo hello world;" />
+  <execute id="disable" user="" group="" code="echo hello world;" />
+  <execute id="on-shutdown" user="" group="" code="echo hello world;" />
+ </udevd>
+</module>
+
