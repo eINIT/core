@@ -6,6 +6,5 @@
   enable="/usr/sbin/sensord ${configuration_services_sensord_options}"
   disable="killall sensord"
   need-files="/usr/sbin/sensord"
-  restart="yes"
   variables="configuration-services-sensord/.*" />
 </module>

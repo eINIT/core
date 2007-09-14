@@ -5,6 +5,5 @@
   requires="network-minimal:mount-critical"
   pid="/var/run/smartd.pid"
   enable="/usr/sbin/smartd"
-  disable="killall -9 smartd"
-  restart="yes" />
+  disable="killall -9 smartd" />
 </module>

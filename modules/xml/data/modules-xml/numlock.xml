@@ -24,6 +24,5 @@
                  echo 'feedback|notice|numlock disabled on ttys '${tty_list} ;
            else
                  echo 'feedback|error|failed to disable numlock on ttys '${tty_list} ;
-           fi"
-  restart="no" />
+           fi" />
 </module>

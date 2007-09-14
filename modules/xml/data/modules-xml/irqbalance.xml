@@ -4,6 +4,5 @@
   provides="irqbalance"
   requires="mount-critical"
   enable="irqbalance"
-  disable="/bin/true"
-  restart="no" />
+  disable="/bin/true" />
 </module>

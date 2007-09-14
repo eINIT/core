@@ -6,7 +6,6 @@
   after="^net-lo$"
   enable="/usr/sbin/entranced"
   disable="killall -9 entranced"
-  restart="no"
   DISPLAY=":0.0"
   HOME="/root"
   need-files="/usr/sbin/entranced" />

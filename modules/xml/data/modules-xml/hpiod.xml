@@ -4,6 +4,5 @@
   provides="hpiod"
   requires="mount-local"
   enable="hpiod"
-  disable="killall hpiod"
-  restart="yes" />
+  disable="killall hpiod" />
 </module>

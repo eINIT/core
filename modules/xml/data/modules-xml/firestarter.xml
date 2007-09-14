@@ -7,6 +7,5 @@
             firestarter --generate-scripts;
            fi; /bin/true"
   enable="firestarter --start"
-  disable="firestarter --stop"
-  restart="yes" />
+  disable="firestarter --stop" />
 </module>

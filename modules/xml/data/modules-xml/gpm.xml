@@ -5,6 +5,5 @@
   requires="tty"
   enable="/usr/sbin/gpm -m ${configuration_services_gpm_device} -t ${configuration_services_gpm_type} ${configuration_services_gpm_options}"
   disable="killall gpm &amp;&gt;/dev/null"
-  restart="yes"
   variables="configuration-services-gpm/.*" />
 </module>

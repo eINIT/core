@@ -5,6 +5,5 @@
   requires="mount-critical:fqdn"
   after="^net-lo$"
   enable="slim -d"
-  disable="killall -9 slim"
-  restart="yes" />
+  disable="killall -9 slim" />
 </module>
