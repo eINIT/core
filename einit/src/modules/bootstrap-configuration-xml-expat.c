@@ -450,9 +450,9 @@ void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
 
   if (command) {
    char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
-   char **myenvironment = straddtoenviron (NULL, "files", xmlfiles);
-
    struct einit_event feedback_ev = evstaticinit (einit_feedback_module_status);
+   char **myenvironment = straddtoenviron (NULL, "files", xmlfiles);
+   myenvironment = straddtoenviron (myenvironment, "rnc_schema", EINIT_LIB_BASE "/schemata/einit.rnc");
 
    feedback_ev.para = (void *)thismodule;
 
