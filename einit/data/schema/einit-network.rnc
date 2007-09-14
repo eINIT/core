@@ -1,38 +1,24 @@
 Network = element network {
-<<<<<<< .mine
- element hostname { StringAttribute }? &
- element domainname { StringAttribute }? &
- element interfaces {
-  element * {
-   (( attribute control { "wpa_supplicant" } , attribute driver { text } , attribute config { text } ) |
-    ( attribute control { "brctl" } , attribute bridge { text } , attribute options { text } )) ? &
-   (( attribute ip { "iproute2" } , attribute address { text } , attribute network { text } ) |
-    ( attribute ip { DHCPclient } )) &
-   attribute kernel-module { text } ?
-  } *
- } &
- element dhcp {
-  element timeout { StringAttribute }
- } ?
-=======
   NetworkContents
->>>>>>> .r2009
 }
 
 NetworkContents =
-  element hostname { StringAttribute }? &
-  element domainname { StringAttribute }? &
+  element hostname { StringAttribute } ? &
+  element domainname { StringAttribute } ? &
   element interfaces {
    element * {
-    (( attribute control { "wpa_supplicant" } , attribute driver { text } , attribute config { text } ) |
-     ( attribute control { "brctl" } , attribute bridge { text } , attribute options { text } )) ? ,
-    (( attribute ip { "iproute2" } , attribute address { text } , attribute network { text } ) |
-     ( attribute ip { DHCPclient } )) ,
+    (( attribute control { "wpa_supplicant" } & attribute driver { text } & attribute config { text } ) |
+     ( attribute control { "brctl" } & attribute bridge { text } & attribute options { text } ) |
+     ( attribute control { "vconfig" } & attribute id { text } ) |
+     ( attribute control { "wvdial" } & attribute profile { text } ) |
+     ( attribute control { "ifenslave" } & attribute master { text } & attribute slaves { text } )) ? &
+    (( attribute ip { "iproute2" } & attribute address { text } & attribute network { text } ) |
+     ( attribute ip { DHCPclient } )) ? &
     attribute kernel-module { text } ?
    } *
-  }* &
+  } &
   element dhcp {
-   element timeout { StringAttribute }?
-  }?
+   element timeout { StringAttribute } ?
+  } ?
 
 DHCPclient = "dhcpcd" | "dhclient" | "pump"
