@@ -10,7 +10,6 @@ ModuleContents =
  } |
  element daemon {
   attribute command { text } ,
-  attribute options { text }? ,
   attribute restart { Boolean }? ,
   CommonModuleAttributes
  } )
@@ -27,7 +26,17 @@ CommonModuleAttributes =
  attribute need-files { text } ? ,
  attribute pid { text } ? ,
  attribute variables { text } ? ,
+ attribute options { text }? ,
+
+ attribute group { text } ? ,
+ attribute user { text } ? ,
+ attribute gid { text } ? ,
+ attribute uid { text } ? ,
+
+# the following attributes are only allowed temporarily
  attribute opts { text } ? ,
  attribute envfile { text } ? ,
  attribute root { text } ? ,
+ attribute DISPLAY { text } ? ,
+ attribute HOME { text } ? ,
  attribute config { text } ?

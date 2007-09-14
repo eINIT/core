@@ -1,9 +1,13 @@
 start = eINIT | Module | Network
 
 eINIT = element einit {
-  ( attribute prefix { "services-virtual-module" }? & ModuleContents* ) |
+  ( attribute prefix { "services-virtual-module" } & ModuleContents* ) |
 
-  ( attribute prefix { "configuration-services" }? & element * { attribute * { text }* }* ) |
+  ( attribute prefix { "configuration-services" } & element * { attribute * { text }* }* ) |
+
+# the next ones are only temporary
+  ( attribute prefix { "services-virtual-network" } &
+    ( element ip { attribute * { text }* } | element ifctl { attribute * { text }* } | element misc { attribute * { text }* } )* ) |
 
   ( Core* &
     Configuration* &

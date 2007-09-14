@@ -67,7 +67,7 @@
   <xml-validator
     command="if [ ! -e &quot;$(which rnv)&quot; ]; then
               echo 'feedback|failure|RNV is not installed, not validating XML files!';
-             elif ! rnv ${rnc_schema} ${files}; then
+             elif ! rnv -q -n 255 ${rnc_schema} ${files}; then
               echo 'feedback|failure|some configuration files failed validation!'; sleep 1;
              fi" />
  </core>
