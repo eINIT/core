@@ -1,6 +1,6 @@
 Network = element network {
- element hostname { StringAttribute } ,
- element domainname { StringAttribute } ,
+ element hostname { StringAttribute }? &
+ element domainname { StringAttribute }? &
  element interfaces {
   element * {
    (( attribute control { "wpa_supplicant" } , attribute driver { text } , attribute config { text } ) |
@@ -9,7 +9,10 @@ Network = element network {
     ( attribute ip { DHCPclient } )) ,
    attribute kernel-module { text } ?
   } *
- }
+ }* &
+ element dhcp {
+  element timeout { StringAttribute }?
+ }?
 }
 
 DHCPclient = "dhcpcd" | "dhclient" | "pump"

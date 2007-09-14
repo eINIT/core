@@ -1,36 +1,110 @@
 start = eINIT | Module | Network
 
 eINIT = element einit {
- attribute prefix { text }?,
- element core {
-  element xml-validator { attribute command { text } } &
+  attribute prefix { text }? &
+
+  Core* &
+  Configuration* &
+  Services* &
+  Special*
+}
+
+Core = element core {
+  element xml-validator { attribute command { text } }? &
   element settings {
-    element xml-parser { element auto-create-missing-directories { BooleanAttribute }? } &
-    element configuration { element on-line-modifications { attribute save-to { text } }? }
-  } &
+    element xml-parser {
+      element auto-create-missing-directories { BooleanAttribute }?
+    }? &
+    element configuration {
+      element on-line-modifications { attribute save-to { text } }?
+    }? &
+    element modules {
+      IDAttribute,
+      PathAttributes
+    }? &
+    element configuration-path {
+      StringAttribute
+    }?
+  }* &
   element scheduler {
-    element shutdown-function-suffixes { StringAttribute }
-  } &
+    element shutdown-function-suffixes { StringAttribute }?
+  }* &
   element module-logic {
-    element init.d-path { StringAttribute } &
-    element maintain-init.d { StringAttribute, BooleanAttribute }
-  }
- }*,
- element configuration {
+    element init.d-path { StringAttribute }? &
+    element maintain-init.d { StringAttribute, BooleanAttribute }?
+  }* &
+  element commands {
+    element include {
+      element file {
+        StringAttribute
+      }* & 
+      element directory {
+        PathAttributes
+      }*
+    }*
+  }* &
+  element mortality {
+    element bad-malloc { IntegerAttribute }* &
+    element bad-stdio { IntegerAttribute }* &
+    element bad-regex { IntegerAttribute }* &
+    element bad-expat { IntegerAttribute }* &
+    element bad-dl { IntegerAttribute }* &
+    element bad-lookup { IntegerAttribute }* &
+    element bad-pthreads { IntegerAttribute }*
+  }*
+}
+
+Configuration = element configuration {
+  element system {
+    element ctrl-alt-del { BooleanAttribute }* &
+    element daemon-spawn-timeout { IntegerAttribute }* &
+    element daemon-term-timeout-primary { IntegerAttribute }* &
+    element daemon-term-timeout-secondary { IntegerAttribute }* &
+    element shell { StringAttribute }* &
+    element shell-exec-timeout { IntegerAttribute }* &
+    element exec-envfile-base { StringAttribute }* &
+    element proc-path { StringAttribute }* &
+    element log { StringAttribute, BooleanAttribute }* &
+    element kexec-to-reboot { BooleanAttribute }* &
+    element kexec-calls {
+      attribute load { text },
+      attribute load-initrd { text },
+      attribute execute { text }
+    }*
+  }* &
+
+  element environment {
+    element global { IDAttribute, StringAttribute }* &
+    element safe { attribute * { text }* }?
+  }* &
+
+  element kernel {
+    element modules {
+      element autoload.d { attribute file { text } }?
+    }*
+  }* &
+
+  Network*
+}
+
+Services = element services {
   element * { text }*
- }*,
- element services {
+}
+
+Special = element special {
   element * { text }*
- }*,
- element special {
-  element * { text }*
- }*
 }
 
 Boolean = "yes" | "no" | "true" | "false" | "enabled" | "disabled"
 
 BooleanAttribute = attribute b { Boolean }
 StringAttribute = attribute s { text }
+
+IntegerAttribute = attribute i { text }
+
+IDAttribute = attribute id { text }
+
+PathAttributes = attribute path { text }, attribute pattern-allow { text }?, attribute pattern-disallow { text }?
 
 include "einit-module.rnc"
 include "einit-network.rnc"
