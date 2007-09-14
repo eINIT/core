@@ -106,7 +106,8 @@ int print_usage_info () {
   "Options:\n"
   "-c <filename>         load <filename> instead of/lib/einit/einit.xml\n"
   "-h, --help            display this text\n"
-  "-v                    print version and copyright notice, then exit\n"
+  "-v                    print version, then exit\n"
+  "-L                    print copyright notice, then exit\n"
   "--bootstrap-modules   use this path to load bootstrap-modules\n"
   "--ipc-command         don't boot, only run specified ipc-command\n"
   "                      (you can use this more than once)\n"
@@ -261,6 +262,9 @@ int main(int argc, char **argv) {
      return print_usage_info ();
      break;
     case 'v':
+     eputs("eINIT " EINIT_VERSION_LITERAL "\n", stdout);
+     return 0;
+    case 'L':
      eputs("eINIT " EINIT_VERSION_LITERAL
           "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
           "--------------------------------------------------------------------------------\n"
