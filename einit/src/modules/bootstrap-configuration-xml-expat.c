@@ -363,6 +363,10 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   if (!recursion) {
    confpath = cfg_getpath ("core-settings-configuration-path");
    if (!confpath) confpath = "/etc/einit/";
+   if (coremode & einit_mode_sandbox) {
+    if (confpath[0] == '/') confpath++;
+   }
+
    cfgplen = strlen(confpath) +1;
    rescan_node:
    hnode = hconfiguration;

@@ -6,12 +6,7 @@
     <auto-create-missing-directories b="true" />
    </xml-parser>
    <configuration>
-    <if match="core-mode:sandbox">
-     <on-line-modifications save-to="etc/einit/local/on-line-modifications.xml" />
-     <else>
-      <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
-     </else>
-    </if>
+    <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
    </configuration>
   </settings>
 
@@ -19,54 +14,35 @@
    <shutdown-function-suffixes s="linux" />
   </scheduler>
 
+  <module-logic>
+   <init.d-path s="/etc/einit/init.d/" />
+   <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
+  </module-logic>
+
   <settings>
 <!-- example: use this to disable the compatibility modules -->
 <!-- <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
    <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" />
+
+   <configuration-path s="/etc/einit/" />
   </settings>
 
-  <if match="core-mode:sandbox">
-   <module-logic>
-    <init.d-path s="etc/einit/init.d/" />
-    <maintain-init.d s="../../../lib/einit/scripts/einit.d_erc.sh" b="true" />
-   </module-logic>
-
-   <settings>
-    <configuration-path s="etc/einit/" />
-   </settings>
-   <commands-include>
-    <file s="sandbox.xml" />
+  <commands>
+   <include>
+    <file s="local.xml" />
     <file s="network.xml" />
     <file s="fstab.xml" />
     <file s="modes.xml" />
-   </commands-include>
-   <else>
-    <module-logic>
-     <init.d-path s="/etc/einit/init.d/" />
-     <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
-    </module-logic>
 
-    <settings>
-     <configuration-path s="/etc/einit/" />
-    </settings>
-    <commands-include>
-     <file s="local.xml" />
-     <file s="network.xml" />
-     <file s="fstab.xml" />
-     <file s="modes.xml" />
-    </commands-include>
-   </else>
-  </if>
+    <directory path="/etc/einit/conf.d" />
+    <directory path="/etc/einit/subsystems.d" />
+    <directory path="/etc/einit/local" />
+    <directory path="/etc/einit/modules" />
 
-  <commands-include>
-   <directory path="/etc/einit/conf.d" />
-   <directory path="/etc/einit/subsystems.d" />
-   <directory path="/etc/einit/local" />
-   <directory path="/etc/einit/modules" />
-
-   <directory path="/lib/einit/modules-xml" />
-   <directory path="/lib/einit/modules-xml/network" />
-  </commands-include>
+    <directory path="/lib/einit/modules-xml" />
+    <directory path="/lib/einit/modules-xml/network" />
+   </include>
+  </commands>
 
 <!-- These settings control the "error correction" settings, i.e. how likely
      einit is to kill itself over a (potentially recoverable) problem.

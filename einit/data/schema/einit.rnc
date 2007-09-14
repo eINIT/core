@@ -1,3 +1,33 @@
-element einit {
- element * { text }
+start = eINIT | Module
+
+eINIT = element einit {
+ attribute prefix { text }?,
+ element core {
+  element xml-validator {
+   attribute command { text }
+  }?,
+  element settings {
+   element xml-parser {
+    element auto-create-missing-directories {
+     BooleanAttribute
+    }?
+   }?
+  }?
+}*,
+ element configuration {
+  element * { text }*
+ }*,
+ element services {
+  element * { text }*
+ }*,
+ element special {
+  element * { text }*
+ }*
+}
+
+BooleanAttribute = attribute b { Boolean }
+Boolean = "yes" | "no" | "true" | "false" | "enabled" | "disabled"
+
+Module = element module {
+ text
 }
