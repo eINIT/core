@@ -1,4 +1,4 @@
-start = eINIT | Module
+start = eINIT | Module | Network
 
 eINIT = element einit {
  attribute prefix { text }?,
@@ -26,6 +26,8 @@ eINIT = element einit {
 }
 
 BooleanAttribute = attribute b { Boolean }
+StringAttribute = attribute s { text }
 Boolean = "yes" | "no" | "true" | "false" | "enabled" | "disabled"
 
 include "einit-module.rnc"
+include "einit-network.rnc"

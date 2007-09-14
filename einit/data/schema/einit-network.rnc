@@ -1,0 +1,14 @@
+Network = element network {
+ element hostname { StringAttribute }
+ element domainname { StringAttribute }
+ element interfaces {
+  element * {
+   attribute kernel-module { text }? ,
+   attribute control { NetworkController } ,
+   attribute ip { IPcontroller }
+  }
+ }
+}
+
+NetworkController = "brctl" | "vconfig" | "wpa_supplicant" | "wvdial"
+IPcontroller = "dhclient" | "dhcpcd" | "pump" | "iproute2"
