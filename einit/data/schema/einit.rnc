@@ -25,7 +25,7 @@ eINITMain =
   Special ? &
   Mode * &
   Information ? &
-  element options { attribute shutdown { BooleanAttribute }? }? &
+  element options { attribute shutdown { text }? }? &
   element ttys { StringAttribute } ? &
   element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
   element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
