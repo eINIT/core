@@ -283,6 +283,7 @@ ConfigurationCompatibility =
 
 FSTab =
   element node {
+    IDAttribute?,
     attribute mountpoint { text }?,
     attribute label { text }?,
     attribute device { text }?,
