@@ -3,6 +3,8 @@ start = eINIT | Module | Network
 eINIT = element einit {
   ( attribute prefix { "services-virtual-module" } & ModuleContents* ) |
 
+  ( attribute prefix { "configuration-network" } & NetworkContents* ) |
+
   ( attribute prefix { "configuration-services" } & element * { attribute * { text }* }* ) |
 
 # the next ones are only temporary
@@ -12,10 +14,12 @@ eINIT = element einit {
   eINITMain
 }
 
-eINITMain = ( Core ? &
+eINITMain = 
+  Core ? &
   Configuration ? &
   Services ? &
-  Special ? )
+  Special ? &
+  element ttys { StringAttribute } ?
 
 Core = element core {
   element xml-validator { attribute command { text } }? &
@@ -73,7 +77,7 @@ Configuration = element configuration {
     element exec-envfile-base { StringAttribute }* &
     element proc-path { StringAttribute }* &
     element log { BooleanAttribute }* &
-    element kexec-to-reboot { BooleanAttribute }* &
+    element kexec-to-reboot { BooleanAttribute, attribute use-proc { Boolean }? }* &
     element kexec-calls {
       attribute load { text },
       attribute load-initrd { text },
@@ -88,7 +92,8 @@ Configuration = element configuration {
 
   element kernel {
     element modules {
-      element autoload.d { attribute file { text } }?
+      element autoload.d { attribute file { text } }? &
+      element * { StringAttribute }*
     }*
   }* &
 
@@ -99,7 +104,7 @@ Configuration = element configuration {
       element std-io {
         attribute stdio { text },
         attribute stderr { text },
-        attribute console { text },
+        attribute console { text } ?,
         attribute activate-vt { text }?,
         attribute verbose-output { text }?,
         attribute kernel-vt { text }?
@@ -150,13 +155,34 @@ Configuration = element configuration {
     element modprobe { CommandAttributes }? &
     element ip-flush { CommandAttributes }? &
     element create-bridge { CommandAttributes }?
-  }*
+  }* &
+
+  TTY ? &
+
+  element compatibility {
+    element sysv {
+      element utmp { BooleanAttribute }? &
+      element wtmp { BooleanAttribute }? &
+
+      element distribution {
+        StringAttribute &
+
+        element gentoo {
+          element init.d { PathAttributes }?
+        }
+      }
+    }
+  } ? &
+
+  element storage {
+    text
+  } ?
 }
 
 Services = element services {
   element virtual {
     Module*
-  } &
+  } ? &
 
   element alias {
     ( element * { attribute group { text }, attribute seq { "most" | "all" | "any" | "any-iop" } }*
@@ -169,11 +195,42 @@ Services = element services {
 
   element override {
    element module { IDAttribute, ModuleDependenciesOptional, ModuleDependenciesRequired? } *
+  } ? &
+
+  element transform {
+   IDAttribute,
+   attribute module-id { text },
+   attribute in { text },
+   attribute out { text },
+   attribute strip-from { text }?
+  } ? &
+
+  element storage {
+    text
   } ?
 }
 
 Special = element special {
   element * { text }*
+}
+
+Mode = element mode {
+  element enable { attribute services { text }, attribute critical { text }? }? &
+  element disable { attribute services { text } }? &
+
+  eINITMain &
+
+  element overrides {
+    eINITMain
+  }
+}
+
+TTY = element tty {
+  element * {
+    attribute dev { text },
+    attribute command { text },
+    attribute restart { Boolean }
+  }*
 }
 
 Boolean = "yes" | "no" | "true" | "false" | "enabled" | "disabled"

@@ -7,32 +7,35 @@
   </environment>
 
   <compatibility>
-   <sysv-distribution s="auto" />
-   <sysv-distribution-gentoo>
+   <sysv />
+   <distribution s="auto">
+     <gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->
-    <init.d path="/etc/init.d/"
-            pattern-allow=".*"
-            pattern-disallow="(.*\.sh|clock|.*mount|checkroot|bootmisc)" />
+      <init.d path="/etc/init.d/"
+              pattern-allow=".*"
+              pattern-disallow="(.*\.sh|clock|.*mount|checkroot|bootmisc)" />
 <!-- use this to make einit parse gentoo's runlevels as einit modes.
      NOTE: some aliases/transformations are still missing...
      NOTE.2: it's broken atm... somewhat -->
-    <runlevels path="/etc/runlevels" exclusive="false" />
-    <parse-env.d b="true" />
-    <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
+      <runlevels path="/etc/runlevels" exclusive="false" />
+      <parse-env.d b="true" />
+      <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
 
 <!-- scriptlets to process gentoo's init.d scripts
      ( i don't particularly feel like re-implementing a complete sh right now )
      arguments: script-path, script-name, action -->
-    <init.d-scriptlets
-     svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d;
-      cp -a /lib/einit/scripts/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
-      echo default>/lib/rcscripts/init.d/softlevel;"
-     execute='cd /etc/init.d/; SVCNAME=${script-name} /lib/rcscripts/sh/runscript.sh ${script-name} ${action};' />
+      <init.d-scriptlets
+       svcdir-init="mount -t tmpfs svcdir /lib/rcscripts/init.d;
+        cp -a /lib/einit/scripts/runscript-einit.sh /lib/rcscripts/init.d/runscript.sh;
+        echo default>/lib/rcscripts/init.d/softlevel;"
+       execute='cd /etc/init.d/; SVCNAME=${script-name} /lib/rcscripts/sh/runscript.sh ${script-name} ${action};' />
 
-    <service-group id="gentoo-network-group" service="net\..*" put-into="network" />
-    <service-group id="gentoo-audio-group" service=".*sound.*" put-into="audio" />
-   </sysv-distribution-gentoo>
+      <service-group id="gentoo-network-group" service="net\..*" put-into="network" />
+      <service-group id="gentoo-audio-group" service=".*sound.*" put-into="audio" />
+     </gentoo>
+    </distribution>
+   </sysv>
   </compatibility>
 
   <secondary>
