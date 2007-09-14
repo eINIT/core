@@ -52,12 +52,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
 
+#include <einit-modules/exec.h>
+
+
 #define ECXE_MASTERTAG 0x00000001
 #define IF_OK          0x1
 
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
 
 void einit_config_xml_expat_event_handler (struct einit_event *);
+void einit_config_xml_expat_ipc_event_handler (struct einit_event *);
 char *einit_config_xml_cfg_to_xml (struct stree *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
@@ -84,17 +88,22 @@ module_register(bootstrap_einit_configuration_xml_expat_self);
 int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
+ event_ignore (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
  event_ignore (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
+
+ exec_cleanup (this);
 
  return 0;
 }
 
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
  module_init(this);
+ exec_configure (this);
 
  thismodule->cleanup = bootstrap_einit_configuration_xml_expat_cleanup;
 
  event_listen (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
+ event_listen (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
 
  function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
@@ -431,6 +440,28 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
   if (ev->string) {
    einit_config_xml_expat_parse_configuration_file (ev->string);
    ev->chain_type = einit_core_configuration_update;
+  }
+ }
+}
+
+void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
+ if ((ev->argc >= 2) && strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
+  char *command = cfg_getstring ("core-xml-validator/command", NULL);
+
+  if (command) {
+   char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
+   char **myenvironment = straddtoenviron (NULL, "files", xmlfiles);
+
+   struct einit_event feedback_ev = evstaticinit (einit_feedback_module_status);
+
+   feedback_ev.para = (void *)thismodule;
+
+   pexec (command, NULL, 0, 0, NULL, NULL, myenvironment, &feedback_ev);
+
+   evstaticdestroy (feedback_ev);
+
+   free (myenvironment);
+   free (xmlfiles);
   }
  }
 }

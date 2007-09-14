@@ -88,7 +88,10 @@
   </mortality>
 <!--  <mode s="init" /> -->
 
-  <validator-command s="rnv lib/einit/schemata/einit.rnc ${xmlfile}" need-file="/usr/bin/rnv" />
+  <xml-validator
+    command="if ! rnv lib/einit/schemata/einit.rnc ${files}; then
+              echo 'feedback|failure|some configuration files failed validation!'; sleep 1;
+             fi" />
  </core>
  <configuration>
 <!-- A note on the configuration variables in this file: If it appears in this file, and it also
