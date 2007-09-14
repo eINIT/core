@@ -13,7 +13,7 @@ eINIT = element einit {
     }?
    }?
   }?
-}*,
+ }*,
  element configuration {
   element * { text }*
  }*,
@@ -28,6 +28,4 @@ eINIT = element einit {
 BooleanAttribute = attribute b { Boolean }
 Boolean = "yes" | "no" | "true" | "false" | "enabled" | "disabled"
 
-Module = element module {
- text
-}
+include "einit-module.rnc"
