@@ -152,6 +152,10 @@ Services = element services {
 
   element prefer {
     element * { StringAttribute }*
+  }* &
+
+  element override {
+    element * { StringAttribute }*
   }*
 }
 
