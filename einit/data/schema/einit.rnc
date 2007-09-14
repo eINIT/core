@@ -3,16 +3,18 @@ start = eINIT | Module | Network
 eINIT = element einit {
  attribute prefix { text }?,
  element core {
-  element xml-validator {
-   attribute command { text }
-  }?,
-  element settings {
-   element xml-parser {
-    element auto-create-missing-directories {
-     BooleanAttribute
-    }?
-   }?
-  }?
+  ( element xml-validator { attribute command { text } }
+  | element settings {
+      ( element xml-parser { element auto-create-missing-directories { BooleanAttribute }? }
+      | element configuration { element on-line-modifications { attribute save-to { text } }? })*
+    }
+  | element scheduler {
+      ( element shutdown-function-suffixes { StringAttribute } )*
+    }
+  | element module-logic {
+      ( element init.d-path { StringAttribute }
+      | element maintain-init.d { StringAttribute, BooleanAttribute } )*
+    })*
  }*,
  element configuration {
   element * { text }*
@@ -24,6 +26,8 @@ eINIT = element einit {
   element * { text }*
  }*
 }
+
+StringAttribute = attribute s { text }
 
 BooleanAttribute = attribute b { Boolean }
 StringAttribute = attribute s { text }

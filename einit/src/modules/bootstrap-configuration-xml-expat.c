@@ -55,8 +55,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/exec.h>
 
 
-#define ECXE_MASTERTAG 0x00000001
-#define IF_OK          0x1
+#define ECXE_MASTERTAG_EINIT   0x00000001
+#define ECXE_MASTERTAG_MODULE  0x00000002
+#define ECXE_MASTERTAG_NETWORK 0x00000004
+
+#define MODULE_IMPLIED_PREFIX "services-virtual-module"
+#define NETWORK_IMPLIED_PREFIX "configuration-network"
+
+#define ECXE_MASTERTAG ( ECXE_MASTERTAG_EINIT | ECXE_MASTERTAG_MODULE | ECXE_MASTERTAG_NETWORK)
 
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
 
@@ -115,9 +121,7 @@ char **xml_configuration_files = NULL;
 time_t xml_configuration_files_highest_mtime = 0;
 
 struct einit_xml_expat_user_data {
- uint32_t options,
-          if_level,
-          if_results;
+ uint32_t options;
  char *file, *prefix;
  enum einit_cfg_node_options type;
 };
@@ -128,67 +132,36 @@ char *xml_source_identifier = "xml-expat";
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int nlen = strlen (name);
- if (strmatch (name, "einit")) {
-  uint32_t i = 0;
-  ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG;
-
-  for (; atts[i]; i += 2) {
-   if (!strcmp (atts[i], "prefix")) {
-    ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (strlen (atts[i+1])+1);
-    *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
-    strcat (((struct einit_xml_expat_user_data *)userData)->prefix, atts[i+1]);
-   }
-  }
-  return;
- }
-
- if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
-
- if (strmatch (name, "if")) {
-  (((struct einit_xml_expat_user_data *)userData)->if_level)++;
-/* shift results to the left -- make room for another result */
-  (((struct einit_xml_expat_user_data *)userData)->if_results) <<= 1;
-
-/* clear the result bit for this one -- might not be necessary */
-  (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
-  (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
-
-  if (atts) {
+ if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) {
+  if (strmatch (name, "einit")) {
    uint32_t i = 0;
+   ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG_EINIT;
 
-   for (; atts[i]; i+=2) {
-    if (strmatch (atts[i], "match")) { // condition is a literal string match
-     char **mt = str2set (':', (char *)(atts[i+1]));
-     if (mt && mt[0] && mt[1]) {
-      if (strmatch (mt[0], "core-mode")) { // literal match is against the einit core mode
-       mt[0] = ((coremode == einit_mode_init) ? "init" :
-               ((coremode == einit_mode_metadaemon) ? "metadaemon" :
-               ((coremode == einit_mode_sandbox) ? "sandbox" : "undefined")));
-      }
-
-      if (strmatch (mt[0], mt[1]))
-       (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
+   if (atts) {
+    for (; atts[i]; i += 2) {
+     if (!strcmp (atts[i], "prefix")) {
+      ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (strlen (atts[i+1])+1);
+      *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
+      strcat (((struct einit_xml_expat_user_data *)userData)->prefix, atts[i+1]);
      }
-
-     if (mt) free (mt);
-    } else if (strmatch (atts[i], "file-exists")) { // does this file exist?
-     struct stat stbuf;
-
-     if (!stat (atts[i+1], &stbuf))
-      (((struct einit_xml_expat_user_data *)userData)->if_results) |= IF_OK;
     }
    }
+  } else if (strmatch (name, "module")) {
+   ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG_MODULE;
+
+   ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (strlen (MODULE_IMPLIED_PREFIX)+1);
+   *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
+   strcat (((struct einit_xml_expat_user_data *)userData)->prefix, MODULE_IMPLIED_PREFIX);
+  } else if (strmatch (name, "network")) {
+   ((struct einit_xml_expat_user_data *)userData)->options |= ECXE_MASTERTAG_NETWORK;
+
+   ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (strlen (NETWORK_IMPLIED_PREFIX)+1);
+   *(((struct einit_xml_expat_user_data *)userData)->prefix) = 0;
+   strcat (((struct einit_xml_expat_user_data *)userData)->prefix, NETWORK_IMPLIED_PREFIX);
   }
 
   return;
- } else if (strmatch (name, "else") && (((struct einit_xml_expat_user_data *)userData)->if_level)) {
-  (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
-
-  return;
  }
-
- if (!(((struct einit_xml_expat_user_data *)userData)->if_level) ||
-      ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
 
   if (!((struct einit_xml_expat_user_data *)userData)->prefix) {
    ((struct einit_xml_expat_user_data *)userData)->prefix = emalloc (nlen+1);
@@ -251,28 +224,23 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    cfg_addnode (newnode);
    free (newnode);
   }
- }
 }
 
 void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
  if (!(((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG)) return;
 
- if (strmatch (name, "einit")) {
-  ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG;
+ if (strmatch (name, "einit") && (((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG_EINIT)) {
+  ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG_EINIT;
   return;
- } else if (strmatch (name, "if")) {
-  (((struct einit_xml_expat_user_data *)userData)->if_level)--;
-  (((struct einit_xml_expat_user_data *)userData)->if_results) >>= 1;
+ } else if (strmatch (name, "module") && (((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG_MODULE) && ((struct einit_xml_expat_user_data *)userData)->prefix && strmatch (((struct einit_xml_expat_user_data *)userData)->prefix, MODULE_IMPLIED_PREFIX)) {
+  ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG_MODULE;
   return;
- } else if (strmatch (name, "else")) {
-  if  (((struct einit_xml_expat_user_data *)userData)->if_level)
-   (((struct einit_xml_expat_user_data *)userData)->if_results) ^= IF_OK;
-
+ } else if (strmatch (name, "network") && (((struct einit_xml_expat_user_data *)userData)->options & ECXE_MASTERTAG_NETWORK) && ((struct einit_xml_expat_user_data *)userData)->prefix && strmatch (((struct einit_xml_expat_user_data *)userData)->prefix, NETWORK_IMPLIED_PREFIX)) {
+  ((struct einit_xml_expat_user_data *)userData)->options ^= ECXE_MASTERTAG_NETWORK;
   return;
  }
 
- if (!(((struct einit_xml_expat_user_data *)userData)->if_level) ||
-      ((((struct einit_xml_expat_user_data *)userData)->if_results) & IF_OK)) {
+
   if (((struct einit_xml_expat_user_data *)userData)->prefix) {
    int tlen = strlen(name)+1;
    char *last = strrchr (((struct einit_xml_expat_user_data *)userData)->prefix, 0);
@@ -285,7 +253,6 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
 
   if (strmatch (name, "mode"))
    curmode = NULL;
- }
 }
 
 int einit_config_xml_expat_parse_configuration_file (char *configfile) {
@@ -303,7 +270,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
-  .if_level = 0,
   .file = estrdup(configfile),
   .prefix = NULL,
   .type =
