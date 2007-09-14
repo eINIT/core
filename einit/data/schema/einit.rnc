@@ -70,7 +70,7 @@ Configuration = element configuration {
     element shell-exec-timeout { IntegerAttribute }* &
     element exec-envfile-base { StringAttribute }* &
     element proc-path { StringAttribute }* &
-    element log { StringAttribute, BooleanAttribute }* &
+    element log { BooleanAttribute }* &
     element kexec-to-reboot { BooleanAttribute }* &
     element kexec-calls {
       attribute load { text },
@@ -99,6 +99,7 @@ Configuration = element configuration {
         attribute stderr { text },
         attribute console { text },
         attribute activate-vt { text }?,
+        attribute verbose-output { text }?,
         attribute kernel-vt { text }?
       }? &
 
