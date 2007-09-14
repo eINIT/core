@@ -23,7 +23,7 @@ eINITMain =
   Configuration ? &
   Services ? &
   Special ? &
-  Mode ? &
+  Mode * &
   Information ? &
   element ttys { StringAttribute } ?
 
@@ -236,7 +236,7 @@ Mode = element mode {
   element overrides {
     eINITMain
   }
-}*
+}
 
 TTY = element tty {
   element manage-utmp { BooleanAttribute }? &
