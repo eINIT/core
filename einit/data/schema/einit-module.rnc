@@ -3,40 +3,47 @@ Module = element module {
 }
 
 ModuleContents =
- ( element shell {
-  (( attribute enable { text } & attribute disable { text } ) |
-   ( attribute script { text } & attribute script-actions { text } )) &
-  CommonModuleAttributes 
+ element shell {
+  ShellAttributes &
+  CommonModuleAttributesRequired &
+  CommonModuleAttributesOptional ?
  } |
  element daemon {
-  attribute command { text } &
-  attribute restart { Boolean } ? &
-  CommonModuleAttributes
- } )
+  DaemonAttributes &
+  CommonModuleAttributesRequired &
+  CommonModuleAttributesOptional ?
+ }
 
-CommonModuleAttributes =
+DaemonAttributes =
+ attribute command { text } &
+ attribute restart { Boolean } ?
+
+ShellAttributes = 
+ (( attribute enable { text } & attribute disable { text } ) |
+  ( attribute script { text } & attribute script-actions { text } ))
+
+CommonModuleAttributesRequired =
  attribute id { text } &
  attribute name { text } &
- attribute provides { text } &
- attribute prepare { text } ? &
- attribute cleanup { text } ? &
- attribute requires { text } ? &
- attribute before { text } ? &
- attribute after { text } ? &
- attribute need-files { text } ? &
- attribute pid { text } ? &
- attribute variables { text } ? &
- attribute options { text }? &
+ attribute provides { text }
 
- attribute group { text } ? &
- attribute user { text } ? &
- attribute gid { text } ? &
- attribute uid { text } ? &
-
-# the following attributes are only allowed temporarily
- attribute opts { text } ? &
- attribute envfile { text } ? &
- attribute root { text } ? &
- attribute DISPLAY { text } ? &
- attribute HOME { text } ? &
- attribute config { text } ?
+CommonModuleAttributesOptional =
+ attribute prepare { text } &
+ attribute cleanup { text } &
+ attribute requires { text } &
+ attribute before { text } &
+ attribute after { text } &
+ attribute need-files { text } &
+ attribute pid { text } &
+ attribute variables { text } &
+ attribute options { text } &
+ attribute group { text } &
+ attribute user { text } &
+ attribute gid { text } &
+ attribute uid { text } &
+ attribute opts { text } &
+ attribute envfile { text } &
+ attribute root { text } &
+ attribute DISPLAY { text } &
+ attribute HOME { text } &
+ attribute config { text }

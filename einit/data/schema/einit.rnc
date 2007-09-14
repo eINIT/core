@@ -148,20 +148,20 @@ Configuration = element configuration {
 Services = element services {
   element virtual {
     Module*
-  }* &
+  } &
 
   element alias {
     ( element * { attribute group { text }, attribute seq { "most" | "all" | "any" | "any-iop" } }*
     | ( IDAttribute, StringAttribute ))
-  }* &
+  } ? &
 
   element prefer {
-    element * { StringAttribute }*
-  }* &
+   element * { StringAttribute }*
+  } ? &
 
   element override {
-    element * { StringAttribute }*
-  }*
+   element module { CommonModuleAttributesRequired | CommonModuleAttributesOptional | DaemonAttributes | ShellAttributes } *
+  } ?
 }
 
 Special = element special {
