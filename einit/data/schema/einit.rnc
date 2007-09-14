@@ -25,7 +25,10 @@ eINITMain =
   Special ? &
   Mode * &
   Information ? &
-  element ttys { StringAttribute } ?
+  element options { attribute shutdown { BooleanAttribute }? }? &
+  element ttys { StringAttribute } ? &
+  element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
+  element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
 
 Core = element core {
   element xml-validator { attribute command { text } }? &
