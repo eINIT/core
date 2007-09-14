@@ -1,4 +1,8 @@
 Module = element module {
+  ModuleContents*
+}
+
+ModuleContents =
  ( element shell {
   (( attribute enable { text } , attribute disable { text } ) |
    ( attribute script { text } , attribute script-actions { text } )) ,
@@ -6,11 +10,10 @@ Module = element module {
  } |
  element daemon {
   attribute command { text } ,
-  attribute options { text } ,
-  attribute restart { Boolean } ,
+  attribute options { text }? ,
+  attribute restart { Boolean }? ,
   CommonModuleAttributes
- } )*
-}
+ } )
 
 CommonModuleAttributes =
  attribute id { text } ,
