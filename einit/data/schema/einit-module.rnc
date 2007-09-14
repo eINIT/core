@@ -1,3 +1,26 @@
 Module = element module {
- text
+ element shell {
+  (( attribute enable { text } , attribute disable { text } ) |
+   ( attribute script { text } , attribute script-actions { text } )) ,
+  CommonModuleAttributes 
+ } |
+ element daemon {
+  attribute command { text } ,
+  attribute options { text } ,
+  attribute restart { Boolean } ,
+  CommonModuleAttributes
+ }
 }
+
+CommonModuleAttributes =
+ attribute id { text } ,
+ attribute name { text } ,
+ attribute provides { text } ,
+ attribute prepare { text } ? ,
+ attribute cleanup { text } ? ,
+ attribute requires { text } ? ,
+ attribute before { text } ? ,
+ attribute after { text } ? ,
+ attribute need-files { text } ? ,
+ attribute pid { text } ? ,
+ attribute variables { text } ?
