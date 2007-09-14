@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-bluez-sdpd"
   name="Bluetooth (SDPd)"
   provides="bluetooth-sdp"
@@ -7,4 +7,4 @@
   command="/usr/sbin/sdpd -n"
   restart="yes"
   need-files="/usr/sbin/sdpd" />
-</einit>
+</module>

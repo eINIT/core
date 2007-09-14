@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-apmd"
   name="APMd"
   provides="apmd"
@@ -6,4 +6,4 @@
   command="/usr/sbin/apmd"
   restart="yes"
   need-files="/usr/sbin/apmd" />
-</einit>
+</module>

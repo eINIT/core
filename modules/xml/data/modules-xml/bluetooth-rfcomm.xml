@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-bluez-rfcomm"
   name="Bluetooth (RFCOMM)"
   provides="bluetooth-rfcomm"
@@ -7,4 +7,4 @@
   enable="/usr/bin/rfcomm -f ${configuration_services_bluetooth_rfcomm_file} bind all"
   disable="/usr/bin/rfcomm release all"
   variables="configuration-services-bluetooth-rfcomm/.*" />
-</einit>
+</module>

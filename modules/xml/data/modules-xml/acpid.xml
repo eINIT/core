@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-acpi"
   name="Advanced Configuration and Power Interface daemon"
   provides="acpid"
@@ -15,4 +15,4 @@
   restart="yes"
   need-files="/usr/sbin/acpid"
   variables="configuration-services-acpid/.*" />
-</einit>
+</module>

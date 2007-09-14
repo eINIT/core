@@ -1,4 +1,4 @@
-<einit prefix="configuration-network">
+<network>
  <hostname s="localhost"/>
  <domainname s="local"/>
  <interfaces>
@@ -8,4 +8,4 @@
 <!--  <wlan0 kernel-module="ipw3945" control="wpa_supplicant" driver="wext" config="/etc/wpa_supplicant/wpa_supplicant.conf" ip="dhcpcd"/> -->
 <!--  <ppp0 control="wvdial" profile="m610"/> -->
  </interfaces>
-</einit>
+</network>

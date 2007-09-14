@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="shell-bluez-hidd"
   name="Bluetooth (HIDd)"
   provides="bluetooth-hid"
@@ -8,4 +8,4 @@
   restart="yes"
   variables="configuration-services-bluetooth-hid/.*"
   need-files="/usr/bin/hidd" />
-</einit>
+</module>
