@@ -1,5 +1,22 @@
 Network = element network {
+<<<<<<< .mine
+ element hostname { StringAttribute }? &
+ element domainname { StringAttribute }? &
+ element interfaces {
+  element * {
+   (( attribute control { "wpa_supplicant" } , attribute driver { text } , attribute config { text } ) |
+    ( attribute control { "brctl" } , attribute bridge { text } , attribute options { text } )) ? &
+   (( attribute ip { "iproute2" } , attribute address { text } , attribute network { text } ) |
+    ( attribute ip { DHCPclient } )) &
+   attribute kernel-module { text } ?
+  } *
+ } &
+ element dhcp {
+  element timeout { StringAttribute }
+ } ?
+=======
   NetworkContents
+>>>>>>> .r2009
 }
 
 NetworkContents =
