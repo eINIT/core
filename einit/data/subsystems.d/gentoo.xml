@@ -7,8 +7,8 @@
   </environment>
 
   <compatibility>
-   <sysv />
-   <distribution s="auto">
+   <sysv>
+    <distribution s="auto">
      <gentoo>
 <!-- in case you wish to use gentoo-ish init.d scripts, use this:
      NOTE: this should only be used with gentoo-ish init.d scripts, as they need special treatment -->

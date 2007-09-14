@@ -7,6 +7,10 @@ eINIT = element einit {
 
   ( attribute prefix { "configuration-services" } & element * { attribute * { text }* }* ) |
 
+  ( attribute prefix { "configuration-storage-fstab" } & FSTab ) |
+
+  ( attribute prefix { "configuration-compatibility" } & ConfigurationCompatibility ) |
+
 # the next ones are only temporary
   ( attribute prefix { "services-virtual-network" } &
     ( element ip { attribute * { text }* } | element ifctl { attribute * { text }* } | element misc { attribute * { text }* } )* ) |
@@ -19,6 +23,8 @@ eINITMain =
   Configuration ? &
   Services ? &
   Special ? &
+  Mode ? &
+  Information ? &
   element ttys { StringAttribute } ?
 
 Core = element core {
@@ -160,22 +166,30 @@ Configuration = element configuration {
   TTY ? &
 
   element compatibility {
-    element sysv {
-      element utmp { BooleanAttribute }? &
-      element wtmp { BooleanAttribute }? &
-
-      element distribution {
-        StringAttribute &
-
-        element gentoo {
-          element init.d { PathAttributes }?
-        }
-      }
-    }
+    ConfigurationCompatibility
   } ? &
 
   element storage {
-    text
+    element update-steps { StringAttribute }? &
+    element maintain-mtab { BooleanAttribute, StringAttribute }? &
+    element filesystem-guessing-order { StringAttribute }? &
+
+    element mountpoints {
+      element no-umount { StringAttribute }? &
+      element system { StringAttribute }? &
+      element critical { StringAttribute }?
+    } ? &
+
+    element fsck-command { StringAttribute }? &
+
+    element block-devices {
+      element dev-constraints { PathAttributes }? &
+      element source { StringAttribute }?
+    }? &
+
+    element fstab {
+      FSTab
+    }?
   } ?
 }
 
@@ -187,7 +201,7 @@ Services = element services {
   element alias {
     ( element * { attribute group { text }, attribute seq { "most" | "all" | "any" | "any-iop" } }*
     | ( IDAttribute, StringAttribute ))
-  } ? &
+  }* &
 
   element prefer {
    element * { StringAttribute }*
@@ -203,11 +217,7 @@ Services = element services {
    attribute in { text },
    attribute out { text },
    attribute strip-from { text }?
-  } ? &
-
-  element storage {
-    text
-  } ?
+  }*
 }
 
 Special = element special {
@@ -226,12 +236,73 @@ Mode = element mode {
 }
 
 TTY = element tty {
+  element manage-utmp { BooleanAttribute }? &
+
   element * {
     attribute dev { text },
     attribute command { text },
     attribute restart { Boolean }
   }*
 }
+
+ConfigurationCompatibility =
+  element sysv {
+    element utmp { BooleanAttribute }? &
+    element wtmp { BooleanAttribute }? &
+
+    element distribution {
+      StringAttribute &
+
+      element gentoo {
+        element init.d { PathAttributes }?
+      }
+    }? &
+
+    element simulate-runlevel { attribute now { text } }? &
+    element initctl { StringAttribute, BooleanAttribute, IntegerAttribute }? &
+    element runlevel-mode-relations {
+      attribute runlevel0 { text },
+      attribute runlevel1 { text },
+      attribute runlevel2 { text },
+      attribute runlevel3 { text },
+      attribute runlevel4 { text },
+      attribute runlevel5 { text },
+      attribute runlevel6 { text },
+      attribute runlevelS { text },
+      attribute runlevels { text }
+    }?
+  }
+
+FSTab =
+  element node {
+    attribute mountpoint { text }?,
+    attribute label { text }?,
+    attribute device { text }?,
+    attribute fs { text }?,
+    attribute uuid { text }?,
+    attribute options { text }?,
+    attribute before-mount { text }?,
+    attribute after-mount { text }?,
+    attribute before-umount { text }?,
+    attribute after-umount { text }?,
+    attribute manager { text }?
+  }* &
+  element use-legacy-fstab { BooleanAttribute }? &
+  element node-order {
+    IDAttribute,
+    attribute after { text }?,
+    attribute before { text }?
+  }*
+
+Information =
+  element information {
+    element filesystem {
+      element type {
+        IDAttribute,
+        attribute flags { text }?
+      }*
+    }?
+  }
 
 Boolean = "yes" | "no" | "true" | "false" | "enabled" | "disabled"
 

@@ -1,6 +1,8 @@
 <einit prefix="configuration-compatibility">
  <!-- options relevant to the sysv compatibility modules -->
- <sysv utmp="yes" wtmp="yes">
+ <sysv>
+  <utmp b="yes" />
+  <wtmp b="yes" />
   <simulate-runlevel now="3" />
   <initctl s="/dev/initctl" i="0600" b="yes" />
 
