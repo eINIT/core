@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-mpd"
   name="Music Player Daemon"
   provides="mpd"
@@ -6,4 +6,4 @@
   command="/usr/bin/mpd --no-create-db --no-daemon"
   restart="yes"
   need-files="/usr/bin/mpd" />
-</einit>
+</module>

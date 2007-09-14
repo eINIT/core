@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-distccd"
   name="Distributed compiling daemon (distccd)"
   provides="distccd"
@@ -8,4 +8,4 @@
   restart="yes"
   variables="configuration-services-distccd/.*"
   need-files="/usr/bin/distccd" />
-</einit>
+</module>

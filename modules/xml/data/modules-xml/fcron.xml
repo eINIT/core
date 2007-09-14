@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-fcron"
   name="Cron (fcron)"
   provides="fcron:cron"
@@ -6,4 +6,4 @@
   command="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf"
   restart="yes"
   need-files="/usr/sbin/fcron" />
-</einit>
+</module>

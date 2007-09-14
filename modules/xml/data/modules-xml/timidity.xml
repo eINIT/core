@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-timidity"
   name="Timidity++ Virtual MIDI Sequencer (timidity)"
   provides="timidity"
@@ -7,4 +7,4 @@
   need-files="/usr/bin/timidity"
   restart="yes"
   variables="configuration-services-timidity/.*" />
-</einit>
+</module>

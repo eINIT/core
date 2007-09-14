@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module"> 
+<module>
  <daemon id="daemon-entrance"
   name="Entrance"
   provides="entrance"
@@ -8,4 +8,4 @@
   DISPLAY=":0.0"
   HOME="/root"
   need-files="/usr/bin/entrance" />
-</einit>
+</module>

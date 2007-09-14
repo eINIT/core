@@ -1,8 +1,8 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-kern-bridge"
   name="802.1d Ethernet Bridging"
   provides="kern-bridge"
   requires="mount-system"
   enable="modprobe -q bridge; /bin/true"
   disable="/bin/true" />
-</einit>
+</module>

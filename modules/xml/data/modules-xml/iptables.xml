@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-iptables"
   name="Ipv4 Linux firewall, NAT and packet mangling tools"
   provides="iptables"
@@ -13,4 +13,4 @@
 		   fi"
   need-files="/sbin/iptables-save:/sbin/iptables-restore"
   variables="configuration-services-iptables/.*"/>
-</einit>
+</module>

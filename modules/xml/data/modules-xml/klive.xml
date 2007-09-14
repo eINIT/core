@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-klive"
   name="Kernel Configuration Reporting (klive)"
   provides="klive"
@@ -6,5 +6,4 @@
   pid="/var/run/klive.pid"
   command="/usr/bin/twistd --nodaemon --pidfile=/var/run/klive.pid --uid klive --syslog -oy /usr/share/klive/klive.tac"
   restart="yes" />
-</einit>
-
+</module>

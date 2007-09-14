@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-syslog"
   name="Syslogger (syslog)"
   provides="syslog:logger"
@@ -6,4 +6,4 @@
   command="/sbin/syslogd -n"
   restart="yes"
   need-files="/sbin/syslog" />
-</einit>
+</module>

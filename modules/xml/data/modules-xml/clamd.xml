@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
 <!-- creds to Tyrius for this one =) -->
  <shell id="shell-clamd"
   name="clamd - AntiVirus"
@@ -18,4 +18,4 @@
            fi;"
   enable="/usr/sbin/clamd"
   disable="killall clamd" />
-</einit>
+</module>

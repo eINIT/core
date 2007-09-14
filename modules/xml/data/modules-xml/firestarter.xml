@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-firestarter"
   name="firestarter"
   provides="firestarter"
@@ -9,4 +9,4 @@
   enable="firestarter --start"
   disable="firestarter --stop"
   restart="yes" />
-</einit>
+</module>

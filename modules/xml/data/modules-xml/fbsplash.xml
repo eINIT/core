@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-fbsplash"
   name="fbsplash"
   provides="fbsplash"
@@ -11,4 +11,4 @@
           done"
   disable="/bin/true"
   variables="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
-</einit>
+</module>

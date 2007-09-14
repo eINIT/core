@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-xdm"
   name="The X Display Manager (xdm)"
   provides="x11:displaymanager"
@@ -7,4 +7,4 @@
   command="/usr/bin/xdm -nodaemon"
   restart="yes"
   need-files="/usr/bin/xdm" />
-</einit>
+</module>

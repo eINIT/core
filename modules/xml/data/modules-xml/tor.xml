@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-tor"
   name="TOR Daemon (tor)"
   provides="tor"
@@ -6,4 +6,4 @@
   command="/usr/bin/tor"
   restart="yes"
   need-files="/usr/bin/tor" />
-</einit>
+</module>

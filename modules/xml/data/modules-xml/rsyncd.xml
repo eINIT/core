@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-rsyncd"
   name="Rsync Daemon (rsyncd)"
   provides="rsyncd"
@@ -7,4 +7,4 @@
   restart="yes"
   need-files="/usr/bin/rsync"
   variables="configuration-services-rsyncd/.*" />
-</einit>
+</module>

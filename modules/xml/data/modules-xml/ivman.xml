@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-ivman"
   name="Ikke's Volume Manager (ivman)"
   uid="ivman"
@@ -9,4 +9,4 @@
   command="/usr/bin/ivman --system --nofork"
   restart="yes"
   need-files="/usr/bin/ivman" />
-</einit>
+</module>

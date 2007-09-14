@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-kern-ati"
   name="Proprietary ATI X11 Drivers"
   provides="kern-ati"
@@ -7,4 +7,4 @@
   enable="modprobe fglrx"
   disable="${configuration_command_rmmod} fglrx"
   variables="configuration-command-rmmod" />
-</einit>
+</module>

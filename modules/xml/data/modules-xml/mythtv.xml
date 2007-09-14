@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-mythtv-backend"
   name="MythTV Backend"
   provides="mythtv"
@@ -7,4 +7,4 @@
   enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
   disable="killall mythbackend; /bin/true"
   HOME="/etc/mythtv"/>
-</einit>
+</module>

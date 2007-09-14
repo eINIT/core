@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-udev"
   name="Mount ( /dev )"
   provides="udev"
@@ -6,7 +6,5 @@
   before="^fs-dev"
   script="udev.sh"
   script-actions="enable:disable:on-shutdown"
-
   variables="configuration-services-udev/.*" />
-  restart="yes" />
-</einit>
+</module>

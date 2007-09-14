@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-sensord"
   name="lm_sensors RRDB logger (sensord)"
   provides="sensord"
@@ -8,4 +8,4 @@
   need-files="/usr/sbin/sensord"
   restart="yes"
   variables="configuration-services-sensord/.*" />
-</einit>
+</module>

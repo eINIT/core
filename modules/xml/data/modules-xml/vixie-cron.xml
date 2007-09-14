@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-vixie-cron"
   name="Cron (Vixie)"
   provides="cron"
@@ -7,4 +7,4 @@
   restart="yes"
   need-files="/usr/sbin/cron"
   variables="configuration-services-vixie-cron/.*" />
-</einit>
+</module>

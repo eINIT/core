@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-setfont"
   name="setfont (${configuration_system_setfont_font})"
   provides="setfont"
@@ -12,4 +12,4 @@
           done"
   disable="/bin/true"
   variables="configuration-services-setfont/.*" />
-</einit>
+</module>

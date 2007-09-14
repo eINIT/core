@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-ipw3945d"
   name="ipw3945d - regulatory daemon"
   provides="ipw3945d"
@@ -9,4 +9,4 @@
            chmod a-w,u+rw /sys/bus/pci/drivers/ipw3945/00*/cmd"
   command="ipw3945d --quiet --foreground"
   restart="yes" />
-</einit>
+</module>

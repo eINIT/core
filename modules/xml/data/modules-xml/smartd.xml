@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-smartd"
   name="S.M.A.R.T daemon (smartd)"
   provides="smartd"
@@ -7,4 +7,4 @@
   enable="/usr/sbin/smartd"
   disable="killall -9 smartd"
   restart="yes" />
-</einit>
+</module>

@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-ip6tables"
   name="Ipv6 Linux firewall, NAT and packet mangling tools"
   provides="ip6tables"
@@ -13,4 +13,4 @@
            fi"
   need-files="/sbin/ip6tables-save:/sbin/ip6tables-restore"
   variables="configuration-services-iptables/.*" />
-</einit>
+</module>

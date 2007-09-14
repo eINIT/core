@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-metalog"
   name="Syslogger (metalog)"
   provides="metalog:logger"
@@ -10,4 +10,4 @@
   restart="yes"
   need-files="/usr/sbin/metalog"
   variables="configuration-services-metalog/.*" />
-</einit>
+</module>

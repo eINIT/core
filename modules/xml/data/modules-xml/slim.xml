@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-slim"
   name="Simple LogIn Manager (slim)"
   provides="x11:displaymanager"
@@ -7,4 +7,4 @@
   enable="slim -d"
   disable="killall -9 slim"
   restart="yes" />
-</einit>
+</module>

@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-kdm"
   name="The KDE Display Manager (kdm)"
   provides="x11:displaymanager"
@@ -9,4 +9,4 @@
   restart="yes"
   need-files="/usr/kde/3.5/bin/kdm"
   options="forking"/>
-</einit>
+</module>

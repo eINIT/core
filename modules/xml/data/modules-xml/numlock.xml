@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-numlock"
   name="Enable numlock in terminal (numlock)"
   provides="numlock"
@@ -26,5 +26,4 @@
                  echo 'feedback|error|failed to disable numlock on ttys '${tty_list} ;
            fi"
   restart="no" />
-</einit>
-
+</module>

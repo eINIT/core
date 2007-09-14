@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-nmbd"
   name="Samba NetBIOS name server (nmbd)"
   provides="nmbd"
@@ -10,4 +10,4 @@
   execute:reload="killall -HUP nmbd"
   restart="yes"
   variables="configuration-services-nmbd/.*" />
-</einit>
+</module>

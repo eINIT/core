@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-sshd"
   name="SSH daemon (sshd)"
   provides="sshd"
@@ -8,4 +8,4 @@
   need-files="/usr/sbin/sshd"
   variables="configuration-services-sshd/.*"
   pid="/var/run/sshd.pid" />
-</einit>
+</module>

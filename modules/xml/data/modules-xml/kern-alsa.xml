@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-kern-audio-alsa"
   name="Kernel Modules (ALSA)"
   provides="kern-alsa"
@@ -25,4 +25,4 @@
           	${configuration_command_rmmod} $x ;
            done ;"
   variables="configuration-command-rmmod:configuration-services-kern-alsa/.*" />
-</einit>
+</module>

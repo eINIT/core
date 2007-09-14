@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-powersave"
   name="Powersave"
   provides="powersave"
@@ -6,4 +6,4 @@
   command="/usr/sbin/powersaved $(if [ -S /var/run/acpid.socket ]] ; then echo '-f /var/run/acpid.socket' ; fi)"
   restart="yes"
   need-files="/usr/sbin/powersaved" />
-</einit>
+</module>

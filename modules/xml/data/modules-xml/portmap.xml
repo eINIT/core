@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-portmap"
   name="Portmap Daemon"
   provides="portmap"
@@ -6,4 +6,4 @@
   command="/sbin/portmap -d"
   restart="yes"
   need-files="/sbin/portmap" />
-</einit>
+</module>

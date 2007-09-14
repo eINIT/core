@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-lighttpd"
   name="HTTPd (Lighty)"
   provides="httpd"
@@ -6,4 +6,4 @@
   command="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf"
   restart="yes"
   need-files="/usr/sbin/lighttpd" />
-</einit>
+</module>

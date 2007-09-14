@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-mysqld"
   name="Database (MySQL)"
   provides="mysqld"
@@ -7,4 +7,4 @@
   restart="yes"
   need-files="/usr/sbin/mysqld"
   variables="configuration-services-mysqld/.*" />
-</einit>
+</module>

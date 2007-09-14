@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-gpm"
   name="Console mouse services (GPM)"
   provides="gpm"
@@ -7,4 +7,4 @@
   disable="killall gpm &amp;&gt;/dev/null"
   restart="yes"
   variables="configuration-services-gpm/.*" />
-</einit>
+</module>

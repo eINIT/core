@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-clock-hwclock"
   name="HWCLOCK"
   provides="hwclock"
@@ -16,4 +16,4 @@
                 echo 'feedback|warning|failed to write time to hardware clock';
            fi"
   variables="configuration-services-hwclock/.*" />
-</einit>
+</module>

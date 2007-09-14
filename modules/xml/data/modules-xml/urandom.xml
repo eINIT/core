@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-urandom2"
   name="urandom"
   provides="urandom"
@@ -18,4 +18,4 @@
   disable="/bin/true"
   restart="no"
   variables="configuration-services-urandom/.*" />
-</einit>
+</module>

@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-irqbalance"
   name="irqbalance"
   provides="irqbalance"
@@ -6,4 +6,4 @@
   enable="irqbalance"
   disable="/bin/true"
   restart="no" />
-</einit>
+</module>

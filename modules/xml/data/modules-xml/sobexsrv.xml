@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-sobexsrv"
   name="Scripting/Secure OBEX Server"
   provides="sobexsrv"
@@ -7,4 +7,4 @@
   command="sobexsrv -l ${configuration_services_sobexsrv_options} -s 2 -IRS -r ${configuration_services_sobexsrv_directory} -d 2&gt; /dev/null"
   restart="yes"
   variables="configuration-services-sobexsrv/.*" />
-</einit>
+</module>

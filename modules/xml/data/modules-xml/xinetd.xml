@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-xinetd"
   name="Internet Services Daemon (xinetd)"
   provides="xinetd"
@@ -12,4 +12,4 @@
   need-files="/usr/sbin/xinetd"
   restart="yes"
   variables="configuration-services-xinetd/.*" />
-</einit>
+</module>

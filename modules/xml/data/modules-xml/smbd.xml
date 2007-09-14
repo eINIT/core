@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-smbd"
   name="Samba daemon (smbd)"
   provides="smbd"
@@ -9,4 +9,4 @@
   restart="yes"
   need-files="/usr/sbin/smbd"
   variables="configuration-services-smbd/.*" />
-</einit>
+</module>

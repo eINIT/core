@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-sensors"
   name="lm_sensors (sensors)"
   provides="sensors"
@@ -7,4 +7,4 @@
   enable="/usr/bin/sensors -s ${configuration_services_sensors_options}"
   disable="/bin/true"
   variables="configuration-services-sensors/.*" />
-</einit>
+</module>

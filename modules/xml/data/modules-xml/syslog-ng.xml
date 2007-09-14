@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-syslog-ng"
   name="Syslogger (syslog-ng)"
   provides="syslog-ng:logger"
@@ -8,4 +8,4 @@
   options="forking"
   restart="yes"
   need-files="/usr/sbin/syslog-ng" />
-</einit>
+</module>

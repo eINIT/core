@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-kern-nvidia"
   name="Proprietary NVIDIA X11 Drivers"
   provides="kern-nvidia"
@@ -14,4 +14,4 @@
   disable="${configuration_command_rmmod} nvidia;
            rm /dev/nvidia*"
   variables="configuration-command-rmmod" />
-</einit>
+</module>

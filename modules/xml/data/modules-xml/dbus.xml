@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-dbus"
   name="D-BUS system messagebus"
   provides="dbus"
@@ -10,4 +10,4 @@
   cleanup="if [ -S /var/run/dbus/system_bus_socket ]; then rm -f /var/run/dbus/system_bus_socket; fi"
   options="forking"
   restart="yes" />
-</einit>
+</module>

@@ -1,16 +1,4 @@
-<einit prefix="services-virtual-module"> 
-<!-- gdm goes crazy if we make it a forking daemon -->
-<!-- <daemon id="daemon-gdm"
-  name="The GNOME Display Manager (gdm)"
-  provides="x11:displaymanager"
-  requires="mount-critical:network-minimal"
-  pid="/var/run/gdm.pid"
-  prepare="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; /bin/true"
-  command="/usr/bin/gdm"
-  need-files="/usr/bin/gdm"
-  options="forking"
-  restart="yes" /> -->
-
+<module>
  <daemon id="daemon-gdm"
   name="The GNOME Display Manager (gdm)"
   provides="x11:displaymanager"
@@ -21,5 +9,4 @@
   command="/usr/bin/gdm -nodaemon"
   need-files="/usr/bin/gdm"
   restart="yes" />
-
-</einit>
+</module>

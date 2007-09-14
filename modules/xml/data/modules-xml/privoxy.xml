@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-privoxy"
   name="Privoxy Daemon"
   provides="privoxy"
@@ -6,4 +6,4 @@
   command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
   restart="yes"
   need-files="/usr/sbin/privoxy" />
-</einit>
+</module>

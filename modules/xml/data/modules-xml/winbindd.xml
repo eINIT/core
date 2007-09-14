@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-winbindd"
   name="Samba Winbind daemon (winbindd)"
   provides="winbindd"
@@ -10,4 +10,4 @@
   restart="yes"
   need-files="/usr/sbin/winbindd"
   variables="configuration-services-winbindd/.*" />
-</einit>
+</module>

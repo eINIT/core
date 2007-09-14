@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-keyboard"
   name="Console (Keyboard Layout)"
   provides="keyboard"
@@ -29,4 +29,4 @@
           done ;"
   disable="/bin/true"
   variables="configuration-services-keyboard/.*" />
-</einit>
+</module>

@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-cpufreq"
   name="Cpufreq Governor"
   provides="cpufreq"
@@ -10,4 +10,4 @@
            	do /usr/bin/cpufreq-set --cpu $i --governor performance ;
            done"
   variables="configuration-services-cpufreq/.*" />
-</einit>
+</module>

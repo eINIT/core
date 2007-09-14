@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-hald"
   name="Hardware Abstraction Layer"
   provides="hal"
@@ -9,4 +9,4 @@
   need-files="/usr/sbin/hald"
   restart="yes"
   options="forking" />
-</einit>
+</module>

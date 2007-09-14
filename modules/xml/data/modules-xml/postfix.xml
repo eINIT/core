@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-postfix"
   name="postfix"
   uid="postfix"
@@ -7,4 +7,4 @@
   enable="/usr/sbin/postfix start"
   disable="/usr/sbin/postfix stop"
   execute:reload="/usr/sbin/postfix reload" />
-</einit>
+</module>

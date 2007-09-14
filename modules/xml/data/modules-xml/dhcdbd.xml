@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
   <daemon id="deamon-dhcdbd"
    name="dhcdbd"
    provides="dhcdbd"
@@ -6,4 +6,4 @@
    pid="/var/run/dhcdbd.pid"
    command="dbus-launch --exit-with-session dhcdbd -sn"
    restart="yes" />
-</einit>
+</module>

@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-clock-ntp-client"
   name="NTP-Client (${configuration_services_ntp_client_command})"
   provides="hwclock:ntp-client"
@@ -20,4 +20,4 @@
                 echo 'feedback|warning|failed to write time to hardware clock';
            fi"
   variables="configuration-services-ntp-client/.*:configuration-services-hwclock/.*" />
-</einit>
+</module>

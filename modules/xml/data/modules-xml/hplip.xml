@@ -1,8 +1,8 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-hplip"
   name="HP Linux Imaging and Printing System (hplip)"
   provides="hplip"
   command="python /usr/share/hplip/hpssd.py -x"
   restart="yes"
   need-files="/usr/share/hplip/hpssd.py" />
-</einit>
+</module>

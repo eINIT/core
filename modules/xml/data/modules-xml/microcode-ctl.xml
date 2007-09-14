@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-microcode"
   name="Microcode-ctl (Intel processor microcode update utility)"
   provides="microcode-ctl"
@@ -7,5 +7,4 @@
   enable="/usr/sbin/microcode_ctl -qu -d ${configuration_services_microcode_ctl_dev}"
   need-files="/usr/sbin/microcode_ctl"
   variables="configuration-services-microcode-ctl/.*" />
-</einit>
-
+</module>

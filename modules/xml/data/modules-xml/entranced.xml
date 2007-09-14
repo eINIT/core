@@ -1,4 +1,4 @@
-<einit prefix="services-virtual-module">
+<module>
  <shell id="shell-entranced"
   name="EntranceD (TEST SHELL VERSION)"
   provides="x11:displaymanager"
@@ -10,5 +10,4 @@
   DISPLAY=":0.0"
   HOME="/root"
   need-files="/usr/sbin/entranced" />
-</einit>
-
+</module>

@@ -1,8 +1,8 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-hellanzb"
   name="NZB downloader and post processor (hellanzb)"
   provides="hellanzb"
   requires="network:mount-local"
   command="hellanzb.py"
   restart="yes" />
-</einit>
+</module>

@@ -1,8 +1,8 @@
-<einit prefix="services-virtual-module">
+<module>
  <daemon id="daemon-ntpd"
   name="NTPD"
   provides="ntpd"
   requires="network:hwclock"
   command="ntpd -n"
   restart="yes" />
-</einit>
+</module>
