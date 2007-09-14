@@ -236,7 +236,7 @@ Mode = element mode {
   element overrides {
     eINITMain
   }
-}
+}*
 
 TTY = element tty {
   element manage-utmp { BooleanAttribute }? &
