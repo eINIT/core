@@ -5,6 +5,7 @@
   requires="mount-local"
   after="^(kern-|modules)"
   enable="/usr/sbin/microcode_ctl -qu -d ${configuration_services_microcode_ctl_dev}"
+  disable="true"
   need-files="/usr/sbin/microcode_ctl"
   variables="configuration-services-microcode-ctl/.*" />
 </module>
