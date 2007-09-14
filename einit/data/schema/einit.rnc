@@ -9,11 +9,13 @@ eINIT = element einit {
   ( attribute prefix { "services-virtual-network" } &
     ( element ip { attribute * { text }* } | element ifctl { attribute * { text }* } | element misc { attribute * { text }* } )* ) |
 
-  ( Core* &
-    Configuration* &
-    Services* &
-    Special* )
+  eINITMain
 }
+
+eINITMain = ( Core ? &
+  Configuration ? &
+  Services ? &
+  Special ? )
 
 Core = element core {
   element xml-validator { attribute command { text } }? &
@@ -160,7 +162,7 @@ Services = element services {
   } ? &
 
   element override {
-   element module { CommonModuleAttributesRequired | CommonModuleAttributesOptional | DaemonAttributes | ShellAttributes } *
+   element module { IDAttribute, ModuleDependenciesOptional, ModuleDependenciesRequired? } *
   } ?
 }
 

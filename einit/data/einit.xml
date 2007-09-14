@@ -85,7 +85,7 @@
    <shell-exec-timeout i="20" />
    <exec-envfile-base s="/etc/einit/conf.d" />
    <proc-path s="/proc" />
-   <log b="true" s="/var/log/einit.log" />
+   <log b="true" />
 
    <kexec-to-reboot b="no" />
    <kexec-calls
@@ -105,12 +105,6 @@
     <autoload.d file="/etc/modules.autoload.d/kernel-2.6" />
    </modules>
   </kernel>
-
-  <network>
-   <dhcp>
-    <timeout s="60"/>
-   </dhcp>
-  </network>
 
   <feedback>
    <visual>

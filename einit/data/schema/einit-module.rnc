@@ -11,7 +11,7 @@ ModuleContents =
  element daemon {
   DaemonAttributes &
   CommonModuleAttributesRequired &
-  CommonModuleAttributesOptional ?
+  CommonModuleAttributesOptional
  }
 
 DaemonAttributes =
@@ -23,27 +23,33 @@ ShellAttributes =
   ( attribute script { text } & attribute script-actions { text } ))
 
 CommonModuleAttributesRequired =
- attribute id { text } &
+ IDAttribute &
  attribute name { text } &
- attribute provides { text }
+ ModuleDependenciesRequired
 
 CommonModuleAttributesOptional =
- attribute prepare { text } &
- attribute cleanup { text } &
- attribute requires { text } &
- attribute before { text } &
- attribute after { text } &
- attribute need-files { text } &
- attribute pid { text } &
- attribute variables { text } &
- attribute options { text } &
- attribute group { text } &
- attribute user { text } &
- attribute gid { text } &
- attribute uid { text } &
- attribute opts { text } &
- attribute envfile { text } &
- attribute root { text } &
- attribute DISPLAY { text } &
- attribute HOME { text } &
- attribute config { text }
+ ModuleDependenciesOptional &
+ attribute prepare { text } ? &
+ attribute cleanup { text } ? &
+ attribute need-files { text } ? &
+ attribute pid { text } ? &
+ attribute variables { text } ? &
+ attribute options { text } ? &
+ attribute group { text } ? &
+ attribute user { text } ? &
+ attribute gid { text } ? &
+ attribute uid { text } ? &
+ attribute opts { text } ? &
+ attribute envfile { text } ? &
+ attribute root { text } ? &
+ attribute DISPLAY { text } ? &
+ attribute HOME { text } ? &
+ attribute config { text } ?
+
+ModuleDependenciesRequired =
+ attribute provides { text }
+
+ModuleDependenciesOptional =
+ attribute requires { text } ? &
+ attribute before { text } ? &
+ attribute after { text } ?

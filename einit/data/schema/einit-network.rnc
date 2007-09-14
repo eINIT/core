@@ -16,9 +16,6 @@ NetworkContents =
      ( attribute ip { DHCPclient } )) ? &
     attribute kernel-module { text } ?
    } *
-  } &
-  element dhcp {
-   element timeout { StringAttribute } ?
-  } ?
+  }
 
 DHCPclient = "dhcpcd" | "dhclient" | "pump"
