@@ -15,10 +15,10 @@ eINIT = element einit {
   ( attribute prefix { "services-virtual-network" } &
     ( element ip { attribute * { text }* } | element ifctl { attribute * { text }* } | element misc { attribute * { text }* } )* ) |
 
-  eINITMain
+  ( eINITMain )
 }
 
-eINITMain = 
+eINITMain =
   Core ? &
   Configuration ? &
   Services ? &
@@ -225,6 +225,9 @@ Special = element special {
 }
 
 Mode = element mode {
+  IDAttribute &
+  attribute base { text }? &
+
   element enable { attribute services { text }, attribute critical { text }? }? &
   element disable { attribute services { text } }? &
 
