@@ -185,7 +185,7 @@ void core_einit_event_handler (struct einit_event *ev) {
 
 // tell module to scan for changes if it's a module-loader
     if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
-     notice (1, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
+     notice (8, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
 
      lm->scanmodules (mlist);
 
