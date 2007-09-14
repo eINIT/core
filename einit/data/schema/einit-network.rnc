@@ -1,10 +1,10 @@
 Network = element network {
- element hostname { StringAttribute }
- element domainname { StringAttribute }
+ element hostname { StringAttribute } &
+ element domainname { StringAttribute } &
  element interfaces {
   element * {
-   attribute kernel-module { text }? ,
-   attribute control { NetworkController } ,
+   attribute kernel-module { text }? &
+   attribute control { NetworkController } &
    attribute ip { IPcontroller }
   }
  }
