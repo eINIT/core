@@ -132,12 +132,6 @@
     </fbsplash>
    </visual>
 
-   <visual-edje>
-    <theme-path s="etc/einit/edje" />
-    <theme-default s="einit.edj" />
-    <theme-default-component s="einit/splash" />
-   </visual-edje>
-
    <aural>
     <tts>
      <synthesizer-command s="/usr/bin/festival --tts --pipe" />
@@ -206,8 +200,7 @@
               [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;
               /bin/true;"
      enable="pexec-options no-pipe; apache2 ${opts} -d ${root} -f ${config} -k start&amp;"
-     disable="killall -9 -q apache2"
-     restart="yes" />
+     disable="killall -9 -q apache2" />
 
 <!-- this one's the version as modified by jvale to suit gentoo's environment -->
     <shell id="shell-apache2-gentoo"
@@ -222,8 +215,7 @@
               [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;
               /bin/true"
      enable="pexec-options no-pipe; apache2 $APACHE2_OPTS -d ${root} -f ${config} -k start&amp;"
-     disable="killall -9 -q apache2"
-     restart="yes" />
+     disable="killall -9 -q apache2" />
 
    </module>
   </virtual>

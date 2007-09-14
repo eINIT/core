@@ -1,5 +1,5 @@
 Module = element module {
- element shell {
+ ( element shell {
   (( attribute enable { text } , attribute disable { text } ) |
    ( attribute script { text } , attribute script-actions { text } )) ,
   CommonModuleAttributes 
@@ -9,7 +9,7 @@ Module = element module {
   attribute options { text } ,
   attribute restart { Boolean } ,
   CommonModuleAttributes
- }
+ } )*
 }
 
 CommonModuleAttributes =
@@ -23,4 +23,8 @@ CommonModuleAttributes =
  attribute after { text } ? ,
  attribute need-files { text } ? ,
  attribute pid { text } ? ,
- attribute variables { text } ?
+ attribute variables { text } ? ,
+ attribute opts { text } ? ,
+ attribute envfile { text } ? ,
+ attribute root { text } ? ,
+ attribute config { text } ?

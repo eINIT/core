@@ -84,11 +84,73 @@ Configuration = element configuration {
     }*
   }* &
 
-  Network*
+  Network* &
+
+  element feedback {
+    element visual {
+      element std-io {
+        attribute stdio { text },
+        attribute stderr { text },
+        attribute console { text },
+        attribute activate-vt { text }?,
+        attribute kernel-vt { text }?
+      }? &
+
+      element use-ansi-codes { BooleanAttribute }? &
+      element shutdown-failure-timeout { IntegerAttribute }? &
+      element broadcast-constraints { StringAttribute }? &
+      element reset-shutdown-broadcast-messages { BooleanAttribute }? &
+      element suppress-messages { BooleanAttribute }? &
+      element suppress-status-notices { BooleanAttribute }? &
+
+      element fbsplash {
+        element ttys { StringAttribute }? &
+        element theme { StringAttribute }? &
+        element chain-feedback { StringAttribute }?
+      }*
+    }* &
+
+    element aural {
+      element tts {
+        element synthesizer-command { StringAttribute }? &
+        element vocalising-threshold { IntegerAttribute }?
+      }*
+    }*
+  }* &
+
+  element ipc {
+    element control-socket { StringAttribute, IntegerAttribute }? &
+    element chain-command { attribute for { text }, attribute do { text } }? &
+
+    element dbus {
+      element connection {
+        attribute name { text },
+        attribute address { text }
+      }?
+    }*
+  }* &
+
+  element command {
+    element rmmod { CommandAttributes }? &
+    element modprobe { CommandAttributes }? &
+    element ip-flush { CommandAttributes }? &
+    element create-bridge { CommandAttributes }?
+  }*
 }
 
 Services = element services {
-  element * { text }*
+  element virtual {
+    Module*
+  }* &
+
+  element alias {
+    ( element * { attribute group { text }, attribute seq { "most" | "all" | "any" | "any-iop" } }*
+    | ( IDAttribute, StringAttribute ))
+  }* &
+
+  element prefer {
+    element * { StringAttribute }*
+  }*
 }
 
 Special = element special {
@@ -105,6 +167,7 @@ IntegerAttribute = attribute i { text }
 IDAttribute = attribute id { text }
 
 PathAttributes = attribute path { text }, attribute pattern-allow { text }?, attribute pattern-disallow { text }?
+CommandAttributes = attribute with-env { text }, StringAttribute?
 
 include "einit-module.rnc"
 include "einit-network.rnc"
