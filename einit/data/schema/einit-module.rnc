@@ -53,4 +53,9 @@ ModuleDependenciesOptional =
  attribute requires { text } ? &
  attribute before { text } ? &
  attribute after { text } ? &
- attribute execute:* { text } ?
+ attribute execute:on-shutdown { text } ? &
+ attribute execute:reload { text } ? &
+ attribute execute:dump { text } ? &
+ attribute execute:check { text } ? &
+ attribute execute:buffer { text } ? &
+ attribute execute:unbuffer { text } ? 
