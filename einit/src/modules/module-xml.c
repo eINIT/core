@@ -153,9 +153,19 @@ char module_xml_v2_module_have_action (char *name, char *action) {
 }
 
 int module_xml_v2_module_custom_action (char *name, char *action, struct einit_event *status) {
- struct cfgnode *node = module_xml_v2_module_get_node (name, action);
+ struct cfgnode *node = NULL;
+ char **myenvironment = NULL;
+ int returnvalue = status_failed;
 
- if (node) {
+ if ((node = module_xml_v2_module_get_attributive_node (name, "environment")) && node->arbattrs) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   myenvironment = straddtoenviron (myenvironment, node->arbattrs[i], node->arbattrs[i+1]);
+  }
+ }
+
+ if ((node = module_xml_v2_module_get_node (name, action))) {
   int x = 0;
   char *code = NULL, *user = NULL, *group = NULL;
 
@@ -171,19 +181,16 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
    if (variables) {
     char **split_variables;
-    int result;
 
     split_variables = str2set (':', variables);
 
-    result = pexec (code, (const char **)split_variables, 0, 0, user, group, NULL, status);
+    returnvalue = pexec (code, (const char **)split_variables, 0, 0, user, group, myenvironment, status);
 
     free (split_variables);
-
-    return result;
    } else
-    return pexec (code, NULL, 0, 0, user, group, NULL, status);
+	returnvalue = pexec (code, NULL, 0, 0, user, group, myenvironment, status);
   } else
-   return status_failed;
+   returnvalue = status_failed;
  } else if (module_xml_v2_module_have_script_action (name, action)) {
   struct cfgnode * t = module_xml_v2_module_get_attributive_node (name, "script");
 
@@ -191,7 +198,6 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
    int i = 0;
    char *scriptpath = NULL, *user = NULL, *group = NULL;
    char **variables = NULL;
-   int returnvalue = status_failed;
 
    for (; t->arbattrs[i]; i+=2) {
     if (strmatch (t->arbattrs[i], "file")) {
@@ -226,7 +232,7 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
     esprintf (ncommand, nclen, "%s %s", scriptpath, action);
 
-    returnvalue = pexec (ncommand, (const char **)variables, 0, 0, user, group, NULL, status);
+    returnvalue = pexec (ncommand, (const char **)variables, 0, 0, user, group, myenvironment, status);
 
     free (ncommand);
 
@@ -236,12 +242,12 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
    if (variables) free (variables);
    if (group) free (group);
    if (user) free (user);
-
-   return returnvalue;
   }
  }
 
- return status_failed;
+ if (myenvironment) free (myenvironment);
+
+ return returnvalue;
 }
 
 struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
@@ -328,6 +334,19 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
  if ((node = module_xml_v2_module_get_attributive_node (name, "variables")) && node->svalue) {
   if (dx->variables) free (dx->variables);
   dx->variables = str2set (':', node->svalue);
+ }
+
+ if ((node = module_xml_v2_module_get_attributive_node (name, "environment")) && node->arbattrs) {
+  int i = 0;
+
+  if (dx->environment) {
+   free (dx->environment);
+   dx->environment = NULL;
+  }
+
+  for (; node->arbattrs[i]; i+=2) {
+   dx->environment = straddtoenviron (dx->environment, node->arbattrs[i], node->arbattrs[i+1]);
+  }
  }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "script")) && node->arbattrs) {

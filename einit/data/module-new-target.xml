@@ -10,6 +10,7 @@
   <pidfile s="/some/pid" />
   <variables s="" />
 
+  <environment a="b" TERM="y" />
  </udevd>
 </module>
 
