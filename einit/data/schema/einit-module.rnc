@@ -31,6 +31,8 @@ ModuleContents =
 
   element variables { StringAttribute }? &
 
+  element options { StringAttribute }? &
+
   element script {
    attribute file { text },
    attribute actions { text }

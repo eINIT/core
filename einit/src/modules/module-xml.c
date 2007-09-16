@@ -363,6 +363,18 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
   }
  }
 
+ if ((node = module_xml_v2_module_get_attributive_node (name, "options")) && node->svalue) {
+  char **opt = str2set (':', node->svalue);
+  uint32_t ri = 0;
+
+  for (; opt[ri]; ri++) {
+   if (strmatch (opt[ri], "forking"))
+    dx->options |= daemon_model_forking;
+  }
+
+  free (opt);
+ }
+
  return dx;
 }
 
@@ -487,6 +499,20 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
       if (before) new_sm->si.before = str2set (':', before);
 
       new_sm->configure = module_xml_v2_module_configure;
+
+      if ((node = module_xml_v2_module_get_attributive_node (new_sm->rid, "options")) && node->svalue) {
+       char **opt = str2set (':', node->svalue);
+       uint32_t ri = 0;
+
+       for (; opt[ri]; ri++) {
+        if (strmatch (opt[ri], "feedback"))
+         new_sm->mode |= einit_module_feedback;
+        else if (strmatch (opt[ri], "deprecated"))
+         new_sm->mode |= einit_module_deprecated;
+       }
+
+       free (opt);
+      }
 
       mod_add (NULL, new_sm);
 
