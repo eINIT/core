@@ -961,7 +961,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    free (tmpxt);
 
    if (tmpx) {
-    esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+    esprintf (tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$", tmpx);
     after = (char **)setadd ((void **)after, (void *)tmp, SET_TYPE_STRING);
    }
   }
