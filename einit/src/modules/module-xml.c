@@ -45,6 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <errno.h>
 
+#include <sys/stat.h>
+#include <libgen.h>
+
 #include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
@@ -81,18 +84,14 @@ module_register(module_xml_v2_self);
 #define MODULES_PREFIX_LENGTH (sizeof(MODULES_PREFIX) -1)
 
 #define MODULES_EXECUTE_NODE_TEMPLATE MODULES_PREFIX "%s-execute"
+#define MODULES_ARBITRARY_NODE_TEMPLATE MODULES_PREFIX "%s-%s"
 
 struct stree *module_xml_v2_modules = NULL;
+struct stree *module_xml_v2_daemons = NULL;
 
 int module_xml_v2_scanmodules (struct lmodule *);
 
-int module_xml_v2_cleanup (struct lmodule *pa) {
- exec_cleanup (pa);
-
- return 0;
-}
-
-int module_xml_v2_module_custom_action (char *name, char *action, struct einit_event *status) {
+struct cfgnode *module_xml_v2_module_get_node (char *name, char *action) {
  if (name && action) {
   char buffer[BUFFERSIZE];
   struct cfgnode *node = NULL;
@@ -101,45 +100,293 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
   while ((node = cfg_findnode (buffer, 0, node))) {
    if (node->idattr && strmatch (node->idattr, action)) {
-    int x = 0;
-    char *code = NULL, *variables = NULL, *user = NULL, *group = NULL;
-
-    for (; node->arbattrs[x]; x+=2) {
-     if (strmatch (node->arbattrs[x], "code")) code = node->arbattrs[x+1];
-     else if (strmatch (node->arbattrs[x], "variables")) variables = node->arbattrs[x+1];
-     else if (strmatch (node->arbattrs[x], "user")) user = node->arbattrs[x+1];
-     else if (strmatch (node->arbattrs[x], "group")) group = node->arbattrs[x+1];
-    }
-
-    if (code) {
-     if (variables) {
-      char **split_variables;
-      int result;
-
-      split_variables = str2set (':', variables);
-
-      result = pexec (code, (const char **)split_variables, 0, 0, user, group, NULL, status);
-
-      free (split_variables);
-
-      return result;
-     } else
-      return pexec (code, NULL, 0, 0, user, group, NULL, status);
-    } else
-     return status_failed;
+    return node;
    }
+  }
+ }
+
+ return NULL;
+}
+
+struct cfgnode *module_xml_v2_module_get_attributive_node (char *name, char *attribute) {
+ if (name && attribute) {
+  char buffer[BUFFERSIZE];
+
+  esprintf (buffer, BUFFERSIZE, MODULES_ARBITRARY_NODE_TEMPLATE, name, attribute);
+
+  return cfg_getnode (buffer, NULL);
+ }
+
+ return NULL;
+}
+
+char module_xml_v2_module_have_script_action (char *name, char *action) {
+ struct cfgnode * t = module_xml_v2_module_get_attributive_node (name, "script");
+
+ if (t && t->arbattrs) {
+  int i = 0;
+
+  for (; t->arbattrs[i]; i+=2) {
+   if (strmatch (t->arbattrs[i], "actions")) {
+    char **actions = str2set (':', t->arbattrs[i+1]);
+    char rv = 0;
+
+    rv = inset ((const void **)actions, action, SET_TYPE_STRING);
+
+    free (actions);
+    return rv;
+   }
+  }
+ }
+
+ return 0;
+}
+
+char module_xml_v2_module_have_action (char *name, char *action) {
+ if (module_xml_v2_module_get_node (name, action)) {
+  return 1;
+ } else {
+  return module_xml_v2_module_have_script_action (name, action);
+ }
+
+ return 0;
+}
+
+int module_xml_v2_module_custom_action (char *name, char *action, struct einit_event *status) {
+ struct cfgnode *node = module_xml_v2_module_get_node (name, action);
+
+ if (node) {
+  int x = 0;
+  char *code = NULL, *user = NULL, *group = NULL;
+
+  for (; node->arbattrs[x]; x+=2) {
+   if (strmatch (node->arbattrs[x], "code")) code = node->arbattrs[x+1];
+   else if (strmatch (node->arbattrs[x], "user")) user = node->arbattrs[x+1];
+   else if (strmatch (node->arbattrs[x], "group")) group = node->arbattrs[x+1];
+  }
+
+  if (code) {
+   struct cfgnode *vnode = module_xml_v2_module_get_attributive_node (name, "variables");
+   char *variables = vnode ? vnode->svalue : NULL; 
+
+   if (variables) {
+    char **split_variables;
+    int result;
+
+    split_variables = str2set (':', variables);
+
+    result = pexec (code, (const char **)split_variables, 0, 0, user, group, NULL, status);
+
+    free (split_variables);
+
+    return result;
+   } else
+    return pexec (code, NULL, 0, 0, user, group, NULL, status);
+  } else
+   return status_failed;
+ } else if (module_xml_v2_module_have_script_action (name, action)) {
+  struct cfgnode * t = module_xml_v2_module_get_attributive_node (name, "script");
+
+  if (t && t->arbattrs) {
+   int i = 0;
+   char *scriptpath = NULL, *user = NULL, *group = NULL;
+   char **variables = NULL;
+   int returnvalue = status_failed;
+
+   for (; t->arbattrs[i]; i+=2) {
+    if (strmatch (t->arbattrs[i], "file")) {
+
+     if ((t->arbattrs[i+1][0] != '/') && t->source_file) {
+      char spbuffer[BUFFERSIZE];
+      char spbuffer2[BUFFERSIZE];
+
+      strncpy (spbuffer2, t->source_file, BUFFERSIZE);
+
+      char *scriptbase = dirname (spbuffer2);
+
+      esprintf (spbuffer, BUFFERSIZE, "%s/%s", scriptbase, t->arbattrs[i+1]);
+
+      scriptpath = estrdup (spbuffer);
+     } else 
+      scriptpath = estrdup (t->arbattrs[i+1]);
+    } else if (strmatch (t->arbattrs[i], "user")) {
+     user = estrdup (t->arbattrs[i+1]);
+	} else if (strmatch (t->arbattrs[i], "group")) {
+     group = estrdup (t->arbattrs[i+1]);
+	}
+   }
+
+   if ((node = module_xml_v2_module_get_attributive_node (name, "variables")) && node->svalue) {
+    variables = str2set (':', node->svalue);
+   }
+
+   if (scriptpath) {
+    ssize_t nclen = strlen (scriptpath) + strlen (action) + 2; /* one for a space and one for \0 */
+    char *ncommand = emalloc (nclen);
+
+    esprintf (ncommand, nclen, "%s %s", scriptpath, action);
+
+    returnvalue = pexec (ncommand, (const char **)variables, 0, 0, user, group, NULL, status);
+
+    free (ncommand);
+
+    free (scriptpath);
+   }
+
+   if (variables) free (variables);
+   if (group) free (group);
+   if (user) free (user);
+
+   return returnvalue;
   }
  }
 
  return status_failed;
 }
 
+struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
+ struct cfgnode *node = module_xml_v2_module_get_node (name, "daemon");
+ struct stree *cnode = module_xml_v2_daemons ? streefind (module_xml_v2_daemons, name, tree_find_first) : NULL;
+ struct dexecinfo *dx = cnode ? cnode->value : NULL;
+
+ if (!cnode) {
+  dx = ecalloc (1, sizeof (struct dexecinfo));
+
+  module_xml_v2_daemons = streeadd (module_xml_v2_daemons, name, dx, SET_NOALLOC, NULL);
+ }
+
+ if (node) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "code")) {
+    if (dx->command) free (dx->command);
+    dx->command = estrdup(node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "user")) {
+    if (dx->user) free (dx->user);
+    dx->user = estrdup(node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "group")) {
+    if (dx->group) free (dx->group);
+    dx->group = estrdup (node->arbattrs[i+1]);
+   }
+  }
+ }
+
+ if ((node = module_xml_v2_module_get_node (name, "prepare"))) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "code")) {
+    if (dx->prepare) free (dx->prepare);
+    dx->prepare = estrdup(node->arbattrs[i+1]);
+   }
+  }
+ }
+
+ if ((node = module_xml_v2_module_get_node (name, "cleanup"))) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "code")) {
+    if (dx->cleanup) free (dx->cleanup);
+    dx->cleanup = estrdup(node->arbattrs[i+1]);
+   }
+  }
+ }
+
+ if ((node = module_xml_v2_module_get_node (name, "is-up"))) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "code")) {
+    if (dx->is_up) free (dx->is_up);
+    dx->is_up = estrdup(node->arbattrs[i+1]);
+   }
+  }
+ }
+
+ if ((node = module_xml_v2_module_get_node (name, "is-down"))) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "code")) {
+    if (dx->is_down) free (dx->is_down);
+    dx->is_down = estrdup(node->arbattrs[i+1]);
+   }
+  }
+ }
+
+ if ((node = module_xml_v2_module_get_attributive_node (name, "restart"))) {
+  dx->restart = node->flag;
+ }
+
+ if ((node = module_xml_v2_module_get_attributive_node (name, "pidfile")) && node->svalue) {
+  if (dx->pidfile) free (dx->pidfile);
+  dx->pidfile = estrdup (node->svalue);
+ }
+
+ if ((node = module_xml_v2_module_get_attributive_node (name, "variables")) && node->svalue) {
+  if (dx->variables) free (dx->variables);
+  dx->variables = str2set (':', node->svalue);
+ }
+
+ if ((node = module_xml_v2_module_get_attributive_node (name, "script")) && node->arbattrs) {
+  int i = 0;
+
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "file")) {
+    if (dx->script) free (dx->script);
+    dx->script = estrdup (node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "actions")) {
+    if (dx->script_actions) free (dx->script_actions);
+    dx->script_actions = str2set (':', node->arbattrs[i+1]);
+   }
+  }
+ }
+
+ return dx;
+}
+
 int module_xml_v2_module_enable (char *name, struct einit_event *status) {
- return module_xml_v2_module_custom_action (name, "enable", status);
+ if (module_xml_v2_module_have_action (name, "daemon")) {
+/* daemon code here */
+  struct dexecinfo *dexec = module_xml_v2_module_get_daemon_action (name);
+
+  if (dexec) {
+   return startdaemon (dexec, status);
+  }
+ } else {
+  if (module_xml_v2_module_have_action (name, "prepare") &&
+      (module_xml_v2_module_custom_action (name, "prepare", status) == status_failed)) {
+   return status_failed;
+  }
+
+  return module_xml_v2_module_custom_action (name, "enable", status);
+ }
+
+ return status_failed;
 }
 
 int module_xml_v2_module_disable (char *name, struct einit_event *status) {
- return module_xml_v2_module_custom_action (name, "disable", status);
+ if (module_xml_v2_module_have_action (name, "daemon")) {
+/* daemon code here */
+  struct dexecinfo *dexec = module_xml_v2_module_get_daemon_action (name);
+
+  if (dexec) {
+   return stopdaemon (dexec, status);
+  }
+ } else {
+  if (module_xml_v2_module_custom_action (name, "disable", status) == status_ok) {
+   if (module_xml_v2_module_have_action (name, "cleanup") &&
+       (module_xml_v2_module_custom_action (name, "cleanup", status) == status_failed)) {
+    return status_failed;
+   }
+
+   return status_ok;
+  }
+ }
+
+ return status_failed;
 }
 
 int module_xml_v2_module_configure (struct lmodule *pa) {
@@ -226,6 +473,35 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
  return 1;
 }
 
+void module_xml_v2_power_event_handler (struct einit_event *ev) {
+ if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
+  struct stree *modules = module_xml_v2_modules;
+
+  while (modules) {
+   if (module_xml_v2_module_have_action (modules->key, "on-shutdown")) {
+#if 0
+    struct einit_event status = evstaticinit (einit_feedback_module_status);
+	status.integer = ((struct lmodule *)(modules->value))->fbseq+1;
+
+    module_xml_v2_module_custom_action (modules->key, "on-shutdown", &status);
+
+    evstaticdestroy (status);
+#endif
+    mod (einit_module_custom, modules->value, "on-shutdown");
+   }
+   modules = streenext (modules);
+  }
+ }
+}
+
+int module_xml_v2_cleanup (struct lmodule *pa) {
+ exec_cleanup (pa);
+
+ event_ignore (einit_event_subsystem_power, module_xml_v2_power_event_handler);
+
+ return 0;
+}
+
 int module_xml_v2_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
@@ -233,5 +509,8 @@ int module_xml_v2_configure (struct lmodule *pa) {
  pa->scanmodules = module_xml_v2_scanmodules;
  pa->cleanup = module_xml_v2_cleanup;
 
+ event_listen (einit_event_subsystem_power, module_xml_v2_power_event_handler);
+
  return 0;
 }
+
