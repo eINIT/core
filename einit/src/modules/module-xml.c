@@ -356,6 +356,11 @@ int module_xml_v2_module_enable (char *name, struct einit_event *status) {
    return startdaemon (dexec, status);
   }
  } else {
+  struct cfgnode *node = NULL;
+  if ((node = module_xml_v2_module_get_attributive_node (name, "pidfile")) && node->svalue) {
+   unlink (node->svalue);
+  }
+
   if (module_xml_v2_module_have_action (name, "prepare") &&
       (module_xml_v2_module_custom_action (name, "prepare", status) == status_failed)) {
    return status_failed;
@@ -377,9 +382,15 @@ int module_xml_v2_module_disable (char *name, struct einit_event *status) {
   }
  } else {
   if (module_xml_v2_module_custom_action (name, "disable", status) == status_ok) {
+   struct cfgnode *node = NULL;
+
    if (module_xml_v2_module_have_action (name, "cleanup") &&
        (module_xml_v2_module_custom_action (name, "cleanup", status) == status_failed)) {
     return status_failed;
+   }
+
+   if ((node = module_xml_v2_module_get_attributive_node (name, "pidfile")) && node->svalue) {
+    unlink (node->svalue);
    }
 
    return status_ok;
