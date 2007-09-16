@@ -1,8 +1,9 @@
 /*
- *  module-xml.c
+ *  module-xml-old.c
  *  einit
  *
  *  Created by Magnus Deininger on 19/04/2006.
+ *  Renamed from module-xml.c on 16/10/2007
  *  Renamed from mod-exec.c on 11/10/2006.
  *  Renamed from module-exec.c/Joined with module-daemon.c on 30/05/2006.
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
@@ -92,8 +93,8 @@ const struct smodule einit_module_xml_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = einit_module_loader,
- .name      = "Module Support (Configuration, Shell-Script)",
- .rid       = "einit-module-exec",
+ .name      = "Module Support (Configuration, Shell-Script, Daemons)",
+ .rid       = "einit-module-xml-old",
  .si        = {
   .provides = NULL,
   .requires = NULL,
