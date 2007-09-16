@@ -1,4 +1,8 @@
+namespace execute = "http://www.einit.org"
+
 start = eINIT | Module | Network
+
+ColonList = xsd:string { pattern = "^(\w+)(:\w+)*$" }
 
 eINIT = element einit {
   ( attribute prefix { "services-virtual-module" } & ModuleContents* ) |
@@ -251,7 +255,7 @@ Mode = element mode {
   IDAttribute &
   attribute base { text }? &
 
-  element enable { attribute services { text } & attribute critical { text }? }? &
+  element enable { attribute services { ColonList } & attribute critical { text }? }? &
   element disable { attribute services { text } }? &
 
   eINITMain &

@@ -19,7 +19,7 @@ DaemonAttributes =
  attribute restart { Boolean } ?
 
 ShellAttributes = 
- (( attribute enable { text } & attribute disable { text } ) |
+ (( attribute enable { text } & attribute disable { text } attribute restart { text }? ) |
   ( attribute script { text } & attribute script-actions { text } ))
 
 CommonModuleAttributesRequired =
@@ -52,4 +52,5 @@ ModuleDependenciesRequired =
 ModuleDependenciesOptional =
  attribute requires { text } ? &
  attribute before { text } ? &
- attribute after { text } ?
+ attribute after { text } ? &
+ attribute execute:* { text } ?
