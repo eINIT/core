@@ -12,6 +12,29 @@ ModuleContents =
   DaemonAttributes &
   CommonModuleAttributesRequired &
   CommonModuleAttributesOptional
+ } |
+ element * {
+  attribute name { text } &
+  ModuleDependenciesRequired &
+  ModuleDependenciesOptional &
+
+  element execute {
+   IDAttribute,
+   attribute code { text },
+   attribute user { text }?,
+   attribute group { text }?
+  }* &
+
+  element pidfile { StringAttribute }? &
+  element environment { attribute * { text }* }? &
+  element restart { BooleanAttribute }? &
+
+  element variables { StringAttribute }? &
+
+  element script {
+   attribute file { text },
+   attribute actions { text }
+  }?
  }
 
 DaemonAttributes =
@@ -52,4 +75,4 @@ ModuleDependenciesRequired =
 ModuleDependenciesOptional =
  attribute requires { text } ? &
  attribute before { text } ? &
- attribute after { text } ? 
+ attribute after { text } ?
