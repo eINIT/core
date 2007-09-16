@@ -1,0 +1,9 @@
+<einit prefix="services-virtual-module">
+ <shell id="shell-device-mapper"
+  name="Device-mapper"
+  provides="device-mapper"
+  requires="udev"
+  script="device-mapper.sh"
+  script-actions="enable:disable:on-shutdown"
+  need-files="/sbin/vgchange" />
+</einit>
