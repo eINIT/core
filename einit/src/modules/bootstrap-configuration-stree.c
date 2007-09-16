@@ -97,49 +97,13 @@ int cfg_addnode_f (struct cfgnode *node) {
  if (!node || !node->id) return -1;
  struct stree *cur = hconfiguration;
  char doop = 1;
- char *template = NULL;
 
  if (node->arbattrs) {
   uint32_t r = 0;
   for (; node->arbattrs[r]; r+=2) {
    if (strmatch ("id", node->arbattrs[r])) node->idattr = node->arbattrs[r+1];
-   else if (strmatch ("based-on-template", node->arbattrs[r])) template = node->arbattrs[r+1];
   }
  }
-
- if (template) {
-  char **attrs = NULL, *nodename = NULL;
-  uint32_t ii = 0, idn = 0;
-  struct cfgnode *tnode = NULL;
-
-  nodename = emalloc (strlen(node->id) + 10);
-  *nodename = 0;
-  strcat (nodename, node->id);
-  strcat (nodename, "-template");
-
-  while ((tnode = cfg_findnode (nodename, 0, tnode))) {
-   if (tnode->idattr && strmatch (tnode->idattr, template)) break; // found a matching template
-  }
-  if (!tnode || !tnode->arbattrs) goto no_template;
-
-  for (ii = 0; node->arbattrs[ii]; ii+=2) {
-   attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii], SET_TYPE_STRING);
-   attrs = (char **)setadd ((void **)attrs, (void *)node->arbattrs[ii+1], SET_TYPE_STRING);
-   if (strmatch (node->arbattrs[ii], "id")) idn = ii+1;
-  }
-  for (ii = 0; tnode->arbattrs[ii]; ii+=2) if (!inset ((const void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING)) {
-   char *tmp = apply_variables (tnode->arbattrs[ii+1], (const char **)node->arbattrs);
-   attrs = (char **)setadd ((void **)attrs, (void *)tnode->arbattrs[ii], SET_TYPE_STRING);
-   attrs = (char **)setadd ((void **)attrs, (void *)tmp, SET_TYPE_STRING);
-   if (strmatch (tnode->arbattrs[ii], "id")) idn = ii+1;
-   free (tmp);
-  }
-
-  free (node->arbattrs);
-  node->arbattrs = attrs;
-  node->idattr = attrs[idn];
- }
- no_template:
 
  if (node->type & einit_node_mode) {
 /* mode definitions only need to be modified -- it doesn't matter if there's more than one, but
