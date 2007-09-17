@@ -1,8 +1,11 @@
 <module>
- <daemon id="deamon-avahi-daemon"
+ <v-avahi-daemon
   name="avahi-daemon"
   provides="avahi-daemon"
-  requires="network-minimal:mount-critical"
-  command="avahi-daemon"
-  restart="yes" />
+  requires="network-minimal:mount-critical">
+
+  <execute id="daemon" code="avahi-daemon" />
+
+  <restart b="yes" />
+ </v-avahi-daemon>
 </module>

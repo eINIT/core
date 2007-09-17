@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-bluez-sdpd"
+ <v-bluez-sdpd
   name="Bluetooth (SDPd)"
   provides="bluetooth-sdp"
   requires="mount-critical:bluetooth-hci"
-  after="^(kern-|modules)"
-  command="/usr/sbin/sdpd -n"
-  restart="yes"
-  need-files="/usr/sbin/sdpd" />
+  after="^(kern-|modules)">
+
+  <execute id="daemon" code="/usr/sbin/sdpd -n" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/sdpd" />
+ </v-bluez-sdpd>
 </module>
