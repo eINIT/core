@@ -16,6 +16,5 @@
   <restart b="yes" />
   <need-files s="/usr/sbin/acpid" />
   <variables s="configuration-services-acpid/.*" />
-
  </v-acpi>
 </module>

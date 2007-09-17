@@ -1,11 +1,14 @@
 <module>
- <daemon id="daemon-NetworkManager"
+ <v-network-manager
   name="NetworkManager"
   provides="NM:networkmanager"
-  requires="dhcdbd:hal"
-  prepare="if [ ! -d /var/run/NetworkManager ] ; then mkdir /var/run/NetworkManager; fi ;
+  requires="dhcdbd:hal">
+
+  <execute id="prepare" code="if [ ! -d /var/run/NetworkManager ] ; then mkdir /var/run/NetworkManager; fi ;
            if [ ! -d /var/run/console ] ; then mkdir /var/run/console ; fi ;
-           /bin/true"
-  command="NetworkManager --no-daemon"
-  restart="yes" />
+           true" />
+  <execute id="daemon" code="NetworkManager --no-daemon" />
+
+  <restart b="yes" />
+ </v-network-manager>
 </module>

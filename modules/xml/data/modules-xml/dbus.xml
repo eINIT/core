@@ -1,13 +1,16 @@
 <module>
- <daemon id="daemon-dbus"
+ <v-dbus
   name="D-BUS system messagebus"
   provides="dbus"
   requires="mount-critical"
-  after="fqdn"
-  pid="/var/run/dbus.pid"
-  prepare="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure"
-  command="pexec-options dont-close-stdin; dbus-daemon --system --fork"
-  cleanup="if [ -S /var/run/dbus/system_bus_socket ]; then rm -f /var/run/dbus/system_bus_socket; fi"
-  options="forking"
-  restart="yes" />
+  after="fqdn">
+
+  <execute id="prepare" code="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure" />
+  <execute id="daemon" code="pexec-options dont-close-stdin; dbus-daemon --system --fork" />
+  <execute id="cleanup" code="if [ -S /var/run/dbus/system_bus_socket ]; then rm -f /var/run/dbus/system_bus_socket; fi" />
+
+  <pidfile s="/var/run/dbus.pid" />
+  <options s="forking" />
+  <restart b="yes" />
+ </v-dbus>
 </module>

@@ -1,11 +1,14 @@
 <module>
- <daemon id="daemon-distccd"
+ <v-distccd
   name="Distributed compiling daemon (distccd)"
   provides="distccd"
-  requires="mount-critical:net-lo"
-  pid="/var/run/distccd/distccd.pid"
-  command="/usr/bin/distccd --daemon --no-detach -N ${configuration_services_distccd_nice} --pid-file /var/run/distccd/distccd.pid --port ${configuration_services_distccd_port} --allow ${configuration_services_distccd_allow} --listen ${configuration_services_distccd_listen}"
-  restart="yes"
-  variables="configuration-services-distccd/.*"
-  need-files="/usr/bin/distccd" />
+  requires="mount-critical:net-lo">
+
+  <execute id="daemon" code="/usr/bin/distccd --daemon --no-detach -N ${configuration_services_distccd_nice} --pid-file /var/run/distccd/distccd.pid --port ${configuration_services_distccd_port} --allow ${configuration_services_distccd_allow} --listen ${configuration_services_distccd_listen}" />
+
+  <pidfile s="/var/run/distccd/distccd.pid" />
+  <restart b="yes" />
+  <variables s="configuration-services-distccd/.*" />
+  <need-files s="/usr/bin/distccd" />
+ </v-distccd>
 </module>

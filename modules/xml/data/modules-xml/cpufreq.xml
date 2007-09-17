@@ -1,13 +1,16 @@
 <module>
- <shell id="shell-cpufreq"
+ <v-cpufreq
   name="Cpufreq Governor"
   provides="cpufreq"
-  requires="mount-critical:acpid"
-  enable="for i in ${configuration_services_cpufreq_cpus};
+  requires="mount-critical:acpid">
+
+  <execute id="enable" code="for i in ${configuration_services_cpufreq_cpus};
           	do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_services_cpufreq_governor} ;
-          done"
-  disable="for i in ${configuration_services_cpufreq_cpus} ;
+          done" />
+  <execute id="disable" code="for i in ${configuration_services_cpufreq_cpus} ;
            	do /usr/bin/cpufreq-set --cpu $i --governor performance ;
-           done"
-  variables="configuration-services-cpufreq/.*" />
+           done" />
+
+  <variables s="configuration-services-cpufreq/.*" />
+ </v-cpufreq>
 </module>

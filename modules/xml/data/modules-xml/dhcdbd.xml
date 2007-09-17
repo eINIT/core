@@ -1,9 +1,12 @@
 <module>
-  <daemon id="deamon-dhcdbd"
+ <v-dhcdbd
    name="dhcdbd"
    provides="dhcdbd"
-   requires="dbus"
-   pid="/var/run/dhcdbd.pid"
-   command="dbus-launch --exit-with-session dhcdbd -sn"
-   restart="yes" />
+   requires="dbus">
+
+  <execute id="daemon" code="dbus-launch --exit-with-session dhcdbd -sn" />
+
+  <pidfile s="/var/run/dhcdbd.pid" />
+  <restart b="yes" />
+ </v-dhcdbd>
 </module>

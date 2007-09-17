@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-cupsd"
+ <v-cupsd
   name="Common Unix Printing System Daemon (cupsd)"
   provides="cupsd"
-  requires="network-minimal:mount-critical"
-  prepare="if [ ! -d /var/log/cups ]; then mkdir /var/log/cups; fi; /bin/true"
-  command="/usr/sbin/cupsd -F"
-  restart="yes"
-  need-files="/usr/sbin/cupsd" />
+  requires="network-minimal:mount-critical">
+
+  <execute id="prepare" code="if [ ! -d /var/log/cups ]; then mkdir /var/log/cups; fi; /bin/true" />
+  <execute id="daemon" code="/usr/sbin/cupsd -F" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/cupsd" />
+ </v-cupsd>
 </module>
