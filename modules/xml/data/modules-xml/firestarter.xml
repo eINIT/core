@@ -1,11 +1,13 @@
 <module>
- <shell id="shell-firestarter"
+ <v-firestarter
   name="firestarter"
   provides="firestarter"
-  requires="mount-critical:net-lo"
-  prepare="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
+  requires="mount-critical:net-lo">
+
+  <execute id="prepare" code="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
             firestarter --generate-scripts;
-           fi; /bin/true"
-  enable="firestarter --start"
-  disable="firestarter --stop" />
+           fi; true" />
+  <execute id="enable" code="firestarter --start" />
+  <execute id="disable" code="firestarter --stop" />
+ </v-firestarter>
 </module>

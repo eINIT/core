@@ -1,19 +1,22 @@
 <module>
- <shell id="shell-clock-hwclock"
+ <v-hwclock
   name="HWCLOCK"
   provides="hwclock"
-  requires="mount-system"
-  enable="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
+  requires="mount-system">
+
+  <execute id="enable" code="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
           if [[ $? == &quot;0&quot; ]]; then
                 echo 'feedback|notice|time read from hardware clock';
           else
                 echo 'feedback|warning|failed to read time from hardware clock';
-          fi"
-  disable="/sbin/hwclock --systohc ${configuration_services_hwclock_options};
+          fi" />
+  <execute id="disable" code="/sbin/hwclock --systohc ${configuration_services_hwclock_options};
            if [[ $? == &quot;0&quot; ]]; then
                 echo 'feedback|notice|time written to hardware clock';
            else
                 echo 'feedback|warning|failed to write time to hardware clock';
-           fi"
-  variables="configuration-services-hwclock/.*" />
+           fi" />
+
+  <variables s="configuration-services-hwclock/.*" />
+ </v-hwclock>
 </module>

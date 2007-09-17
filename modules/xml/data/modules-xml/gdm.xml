@@ -1,12 +1,15 @@
 <module>
- <daemon id="daemon-gdm"
+ <v-gdm
   name="The GNOME Display Manager (gdm)"
   provides="x11:displaymanager"
   requires="mount-critical:fqdn"
-  after="^net-lo$"
-  pid="/var/run/gdm.pid"
-  prepare="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; /bin/true"
-  command="/usr/bin/gdm -nodaemon"
-  need-files="/usr/bin/gdm"
-  restart="yes" />
+  after="^net-lo$">
+
+  <execute id="prepare" code="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; true" />
+  <execute id="daemon" code="/usr/bin/gdm -nodaemon" />
+
+  <pidfile s="/var/run/gdm.pid" />
+  <need-files s="/usr/bin/gdm" />
+  <restart b="yes" />
+ </v-gdm>
 </module>

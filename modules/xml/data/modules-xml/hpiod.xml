@@ -1,8 +1,10 @@
 <module>
- <shell id="shell-hpiod"
+ <v-hpiod
   name="HP I/O Backend Daemon (hpiod)"
   provides="hpiod"
-  requires="mount-local"
-  enable="hpiod"
-  disable="killall hpiod" />
+  requires="mount-local">
+
+  <execute id="enable" code="hpiod" />
+  <execute id="disable" code="killall hpiod" />
+ </v-hpiod>
 </module>

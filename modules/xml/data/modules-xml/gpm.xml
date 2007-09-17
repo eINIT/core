@@ -1,9 +1,12 @@
 <module>
- <shell id="shell-gpm"
+ <v-gpm
   name="Console mouse services (GPM)"
   provides="gpm"
-  requires="tty"
-  enable="/usr/sbin/gpm -m ${configuration_services_gpm_device} -t ${configuration_services_gpm_type} ${configuration_services_gpm_options}"
-  disable="killall gpm &amp;&gt;/dev/null"
-  variables="configuration-services-gpm/.*" />
+  requires="tty">
+
+  <execute id="enable" code="/usr/sbin/gpm -m ${configuration_services_gpm_device} -t ${configuration_services_gpm_type} ${configuration_services_gpm_options}" />
+  <execute id="disable" code="killall gpm &amp;&gt;/dev/null" />
+
+  <variables s="configuration-services-gpm/.*" />
+ </v-gpm>
 </module>

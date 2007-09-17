@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-tts-festival"
+ <v-festival
   name="TTS (festival)"
   provides="festivald"
-  requires="mount-critical:audio"
-  command="/usr/bin/festival --server -b /etc/festival/server.scm"
-  restart="yes"
-  need-files="/usr/bin/festival" />
+  requires="mount-critical:audio">
+
+  <execute id="daemon" code="/usr/bin/festival --server -b /etc/festival/server.scm" />
+
+  <restart b="yes" />
+  <need-files s="/usr/bin/festival" />
+ </v-festival>
 </module>

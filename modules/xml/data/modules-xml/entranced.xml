@@ -1,12 +1,13 @@
 <module>
- <shell id="shell-entranced"
-  name="EntranceD (TEST SHELL VERSION)"
-  provides="x11:displaymanager"
-  requires="mount-critical:fqdn"
-  after="^net-lo$"
-  enable="/usr/sbin/entranced"
-  disable="killall -9 entranced"
-  DISPLAY=":0.0"
-  HOME="/root"
-  need-files="/usr/sbin/entranced" />
+ <v-entrance
+  name="EntranceD"
+  provides="displaymanager:entranced"
+  requires="mount-critical:network-minimal">
+
+  <execute id="daemon" code="/usr/sbin/entranced" />
+
+  <need-files s="/usr/sbin/entranced" />
+  <environment DISPLAY=":0.0" HOME="/root" />
+  <restart b="yes" />
+ </v-entrance>
 </module>

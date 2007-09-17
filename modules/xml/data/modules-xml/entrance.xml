@@ -1,11 +1,13 @@
 <module>
- <daemon id="daemon-entrance"
+ <v-entrance
   name="Entrance"
   provides="entrance"
-  requires="x11"
-  command="/usr/bin/entrance"
-  restart="yes"
-  DISPLAY=":0.0"
-  HOME="/root"
-  need-files="/usr/bin/entrance" />
+  requires="x11">
+
+  <execute id="daemon" code="/usr/bin/entrance" />
+
+  <need-files s="/usr/bin/entrance" />
+  <environment DISPLAY=":0.0" HOME="/root" />
+  <restart b="yes" />
+ </v-entrance>
 </module>

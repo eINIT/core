@@ -1,8 +1,11 @@
 <module>
- <daemon id="daemon-hellanzb"
+ <v-hellanzb
   name="NZB downloader and post processor (hellanzb)"
   provides="hellanzb"
-  requires="network:mount-local"
-  command="hellanzb.py"
-  restart="yes" />
+  requires="network:mount-local">
+
+  <execute id="daemon" code="hellanzb.py" />
+
+  <restart b="yes" />
+ </v-hellanzb>
 </module>

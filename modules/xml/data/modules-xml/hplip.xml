@@ -1,8 +1,11 @@
 <module>
- <daemon id="daemon-hplip"
+ <v-hplip
   name="HP Linux Imaging and Printing System (hplip)"
-  provides="hplip"
-  command="python /usr/share/hplip/hpssd.py -x"
-  restart="yes"
-  need-files="/usr/share/hplip/hpssd.py" />
+  provides="hplip">
+
+  <execute id="daemon" code="python /usr/share/hplip/hpssd.py -x" />
+
+  <restart b="yes" />
+  <need-files s="/usr/share/hplip/hpssd.py" />
+ </v-hplip>
 </module>

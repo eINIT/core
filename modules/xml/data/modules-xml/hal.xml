@@ -1,12 +1,15 @@
 <module>
- <daemon id="daemon-hald"
+ <v-hald
   name="Hardware Abstraction Layer"
   provides="hal"
   after="logger"
-  requires="mount-critical:dbus"
-  pid="/var/run/hald.pid"
-  command="/usr/sbin/hald --daemon=yes --use-syslog --verbose=no"
-  need-files="/usr/sbin/hald"
-  restart="yes"
-  options="forking" />
+  requires="mount-critical:dbus">
+
+  <execute id="daemon" code="/usr/sbin/hald --daemon=yes --use-syslog --verbose=no" />
+
+  <options s="forking" />
+  <restart b="yes" />
+  <need-files s="/usr/sbin/hald" />
+  <pidfile s="/var/run/hald.pid" />
+ </v-hald>
 </module>
