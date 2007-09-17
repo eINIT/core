@@ -34,7 +34,7 @@ eINITMain =
   element ttys { StringAttribute } ? &
   element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
   element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
-  element feedback { attribute auto-add { Boolean }, attribute default { text } }
+  element feedback { attribute auto-add { Boolean }, attribute default { text } } ?
 
 Core = element core {
   element xml-validator { attribute command { text } }? &
