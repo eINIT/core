@@ -1,10 +1,13 @@
 <module>
- <shell id="shell-kern-ati"
+ <v-kern-ati
   name="Proprietary ATI X11 Drivers"
   provides="kern-ati"
   requires="mount-system"
-  before="displaymanager"
-  enable="modprobe fglrx"
-  disable="${configuration_command_rmmod} fglrx"
-  variables="configuration-command-rmmod" />
+  before="displaymanager">
+
+  <execute id="enable" code="modprobe fglrx" />
+  <execute id="disable" code="${configuration_command_rmmod} fglrx" />
+
+  <variables s="configuration-command-rmmod" />
+ </v-kern-ati>
 </module>

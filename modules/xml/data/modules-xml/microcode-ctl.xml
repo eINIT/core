@@ -1,11 +1,14 @@
 <module>
- <shell id="shell-microcode"
+ <v-microcode-ctl
   name="Microcode-ctl (Intel processor microcode update utility)"
   provides="microcode-ctl"
   requires="mount-local"
-  after="^(kern-|modules)"
-  enable="/usr/sbin/microcode_ctl -qu -d ${configuration_services_microcode_ctl_dev}"
-  disable="true"
-  need-files="/usr/sbin/microcode_ctl"
-  variables="configuration-services-microcode-ctl/.*" />
+  after="^(kern-|modules)">
+
+  <execute id="enable" code="/usr/sbin/microcode_ctl -qu -d ${configuration_services_microcode_ctl_dev}" />
+  <execute id="disable" code="true" />
+
+  <need-files s="/usr/sbin/microcode_ctl" />
+  <variables s="configuration-services-microcode-ctl/.*" />
+ </v-microcode-ctl>
 </module>

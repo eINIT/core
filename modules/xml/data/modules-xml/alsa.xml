@@ -1,5 +1,5 @@
 <module>
- <v-kern-alsa
+ <v-alsa
   name="Audio (ALSA)"
   provides="alsa"
   requires="mount-critical"
@@ -10,5 +10,5 @@
   <execute id="on-shutdown" code="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} store; true" />
 
   <variables s="configuration-services-alsa-mixer/.*" />
- </v-kern-alsa>
+ </v-alsa>
 </module>

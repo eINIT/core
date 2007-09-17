@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-klive"
+ <v-klive
   name="Kernel Configuration Reporting (klive)"
   provides="klive"
-  requires="network:mount-critical:logger"
-  pid="/var/run/klive.pid"
-  command="/usr/bin/twistd --nodaemon --pidfile=/var/run/klive.pid --uid klive --syslog -oy /usr/share/klive/klive.tac"
-  restart="yes" />
+  requires="network:mount-critical:logger">
+
+  <execute id="daemon" code="/usr/bin/twistd --nodaemon --pidfile=/var/run/klive.pid --uid klive --syslog -oy /usr/share/klive/klive.tac" />
+
+  <pidfile s="/var/run/klive.pid" />
+  <restart b="yes" />
+ </v-klive>
 </module>

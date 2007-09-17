@@ -1,9 +1,10 @@
 <module>
- <shell id="shell-keyboard"
+ <v-keyboard
   name="Console (Keyboard Layout)"
   provides="keyboard"
-  requires="mount-local"
-  enable="if [[ -f /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ]] ; then
+  requires="mount-local">
+
+  <execute id="enable" code="if [[ -f /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ]] ; then
           	echo 1 > /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ;
           fi ;
 
@@ -26,7 +27,9 @@
           if [ -d /dev/vc ] ; then tty_dev=/dev/vc/ ; else tty_dev=/dev/tty ; fi ;
           for tty_num in ${tty_list} ; do
                 echo -n -e ${termencoding} &gt; ${tty_dev}${tty_num} ;
-          done ;"
-  disable="/bin/true"
-  variables="configuration-services-keyboard/.*" />
+          done ;" />
+  <execute id="disable" code="true" />
+
+  <variables s="configuration-services-keyboard/.*" />
+ </v-keyboard>
 </module>

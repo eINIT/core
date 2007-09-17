@@ -1,12 +1,13 @@
 <module>
- <daemon id="daemon-ivman"
+ <v-ivman
   name="Ikke's Volume Manager (ivman)"
-  uid="ivman"
-  gid="plugdev"
   provides="ivman"
-  requires="hal"
-  pid="/var/run/ivman.pid"
-  command="/usr/bin/ivman --system --nofork"
-  restart="yes"
-  need-files="/usr/bin/ivman" />
+  requires="hal">
+
+  <execute id="daemon" code="/usr/bin/ivman --system --nofork" user="ivman" group="plugdev" />
+
+  <pidfile s="/var/run/ivman.pid" />
+  <restart b="yes" />
+  <need-files s="/usr/bin/ivman" />
+ </v-ivman>
 </module>

@@ -1,17 +1,20 @@
 <module>
- <shell id="shell-kern-nvidia"
+ <v-kern-nvidia
   name="Proprietary NVIDIA X11 Drivers"
   provides="kern-nvidia"
   requires="mount-system"
-  before="displaymanager"
-  enable="modprobe nvidia;
+  before="displaymanager">
+
+  <execute id="enable" code="modprobe nvidia;
           for i in 0 1 2 3 4 5 6 7; do
           	mknod /dev/nvidia$i c 195 $i;
           done;
           mknod /dev/nvidiactl c 195 255;
           chgrp video /dev/nvidia*;
-          chmod 0660 /dev/nvidia*"
-  disable="${configuration_command_rmmod} nvidia;
-           rm /dev/nvidia*"
-  variables="configuration-command-rmmod" />
+          chmod 0660 /dev/nvidia*" />
+  <execute id="disable" code="${configuration_command_rmmod} nvidia;
+           rm /dev/nvidia*" />
+
+  <variables s="configuration-command-rmmod" />
+ </v-kern-nvidia>
 </module>

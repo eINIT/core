@@ -1,8 +1,10 @@
 <module>
- <shell id="shell-lisa"
+ <v-lisa
   name="LAN Information Server (LISA)"
   provides="lisa"
-  requires="network:mount-critical"
-  enable="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q"
-  disable="/usr/bin/killall lisa" />
+  requires="network:mount-critical">
+
+  <execute id="enable" code="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q" />
+  <execute id="disable" code="/usr/bin/killall lisa" />
+ </v-lisa>
 </module>

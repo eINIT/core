@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-mpd"
+ <v-mpd
   name="Music Player Daemon"
   provides="mpd"
-  requires="mount-local"
-  command="/usr/bin/mpd --no-create-db --no-daemon"
-  restart="yes"
-  need-files="/usr/bin/mpd" />
+  requires="mount-local">
+
+  <execute id="daemon" code="/usr/bin/mpd --no-create-db --no-daemon" />
+
+  <restart b="yes" />
+  <need-files s="/usr/bin/mpd" />
+ </v-mpd>
 </module>

@@ -1,10 +1,13 @@
 <module>
- <shell id="shell-mythtv-backend"
+ <v-mythtv
   name="MythTV Backend"
   provides="mythtv"
   requires="network:mount-critical"
-  after="^(kern-|modules)"
-  enable="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon"
-  disable="killall mythbackend; /bin/true"
-  HOME="/etc/mythtv"/>
+  after="^(kern-|modules)">
+
+  <execute id="enable" code="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon" />
+  <execute id="disable" code="killall mythbackend; true" />
+
+  <environment HOME="/etc/mythtv" />
+ </v-mythtv>
 </module>

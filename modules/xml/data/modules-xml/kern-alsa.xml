@@ -1,10 +1,11 @@
 <module>
- <shell id="shell-kern-audio-alsa"
+ <v-kern-alsa
   name="Kernel Modules (ALSA)"
   provides="kern-alsa"
   requires="mount-system"
-  before="^alsa"
-  enable="kernel_modules_alsa=`/sbin/modprobe -c | grep -E '(snd-card|sound-service)-[0-9]' | awk '{print $3}'` ;
+  before="^alsa">
+
+  <execute id="enable" code="kernel_modules_alsa=`/sbin/modprobe -c | grep -E '(snd-card|sound-service)-[0-9]' | awk '{print $3}'` ;
           if [[ -z '${kernel_modules_alsa}' &amp;&amp; ! ( -d /proc/asound &amp;&amp; -z &quot;$(grep ' no soundcards ' /proc/asound/cards)&quot; ) ]] ; then
          	echo -n 'feedback|warning|Looks like you did not customise your alsa installation...';
          	kernel_modules_alsa=$(modprobe -c | grep pci: |  awk '{ print $3 }' | grep snd.* | sort | uniq) ;
@@ -19,10 +20,12 @@
           kernel_modules_alsa=&quot;${kernel_modules_alsa} $(modprobe -l | sed -n -e '/snd.ioctl32\./ s:\/.*\/\(.*\).ko:\1:p')&quot; ;
           for x in ${kernel_modules_alsa} ;
          	do echo $x; modprobe $x ;
-          done ;"
-  disable="kernel_modules_alsa=`cat /proc/asound/modules | awk '{print $2}'` ;
+          done ;" />
+  <execute id="disable" code="kernel_modules_alsa=`cat /proc/asound/modules | awk '{print $2}'` ;
            for x in ${kernel_modules_alsa} ; do
           	${configuration_command_rmmod} $x ;
-           done ;"
-  variables="configuration-command-rmmod:configuration-services-kern-alsa/.*" />
+           done ;" />
+
+  <variables s="configuration-command-rmmod:configuration-services-kern-alsa/.*" />
+ </v-kern-alsa>
 </module>

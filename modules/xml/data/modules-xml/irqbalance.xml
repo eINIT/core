@@ -1,8 +1,10 @@
 <module>
- <shell id="shell-irqbalance"
+ <v-irqbalance
   name="irqbalance"
   provides="irqbalance"
-  requires="mount-critical"
-  enable="irqbalance"
-  disable="/bin/true" />
+  requires="mount-critical">
+
+  <execute id="enable" code="irqbalance" />
+  <execute id="disable" code="true" />
+ </v-irqbalance>
 </module>

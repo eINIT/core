@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-mysqld"
+ <v-mysqld
   name="Database (MySQL)"
   provides="mysqld"
-  requires="mount-local:network-minimal"
-  command="/usr/sbin/mysqld --defaults-file=${configuration_services_mysqld_defaults}"
-  restart="yes"
-  need-files="/usr/sbin/mysqld"
-  variables="configuration-services-mysqld/.*" />
+  requires="mount-local:network-minimal">
+
+  <execute id="daemon" code="/usr/sbin/mysqld --defaults-file=${configuration_services_mysqld_defaults}" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/mysqld" />
+  <variables s="configuration-services-mysqld/.*" />
+ </v-mysqld>
 </module>
