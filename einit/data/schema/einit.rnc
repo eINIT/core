@@ -1,6 +1,6 @@
 start = eINIT | Module | Network
 
-ColonList = xsd:string { pattern = "^(\w+)(:\w+)*$" }
+ColonList = xsd:string { pattern = "^((-|\w)+)(:(-|\w)+)*$" }
 
 eINIT = element einit {
   ( attribute prefix { "services-virtual-module" } & ModuleContents* ) |
@@ -33,7 +33,8 @@ eINITMain =
   element options { attribute shutdown { text }? }? &
   element ttys { StringAttribute } ? &
   element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
-  element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
+  element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
+  element feedback { attribute auto-add { BooleanValue }, attribute default { text } }
 
 Core = element core {
   element xml-validator { attribute command { text } }? &
