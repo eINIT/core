@@ -1,12 +1,15 @@
 <module>
- <daemon id="daemon-smbd"
+ <v-smbd
   name="Samba daemon (smbd)"
   provides="smbd"
   after="mount-critical:winbindd:cupsd"
-  requires="nmbd"
-  command="/usr/sbin/smbd -F ${configuration_services_smbd_options}"
-  execute:reload="killall -HUP smbd"
-  restart="yes"
-  need-files="/usr/sbin/smbd"
-  variables="configuration-services-smbd/.*" />
+  requires="nmbd">
+
+  <execute id="daemon" code="/usr/sbin/smbd -F ${configuration_services_smbd_options}" />
+  <execute id="reload" code="killall -HUP smbd" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/smbd" />
+  <variables s="configuration-services-smbd/.*" />
+ </v-smbd>
 </module>

@@ -1,10 +1,11 @@
 <module>
- <shell id="shell-udev"
+ <v-udev
   name="Mount ( /dev )"
   provides="udev"
   requires="fs-sys:fs-proc"
-  before="^fs-dev"
-  script="udev.sh"
-  script-actions="enable:disable:on-shutdown"
-  variables="configuration-services-udev/.*" />
+  before="^fs-dev">
+
+  <script file="udev.sh" actions="enable:disable:on-shutdown" />
+  <variables s="configuration-services-udev/.*" />
+ </v-udev>
 </module>

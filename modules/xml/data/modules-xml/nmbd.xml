@@ -1,13 +1,16 @@
 <module>
- <daemon id="daemon-nmbd"
+ <v-nmbd
   name="Samba NetBIOS name server (nmbd)"
   provides="nmbd"
   requires="network-minimal"
-  after="cupsd"
-  pid="/var/run/samba/nmbd.pid"
-  prepare="if [ ! -d /var/run/samba ] ; then mkdir /var/run/samba ; fi ; /bin/true"
-  command="nmbd -F ${configuration_services_nmbd_options}"
-  execute:reload="killall -HUP nmbd"
-  restart="yes"
-  variables="configuration-services-nmbd/.*" />
+  after="cupsd">
+
+  <execute id="prepare" code="if [ ! -d /var/run/samba ] ; then mkdir /var/run/samba ; fi ; true" />
+  <execute id="daemon" code="nmbd -F ${configuration_services_nmbd_options}" />
+  <execute id="reload" code="killall -HUP nmbd" />
+
+  <pidfile s="/var/run/samba/nmbd.pid" />
+  <restart b="yes" />
+  <variables s="configuration-services-nmbd/.*" />
+ </v-nmbd>
 </module>

@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-apmd"
+ <v-apmd
   name="APMd"
   provides="apmd"
-  requires="mount-critical"
-  command="/usr/sbin/apmd"
-  restart="yes"
-  need-files="/usr/sbin/apmd" />
+  requires="mount-critical">
+
+  <execute id="daemon" code="/usr/sbin/apmd" />
+
+  <need-files s="/usr/sbin/apmd" />
+  <restart b="yes" />
+ </v-apmd>
 </module>

@@ -157,6 +157,23 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
  char **myenvironment = NULL;
  int returnvalue = status_failed;
 
+ if ((node = module_xml_v2_module_get_attributive_node (name, "need-files")) && node->svalue) {
+  char **files = str2set (':', node->svalue);
+
+  if (files) {
+   int i = 0;
+   struct stat st;
+   for (; files[i]; i++) {
+    if (stat (files[i], &st)) {
+     free (files);
+     return status_failed;
+    }
+   }
+
+   free (files);
+  }
+ }
+
  if ((node = module_xml_v2_module_get_attributive_node (name, "environment")) && node->arbattrs) {
   int i = 0;
 
@@ -336,6 +353,11 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
   dx->variables = str2set (':', node->svalue);
  }
 
+ if ((node = module_xml_v2_module_get_attributive_node (name, "need-files")) && node->svalue) {
+  if (dx->need_files) free (dx->need_files);
+  dx->need_files = str2set (':', node->svalue);
+ }
+
  if ((node = module_xml_v2_module_get_attributive_node (name, "environment")) && node->arbattrs) {
   int i = 0;
 
@@ -461,7 +483,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
 /* exclude legacy nodes */
    if (strcmp (cur->key, MODULES_PREFIX "shell") && strcmp (cur->key, MODULES_PREFIX "daemon")) {
     struct cfgnode *node = cur->value;
-    notice (1, "processing id=%s", cur->key + MODULES_PREFIX_LENGTH);
+/*    notice (1, "processing id=%s", cur->key + MODULES_PREFIX_LENGTH); */
 
     if ((!module_xml_v2_modules || !streefind (module_xml_v2_modules, cur->key + MODULES_PREFIX_LENGTH, tree_find_first)) && node->arbattrs) {
      int i = 0;

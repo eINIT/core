@@ -1,10 +1,11 @@
 <module>
- <shell id="shell-postfix"
+ <v-postfix
   name="postfix"
-  uid="postfix"
   provides="mta:postfix"
-  requires="network:mount-critical"
-  enable="/usr/sbin/postfix start"
-  disable="/usr/sbin/postfix stop"
-  execute:reload="/usr/sbin/postfix reload" />
+  requires="network:mount-critical">
+
+  <execute id="enable" code="/usr/sbin/postfix start" user="postfix" />
+  <execute id="disable" code="/usr/sbin/postfix stop" user="postfix" />
+  <execute id="reload" code="/usr/sbin/postfix reload" user="postfix" />
+ </v-postfix>
 </module>

@@ -1,13 +1,16 @@
 <module>
- <daemon id="daemon-winbindd"
+ <v-winbindd
   name="Samba Winbind daemon (winbindd)"
   provides="winbindd"
   after="cupsd"
   before="smbd"
-  requires="nmbd"
-  command="/usr/sbin/winbindd -F ${configuration_services_winbindd_options}"
-  execute:reload="killall -HUP winbindd"
-  restart="yes"
-  need-files="/usr/sbin/winbindd"
-  variables="configuration-services-winbindd/.*" />
+  requires="nmbd">
+
+  <execute id="daemon" code="/usr/sbin/winbindd -F ${configuration_services_winbindd_options}" />
+  <execute id="reload" code="killall -HUP winbindd" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/winbindd" />
+  <variables s="configuration-services-winbindd/.*" />
+ </v-winbindd>
 </module>

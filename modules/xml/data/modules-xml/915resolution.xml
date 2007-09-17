@@ -1,15 +1,19 @@
 <module>
- <shell id="shell-915resolution"
+ <v-915resolution
   name="Resolution (Intel)"
   provides="video-intel-resolution"
-  requires="mount-critical"
-  enable="echo 'feedback|notice|Setting up Intel resolution...';
+  requires="mount-critical">
+
+  <execute id="enable" code="echo 'feedback|notice|Setting up Intel resolution...';
           915resolution ${configuration_services_video_intel_resolution_mode} ${configuration_services_video_intel_resolution_x} ${configuration_services_video_intel_resolution_y} ${configuration_services_video_intel_resolution_bpp} &gt;&gt; /dev/null;
           if [[ $? == '0' ]]; then
           	echo -n ' OK';
           else
           	echo 'feedback|error|Intel resolution failed!';
-          fi"
-  disable="/bin/true"
-  variables="configuration-services-video-intel-resolution/.*" />
+          fi" />
+  <execute id="disable" code="true" />
+
+  <variables s="configuration-services-video-intel-resolution/.*" />
+
+ </v-915resolution>
 </module>

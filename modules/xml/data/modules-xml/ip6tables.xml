@@ -1,16 +1,19 @@
 <module>
- <shell id="shell-ip6tables"
+ <v-ip6tables
   name="Ipv6 Linux firewall, NAT and packet mangling tools"
   provides="ip6tables"
-  requires="network"
-  prepare="touch ${configuration_services_iptables_rules_file} ;
-           chmod 0600 ${configuration_services_iptables_rules_file}"
-  enable="/sbin/ip6tables-restore ${configuration_services_iptables_options} &lt; ${configuration_services_iptables_rules_file}"
-  disable="if [ &quot;${configuration_services_iptables_save_on_stop}&quot; = &quot;yes&quot; ];then
+  requires="network">
+
+  <execute id="prepare" code="touch ${configuration_services_iptables_rules_file} ;
+           chmod 0600 ${configuration_services_iptables_rules_file}" />
+  <execute id="enable" code="/sbin/ip6tables-restore ${configuration_services_iptables_options} &lt; ${configuration_services_iptables_rules_file}" />
+  <execute id="prepare" code="if [ &quot;${configuration_services_iptables_save_on_stop}&quot; = &quot;yes&quot; ]; then
                 /sbin/ip6tables-save ${configuration_services_iptables_options} &gt; ${configuration_services_iptables_rules_file} ;
            else
-                /dev/true ;
-           fi"
-  need-files="/sbin/ip6tables-save:/sbin/ip6tables-restore"
-  variables="configuration-services-iptables/.*" />
+                true ;
+           fi" />
+
+  <variables s="configuration-services-iptables/.*" />
+  <need-files s="/sbin/ip6tables-save:/sbin/ip6tables-restore" />
+ </v-ip6tables>
 </module>

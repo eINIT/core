@@ -1,18 +1,21 @@
 <module>
- <daemon id="daemon-acpi"
+ <v-acpi
   name="Advanced Configuration and Power Interface daemon"
   provides="acpid"
-  requires="mount-critical"
-  pid="/var/run/acpid.pid"
-  prepare="if [ ! -e /proc/acpi ]; then
+  requires="mount-critical">
+
+  <execute id="prepare" code="if [ ! -e /proc/acpi ]; then
                 echo 'feedback|error|ACPI support has not been compiled into the kernel!';
-           fi"
-  command="pexec-options dont-close-stdin;if /usr/sbin/acpid ${configuration_services_acpid_options}; then
+           fi" />
+  <execute id="daemon" code="pexec-options dont-close-stdin;if /usr/sbin/acpid ${configuration_services_acpid_options}; then
                  pidof acpid &gt; /var/run/acpid.pid;
-           fi"
-  execute:reload="killall acpid -HUP &amp;&gt;/dev/null"
-  options="forking"
-  restart="yes"
-  need-files="/usr/sbin/acpid"
-  variables="configuration-services-acpid/.*" />
+           fi" />
+  <execute id="reload" code="killall acpid -HUP &amp;&gt;/dev/null" />
+
+  <options s="forking" />
+  <restart b="yes" />
+  <need-files s="/usr/sbin/acpid" />
+  <variables s="configuration-services-acpid/.*" />
+
+ </v-acpi>
 </module>

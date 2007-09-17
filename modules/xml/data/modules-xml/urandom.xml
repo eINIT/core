@@ -1,21 +1,23 @@
 <module>
- <shell id="shell-urandom2"
+ <v-urandom
   name="urandom"
   provides="urandom"
-  requires="mount-system"
-  enable="echo &quot;feedback|notice|Initializing random number generator...&quot;;
+  requires="mount-system">
+
+  <execute id="enable" code="echo &quot;feedback|notice|Initializing random number generator...&quot;;
           if [ -f ${configuration_services_urandom_seed} ]; then
            cat ${configuration_services_urandom_seed} &gt;/dev/urandom;
           else
            touch ${configuration_services_urandom_seed};
           fi;
           chmod 600 ${configuration_services_urandom_seed};
-          dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null"
-  execute:on-shutdown="echo &quot;feedback|notice|Saving random seed...&quot;;
+          dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null" />
+  <execute id="disable" code="true" />
+  <execute id="on-shutdown" code="echo &quot;feedback|notice|Saving random seed...&quot;;
             touch ${configuration_services_urandom_seed};
             chmod 600 ${configuration_services_urandom_seed};
-            dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null"
-  disable="/bin/true"
-  restart="no"
-  variables="configuration-services-urandom/.*" />
+            dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null" />
+
+  <variables s="configuration-services-urandom/.*" />
+ </v-urandom>
 </module>

@@ -1,11 +1,14 @@
 <module>
- <shell id="shell-audio-alsa"
+ <v-kern-alsa
   name="Audio (ALSA)"
   provides="alsa"
   requires="mount-critical"
-  after="kern-alsa"
-  enable="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} restore; /bin/true"
-  disable="/bin/true"
-  execute:on-shutdown="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} store; /bin/true"
-  variables="configuration-services-alsa-mixer/.*" />
+  after="kern-alsa">
+
+  <execute id="enable" code="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} restore; true" />
+  <execute id="disable" code="true" />
+  <execute id="on-shutdown" code="/usr/sbin/alsactl -f ${configuration_services_alsa_mixer_file} store; true" />
+
+  <variables s="configuration-services-alsa-mixer/.*" />
+ </v-kern-alsa>
 </module>

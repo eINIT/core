@@ -30,6 +30,7 @@ ModuleContents =
   element restart { BooleanAttribute }? &
 
   element variables { StringAttribute }? &
+  element need-files { StringAttribute }? &
 
   element options { StringAttribute }? &
 
