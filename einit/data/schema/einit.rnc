@@ -1,7 +1,5 @@
 start = eINIT | Module | Network
 
-ColonList = xsd:string { pattern = "^((-|\w)+)(:(-|\w)+)*$" }
-
 eINIT = element einit {
   ( attribute prefix { "services-virtual-module" } & ModuleContents* ) |
 
@@ -348,6 +346,9 @@ IntegerAttribute = attribute i { text }
 
 PathAttributes = attribute path { text }, attribute pattern-allow { text }?, attribute pattern-disallow { text }?
 CommandAttributes = attribute with-env { text }, StringAttribute?
+
+#ColonList = xsd:string { pattern = "^((-|\.|\w|\d)+)(:(-|\.|\w|\d)+)*$" }
+ColonList = text
 
 include "einit-module.rnc"
 include "einit-network.rnc"
