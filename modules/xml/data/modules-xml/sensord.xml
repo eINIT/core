@@ -1,10 +1,13 @@
 <module>
- <shell id="shell-sensord"
+ <v-sensord
   name="lm_sensors RRDB logger (sensord)"
   provides="sensord"
-  requires="logger:sensors"
-  enable="/usr/sbin/sensord ${configuration_services_sensord_options}"
-  disable="killall sensord"
-  need-files="/usr/sbin/sensord"
-  variables="configuration-services-sensord/.*" />
+  requires="logger:sensors">
+
+  <execute id="enable" code="/usr/sbin/sensord ${configuration_services_sensord_options}" />
+  <execute id="disable" code="killall sensord" />
+
+  <need-files s="/usr/sbin/sensord" />
+  <variables s="configuration-services-sensord/.*" />
+ </v-sensord>
 </module>

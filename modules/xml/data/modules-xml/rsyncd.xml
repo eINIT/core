@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-rsyncd"
+ <v-rsyncd
   name="Rsync Daemon (rsyncd)"
   provides="rsyncd"
-  requires="net-lo:mount-local"
-  command="/usr/bin/rsync --daemon --no-detach ${configuration_services_rsyncd_options}"
-  restart="yes"
-  need-files="/usr/bin/rsync"
-  variables="configuration-services-rsyncd/.*" />
+  requires="net-lo:mount-local">
+
+  <execute id="daemon" code="/usr/bin/rsync --daemon --no-detach ${configuration_services_rsyncd_options}" />
+
+  <restart b="yes" />
+  <need-files s="/usr/bin/rsync" />
+  <variables s="configuration-services-rsyncd/.*" />
+ </v-rsyncd>
 </module>

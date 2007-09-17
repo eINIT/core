@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-powersave"
+ <v-powersave
   name="Powersave"
   provides="powersave"
-  requires="mount-critical:hal:acpid"
-  command="/usr/sbin/powersaved $(if [ -S /var/run/acpid.socket ]] ; then echo '-f /var/run/acpid.socket' ; fi)"
-  restart="yes"
-  need-files="/usr/sbin/powersaved" />
+  requires="mount-critical:hal:acpid">
+
+  <execute id="daemon" code="/usr/sbin/powersaved $(if [ -S /var/run/acpid.socket ]] ; then echo '-f /var/run/acpid.socket' ; fi)" />
+
+  <need-files s="/usr/sbin/powersaved" />
+  <restart b="yes" />
+ </v-powersave>
 </module>

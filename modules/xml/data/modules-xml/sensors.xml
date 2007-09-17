@@ -1,10 +1,13 @@
 <module>
- <shell id="shell-sensors"
+ <v-sensors
   name="lm_sensors (sensors)"
   provides="sensors"
   requires="mount-critical"
-  after="^(kern-|modules)"
-  enable="/usr/bin/sensors -s ${configuration_services_sensors_options}"
-  disable="/bin/true"
-  variables="configuration-services-sensors/.*" />
+  after="^(kern-|modules)">
+
+  <execute id="enable" code="/usr/bin/sensors -s ${configuration_services_sensors_options}" />
+  <execute id="disable" code="true" />
+
+  <variables s="configuration-services-sensors/.*" />
+ </v-sensors>
 </module>

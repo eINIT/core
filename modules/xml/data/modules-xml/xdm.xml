@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-xdm"
+ <v-xdm
   name="The X Display Manager (xdm)"
   provides="x11:displaymanager"
   requires="mount-critical:fqdn"
-  after="^net-lo$"
-  command="/usr/bin/xdm -nodaemon"
-  restart="yes"
-  need-files="/usr/bin/xdm" />
+  after="^net-lo$">
+
+  <execute id="daemon" code="/usr/bin/xdm -nodaemon" />
+
+  <restart b="yes" />
+  <need-files s="/usr/bin/xdm" />
+ </v-xdm>
 </module>

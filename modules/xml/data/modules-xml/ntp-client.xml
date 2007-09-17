@@ -1,23 +1,26 @@
 <module>
- <shell id="shell-clock-ntp-client"
+ <v-ntp-client
   name="NTP-Client (${configuration_services_ntp_client_command})"
   provides="hwclock:ntp-client"
   requires="network-minimal:mount-critical"
-  after="network"
-  options="deprecated"
-  enable="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
+  after="network">
+
+  <execute id="enable" code="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
           ${configuration_services_ntp_client_command} ${configuration_services_ntp_client_options};
           if [[ $? == &quot;0&quot; ]]; then
                 /sbin/hwclock --systohc ${configuration_services_hwclock_options};
                 echo 'feedback|notice|time synced with ntp server';
           else
                 echo 'feedback|warning|failed to sync time with ntp server';
-          fi"
-  disable="/sbin/hwclock --systohc ${configuration_services_hwclock_options};
+          fi" />
+  <execute id="disable" code="/sbin/hwclock --systohc ${configuration_services_hwclock_options};
            if [[ $? == &quot;0&quot; ]]; then
                 echo 'feedback|notice|time written to hardware clock';
            else
                 echo 'feedback|warning|failed to write time to hardware clock';
-           fi"
-  variables="configuration-services-ntp-client/.*:configuration-services-hwclock/.*" />
+           fi" />
+
+  <variables s="configuration-services-ntp-client/.*:configuration-services-hwclock/.*" />
+  <options s="deprecated" />
+ </v-ntp-client>
 </module>

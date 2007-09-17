@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-syslog"
+ <v-syslog
   name="Syslogger (syslog)"
   provides="syslog:logger"
-  requires="mount-critical"
-  command="/sbin/syslogd -n"
-  restart="yes"
-  need-files="/sbin/syslog" />
+  requires="mount-critical">
+
+  <execute id="daemon" code="/sbin/syslogd -n" />
+
+  <restart b="yes" />
+  <need-files s="/sbin/syslog" />
+ </v-syslog>
 </module>

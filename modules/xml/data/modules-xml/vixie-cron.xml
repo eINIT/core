@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-vixie-cron"
+ <v-vixie-cron
   name="Cron (Vixie)"
   provides="cron"
-  requires="mount-local:network-minimal"
-  command="/usr/sbin/cron -n ${configuration_services_vixie_cron_options}"
-  restart="yes"
-  need-files="/usr/sbin/cron"
-  variables="configuration-services-vixie-cron/.*" />
+  requires="mount-local:network-minimal">
+
+  <execute id="daemon" code="/usr/sbin/cron -n ${configuration_services_vixie_cron_options}" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/cron" />
+  <variables s="configuration-services-vixie-cron/.*" />
+ </v-vixie-cron>
 </module>

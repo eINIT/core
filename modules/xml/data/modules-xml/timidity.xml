@@ -1,10 +1,13 @@
 <module>
- <daemon id="daemon-timidity"
+ <v-timidity
   name="Timidity++ Virtual MIDI Sequencer (timidity)"
   provides="timidity"
-  requires="alsa:mount-system"
-  command="/usr/bin/timidity -iA ${configuration_services_timidity_options}"
-  need-files="/usr/bin/timidity"
-  restart="yes"
-  variables="configuration-services-timidity/.*" />
+  requires="alsa:mount-system">
+
+  <execute id="daemon" code="/usr/bin/timidity -iA ${configuration_services_timidity_options}" />
+
+  <restart b="yes" />
+  <variables s="configuration-services-timidity/.*" />
+  <need-files s="/usr/bin/timidity" />
+ </v-timidity>
 </module>

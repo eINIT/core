@@ -1,8 +1,11 @@
 <module>
- <daemon id="daemon-ntpd"
+ <v-ntpd
   name="NTPD"
   provides="ntpd"
-  requires="network:hwclock"
-  command="ntpd -n"
-  restart="yes" />
+  requires="network:hwclock">
+
+  <execute id="daemon" code="ntpd -n" />
+
+  <restart b="yes" />
+ </v-ntpd>
 </module>

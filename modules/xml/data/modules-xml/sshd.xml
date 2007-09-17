@@ -1,11 +1,14 @@
 <module>
- <daemon id="daemon-sshd"
+ <v-sshd
   name="SSH daemon (sshd)"
   provides="sshd"
-  requires="network-minimal:mount-critical"
-  command="/usr/sbin/sshd -D ${configuration_services_sshd_options}"
-  restart="yes"
-  need-files="/usr/sbin/sshd"
-  variables="configuration-services-sshd/.*"
-  pid="/var/run/sshd.pid" />
+  requires="network-minimal:mount-critical">
+
+  <execute id="daemon" code="/usr/sbin/sshd -D ${configuration_services_sshd_options}" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/sshd" />
+  <variables s="configuration-services-sshd/.*" />
+  <pidfile s="/var/run/sshd.pid" />
+ </v-sshd>
 </module>

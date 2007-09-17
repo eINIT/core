@@ -1,29 +1,11 @@
-<einit>
- <configuration>
-  <feedback>
-   <visual>
-    <fbsplash>
-     <daemon>
-      <ttys silent="10" verbose="9" />
-      <fifo s="/lib/splash/cache/.splash" />
-      <mount-dir b="yes" path="/lib/splash/cache/" size="1m" />
-     </daemon>
+<module>
+ <v-splashd
+  name="Splash-Util (Daemon)"
+  provides="splashd"
+  requires="mount-system"
+  before="tty">
 
-<!--     <theme s="gentoo" /> -->
-    </fbsplash>
-   </visual>
-  </feedback>
- </configuration>
-
- <services>
-  <virtual>
-   <module>
-    <shell id="shell-splash"
-     name="Splash-Util (Daemon)"
-     provides="splashd"
-     requires="mount-system"
-     before="tty"
-     prepare="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
+  <execute id="prepare" code="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
        umount splashcache;
        mount splashcache -t tmpfs &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot; -o size=${configuration_feedback_visual_fbsplash_daemon_mount_dir_size};
       fi;
@@ -32,8 +14,8 @@
        chown root:video /dev/fb0;
        chmod 0660 /dev/fb0;
       fi;
-      /bin/true"
-     enable="pexec-options dont-close-stdin;
+      /bin/true" />
+  <execute id="enable" code="pexec-options dont-close-stdin;
       for TTY in ${configuration_feedback_visual_fbsplash_ttys} ; do
        /sbin/splash_util.static --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setcfg ;
        /sbin/splash_util.static --tty=${TTY} -m v -t ${configuration_feedback_visual_fbsplash_theme} -c setpic 2&gt;/dev/null ;
@@ -41,19 +23,13 @@
       done;
 
       if /sbin/splash_util -d -t ${configuration_feedback_visual_fbsplash_theme}; then exit 0; fi;
-      /sbin/splash_util.static -d -t ${configuration_feedback_visual_fbsplash_theme};"
-     disable="echo exit&gt;${configuration_feedback_visual_fbsplash_daemon_fifo};"
-     cleanup="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
+      /sbin/splash_util.static -d -t ${configuration_feedback_visual_fbsplash_theme};" />
+  <execute id="disable" code="echo exit&gt;${configuration_feedback_visual_fbsplash_daemon_fifo};" />
+  <execute id="cleanup" code="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then
        umount &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_path}&quot;
-      fi; /bin/true"
-     variables="configuration-feedback-visual-fbsplash-daemon-ttys/.*:configuration-feedback-visual-fbsplash-theme:configuration-feedback-visual-fbsplash-daemon-fifo:configuration-feedback-visual-fbsplash-daemon-mount-dir/.*:configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-ttys"
-     options="feedback" />
+      fi; /bin/true" />
 
-   </module>
-  </virtual>
-
-  <prefer>
-   <splashd s="shell-splash" />
-  </prefer>
- </services>
-</einit>
+  <variables s="configuration-feedback-visual-fbsplash-daemon-ttys/.*:configuration-feedback-visual-fbsplash-theme:configuration-feedback-visual-fbsplash-daemon-fifo:configuration-feedback-visual-fbsplash-daemon-mount-dir/.*:configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-ttys" />
+  <options s="feedback" />
+ </v-splashd>
+</module>

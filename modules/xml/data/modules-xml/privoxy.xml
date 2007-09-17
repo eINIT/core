@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-privoxy"
+ <v-privoxy
   name="Privoxy Daemon"
   provides="privoxy"
-  requires="network:mount-critical"
-  command="/usr/sbin/privoxy --no-daemon /etc/privoxy/config"
-  restart="yes"
-  need-files="/usr/sbin/privoxy" />
+  requires="network:mount-critical">
+
+  <execute id="daemon" code="/usr/sbin/privoxy --no-daemon /etc/privoxy/config" />
+
+  <restart b="yes" />
+  <need-files s="/usr/sbin/privoxy" />
+ </v-privoxy>
 </module>

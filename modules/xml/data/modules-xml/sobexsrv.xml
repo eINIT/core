@@ -1,10 +1,12 @@
 <module>
- <daemon id="daemon-sobexsrv"
+ <v-sobexsrv
   name="Scripting/Secure OBEX Server"
   provides="sobexsrv"
-  requires="mount-critical:bluetooth-hci:bluetooth-sdp"
-  user="sobexsrv"
-  command="sobexsrv -l ${configuration_services_sobexsrv_options} -s 2 -IRS -r ${configuration_services_sobexsrv_directory} -d 2&gt; /dev/null"
-  restart="yes"
-  variables="configuration-services-sobexsrv/.*" />
+  requires="mount-critical:bluetooth-hci:bluetooth-sdp">
+
+  <execute id="daemon" code="sobexsrv -l ${configuration_services_sobexsrv_options} -s 2 -IRS -r ${configuration_services_sobexsrv_directory} -d 2&gt; /dev/null" user="sobexsrv" />
+
+  <restart b="yes" />
+  <variables s="configuration-services-sobexsrv/.*" />
+ </v-sobexsrv>
 </module>

@@ -1,8 +1,11 @@
 <module>
- <daemon id="daemon-netplugd"
+ <v-netplugd
   name="Network Cable HotPlug Management daemon (netplugd)"
   provides="netplugd"
-  requires="ipc"
-  command="netplugd -F"
-  restart="yes" />
+  requires="ipc">
+
+  <execute id="daemon" code="netplugd -F" />
+
+  <restart b="yes" />
+ </v-netplugd>
 </module>

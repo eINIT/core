@@ -1,9 +1,12 @@
 <module>
- <daemon id="daemon-tor"
+ <v-tor
   name="TOR Daemon (tor)"
   provides="tor"
-  requires="network:mount-critical"
-  command="/usr/bin/tor"
-  restart="yes"
-  need-files="/usr/bin/tor" />
+  requires="network:mount-critical">
+
+  <execute id="daemon" code="/usr/bin/tor" />
+
+  <restart b="yes" />
+  <need-files s="/usr/bin/tor" />
+ </v-tor>
 </module>
