@@ -429,7 +429,7 @@ void cross_taskblock (struct module_taskblock *source, struct module_taskblock *
 }
 
 struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int task, struct cfgnode *mode) {
- char disable_all_but_feedback = 0, disable_all = 0, auto_add_feedback = 0;
+ char disable_all_but_feedback = 0, disable_all = 0;
 
  if (!plan) {
   plan = emalloc (sizeof (struct mloadplan));
@@ -442,10 +442,8 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   char **enable   = str2set (':', cfg_getstring ("enable/services", mode));
   char **disable  = str2set (':', cfg_getstring ("disable/services", mode));
   char **critical = str2set (':', cfg_getstring ("enable/critical", mode));
-  char *strng = cfg_getstring ("feedback/auto-add", mode);
+  char *strng;
 
-  if ((strng = cfg_getstring ("feedback/auto-add", mode)))
-   auto_add_feedback = parse_boolean(strng);
   if ((strng = cfg_getstring ("options/shutdown", mode)) && parse_boolean(strng)) {
    plan->options |= plan_option_shutdown;
   }
@@ -477,32 +475,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    if (plan->changes.critical) free (plan->changes.critical);
    plan->changes.critical = tmp;
   }
-
-  if (auto_add_feedback && (strng = cfg_getstring("feedback/default", mode))) {
-   if (plan->changes.enable) {
-    uint32_t y = 0;
-
-    for (; plan->changes.enable[y]; y++) {
-     struct stree *st = NULL;
-
-     emutex_lock (&ml_service_list_mutex);
-
-     if ((st = streefind (module_logics_service_list, plan->changes.enable[y], tree_find_first))) {
-      struct lmodule **lmod = st->value;
-
-      if (lmod[0] && lmod[0]->module && lmod[0]->module->mode & einit_module_feedback) {
-       emutex_unlock (&ml_service_list_mutex);
-       goto have_feedback;
-      }
-     }
-
-     emutex_unlock (&ml_service_list_mutex);
-    }
-   }
-
-   plan->changes.enable = (char **)setadd ((void **)plan->changes.enable, (void *)strng, SET_TYPE_STRING);
-  }
-  have_feedback:
 
   if (base) {
    int y = 0;

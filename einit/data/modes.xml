@@ -4,7 +4,6 @@
   <enable services="network-minimal:hwclock:mount-local:tty:keyboard:ipc:logger:utmp:urandom:modules" critical="mount-critical:tty" />
   <overrides>
    <ttys s="tty1-regular" />
-   <feedback auto-add="true" default="feedback-textual" />
   </overrides>
  </mode>
 
