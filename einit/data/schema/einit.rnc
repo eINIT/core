@@ -113,6 +113,9 @@ Configuration = element configuration {
   Network* &
 
   element feedback {
+    element textual { BooleanAttribute }? &
+    element fbsplash { BooleanAttribute }? &
+    element aural { BooleanAttribute }? &
     element visual {
       element std-io {
         attribute stdio { text },
