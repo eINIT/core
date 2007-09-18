@@ -876,7 +876,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   }
 
 #ifdef LINUX
-  if ((einit_sub = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0)) < 0) {
+  if ((child = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0)) < 0) {
    if (status) {
     status->string = strerror (errno);
    }
