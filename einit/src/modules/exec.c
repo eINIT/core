@@ -875,12 +875,22 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    status_update (status);
   }
 
+#ifdef LINUX
+  if ((einit_sub = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0)) < 0) {
+   if (status) {
+    status->string = strerror (errno);
+   }
+   return status_failed;
+  }
+#else
   if ((child = fork()) < 0) {
    if (status) {
     status->string = strerror (errno);
    }
    return status_failed;
-  } else if (child == 0) {
+  }
+#endif
+  else if (child == 0) {
    char **cmd;
    char **cmdsetdup;
    char **daemon_environment;

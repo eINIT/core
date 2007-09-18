@@ -67,6 +67,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* okay, i think i found the proper file now */
 #include <asm/ioctls.h>
 #include <linux/vt.h>
+
+#include <sys/syscall.h>
 #endif
 
 #define EXPECTED_EIV 1
@@ -213,7 +215,13 @@ int einit_tty_texec (struct cfgnode *node) {
     char cret [BUFFERSIZE];
     esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
-   } else if (!(cpid = fork())) {
+   } else
+#ifdef LINUX
+   if ((cpid = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0)) == 0)
+#else
+   if (!(cpid = fork()))
+#endif
+   {
     disable_core_dumps ();
 
     if (device) {
