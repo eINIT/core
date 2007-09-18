@@ -54,9 +54,6 @@ int einit_fqdn_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_fqdn_provides[] = {"fqdn", NULL};
-// char * einit_fqdn_requires[] = {"mount-system", NULL}; /* maybe fs-proc, if i ever implement it like that */
-
 struct einit_cfgvar_info
   einit_fqdn_cfgvar_hostname = {
    .options = eco_optional | eco_warn_if_default,
@@ -78,7 +75,7 @@ const struct smodule einit_fqdn_self = {
  .name      = "FQDN",
  .rid       = "einit-fqdn",
  .si        = {
-  .provides = einit_fqdn_provides,
+  .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
@@ -91,33 +88,43 @@ module_register(einit_fqdn_self);
 
 #endif
 
+void einit_fqdn_core_event_handler (struct einit_event *);
+
 int einit_fqdn_cleanup (struct lmodule *this) {
+ event_ignore (einit_event_subsystem_core, einit_fqdn_core_event_handler);
+
  return 0;
 }
 
-int einit_fqdn_enable (void *pa, struct einit_event *status) {
+void einit_fqdn_set () {
  char *hname, *dname;
  if ((hname = cfg_getstring ("configuration-network-hostname", NULL)))
   sethostname (hname, strlen (hname));
  if ((dname = cfg_getstring ("configuration-network-domainname", NULL)))
   setdomainname (dname, strlen (dname));
- char tmp[BUFFERSIZE];
- esprintf (tmp, BUFFERSIZE, "%s.%s", hname, dname);
- status->string = tmp;
- status_update (status);
- return status_ok;
+ notice (4, "hostname set to: %s.%s", hname, dname);
 }
 
-int einit_fqdn_disable (void *pa, struct einit_event *status) {
- return status_ok;
+void einit_fqdn_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_early_boot:
+   einit_fqdn_set();
+   break;
+
+/*  case einit_core_devices_available:
+   break;*/
+/* this latter hook is gonna be needed for domainname setting via proc */
+
+  default: break;
+ }
 }
 
 int einit_fqdn_configure (struct lmodule *irr) {
  module_init (irr);
 
  thismodule->cleanup = einit_fqdn_cleanup;
- thismodule->enable = einit_fqdn_enable;
- thismodule->disable = einit_fqdn_disable;
+
+ event_listen (einit_event_subsystem_core, einit_fqdn_core_event_handler);
 
  return 0;
 }
