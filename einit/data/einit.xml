@@ -107,6 +107,10 @@
   </kernel>
 
   <feedback>
+   <textual b="true" />
+   <fbsplash b="true" />
+   <aural b="false" />
+
    <visual>
     <std-io stdio="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" activate-vt="9" kernel-vt="12" />
 <!-- better verbosity on tty10: -->
@@ -214,7 +218,7 @@
    </module>
   </virtual>
   <alias>
-   <mount-system group="fs-root:fs-sys:fs-proc:udev" seq="most" />
+   <mount-system group="fs-root" seq="most" />
    <samba group="nmbd:smbd" seq="all" />
    <network-minimal group="fqdn:net-lo" seq="most" />
   </alias>

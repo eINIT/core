@@ -110,6 +110,9 @@ enum einit_event_code {
  einit_core_mode_switching          = einit_event_subsystem_core     | 0x201,
  einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,
 
+ einit_core_early_boot              = einit_event_subsystem_core     | 0x301,
+ einit_core_devices_available       = einit_event_subsystem_core     | 0x302,
+
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
 

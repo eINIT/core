@@ -80,8 +80,6 @@ int einit_feedback_visual_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_feedback_visual_provides[] = {"feedback-textual", NULL};
-char * einit_feedback_visual_after[] = {"^(fs-dev|udev)$", NULL};
 const struct smodule einit_feedback_visual_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -90,9 +88,9 @@ const struct smodule einit_feedback_visual_self = {
  .name      = "visual/text-based feedback module",
  .rid       = "einit-feedback-visual-textual",
  .si        = {
-  .provides = einit_feedback_visual_provides,
+  .provides = NULL,
   .requires = NULL,
-  .after    = einit_feedback_visual_after,
+  .after    = NULL,
   .before   = NULL
  },
  .configure = einit_feedback_visual_configure
@@ -172,6 +170,9 @@ pthread_mutex_t
  feedback_textual_all_done_cond = PTHREAD_COND_INITIALIZER;
 
 extern int einit_have_feedback;
+char feedback_textual_allowed = 1;
+
+void feedback_textual_enable();
 
 void feedback_textual_queue_fd_command (enum feedback_textual_commands command, FILE *fd, enum einit_ipc_options fd_options, uint32_t seqid) {
  struct feedback_textual_command tnc;
@@ -195,7 +196,7 @@ void feedback_textual_queue_fd_command (enum feedback_textual_commands command, 
 void feedback_textual_queue_update (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
  struct feedback_textual_command tnc;
 
- if (!einit_have_feedback && (einit_quietness < 3)) {
+ if (!einit_have_feedback && feedback_textual_allowed && (einit_quietness < 3)) {
   if (message) {
    eprintf (stderr, " > %s\n", message);
   }
@@ -339,7 +340,7 @@ void feedback_textual_update_streams () {
     if (!suppress_messages) {
      char *emarker = "";
      char *wmarker = "";
-     char wmbuffer[BUFFERSIZE];
+//     char wmbuffer[BUFFERSIZE];
      char did_display = 0;
 
      if (!(feedback_textual_modules[y]->module->status & (status_enabled | status_disabled | status_failed | status_working))) {
@@ -733,7 +734,9 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
 }
 
 void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
- if (ev->type == einit_core_service_update) {
+ if (ev->type == einit_core_devices_available) {
+  feedback_textual_enable();
+ } else if (ev->type == einit_core_service_update) {
   feedback_textual_queue_update (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL, ev->flag);
  } else if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
@@ -824,11 +827,18 @@ int einit_feedback_visual_cleanup (struct lmodule *this) {
 /*
   -------- function to enable and configure this module -----------------------
  */
-int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
+void feedback_textual_enable() {
  emutex_lock (&thismodule->imutex);
+ struct cfgnode *node = cfg_getnode ("configuration-feedback-textual", NULL);
+ if (node && !node->flag) { /* node needs to exist and explicitly say 'no' to disable this module */
+  feedback_textual_allowed = 0;
+  emutex_unlock (&thismodule->imutex);
+  return;
+ }
 
- struct cfgnode *node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL);
- if (node)
+ notice (3, "enabling textual feedback");
+
+ if ((node = cfg_getnode ("configuration-feedback-visual-use-ansi-codes", NULL)))
   enableansicodes = node->flag;
 
  if (einit_quietness < 1) {
@@ -936,7 +946,7 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
    eputs ("\e[2J\e[0;0H\n", stdout);
  }
 
-/* register our default output feedback-stream */
+ /* register our default output feedback-stream */
  struct feedback_stream st;
  memset (&st, 0, sizeof (struct feedback_stream));
 
@@ -978,23 +988,12 @@ int einit_feedback_visual_enable (void *pa, struct einit_event *status) {
 
  einit_feedback_visual_textual_worker_thread_keep_running = 1;
  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
-
- return status_ok;
-}
-
-/*
-  -------- function to disable this module ------------------------------------
- */
-int einit_feedback_visual_disable (void *pa, struct einit_event *status) {
- return status_ok;
 }
 
 int einit_feedback_visual_configure (struct lmodule *irr) {
  module_init (irr);
 
  irr->cleanup = einit_feedback_visual_cleanup;
- irr->enable  = einit_feedback_visual_enable;
- irr->disable = einit_feedback_visual_disable;
 
  event_listen (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
  event_listen (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);

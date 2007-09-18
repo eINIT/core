@@ -594,6 +594,14 @@ int main(int argc, char **argv) {
     evstaticdestroy(eml);
    }
 
+   {
+    notice (3, "running early bootup code...");
+
+    struct einit_event eml = evstaticinit(einit_core_early_boot);
+    event_emit (&eml, einit_event_flag_broadcast);
+    evstaticdestroy(eml);
+   }
+
    notice (2, "scheduling startup switches.\n");
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
