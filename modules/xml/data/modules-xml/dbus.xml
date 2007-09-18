@@ -2,8 +2,7 @@
  <v-dbus
   name="D-BUS system messagebus"
   provides="dbus"
-  requires="mount-critical"
-  after="fqdn">
+  requires="mount-critical">
 
   <execute id="prepare" code="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure" />
   <execute id="daemon" code="pexec-options dont-close-stdin; dbus-daemon --system --fork" />

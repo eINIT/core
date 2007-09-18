@@ -2,7 +2,7 @@
  <v-gdm
   name="The GNOME Display Manager (gdm)"
   provides="x11:displaymanager"
-  requires="mount-critical:fqdn"
+  requires="mount-critical"
   after="^net-lo$">
 
   <execute id="prepare" code="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; true" />
