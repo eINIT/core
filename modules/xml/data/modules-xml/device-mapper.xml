@@ -1,8 +1,8 @@
 <module>
+ <!-- device-mapper doesn't require udev anymore: it's a given -->
  <v-device-mapper
   name="Device-mapper"
-  provides="device-mapper"
-  requires="udev">
+  provides="device-mapper">
 
   <script file="device-mapper.sh" actions="enable:disable:on-shutdown" />
 
