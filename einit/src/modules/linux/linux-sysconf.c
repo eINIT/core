@@ -59,19 +59,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int linux_sysconf_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-char * linux_sysconf_provides[] = {"sysconf", NULL};
-char * linux_sysconf_requires[] = {"fs-proc", NULL};
+char * linux_sysconf_provides[] = { "kexec", NULL };
 char * linux_sysconf_after[] = {"^fs-(boot|root|usr)", NULL};
 const struct smodule module_linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .name      = "Linux-specific System-Configuration",
+ .name      = "Linux System- and kexec()-Configuration",
  .rid       = "linux-sysconf",
  .si        = {
   .provides = linux_sysconf_provides,
-  .requires = linux_sysconf_requires,
+  .requires = NULL,
   .after    = linux_sysconf_after,
   .before   = NULL
  },
@@ -85,33 +84,6 @@ module_register(module_linux_sysconf_self);
 char linux_reboot_use_kexec = 0;
 char *linux_reboot_use_kexec_command = NULL;
 
-#if 0
-void linux_reboot () {
- if (linux_reboot_use_kexec) {
-  eputs ("rebooting via kexec\n", stderr);
-
-  if (linux_reboot_use_kexec_command) {
-   system (linux_reboot_use_kexec_command);
-
-   eputs ("calling the kexec binary failed, trying the hard way\n", stderr);
-  }
-
-  syscall(__NR_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, 0);
-
-  eputs ("whoops, looks like the kexec failed!\n", stderr);
- }
-
- reboot (LINUX_REBOOT_CMD_RESTART);
- notice (1, "\naight, who hasn't eaten his cereals this morning?");
- exit (EXIT_FAILURE);
-}
-
-void linux_power_off () {
- reboot (LINUX_REBOOT_CMD_POWER_OFF);
- notice (1, "\naight, who hasn't eaten his cereals this morning?");
- exit (EXIT_FAILURE);
-}
-#else
 void linux_reboot () {
   if (linux_reboot_use_kexec) {
    _exit (einit_exit_status_last_rites_kexec);
@@ -123,56 +95,22 @@ void linux_reboot () {
 void linux_power_off () {
  _exit (einit_exit_status_last_rites_halt);
 }
-#endif
 
-void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
-  if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
-   eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", ev->output);
-   ev->task++;
-  }
-  if (!cfg_getstring ("configuration-services-sysctl/config", NULL)) {
-   eputs (" * configuration variable \"configuration-services-sysctl/config\" not found.\n", ev->output);
-   ev->ipc_return++;
-  }
+void linux_sysconf_ctrl_alt_del () {
+ struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
 
-  ev->implemented = 1;
+ if (cfg && !cfg->flag) {
+  if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1)
+   notice (1, "I should've changed the CTRL+ALT+DEL action, but i couldn't: %s", strerror (errno));
  }
 }
 
-int linux_sysconf_cleanup (struct lmodule *this) {
- function_unregister ("core-power-reset-linux", 1, linux_reboot);
- function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
-
- return 0;
-}
-
-int linux_sysconf_enable (void *pa, struct einit_event *status) {
- struct cfgnode *cfg = cfg_getnode ("configuration-system-ctrl-alt-del", NULL);
+void linux_sysconf_sysctl () {
  FILE *sfile;
  char *sfilename;
 
- if (cfg && !cfg->flag) {
-  if (coremode != einit_mode_sandbox) {
-   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1) {
-    status->string = strerror(errno);
-    errno = 0;
-    status->flag++;
-    status_update (status);
-   }
-  } else {
-   if (1) {
-    status->string = strerror(errno);
-    errno = 0;
-    status->flag++;
-    status_update (status);
-   }
-  }
- }
-
  if ((sfilename = cfg_getstring ("configuration-services-sysctl/config", NULL))) {
-  fbprintf (status, "doing system configuration via %s.", sfilename);
+  notice (4, "doing system configuration via %s.", sfilename);
 
   if ((sfile = efopen (sfilename, "r"))) {
    char buffer[BUFFERSIZE], *cptr;
@@ -219,6 +157,48 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
    efclose (sfile);
   }
  }
+}
+
+void linux_sysconf_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_early_boot:
+   linux_sysconf_ctrl_alt_del();
+   break;
+
+  case einit_core_devices_available:
+   linux_sysconf_sysctl();
+   break;
+
+  default: break;
+ }
+}
+
+void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
+ if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
+  if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
+   eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", ev->output);
+   ev->task++;
+  }
+  if (!cfg_getstring ("configuration-services-sysctl/config", NULL)) {
+   eputs (" * configuration variable \"configuration-services-sysctl/config\" not found.\n", ev->output);
+   ev->ipc_return++;
+  }
+
+  ev->implemented = 1;
+ }
+}
+
+int linux_sysconf_cleanup (struct lmodule *this) {
+ function_unregister ("core-power-reset-linux", 1, linux_reboot);
+ function_unregister ("core-power-off-linux", 1, linux_power_off);
+ event_ignore (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, linux_sysconf_core_event_handler);
+
+ return 0;
+}
+
+int linux_sysconf_enable (void *pa, struct einit_event *status) {
+ struct cfgnode *cfg;
 
  if ((cfg = cfg_getnode ("configuration-system-kexec-to-reboot", NULL)) && cfg->flag && cfg->arbattrs) {
   uint32_t i = 0;
@@ -310,6 +290,7 @@ int linux_sysconf_configure (struct lmodule *irr) {
  thismodule->disable = linux_sysconf_disable;
 
  event_listen (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
+ event_listen (einit_event_subsystem_core, linux_sysconf_core_event_handler);
  function_register ("core-power-off-linux", 1, linux_power_off);
  function_register ("core-power-reset-linux", 1, linux_reboot);
 
