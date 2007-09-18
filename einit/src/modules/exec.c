@@ -60,6 +60,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <regex.h>
 #endif
 
+#ifdef LINUX
+#include <sys/syscall.h>
+#endif
+
 int einit_exec_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
@@ -97,10 +101,6 @@ char *safe_environment[] = { "PATH=/bin:/sbin:/usr/bin:/usr/sbin", "TERM=dumb", 
 
 extern char shutting_down;
 
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-struct execst * pexec_running = NULL;
-pthread_mutex_t pexec_running_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
 pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 int spawn_timeout = 5;
 char kill_timeout_primary = 20, kill_timeout_secondary = 20;
@@ -115,9 +115,6 @@ void einit_exec_ipc_event_handler (struct einit_event *);
 void einit_exec_einit_event_handler (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-void *pexec_watcher (struct spidcb *spid);
-#endif
 void *dexec_watcher (struct spidcb *spid);
 
 int einit_exec_cleanup (struct lmodule *irr) {
@@ -193,10 +190,6 @@ void einit_exec_process_event_handler (struct einit_event *ev) {
 
 //  pthread_t th;
 
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-//  ethread_create (&th, &thread_attribute_detached, pexec_watcher, spid);
-  pexec_watcher(spid);
-#endif
 //  ethread_create (&th, &thread_attribute_detached, dexec_watcher, spid);
   dexec_watcher(spid);
 
@@ -215,26 +208,6 @@ void einit_exec_ipc_event_handler (struct einit_event *ev) {
   ev->implemented = 1;
  }
 }
-
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-void *pexec_watcher (struct spidcb *spid) {
- pid_t pid = spid->pid;
- int status = spid->status;
- emutex_lock (&pexec_running_mutex);
- struct execst *cur = pexec_running;
- while (cur) {
-  if (cur->pid == pid) {
-/* save status and resume pexec() */
-   cur->status = status;
-   emutex_unlock (&pexec_running_mutex);
-   emutex_unlock (&(cur->mutex);
-   return NULL;
-  }
-  cur = cur->next;
- }
- emutex_unlock (&pexec_running_mutex);
-}
-#endif
 
 char *apply_envfile_f (char *command, const char **environment) {
  uint32_t i = 0;
@@ -436,164 +409,6 @@ char **create_environment_f (char **environment, const char **variables) {
  return environment;
 }
 
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-// less features and verbosity in this one -- we only want it to work *somehow*
-
-int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
- pid_t child;
- int pidstatus = 0;
- char **cmd, **cmdsetdup;
- enum pexec_options options = (status ? 0 : pexec_option_nopipe);
-
- lookupuidgid (&uid, &gid, user, group);
-
- if (!command) return status_failed;
-// if the first command is pexec-options, then set some special options
- if (strstr (command, "pexec-options") == command) {
-  char *ocmds = command,
-       *rcmds = strchr (ocmds, ';'),
-       **optx = NULL;
-  if (!rcmds) return status_failed;
-
-  *rcmds = 0;
-  optx = str2set (' ', ocmds);
-  *rcmds = ';';
-
-  command = rcmds+1;
-
-  if (optx) {
-   unsigned int x = 0;
-   for (; optx[x]; x++) {
-    if (strmatch (optx[x], "no-pipe")) {
-     options |= pexec_option_nopipe;
-    } else if (strmatch (optx[x], "safe-environment")) {
-     options |= pexec_option_safe_environment;
-    } else if (strmatch (optx[x], "dont-close-stdin")) {
-     options |= pexec_option_dont_close_stdin;
-    }
-   }
-
-   free (optx);
-  }
- }
- if (!command || !command[0]) return status_failed;
-
- struct execst *new = ecalloc (1, sizeof (struct execst));
- emutex_init (&(new->mutex), NULL);
- emutex_lock (&(new->mutex));
- emutex_lock (&pexec_running_mutex);
- if (!pexec_running) pexec_running = new;
- else {
-  new->next = pexec_running;
-  pexec_running = new;
- }
- emutex_unlock (&pexec_running_mutex);
-
- if (status) {
-  fbprintf (status, "executing: %s", command);
-/*  status->string = command;
-  status_update (status);*/
- }
- notice (10, (char *)command);
-
- if ((child = fork()) < 0) {
-  if (status)
-   status->string = strerror (errno);
-  emutex_unlock (&(new->mutex));
-  emutex_destroy (&(new->mutex));
-  if (new == pexec_running) {
-   pexec_running = new->next;
-  } else {
-   struct execst *cur = pexec_running;
-   while (cur) {
-    if (cur->next == new) {
-     cur->next = new->next;
-    }
-    cur = cur->next;
-   }
-  }
-  free (new);
-  return status_failed;
- } else if (child == 0) {
-  char **exec_environment = NULL;
-
-  disable_core_dumps ();
-
-  if (gid && (setgid (gid) == -1))
-   perror ("setting gid");
-  if (uid && (setuid (uid) == -1))
-   perror ("setting uid");
-
-  eclose (1);
-
-  dup2 (2, 1);
-// we can safely play with the global environment here, since we fork()-ed earlier
-  if (einit_global_environment) {
-   if (local_environment)
-    exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
-   else
-    exec_environment = einit_global_environment;
-  } else
-   exec_environment = local_environment;
-
-  if (variables)
-   exec_environment = create_environment_f (exec_environment, variables);
-
-  if (exec_environment)
-   command = apply_envfile_f ((char *)command, (const char **)exec_environment);
-
-  cmdsetdup = str2set ('\0', command);
-  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
-
-  if (options & pexec_option_safe_environment) {
-   debugx(" >> \"%s\": NOT using environment {%s}, but {%s} instead.\n", set2str(':', cmd), set2str(':', exec_environment), set2str(':', safe_environment));
-   execve (cmd[0], cmd, safe_environment);
-  } else {
-   execve (cmd[0], cmd, exec_environment);
-  }
-  perror (cmd[0]);
-  free (cmd);
-  free (cmdsetdup);
-  exit (EXIT_FAILURE);
- } else {
-  ssize_t br;
-  ssize_t ic = 0;
-  ssize_t i;
-  new->pid = child;
-// this loop can be used to create a race-condition
-//  sched_watch_pid (child, pexec_watcher);
-  sched_watch_pid (child);
-
-  char buf[BUFFERSIZE+1];
-  char lbuf[BUFFERSIZE+1];
-
-  emutex_lock (&(new->mutex));
-  emutex_unlock (&(new->mutex));
-  emutex_destroy (&(new->mutex));
-  pidstatus = new->status;
-
-  emutex_lock (&pexec_running_mutex);
-  if (new == pexec_running) {
-   pexec_running = new->next;
-  } else {
-   struct execst *cur = pexec_running;
-   while (cur) {
-    if (cur->next == new) {
-     cur->next = new->next;
-    }
-    cur = cur->next;
-   }
-  }
-  emutex_unlock (&pexec_running_mutex);
-  free (new);
- }
-
- if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
- return status_failed;
-}
-
-#else
-
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  int pipefderr [2];
  pid_t child;
@@ -663,17 +478,31 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  }*/
 // notice (10, (char *)command);
 
+#ifdef LINUX
+// void *stack = emalloc (4096);
+// if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, stack+4096)) < 0) {
+
+ if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, 0)) < 0) {
+  if (status)
+   status->string = strerror (errno);
+  return status_failed;
+ }
+#else
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
   return status_failed;
- } else if (child == 0) {
+ }
+#endif
+ else if (child == 0) {
 /* cause segfault */
 /*  sleep (1);
   *((char *)0) = 1;*/
 
 /* make sure einit's thread is in a proper state */
+#ifndef LINUX
   sched_yield();
+#endif
 
   char **exec_environment;
 
@@ -730,6 +559,10 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    if ((fx = fdopen(pipefderr[0], "r"))) {
     char rxbuffer[BUFFERSIZE];
     setvbuf (fx, NULL, _IONBF, 0);
+
+#ifdef LINUX
+    kill (child, SIGCONT);
+#endif
 
     if ((waitpid (child, &pidstatus, WNOHANG) == child) &&
         (WIFEXITED(pidstatus) || WIFSIGNALED(pidstatus))) {
@@ -798,10 +631,10 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    } else {
     perror ("pexec(): open pipe");
    }
-  }/* else if (status) {
-   status->string = "NOT piping, check stderr for program output";
-   status_update (status);
-  }*/
+  }
+#ifdef LINUX
+  else kill (child, SIGCONT);
+#endif
 
   if (!have_waited) {
    do {
@@ -814,7 +647,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
  return status_failed;
 }
-#endif
 
 void *dexec_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;

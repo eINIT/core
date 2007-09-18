@@ -137,9 +137,6 @@ for param in $@; do
 	elif test "$param" = "--no-posix-regex"; then
 		echo -n " NOREGEX";
 		XCFLAGS=$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS});
-	elif test "$param" = "--pthread-wait-bug"; then
-		echo -n " PTHREAD-WAIT-BUG";
-		XCFLAGS="$XCFLAGS -DBUGGY_PTHREAD_CHILD_WAIT_HANDLING";
 	elif test "$param" = "--no-nix-environ"; then
 		echo -n " NO-NIX-ENVIRON";
 		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
@@ -271,8 +268,6 @@ Options:
  --bitch-a-lot          tell all programs used to compile and link to be more
                         verbose
  --use-posix-regex      use posix.2 regular expressions
- --pthread-wait-bug     some pthreads implementations don't allow all threads
-                        in one process to wait on other processes' children
  --internal-modules     the modules to compile-in
  --external-modules     the modules to compile as loadable .so-files
  --tree-type=           define the type of tree-structures einit should use.

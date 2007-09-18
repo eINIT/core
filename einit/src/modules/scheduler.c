@@ -268,89 +268,19 @@ void sched_reset_event_handlers () {
 
 }
 
-/*
-int __sched_watch_pid (pid_t pid, void *(*function)(struct spidcb *)) {
- struct spidcb *nele;
- emutex_lock (&schedcpidmutex);
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-  if (sched_deadorphans) {
-   struct spidcb *start = sched_deadorphans, *prev = NULL, *cur = start;
-   for (; cur; cur = cur->next) {
-    if (cur->pid == (pid_t)pid) {
-     cur->cfunc = function;
-     if (prev)
-      prev->next = cur->next;
-     else
-      sched_deadorphans = cur->next;
-     cur->next = cpids;
-     cpids = cur;
-     emutex_unlock (&schedcpidmutex);
-     return 0;
-    }
-    if (start != sched_deadorphans) {
-     cur = sched_deadorphans;
-     start = cur;
-     prev = NULL;
-    } else
-     prev = cur;
-   }
-  }
-#endif
-  nele = ecalloc (1, sizeof (struct spidcb));
-  nele->pid = pid;
-  nele->cfunc = function;
-  nele->dead = 0;
-  nele->status = 0;
-  nele->next = cpids;
- cpids = nele;
-
- emutex_unlock (&schedcpidmutex);
- if (!(coremode & einit_core_exiting) && signal_semaphore) {
-  if (sem_post (signal_semaphore)) {
-   bitch(bitch_stdio, 0, "sem_post() failed.");
-  }
- }
-
- return 0;
-}
-*/
-
 int __sched_watch_pid (pid_t pid) {
  struct spidcb *nele;
- emutex_lock (&schedcpidmutex);
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
- if (sched_deadorphans) {
-  struct spidcb *start = sched_deadorphans, *prev = NULL, *cur = start;
-  for (; cur; cur = cur->next) {
-   if (cur->pid == (pid_t)pid) {
-//    cur->cfunc = function;
-    if (prev)
-     prev->next = cur->next;
-    else
-     sched_deadorphans = cur->next;
-    cur->next = cpids;
-    cpids = cur;
-    emutex_unlock (&schedcpidmutex);
-    return 0;
-   }
-   if (start != sched_deadorphans) {
-    cur = sched_deadorphans;
-    start = cur;
-    prev = NULL;
-   } else
-    prev = cur;
-  }
- }
-#endif
  nele = ecalloc (1, sizeof (struct spidcb));
  nele->pid = pid;
  nele->cfunc = NULL;
  nele->dead = 0;
  nele->status = 0;
+
+ emutex_lock (&schedcpidmutex);
  nele->next = cpids;
  cpids = nele;
-
  emutex_unlock (&schedcpidmutex);
+
  if (!(coremode & einit_core_exiting) && signal_semaphore) {
   if (sem_post (signal_semaphore)) {
    bitch(bitch_stdio, 0, "sem_post() failed.");
@@ -552,130 +482,6 @@ void sched_einit_event_handler(struct einit_event *ev) {
  }
 }
 
-/* BUG: linux pthread-libraries on kernel <= 2.4 can not wait on other threads' children, thus
-        when doing a ./configure, you have to specify the option --pthread-wait-bug. these functions
-        are buggy too, though, and subject to racing bugs. */
-#ifdef BUGGY_PTHREAD_CHILD_WAIT_HANDLING
-void *sched_run_sigchild (void *p) {
- int i, l, status;
- pid_t pid;
- int check;
- while (1) {
-  emutex_lock (&schedcpidmutex);
-  struct spidcb *start = cpids, *prev = NULL, *cur = start;
-  check = 0;
-  for (; cur; cur = cur->next) {
-   pid = cur->pid;
-   if (cur->dead) {
-    struct einit_event ee = evstaticinit(einit_process_died);
-    ee.integer = cur->pid;
-    ee.status = cur->status;
-    event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
-    evstaticdestroy (ee);
-
-    check++;
-
-/*    if (cur->cfunc) {
-     pthread_t th;
-     ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
-    }*/
-
-    if (prev)
-     prev->next = cur->next;
-    else
-     cpids = cur->next;
-
-    break;
-   }
-   if (start != cpids) {
-    cur = cpids;
-    start = cur;
-    prev = NULL;
-   } else
-    prev = cur;
-  }
-  emutex_unlock (&schedcpidmutex);
-  if (!check) {
-   sched_handle_timers();
-
-   sem_wait (signal_semaphore);
-   if (coremode & einit_core_exiting) {
-    return NULL;
-   }
-
-   if (sigint_called) {
-    struct einit_event ee;
-    ee.type = einit_core_switch_mode;
-    ee.string = "power-reset";
-
-//    ee.para = stdout;
-
-    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
-//  evstaticdestroy(ee);
-
-    sigint_called = 0;
-   }
-  }
- }
-}
-
-/* signal handlers */
-
-/* apparently some of the pthread*() functions aren't asnyc-safe... still it
-   appears to be working, so... */
-
-/* I came up with this pretty cheap solution to prevent deadlocks while still being able to use mutexes */
-void *sched_signal_sigchld_addentrythreadfunction (struct spidcb *nele) {
- char known = 0;
- emutex_lock (&schedcpidmutex);
- struct spidcb *cur = cpids;
-  for (; cur; cur = cur->next) {
-   if (cur->pid == (pid_t)nele->pid) {
-    known++;
-    cur->status = nele->status;
-    cur->dead = 1;
-    free (nele);
-    break;
-   }
-  }
-
-  if (!known) {
-   nele->cfunc = NULL;
-   nele->dead = 1;
-
-   nele->next = sched_deadorphans;
-   sched_deadorphans = nele;
-  }
- emutex_unlock (&schedcpidmutex);
-
- if (sem_post (signal_semaphore)) {
-  bitch(bitch_stdio, 0, "sem_post() failed.");
- }
-}
-
-/* this should prevent any zombies from being created */
-void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- int i, status;
- pid_t pid;
- struct spidcb *nele;
- pthread_t th;
-
- while (pid = waitpid (-1, &status, WNOHANG)) {
-  if (pid == -1) {
-   break;
-  }
-
-  nele = ecalloc (1, sizeof (struct spidcb));
-  nele->pid = pid;
-  nele->status = status;
-
-  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))sched_signal_sigchld_addentrythreadfunction, (void *)nele);
- }
-
- return;
-}
-
-#else
 void *sched_run_sigchild (void *p) {
  int status, check;
  pid_t pid;
@@ -759,7 +565,6 @@ void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
 
  return;
 }
-#endif
 
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
  if (!(coremode & einit_core_exiting) && signal_semaphore) {
