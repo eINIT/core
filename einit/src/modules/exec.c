@@ -482,7 +482,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 // void *stack = emalloc (4096);
 // if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, stack+4096)) < 0) {
 
- if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, 0)) < 0) {
+ if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED | SIGCHLD, 0)) < 0) {
   if (status)
    status->string = strerror (errno);
   return status_failed;
