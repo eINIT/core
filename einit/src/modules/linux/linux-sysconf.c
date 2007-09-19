@@ -159,13 +159,13 @@ void linux_sysconf_sysctl () {
  }
 }
 
-void linux_sysconf_core_event_handler (struct einit_event *ev) {
+void linux_sysconf_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
-  case einit_core_early_boot:
+  case einit_boot_early:
    linux_sysconf_ctrl_alt_del();
    break;
 
-  case einit_core_devices_available:
+  case einit_boot_devices_available:
    linux_sysconf_sysctl();
    break;
 
@@ -192,7 +192,7 @@ int linux_sysconf_cleanup (struct lmodule *this) {
  function_unregister ("core-power-reset-linux", 1, linux_reboot);
  function_unregister ("core-power-off-linux", 1, linux_power_off);
  event_ignore (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
- event_ignore (einit_event_subsystem_core, linux_sysconf_core_event_handler);
+ event_ignore (einit_event_subsystem_boot, linux_sysconf_boot_event_handler);
 
  return 0;
 }
@@ -290,7 +290,7 @@ int linux_sysconf_configure (struct lmodule *irr) {
  thismodule->disable = linux_sysconf_disable;
 
  event_listen (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
- event_listen (einit_event_subsystem_core, linux_sysconf_core_event_handler);
+ event_listen (einit_event_subsystem_boot, linux_sysconf_boot_event_handler);
  function_register ("core-power-off-linux", 1, linux_power_off);
  function_register ("core-power-reset-linux", 1, linux_reboot);
 
