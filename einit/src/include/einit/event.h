@@ -51,12 +51,14 @@ extern "C" {
 #define EVENT_CODE_MASK                0x00000fff
 
 enum einit_event_emit_flags {
- einit_event_flag_broadcast    = 0x1,
+ einit_event_flag_broadcast               = 0x1,
 /*!< this should always be specified, although just now it's being ignored */
- einit_event_flag_spawn_thread = 0x2,
+ einit_event_flag_spawn_thread            = 0x2,
 /*!< use this to tell einit that you don't wish/need to wait for this to return */
- einit_event_flag_duplicate    = 0x4
+ einit_event_flag_duplicate               = 0x4,
 /*!< duplicate event data block. important with *spawn_thread */
+ einit_event_flag_spawn_thread_multi_wait = 0x8
+/*!< use this to tell einit to spawn a thread for every handler */
 };
 
 enum einit_event_subsystems {
@@ -72,6 +74,7 @@ enum einit_event_subsystems {
 /*!< set/receive timer ticks */
  einit_event_subsystem_network  = 0x00007000,
  einit_event_subsystem_process  = 0x00008000,
+ einit_event_subsystem_boot     = 0x00009000,
 
  einit_event_subsystem_any      = 0xffffe000,
 /*!< match any subsystem... mostly intended to be used for rebroadcasting, e.g. via D-Bus */
@@ -110,8 +113,7 @@ enum einit_event_code {
  einit_core_mode_switching          = einit_event_subsystem_core     | 0x201,
  einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,
 
- einit_core_early_boot              = einit_event_subsystem_core     | 0x301,
- einit_core_devices_available       = einit_event_subsystem_core     | 0x302,
+ einit_core_suspend_all             = einit_event_subsystem_core     | 0x400,
 
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
@@ -159,7 +161,11 @@ enum einit_event_code {
  einit_network_do_update            = einit_event_subsystem_network  | 0x001,
 
 /* einit_event_subsystem_process: */
- einit_process_died                 = einit_event_subsystem_process  | 0x001
+ einit_process_died                 = einit_event_subsystem_process  | 0x001,
+
+/* einit_event_subsystem_boot: */
+ einit_boot_early                   = einit_event_subsystem_boot     | 0x001,
+ einit_boot_devices_available       = einit_event_subsystem_boot     | 0x002
 };
 
 enum einit_ipc_options {

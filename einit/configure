@@ -119,6 +119,12 @@ for param in $@; do
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+	elif test "$param" = "--enable-darwin"; then
+		echo -n " LINUX";
+		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_DARWIN}"
+	elif test "$param" = "--enable-bsd"; then
+		echo -n " LINUX";
+		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_BSD}"
 	elif test "$param" = "--enable-bsd"; then
 		echo -n " BSD";
 		PMODULES="$PMODULES bsd";
@@ -175,6 +181,12 @@ echo -n "checking automatic options [";
 if test -n "`uname -a|grep -i 'Linux'`"; then
 	echo -n " LINUX";
 	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+elif test -n "`uname -a|grep -i 'Darwin'`"; then
+	echo -n " DARWIN";
+	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_DARWIN}"
+elif test -n "`uname -a|grep -i 'BSD'`"; then
+	echo -n " BSD";
+	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_BSD}"
 fi
 echo " ]";
 

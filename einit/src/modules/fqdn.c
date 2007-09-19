@@ -88,10 +88,10 @@ module_register(einit_fqdn_self);
 
 #endif
 
-void einit_fqdn_core_event_handler (struct einit_event *);
+void einit_fqdn_boot_event_handler (struct einit_event *);
 
 int einit_fqdn_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_core, einit_fqdn_core_event_handler);
+ event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
 
  return 0;
 }
@@ -105,13 +105,13 @@ void einit_fqdn_set () {
  notice (4, "hostname set to: %s.%s", hname, dname);
 }
 
-void einit_fqdn_core_event_handler (struct einit_event *ev) {
+void einit_fqdn_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
-  case einit_core_early_boot:
+  case einit_boot_early:
    einit_fqdn_set();
    break;
 
-/*  case einit_core_devices_available:
+/*  case einit_boot_devices_available:
    break;*/
 /* this latter hook is gonna be needed for domainname setting via proc */
 
@@ -119,12 +119,24 @@ void einit_fqdn_core_event_handler (struct einit_event *ev) {
  }
 }
 
+int einit_fqdn_suspend (struct lmodule *irr) {
+ event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
+
+ return status_ok;
+}
+
+int einit_fqdn_resume (struct lmodule *irr) {
+ return status_ok;
+}
+
 int einit_fqdn_configure (struct lmodule *irr) {
  module_init (irr);
 
  thismodule->cleanup = einit_fqdn_cleanup;
+ thismodule->suspend = einit_fqdn_suspend;
+ thismodule->resume  = einit_fqdn_resume;
 
- event_listen (einit_event_subsystem_core, einit_fqdn_core_event_handler);
+ event_listen (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
 
  return 0;
 }

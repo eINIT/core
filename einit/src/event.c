@@ -53,6 +53,22 @@ pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 uint32_t cseqid = 0;
 
+struct evt_wrapper_data {
+  void (*handler) (struct einit_event *);
+  struct einit_event *event;
+};
+
+void *event_thread_wrapper (struct evt_wrapper_data *d) {
+ if (d) {
+  d->handler (d->event);
+
+  evdestroy (d->event);
+  free (d);
+ }
+
+ return NULL;
+}
+
 void *event_subthread (struct einit_event *event) {
  static char recurse = 0;
  if (!event) return NULL;
@@ -87,13 +103,14 @@ void *event_subthread (struct einit_event *event) {
    if (event->stringset) free (event->stringset);
   }
 
-  free (event);
+  evdestroy (event);
  }
 
  return NULL;
 }
 
 void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
+ pthread_t **threads = NULL;
  if (!event || !event->type) return NULL;
 
  if (flags & einit_event_flag_spawn_thread) {
@@ -118,22 +135,18 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   struct event_function *cur = event_functions;
   while (cur) {
    if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
-    cur->handler (event);
+    if (flags & einit_event_flag_spawn_thread_multi_wait) {
+     pthread_t *threadid = emalloc (sizeof (pthread_t));
+	 struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
+/* need this */
 
-/*    if (flags & einit_event_flag_spawn_thread) {
-     pthread_t threadid;
-     if (flags & einit_event_flag_duplicate) {
-      struct einit_event *ev = evdup(event);
-      ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, ev);
-     } else
-      ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))cur->handler, event);
-    } else {
-     if (flags & einit_event_flag_duplicate) {
-      struct einit_event *ev = evdup(event);
-      cur->handler (ev);
-     } else
-      cur->handler (event);
-    } */
+     d->event = evdup(event);
+     d->handler = cur->handler;
+
+     ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
+	 threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+    } else
+     cur->handler (event);
    }
    cur = cur->next;
   }
@@ -142,6 +155,18 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   event->type = event->chain_type;
   event->chain_type = 0;
   event_emit (event, flags);
+ }
+
+ if ((flags & einit_event_flag_spawn_thread_multi_wait) && threads) {
+  int i = 0;
+
+  for (; threads[i]; i++) {
+   pthread_join (*(threads[i]), NULL);
+
+   free (threads[i]);
+  }
+
+  free (threads);
  }
 
  return NULL;

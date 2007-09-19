@@ -733,10 +733,14 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
  }
 }
 
-void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
- if (ev->type == einit_core_devices_available) {
+void einit_feedback_visual_boot_event_handler(struct einit_event *ev) {
+ if (ev->type == einit_boot_devices_available) {
   feedback_textual_enable();
- } else if (ev->type == einit_core_service_update) {
+ }
+}
+
+void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
+ if (ev->type == einit_core_service_update) {
   feedback_textual_queue_update (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL, ev->flag);
  } else if (ev->type == einit_core_mode_switching) {
   char tmp[BUFFERSIZE];
@@ -816,6 +820,7 @@ void einit_feedback_visual_ipc_event_handler(struct einit_event *ev) {
 }
 
 int einit_feedback_visual_cleanup (struct lmodule *this) {
+ event_ignore (einit_event_subsystem_boot, einit_feedback_visual_boot_event_handler);
  event_ignore (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
  event_ignore (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
  event_ignore (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
@@ -998,6 +1003,8 @@ int einit_feedback_visual_configure (struct lmodule *irr) {
  event_listen (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
  event_listen (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
  event_listen (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
+
+ event_listen (einit_event_subsystem_boot, einit_feedback_visual_boot_event_handler);
 
  event_listen (einit_event_subsystem_ipc, einit_feedback_visual_ipc_event_handler);
 

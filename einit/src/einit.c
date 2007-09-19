@@ -207,13 +207,21 @@ void core_einit_event_handler (struct einit_event *ev) {
   update_event.para = mlist;
   event_emit (&update_event, einit_event_flag_broadcast);
   evstaticdestroy(update_event);
- } else if (ev->type == einit_core_recover) { // call everone's recover-function (if defined)
+ } else if (ev->type == einit_core_recover) { // call everyone's recover-function (if defined)
   struct lmodule *lm = mlist;
 
   while (lm) {
    if (lm->recover) {
     lm->recover (lm);
    }
+
+   lm = lm->next;
+  }
+ } else if (ev->type == einit_core_suspend_all) { // suspend everyone (if possible)
+  struct lmodule *lm = mlist;
+
+  while (lm) {
+   mod (einit_module_suspend, lm, NULL);
 
    lm = lm->next;
   }
@@ -597,8 +605,8 @@ int main(int argc, char **argv) {
    {
     notice (3, "running early bootup code...");
 
-    struct einit_event eml = evstaticinit(einit_core_early_boot);
-    event_emit (&eml, einit_event_flag_broadcast);
+    struct einit_event eml = evstaticinit(einit_boot_early);
+    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
    }
 

@@ -91,6 +91,82 @@ int einit_mod_so_cleanup (struct lmodule *pa) {
  return 0;
 }
 
+int einit_mod_so_do_suspend (struct lmodule *pa) {
+ if (pa->sohandle) {
+  const struct smodule *o = pa->module;
+  struct smodule *n = emalloc (sizeof (struct smodule));
+  memset (n, 0, sizeof (struct smodule));
+
+  n->rid = estrdup (o->rid);
+  n->name = estrdup (o->name);
+
+  if (o->si.requires) { n->si.requires = (char **)setdup ((const void **)o->si.requires, SET_TYPE_STRING); }
+  if (o->si.provides) { n->si.provides = (char **)setdup ((const void **)o->si.provides, SET_TYPE_STRING); }
+  if (o->si.before) { n->si.before = (char **)setdup ((const void **)o->si.before, SET_TYPE_STRING); }
+  if (o->si.after) { n->si.after = (char **)setdup ((const void **)o->si.after, SET_TYPE_STRING); }
+  if (o->si.shutdown_before) { n->si.shutdown_before = (char **)setdup ((const void **)o->si.shutdown_before, SET_TYPE_STRING); }
+  if (o->si.shutdown_after) { n->si.shutdown_after = (char **)setdup ((const void **)o->si.shutdown_after, SET_TYPE_STRING); }
+
+  pa->module = n;
+
+  if (!dlclose (pa->sohandle)) {   
+   pa->sohandle = NULL;
+
+   return status_ok;
+  } else {
+   return status_failed;
+  }
+ } else return status_ok;
+}
+
+int einit_mod_so_do_resume (struct lmodule *pa) {
+ void *sohandle = dlopen (pa->source, RTLD_NOW);
+ if (sohandle == NULL) {
+  eputs (dlerror (), stdout);
+  return status_failed;
+ }
+
+ struct smodule **modinfo = (struct smodule **)dlsym (sohandle, "self");
+ if ((modinfo != NULL) && ((*modinfo) != NULL)) {
+  if ((*modinfo)->eibuild == BUILDNUMBER) {
+   struct smodule *sm = (struct smodule *)pa->module;
+   pa->module = *modinfo;
+
+   if (sm) {
+    if (sm->si.provides) free (sm->si.provides);
+    if (sm->si.requires) free (sm->si.requires);
+    if (sm->si.after) free (sm->si.after);
+    if (sm->si.before) free (sm->si.before);
+    if (sm->si.shutdown_after) free (sm->si.shutdown_after);
+    if (sm->si.shutdown_before) free (sm->si.shutdown_before);
+
+    free (sm->rid);
+    free (sm->name);
+    free (sm);
+   }
+
+   pa->do_suspend = einit_mod_so_do_suspend;
+   pa->do_resume = einit_mod_so_do_resume;
+
+   pa->sohandle = sohandle;
+
+   pa->module->configure (pa);
+  } else {
+   notice (1, "module %s: not loading: different build number: %i.\n", pa->source, (*modinfo)->eibuild);
+
+   dlclose (sohandle);
+   return status_failed;
+  }
+ } else {
+  notice (1, "module %s: not loading: missing header.\n", pa->source);
+
+  dlclose (sohandle);
+  return status_failed;
+ }
+
+ return status_ok;
+}
+
 int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  void *sohandle;
  char **modules = NULL;
@@ -150,6 +226,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
       new->source = estrdup(modules[z]);
+	  new->do_suspend = einit_mod_so_do_suspend;
+	  new->do_resume = einit_mod_so_do_resume;
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);

@@ -59,6 +59,38 @@ pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 int modules_work_count = 0;
 time_t modules_last_change = 0;
 
+int mod_suspend (struct lmodule *m) {
+ if (m && !(m->status & status_suspended)) {
+  if (m->suspend && m->do_suspend) {
+   if ((m->suspend (m) == status_ok) && (m->do_suspend (m) == status_ok)) {
+    notice (3, "module suspended");
+    m->status |= status_suspended;
+    return status_ok;
+   } else return status_failed;
+  } else {
+   return status_failed;
+  }
+ } else {
+  return status_ok;
+ }
+}
+
+int mod_resume (struct lmodule *m) {
+ if (m && (m->status & status_suspended)) {
+  if (m->resume && m->do_resume) {
+   if ((m->do_resume (m) == status_ok) && (m->resume (m) == status_ok)) {
+    notice (3, "module resumed");
+    m->status ^= status_suspended;
+    return status_ok;
+   } else return status_failed;
+  } else {
+   return status_failed;
+  }
+ } else {
+  return status_ok;
+ }
+}
+
 void mod_freedesc (struct lmodule *m) {
  emutex_lock (&m->mutex);
  emutex_lock (&m->imutex);
@@ -154,6 +186,33 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 /* wait if the module is already being processed in a different thread */
  if (!(task & einit_module_ignore_mutex))
   emutex_lock (&module->mutex);
+
+ if (task & einit_module_suspend) {
+  int retval = mod_suspend (module);
+
+  if (!(task & einit_module_ignore_mutex))
+   emutex_unlock (&module->mutex);
+
+  return retval;
+ }
+
+ if (task & einit_module_resume) {
+  int retval = mod_resume (module);
+
+  if (!(task & einit_module_ignore_mutex))
+   emutex_unlock (&module->mutex);
+
+  return retval;
+ }
+
+ if (module->status & status_suspended) {
+  if (!(mod_resume (module) == status_ok)) {
+   if (!(task & einit_module_ignore_mutex))
+    emutex_unlock (&module->mutex);
+
+   return status_failed;
+  }
+ }
 
  if (task & einit_module_custom) {
   if (!custom_command) {

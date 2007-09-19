@@ -1,8 +1,8 @@
 /*
- *  linux-udev.c
+ *  bsd-devfs.c
  *  einit
  *
- *  Created on 18/09/2007.
+ *  Created on 19/09/2007.
  *  Copyright 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -55,66 +55,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int linux_udev_configure (struct lmodule *);
+int bsd_devfs_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule linux_udev_self = {
+const struct smodule bsd_devfs_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = einit_module_generic,
- .name      = "Device Setup (Linux, UDEV)",
- .rid       = "linux-udev",
+ .name      = "Device Setup (BSD, DevFS)",
+ .rid       = "bsd-devfs",
  .si        = {
   .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = linux_udev_configure
+ .configure = bsd_devfs_configure
 };
 
-module_register(linux_udev_self);
+module_register(bsd_devfs_self);
 
 #endif
 
-char linux_udev_enabled = 0;
+char bsd_devfs_enabled = 0;
 
-int linux_udev_run() {
- if (!linux_udev_enabled) {
-  linux_udev_enabled = 1;
+int bsd_devfs_run() {
+ if (!bsd_devfs_enabled) {
+  bsd_devfs_enabled = 1;
 
-  mount ("proc", "/proc", "proc", 0, NULL);
-  mount ("sys", "/sys", "sysfs", 0, NULL);
-
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
+  mount ("devfs", "/dev", 0, NULL);
  }
 
  return status_ok;
 }
 
-int linux_udev_shutdown() {
- if (linux_udev_enabled) {
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh disable");
-
-  linux_udev_enabled = 0;
+int bsd_devfs_shutdown() {
+ if (bsd_devfs_enabled) {
+  bsd_devfs_enabled = 0;
  }
 
  return status_ok;
 }
 
-void linux_udev_power_event_handler (struct einit_event *ev) {
+void bsd_devfs_power_event_handler (struct einit_event *ev) {
  if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  linux_udev_shutdown();
+  bsd_devfs_shutdown();
  }
 }
 
-void linux_udev_boot_event_handler (struct einit_event *ev) {
+void bsd_devfs_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
-   if (linux_udev_run() == status_ok) {
+   if (bsd_devfs_run() == status_ok) {
     struct einit_event eml = evstaticinit(einit_boot_devices_available);
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
@@ -127,23 +121,23 @@ void linux_udev_boot_event_handler (struct einit_event *ev) {
  }
 }
 
-int linux_udev_cleanup (struct lmodule *pa) {
+int bsd_devfs_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
- event_ignore (einit_event_subsystem_power, linux_udev_power_event_handler);
- event_ignore (einit_event_subsystem_boot, linux_udev_boot_event_handler);
+ event_ignore (einit_event_subsystem_power, bsd_devfs_power_event_handler);
+ event_ignore (einit_event_subsystem_boot, bsd_devfs_boot_event_handler);
 
  return 0;
 }
 
-int linux_udev_configure (struct lmodule *pa) {
+int bsd_devfs_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure(pa);
 
- pa->cleanup = linux_udev_cleanup;
+ pa->cleanup = bsd_devfs_cleanup;
 
- event_listen (einit_event_subsystem_boot, linux_udev_boot_event_handler);
- event_listen (einit_event_subsystem_power, linux_udev_power_event_handler);
+ event_listen (einit_event_subsystem_boot, bsd_devfs_boot_event_handler);
+ event_listen (einit_event_subsystem_power, bsd_devfs_power_event_handler);
 
  return 0;
 }

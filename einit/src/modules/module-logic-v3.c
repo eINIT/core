@@ -1796,7 +1796,7 @@ void mod_commits_dec () {
  notice (5, "plan finished.");
 #endif
 
- char clean_broken = 0, **unresolved = NULL, **broken = NULL;
+ char clean_broken = 0, **unresolved = NULL, **broken = NULL, suspend_all = 0;
  emutex_lock (&ml_unresolved_mutex);
  if (broken_services) {
   broken = (char **)setdup ((const void **)broken_services, SET_TYPE_STRING);
@@ -1830,6 +1830,7 @@ void mod_commits_dec () {
  emutex_lock (&ml_commits_mutex);
  ml_commits--;
  clean_broken = (ml_commits <= 0);
+ suspend_all = (ml_commits <= 0);
  emutex_unlock (&ml_commits_mutex);
 
  if (clean_broken) {
@@ -1861,6 +1862,14 @@ void mod_commits_dec () {
    module_logics_chain_examine_reverse = NULL;
   }
   emutex_unlock(&ml_chain_examine);
+ }
+
+ if (suspend_all) {
+  notice (3, "suspending and unloading unused modules...");
+
+  struct einit_event eml = evstaticinit(einit_core_suspend_all);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  evstaticdestroy(eml);
  }
 
 #if 0
