@@ -1,3 +1,5 @@
+namespace execute = "http://www.einit.org"
+
 start = eINIT | Module | Network
 
 eINIT = element einit {
@@ -29,7 +31,7 @@ eINITMain =
   Mode * &
   Information ? &
   element options { attribute shutdown { text }? }? &
-  element ttys { StringAttribute } ? &
+  element ttys { TTYAttribute } ? &
   element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
   element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
 
@@ -217,7 +219,7 @@ Services = element services {
   } ? &
 
   element alias {
-    ( element * { attribute group { text }, attribute seq { "most" | "all" | "any" | "any-iop" } }*
+    ( element * { attribute group { List_of_services }, attribute seq { "most" | "all" | "any" | "any-iop" } }*
     | ( IDAttribute, StringAttribute ))
   }* &
 
@@ -254,8 +256,8 @@ Mode = element mode {
   IDAttribute &
   attribute base { text }? &
 
-  element enable { attribute services { ColonList } & attribute critical { text }? }? &
-  element disable { attribute services { text } }? &
+  element enable { attribute services { List_of_services } & attribute critical { text }? }? &
+  element disable { attribute services { List_of_services } }? &
 
   eINITMain &
 
@@ -276,9 +278,11 @@ TTY = element tty {
 
 ConfigurationCompatibility =
   element sysv {
-    element utmp { BooleanAttribute }? &
-    element wtmp { BooleanAttribute }? &
-
+     attribute utmp { Boolean }? &
+     attribute wtmp { Boolean }? &
+    element utmp { BooleanAttribute }? & #Not sure if those
+    element wtmp { BooleanAttribute }? & #should be here...
+  
     element distribution {
       StringAttribute &
 
@@ -354,3 +358,4 @@ ColonList = text
 
 include "einit-module.rnc"
 include "einit-network.rnc"
+include "data-types.rnc"

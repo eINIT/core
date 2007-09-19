@@ -1,3 +1,5 @@
+namespace execute = "http://www.einit.org"
+
 Module = element module {
   ModuleContents*
 }
@@ -70,7 +72,8 @@ CommonModuleAttributesOptional =
  attribute root { text } ? &
  attribute DISPLAY { text } ? &
  attribute HOME { text } ? &
- attribute config { text } ?
+ attribute config { text } ? &
+ attribute execute:* { text } ?
 
 ModuleDependenciesRequired =
  attribute provides { text }
