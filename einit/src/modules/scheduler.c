@@ -189,7 +189,7 @@ void sched_handle_timers () {
 
 void sched_timer_event_handler(struct einit_event *ev) {
  if (ev->type == einit_timer_set) {
-  notice (1, "setting timer...");
+//  notice (1, "setting timer...");
 
   emutex_lock (&sched_timer_data_mutex);
 
@@ -197,7 +197,7 @@ void sched_timer_event_handler(struct einit_event *ev) {
   sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)tmpinteger, SET_NOALLOC);
   setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
 
-  if (sched_timer_data) {
+/*  if (sched_timer_data) {
    uint32_t i = 0;
 
    notice (1, "timestamps:\n");
@@ -205,7 +205,7 @@ void sched_timer_event_handler(struct einit_event *ev) {
    for (; sched_timer_data[i]; i++) {
     notice (1, " * %i\n", (int)sched_timer_data[i]);
    }
-  }
+  }*/
 
   emutex_unlock (&sched_timer_data_mutex);
 

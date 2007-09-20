@@ -177,6 +177,37 @@ char mount_fastboot = 0;
 }\
 }
 
+struct {
+ void **chunks;
+} mount_garbage = {
+ .chunks = NULL
+};
+
+pthread_mutex_t mount_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void mount_garbage_add_chunk (void *chunk) {
+ if (!chunk) return;
+ emutex_lock (&mount_garbage_mutex);
+ mount_garbage.chunks = setadd (mount_garbage.chunks, chunk, SET_NOALLOC);
+ emutex_unlock (&mount_garbage_mutex);
+}
+
+void mount_garbage_free () {
+ emutex_lock (&mount_garbage_mutex);
+ if (mount_garbage.chunks) {
+  int i = 0;
+
+  for (; mount_garbage.chunks[i]; i++) {
+   free (mount_garbage.chunks[i]);
+  }
+
+  free (mount_garbage.chunks);
+  mount_garbage.chunks = NULL;
+ }
+ emutex_unlock (&mount_garbage_mutex);
+}
+
+
 char *generate_legacy_mtab () {
  char *ret = NULL;
  ssize_t retlen = 0;
@@ -394,6 +425,15 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
  struct mountpoint_data *mp = st ? st->value : ecalloc (1, sizeof (struct mountpoint_data));
 // char *device = dd->device;
 
+ mount_garbage_add_chunk (mp->mountpoint);
+ mount_garbage_add_chunk (mp->variables);
+ mount_garbage_add_chunk (mp->fs);
+ mount_garbage_add_chunk (mp->options);
+ mount_garbage_add_chunk (mp->before_mount);
+ mount_garbage_add_chunk (mp->after_mount);
+ mount_garbage_add_chunk (mp->before_umount);
+ mount_garbage_add_chunk (mp->after_umount);
+
  mp->mountpoint = mountpoint;
  mp->fs = fs ? fs : estrdup("auto");
  mp->options = options;
@@ -413,6 +453,7 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
  mp->variables = variables;
  mp->mountflags = mountflags;
 
+ if (mp->flatoptions) free (mp->flatoptions);
  mp->flatoptions = options_string_to_mountflags (mp->options, &(mp->mountflags), mountpoint);
 
  struct stree *t = NULL;
@@ -443,15 +484,19 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
  }
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);*/
 
- if (!dd && (device || (device = fs) || (device = "(none)"))) {
-  emutex_lock (&mounter_dd_by_devicefile_mutex);
-  if (mounter_dd_by_devicefile && (t = streefind (mounter_dd_by_devicefile, device, tree_find_first))) {
-   dd = t->value;
+ if (!dd) {
+  char *du = device;
+  if ((du || (du = fs) || (du = "(none)"))) {
+   emutex_lock (&mounter_dd_by_devicefile_mutex);
+   if (mounter_dd_by_devicefile && (t = streefind (mounter_dd_by_devicefile, du, tree_find_first))) {
+    dd = t->value;
+   }
+   emutex_unlock (&mounter_dd_by_devicefile_mutex);
   }
-  emutex_unlock (&mounter_dd_by_devicefile_mutex);
  }
 
  if (dd) {
+  if (device) free (device);
   mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  } else {
   struct device_data *d = emalloc(sizeof(struct device_data));
@@ -459,7 +504,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
 
   memset (d, 0, sizeof(struct device_data));
 
-  if (device || (device = fs) || (device = "(none)")) d->device = estrdup (device);
+  if (device || (device = fs) || (device = estrdup ("(none)"))) d->device = estrdup (device);
 
 //  eprintf (stderr, " >> inserting new device_data node for %s, device %s\n", mountpoint, device);
 
@@ -474,6 +519,8 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
   mounter_dd_by_devicefile =
    streeadd (mounter_dd_by_devicefile, d->device, mounter_device_data[y], SET_NOALLOC, NULL);
   emutex_unlock (&mounter_dd_by_devicefile_mutex);
+
+  if (device) free (device);
 
   mount_add_update_fstab_data (d, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  }
@@ -693,7 +740,7 @@ void mount_update_nodes_from_mtab () {
        mp->status |= device_status_mounted;
       }
      }
-	}
+    }
    }
 
    cur = streenext (cur);
@@ -842,7 +889,6 @@ void mount_add_update_group (char *groupname, char **elements, char *seq) {
    jele = set2str (':', (const char **)elements);
   }
 
-  char **oarb = onode->arbattrs;
   char **narb = NULL;
 
   narb = (char **)setadd ((void **)narb, (void *)"group", SET_TYPE_STRING);
@@ -850,13 +896,15 @@ void mount_add_update_group (char *groupname, char **elements, char *seq) {
   narb = (char **)setadd ((void **)narb, (void *)"seq", SET_TYPE_STRING);
   narb = (char **)setadd ((void **)narb, (void *)seq, SET_TYPE_STRING);
 
+  char **oarb = onode->arbattrs;
+
   onode->arbattrs = narb;
 
   if (oarb) {
    free (oarb);
   }
-  free (jele);
 
+  free (jele);
  } else {
   char *jele = set2str (':', (const char **)elements);
   memset (&newnode, 0, sizeof(struct cfgnode));
@@ -926,7 +974,11 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     char *comb = set2str ('-', (const char **)tmp_split);
 
     tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
+
+    free (comb);
    }
+
+   free (tmp_split);
 
 /* same game, but with the device and not the mountpoint */
    struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
@@ -945,6 +997,8 @@ int einit_mount_scanmodules (struct lmodule *ml) {
        if (!inset ((const void **)tmpxt, comb, SET_TYPE_STRING)) {
         tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
        }
+
+       free (comb);
       }
      }
     }
@@ -957,13 +1011,14 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     tmpx = set2str ('|', (const char **)tmpxt);
    }
 
-   free (tmp_split);
-   free (tmpxt);
-
    if (tmpx) {
     esprintf (tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$", tmpx);
     after = (char **)setadd ((void **)after, (void *)tmp, SET_TYPE_STRING);
+    free (tmpx);
    }
+
+   free (tmp_split);
+   free (tmpxt);
   }
 
 /*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
@@ -1033,10 +1088,15 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   while (lm) {
    if (lm->source && strmatch(lm->source, tmp)) {
     struct smodule *sm = (struct smodule *)lm->module;
+    mount_garbage_add_chunk (sm->si.after);
+    mount_garbage_add_chunk (sm->si.requires);
+
     sm->si.after = after;
     sm->si.requires = requires;
 
     lm = mod_update (lm);
+
+    free (newmodule);
 
     goto do_next;
    }
@@ -1066,15 +1126,28 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
   do_next:
 
+  free (servicename);
   s = s->next;
  }
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
 
- if (ssystem) mount_add_update_group ("mount-system", ssystem, "most");
- if (scritical) mount_add_update_group ("mount-critical", scritical, "most");
- if (slocal) mount_add_update_group ("mount-local", slocal, "most");
- if (sremote) mount_add_update_group ("mount-remote", sremote, "most");
+ if (ssystem) {
+  mount_add_update_group ("mount-system", ssystem, "most");
+  free (ssystem);
+ }
+ if (scritical) {
+  mount_add_update_group ("mount-critical", scritical, "most");
+  free (scritical);
+ }
+ if (slocal) {
+  mount_add_update_group ("mount-local", slocal, "most");
+  free (slocal);
+ }
+ if (sremote) {
+  mount_add_update_group ("mount-remote", sremote, "most");
+  free (sremote);
+ }
 
  return 0;
 }

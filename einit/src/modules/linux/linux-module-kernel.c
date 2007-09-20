@@ -169,7 +169,12 @@ int linux_module_kernel_scanmodules (struct lmodule *mainlist) {
       if (lm->si && lm->si->provides)
        modules_group  = (char **)setadd ((void **)modules_group, lm->si->provides[0], SET_TYPE_STRING);
 
-      lm->param = str2set (':', node->svalue);
+      if (lm->param) {
+       void *t = lm->param;
+       lm->param = str2set (':', node->svalue);
+       free (t);
+      } else
+       lm->param = str2set (':', node->svalue);
       lm = mod_update (lm);
 
       doop = 0;
@@ -201,6 +206,7 @@ int linux_module_kernel_scanmodules (struct lmodule *mainlist) {
 
   if (modules_group) {
    linux_module_kernel_add_update_group ("modules", modules_group, "most");
+   free (modules_group);
   }
 
   streefree (linux_module_kernel_nodes);
@@ -261,6 +267,8 @@ int linux_module_kernel_cleanup (struct lmodule *this) {
 }
 
 int linux_module_kernel_module_cleanup (struct lmodule *this) {
+ if (this->param) free (this->param);
+
  return 0;
 }
 
@@ -274,6 +282,7 @@ int linux_module_kernel_module_configure (struct lmodule *tm) {
 
  node = cfg_getnode (tmp, NULL);
  if (node && node->svalue) {
+  if (tm->param) free (tm->param);
   tm->param = str2set (':', node->svalue);
  }
 

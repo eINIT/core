@@ -99,7 +99,40 @@ struct service_transformation {
 };
 #endif
 
+struct {
+ void **chunks;
+} einit_module_transformations_garbage = {
+ .chunks = NULL
+};
+
+pthread_mutex_t einit_module_transformations_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
+int einit_module_transformations_usage = 0;
+
+void einit_module_transformations_garbage_add_chunk (void *chunk) {
+ if (!chunk) return;
+ emutex_lock (&einit_module_transformations_garbage_mutex);
+ einit_module_transformations_garbage.chunks = setadd (einit_module_transformations_garbage.chunks, chunk, SET_NOALLOC);
+ emutex_unlock (&einit_module_transformations_garbage_mutex);
+}
+
+void einit_module_transformations_garbage_free () {
+ emutex_lock (&einit_module_transformations_garbage_mutex);
+ if (einit_module_transformations_garbage.chunks) {
+  int i = 0;
+
+  for (; einit_module_transformations_garbage.chunks[i]; i++) {
+   free (einit_module_transformations_garbage.chunks[i]);
+  }
+
+  free (einit_module_transformations_garbage.chunks);
+  einit_module_transformations_garbage.chunks = NULL;
+ }
+ emutex_unlock (&einit_module_transformations_garbage_mutex);
+}
+
 void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
+ einit_module_transformations_usage++;
+
  if (ev->type == einit_core_configuration_update) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
@@ -204,6 +237,14 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
      else if (strmatch (lnode->arbattrs[i], "shutdown-after")) esi->shutdown_after = str2set (':', lnode->arbattrs[i+1]);
     }
 
+    einit_module_transformations_garbage_add_chunk (module->si);
+    einit_module_transformations_garbage_add_chunk (module->si->provides);
+    einit_module_transformations_garbage_add_chunk (module->si->requires);
+    einit_module_transformations_garbage_add_chunk (module->si->after);
+    einit_module_transformations_garbage_add_chunk (module->si->before);
+    einit_module_transformations_garbage_add_chunk (module->si->shutdown_before);
+    einit_module_transformations_garbage_add_chunk (module->si->shutdown_after);
+
     module->si = esi;
     break;
    }
@@ -224,6 +265,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
      }
     }
 
+    einit_module_transformations_garbage_add_chunk (module->si->provides);
     module->si->provides = np;
    }
 
@@ -259,6 +301,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
        np = (char **)setadd ((void **)np, module->si->provides[i], SET_TYPE_STRING);
      }
 
+     einit_module_transformations_garbage_add_chunk (module->si->provides);
      module->si->provides = np;
     }
 
@@ -290,6 +333,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
        np = (char **)setadd ((void **)np, module->si->requires[i], SET_TYPE_STRING);
      }
 
+     einit_module_transformations_garbage_add_chunk (module->si->requires);
      module->si->requires = np;
     }
 
@@ -321,6 +365,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
        np = (char **)setadd ((void **)np, module->si->after[i], SET_TYPE_STRING);
      }
 
+     einit_module_transformations_garbage_add_chunk (module->si->after);
      module->si->after = np;
     }
 
@@ -352,6 +397,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
        np = (char **)setadd ((void **)np, module->si->before[i], SET_TYPE_STRING);
      }
 
+     einit_module_transformations_garbage_add_chunk (module->si->before);
      module->si->before = np;
     }
 
@@ -383,6 +429,7 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
        np = (char **)setadd ((void **)np, module->si->shutdown_before[i], SET_TYPE_STRING);
      }
 
+     einit_module_transformations_garbage_add_chunk (module->si->shutdown_before);
      module->si->shutdown_before = np;
     }
 
@@ -414,11 +461,14 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
        np = (char **)setadd ((void **)np, module->si->shutdown_after[i], SET_TYPE_STRING);
      }
 
+     einit_module_transformations_garbage_add_chunk (module->si->shutdown_after);
      module->si->shutdown_after = np;
     }
    }
 #endif
  }
+
+ einit_module_transformations_usage--;
 }
 
 int einit_module_transformations_cleanup (struct lmodule *r) {
@@ -428,11 +478,17 @@ int einit_module_transformations_cleanup (struct lmodule *r) {
 }
 
 int einit_module_transformations_suspend (struct lmodule *r) {
- event_wakeup (einit_core_configuration_update, r);
- event_wakeup (einit_core_update_module, r);
- event_ignore (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
+ if (!einit_module_transformations_usage) {
+  event_wakeup (einit_core_configuration_update, r);
+  event_wakeup (einit_core_update_module, r);
+  event_ignore (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
 
- return status_ok;
+  einit_module_transformations_garbage_free();
+
+  return status_ok;
+ } else {
+  return status_failed;
+ }
 }
 
 int einit_module_transformations_resume (struct lmodule *r) {

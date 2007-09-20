@@ -182,7 +182,14 @@ struct eml_garbage {
  .chunks = NULL
 };
 
-void einit_module_logic_v3_free_garbage () {
+void einit_module_logic_v3_garbage_add_chunk (void *chunk) {
+ if (!chunk) return;
+ emutex_lock (&ml_garbage_mutex);
+ einit_module_logic_v3_garbage.chunks = setadd (einit_module_logic_v3_garbage.chunks, chunk, SET_NOALLOC);
+ emutex_unlock (&ml_garbage_mutex);
+}
+
+void einit_module_logic_v3_garbage_free () {
  emutex_lock (&ml_garbage_mutex);
  if (einit_module_logic_v3_garbage.strees) {
   int i = 0;
@@ -383,7 +390,7 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
   rd->target_state.enable = target_state.enable;
   rd->target_state.disable = target_state.disable;
 
-  einit_module_logic_v3_free_garbage ();
+  einit_module_logic_v3_garbage_free ();
 
   return status_ok;
  } else
@@ -1839,7 +1846,7 @@ char mod_workthreads_dec (char *service) {
   char spawn = 0;
   emutex_unlock (&ml_workthreads_mutex);
 
-  einit_module_logic_v3_free_garbage();
+  einit_module_logic_v3_garbage_free();
 
   emutex_lock (&ml_tb_current_mutex);
   if (current.enable) {
@@ -1992,7 +1999,7 @@ void mod_commits_dec () {
  }
 
  if (suspend_all) {
-  einit_module_logic_v3_free_garbage();
+  einit_module_logic_v3_garbage_free();
 
   notice (3, "suspending and unloading unused modules...");
 
@@ -3616,6 +3623,8 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
    }
   }
  }
+
+ if (xbefore) free (xbefore);
 
  return hd;
 }

@@ -76,6 +76,37 @@ module_register(bootstrap_einit_configuration_stree_self);
 
 #endif
 
+struct {
+ void **chunks;
+} cfg_stree_garbage = {
+ .chunks = NULL
+};
+
+pthread_mutex_t cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void cfg_stree_garbage_add_chunk (void *chunk) {
+ if (!chunk) return;
+ emutex_lock (&cfg_stree_garbage_mutex);
+ if (!cfg_stree_garbage.chunks || (!inset ((const void **)cfg_stree_garbage.chunks, chunk, SET_NOALLOC)))
+  cfg_stree_garbage.chunks = setadd (cfg_stree_garbage.chunks, chunk, SET_NOALLOC);
+ emutex_unlock (&cfg_stree_garbage_mutex);
+}
+
+void cfg_stree_garbage_free () {
+ emutex_lock (&cfg_stree_garbage_mutex);
+ if (cfg_stree_garbage.chunks) {
+  int i = 0;
+
+  for (; cfg_stree_garbage.chunks[i]; i++) {
+   free (cfg_stree_garbage.chunks[i]);
+  }
+
+  free (cfg_stree_garbage.chunks);
+  cfg_stree_garbage.chunks = NULL;
+ }
+ emutex_unlock (&cfg_stree_garbage_mutex);
+}
+
 int cfg_free () {
  struct stree *cur = hconfiguration;
  struct cfgnode *node = NULL;
@@ -139,10 +170,12 @@ int cfg_addnode_f (struct cfgnode *node) {
 // NTS: implement checks to figure out if the node is similar
 
 // this means we found something that looks like it
-    void *bsl = cur->luggage;
+    cfg_stree_garbage_add_chunk (cur->luggage);
+    cfg_stree_garbage_add_chunk (((struct cfgnode *)cur->value)->arbattrs);
+    cfg_stree_garbage_add_chunk (((struct cfgnode *)cur->value)->source_file);
+
     ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
     cur->luggage = node->arbattrs;
-//    if (bsl) free (bsl);
 
     ((struct cfgnode *)cur->value)->type        = node->type;
     ((struct cfgnode *)cur->value)->mode        = node->mode;
@@ -150,15 +183,9 @@ int cfg_addnode_f (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->value       = node->value;
     ((struct cfgnode *)cur->value)->svalue      = node->svalue;
     ((struct cfgnode *)cur->value)->idattr      = node->idattr;
-    bsl = (void *)((struct cfgnode *)cur->value)->path;
     ((struct cfgnode *)cur->value)->path        = node->path;
-//    if (bsl) free (bsl);
-    bsl = (void *)((struct cfgnode *)cur->value)->source;
     ((struct cfgnode *)cur->value)->source      = node->source;
-//    if (bsl) free (bsl);
-    bsl = (void *)((struct cfgnode *)cur->value)->source_file;
     ((struct cfgnode *)cur->value)->source_file = node->source_file;
-//    if (bsl) free (bsl);
 
     doop = 0;
 
@@ -174,6 +201,11 @@ int cfg_addnode_f (struct cfgnode *node) {
 
   einit_new_node = 1;
  }
+
+/* hmmm.... */
+/* cfg_stree_garbage_add_chunk (node->arbattrs);
+ cfg_stree_garbage_add_chunk (node->source_file);*/
+ cfg_stree_garbage_add_chunk (node->id);
 
  return 0;
 }

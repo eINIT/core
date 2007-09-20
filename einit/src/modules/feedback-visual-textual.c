@@ -566,6 +566,9 @@ void feedback_textual_process_command (struct feedback_textual_command *command)
   feedback_textual_statusline = command->statusline;
 
   feedback_textual_update_screen ();
+
+  feedback_textual_statusline = NULL;
+  free (command->statusline);
  }
 
  if (command->module) {

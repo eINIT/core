@@ -393,7 +393,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       recursion++;
       einit_config_xml_expat_parse_configuration_file (files[ixx]);
       recursion--;
-	 }
+     }
 
      free (files);
     }

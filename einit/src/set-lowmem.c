@@ -484,7 +484,7 @@ char **strsetdel (char **set, char *item) {
  }
 
  if (!x) {
-//  free (set);
+  free (set);
   return NULL;
  }
 

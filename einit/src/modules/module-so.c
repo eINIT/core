@@ -180,6 +180,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   if (nmodules) {
    modules = (char **)setcombine_nc ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
   }
+
+  free (nmodules);
  }
 
  if (!modules) {
