@@ -140,7 +140,8 @@ pthread_mutex_t
   ml_currently_provided_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_rid_list_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_current_switches_mutex = PTHREAD_MUTEX_INITIALIZER;
+  ml_current_switches_mutex = PTHREAD_MUTEX_INITIALIZER,
+  ml_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t
   ml_cond_service_update = PTHREAD_COND_INITIALIZER;
 
@@ -169,6 +170,42 @@ void mod_ping_all_threads() {
 #endif
 
  pthread_cond_broadcast (&ml_cond_service_update);
+}
+
+int einit_module_logic_v3_usage = 0;
+
+struct eml_garbage {
+ struct stree **strees;
+ void **chunks;
+} einit_module_logic_v3_garbage = {
+ .strees = NULL,
+ .chunks = NULL
+};
+
+void einit_module_logic_v3_free_garbage () {
+ emutex_lock (&ml_garbage_mutex);
+ if (einit_module_logic_v3_garbage.strees) {
+  int i = 0;
+
+  for (; einit_module_logic_v3_garbage.strees[i]; i++) {
+   streefree (einit_module_logic_v3_garbage.strees[i]);
+  }
+
+  free (einit_module_logic_v3_garbage.strees);
+  einit_module_logic_v3_garbage.strees = NULL;
+ }
+
+ if (einit_module_logic_v3_garbage.chunks) {
+  int i = 0;
+
+  for (; einit_module_logic_v3_garbage.chunks[i]; i++) {
+   free (einit_module_logic_v3_garbage.chunks[i]);
+  }
+
+  free (einit_module_logic_v3_garbage.chunks);
+  einit_module_logic_v3_garbage.chunks = NULL;
+ }
+ emutex_unlock (&ml_garbage_mutex);
 }
 
 void mod_wait_for_ping() {
@@ -313,10 +350,80 @@ int einit_module_logic_v3_cleanup (struct lmodule *this) {
  return 0;
 }
 
+struct eml_resume_data {
+ struct stree *module_logics_service_list;
+ struct stree *module_logics_group_data;
+ struct module_taskblock current, target_state;
+};
+
+int einit_module_logic_v3_suspend (struct lmodule *this) {
+ if (!einit_module_logic_v3_usage) {
+  function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
+
+  event_ignore (einit_event_subsystem_core, module_logic_einit_event_handler);
+  event_ignore (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
+
+  sleep (1);
+  event_wakeup (einit_event_subsystem_ipc, this);
+  event_wakeup (einit_core_update_configuration, this);
+  event_wakeup (einit_core_module_list_update, this);
+  event_wakeup (einit_core_service_update, this);
+  event_wakeup (einit_core_switch_mode, this);
+  event_wakeup (einit_core_change_service_status, this);
+
+  this->resumedata = ecalloc (1, sizeof (struct eml_resume_data));
+  struct eml_resume_data *rd = this->resumedata;
+
+  rd->module_logics_service_list = module_logics_service_list;
+  rd->module_logics_group_data = module_logics_group_data;
+  rd->current.critical = current.critical;
+  rd->current.enable = current.enable;
+  rd->current.disable = current.disable;
+  rd->target_state.critical = target_state.critical;
+  rd->target_state.enable = target_state.enable;
+  rd->target_state.disable = target_state.disable;
+
+  einit_module_logic_v3_free_garbage ();
+
+  return status_ok;
+ } else
+  return status_failed;
+}
+
+int einit_module_logic_v3_resume (struct lmodule *this) {
+ event_wakeup_cancel (einit_event_subsystem_ipc, this);
+ event_wakeup_cancel (einit_core_update_configuration, this);
+ event_wakeup_cancel (einit_core_module_list_update, this);
+ event_wakeup_cancel (einit_core_service_update, this);
+ event_wakeup_cancel (einit_core_switch_mode, this);
+ event_wakeup_cancel (einit_core_change_service_status, this);
+
+ if (this->resumedata) {
+  struct eml_resume_data *rd = this->resumedata;
+
+  module_logics_service_list = rd->module_logics_service_list;
+  module_logics_group_data = rd->module_logics_group_data;
+
+  current.critical = rd->current.critical;
+  current.enable = rd->current.enable;
+  current.disable = rd->current.disable;
+  target_state.critical = rd->target_state.critical;
+  target_state.enable = rd->target_state.enable;
+  target_state.disable = rd->target_state.disable;
+
+  free (this->resumedata);
+ }
+
+ return status_ok;
+}
+
 int einit_module_logic_v3_configure (struct lmodule *this) {
  module_init(this);
 
  thismodule->cleanup = einit_module_logic_v3_cleanup;
+
+ thismodule->suspend = einit_module_logic_v3_suspend;
+ thismodule->resume = einit_module_logic_v3_resume;
 
  event_listen (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
  event_listen (einit_event_subsystem_core, module_logic_einit_event_handler);
@@ -1033,6 +1140,8 @@ int mod_modaction (char **argv, FILE *output) {
 }
 
 void module_logic_einit_event_handler(struct einit_event *ev) {
+ einit_module_logic_v3_usage++;
+
  if ((ev->type == einit_core_update_configuration) && !initdone) {
   initdone = 1;
 
@@ -1087,6 +1196,11 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
 /* need to defer-free this at some point... */
 //  if (module_logics_service_list) streefree (module_logics_service_list);
+  emutex_lock (&ml_garbage_mutex);
+  if (module_logics_service_list)
+   einit_module_logic_v3_garbage.strees = setadd ((void **)einit_module_logic_v3_garbage.strees, module_logics_service_list, SET_NOALLOC);
+  emutex_unlock (&ml_garbage_mutex);
+
   module_logics_service_list = new_service_list;
   einit_module_logic_list_revision++;
 
@@ -1121,7 +1235,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   mod_examine_module ((struct lmodule *)ev->para);
  } else switch (ev->type) {
   case einit_core_switch_mode:
-   if (!ev->string) return;
+   if (!ev->string) goto done;
    else {
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
@@ -1141,9 +1255,9 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
      evstaticdestroy(ee);
     }
    }
-   return;
+   goto done;
   case einit_core_change_service_status:
-   if (!ev->set || !ev->set[0] || !ev->set[1]) return;
+   if (!ev->set || !ev->set[0] || !ev->set[1]) goto done;
    else {
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
@@ -1218,10 +1332,14 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
      fflush (ev->output);
     }
    }
-   return;
+   goto done;
   default:
-   return;
+   goto done;
  }
+
+ done:
+ einit_module_logic_v3_usage--;
+ return;
 }
 
 void module_logic_update_init_d () {
@@ -1260,6 +1378,8 @@ void module_logic_update_init_d () {
  (status & status_enabled ? "enabled" : "disabled")))
 
 void module_logic_ipc_event_handler (struct einit_event *ev) {
+ einit_module_logic_v3_usage++;
+
  if (ev->argv && ev->argv[0] && ev->argv[1] && ev->output) {
   if (strmatch (ev->argv[0], "update") && strmatch (ev->argv[1], "init.d")) {
    module_logic_update_init_d();
@@ -1617,6 +1737,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 #endif
   }
  }
+
+ einit_module_logic_v3_usage--;
 }
 
 /* end common functions */
@@ -1717,6 +1839,8 @@ char mod_workthreads_dec (char *service) {
   char spawn = 0;
   emutex_unlock (&ml_workthreads_mutex);
 
+  einit_module_logic_v3_free_garbage();
+
   emutex_lock (&ml_tb_current_mutex);
   if (current.enable) {
    for (i = 0; current.enable[i]; i++) {
@@ -1747,6 +1871,8 @@ char mod_workthreads_dec (char *service) {
  mod_ping_all_threads();
 #endif
 
+ einit_module_logic_v3_usage--;
+
  return 0;
 }
 
@@ -1771,6 +1897,7 @@ char mod_workthreads_inc (char *service) {
   lm_workthreads_list = (char **)setadd((void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING);
 
   ml_workthreads++;
+  einit_module_logic_v3_usage++;
  }
  emutex_unlock (&ml_workthreads_mutex);
 
@@ -1865,6 +1992,8 @@ void mod_commits_dec () {
  }
 
  if (suspend_all) {
+  einit_module_logic_v3_free_garbage();
+
   notice (3, "suspending and unloading unused modules...");
 
   struct einit_event eml = evstaticinit(einit_core_suspend_all);

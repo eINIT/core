@@ -249,6 +249,8 @@ void core_einit_event_handler (struct einit_event *ev) {
 
   if (ok)
    notice (4, "%i modules suspended", ok);
+
+  event_snooze_time = event_timer_register_timeout(60);
  } else if (ev->type == einit_core_resume_all) { // resume everyone (if necessary)
   struct lmodule *lm = mlist;
   int ok = 0;
