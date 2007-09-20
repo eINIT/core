@@ -83,6 +83,8 @@ enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
 char einit_quietness = 0;
 
+time_t event_snooze_time = 0;
+
 pthread_key_t einit_function_macro_key;
 
 /* some more variables that are only of relevance to main() */
@@ -148,6 +150,24 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
 }
 
 struct lmodule *mlist;
+
+void core_timer_event_handler (struct einit_event *ev) {
+ if ((ev->type == einit_timer_tick) && (event_snooze_time)) {
+  struct lmodule *lm = mlist;
+  int ok = 0;
+
+  while (lm) {
+   ok += (mod (einit_module_suspend, lm, NULL) == status_ok) ? 1 : 0;
+
+   lm = lm->next;
+  }
+
+  if (ok)
+   notice (4, "%i modules suspended", ok);
+
+  event_snooze_time = 0;
+ }
+}
 
 void core_einit_event_handler (struct einit_event *ev) {
  if (ev->type == einit_core_configuration_update) {
@@ -219,12 +239,28 @@ void core_einit_event_handler (struct einit_event *ev) {
   }
  } else if (ev->type == einit_core_suspend_all) { // suspend everyone (if possible)
   struct lmodule *lm = mlist;
+  int ok = 0;
 
   while (lm) {
-   mod (einit_module_suspend, lm, NULL);
+   ok += (mod (einit_module_suspend, lm, NULL) == status_ok) ? 1 : 0;
 
    lm = lm->next;
   }
+
+  if (ok)
+   notice (4, "%i modules suspended", ok);
+ } else if (ev->type == einit_core_resume_all) { // resume everyone (if necessary)
+  struct lmodule *lm = mlist;
+  int ok = 0;
+
+  while (lm) {
+   ok += (mod (einit_module_resume, lm, NULL) == status_ok) ? 1 : 0;
+
+   lm = lm->next;
+  }
+
+  if (ok)
+   notice (4, "%i available", ok);
  }
 }
 
@@ -257,6 +293,7 @@ int main(int argc, char **argv) {
  isinit = getpid() == 1;
 
  event_listen (einit_event_subsystem_core, core_einit_event_handler);
+ event_listen (einit_event_subsystem_timer, core_timer_event_handler);
 
  if (argv) einit_argv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
 

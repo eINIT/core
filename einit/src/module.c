@@ -63,7 +63,7 @@ int mod_suspend (struct lmodule *m) {
  if (m && !(m->status & status_suspended)) {
   if (m->suspend && m->do_suspend) {
    if ((m->suspend (m) == status_ok) && (m->do_suspend (m) == status_ok)) {
-    notice (3, "module suspended");
+//    notice (3, "module suspended");
     m->status |= status_suspended;
     return status_ok;
    } else return status_failed;
@@ -79,7 +79,7 @@ int mod_resume (struct lmodule *m) {
  if (m && (m->status & status_suspended)) {
   if (m->resume && m->do_resume) {
    if ((m->do_resume (m) == status_ok) && (m->resume (m) == status_ok)) {
-    notice (3, "module resumed");
+//    notice (3, "module resumed");
     m->status ^= status_suspended;
     return status_ok;
    } else return status_failed;

@@ -120,12 +120,15 @@ void einit_fqdn_boot_event_handler (struct einit_event *ev) {
 }
 
 int einit_fqdn_suspend (struct lmodule *irr) {
+ event_wakeup (einit_boot_early, irr);
  event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
 
  return status_ok;
 }
 
 int einit_fqdn_resume (struct lmodule *irr) {
+ event_wakeup_cancel (einit_boot_early, irr);
+
  return status_ok;
 }
 

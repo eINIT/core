@@ -233,10 +233,26 @@ int module_c_cleanup (struct lmodule *this) {
  return 0;
 }
 
+int module_c_suspend (struct lmodule *this) {
+ event_wakeup (einit_core_update_configuration, this);
+ event_ignore (einit_event_subsystem_core, module_c_einit_event_handler);
+
+ return status_ok;
+}
+
+int module_c_resume (struct lmodule *this) {
+ event_wakeup_cancel (einit_core_update_configuration, this);
+
+ return status_ok;
+}
+
 int module_c_configure (struct lmodule *irr) {
  module_init (irr);
 
  thismodule->cleanup = module_c_cleanup;
+
+ thismodule->suspend = module_c_suspend;
+ thismodule->resume = module_c_resume;
  
  event_listen (einit_event_subsystem_core, module_c_einit_event_handler);
 

@@ -258,10 +258,26 @@ int einit_ipc_configuration_cleanup (struct lmodule *irr) {
  return 0;
 }
 
+int einit_ipc_configuration_suspend (struct lmodule *irr) {
+ event_wakeup (einit_event_subsystem_ipc, irr);
+ event_ignore (einit_event_subsystem_ipc, einit_ipc_configuration_ipc_event_handler);
+
+ return status_ok;
+}
+
+int einit_ipc_configuration_resume (struct lmodule *irr) {
+ event_wakeup_cancel (einit_event_subsystem_ipc, irr);
+
+ return status_ok;
+}
+
 int einit_ipc_configuration_configure (struct lmodule *r) {
  module_init (r);
 
  thismodule->cleanup = einit_ipc_configuration_cleanup;
+
+ thismodule->suspend = einit_ipc_configuration_suspend;
+ thismodule->resume = einit_ipc_configuration_resume;
 
  event_listen (einit_event_subsystem_ipc, einit_ipc_configuration_ipc_event_handler);
 

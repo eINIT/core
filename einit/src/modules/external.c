@@ -91,12 +91,6 @@ module_register(einit_external_self);
 
 void einit_external_einit_event_handler (struct einit_event *);
 
-int einit_external_cleanup (struct lmodule *irr) {
- event_ignore (einit_event_subsystem_core, einit_external_einit_event_handler);
-
- return 0;
-}
-
 int einit_external_enable (void *pa, struct einit_event *status) {
  if (!cfg_getstring ("services-external/provided", NULL)) {
   status->string = "no external services configured, not enabling";
@@ -109,7 +103,7 @@ int einit_external_enable (void *pa, struct einit_event *status) {
 }
 
 int einit_external_disable (void *pa, struct einit_event *status) {
- return status_failed; // once enabled, this module cannot be disabled
+ return status_ok; // meh, it's OK
 }
 
 void einit_external_einit_event_handler (struct einit_event *ev) {
@@ -135,12 +129,31 @@ void einit_external_einit_event_handler (struct einit_event *ev) {
  }
 }
 
+int einit_external_cleanup (struct lmodule *irr) {
+ event_ignore (einit_event_subsystem_core, einit_external_einit_event_handler);
+
+ return 0;
+}
+
+int einit_external_suspend (struct lmodule *irr) {
+ event_ignore (einit_event_subsystem_core, einit_external_einit_event_handler);
+
+ return status_ok;
+}
+
+int einit_external_resume (struct lmodule *irr) {
+ return status_ok;
+}
+
 int einit_external_configure (struct lmodule *r) {
  module_init (r);
 
  r->cleanup = einit_external_cleanup;
  r->enable = einit_external_enable;
  r->disable = einit_external_disable;
+
+ r->suspend = einit_external_suspend;
+ r->resume = einit_external_resume;
 
  event_listen (einit_event_subsystem_core, einit_external_einit_event_handler);
 

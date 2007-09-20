@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
+#include <einit/event.h>
 #include <errno.h>
 #include <string.h>
 
@@ -293,10 +294,25 @@ int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
  return 0;
 }
 
+int einit_ipc_core_helpers_suspend (struct lmodule *irr) {
+ event_wakeup (einit_event_subsystem_ipc, irr);
+ event_ignore (einit_event_subsystem_ipc, einit_ipc_core_helpers_ipc_event_handler);
+
+ return status_ok;
+}
+
+int einit_ipc_core_helpers_resume (struct lmodule *irr) {
+ event_wakeup_cancel (einit_event_subsystem_ipc, irr);
+
+ return status_ok;
+}
+
 int einit_ipc_core_helpers_configure (struct lmodule *r) {
  module_init (r);
 
  thismodule->cleanup = einit_ipc_core_helpers_cleanup;
+ thismodule->resume = einit_ipc_core_helpers_resume;
+ thismodule->suspend = einit_ipc_core_helpers_suspend;
 
  event_listen (einit_event_subsystem_ipc, einit_ipc_core_helpers_ipc_event_handler);
 

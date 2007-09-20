@@ -137,8 +137,6 @@ int ipc_process_f (const char *cmd, FILE *f) {
 
  event_emit (event, einit_event_flag_broadcast);
 
- if (event->argv) free (event->argv);
-
  if (!event->implemented) {
   if (event->ipc_options & einit_ipc_output_xml) {
    eprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
@@ -149,6 +147,8 @@ int ipc_process_f (const char *cmd, FILE *f) {
   ret = 1;
  } else
   ret = event->ipc_return;
+
+ if (event->argv) free (event->argv);
 
  if (event->ipc_options & einit_ipc_output_xml) {
   eputs ("</einit-ipc>\n", f);

@@ -114,6 +114,7 @@ enum einit_event_code {
  einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,
 
  einit_core_suspend_all             = einit_event_subsystem_core     | 0x400,
+ einit_core_resume_all              = einit_event_subsystem_core     | 0x401,
 
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
@@ -252,6 +253,9 @@ extern pthread_key_t einit_function_macro_key;
 void *event_emit (struct einit_event *, enum einit_event_emit_flags);
 void event_listen (enum einit_event_subsystems, void (*)(struct einit_event *));
 void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
+
+void event_wakeup (enum einit_event_code, struct lmodule *);
+void event_wakeup_cancel (enum einit_event_code, struct lmodule *);
 
 void function_register_type (const char *, uint32_t, void const *, enum function_type);
 void function_unregister_type (const char *, uint32_t, void const *, enum function_type);
