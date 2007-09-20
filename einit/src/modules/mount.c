@@ -1018,7 +1018,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
 
    free (tmp_split);
-   free (tmpxt);
+//   free (tmpxt);
   }
 
 /*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
