@@ -91,6 +91,18 @@ module_register(bootstrap_einit_configuration_xml_expat_self);
 
 #endif
 
+struct cfgnode *curmode = NULL;
+
+char **xml_configuration_files = NULL;
+time_t xml_configuration_files_highest_mtime = 0;
+
+struct ecx_resume_data {
+ char **xml_configuration_files;
+ time_t xml_configuration_files_highest_mtime;
+};
+
+char bootstrap_einit_configuration_xml_expat_usage = 0;
+
 int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
@@ -102,11 +114,48 @@ int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  return 0;
 }
 
+int bootstrap_einit_configuration_xml_expat_suspend (struct lmodule *this) {
+ if (!bootstrap_einit_configuration_xml_expat_usage) {
+  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
+
+  event_ignore (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
+  event_ignore (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
+
+  struct ecx_resume_data *rd = ecalloc (1, sizeof (struct ecx_resume_data));
+  rd->xml_configuration_files = xml_configuration_files;
+  rd->xml_configuration_files_highest_mtime = xml_configuration_files_highest_mtime;
+  this->resumedata = rd;
+
+  exec_cleanup (this);
+
+  event_wakeup (einit_core_update_configuration, this);
+  event_wakeup (einit_event_subsystem_ipc, this);
+
+  return status_ok;
+ } else {
+  return status_failed;
+ }
+}
+
+int bootstrap_einit_configuration_xml_expat_resume (struct lmodule *this) {
+ struct ecx_resume_data *rd = this->resumedata;
+ if (rd) {
+  xml_configuration_files = rd->xml_configuration_files;
+  xml_configuration_files_highest_mtime = rd->xml_configuration_files_highest_mtime;
+  this->resumedata = NULL;
+  free (rd);
+ }
+
+ return status_ok;
+}
+
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
  module_init(this);
  exec_configure (this);
 
  thismodule->cleanup = bootstrap_einit_configuration_xml_expat_cleanup;
+ thismodule->suspend = bootstrap_einit_configuration_xml_expat_suspend;
+ thismodule->resume = bootstrap_einit_configuration_xml_expat_resume;
 
  event_listen (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
  event_listen (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
@@ -115,10 +164,6 @@ int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
 
  return 0;
 }
-
-struct cfgnode *curmode = NULL;
-char **xml_configuration_files = NULL;
-time_t xml_configuration_files_highest_mtime = 0;
 
 struct einit_xml_expat_user_data {
  uint32_t options;
@@ -389,6 +434,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 }
 
 void einit_config_xml_expat_event_handler (struct einit_event *ev) {
+ bootstrap_einit_configuration_xml_expat_usage++;
+
  if (ev->type == einit_core_update_configuration) {
   if (!ev->string && xml_configuration_files) {
    struct stat st;
@@ -412,9 +459,13 @@ void einit_config_xml_expat_event_handler (struct einit_event *ev) {
    ev->chain_type = einit_core_configuration_update;
   }
  }
+
+ bootstrap_einit_configuration_xml_expat_usage--;
 }
 
 void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
+ bootstrap_einit_configuration_xml_expat_usage++;
+
  if ((ev->argc >= 2) && strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
   char *command = cfg_getstring ("core-xml-validator/command", NULL);
 
@@ -434,6 +485,8 @@ void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
    free (xmlfiles);
   }
  }
+
+ bootstrap_einit_configuration_xml_expat_usage--;
 }
 
 char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
