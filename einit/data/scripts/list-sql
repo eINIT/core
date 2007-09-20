@@ -1,0 +1,26 @@
+#!/bin/sh
+
+echo '<?xml version="1.0"?>
+<xsl:stylesheet version = "1.0"
+        xmlns:xsl = "http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="text"/>
+<xsl:template match="module">
+INSERT INTO `einit`.`einitModules` (name, rid, provides, requires, before, after, shutdownBefore, shutdownAfter, functions)
+ VALUES
+ (`<xsl:value-of select="@name"/>`,
+  `<xsl:value-of select="@id"/>`,
+  `<xsl:value-of select="@provides"/>`,
+  `<xsl:value-of select="@requires"/>`,
+  `<xsl:value-of select="@before"/>`,
+  `<xsl:value-of select="@after"/>`,
+  `<xsl:value-of select="@shutdown-before"/>`,
+  `<xsl:value-of select="@shutdown-after"/>`,
+  `<xsl:value-of select="@functions"/>`)
+ ON DUPLICATE KEY UPDATE;
+</xsl:template>
+</xsl:stylesheet>
+'>/tmp/einit-modules-to-sql.xslt
+
+/sbin/einit --ipc-command "list modules --xml">/tmp/einit-modules.xml
+
+Xalan /tmp/einit-modules.xml /tmp/einit-modules-to-sql.xslt > einit-modules.sql
