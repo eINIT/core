@@ -1,8 +1,9 @@
 export INCLUDEPATH="/usr/local/include"
 
-# modules that need to be enabled manually: ipc-dbus, linux-netlink
+# modules that need to be enabled manually: ipc-dbus, linux-netlink, cron, parse-sh, distro-gentoo, module-random
+# modules that need to be reworked and are thus disabled by default: feedback-aural, feedback-aural-festival
 
-export MODULES_GENERIC="feedback-visual-textual feedback-aural feedback-aural-festival fqdn external exec ipc mount tty process parse-sh ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler feedback-visual-fbsplash module-lisp module-xml-old module-network cron module-c module-network-v2 functions-xml module-xml module-logic-v3 log"
+export MODULES_GENERIC="feedback-visual-textual fqdn external exec ipc mount tty process ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler feedback-visual-fbsplash module-xml-old module-network module-c module-network-v2 functions-xml module-xml module-logic-v3 log"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 export MODULES_CORE="module-so bootstrap-configuration-xml-expat bootstrap-configuration-stree"
 export MODULES_EXPERIMENTAL="readahead"

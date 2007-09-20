@@ -1198,7 +1198,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 //  if (module_logics_service_list) streefree (module_logics_service_list);
   emutex_lock (&ml_garbage_mutex);
   if (module_logics_service_list)
-   einit_module_logic_v3_garbage.strees = setadd ((void **)einit_module_logic_v3_garbage.strees, module_logics_service_list, SET_NOALLOC);
+   einit_module_logic_v3_garbage.strees = (struct stree **)setadd ((void **)einit_module_logic_v3_garbage.strees, module_logics_service_list, SET_NOALLOC);
   emutex_unlock (&ml_garbage_mutex);
 
   module_logics_service_list = new_service_list;

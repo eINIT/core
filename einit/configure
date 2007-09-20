@@ -155,7 +155,7 @@ for param in $@; do
 	elif test "$short" = "--distro-support"; then
 		if [ "${param#*=}" = "gentoo" ]; then
 			echo -n " GENTOO";
-			EXTERNALMODULES="${EXTERNALMODULES} distro-gentoo";
+			EXTERNALMODULES="${EXTERNALMODULES} parse-sh distro-gentoo";
 		fi
         elif test "$param" = "--svn"; then
                 echo -n " SVN";
