@@ -96,7 +96,7 @@ Configuration = element configuration {
      attribute use-proc { Boolean }?,
      attribute kernel-image { string }?,
      attribute kernel-options { string }?,
-     attribute kernel-initrd { string }?, }* &
+     attribute kernel-initrd { string }? }* &
     element kexec-calls {
       attribute load { text },
       attribute load-initrd { text },
