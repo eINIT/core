@@ -1632,7 +1632,6 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
 int emount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) return status_ok;
- if (strmatch (mountpoint, "/") && status) return status_ok;
 
  struct device_data *dd = mount_get_device_data (mountpoint, NULL);
  if (dd && dd->mountpoints) {
@@ -1661,7 +1660,6 @@ int emount (char *mountpoint, struct einit_event *status) {
 
 int eumount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) return status_ok;
- if (strmatch (mountpoint, "/") && status) return status_ok;
 
  emutex_lock (&mount_device_data_mutex);
  mount_update_nodes_from_mtab();
