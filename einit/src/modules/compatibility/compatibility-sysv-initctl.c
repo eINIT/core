@@ -114,58 +114,68 @@ pthread_t initctl_thread;
 
 void * initctl_wait (char *);
 
-void compatibility_sysv_initctl_einit_event_handler(struct einit_event *ev) {
- if (ev->type == einit_core_service_update) {
-  if (ev->status & status_enabled) {
-   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides, "ipc", SET_TYPE_STRING)) {
-    struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
+void compatibility_sysv_initctl_run () {
+ struct cfgnode *node = cfg_getnode ("configuration-compatibility-sysv-initctl", NULL);
 
-    if (node && !node->flag) return; // check if initctl should actually be used
+ if (node && !node->flag) return; // check if initctl should actually be used
 
-    char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
-    mode_t fifomode = (node && node->value ? node->value : 0600);
+ char *fifo = (node && node->svalue ? node->svalue : "/dev/initctl");
+ mode_t fifomode = (node && node->value ? node->value : 0600);
 
-    if (mkfifo (fifo, fifomode)) {
-     if (errno == EEXIST) {
-      if (unlink (fifo)) {
-       notice (3, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
-       return;
-      }
-      if (mkfifo (fifo, fifomode)) {
-       notice (3, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
-      }
-     } else {
-      notice (3, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
-      return;
-     }
-    }
-
-    ethread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
-
+ if (mkfifo (fifo, fifomode)) {
+  if (errno == EEXIST) {
+   if (unlink (fifo)) {
+    notice (3, "could not remove stale fifo \"%s\": %s: giving up", fifo, strerror (errno));
+    return;
    }
-  } else if (!(ev->status & status_enabled)) {
-   if (ev->module && ev->module->si && ev->module->si->provides && inset ((const void **)ev->module->si->provides,"ipc", SET_TYPE_STRING)) {
-
-    char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
-    if (!fifo) fifo =  "/dev/initctl";
-
-    if (compatibility_sysv_initctl_running)
-     ethread_cancel (initctl_thread);
-
-    if (unlink (fifo)) {
-     notice (3, "could not remove stale fifo \"%s\": %s", fifo, strerror (errno));
-    }
-
-    compatibility_sysv_initctl_running = 0;
-
+   if (mkfifo (fifo, fifomode)) {
+    notice (3, "could not recreate fifo \"%s\": %s", fifo, strerror (errno));
    }
+  } else {
+   notice (3, "could not create fifo \"%s\": %s: giving up", fifo, strerror (errno));
+   return;
   }
+ }
+
+ ethread_create (&initctl_thread, NULL, (void *(*)(void *))initctl_wait, (void *)fifo);
+}
+
+void compatibility_sysv_initctl_shutdown () {
+ char *fifo = cfg_getstring ("configuration-compatibility-sysv-initctl", NULL);
+ if (!fifo) fifo =  "/dev/initctl";
+
+ if (compatibility_sysv_initctl_running)
+  ethread_cancel (initctl_thread);
+
+ if (unlink (fifo)) {
+  notice (3, "could not remove stale fifo \"%s\": %s", fifo, strerror (errno));
+ }
+
+ compatibility_sysv_initctl_running = 0;
+}
+
+void compatibility_sysv_initctl_power_event_handler (struct einit_event *ev) {
+ if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
+  compatibility_sysv_initctl_shutdown();
+ }
+}
+
+void compatibility_sysv_initctl_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_devices_available:
+   compatibility_sysv_initctl_run();
+
+   break;
+
+  default: break;
  }
 }
 
 int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
- event_ignore (einit_event_subsystem_core, compatibility_sysv_initctl_einit_event_handler);
+
+ event_ignore (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
+ event_ignore (einit_event_subsystem_boot, compatibility_sysv_initctl_boot_event_handler);
 
  return 0;
 }
@@ -297,7 +307,9 @@ int compatibility_sysv_initctl_configure (struct lmodule *r) {
  thismodule->cleanup = compatibility_sysv_initctl_cleanup;
 
  ipc_configure (r);
- event_listen (einit_event_subsystem_core, compatibility_sysv_initctl_einit_event_handler);
+
+ event_listen (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
+ event_listen (einit_event_subsystem_boot, compatibility_sysv_initctl_boot_event_handler);
 
  return 0;
 }
