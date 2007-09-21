@@ -166,7 +166,9 @@ enum einit_event_code {
 
 /* einit_event_subsystem_boot: */
  einit_boot_early                   = einit_event_subsystem_boot     | 0x001,
- einit_boot_devices_available       = einit_event_subsystem_boot     | 0x002
+ einit_boot_devices_available       = einit_event_subsystem_boot     | 0x002,
+ einit_boot_root_device_ok          = einit_event_subsystem_boot     | 0x003,
+ einit_boot_critical_devices        = einit_event_subsystem_boot     | 0x004
 };
 
 enum einit_ipc_options {

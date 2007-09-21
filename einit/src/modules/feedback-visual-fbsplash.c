@@ -61,9 +61,6 @@ int einit_feedback_visual_fbsplash_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char *einit_feedback_visual_fbsplash_provides[] = {"feedback-fbsplash", "feedback-graphical", NULL};
-char *einit_feedback_visual_fbsplash_requires[] = {"mount-system", "splashd", NULL};
-char *einit_feedback_visual_fbsplash_before[]   = {"mount-critical", NULL};
 const struct smodule einit_feedback_visual_fbsplash_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -72,10 +69,10 @@ const struct smodule einit_feedback_visual_fbsplash_self = {
  .name      = "visual/fbsplash-based feedback module",
  .rid       = "einit-feedback-visual-fbsplash",
  .si        = {
-  .provides = einit_feedback_visual_fbsplash_provides,
-  .requires = einit_feedback_visual_fbsplash_requires,
+  .provides = NULL,
+  .requires = NULL,
   .after    = NULL,
-  .before   = einit_feedback_visual_fbsplash_before
+  .before   = NULL
  },
  .configure = einit_feedback_visual_fbsplash_configure
 };
@@ -98,6 +95,9 @@ pthread_mutex_t
  fbsplash_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t fbsplash_commandQ_cond = PTHREAD_COND_INITIALIZER;
 
+int einit_feedback_visual_fbsplash_disable ();
+int einit_feedback_visual_fbsplash_enable ();
+
 void fbsplash_queue_comand (const char *command) {
  emutex_lock (&fbsplash_commandQ_mutex);
  fbsplash_commandQ = (char **)setadd ((void **)fbsplash_commandQ, command, SET_TYPE_STRING);
@@ -106,9 +106,16 @@ void fbsplash_queue_comand (const char *command) {
  pthread_cond_broadcast (&fbsplash_commandQ_cond);
 }
 
-void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
+void einit_feedback_visual_fbsplash_power_event_handler(struct einit_event *ev) {
+ if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
+  notice (4, "disabling feedack (fbsplash)");
+  einit_feedback_visual_fbsplash_disable();
+ }
+}
+
+void einit_feedback_visual_fbsplash_boot_event_handler(struct einit_event *ev) {
 /* preinit */
- if ((ev->type == einit_core_module_list_update_complete) && !einit_have_feedback && !(coremode & einit_mode_ipconly)) {
+ if ((ev->type == einit_boot_devices_available) && !(coremode & einit_mode_ipconly)) {
   if (einit_initial_environment) {
 /* check for kernel params */
    uint32_t i = 0;
@@ -202,16 +209,21 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
    if (start_splash) {
     struct einit_event ee = evstaticinit(einit_core_change_service_status);
 
-    ee.argv = (char **)setadd ((void **)ee.set, "feedback-fbsplash", SET_TYPE_STRING);
+    ee.argv = (char **)setadd ((void **)ee.set, "splashd", SET_TYPE_STRING);
     ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
 
-    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+    event_emit (&ee, einit_event_flag_broadcast);
 
     evstaticdestroy(ee);
+
+    notice (4, "enabling feedack (fbsplash)");
+    einit_feedback_visual_fbsplash_enable();
    }
   }
  }
+}
 
+void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
  if ((ev->type == einit_core_mode_switching) && !fbsplash_disabled) {
   char tmp[BUFFERSIZE];
 
@@ -333,7 +345,7 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
  return NULL;
 }
 
-int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status) {
+int einit_feedback_visual_fbsplash_enable () {
  char *tmp = NULL, *fbtheme = NULL, *fbmode = "silent";
  char freetheme = 0, freemode = 0, have_verbose_tty = 0;
 
@@ -430,7 +442,7 @@ int einit_feedback_visual_fbsplash_enable (void *pa, struct einit_event *status)
  return status_ok;
 }
 
-int einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status) {
+int einit_feedback_visual_fbsplash_disable () {
  einit_feedback_visual_fbsplash_worker_thread_keep_running = 0;
  pthread_cond_broadcast (&fbsplash_commandQ_cond);
 
@@ -438,6 +450,8 @@ int einit_feedback_visual_fbsplash_disable (void *pa, struct einit_event *status
 }
 
 int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
+ event_ignore (einit_event_subsystem_boot, einit_feedback_visual_fbsplash_boot_event_handler);
+ event_ignore (einit_event_subsystem_power, einit_feedback_visual_fbsplash_power_event_handler);
  event_ignore (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
 
  return 0;
@@ -448,10 +462,10 @@ int einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
  module_logic_configure(tm);
 
  tm->cleanup = einit_feedback_visual_fbsplash_cleanup;
- tm->enable = einit_feedback_visual_fbsplash_enable;
- tm->disable = einit_feedback_visual_fbsplash_disable;
 
  event_listen (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
+ event_listen (einit_event_subsystem_boot, einit_feedback_visual_fbsplash_boot_event_handler);
+ event_listen (einit_event_subsystem_power, einit_feedback_visual_fbsplash_power_event_handler);
 
  return 0;
 }

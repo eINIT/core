@@ -1,8 +1,7 @@
 <module>
  <v-netplugd
   name="Network Cable HotPlug Management daemon (netplugd)"
-  provides="netplugd"
-  requires="ipc">
+  provides="netplugd">
 
   <execute id="daemon" code="netplugd -F" />
 

@@ -2,7 +2,6 @@
  <v-splashd
   name="Splash-Util (Daemon)"
   provides="splashd"
-  requires="mount-system"
   before="tty">
 
   <execute id="prepare" code="if test &quot;${configuration_feedback_visual_fbsplash_daemon_mount_dir_b}&quot; = &quot;yes&quot;; then

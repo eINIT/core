@@ -2,7 +2,6 @@
  <v-kern-alsa
   name="Kernel Modules (ALSA)"
   provides="kern-alsa"
-  requires="mount-system"
   before="^alsa">
 
   <execute id="enable" code="kernel_modules_alsa=`/sbin/modprobe -c | grep -E '(snd-card|sound-service)-[0-9]' | awk '{print $3}'` ;

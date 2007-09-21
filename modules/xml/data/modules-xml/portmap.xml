@@ -2,7 +2,7 @@
  <v-portmap
   name="Portmap Daemon"
   provides="portmap"
-  requires="mount-system:network">
+  requires="network">
 
   <execute id="daemon" code="/sbin/portmap -d" />
 

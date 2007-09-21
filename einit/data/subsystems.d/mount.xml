@@ -7,7 +7,6 @@
    <filesystem-guessing-order s="ext4:ext3:ext2:reiser4:reiserfs:xfs:jfs:ufs:udf" />
    <mountpoints>
     <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache" />
-    <system s="/:/sys:/proc:/dev" />
     <critical s="/usr:/var" />
    </mountpoints>
    <!-- parametre 1 is the filesystem type, parametre 2 is the device -->

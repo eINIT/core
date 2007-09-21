@@ -2,7 +2,6 @@
  <v-kern-ati
   name="Proprietary ATI X11 Drivers"
   provides="kern-ati"
-  requires="mount-system"
   before="displaymanager">
 
   <execute id="enable" code="modprobe fglrx" />

@@ -2,7 +2,7 @@
  <v-numlock
   name="Enable numlock in terminal (numlock)"
   provides="numlock"
-  requires="tty:mount-system">
+  requires="tty">
 
   <execute id="enable" code="tty_max=$(cat /lib/einit/einit.xml | egrep -c 'tty[0-9]-regular') ;
           tty_list=$(seq 1 ${tty_max}) ;

@@ -123,6 +123,9 @@ int einit_mount_recover_module (struct lmodule *);
 void einit_mount_mount_ipc_handler(struct einit_event *);
 void einit_mount_mount_handler(struct einit_event *);
 void einit_mount_einit_event_handler(struct einit_event *);
+void einit_mount_boot_event_handler (struct einit_event *);
+void einit_mount_power_event_handler (struct einit_event *);
+
 int einit_mount_scanmodules (struct lmodule *);
 int einit_mount_cleanup (struct lmodule *);
 void einit_mount_update_configuration ();
@@ -139,7 +142,6 @@ struct stree *mounter_dd_by_devicefile = NULL;
 
 char **mount_dont_umount = NULL;
 char **mount_critical = NULL;
-char **mount_system = NULL;
 char *mount_fsck_template = NULL;
 char *mount_mtab_file = NULL;
 enum mount_options mount_options;
@@ -925,19 +927,17 @@ void mount_add_update_group (char *groupname, char **elements, char *seq) {
 
 int einit_mount_scanmodules (struct lmodule *ml) {
  struct stree *s = NULL;
- char **scritical = NULL, **ssystem = NULL, **slocal = NULL, **sremote = NULL;
+ char **scritical = NULL, **slocal = NULL, **sremote = NULL;
 
  if (!mount_filesystems) return 0;
 
- ssystem = (char **)setadd ((void **)NULL, (void *)"fs-root", SET_TYPE_STRING);
- scritical = (char **)setadd ((void **)NULL, (void *)"mount-system", SET_TYPE_STRING);
  slocal = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
  sremote = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
  s = mounter_dd_by_mountpoint;
- while (s) {
+ while (s && !strmatch (s->key, "/")) {
   char *servicename = mount_mp_to_service_name(s->key);
   char tmp[BUFFERSIZE];
   char **after = NULL;
@@ -1043,24 +1043,13 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
-    if (inset ((const void **)mount_system, s->key, SET_TYPE_STRING)) {
-     ssystem = (char **)setadd ((void **)ssystem, (void *)servicename, SET_TYPE_STRING);
-    } else if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING)) {
+    if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING)) {
      scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
-
-     requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
     } else {
      char ad = 0;
 
      if (inset ((const void **)mp->options, "critical", SET_TYPE_STRING)) {
       scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
-      ad = 1;
-
-      requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
-     }
-
-     if (inset ((const void **)mp->options, "system", SET_TYPE_STRING)) {
-      ssystem = (char **)setadd ((void **)ssystem, (void *)servicename, SET_TYPE_STRING);
       ad = 1;
      }
 
@@ -1070,26 +1059,17 @@ int einit_mount_scanmodules (struct lmodule *ml) {
       if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
        sremote = (char **)setadd ((void **)sremote, (void *)servicename, SET_TYPE_STRING);
        ad = 1;
-
-       requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
       }
      }
 
      if (!ad) {
       slocal = (char **)setadd ((void **)slocal, (void *)servicename, SET_TYPE_STRING);
-      requires = (char **)setadd ((void **)requires, "mount-system", SET_TYPE_STRING);
      }
     }
    }
   }
 
   esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
-
-  if (inset ((const void **)ssystem, servicename, SET_TYPE_STRING)) {
-//   notice (1, "%s is in ssystem (%s), not making it require that", servicename, set2str (' ', ssystem));
-
-   requires = strsetdel (requires, "mount-system");
-  }
 
   while (lm) {
    if (lm->source && strmatch(lm->source, tmp)) {
@@ -1138,10 +1118,6 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
 
- if (ssystem) {
-  mount_add_update_group ("mount-system", ssystem, "most");
-  free (ssystem);
- }
  if (scritical) {
   mount_add_update_group ("mount-critical", scritical, "most");
   free (scritical);
@@ -1758,9 +1734,6 @@ void einit_mount_update_configuration () {
   free (tmp);
  }
 
- if ((node = cfg_findnode ("configuration-storage-mountpoints-system",0,NULL)) && node->svalue)
-  mount_system = str2set(':', node->svalue);
-
  if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue)
   mount_critical = str2set(':', node->svalue);
 
@@ -1782,6 +1755,8 @@ int einit_mount_cleanup (struct lmodule *tm) {
  event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
+ event_ignore (einit_event_subsystem_boot, einit_mount_boot_event_handler);
+ event_ignore (einit_event_subsystem_power, einit_mount_power_event_handler);
 
  function_unregister ("fs-mount", 1, (void *)emount);
  function_unregister ("fs-umount", 1, (void *)eumount);
@@ -1820,6 +1795,47 @@ int einit_mount_recover_module (struct lmodule *module) {
  return status_ok;
 }
 
+void emount_root () {
+ struct einit_event ev = evstaticinit (einit_feedback_module_status);
+ ev.module = thismodule;
+ emount ("/", &ev);
+ evstaticdestroy (ev);
+}
+
+void eumount_root () {
+ struct einit_event ev = evstaticinit (einit_feedback_module_status);
+ ev.module = thismodule;
+ eumount ("/", &ev);
+ evstaticdestroy (ev);
+}
+
+void einit_mount_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_devices_available:
+   emount_root ();
+   {
+    struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
+    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+    evstaticdestroy(eml);
+   }
+
+   break;
+
+  default: break;
+ }
+}
+
+void einit_mount_power_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_power_down_imminent:
+  case einit_power_reset_imminent:
+   eumount_root ();
+   break;
+
+  default: break;
+ }
+}
+
 int einit_mount_configure (struct lmodule *r) {
  struct stat st;
  module_init (r);
@@ -1831,6 +1847,8 @@ int einit_mount_configure (struct lmodule *r) {
  /* pexec configuration */
  exec_configure (this);
 
+ event_listen (einit_event_subsystem_power, einit_mount_power_event_handler);
+ event_listen (einit_event_subsystem_boot, einit_mount_boot_event_handler);
  event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_listen (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);

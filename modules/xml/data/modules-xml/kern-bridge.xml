@@ -1,8 +1,7 @@
 <module>
  <v-kern-bridge
   name="802.1d Ethernet Bridging"
-  provides="kern-bridge"
-  requires="mount-system">
+  provides="kern-bridge">
 
   <execute id="enable" code="modprobe -q bridge; true" />
   <execute id="disable" code="true" />

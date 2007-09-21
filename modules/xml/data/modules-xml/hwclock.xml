@@ -1,8 +1,7 @@
 <module>
  <v-hwclock
   name="HWCLOCK"
-  provides="hwclock"
-  requires="mount-system">
+  provides="hwclock">
 
   <execute id="enable" code="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};
           if [[ $? == &quot;0&quot; ]]; then

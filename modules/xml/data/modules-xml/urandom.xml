@@ -1,8 +1,7 @@
 <module>
  <v-urandom
   name="urandom"
-  provides="urandom"
-  requires="mount-system">
+  provides="urandom">
 
   <execute id="enable" code="echo &quot;feedback|notice|Initializing random number generator...&quot;;
           if [ -f ${configuration_services_urandom_seed} ]; then

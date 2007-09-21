@@ -2,7 +2,6 @@
  <v-kern-nvidia
   name="Proprietary NVIDIA X11 Drivers"
   provides="kern-nvidia"
-  requires="mount-system"
   before="displaymanager">
 
   <execute id="enable" code="modprobe nvidia;

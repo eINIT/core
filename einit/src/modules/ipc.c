@@ -69,9 +69,6 @@ int einit_ipc_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_ipc_provides[] = {"ipc", NULL};
-char * einit_ipc_requires[] = {"mount-system", NULL};
-char * einit_ipc_before[] = {"mount-local", NULL};
 const struct smodule einit_ipc_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -80,10 +77,10 @@ const struct smodule einit_ipc_self = {
  .name      = "eINIT IPC module",
  .rid       = "einit-ipc",
  .si        = {
-  .provides = einit_ipc_provides,
-  .requires = einit_ipc_requires,
+  .provides = NULL,
+  .requires = NULL,
   .after    = NULL,
-  .before   = einit_ipc_before
+  .before   = NULL
  },
  .configure = einit_ipc_configure
 };
@@ -94,6 +91,9 @@ module_register(einit_ipc_self);
 
 pthread_t ipc_thread;
 char einit_ipc_running = 0;
+
+void einit_ipc_boot_event_handler (struct einit_event *);
+void einit_ipc_power_event_handler (struct einit_event *);
 
 int ipc_process_f (const char *cmd, FILE *f) {
  if (!cmd) return 0;
@@ -311,24 +311,37 @@ void * ipc_wait (void *unused_parameter) {
  return NULL;
 }
 
-int einit_ipc_enable (void *pa, struct einit_event *status) {
- ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
- return status_ok;
+void einit_ipc_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_root_device_ok:
+   notice (4, "enabling IPC (core)");
+   ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
+   break;
+
+  default: break;
+ }
 }
 
-int einit_ipc_disable (void *pa, struct einit_event *status) {
- if (einit_ipc_running)
-  ethread_cancel (ipc_thread);
+void einit_ipc_power_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_power_down_scheduled:
+  case einit_power_reset_scheduled:
+   notice (4, "disabling IPC (core)");
+   if (einit_ipc_running)
+    ethread_cancel (ipc_thread);
+   break;
 
- return status_ok;
+  default: break;
+ }
 }
 
 int einit_ipc_configure (struct lmodule *irr) {
  module_init(irr);
 
  irr->cleanup = einit_ipc_cleanup;
- irr->enable = einit_ipc_enable;
- irr->disable = einit_ipc_disable;
+
+ event_listen (einit_event_subsystem_boot, einit_ipc_boot_event_handler);
+ event_listen (einit_event_subsystem_power, einit_ipc_power_event_handler);
 
  event_listen (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);
  function_register ("einit-ipc-process-string", 1, ipc_process_f);
