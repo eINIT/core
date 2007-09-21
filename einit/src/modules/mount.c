@@ -978,7 +978,10 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     free (comb);
    }
 
-   free (tmp_split);
+   if (tmp_split) {
+    free (tmp_split);
+    tmp_split = NULL;
+   }
 
 /* same game, but with the device and not the mountpoint */
    struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
@@ -1006,7 +1009,6 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
    tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
 
-
    if (tmpxt) {
     tmpx = set2str ('|', (const char **)tmpxt);
    }
@@ -1017,7 +1019,11 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     free (tmpx);
    }
 
-   free (tmp_split);
+   if (tmp_split) {
+    free (tmp_split);
+    tmp_split = NULL;
+   }
+
 //   free (tmpxt);
   }
 
