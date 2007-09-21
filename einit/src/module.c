@@ -184,8 +184,13 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  if (!module) return 0;
 
 /* wait if the module is already being processed in a different thread */
- if (!(task & einit_module_ignore_mutex))
-  emutex_lock (&module->mutex);
+ if (!(task & einit_module_ignore_mutex)) {
+  if ((task & einit_module_suspend) || (task & einit_module_resume)) {
+   if (pthread_mutex_trylock (&module->mutex))
+    return status_failed;
+  } else
+   emutex_lock (&module->mutex);
+ }
 
  if (task & einit_module_suspend) {
   int retval = mod_suspend (module);

@@ -496,7 +496,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
  }
 
  if (dd) {
-  if (device) free (device);
+//  if (device) free (device);
   mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  } else {
   struct device_data *d = emalloc(sizeof(struct device_data));
@@ -520,7 +520,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
    streeadd (mounter_dd_by_devicefile, d->device, mounter_device_data[y], SET_NOALLOC, NULL);
   emutex_unlock (&mounter_dd_by_devicefile_mutex);
 
-  if (device) free (device);
+//  if (device) free (device);
 
   mount_add_update_fstab_data (d, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  }
