@@ -16,11 +16,6 @@
                      pattern-allow="^([shm]d[a-z]?[0-9]*)" pattern-disallow="^\.udev" />
     <source s="dev" />
    </block-devices>
-   <fstab>
-    <!-- default nodes that are /very/, very very VERY important (!) -->
-
-    <node-order id="/" after="^(fs-(proc|sys|dev)|udev)$" />
-   </fstab>
   </storage>
  </configuration>
 

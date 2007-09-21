@@ -931,13 +931,14 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
  if (!mount_filesystems) return 0;
 
+ scritical = (char **)setadd ((void **)NULL, (void *)"fs-root", SET_TYPE_STRING);
  slocal = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
  sremote = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
  s = mounter_dd_by_mountpoint;
- while (s && !strmatch (s->key, "/")) {
+ while (s) {
   char *servicename = mount_mp_to_service_name(s->key);
   char tmp[BUFFERSIZE];
   char **after = NULL;
@@ -961,6 +962,8 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
    tcnode = cfg_findnode ("configuration-storage-fstab-node-order", 0, tcnode);
   }
+
+  if (strmatch (s->key, "/")) special_order = 1;
 
   if (!special_order) {
    char *tmpx = NULL;
@@ -1629,6 +1632,7 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
 int emount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) return status_ok;
+ if (strmatch (mountpoint, "/") && status) return status_ok;
 
  struct device_data *dd = mount_get_device_data (mountpoint, NULL);
  if (dd && dd->mountpoints) {
@@ -1657,6 +1661,7 @@ int emount (char *mountpoint, struct einit_event *status) {
 
 int eumount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) return status_ok;
+ if (strmatch (mountpoint, "/") && status) return status_ok;
 
  emutex_lock (&mount_device_data_mutex);
  mount_update_nodes_from_mtab();
