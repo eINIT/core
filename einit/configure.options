@@ -8,7 +8,7 @@ export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl
 export MODULES_CORE="module-so bootstrap-configuration-stree bootstrap-configuration-xml-expat"
 export MODULES_EXPERIMENTAL="readahead"
 
-export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-module-kernel linux-udev"
+export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-kernel-modules linux-udev"
 export MODULES_BSD="bsd-devfs"
 export MODULES_DARWIN="${MODULES_BSD}"
 

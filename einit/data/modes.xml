@@ -1,7 +1,7 @@
 <einit>
 
  <mode id="boot">
-  <enable services="network-minimal:hwclock:mount-local:tty:keyboard:logger:utmp:urandom:modules" critical="mount-critical:tty" />
+  <enable services="network-minimal:hwclock:mount-local:tty:keyboard:logger:utmp:urandom" critical="mount-critical:tty" />
   <overrides>
    <ttys s="tty1-regular" />
   </overrides>

@@ -110,7 +110,7 @@ char flush_log_buffer_to_syslog() {
   while (logbuffer && logbuffer[0]) {
 
    char *slmessage = logbuffer[0]->message;
-   char severity = logbuffer[0]->severity;
+//   char severity = logbuffer[0]->severity;
 
 //   fprintf (stderr, "message: %s\n", slmessage);
 

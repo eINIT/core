@@ -81,11 +81,18 @@ module_register(linux_udev_self);
 
 char linux_udev_enabled = 0;
 
+void linux_udev_load_kernel_extensions() {
+ struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
+}
+
 int linux_udev_run() {
  if (!linux_udev_enabled) {
   linux_udev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
+  linux_udev_load_kernel_extensions();
   mount ("sys", "/sys", "sysfs", 0, NULL);
 
   system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
