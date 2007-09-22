@@ -538,10 +538,14 @@ int main(int argc, char **argv) {
 #ifdef LINUX
     if (!(coremode & einit_mode_sandbox)) {
      mount ("proc", "/proc", "proc", 0, NULL);
+     mount ("sys", "/sys", "sysfs", 0, NULL);
+
+     system ("mount / -o remount,rw");
     }
 #endif
 
     nargv = (char **)setadd ((void **)nargv, "/usr/bin/valgrind", SET_TYPE_STRING);
+    nargv = (char **)setadd ((void **)nargv, "--log-file=/einit.valgrind", SET_TYPE_STRING);
     nargv = (char **)setadd ((void **)nargv, (coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", SET_TYPE_STRING);
 
     for (; xargv[i]; i++) {
