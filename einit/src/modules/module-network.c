@@ -214,9 +214,6 @@ int network_scanmodules (struct lmodule *mainlist) {
       } else if (strmatch (node->arbattrs[y], "kernel-module")) {
        struct cfgnode newnode;
 
-       esprintf (tmp, BUFFERSIZE, "kern-%s", interfacename);
-       req = (char **)setadd ((void **)req, tmp, SET_TYPE_STRING);
-
        memset (&newnode, 0, sizeof(struct cfgnode));
 
        esprintf (tmp, BUFFERSIZE, "configuration-kernel-modules-%s", interfacename);
