@@ -8,10 +8,10 @@
 if [ $1 = "enable" ]; then
  echo 'feedback|notice|Using udev to manage /dev'
  udev=$(cat /proc/mounts | grep udev)
- if [ -z ${udev} ] ; then
+ if [ -z "${udev}" ] ; then
   mount -n -t tmpfs -o exec,nosuid,mode=0755 udev /dev
   touch /dev/.einit
-  if [ '${configuration_services_udev_device_tarball}' = 'yes' ] ; then
+  if [ "${configuration_services_udev_device_tarball}" = 'yes' ] ; then
    echo 'feedback|notice|Populating /dev with saved device nodes'
    tar -jxpf /lib/udev/state/devices.tar.bz2 -C /dev
    sleep 2
@@ -63,7 +63,7 @@ if [ $1 = "enable" ]; then
 elif [ $1 = "disable" ]; then
  killall -9 udevd;
 elif [ $1 = "on-shutdown" ]; then
- if [ '${configuration_services_udev_device_tarball}' = 'yes' ] ; then
+ if [ "${configuration_services_udev_device_tarball}" = 'yes' ] ; then
   echo 'feedback|notice|Saving device nodes'
   save_tmp_base=/tmp/udev.savedevices.'$$'
   devices_udev='${save_tmp_base}'/devices.udev

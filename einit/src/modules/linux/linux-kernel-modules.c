@@ -124,6 +124,33 @@ int linux_kernel_modules_unload (char **modules) {
  return status_ok;
 }
 
+char **linux_kernel_modules_autoload_d() {
+ char **rv = NULL;
+ char *file = cfg_getstring ("configuration-kernel-modules-autoload.d/file", NULL);
+ if (file) {
+  char *d = readfile (file);
+
+  notice (4, "grabbing kernel modules from file \"%s\"", file);
+
+  if (d) {
+   char **t = str2set ('\n', d);
+   int i = 0;
+
+   for (; t[i]; i++) {
+    char *module = t[i];
+    strtrim (module);
+    if ((module[0] != '#') && (module[0] != '\n') && (module[0] != '\r') && (module[0] != 0)) {
+     rv = (char **)setadd ((void **)rv, module, SET_TYPE_STRING);
+    }
+   }
+
+   free (t);
+  }
+ }
+
+ return rv;
+}
+
 int linux_kernel_modules_run (char shutdown) {
  pthread_t **threads = NULL;
  struct stree *linux_kernel_modules_nodes = cfg_prefix("configuration-kernel-modules-");
@@ -160,6 +187,26 @@ int linux_kernel_modules_run (char shutdown) {
 
   streefree (linux_kernel_modules_nodes);
  }
+
+ char **kamodules = linux_kernel_modules_autoload_d();
+ if (kamodules) {
+  if (shutdown) {
+   pthread_t *threadid = emalloc (sizeof (pthread_t));
+
+   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_unload, kamodules)) {
+    linux_kernel_modules_unload (kamodules);
+   } else
+    threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+  } else {
+   pthread_t *threadid = emalloc (sizeof (pthread_t));
+
+   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, kamodules)) {
+    linux_kernel_modules_load (kamodules);
+   } else
+    threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+  }
+ }
+
 
  if (threads) {
   int i = 0;
