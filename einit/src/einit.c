@@ -60,6 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef LINUX
 #include <sys/syscall.h>
+#include <sys/mount.h>
 #endif
 
 char shutting_down = 0;
@@ -421,7 +422,7 @@ int main(int argc, char **argv) {
 // if (pid == 1) {
   initoverride = 1;
 #ifdef LINUX
-  if ((einit_sub = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0)) < 0) {
+  if ((einit_sub = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
    bitch (bitch_stdio, errno, "Could not fork()");
    eputs (" !! Haven't been able to fork a secondary worker process. This is VERY bad, you will get a lot of zombie processes! (provided that things work at all)\n", stderr);
   }
