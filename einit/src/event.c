@@ -186,14 +186,13 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
    if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
     if (flags & einit_event_flag_spawn_thread_multi_wait) {
      pthread_t *threadid = emalloc (sizeof (pthread_t));
-	 struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
-/* need this */
+     struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
 
      d->event = evdup(event);
      d->handler = cur->handler;
 
      ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
-	 threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
     } else
      cur->handler (event);
    }

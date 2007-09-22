@@ -534,6 +534,13 @@ int main(int argc, char **argv) {
    if (have_valgrind) {
     char **nargv = NULL;
     uint32_t i = 1;
+
+#ifdef LINUX
+    if (!(coremode & einit_mode_sandbox)) {
+     mount ("proc", "/proc", "proc", 0, NULL);
+    }
+#endif
+
     nargv = (char **)setadd ((void **)nargv, "/usr/bin/valgrind", SET_TYPE_STRING);
     nargv = (char **)setadd ((void **)nargv, (coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", SET_TYPE_STRING);
 
