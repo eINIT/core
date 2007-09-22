@@ -69,15 +69,10 @@ struct mloadplan {
  enum einit_plan_options options;
 };
 
-typedef double (*plan_progress_fetcher)(struct mloadplan *);
-
-plan_progress_fetcher get_plan_progress_fp;
-
 #define get_plan_progress(plan)\
- ((get_plan_progress_fp || (get_plan_progress_fp = function_find_one ("module-logic-get-plan-progress", 1, NULL))) ? get_plan_progress_fp(plan) : 0.0)
+ function_call_by_name(double, "module-logic-get-plan-progress", 1, plan)
 
-#define module_logic_configure(x)\
- get_plan_progress_fp = NULL
+#define module_logic_configure(x)
 
 #endif
 
