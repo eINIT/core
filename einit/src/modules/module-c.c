@@ -79,6 +79,7 @@ module_register(module_c_self);
 #endif
 
 char module_c_firstrun = 1;
+int module_c_usage = 0;
 
 char module_c_compile_file (char *oname, char *base, char *nname) {
  char ret = 0;
@@ -220,11 +221,13 @@ char module_c_update_modules () {
 }
 
 void module_c_einit_event_handler (struct einit_event *ev) {
+ module_c_usage++;
  if (ev->type == einit_core_update_configuration) {
   if (module_c_update_modules()) {
    ev->chain_type = einit_core_configuration_update;
   }
  }
+ module_c_usage--;
 }
 
 int module_c_cleanup (struct lmodule *this) {
@@ -234,10 +237,13 @@ int module_c_cleanup (struct lmodule *this) {
 }
 
 int module_c_suspend (struct lmodule *this) {
- event_wakeup (einit_core_update_configuration, this);
- event_ignore (einit_event_subsystem_core, module_c_einit_event_handler);
+ if (!module_c_usage) {
+  event_wakeup (einit_core_update_configuration, this);
+  event_ignore (einit_event_subsystem_core, module_c_einit_event_handler);
 
- return status_ok;
+  return status_ok;
+ } else
+  return status_failed;
 }
 
 int module_c_resume (struct lmodule *this) {

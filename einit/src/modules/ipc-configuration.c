@@ -74,9 +74,12 @@ module_register(einit_ipc_configuration_self);
 
 #endif
 
+int einit_ipc_configuration_ipc_event_usage = 0;
+
 void einit_ipc_configuration_ipc_event_handler (struct einit_event *);
 
 void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
+ einit_ipc_configuration_ipc_event_usage++;
  if (ev->argc > 1) {
   if (strmatch (ev->argv[0], "update") && strmatch (ev->argv[1], "configuration")) {
    struct einit_event nev = evstaticinit(einit_core_update_configuration);
@@ -250,6 +253,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    ev->implemented = 1;
   }
  }
+ einit_ipc_configuration_ipc_event_usage--;
 }
 
 int einit_ipc_configuration_cleanup (struct lmodule *irr) {
@@ -259,10 +263,13 @@ int einit_ipc_configuration_cleanup (struct lmodule *irr) {
 }
 
 int einit_ipc_configuration_suspend (struct lmodule *irr) {
- event_wakeup (einit_event_subsystem_ipc, irr);
- event_ignore (einit_event_subsystem_ipc, einit_ipc_configuration_ipc_event_handler);
+ if (!einit_ipc_configuration_ipc_event_usage) {
+  event_wakeup (einit_event_subsystem_ipc, irr);
+  event_ignore (einit_event_subsystem_ipc, einit_ipc_configuration_ipc_event_handler);
 
- return status_ok;
+  return status_ok;
+ } else
+  return status_failed;
 }
 
 int einit_ipc_configuration_resume (struct lmodule *irr) {

@@ -849,6 +849,8 @@ int mod_plan_free (struct mloadplan *plan) {
 }
 
 double mod_get_plan_progress_f (struct mloadplan *plan) {
+ einit_module_logic_v3_usage++;
+
  if (plan) {
   return 0.0;
  } else {
@@ -865,6 +867,8 @@ double mod_get_plan_progress_f (struct mloadplan *plan) {
 
   return 1.0 - (double)(left / all);
  }
+
+ einit_module_logic_v3_usage--;
 }
 
 void mod_sort_service_list_items_by_preference() {

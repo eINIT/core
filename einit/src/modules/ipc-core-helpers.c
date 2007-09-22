@@ -78,6 +78,7 @@ module_register(einit_ipc_core_helpers_self);
 struct lmodule *mlist;
 
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
+int einit_ipc_core_helpers_event_usage = 0;
 
 #define STATUS2STRING(status)\
  (status == status_idle ? "idle" : \
@@ -89,6 +90,7 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
  (status & status_enabled ? "E" : "D")))
 
 void *einit_ipc_core_helpers_detached_module_action (char **argv) {
+ einit_ipc_core_helpers_event_usage++;
  struct lmodule *cur = mlist;
  enum einit_module_task task = 0;
 
@@ -111,11 +113,14 @@ void *einit_ipc_core_helpers_detached_module_action (char **argv) {
 
  free (argv);
 
+ einit_ipc_core_helpers_event_usage--;
+
  return NULL;
 }
 
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
- if (!ev || !ev->argv) return;
+ einit_ipc_core_helpers_event_usage++;
+ if (!ev || !ev->argv) goto done;
 
  if ((ev->argc >= 2) && ev->argv[0] && ev->argv[1]) {
   if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
@@ -285,6 +290,10 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
    }
   }*/
  }
+ 
+ done:
+ einit_ipc_core_helpers_event_usage--;
+ return;
 }
 
 
@@ -295,10 +304,13 @@ int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
 }
 
 int einit_ipc_core_helpers_suspend (struct lmodule *irr) {
- event_wakeup (einit_event_subsystem_ipc, irr);
- event_ignore (einit_event_subsystem_ipc, einit_ipc_core_helpers_ipc_event_handler);
+ if (!einit_ipc_core_helpers_event_usage) {
+  event_wakeup (einit_event_subsystem_ipc, irr);
+  event_ignore (einit_event_subsystem_ipc, einit_ipc_core_helpers_ipc_event_handler);
 
- return status_ok;
+  return status_ok;
+ } else
+  return status_failed;
 }
 
 int einit_ipc_core_helpers_resume (struct lmodule *irr) {

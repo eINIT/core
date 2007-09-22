@@ -89,6 +89,7 @@ module_register(einit_fqdn_self);
 #endif
 
 void einit_fqdn_boot_event_handler (struct einit_event *);
+int einit_fqdn_usage = 0;
 
 int einit_fqdn_cleanup (struct lmodule *this) {
  event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
@@ -106,6 +107,7 @@ void einit_fqdn_set () {
 }
 
 void einit_fqdn_boot_event_handler (struct einit_event *ev) {
+ einit_fqdn_usage++;
  switch (ev->type) {
   case einit_boot_early:
    einit_fqdn_set();
@@ -117,13 +119,17 @@ void einit_fqdn_boot_event_handler (struct einit_event *ev) {
 
   default: break;
  }
+ einit_fqdn_usage--;
 }
 
 int einit_fqdn_suspend (struct lmodule *irr) {
- event_wakeup (einit_boot_early, irr);
- event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
+ if (!einit_fqdn_usage) {
+  event_wakeup (einit_boot_early, irr);
+  event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
 
- return status_ok;
+  return status_ok;
+ } else
+  return status_failed;
 }
 
 int einit_fqdn_resume (struct lmodule *irr) {
