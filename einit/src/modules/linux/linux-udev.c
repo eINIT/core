@@ -92,10 +92,11 @@ int linux_udev_run() {
   linux_udev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
-  linux_udev_load_kernel_extensions();
   mount ("sys", "/sys", "sysfs", 0, NULL);
 
   system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
+
+  linux_udev_load_kernel_extensions();
  }
 
  return status_ok;
