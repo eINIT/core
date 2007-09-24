@@ -33,28 +33,28 @@
      provided by multiple services, however, you may find it easier to just use
      a module's RID instead of a multi-call service name. for example, instead
      of specifying "displaymanager" when all you want is gdm, you may instead
-     want to specify "daemon-gdm" in your modes.xml, whereever you keep your
+     want to specify "v-gdm" in your modes.xml, whereever you keep your
      modes. alternatively, you can specify 'inderect' preferences on multi-
      service module(-sets). an example of this would be the 'logger' service,
-     which is (among others) provided by daemon-metalog, which also provides
+     which is (among others) provided by v-metalog, which also provides
      'metalog' as a service. by specifying both 'logger' and 'metalog', you're
-     indirectly adding a prefer-line like <logger s="daemon-metalog" />.
-     same for specifying both "logger" and "daemon-metalog". the latter form
-     may be more reliable (since daemon-metalog is always unambiguous, whereas
+     indirectly adding a prefer-line like <logger s="v-metalog" />.
+     same for specifying both "logger" and "v-metalog". the latter form
+     may be more reliable (since v-metalog is always unambiguous, whereas
      "metalog" is not). -->
 
 <!--  <prefer>
-   <displaymanager s="daemon-kdm:daemon-entrance" />
-   <logger s="daemon-metalog:daemon-syslog-ng:daemon-syslog" />
-   <kern-alsa s="shell-kern-audio-alsa" />
-   <kern-arbitrary s="shell-kern-module-autoload.d" />
-   <antivirus s="shell-clamd" />
+   <displaymanager s="v-kdm:v-entrance" />
+   <logger s="v-metalog:v-syslog-ng:v-syslog" />
+   <kern-alsa s="v-kern-audio-alsa" />
+   <kern-arbitrary s="v-kern-module-autoload.d" />
+   <antivirus s="v-clamd" />
   </prefer> -->
 
   <alias>
 <!-- service groups -->
 <!-- you really don't want to remove net-lo or fqdn from network, or stuff will break -->
-   <network group="fqdn:net-lo:net-eth0" seq="most" />
+   <network group="net-lo:net-eth0" seq="most" />
 <!-- or kern-ati if you have an ATI card -->
    <video group="kern-nvidia" seq="any-iop" />
 <!-- kern-sound is the list-based module loader.
