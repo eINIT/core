@@ -1,5 +1,5 @@
 <module>
- <v-entrance
+ <v-entranced
   name="EntranceD"
   provides="displaymanager:entranced"
   requires="mount-critical:network-minimal">
@@ -9,5 +9,5 @@
   <need-files s="/usr/sbin/entranced" />
   <environment DISPLAY=":0.0" HOME="/root" />
   <restart b="yes" />
- </v-entrance>
+ </v-entranced>
 </module>
