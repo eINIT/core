@@ -491,7 +491,7 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
   if (!strmatch (command, "list modules --xml") && !strmatch (command, "list services --xml")) {
    reply = dbus_message_new_method_return(message);
 
-   if (!returnvalue) returnvalue = "<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
+   if (!returnvalue) returnvalue = (char *)"<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
 
    dbus_message_iter_init_append(reply, &args);
    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
