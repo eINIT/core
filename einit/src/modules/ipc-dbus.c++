@@ -69,8 +69,8 @@ int einit_dbus_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_dbus_provides[] = {"ipc-dbus", NULL};
-char * einit_dbus_requires[] = {"dbus", NULL};
+const char * einit_dbus_provides[] = {"ipc-dbus", NULL};
+const char * einit_dbus_requires[] = {"dbus", NULL};
 const struct smodule einit_dbus_self = {
  EINIT_VERSION,
  BUILDNUMBER,
@@ -182,8 +182,8 @@ einit_dbus::~einit_dbus() {
 }
 
 int einit_dbus::dbus_connect () {
- char *dbusname;
- char *dbusaddress;
+ const char *dbusname;
+ const char *dbusaddress;
  int ret = 0;
 
  if (!(dbusaddress = cfg_getstring("configuration-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
@@ -222,8 +222,8 @@ int einit_dbus::dbus_connect () {
 }
 
 int einit_dbus::enable (struct einit_event *status) {
- char *dbusname;
- char *dbusaddress;
+ const char *dbusname;
+ const char *dbusaddress;
  int ret = 0;
 
  if (!(dbusaddress = cfg_getstring("configuration-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
