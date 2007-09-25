@@ -444,7 +444,7 @@ void *einit_dbus::ipc_spawn_safe_bootstrap (DBusMessage *message) {
 void einit_dbus::ipc_spawn(DBusMessage *message) {
  DBusMessage *reply;
  DBusMessageIter args;
- char *command = "";
+ const char *command = "";
 
  if (!dbus_message_iter_init(message, &args))
   fprintf(stderr, "Message has no arguments!\n");
@@ -454,7 +454,7 @@ void einit_dbus::ipc_spawn(DBusMessage *message) {
   char *returnvalue = NULL;
   dbus_message_iter_get_basic(&args, &command);
 
-  returnvalue = this->ipc_request (command);
+  returnvalue = this->ipc_request ((char*)command);
 
   if (this->connection) { /* make sure we're still connected after the ipc command */
 
@@ -478,7 +478,7 @@ void einit_dbus::ipc_spawn(DBusMessage *message) {
 void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
  DBusMessage *reply;
  DBusMessageIter args;
- char *command = "";
+ const char *command = "";
 
  if (!dbus_message_iter_init(message, &args))
   fprintf(stderr, "Message has no arguments!\n");
@@ -508,7 +508,7 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
 
   reply = dbus_message_new_method_return(message);
 
-  returnvalue = this->ipc_request (command);
+  returnvalue = this->ipc_request ((char*)command);
 
   dbus_message_iter_init_append(reply, &args);
   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
