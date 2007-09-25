@@ -76,11 +76,11 @@ const struct smodule einit_dbus_self = {
  BUILDNUMBER,
  1,
  einit_module_generic,
- "eINIT <-> DBUS connector",
- "einit-ipc-dbus",
+ (char *)"eINIT <-> DBUS connector",
+ (char *)"einit-ipc-dbus",
  {
-  einit_dbus_provides,
-  einit_dbus_requires,
+  (char **)einit_dbus_provides,
+  (char **)einit_dbus_requires,
   NULL,
   NULL
  },
