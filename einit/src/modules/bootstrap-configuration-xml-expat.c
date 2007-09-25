@@ -348,7 +348,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     uint32_t line = XML_GetCurrentLineNumber (par);
     char **tx = str2set ('\n', data);
 
-    notice (2, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, XML_GetCurrentColumnNumber (par));
+    notice (2, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, (int)XML_GetCurrentColumnNumber (par));
 
     if (tx) {
      if (setcount ((const void **)tx) >= line) {
