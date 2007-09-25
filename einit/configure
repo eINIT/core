@@ -139,10 +139,10 @@ for param in $@; do
 		XCFLAGS="$XCFLAGS -DBITCHY";
 	elif test "$param" = "--use-posix-regex"; then
 		echo -n " REGEX";
-		XCFLAGS="$(sed 's/-DPOSIXREGEX//' < echo ${XCFLAGS}) -DPOSIXREGEX";
+		XCFLAGS="$(echo ${XCFLAGS} | sed 's/-DPOSIXREGEX//') -DPOSIXREGEX";
 	elif test "$param" = "--no-posix-regex"; then
 		echo -n " NOREGEX";
-		XCFLAGS=$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS});
+		XCFLAGS="$(echo ${XCFLAGS} | sed 's/-DPOSIXREGEX//')";
 	elif test "$param" = "--no-nix-environ"; then
 		echo -n " NO-NIX-ENVIRON";
 		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
@@ -168,6 +168,7 @@ for param in $@; do
                 EBUILD="1";
                 CONFIGINSTALLMETHOD="ebuild";
         elif test "$param" = "--enable-ipc-dbus"; then
+		echo -n " DBUS";
 		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
 		DBUS="dbus";
 		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit libeinit++";
@@ -277,6 +278,8 @@ Options:
  --enable-linux         enable compilation of linux-specific modules
  --enable-bsd           enable compilation of bsd-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
+ --enable-ipc-dbus	enable compilation of dbus-ipc
+ --with-expat		build with expat libs linked in statically
  --bitch-a-lot          tell all programs used to compile and link to be more
                         verbose
  --use-posix-regex      use posix.2 regular expressions
