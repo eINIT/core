@@ -221,10 +221,16 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  }
 #else
  if (task & einit_module_suspend) {
+  if (!(task & einit_module_ignore_mutex))
+   emutex_unlock (&module->mutex);
+
   return status_failed;
  }
 
  if (task & einit_module_resume) {
+  if (!(task & einit_module_ignore_mutex))
+   emutex_unlock (&module->mutex);
+
   return status_ok;
  }
 #endif
