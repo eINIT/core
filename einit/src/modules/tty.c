@@ -88,8 +88,6 @@ int einit_tty_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * einit_tty_provides[] = {"tty", NULL};
-char * einit_tty_after[] = {"^(fs-(dev|proc|sys)|udev)$", NULL};
 const struct smodule einit_tty_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -98,9 +96,9 @@ const struct smodule einit_tty_self = {
  .name      = "TTY-Configuration",
  .rid       = "einit-tty",
  .si        = {
-  .provides = einit_tty_provides,
+  .provides = NULL,
   .requires = NULL,
-  .after    = einit_tty_after,
+  .after    = NULL,
   .before   = NULL
  },
  .configure = einit_tty_configure
@@ -280,28 +278,61 @@ int einit_tty_texec (struct cfgnode *node) {
  return 0;
 }
 
-int einit_tty_enable (void *pa, struct einit_event *status) {
+void einit_tty_disable_unused (char **enab_ttys) {
+ emutex_lock (&ttys_mutex);
+ struct ttyst *cur = ttys;
+
+ while (cur) {
+  if (cur->node && (!enab_ttys || !inset ((const void **)enab_ttys, cur->node->id + 18, SET_TYPE_STRING))) {
+   notice (4, "disabling tty %s (not used in new mode)", cur->node->id + 18);
+   cur->restart = 0;
+   killpg (cur->pid, SIGHUP); // send a SIGHUP to the getty's process group
+   kill (cur->pid, SIGTERM);
+  }
+  cur = cur->next;
+ }
+ emutex_unlock (&ttys_mutex);
+}
+
+char einit_tty_is_present (char *ttyname) {
+ char present = 0;
+
+ emutex_lock (&ttys_mutex);
+ struct ttyst *cur = ttys;
+
+ while (cur) {
+  if (cur->node && strmatch (ttyname, cur->node->id + 18)) {
+   present = 1;
+   break;
+  }
+  cur = cur->next;
+ }
+ emutex_unlock (&ttys_mutex);
+
+ return present;
+}
+
+void einit_tty_update() {
  struct cfgnode *node = NULL;
- char **ttys = NULL, *blocked_tty = cfg_getstring ("configuration-feedback-visual-std-io/stdio", NULL);
+ char **enab_ttys = NULL, *blocked_tty = cfg_getstring ("configuration-feedback-visual-std-io/stdio", NULL);
  int i = 0;
 
- if (!(ttys = str2set (':', cfg_getstring("ttys", NULL)))) {
-  status->string = "I've no idea what to start, really.";
-  return status_failed;
- }
+ enab_ttys = str2set (':', cfg_getstring("ttys", NULL));
 
- status->string = "creating environment";
+ notice (4, "reconfiguring ttys");
 
- status->string = "commencing";
- status_update (status);
+ einit_tty_disable_unused (enab_ttys);
 
- for (i = 0; ttys[i]; i++) {
-  char *tmpnodeid = emalloc (strlen(ttys[i])+20);
-  status->string = ttys[i];
-  status_update (status);
+ if (!enab_ttys || strmatch (enab_ttys[0], "none")) {
+  notice (4, "no ttys to bring up");
+ } else for (i = 0; enab_ttys[i]; i++) if (einit_tty_is_present (enab_ttys[i])) {
+  notice (4, "not enabling tty %s (already enabled)", enab_ttys[i]);
+ } else {
+  char *tmpnodeid = emalloc (strlen(enab_ttys[i])+20);
+  notice (4, "enabling tty %s (new)", enab_ttys[i]);
 
   memcpy (tmpnodeid, "configuration-tty-", 19);
-  strcat (tmpnodeid, ttys[i]);
+  strcat (tmpnodeid, enab_ttys[i]);
 
   node = cfg_getnode (tmpnodeid, NULL);
   if (node && node->arbattrs) {
@@ -325,46 +356,33 @@ int einit_tty_enable (void *pa, struct einit_event *status) {
     einit_tty_texec (node);
    }
   } else {
-   char warning[BUFFERSIZE];
-   esprintf (warning, BUFFERSIZE, "einit-tty: node %s not found", tmpnodeid);
-   notice (3, warning);
+   notice (4, "einit-tty: node %s not found", tmpnodeid);
   }
 
   free (tmpnodeid);
  }
 
- status->string="all ttys up";
- status_update (status);
- free (ttys);
- return status_ok;
+ free (enab_ttys);
 }
 
-int einit_tty_disable (void *pa, struct einit_event *status) {
- struct ttyst *cur = ttys;
- emutex_lock (&ttys_mutex);
-#ifdef LINUX
- uint32_t vtn = parse_integer(cfg_getstring ("configuration-feedback-visual-std-io/activate-vt", NULL));
- int tfd = 0;
- errno = 0;
- if ((tfd = eopen ("/dev/tty1", O_RDWR)))
-  ioctl (tfd, VT_ACTIVATE, vtn);
- if (errno)
-  perror ("einit-tty: activate terminal");
- if (tfd > 0) eclose (tfd);
-#endif
+void einit_tty_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_devices_available:
+   einit_tty_update();
+   break;
 
- while (cur) {
-  cur->restart = 0;
-  killpg (cur->pid, SIGHUP); // send a SIGHUP to the getty's process group
-  kill (cur->pid, SIGTERM);
-  cur = cur->next;
+   default: break;
  }
- emutex_unlock (&ttys_mutex);
- return status_ok;
 }
 
-int einit_tty_custom (void *pa, char *cmd, struct einit_event *status) {
- return status_ok;
+void einit_tty_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_mode_switching:
+   einit_tty_update();
+   break;
+
+   default: break;
+ }
 }
 
 int einit_tty_configure (struct lmodule *this) {
@@ -372,14 +390,14 @@ int einit_tty_configure (struct lmodule *this) {
  sched_configure(this);
 
  thismodule->cleanup = einit_tty_cleanup;
- thismodule->enable = einit_tty_enable;
- thismodule->disable = einit_tty_disable;
- thismodule->custom = einit_tty_custom;
 
  utmp_configure(this);
  exec_configure(this);
 
  event_listen (einit_event_subsystem_process, einit_tty_process_event_handler);
+
+ event_listen (einit_event_subsystem_core, einit_tty_core_event_handler);
+ event_listen (einit_event_subsystem_boot, einit_tty_boot_event_handler);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
