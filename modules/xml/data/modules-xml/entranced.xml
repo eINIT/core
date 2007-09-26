@@ -4,10 +4,10 @@
   provides="displaymanager:entranced"
   requires="mount-critical">
 
-  <execute id="daemon" code="/usr/sbin/entranced" />
+  <execute id="enable" code="/usr/sbin/entranced" />
+  <execute id="disable" code="killall entranced" />
 
   <need-files s="/usr/sbin/entranced" />
   <environment DISPLAY=":0.0" HOME="/root" />
-  <restart b="yes" />
  </v-entranced>
 </module>
