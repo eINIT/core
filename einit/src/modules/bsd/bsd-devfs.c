@@ -81,11 +81,18 @@ module_register(bsd_devfs_self);
 
 char bsd_devfs_enabled = 0;
 
+void bsd_devfs_load_kernel_extensions() {
+ struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
+}
+
 int bsd_devfs_run() {
  if (!bsd_devfs_enabled) {
   bsd_devfs_enabled = 1;
 
   mount ("devfs", "/dev", 0, NULL);
+  bsd_devfs_load_kernel_extensions();
  }
 
  return status_ok;
