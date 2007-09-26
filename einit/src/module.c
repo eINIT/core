@@ -192,6 +192,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    emutex_lock (&module->mutex);
  }
 
+#if 0
  if (task & einit_module_suspend) {
   int retval = mod_suspend (module);
 
@@ -218,6 +219,15 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    return status_failed;
   }
  }
+#else
+ if (task & einit_module_suspend) {
+  return status_failed;
+ }
+
+ if (task & einit_module_resume) {
+  return status_ok;
+ }
+#endif
 
  if (task & einit_module_custom) {
   if (!custom_command) {
