@@ -6,10 +6,11 @@
   after="^net-lo$">
 
   <execute id="prepare" code="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; true" />
-  <execute id="daemon" code="/usr/bin/gdm -nodaemon" />
+  <execute id="daemon" code="/usr/bin/gdm" />
 
   <pidfile s="/var/run/gdm.pid" />
   <need-files s="/usr/bin/gdm" />
   <restart b="yes" />
+  <options s="forking" />
  </v-gdm>
 </module>
