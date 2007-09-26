@@ -6,7 +6,7 @@
   after="^net-lo$">
 
   <execute id="prepare" code="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; true" />
-  <execute id="daemon" code="/usr/bin/gdm --wait-for-go" />
+  <execute id="daemon" code="/usr/bin/gdm" />
 
   <pidfile s="/var/run/gdm.pid" />
   <need-files s="/usr/bin/gdm" />
