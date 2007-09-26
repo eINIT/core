@@ -302,8 +302,15 @@ int network_scanmodules (struct lmodule *mainlist) {
      esprintf (tmp, BUFFERSIZE, "Network Interface (%s)", interfacename);
      newmodule->name = estrdup (tmp);
 
-     esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
-     newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, (void *)tmp, SET_TYPE_STRING);
+#ifdef LINUX
+     if (!strmatch (interfacename, "lo"))
+#else
+     if (!strmatch (interfacename, "lo0") && !strmatch (interfacename, "lo"))
+#endif
+     {
+      esprintf (tmp, BUFFERSIZE, "net-%s", interfacename);
+      newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, (void *)tmp, SET_TYPE_STRING);
+     }
      newmodule->si.requires = req;
 
      newmodule->si.after = after;
