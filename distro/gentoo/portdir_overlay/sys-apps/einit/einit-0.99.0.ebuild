@@ -17,6 +17,7 @@ HOMEPAGE="http://einit.org/"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="-*"
+RESTRICT="strip"
 
 IUSE="doc static debug nowtf externalise fbsplash aural dbus noxml baselayout2"
 
