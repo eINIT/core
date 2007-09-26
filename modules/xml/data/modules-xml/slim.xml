@@ -2,8 +2,7 @@
  <v-slim
   name="Simple LogIn Manager (slim)"
   provides="x11:displaymanager"
-  requires="mount-critical"
-  after="^net-lo$">
+  requires="mount-critical">
 
   <execute id="enable" code="slim -d" />
   <execute id="disable" code="killall -9 slim" />

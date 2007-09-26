@@ -239,7 +239,8 @@ int network_scanmodules (struct lmodule *mainlist) {
      }
 
 // this should be all they need; root as well because /etc should be writable for resolv.conf
-     after = (char **)setadd ((void **)after, (void *)"^fs-(proc|root)$", SET_TYPE_STRING);
+//     after = (char **)setadd ((void **)after, (void *)"^fs-(proc|root)$", SET_TYPE_STRING);
+/* not necessary anymore: stuff's in the pre-boot stage, no network modules get enabled before that is through */
 
      memset (newmodule, 0, sizeof (struct smodule));
 
@@ -781,6 +782,8 @@ int network_interface_cleanup (struct lmodule *this) {
  return 0;
 }
 
+struct lmodule *network_loopback_interface_module = NULL;
+
 int network_interface_configure (struct lmodule *tm) {
  if (!tm->module || !tm->module->rid) return 1;
 
@@ -797,7 +800,30 @@ int network_interface_configure (struct lmodule *tm) {
 
  network_modules = streeadd (network_modules, tm->module->rid + 10, tm, SET_NOALLOC, NULL);
 
+#ifdef LINUX
+ if (strmatch (tm->module->rid, "interface-lo")) {
+  network_loopback_interface_module = tm;
+ }
+#else
+ if (strmatch (tm->module->rid, "interface-lo0") || strmatch (tm->module->rid, "interface-lo")) {
+  network_loopback_interface_module = tm;
+ }
+#endif
+
  return 0;
+}
+
+void network_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_devices_available:
+/* enable net-lo here */
+   if (network_loopback_interface_module) {
+    mod (einit_module_enable, network_loopback_interface_module, NULL);
+   }
+   break;
+
+   default: break;
+ }
 }
 
 int network_configure (struct lmodule *this) {
@@ -806,6 +832,8 @@ int network_configure (struct lmodule *this) {
 
  thismodule->cleanup = network_cleanup;
  thismodule->scanmodules = network_scanmodules;
+
+ event_listen (einit_event_subsystem_boot, network_boot_event_handler);
 
 #if 0
  event_listen (einit_event_subsystem_core, network_einit_event_handler);

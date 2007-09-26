@@ -2,7 +2,7 @@
  <v-avahi-daemon
   name="avahi-daemon"
   provides="avahi-daemon"
-  requires="network-minimal:mount-critical">
+  requires="mount-critical">
 
   <execute id="daemon" code="avahi-daemon" />
 

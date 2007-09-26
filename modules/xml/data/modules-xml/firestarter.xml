@@ -2,7 +2,7 @@
  <v-firestarter
   name="firestarter"
   provides="firestarter"
-  requires="mount-critical:net-lo">
+  requires="mount-critical">
 
   <execute id="prepare" code="if [ ! -f /etc/firestarter/firestarter.sh ] ; then
             firestarter --generate-scripts;

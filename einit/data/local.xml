@@ -53,8 +53,7 @@
 
   <alias>
 <!-- service groups -->
-<!-- you really don't want to remove net-lo or fqdn from network, or stuff will break -->
-   <network group="net-lo:net-eth0" seq="most" />
+   <network group="net-eth0" seq="most" />
 <!-- or kern-ati if you have an ATI card -->
    <video group="kern-nvidia" seq="any-iop" />
 <!-- kern-sound is the list-based module loader.

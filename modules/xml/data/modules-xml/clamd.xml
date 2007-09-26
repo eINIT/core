@@ -4,7 +4,7 @@
  <v-clamd
   name="clamd - AntiVirus"
   provides="antivirus:clamd"
-  requires="network-minimal:mount-critical">
+  requires="mount-critical">
 
   <execute id="prepare" code="local clamd_socket=$(awk '$1 == &quot;LocalSocket&quot; { print $2 }' /etc/clamd.conf);
            logfile=$(awk '$1 == &quot;LogFile&quot; { print $2 }' /etc/clamd.conf);

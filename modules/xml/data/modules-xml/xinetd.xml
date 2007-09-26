@@ -2,7 +2,7 @@
  <v-xinetd
   name="Internet Services Daemon (xinetd)"
   provides="xinetd"
-  requires="network:network-minimal">
+  requires="network">
 
   <execute id="daemon" code="unset -f `declare -F | sed 's:declare -f::g'` ;
            /usr/sbin/xinetd -dontfork -pidfile /var/run/xinetd.pid ${configuration_services_xinetd_options}" />

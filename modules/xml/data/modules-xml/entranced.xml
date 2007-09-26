@@ -2,7 +2,7 @@
  <v-entranced
   name="EntranceD"
   provides="displaymanager:entranced"
-  requires="mount-critical:network-minimal">
+  requires="mount-critical">
 
   <execute id="daemon" code="/usr/sbin/entranced" />
 

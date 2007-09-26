@@ -2,7 +2,7 @@
  <v-ntp-client
   name="NTP-Client (${configuration_services_ntp_client_command})"
   provides="hwclock:ntp-client"
-  requires="network-minimal:mount-critical"
+  requires="network:mount-critical"
   after="network">
 
   <execute id="enable" code="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};

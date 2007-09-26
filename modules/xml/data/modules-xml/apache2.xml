@@ -2,7 +2,7 @@
  <v-apache2
   name="httpd - Apache Hypertext Transfer Protocol Server"
   provides="apache2"
-  requires="mount-critical:net-lo">
+  requires="mount-critical">
 
   <execute id="prepare" code="[ ! -e /var/log/apache2 ] &amp;&amp; mkdir /var/log/apache2;
            [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;
@@ -18,7 +18,7 @@
  <v-apache2-gentoo
   name="httpd - Apache Hypertext Transfer Protocol Server (Gentoo Configuration)"
   provides="apache2"
-  requires="mount-critical:net-lo">
+  requires="mount-critical">
 
   <execute id="prepare" code="[ ! -e /var/log/apache2 ] &amp;&amp; mkdir /var/log/apache2;
            [ -f /var/log/apache2/ssl_scache ] &amp;&amp; rm /var/log/apache2/ssl_scache;

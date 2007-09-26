@@ -2,8 +2,7 @@
  <v-xdm
   name="The X Display Manager (xdm)"
   provides="x11:displaymanager"
-  requires="mount-critical"
-  after="^net-lo$">
+  requires="mount-critical">
 
   <execute id="daemon" code="/usr/bin/xdm -nodaemon" />
 

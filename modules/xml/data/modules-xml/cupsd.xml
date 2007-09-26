@@ -2,7 +2,7 @@
  <v-cupsd
   name="Common Unix Printing System Daemon (cupsd)"
   provides="cupsd"
-  requires="network-minimal:mount-critical">
+  requires="mount-critical">
 
   <execute id="prepare" code="if [ ! -d /var/log/cups ]; then mkdir /var/log/cups; fi; /bin/true" />
   <execute id="daemon" code="/usr/sbin/cupsd -F" />

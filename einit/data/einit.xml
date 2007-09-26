@@ -160,7 +160,6 @@
  <services>
   <alias>
    <samba group="nmbd:smbd" seq="all" />
-   <network-minimal group="net-lo" seq="most" />
   </alias>
   <prefer>
    <kern-alsa s="shell-kern-audio-alsa" />
