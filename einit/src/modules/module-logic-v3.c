@@ -1482,27 +1482,20 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      }
 
      if (inmodes) {
-      char *modestr;
+      char *modestr = NULL;
       if (ev->ipc_options & einit_ipc_output_xml) {
        modestr = set2str (':', (const char **)inmodes);
        eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\" provided=\"%s\">\n", cur->key, modestr, mod_isprovided(cur->key) ? "yes" : "no");
       } else {
-       modestr = set2str (' ', (const char **)inmodes);
-       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
-                            "\e[1mservice \"%s\" (%s)\n\e[0m" :
-                            "service \"%s\" (%s)\n",
-                            cur->key, modestr);
+       eprintf (ev->output, "%s |", cur->key);
       }
-      free (modestr);
+      if (modestr) free (modestr);
       free (inmodes);
      } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        eprintf (ev->output, " <service id=\"%s\" provided=\"%s\">\n", cur->key, mod_isprovided(cur->key) ? "yes" : "no");
       } else {
-       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
-                            "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
-                            "service \"%s\" (not in any mode)\n",
-                            cur->key);
+       eprintf (ev->output, "%s |", cur->key);
       }
      }
 
@@ -1593,16 +1586,17 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
         struct lmodule **xs = cur->value;
         uint32_t u = 0;
         for (u = 0; xs[u]; u++) {
-         eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
+         eprintf (ev->output,
            ((xs[u]->module && (xs[u]->module->mode & einit_module_deprecated)) ?
-                                  " \e[31m- \e[0mcandidate \"%s\" (%s)\n" :
-                                  " \e[33m* \e[0mcandidate \"%s\" (%s)\n") :
-             " * candidate \"%s\" (%s)\n",
-           xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown",
-           xs[u]->module && xs[u]->module->name ? xs[u]->module->name : "unknown");
+             " (%s)" : " %s"),
+           xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown");
         }
        }
       }
+     }
+
+     if (!(ev->ipc_options & einit_ipc_output_xml)) {
+      eputs ("\n", ev->output);
      }
 
      cur = streenext (cur);
@@ -1644,23 +1638,16 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        modestr = set2str (':', (const char **)inmodes);
        eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\" provided=\"%s\">\n", cur->key, modestr, mod_isprovided(cur->key) ? "yes" : "no");
+       free (modestr);
       } else {
-       modestr = set2str (' ', (const char **)inmodes);
-       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
-                            "\e[1mservice \"%s\" (%s)\n\e[0m" :
-                              "service \"%s\" (%s)\n",
-                            cur->key, modestr);
+       eprintf (ev->output, "%s (group)\n", cur->key);
       }
-      free (modestr);
       free (inmodes);
      } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        eprintf (ev->output, " <service id=\"%s\" provided=\"%s\">\n", cur->key, mod_isprovided(cur->key) ? "yes" : "no");
       } else {
-       eprintf (ev->output, (ev->ipc_options & einit_ipc_output_ansi) ?
-                            "\e[1mservice \"%s\" (not in any mode)\e[0m\n" :
-                              "service \"%s\" (not in any mode)\n",
-                            cur->key);
+       eprintf (ev->output, "%s (group)\n", cur->key);
       }
      }
 

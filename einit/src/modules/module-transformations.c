@@ -237,13 +237,15 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
      else if (strmatch (lnode->arbattrs[i], "shutdown-after")) esi->shutdown_after = str2set (':', lnode->arbattrs[i+1]);
     }
 
-    einit_module_transformations_garbage_add_chunk (module->si);
-    einit_module_transformations_garbage_add_chunk (module->si->provides);
-    einit_module_transformations_garbage_add_chunk (module->si->requires);
-    einit_module_transformations_garbage_add_chunk (module->si->after);
-    einit_module_transformations_garbage_add_chunk (module->si->before);
-    einit_module_transformations_garbage_add_chunk (module->si->shutdown_before);
-    einit_module_transformations_garbage_add_chunk (module->si->shutdown_after);
+    if (module->si) {
+     einit_module_transformations_garbage_add_chunk (module->si);
+     einit_module_transformations_garbage_add_chunk (module->si->provides);
+     einit_module_transformations_garbage_add_chunk (module->si->requires);
+     einit_module_transformations_garbage_add_chunk (module->si->after);
+     einit_module_transformations_garbage_add_chunk (module->si->before);
+     einit_module_transformations_garbage_add_chunk (module->si->shutdown_before);
+     einit_module_transformations_garbage_add_chunk (module->si->shutdown_after);
+    }
 
     module->si = esi;
     break;
