@@ -1271,8 +1271,6 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    if (!ev->set || !ev->set[0] || !ev->set[1]) goto done;
    else {
     if (ev->output) {
-     struct einit_event ee = evstaticinit(einit_feedback_register_fd);
-
      if (ev->set && ev->set[0] && ev->set[1] &&
          (strmatch (ev->set[1], "enable") || strmatch (ev->set[1], "disable") ||
           strmatch (ev->set[1], "start") || strmatch (ev->set[1], "stop"))) {
@@ -1314,10 +1312,13 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
       eputs ("\n \e[32m>> check complete.\e[0m\n", ev->output);
      }
 
-     ee.output = ev->output;
-     ee.ipc_options = ev->ipc_options;
-     event_emit (&ee, einit_event_flag_broadcast);
-     evstaticdestroy(ee);
+     if (!strmatch (ev->set[1], "status")) {
+      struct einit_event ee = evstaticinit(einit_feedback_register_fd);
+      ee.output = ev->output;
+      ee.ipc_options = ev->ipc_options;
+      event_emit (&ee, einit_event_flag_broadcast);
+      evstaticdestroy(ee);
+     }
     }
 
     ev->integer = mod_modaction ((char **)ev->set, ev->output);
@@ -1325,10 +1326,12 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     if (ev->output) {
      struct einit_event ee = evstaticinit(einit_feedback_unregister_fd);
 
-     ee.output = ev->output;
-     ee.ipc_options = ev->ipc_options;
-     event_emit (&ee, einit_event_flag_broadcast);
-     evstaticdestroy(ee);
+     if (!strmatch (ev->set[1], "status")) {
+      ee.output = ev->output;
+      ee.ipc_options = ev->ipc_options;
+      event_emit (&ee, einit_event_flag_broadcast);
+      evstaticdestroy(ee);
+     }
 
      fflush (ev->output);
 
