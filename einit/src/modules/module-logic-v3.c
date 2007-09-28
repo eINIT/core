@@ -1128,6 +1128,7 @@ int mod_modaction (char **argv, FILE *output) {
   return ret;
  }
 
+ char *targv = argv[1];
  argv[1] = NULL;
 
  if ((plan = mod_plan (NULL, argv, task, NULL))) {
@@ -1144,8 +1145,7 @@ int mod_modaction (char **argv, FILE *output) {
   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
  }
 
-// free (argv[0]);
-// free (argv);
+ argv[1] = targv; /* make sure to leave argv1 as it was */
 
  return ret;
 }
@@ -1268,11 +1268,11 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
    }
    goto done;
   case einit_core_change_service_status:
+//   if (!ev->set || !ev->set[0] || !ev->set[0][0] || !ev->set[1] || !ev->set[1][0]) goto done;
    if (!ev->set || !ev->set[0] || !ev->set[1]) goto done;
    else {
     if (ev->output) {
-     if (ev->set && ev->set[0] && ev->set[1] &&
-         (strmatch (ev->set[1], "enable") || strmatch (ev->set[1], "disable") ||
+     if ((strmatch (ev->set[1], "enable") || strmatch (ev->set[1], "disable") ||
           strmatch (ev->set[1], "start") || strmatch (ev->set[1], "stop"))) {
       uint32_t r = 0;
       char **senable = NULL;
@@ -1335,7 +1335,7 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
      fflush (ev->output);
 
-     if (ev->set && ev->set[0] && ev->set[1] && !strmatch(ev->set[1], "status")) {
+     if (!strmatch(ev->set[1], "status")) {
       if (ev->integer) {
        eputs (" \e[31m!! request failed.\e[0m\n", ev->output);
       } else {
