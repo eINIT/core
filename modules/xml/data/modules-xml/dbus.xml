@@ -2,6 +2,7 @@
  <v-dbus
   name="D-BUS system messagebus"
   provides="dbus"
+  after="displaymanager"
   requires="mount-critical">
 
   <execute id="prepare" code="rm -rf /var/run/dbus; mkdir -p /var/run/dbus; dbus-uuidgen --ensure" />

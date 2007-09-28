@@ -2,7 +2,7 @@
  <v-hald
   name="Hardware Abstraction Layer"
   provides="hal"
-  after="logger"
+  after="logger:displaymanager"
   requires="mount-critical:dbus">
 
   <execute id="daemon" code="/usr/sbin/hald --daemon=yes --use-syslog --verbose=no" />

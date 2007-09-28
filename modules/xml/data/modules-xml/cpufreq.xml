@@ -2,6 +2,7 @@
  <v-cpufreq
   name="Cpufreq Governor"
   provides="cpufreq"
+  after="displaymanager"
   requires="mount-critical:acpid">
 
   <execute id="enable" code="for i in ${configuration_services_cpufreq_cpus};

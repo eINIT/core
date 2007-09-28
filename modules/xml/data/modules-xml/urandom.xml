@@ -1,6 +1,7 @@
 <module>
  <v-urandom
   name="urandom"
+  after="displaymanager"
   provides="urandom">
 
   <execute id="enable" code="echo &quot;feedback|notice|Initializing random number generator...&quot;;

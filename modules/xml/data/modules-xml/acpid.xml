@@ -2,6 +2,7 @@
  <v-acpi
   name="Advanced Configuration and Power Interface daemon"
   provides="acpid"
+  after="displaymanager"
   requires="mount-critical">
 
   <execute id="prepare" code="if [ ! -e /proc/acpi ]; then

@@ -2,6 +2,7 @@
  <v-sshd
   name="SSH daemon (sshd)"
   provides="sshd"
+  after="displaymanager"
   requires="mount-critical">
 
   <execute id="daemon" code="/usr/sbin/sshd -D ${configuration_services_sshd_options}" />
