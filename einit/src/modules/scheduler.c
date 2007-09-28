@@ -260,12 +260,15 @@ void sched_reset_event_handlers () {
 #endif
 #endif
 
+/* some signals REALLY should be ignored */
+ action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+ if ( sigaction (SIGTRAP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
  if ( sigaction (SIGPIPE, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGIO, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTIN, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTOU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-
-
 }
 
 int __sched_watch_pid (pid_t pid) {

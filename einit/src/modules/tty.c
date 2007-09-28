@@ -215,7 +215,7 @@ int einit_tty_texec (struct cfgnode *node) {
     notice (2, cret);
    } else
 #ifdef LINUX
-   if ((cpid = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0, NULL, NULL, NULL)) == 0)
+   if ((cpid = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) == 0)
 #else
    if (!(cpid = fork()))
 #endif
