@@ -60,8 +60,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int compatibility_sysv_utmp_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-char * compatibility_sysv_utmp_provides[] = {"utmp", NULL};
-char * compatibility_sysv_utmp_requires[] = {"mount-critical", NULL};
 const struct smodule module_compatibility_sysv_utmp_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -70,8 +68,8 @@ const struct smodule module_compatibility_sysv_utmp_self = {
  .name      = "System-V Compatibility: {U|W}TMP",
  .rid       = "compatibility-sysv-utmp",
  .si        = {
-  .provides = compatibility_sysv_utmp_provides,
-  .requires = compatibility_sysv_utmp_requires,
+  .provides = NULL,
+  .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
@@ -82,8 +80,6 @@ module_register(module_compatibility_sysv_utmp_self);
 
 #endif
 
-int  compatibility_sysv_utmp_enable  (void *, struct einit_event *);
-int  compatibility_sysv_utmp_disable (void *, struct einit_event *);
 char updateutmp_f (enum utmp_action, struct utmp *);
 
 int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
@@ -222,34 +218,51 @@ char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
  return 0;
 }
 
-int compatibility_sysv_utmp_enable (void *pa, struct einit_event *status) {
+void compatibility_sysv_utmp_clean() {
  char utmp_cfg = parse_boolean (cfg_getstring ("configuration-compatibility-sysv/utmp", NULL));
 
  if (utmp_cfg) {
-  status->string = "cleaning utmp";
-  status_update (status);
+  notice (4, "cleaning utmp");
   updateutmp_f (utmp_clean, NULL);
  }
 
-/* always return OK, as utmp is pretty much useless to eINIT, so no reason
+/* don't worry if it's not OK, as utmp is pretty much useless to eINIT, so no reason
    to bitch about it... */
- return status_ok;
 }
 
-int compatibility_sysv_utmp_disable (void *pa, struct einit_event *status) {
- return status_ok;
+void compatibility_sysv_utmp_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_service_update:
+   if ((ev->status & status_enabled) && ev->set && (inset ((const void **)ev->set, "fs-var", SET_TYPE_STRING) || inset ((const void **)ev->set, "fs-var-run", SET_TYPE_STRING))) {
+    compatibility_sysv_utmp_clean();
+   }
+   break;
+
+  default: break;
+ }
+}
+
+void compatibility_sysv_utmp_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_root_device_ok:
+   compatibility_sysv_utmp_clean();
+   break;
+
+  default: break;
+ }
 }
 
 int compatibility_sysv_utmp_configure (struct lmodule *irr) {
  module_init (irr);
 
- thismodule->enable = compatibility_sysv_utmp_enable;
- thismodule->disable = compatibility_sysv_utmp_disable;
  thismodule->cleanup = compatibility_sysv_utmp_cleanup;
 
  utmp_configure (irr);
  function_register ("einit-utmp-update", 1, updateutmp_f);
 // event_listen (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
+
+ event_listen (einit_event_subsystem_core, compatibility_sysv_utmp_core_event_handler);
+ event_listen (einit_event_subsystem_boot, compatibility_sysv_utmp_boot_event_handler);
 
  return 0;
 }
