@@ -169,15 +169,19 @@ int linux_kernel_modules_run (char shutdown) {
 
       if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_unload, modules)) {
        linux_kernel_modules_unload (modules);
-      } else
-       threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      } else {
+       if (!node->flag)
+        threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      }
      } else {
       pthread_t *threadid = emalloc (sizeof (pthread_t));
 
       if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
        linux_kernel_modules_load (modules);
-      } else
-       threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      } else {
+       if (!node->flag)
+        threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      }
      }
     }
    }
