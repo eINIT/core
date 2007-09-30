@@ -1,7 +1,6 @@
 <module>
  <v-hwclock
   name="HWCLOCK"
-  after="displaymanager"
   provides="hwclock">
 
   <execute id="enable" code="/sbin/hwclock --hctosys ${configuration_services_hwclock_options};

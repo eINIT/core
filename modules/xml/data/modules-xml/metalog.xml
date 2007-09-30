@@ -2,7 +2,6 @@
  <v-metalog
   name="Syslogger (metalog)"
   provides="metalog:logger"
-  after="displaymanager"
   requires="mount-critical:hwclock">
 
   <execute id="daemon" code="/usr/sbin/metalog --pidfile /var/run/metalog.pid ${configuration_services_metalog_options}" />

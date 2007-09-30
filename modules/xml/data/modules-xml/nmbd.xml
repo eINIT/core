@@ -2,7 +2,7 @@
  <v-nmbd
   name="Samba NetBIOS name server (nmbd)"
   provides="nmbd"
-  after="cupsd:displaymanager">
+  after="cupsd">
 
   <execute id="prepare" code="if [ ! -d /var/run/samba ] ; then mkdir /var/run/samba ; fi ; true" />
   <execute id="daemon" code="nmbd -F ${configuration_services_nmbd_options}" />

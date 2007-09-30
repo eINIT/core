@@ -2,7 +2,7 @@
  <v-smbd
   name="Samba daemon (smbd)"
   provides="smbd"
-  after="mount-critical:winbindd:cupsd:displaymanager"
+  after="mount-critical:winbindd:cupsd"
   requires="nmbd">
 
   <execute id="daemon" code="/usr/sbin/smbd -F ${configuration_services_smbd_options}" />
