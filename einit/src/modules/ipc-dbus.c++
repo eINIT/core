@@ -186,8 +186,13 @@ int einit_dbus::dbus_connect () {
  const char *dbusaddress;
  int ret = 0;
 
+#if 0
  if (!(dbusaddress = cfg_getstring("configuration-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
  if (!(dbusname = cfg_getstring("configuration-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.Einit";
+#else
+ dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+ dbusname = "org.einit.Einit";
+#endif
 
  if (dbus_error_is_set(&(this->error))) { 
   notice (2, "DBUS: Error (%s)\n", this->error.message); 
@@ -226,8 +231,13 @@ int einit_dbus::enable (struct einit_event *status) {
  const char *dbusaddress;
  int ret = 0;
 
+#if 0
  if (!(dbusaddress = cfg_getstring("configuration-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
  if (!(dbusname = cfg_getstring("configuration-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.Einit";
+#else
+ dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+ dbusname = "org.einit.Einit";
+#endif
 
 // this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
  this->connection = dbus_connection_open_private (dbusaddress, &(this->error));
