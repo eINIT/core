@@ -215,6 +215,38 @@ void sched_timer_event_handler(struct einit_event *ev) {
  }
 }
 
+#ifdef __GLIBC__
+#include <execinfo.h>
+
+int sched_trace_target = STDOUT_FILENO;
+
+#define TRACE_MESSAGE_HEADER "eINIT has crashed! This is very bad, please submit the following backtrace to a developer:\n --- BACKTRACE ---\n"
+#define TRACE_MESSAGE_HEADER_LENGTH sizeof(TRACE_MESSAGE_HEADER)
+
+#define TRACE_MESSAGE_FOOTER "\n --- END OF BACKTRACE ---\n"
+#define TRACE_MESSAGE_FOOTER_LENGTH sizeof(TRACE_MESSAGE_FOOTER)
+
+void sched_signal_trace (int signal, siginfo_t *siginfo, void *context) {
+ void *trace[250];
+ ssize_t trace_length;
+ int timer = 45;
+
+ trace_length = backtrace (trace, 250);
+
+ write (sched_trace_target, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
+
+ backtrace_symbols_fd (trace, trace_length, sched_trace_target);
+
+ write (sched_trace_target, TRACE_MESSAGE_FOOTER, TRACE_MESSAGE_FOOTER_LENGTH);
+
+ fsync (sched_trace_target);
+
+ while ((timer = sleep (timer)));
+
+ raise(SIGKILL);
+}
+#endif
+
 void sched_reset_event_handlers () {
  struct sigaction action;
 
@@ -271,6 +303,27 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGIO, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTIN, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTOU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+
+
+/* catch a couple of signals and print traces for them */
+#ifdef __GLIBC__
+ action.sa_sigaction = sched_signal_trace;
+ action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER;
+
+ if ( sigaction (SIGQUIT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGUSR2, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTSTP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGTERM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGSEGV, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#ifdef SIGPOLL
+ if ( sigaction (SIGPOLL, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#endif
+ if ( sigaction (SIGPROF, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXCPU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+ if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#endif
 }
 
 int __sched_watch_pid (pid_t pid) {
