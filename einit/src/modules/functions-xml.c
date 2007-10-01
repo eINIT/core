@@ -206,7 +206,7 @@ void einit_functions_xml_update_functions () {
 //    notice (1, "registering function: %s", node->idattr);
     einit_functions_xml_registered = (char **)setadd ((void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING);
 
-    function_register_type (node->idattr, d.version, einit_functions_xml_generic_wrapper, function_type_generic);
+    function_register_type (node->idattr, d.version, einit_functions_xml_generic_wrapper, function_type_generic, thismodule);
    }
   }
  }
@@ -238,7 +238,7 @@ int einit_functions_xml_cleanup (struct lmodule *pa) {
   for (; einit_functions_xml_registered[i]; i++) {
    struct einit_function_xml_data d = einit_functions_xml_data_get (einit_functions_xml_registered[i]);
 
-   function_unregister_type (einit_functions_xml_registered[i], d.version, einit_functions_xml_generic_wrapper, function_type_generic);
+   function_unregister_type (einit_functions_xml_registered[i], d.version, einit_functions_xml_generic_wrapper, function_type_generic, thismodule);
   }
  }
 

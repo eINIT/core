@@ -263,22 +263,46 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
  return;
 }
 
-void function_register_type (const char *name, uint32_t version, void const *function, enum function_type type) {
+void function_register_type (const char *name, uint32_t version, void const *function, enum function_type type, struct lmodule *module) {
  if (!name || !function) return;
- struct exported_function *fstruct = ecalloc (1, sizeof (struct exported_function));
 
- fstruct->type     = type;
- fstruct->version  = version;
- fstruct->function = function;
+ char added = 0;
 
- emutex_lock (&pof_mutex);
-  exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
- emutex_unlock (&pof_mutex);
+ if (module) {
+  emutex_lock (&pof_mutex);
+  struct stree *ha = exported_functions;
+  ha = streefind (exported_functions, name, tree_find_first);
+  while (ha) {
+   struct exported_function *ef = ha->value;
+   if (ef && (ef->version == version) && (ef->type == type) && (ef->module == module)) {
+    ef->function = function;
+	added = 1;
+	break;
+   }
 
- free (fstruct);
+   ha = streefind (ha, name, tree_find_next);
+  }
+  emutex_unlock (&pof_mutex);
+ }
+
+
+ if (!added) {
+  struct exported_function *fstruct = ecalloc (1, sizeof (struct exported_function));
+
+  fstruct->type     = type;
+  fstruct->version  = version;
+  fstruct->function = function;
+  fstruct->module   = module;
+
+  emutex_lock (&pof_mutex);
+   exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
+  emutex_unlock (&pof_mutex);
+
+  free (fstruct);
+ }
 }
 
-void function_unregister_type (const char *name, uint32_t version, void const *function, enum function_type type) {
+void function_unregister_type (const char *name, uint32_t version, void const *function, enum function_type type, struct lmodule *module) {
  if (!exported_functions) return;
  struct stree *ha = exported_functions;
 
@@ -290,7 +314,7 @@ void function_unregister_type (const char *name, uint32_t version, void const *f
    exported_functions = streedel (ha);
    ha = streefind (exported_functions, name, tree_find_first);
   } else
-   ha = streefind (exported_functions, name, tree_find_next);
+   ha = streefind (ha, name, tree_find_next);
  }
  emutex_unlock (&pof_mutex);
 

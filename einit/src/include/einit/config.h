@@ -150,6 +150,7 @@ typedef char *(*cfg_string_converter) (const struct stree *);
 
 #if (! defined(einit_modules_bootstrap_configuration_stree)) || (einit_modules_bootstrap_configuration_stree == 'm') || (einit_modules_bootstrap_configuration_stree == 'n')
 
+#if 0
 typedef int (*cfg_addnode_t) (struct cfgnode *);
 typedef struct cfgnode *(*cfg_findnode_t) (const char *, enum einit_cfg_node_options, const struct cfgnode *);
 typedef char *(*cfg_getstring_t) (const char *, const struct cfgnode *);
@@ -166,10 +167,6 @@ cfg_filter_t cfg_filter_fp;
 cfg_getpath_t cfg_getpath_fp;
 cfg_prefix_t cfg_prefix_fp;
 
-#define config_configure() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL; cfg_prefix_fp = NULL;
-#define config_cleanup() cfg_addnode_fp = NULL; cfg_findnode_fp = NULL; cfg_getstring_fp = NULL; cfg_getnode_fp = NULL; cfg_filter_fp = NULL; cfg_getpath_fp = NULL; cfg_prefix_fp = NULL;
-
-
 #define cfg_addnode(node) ((cfg_addnode_fp || (cfg_addnode_fp = function_find_one("einit-configuration-node-add", 1, NULL))) ? cfg_addnode_fp(node) : -1)
 
 #define cfg_findnode(name, mode, node) ((cfg_findnode_fp || (cfg_findnode_fp = function_find_one("einit-configuration-node-get-find", 1, NULL))) ? cfg_findnode_fp(name, mode, node) : NULL)
@@ -183,6 +180,27 @@ cfg_prefix_t cfg_prefix_fp;
 #define cfg_filter(filter, i) ((cfg_filter_fp || (cfg_filter_fp = function_find_one("einit-configuration-node-get-filter", 1, NULL))) ? cfg_filter_fp(filter, i) : NULL)
 
 #define cfg_prefix(prefix) ((cfg_prefix_fp || (cfg_prefix_fp = function_find_one("einit-configuration-node-get-prefix", 1, NULL))) ? cfg_prefix_fp(prefix) : NULL)
+
+#endif
+
+struct exported_function *cfg_addnode_fs;
+struct exported_function *cfg_findnode_fs;
+struct exported_function *cfg_getstring_fs;
+struct exported_function *cfg_getnode_fs;
+struct exported_function *cfg_filter_fs;
+struct exported_function *cfg_getpath_fs;
+struct exported_function *cfg_prefix_fs;
+
+#define config_configure() cfg_addnode_fs = NULL; cfg_findnode_fs = NULL; cfg_getstring_fs = NULL; cfg_getnode_fs = NULL; cfg_filter_fs = NULL; cfg_getpath_fs = NULL; cfg_prefix_fs = NULL;
+#define config_cleanup() cfg_addnode_fs = NULL; cfg_findnode_fs = NULL; cfg_getstring_fs = NULL; cfg_getnode_fs = NULL; cfg_filter_fs = NULL; cfg_getpath_fs = NULL; cfg_prefix_fs = NULL;
+
+#define cfg_addnode(node) function_call_by_name_use_data (int, "einit-configuration-node-add", 1, cfg_addnode_fs, -1, node)
+#define cfg_findnode(name, mode, node) function_call_by_name_use_data (struct cfgnode *, "einit-configuration-node-get-find", 1, cfg_findnode_fs, NULL, name, mode, node)
+#define cfg_getstring(id, base) function_call_by_name_use_data (char *, "einit-configuration-node-get-string", 1, cfg_getstring_fs, NULL, id, base)
+#define cfg_getnode(id, base) function_call_by_name_use_data (struct cfgnode *, "einit-configuration-node-get", 1, cfg_getnode_fs, NULL, id, base)
+#define cfg_getpath(id) function_call_by_name_use_data (char *, "einit-configuration-node-get-path", 1, cfg_getpath_fs, NULL, id)
+#define cfg_filter(filter, i) function_call_by_name_use_data (struct stree *, "einit-configuration-node-get-filter", 1, cfg_filter_fs, NULL, filter, i)
+#define cfg_prefix(prefix) function_call_by_name_use_data (struct stree *, "einit-configuration-node-get-prefix", 1, cfg_prefix_fs, NULL, prefix)
 
 #else
 

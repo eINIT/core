@@ -687,7 +687,7 @@ void *dexec_watcher (struct spidcb *spid) {
    emutex_unlock (&cur->mutex);
   } else if (!shutting_down && (dx->restart)) {
 /* don't try to restart if the daemon died too swiftly */
-/* also make sure to NOT respawn shit when shutting down */
+/* also make sure to NOT respawn something when shutting down */
    emutex_unlock (&cur->mutex);
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb = evstaticinit(einit_feedback_module_status);

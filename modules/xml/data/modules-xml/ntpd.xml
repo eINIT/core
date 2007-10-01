@@ -2,7 +2,7 @@
  <v-ntpd
   name="NTPD"
   provides="ntpd"
-  requires="network:hwclock">
+  requires="network">
 
   <execute id="daemon" code="ntpd -n" />
 

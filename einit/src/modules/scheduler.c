@@ -98,6 +98,8 @@ struct spidcb *sched_deadorphans = NULL;
 
 char sigint_called = 0;
 
+extern char shutting_down;
+
 int cleanup ();
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context);
 
@@ -319,6 +321,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
  else {
   if (strmatch (ev->argv[0], "power") && (ev->argc > 1)) {
    if (strmatch (ev->argv[1], "down") || strmatch (ev->argv[1], "off")) {
+    shutting_down = 1;
     ev->implemented = 1;
 
     struct einit_event ee = evstaticinit(einit_core_switch_mode);
@@ -328,6 +331,7 @@ void sched_ipc_event_handler(struct einit_event *ev) {
     evstaticdestroy(ee);
    }
    if (strmatch (ev->argv[1], "reset")) {
+    shutting_down = 1;
     ev->implemented = 1;
 
     struct einit_event ee = evstaticinit(einit_core_switch_mode);
@@ -540,6 +544,7 @@ void *sched_run_sigchild (void *p) {
     }
    }
    if (sigint_called) {
+    shutting_down = 1;
     debug ("scheduler SIGCHLD thread: making eINIT shut down\n");
 
     struct einit_event ee = evstaticinit (einit_core_switch_mode);

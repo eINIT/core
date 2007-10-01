@@ -2,7 +2,7 @@
  <v-metalog
   name="Syslogger (metalog)"
   provides="metalog:logger"
-  requires="mount-critical:hwclock">
+  requires="mount-critical">
 
   <execute id="daemon" code="/usr/sbin/metalog --pidfile /var/run/metalog.pid ${configuration_services_metalog_options}" />
   <execute id="buffer" code="killall -USR2 metalog" />

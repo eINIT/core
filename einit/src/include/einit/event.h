@@ -244,6 +244,7 @@ struct exported_function {
  enum function_type type;
  uint32_t version;                       /*!< API version (for internal use) */
  void const *function;                   /*!< pointer to the function */
+ struct lmodule *module;
 };
 
 enum einit_timer_options {
@@ -260,11 +261,16 @@ void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
 void event_wakeup (enum einit_event_code, struct lmodule *);
 void event_wakeup_cancel (enum einit_event_code, struct lmodule *);
 
-void function_register_type (const char *, uint32_t, void const *, enum function_type);
-void function_unregister_type (const char *, uint32_t, void const *, enum function_type);
+void function_register_type (const char *, uint32_t, void const *, enum function_type, struct lmodule *);
+void function_unregister_type (const char *, uint32_t, void const *, enum function_type, struct lmodule *);
 
-#define function_register(name,version,function) function_register_type (name, version, function, function_type_specific);
-#define function_unregister(name,version,function) function_unregister_type (name, version, function, function_type_specific);
+#ifdef thismodule
+#define function_register(name,version,function) function_register_type (name, version, function, function_type_specific, thismodule)
+#define function_unregister(name,version,function) function_unregister_type (name, version, function, function_type_specific, thismodule)
+#else
+#define function_register(name,version,function) function_register_type (name, version, function, function_type_specific, NULL)
+#define function_unregister(name,version,function) function_unregister_type (name, version, function, function_type_specific, NULL)
+#endif
 
 void **function_find (const char *, const uint32_t, const char **);
 void *function_find_one (const char *, const uint32_t, const char **);
@@ -273,15 +279,26 @@ struct exported_function **function_look_up (const char *, const uint32_t, const
 struct exported_function *function_look_up_one (const char *, const uint32_t, const char **);
 
 #define function_call(rv,data,...)\
- ((rv)(((data) != NULL) && ((data)->function != NULL) ?\
+ ((rv)(((data) != NULL) && (!(data)->module || !((data)->module->status & status_suspended) || (mod(einit_module_resume, (data)->module, NULL) == status_ok)) && ((data)->function != NULL) ?\
   (((data)->type == function_type_generic) ? \
   (((rv (*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
   (((rv (*)())(data)->function) (__VA_ARGS__))) :\
   0))
 
+#define function_call_wfailrv(rv,data,failrv,...)\
+ ((rv)(((data) != NULL) && (!(data)->module || !((data)->module->status & status_suspended) || (mod(einit_module_resume, (data)->module, NULL) == status_ok)) && ((data)->function != NULL) ?\
+  (((data)->type == function_type_generic) ? \
+  (((rv (*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
+  (((rv (*)())(data)->function) (__VA_ARGS__))) :\
+  failrv))
+
 #define function_call_by_name(rv,name,version,...)\
  (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, NULL)),\
   function_call(rv, (struct exported_function *)pthread_getspecific(einit_function_macro_key), __VA_ARGS__))
+
+#define function_call_by_name_use_data(rv,name,version,data,failrv,...)\
+ (data || (data = function_look_up_one(name, version, NULL)) ? \
+  function_call_wfailrv(rv, data, failrv, __VA_ARGS__) : failrv)
 
 #define function_call_by_name_multi(rv,name,version,sub,...)\
  (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, sub)),\

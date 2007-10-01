@@ -108,6 +108,8 @@ module_register(module_compatibility_sysv_initctl_self);
 
 #endif
 
+extern char shutting_down;
+
 char compatibility_sysv_initctl_running = 0;
 
 pthread_t initctl_thread;
@@ -198,7 +200,7 @@ void * initctl_wait (char *fifo) {
 
   memset (&ic, 0, sizeof (struct init_command)); // clear this struct, just in case
 
-  if (read (nfd, &ic, sizeof(struct init_command)) > 12) { // enough bytrs to process were read
+  if (read (nfd, &ic, sizeof(struct init_command)) > 12) { // enough bytes to process were read
    if (ic.signature == INITCTL_MAGIC) {
 //  INITCTL_CMD_START: what's that do?
 //  INITCTL_CMD_UNSETENV is deliberately ignored
@@ -259,6 +261,9 @@ void * initctl_wait (char *fifo) {
        if (strmatch (cx[0], "INIT_HALT")) {
         if (strmatch (cx[1], "HALT") || strmatch (cx[1], "POWERDOWN")) {
          struct einit_event ee = evstaticinit(einit_core_switch_mode);
+
+         shutting_down = 1;
+
          ee.string = "power-down";
          event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
          evstaticdestroy(ee);

@@ -228,8 +228,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
       new->source = estrdup(modules[z]);
-//      new->do_suspend = einit_mod_so_do_suspend;
-//      new->do_resume = einit_mod_so_do_resume;
+      new->do_suspend = einit_mod_so_do_suspend;
+      new->do_resume = einit_mod_so_do_resume;
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);
