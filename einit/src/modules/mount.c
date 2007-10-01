@@ -1359,7 +1359,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 
      fbprintf (status, "updating list of modules");
 
-     event_emit (&ev, einit_event_flag_broadcast);
+     event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
 
      evstaticdestroy(ev);
     }
