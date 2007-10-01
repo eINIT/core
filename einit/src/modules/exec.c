@@ -495,10 +495,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  }
 #endif
  else if (child == 0) {
-/* cause segfault */
-/*  sleep (1);
-  *((char *)0) = 1;*/
-
 /* make sure einit's thread is in a proper state */
 #ifndef LINUX
   sched_yield();
@@ -507,6 +503,10 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   char **exec_environment;
 
   disable_core_dumps ();
+
+/* cause segfault */
+/*  sleep (1);
+  *((char *)0) = 1;*/
 
   if (gid && (setgid (gid) == -1))
    perror ("setting gid");
