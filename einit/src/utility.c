@@ -710,7 +710,7 @@ uintptr_t hashp (const char *str) {
 #endif
 
 void enable_core_dumps() {
- const struct rlimit infinite = {
+ struct rlimit infinite = {
   .rlim_cur = RLIM_INFINITY,
   .rlim_max = RLIM_INFINITY
  };
@@ -719,7 +719,7 @@ void enable_core_dumps() {
 }
 
 void disable_core_dumps() {
- const struct rlimit zero = {
+ struct rlimit zero = {
   .rlim_cur = 0,
   .rlim_max = 0
  };
