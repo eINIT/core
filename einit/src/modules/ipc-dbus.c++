@@ -186,8 +186,8 @@ int einit_dbus::dbus_connect () {
  const char *dbusaddress;
  int ret = 0;
 
- if (!(dbusaddress = (cfg_getstring("configuration-ipc-dbus-connection/address", NULL)))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
- if (!(dbusname = (cfg_getstring("configuration-ipc-dbus-connection/name", NULL)))) dbusname = "org.einit.Einit";
+ if (!(dbusaddress = cfg_getstring("configuration-ipc-dbus-connection/address", NULL))) dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
+ if (!(dbusname = cfg_getstring("configuration-ipc-dbus-connection/name", NULL))) dbusname = "org.einit.Einit";
 
  if (dbus_error_is_set(&(this->error))) { 
   notice (2, "DBUS: Error (%s)\n", this->error.message); 
