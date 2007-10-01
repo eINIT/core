@@ -158,6 +158,7 @@ struct stree *mount_filesystems = NULL;
 
 char *generate_legacy_mtab ();
 char mount_fastboot = 0;
+char *mount_crash_data = NULL;
 
 /* macro definitions */
 #define update_real_mtab() {\
@@ -813,6 +814,9 @@ void einit_mount_mount_handler(struct einit_event *ev) {
 void einit_mount_einit_event_handler(struct einit_event *ev) {
  if ((ev->type == einit_core_configuration_update) || (ev->type == einit_core_module_list_update_complete)) {
   einit_mount_update_configuration();
+ } else if (ev->type == einit_core_crash_data) {
+  notice (4, "storing crash data to save it afer / is back to r/w status");
+  mount_crash_data = estrdup (ev->string);
  }
 }
 
@@ -1803,6 +1807,23 @@ void emount_root () {
  ev.module = thismodule;
  emount ("/", &ev);
  evstaticdestroy (ev);
+
+ if (mount_crash_data) {
+  FILE *f = fopen ("/einit.crash.data", "a");
+  if (!f) f = fopen ("/tmp/einit.crash.data", "a");
+  if (!f) f = fopen ("einit.crash.data", "a");
+  if (f) {
+   time_t t = time(NULL);
+   fprintf (f, "\n >> eINIT CRASH DATA <<\n * Time of Crash: %s\n"
+               " --- VERSION INFORMATION ---\n eINIT, version: " EINIT_VERSION_LITERAL
+               "\n --- END OF VERSION INFORMATION ---\n --- BACKTRACE ---\n %s"
+               "\n --- END OF BACKTRACE ---\n"
+               " >> END OF eINIT CRASH DATA <<\n", ctime(&t), mount_crash_data);
+   fclose (f);
+  }
+  free (mount_crash_data);
+  mount_crash_data = NULL;
+ }
 }
 
 void eumount_root () {

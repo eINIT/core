@@ -218,32 +218,39 @@ void sched_timer_event_handler(struct einit_event *ev) {
 #ifdef __GLIBC__
 #include <execinfo.h>
 
-int sched_trace_target = STDOUT_FILENO;
+extern int sched_trace_target;
 
-#define TRACE_MESSAGE_HEADER "eINIT has crashed! This is very bad, please submit the following backtrace to a developer:\n --- BACKTRACE ---\n"
+#define TRACE_MESSAGE_HEADER "eINIT has crashed! Please submit the following to a developer:\n --- VERSION INFORMATION ---\n eINIT, version: " EINIT_VERSION_LITERAL "\n --- END OF VERSION INFORMATION ---\n --- BACKTRACE ---\n"
 #define TRACE_MESSAGE_HEADER_LENGTH sizeof(TRACE_MESSAGE_HEADER)
 
-#define TRACE_MESSAGE_FOOTER "\n --- END OF BACKTRACE ---\n"
+#define TRACE_MESSAGE_FOOTER " --- END OF BACKTRACE ---\n"
 #define TRACE_MESSAGE_FOOTER_LENGTH sizeof(TRACE_MESSAGE_FOOTER)
+
+#define TRACE_MESSAGE_FOOTER_STDOUT " --- END OF BACKTRACE ---\n\n > switching back to the default mode in 15 seconds + 5 seconds cooldown.\n"
+#define TRACE_MESSAGE_FOOTER_STDOUT_LENGTH sizeof(TRACE_MESSAGE_FOOTER_STDOUT)
 
 void sched_signal_trace (int signal, siginfo_t *siginfo, void *context) {
  void *trace[250];
  ssize_t trace_length;
- int timer = 45;
+ int timer = 15;
 
  trace_length = backtrace (trace, 250);
 
- write (sched_trace_target, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
+ if (sched_trace_target) {
+//  write (sched_trace_target, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
+  backtrace_symbols_fd (trace, trace_length, sched_trace_target);
+//  write (sched_trace_target, TRACE_MESSAGE_FOOTER, TRACE_MESSAGE_FOOTER_LENGTH);
+ }
 
- backtrace_symbols_fd (trace, trace_length, sched_trace_target);
-
- write (sched_trace_target, TRACE_MESSAGE_FOOTER, TRACE_MESSAGE_FOOTER_LENGTH);
-
- fsync (sched_trace_target);
+ write (STDOUT_FILENO, TRACE_MESSAGE_HEADER, TRACE_MESSAGE_HEADER_LENGTH);
+ backtrace_symbols_fd (trace, trace_length, STDOUT_FILENO);
+ write (STDOUT_FILENO, TRACE_MESSAGE_FOOTER_STDOUT, TRACE_MESSAGE_FOOTER_STDOUT_LENGTH);
+ fsync (STDOUT_FILENO);
 
  while ((timer = sleep (timer)));
 
- raise(SIGKILL);
+// raise(SIGKILL);
+ _exit(einit_exit_status_die_respawn);
 }
 #endif
 

@@ -212,11 +212,39 @@ char **straddtoenviron (char **environment, const char *key, const char *value) 
 
 #endif
 
-char *readfile (const char *filename) {
- int fd = 0, rn = 0;
+char *readfd (int fd) {
+ int rn = 0;
  void *buf = NULL;
  char *data = NULL;
  uint32_t blen = 0;
+
+ buf = emalloc (BUFFERSIZE * 10);
+ do {
+  buf = erealloc (buf, blen + BUFFERSIZE * 10);
+  if (buf == NULL) return NULL;
+  rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
+  blen = blen + rn;
+ } while (rn > 0);
+
+ if (errno && (errno != EAGAIN))
+  bitch(bitch_stdio, errno, "reading file failed.");
+
+ data = erealloc (buf, blen+1);
+ data[blen] = 0;
+ if (blen > 0) {
+  *(data+blen-1) = 0;
+ } else {
+  free (data);
+  data = NULL;
+ }
+
+ return data;
+}
+
+char *readfile (const char *filename) {
+ int fd = 0;
+ void *buf = NULL;
+ char *data = NULL;
  struct stat st;
 
  if (!filename) return NULL;
@@ -235,27 +263,8 @@ char *readfile (const char *filename) {
 
    *(data+st.st_size) = 0;
   } else {
-   buf = emalloc (BUFFERSIZE*sizeof(char));
-   blen = 0;
-   do {
-    buf = erealloc (buf, blen + BUFFERSIZE);
-    if (buf == NULL) return NULL;
-    rn = read (fd, (char *)(buf + blen), BUFFERSIZE);
-    blen = blen + rn;
-   } while (rn > 0);
-
-   if (errno && (errno != EAGAIN))
-    bitch(bitch_stdio, errno, "reading file failed.");
-
+   data = readfd (fd);
    eclose (fd);
-   data = erealloc (buf, blen+1);
-   data[blen] = 0;
-   if (blen > 0) {
-    *(data+blen-1) = 0;
-   } else {
-    free (data);
-    data = NULL;
-   }
   }
  }
 

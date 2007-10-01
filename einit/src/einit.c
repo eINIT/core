@@ -64,6 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 char shutting_down = 0;
+int sched_trace_target = STDOUT_FILENO;
 
 #ifndef NONIXENVIRON
 int main(int, char **, char **);
@@ -279,10 +280,12 @@ int main(int argc, char **argv) {
  int pthread_errno;
  FILE *commandpipe_in, *commandpipe_out;
  int commandpipe[2];
+ int debugsocket[2];
  char need_recovery = 0;
  char debug = 0;
  int debugme_pipe = 0;
  char crash_threshold = 5;
+ char *einit_crash_data = NULL;
 
  boottime = time(NULL);
 
@@ -412,6 +415,10 @@ int main(int argc, char **argv) {
 
  fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC);
 
+ socketpair (AF_UNIX, SOCK_STREAM, 0, debugsocket);
+ fcntl (debugsocket[0], F_SETFD, FD_CLOEXEC);
+ fcntl (debugsocket[1], F_SETFD, FD_CLOEXEC);
+
  if (!debug) {
   fcntl (commandpipe[0], F_SETFD, FD_CLOEXEC);
   commandpipe_in = fdopen (commandpipe[0], "r");
@@ -450,6 +457,11 @@ int main(int argc, char **argv) {
 
   if ( sigaction (SIGPIPE, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
+  close (debugsocket[1]);
+  if (einit_crash_data) {
+   free (einit_crash_data);
+   einit_crash_data = NULL;
+  }
 
   while (1) {
    wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
@@ -459,7 +471,7 @@ int main(int argc, char **argv) {
     if (!debug) if (commandpipe_in) fclose (commandpipe_in);
     if (commandpipe_out) fclose (commandpipe_out);
 
-    if (WIFEXITED(rstatus)) {
+    if (WIFEXITED(rstatus) && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
      fprintf (stderr, "eINIT has quit properly.\n");
 
      if (!(coremode & einit_mode_sandbox)) {
@@ -475,22 +487,11 @@ int main(int argc, char **argv) {
      exit (EXIT_SUCCESS);
     }
 
-/*    if (WIFEXITED(rstatus)) {
-     char tmp[BUFFERSIZE];
-     esprintf (tmp, BUFFERSIZE, "%i", WEXITSTATUS(rstatus));
-
-     execl (EINIT_LIB_BASE "/bin/crash-handler", EINIT_LIB_BASE "/bin/crash-handler", "--exit", tmp, NULL);
-     exit (EXIT_SUCCESS);
-    } else if (WIFSIGNALED(rstatus)) {
-//     esprintf (tmp, BUFFERSIZE, "sigsegv", WEXITSTATUS(rstatus));
-     execl (EINIT_LIB_BASE "/bin/crash-handler", EINIT_LIB_BASE "/bin/crash-handler", "--signal", "sigsegv", NULL);
-
-     eprintf (stderr, "eINIT was killed by a signal and I couldn't invoke the crash-handler...\n(%s)\n", EINIT_LIB_BASE "/bin/crash-handler");
-     exit (EXIT_FAILURE);
-    }*/
-
     int n = 5;
     fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.\n");
+    if (einit_crash_data = readfd (debugsocket[0])) {
+     fprintf (stderr, " > neat, received crash data\n");
+    }
     while ((n = sleep (n)));
     fprintf (stderr, "Respawning secondary eINIT process.\n");
 
@@ -498,6 +499,8 @@ int main(int argc, char **argv) {
     else debug = 1;
     need_recovery = 1;
     initoverride = 0;
+
+    close (debugsocket[0]);
 
     goto respawn;
    } else {
@@ -513,6 +516,9 @@ int main(int argc, char **argv) {
   }
  } else {
   enable_core_dumps ();
+
+  close (debugsocket[0]);
+  sched_trace_target = debugsocket[1];
 
   if (debug) {
    char **xargv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
@@ -651,6 +657,18 @@ int main(int argc, char **argv) {
     struct einit_event eml = evstaticinit(einit_core_recover);
     event_emit (&eml, einit_event_flag_broadcast);
     evstaticdestroy(eml);
+   }
+
+   if (einit_crash_data) {
+    notice (1, "submitting crash data...");
+
+    struct einit_event eml = evstaticinit(einit_core_crash_data);
+    eml.string = einit_crash_data;
+    event_emit (&eml, einit_event_flag_broadcast);
+    evstaticdestroy(eml);
+
+    free (einit_crash_data);
+    einit_crash_data = NULL;
    }
 
    {

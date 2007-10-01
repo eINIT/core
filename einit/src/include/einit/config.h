@@ -92,6 +92,8 @@ struct cfgnode;
 #define einit_exit_status_last_rites_reboot 43
 #define einit_exit_status_last_rites_kexec 44
 
+#define einit_exit_status_die_respawn 50
+
 enum einit_cfg_node_options {
  einit_node_regular = 0x02,
  einit_node_mode = 0x08,

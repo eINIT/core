@@ -116,6 +116,7 @@ enum einit_event_code {
  einit_core_suspend_all             = einit_event_subsystem_core     | 0x400,
  einit_core_resume_all              = einit_event_subsystem_core     | 0x401,
 
+ einit_core_crash_data              = einit_event_subsystem_core     | 0xffd,
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
 
