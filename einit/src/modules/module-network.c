@@ -617,14 +617,14 @@ int check_rfkill (struct interface_descriptor *id, struct einit_event *status) {
    free (ifbuffer);
 
    if (flags & 1) { // hardware killswitch active
-    notice (4, "hardware killswitch on network device %s activate", id->interface_name);
-    fbprintf (status, "hardware killswitch on network device %s activate, please turn your device on.", id->interface_name);
+    notice (4, "hardware killswitch on network device %s active", id->interface_name);
+    fbprintf (status, "hardware killswitch on network device %s active, please turn your device on.", id->interface_name);
     return status_failed;
    }
 
    if (flags & 2) { // software killswitch active
     FILE *f = fopen (path, "w");
-    notice (4, "software killswitch on network device %s activate, clearing", id->interface_name);
+    notice (4, "software killswitch on network device %s active, clearing", id->interface_name);
 
     if (f) {
      fputs ("0", f);
