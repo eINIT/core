@@ -121,6 +121,7 @@ int network_interface_configure (struct lmodule *);
 int network_cleanup (struct lmodule *);
 int network_configure (struct lmodule *);
 
+int check_rfkill (struct interface_descriptor *, struct einit_event *);
 int create_bridge (struct interface_descriptor *, struct einit_event *);
 int bridge_enable (struct interface_descriptor *, struct einit_event *);
 int flush_ip (struct interface_descriptor *, struct einit_event *);
@@ -597,6 +598,10 @@ int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
   char *cmd = apply_variables (ip_flush, ip_flush_env);
   return pexec (cmd, NULL, 0, 0, NULL, NULL, NULL, status);
  }
+ return status_failed;
+}
+
+int check_rfkill (struct interface_descriptor *id, struct einit_event *status) {
  return status_failed;
 }
 
