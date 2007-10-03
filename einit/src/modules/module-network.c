@@ -602,7 +602,40 @@ int flush_ip (struct interface_descriptor *id, struct einit_event *status) {
 }
 
 int check_rfkill (struct interface_descriptor *id, struct einit_event *status) {
- return status_failed;
+ struct stat st;
+ char path[BUFFERSIZE];
+
+ esprintf (path, BUFFERSIZE, "/sys/class/net/%s/device/rf_kill", id->interface_name);
+
+ if (stat (path, &st)) { /* device doesn't have a killswitch, so it's alright */
+  return status_ok;
+ } else {
+  char *ifbuffer;
+
+  if ((ifbuffer = readfile (path))) {
+   int flags = parse_integer (ifbuffer);
+   free (ifbuffer);
+
+   if (flags & 1) { // hardware killswitch active
+    notice (4, "hardware killswitch on network device %s activate", id->interface_name);
+    fbprintf (status, "hardware killswitch on network device %s activate, please turn your device on.", id->interface_name);
+    return status_failed;
+   }
+
+   if (flags & 2) { // software killswitch active
+    FILE *f = fopen (path, "w");
+    notice (4, "software killswitch on network device %s activate, clearing", id->interface_name);
+
+    if (f) {
+     fputs ("0", f);
+     fclose (f);
+    }
+    return status_ok;
+   }
+  }
+ }
+
+ return status_ok;
 }
 
 int create_bridge (struct interface_descriptor *id, struct einit_event *status) {
@@ -660,6 +693,9 @@ int network_interface_enable (struct interface_descriptor *id, struct einit_even
   if (network_ready(id,status) == status_failed)
    goto fail;
  }
+
+ if (check_rfkill (id,status) == status_failed)
+  goto fail;
 
  if (flush_ip(id,status) == status_failed)
   goto fail;
