@@ -667,7 +667,8 @@ void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptr
 
 // modinfo->si.after = str2set (' ', serv);
 
- module->si.provides = (char **)setadd ((void **)module->si.provides, (void *)name, SET_TYPE_STRING);
+/* seems to be included already */
+// module->si.provides = (char **)setadd ((void **)module->si.provides, (void *)name, SET_TYPE_STRING);
 
  if (module->si.requires) gentoo_fixname_set (module->si.requires);
  if (module->si.provides) gentoo_fixname_set (module->si.provides);
