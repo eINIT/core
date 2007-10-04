@@ -534,6 +534,9 @@ void einit_event_handler (struct einit_event *ev) {
   uint32_t i = 0;
 //  eputs ("marking service status!\n", stderr);
   if (!ev->set) return;
+  if (coremode & einit_mode_ipconly) return;
+  if (coremode & einit_mode_sandbox) return;
+
   if (ev->status & status_working) {
    if (ev->task & einit_module_enable) {
     for (; ev->set[i]; i++)
@@ -616,14 +619,20 @@ int compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
 #endif
 }
 
-char **gentoo_resolve_dependency_type (rc_depinfo_t *depinfo, char *type, char **current) {
- rc_deptype_t *dependencies;
+char **gentoo_resolve_dependency_type (rc_depinfo_t *deptree, char *type, char **current, char *runlevel, char *name) {
  char **serv = NULL;
+ char **tmp_dependencies = NULL;
+ char **tmp_type = (char **)setadd (NULL, type, SET_TYPE_STRING);
+ char **tmp_service = (char **)setadd (NULL, name, SET_TYPE_STRING);
 
- if ((dependencies = rc_get_deptype(depinfo, type)) && dependencies->services) {
-  serv = (char **)setdup ((const void **)dependencies->services, SET_TYPE_STRING);
+ if ((tmp_dependencies = rc_get_depends(deptree, tmp_type, tmp_service, runlevel, RC_DEP_START))) {
+  serv = (char **)setdup ((const void **)tmp_dependencies, SET_TYPE_STRING);
 //  eprintf (stderr, "deps: %s %s\n", set2str (' ', dependencies->services), set2str (' ', serv));
+
+  free (tmp_dependencies);
  }
+
+ free (tmp_type);
 
  if (current) {
   if (serv) {
@@ -639,32 +648,26 @@ char **gentoo_resolve_dependency_type (rc_depinfo_t *depinfo, char *type, char *
 
 void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptree, char *name) {
  rc_depinfo_t *depinfo;
+ char **runlevels = str2set (':', cfg_getstring ("compatibility-sysv-distribution-gentoo-runlevels-for-dependencies", NULL));
+ int i = 0;
+
+ if (!runlevels) runlevels = setadd (setadd (NULL, "boot", SET_TYPE_STRING), "default", SET_TYPE_STRING);
 
  memset (&module->si, 0, sizeof(module->si));
-/* module->si.requires = NULL;
- module->si.provides = NULL;
- module->si.before = NULL;
- module->si.after = NULL;*/
 
- if (depinfo = rc_get_depinfo (gentoo_deptree, name)) {
-  module->si.requires = gentoo_resolve_dependency_type(depinfo, "ineed", module->si.requires);
-  module->si.provides = gentoo_resolve_dependency_type(depinfo, "iprovide", module->si.provides);
-  module->si.before = gentoo_resolve_dependency_type(depinfo, "ibefore", module->si.before);
-  module->si.after = gentoo_resolve_dependency_type(depinfo, "after", module->si.after);
-  module->si.after = gentoo_resolve_dependency_type(depinfo, "iuse", module->si.after);
-
-/*  if (dependencies = rc_get_deptype(depinfo, "iafter")) {
-   dependencies->services;
-  }*/
- } else {
-  fprintf (stderr, " >> no dependency information for service \"%s\".\n", name);
+ for (; runlevels[i]; i++) {
+  module->si.requires = gentoo_resolve_dependency_type(gentoo_deptree, "ineed", module->si.requires, runlevels[i], name);
+  module->si.provides = gentoo_resolve_dependency_type(gentoo_deptree, "iprovide", module->si.provides, runlevels[i], name);
+  module->si.before = gentoo_resolve_dependency_type(gentoo_deptree, "ibefore", module->si.before, runlevels[i], name);
+  module->si.after = gentoo_resolve_dependency_type(gentoo_deptree, "after", module->si.after, runlevels[i], name);
+  module->si.after = gentoo_resolve_dependency_type(gentoo_deptree, "iuse", module->si.after, runlevels[i], name);
  }
+
+ free (runlevels);
 
 // modinfo->si.after = str2set (' ', serv);
 
  module->si.provides = (char **)setadd ((void **)module->si.provides, (void *)name, SET_TYPE_STRING);
- module->si.requires = (char **)setadd ((void **)module->si.requires, (void *)"utmp", SET_TYPE_STRING);
- module->si.requires = (char **)setadd ((void **)module->si.requires, (void *)"initctl", SET_TYPE_STRING);
 
  if (module->si.requires) gentoo_fixname_set (module->si.requires);
  if (module->si.provides) gentoo_fixname_set (module->si.provides);

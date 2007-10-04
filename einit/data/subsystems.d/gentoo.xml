@@ -22,6 +22,8 @@
       <parse-env.d b="true" />
       <softlevel-tracker b="true" path="/lib/rcscripts/init.d" />
 
+      <runlevels-for-dependencies s="boot:default" />
+
 <!-- scriptlets to process gentoo's init.d scripts
      ( i don't particularly feel like re-implementing a complete sh right now )
      arguments: script-path, script-name, action -->
