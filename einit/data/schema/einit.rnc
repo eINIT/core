@@ -296,7 +296,8 @@ ConfigurationCompatibility =
         element parse-env.d { BooleanAttribute }? &
         element softlevel-tracker { BooleanAttribute & PathAttributes }? &
         element init.d-scriptlets { attribute svcdir-init { text }? & attribute execute { text }? }? &
-        element service-group { IDAttribute & attribute service { text } & attribute put-into { text } }*
+        element service-group { IDAttribute & attribute service { text } & attribute put-into { text } }* &
+        element runlevels-for-dependencies { StringAttribute }?
       }
     }? &
 
