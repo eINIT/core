@@ -411,21 +411,83 @@ char **create_environment_f (char **environment, const char **variables) {
  return environment;
 }
 
-void exec_run_sh (const char *command, enum pexec_options options, char **exec_environment) {
- char **cmdsetdup, **cmd;
+struct exec_parser_data {
+ int commands;
+ char **command;
+ char forkflag;
+};
 
- cmdsetdup = str2set ('\0', command);
- cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
+void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_parser_data *pd) {
+ switch (status) {
+  case pa_end_of_file: break;
 
- if (options & pexec_option_safe_environment) {
-  execve (cmd[0], cmd, safe_environment);
- } else {
-  execve (cmd[0], cmd, exec_environment);
+  case pa_new_context:
+  case pa_new_context_fork:
+   if (pd->command) {
+    free (pd->command);
+   }
+
+   pd->command = (char **)setdup((const void **)data, SET_TYPE_STRING);
+   pd->commands++;
+   pd->forkflag = (status == pa_new_context_fork);
+   break;
+
+  default: break;
  }
- perror (cmd[0]);
- free (cmd);
- free (cmdsetdup);
- exit (EXIT_FAILURE);
+}
+
+void exec_run_sh (const char *command, enum pexec_options options, char **exec_environment) {
+ struct exec_parser_data pd;
+
+ memset (&pd, 0, sizeof (pd));
+
+/* parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
+
+ if ((pd.commands == 1) && pd.command) {
+  int forkres = 0;
+
+  if (!pd.forkflag || ((forkres = fork()) == 0)) {
+   char **r = which (pd.command[0]);
+   if (r && r[0]) {
+    pd.command[0] = r[0];
+   }
+
+   if (options & pexec_option_safe_environment) {
+    execve (pd.command[0], pd.command, safe_environment);
+   } else {
+    execve (pd.command[0], pd.command, exec_environment);
+   }
+
+   perror (pd.command[0]);
+
+   if (r) free (r);
+  }
+
+  if (forkres == -1) {
+   perror ("einit/sh: was supposed to fork but failed");
+  }
+
+  free (pd.command);
+
+  exit (EXIT_FAILURE);
+ } else*/ {
+  char **cmdsetdup, **cmd;
+
+  if (pd.command) free (pd.command);
+
+  cmdsetdup = str2set ('\0', command);
+  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
+
+  if (options & pexec_option_safe_environment) {
+   execve (cmd[0], cmd, safe_environment);
+  } else {
+   execve (cmd[0], cmd, exec_environment);
+  }
+  perror (cmd[0]);
+  free (cmd);
+  free (cmdsetdup);
+  exit (EXIT_FAILURE);
+ }
 }
 
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
@@ -900,8 +962,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   }
 #endif
   else if (child == 0) {
-   char **cmd;
-   char **cmdsetdup;
+//   char **cmd;
+//   char **cmdsetdup;
    char **daemon_environment;
 
    disable_core_dumps ();
@@ -916,18 +978,20 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
    shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
 
-   cmdsetdup = str2set ('\0', shellcmd->command);
+   eclose (1);
+   dup2 (2, 1);
+
+   exec_run_sh (shellcmd->command, 0, daemon_environment);
+
+/*   cmdsetdup = str2set ('\0', shellcmd->command);
    cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
 //  close (0);
 //  close (1);
 //  close (2);
-   eclose (1);
-   dup2 (2, 1);
-
    execve (cmd[0], cmd, daemon_environment);
    free (cmd);
    free (cmdsetdup);
-   exit (EXIT_FAILURE);
+   exit (EXIT_FAILURE);*/
   } else {
    new->pid = child;
 //  sched_watch_pid (child, dexec_watcher);

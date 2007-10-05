@@ -84,7 +84,7 @@ module_register(einit_parse_sh_self);
 
 #endif
 
-int parse_sh_f (const char *, void (*)(const char **, uint8_t));
+int parse_sh_f (const char *, void (*)(const char **, uint8_t, void *), void *);
 
 int einit_parse_sh_cleanup (struct lmodule *irr) {
  function_unregister ("einit-parse-sh", 1, parse_sh_f);
@@ -94,7 +94,7 @@ int einit_parse_sh_cleanup (struct lmodule *irr) {
 }
 
 // parse sh-style files and call back for each line
-int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
+int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void *), void *ud) {
  if (!data) return -1;
 
  char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp;
@@ -124,6 +124,8 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
    case '\"': dquote = !dquote; break;
    case '\\': lit = 1; break;
    case '\n':
+   case ';':
+   case '&':
     if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
      *cdp = 0;
      command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
@@ -134,7 +136,10 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
     stat = sh_parser_status_lw;
 
     if (command) {
-     callback ((const char **)command, pa_new_context);
+     if ((*cur) == '&')
+      callback ((const char **)command, pa_new_context_fork, ud);
+     else
+      callback ((const char **)command, pa_new_context, ud);
 
      free (command);
      command = NULL;
@@ -175,13 +180,13 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t)) {
  stat = sh_parser_status_lw;
 
  if (command) {
-  callback ((const char **)command, pa_new_context);
+  callback ((const char **)command, pa_new_context, ud);
 
   free (command);
   command = NULL;
  }
 
- callback (NULL, pa_end_of_file);
+ callback (NULL, pa_end_of_file, ud);
  free (ndp);
 
  return 0;

@@ -54,7 +54,8 @@ enum einit_sh_parser_status {
 
 enum einit_sh_parser_pa {
  pa_end_of_file = 0x1,
- pa_new_context = 0x2
+ pa_new_context = 0x2,
+ pa_new_context_fork = 0x4
 };
 
 #if (! defined(einit_modules_parse_sh)) || (einit_modules_parse_sh == 'm') || (einit_modules_parse_sh == 'n')
