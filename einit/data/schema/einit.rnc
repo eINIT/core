@@ -53,8 +53,9 @@ Core = element core {
     }?
   }* &
   element scheduler {
-    element shutdown-function-suffixes { StringAttribute }?
-  }* &
+    element shutdown-function-suffixes { StringAttribute }? &
+    element niceness { attribute core { text }, tasks { text } }?
+}* &
   element module-logic {
     element init.d-path { StringAttribute }? &
     element maintain-init.d { StringAttribute, BooleanAttribute }?
