@@ -113,7 +113,7 @@ int compatibility_sysv_gentoo_init_d_reset (char *, struct einit_event *);
 int compatibility_sysv_gentoo_init_d_custom (char *, char *, struct einit_event *);
 int compatibility_sysv_gentoo_configure (struct lmodule *);
 int compatibility_sysv_gentoo_cleanup (struct lmodule *);
-void sh_add_environ_callback (char **, uint8_t);
+void sh_add_environ_callback (char **, uint8_t, void *);
 void parse_gentoo_runlevels (char *, struct cfgnode *, char);
 void einit_event_handler (struct einit_event *);
 void ipc_event_handler (struct einit_event *);
@@ -132,7 +132,6 @@ void gentoo_fixname (char *name) {
 
 void gentoo_fixname_set (char **set) {
  uint32_t i = 0;
- char xd = 0;
 
  for (; set[i]; i++) {
   gentoo_fixname(set[i]);
@@ -149,9 +148,11 @@ int compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
 
  parse_sh_cleanup (irr);
  exec_cleanup(irr);
+
+ return 0;
 }
 
-void sh_add_environ_callback (char **data, uint8_t status) {
+void sh_add_environ_callback (char **data, uint8_t status, void *ignored) {
  char *x, *y;
 
 // if (data)
@@ -208,11 +209,11 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
  if (!path) return;
  plen = strlen (path) +2;
 
- if (dir = eopendir (path)) {
+ if ((dir = eopendir (path))) {
   struct stat st;
   char **nservices = NULL;
 
-  while (de = ereaddir (dir)) {
+  while ((de = ereaddir (dir))) {
    uint32_t xplen = plen + strlen (de->d_name);
 
    if (de->d_name[0] == '.') continue;
@@ -281,7 +282,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     cfg_addnode (&newnode);
 
-    if (currentmode = cfg_findnode (newnode.id, einit_node_mode, NULL)) {
+    if ((currentmode = cfg_findnode (newnode.id, einit_node_mode, NULL))) {
      tmp[xplen-2] = '/';
      tmp[xplen-1] = 0;
      parse_gentoo_runlevels (tmp, currentmode, exclusive);
@@ -424,7 +425,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)"services", SET_TYPE_STRING);
     arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', (const char **)nservices), SET_TYPE_STRING);
 
-    if (critical = str2set (':', cfg_getstring ("enable/critical", currentmode))) {
+    if ((critical = str2set (':', cfg_getstring ("enable/critical", currentmode)))) {
      arbattrs = (char **)setadd ((void **)arbattrs, (void *)"critical", SET_TYPE_STRING);
      arbattrs = (char **)setadd ((void **)arbattrs, (void *)critical, SET_TYPE_STRING);
     }
@@ -472,7 +473,7 @@ void einit_event_handler (struct einit_event *ev) {
 
      if (data) {
 //      puts ("compatibility-sysv-gentoo: updating configuration with env.d");
-      parse_sh (data, (void (*)(const char **, enum einit_sh_parser_pa))sh_add_environ_callback);
+      parse_sh (data, (void (*)(const char **, enum einit_sh_parser_pa, void *))sh_add_environ_callback);
 
       free (data);
      }
@@ -481,14 +482,14 @@ void einit_event_handler (struct einit_event *ev) {
    }
 
 /* runlevels */
-   if (bpath = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-runlevels/path")) {
+   if ((bpath = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-runlevels/path"))) {
     parse_gentoo_runlevels (bpath, NULL, parse_boolean (cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-runlevels/exclusive", NULL)));
 // need to add checks here for updated configuration
    }
 
 /* service tracker */
    node = cfg_getnode ("configuration-compatibility-sysv-distribution-gentoo-softlevel-tracker", NULL);
-   if (do_service_tracking = (node && node->flag)) {
+   if ((do_service_tracking = (node && node->flag))) {
     service_tracking_path = cfg_getpath ("configuration-compatibility-sysv-distribution-gentoo-softlevel-tracker/path");
     if (!service_tracking_path) do_service_tracking = 0;
    }
@@ -617,6 +618,7 @@ int compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
  free (this->param);
 }
 #endif
+ return 0;
 }
 
 char **gentoo_resolve_dependency_type (rc_depinfo_t *deptree, char *type, char **current, char *runlevel, char *name) {
@@ -647,11 +649,11 @@ char **gentoo_resolve_dependency_type (rc_depinfo_t *deptree, char *type, char *
 }
 
 void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptree, char *name) {
- rc_depinfo_t *depinfo;
+// rc_depinfo_t *depinfo;
  char **runlevels = str2set (':', cfg_getstring ("compatibility-sysv-distribution-gentoo-runlevels-for-dependencies", NULL));
  int i = 0;
 
- if (!runlevels) runlevels = setadd (setadd (NULL, "boot", SET_TYPE_STRING), "default", SET_TYPE_STRING);
+ if (!runlevels) runlevels = (char **)setadd (setadd (NULL, "boot", SET_TYPE_STRING), "default", SET_TYPE_STRING);
 
  memset (&module->si, 0, sizeof(module->si));
 
@@ -705,18 +707,18 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  }
 
 #ifdef POSIXREGEX
- if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL)) {
+ if ((spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL))) {
   haveallowpattern = !eregcomp (&allowpattern, spattern);
  }
 
- if (spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-disallow", NULL)) {
+ if ((spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-disallow", NULL))) {
   havedisallowpattern = !eregcomp (&disallowpattern, spattern);
  }
 #endif
 
  plen = strlen (init_d_path) +1;
 
- if (dir = eopendir (init_d_path)) {
+ if ((dir = eopendir (init_d_path))) {
 // load gentoo's default dependency information using librc.so's functions
   rc_depinfo_t *gentoo_deptree = rc_load_deptree();
   if (!gentoo_deptree) {
@@ -726,7 +728,7 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 #ifdef DEBUG
   puts (" >> reading directory");
 #endif
-  while (de = ereaddir (dir)) {
+  while ((de = ereaddir (dir))) {
    char doop = 1;
 
 //   puts (de->d_name);
@@ -745,7 +747,7 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 
    tmp = (char *)emalloc (plen + strlen (de->d_name));
    struct stat sbuf;
-   struct lmodule *lm;
+//   struct lmodule *lm;
    *tmp = 0;
    strcat (tmp, init_d_path);
    strcat (tmp, de->d_name);
@@ -817,6 +819,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
  if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
 #endif
+
+ return 0;
 }
 
 // int __pexec_function (char *command, char **variables, uid_t uid, gid_t gid, char *user, char *group, char **local_environment, struct einit_event *status);
@@ -832,7 +836,7 @@ int compatibility_sysv_gentoo_init_d_enable (char *init_script, struct einit_eve
  char **env = rc_config_env (NULL);
 
  if (!init_script || !init_d_exec_scriptlet) return status_failed;
- if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+ if ((xrev = strrchr(init_script, '/'))) variables[3] = xrev+1;
 
  cmdscript = apply_variables (init_d_exec_scriptlet, (const char **)variables);
 
@@ -850,7 +854,7 @@ int compatibility_sysv_gentoo_init_d_disable (char *init_script, struct einit_ev
  char **env = rc_config_env (NULL);
 
  if (!init_script || !init_d_exec_scriptlet) return status_failed;
- if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+ if ((xrev = strrchr(init_script, '/'))) variables[3] = xrev+1;
 
  cmdscript = apply_variables (init_d_exec_scriptlet, (const char **)variables);
 
@@ -868,7 +872,7 @@ int compatibility_sysv_gentoo_init_d_custom (char *init_script, char *action, st
  char **env = rc_config_env (NULL);
 
  if (!init_script || !init_d_exec_scriptlet) return status_failed;
- if (xrev = strrchr(init_script, '/')) variables[3] = xrev+1;
+ if ((xrev = strrchr(init_script, '/'))) variables[3] = xrev+1;
 
  cmdscript = apply_variables (init_d_exec_scriptlet, (const char **)variables);
 
@@ -886,6 +890,8 @@ int compatibility_sysv_gentoo_configure (struct lmodule *irr) {
 
  event_listen (einit_event_subsystem_core, einit_event_handler);
  event_listen (einit_event_subsystem_ipc, ipc_event_handler);
+
+ return 0;
 }
 
 // no enable/disable functions: this is a passive module

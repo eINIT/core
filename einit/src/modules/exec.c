@@ -56,6 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <sys/stat.h> 
 
+#include <einit-modules/parse-sh.h>
+
 #ifdef POSIXREGEX
 #include <regex.h>
 #endif
@@ -409,11 +411,27 @@ char **create_environment_f (char **environment, const char **variables) {
  return environment;
 }
 
+void exec_run_sh (const char *command, enum pexec_options options, char **exec_environment) {
+ char **cmdsetdup, **cmd;
+
+ cmdsetdup = str2set ('\0', command);
+ cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
+
+ if (options & pexec_option_safe_environment) {
+  execve (cmd[0], cmd, safe_environment);
+ } else {
+  execve (cmd[0], cmd, exec_environment);
+ }
+ perror (cmd[0]);
+ free (cmd);
+ free (cmdsetdup);
+ exit (EXIT_FAILURE);
+}
+
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
  int pipefderr [2];
  pid_t child;
  int pidstatus = 0;
- char **cmd, **cmdsetdup;
  enum pexec_options options = (status ? 0 : pexec_option_nopipe);
  uint32_t cs = status_ok;
  char have_waited = 0;
@@ -537,18 +555,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   command = apply_envfile_f ((char *)command, (const char **)exec_environment);
 
-  cmdsetdup = str2set ('\0', command);
-  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
-
-  if (options & pexec_option_safe_environment) {
-   execve (cmd[0], cmd, safe_environment);
-  } else {
-   execve (cmd[0], cmd, exec_environment);
-  }
-  perror (cmd[0]);
-  free (cmd);
-  free (cmdsetdup);
-  exit (EXIT_FAILURE);
+  exec_run_sh (command, options, exec_environment);
  } else {
   FILE *fx;
 
