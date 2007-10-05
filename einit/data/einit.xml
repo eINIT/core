@@ -15,7 +15,7 @@
 <!-- niceness increments:
      'core' is relative to whatever the kernel set,
      'tasks' is relative to the value set by core -->
-   <niceness core="10" tasks="-20" />
+   <niceness core="0" tasks="0" />
   </scheduler>
 
   <module-logic>
