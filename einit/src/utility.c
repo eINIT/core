@@ -735,3 +735,78 @@ void disable_core_dumps() {
 
  setrlimit(RLIMIT_CORE, &zero);
 }
+
+#if ! defined (EINIT_UTIL)
+
+char **getpath_filter (char *filter) {
+ char **rv = NULL;
+
+ return rv;
+}
+
+char *joinpath (char *path1, char *path2) {
+ char *rv = NULL;
+ int tlen = strlen (path1);
+
+ if (path1[tlen] == '/') {
+  tlen += strlen (path2) + 1;
+  rv = emalloc (tlen);
+
+  esprintf (rv, tlen, "%s%s", path1, path2);
+ } else {
+  tlen += strlen (path2) + 2;
+  rv = emalloc (tlen);
+
+  esprintf (rv, tlen, "%s/%s", path1, path2);
+ }
+
+ return rv;
+}
+
+char **which (char *binary) {
+ char **rv = NULL;
+ char n = 0;
+ char **env;
+
+ if (!binary) return NULL;
+
+ for (; n < 2; n++) {
+  struct stat st;
+
+  switch (n) {
+   case 0: env = einit_global_environment; break;
+   case 1: env = einit_initial_environment; break;
+   default: env = NULL; break;
+  }
+
+  if (env) {
+   int i = 0;
+
+   for (; env[i]; i++) {
+    if (strstr (env[i], "PATH=") == env[i]) {
+     char **paths = str2set (':', env[i]+5);
+
+     if (paths) {
+      int j = 0;
+      for (; paths[j]; j++) {
+       char *t = joinpath (paths[j], binary);
+
+       if (!stat (t, &st)) {
+        if (!inset ((const void **)rv, t, SET_TYPE_STRING))
+         rv = (char **)setadd ((void **)rv, t, SET_TYPE_STRING);
+       }
+
+       free (t);
+      }
+     }
+
+     break;
+    }
+   }
+  }
+ }
+
+ return rv;
+}
+
+#endif
