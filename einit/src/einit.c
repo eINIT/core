@@ -106,6 +106,11 @@ char ** environ;
 
 char *bootstrapmodulepath = BOOTSTRAP_MODULE_PATH;
 
+struct lmodule *mlist;
+
+int einit_task_niceness_increment = 0;
+int einit_core_niceness_increment = 0;
+
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
   "Usage:\n"
@@ -151,8 +156,6 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
  kill (einit_sub, SIGINT);
 }
 
-struct lmodule *mlist;
-
 void core_timer_event_handler (struct einit_event *ev) {
  if ((ev->type == einit_timer_tick) && (event_snooze_time)) {
   struct lmodule *lm = mlist;
@@ -174,6 +177,8 @@ void core_timer_event_handler (struct einit_event *ev) {
 void core_einit_event_handler (struct einit_event *ev) {
  if (ev->type == einit_core_configuration_update) {
   struct cfgnode *node;
+  char *str;
+
   ev->chain_type = einit_core_update_modules;
 
   if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
@@ -197,6 +202,11 @@ void core_einit_event_handler (struct einit_event *ev) {
   if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
    mortality[bitch_epthreads] = node->value;
 
+  if ((str = cfg_getstring ("core-scheduler-niceness/core", NULL)))
+   einit_core_niceness_increment = parse_integer (str);
+
+  if ((str = cfg_getstring ("core-scheduler-niceness/tasks", NULL)))
+   einit_task_niceness_increment = parse_integer (str);
  } else if (ev->type == einit_core_update_modules) {
   struct lmodule *lm;
 
@@ -651,7 +661,10 @@ int main(int argc, char **argv) {
    eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
    exit (EXIT_FAILURE);
   } else {
+/* actual init code */
    uint32_t e = 0;
+
+   nice (einit_core_niceness_increment);
 
    if (need_recovery) {
     notice (1, "need to recover from something...");

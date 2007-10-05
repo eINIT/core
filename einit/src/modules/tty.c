@@ -220,6 +220,8 @@ int einit_tty_texec (struct cfgnode *node) {
    if (!(cpid = fork()))
 #endif
    {
+    nice (-einit_core_niceness_increment);
+
     disable_core_dumps ();
 
     if (device) {

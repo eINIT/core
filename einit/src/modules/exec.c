@@ -500,6 +500,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   sched_yield();
 #endif
 
+  nice (einit_task_niceness_increment);
+
   char **exec_environment;
 
   disable_core_dumps ();
