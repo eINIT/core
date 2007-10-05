@@ -213,19 +213,31 @@ void einit_exec_ipc_event_handler (struct einit_event *ev) {
 
 char *apply_envfile_f (char *command, const char **environment) {
  uint32_t i = 0;
-
  char **envfiles = NULL;
+ char **variables = NULL;
 
  if (environment) {
   for (; environment[i]; i++) {
    if (strstr(environment[i], "envfile=") == environment[i]) {
     if (envfiles) free (envfiles);
 
+    if (envfiles) free (envfiles);
     envfiles = str2set (':', environment[i]+8);
-    break;
-   }
-   if (strstr(environment[i], "services=") == environment[i]) {
-    envfiles = str2set (':', environment[i]+9);
+   } else if (strstr(environment[i], "services=") == environment[i]) {
+    if (!envfiles) envfiles = str2set (':', environment[i]+9);
+   } else {
+    char *r = estrdup (environment[i]);
+    char *n = strchr (r, '=');
+
+    if (n) {
+     *n = 0;
+     n++;
+
+     variables = (char **)setadd ((void **)variables, r, SET_TYPE_STRING);
+     variables = (char **)setadd ((void **)variables, n, SET_TYPE_STRING);
+    }
+
+    free (r);
    }
   }
  }
@@ -256,6 +268,16 @@ char *apply_envfile_f (char *command, const char **environment) {
     strcat (command, oc);
    }
   }
+ }
+
+ if (variables) {
+/*  char *t = apply_variables (command, (const char **)variables);
+
+  free (command);
+
+  command = t;*/
+
+  free (variables);
  }
 
  return command;
@@ -580,6 +602,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   sched_yield();
 #endif
 
+  nice (-einit_core_niceness_increment);
   nice (einit_task_niceness_increment);
 
   char **exec_environment;
@@ -965,6 +988,9 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 //   char **cmd;
 //   char **cmdsetdup;
    char **daemon_environment;
+
+   nice (-einit_core_niceness_increment);
+   nice (einit_task_niceness_increment);
 
    disable_core_dumps ();
 
