@@ -277,6 +277,8 @@ char *apply_envfile_f (char *command, const char **environment) {
 
   command = t;*/
 
+  command = apply_variables (command, (const char **)variables);
+
   free (variables);
  }
 
