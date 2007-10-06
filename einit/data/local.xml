@@ -58,7 +58,7 @@
    <video group="kern-nvidia" seq="any-iop" />
 <!-- kern-sound is the list-based module loader.
      if you want alsa module auto-detection, replace with kern-alsa -->
-   <audio group="alsa:kern-sound" seq="most" />
+   <audio group="alsa:kern-alsa" seq="most" />
    <avahi group="avahi-dnsconfd" seq="any-iop" />
 <!-- add winbindd if you need it -->
    <samba group="smbd:nmbd" seq="all" />
