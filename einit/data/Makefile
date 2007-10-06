@@ -15,7 +15,9 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/schemata
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
-	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
+#	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
+	sed -e "s/\/lib/\/${ELIBDIR}/" < einit.xml >einit.xml.n
+	${INSTALL} ${IPARAM} -m 0644 einit.xml.n ${DESTDIR}/${LIBDIR}/einit.xml
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -m 0644 schema/*.rn? ${DESTDIR}/${LIBDIR}/schemata
 	${INSTALL} ${IPARAM} -m 0644 einit.conf ${DESTDIR}/${ETCDIR}/../dbus-1/system.d

@@ -42,8 +42,6 @@ else
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
-BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
-
 SOURCESUFFIXES="c s c++ S"
 HEADERSUFFIXES="h"
 
@@ -53,7 +51,7 @@ GCCFLAGS="-Wall"
 
 MAKEFILETASKS="all install"
 
-LIBRARIES="-L/lib -L/usr/lib -L/usr/local/lib"
+ELIBDIR="lib"
 
 pwd=$(pwd)
 nomodule=""
@@ -61,6 +59,7 @@ nomodule=""
 XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 
 DBUS=""
+PREFIX="/einit"
 
 . ./configure.options
 
@@ -119,6 +118,12 @@ for param in $@; do
 	elif test "$param" = "--enable-linux"; then
 		echo -n " LINUX";
 		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+	elif test "$param" = "--enable-darwin"; then
+		echo -n " LINUX";
+		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_DARWIN}"
+	elif test "$param" = "--enable-bsd"; then
+		echo -n " LINUX";
+		EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_BSD}"
 	elif test "$param" = "--enable-bsd"; then
 		echo -n " BSD";
 		PMODULES="$PMODULES bsd";
@@ -133,13 +138,10 @@ for param in $@; do
 		XCFLAGS="$XCFLAGS -DBITCHY";
 	elif test "$param" = "--use-posix-regex"; then
 		echo -n " REGEX";
-		XCFLAGS='$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS}) -DPOSIXREGEX';
+		XCFLAGS="$(echo ${XCFLAGS} | sed 's/-DPOSIXREGEX//') -DPOSIXREGEX";
 	elif test "$param" = "--no-posix-regex"; then
 		echo -n " NOREGEX";
-		XCFLAGS=$(sed "s/-DPOSIXREGEX//" < echo ${XCFLAGS});
-	elif test "$param" = "--pthread-wait-bug"; then
-		echo -n " PTHREAD-WAIT-BUG";
-		XCFLAGS="$XCFLAGS -DBUGGY_PTHREAD_CHILD_WAIT_HANDLING";
+		XCFLAGS="$(echo ${XCFLAGS} | sed 's/-DPOSIXREGEX//')";
 	elif test "$param" = "--no-nix-environ"; then
 		echo -n " NO-NIX-ENVIRON";
 		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
@@ -149,6 +151,13 @@ for param in $@; do
 	elif test "$short" = "--with-expat"; then
 		echo -n " EXPAT";
 		EXPAT_CFGD_LIB="${param#*=}";
+	elif test "$short" = "--distro-support"; then
+		if [ "${param#*=}" = "gentoo" ]; then
+			echo -n " GENTOO";
+			EXTERNALMODULES="${EXTERNALMODULES} distro-gentoo";
+		fi
+        elif test "$short" = "--libdir-name"; then
+                ELIBDIR="${param#*=}";
         elif test "$param" = "--svn"; then
                 echo -n " SVN";
                 ISSVN=1;
@@ -160,6 +169,7 @@ for param in $@; do
                 EBUILD="1";
                 CONFIGINSTALLMETHOD="ebuild";
         elif test "$param" = "--enable-ipc-dbus"; then
+		echo -n " DBUS";
 		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
 		DBUS="dbus";
 		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit libeinit++";
@@ -173,8 +183,17 @@ echo -n "checking automatic options [";
 if test -n "`uname -a|grep -i 'Linux'`"; then
 	echo -n " LINUX";
 	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_LINUX}"
+elif test -n "`uname -a|grep -i 'Darwin'`"; then
+	echo -n " DARWIN";
+	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_DARWIN}"
+elif test -n "`uname -a|grep -i 'BSD'`"; then
+	echo -n " BSD";
+	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_BSD}"
 fi
 echo " ]";
+
+LIBRARIES="-L/${ELIBDIR} -L/usr/${ELIBDIR} -L/usr/local/${ELIBDIR}"
+BOOTSTRAP_MODULE_PATH="/${ELIBDIR}/einit/bootstrap/"
 
 echo "skipping modules: ${nomodule}"
 
@@ -263,11 +282,11 @@ Options:
  --enable-linux         enable compilation of linux-specific modules
  --enable-bsd           enable compilation of bsd-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
+ --enable-ipc-dbus	enable compilation of dbus-ipc
+ --with-expat		build with expat libs linked in statically
  --bitch-a-lot          tell all programs used to compile and link to be more
                         verbose
  --use-posix-regex      use posix.2 regular expressions
- --pthread-wait-bug     some pthreads implementations don't allow all threads
-                        in one process to wait on other processes' children
  --internal-modules     the modules to compile-in
  --external-modules     the modules to compile as loadable .so-files
  --tree-type=           define the type of tree-structures einit should use.
@@ -282,7 +301,7 @@ fi;
 echo -n "/etc/make.conf ["
 if test "$EBUILD" = "1"; then
 	echo -n " skipping (ebuild)";
-elif test -n ""${CFLAGS}; then
+elif test -n "${CFLAGS}"; then
 	echo -n " skipping (CFLAGS set)";
 elif test -f /etc/make.conf; then
 	echo -n " sourcing";
@@ -445,12 +464,12 @@ fi
 if [ -e "${EXPAT_CFGD_LIB}" ]; then
  EXPAT_LIBS="${EXPAT_CFGD_LIB}"
 elif [ "${EXUSR}" = "yes" ]; then
- if [ -e "/usr/lib/libexpat.a" ]; then
-  EXPAT_LIBS="/usr/lib/libexpat.a"
- elif [ -e "/usr/local/lib/libexpat.a" ]; then
-  EXPAT_LIBS="/usr/local/lib/libexpat.a"
- elif [ -e "/lib/libexpat.a" ]; then
-  EXPAT_LIBS="/lib/libexpat.a"
+ if [ -e "/usr/${ELIBDIR}/libexpat.a" ]; then
+  EXPAT_LIBS="/usr/${ELIBDIR}/libexpat.a"
+ elif [ -e "/usr/local/${ELIBDIR}/libexpat.a" ]; then
+  EXPAT_LIBS="/usr/local/${ELIBDIR}/libexpat.a"
+ elif [ -e "/${ELIBDIR}/libexpat.a" ]; then
+  EXPAT_LIBS="/${ELIBDIR}/libexpat.a"
  else
   EXPAT_LIBS="-lexpat"
  fi;
@@ -510,15 +529,16 @@ if [ "${GTK}" = "gtk" ]; then
 	GTK_LIBS=$(pkg-config --libs gtkmm-2.4)
 fi
 
-XCFLAGS="${XCFLAGS} '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'"
+XCFLAGS="${XCFLAGS}"
 
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
 ETCXDIR = ${PREFIX}/etc
-LIBDIR = ${PREFIX}/lib/einit
-MODDIR = ${PREFIX}/lib/einit/modules
-ULIBDIR = ${UPREFIX}/lib
+LIBDIR = ${PREFIX}/${ELIBDIR}/einit
+MODDIR = ${PREFIX}/${ELIBDIR}/einit/modules
+ULIBDIR = ${UPREFIX}/${ELIBDIR}
+ELIBDIR = ${ELIBDIR}
 BINDIR = ${PREFIX}/bin
 UBINDIR = ${UPREFIX}/bin
 USHAREDIR = ${UPREFIX}/share/einit
@@ -560,8 +580,8 @@ BOOTSTRAP_MODULE_PATH = ${BOOTSTRAP_MODULE_PATH}
 CC = $CC ${GCCFLAGS} -fPIC
 ASM = $ASM ${GCCFLAGS}
 
-CFLAGS = $CFLAGS$XCFLAGS
-CXXFLAGS = $CXXFLAGS$XCFLAGS
+CFLAGS = $CFLAGS$XCFLAGS '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'
+CXXFLAGS = $CXXFLAGS$XCFLAGS '-DUSHAREDIR=\"${UPREFIX}/share/einit\"'
 LDFLAGS = $LDFLAGS
 CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL
@@ -601,9 +621,10 @@ echo "creating config.sh..."
 echo "PREFIX=\"$PREFIX\"
 ETCDIR=\"${PREFIX}/etc/einit\"
 ETCXDIR=\"${PREFIX}/etc\"
-LIBDIR=\"${PREFIX}/lib/einit\"
-ULIBDIR=\"${UPREFIX}/lib\"
-MODDIR=\"${PREFIX}/lib/einit/modules\"
+LIBDIR=\"${PREFIX}/${ELIBDIR}/einit\"
+ULIBDIR=\"${UPREFIX}/${ELIBDIR}\"
+ELIBDIR=\"${ELIBDIR}\"
+MODDIR=\"${PREFIX}/${ELIBDIR}/einit/modules\"
 BINDIR=\"${PREFIX}/bin\"
 SBINDIR=\"${PREFIX}/sbin\"
 INCLUDEDIR=\"${UPREFIX}/include\"
@@ -640,7 +661,8 @@ BOOTSTRAP_MODULE_PATH=\"${BOOTSTRAP_MODULE_PATH}\"
 CC=\"$CC ${GCCFLAGS}\"
 ASM=\"$ASM ${GCCFLAGS}\"
 
-CFLAGS=\"$CFLAGS$XCFLAGS\"
+CFLAGS=\"$CFLAGS$XCFLAGS -DUSHAREDIR=\\\"${UPREFIX}/share/einit\\\"\"
+CXXFLAGS=\"$CXXFLAGS$XCFLAGS -DUSHAREDIR=\\\"${UPREFIX}/share/einit\\\"\"
 LDFLAGS=\"$LDFLAGS\"
 CCC=\"\${CC} \${INCLUDE} \${CFLAGS}\"
 CCL=\"$CCL\"
@@ -660,7 +682,109 @@ LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
 DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
 DBUS_LIBS=\"${DBUS_LIBS}\"
 DBUS=\"${DBUS}\"
+
+GTK_CFLAGS=\"${GTK_CFLAGS}\"
+GTK_LIBS=\"${GTK_LIBS}\"
+GTK=\"${GTK}\"
+
+NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
+NETLINK_LIBS=\"${NETLINK_LIBS}\"
+
+LIBNOTIFY_CFLAGS=\"${LIBNOTIFY_CFLAGS}\"
+LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
+
+EXPAT_LIBS=\"${EXPAT_LIBS}\"
+
+GUI=\"${GUI}\"
 " > config.sh
+
+echo "creating config.xml..."
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<einit>
+ <configuration>
+  <compiler>
+   <build-configuration id=\"primus\"
+    PREFIX=\"$PREFIX\"
+    ETCDIR=\"${PREFIX}/etc/einit\"
+    ETCXDIR=\"${PREFIX}/etc\"
+    LIBDIR=\"${PREFIX}/${ELIBDIR}/einit\"
+    ULIBDIR=\"${UPREFIX}/${ELIBDIR}\"
+    ELIBDIR=\"${ELIBDIR}\"
+    MODDIR=\"${PREFIX}/${ELIBDIR}/einit/modules\"
+    BINDIR=\"${PREFIX}/bin\"
+    SBINDIR=\"${PREFIX}/sbin\"
+    INCLUDEDIR=\"${UPREFIX}/include\"
+    BOOTSTRAPDIR=\"${PREFIX}/${BOOTSTRAP_MODULE_PATH}\"
+
+    INSTALL=\"install\"
+    IPARAM=\"\"
+    SOIPARAM=\"\"
+    BINIPARAM=\"\"
+    CONFIGINSTALLMETHOD=\"${CONFIGINSTALLMETHOD}\"
+
+    COMPILER=\"${COMPILER}\"
+    OS=\"${OS}\"
+    ARCH=\"${ARCH}\"
+    ASMDIR=\"${ASMDIR}\"
+
+    LIBRT=\"${LIBRT}\"
+
+    PMODULES=\"$PMODULES\"
+    OPTIONS=\"$OPTIONS\"
+    INCLUDE=\"$INCLUDE\"
+
+    XDYNAMIC=\"$XDYNAMIC\"
+    BUILDNUMBER=\"$BUILDNUMBER\"
+    ISSVN=\"$ISSVN\"
+
+    INTERNALMODULES=\"${INTERNALMODULES}\"
+    EXTERNALMODULES=\"${EXTERNALMODULES}\"
+
+    CORELIBS=\"${CORELIBS}\"
+
+    BOOTSTRAP_MODULE_PATH=\"${BOOTSTRAP_MODULE_PATH}\"
+
+    CC=\"$CC ${GCCFLAGS}\"
+    ASM=\"$ASM ${GCCFLAGS}\"
+
+    CFLAGS=\"$CFLAGS$XCFLAGS\"
+    CXXFLAGS=\"$CXXFLAGS$XCFLAGS\"
+    LDFLAGS=\"$LDFLAGS\"
+    CCC=\"${CC} \${INCLUDE} \${CFLAGS}\"
+    CCL=\"$CCL\"
+    CLD=\"${CC} \${LDFLAGS} ${LIBRARIES}\"
+    LLD=\"${CC} \${LDFLAGS} $LLD ${LIBRARIES}\"
+    XLLD=\"$LLD\"
+    STATIC=\"$STATIC\"
+    LPA=\"$LPA\"
+
+    CXX=\"$CXX\"
+    CXXC=\"${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}\"
+    XXL=\"$XXL -DISSVN=\${ISSVN}\"
+    CXXLD=\"${CXX} \${LDFLAGS}\"
+    CXXLD=\"${CXXC} \${LDFLAGS}\"
+    LXXLD=\"${CXXC} \${LDFLAGS} $LLD\"
+
+    DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
+    DBUS_LIBS=\"${DBUS_LIBS}\"
+    DBUS=\"${DBUS}\"
+
+    GTK_CFLAGS=\"${GTK_CFLAGS}\"
+    GTK_LIBS=\"${GTK_LIBS}\"
+    GTK=\"${GTK}\"
+
+    NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
+    NETLINK_LIBS=\"${NETLINK_LIBS}\"
+
+    LIBNOTIFY_CFLAGS=\"${LIBNOTIFY_CFLAGS}\"
+    LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
+
+    EXPAT_LIBS=\"${EXPAT_LIBS}\"
+
+    GUI=\"${GUI}\" />
+  </compiler>
+ </configuration>
+</einit>" > config.xml
 
 collect_objects () {
 	objects=""
@@ -802,7 +926,7 @@ collect_and_install_headers() {
 
 #define BUFFERSIZE 1024
 
-#define EINIT_LIB_BASE \"${PREFIX}/lib/einit\"
+#define EINIT_LIB_BASE \"${PREFIX}/${ELIBDIR}/einit\"
 #define EINIT_SBIN_BASE \"${PREFIX}/sbin\"
 #define EINIT_ETC_BASE \"${PREFIX}/etc/einit\"
 

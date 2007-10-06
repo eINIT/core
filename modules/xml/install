@@ -2,6 +2,10 @@
 # -----------------
 # einit data install script
 # -----------------
+# argument 1 is the path to install to, argument 2 is the libdirname
+# example:
+#  ./install / lib
+# -----------------
 # Copyright (c) 2007, Magnus Deininger
 # All rights reserved.
 #
@@ -28,12 +32,13 @@ if [ "$PREFIX" = "" ]; then
  echo "PREFIX=\"$1\"
 ETCDIR=\"$1/etc/einit\"
 ETCXDIR=\"$1/etc\"
-LIBDIR=\"$1/lib/einit\"
-MODDIR=\"$1/lib/einit/modules\"
+ELIBDIR=\"$2\"
+LIBDIR=\"$1/$2/einit\"
+MODDIR=\"$1/$2/einit/modules\"
 BINDIR=\"$1/bin\"
 SBINDIR=\"$1/sbin\"
 INCLUDEDIR=\"$1/include\"
-BOOTSTRAPDIR=\"$1/lib/einit/bootstrap/\"
+BOOTSTRAPDIR=\"$1/$2/einit/bootstrap/\"
 
 INSTALL=install
 " > config.sh;

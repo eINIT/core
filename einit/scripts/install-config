@@ -46,6 +46,10 @@ method=$3
 
 echo "installing $file to $DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
 
+sed -e "s/\/lib/\/${ELIBDIR}/" < $file >"tmp.${fileshort}";
+
+file="tmp.${fileshort}"
+
 if [ "${method}" = "ebuild" ]; then
 # gentoo's ebuilds do internal handling for configuration updates, no need to
 # mess with diff and patch ourselves
@@ -80,3 +84,5 @@ else
 # defaults-file must always be the most recent
  cp -f ${file} "$DESTDIR/$LIBDIR/defaults/${subsystem}/${fileshort}";
 fi;
+
+rm "tmp.${fileshort}"

@@ -42,8 +42,6 @@ else
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
-BOOTSTRAP_MODULE_PATH="/lib/einit/bootstrap/"
-
 SOURCESUFFIXES="c s c++ S"
 HEADERSUFFIXES="h"
 
@@ -53,7 +51,7 @@ GCCFLAGS="-Wall"
 
 MAKEFILETASKS="all install"
 
-LIBRARIES="-L/lib -L/usr/lib -L/usr/local/lib"
+ELIBDIR="lib"
 
 pwd=$(pwd)
 nomodule=""
@@ -158,6 +156,8 @@ for param in $@; do
 			echo -n " GENTOO";
 			EXTERNALMODULES="${EXTERNALMODULES} distro-gentoo";
 		fi
+        elif test "$short" = "--libdir-name"; then
+                ELIBDIR="${param#*=}";
         elif test "$param" = "--svn"; then
                 echo -n " SVN";
                 ISSVN=1;
@@ -191,6 +191,9 @@ elif test -n "`uname -a|grep -i 'BSD'`"; then
 	EXTERNALMODULES="${EXTERNALMODULES} ${MODULES_BSD}"
 fi
 echo " ]";
+
+LIBRARIES="-L/${ELIBDIR} -L/usr/${ELIBDIR} -L/usr/local/${ELIBDIR}"
+BOOTSTRAP_MODULE_PATH="/${ELIBDIR}/einit/bootstrap/"
 
 echo "skipping modules: ${nomodule}"
 
@@ -461,12 +464,12 @@ fi
 if [ -e "${EXPAT_CFGD_LIB}" ]; then
  EXPAT_LIBS="${EXPAT_CFGD_LIB}"
 elif [ "${EXUSR}" = "yes" ]; then
- if [ -e "/usr/lib/libexpat.a" ]; then
-  EXPAT_LIBS="/usr/lib/libexpat.a"
- elif [ -e "/usr/local/lib/libexpat.a" ]; then
-  EXPAT_LIBS="/usr/local/lib/libexpat.a"
- elif [ -e "/lib/libexpat.a" ]; then
-  EXPAT_LIBS="/lib/libexpat.a"
+ if [ -e "/usr/${ELIBDIR}/libexpat.a" ]; then
+  EXPAT_LIBS="/usr/${ELIBDIR}/libexpat.a"
+ elif [ -e "/usr/local/${ELIBDIR}/libexpat.a" ]; then
+  EXPAT_LIBS="/usr/local/${ELIBDIR}/libexpat.a"
+ elif [ -e "/${ELIBDIR}/libexpat.a" ]; then
+  EXPAT_LIBS="/${ELIBDIR}/libexpat.a"
  else
   EXPAT_LIBS="-lexpat"
  fi;
@@ -532,9 +535,10 @@ echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}/etc/einit
 ETCXDIR = ${PREFIX}/etc
-LIBDIR = ${PREFIX}/lib/einit
-MODDIR = ${PREFIX}/lib/einit/modules
-ULIBDIR = ${UPREFIX}/lib
+LIBDIR = ${PREFIX}/${ELIBDIR}/einit
+MODDIR = ${PREFIX}/${ELIBDIR}/einit/modules
+ULIBDIR = ${UPREFIX}/${ELIBDIR}
+ELIBDIR = ${ELIBDIR}
 BINDIR = ${PREFIX}/bin
 UBINDIR = ${UPREFIX}/bin
 USHAREDIR = ${UPREFIX}/share/einit
@@ -617,9 +621,10 @@ echo "creating config.sh..."
 echo "PREFIX=\"$PREFIX\"
 ETCDIR=\"${PREFIX}/etc/einit\"
 ETCXDIR=\"${PREFIX}/etc\"
-LIBDIR=\"${PREFIX}/lib/einit\"
-ULIBDIR=\"${UPREFIX}/lib\"
-MODDIR=\"${PREFIX}/lib/einit/modules\"
+LIBDIR=\"${PREFIX}/${ELIBDIR}/einit\"
+ULIBDIR=\"${UPREFIX}/${ELIBDIR}\"
+ELIBDIR=\"${ELIBDIR}\"
+MODDIR=\"${PREFIX}/${ELIBDIR}/einit/modules\"
 BINDIR=\"${PREFIX}/bin\"
 SBINDIR=\"${PREFIX}/sbin\"
 INCLUDEDIR=\"${UPREFIX}/include\"
@@ -702,9 +707,10 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     PREFIX=\"$PREFIX\"
     ETCDIR=\"${PREFIX}/etc/einit\"
     ETCXDIR=\"${PREFIX}/etc\"
-    LIBDIR=\"${PREFIX}/lib/einit\"
-    ULIBDIR=\"${UPREFIX}/lib\"
-    MODDIR=\"${PREFIX}/lib/einit/modules\"
+    LIBDIR=\"${PREFIX}/${ELIBDIR}/einit\"
+    ULIBDIR=\"${UPREFIX}/${ELIBDIR}\"
+    ELIBDIR=\"${ELIBDIR}\"
+    MODDIR=\"${PREFIX}/${ELIBDIR}/einit/modules\"
     BINDIR=\"${PREFIX}/bin\"
     SBINDIR=\"${PREFIX}/sbin\"
     INCLUDEDIR=\"${UPREFIX}/include\"
@@ -920,7 +926,7 @@ collect_and_install_headers() {
 
 #define BUFFERSIZE 1024
 
-#define EINIT_LIB_BASE \"${PREFIX}/lib/einit\"
+#define EINIT_LIB_BASE \"${PREFIX}/${ELIBDIR}/einit\"
 #define EINIT_SBIN_BASE \"${PREFIX}/sbin\"
 #define EINIT_ETC_BASE \"${PREFIX}/etc/einit\"
 
