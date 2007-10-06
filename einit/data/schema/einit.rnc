@@ -50,7 +50,8 @@ Core = element core {
     }? &
     element configuration-path {
       StringAttribute
-    }?
+    }? &
+   element allow-code-unloading { BooleanAttribute }?
   }* &
   element scheduler {
     element shutdown-function-suffixes { StringAttribute }? &

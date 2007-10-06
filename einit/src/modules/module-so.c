@@ -85,6 +85,8 @@ module_register(einit_mod_so_self);
 
 pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+extern char einit_allow_code_unloading;
+
 int einit_mod_so_scanmodules (struct lmodule *);
 
 int einit_mod_so_cleanup (struct lmodule *pa) {
@@ -203,6 +205,14 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
    while (lm) {
     if (lm->source && strmatch(lm->source, modules[z])) {
+     if (einit_allow_code_unloading) {
+      lm->do_suspend = einit_mod_so_do_suspend;
+      lm->do_resume = einit_mod_so_do_resume;
+     } else {
+      lm->do_suspend = NULL;
+      lm->do_resume = NULL;
+     }
+
      lm = mod_update (lm);
 
      if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
@@ -228,8 +238,11 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
       new->source = estrdup(modules[z]);
-      new->do_suspend = einit_mod_so_do_suspend;
-      new->do_resume = einit_mod_so_do_resume;
+
+      if (einit_allow_code_unloading) {
+       new->do_suspend = einit_mod_so_do_suspend;
+       new->do_resume = einit_mod_so_do_resume;
+      }
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);

@@ -8,6 +8,14 @@
    <configuration>
     <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
    </configuration>
+
+<!-- example: use this to disable the compatibility modules -->
+<!-- <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
+   <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" />
+
+   <configuration-path s="/etc/einit/" />
+
+   <allow-code-unloading b="false" />
   </settings>
 
   <scheduler>
@@ -22,14 +30,6 @@
    <init.d-path s="/etc/einit/init.d/" />
    <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
   </module-logic>
-
-  <settings>
-<!-- example: use this to disable the compatibility modules -->
-<!-- <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" pattern-disallow="^compatibility.*" /> -->
-   <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" />
-
-   <configuration-path s="/etc/einit/" />
-  </settings>
 
   <commands>
    <include>
