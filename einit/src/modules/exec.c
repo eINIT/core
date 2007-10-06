@@ -461,7 +461,7 @@ void exec_run_sh (const char *command, enum pexec_options options, char **exec_e
 
  memset (&pd, 0, sizeof (pd));
 
- parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
+ // parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
 
  if ((pd.commands == 1) && pd.command) {
   int forkres = 0;
