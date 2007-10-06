@@ -30,7 +30,7 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --prefix=/ --libdir-name=\"$(get_libdir)\""
+	myconf="--ebuild --svn --prefix=/ --libdir-name=$(get_libdir)"
 
 	econf ${myconf} || die
 	emake || die

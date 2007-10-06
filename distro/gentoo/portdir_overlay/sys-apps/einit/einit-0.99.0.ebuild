@@ -43,7 +43,7 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --prefix=/ --with-expat=/usr/lib/libexpat.a --libdir-name=\"$(get_libdir)\""
+	myconf="--ebuild --svn --prefix=/ --with-expat=/usr/lib/libexpat.a --libdir-name=$(get_libdir)"
 
 	if use static ; then
 		local myconf="${myconf} --static"
