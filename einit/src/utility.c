@@ -516,8 +516,8 @@ char *apply_variables (const char *ostring, const char **env) {
  uint32_t len = 0, rpos = 0, spos = 0, rspos = 0;
  char *string;
 
- if (!env) return estrdup (ostring);
  if (!ostring || !(string = estrdup(ostring))) return NULL;
+ if (!env) return estrdup (ostring);
 
  ret = emalloc (len = (strlen (string) + 1));
  *ret = 0;
