@@ -298,7 +298,7 @@ fi;
 echo -n "/etc/make.conf ["
 if test "$EBUILD" = "1"; then
 	echo -n " skipping (ebuild)";
-elif test -n ""${CFLAGS}; then
+elif test -n "${CFLAGS}"; then
 	echo -n " skipping (CFLAGS set)";
 elif test -f /etc/make.conf; then
 	echo -n " sourcing";
