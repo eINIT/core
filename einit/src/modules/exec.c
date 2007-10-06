@@ -233,7 +233,7 @@ char *apply_envfile_f (char *command, const char **environment) {
      *n = 0;
      n++;
 
-     if (*n) {
+     if (*n && !inset ((const void **)variables, r, SET_TYPE_STRING)) {
       variables = (char **)setadd ((void **)variables, r, SET_TYPE_STRING);
       variables = (char **)setadd ((void **)variables, n, SET_TYPE_STRING);
      }
@@ -273,7 +273,7 @@ char *apply_envfile_f (char *command, const char **environment) {
  }
 
  if (variables) {
-//  command = apply_variables (command, (const char **)variables);
+  command = apply_variables (command, (const char **)variables);
 
   free (variables);
  }
@@ -1000,10 +1000,10 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
    daemon_environment = create_environment_f (daemon_environment, (const char **)shellcmd->variables);
 
-   shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
-
    eclose (1);
    dup2 (2, 1);
+
+   shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
 
    exec_run_sh (shellcmd->command, 0, daemon_environment);
 

@@ -542,7 +542,7 @@ char *apply_variables (const char *ostring, const char **env) {
      }
     }
     if (xi) {
-     len = len - strlen (vst) - 3 + strlen (env[xi]);
+     len = len - strlen (vst) - 2 + strlen (env[xi]);
      ret = erealloc (ret, len);
      for (i = 0; env[xi][i]; i++) {
       ret[rpos] = env[xi][i];
