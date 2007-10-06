@@ -44,7 +44,7 @@
    </para>
   </legalnotice>
   <abstract>
-   <para>This is an attempt at documenting eINIT as of version 0.24.4.</para>
+   <para>This is an attempt at documenting eINIT. We should be done by version 0.25.1.</para>
    <para>This is currently a WIP ("Work in Progress"), but your feedback is greatly appreciated. If you'd like to
     point out flaws, shortcomings or ideas, please file an issue on einit.org, or join #einit on freenode. We're
     eager to hear from you. :)</para>
