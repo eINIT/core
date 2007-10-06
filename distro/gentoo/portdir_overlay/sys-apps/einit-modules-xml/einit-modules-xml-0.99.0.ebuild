@@ -30,7 +30,7 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --enable-linux --use-posix-regex --prefix=${ROOT}"
+	myconf="--ebuild --svn --prefix=/ --libdir-name=\"$(get_libdir)\""
 
 	econf ${myconf} || die
 	emake || die

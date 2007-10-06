@@ -3,7 +3,7 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v29)
+# eINIT SVN ebuild (v30)
 #
 
 inherit subversion
@@ -43,7 +43,7 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --prefix=/ --with-expat=/usr/lib/libexpat.a"
+	myconf="--ebuild --svn --prefix=/ --with-expat=/usr/lib/libexpat.a --libdir-name=\"$(get_libdir)\""
 
 	if use static ; then
 		local myconf="${myconf} --static"
