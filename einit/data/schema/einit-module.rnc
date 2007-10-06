@@ -5,16 +5,6 @@ Module = element module {
 }
 
 ModuleContents =
- element shell {
-  ShellAttributes &
-  CommonModuleAttributesRequired &
-  CommonModuleAttributesOptional ?
- } |
- element daemon {
-  DaemonAttributes &
-  CommonModuleAttributesRequired &
-  CommonModuleAttributesOptional
- } |
  element * {
   attribute name { text } &
   ModuleDependenciesRequired &
@@ -49,31 +39,6 @@ DaemonAttributes =
 ShellAttributes = 
  (( attribute enable { text } & attribute disable { text } ) |
   ( attribute script { text } & attribute script-actions { text } ))
-
-CommonModuleAttributesRequired =
- IDAttribute &
- attribute name { text } &
- ModuleDependenciesRequired
-
-CommonModuleAttributesOptional =
- ModuleDependenciesOptional &
- attribute prepare { text } ? &
- attribute cleanup { text } ? &
- attribute need-files { text } ? &
- attribute pid { text } ? &
- attribute variables { text } ? &
- attribute options { text } ? &
- attribute group { text } ? &
- attribute user { text } ? &
- attribute gid { text } ? &
- attribute uid { text } ? &
- attribute opts { text } ? &
- attribute envfile { text } ? &
- attribute root { text } ? &
- attribute DISPLAY { text } ? &
- attribute HOME { text } ? &
- attribute config { text } ? &
- attribute execute:* { text } ?
 
 ModuleDependenciesRequired =
  attribute provides { text }
