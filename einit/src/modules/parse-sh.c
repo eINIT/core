@@ -97,7 +97,7 @@ int einit_parse_sh_cleanup (struct lmodule *irr) {
 int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void *), void *ud) {
  if (!data) return -1;
 
- char *ndp = emalloc(strlen(data)), *cdp = ndp, *sdp = cdp;
+ char *ndp = emalloc(strlen(data)+1), *cdp = ndp, *sdp = cdp;
  const char *cur = data-1;
  enum einit_sh_parser_status stat = sh_parser_status_lw;
  char squote = 0, dquote = 0, lit = 0,

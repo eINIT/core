@@ -461,7 +461,7 @@ void exec_run_sh (const char *command, enum pexec_options options, char **exec_e
 
  memset (&pd, 0, sizeof (pd));
 
-// parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
+ parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
 
  if ((pd.commands == 1) && pd.command) {
   int forkres = 0;
@@ -487,9 +487,15 @@ void exec_run_sh (const char *command, enum pexec_options options, char **exec_e
    perror ("einit/sh: was supposed to fork but failed");
   }
 
+  if (forkres) {
+   fprintf (stderr, "einit/sh: forked our call into the background. [%i]", forkres);
+   _exit (EXIT_SUCCESS);
+  }
+
   free (pd.command);
 
-  exit (EXIT_FAILURE);
+  fprintf (stderr, "einit/sh: failed to run the command.");
+  _exit (EXIT_FAILURE);
  } else {
   char **cmdsetdup, **cmd;
 
@@ -506,7 +512,7 @@ void exec_run_sh (const char *command, enum pexec_options options, char **exec_e
   perror (cmd[0]);
   free (cmd);
   free (cmdsetdup);
-  exit (EXIT_FAILURE);
+  _exit (EXIT_FAILURE);
  }
 }
 
