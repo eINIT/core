@@ -33,7 +33,7 @@ einit-control-dbus: einit-control-dbus.o bitch.o utility.o libeinit.${SO}.1.0.0 
 libeinit.${SO}: libeinit.${SO}.1.0.0
 
 libeinit.${SO}.1.0.0: libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects)
-	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,einit.so.1 libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 -lexpat ${LPA}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 -lexpat ${LPA}; fi
+	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,einit.so.1 libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 -lexpat ${LPA} ${LDL}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 -lexpat ${LPA} ${LDL}; fi
 	ln -fs libeinit.${SO}.1.0.0 libeinit.${SO}.1
 	ln -fs libeinit.${SO}.1 libeinit.${SO}
 
