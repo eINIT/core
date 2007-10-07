@@ -15,7 +15,7 @@
 
    <configuration-path s="/etc/einit/" />
 
-   <allow-code-unloading b="false" />
+   <allow-code-unloading b="true" />
   </settings>
 
   <scheduler>
