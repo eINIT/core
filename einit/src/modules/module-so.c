@@ -173,6 +173,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  void *sohandle;
  char **modules = NULL;
  struct cfgnode *node = NULL;
+ struct lmodule *lm = modchain;
 
  emutex_lock (&modules_update_mutex);
 
@@ -196,12 +197,33 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
                                  , ".*\\.so", NULL, 0);
  }
 
+/* make sure all bootstrap modules get updated */
+ while (lm) {
+  if (lm->source && (strstr(lm->source, bootstrapmodulepath) == lm->source)) {
+   if (einit_allow_code_unloading) {
+    lm->do_suspend = einit_mod_so_do_suspend;
+    lm->do_resume = einit_mod_so_do_resume;
+   } else {
+    lm->do_suspend = NULL;
+    lm->do_resume = NULL;
+   }
+
+   lm = mod_update (lm);
+
+   if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
+    lm->scanmodules (modchain);
+   }
+  }
+  lm = lm->next;
+ }
+
+/* load all new modules */
  if (modules) {
   uint32_t z = 0;
 
   for (; modules[z]; z++) {
    struct smodule **modinfo;
-   struct lmodule *lm = modchain;
+   lm = modchain;
 
    while (lm) {
     if (lm->source && strmatch(lm->source, modules[z])) {
