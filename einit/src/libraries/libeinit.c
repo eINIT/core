@@ -97,9 +97,9 @@ void *einit_ipc_lib_handle = NULL;
 
 char (*einit_disconnect_fp)() = NULL;
 void (*einit_receive_events_fp)() = NULL;
-char *(*einit_ipc_fp)(char *) = NULL;
-char *(*einit_ipc_safe_fp)(char *) = NULL;
-char *(*einit_ipc_request_fp)(char *) = NULL;
+char *(*einit_ipc_fp)(const char *) = NULL;
+char *(*einit_ipc_safe_fp)(const char *) = NULL;
+char *(*einit_ipc_request_fp)(const char *) = NULL;
 
 void (*einit_remote_event_emit_dispatch_fp)(struct einit_remote_event *) = NULL;
 void (*einit_remote_event_emit_fp)(struct einit_remote_event *, enum einit_event_emit_flags) = NULL;
@@ -148,31 +148,31 @@ char einit_connect() {
 }
 
 char einit_disconnect() {
- /* TODO: fix this up again */
+ if (einit_disconnect_fp) return einit_disconnect_fp();
 
  return 0;
 }
 
 void einit_receive_events() {
-/* TODO: fix this up again */
+ if (einit_receive_events_fp) einit_receive_events_fp();
 
  return;
 }
 
 char *einit_ipc(const char *command) {
-/* TODO: fix this up again */
+ if (einit_ipc_fp) return einit_ipc_fp(command);
 
  return NULL;
 }
 
 char *einit_ipc_safe(const char *command) {
-/* TODO: fix this up again */
+ if (einit_ipc_safe_fp) return einit_ipc_safe_fp(command);
 
  return NULL;
 }
 
 char *einit_ipc_request(const char *command) {
-/* TODO: fix this up again */
+ if (einit_ipc_request_fp) return einit_ipc_request_fp(command);
 
  return NULL;
 }
@@ -856,14 +856,15 @@ void einit_remote_event_ignore (enum einit_event_subsystems type, void (* handle
 
  return;
 }
+
 void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
-/* TODO: fix this up again */
+ if (einit_remote_event_emit_dispatch_fp) einit_remote_event_emit_dispatch_fp(ev);
 
  return;
 }
 
 void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
-/* TODO: fix this up again */
+ if (einit_remote_event_emit_fp) einit_remote_event_emit_fp(ev, flags);
 
  return;
 }
