@@ -8,8 +8,10 @@
 
 inherit subversion
 
+EXPATVERSION="2.0.1"
+
 ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/${PN}"
-SRC_URI="mirror://sourceforge/expat/expat-2.0.1.tar.gz"
+SRC_URI="mirror://sourceforge/expat/expat-${EXPATVERSION}.tar.gz"
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.org/"
@@ -21,8 +23,7 @@ RESTRICT="strip"
 
 IUSE="doc static debug nowtf externalise fbsplash aural dbus noxml baselayout2"
 
-RDEPEND="dev-libs/expat
-	app-text/rnv
+RDEPEND="app-text/rnv
 	sys-apps/iproute2
 	>=dev-libs/libnl-1.0_pre6
 	dbus? ( >=sys-apps/dbus-1.0.2-r2 )
@@ -44,7 +45,12 @@ src_unpack() {
 src_compile() {
 	local myconf
 
-	myconf="--ebuild --svn --prefix=/ --with-expat=/usr/lib/libexpat.a --libdir-name=$(get_libdir)"
+	pushd ${WORKDIR}/expat-${EXPATVERSION}
+		CFLAGS=-fPIC econf
+		emake
+	popd
+
+	myconf="--ebuild --svn --prefix=/ --with-expat=${WORKDIR}/expat-${EXPATVERSION}/libexpat.a --libdir-name=$(get_libdir)"
 
 	if use static ; then
 		local myconf="${myconf} --static"
