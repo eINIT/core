@@ -9,7 +9,7 @@
 inherit subversion
 
 ESVN_REPO_URI="svn://svn.berlios.de/einit/trunk/${PN}"
-SRC_URI=""
+SRC_URI="mirror://sourceforge/expat/expat-2.0.1.tar.gz"
 
 DESCRIPTION="eINIT - an alternate /sbin/init"
 HOMEPAGE="http://einit.org/"
