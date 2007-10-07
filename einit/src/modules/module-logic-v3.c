@@ -1488,7 +1488,14 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
        modestr = set2str (':', (const char **)inmodes);
        eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\" provided=\"%s\">\n", cur->key, modestr, mod_isprovided(cur->key) ? "yes" : "no");
       } else {
-       eprintf (ev->output, "%s |", cur->key);
+       if (ev->ipc_options & einit_ipc_output_ansi) {
+        if (mod_isprovided(cur->key)) {
+         eprintf (ev->output, "\e[33m%s\e[0m |", cur->key);
+        } else {
+         eprintf (ev->output, "%s |", cur->key);
+        }
+       } else
+        eprintf (ev->output, "%s |", cur->key);
       }
       if (modestr) free (modestr);
       free (inmodes);
@@ -1496,7 +1503,14 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        eprintf (ev->output, " <service id=\"%s\" provided=\"%s\">\n", cur->key, mod_isprovided(cur->key) ? "yes" : "no");
       } else {
-       eprintf (ev->output, "%s |", cur->key);
+       if (ev->ipc_options & einit_ipc_output_ansi) {
+        if (mod_isprovided(cur->key)) {
+         eprintf (ev->output, "\e[33m%s\e[0m |", cur->key);
+        } else {
+         eprintf (ev->output, "%s |", cur->key);
+        }
+       } else
+        eprintf (ev->output, "%s |", cur->key);
       }
      }
 
@@ -1587,10 +1601,23 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
         struct lmodule **xs = cur->value;
         uint32_t u = 0;
         for (u = 0; xs[u]; u++) {
-         eprintf (ev->output,
-           ((xs[u]->module && (xs[u]->module->mode & einit_module_deprecated)) ?
-             " (%s)" : " %s"),
-           xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown");
+         char *trid = xs[u]->module && xs[u]->module->rid ? xs[u]->module->rid : "unknown";
+
+         if (ev->ipc_options & einit_ipc_output_ansi) {
+          if (xs[u]->status & status_enabled) {
+           eprintf (ev->output, " \e[33m%s\e[0m", trid);
+          } else if (xs[u]->status & status_failed) {
+           eprintf (ev->output, " \e[31m%s\e[0m", trid);
+          } else if (xs[u]->module && (xs[u]->module->mode & einit_module_deprecated)) {
+           eprintf (ev->output, " \e[35m%s\e[0m", trid);
+          } else  {
+           eprintf (ev->output, " %s", trid);
+          }
+         } else {
+          eprintf (ev->output,
+            ((xs[u]->module && (xs[u]->module->mode & einit_module_deprecated)) ?
+              " (%s)" : " %s"), trid);
+         }
         }
        }
       }
