@@ -1490,7 +1490,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
       } else {
        if (ev->ipc_options & einit_ipc_output_ansi) {
         if (mod_isprovided(cur->key)) {
-         eprintf (ev->output, "\e[33m%s\e[0m |", cur->key);
+         eprintf (ev->output, "\e[32m%s\e[0m |", cur->key);
         } else {
          eprintf (ev->output, "%s |", cur->key);
         }
@@ -1505,7 +1505,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
       } else {
        if (ev->ipc_options & einit_ipc_output_ansi) {
         if (mod_isprovided(cur->key)) {
-         eprintf (ev->output, "\e[33m%s\e[0m |", cur->key);
+         eprintf (ev->output, "\e[32m%s\e[0m |", cur->key);
         } else {
          eprintf (ev->output, "%s |", cur->key);
         }
@@ -1605,7 +1605,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
          if (ev->ipc_options & einit_ipc_output_ansi) {
           if (xs[u]->status & status_enabled) {
-           eprintf (ev->output, " \e[33m%s\e[0m", trid);
+           eprintf (ev->output, " \e[32m%s\e[0m", trid);
           } else if (xs[u]->status & status_failed) {
            eprintf (ev->output, " \e[31m%s\e[0m", trid);
           } else if (xs[u]->module && (xs[u]->module->mode & einit_module_deprecated)) {
