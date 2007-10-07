@@ -126,6 +126,8 @@ int main(int argc, char **argv) {
  }
 
  if (c) {
+  einit_connect();
+
   ret = send_ipc_dbus(c);
 
   free (c);
