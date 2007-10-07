@@ -36,6 +36,7 @@ PDEPEND="!noxml? ( sys-apps/einit-modules-xml )"
 S=${WORKDIR}/${PN}
 
 src_unpack() {
+	src_unpack ${A}
 	subversion_src_unpack
 	cd "${S}"
 }
