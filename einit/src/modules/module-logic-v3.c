@@ -1160,21 +1160,15 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
  } else if (ev->type == einit_core_module_list_update) {
   /* update list with services */
   struct stree *new_service_list = NULL;
+  struct stree *new_rid_list = NULL;
   struct lmodule *cur = ev->para;
-
-  emutex_lock (&ml_rid_list_mutex);
-  if (module_logic_rid_list) {
-   streefree (module_logic_rid_list);
-   module_logic_rid_list = NULL;
-  }
-  emutex_unlock (&ml_rid_list_mutex);
 
   emutex_lock (&ml_service_list_mutex);
 
   while (cur) {
    if (cur->module && cur->module->rid) {
     emutex_lock (&ml_rid_list_mutex);
-    module_logic_rid_list = streeadd (module_logic_rid_list, cur->module->rid, cur, SET_NOALLOC, NULL);
+    new_rid_list = streeadd (new_rid_list, cur->module->rid, cur, SET_NOALLOC, NULL);
     emutex_unlock (&ml_rid_list_mutex);
 
     struct lmodule **t = NULL;
@@ -1211,6 +1205,13 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
   if (module_logics_service_list)
    einit_module_logic_v3_garbage.strees = (struct stree **)setadd ((void **)einit_module_logic_v3_garbage.strees, module_logics_service_list, SET_NOALLOC);
   emutex_unlock (&ml_garbage_mutex);
+
+  emutex_lock (&ml_rid_list_mutex);
+  if (module_logic_rid_list) {
+   streefree (module_logic_rid_list);
+  }
+  module_logic_rid_list = new_rid_list;
+  emutex_unlock (&ml_rid_list_mutex);
 
   module_logics_service_list = new_service_list;
   einit_module_logic_list_revision++;
@@ -1467,8 +1468,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     while (cur) {
      if (mod_is_rid (cur->key)) {
       cur = streenext (cur);
-	  continue;
-	 }
+      continue;
+     }
 
      char **inmodes = NULL;
      struct stree *mcur = modes;
