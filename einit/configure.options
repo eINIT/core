@@ -22,7 +22,7 @@ export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
 export COREOBJECTS="einit module bitch utility event tree-linear set-lowmem ${ASMFUNCTIONS}"
-export UTILOBJECTS="einit-control bitch utility tree-linear set-lowmem ${ASMFUNCTIONS} last-rites"
+export UTILOBJECTS="einit-control bitch utility tree-linear set-lowmem ${ASMFUNCTIONS} last-rites libeinit libeinit++"
 
 export BUILDCOMPONENTS="core util modules headers"
 

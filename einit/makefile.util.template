@@ -1,12 +1,18 @@
-util: einit-control
+util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0
 
-install: einit-control last-rites $(DBUS)
+install: util $(DBUS)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} last-rites ${DESTDIR}/${LIBDIR}/bin
 	ln -fs einit-control ${DESTDIR}/${SBINDIR}/power
 	ln -fs einit-control ${DESTDIR}/${SBINDIR}/erc
+	${INSTALL} ${BINIPARAM} libeinit.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../
+	${INSTALL} ${BINIPARAM} libeinit++.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../
+	ln -fs libeinit.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}.1
+	ln -fs libeinit.${SO}.1 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}
+	ln -fs libeinit++.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../libeinit++.${SO}.1
+	ln -fs libeinit++.${SO}.1 ${DESTDIR}/${LIBDIR}/../libeinit++.${SO}
 
 einit-control: einit-control.o bitch.o utility.o $(asmobjects)
 	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC)
@@ -14,19 +20,12 @@ einit-control: einit-control.o bitch.o utility.o $(asmobjects)
 last-rites: last-rites.o bitch.o utility.o $(asmobjects)
 	$(CLD) last-rites.o bitch.o utility.o $(asmobjects) -o last-rites $(STATIC)
 
-dbus: einit-control-dbus libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0
+dbus: einit-control-dbus libeinit-ipc-dbus.so
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${ULIBDIR}
 	${INSTALL} ${BINIPARAM} einit-control-dbus ${DESTDIR}/${SBINDIR}
-	ln -fs libeinit.${SO}.1.0.0 ${DESTDIR}/${ULIBDIR}/libeinit.${SO}.1
-	ln -fs libeinit.${SO}.1 ${DESTDIR}/${ULIBDIR}/libeinit.${SO}
-	ln -fs libeinit++.${SO}.1.0.0 ${DESTDIR}/${ULIBDIR}/libeinit++.${SO}.1
-	ln -fs libeinit++.${SO}.1 ${DESTDIR}/${ULIBDIR}/libeinit++.${SO}
-	${INSTALL} ${BINIPARAM} libeinit.${SO}.1.0.0 ${DESTDIR}/${ULIBDIR}
-	${INSTALL} ${BINIPARAM} libeinit++.${SO}.1.0.0 ${DESTDIR}/${ULIBDIR}
-
-#einit-control-dbus: einit-control-dbus.o bitch.o utility.o libeinit.o $(asmobjects) tree-linear.o set-lowmem.o
-#	$(CLD) einit-control-dbus.o bitch.o utility.o libeinit.o $(asmobjects) -o einit-control-dbus $(STATIC) $(DBUS_LIBS) tree-linear.o set-lowmem.o -lexpat
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/ipc
+	${INSTALL} ${BINIPARAM} libeinit-ipc-dbus.so ${DESTDIR}/${LIBDIR}/ipc
 
 einit-control-dbus: einit-control-dbus.o bitch.o utility.o libeinit.${SO}.1.0.0 $(asmobjects)
 	$(CLD) einit-control-dbus.o bitch.o utility.o $(asmobjects) -o einit-control-dbus $(STATIC) $(DBUS_LIBS) -L. -leinit
@@ -34,9 +33,12 @@ einit-control-dbus: einit-control-dbus.o bitch.o utility.o libeinit.${SO}.1.0.0 
 libeinit.${SO}: libeinit.${SO}.1.0.0
 
 libeinit.${SO}.1.0.0: libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects)
-	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,einit.so.1 libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 $(DBUS_LIBS) -lexpat ${LPA}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 $(DBUS_LIBS) -lexpat ${LPA}; fi
+	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,einit.so.1 libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 -lexpat ${LPA}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit.${SO}.1.0.0 -lexpat ${LPA}; fi
 	ln -fs libeinit.${SO}.1.0.0 libeinit.${SO}.1
 	ln -fs libeinit.${SO}.1 libeinit.${SO}
+
+libeinit-ipc-dbus.so: libeinit-ipc-dbus.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects)
+	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-dbus.o utility.o bitch.o tree-linear.o set-lowmem.o $(asmobjects) -o libeinit-ipc-dbus.so $(DBUS_LIBS) ${LPA}
 
 libeinit++.${SO}: libeinit++.${SO}.1.0.0
 

@@ -172,7 +172,7 @@ for param in $@; do
 		echo -n " DBUS";
 		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
 		DBUS="dbus";
-		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit libeinit++";
+		UTILOBJECTS="${UTILOBJECTS} einit-control-dbus libeinit-ipc-dbus";
 	elif test "$shorte" = ""; then
 		EXTERNALMODULES="${EXTERNALMODULES} ${param#*--enable-}";
 	fi;
