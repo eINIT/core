@@ -50,7 +50,7 @@ src_compile() {
 		emake
 	popd
 
-	myconf="--ebuild --svn --prefix=/ --with-expat=${WORKDIR}/expat-${EXPATVERSION}/libexpat.a --libdir-name=$(get_libdir)"
+	myconf="--ebuild --svn --prefix=/ --with-expat=${WORKDIR}/expat-${EXPATVERSION}/libexpat.la --libdir-name=$(get_libdir)"
 
 	if use static ; then
 		local myconf="${myconf} --static"
