@@ -126,7 +126,10 @@ void einit_preload_boot_event_handler (struct einit_event *ev) {
  einit_preload_usage++;
  switch (ev->type) {
   case einit_boot_early:
-   einit_preload_run();
+   if (fork() == 0) {
+    einit_preload_run();
+    _exit (EXIT_SUCCESS);
+   }
    break;
 
   default: break;

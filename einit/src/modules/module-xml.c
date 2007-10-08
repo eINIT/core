@@ -592,7 +592,7 @@ void module_xml_v2_preload() {
   if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
    char **files = str2set (':', node->svalue);
 
-   if (files) {
+   if (files && !fork()) {
     int i = 0;
     void *dh;
 
@@ -619,7 +619,10 @@ void module_xml_v2_preload() {
     }
 
     free (files);
+    _exit (EXIT_SUCCESS);
    }
+
+   if (files) free (files);
   }
 
   s = streenext (s);
