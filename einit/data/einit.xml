@@ -91,7 +91,7 @@
    <proc-path s="/proc" />
    <log b="true" />
 
-   <preload binaries="agetty:getty:sh:udevd:dhcpcd:pump" />
+   <preload binaries="agetty:getty:sh:udevd:dhcpcd:pump:modprobe:rmmod" />
 
    <kexec-to-reboot b="no" />
    <kexec-calls
