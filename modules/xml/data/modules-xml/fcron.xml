@@ -2,7 +2,6 @@
  <v-fcron
   name="Cron (fcron)"
   provides="fcron:cron"
-  after="displaymanager"
   requires="mount-critical">
 
   <execute id="daemon" code="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf" />
