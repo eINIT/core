@@ -106,11 +106,12 @@ void einit_preload_run () {
      if (w) {
       int n = 0;
 
-      for (; w[n]; w++) {
+      for (; w[n]; n++) {
        if ((dh = dlopen (w[n], RTLD_NOW))) {
         dlclose (dh);
        }
       }
+
       free (w);
      }
     }
