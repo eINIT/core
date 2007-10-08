@@ -49,13 +49,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef DARWIN
 /* dammit, what's wrong with macos!? */
 
-cfg_addnode_t cfg_addnode_fp = NULL;
-cfg_findnode_t cfg_findnode_fp = NULL;
-cfg_getstring_t cfg_getstring_fp = NULL;
-cfg_getnode_t cfg_getnode_fp = NULL;
-cfg_filter_t cfg_filter_fp = NULL;
-cfg_getpath_t cfg_getpath_fp = NULL;
-cfg_prefix_t cfg_prefix_fp = NULL;
+struct exported_function *cfg_addnode_fs = NULL;
+struct exported_function *cfg_findnode_fs = NULL;
+struct exported_function *cfg_getstring_fs = NULL;
+struct exported_function *cfg_getnode_fs = NULL;
+struct exported_function *cfg_filter_fs = NULL;
+struct exported_function *cfg_getpath_fs = NULL;
+struct exported_function *cfg_prefix_fs = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 char *bootstrapmodulepath = NULL;
