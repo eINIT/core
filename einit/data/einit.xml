@@ -91,6 +91,8 @@
    <proc-path s="/proc" />
    <log b="true" />
 
+   <preload binaries="agetty:getty:sh:udevd:dhcpcd:pump" />
+
    <kexec-to-reboot b="no" />
    <kexec-calls
      load="/usr/sbin/kexec -l ${kernel-image} --append=&quot;${kernel-options}&quot;"
