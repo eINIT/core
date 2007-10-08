@@ -85,7 +85,7 @@ enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
 char einit_quietness = 0;
 
-char einit_allow_code_unloading = 0;
+char einit_allow_code_unloading = 1;
 
 time_t event_snooze_time = 0;
 

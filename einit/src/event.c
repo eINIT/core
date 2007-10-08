@@ -276,8 +276,8 @@ void function_register_type (const char *name, uint32_t version, void const *fun
    struct exported_function *ef = ha->value;
    if (ef && (ef->version == version) && (ef->type == type) && (ef->module == module)) {
     ef->function = function;
-	added = 1;
-	break;
+    added = 1;
+    break;
    }
 
    ha = streefind (ha, name, tree_find_next);
@@ -310,11 +310,13 @@ void function_unregister_type (const char *name, uint32_t version, void const *f
  ha = streefind (exported_functions, name, tree_find_first);
  while (ha) {
   struct exported_function *ef = ha->value;
-  if (ef && (ef->version == version) && (ef->type == type)) {
-   exported_functions = streedel (ha);
+  if (ef && (ef->version == version) && (ef->type == type) && (ef->module == module)) {
+//   exported_functions = streedel (ha);
+   ef->function = NULL;
    ha = streefind (exported_functions, name, tree_find_first);
-  } else
-   ha = streefind (ha, name, tree_find_next);
+  }
+
+  ha = streefind (ha, name, tree_find_next);
  }
  emutex_unlock (&pof_mutex);
 
@@ -550,7 +552,7 @@ void event_wakeup (enum einit_event_code c, struct lmodule *m) {
     emutex_unlock (&event_wakeup_mutex);
 
     if (d->module == m)
-	 return;
+     return;
    }
   }
   d = d->next;

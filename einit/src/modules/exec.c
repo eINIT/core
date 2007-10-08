@@ -876,10 +876,21 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   struct stat st;
 
   for (; shellcmd->need_files[r]; r++) {
-   if (stat (shellcmd->need_files[r], &st)) {
-    notice (4, "can't bring up daemon \"%s\", because file \"%s\" does not exist.", shellcmd->id ? shellcmd->id : "unknown", shellcmd->need_files[r]);
+   if (shellcmd->need_files[r][0] == '/') {
+    if (stat (shellcmd->need_files[r], &st)) {
+     notice (4, "can't bring up daemon \"%s\", because file \"%s\" does not exist.", shellcmd->id ? shellcmd->id : "unknown", shellcmd->need_files[r]);
 
-    return status_failed;
+     return status_failed;
+    }
+   } else {
+    char **w = which (shellcmd->need_files[r]);
+    if (!w) {
+     notice (4, "can't bring up daemon \"%s\", because executable \"%s\" does not exist.", shellcmd->id ? shellcmd->id : "unknown", shellcmd->need_files[r]);
+
+     return status_failed;
+    } else {
+     free (w);
+    }
    }
   }
  }

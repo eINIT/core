@@ -105,6 +105,10 @@ char *feedback_textual_statusline = NULL;
 uint32_t shutdownfailuretimeout = 10;
 char enableansicodes = 1, suppress_messages = 0, suppress_status_notices = 0;
 
+pthread_t feedback_textual_thread;
+char einit_feedback_visual_textual_worker_thread_running = 0;
+//     einit_feedback_visual_textual_worker_thread_keep_running = 1;
+
 enum feedback_textual_commands {
  ftc_module_update,
  ftc_register_fd,
@@ -162,17 +166,18 @@ struct feedback_stream **feedback_streams;
 pthread_mutex_t
  feedback_textual_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
  feedback_textual_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
- feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER,
+// feedback_textual_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER,
  feedback_textual_streams_mutex = PTHREAD_MUTEX_INITIALIZER,
  feedback_textual_all_done_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
  pthread_cond_t
- feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER,
+// feedback_textual_commandQ_cond = PTHREAD_COND_INITIALIZER,
  feedback_textual_all_done_cond = PTHREAD_COND_INITIALIZER;
 
 extern int einit_have_feedback;
 char feedback_textual_allowed = 1;
 
 void feedback_textual_enable();
+void *einit_feedback_visual_textual_worker_thread (void *);
 
 void feedback_textual_queue_fd_command (enum feedback_textual_commands command, FILE *fd, enum einit_ipc_options fd_options, uint32_t seqid) {
  struct feedback_textual_command tnc;
@@ -190,7 +195,10 @@ void feedback_textual_queue_fd_command (enum feedback_textual_commands command, 
 
  emutex_unlock (&feedback_textual_commandQ_mutex);
 
- pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+// pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+ if (!einit_feedback_visual_textual_worker_thread_running) {
+  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
+ }
 }
 
 void feedback_textual_queue_update (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
@@ -236,7 +244,10 @@ void feedback_textual_queue_update (struct lmodule *module, enum einit_module_st
 
  emutex_unlock (&feedback_textual_commandQ_mutex);
 
- pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+// pthread_cond_broadcast (&feedback_textual_commandQ_cond);
+ if (!einit_feedback_visual_textual_worker_thread_running) {
+  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
+ }
 }
 
 void feedback_textual_wait_for_commandQ_to_finish() {
@@ -246,10 +257,10 @@ void feedback_textual_wait_for_commandQ_to_finish() {
   ret = (feedback_textual_commandQ == NULL);
   emutex_unlock (&feedback_textual_commandQ_mutex);
 
-  if (ret) return;
-  else {
+  if (ret || !einit_feedback_visual_textual_worker_thread_running) return;
+/*  else {
    pthread_cond_broadcast (&feedback_textual_commandQ_cond);
-  }
+  }*/
 
   emutex_lock (&feedback_textual_all_done_cond_mutex);
   int e;
@@ -284,10 +295,6 @@ void feedback_textual_wait_for_commandQ_to_finish() {
 
  return;
 }
-
-pthread_t feedback_textual_thread;
-char einit_feedback_visual_textual_worker_thread_running = 0,
-     einit_feedback_visual_textual_worker_thread_keep_running = 1;
 
 signed int feedback_log_sort (struct message_log *st1, struct message_log *st2) {
  if (!st1) return 1;
@@ -586,9 +593,11 @@ signed int feedback_command_sort (struct feedback_textual_command *st1, struct f
 void *einit_feedback_visual_textual_worker_thread (void *irr) {
  einit_feedback_visual_textual_worker_thread_running = 1;
  einit_have_feedback = 1;
+ char cs = 0;
 
- while (einit_feedback_visual_textual_worker_thread_keep_running) {
-  char cs = 0;
+/* while (einit_feedback_visual_textual_worker_thread_keep_running) {*/
+ rerun:
+
   while (feedback_textual_commandQ) {
    struct feedback_textual_command *command = NULL;
 
@@ -669,14 +678,18 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
   }
 
 //  if (cs)
-   feedback_textual_update_screen ();
+  feedback_textual_update_screen ();
 
   pthread_cond_broadcast (&feedback_textual_all_done_cond);
 
-  emutex_lock (&feedback_textual_commandQ_cond_mutex);
+/*  emutex_lock (&feedback_textual_commandQ_cond_mutex);
   pthread_cond_wait (&feedback_textual_commandQ_cond, &feedback_textual_commandQ_cond_mutex);
-  emutex_unlock (&feedback_textual_commandQ_cond_mutex);
- }
+  emutex_unlock (&feedback_textual_commandQ_cond_mutex);*/
+/* } */
+ usleep (100);
+ if (feedback_textual_commandQ) goto rerun;
+
+ einit_feedback_visual_textual_worker_thread_running = 0;
 
  return NULL;
 }
@@ -994,7 +1007,7 @@ void feedback_textual_enable() {
 
  emutex_unlock (&thismodule->imutex);
 
- einit_feedback_visual_textual_worker_thread_keep_running = 1;
+// einit_feedback_visual_textual_worker_thread_keep_running = 1;
  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
 }
 

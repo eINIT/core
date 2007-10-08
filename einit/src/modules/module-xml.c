@@ -50,6 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit-modules/exec.h>
 
+#include <dlfcn.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -164,9 +166,19 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
    int i = 0;
    struct stat st;
    for (; files[i]; i++) {
-    if (stat (files[i], &st)) {
-     free (files);
-     return status_failed;
+    if (files[i][0] == '/') {
+     if (stat (files[i], &st)) {
+      free (files);
+      return status_failed;
+     }
+    } else {
+     char **w = which (files[i]);
+     if (!w) {
+      free (files);
+      return status_failed;
+     } else {
+      free (w);
+     }
     }
    }
 
@@ -572,10 +584,62 @@ void module_xml_v2_power_event_handler (struct einit_event *ev) {
  }
 }
 
+void module_xml_v2_preload() {
+ struct stree *s = module_xml_v2_modules;
+ struct cfgnode *node;
+
+ while (s) {
+  if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
+   char **files = str2set (':', node->svalue);
+
+   if (files) {
+    int i = 0;
+    void *dh;
+
+    notice (4, "pre-loading files for module %s.", s->key);
+
+    for (; files[i]; i++) {
+     if (files[i][0] == '/') {
+      if ((dh = dlopen (files[i], RTLD_NOW))) {
+       dlclose (dh);
+      }
+     } else {
+      char **w = which (files[i]);
+      if (w) {
+       int n = 0;
+
+       for (; w[n]; w++) {
+        if ((dh = dlopen (w[n], RTLD_NOW))) {
+         dlclose (dh);
+        }
+       }
+       free (w);
+      }
+     }
+    }
+
+    free (files);
+   }
+  }
+
+  s = streenext (s);
+ }
+}
+
+void module_xml_v2_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_early:
+   module_xml_v2_preload();
+   break;
+  default: break;
+ }
+}
+
 int module_xml_v2_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
 
  event_ignore (einit_event_subsystem_power, module_xml_v2_power_event_handler);
+ event_ignore (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
 
  return 0;
 }
@@ -588,6 +652,7 @@ int module_xml_v2_configure (struct lmodule *pa) {
  pa->cleanup = module_xml_v2_cleanup;
 
  event_listen (einit_event_subsystem_power, module_xml_v2_power_event_handler);
+ event_listen (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
 
  return 0;
 }

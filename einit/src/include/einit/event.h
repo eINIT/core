@@ -265,13 +265,8 @@ void event_wakeup_cancel (enum einit_event_code, struct lmodule *);
 void function_register_type (const char *, uint32_t, void const *, enum function_type, struct lmodule *);
 void function_unregister_type (const char *, uint32_t, void const *, enum function_type, struct lmodule *);
 
-#ifdef thismodule
 #define function_register(name,version,function) function_register_type (name, version, function, function_type_specific, thismodule)
 #define function_unregister(name,version,function) function_unregister_type (name, version, function, function_type_specific, thismodule)
-#else
-#define function_register(name,version,function) function_register_type (name, version, function, function_type_specific, NULL)
-#define function_unregister(name,version,function) function_unregister_type (name, version, function, function_type_specific, NULL)
-#endif
 
 void **function_find (const char *, const uint32_t, const char **);
 void *function_find_one (const char *, const uint32_t, const char **);
