@@ -159,6 +159,9 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
       free (n);
      }
 
+     /* add the dir itself afterwards */
+     retval = (char **)setadd((void **)retval, (void *)tmp, SET_TYPE_STRING);
+
      goto cleanup_continue;
     }
    } else if (!S_ISREG (sbuf.st_mode)) {
@@ -807,6 +810,38 @@ char **which (char *binary) {
  }
 
  return rv;
+}
+
+int unlink_recursive (const char *file, char self) {
+ struct stat st;
+ int c = 0;
+
+ if (!file || lstat (file, &st)) return 0;
+
+ if (S_ISLNK (st.st_mode)) {
+  if (self) unlink (file);
+  return 1;
+ }
+
+ if (S_ISDIR (st.st_mode)) {
+  char **files = readdirfilter (NULL, file, NULL, NULL, 1);
+  int i = 0;
+
+  for (; files[i]; i++) {
+/* make extra-sure not to erase files that aren't under that path, or the file itself */
+   if ((strstr (files[i], file) == file) && strcmp (files[i], file)) {
+    unlink (files[i]);
+    c++;
+   }
+  }
+ }
+
+ if (self) {
+  unlink (file);
+  c++;
+ }
+
+ return c;
 }
 
 #endif

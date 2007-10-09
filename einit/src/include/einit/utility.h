@@ -250,6 +250,8 @@ void disable_core_dumps();
 char **getpath_filter (char *filter);
 char **which (char *binary);
 
+int unlink_recursive (const char *file, char self);
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus

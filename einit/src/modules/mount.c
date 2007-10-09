@@ -1381,6 +1381,19 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
  return status_failed;
 }
 
+void mount_do_special_root_umount (struct einit_event *status) {
+ fbprintf (status, "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts");
+ unlink ("/etc/mtab");
+ symlink ("/proc/mounts", "/etc/mtab");
+ errno = 0;
+
+ fbprintf (status, "pruning /tmp");
+ unlink_recursive("/tmp", 0);
+
+/* fbprintf (status, "unlinking all files in /var/tmp");
+ unlink_recursive("/var/tmp", 0);*/
+}
+
 int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
  void **functions;
  char **fnames = mount_generate_mount_function_suffixes(mp->fs);
@@ -1388,6 +1401,12 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
  functions = function_find ("fs-umount", 1, (const char **)fnames);
  if (functions) {
   uint32_t r = 0;
+
+/* make sure that, before we try to umount, we do some special pruning for / */
+  if (strmatch (mountpoint, "/")) {
+   mount_do_special_root_umount(status);
+  }
+
   for (; functions[r]; r++) {
    einit_umount_function f = functions[r];
 
@@ -1562,13 +1581,6 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
  fbprintf (status, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
-
- if (strmatch (mountpoint, "/")) {
-  fbprintf (status, "unlinking /etc/mtab and replacing it by a symlink to /proc/mounts");
-  unlink ("/etc/mtab");
-  symlink ("/proc/mounts", "/etc/mtab");
-  errno = 0;
- }
 
 #if defined(DARWIN) || defined(__FreeBSD__)
  if (unmount (mountpoint, 0) != -1)
