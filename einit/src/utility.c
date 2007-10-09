@@ -824,15 +824,27 @@ int unlink_recursive (const char *file, char self) {
  }
 
  if (S_ISDIR (st.st_mode)) {
-  char **files = readdirfilter (NULL, file, NULL, NULL, 1);
-  int i = 0;
+  DIR *d;
+  struct dirent *e;
 
-  for (; files[i]; i++) {
-/* make extra-sure not to erase files that aren't under that path, or the file itself */
-   if ((strstr (files[i], file) == file) && strcmp (files[i], file)) {
-    unlink (files[i]);
-    c++;
+  d = eopendir (file);
+  if (d != NULL) {
+   while ((e = ereaddir (d))) {
+    char *f = joinpath ((char *)file, e->d_name);
+
+    if (f) {
+     if (!lstat (f, &st) && !S_ISLNK (st.st_mode) && S_ISDIR (st.st_mode)) {
+      unlink_recursive (f, 1);
+     }
+
+     unlink (f);
+     c++;
+
+     free (f);
+    }
    }
+
+   eclosedir(d);
   }
  }
 
