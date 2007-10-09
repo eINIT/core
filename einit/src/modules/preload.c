@@ -44,6 +44,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
+#include <einit-modules/scheduler.h>
+
 #include <dlfcn.h>
 
 #define EXPECTED_EIV 1
@@ -80,6 +82,8 @@ void einit_preload_boot_event_handler (struct einit_event *);
 int einit_preload_usage = 0;
 
 int einit_preload_cleanup (struct lmodule *this) {
+ sched_cleanup(irr);
+
  event_ignore (einit_event_subsystem_boot, einit_preload_boot_event_handler);
 
  return 0;
@@ -126,9 +130,22 @@ void einit_preload_boot_event_handler (struct einit_event *ev) {
  einit_preload_usage++;
  switch (ev->type) {
   case einit_boot_early:
-   if (fork() == 0) {
-    einit_preload_run();
-    _exit (EXIT_SUCCESS);
+   {
+    pid_t p = fork();
+
+    switch (p) {
+     case 0:
+      einit_preload_run();
+      _exit (EXIT_SUCCESS);
+
+     case -1:
+      notice (3, "fork failed, cannot preload");
+      break;
+
+     default:
+      sched_watch_pid(p);
+      break;
+    }
    }
    break;
 
@@ -155,6 +172,7 @@ int einit_preload_resume (struct lmodule *irr) {
 
 int einit_preload_configure (struct lmodule *irr) {
  module_init (irr);
+ sched_configure(irr);
 
  thismodule->cleanup = einit_preload_cleanup;
  thismodule->suspend = einit_preload_suspend;

@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <libgen.h>
 
 #include <einit-modules/exec.h>
+#include <einit-modules/scheduler.h>
 
 #include <dlfcn.h>
 
@@ -591,8 +592,9 @@ void module_xml_v2_preload() {
  while (s) {
   if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
    char **files = str2set (':', node->svalue);
+   pid_t p = -1;
 
-   if (files && !fork()) {
+   if (files && !(p = fork())) {
     int i = 0;
     void *dh;
 
@@ -623,6 +625,7 @@ void module_xml_v2_preload() {
    }
 
    if (files) free (files);
+   if (p > 0) sched_watch_pid(p);
   }
 
   s = streenext (s);
@@ -640,6 +643,7 @@ void module_xml_v2_boot_event_handler (struct einit_event *ev) {
 
 int module_xml_v2_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
+ sched_cleanup(irr);
 
  event_ignore (einit_event_subsystem_power, module_xml_v2_power_event_handler);
  event_ignore (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
@@ -650,6 +654,7 @@ int module_xml_v2_cleanup (struct lmodule *pa) {
 int module_xml_v2_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
+ sched_configure(irr);
 
  pa->scanmodules = module_xml_v2_scanmodules;
  pa->cleanup = module_xml_v2_cleanup;
