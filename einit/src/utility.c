@@ -830,6 +830,10 @@ int unlink_recursive (const char *file, char self) {
   d = eopendir (file);
   if (d != NULL) {
    while ((e = ereaddir (d))) {
+    if (strmatch (e->d_name, ".") || strmatch (e->d_name, "..")) {
+     continue;
+    }
+
     char *f = joinpath ((char *)file, e->d_name);
 
     if (f) {
@@ -838,6 +842,7 @@ int unlink_recursive (const char *file, char self) {
      }
 
      unlink (f);
+
      c++;
 
      free (f);

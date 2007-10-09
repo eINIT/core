@@ -1450,8 +1450,8 @@ void mount_do_special_root_umount (struct einit_event *status) {
  symlink ("/proc/mounts", "/etc/mtab");
  errno = 0;
 
-// fbprintf (status, "pruning /tmp");
-// unlink_recursive("/tmp/", 0);
+ fbprintf (status, "pruning /tmp");
+ unlink_recursive("/tmp/", 0);
 
 /* fbprintf (status, "unlinking all files in /var/tmp");
  unlink_recursive("/var/tmp", 0);*/
