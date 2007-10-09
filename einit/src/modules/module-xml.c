@@ -585,6 +585,35 @@ void module_xml_v2_power_event_handler (struct einit_event *ev) {
  }
 }
 
+void module_xml_v2_do_preload(char **files) {
+ if (files) {
+  int i = 0;
+  void *dh;
+
+  for (; files[i]; i++) {
+   if (files[i][0] == '/') {
+    if ((dh = dlopen (files[i], RTLD_NOW))) {
+     dlclose (dh);
+    }
+   } else {
+    char **w = which (files[i]);
+    if (w) {
+     int n = 0;
+
+     for (; w[n]; n++) {
+      if ((dh = dlopen (w[n], RTLD_NOW))) {
+       dlclose (dh);
+      }
+     }
+     free (w);
+    }
+   }
+  }
+
+  free (files);
+ }
+}
+
 void module_xml_v2_preload() {
  struct stree *s = module_xml_v2_modules;
  struct cfgnode *node;
@@ -592,40 +621,14 @@ void module_xml_v2_preload() {
  while (s) {
   if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
    char **files = str2set (':', node->svalue);
-   pid_t p = -1;
 
-   if (files && !(p = fork())) {
-    int i = 0;
-    void *dh;
+   module_xml_v2_do_preload(files);
+  }
 
-    notice (4, "pre-loading files for module %s.", s->key);
+  if ((node = module_xml_v2_module_get_attributive_node (s->key, "preload-binaries")) && node->svalue) {
+   char **files = str2set (':', node->svalue);
 
-    for (; files[i]; i++) {
-     if (files[i][0] == '/') {
-      if ((dh = dlopen (files[i], RTLD_NOW))) {
-       dlclose (dh);
-      }
-     } else {
-      char **w = which (files[i]);
-      if (w) {
-       int n = 0;
-
-       for (; w[n]; n++) {
-        if ((dh = dlopen (w[n], RTLD_NOW))) {
-         dlclose (dh);
-        }
-       }
-       free (w);
-      }
-     }
-    }
-
-    free (files);
-    _exit (EXIT_SUCCESS);
-   }
-
-   if (files) free (files);
-   if (p > 0) sched_watch_pid(p);
+   module_xml_v2_do_preload(files);
   }
 
   s = streenext (s);
@@ -635,7 +638,23 @@ void module_xml_v2_preload() {
 void module_xml_v2_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
-   module_xml_v2_preload();
+   {
+    pid_t p = fork();
+
+    switch (p) {
+     case 0:
+      module_xml_v2_preload();
+      _exit (EXIT_SUCCESS);
+
+     case -1:
+      notice (3, "fork failed, cannot preload");
+      break;
+
+     default:
+      sched_watch_pid(p);
+      break;
+    }
+   }
    break;
   default: break;
  }
