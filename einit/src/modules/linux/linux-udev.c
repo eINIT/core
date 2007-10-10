@@ -88,7 +88,9 @@ void linux_udev_load_kernel_extensions() {
 }
 
 int linux_udev_run() {
- if (!linux_udev_enabled) {
+ char *dm;
+
+ if (!linux_udev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "udev")) {
   linux_udev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);

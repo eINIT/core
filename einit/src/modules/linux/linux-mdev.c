@@ -2,13 +2,13 @@
  *  linux-mdev.c
  *  einit
  *
- *  Created on 18/09/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Created on 10/10/2007.
+ *  Copyright 2007 Ryan Hope, Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007, Ryan Hope, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -88,7 +88,9 @@ void linux_mdev_load_kernel_extensions() {
 }
 
 int linux_mdev_run() {
- if (!linux_mdev_enabled) {
+ char *dm;
+
+ if (!linux_mdev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "mdev")) {
   linux_mdev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);

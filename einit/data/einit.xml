@@ -98,6 +98,8 @@
      load="/usr/sbin/kexec -l ${kernel-image} --append=&quot;${kernel-options}&quot;"
      load-initrd="/usr/sbin/kexec -l ${kernel-image} --append=&quot;${kernel-options}&quot; --initrd=&quot;${kernel-initrd}&quot;"
      execute="/usr/sbin/kexec -e" />
+
+   <device-manager s="udev" />
   </system>
 
   <environment>

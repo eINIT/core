@@ -104,7 +104,8 @@ Configuration = element configuration {
       attribute load { text },
       attribute load-initrd { text },
       attribute execute { text }
-    }*
+    }* &
+    element device-manager { StringAttribute }?
   }* &
 
   element environment {
