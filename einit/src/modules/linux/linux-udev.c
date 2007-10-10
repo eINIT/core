@@ -99,9 +99,10 @@ int linux_udev_run() {
   system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
 
   linux_udev_load_kernel_extensions();
- }
 
- return status_ok;
+  return status_ok;
+ } else
+  return status_failed;
 }
 
 int linux_udev_shutdown() {

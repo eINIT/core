@@ -99,9 +99,10 @@ int linux_mdev_run() {
   system (EINIT_LIB_BASE "/modules-xml/mdev.sh enable");
 
   linux_mdev_load_kernel_extensions();
- }
 
- return status_ok;
+  return status_ok;
+ } else
+  return status_failed;
 }
 
 int linux_mdev_shutdown() {
