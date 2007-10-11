@@ -8,6 +8,8 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/modules
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/init.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/subsystems.d
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/hotplug
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/hotplug.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
