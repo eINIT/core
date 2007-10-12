@@ -2,13 +2,13 @@
  *  linux-hotplug.c
  *  einit
  *
- *  Created by Ryan Hope on 10/11/2007.
- *  Copyright 2007 Magnus Deininger, Ryan Hope. All rights reserved.
+ *  Created on 01/10/2007.
+ *  Copyright 2007 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger, Ryan Hope
+Copyright (c) 2007, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -36,17 +36,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <unistd.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
+#include <einit/utility.h>
 #include <errno.h>
-#include <string.h>
 
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <linux/types.h>
 #include <linux/netlink.h>
@@ -57,87 +60,86 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int einit_linux_hotplug_configure (struct lmodule *);
+int linux_hotplug_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule einit_linux_hotplug_self = {
+const struct smodule linux_hotplug_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = 0,
+ .mode      = einit_module_generic,
  .name      = "eINIT Hotplug Agent",
- .rid       = "einit-linux-hotplug",
+ .rid       = "linux-hotplug",
  .si        = {
   .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
  },
- .configure = einit_linux_hotplug_configure,
+ .configure = linux_hotplug_configure
 };
 
-module_register(einit_linux_hotplug_self);
+module_register(linux_hotplug_self);
 
 #endif
 
-void einit_linux_hotplug_boot_event_handler (struct einit_event *);
-int einit_linux_hotplug_usage = 0;
+char linux_hotplug_enabled = 0;
 
-int einit_linux_hotplug_cleanup (struct lmodule *this) {
- sched_cleanup(irr);
+int linux_hotplug_run() {
+ if (!linux_hotplug_enabled) {
+  linux_hotplug_enabled = 1;
 
- event_ignore (einit_event_subsystem_boot, einit_linux_hotplug_boot_event_handler);
+  struct sockaddr_nl nls;
+  struct pollfd pfd;
+  char buf[512];
 
- return 0;
+  // Open hotplug event netlink socket
+
+  memset(&nls,0,sizeof(struct sockaddr_nl));
+  nls.nl_family = AF_NETLINK;
+  nls.nl_pid = getpid();
+  nls.nl_groups = -1;
+
+  pfd.events = POLLIN;
+  pfd.fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
+  if (pfd.fd==-1)
+   return 1;
+
+  // Listen to netlink socket
+
+  if (bind(pfd.fd, (void *)&nls, sizeof(struct sockaddr_nl)))
+   return 1;
+  while (-1!=poll(&pfd, 1, -1)) {
+   int i, len = recv(pfd.fd, buf, sizeof(buf), MSG_DONTWAIT);
+   if (len == -1) die("recv\n");
+
+   // Print the data to stdout.
+   i = 0;
+   while (i<len) {
+    printf("%s\n", buf+i);
+    i += strlen(buf+i)+1;
+   }
+  }
+  return 0;
+ }
+ return status_ok;
 }
 
-void die(char *s)
-{
-	write(2,s,strlen(s));
-	exit(1);
+int linux_hotplug_shutdown() {
+ if (linux_hotplug_enabled) {
+  linux_hotplug_enabled = 0;
+ }
+ return status_ok;
 }
 
-void einit_linux_hotplug_run () {
-	struct sockaddr_nl nls;
-	struct pollfd pfd;
-	char buf[512];
-
-	// Open hotplug event netlink socket
-
-	memset(&nls,0,sizeof(struct sockaddr_nl));
-	nls.nl_family = AF_NETLINK;
-	nls.nl_pid = getpid();
-	nls.nl_groups = -1;
-
-	pfd.events = POLLIN;
-	pfd.fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
-	if (pfd.fd==-1)
-		die("Not root\n");
-
-	// Listen to netlink socket
-
-	if (bind(pfd.fd, (void *)&nls, sizeof(struct sockaddr_nl)))
-		die("Bind failed\n");
-	while (-1!=poll(&pfd, 1, -1)) {
-		int i, len = recv(pfd.fd, buf, sizeof(buf), MSG_DONTWAIT);
-		if (len == -1) die("recv\n");
-
-		// Print the data to stdout.
-		i = 0;
-		while (i<len) {
-			printf("%s\n", buf+i);
-			i += strlen(buf+i)+1;
-		}
-	}
-	die("poll\n");
-
-	// Dear gcc: shut up.
-	return 0;
+void linux_hotplug_power_event_handler (struct einit_event *ev) {
+ if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
+  linux_hotplug_shutdown();
+ }
 }
 
-void einit_linux_hotplug_boot_event_handler (struct einit_event *ev) {
- einit_linux_hotplug_usage++;
+void linux_hotplug_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
    {
@@ -145,7 +147,7 @@ void einit_linux_hotplug_boot_event_handler (struct einit_event *ev) {
 
     switch (p) {
      case 0:
-      einit_linux_hotplug_run();
+      linux_hotplug_run();
       _exit (EXIT_SUCCESS);
 
      case -1:
@@ -161,34 +163,25 @@ void einit_linux_hotplug_boot_event_handler (struct einit_event *ev) {
 
   default: break;
  }
- einit_linux_hotplug_usage--;
 }
 
-int einit_linux_hotplug_suspend (struct lmodule *irr) {
- if (!einit_linux_hotplug_usage) {
-  event_wakeup (einit_boot_early, irr);
-  event_ignore (einit_event_subsystem_boot, einit_linux_hotplug_boot_event_handler);
+int linux_hotplug_cleanup (struct lmodule *pa) {
+ exec_cleanup(pa);
 
-  return status_ok;
- } else
-  return status_failed;
+ event_ignore (einit_event_subsystem_power, linux_hotplug_power_event_handler);
+ event_ignore (einit_event_subsystem_boot, linux_hotplug_boot_event_handler);
+
+ return 0;
 }
 
-int einit_linux_hotplug_resume (struct lmodule *irr) {
- event_wakeup_cancel (einit_boot_early, irr);
+int linux_hotplug_configure (struct lmodule *pa) {
+ module_init (pa);
+ exec_configure(pa);
 
- return status_ok;
-}
+ pa->cleanup = linux_hotplug_cleanup;
 
-int einit_linux_hotplug_configure (struct lmodule *irr) {
- module_init (irr);
- sched_configure(irr);
-
- thismodule->cleanup = einit_linux_hotplug_cleanup;
- thismodule->suspend = einit_linux_hotplug_suspend;
- thismodule->resume  = einit_linux_hotplug_resume;
-
- event_listen (einit_event_subsystem_boot, einit_linux_hotplug_boot_event_handler);
+ event_listen (einit_event_subsystem_boot, linux_hotplug_boot_event_handler);
+ event_listen (einit_event_subsystem_power, linux_hotplug_power_event_handler);
 
  return 0;
 }
