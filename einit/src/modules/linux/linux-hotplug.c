@@ -54,6 +54,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/types.h>
 #include <linux/netlink.h>
 
+#include <einit-modules/exec.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
