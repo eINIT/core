@@ -99,6 +99,10 @@ for param in $@; do
 	elif test "$short" = "--target"; then
 		echo -n " TARGET";
 		RCTARGET="${param#*=}";
+		ARCH=${RCTARGET%%-*}
+	elif test "$short" = "--target-arch"; then
+		echo -n " ARCH";
+		ARCH="${param#*=}";
 	elif test "$short" = "--core"; then
 		echo -n " CORE";
 		COREFILE="${param#*=}";
@@ -505,10 +509,12 @@ echo " done"
 if test -n "$(echo ${EXTERNALMODULES}|grep bootstrap-)"; then DO_BOOTSTRAP=yes; else DO_BOOTSTRAP=; fi
 
 echo -n "testing architecture... "
-if test -x "$(which arch 2>/dev/null)"; then
-	ARCH=`arch`
-else
-	ARCH="unknown"
+if test -z "${ARCH}"; then
+	if test -x "$(which arch 2>/dev/null)"; then
+		ARCH=`arch`
+	else
+		ARCH="unknown"
+	fi
 fi
 echo ${ARCH}
 
