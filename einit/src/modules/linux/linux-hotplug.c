@@ -114,7 +114,7 @@ int linux_hotplug_run() {
    return 1;
   while (-1!=poll(&pfd, 1, -1)) {
    int i, len = recv(pfd.fd, buf, sizeof(buf), MSG_DONTWAIT);
-   if (len == -1) die("recv\n");
+   if (len == -1) return 1;
 
    // Print the data to stdout.
    i = 0;
