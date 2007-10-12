@@ -24,5 +24,8 @@ feedback-visual-textual.so: feedback-visual-textual.o
 linux-netlink.so: linux-netlink.o
 	${LLD} linux-netlink.o ${NETLINK_LIBS} -o linux-netlink.so
 
+linux-hotplug.so: linux-hotplug.o
+	${LLD} linux-hotplug.o ${HOTPLUG_LIBS} -o linux-hotplug.so
+
 distro-gentoo.so: distro-gentoo.o
 	${LLD} -Wl,--no-as-needed distro-gentoo.o -leinfo -lrc -o distro-gentoo.so
