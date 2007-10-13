@@ -247,6 +247,7 @@ uintptr_t hashp (const char *str);
 void enable_core_dumps();
 void disable_core_dumps();
 
+char *joinpath (char *path1, char *path2);
 char **getpath_filter (char *filter);
 char **which (char *binary);
 
