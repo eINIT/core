@@ -410,6 +410,11 @@ int linux_edev_run() {
   mkdir ("/dev/pts", 0777);
   mount ("devpts", "/dev/pts", "devpts", 0, NULL);
 
+  mkdir ("/dev/shm", 0777);
+  mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
+
+  symlink ("/proc/self/fd", "/dev/fd");
+
   ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL);
 
   linux_edev_ping_for_uevents("/sys", 6);
