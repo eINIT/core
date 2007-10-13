@@ -414,6 +414,9 @@ int linux_edev_run() {
   mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
 
   symlink ("/proc/self/fd", "/dev/fd");
+  symlink ("fd/0", "/dev/stdin");
+  symlink ("fd/1", "/dev/stdout");
+  symlink ("fd/2", "/dev/stderr");
 
   ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL);
 
