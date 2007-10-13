@@ -422,6 +422,12 @@ int linux_edev_run() {
 
   linux_edev_ping_for_uevents("/sys", 6);
 
+  FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
+  if (he) {
+   fputs ("", he);
+   fclose (he);
+  }
+
   if (coremode & einit_mode_sandbox) {
    while (1) {
     sleep (1);
