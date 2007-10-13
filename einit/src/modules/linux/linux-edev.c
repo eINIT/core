@@ -424,7 +424,7 @@ int linux_edev_run() {
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {
-   fputs ("", he);
+   fputs ("/lib/einit/scripts/einit-hotplug", he);
    fclose (he);
   }
 
