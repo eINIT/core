@@ -222,7 +222,7 @@ void linux_edev_hotplug_handle (char **v) {
       if (ev.type == einit_hotplug_add) {
        char *devpath_dir = joinpath (DEVPREFIX, subsystem);
 
-       mkdir (devpath_dir, 0777);
+       mkdir (devpath_dir, 0660);
        free (devpath_dir);
       }
 
@@ -235,7 +235,7 @@ void linux_edev_hotplug_handle (char **v) {
         mknod (devpath_subsys, S_IFCHR, ldev);
        }
 
-       chmod (devpath_subsys, 0777);
+       //chmod (devpath_subsys, 0660);
 
        symlink (devpath_subsys, devpath);
       } else if (ev.type == einit_hotplug_remove) {
@@ -252,7 +252,7 @@ void linux_edev_hotplug_handle (char **v) {
         mknod (devpath, S_IFCHR, ldev);
        }
 
-       chmod (devpath, 0777);
+       //chmod (devpath, 0660);
       } else if (ev.type == einit_hotplug_remove) {
        unlink (devpath);
       }
@@ -407,10 +407,10 @@ int linux_edev_run() {
   mount ("sys", "/sys", "sysfs", 0, NULL);
   mount ("edev", "/dev", "tmpfs", 0, NULL);
 
-  mkdir ("/dev/pts", 0777);
+  //mkdir ("/dev/pts", 0660);
   mount ("devpts", "/dev/pts", "devpts", 0, NULL);
 
-  mkdir ("/dev/shm", 0777);
+  //mkdir ("/dev/shm", 0660);
   mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
 
   symlink ("/proc/self/fd", "/dev/fd");
