@@ -165,8 +165,6 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
     pexec(command, NULL, 0, 0, NULL, NULL, env, NULL);
 
-//    fprintf (stderr, "executing: %s\n", command);
-
     free (cd);
     free (command);
    }
@@ -177,14 +175,6 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 #endif
 
   if (firmware) {
-/*   echo 1 > /sys/$DEVPATH/loading
-     cat /path/to/$FIRMWARE > /sys/$DEVPATH/data
-     echo 0 > /sys/$DEVPATH/loading
-
-   Note that "echo -1 > /sys/$DEVPATH/loading" will cancel the firmware load
-   and return an error to the kernel, and /sys/class/firmware/timeout contains a
-   timeout (in seconds) for firmware loads.
-*/
    char buffer[BUFFERSIZE];
    int tblen = sizeof(SYS_DIR) + strlen (devpath) + 11;
    FILE *f;
