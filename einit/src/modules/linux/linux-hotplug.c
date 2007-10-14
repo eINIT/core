@@ -208,18 +208,26 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/data", devpath);
     ssize_t ll;
     char *firmware_data = readfile_l (targetbuffer, &ll);
-    if ((f = fopen (targetbuffer, "w"))) {
-     int rembytes = ll;
-     while (rembytes) {
-      rembytes -= fwrite (firmware_data +ll -rembytes, rembytes, 1, f);
+    if (firmware_data && ll) {
+     if ((f = fopen (targetbuffer, "w"))) {
+      int rembytes = ll;
+      while (rembytes) {
+       rembytes -= fwrite (firmware_data +ll -rembytes, rembytes, 1, f);
+      }
+      fclose (f);
      }
-     fclose (f);
-    }
 
-    esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
-    if ((f = fopen (targetbuffer, "w"))) {
-     fputs ("0", f);
-     fclose (f);
+     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
+     if ((f = fopen (targetbuffer, "w"))) {
+      fputs ("0", f);
+      fclose (f);
+     }
+    } else {
+     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
+     if ((f = fopen (targetbuffer, "w"))) {
+      fputs ("-1", f);
+      fclose (f);
+     }
     }
    }
 
