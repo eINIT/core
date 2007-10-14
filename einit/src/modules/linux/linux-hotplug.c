@@ -80,7 +80,7 @@ module_register(linux_hotplug_self);
 
 #endif
 
-#if 0
+#if 1
 #define LEGACY_HOTPLUG
 #endif
 
