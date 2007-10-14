@@ -56,7 +56,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/types.h>
 #include <linux/netlink.h>
 
-#include <sys/poll.h>
 #include <sys/socket.h>
 
 #include <fcntl.h>
@@ -400,7 +399,6 @@ void *linux_edev_hotplug(void *ignored) {
  return linux_edev_hotplug (NULL);
 }
 
-
 int linux_edev_run() {
  char *dm = cfg_getstring("configuration-system-device-manager", NULL);
 
@@ -442,11 +440,6 @@ int linux_edev_run() {
   linux_edev_load_kernel_extensions();
 
   return status_ok;
-
- } else if (!linux_edev_enabled && strmatch (dm, "mdev")) {  	 
-  pthread_t th; 	 
-  ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL); 	 
-  	 
  }
 
  return status_failed;

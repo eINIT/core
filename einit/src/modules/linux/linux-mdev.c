@@ -47,7 +47,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit-modules/exec.h>
 
+#include <pthread.h>
+
 #include <sys/mount.h>
+
+#include <linux/types.h>
+#include <linux/netlink.h>
+
+#include <sys/socket.h>
+
+#include <fcntl.h>
 
 #define EXPECTED_EIV 1
 
@@ -81,22 +90,188 @@ module_register(linux_mdev_self);
 
 char linux_mdev_enabled = 0;
 
+#define NETLINK_BUFFER 1024*1024*64
+
 void linux_mdev_load_kernel_extensions() {
  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
  evstaticdestroy(eml);
 }
 
+void linux_mdev_hotplug_handle (char **v) {
+ if (v && v[0]) {
+  int i = 0;
+  char **args = NULL;
+  struct einit_event ev = evstaticinit(einit_hotplug_generic);
+
+  if (strstr (v[0], "add@") == v[0]) {
+   ev.type = einit_hotplug_add;
+  } else if (strstr (v[0], "remove@") == v[0]) {
+   ev.type = einit_hotplug_remove;
+  } else if (strstr (v[0], "change@") == v[0]) {
+   ev.type = einit_hotplug_change;
+  } else if (strstr (v[0], "online@") == v[0]) {
+   ev.type = einit_hotplug_online;
+  } else if (strstr (v[0], "offline@") == v[0]) {
+   ev.type = einit_hotplug_offline;
+  } else if (strstr (v[0], "move@") == v[0]) {
+   ev.type = einit_hotplug_move;
+  }
+
+  for (i = 1; v[i]; i++) {
+   char *n = strchr (v[i], '=');
+   if (n) {
+    *n = 0;
+    n++;
+
+    args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
+    args = (char **)setadd ((void **)args, n, SET_TYPE_STRING);
+   }
+  }
+
+  ev.stringset = args;
+
+/* emit the event, waiting for it to be processed */
+  event_emit (&ev, einit_event_flag_broadcast);
+  evstaticdestroy (ev);
+
+  if (args) free (args);
+ }
+}
+
+void *linux_mdev_hotplug(void *ignored) {
+ struct sockaddr_nl nls;
+ int fd, pos = 0;
+ char buffer[BUFFERSIZE];
+
+ redo:
+
+ memset(&nls, 0, sizeof(struct sockaddr_nl));
+ nls.nl_family = AF_NETLINK;
+ nls.nl_pid = getpid();
+ nls.nl_groups = -1;
+
+ fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
+
+ if (fd == -1) goto done;
+
+ if (bind(fd, (void *)&nls, sizeof(struct sockaddr_nl))) goto done;
+
+ errno = 0;
+
+ char **v = NULL;
+
+ int newlength = NETLINK_BUFFER;
+
+ if (setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &newlength, sizeof (int))) {
+  perror ("setsockopt: can't increase buffer size");
+ }
+
+ if (fcntl (fd, F_SETFD, FD_CLOEXEC)) {
+  perror ("can't set close-on-exec flag");
+ }
+
+ while (!errno || (errno == EAGAIN) || (errno == ESPIPE) || (errno == EINTR)) {
+  int rp = read (fd, buffer + pos, BUFFERSIZE - pos);
+  int i = 0;
+  char last = rp < (BUFFERSIZE - pos);
+
+  if ((rp == -1) && !(!errno || (errno == EAGAIN) || (errno == ESPIPE) || (errno == EINTR))) {
+   perror ("mdev/read");
+
+   continue;
+  }
+
+  pos += rp;
+  buffer[rp] = 0;
+
+  for (i = 0; (i < pos); i++) {
+   if (((buffer[i] == 0)) && (i > 0)) {
+    char lbuffer[BUFFERSIZE];
+    int offset = 0;
+
+    for (offset = 0; (offset < i) && !buffer[offset]; offset++) {
+     offset++;
+    }
+
+    memcpy (lbuffer, buffer + offset, i - offset +1);
+    if ((strstr (lbuffer, "add@") == lbuffer) ||
+        (strstr (lbuffer, "remove@") == lbuffer) ||
+        (strstr (lbuffer, "change@") == lbuffer) ||
+        (strstr (lbuffer, "online@") == lbuffer) ||
+        (strstr (lbuffer, "offline@") == lbuffer) ||
+        (strstr (lbuffer, "move@") == lbuffer)) {
+
+     if (v) {
+      linux_mdev_hotplug_handle(v);
+
+      free (v);
+      v = NULL;
+     }
+    }
+
+    v = (char **)setadd ((void **)v, lbuffer, SET_TYPE_STRING);
+
+    i++;
+
+    memmove (buffer, buffer + offset + i, pos - i);
+    pos -= i;
+
+    i = -1;
+   }
+  }
+
+/* we got less than we requested, assume that was a last message */
+  if (last) {
+   if (v) {
+    linux_mdev_hotplug_handle(v);
+
+    free (v);
+    v = NULL;
+   }
+  }
+
+  errno = 0;
+ }
+
+ if (v) {
+  linux_mdev_hotplug_handle(v);
+
+  free (v);
+  v = NULL;
+ }
+
+ close (fd);
+
+ if (errno) {
+  perror ("mdev");
+ }
+
+ sleep (1);
+ goto redo;
+
+ done:
+
+ notice (1, "hotplug thread exiting... respawning in 10 sec");
+
+ sleep (10);
+ return linux_mdev_hotplug (NULL);
+}
+
 int linux_mdev_run() {
  char *dm;
 
  if (!linux_mdev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "mdev")) {
+  pthread_t th;
+
   linux_mdev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
 
   system (EINIT_LIB_BASE "/modules-xml/mdev.sh enable");
+
+  ethread_create (&th, &thread_attribute_detached, linux_mdev_hotplug, NULL);
 
   linux_mdev_load_kernel_extensions();
 
