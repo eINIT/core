@@ -402,9 +402,9 @@ void *linux_edev_hotplug(void *ignored) {
 
 
 int linux_edev_run() {
- char *dm;
+ char *dm = cfg_getstring("configuration-system-device-manager", NULL);
 
- if (!linux_edev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "edev")) {
+ if (!linux_edev_enabled && strmatch (dm, "edev")) {
   pthread_t th;
   linux_edev_enabled = 1;
 
@@ -427,7 +427,6 @@ int linux_edev_run() {
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {
-//   fputs ("/lib/einit/scripts/einit-hotplug", he);
    fputs ("", he);
    fclose (he);
   }
@@ -443,8 +442,18 @@ int linux_edev_run() {
   linux_edev_load_kernel_extensions();
 
   return status_ok;
- } else
-  return status_failed;
+ } else if (!linux_edev_enabled && strmatch (dm, "mdev")) {
+  pthread_t th;
+  ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL);
+
+  FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
+  if (he) {
+   fputs ("", he);
+   fclose (he);
+  }
+ }
+
+ return status_failed;
 }
 
 int linux_edev_shutdown() {
