@@ -80,36 +80,46 @@ module_register(linux_hotplug_self);
 
 #endif
 
+#if 0
+#define LEGACY_HOTPLUG
+#endif
+
+#define FIRMWARE_DIR "/lib/firmware"
+#define SYS_DIR "/sys"
+
 void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
  if (ev->stringset) {
   char *subsystem = NULL;
-  char **commands = NULL;
+  char *firmware = NULL;
+  char *devpath = NULL;
   int i = 0;
 
   for (; ev->stringset[i]; i+=2) {
    if (strmatch (ev->stringset[i], "SUBSYSTEM")) {
     subsystem = ev->stringset[i+1];
+   } else if (strmatch (ev->stringset[i], "FIRMWARE")) {
+    firmware = ev->stringset[i+1];
+   } else if (strmatch (ev->stringset[i], "DEVPATH")) {
+    devpath = ev->stringset[i+1];
    }
   }
+
+#ifdef LEGACY_HOTPLUG
+  char **commands = NULL;
 
   if (subsystem) {
    char n = 0;
 
-   for (; n < 4; n++) {
+   for (; n < 2; n++) {
     char buffer[BUFFERSIZE];
-    char *tbuffer = (n == 1) ? "/etc/einit/hotplug.d/default/" : "/etc/hotplug.d/default/";
+    char *tbuffer = (n == 1) ? "/etc/einit/hotplug.d/default/" : NULL;
 
     switch (n) {
      case 0:
       esprintf(buffer, BUFFERSIZE, "/etc/einit/hotplug.d/%s/", subsystem);
       tbuffer = buffer;
       break;
-     case 2:
-      esprintf(buffer, BUFFERSIZE, "/etc/hotplug.d/%s/", subsystem);
-      tbuffer = buffer;
-      break;
      case 1:
-     case 3:
       break;
      default:
       tbuffer = NULL;
@@ -162,6 +172,58 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
    }
 
    free (env);
+   free (commands);
+  }
+#endif
+
+  if (firmware) {
+/*   echo 1 > /sys/$DEVPATH/loading
+     cat /path/to/$FIRMWARE > /sys/$DEVPATH/data
+     echo 0 > /sys/$DEVPATH/loading
+
+   Note that "echo -1 > /sys/$DEVPATH/loading" will cancel the firmware load
+   and return an error to the kernel, and /sys/class/firmware/timeout contains a
+   timeout (in seconds) for firmware loads.
+*/
+   char buffer[BUFFERSIZE];
+   int tblen = sizeof(SYS_DIR) + strlen (devpath) + 11;
+   FILE *f;
+   struct stat st;
+   char *targetbuffer = emalloc (tblen);
+
+   esprintf (buffer, BUFFERSIZE, FIRMWARE_DIR "/%s", firmware);
+   if (stat (buffer, &st)) {
+    esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
+    if ((f = fopen (targetbuffer, "w"))) {
+     fputs ("-1", f);
+     fclose (f);
+    }
+   } else {
+    esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
+    if ((f = fopen (targetbuffer, "w"))) {
+     fputs ("1", f);
+     fclose (f);
+    }
+
+    esprintf (targetbuffer, tblen, SYS_DIR "/%s/data", devpath);
+    ssize_t ll;
+    char *firmware_data = readfile_l (targetbuffer, &ll);
+    if ((f = fopen (targetbuffer, "w"))) {
+     int rembytes = ll;
+     while (rembytes) {
+      rembytes -= fwrite (firmware_data +ll -rembytes, rembytes, 1, f);
+     }
+     fclose (f);
+    }
+
+    esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
+    if ((f = fopen (targetbuffer, "w"))) {
+     fputs ("0", f);
+     fclose (f);
+    }
+   }
+
+   free (targetbuffer);
   }
  }
 }

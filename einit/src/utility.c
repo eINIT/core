@@ -215,7 +215,7 @@ char **straddtoenviron (char **environment, const char *key, const char *value) 
 
 #endif
 
-char *readfd (int fd) {
+char *readfd_l (int fd, ssize_t *rl) {
  int rn = 0;
  void *buf = NULL;
  char *data = NULL;
@@ -241,10 +241,12 @@ char *readfd (int fd) {
   data = NULL;
  }
 
+ if (rl) *rl = blen;
+
  return data;
 }
 
-char *readfile (const char *filename) {
+char *readfile_l (const char *filename, ssize_t *rl) {
  int fd = 0;
  void *buf = NULL;
  char *data = NULL;
@@ -265,8 +267,9 @@ char *readfile (const char *filename) {
    munmap (buf, st.st_size);
 
    *(data+st.st_size) = 0;
+   if (rl) *rl = st.st_size;
   } else {
-   data = readfd (fd);
+   data = readfd_l (fd, rl);
    eclose (fd);
   }
  }

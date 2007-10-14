@@ -74,8 +74,11 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
 */
 char **straddtoenviron (char **environment, const char *key, const char *value);
 
-char *readfd (int fd);
-char *readfile (const char *filename);
+char *readfd_l (int fd, ssize_t *rl);
+char *readfile_l (const char *filename, ssize_t *rl);
+
+#define readfd(fd) readfd_l(fd, NULL)
+#define readfile(name) readfile_l(name, NULL)
 
 /*!\}*/
 

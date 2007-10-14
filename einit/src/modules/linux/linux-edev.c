@@ -425,14 +425,14 @@ int linux_edev_run() {
 
   ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL);
 
-  linux_edev_ping_for_uevents("/sys", 6);
-
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {
 //   fputs ("/lib/einit/scripts/einit-hotplug", he);
    fputs ("", he);
    fclose (he);
   }
+
+  linux_edev_ping_for_uevents("/sys", 6);
 
   if (coremode & einit_mode_sandbox) {
    while (1) {
