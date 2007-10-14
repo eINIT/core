@@ -7,9 +7,8 @@
 
 if [ $1 = "enable" ]; then
  echo 'feedback|notice|Using udev to manage /dev'
- udev=$(cat /proc/mounts | grep udev)
+ udev=""
  if [ -z "${udev}" ] ; then
-  mount -n -t tmpfs -o exec,nosuid,mode=0755 udev /dev
   touch /dev/.einit
   if [ "${configuration_services_udev_device_tarball}" = 'yes' ] ; then
    echo 'feedback|notice|Populating /dev with saved device nodes'
@@ -22,12 +21,7 @@ if [ $1 = "enable" ]; then
   if [ ! -c /dev/tty1 ] ; then mknod /dev/tty1 c 4 1 ; fi
   if [ ! -c /dev/null ] ; then mknod /dev/null c 1 3 ; fi
   if [ -d /lib/udev/devices ] ; then cp --preserve=all --recursive --update /lib/udev/devices/* /dev 2>/dev/null ; fi
-  ln -snf /proc/self/fd /dev/fd
-  ln -snf fd/0 /dev/stdin
-  ln -snf fd/1 /dev/stdout
-  ln -snf fd/2 /dev/stderr
   if [ -e /proc/kcore ] ; then ln -snf /proc/kcore /dev/core ; fi
-  mkdir -p /dev/pts /dev/sh
   if [ -e /proc/sys/kernel/hotplug ] ; then
    echo 'feedback|notice|Setting up proper hotplug agent'
    if [ $(uname -r | cut -f 3 -d . | cut -f 1 -d -) -gt 14 ] ; then

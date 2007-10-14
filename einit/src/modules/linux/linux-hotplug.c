@@ -80,10 +80,6 @@ module_register(linux_hotplug_self);
 
 #endif
 
-#if 1
-#define LEGACY_HOTPLUG
-#endif
-
 #define FIRMWARE_DIR "/lib/firmware"
 #define SYS_DIR "/sys"
 
@@ -93,6 +89,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
   char *firmware = NULL;
   char *devpath = NULL;
   int i = 0;
+  struct cfgnode *node = cfg_getnode ("configuration-system-hotplug-support-legacy-hotplug-scripts", NULL);
 
   for (; ev->stringset[i]; i+=2) {
    if (strmatch (ev->stringset[i], "SUBSYSTEM")) {
@@ -104,75 +101,75 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
    }
   }
 
-#ifdef LEGACY_HOTPLUG
-  char **commands = NULL;
+  if (node && node->flag) {
+   char **commands = NULL;
 
-  if (subsystem) {
-   char n = 0;
+   if (subsystem) {
+    char n = 0;
 
-   for (; n < 2; n++) {
-    char buffer[BUFFERSIZE];
-    char *tbuffer = (n == 1) ? "/etc/einit/hotplug.d/default/" : NULL;
+    for (; n < 2; n++) {
+     char buffer[BUFFERSIZE];
+     char *tbuffer = (n == 1) ? "/etc/einit/hotplug.d/default/" : NULL;
 
-    switch (n) {
-     case 0:
-      esprintf(buffer, BUFFERSIZE, "/etc/einit/hotplug.d/%s/", subsystem);
-      tbuffer = buffer;
-      break;
-     case 1:
-      break;
-     default:
-      tbuffer = NULL;
-      break;
-    }
+     switch (n) {
+      case 0:
+       esprintf(buffer, BUFFERSIZE, "/etc/einit/hotplug.d/%s/", subsystem);
+       tbuffer = buffer;
+       break;
+      case 1:
+       break;
+      default:
+       tbuffer = NULL;
+       break;
+     }
 
-    if (tbuffer) {
-     struct stat st;
+     if (tbuffer) {
+      struct stat st;
 
-     if (!stat (tbuffer, &st) && S_ISDIR(st.st_mode)) {
-      char **cm = readdirfilter (NULL, tbuffer, "\\.hotplug$", NULL, 0);
+      if (!stat (tbuffer, &st) && S_ISDIR(st.st_mode)) {
+       char **cm = readdirfilter (NULL, tbuffer, "\\.hotplug$", NULL, 0);
 
-      if (cm) {
-       commands = (char **)setcombine_nc ((void **)commands, (const void **)cm, SET_TYPE_STRING);
-       free (cm);
+       if (cm) {
+        commands = (char **)setcombine_nc ((void **)commands, (const void **)cm, SET_TYPE_STRING);
+        free (cm);
+       }
       }
      }
     }
    }
+
+   if (commands) {
+    char **env = NULL;
+    char *command;
+    ssize_t blen = strlen (subsystem) + 2;
+    char **cd = NULL;
+
+    for (i = 0; ev->stringset[i]; i+=2) {
+     env = straddtoenviron (env, ev->stringset[i], ev->stringset[i+1]);
+    }
+
+    for (i = 0; commands[i]; i++) {
+     int len = blen + strlen (commands[i]);
+     char *t = emalloc (len);
+
+     esprintf (t, len, "%s %s", commands[i], subsystem);
+     cd = (char **)setadd ((void **)cd, t, SET_TYPE_STRING);
+     free (t);
+    }
+
+    if (cd) {
+     command = set2str (';', (const char **)cd);
+
+     pexec(command, NULL, 0, 0, NULL, NULL, env, NULL);
+
+     free (cd);
+     free (command);
+    }
+
+    free (env);
+    free (commands);
+   }
   }
-
-  if (commands) {
-   char **env = NULL;
-   char *command;
-   ssize_t blen = strlen (subsystem) + 2;
-   char **cd = NULL;
-
-   for (i = 0; ev->stringset[i]; i+=2) {
-    env = straddtoenviron (env, ev->stringset[i], ev->stringset[i+1]);
-   }
-
-   for (i = 0; commands[i]; i++) {
-    int len = blen + strlen (commands[i]);
-    char *t = emalloc (len);
-
-    esprintf (t, len, "%s %s", commands[i], subsystem);
-    cd = (char **)setadd ((void **)cd, t, SET_TYPE_STRING);
-    free (t);
-   }
-
-   if (cd) {
-    command = set2str (';', (const char **)cd);
-
-    pexec(command, NULL, 0, 0, NULL, NULL, env, NULL);
-
-    free (cd);
-    free (command);
-   }
-
-   free (env);
-   free (commands);
-  }
-#endif
 
   if (firmware) {
    char buffer[BUFFERSIZE];

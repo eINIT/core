@@ -105,7 +105,13 @@ Configuration = element configuration {
       attribute load-initrd { text },
       attribute execute { text }
     }* &
-    element device-manager { StringAttribute }?
+
+    element device-manager { StringAttribute }? &
+
+    element hotplug {
+     element support-legacy-hotplug-scripts { BooleanAttribute }? &
+     element handler { StringAttribute }?
+    }?
   }* &
 
   element environment {

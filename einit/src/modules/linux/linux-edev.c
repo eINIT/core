@@ -410,10 +410,10 @@ int linux_edev_run() {
   mount ("sys", "/sys", "sysfs", 0, NULL);
   mount ("edev", "/dev", "tmpfs", 0, NULL);
 
-  //mkdir ("/dev/pts", 0660);
+  mkdir ("/dev/pts", 0777);
   mount ("devpts", "/dev/pts", "devpts", 0, NULL);
 
-  //mkdir ("/dev/shm", 0660);
+  mkdir ("/dev/shm", 0777);
   mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
 
   symlink ("/proc/self/fd", "/dev/fd");
@@ -425,7 +425,13 @@ int linux_edev_run() {
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {
-   fputs ("", he);
+   char *hotplug_handler = cfg_getstring ("configuration-system-hotplug-handler", NULL);
+
+   if (hotplug_handler) {
+    fputs (hotplug_handler, he);
+   } else {
+    fputs ("", he);
+   }
    fclose (he);
   }
 
@@ -438,6 +444,8 @@ int linux_edev_run() {
   }
 
   linux_edev_load_kernel_extensions();
+
+  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
   return status_ok;
  }

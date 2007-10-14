@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/utility.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include <einit-modules/exec.h>
 
@@ -95,10 +96,24 @@ int linux_udev_run() {
 
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
+  mount ("mdev", "/dev", "tmpfs", 0, NULL);
+
+  mkdir ("/dev/pts", 0777);
+  mount ("devpts", "/dev/pts", "devpts", 0, NULL);
+
+  mkdir ("/dev/shm", 0777);
+  mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
+
+  symlink ("/proc/self/fd", "/dev/fd");
+  symlink ("fd/0", "/dev/stdin");
+  symlink ("fd/1", "/dev/stdout");
+  symlink ("fd/2", "/dev/stderr");
 
   system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
 
   linux_udev_load_kernel_extensions();
+
+  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
   return status_ok;
  } else
@@ -130,8 +145,6 @@ void linux_udev_boot_event_handler (struct einit_event *ev) {
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
    }
-
-   /* some code */
    break;
 
   default: break;

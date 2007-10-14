@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <einit/module.h>
 #include <einit/config.h>
@@ -268,12 +269,43 @@ int linux_mdev_run() {
 
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
+  mount ("mdev", "/dev", "tmpfs", 0, NULL);
 
-  system (EINIT_LIB_BASE "/modules-xml/mdev.sh enable");
+  mkdir ("/dev/pts", 0777);
+  mount ("devpts", "/dev/pts", "devpts", 0, NULL);
+
+  mkdir ("/dev/shm", 0777);
+  mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
+
+  symlink ("/proc/self/fd", "/dev/fd");
+  symlink ("fd/0", "/dev/stdin");
+  symlink ("fd/1", "/dev/stdout");
+  symlink ("fd/2", "/dev/stderr");
 
   ethread_create (&th, &thread_attribute_detached, linux_mdev_hotplug, NULL);
 
+  FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
+  if (he) {
+   char *hotplug_handler = cfg_getstring ("configuration-system-hotplug-handler", NULL);
+
+   if (hotplug_handler) {
+    fputs (hotplug_handler, he);
+   } else {
+    fputs ("", he);
+   }
+   fclose (he);
+  }
+
+  system ("mdev -s");
+
+  chmod ("/dev/null", 0777);
+  chmod ("/dev/zero", 0666);
+  chmod ("/dev/console", 0660);
+  chmod ("/dev/ptmx", 0777);
+
   linux_mdev_load_kernel_extensions();
+
+  mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
   return status_ok;
  } else
@@ -298,8 +330,6 @@ void linux_mdev_boot_event_handler (struct einit_event *ev) {
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
    }
-
-   /* some code */
    break;
 
   default: break;
