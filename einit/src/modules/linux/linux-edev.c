@@ -442,7 +442,13 @@ int linux_edev_run() {
   linux_edev_load_kernel_extensions();
 
   return status_ok;
- } 
+
+ } else if (!linux_edev_enabled && strmatch (dm, "mdev")) {  	 
+  pthread_t th; 	 
+  ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL); 	 
+  	 
+ }
+
  return status_failed;
 }
 
