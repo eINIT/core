@@ -198,6 +198,8 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
      fputs ("-1", f);
      fclose (f);
     }
+
+    notice (3, "can't locate firmware: %s\n", buffer);
    } else {
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
     if ((f = fopen (targetbuffer, "w"))) {
@@ -206,8 +208,10 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
     }
 
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/data", devpath);
-    ssize_t ll;
+
+    ssize_t ll = 0;
     char *firmware_data = readfile_l (targetbuffer, &ll);
+
     if (firmware_data && ll) {
      if ((f = fopen (targetbuffer, "w"))) {
       int rembytes = ll;
@@ -228,6 +232,8 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
       fputs ("-1", f);
       fclose (f);
      }
+
+     notice (3, "can't load firmware: %s\n", buffer);
     }
    }
 

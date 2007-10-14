@@ -260,7 +260,7 @@ char *readfile_l (const char *filename, ssize_t *rl) {
  fd = eopen (filename, O_RDONLY);
 
  if (fd != -1) {
-  if ((buf = mmap (NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
+  if ((st.st_size > 0) && ((buf = mmap (NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED)) {
    eclose (fd);
    data = emalloc (st.st_size +1);
    memcpy (data, buf, st.st_size);
