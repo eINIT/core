@@ -235,7 +235,7 @@ void linux_edev_hotplug_handle (char **v) {
         mknod (devpath_subsys, S_IFCHR, ldev);
        }
 
-       //chmod (devpath_subsys, 0660);
+       chmod (devpath_subsys, 0660);
 
        symlink (devpath_subsys, devpath);
       } else if (ev.type == einit_hotplug_remove) {
@@ -243,7 +243,9 @@ void linux_edev_hotplug_handle (char **v) {
        unlink (devpath);
       }
 
-      free (devpath_subsys);
+      ev.string = devpath_subsys;
+
+      free (devpath);
      } else {
       if (ev.type == einit_hotplug_add) {
        if (strstr (device, "/block/") == device) {
@@ -252,13 +254,13 @@ void linux_edev_hotplug_handle (char **v) {
         mknod (devpath, S_IFCHR, ldev);
        }
 
-       //chmod (devpath, 0660);
+       chmod (devpath, 0660);
       } else if (ev.type == einit_hotplug_remove) {
        unlink (devpath);
       }
-     }
 
-     free (devpath);
+      ev.string = devpath;
+     }
     }
    }
   }
@@ -267,6 +269,9 @@ void linux_edev_hotplug_handle (char **v) {
 
 /* emit the event, waiting for it to be processed */
   event_emit (&ev, einit_event_flag_broadcast);
+
+  if (ev.string) free (ev.string);
+
   evstaticdestroy (ev);
 
   if (args) free (args);
@@ -424,7 +429,8 @@ int linux_edev_run() {
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {
-   fputs ("/lib/einit/scripts/einit-hotplug", he);
+//   fputs ("/lib/einit/scripts/einit-hotplug", he);
+   fputs ("", he);
    fclose (he);
   }
 
