@@ -267,6 +267,7 @@ char *readfile_l (const char *filename, ssize_t *rl) {
    munmap (buf, st.st_size);
 
    *(data+st.st_size) = 0;
+
    if (rl) *rl = st.st_size;
   } else {
    data = readfd_l (fd, rl);

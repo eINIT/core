@@ -210,7 +210,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/data", devpath);
 
     ssize_t ll = 0;
-    char *firmware_data = readfile_l (targetbuffer, &ll);
+    char *firmware_data = readfile_l (buffer, &ll);
 
     if (firmware_data && ll) {
      if ((f = fopen (targetbuffer, "w"))) {
