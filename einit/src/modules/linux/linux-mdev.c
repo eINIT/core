@@ -293,6 +293,8 @@ int linux_mdev_run() {
    } else {
     fputs ("", he);
    }
+
+   fputs ("\n", he);
    fclose (he);
   }
 

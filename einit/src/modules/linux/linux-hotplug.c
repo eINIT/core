@@ -178,6 +178,8 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
    struct stat st;
    char *targetbuffer = emalloc (tblen);
 
+   notice (2, "need firmware: %s", firmware);
+
    esprintf (buffer, BUFFERSIZE, FIRMWARE_DIR "/%s", firmware);
    if (stat (buffer, &st)) {
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);

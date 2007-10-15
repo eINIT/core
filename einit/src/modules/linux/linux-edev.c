@@ -432,6 +432,8 @@ int linux_edev_run() {
    } else {
     fputs ("", he);
    }
+
+   fputs ("\n", he);
    fclose (he);
   }
 
