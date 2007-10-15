@@ -184,15 +184,15 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
    if (stat (buffer, &st)) {
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
     if ((f = fopen (targetbuffer, "w"))) {
-     fputs ("-1", f);
+     fputs ("-1\n", f);
      fclose (f);
     }
 
-    notice (3, "can't locate firmware: %s\n", buffer);
+    notice (3, "can't locate firmware: %s", buffer);
    } else {
     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
     if ((f = fopen (targetbuffer, "w"))) {
-     fputs ("1", f);
+     fputs ("1\n", f);
      fclose (f);
     }
 
@@ -212,17 +212,19 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
      esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
      if ((f = fopen (targetbuffer, "w"))) {
-      fputs ("0", f);
-      fclose (f);
-     }
-    } else {
-     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
-     if ((f = fopen (targetbuffer, "w"))) {
-      fputs ("-1", f);
+      fputs ("0\n", f);
       fclose (f);
      }
 
-     notice (3, "can't load firmware: %s\n", buffer);
+     notice (3, "firmware loaded okay: %s", buffer);
+    } else {
+     esprintf (targetbuffer, tblen, SYS_DIR "/%s/loading", devpath);
+     if ((f = fopen (targetbuffer, "w"))) {
+      fputs ("-1\n", f);
+      fclose (f);
+     }
+
+     notice (3, "can't load firmware: %s", buffer);
     }
    }
 
