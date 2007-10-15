@@ -171,7 +171,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
    }
   }
 
-  if (firmware) {
+  if (firmware && (ev->type == einit_hotplug_add)) {
    char buffer[BUFFERSIZE];
    int tblen = sizeof(SYS_DIR) + strlen (devpath) + 11;
    FILE *f;
