@@ -228,6 +228,8 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
     }
    }
 
+   notice (3, "done loading firmware: %s", buffer);
+
    free (targetbuffer);
   }
  }
