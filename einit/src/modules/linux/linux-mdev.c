@@ -304,6 +304,8 @@ int linux_mdev_run() {
   chmod ("/dev/zero", 0666);
   chmod ("/dev/console", 0660);
   chmod ("/dev/ptmx", 0777);
+  chmod ("/dev/random", 0777);
+  chmod ("/dev/urandom", 0777);
 
   linux_mdev_load_kernel_extensions();
 
