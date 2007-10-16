@@ -34,8 +34,8 @@
                     symlink="/dev/${DEVPATH_BASE}"
                     devicefile="/dev/${SUBSYSTEM}/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^mem$"
-                    group="mem"
+   <devicefile-rule SUBSYSTEM="^(mem|tty)$"
+                    group="${SUBSYSTEM}"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule DEVPATH_BASE="^(console|mem)$"
