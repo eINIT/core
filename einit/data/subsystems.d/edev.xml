@@ -34,6 +34,10 @@
                     symlink="/dev/${DEVPATH_BASE}"
                     devicefile="/dev/${SUBSYSTEM}/${DEVPATH_BASE}" />
 
+   <devicefile-rule SUBSYSTEM="^mem$"
+                    group="mem"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
    <devicefile-rule DEVPATH_BASE="^(console|mem)$"
                     chmod="0660"
                     devicefile="/dev/${DEVPATH_BASE}" />
