@@ -34,6 +34,14 @@
                     symlink="/dev/${DEVPATH_BASE}"
                     devicefile="/dev/${SUBSYSTEM}/${DEVPATH_BASE}" />
 
+   <devicefile-rule DEVPATH_BASE="^(console)$"
+                    chmod="0660"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
+   <devicefile-rule DEVPATH_BASE="^(zero|null|ptmx|random|urandom)$"
+                    chmod="0666"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
 <!-- the following rules /would/ usually make sense, however due to the
      handling, they're completely obsolete and would thus only increase the
      time it takes to find a rule. -->
