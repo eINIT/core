@@ -42,7 +42,8 @@ Core = element core {
       element auto-create-missing-directories { BooleanAttribute }?
     }? &
     element configuration {
-      element on-line-modifications { attribute save-to { text } }?
+      element on-line-modifications { attribute save-to { text } }? &
+      element multi-node-variables { attribute allow { text } }?
     }? &
     element modules {
       IDAttribute,
@@ -123,6 +124,12 @@ Configuration = element configuration {
     element modules {
       element autoload.d { attribute file { text } }? &
       element * { StringAttribute, BooleanAttribute? }*
+    }*
+  }* &
+
+  element edev {
+    element devicefile-rule {
+      attribute * { text }*
     }*
   }* &
 

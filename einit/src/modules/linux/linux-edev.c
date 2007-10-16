@@ -60,6 +60,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <fcntl.h>
 
+#include <regex.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -93,6 +95,13 @@ module_register(linux_edev_self);
 char linux_edev_enabled = 0;
 
 #define NETLINK_BUFFER 1024*1024*64
+
+struct stree *linux_edev_gids = NULL;
+struct stree *linux_edev_uids = NULL;
+struct stree *linux_edev_compiled_regexes = NULL;
+
+char ***linux_edev_device_rules = NULL;
+pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void linux_edev_load_kernel_extensions() {
  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
@@ -148,6 +157,33 @@ void linux_edev_ping_for_uevents(char *dir, char depth) {
  free (x);
 }
 
+void linux_edev_mkdir_p (char *path) {
+ if (path) {
+  char **path_components = str2set ('/', path);
+  int i = 0;
+  char **cur = NULL;
+
+  for (; path_components[i] && path_components[i+1]; i++) {
+   char *p = NULL;
+
+   cur = (char **)setadd ((void **)cur, path_components[i], SET_TYPE_STRING);
+
+   if (cur) {
+    p = set2str ('/', (const char **)cur);
+
+    if (p) {
+     mkdir (p, 0777);
+     free (p);
+     p = NULL;
+    }
+   }
+  }
+
+  if (cur)
+   free (cur);
+ }
+}
+
 void linux_edev_hotplug_handle (char **v) {
  if (v && v[0]) {
   int i = 0;
@@ -181,10 +217,10 @@ void linux_edev_hotplug_handle (char **v) {
 
   if (args && ((ev.type == einit_hotplug_add) || (ev.type == einit_hotplug_remove))) {
    char *device = NULL;
-   char *subsystem = NULL;
    unsigned char major = 0;
    unsigned char minor = 0;
    char have_id = 0;
+   char blockdevice = 0;
 
    for (i = 0; args[i]; i+=2) {
     if (strmatch (args[i], "MAJOR")) {
@@ -194,75 +230,147 @@ void linux_edev_hotplug_handle (char **v) {
      have_id = 1;
      minor = parse_integer (args[i+1]);
     } else if (strmatch (args[i], "DEVPATH")) {
-     device = args[i+1];
-    } else if (strmatch (args[i], "SUBSYSTEM")) {
-     subsystem = args[i+1];
+     device = estrdup(args[i+1]);
     }
    }
 
    if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
     char *base = strrchr (device, '/');
-    if (base) {
+    if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
+     char *devicefile = NULL;
+     char **symlinks = NULL;
+     char *group = NULL;
+     char *user = NULL;
+     mode_t chmode = 0;
+
      base++;
-#define DEVPREFIX "/dev"
-#define DEVPREFIX_TEMPLATE DEVPREFIX "/%s"
-     int len = strlen (base) + sizeof (DEVPREFIX) + 3;
-     char *devpath = emalloc (len);
 
-     esprintf (devpath, len, DEVPREFIX_TEMPLATE, base);
+     args = (char **)setadd ((void **)args, "DEVPATH_BASE", SET_TYPE_STRING);
+     args = (char **)setadd ((void **)args, base, SET_TYPE_STRING);
 
-     if (subsystem) {
-#define DEVPREFIX_SUBSYS DEVPREFIX "/%s"
-#define DEVPREFIX_SUBSYS_TEMPLATE DEVPREFIX_SUBSYS "/%s"
-      int len_subsys = strlen (base) + strlen (subsystem) + sizeof (DEVPREFIX_SUBSYS) +2;
-      char *devpath_subsys = emalloc (len_subsys);
+     emutex_lock (&linux_edev_device_rules_mutex);
+     if (linux_edev_device_rules) {
+      for (i = 0; linux_edev_device_rules[i]; i++) {
+       int j;
+       char match = 1;
 
-      if (ev.type == einit_hotplug_add) {
-       char *devpath_dir = joinpath (DEVPREFIX, subsystem);
+       for (j = 0; args[j]; j += 2) {
+        int k;
 
-       mkdir (devpath_dir, 0660);
-       free (devpath_dir);
-      }
+        for (k = 0; linux_edev_device_rules[i][k]; k += 2) {
+         if (strmatch (args[j], linux_edev_device_rules[i][k])) { // and we got something to match
+          struct stree *s = streefind (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], tree_find_first);
+          regex_t *reg;
 
-      esprintf (devpath_subsys, len_subsys, DEVPREFIX_SUBSYS_TEMPLATE, subsystem, base);
+          if (s) {
+           reg = s->value;
+          } else {
+           reg = emalloc (sizeof (regex_t));
+           if (regcomp (reg, linux_edev_device_rules[i][k+1], REG_NOSUB | REG_EXTENDED) == 0) {
+            linux_edev_compiled_regexes = streeadd (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], reg, SET_NOALLOC, NULL);
+           } else {
+            free (reg);
+            reg = NULL;
+           }
+          }
 
-      if (ev.type == einit_hotplug_add) {
-       if (strstr (device, "/block/") == device) {
-        mknod (devpath_subsys, S_IFBLK, ldev);
-       } else {
-        mknod (devpath_subsys, S_IFCHR, ldev);
+          if (reg) {
+           if (regexec (reg, args[j+1], 0, NULL, 0) == REG_NOMATCH) {
+            match = 0;
+            break;
+           }
+          }
+         }
+        }
        }
 
-       chmod (devpath_subsys, 0660);
-
-       symlink (devpath_subsys, devpath);
-      } else if (ev.type == einit_hotplug_remove) {
-       unlink (devpath_subsys);
-       unlink (devpath);
-      }
-
-      ev.string = devpath_subsys;
-
-      free (devpath);
-     } else {
-      if (ev.type == einit_hotplug_add) {
-       if (strstr (device, "/block/") == device) {
-        mknod (devpath, S_IFBLK, ldev);
-       } else {
-        mknod (devpath, S_IFCHR, ldev);
+       if (match) {
+//        notice (1, "have match!");
+        for (j = 0; linux_edev_device_rules[i][j] && linux_edev_device_rules[i][j+1]; j += 2) {
+         if (!devicefile && strmatch (linux_edev_device_rules[i][j], "devicefile")) {
+          devicefile = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
+         } else if (strmatch (linux_edev_device_rules[i][j], "symlink")) {
+          char *symlink = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
+          if (symlink) {
+           symlinks = (char **)setadd ((void **)symlinks, symlink, SET_TYPE_STRING);
+           free (symlink);
+          }
+         } else if (!chmode && strmatch (linux_edev_device_rules[i][j], "chmod")) {
+          chmode = parse_integer (linux_edev_device_rules[i][j+1]);
+         } else if (!user && strmatch (linux_edev_device_rules[i][j], "user")) {
+          user = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
+         } else if (!group && strmatch (linux_edev_device_rules[i][j], "group")) {
+          group = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
+         } else if (strmatch (linux_edev_device_rules[i][j], "blockdevice")) {
+          blockdevice = parse_boolean (linux_edev_device_rules[i][j+1]);
+         }
+        }
        }
+      }
+     }
+     emutex_unlock (&linux_edev_device_rules_mutex);
 
-       chmod (devpath, 0660);
-      } else if (ev.type == einit_hotplug_remove) {
-       unlink (devpath);
+     if (devicefile) {
+      ev.string = devicefile;
+      linux_edev_mkdir_p (devicefile);
+      struct stree *ts = NULL;
+      uid_t uid = 0;
+      uid_t gid = 0;
+      struct stat st;
+
+      if (stat (devicefile, &st) && (mknod (devicefile, blockdevice ? S_IFBLK : S_IFCHR, ldev) != 0)) {
+       linux_edev_mkdir_p (devicefile);
+
+       if (mknod (devicefile, blockdevice ? S_IFBLK : S_IFCHR, ldev) != 0) {
+        goto no_devicefile;
+       }
       }
 
-      ev.string = devpath;
+      chmod (devicefile, chmode);
+
+      if (user) {
+       if ((ts = streefind (linux_edev_uids, user, tree_find_first))) {
+        uintptr_t xn = ts->value;
+        uid = (uid_t)xn;
+       } else {
+        lookupuidgid (&uid, NULL, user, NULL);
+        uintptr_t xn = uid;
+        linux_edev_uids = streeadd (linux_edev_uids, user, (void *)xn, SET_NOALLOC, NULL);
+       }
+      }
+
+      if (group) {
+       if ((ts = streefind (linux_edev_gids, group, tree_find_first))) {
+        uintptr_t xn = ts->value;
+        gid = (uid_t)xn;
+       } else {
+        lookupuidgid (NULL, &gid, NULL, group);
+        uintptr_t xn = gid;
+        linux_edev_gids = streeadd (linux_edev_gids, user, (void *)xn, SET_NOALLOC, NULL);
+       }
+      }
+
+      if (user || group) {
+       chown (devicefile, uid, gid);
+      }
+
+      if (symlinks) {
+       for (i = 0; symlinks[i]; i++) {
+        if (symlink (devicefile, symlinks[i]) != 0) {
+         linux_edev_mkdir_p (symlinks[i]);
+         symlink (devicefile, symlinks[i]);
+        }
+       }
+      }
      }
     }
    }
+
+   if (device) free (device);
   }
+
+  no_devicefile:
 
   ev.stringset = args;
 
@@ -399,8 +507,12 @@ void *linux_edev_hotplug(void *ignored) {
  return linux_edev_hotplug (NULL);
 }
 
+void linux_edev_retrieve_rules();
+
 int linux_edev_run() {
  char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+
+ linux_edev_retrieve_rules();
 
  if (!linux_edev_enabled && strmatch (dm, "edev")) {
   pthread_t th;
@@ -478,11 +590,43 @@ void linux_edev_boot_event_handler (struct einit_event *ev) {
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
    }
-
-   /* some code */
    break;
 
   default: break;
+ }
+}
+
+void linux_edev_retrieve_rules () {
+ char ***new_rules = NULL;
+ struct cfgnode *node = NULL;
+
+ while ((node = cfg_findnode ("configuration-edev-devicefile-rule", 0, node))) {
+  if (node->arbattrs) {
+   char **e = (char **)setdup ((const void **)node->arbattrs, SET_TYPE_STRING);
+
+   new_rules = (char ***)setadd ((void **)new_rules, (void *)e, SET_NOALLOC);
+  }
+ }
+
+ emutex_lock (&linux_edev_device_rules_mutex);
+ if (linux_edev_device_rules) {
+  int i = 0;
+  for (; linux_edev_device_rules[i]; i++) {
+   free (linux_edev_device_rules[i]);
+  }
+  free (linux_edev_device_rules);
+ }
+ linux_edev_device_rules = new_rules;
+ emutex_unlock (&linux_edev_device_rules_mutex);
+}
+
+void linux_edev_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_configuration_update:
+   linux_edev_retrieve_rules();
+   break;
+
+   default: break;
  }
 }
 
@@ -491,6 +635,7 @@ int linux_edev_cleanup (struct lmodule *pa) {
 
  event_ignore (einit_event_subsystem_power, linux_edev_power_event_handler);
  event_ignore (einit_event_subsystem_boot, linux_edev_boot_event_handler);
+ event_ignore (einit_event_subsystem_core, linux_edev_core_event_handler);
 
  return 0;
 }
@@ -501,6 +646,7 @@ int linux_edev_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_edev_cleanup;
 
+ event_listen (einit_event_subsystem_core, linux_edev_core_event_handler);
  event_listen (einit_event_subsystem_boot, linux_edev_boot_event_handler);
  event_listen (einit_event_subsystem_power, linux_edev_power_event_handler);
 

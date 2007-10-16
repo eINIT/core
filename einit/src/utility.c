@@ -438,10 +438,13 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
  if (!_getgr_r_size_max) _getgr_r_size_max = sysconf (_SC_GETGR_R_SIZE_MAX);
  if (!_getpw_r_size_max) _getpw_r_size_max = sysconf (_SC_GETPW_R_SIZE_MAX);
 
- if (user) {
+ if (user && uid) {
   struct passwd pwd, *pwdptr;
   char *buffer = emalloc (_getpw_r_size_max);
   errno = 0;
+
+  memset (buffer, 0, _getpw_r_size_max);
+
   while (getpwnam_r(user, &pwd, buffer, _getpw_r_size_max, &pwdptr)) {
    switch (errno) {
     case EIO:
@@ -459,17 +462,23 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
    }
   }
 
-  *uid = pwd.pw_uid;
-  if (!group) *gid = pwd.pw_gid;
+  if (pwd.pw_name && strmatch (pwd.pw_name, user)) {
+   *uid = pwd.pw_uid;
+
+   if (!group && gid) *gid = pwd.pw_gid;
+  }
   free (buffer);
  }
 
  abortusersearch:
 
- if (group) {
+ if (group && gid) {
   struct group grp, *grpptr;
   char *buffer = emalloc (_getgr_r_size_max);
   errno = 0;
+
+  memset (buffer, 0, _getgr_r_size_max);
+
   while (getgrnam_r(group, &grp, buffer, _getgr_r_size_max, &grpptr)) {
    switch (errno) {
     case EIO:
@@ -485,7 +494,8 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
    }
   }
 
-  *gid = grp.gr_gid;
+  if (grp.gr_name && strmatch (grp.gr_name, group))
+   *gid = grp.gr_gid;
   free (buffer);
  }
 
@@ -531,7 +541,7 @@ char *apply_variables (const char *ostring, const char **env) {
 
  for (spos = 0, rpos = 0; string[spos]; spos++) {
   if ((string[spos] == '$') && (string[spos+1] == '{')) {
-   for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
+   for (rspos -= (rspos > 1) ? 2 : 0; string[rspos] && (rspos < spos); rspos++) {
     ret[rpos] = string[rspos];
     rpos++;
    }
