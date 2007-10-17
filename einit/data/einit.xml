@@ -92,7 +92,7 @@
    <exec-envfile-base s="/etc/einit/conf.d" />
    <proc-path s="/proc" />
    <log b="true" />
-
+   <preload s="true" />
    <preload binaries="agetty:getty:sh:udevd:dhcpcd:pump:modprobe:rmmod" />
 
    <kexec-to-reboot b="no" />

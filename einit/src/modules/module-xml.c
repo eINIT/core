@@ -619,18 +619,22 @@ void module_xml_v2_preload() {
  struct cfgnode *node;
 
  while (s) {
-  if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
-   char **files = str2set (':', node->svalue);
+  char *dm;
+  if ((dm = cfg_getstring("configuration-system-preload", NULL)) && strmatch (dm, "true")) {
+ 
+   if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
+    char **files = str2set (':', node->svalue);
 
-   module_xml_v2_do_preload(files);
+    module_xml_v2_do_preload(files);
+   }
+
+   if ((node = module_xml_v2_module_get_attributive_node (s->key, "preload-binaries")) && node->svalue) {
+    char **files = str2set (':', node->svalue);
+
+    module_xml_v2_do_preload(files);
+   }
   }
-
-  if ((node = module_xml_v2_module_get_attributive_node (s->key, "preload-binaries")) && node->svalue) {
-   char **files = str2set (':', node->svalue);
-
-   module_xml_v2_do_preload(files);
-  }
-
+  
   s = streenext (s);
  }
 }
