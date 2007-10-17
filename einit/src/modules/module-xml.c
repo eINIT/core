@@ -585,6 +585,7 @@ void module_xml_v2_power_event_handler (struct einit_event *ev) {
  }
 }
 
+/* 
 void module_xml_v2_do_preload(char **files) {
  if (files) {
   int i = 0;
@@ -638,7 +639,7 @@ void module_xml_v2_preload() {
   s = streenext (s);
  }
 }
-
+*/
 void module_xml_v2_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
@@ -647,7 +648,7 @@ void module_xml_v2_boot_event_handler (struct einit_event *ev) {
 
     switch (p) {
      case 0:
-      module_xml_v2_preload();
+//      module_xml_v2_preload();
       _exit (EXIT_SUCCESS);
 
      case -1:
