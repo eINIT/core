@@ -46,6 +46,10 @@
                     chmod="0666"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
+   <devicefile-rule SUBSYSTEM="^(snd|sound)$"
+                    group="audio"
+                    devicefile="/dev/snd/${DEVPATH_BASE}" />
+
 <!-- the following rules /would/ usually make sense, however due to the
      handling, they're completely obsolete and would thus only increase the
      time it takes to find a rule. -->
