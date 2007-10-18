@@ -85,7 +85,7 @@ int linux_kernel_modules_load (char **modules) {
  char *modprobe_command = cfg_getstring ("configuration-command-modprobe/with-env", 0);
  uint32_t i = 0;
 
- for (; modules[i]; i++) {
+ for (; modules[i]; i++) if (strcmp ("", modules[i])) {
   const char *tpldata[] = { "module", modules[i], NULL };
   char *applied = apply_variables (modprobe_command, tpldata);
 
