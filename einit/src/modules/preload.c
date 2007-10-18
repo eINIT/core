@@ -131,20 +131,24 @@ void einit_preload_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
    {
-    pid_t p = fork();
+    struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
 
-    switch (p) {
-     case 0:
-      einit_preload_run();
-      _exit (EXIT_SUCCESS);
+    if (node && node->flag) {
+     pid_t p = fork();
 
-     case -1:
-      notice (3, "fork failed, cannot preload");
-      break;
+     switch (p) {
+      case 0:
+       einit_preload_run();
+       _exit (EXIT_SUCCESS);
 
-     default:
-      sched_watch_pid(p);
-      break;
+      case -1:
+       notice (3, "fork failed, cannot preload");
+       break;
+
+      default:
+       sched_watch_pid(p);
+       break;
+     }
     }
    }
    break;

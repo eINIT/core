@@ -93,6 +93,7 @@ struct stree *module_xml_v2_modules = NULL;
 struct stree *module_xml_v2_daemons = NULL;
 
 int module_xml_v2_scanmodules (struct lmodule *);
+void module_xml_v2_preload_fork();
 
 struct cfgnode *module_xml_v2_module_get_node (char *name, char *action) {
  if (name && action) {
@@ -480,6 +481,7 @@ int module_xml_v2_module_configure (struct lmodule *pa) {
 
 int module_xml_v2_scanmodules (struct lmodule *modchain) {
  struct stree *modules_to_update = module_xml_v2_modules;
+ int new_modules = 0;
 
  while (modules_to_update) {
   mod_update (modules_to_update->value);
@@ -501,6 +503,8 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
     if ((!module_xml_v2_modules || !streefind (module_xml_v2_modules, cur->key + MODULES_PREFIX_LENGTH, tree_find_first)) && node->arbattrs) {
      int i = 0;
      char *name = NULL, *requires = NULL, *provides = NULL, *after = NULL, *before = NULL;
+
+     new_modules++;
 
      for (; node->arbattrs[i]; i+=2) {
       if (strmatch (node->arbattrs[i], "name")) {
@@ -561,6 +565,10 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
   streefree (module_nodes);
  }
 
+ if (new_modules) {
+  module_xml_v2_preload_fork();
+ }
+
  return 1;
 }
 
@@ -585,7 +593,6 @@ void module_xml_v2_power_event_handler (struct einit_event *ev) {
  }
 }
 
-/* 
 void module_xml_v2_do_preload(char **files) {
  if (files) {
   int i = 0;
@@ -620,46 +627,50 @@ void module_xml_v2_preload() {
  struct cfgnode *node;
 
  while (s) {
-  char *dm;
-  if ((dm = cfg_getstring("configuration-system-preload", NULL)) && strmatch (dm, "true")) {
- 
-   if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
-    char **files = str2set (':', node->svalue);
+  if ((node = module_xml_v2_module_get_attributive_node (s->key, "need-files")) && node->svalue) {
+   char **files = str2set (':', node->svalue);
 
-    module_xml_v2_do_preload(files);
-   }
+   module_xml_v2_do_preload(files);
+  }
 
-   if ((node = module_xml_v2_module_get_attributive_node (s->key, "preload-binaries")) && node->svalue) {
-    char **files = str2set (':', node->svalue);
+  if ((node = module_xml_v2_module_get_attributive_node (s->key, "preload-binaries")) && node->svalue) {
+   char **files = str2set (':', node->svalue);
 
-    module_xml_v2_do_preload(files);
-   }
+   module_xml_v2_do_preload(files);
   }
   
   s = streenext (s);
  }
 }
-*/
+
+void module_xml_v2_preload_fork() {
+ struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
+
+ if (node && node->flag) {
+  notice (3, "pre-loading binaries from XML modules");
+  pid_t p = fork();
+
+  switch (p) {
+   case 0:
+    module_xml_v2_preload();
+    _exit (EXIT_SUCCESS);
+
+   case -1:
+    notice (3, "fork failed, cannot preload");
+    break;
+
+   default:
+    sched_watch_pid(p);
+    break;
+  }
+ }
+}
+
+
 void module_xml_v2_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
-   {
-    pid_t p = fork();
-
-    switch (p) {
-     case 0:
-//      module_xml_v2_preload();
-      _exit (EXIT_SUCCESS);
-
-     case -1:
-      notice (3, "fork failed, cannot preload");
-      break;
-
-     default:
-      sched_watch_pid(p);
-      break;
-    }
-   }
+   module_xml_v2_preload_fork ();
    break;
   default: break;
  }
