@@ -899,7 +899,7 @@ int einit_mount_critical_enable (void *ign, struct einit_event *status) {
    while (s) {
     struct lmodule *lm = s->value;
 
-    if (lm && ((lm->status & status_working) || (lm->status == status_idle))) {
+    if (lm && (lm->status & status_working)) {
      repeat = 1;
      break;
     }
