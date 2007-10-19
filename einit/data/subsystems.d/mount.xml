@@ -10,7 +10,9 @@
     <critical s="/usr:/var" />
    </mountpoints>
    <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
-   <fsck-command s="pexec-options no-pipe; /sbin/fsck -a -T -t %1$s %2$s" />
+   <fsck-command id="generic" s="pexec-options no-pipe; /sbin/fsck -a -T -t ${fs} ${device}" />
+   <fsck-command id="jfs" s="pexec-options no-pipe; /sbin/fsck.jfs ${device}" />
+   <fsck-command id="reiser4" s="pexec-options no-pipe; /sbin/fsck.${fs} -a ${device}" />
    <block-devices>
     <dev-constraints path="/dev/"
                      pattern-allow="^([shm]d[a-z]?[0-9]*)" pattern-disallow="^\.udev" />

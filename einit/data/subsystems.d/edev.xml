@@ -57,6 +57,10 @@
    <devicefile-rule SUBSYSTEM="^input$"
                     chmod="0640" />
 
+   <devicefile-rule SUBSYSTEM="^block$"
+                    group="disk"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
 <!-- the following rules /would/ usually make sense, however due to the
      handling, they're completely obsolete and would thus only increase the
      time it takes to find a rule. -->

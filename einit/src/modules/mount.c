@@ -142,7 +142,6 @@ struct stree *mounter_dd_by_devicefile = NULL;
 
 char **mount_dont_umount = NULL;
 char **mount_critical = NULL;
-char *mount_fsck_template = NULL;
 char *mount_mtab_file = NULL;
 enum mount_options mount_options;
 
@@ -1508,18 +1507,39 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
   return status_ok;
  }
 
+ struct cfgnode *node = NULL;
+ char *mount_fsck_template = NULL;
+
+ while ((node = cfg_findnode ("configuration-storage-fsck-command", 0, NULL))) {
+  if (fs && node->idattr && strmatch (node->idattr, fs)) {
+   mount_fsck_template = node->svalue;
+  } else if (!mount_fsck_template && node->idattr && strmatch (node->idattr, "generic")) {
+   mount_fsck_template = node->svalue;
+  }
+ }
+
  if (mount_fsck_template) {
-  char tmp[BUFFERSIZE];
+  char *command;
+
   status->string = "filesystem might be dirty; running fsck";
   status_update (status);
 
-  esprintf (tmp, BUFFERSIZE, mount_fsck_template, fs, device);
-  if (coremode != einit_mode_sandbox) {
-   pexec_v1 (tmp, NULL, NULL, status);
-  } else {
-   status->string = tmp;
-   status_update (status);
+  char **d = (char **)setadd ((void **)setadd ((void **)(fs ? setadd (setadd ((void **)NULL, "fs", SET_TYPE_STRING), fs, SET_TYPE_STRING) : NULL), "device", SET_TYPE_STRING), device, SET_TYPE_STRING);
+
+  command = apply_variables(mount_fsck_template, (const char **)d);
+  if (command) {
+
+   if (coremode != einit_mode_sandbox) {
+    pexec_v1 (command, NULL, NULL, status);
+   } else {
+    status->string = command;
+    status_update (status);
+   }
+
+   free (command);
   }
+
+  free (d);
  } else {
   status->string = "WARNING: filesystem dirty, but no fsck command known";
   status_update (status);
@@ -1764,9 +1784,6 @@ void einit_mount_update_configuration () {
 
  if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue)
   mount_dont_umount = str2set(':', node->svalue);
-
- if ((node = cfg_findnode ("configuration-storage-fsck-command",0,NULL)) && node->svalue)
-  mount_fsck_template = estrdup(node->svalue);
 
  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
   mount_options |= mount_maintain_mtab;
