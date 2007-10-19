@@ -12,6 +12,9 @@ ipc-dbus.so: ipc-dbus.o
 module-logic-v3.so: module-logic-v3.o
 	${LLD} module-logic-v3.o ${LIBRT} -o module-logic-v3.so
 
+mount.so: mount.o
+	${LLD} mount.o ${LIBRT} -o mount.so
+
 module-xml.so: module-xml.o
 	${LLD} module-xml.o ${LDL} -o module-xml.so
 
