@@ -249,6 +249,51 @@ void linux_edev_hotplug_handle (char **v) {
      args = (char **)setadd ((void **)args, "DEVPATH_BASE", SET_TYPE_STRING);
      args = (char **)setadd ((void **)args, base, SET_TYPE_STRING);
 
+     char *tmpsysdev = joinpath("/sys", device);
+
+     if (tmpsysdev) {
+      char *tn;
+      char *data;
+
+      tn = joinpath(tmpsysdev, "vendor");
+      if (tn) {
+       if ((data = readfile (tn))) {
+        args = (char **)setadd ((void **)args, "VENDOR", SET_TYPE_STRING);
+        args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
+
+        free (data);
+       }
+
+       free (tn);
+      }
+
+      tn = joinpath(tmpsysdev, "device");
+      if (tn) {
+       if ((data = readfile (tn))) {
+        args = (char **)setadd ((void **)args, "DEVICE", SET_TYPE_STRING);
+        args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
+
+        free (data);
+       }
+
+       free (tn);
+      }
+
+      tn = joinpath(tmpsysdev, "class");
+      if (tn) {
+       if ((data = readfile (tn))) {
+        args = (char **)setadd ((void **)args, "CLASS", SET_TYPE_STRING);
+        args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
+
+        free (data);
+       }
+
+       free (tn);
+      }
+
+      free (tmpsysdev);
+     }
+
      emutex_lock (&linux_edev_device_rules_mutex);
      if (linux_edev_device_rules) {
       for (i = 0; linux_edev_device_rules[i]; i++) {
