@@ -578,15 +578,9 @@ void module_xml_v2_power_event_handler (struct einit_event *ev) {
 
   while (modules) {
    if (module_xml_v2_module_have_action (modules->key, "on-shutdown")) {
-#if 0
-    struct einit_event status = evstaticinit (einit_feedback_module_status);
-	status.integer = ((struct lmodule *)(modules->value))->fbseq+1;
-
-    module_xml_v2_module_custom_action (modules->key, "on-shutdown", &status);
-
-    evstaticdestroy (status);
-#endif
-    mod (einit_module_custom, modules->value, "on-shutdown");
+    struct lmodule *mo = modules->value;
+    if (mo && (mo->status & status_enabled))
+     mod (einit_module_custom, mo, "on-shutdown");
    }
    modules = streenext (modules);
   }
@@ -638,7 +632,7 @@ void module_xml_v2_preload() {
 
    module_xml_v2_do_preload(files);
   }
-  
+
   s = streenext (s);
  }
 }
