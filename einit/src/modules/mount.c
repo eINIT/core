@@ -1873,7 +1873,7 @@ void einit_mount_boot_event_handler (struct einit_event *ev) {
    emount_root ();
 
    if (mount_autostart) {
-    struct einit_event eml = evstaticinit(einit_core_change_service_status);
+    struct einit_event eml = evstaticinit(einit_core_manipulate_services);
     eml.stringset = mount_autostart;
     eml.task = einit_module_enable;
 
