@@ -2,8 +2,7 @@
  <v-microcode-ctl
   name="Microcode-ctl (Intel processor microcode update utility)"
   provides="microcode-ctl"
-  requires="mount-local"
-  after="^(kern-|modules)">
+  after="^fs-.*">
 
   <execute id="enable" code="/usr/sbin/microcode_ctl -qu -d ${configuration_services_microcode_ctl_dev}" />
   <execute id="disable" code="true" />

@@ -2,7 +2,7 @@
  <v-keyboard
   name="Console (Keyboard Layout)"
   provides="keyboard"
-  requires="mount-local">
+  after="^fs-.*">
 
   <execute id="enable" code="if [[ -f /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ]] ; then
           	echo 1 > /proc/sys/dev/mac_hid/keyboard_sends_linux_keycodes ;

@@ -1268,6 +1268,22 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     }
    }
    goto done;
+
+  case einit_core_manipulate_services:
+   if (!ev->stringset) goto done;
+   else {
+    struct mloadplan *plan;
+
+    if ((plan = mod_plan (NULL, ev->stringset, ev->task, NULL))) {
+     pthread_t th;
+
+     mod_plan_commit (plan);
+
+     ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+    }
+   }
+   goto done;
+
   case einit_core_change_service_status:
 //   if (!ev->set || !ev->set[0] || !ev->set[0][0] || !ev->set[1] || !ev->set[1][0]) goto done;
    if (!ev->set || !ev->set[0] || !ev->set[1]) goto done;

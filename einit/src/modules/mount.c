@@ -143,6 +143,7 @@ struct stree *mounter_dd_by_devicefile = NULL;
 char **mount_dont_umount = NULL;
 char **mount_critical = NULL;
 char *mount_mtab_file = NULL;
+
 enum mount_options mount_options;
 
 extern char shutting_down;
@@ -158,6 +159,9 @@ struct stree *mount_filesystems = NULL;
 char *generate_legacy_mtab ();
 char mount_fastboot = 0;
 char *mount_crash_data = NULL;
+
+char **mount_autostart = NULL;
+struct stree *mount_critical_filesystems = NULL;
 
 /* macro definitions */
 #define update_real_mtab() {\
@@ -187,6 +191,8 @@ struct {
 
 pthread_mutex_t mount_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct lmodule *mount_critical_module = NULL;
+
 void mount_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
  emutex_lock (&mount_garbage_mutex);
@@ -208,7 +214,6 @@ void mount_garbage_free () {
  }
  emutex_unlock (&mount_garbage_mutex);
 }
-
 
 char *generate_legacy_mtab () {
  char *ret = NULL;
@@ -868,81 +873,104 @@ int einit_mountpoint_configure (struct lmodule *tm) {
 
  tm->source = estrdup(tm->module->rid);
 
+ if (tm->module && tm->module->si.provides && tm->module->si.provides[0]) {
+  struct stree *st = streefind (mount_critical_filesystems, tm->module->si.provides[0], tree_find_first);
+
+  if (st) {
+   st->value = tm;
+  }
+ }
+
  return 0;
 }
 
-void mount_add_update_group (char *groupname, char **elements, char *seq) {
- struct cfgnode newnode;
- char tmp[BUFFERSIZE];
+int einit_mount_critical_enable (void *ign, struct einit_event *status) {
+ if (mount_critical_filesystems) {
+  char repeat = 0;
 
- esprintf (tmp, BUFFERSIZE, "services-alias-%s", groupname);
+  do {
+   if (repeat) {
+    sleep (1);
+    repeat = 0;
+   }
 
- struct cfgnode *onode = cfg_getnode (tmp, NULL);
- if (onode) {
-  char *jele = NULL;
-  if (!onode->source || !strmatch (onode->source, self->rid)) {
-   uint32_t i = 0;
+   struct stree *s = mount_critical_filesystems;
 
-   for (; onode->arbattrs[i]; i+=2) {
-    if (strmatch (onode->arbattrs[i], "group")) {
-     char **nele = str2set (':', onode->arbattrs[i+1]);
+   while (s) {
+    struct lmodule *lm = s->value;
 
-     nele = (char **)setcombine_nc ((void **)nele, (const void **)elements, SET_TYPE_STRING);
-
-     jele = set2str (':', (const char **)nele);
-
+    if (lm && ((lm->status & status_working) || (lm->status == status_idle))) {
+     repeat = 1;
      break;
     }
+
+    s = streenext (s);
    }
-  }
-
-  if (!jele) {
-   jele = set2str (':', (const char **)elements);
-  }
-
-  char **narb = NULL;
-
-  narb = (char **)setadd ((void **)narb, (void *)"group", SET_TYPE_STRING);
-  narb = (char **)setadd ((void **)narb, (void *)jele, SET_TYPE_STRING);
-  narb = (char **)setadd ((void **)narb, (void *)"seq", SET_TYPE_STRING);
-  narb = (char **)setadd ((void **)narb, (void *)seq, SET_TYPE_STRING);
-
-  char **oarb = onode->arbattrs;
-
-  onode->arbattrs = narb;
-
-  if (oarb) {
-   free (oarb);
-  }
-
-  free (jele);
- } else {
-  char *jele = set2str (':', (const char **)elements);
-  memset (&newnode, 0, sizeof(struct cfgnode));
-
-  newnode.id = estrdup (tmp);
-  newnode.source = self->rid;
-  newnode.type = einit_node_regular;
-
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"group", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)jele, SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"seq", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)seq, SET_TYPE_STRING);
-
-  cfg_addnode (&newnode);
-  free (jele);
+  } while (repeat);
  }
+
+ return status_ok;
+}
+
+int einit_mount_critical_disable (void *ign, struct einit_event *status) {
+ if (mount_critical_filesystems) {
+  char repeat = 0;
+
+  do {
+   if (repeat) {
+    sleep (1);
+    repeat = 0;
+   }
+
+   struct stree *s = mount_critical_filesystems;
+
+   while (s) {
+    struct lmodule *lm = s->value;
+
+    if (lm && (lm->status & status_working)) {
+     repeat = 1;
+     break;
+    }
+
+    s = streenext (s);
+   }
+  } while (repeat);
+ }
+
+ return status_ok;
+}
+
+int einit_mount_critical_configure (struct lmodule *t) {
+ t->enable = einit_mount_critical_enable;
+ t->disable = einit_mount_critical_disable;
+
+ return 1;
 }
 
 int einit_mount_scanmodules (struct lmodule *ml) {
  struct stree *s = NULL;
- char **scritical = NULL, **slocal = NULL, **sremote = NULL;
 
  if (!mount_filesystems) return 0;
 
- scritical = (char **)setadd ((void **)NULL, (void *)"fs-root", SET_TYPE_STRING);
- slocal = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
- sremote = (char **)setadd ((void **)NULL, (void *)"mount-critical", SET_TYPE_STRING);
+ if (mount_critical_module) {
+  mod_update (mount_critical_module);
+ } else {
+  struct smodule *newmodule = emalloc (sizeof (struct smodule));
+  memset (newmodule, 0, sizeof (struct smodule));
+
+  newmodule->rid = estrdup("einit-mount-critical");
+  newmodule->name = estrdup("Mount (Critical Filesystems)");
+  newmodule->eiversion = EINIT_VERSION;
+  newmodule->eibuild = BUILDNUMBER;
+  newmodule->version = 1;
+  newmodule->mode = einit_module_generic;
+
+  newmodule->configure = einit_mount_critical_configure;
+
+  newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, "mount-critical", SET_TYPE_STRING);
+
+  mount_critical_module = mod_add (NULL, newmodule);
+ }
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
@@ -1055,28 +1083,12 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
-    if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING)) {
-     scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
-    } else {
-     char ad = 0;
+    if (!mount_autostart || !inset ((const void **)mount_autostart, servicename, SET_TYPE_STRING)) {
+     mount_autostart = (char **)setadd ((void **)mount_autostart, (void *)servicename, SET_TYPE_STRING);
+    }
 
-     if (inset ((const void **)mp->options, "critical", SET_TYPE_STRING)) {
-      scritical = (char **)setadd ((void **)scritical, (void *)servicename, SET_TYPE_STRING);
-      ad = 1;
-     }
-
-     if (!ad) {
-      enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
-
-      if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
-       sremote = (char **)setadd ((void **)sremote, (void *)servicename, SET_TYPE_STRING);
-       ad = 1;
-      }
-     }
-
-     if (!ad) {
-      slocal = (char **)setadd ((void **)slocal, (void *)servicename, SET_TYPE_STRING);
-     }
+    if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING) || inset ((const void **)mp->options, "critical", SET_TYPE_STRING)) {
+     mount_critical_filesystems = streeadd (mount_critical_filesystems, servicename, NULL, SET_NOALLOC, NULL);
     }
    }
   }
@@ -1129,19 +1141,6 @@ int einit_mount_scanmodules (struct lmodule *ml) {
  }
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
-
- if (scritical) {
-  mount_add_update_group ("mount-critical", scritical, "most");
-  free (scritical);
- }
- if (slocal) {
-  mount_add_update_group ("mount-local", slocal, "most");
-  free (slocal);
- }
- if (sremote) {
-  mount_add_update_group ("mount-remote", sremote, "most");
-  free (sremote);
- }
 
  return 0;
 }
@@ -1872,6 +1871,16 @@ void einit_mount_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_devices_available:
    emount_root ();
+
+   if (mount_autostart) {
+    struct einit_event eml = evstaticinit(einit_core_change_service_status);
+    eml.stringset = mount_autostart;
+    eml.task = einit_module_enable;
+
+    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+    evstaticdestroy(eml);
+   }
+
    {
     struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);

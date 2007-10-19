@@ -2,7 +2,7 @@
  <v-lighttpd
   name="HTTPd (Lighty)"
   provides="httpd"
-  requires="mount-local">
+  after="^fs-.*">
 
   <execute id="daemon" code="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf" />
 

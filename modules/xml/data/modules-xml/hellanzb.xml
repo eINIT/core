@@ -2,7 +2,8 @@
  <v-hellanzb
   name="NZB downloader and post processor (hellanzb)"
   provides="hellanzb"
-  requires="network:mount-local">
+  requires="network"
+  after="^fs-.*">
 
   <execute id="daemon" code="hellanzb.py" />
 

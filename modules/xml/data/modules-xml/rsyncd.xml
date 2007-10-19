@@ -2,7 +2,7 @@
  <v-rsyncd
   name="Rsync Daemon (rsyncd)"
   provides="rsyncd"
-  requires="mount-local">
+  after="^fs-.*">
 
   <execute id="daemon" code="/usr/bin/rsync --daemon --no-detach ${configuration_services_rsyncd_options}" />
 

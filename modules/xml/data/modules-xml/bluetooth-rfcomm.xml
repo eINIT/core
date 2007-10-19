@@ -2,8 +2,8 @@
  <v-bluez-rfcomm
   name="Bluetooth (RFCOMM)"
   provides="bluetooth-rfcomm"
-  requires="mount-local:bluetooth-hci"
-  after="^(kern-|modules)">
+  requires="bluetooth-hci"
+  after="^fs-.*">
 
   <execute id="enable" code="/usr/bin/rfcomm -f ${configuration_services_bluetooth_rfcomm_file} bind all" />
   <execute id="disable" code="/usr/bin/rfcomm release all" />

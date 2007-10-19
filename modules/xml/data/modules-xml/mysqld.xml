@@ -2,7 +2,7 @@
  <v-mysqld
   name="Database (MySQL)"
   provides="mysqld"
-  requires="mount-local">
+  after="^fs-.*">
 
   <execute id="daemon" code="/usr/sbin/mysqld --defaults-file=${configuration_services_mysqld_defaults}" />
 

@@ -2,7 +2,7 @@
  <v-mpd
   name="Music Player Daemon"
   provides="mpd"
-  requires="mount-local">
+  after="^fs-.*">
 
   <execute id="daemon" code="pexec-options dont-close-stdin; /usr/bin/mpd --no-create-db" />
 

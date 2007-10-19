@@ -2,7 +2,7 @@
  <v-vixie-cron
   name="Cron (Vixie)"
   provides="cron"
-  requires="mount-local">
+  after="^fs-.*">
 
   <execute id="daemon" code="/usr/sbin/cron -n ${configuration_services_vixie_cron_options}" />
 

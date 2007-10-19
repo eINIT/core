@@ -110,6 +110,7 @@ enum einit_event_code {
 /*!< update the modules */
  einit_core_update_module           = einit_event_subsystem_core     | 0x105,
 /*!< update this module (in ->para) */
+ einit_core_manipulate_services     = einit_event_subsystem_core     | 0x106,
 
  einit_core_mode_switching          = einit_event_subsystem_core     | 0x201,
  einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,

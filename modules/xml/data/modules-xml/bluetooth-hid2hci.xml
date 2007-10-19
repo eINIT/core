@@ -2,8 +2,7 @@
  <v-bluez-hid2hci
   name="Bluetooth (HID2HCI)"
   provides="bluetooth-hid2hci"
-  requires="mount-local"
-  after="^(kern-|modules)">
+  after="^fs-.*">
 
   <execute id="enable" code="/usr/sbin/hid2hci -0 -q" />
   <execute id="disable" code="true" />
