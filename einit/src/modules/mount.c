@@ -132,7 +132,7 @@ void einit_mount_update_configuration ();
 unsigned char read_filesystem_flags_from_configuration (void *);
 void mount_add_filesystem (char *, char *);
 char *options_string_to_mountflags (char **, unsigned long *, char *);
-enum filesystem_capability mount_get_filesystem_options (char *);
+uintptr_t mount_get_filesystem_options (char *);
 char **mount_generate_mount_function_suffixes (char *);
 int mount_fsck (char *, char *, struct einit_event *);
 
@@ -286,14 +286,14 @@ unsigned char read_filesystem_flags_from_configuration (void *na) {
  while ((node = cfg_findnode ("information-filesystem-type", 0, node))) {
   if (node->arbattrs) {
    id = NULL;
-   flags = 0;
+   flags = NULL;
    for (i = 0; node->arbattrs[i]; i+=2) {
     if (strmatch (node->arbattrs[i], "id"))
      id = node->arbattrs[i+1];
     else if (strmatch (node->arbattrs[i], "flags"))
      flags = node->arbattrs[i+1];
    }
-   mount_add_filesystem (id, flags);
+   if (id && flags) mount_add_filesystem (id, flags);
   }
  }
  return 0;
@@ -310,12 +310,18 @@ void mount_add_filesystem (char *name, char *options) {
     flags |= filesystem_capability_volatile;
    else if (strmatch (t[i], "network"))
     flags |= filesystem_capability_network;
+   else if (strmatch (t[i], "nofsck"))
+    flags |= filesystem_capability_no_fsck;
   }
   free (t);
  }
 
+// notice (1, "adding/updating filesystem: %s (0x%x)", name, (unsigned int)flags);
+
  emutex_lock (&mount_fs_mutex);
- if (mount_filesystems && streefind (mount_filesystems, name, tree_find_first)) {
+ struct stree *st = NULL;
+ if (mount_filesystems && (st = streefind (mount_filesystems, name, tree_find_first))) {
+  st->value = (void *)flags;
   emutex_unlock (&mount_fs_mutex);
   return;
  }
@@ -324,7 +330,7 @@ void mount_add_filesystem (char *name, char *options) {
  emutex_unlock (&mount_fs_mutex);
 }
 
-enum filesystem_capability mount_get_filesystem_options (char *name) {
+uintptr_t mount_get_filesystem_options (char *name) {
  enum filesystem_capability ret = filesystem_capability_rw;
  struct stree *t;
 
@@ -1498,7 +1504,7 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
 }
 
 int mount_fsck (char *fs, char *device, struct einit_event *status) {
- if (mount_fastboot) {
+ if (mount_fastboot || (fs && (mount_get_filesystem_options(fs) & filesystem_capability_no_fsck))) {
   return status_ok;
  }
 

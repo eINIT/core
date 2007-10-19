@@ -25,19 +25,20 @@
    <!-- all-purpose filesystems -->
    <type id="ext2" flags="rw" />
    <type id="ext3" flags="rw" />
+   <type id="ext4" flags="rw" />
    <type id="reiserfs" flags="rw" />
    <type id="reiser4" flags="rw" />
    <type id="xfs" flags="rw" />
    <type id="jfs" flags="rw" />
 
    <!-- special-purpose filesystems -->
-   <type id="tmpfs" flags="volatile:rw" />
+   <type id="tmpfs" flags="volatile:rw:nofsck" />
    <type id="squashfs" />
    <type id="romfs" />
    <type id="cramfs" />
 
    <!-- network filesystems -->
-   <type id="nfs" flags="network" />
+   <type id="nfs" flags="network:nofsck" />
 
    <!-- dos-ish filesystems -->
    <type id="vfat" flags="rw" />
@@ -49,9 +50,11 @@
 
    <!-- internal-use filesystems -->
    <type id="unionfs" />
-   <type id="proc" flags="rw:volatile" />
-   <type id="sysfs" flags="rw:volatile" />
+   <type id="proc" flags="rw:volatile:nofsck" />
+   <type id="sysfs" flags="rw:volatile:nofsck" />
+
+   <!-- really special filesystems -->
+   <type id="swap" flags="nofsck" />
   </filesystem>
  </information>
-
 </einit>

@@ -73,8 +73,10 @@ enum filesystem_capability {
 /*!< Filesystem Capability: can be mounted RW */
  filesystem_capability_volatile = 0x2,
 /*!< Filesystem Capability: changes are lost */
- filesystem_capability_network  = 0x4
+ filesystem_capability_network  = 0x4,
 /*!< Filesystem Capability: network filesystem */
+ filesystem_capability_no_fsck  = 0x8
+/*!< Filesystem Capability: skip fscks (fsck useless/pointless) */
 };
 /*!\}*/
 
