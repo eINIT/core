@@ -1,7 +1,7 @@
 <einit>
 
  <mode id="boot">
-  <enable services="mount-local:tty:keyboard:logger:urandom" critical="mount-critical:tty" />
+  <enable services="mount-local:keyboard:logger:urandom" critical="mount-critical" />
   <overrides>
    <ttys s="tty1-regular" />
   </overrides>
