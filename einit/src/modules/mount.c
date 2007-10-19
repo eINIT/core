@@ -1510,7 +1510,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
  struct cfgnode *node = NULL;
  char *mount_fsck_template = NULL;
 
- while ((node = cfg_findnode ("configuration-storage-fsck-command", 0, NULL))) {
+ while ((node = cfg_findnode ("configuration-storage-fsck-command", 0, node))) {
   if (fs && node->idattr && strmatch (node->idattr, fs)) {
    mount_fsck_template = node->svalue;
   } else if (!mount_fsck_template && node->idattr && strmatch (node->idattr, "generic")) {
