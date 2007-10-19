@@ -46,3 +46,7 @@ libeinit++.${SO}.1.0.0: libeinit.${SO}.1.0.0 libeinit++.o
 	if test "${SO}" = "so"; then ${CXXLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit++.so.1 libeinit++.o -o libeinit++.${SO}.1.0.0 -L. -leinit; else ${CXXLD} ${XDYNAMIC_SIMPLE} libeinit++.o -o libeinit++.${SO}.1.0.0 -L. -leinit; fi
 	ln -fs libeinit++.${SO}.1.0.0 libeinit++.${SO}.1
 	ln -fs libeinit++.${SO}.1 libeinit++.${SO}
+
+test: utility.o bitch.o $(asmobjects) set-lowmem.o test-core-apply-variables.o
+	$(CLD) test-core-apply-variables.o utility.o bitch.o $(asmobjects) set-lowmem.o -o test-core-apply-variables $(STATIC)
+	./test-core-apply-variables

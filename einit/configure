@@ -49,7 +49,7 @@ COMPILER=gnu
 
 GCCFLAGS="-Wall"
 
-MAKEFILETASKS="all install"
+MAKEFILETASKS="all install test"
 
 ELIBDIR="lib"
 
@@ -152,6 +152,9 @@ for param in $@; do
 	elif test "$param" = "--avoid-usr"; then
 		echo -n " EXUSR";
 		EXUSR="yes";
+	elif test "$param" = "--enable-tests"; then
+		echo -n " TESTS";
+		UTILOBJECTS="${UTILOBJECTS} ${UTILOBJECTS_TESTS}";
 	elif test "$short" = "--with-expat"; then
 		echo -n " EXPAT";
 		EXPAT_CFGD_LIB="${param#*=}";

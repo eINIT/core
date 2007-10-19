@@ -5,6 +5,9 @@ all:
 	cd build && ${MAKE} all
 	cd data && ${MAKE} all
 
+test:
+	cd build && ${MAKE} test
+
 documentation-html:
 	cd documentation && ${MAKE} documentation-html
 

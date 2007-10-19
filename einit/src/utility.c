@@ -541,7 +541,7 @@ char *apply_variables (const char *ostring, const char **env) {
 
  for (spos = 0, rpos = 0; string[spos]; spos++) {
   if ((string[spos] == '$') && (string[spos+1] == '{')) {
-   for (rspos -= (rspos > 1) ? 2 : 0; string[rspos] && (rspos < spos); rspos++) {
+   for (rspos -= (rspos > 1) ? 2 : rspos; string[rspos] && (rspos < spos); rspos++) {
     ret[rpos] = string[rspos];
     rpos++;
    }

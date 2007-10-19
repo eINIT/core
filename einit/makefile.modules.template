@@ -26,3 +26,5 @@ linux-netlink.so: linux-netlink.o
 
 distro-gentoo.so: distro-gentoo.o
 	${LLD} -Wl,--no-as-needed distro-gentoo.o -leinfo -lrc -o distro-gentoo.so
+
+test:

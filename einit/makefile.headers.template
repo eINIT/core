@@ -1,3 +1,5 @@
 headers:
 
 install: install-auto
+
+test:

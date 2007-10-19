@@ -6,3 +6,5 @@ install: einit
 
 einit: $(objects) module-configuration.o
 	$(CLD) $(objects) module-configuration.o -o einit $(STATIC) $(CORELIBS) $(LPA) $(XDYNAMIC)
+
+test:
