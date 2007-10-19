@@ -529,9 +529,8 @@ char parse_boolean (const char *s) {
 }
 
 char *apply_variables (const char *ostring, const char **env) {
- char *ret = NULL, *vst = NULL, tsin = 0;
+ char *ret = NULL, *vst = NULL, tsin = 0, *string;
  uint32_t len = 0, rpos = 0, spos = 0, rspos = 0;
- char *string;
 
  if (!ostring || !(string = estrdup(ostring))) return NULL;
  if (!env) return estrdup (ostring);
@@ -541,7 +540,7 @@ char *apply_variables (const char *ostring, const char **env) {
 
  for (spos = 0, rpos = 0; string[spos]; spos++) {
   if ((string[spos] == '$') && (string[spos+1] == '{')) {
-   for (rspos -= (rspos > 1) ? 2 : rspos; string[rspos] && (rspos < spos); rspos++) {
+   for (rspos += (tsin && (rspos > 1)) ? -2 : 1; string[rspos] && (rspos < spos); rspos++) {
     ret[rpos] = string[rspos];
     rpos++;
    }
@@ -565,8 +564,10 @@ char *apply_variables (const char *ostring, const char **env) {
       ret[rpos] = env[xi][i];
       rpos++;
      }
+	 
+	 rspos = spos;
     } else {
-     for (rspos -=2; string[rspos] && (rspos < spos); rspos++) {
+     for (rspos -= (rspos > 1) ? 2 : rspos; string[rspos] && (rspos < spos); rspos++) {
       ret[rpos] = string[rspos];
       rpos++;
      }

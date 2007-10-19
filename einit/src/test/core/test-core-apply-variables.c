@@ -40,9 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <einit/set.h>
 
-
 int example_setfont () {
- char **vars = (char **)setadd ((char **)setadd((char **)NULL, "configuration_services_setfont_font", SET_TYPE_STRING), "lat2-12", SET_TYPE_STRING);
+ const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "configuration_services_setfont_font", SET_TYPE_STRING), "lat2-12", SET_TYPE_STRING);
  char *res = apply_variables ("tty_max=$(cat /etc/einit/subsystems.d/tty.xml | egrep -c 'tty[0-9]-regular'); tty_list=$(seq 1 ${tty_max}); if [ -d /dev/vc ]; then tty_dev=/dev/vc/; else tty_dev=/dev/tty; fi; for tty_num in ${tty_list}; do setfont ${configuration_services_setfont_font} -C ${tty_dev}${tty_num}; done", vars);
 
  const char *expected_result = "tty_max=$(cat /etc/einit/subsystems.d/tty.xml | egrep -c 'tty[0-9]-regular'); tty_list=$(seq 1 ${tty_max}); if [ -d /dev/vc ]; then tty_dev=/dev/vc/; else tty_dev=/dev/tty; fi; for tty_num in ${tty_list}; do setfont lat2-12 -C ${tty_dev}${tty_num}; done";
@@ -54,15 +53,111 @@ int example_setfont () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- done:
-  free (vars);
-  free (res);
+ free (vars);
+ free (res);
+
+ return test_failed;
+}
+
+int example_simple_start () {
+ const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ char *res = apply_variables ("${simple}", vars);
+
+ const char *expected_result = "start";
+
+ char test_failed = 0;
+
+ if (!strmatch (res, expected_result)) {
+  test_failed = 1;
+  fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
+ }
+
+ free (vars);
+ free (res);
+
+ return test_failed;
+}
+
+int example_simple_start_half () {
+ const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ char *res = apply_variables ("${simple}${half}", vars);
+
+ const char *expected_result = "start${half}";
+
+ char test_failed = 0;
+
+ if (!strmatch (res, expected_result)) {
+  test_failed = 1;
+  fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
+ }
+
+ free (vars);
+ free (res);
+
+ return test_failed;
+}
+
+int example_half_simple_start () {
+ const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ char *res = apply_variables ("${simple}${half}", vars);
+
+ const char *expected_result = "start${half}";
+
+ char test_failed = 0;
+
+ if (!strmatch (res, expected_result)) {
+  test_failed = 1;
+  fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
+ }
+
+ free (vars);
+ free (res);
+
+ return test_failed;
+}
+
+
+int example_double () {
+ const char **vars = (const char **)setadd((void **)setadd ((void **)setadd((void **)setadd((void **)NULL, "double", SET_TYPE_STRING), "DD", SET_TYPE_STRING), "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ char *res = apply_variables ("${simple${double}${half}}", vars);
+
+ const char *expected_result = "${simpleDD${half}}";
+
+ char test_failed = 0;
+
+ if (!strmatch (res, expected_result)) {
+  test_failed = 1;
+  fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
+ }
+
+ free (vars);
+ free (res);
+
+ return test_failed;
+}
+
+int example_broken () {
+ const char **vars = (const char **)setadd((void **)setadd ((void **)setadd((void **)setadd((void **)NULL, "double", SET_TYPE_STRING), "DD", SET_TYPE_STRING), "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ char *res = apply_variables ("${simple${double}${half}", vars);
+
+ const char *expected_result = "${simpleDD${half}";
+
+ char test_failed = 0;
+
+ if (!strmatch (res, expected_result)) {
+  test_failed = 1;
+  fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
+ }
+
+ free (vars);
+ free (res);
 
  return test_failed;
 }
 
 int main () {
- if (example_setfont()) {
+ if (example_setfont() || example_simple_start() || example_simple_start_half() || example_half_simple_start() ||
+     example_double() || example_broken()) {
   return EXIT_FAILURE;
  }
 
