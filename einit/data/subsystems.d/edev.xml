@@ -50,9 +50,8 @@
                     group="audio"
                     devicefile="/dev/snd/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^(mouse*|mice|event*)$"
-                    chmod="0640"
-                    devicefile="/dev/input/${DEVPATH_BASE}" />
+   <devicefile-rule SUBSYSTEM="^input$"
+                    chmod="0640" />
 
 <!-- the following rules /would/ usually make sense, however due to the
      handling, they're completely obsolete and would thus only increase the
