@@ -155,9 +155,28 @@ int example_broken () {
  return test_failed;
 }
 
+int example_middle () {
+ const char **vars = (const char **)setadd((void **)setadd ((void **)setadd((void **)setadd((void **)NULL, "double", SET_TYPE_STRING), "DD", SET_TYPE_STRING), "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ char *res = apply_variables ("${simple}${double}${half}", vars);
+
+ const char *expected_result = "startDD${half}";
+
+ char test_failed = 0;
+
+ if (!strmatch (res, expected_result)) {
+  test_failed = 1;
+  fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
+ }
+
+ free (vars);
+ free (res);
+
+ return test_failed;
+}
+
 int main () {
  if (example_setfont() || example_simple_start() || example_simple_start_half() || example_half_simple_start() ||
-     example_double() || example_broken()) {
+     example_double() || example_broken() || example_middle()) {
   return EXIT_FAILURE;
  }
 
