@@ -50,7 +50,7 @@ src_compile() {
 		emake
 	popd
 
-	myconf="--ebuild --svn --prefix=/ --with-expat=${WORKDIR}/expat-${EXPATVERSION}/.libs/libexpat.a --libdir-name=$(get_libdir)"
+	myconf="--ebuild --svn --prefix=/ --with-expat=${WORKDIR}/expat-${EXPATVERSION}/.libs/libexpat.a --libdir-name=$(get_libdir) --enable-tests"
 
 	if use static ; then
 		local myconf="${myconf} --static"
@@ -95,6 +95,10 @@ src_install() {
 	if use doc ; then
 		dohtml build/documentation/html/*
 	fi
+}
+
+src_test() {
+	emake -j1 test || die
 }
 
 pkg_postinst() {
