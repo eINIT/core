@@ -50,6 +50,10 @@
                     group="audio"
                     devicefile="/dev/snd/${DEVPATH_BASE}" />
 
+   <devicefile-rule SUBSYSTEM="^(card*|nvidia*|3dfx*)$"
+                    group="video"
+                    devicefile="/dev/dri/${DEVPATH_BASE}" />
+
    <devicefile-rule SUBSYSTEM="^input$"
                     chmod="0640" />
 
