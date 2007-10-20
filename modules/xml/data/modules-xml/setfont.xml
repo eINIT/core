@@ -13,6 +13,7 @@
           done" />
   <execute id="disable" code="true" />
 
+  <need-files s="setfont" />
   <variables s="configuration-services-setfont/.*" />
  </v-setfont>
 </module>

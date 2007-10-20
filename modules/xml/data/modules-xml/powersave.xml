@@ -4,9 +4,9 @@
   provides="powersave"
   requires="mount-critical:hal:acpid">
 
-  <execute id="daemon" code="/usr/sbin/powersaved $(if [ -S /var/run/acpid.socket ]] ; then echo '-f /var/run/acpid.socket' ; fi)" />
+  <execute id="daemon" code="powersaved $(if [ -S /var/run/acpid.socket ]] ; then echo '-f /var/run/acpid.socket' ; fi)" />
 
-  <need-files s="/usr/sbin/powersaved" />
+  <need-files s="powersaved" />
   <restart b="yes" />
  </v-powersave>
 </module>

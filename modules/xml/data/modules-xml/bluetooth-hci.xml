@@ -5,9 +5,9 @@
   requires="mount-critical"
   after="^(kern-|modules)">
 
-  <execute id="daemon" code="sleep 1 ; /usr/sbin/hcid -n -f /etc/bluetooth/hcid.conf" />
+  <execute id="daemon" code="sleep 1 ; hcid -n -f /etc/bluetooth/hcid.conf" />
 
-  <need-files s="/usr/sbin/hcid" />
+  <need-files s="hcid" />
   <restart b="yes" />
  </v-bluez-hcid>
 </module>

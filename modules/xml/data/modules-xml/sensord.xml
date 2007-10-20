@@ -4,10 +4,10 @@
   provides="sensord"
   requires="logger:sensors">
 
-  <execute id="enable" code="/usr/sbin/sensord ${configuration_services_sensord_options}" />
+  <execute id="enable" code="sensord ${configuration_services_sensord_options}" />
   <execute id="disable" code="killall sensord" />
 
-  <need-files s="/usr/sbin/sensord" />
+  <need-files s="sensord" />
   <variables s="configuration-services-sensord/.*" />
  </v-sensord>
 </module>

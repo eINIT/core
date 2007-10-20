@@ -4,9 +4,10 @@
   provides="smartd"
   requires="mount-critical">
 
-  <execute id="enable" code="/usr/sbin/smartd" />
+  <execute id="enable" code="smartd" />
   <execute id="disable" code="killall -9 smartd" />
 
   <pidfile s="/var/run/smartd.pid" />
+  <need-files s="smartd" />
  </v-smartd>
 </module>

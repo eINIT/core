@@ -5,12 +5,13 @@
   requires="mount-critical:acpid">
 
   <execute id="enable" code="for i in ${configuration_services_cpufreq_cpus};
-          	do /usr/bin/cpufreq-set --cpu $i --governor ${configuration_services_cpufreq_governor} ;
+          	do cpufreq-set --cpu $i --governor ${configuration_services_cpufreq_governor} ;
           done" />
   <execute id="disable" code="for i in ${configuration_services_cpufreq_cpus} ;
-           	do /usr/bin/cpufreq-set --cpu $i --governor performance ;
+           	do cpufreq-set --cpu $i --governor performance ;
            done" />
 
   <variables s="configuration-services-cpufreq/.*" />
+  <need-files s="cpufreq-set" />
  </v-cpufreq>
 </module>

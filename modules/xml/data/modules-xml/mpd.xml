@@ -4,11 +4,11 @@
   provides="mpd"
   after="^fs-.*">
 
-  <execute id="daemon" code="pexec-options dont-close-stdin; /usr/bin/mpd --no-create-db" />
+  <execute id="daemon" code="pexec-options dont-close-stdin; mpd --no-create-db" />
 
   <pidfile s="/var/run/mpd/mpd.pid" />
   <options s="forking" />
   <restart b="yes" />
-  <need-files s="/usr/bin/mpd" />
+  <need-files s="mpd" />
  </v-mpd>
 </module>

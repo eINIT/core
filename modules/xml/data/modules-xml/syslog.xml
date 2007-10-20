@@ -4,9 +4,9 @@
   provides="syslog:logger"
   requires="mount-critical">
 
-  <execute id="daemon" code="/sbin/syslogd -n" />
+  <execute id="daemon" code="syslogd -n" />
 
   <restart b="yes" />
-  <need-files s="/sbin/syslog" />
+  <need-files s="syslog" />
  </v-syslog>
 </module>

@@ -10,5 +10,7 @@
   <execute id="daemon" code="NetworkManager --no-daemon" />
 
   <restart b="yes" />
+
+  <need-files s="NetworkManager" />
  </v-network-manager>
 </module>

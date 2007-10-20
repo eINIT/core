@@ -4,7 +4,9 @@
   provides="dovecot"
   requires="network:mount-critical:mysqld">
 
-  <execute id="enable" code="/usr/sbin/dovecot" />
-  <execute id="disable" code="/usr/bin/killall dovecot" />
+  <execute id="enable" code="dovecot" />
+  <execute id="disable" code="killall dovecot" />
+
+  <need-files s="dovecot" />
  </v-dovecot>
 </module>

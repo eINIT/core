@@ -4,9 +4,9 @@
   provides="fcron:cron"
   requires="mount-critical">
 
-  <execute id="daemon" code="/usr/sbin/fcron -f -c /etc/fcron/fcron.conf" />
+  <execute id="daemon" code="fcron -f -c /etc/fcron/fcron.conf" />
 
-  <need-files s="/usr/sbin/fcron" />
+  <need-files s="fcron" />
   <restart b="yes" />
  </v-fcron>
 </module>

@@ -11,5 +11,6 @@
   <pidfile s="/var/run/samba/nmbd.pid" />
   <restart b="yes" />
   <variables s="configuration-services-nmbd/.*" />
+  <need-files s="nmbd" />
  </v-nmbd>
 </module>

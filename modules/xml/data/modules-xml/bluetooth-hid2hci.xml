@@ -4,7 +4,9 @@
   provides="bluetooth-hid2hci"
   after="^fs-.*">
 
-  <execute id="enable" code="/usr/sbin/hid2hci -0 -q" />
+  <execute id="enable" code="hid2hci -0 -q" />
   <execute id="disable" code="true" />
- </v-bluez-hid2hci>
+
+  <need-files s="hid2hci" />
+</v-bluez-hid2hci>
 </module>

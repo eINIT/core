@@ -12,6 +12,7 @@
           done" />
   <execute id="disable" code="true" />
 
+  <need-files s="splash_util" />
   <variables s="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
  </v-fbsplash>
 </module>

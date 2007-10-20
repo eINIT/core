@@ -4,9 +4,9 @@
   provides="entrance"
   requires="x11">
 
-  <execute id="daemon" code="/usr/bin/entrance" />
+  <execute id="daemon" code="entrance" />
 
-  <need-files s="/usr/bin/entrance" />
+  <need-files s="entrance" />
   <environment DISPLAY=":0.0" HOME="/root" />
   <restart b="yes" />
  </v-entrance>

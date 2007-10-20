@@ -6,11 +6,11 @@
   before="smbd"
   requires="nmbd">
 
-  <execute id="daemon" code="/usr/sbin/winbindd -F ${configuration_services_winbindd_options}" />
+  <execute id="daemon" code="winbindd -F ${configuration_services_winbindd_options}" />
   <execute id="reload" code="killall -HUP winbindd" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/winbindd" />
+  <need-files s="winbindd" />
   <variables s="configuration-services-winbindd/.*" />
  </v-winbindd>
 </module>

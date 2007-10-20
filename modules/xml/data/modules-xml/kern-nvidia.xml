@@ -6,7 +6,7 @@
 
   <execute id="enable" code="modprobe nvidia;
           for i in 0 1 2 3 4 5 6 7; do
-          	mknod /dev/nvidia$i c 195 $i;
+           mknod /dev/nvidia$i c 195 $i;
           done;
           mknod /dev/nvidiactl c 195 255;
           chgrp video /dev/nvidia*;

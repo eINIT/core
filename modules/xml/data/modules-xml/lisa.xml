@@ -6,5 +6,7 @@
 
   <execute id="enable" code="/usr/kde/3.5/bin/lisa --config=/etc/conf.d/lisa -q" />
   <execute id="disable" code="/usr/bin/killall lisa" />
+
+  <need-files s="/usr/kde/3.5/bin/lisa" />
  </v-lisa>
 </module>

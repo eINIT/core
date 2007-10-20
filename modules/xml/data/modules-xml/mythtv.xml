@@ -5,9 +5,10 @@
   requires="network:mount-critical"
   after="^(kern-|modules)">
 
-  <execute id="enable" code="/usr/bin/mythbackend --logfile /var/log/mythtv/mythbackend --daemon" />
+  <execute id="enable" code="mythbackend --logfile /var/log/mythtv/mythbackend --daemon" />
   <execute id="disable" code="killall mythbackend; true" />
 
   <environment HOME="/etc/mythtv" />
+  <need-files s="mythbackend" />
  </v-mythtv>
 </module>

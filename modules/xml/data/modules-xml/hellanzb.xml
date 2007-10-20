@@ -8,5 +8,6 @@
   <execute id="daemon" code="hellanzb.py" />
 
   <restart b="yes" />
+  <need-files s="hellanzb.py" />
  </v-hellanzb>
 </module>

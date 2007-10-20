@@ -15,5 +15,6 @@
 
   <variables s="configuration-services-video-intel-resolution/.*" />
 
+  <need-files s="915resolution" />
  </v-915resolution>
 </module>

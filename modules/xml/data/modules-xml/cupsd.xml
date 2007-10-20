@@ -5,9 +5,9 @@
   requires="mount-critical">
 
   <execute id="prepare" code="if [ ! -d /var/log/cups ]; then mkdir /var/log/cups; fi; /bin/true" />
-  <execute id="daemon" code="/usr/sbin/cupsd -F" />
+  <execute id="daemon" code="cupsd -F" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/cupsd" />
+  <need-files s="cupsd" />
  </v-cupsd>
 </module>

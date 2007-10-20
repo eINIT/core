@@ -5,11 +5,11 @@
   after="logger:displaymanager"
   requires="mount-critical:dbus">
 
-  <execute id="daemon" code="/usr/sbin/hald --daemon=yes --use-syslog --verbose=no" />
+  <execute id="daemon" code="hald --daemon=yes --use-syslog --verbose=no" />
 
   <options s="forking" />
   <restart b="yes" />
-  <need-files s="/usr/sbin/hald" />
+  <need-files s="hald" />
   <pidfile s="/var/run/hald.pid" />
  </v-hald>
 </module>

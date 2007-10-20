@@ -6,14 +6,14 @@
 
   <execute id="prepare" code="touch ${configuration_services_iptables_rules_file} ;
            chmod 0600 ${configuration_services_iptables_rules_file}" />
-  <execute id="enable" code="/sbin/iptables-restore ${configuration_services_iptables_options} &lt; ${configuration_services_iptables_rules_file}" />
+  <execute id="enable" code="iptables-restore ${configuration_services_iptables_options} &lt; ${configuration_services_iptables_rules_file}" />
   <execute id="prepare" code="if [ &quot;${configuration_services_iptables_save_on_stop}&quot; = &quot;yes&quot; ]; then
-                /sbin/iptables-save ${configuration_services_iptables_options} &gt; ${configuration_services_iptables_rules_file} ;
+                iptables-save ${configuration_services_iptables_options} &gt; ${configuration_services_iptables_rules_file} ;
            else
                 true ;
            fi" />
 
   <variables s="configuration-services-iptables/.*" />
-  <need-files s="/sbin/iptables-save:/sbin/iptables-restore" />
+  <need-files s="iptables-save:iptables-restore" />
  </v-iptables>
 </module>

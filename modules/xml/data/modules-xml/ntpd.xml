@@ -7,5 +7,6 @@
   <execute id="daemon" code="ntpd -n" />
 
   <restart b="yes" />
+  <need-files s="ntpd" />
  </v-ntpd>
 </module>

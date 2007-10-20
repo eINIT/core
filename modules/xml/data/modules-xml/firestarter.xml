@@ -9,5 +9,7 @@
            fi; true" />
   <execute id="enable" code="firestarter --start" />
   <execute id="disable" code="firestarter --stop" />
+
+  <need-files s="firestarter" />
  </v-firestarter>
 </module>

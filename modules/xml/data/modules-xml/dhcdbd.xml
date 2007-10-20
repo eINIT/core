@@ -8,5 +8,6 @@
 
   <pidfile s="/var/run/dhcdbd.pid" />
   <restart b="yes" />
+  <need-files s="dbus-launch" />
  </v-dhcdbd>
 </module>

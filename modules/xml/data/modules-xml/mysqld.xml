@@ -4,10 +4,10 @@
   provides="mysqld"
   after="^fs-.*">
 
-  <execute id="daemon" code="/usr/sbin/mysqld --defaults-file=${configuration_services_mysqld_defaults}" />
+  <execute id="daemon" code="mysqld --defaults-file=${configuration_services_mysqld_defaults}" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/mysqld" />
+  <need-files s="mysqld" />
   <variables s="configuration-services-mysqld/.*" />
  </v-mysqld>
 </module>

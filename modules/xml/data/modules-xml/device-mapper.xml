@@ -6,7 +6,7 @@
 
   <script file="device-mapper.sh" actions="enable:disable:on-shutdown" />
 
-  <need-files s="/sbin/vgchange" />
+  <need-files s="vgchange" />
 
  </v-device-mapper>
 </module>

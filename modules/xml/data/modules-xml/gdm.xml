@@ -5,10 +5,10 @@
   requires="mount-critical">
 
   <execute id="prepare" code="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; true" />
-  <execute id="daemon" code="/usr/bin/gdm" />
+  <execute id="daemon" code="gdm" />
 
   <pidfile s="/var/run/gdm.pid" />
-  <need-files s="/usr/bin/gdm" />
+  <need-files s="gdm:X" />
   <restart b="yes" />
   <options s="forking" />
  </v-gdm>

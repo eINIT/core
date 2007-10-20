@@ -4,9 +4,9 @@
   provides="httpd"
   after="^fs-.*">
 
-  <execute id="daemon" code="/usr/sbin/lighttpd -D -f /etc/lighttpd/lighttpd.conf" />
+  <execute id="daemon" code="lighttpd -D -f /etc/lighttpd/lighttpd.conf" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/lighttpd" />
+  <need-files s="lighttpd" />
  </v-lighttpd>
 </module>

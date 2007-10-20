@@ -26,5 +26,7 @@
            else
                  echo 'feedback|error|failed to disable numlock on ttys '${tty_list} ;
            fi" />
+
+  <need-files s="setleds" />
  </v-numlock>
 </module>

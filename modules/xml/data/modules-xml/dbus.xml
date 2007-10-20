@@ -11,5 +11,6 @@
   <pidfile s="/var/run/dbus.pid" />
   <options s="forking" />
   <restart b="yes" />
+  <need-files s="dbus-daemon" />
  </v-dbus>
 </module>

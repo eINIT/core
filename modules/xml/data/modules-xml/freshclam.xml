@@ -13,7 +13,9 @@
            	chown ${clamav_user} ${logfile};
            fi;" />
 
-  <execute id="enable" code="/usr/bin/freshclam -d" />
+  <execute id="enable" code="freshclam -d" />
   <execute id="disable" code="killall freshclam" />
+
+  <need-files s="freshclam" />
  </v-freshclam>
 </module>

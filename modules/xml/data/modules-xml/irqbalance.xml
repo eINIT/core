@@ -6,5 +6,7 @@
 
   <execute id="enable" code="irqbalance" />
   <execute id="disable" code="true" />
+
+  <need-files s="irqbalance" />
  </v-irqbalance>
 </module>

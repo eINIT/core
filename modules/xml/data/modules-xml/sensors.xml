@@ -5,9 +5,10 @@
   requires="mount-critical"
   after="^(kern-|modules)">
 
-  <execute id="enable" code="/usr/bin/sensors -s ${configuration_services_sensors_options}" />
+  <execute id="enable" code="sensors -s ${configuration_services_sensors_options}" />
   <execute id="disable" code="true" />
 
+  <need-files s="sensors" />
   <variables s="configuration-services-sensors/.*" />
  </v-sensors>
 </module>

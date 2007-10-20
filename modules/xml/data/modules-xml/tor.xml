@@ -4,9 +4,9 @@
   provides="tor"
   requires="network:mount-critical">
 
-  <execute id="daemon" code="/usr/bin/tor" />
+  <execute id="daemon" code="tor" />
 
   <restart b="yes" />
-  <need-files s="/usr/bin/tor" />
+  <need-files s="tor" />
  </v-tor>
 </module>

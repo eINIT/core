@@ -5,9 +5,9 @@
   requires="mount-critical:bluetooth-hci"
   after="^(kern-|modules)">
 
-  <execute id="daemon" code="/usr/sbin/sdpd -n" />
+  <execute id="daemon" code="sdpd -n" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/sdpd" />
+  <need-files s="sdpd" />
  </v-bluez-sdpd>
 </module>

@@ -5,9 +5,10 @@
   requires="bluetooth-hci"
   after="^fs-.*">
 
-  <execute id="enable" code="/usr/bin/rfcomm -f ${configuration_services_bluetooth_rfcomm_file} bind all" />
-  <execute id="disable" code="/usr/bin/rfcomm release all" />
+  <execute id="enable" code="rfcomm -f ${configuration_services_bluetooth_rfcomm_file} bind all" />
+  <execute id="disable" code="rfcomm release all" />
 
   <variables s="configuration-services-bluetooth-rfcomm/.*" />
+  <need-files s="rfcomm" />
  </v-bluez-rfcomm>
 </module>

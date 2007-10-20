@@ -1,12 +1,11 @@
 <module>
  <v-portmap
   name="Portmap Daemon"
-  provides="portmap"
-  requires="network">
+  provides="portmap">
 
-  <execute id="daemon" code="/sbin/portmap -d" />
+  <execute id="daemon" code="portmap -d" />
 
-  <need-files s="/sbin/portmap" />
+  <need-files s="portmap" />
   <restart b="yes" />
  </v-portmap>
 </module>

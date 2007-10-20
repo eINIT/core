@@ -18,7 +18,9 @@
            if [ -S &quot;${clamd_socket:-/tmp/clamd}&quot; ]; then
            	rm -f ${clamd_socket:-/tmp/clamd};
            fi;" />
-  <execute id="enable" code="/usr/sbin/clamd" />
+  <execute id="enable" code="clamd" />
   <execute id="disable" code="killall clamd" />
+
+  <need-files s="clamd" />
  </v-clamd>
 </module>

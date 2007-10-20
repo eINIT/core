@@ -4,10 +4,10 @@
   provides="ivman"
   requires="hal">
 
-  <execute id="daemon" code="/usr/bin/ivman --system --nofork" user="ivman" group="plugdev" />
+  <execute id="daemon" code="ivman --system --nofork" user="ivman" group="plugdev" />
 
   <pidfile s="/var/run/ivman.pid" />
   <restart b="yes" />
-  <need-files s="/usr/bin/ivman" />
+  <need-files s="ivman" />
  </v-ivman>
 </module>

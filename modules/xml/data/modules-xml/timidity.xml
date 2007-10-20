@@ -4,10 +4,10 @@
   provides="timidity"
   requires="alsa">
 
-  <execute id="daemon" code="/usr/bin/timidity -iA ${configuration_services_timidity_options}" />
+  <execute id="daemon" code="timidity -iA ${configuration_services_timidity_options}" />
 
   <restart b="yes" />
   <variables s="configuration-services-timidity/.*" />
-  <need-files s="/usr/bin/timidity" />
+  <need-files s="timidity" />
  </v-timidity>
 </module>

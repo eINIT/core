@@ -10,5 +10,6 @@
 
   <pidfile s="/var/run/ipw3945d.pid" />
   <restart b="yes" />
+  <need-files s="ipw3945d" />
  </v-ipw3945d>
 </module>

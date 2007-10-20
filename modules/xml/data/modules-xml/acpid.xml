@@ -7,14 +7,14 @@
   <execute id="prepare" code="if [ ! -e /proc/acpi ]; then
                 echo 'feedback|error|ACPI support has not been compiled into the kernel!';
            fi" />
-  <execute id="daemon" code="pexec-options dont-close-stdin;if /usr/sbin/acpid ${configuration_services_acpid_options}; then
+  <execute id="daemon" code="pexec-options dont-close-stdin;if acpid ${configuration_services_acpid_options}; then
                  pidof acpid &gt; /var/run/acpid.pid;
            fi" />
   <execute id="reload" code="killall acpid -HUP &amp;&gt;/dev/null" />
 
   <options s="forking" />
   <restart b="yes" />
-  <need-files s="/usr/sbin/acpid" />
+  <need-files s="acpid" />
   <variables s="configuration-services-acpid/.*" />
  </v-acpi>
 </module>

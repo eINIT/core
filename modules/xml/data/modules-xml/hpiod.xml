@@ -6,5 +6,7 @@
 
   <execute id="enable" code="hpiod" />
   <execute id="disable" code="killall hpiod" />
+
+  <need-files s="hpiod" />
  </v-hpiod>
 </module>

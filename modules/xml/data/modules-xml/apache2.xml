@@ -13,6 +13,7 @@
 
   <environment opts="-D DEFAULT_VHOST" root="/usr/lib/apache2" config="/etc/apache2/httpd.conf" />
   <pidfile s="/var/run/apache2.pid" />
+  <need-files s="apache2" />
  </v-apache2>
 
  <v-apache2-gentoo
@@ -29,5 +30,6 @@
 
   <environment root="/usr/lib/apache2" config="/etc/apache2/httpd.conf" envfile="/etc/conf.d/apache2" />
   <pidfile s="/var/run/apache2.pid" />
+  <need-files s="apache2" />
  </v-apache2-gentoo>
 </module>

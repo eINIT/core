@@ -5,11 +5,11 @@
   after="mount-critical:winbindd:cupsd"
   requires="nmbd">
 
-  <execute id="daemon" code="/usr/sbin/smbd -F ${configuration_services_smbd_options}" />
+  <execute id="daemon" code="smbd -F ${configuration_services_smbd_options}" />
   <execute id="reload" code="killall -HUP smbd" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/smbd" />
+  <need-files s="smbd" />
   <variables s="configuration-services-smbd/.*" />
  </v-smbd>
 </module>

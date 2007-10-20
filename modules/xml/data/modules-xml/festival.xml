@@ -4,9 +4,9 @@
   provides="festivald"
   requires="mount-critical:audio">
 
-  <execute id="daemon" code="/usr/bin/festival --server -b /etc/festival/server.scm" />
+  <execute id="daemon" code="festival --server -b /etc/festival/server.scm" />
 
   <restart b="yes" />
-  <need-files s="/usr/bin/festival" />
+  <need-files s="festival" />
  </v-festival>
 </module>

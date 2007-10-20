@@ -8,7 +8,7 @@
 
   <pidfile s="/var/run/kdm.pid" />
   <restart b="yes" />
-  <need-files s="/usr/kde/3.5/bin/kdm" />
+  <need-files s="/usr/kde/3.5/bin/kdm:X" />
   <options s="forking" />
  </v-kdm>
 </module>

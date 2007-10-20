@@ -7,5 +7,6 @@
   <execute id="daemon" code="avahi-dnsconfd" />
 
   <restart b="yes" />
+  <need-files s="avahi-dnsconfd" />
  </v-avahi-dnsconfd>
 </module>

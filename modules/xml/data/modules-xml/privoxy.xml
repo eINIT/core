@@ -4,9 +4,9 @@
   provides="privoxy"
   requires="network:mount-critical">
 
-  <execute id="daemon" code="/usr/sbin/privoxy --no-daemon /etc/privoxy/config" />
+  <execute id="daemon" code="privoxy --no-daemon /etc/privoxy/config" />
 
   <restart b="yes" />
-  <need-files s="/usr/sbin/privoxy" />
+  <need-files s="privoxy" />
  </v-privoxy>
 </module>

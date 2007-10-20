@@ -6,5 +6,6 @@
   <execute id="daemon" code="netplugd -F" />
 
   <restart b="yes" />
+  <need-files s="netplugd" />
  </v-netplugd>
 </module>
