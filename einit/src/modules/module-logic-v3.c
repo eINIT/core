@@ -88,6 +88,7 @@ struct stree *module_logic_rid_list = NULL;
 
 void module_logic_ipc_event_handler (struct einit_event *);
 void module_logic_einit_event_handler (struct einit_event *);
+void module_logic_boot_event_handler (struct einit_event *);
 double mod_get_plan_progress_f (struct mloadplan *);
 char initdone = 0;
 char mod_isbroken (char *service);
@@ -173,6 +174,7 @@ void mod_ping_all_threads() {
 }
 
 int einit_module_logic_v3_usage = 0;
+char mod_critical_devices_ok = 0;
 
 struct eml_garbage {
  struct stree **strees;
@@ -351,6 +353,7 @@ char mod_is_requested_rid (char *rid) {
 int einit_module_logic_v3_cleanup (struct lmodule *this) {
  function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
+ event_ignore (einit_event_subsystem_boot, module_logic_boot_event_handler);
  event_ignore (einit_event_subsystem_core, module_logic_einit_event_handler);
  event_ignore (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
 
@@ -361,12 +364,14 @@ struct eml_resume_data {
  struct stree *module_logics_service_list;
  struct stree *module_logics_group_data;
  struct module_taskblock current, target_state;
+ char mod_critical_devices_ok;
 };
 
 int einit_module_logic_v3_suspend (struct lmodule *this) {
  if (!einit_module_logic_v3_usage) {
   function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
+  event_ignore (einit_event_subsystem_boot, module_logic_boot_event_handler);
   event_ignore (einit_event_subsystem_core, module_logic_einit_event_handler);
   event_ignore (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
 
@@ -377,6 +382,7 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
   event_wakeup (einit_core_service_update, this);
   event_wakeup (einit_core_switch_mode, this);
   event_wakeup (einit_core_change_service_status, this);
+  event_wakeup (einit_boot_critical_devices_ok, this);
 
   this->resumedata = ecalloc (1, sizeof (struct eml_resume_data));
   struct eml_resume_data *rd = this->resumedata;
@@ -389,6 +395,7 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
   rd->target_state.critical = target_state.critical;
   rd->target_state.enable = target_state.enable;
   rd->target_state.disable = target_state.disable;
+  rd->mod_critical_devices_ok = mod_critical_devices_ok;
 
   einit_module_logic_v3_garbage_free ();
 
@@ -417,6 +424,7 @@ int einit_module_logic_v3_resume (struct lmodule *this) {
   target_state.critical = rd->target_state.critical;
   target_state.enable = rd->target_state.enable;
   target_state.disable = rd->target_state.disable;
+  mod_critical_devices_ok = rd->mod_critical_devices_ok;
 
   free (this->resumedata);
  }
@@ -434,6 +442,7 @@ int einit_module_logic_v3_configure (struct lmodule *this) {
 
  event_listen (einit_event_subsystem_ipc, module_logic_ipc_event_handler);
  event_listen (einit_event_subsystem_core, module_logic_einit_event_handler);
+ event_listen (einit_event_subsystem_boot, module_logic_boot_event_handler);
 
  function_register ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
@@ -1148,6 +1157,16 @@ int mod_modaction (char **argv, FILE *output) {
  argv[1] = targv; /* make sure to leave argv1 as it was */
 
  return ret;
+}
+
+void module_logic_boot_event_handler(struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_critical_devices_ok:
+   mod_critical_devices_ok = 1;
+   break;
+
+   default: break;
+ }
 }
 
 void module_logic_einit_event_handler(struct einit_event *ev) {
@@ -4038,7 +4057,8 @@ void mod_commit_and_wait (char **en, char **dis) {
    }
   }
 
-  if (remainder <= 0) {
+/* don't allow any plan to finish, unless the critical_devices_ok event happened */
+  if ((remainder <= 0) && mod_critical_devices_ok) {
    mod_commits_dec();
 
 //   pthread_mutex_destroy (&ml_service_update_mutex);

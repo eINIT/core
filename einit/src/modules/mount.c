@@ -960,6 +960,10 @@ int einit_mount_critical_enable (void *ign, struct einit_event *status) {
   } while (repeat);
  }
 
+ struct einit_event eml = evstaticinit(einit_boot_critical_devices_ok);
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+ evstaticdestroy(eml);
+
  return status_ok;
 }
 
@@ -1021,6 +1025,8 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   newmodule->si.provides = (char **)setadd ((void **)newmodule->si.provides, "mount-critical", SET_TYPE_STRING);
 
   mount_critical_module = mod_add (NULL, newmodule);
+
+  mount_autostart = (char **)setadd ((void **)mount_autostart, (void *)"mount-critical", SET_TYPE_STRING);
  }
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
@@ -1134,7 +1140,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
-    if (!mount_autostart || !inset ((const void **)mount_autostart, servicename, SET_TYPE_STRING)) {
+    if (!strmatch (servicename, "fs-root") && (!mount_autostart || !inset ((const void **)mount_autostart, servicename, SET_TYPE_STRING))) {
      mount_autostart = (char **)setadd ((void **)mount_autostart, (void *)servicename, SET_TYPE_STRING);
     }
 
@@ -1413,7 +1419,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 
     update_real_mtab();
 
-    if (mount_critical && inset ((const void **)mount_critical, (const void *)mountpoint, SET_TYPE_STRING)) {
+//    if (mount_critical && inset ((const void **)mount_critical, (const void *)mountpoint, SET_TYPE_STRING)) {
      struct einit_event ev = evstaticinit(einit_core_update_modules);
 
      fbprintf (status, "updating list of modules");
@@ -1421,7 +1427,7 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
      event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
 
      evstaticdestroy(ev);
-    }
+//    }
 
     return status_ok;
    }

@@ -156,10 +156,8 @@ char module_xml_v2_module_have_action (char *name, char *action) {
  return 0;
 }
 
-int module_xml_v2_module_custom_action (char *name, char *action, struct einit_event *status) {
+char module_xml_v2_check_files (char *name) {
  struct cfgnode *node = NULL;
- char **myenvironment = NULL;
- int returnvalue = status_failed;
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "need-files")) && node->svalue) {
   char **files = str2set (':', node->svalue);
@@ -171,13 +169,13 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
     if (files[i][0] == '/') {
      if (stat (files[i], &st)) {
       free (files);
-      return status_failed;
+      return 0;
      }
     } else {
      char **w = which (files[i]);
      if (!w) {
       free (files);
-      return status_failed;
+      return 0;
      } else {
       free (w);
      }
@@ -187,6 +185,16 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
    free (files);
   }
  }
+
+ return 1;
+}
+
+int module_xml_v2_module_custom_action (char *name, char *action, struct einit_event *status) {
+ struct cfgnode *node = NULL;
+ char **myenvironment = NULL;
+ int returnvalue = status_failed;
+
+ if (!module_xml_v2_check_files (name)) return status_failed;
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "environment")) && node->arbattrs) {
   int i = 0;
@@ -219,7 +227,7 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
     free (split_variables);
    } else
-	returnvalue = pexec (code, NULL, 0, 0, user, group, myenvironment, status);
+    returnvalue = pexec (code, NULL, 0, 0, user, group, myenvironment, status);
   } else
    returnvalue = status_failed;
  } else if (module_xml_v2_module_have_script_action (name, action)) {
@@ -248,9 +256,9 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
       scriptpath = estrdup (t->arbattrs[i+1]);
     } else if (strmatch (t->arbattrs[i], "user")) {
      user = estrdup (t->arbattrs[i+1]);
-	} else if (strmatch (t->arbattrs[i], "group")) {
+    } else if (strmatch (t->arbattrs[i], "group")) {
      group = estrdup (t->arbattrs[i+1]);
-	}
+    }
    }
 
    if ((node = module_xml_v2_module_get_attributive_node (name, "variables")) && node->svalue) {
@@ -504,8 +512,6 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
      int i = 0;
      char *name = NULL, *requires = NULL, *provides = NULL, *after = NULL, *before = NULL;
 
-     new_modules++;
-
      for (; node->arbattrs[i]; i+=2) {
       if (strmatch (node->arbattrs[i], "name")) {
        name = node->arbattrs[i+1];
@@ -520,9 +526,11 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
       }
      }
 
-     if (name && provides) {
+     if (name && provides && module_xml_v2_check_files (cur->key + MODULES_PREFIX_LENGTH)) {
       struct smodule *new_sm = emalloc (sizeof (struct smodule));
       memset (new_sm, 0, sizeof (struct smodule));
+
+      new_modules++;
 
       new_sm->rid = estrdup (cur->key + MODULES_PREFIX_LENGTH);
       new_sm->name = estrdup (name);
