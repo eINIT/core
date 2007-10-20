@@ -666,7 +666,7 @@ int network_ready (struct interface_descriptor *id, struct einit_event *status) 
    return status_failed;
   }
 
-  usleep(10000);
+  usleep(100000);
   retries++;
  }
  return ret;
