@@ -526,7 +526,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
       }
      }
 
-     if (name && provides && module_xml_v2_check_files (cur->key + MODULES_PREFIX_LENGTH)) {
+     if (name && provides/* && module_xml_v2_check_files (cur->key + MODULES_PREFIX_LENGTH)*/) {
       struct smodule *new_sm = emalloc (sizeof (struct smodule));
       memset (new_sm, 0, sizeof (struct smodule));
 

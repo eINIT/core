@@ -4098,7 +4098,7 @@ void mod_commit_and_wait (char **en, char **dis) {
   mod_wait_for_ping();
 //  notice (1, "got ping...");
 
-  if (!modules_work_count && modules_last_change) {
+  if (!modules_work_count/* && modules_last_change*/) {
    if ((modules_last_change + EINIT_PLAN_CHANGE_STALL_TIMEOUT) < time(NULL)) {
     notice (1, "PLAN ABORTED: didn't do anything at all for too long");
 
