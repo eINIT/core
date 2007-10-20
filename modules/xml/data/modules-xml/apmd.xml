@@ -6,7 +6,6 @@
 
   <execute id="daemon" code="apmd" />
 
-  <need-files s="/usr/sbin/apmd" />
   <restart b="yes" />
   <need-files s="apmd" />
  </v-apmd>
