@@ -80,8 +80,16 @@ module_register(einit_linux_kernel_modules_self);
 int linux_kernel_modules_module_configure (struct lmodule *);
 int linux_kernel_modules_cleanup (struct lmodule *);
 
+void *linux_kernel_modules_load_exec (void *c) {
+ pexec (c, NULL, 0, 0, NULL, NULL, NULL, NULL);
+
+ return NULL;
+}
+
 int linux_kernel_modules_load (char **modules) {
  if (!modules) return status_failed;
+ pthread_t **threads = NULL;
+
  char *modprobe_command = cfg_getstring ("configuration-command-modprobe/with-env", 0);
  uint32_t i = 0;
 
@@ -92,13 +100,34 @@ int linux_kernel_modules_load (char **modules) {
   if (applied) {
    notice (4, "loading kernel module: %s", modules[i]);
 
-   if (pexec (applied, NULL, 0, 0, NULL, NULL, NULL, NULL) & status_failed) {
-    notice (2, "loading kernel module \"%s\" failed", modules[i]);
+   if (modules[i+1]) {
+    pthread_t *threadid = emalloc (sizeof (pthread_t));
+
+    if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load_exec, applied)) {
+     linux_kernel_modules_load_exec (applied);
+    } else {
+     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+    }
+   } else {
+    linux_kernel_modules_load_exec (applied);
    }
   }
  }
 
  free (modules);
+
+ if (threads) {
+  int i = 0;
+
+  for (; threads[i]; i++) {
+   pthread_join (*(threads[i]), NULL);
+
+   free (threads[i]);
+  }
+
+  free (threads);
+ }
+
  return status_ok;
 }
 
