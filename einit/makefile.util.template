@@ -3,10 +3,10 @@ util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0
 install: util $(DBUS)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
-	${INSTALL} ${BINIPARAM} einit-control ${DESTDIR}/${SBINDIR}
+	${INSTALL} -g einit -m 0770 einit-control ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} last-rites ${DESTDIR}/${LIBDIR}/bin
-	ln -fs einit-control ${DESTDIR}/${SBINDIR}/power
-	ln -fs einit-control ${DESTDIR}/${SBINDIR}/erc
+	ln -fs einit-control ${DESTDIR}/${BINDIR}/power
+	ln -fs einit-control ${DESTDIR}/${BINDIR}/erc
 	${INSTALL} ${BINIPARAM} libeinit.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../
 	${INSTALL} ${BINIPARAM} libeinit++.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../
 	ln -fs libeinit.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}.1

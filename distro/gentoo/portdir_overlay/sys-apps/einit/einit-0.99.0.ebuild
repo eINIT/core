@@ -36,6 +36,13 @@ PDEPEND="!noxml? ( sys-apps/einit-modules-xml )"
 
 S=${WORKDIR}/${PN}
 
+pkg_setup() {
+	enewgroup einit
+	ewarn
+	ewarn "WARNING: This is a live SVN build!!!"
+	ewarn
+}
+
 src_unpack() {
 	unpack ${A}
 	subversion_src_unpack
