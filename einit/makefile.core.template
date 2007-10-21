@@ -2,7 +2,7 @@ core: einit
 
 install: einit
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
-	${INSTALL} -g einit -m 0770 einit ${DESTDIR}/${SBINDIR}
+	${INSTALL} -g einit -m 0770 einit ${BINIPARAM} ${DESTDIR}/${SBINDIR}
 
 einit: $(objects) module-configuration.o
 	$(CLD) $(objects) module-configuration.o -o einit $(STATIC) $(CORELIBS) $(LPA) $(XDYNAMIC)
