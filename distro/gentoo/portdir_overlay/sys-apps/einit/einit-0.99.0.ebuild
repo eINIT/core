@@ -109,10 +109,11 @@ src_test() {
 }
 
 pkg_postinst() {
-	ewarn
-	ewarn "This is a live SVN build and as such may be subject to weird errors."
-	ewarn
+	einfo
 	einfo "eINIT is now installed, but you will still need to configure it."
+	einfo
+	einfo "To use einit as a non-root user, and that user to the group 'einit'."
+	einfo
 	if use doc ; then
 		einfo
 		einfo "Since you had the doc use-flag enabled, you should find the user's guide"
