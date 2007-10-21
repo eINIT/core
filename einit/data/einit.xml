@@ -152,7 +152,7 @@
   </feedback>
 
   <ipc>
-   <control-socket s="/dev/einit-control" i="0600" />
+   <control-socket s="/dev/einit-control" i="0660" />
    <chain-command for="^update configuration.*" do="examine configuration" />
 
    <dbus>
