@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <grp.h>
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
@@ -250,7 +251,13 @@ void * ipc_wait (void *unused_parameter) {
  int nfd;
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
  mode_t socketmode = (node && node->value ? node->value : 0660);
- gid_t gid = getegid();
+ struct group *grp;
+ gid_t gid;
+ if (NULL == (grp = getgrnam("einit")))
+  perror("getgrnam() error.");
+ else {
+  gid = grp->gr_gid;
+ }
  struct sockaddr_un saddr;
 
  einit_ipc_running = 1;
@@ -279,7 +286,7 @@ void * ipc_wait (void *unused_parameter) {
  }
 
  if (chown (saddr.sun_path,0,gid)) {
-  perror ("einit-ipc: chgrp on socket");
+  perror ("einit-ipc: chown on socket");
  }
 
  if (chmod (saddr.sun_path, socketmode)) {
