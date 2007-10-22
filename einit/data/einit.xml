@@ -108,6 +108,10 @@
    </hotplug>
   </system>
 
+  <linux>
+   <cpufreq cpus="2" in-switch="performance" post-switch="ondemand" />
+  </linux>
+
   <environment>
    <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin" />
    <global id="TERM" s="linux" />

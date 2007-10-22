@@ -115,6 +115,14 @@ Configuration = element configuration {
     }?
   }* &
 
+  element linux {
+    element cpufreq {
+     attribute cpus { text }? ,
+     attribute in-switch { text },
+     attribute post-switch { text },
+    }?
+  }?
+
   element environment {
     element global { IDAttribute, StringAttribute }* &
     element safe { attribute * { text }* }?
@@ -303,7 +311,7 @@ ConfigurationCompatibility =
      attribute wtmp { Boolean }? &
     element utmp { BooleanAttribute }? & #Not sure if those
     element wtmp { BooleanAttribute }? & #should be here...
-  
+
     element distribution {
       StringAttribute &
 
