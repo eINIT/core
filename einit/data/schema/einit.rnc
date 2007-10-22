@@ -119,9 +119,9 @@ Configuration = element configuration {
     element cpufreq {
      attribute cpus { text }? ,
      attribute in-switch { text },
-     attribute post-switch { text },
+     attribute post-switch { text }
     }?
-  }?
+  }? &
 
   element environment {
     element global { IDAttribute, StringAttribute }* &

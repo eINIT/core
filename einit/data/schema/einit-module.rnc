@@ -29,10 +29,10 @@ ModuleContents =
   element script {
    attribute file { text },
    attribute actions { text }
-  }?
+  }? &
 
   element preload-binaries { StringAttribute }? &
-  element auto-enable { StringAttribute }? &
+  element auto-enable { StringAttribute }?
  }
 
 DaemonAttributes =
