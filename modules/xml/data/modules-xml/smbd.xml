@@ -2,7 +2,7 @@
  <v-smbd
   name="Samba daemon (smbd)"
   provides="smbd"
-  after="mount-critical:winbindd:cupsd"
+  after="winbindd:cupsd"
   requires="nmbd">
 
   <execute id="daemon" code="smbd -F ${configuration_services_smbd_options}" />

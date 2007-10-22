@@ -1,8 +1,7 @@
 <module>
  <v-acpi
   name="Advanced Configuration and Power Interface daemon"
-  provides="acpid"
-  requires="mount-critical">
+  provides="acpid">
 
   <execute id="prepare" code="if [ ! -e /proc/acpi ]; then
                 echo 'feedback|error|ACPI support has not been compiled into the kernel!';

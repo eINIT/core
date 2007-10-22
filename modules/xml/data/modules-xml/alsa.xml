@@ -2,7 +2,6 @@
  <v-alsa
   name="Audio (ALSA)"
   provides="alsa"
-  requires="mount-critical"
   after="kern-alsa">
 
   <execute id="enable" code="alsactl -f ${configuration_services_alsa_mixer_file} restore; true" />

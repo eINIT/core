@@ -3,7 +3,7 @@
   name="Hardware Abstraction Layer"
   provides="hal"
   after="logger:displaymanager"
-  requires="mount-critical:dbus">
+  requires="dbus">
 
   <execute id="daemon" code="hald --daemon=yes --use-syslog --verbose=no" />
 

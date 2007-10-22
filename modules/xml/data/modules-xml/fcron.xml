@@ -1,8 +1,7 @@
 <module>
  <v-fcron
   name="Cron (fcron)"
-  provides="fcron:cron"
-  requires="mount-critical">
+  provides="fcron:cron">
 
   <execute id="daemon" code="fcron -f -c /etc/fcron/fcron.conf" />
 

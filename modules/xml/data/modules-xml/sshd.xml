@@ -1,8 +1,7 @@
 <module>
  <v-sshd
   name="SSH daemon (sshd)"
-  provides="sshd"
-  requires="mount-critical">
+  provides="sshd">
 
   <execute id="daemon" code="/usr/sbin/sshd -D ${configuration_services_sshd_options}" />
 
