@@ -678,12 +678,59 @@ void module_xml_v2_boot_event_handler (struct einit_event *ev) {
  }
 }
 
+void module_xml_v2_auto_enable (char *mode) {
+ if (!mode) return;
+
+ char **automod = NULL;
+
+ struct stree *modules = module_xml_v2_modules;
+
+ while (modules) {
+  struct cfgnode *s = module_xml_v2_module_get_attributive_node(modules->key, "auto-enable");
+  if (s && s->svalue) {
+   char **sp = str2set (':', s->svalue);
+
+   if (sp) {
+    if (inset ((const void **)sp, mode, SET_TYPE_STRING)) {
+     automod = (char **)setadd ((void **)automod, modules->key, SET_TYPE_STRING);
+    }
+
+    free (sp);
+   }
+  }
+
+  modules = streenext (modules);
+ }
+
+ if (automod) {
+  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+  eml.stringset = automod;
+  eml.task = einit_module_enable;
+
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  evstaticdestroy(eml);
+
+  free (automod);
+ }
+}
+
+void module_xml_v2_core_event_handler (struct einit_event *ev) {
+ if (ev->para)
+  switch (ev->type) {
+   case einit_core_mode_switching:
+    module_xml_v2_auto_enable (((struct cfgnode *)ev->para)->id);
+    break;
+    default: break;
+  }
+}
+
 int module_xml_v2_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
  sched_cleanup(irr);
 
  event_ignore (einit_event_subsystem_power, module_xml_v2_power_event_handler);
  event_ignore (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
+ event_ignore (einit_event_subsystem_core, module_xml_v2_core_event_handler);
 
  return 0;
 }
@@ -698,6 +745,7 @@ int module_xml_v2_configure (struct lmodule *pa) {
 
  event_listen (einit_event_subsystem_power, module_xml_v2_power_event_handler);
  event_listen (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
+ event_listen (einit_event_subsystem_core, module_xml_v2_core_event_handler);
 
  return 0;
 }
