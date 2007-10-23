@@ -487,6 +487,53 @@ int module_xml_v2_module_configure (struct lmodule *pa) {
  return 0;
 }
 
+char **module_xml_v2_add_fs (char **xt, char *s) {
+ if (s) {
+  char **tmp = s[0] == '/' ? str2set ('/', s+1) : str2set ('/', s);
+  uint32_t r = 0;
+
+  for (r = 0; tmp[r]; r++);
+  for (r--; tmp[r] && r > 0; r--) {
+   tmp[r] = 0;
+   char *comb = set2str ('-', (const char **)tmp);
+
+   if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
+    xt = (char **)setadd ((void **)xt, (void *)comb, SET_TYPE_STRING);
+   }
+
+   free (comb);
+  }
+
+  if (tmp) {
+   free (tmp);
+  }
+ }
+
+ return xt;
+}
+
+char *module_xml_v2_generate_defer_fs (char **tmpxt) {
+ char *tmp = NULL;
+
+ char *tmpx = NULL;
+ tmp = emalloc (BUFFERSIZE);
+
+ tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+
+ if (tmpxt) {
+  tmpx = set2str ('|', (const char **)tmpxt);
+ }
+
+ if (tmpx) {
+  esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+  free (tmpx);
+ }
+
+ free (tmpxt);
+
+ return tmp;
+}
+
 int module_xml_v2_scanmodules (struct lmodule *modchain) {
  struct stree *modules_to_update = module_xml_v2_modules;
  int new_modules = 0;
@@ -510,7 +557,8 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
 
     if ((!module_xml_v2_modules || !streefind (module_xml_v2_modules, cur->key + MODULES_PREFIX_LENGTH, tree_find_first)) && node->arbattrs) {
      int i = 0;
-     char *name = NULL, *requires = NULL, *provides = NULL, *after = NULL, *before = NULL;
+     char *name = NULL, *requires = NULL, *provides = NULL, **after = NULL, *before = NULL, **fs = NULL;
+     struct cfgnode *xnode;
 
      for (; node->arbattrs[i]; i+=2) {
       if (strmatch (node->arbattrs[i], "name")) {
@@ -520,9 +568,34 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
       } else if (strmatch (node->arbattrs[i], "requires")) {
        requires = node->arbattrs[i+1];
       } else if (strmatch (node->arbattrs[i], "after")) {
-       after = node->arbattrs[i+1];
+       after = str2set (':', node->arbattrs[i+1]);
       } else if (strmatch (node->arbattrs[i], "before")) {
        before = node->arbattrs[i+1];
+      }
+     }
+
+     if ((xnode = module_xml_v2_module_get_attributive_node (cur->key + MODULES_PREFIX_LENGTH, "pidfile")) && xnode->svalue) {
+      fs = module_xml_v2_add_fs(fs, xnode->svalue);
+     }
+
+     if ((xnode = module_xml_v2_module_get_attributive_node (cur->key + MODULES_PREFIX_LENGTH, "need-files")) && xnode->svalue) {
+      char **sx = str2set (':', xnode->svalue);
+      int ix = 0;
+
+      for (; sx[ix]; ix++) {
+       if (sx[ix][0] == '/') {
+        fs = module_xml_v2_add_fs(fs, sx[ix]);
+       }
+      }
+     }
+
+     if (fs) {
+      char *a = module_xml_v2_generate_defer_fs(fs);
+
+      if (a) {
+       after = (char **)setadd ((void **)after, a, SET_TYPE_STRING);
+
+       free (a);
       }
      }
 
@@ -542,7 +615,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
 
       new_sm->si.provides = str2set (':', provides);
       if (requires) new_sm->si.requires = str2set (':', requires);
-      if (after) new_sm->si.after = str2set (':', after);
+      if (after) new_sm->si.after = after;
       if (before) new_sm->si.before = str2set (':', before);
 
       new_sm->configure = module_xml_v2_module_configure;
