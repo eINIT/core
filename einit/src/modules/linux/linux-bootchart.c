@@ -159,6 +159,20 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
 
      free (u);
     }
+
+/*    if ((u = joinpath (t, "cmdline"))) {
+     struct stat st;
+     if (!stat (u, &st)) {
+      char *ru = readfile (u);
+
+      if (strstr (ru, )) {
+       linux_bootchart_have_thread = 0;
+      }
+     }
+
+     free (u);
+    }*/
+
     free (t);
    }
 
@@ -226,12 +240,17 @@ void *linux_bootchart_thread (void *ignored) {
  char *save_to = "/var/log/bootchart.tgz";
  FILE *f;
  char try_acct = 1;
+ signed int extra_wait = 0;
+
+ if ((node = cfg_getnode ("configuration-bootchart-extra-waiting-time", NULL)) && node->value) {
+  extra_wait = node->value;
+ }
 
  char *buffer_ds = NULL;
  char *buffer_ps = NULL;
  char *buffer_st = NULL;
 
- while (linux_bootchart_have_thread) {
+ while (linux_bootchart_have_thread || extra_wait) {
   char *uptime = linux_bootchart_get_uptime();
 
   if (linux_bootchart_process_accounting && try_acct) {
@@ -248,6 +267,8 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   usleep (linux_bootchart_sleep_time);
+  if (!linux_bootchart_have_thread)
+   extra_wait -= linux_bootchart_sleep_time;
  }
 
  if ((node = cfg_getnode ("configuration-bootchart-save-to", NULL)) && node->svalue) {

@@ -115,8 +115,11 @@
   <bootchart>
    <active b="no" />
    <save-to s="/var/log/bootchart.tgz" />
-   <polling-interval i="200" /> <!-- ... in microseconds -->
+   <polling-interval i="200000" /> <!-- ... in microseconds -->
    <process-accounting b="yes" />
+
+<!--   <stop-logging-on-process s="x:y:z" /> -->
+   <extra-waiting-time i="5000000" /> <!-- ... also in microseconds -->
   </bootchart>
 
   <environment>

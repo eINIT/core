@@ -127,7 +127,9 @@ Configuration = element configuration {
     element active { BooleanAttribute }? &
     element save-to { StringAttribute }? &
     element polling-interval { IntegerAttribute }? &
-    element process-accounting { BooleanAttribute }?
+    element process-accounting { BooleanAttribute }? &
+    element stop-logging-on-process { StringAttribute }? &
+    element extra-waiting-time { IntegerAttribute }?
   }? &
 
   element environment {
