@@ -257,7 +257,7 @@ char *readfile_l (const char *filename, ssize_t *rl) {
  if (!filename) return NULL;
 
 /* make an exception to the no-0-length-files rule for stuff in /proc */
- if (stat (filename, &st) || ((st.st_size <= 0) && (strstr (filename, "/proc/") != filename))) return NULL;
+ if (stat (filename, &st) || S_ISDIR(st.st_mode) || ((st.st_size <= 0) && (strstr (filename, "/proc/") != filename))) return NULL;
 
  fd = eopen (filename, O_RDONLY);
 
