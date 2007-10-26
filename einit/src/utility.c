@@ -229,8 +229,11 @@ char *readfd_l (int fd, ssize_t *rl) {
   blen = blen + rn;
  } while (rn > 0);
 
+#ifdef BITCHY
+/* about the only way we get here is files in /proc that suddently 'vanished'... so no need to bitch */
  if (errno && (errno != EAGAIN))
   bitch(bitch_stdio, errno, "reading file failed.");
+#endif
 
  if (blen > -1) {
   data = erealloc (buf, blen+1);

@@ -140,9 +140,9 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
  struct dirent *e;
  char **data = NULL;
 
- d = eopendir ("/proc");
+ d = opendir ("/proc");
  if (d != NULL) {
-  while ((e = ereaddir (d))) {
+  while ((e = readdir (d))) {
    char *t, *u, *da = NULL;
    if (strmatch (e->d_name, ".") || strmatch (e->d_name, "..")) {
     continue;
@@ -165,7 +165,7 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
    }
   }
 
-  eclosedir(d);
+  closedir(d);
  }
 
  if (data) {
@@ -387,12 +387,25 @@ void linux_bootchart_core_event_handler (struct einit_event *ev) {
   case einit_core_mode_switch_done:
    linux_bootchart_switch_done ();
    break;
-   default: break;
+
+  default: break;
+ }
+}
+
+void linux_bootchart_boot_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_boot_early:
+   linux_bootchart_in_switch--;
+   linux_bootchart_switch ();
+   break;
+
+  default: break;
  }
 }
 
 int linux_bootchart_cleanup (struct lmodule *pa) {
  event_ignore (einit_event_subsystem_core, linux_bootchart_core_event_handler);
+ event_ignore (einit_event_subsystem_boot, linux_bootchart_boot_event_handler);
 
  return 0;
 }
@@ -400,12 +413,8 @@ int linux_bootchart_cleanup (struct lmodule *pa) {
 int linux_bootchart_configure (struct lmodule *tm) {
  module_init (tm);
 
+ event_listen (einit_event_subsystem_boot, linux_bootchart_boot_event_handler);
  event_listen (einit_event_subsystem_core, linux_bootchart_core_event_handler);
-
- if (!(coremode & einit_mode_ipconly)) {
-  linux_bootchart_in_switch--;
-  linux_bootchart_switch();
- }
 
  return 0;
 }
