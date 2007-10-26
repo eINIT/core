@@ -402,8 +402,10 @@ int linux_bootchart_configure (struct lmodule *tm) {
 
  event_listen (einit_event_subsystem_core, linux_bootchart_core_event_handler);
 
- linux_bootchart_in_switch--;
- linux_bootchart_switch();
+ if (!(coremode & einit_mode_ipconly)) {
+  linux_bootchart_in_switch--;
+  linux_bootchart_switch();
+ }
 
  return 0;
 }
