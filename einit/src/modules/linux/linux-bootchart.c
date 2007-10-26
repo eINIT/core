@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/acct.h>
 
 #define EXPECTED_EIV 1
 
@@ -82,6 +83,7 @@ module_register(linux_bootchart_self);
 int linux_bootchart_in_switch = 0;
 char linux_bootchart_have_thread = 0;
 unsigned long linux_bootchart_sleep_time = 0;
+char linux_bootchart_process_accounting = 0;
 
 char *linux_bootchart_get_uptime () {
  char *tmp = readfile ("/proc/uptime");
@@ -223,6 +225,7 @@ void *linux_bootchart_thread (void *ignored) {
  struct cfgnode *node;
  char *save_to = "/var/log/bootchart.tgz";
  FILE *f;
+ char try_acct = 1;
 
  char *buffer_ds = NULL;
  char *buffer_ps = NULL;
@@ -230,6 +233,11 @@ void *linux_bootchart_thread (void *ignored) {
 
  while (linux_bootchart_have_thread) {
   char *uptime = linux_bootchart_get_uptime();
+
+  if (linux_bootchart_process_accounting && try_acct) {
+   if (acct ("/dev/kernel_pacct") == -1)
+    try_acct = 1;
+  }
 
   if (uptime) {
    buffer_ds = linux_bootchart_update_ds (buffer_ds, uptime);
@@ -280,6 +288,21 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_st);
+ }
+
+ if (linux_bootchart_process_accounting) {
+  char *r = readfile ("/dev/kernel_pacct");
+  if (r) {
+   if ((f = fopen ("/tmp/bootchart.einit/kernel_pacct", "w"))) {
+    fputs (r, f);
+
+    fclose (f);
+   }
+
+   unlink ("/dev/kernel_pacct");
+  }
+
+  acct(NULL);
  }
 
  if ((f = fopen ("/tmp/bootchart.einit/header", "w"))) {
@@ -357,6 +380,10 @@ void linux_bootchart_switch () {
    linux_bootchart_sleep_time = node->value;
   } else {
    linux_bootchart_sleep_time = 200;
+  }
+
+  if ((node = cfg_getnode ("configuration-bootchart-process-accounting", NULL)) && node->flag) {
+   linux_bootchart_process_accounting = 1;
   }
 
   if (!linux_bootchart_have_thread) {

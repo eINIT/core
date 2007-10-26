@@ -116,6 +116,7 @@
    <active b="no" />
    <save-to s="/var/log/bootchart.tgz" />
    <polling-interval i="200" /> <!-- ... in microseconds -->
+   <process-accounting b="yes" />
   </bootchart>
 
   <environment>
