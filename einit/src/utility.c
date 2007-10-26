@@ -219,7 +219,7 @@ char *readfd_l (int fd, ssize_t *rl) {
  int rn = 0;
  void *buf = NULL;
  char *data = NULL;
- uint32_t blen = 0;
+ ssize_t blen = 0;
 
  buf = emalloc (BUFFERSIZE * 10);
  do {
@@ -232,16 +232,18 @@ char *readfd_l (int fd, ssize_t *rl) {
  if (errno && (errno != EAGAIN))
   bitch(bitch_stdio, errno, "reading file failed.");
 
- data = erealloc (buf, blen+1);
- data[blen] = 0;
- if (blen > 0) {
-  *(data+blen-1) = 0;
- } else {
-  free (data);
-  data = NULL;
- }
+ if (blen > -1) {
+  data = erealloc (buf, blen+1);
+  data[blen] = 0;
+  if (blen > 0) {
+   *(data+blen-1) = 0;
+  } else {
+   free (data);
+   data = NULL;
+  }
 
- if (rl) *rl = blen;
+  if (rl) *rl = blen;
+ }
 
  return data;
 }

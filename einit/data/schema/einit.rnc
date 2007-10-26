@@ -123,6 +123,12 @@ Configuration = element configuration {
     }?
   }? &
 
+  element bootchart {
+    element active { BooleanAttribute }? &
+    element save-to { StringAttribute }? &
+    element polling-interval { IntegerAttribute }?
+  }? &
+
   element environment {
     element global { IDAttribute, StringAttribute }* &
     element safe { attribute * { text }* }?

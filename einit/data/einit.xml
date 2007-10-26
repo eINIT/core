@@ -112,6 +112,12 @@
    <cpufreq cpus="2" in-switch="performance" post-switch="ondemand" />
   </linux>
 
+  <bootchart>
+   <active b="no" />
+   <save-to s="/var/log/bootchart.tgz" />
+   <polling-interval i="200" /> <!-- ... in microseconds -->
+  </bootchart>
+
   <environment>
    <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin" />
    <global id="TERM" s="linux" />
