@@ -115,7 +115,7 @@
   <bootchart>
    <active b="no" />
    <save-to s="/var/log/bootchart.tgz" />
-   <polling-interval i="200000" /> <!-- ... in microseconds -->
+   <polling-interval i="20000" /> <!-- ... in microseconds -->
    <process-accounting b="yes" />
 
 <!--   <stop-logging-on-process s="x:y:z" /> -->
