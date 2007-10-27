@@ -129,7 +129,10 @@ Configuration = element configuration {
     element polling-interval { IntegerAttribute }? &
     element process-accounting { BooleanAttribute }? &
     element stop-logging-on-process { StringAttribute }? &
-    element extra-waiting-time { IntegerAttribute }?
+    element extra-waiting-time { IntegerAttribute }? &
+
+    element chart-directory { StringAttribute }? &
+    element chart-format { StringAttribute }?
   }? &
 
   element environment {
