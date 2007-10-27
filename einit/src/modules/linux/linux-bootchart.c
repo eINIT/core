@@ -390,6 +390,10 @@ void *linux_bootchart_thread (void *ignored) {
 
  unlink_recursive ("/tmp/bootchart.einit/", 1);
 
+ char *di = cfg_getstring ("configuration-bootchart-chart-directory", NULL);
+ char *fo = cfg_getstring ("configuration-bootchart-chart-format", NULL);
+ esprintf (buffer, BUFFERSIZE, "bootchart -o %s -f %s %s", di, fo, save_to);
+
  return NULL;
 }
 

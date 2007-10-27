@@ -120,6 +120,9 @@
 
 <!--   <stop-logging-on-process s="x:y:z" /> -->
    <extra-waiting-time i="5000000" /> <!-- ... also in microseconds -->
+
+   <chart-directory s="/var/log" />
+   <chart-format s="png" />
   </bootchart>
 
   <environment>
