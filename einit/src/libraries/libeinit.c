@@ -104,7 +104,7 @@ char *(*einit_ipc_request_fp)(const char *) = NULL;
 void (*einit_remote_event_emit_dispatch_fp)(struct einit_remote_event *) = NULL;
 void (*einit_remote_event_emit_fp)(struct einit_remote_event *, enum einit_event_emit_flags) = NULL;
 
-char einit_connect() {
+char einit_connect(int *argc, char **argv) {
 /* TODO: fix this up again */
  char t = 0;
 
@@ -118,9 +118,9 @@ char einit_connect() {
   }
 
   if ((einit_ipc_lib_handle = dlopen (clib, RTLD_NOW))) {
-   char (*cfunc)() = dlsym (einit_ipc_lib_handle, "einit_connect");
+   char (*cfunc)(int*, char**) = dlsym (einit_ipc_lib_handle, "einit_connect");
    if (cfunc) {
-    if (cfunc()) {
+    if (cfunc(argc, argv)) {
      einit_disconnect_fp = dlsym (einit_ipc_lib_handle, "einit_disconnect");
      einit_receive_events_fp = dlsym (einit_ipc_lib_handle, "einit_receive_events");
      einit_ipc_fp = dlsym (einit_ipc_lib_handle, "einit_ipc");
@@ -414,7 +414,7 @@ struct stree *einit_get_all_modules () {
  struct stree *rtree = NULL;
  char *module_data;
 
- if (!einit_connected && !einit_connect()) return NULL;
+ if (!einit_connected && !einit_connect(NULL, NULL)) return NULL;
 
  module_data = einit_ipc_safe ("list modules --xml");
 
@@ -515,7 +515,7 @@ struct stree *einit_get_all_services () {
  struct stree *rtree = NULL;
  char *module_data;
 
- if (!einit_connected && !einit_connect()) return NULL;
+ if (!einit_connected && !einit_connect(NULL, NULL)) return NULL;
 
  module_data = einit_ipc_safe ("list services --xml");
 
@@ -763,7 +763,7 @@ struct stree *einit_get_all_modes() {
  struct stree *rtree = NULL;
  char *mode_data;
 
- if (!einit_connected && !einit_connect()) return NULL;
+ if (!einit_connected && !einit_connect(NULL, NULL)) return NULL;
 
  mode_data = einit_ipc_safe ("list modes --xml");
 

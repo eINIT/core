@@ -189,7 +189,7 @@ char *einit_ipc_safe(const char *request);
  *
  * Connect to eINIT, via whatever Method is deemed appropriate. Use this before using any of the einit*_ipc*() functions. The return value is either zero for "that didn't work" or non-zero for "go ahead, you're good to go".
  */
-char einit_connect();
+char einit_connect(int *argc, char **argv);
 
 /*!\brief Disonnect from eINIT
  *

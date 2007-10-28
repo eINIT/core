@@ -45,6 +45,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <expat.h>
 
+#ifdef DARWIN
+/* dammit, what's wrong with macos!? */
+
+struct exported_function *cfg_addnode_fs = NULL;
+struct exported_function *cfg_findnode_fs = NULL;
+struct exported_function *cfg_getstring_fs = NULL;
+struct exported_function *cfg_getnode_fs = NULL;
+struct exported_function *cfg_filter_fs = NULL;
+struct exported_function *cfg_getpath_fs = NULL;
+struct exported_function *cfg_prefix_fs = NULL;
+
+struct cfgnode *cmode = NULL, *amode = NULL;
+char *bootstrapmodulepath = NULL;
+time_t boottime = 0;
+enum einit_mode coremode = 0;
+const struct smodule **coremodules[MAXMODULES] = { NULL };
+char **einit_initial_environment = NULL;
+char **einit_global_environment = NULL;
+struct spidcb *cpids = NULL;
+int einit_have_feedback = 1;
+struct stree *service_aliases = NULL;
+struct stree *service_usage = NULL;
+char einit_new_node = 0;
+struct event_function *event_functions = NULL;
+struct stree *exported_functions = NULL;
+unsigned char *gdebug = 0;
+struct stree *hconfiguration = NULL;
+struct utsname osinfo = {};
+pthread_attr_t thread_attribute_detached = {};
+struct spidcb *sched_deadorphans = NULL;
+sched_watch_pid_t sched_watch_pid_fp = NULL;
+char einit_quietness = 0;
+
+#endif
+
 struct remote_event_function {
  uint32_t type;                                 /*!< type of function */
  void (*handler)(struct einit_remote_event *);  /*!< handler function */
@@ -240,7 +275,7 @@ void *einit_message_thread(void *notused) {
  return NULL;
 }
 
-char einit_connect() {
+char einit_connect(int *argc, char **argv) {
 // char *dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
  pthread_attr_init (&einit_dbus_thread_attribute_detached);
  pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);

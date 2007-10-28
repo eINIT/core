@@ -48,7 +48,7 @@ Einit::Einit() {
  this->modulesRaw = NULL;
  this->modesRaw = NULL;
 
- einit_connect();
+ einit_connect(NULL, NULL);
 }
 
 Einit::~Einit() {

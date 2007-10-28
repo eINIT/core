@@ -42,79 +42,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/config.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <string.h>
 #include <libgen.h>
 #include <errno.h>
 
 #include <sys/ioctl.h>
 
+#include <einit/einit.h>
+
 int main(int, char **);
 int print_usage_info ();
-int ipc (char *);
-
-char *ctrlsocket = "/dev/einit-control";
 
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL " Control\nCopyright (c) 2006, 2007, Magnus Deininger\nUsage:\n einit-control [-s control-socket] [-v] [-h] [function] [--] command\n [function] [-s control-socket] [-v] [-h] [--] command\n\npossible commands for function \"power\":\n down   tell einit to shut down the computer\n reset  reset/reboot the computer\n\nNOTE: calling einit-control [function] [command] is equivalent to calling [function] [command] directly.\n  (provided that the proper symlinks are in place.)\n", stderr);
  return -1;
-}
-
-int ipc (char *cmd) {
- int sock = socket (AF_UNIX, SOCK_STREAM, 0), ret = 0;
- char buffer[BUFFERSIZE];
- struct sockaddr_un saddr;
- int len = strlen (cmd);
- char *c;
- FILE *esocket;
- if (sock == -1)
-  return bitch (bitch_stdio, 0, "socket not open");
-
- saddr.sun_family = AF_UNIX;
- strncpy (saddr.sun_path, ctrlsocket, sizeof(saddr.sun_path) - 1);
-
- if (connect(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
-  eclose (sock);
-  return bitch (bitch_stdio, 0, "connect() failed.");
- }
-
- len = strlen(cmd);
- c = emalloc ((len+2)*sizeof (char));
- esprintf (c, (len+2), "%s\n", cmd);
-
- if (!(esocket = fdopen (sock, "w+"))) {
-  bitch(bitch_stdio, 0, "fdopen() failed.");
-  eclose (sock);
-  return 0;
- }
-
- if (fputs(c, esocket) == EOF) {
-  bitch(bitch_stdio, 0, "fputs() failed.");
- }
-
- if (fflush (esocket) == EOF)
-  bitch(bitch_stdio, errno, "couldn't flush IPC buffer");
-
- while ((!feof(esocket)) && fgets (buffer, BUFFERSIZE, esocket)) {
-  if (strmatch("IPC//processed.\n", buffer)) {
-   char retval[BUFFERSIZE];
-   *retval = 0;
-
-   fgets (retval, BUFFERSIZE, esocket);
-
-   ret = atoi(retval);
-
-   break;
-  }
-
-  eputs (buffer, stdout);
- }
-
- errno = 0;
-
- efclose (esocket);
- return ret;
 }
 
 int main(int argc, char **argv) {
@@ -123,6 +64,7 @@ int main(int argc, char **argv) {
  char *name = estrdup ((char *)basename(argv[0]));
  char ansi = 0;
  c[0] = 0;
+ char *res = NULL;
  if (strmatch (name, "erc")) {
   c = (char *)erealloc (c, 3*sizeof (char));
   c = strcat (c, "rc");
@@ -136,15 +78,15 @@ int main(int argc, char **argv) {
   ansi = 1;
  }
 
+ if (!einit_connect(&argc, argv)) {
+  fputs (stderr, "Error: can't connect to eINIT\n");
+
+  return -1;
+ }
+
  for (i = 1; i < argc; i++) {
   if (argv[i][0] == '-')
    switch (argv[i][1]) {
-    case 's':
-     if ((++i) < argc)
-      ctrlsocket = argv[i];
-     else
-      return print_usage_info ();
-     break;
     case 'h':
      return print_usage_info ();
      break;
@@ -176,8 +118,10 @@ int main(int argc, char **argv) {
   c = erealloc (c, (strlen(c)+8)*sizeof (char));
   c = strcat (c, " --ansi");
  }
-
- ret = ipc(c);
+ 
+ if ((res = einit_ipc_request(c))) {
+  puts (res);
+ }
 
  return ret;
 }
