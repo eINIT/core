@@ -6,7 +6,12 @@
    <maintain-mtab b="yes" s="/etc/mtab" />
    <filesystem-guessing-order s="ext4:ext3:ext2:reiser4:reiserfs:xfs:jfs:ufs:udf" />
    <mountpoints>
-    <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache" />
+<!-- *coughcough* the '/' at the end is intentional. That's because, after eINIT is done with
+     shutting down, it'll pass control to the 'last-rites'-program, which will unmount everything
+     that einit couldn't unmount before. since parts of einit actually open files under / for
+	 writing, and einit can't kill itself for things to work, so / simply won't be unmounted by
+	 einit, but instead we'll rely on this program to do it for us...->
+    <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache:/" />
     <critical s="/usr:/var" />
    </mountpoints>
    <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
