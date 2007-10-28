@@ -182,6 +182,7 @@ char *einit_ipc_i (const char *cmd, const char *interface) {
 
  if (rvx) {
   char *rv = set2str ('\n', (const char **)rvx);
+  free (rvx);
   return rv;
  } else return NULL;
 // return ret;
