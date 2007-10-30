@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
  }
 
  if (!einit_connect(&argc, argv)) {
-  fputs (stderr, "Error: can't connect to eINIT\n");
+  fputs ("Error: can't connect to eINIT\n", stderr);
 
   return -1;
  }

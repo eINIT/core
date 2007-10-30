@@ -152,7 +152,8 @@ pthread_mutex_t
  mount_fs_mutex = PTHREAD_MUTEX_INITIALIZER,
  mount_device_data_mutex = PTHREAD_MUTEX_INITIALIZER,
  mounter_dd_by_devicefile_mutex = PTHREAD_MUTEX_INITIALIZER,
- mounter_dd_by_mountpoint_mutex = PTHREAD_MUTEX_INITIALIZER;
+ mounter_dd_by_mountpoint_mutex = PTHREAD_MUTEX_INITIALIZER,
+ mount_autostart_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *mount_filesystems = NULL;
 
@@ -1026,7 +1027,9 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
   mount_critical_module = mod_add (NULL, newmodule);
 
+  emutex_lock (&mount_autostart_mutex);
   mount_autostart = (char **)setadd ((void **)mount_autostart, (void *)"mount-critical", SET_TYPE_STRING);
+  emutex_unlock (&mount_autostart_mutex);
  }
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
@@ -1140,9 +1143,11 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
+    emutex_lock (&mount_autostart_mutex);
     if (!strmatch (servicename, "fs-root") && (!mount_autostart || !inset ((const void **)mount_autostart, servicename, SET_TYPE_STRING))) {
      mount_autostart = (char **)setadd ((void **)mount_autostart, (void *)servicename, SET_TYPE_STRING);
     }
+    emutex_unlock (&mount_autostart_mutex);
 
     if (inset ((const void **)mount_critical, s->key, SET_TYPE_STRING) || inset ((const void **)mp->options, "critical", SET_TYPE_STRING)) {
      mount_critical_filesystems = streeadd (mount_critical_filesystems, servicename, NULL, SET_NOALLOC, NULL);
@@ -1949,6 +1954,7 @@ void einit_mount_boot_event_handler (struct einit_event *ev) {
   case einit_boot_devices_available:
    emount_root ();
 
+   emutex_lock (&mount_autostart_mutex);
    if (mount_autostart) {
     struct einit_event eml = evstaticinit(einit_core_manipulate_services);
     eml.stringset = mount_autostart;
@@ -1957,6 +1963,7 @@ void einit_mount_boot_event_handler (struct einit_event *ev) {
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
     evstaticdestroy(eml);
    }
+   emutex_unlock (&mount_autostart_mutex);
 
    {
     struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
