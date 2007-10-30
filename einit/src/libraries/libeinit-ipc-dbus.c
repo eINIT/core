@@ -420,7 +420,7 @@ char *einit_ipc_safe(const char *command) {
 }
 
 char *einit_ipc_request(const char *command) {
- if (einit_dbus_connection || einit_connect()) {
+ if (einit_dbus_connection || einit_connect(NULL, NULL)) {
   return einit_ipc(command);
  }
 
