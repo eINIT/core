@@ -10,7 +10,7 @@
      shutting down, it'll pass control to the 'last-rites'-program, which will unmount everything
      that einit couldn't unmount before. since parts of einit actually open files under / for
 	 writing, and einit can't kill itself for things to work, so / simply won't be unmounted by
-	 einit, but instead we'll rely on this program to do it for us...->
+	 einit, but instead we'll rely on this program to do it for us... -->
     <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache:/" />
     <critical s="/usr:/var" />
    </mountpoints>
