@@ -2,7 +2,7 @@
  <v-hald
   name="Hardware Abstraction Layer"
   provides="hal"
-  after="logger:displaymanager"
+  after="logger:displaymanager:acpid"
   requires="dbus">
 
   <execute id="daemon" code="hald --daemon=yes --use-syslog --verbose=no" />
