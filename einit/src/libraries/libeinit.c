@@ -139,7 +139,8 @@ char einit_connect(int *argc, char **argv) {
     einit_ipc_lib_handle = NULL;
    }
   } else {
-   eputs (dlerror (), stderr);
+/* don't nag if the lib can't be loaded... */
+//   eputs (dlerror (), stderr);
    continue;
   }
  }
