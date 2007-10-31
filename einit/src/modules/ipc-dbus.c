@@ -1,8 +1,9 @@
 /*
- *  ipc-dbus.c++
+ *  ipc-dbus.c
  *  einit
  *
  *  Created by Magnus Deininger on 05/09/2006.
+ *  Converted from C++ to C on 31/10/2007
  *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
  *
  */
@@ -43,8 +44,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <errno.h>
 #include <string.h>
+#include <dbus/dbus.h>
 
-#include <einit-modules/dbus.h>
 #include <einit-modules/ipc.h>
 
 #include <fcntl.h>
@@ -61,30 +62,26 @@ int einit_dbus_cleanup (struct lmodule *);
 int einit_ipc_dbus_enable (void *pa, struct einit_event *status);
 int einit_ipc_dbus_disable (void *pa, struct einit_event *status);
 
-class einit_dbus einit_main_dbus_class;
-
-extern "C" {
-
 int einit_dbus_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const char * einit_dbus_provides[] = {"ipc-dbus", NULL};
-const char * einit_dbus_requires[] = {"dbus", NULL};
+char * einit_dbus_provides[] = {"ipc-dbus", NULL};
+char * einit_dbus_requires[] = {"dbus", NULL};
 const struct smodule einit_dbus_self = {
- EINIT_VERSION,
- BUILDNUMBER,
- 1,
- einit_module_generic,
- (char *)"eINIT <-> DBUS connector",
- (char *)"einit-ipc-dbus",
- {
-  (char **)einit_dbus_provides,
-  (char **)einit_dbus_requires,
-  NULL,
-  NULL
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "eINIT <-> DBUS connector",
+ .rid       = "einit-ipc-dbus",
+ .si        = {
+  .provides = einit_dbus_provides,
+  .requires = einit_dbus_requires,
+  .after    = NULL,
+  .before   = NULL
  },
- einit_dbus_configure
+ .configure = einit_dbus_configure
 };
 
 module_register(einit_dbus_self);
@@ -93,7 +90,40 @@ module_register(einit_dbus_self);
 
 pthread_attr_t einit_ipc_dbus_thread_attribute_detached;
 
-int einit_dbus_configure (struct lmodule *irr) {
+DBusError einit_dbus_error;
+DBusConnection *einit_dbus_connection;
+dbus_uint32_t einit_dbus_sequence = 1;
+char einit_dbus_terminate_thread;
+char einit_dbus_active = 0;
+pthread_mutex_t einit_dbus_sequence_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_t einit_dbus_message_thread_id;
+
+const char * einit_dbus_introspection_data =
+  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+  "<node name=\"/org/einit/einit\">"
+   "<interface name=\"org.einit.Einit\">"
+    "<method name=\"Configure\">"
+    "</method>"
+    "<method name=\"EventEmit\">"
+     "<arg type=\"s\" direction=\"in\" />"
+     "<arg type=\"s\" direction=\"out\" />"
+    "</method>"
+   "</interface>"
+  "</node>";
+
+void *einit_dbus_handle_event_bootstrap (DBusMessage *);
+int einit_ipc_dbus_enable (void *, struct einit_event *);
+int einit_ipc_dbus_disable (void *, struct einit_event *);
+int einit_dbus_cleanup (struct lmodule *);
+void einit_dbus_signal_dbus (const char *);
+void einit_dbus_generic_event_handler (struct einit_event *);
+DBusMessage *einit_dbus_create_event_message (DBusMessage *, struct einit_event *);
+void *einit_dbus_message_thread(void *);
+void *einit_dbus_handle_event (DBusMessage *);
+void *einit_dbus_ipc_spawn_safe(DBusMessage *);
+void *einit_dbus_ipc_spawn(DBusMessage *);
+
+int einit_dbus_configure(struct lmodule *irr) {
  int pthread_errno;
  module_init (irr);
 
@@ -106,20 +136,16 @@ int einit_dbus_configure (struct lmodule *irr) {
  thismodule->disable = einit_ipc_dbus_disable;
  thismodule->cleanup = einit_dbus_cleanup;
 
- return einit_main_dbus_class.configure();;
-}
-
-}
-
-int einit_dbus::configure() {
- event_listen (einit_event_subsystem_any, this->generic_event_handler);
+ event_listen (einit_event_subsystem_any, einit_dbus_generic_event_handler);
 
  dbus_threads_init_default();
+
+ dbus_error_init(&(einit_dbus_error));
 
  return 0;
 }
 
-void einit_dbus::signal_dbus (const char *IN_string) {
+void einit_dbus_signal_dbus (const char *IN_string) {
  DBusMessage *message;
  DBusMessageIter argv;
 
@@ -129,59 +155,44 @@ void einit_dbus::signal_dbus (const char *IN_string) {
  dbus_message_iter_init_append(message, &argv);
  if (!dbus_message_iter_append_basic(&argv, DBUS_TYPE_STRING, &IN_string)) { return; }
 
- emutex_lock (&this->sequence_mutex);
- this->sequence++;
-/* if (!dbus_connection_send(this->connection, message, &this->sequence)) { emutex_unlock (&this->sequence_mutex); return; }*/
- dbus_connection_send(this->connection, message, &this->sequence);
- emutex_unlock (&this->sequence_mutex);
-// dbus_connection_flush(this->connection);
+ emutex_lock (&einit_dbus_sequence_mutex);
+ einit_dbus_sequence++;
+ /* if (!dbus_connection_send(einit_dbus_connection, message, &einit_dbus_sequence)) { emutex_unlock (&einit_dbus_sequence_mutex); return; }*/
+ dbus_connection_send(einit_dbus_connection, message, &einit_dbus_sequence);
+ emutex_unlock (&einit_dbus_sequence_mutex);
+// dbus_connection_flush(einit_dbus_connection);
  dbus_message_unref(message);
 }
 
-void einit_dbus::broadcast_event (struct einit_event *ev) {
+void einit_dbus_broadcast_event (struct einit_event *ev) {
  DBusMessage *message;
 
  message = dbus_message_new_signal("/org/einit/einit", "org.einit.Einit.Information", "EventSignal");
  if (!message) { return; }
 
- message = this->create_event_message (message, ev);
+ message = einit_dbus_create_event_message (message, ev);
  if (!message) { return; }
 
- emutex_lock (&this->sequence_mutex);
- this->sequence++;
- dbus_connection_send(this->connection, message, &this->sequence);
- emutex_unlock (&this->sequence_mutex);
+ emutex_lock (&einit_dbus_sequence_mutex);
+ einit_dbus_sequence++;
+ dbus_connection_send(einit_dbus_connection, message, &einit_dbus_sequence);
+ emutex_unlock (&einit_dbus_sequence_mutex);
 
  dbus_message_unref(message);
 }
 
-void einit_dbus::generic_event_handler (struct einit_event *ev) {
- if (einit_main_dbus_class.active) {
+void einit_dbus_generic_event_handler (struct einit_event *ev) {
+ if (einit_dbus_active) {
   uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
 
   if (subsystem != einit_event_subsystem_timer) // don't broadcast timer events.
-   einit_main_dbus_class.broadcast_event (ev);
+   einit_dbus_broadcast_event (ev);
  }
 
  return;
 }
 
-einit_dbus::einit_dbus() {
- dbus_error_init(&(this->error));
- this->sequence = 1;
- this->active = 0;
-
- pthread_mutex_init (&(this->sequence_mutex), NULL);
-
- this->introspection_data = einit_dbus_introspection_data;
-// dbus_g_object_type_install_info (COM_FOO_TYPE_MY_OBJECT, &(this->introspection_data));
-}
-
-einit_dbus::~einit_dbus() {
- dbus_error_free(&(this->error));
-}
-
-int einit_dbus::dbus_connect () {
+int einit_dbus_dbus_connect () {
  const char *dbusname;
  const char *dbusaddress;
  int ret = 0;
@@ -194,39 +205,39 @@ int einit_dbus::dbus_connect () {
  dbusname = "org.einit.Einit";
 #endif
 
- if (dbus_error_is_set(&(this->error))) { 
-  notice (2, "DBUS: Error (%s)\n", this->error.message); 
-  dbus_error_free(&(this->error));
+ if (dbus_error_is_set(&(einit_dbus_error))) { 
+  notice (2, "DBUS: Error (%s)\n", einit_dbus_error.message); 
+  dbus_error_free(&(einit_dbus_error));
  }
 
-// this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
- this->connection = dbus_connection_open_private (dbusaddress, &(this->error));
- if (dbus_error_is_set(&(this->error))) { 
-  notice (2, "DBUS: Connection Error (%s)\n", this->error.message); 
-  dbus_error_free(&(this->error));
+// einit_dbus_connection = dbus_bus_get(DBUS_BUS_SESSION, &(einit_dbus_error));
+ einit_dbus_connection = dbus_connection_open_private (dbusaddress, &(einit_dbus_error));
+ if (dbus_error_is_set(&(einit_dbus_error))) { 
+  notice (2, "DBUS: Connection Error (%s)\n", einit_dbus_error.message); 
+  dbus_error_free(&(einit_dbus_error));
  }
- if (!this->connection) return status_failed;
+ if (!einit_dbus_connection) return status_failed;
 
- if (dbus_bus_register (this->connection, &(this->error)) != TRUE) {
-  if (dbus_error_is_set(&(this->error))) { 
-   notice(2, "DBUS: Registration Error (%s)\n", this->error.message); 
-   dbus_error_free(&(this->error));
+ if (dbus_bus_register (einit_dbus_connection, &(einit_dbus_error)) != TRUE) {
+  if (dbus_error_is_set(&(einit_dbus_error))) { 
+   notice(2, "DBUS: Registration Error (%s)\n", einit_dbus_error.message); 
+   dbus_error_free(&(einit_dbus_error));
   }
 
   return status_failed;
  }
 
- ret = dbus_bus_request_name(this->connection, dbusname, DBUS_NAME_FLAG_REPLACE_EXISTING, &(this->error));
- if (dbus_error_is_set(&(this->error))) { 
-  notice(2, "DBUS: Name Error (%s)\n", this->error.message); 
-  dbus_error_free(&(this->error));
+ ret = dbus_bus_request_name(einit_dbus_connection, dbusname, DBUS_NAME_FLAG_REPLACE_EXISTING, &(einit_dbus_error));
+ if (dbus_error_is_set(&(einit_dbus_error))) { 
+  notice(2, "DBUS: Name Error (%s)\n", einit_dbus_error.message); 
+  dbus_error_free(&(einit_dbus_error));
  }
  if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return status_failed;
 
  return status_ok;
 }
 
-int einit_dbus::enable (struct einit_event *status) {
+int einit_dbus_enable (struct einit_event *status) {
  const char *dbusname;
  const char *dbusaddress;
  int ret = 0;
@@ -239,67 +250,61 @@ int einit_dbus::enable (struct einit_event *status) {
  dbusname = "org.einit.Einit";
 #endif
 
-// this->connection = dbus_bus_get(DBUS_BUS_SESSION, &(this->error));
- this->connection = dbus_connection_open_private (dbusaddress, &(this->error));
- if (dbus_error_is_set(&(this->error))) { 
-  fbprintf(status, "DBUS: Connection Error (%s)\n", this->error.message); 
-  dbus_error_free(&(this->error));
+// einit_dbus_connection = dbus_bus_get(DBUS_BUS_SESSION, &(einit_dbus_error));
+ einit_dbus_connection = dbus_connection_open_private (dbusaddress, &(einit_dbus_error));
+ if (dbus_error_is_set(&(einit_dbus_error))) { 
+  fbprintf(status, "DBUS: Connection Error (%s)\n", einit_dbus_error.message); 
+  dbus_error_free(&(einit_dbus_error));
  }
- if (!this->connection) return status_failed;
+ if (!einit_dbus_connection) return status_failed;
 
- if (dbus_bus_register (this->connection, &(this->error)) != TRUE) {
-  if (dbus_error_is_set(&(this->error))) { 
-   fbprintf(status, "DBUS: Registration Error (%s)\n", this->error.message); 
-   dbus_error_free(&(this->error));
+ if (dbus_bus_register (einit_dbus_connection, &(einit_dbus_error)) != TRUE) {
+  if (dbus_error_is_set(&(einit_dbus_error))) { 
+   fbprintf(status, "DBUS: Registration Error (%s)\n", einit_dbus_error.message); 
+   dbus_error_free(&(einit_dbus_error));
   }
 
   return status_failed;
  }
 
- ret = dbus_bus_request_name(this->connection, dbusname, DBUS_NAME_FLAG_REPLACE_EXISTING, &(this->error));
- if (dbus_error_is_set(&(this->error))) { 
-  fbprintf(status, "DBUS: Name Error (%s)\n", this->error.message); 
-  dbus_error_free(&(this->error));
+ ret = dbus_bus_request_name(einit_dbus_connection, dbusname, DBUS_NAME_FLAG_REPLACE_EXISTING, &(einit_dbus_error));
+ if (dbus_error_is_set(&(einit_dbus_error))) { 
+  fbprintf(status, "DBUS: Name Error (%s)\n", einit_dbus_error.message); 
+  dbus_error_free(&(einit_dbus_error));
  }
  if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return status_failed;
 
- this->terminate_thread = 0;
- this->active = 1;
+ einit_dbus_terminate_thread = 0;
+ einit_dbus_active = 1;
 
- if ((errno = pthread_create (&(this->message_thread_id), /*&einit_ipc_dbus_thread_attribute_detached*/ NULL, &(einit_dbus::message_thread_bootstrap), NULL))) {
+ if ((errno = pthread_create (&(einit_dbus_message_thread_id), /*&einit_ipc_dbus_thread_attribute_detached*/ NULL, einit_dbus_message_thread, NULL))) {
   fbprintf (status, "could not create detached I/O thread, creating non-detached thread. (error = %s)", strerror(errno));
 
-  ethread_create (&(this->message_thread_id), NULL, &(einit_dbus::message_thread_bootstrap), NULL);
+  ethread_create (&(einit_dbus_message_thread_id), NULL, einit_dbus_message_thread, NULL);
  }
 
  return status_ok;
 }
 
-int einit_dbus::disable (struct einit_event *status) {
+int einit_dbus_disable (struct einit_event *status) {
 
-/* dbus_connection_flush(this->connection);*/
- this->terminate_thread = 1;
- this->active = 0;
+ /* dbus_connection_flush(einit_dbus_connection);*/
+ einit_dbus_terminate_thread = 1;
+ einit_dbus_active = 0;
 
- pthread_join (this->message_thread_id, NULL);
+ pthread_join (einit_dbus_message_thread_id, NULL);
 
  return status_ok;
 }
 
-void *einit_dbus::message_thread_bootstrap(void *e) {
- einit_main_dbus_class.message_thread();
-
- return NULL;
-}
-
-void einit_dbus::message_thread() {
+void *einit_dbus_message_thread(void *ign) {
  DBusMessage *message;
 
  while (1) {
 
- while (this->connection && dbus_connection_read_write_dispatch(this->connection, 100)) {
-  if (!dbus_connection_get_is_connected (this->connection)) break;
-  message = dbus_connection_pop_message(this->connection);
+  while (einit_dbus_connection && dbus_connection_read_write_dispatch(einit_dbus_connection, 100)) {
+   if (!dbus_connection_get_is_connected (einit_dbus_connection)) break;
+   message = dbus_connection_pop_message(einit_dbus_connection);
 
   if (message) {
 // introspection support
@@ -310,49 +315,49 @@ void einit_dbus::message_thread() {
     reply = dbus_message_new_method_return(message);
 
     dbus_message_iter_init_append(reply, &args);
-    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &this->introspection_data)) { continue; }
+    if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &einit_dbus_introspection_data)) { continue; }
 
-    emutex_lock (&this->sequence_mutex);
-    this->sequence++;
-    if (!dbus_connection_send(this->connection, reply, &(this->sequence))) {
-	 emutex_unlock (&this->sequence_mutex);
+    emutex_lock (&einit_dbus_sequence_mutex);
+    einit_dbus_sequence++;
+    if (!dbus_connection_send(einit_dbus_connection, reply, &(einit_dbus_sequence))) {
+     emutex_unlock (&einit_dbus_sequence_mutex);
      continue; }
-    emutex_unlock (&this->sequence_mutex);
+     emutex_unlock (&einit_dbus_sequence_mutex);
 
     dbus_message_unref(reply);
 // 'old fashioned' ipc via dbus
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC")) {
     pthread_t th;
-    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_safe_bootstrap), message)) {
-     this->ipc_spawn_safe_bootstrap(message);
+    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))einit_dbus_ipc_spawn_safe, message)) {
+     einit_dbus_ipc_spawn_safe(message);
     }
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC")) {
     pthread_t th;
-    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::ipc_spawn_bootstrap), message)) {
-     this->ipc_spawn_bootstrap(message);
+    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))einit_dbus_ipc_spawn, message)) {
+     einit_dbus_ipc_spawn(message);
     }
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "EmitEvent")) {
     pthread_t th;
-    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))&(einit_dbus::handle_event_bootstrap), message)) {
-     this->handle_event(message);
+    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))einit_dbus_handle_event, message)) {
+     einit_dbus_handle_event(message);
     }
    }
   }
 
-  if (this->terminate_thread) {
-   this->active = 0;
+  if (einit_dbus_terminate_thread) {
+   einit_dbus_active = 0;
 
    int r = 1;
    while ((r = sleep(r))) ; // wait a second before disconnecting
 
-   dbus_connection_close(this->connection); // close the connection after looping
+   dbus_connection_close(einit_dbus_connection); // close the connection after looping
 
-   this->connection = NULL;
-   return;
+   einit_dbus_connection = NULL;
+   return NULL;
   }
  }
 
- this->active = 0;
+ einit_dbus_active = 0;
 
  notice (1, "dbus connection was dropped, suspending signals until we're reconnected!\n");
  fprintf (stderr, "dbus connection was dropped, suspending signals until we're reconnected!\n");
@@ -361,15 +366,17 @@ void einit_dbus::message_thread() {
  int r = 5;
  while ((r = sleep(r))) ; // wait a couple of seconds before reconnecting to have everyone calm down a little
 
-// this->connection = NULL;
+// einit_dbus_connection = NULL;
 
- this->dbus_connect();
+ einit_dbus_dbus_connect();
 
- if (this->connection) this->active = 1;
+ if (einit_dbus_connection) einit_dbus_active = 1;
  }
+
+ return NULL;
 }
 
-char *einit_dbus::ipc_request (char *command) {
+char *einit_dbus_ipc_request (char *command) {
  if (!command) return NULL;
   int internalpipe[2];
   char *returnvalue = NULL;
@@ -437,21 +444,7 @@ char *einit_dbus::ipc_request (char *command) {
   return returnvalue;
 }
 
-void *einit_dbus::ipc_spawn_bootstrap (DBusMessage *message) {
- einit_main_dbus_class.ipc_spawn (message);
-
- dbus_message_unref(message);
- return NULL;
-}
-
-void *einit_dbus::ipc_spawn_safe_bootstrap (DBusMessage *message) {
- einit_main_dbus_class.ipc_spawn_safe (message);
-
- dbus_message_unref(message);
- return NULL;
-}
-
-void einit_dbus::ipc_spawn(DBusMessage *message) {
+void *einit_dbus_ipc_spawn(DBusMessage *message) {
  DBusMessage *reply;
  DBusMessageIter args;
  const char *command = "";
@@ -464,28 +457,30 @@ void einit_dbus::ipc_spawn(DBusMessage *message) {
   char *returnvalue = NULL;
   dbus_message_iter_get_basic(&args, &command);
 
-  returnvalue = this->ipc_request ((char*)command);
+  returnvalue = einit_dbus_ipc_request ((char*)command);
 
-  if (this->connection) { /* make sure we're still connected after the ipc command */
+  if (einit_dbus_connection) { /* make sure we're still connected after the ipc command */
 
    reply = dbus_message_new_method_return(message);
 
    dbus_message_iter_init_append(reply, &args);
-   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
+   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return NULL; }
 
    free (returnvalue);
 
-   emutex_lock (&this->sequence_mutex);
-   this->sequence++;
-   if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
-   emutex_unlock (&this->sequence_mutex);
+   emutex_lock (&einit_dbus_sequence_mutex);
+   einit_dbus_sequence++;
+   if (!dbus_connection_send(einit_dbus_connection, reply, &(einit_dbus_sequence))) { emutex_unlock (&einit_dbus_sequence_mutex); return NULL; }
+   emutex_unlock (&einit_dbus_sequence_mutex);
 
    dbus_message_unref(reply);
   }
  }
+
+ return NULL;
 }
 
-void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
+void *einit_dbus_ipc_spawn_safe(DBusMessage *message) {
  DBusMessage *reply;
  DBusMessageIter args;
  const char *command = "";
@@ -504,37 +499,39 @@ void einit_dbus::ipc_spawn_safe(DBusMessage *message) {
    if (!returnvalue) returnvalue = (char *)"<einit-ipc><error type=\"unsafe-request\" /></einit-ipc>\n";
 
    dbus_message_iter_init_append(reply, &args);
-   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return; }
+   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { return NULL; }
 
-   emutex_lock (&this->sequence_mutex);
-   this->sequence++;
-   if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
-   emutex_unlock (&this->sequence_mutex);
+   emutex_lock (&einit_dbus_sequence_mutex);
+   einit_dbus_sequence++;
+   if (!dbus_connection_send(einit_dbus_connection, reply, &(einit_dbus_sequence))) { emutex_unlock (&einit_dbus_sequence_mutex); return NULL; }
+   emutex_unlock (&einit_dbus_sequence_mutex);
 
    dbus_message_unref(reply);
 
-   return;
+   return NULL;
   }
 
   reply = dbus_message_new_method_return(message);
 
-  returnvalue = this->ipc_request ((char*)command);
+  returnvalue = einit_dbus_ipc_request ((char*)command);
 
   dbus_message_iter_init_append(reply, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return; }
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return NULL; }
 
   free (returnvalue);
 
-  emutex_lock (&this->sequence_mutex);
-  this->sequence++;
-  if (!dbus_connection_send(this->connection, reply, &(this->sequence))) { emutex_unlock (&this->sequence_mutex); return; }
-  emutex_unlock (&this->sequence_mutex);
+  emutex_lock (&einit_dbus_sequence_mutex);
+  einit_dbus_sequence++;
+  if (!dbus_connection_send(einit_dbus_connection, reply, &(einit_dbus_sequence))) { emutex_unlock (&einit_dbus_sequence_mutex); return NULL; }
+  emutex_unlock (&einit_dbus_sequence_mutex);
 
   dbus_message_unref(reply);
  }
+
+ return NULL;
 }
 
-struct einit_event *einit_dbus::read_event (DBusMessage *message) {
+struct einit_event *einit_dbus_read_event (DBusMessage *message) {
  struct einit_event *ev = evinit (0);
  DBusMessageIter args;
  DBusMessageIter sub;
@@ -613,7 +610,7 @@ struct einit_event *einit_dbus::read_event (DBusMessage *message) {
  return ev;
 }
 
-DBusMessage *einit_dbus::create_event_message (DBusMessage *message, struct einit_event *ev) {
+DBusMessage *einit_dbus_create_event_message (DBusMessage *message, struct einit_event *ev) {
  DBusMessageIter argv;
 
  if (!ev) return NULL;
@@ -655,50 +652,47 @@ DBusMessage *einit_dbus::create_event_message (DBusMessage *message, struct eini
  return message;
 }
 
-void einit_dbus::handle_event (DBusMessage *message) {
+void *einit_dbus_handle_event (DBusMessage *message) {
  DBusMessage *reply;
 
- if (!message) return;
+ if (!message) return NULL;
 
- struct einit_event *ev = this->read_event (message);
+ struct einit_event *ev = einit_dbus_read_event (message);
 
- if (!ev) return;
+ if (!ev) return NULL;
 
  event_emit (ev, einit_event_flag_broadcast);
 
  reply = dbus_message_new_method_return(message);
- if (!reply) { return; }
+ if (!reply) { return NULL; }
 
- reply = this->create_event_message (reply, ev);
- if (!reply) { evpurge (ev); return; }
+ reply = einit_dbus_create_event_message (reply, ev);
+ if (!reply) { evpurge (ev); return NULL; }
 
  evpurge (ev);
 
- emutex_lock (&this->sequence_mutex);
- this->sequence++;
- if (!dbus_connection_send(this->connection, reply, &this->sequence)) { emutex_unlock (&this->sequence_mutex); return; }
- emutex_unlock (&this->sequence_mutex);
+ emutex_lock (&einit_dbus_sequence_mutex);
+ einit_dbus_sequence++;
+ if (!dbus_connection_send(einit_dbus_connection, reply, &einit_dbus_sequence)) { emutex_unlock (&einit_dbus_sequence_mutex); return NULL; }
+ emutex_unlock (&einit_dbus_sequence_mutex);
 
  dbus_message_unref(message);
  dbus_message_unref(reply);
-}
-
-void *einit_dbus::handle_event_bootstrap (DBusMessage *message) {
- einit_main_dbus_class.handle_event (message);
 
  return NULL;
 }
 
 int einit_ipc_dbus_enable (void *pa, struct einit_event *status) {
- return einit_main_dbus_class.enable(status);
+ return einit_dbus_enable(status);
 }
 
 int einit_ipc_dbus_disable (void *pa, struct einit_event *status) {
- return einit_main_dbus_class.disable(status);
+ return einit_dbus_disable(status);
 }
 
-int einit_dbus_cleanup (struct lmodule *) {
- event_ignore (einit_event_subsystem_any, einit_main_dbus_class.generic_event_handler);
+int einit_dbus_cleanup (struct lmodule *lm) {
+ event_ignore (einit_event_subsystem_any, einit_dbus_generic_event_handler);
+ dbus_error_free(&(einit_dbus_error));
 
  return 0;
 }
