@@ -296,7 +296,7 @@ char einit_connect(int *argc, char **argv) {
   return 0;
  }
 
- if ((pingres = einit_ipc_safe ("ping")) {
+ if ((pingres = einit_ipc_safe ("ping"))) {
   free (pingres);
  } else {
   einit_disconnect();
