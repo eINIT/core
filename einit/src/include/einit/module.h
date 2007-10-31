@@ -392,7 +392,7 @@ extern time_t modules_last_change;
  if (a->task & einit_module_feedback_show) a->task ^= einit_module_feedback_show; a->string = NULL
 #endif
 
-#define fbprintf(statusvar, ...) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); statusvar->string = _notice_buffer; status_update (statusvar); }
+#define fbprintf(statusvar, ...) if (statusvar) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); statusvar->string = _notice_buffer; status_update (statusvar); }
 
 char *bootstrapmodulepath;
 const struct smodule **coremodules[MAXMODULES];

@@ -247,8 +247,13 @@ char strmatch (const char *, const char *);
 
 uintptr_t hashp (const char *str);
 
+#ifdef DEBUG
 void enable_core_dumps();
 void disable_core_dumps();
+#else
+#define enable_core_dumps() 
+#define disable_core_dumps() 
+#endif
 
 char *joinpath (char *path1, char *path2);
 char **getpath_filter (char *filter);

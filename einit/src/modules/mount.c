@@ -125,6 +125,7 @@ void einit_mount_mount_handler(struct einit_event *);
 void einit_mount_einit_event_handler(struct einit_event *);
 void einit_mount_boot_event_handler (struct einit_event *);
 void einit_mount_power_event_handler (struct einit_event *);
+void einit_mount_hotplug_event_handler (struct einit_event *);
 
 int einit_mount_scanmodules (struct lmodule *);
 int einit_mount_cleanup (struct lmodule *);
@@ -153,10 +154,14 @@ pthread_mutex_t
  mount_device_data_mutex = PTHREAD_MUTEX_INITIALIZER,
  mounter_dd_by_devicefile_mutex = PTHREAD_MUTEX_INITIALIZER,
  mounter_dd_by_mountpoint_mutex = PTHREAD_MUTEX_INITIALIZER,
- mount_autostart_mutex = PTHREAD_MUTEX_INITIALIZER;
+ mount_autostart_mutex = PTHREAD_MUTEX_INITIALIZER,
+ mount_active_fscks_mutex = PTHREAD_MUTEX_INITIALIZER,
+ mount_finished_fscks_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *mount_filesystems = NULL;
 
+char **mount_active_fscks = NULL;
+char **mount_finished_fscks = NULL;
 char *generate_legacy_mtab ();
 char mount_fastboot = 0;
 char *mount_crash_data = NULL;
@@ -1564,9 +1569,43 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
 }
 
 int mount_fsck (char *fs, char *device, struct einit_event *status) {
+ char ping_loop = 0, finished = 1, waited = 0;
  if (mount_fastboot || (fs && (mount_get_filesystem_options(fs) & filesystem_capability_no_fsck))) {
   return status_ok;
  }
+
+ emutex_lock (&mount_finished_fscks_mutex);
+ if (mount_finished_fscks && inset ((const void **)mount_finished_fscks, device, SET_TYPE_STRING)) {
+  fbprintf (status, "fsck ran already");
+  finished = 1;
+ }
+ emutex_unlock (&mount_finished_fscks_mutex);
+
+ if (finished) return status_ok;
+
+ do {
+  emutex_lock (&mount_active_fscks_mutex);
+  if (mount_active_fscks && inset ((const void **)mount_active_fscks, device, SET_TYPE_STRING)) {
+   ping_loop = 1;
+   finished = 1;
+  }
+  emutex_unlock (&mount_active_fscks_mutex);
+
+  if (ping_loop) {
+   if (!waited)
+    fbprintf (status, "waiting for fsck");
+   mount_wait_for_ping();
+  }
+ } while (ping_loop);
+
+ if (finished) {
+  fbprintf (status, "fsck ran already");
+  return status_ok;
+ }
+
+ emutex_lock (&mount_active_fscks_mutex);
+ mount_active_fscks = (char **)setadd ((void **)mount_active_fscks, device, SET_TYPE_STRING);
+ emutex_unlock (&mount_active_fscks_mutex);
 
  struct cfgnode *node = NULL;
  char *mount_fsck_template = NULL;
@@ -1605,6 +1644,16 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
   status->string = "WARNING: filesystem dirty, but no fsck command known";
   status_update (status);
  }
+
+ emutex_lock (&mount_finished_fscks_mutex);
+ mount_finished_fscks = (char **)setadd ((void **)mount_finished_fscks, device, SET_TYPE_STRING);
+ emutex_unlock (&mount_finished_fscks_mutex);
+
+ emutex_lock (&mount_active_fscks_mutex);
+ mount_active_fscks = strsetdel ((char **)mount_active_fscks, device);
+ emutex_unlock (&mount_active_fscks_mutex);
+
+ mount_ping();
 
  return status_ok;
 }
@@ -1875,6 +1924,7 @@ void einit_mount_update_configuration () {
 }
 
 int einit_mount_cleanup (struct lmodule *tm) {
+ event_ignore (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
  event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
@@ -1988,6 +2038,47 @@ void einit_mount_power_event_handler (struct einit_event *ev) {
  }
 }
 
+void *einit_mount_fsck_thread (struct device_data *dd) {
+ if (dd->fs) {
+  mount_fsck (dd->fs, dd->device, NULL);
+ } else if (dd->mountpoints) {
+  struct mountpoint_data *mp = dd->mountpoints->value;
+
+  if (mp && mp->fs) {
+   mount_fsck (mp->fs, dd->device, NULL);
+  }
+ }
+
+ return NULL;
+}
+
+void einit_mount_analyse_fs (char *device) {
+ struct device_data *dd = NULL;
+ struct stree *t = NULL;
+
+ emutex_lock (&mounter_dd_by_devicefile_mutex);
+ if (mounter_dd_by_devicefile && (t = streefind (mounter_dd_by_devicefile, device, tree_find_first))) {
+  dd = t->value;
+ }
+ emutex_unlock (&mounter_dd_by_devicefile_mutex);
+
+ if (dd) {
+  pthread_t th;
+  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))einit_mount_fsck_thread, dd);
+ }
+}
+
+void einit_mount_hotplug_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_hotplug_add:
+   if (ev->string) {
+    einit_mount_analyse_fs (ev->string);
+   }
+   break;
+  default: break;
+ }
+}
+
 int einit_mount_configure (struct lmodule *r) {
  struct stat st;
  module_init (r);
@@ -2004,6 +2095,7 @@ int einit_mount_configure (struct lmodule *r) {
  event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_listen (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);
+ event_listen (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
 
  function_register ("fs-mount", 1, (void *)emount);
  function_register ("fs-umount", 1, (void *)eumount);

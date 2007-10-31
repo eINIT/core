@@ -741,6 +741,7 @@ uintptr_t hashp (const char *str) {
 }
 #endif
 
+#ifdef DEBUG
 void enable_core_dumps() {
  struct rlimit infinite = {
   .rlim_cur = RLIM_INFINITY,
@@ -758,6 +759,7 @@ void disable_core_dumps() {
 
  setrlimit(RLIMIT_CORE, &zero);
 }
+#endif
 
 #if ! defined (EINIT_UTIL)
 

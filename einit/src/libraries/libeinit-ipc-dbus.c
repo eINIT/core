@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <expat.h>
 
+char einit_disconnect();
+
 #ifdef DARWIN
 /* dammit, what's wrong with macos!? */
 
@@ -276,6 +278,7 @@ void *einit_message_thread(void *notused) {
 }
 
 char einit_connect(int *argc, char **argv) {
+ char *pingres = NULL;
 // char *dbusaddress = "unix:path=/var/run/dbus/system_bus_socket";
  pthread_attr_init (&einit_dbus_thread_attribute_detached);
  pthread_attr_setdetachstate (&einit_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED);
@@ -293,18 +296,25 @@ char einit_connect(int *argc, char **argv) {
   return 0;
  }
 
+ if ((pingres = einit_ipc_safe ("ping")) {
+  free (pingres);
+ } else {
+  einit_disconnect();
+  return 0;
+ }
+
 /* einit_dbus_connection = dbus_connection_open_private (dbusaddress, einit_dbus_error);
  if (dbus_error_is_set(einit_dbus_error)) {
- fprintf(stderr, "DBUS: Connection Error (%s)\n", einit_dbus_error->message);
- dbus_error_free(einit_dbus_error);
-}
+  fprintf(stderr, "DBUS: Connection Error (%s)\n", einit_dbus_error->message);
+  dbus_error_free(einit_dbus_error);
+ }
  if (!einit_dbus_connection) return 0;
 
  if (dbus_bus_register (einit_dbus_connection, einit_dbus_error) != TRUE) {
  if (dbus_error_is_set(einit_dbus_error)) { 
- fprintf(stderr, "DBUS: Registration Error (%s)\n", einit_dbus_error->message); 
- dbus_error_free(einit_dbus_error);
-}
+  fprintf(stderr, "DBUS: Registration Error (%s)\n", einit_dbus_error->message); 
+  dbus_error_free(einit_dbus_error);
+ }
  return 0;
 }*/
 
