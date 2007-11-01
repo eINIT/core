@@ -598,6 +598,8 @@ int main(int argc, char **argv) {
 
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
    bitch(bitch_epthreads, pthread_errno, "pthread_attr_init() failed.");
+
+   if (einit_initial_environment) free (einit_initial_environment);
    return -1;
   } else {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
@@ -607,6 +609,8 @@ int main(int argc, char **argv) {
 
   if ((pthread_errno = pthread_key_create(&einit_function_macro_key, NULL))) {
    bitch(bitch_epthreads, pthread_errno, "pthread_key_create(einit_function_macro_key) failed.");
+
+   if (einit_initial_environment) free (einit_initial_environment);
    return -1;
   }
 
@@ -661,6 +665,7 @@ int main(int argc, char **argv) {
 //   if (gmode == EINIT_GMODE_SANDBOX)
 //    cleanup ();
 
+   if (einit_initial_environment) free (einit_initial_environment);
    return ret;
   } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {
    eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
@@ -715,6 +720,11 @@ int main(int argc, char **argv) {
    evstaticdestroy(eml);
   }
 
+  if (einit_initial_environment) free (einit_initial_environment);
   return ret;
  }
+
+/* this should never be reached... */
+ if (einit_initial_environment) free (einit_initial_environment);
+ return 0;
 }

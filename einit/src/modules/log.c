@@ -96,6 +96,8 @@ pthread_mutex_t logmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t log_flushmutex = PTHREAD_MUTEX_INITIALIZER;
 char dolog = 1, log_notices_to_stderr = 1;
 
+int einit_log_in_switch = 0;
+
 void einit_log_feedback_event_handler(struct einit_event *);
 void einit_log_ipc_event_handler(struct einit_event *);
 void einit_log_einit_event_handler(struct einit_event *);
@@ -136,6 +138,31 @@ char flush_log_buffer_to_syslog() {
  }
 
  return 1;
+}
+
+void flush_log_buffer_free() {
+ if (!logbuffer) return;
+
+ if (pthread_mutex_trylock(&logmutex)) return;
+
+ while (logbuffer && logbuffer[0]) {
+
+  char *slmessage = logbuffer[0]->message;
+
+  logbuffer = (struct log_entry **)setdel ((void **)logbuffer, (void *)logbuffer[0]);
+
+  pthread_mutex_unlock(&logmutex);
+
+  if (slmessage) {
+   free (slmessage);
+  }
+
+  if (pthread_mutex_trylock(&logmutex)) return;
+ }
+
+ pthread_mutex_unlock(&logmutex);
+
+ return;
 }
 
 void flush_log_buffer() {
@@ -188,6 +215,7 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
 
  if (ev->type == einit_core_mode_switching) {
   char logentry[BUFFERSIZE];
+  einit_log_in_switch++;
 
   esprintf (logentry, BUFFERSIZE, "Now switching to mode \"%s\".", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
 
@@ -209,6 +237,7 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
 //  if (have_syslog) flush_log_buffer();
  } else if (ev->type == einit_core_mode_switch_done) {
   char logentry[BUFFERSIZE];
+  einit_log_in_switch--;
 
   esprintf (logentry, BUFFERSIZE, "Mode \"%s\" is now in effect.", (ev->para && ((struct cfgnode *)(ev->para))->id) ? ((struct cfgnode *)(ev->para))->id : "unknown");
 
@@ -231,6 +260,9 @@ void einit_log_einit_event_handler(struct einit_event *ev) {
    syslog(LOG_NOTICE, logentry);
   }
 
+  if (!einit_log_in_switch && !have_syslog) { /* no more switches... and still no syslog */
+   flush_log_buffer_free(); /* clear buffer */
+  }
  }
 }
 

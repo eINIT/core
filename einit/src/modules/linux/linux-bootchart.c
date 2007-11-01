@@ -60,6 +60,8 @@ int linux_bootchart_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
+extern char shutting_down;
+
 const struct smodule linux_bootchart_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -177,7 +179,9 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
    }
 
    if (da) {
-    data = (char **)setadd ((void **)data, da, SET_NOALLOC);
+    data = (char **)setadd ((void **)data, da, SET_TYPE_STRING);
+    free (da);
+    da = NULL;
    }
   }
 
@@ -186,7 +190,6 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
 
  if (data) {
   char *t = set2str ('\n', (const char **)data);
-  int y = 0;
 
   if (t) {
    size_t len = strlen (uptime) + strlen (t) + 4 + (ps ? strlen (ps) : 0);
@@ -202,10 +205,6 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
    free (t);
 
    ps = tx;
-  }
-
-  for (; data[y]; y++) {
-   free (data[y]);
   }
 
   free (data);
@@ -250,7 +249,7 @@ void *linux_bootchart_thread (void *ignored) {
  char *buffer_ps = NULL;
  char *buffer_st = NULL;
 
- while (linux_bootchart_have_thread || extra_wait) {
+ while (!shutting_down && (linux_bootchart_have_thread || (extra_wait > 0))) {
   char *uptime = linux_bootchart_get_uptime();
 
   if (linux_bootchart_process_accounting && try_acct) {
@@ -264,6 +263,7 @@ void *linux_bootchart_thread (void *ignored) {
    buffer_st = linux_bootchart_update_st (buffer_st, uptime);
 
    free (uptime);
+   uptime = NULL;
   }
 
   usleep (linux_bootchart_sleep_time);
@@ -289,7 +289,7 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_ds);
-  notice (1, "bootchart: free()'d buffer_ds");
+  buffer_ds = NULL;
  }
 
  if (buffer_ps) {
@@ -300,7 +300,7 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_ps);
-  notice (1, "bootchart: free()'d buffer_ps");
+  buffer_ps = NULL;
  }
 
  if (buffer_st) {
@@ -311,7 +311,7 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_st);
-  notice (1, "bootchart: free()'d buffer_st");
+  buffer_st = NULL;
  }
 
  if (linux_bootchart_process_accounting) {
@@ -436,7 +436,9 @@ void linux_bootchart_switch_done () {
 void linux_bootchart_core_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_core_mode_switching:
-   linux_bootchart_switch ();
+   if (!shutting_down) {
+    linux_bootchart_switch ();
+   }
    break;
 
   case einit_core_mode_switch_done:
