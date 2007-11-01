@@ -92,6 +92,8 @@ module_register(module_xml_v2_self);
 struct stree *module_xml_v2_modules = NULL;
 struct stree *module_xml_v2_daemons = NULL;
 
+char module_xml_v2_allow_preloads = 0;
+
 int module_xml_v2_scanmodules (struct lmodule *);
 void module_xml_v2_preload_fork();
 
@@ -721,7 +723,7 @@ void module_xml_v2_preload() {
 void module_xml_v2_preload_fork() {
  struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
 
- if (node && node->flag) {
+ if (module_xml_v2_allow_preloads && node && node->flag) {
   notice (3, "pre-loading binaries from XML modules");
   pid_t p = fork();
 
@@ -745,6 +747,7 @@ void module_xml_v2_preload_fork() {
 void module_xml_v2_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
+   module_xml_v2_allow_preloads = 1;
    module_xml_v2_preload_fork ();
    break;
   default: break;
