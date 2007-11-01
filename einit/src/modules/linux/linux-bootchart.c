@@ -289,6 +289,7 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_ds);
+  notice (1, "bootchart: free()'d buffer_ds");
  }
 
  if (buffer_ps) {
@@ -299,6 +300,7 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_ps);
+  notice (1, "bootchart: free()'d buffer_ps");
  }
 
  if (buffer_st) {
@@ -309,6 +311,7 @@ void *linux_bootchart_thread (void *ignored) {
   }
 
   free (buffer_st);
+  notice (1, "bootchart: free()'d buffer_st");
  }
 
  if (linux_bootchart_process_accounting) {
