@@ -172,6 +172,8 @@ char *einit_ipc_i (const char *cmd, const char *interface) {
    break;
   }
 
+  strtrim (buffer);
+
 //  eputs (buffer, stdout);
   rvx = (char **)setadd ((void **)rvx, buffer, SET_TYPE_STRING);
  }
