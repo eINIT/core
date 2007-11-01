@@ -122,8 +122,6 @@ struct cfgnode {
  char **arbattrs;
  char *idattr;
  char *path;
- char *source;
- char *source_file;
 };
 
 struct stree *hconfiguration;

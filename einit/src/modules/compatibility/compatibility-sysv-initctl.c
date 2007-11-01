@@ -223,7 +223,6 @@ void * initctl_wait (char *fifo) {
        memset (&tnode, 0, sizeof(struct cfgnode));
 
        tnode.type = einit_node_regular;
-       tnode.source = self->rid;
        tnode.id = "configuration-system-daemon-term-timeout-primary";
        tnode.value = ic.timeout;
 

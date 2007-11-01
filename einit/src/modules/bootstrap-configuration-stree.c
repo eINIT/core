@@ -183,7 +183,6 @@ int cfg_addnode_f (struct cfgnode *node) {
 // this means we found something that looks like it
     cfg_stree_garbage_add_chunk (cur->luggage);
     cfg_stree_garbage_add_chunk (((struct cfgnode *)cur->value)->arbattrs);
-    cfg_stree_garbage_add_chunk (((struct cfgnode *)cur->value)->source_file);
 
     ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
     cur->luggage = node->arbattrs;
@@ -195,8 +194,6 @@ int cfg_addnode_f (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->svalue      = node->svalue;
     ((struct cfgnode *)cur->value)->idattr      = node->idattr;
     ((struct cfgnode *)cur->value)->path        = node->path;
-    ((struct cfgnode *)cur->value)->source      = node->source;
-    ((struct cfgnode *)cur->value)->source_file = node->source_file;
 
     doop = 0;
 
@@ -214,8 +211,7 @@ int cfg_addnode_f (struct cfgnode *node) {
  }
 
 /* hmmm.... */
-/* cfg_stree_garbage_add_chunk (node->arbattrs);
- cfg_stree_garbage_add_chunk (node->source_file);*/
+/* cfg_stree_garbage_add_chunk (node->arbattrs);*/
  cfg_stree_garbage_add_chunk (node->id);
 
  bootstrap_einit_configuration_stree_usage--;
@@ -278,6 +274,7 @@ char *cfg_getstring_f (const char *id, const struct cfgnode *mode) {
    if (node)
     ret = node->svalue;
 
+   free (sub);
    bootstrap_einit_configuration_stree_usage--;
    return ret;
   }

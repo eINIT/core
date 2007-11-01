@@ -144,8 +144,8 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
         if (r) {
          struct cfgnode *node = cfg_getnode (r[0], NULL);
 
-         if (node && node->source)
-          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * defined by \"%s\" in \"%s\"\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, node->source, node->source_file ? node->source_file : "(unknown)", variables[i]->description);
+         if (node)
+          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
          else
           eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
 

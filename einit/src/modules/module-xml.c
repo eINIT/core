@@ -241,15 +241,13 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
    for (; t->arbattrs[i]; i+=2) {
     if (strmatch (t->arbattrs[i], "file")) {
 
-     if ((t->arbattrs[i+1][0] != '/') && t->source_file) {
+     if ((t->arbattrs[i+1][0] != '/')) {
       char spbuffer[BUFFERSIZE];
       char spbuffer2[BUFFERSIZE];
 
-      strncpy (spbuffer2, t->source_file, BUFFERSIZE);
+      strncpy (spbuffer2, EINIT_LIB_BASE "/modules-xml", BUFFERSIZE);
 
-      char *scriptbase = dirname (spbuffer2);
-
-      esprintf (spbuffer, BUFFERSIZE, "%s/%s", scriptbase, t->arbattrs[i+1]);
+      esprintf (spbuffer, BUFFERSIZE, "%s/%s", spbuffer2, t->arbattrs[i+1]);
 
       scriptpath = estrdup (spbuffer);
      } else 
@@ -587,6 +585,8 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
         fs = module_xml_v2_add_fs(fs, sx[ix]);
        }
       }
+
+      free (sx);
      }
 
      if (fs) {

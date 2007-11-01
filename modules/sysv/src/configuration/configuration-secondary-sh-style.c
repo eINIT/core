@@ -210,7 +210,6 @@ void einit_event_handler (struct einit_event *ev) {
 
          newnode.id       = estrdup(node->arbattrs[y]);
          newnode.nodetype = EI_NODETYPE_CONFIG;
-         newnode.source   = self.rid;
          newnode.arbattrs = arbattrs;
 
          if (sindex != -1) newnode.svalue = arbattrs[z];

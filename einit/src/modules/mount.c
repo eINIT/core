@@ -566,7 +566,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
  }
 
  if (dd) {
-//  if (device) free (device);
+  if (device) free (device);
   mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  } else {
   struct device_data *d = emalloc(sizeof(struct device_data));
@@ -574,7 +574,10 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
 
   memset (d, 0, sizeof(struct device_data));
 
-  if (device || (device = fs) || (device = estrdup ("(none)"))) d->device = estrdup (device);
+  if (device || (device = fs) || (device = estrdup ("(none)"))) {
+//   d->device = estrdup (device);
+   d->device = device;
+  }
 
 //  eprintf (stderr, " >> inserting new device_data node for %s, device %s\n", mountpoint, device);
 
@@ -687,9 +690,10 @@ void mount_update_fstab_nodes () {
    for (i = 0; node->arbattrs[i]; i+=2) {
     if (strmatch(node->arbattrs[i], "mountpoint"))
      mountpoint = estrdup (node->arbattrs[i+1]);
-    else if (strmatch(node->arbattrs[i], "device"))
+    else if (strmatch(node->arbattrs[i], "device")) {
+     if (device) free (device);
      device = estrdup (node->arbattrs[i+1]);
-    else if (strmatch(node->arbattrs[i], "fs"))
+    } else if (strmatch(node->arbattrs[i], "fs"))
      fs = estrdup (node->arbattrs[i+1]);
     else if (strmatch(node->arbattrs[i], "options"))
      options = str2set (':', node->arbattrs[i+1]);
@@ -1116,6 +1120,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
    if (tmpxt) {
     tmpx = set2str ('|', (const char **)tmpxt);
+    free (tmpxt);
    }
 
    if (tmpx) {
@@ -1909,11 +1914,15 @@ void einit_mount_update_configuration () {
   free (tmp);
  }
 
- if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue)
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue) {
+  if (mount_critical) free (mount_critical);
   mount_critical = str2set(':', node->svalue);
+ }
 
- if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue)
+ if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue) {
+  if (mount_dont_umount) free (mount_dont_umount);
   mount_dont_umount = str2set(':', node->svalue);
+ }
 
  if ((node = cfg_getnode ("configuration-storage-maintain-mtab",NULL)) && node->flag && node->svalue) {
   mount_options |= mount_maintain_mtab;

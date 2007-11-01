@@ -1472,6 +1472,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
    }
 
+   if (modes) free (modes);
+
    ev->implemented = 1;
   } else if (strmatch (ev->argv[0], "list")) {
    if (strmatch (ev->argv[1], "services")) {

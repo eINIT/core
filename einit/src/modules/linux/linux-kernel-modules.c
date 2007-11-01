@@ -152,6 +152,7 @@ char **linux_kernel_modules_autoload_d() {
    }
 
    free (t);
+   free (d);
   }
  }
 

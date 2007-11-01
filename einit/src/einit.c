@@ -85,7 +85,7 @@ enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
 char einit_quietness = 0;
 
-char einit_allow_code_unloading = 1;
+char einit_allow_code_unloading = 0;
 
 time_t event_snooze_time = 0;
 
@@ -665,6 +665,7 @@ int main(int argc, char **argv) {
 //   if (gmode == EINIT_GMODE_SANDBOX)
 //    cleanup ();
 
+   free (ipccommands);
    if (einit_initial_environment) free (einit_initial_environment);
    return ret;
   } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {

@@ -219,7 +219,6 @@ int network_scanmodules (struct lmodule *mainlist) {
 
        esprintf (tmp, BUFFERSIZE, "configuration-kernel-modules-%s", interfacename);
        newnode.id = estrdup (tmp);
-       newnode.source = self->rid;
        newnode.type = einit_node_regular;
 
        esprintf (tmp, BUFFERSIZE, "kernel-module-%s", interfacename);

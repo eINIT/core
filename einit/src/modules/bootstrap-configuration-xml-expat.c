@@ -169,11 +169,10 @@ struct einit_xml_expat_user_data {
  uint32_t options;
  char *file, *prefix;
  enum einit_cfg_node_options type;
+ uint32_t adds;
 };
 
 char xml_parser_auto_create_missing_directories = 0;
-
-char *xml_source_identifier = "xml-expat";
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int nlen = strlen (name);
@@ -227,8 +226,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 
    newnode->type |= einit_node_mode;
    newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
-   newnode->source = xml_source_identifier;
-   newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    for (; newnode->arbattrs[i] != NULL; i+=2) {
     if (strmatch (newnode->arbattrs[i], "id")) {
      newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
@@ -239,7 +236,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    }
    if (newnode->id) {
     char *id = newnode->id;
-    cfg_addnode (newnode);
+    if (cfg_addnode (newnode) != -1)
+     ((struct einit_xml_expat_user_data *)userData)->adds++;
     curmode = NULL;
     curmode = cfg_findnode (id, einit_node_mode, curmode);
     free (newnode);
@@ -254,8 +252,6 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
    newnode->mode = curmode;
    newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
-   newnode->source = xml_source_identifier;
-   newnode->source_file = ((struct einit_xml_expat_user_data *)userData)->file;
    if (newnode->arbattrs)
     for (; newnode->arbattrs[i] != NULL; i+=2) {
      if (strmatch (newnode->arbattrs[i], "s"))
@@ -266,7 +262,8 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
       newnode->flag = parse_boolean (newnode->arbattrs[i+1]);
      }
     }
-   cfg_addnode (newnode);
+   if (cfg_addnode (newnode) != -1)
+    ((struct einit_xml_expat_user_data *)userData)->adds++;
    free (newnode);
   }
 }
@@ -315,12 +312,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
-  .file = estrdup(configfile),
   .prefix = NULL,
   .type =
-    (tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&
+    ((tmps = cfg_getstring ("core-settings-configuration-on-line-modifications/save-to", NULL)) &&
     strmatch (configfile, tmps) ?
-    einit_node_modified : 0
+    einit_node_modified : 0),
+  .adds = 0
  };
 
  if ((data = readfile (configfile))) {
@@ -427,8 +424,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  } else if (errno) {
   notice (3, "could not read file \"%s\": %s\n", configfile, strerror (errno));
 
+  if (expatuserdata.prefix) free (expatuserdata.prefix);
+
   return errno;
  }
+
+ if (expatuserdata.prefix) free (expatuserdata.prefix);
 
  return hconfiguration != NULL;
 }

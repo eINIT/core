@@ -823,6 +823,8 @@ char **which (char *binary) {
 
        free (t);
       }
+
+      free (paths);
      }
 
      break;
