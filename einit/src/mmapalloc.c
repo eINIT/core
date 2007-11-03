@@ -7,7 +7,8 @@
  *
  *
  * This is a replacement for the default (m|re|c)alloc() set of functions,
- * which strictly rely on mmap() to get memory.
+ * which strictly relies on mmap() to get memory.
+ * (this makes it a lot better if you're likely to need large amounts of mem)
  *
  * This relies on an implementation of mmap() that supports MAP_ANONYMOUS
  *
@@ -82,18 +83,23 @@ struct page_header *current_page = &dummy_page;
  (((struct page_header *)(page))->next_page)->prev_page = ((struct page_header *)(page))->prev_page;\
  (((struct page_header *)(page))->prev_page)->next_page = ((struct page_header *)(page))->next_page;
 
-void *malloc(size_t s) {
+void *mmap_malloc(size_t s) {
  size_t pages = 0;
 
  if (!pagesize) pagesize = sysconf(_SC_PAGESIZE);
 
  pages = size2pages(s);
 
+ retry:
+
  void *p = mmap(NULL, pages*pagesize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
  if (p == MAP_FAILED) {
-  errno = ENOMEM;
-  return NULL;
+/*  errno = ENOMEM;
+  return NULL;*/
+
+  sleep 1;
+  goto retry;
  }
 
  init_page (p, s);
@@ -101,17 +107,17 @@ void *malloc(size_t s) {
  return p+sizeof(struct page_header);
 }
 
-void *calloc(size_t c, size_t s) {
+void *mmap_calloc(size_t c, size_t s) {
  size_t l = c*s;
- void *p = malloc(l);
+ void *p = mmap_malloc(l);
 
  if (p) memset (p, 0, l);
 
  return p;
 }
 
-void *realloc(void *p, size_t s) {
- if (!p) return malloc (s);
+void *mmap_realloc(void *p, size_t s) {
+ if (!p) return mmap_malloc (s);
  if (!s) { free (p); return NULL; }
 
  void *np = NULL;
@@ -128,11 +134,16 @@ void *realloc(void *p, size_t s) {
   return p;
  }
 
+ retry:
+
  np = mmap(NULL, pages*pagesize, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
  if (np == MAP_FAILED) {
-  errno = ENOMEM;
-  return NULL;
+/*  errno = ENOMEM;
+  return NULL; */
+
+  sleep (1);
+  goto retry;
  }
 
  memcpy (np+sizeof(struct page_header), p, (((struct page_header *)(p-sizeof(struct page_header)))->size));
@@ -146,7 +157,7 @@ void *realloc(void *p, size_t s) {
  return np+sizeof(struct page_header);
 }
 
-void free(void *p) {
+void mmap_free(void *p) {
 // remove_page(p-sizeof(struct page_header));
 
  if (p) munmap (p-sizeof(struct page_header), size2pages(((struct page_header *)(p-sizeof(struct page_header)))->size) * pagesize);
