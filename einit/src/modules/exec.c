@@ -532,6 +532,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  enum pexec_options options = (status ? 0 : pexec_option_nopipe);
  uint32_t cs = status_ok;
  char have_waited = 0;
+ char *freeocmds = NULL;
 
  lookupuidgid (&uid, &gid, user, group);
 
@@ -541,7 +542,12 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   char *ocmds = estrdup(command),
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
-  if (!rcmds) return status_failed;
+  if (!rcmds) {
+   free (ocmds);
+   return status_failed;
+  }
+
+  freeocmds = ocmds;
 
   *rcmds = 0;
   optx = str2set (' ', ocmds);
@@ -564,7 +570,10 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    free (optx);
   }
  }
- if (!command || !command[0]) return status_failed;
+ if (!command || !command[0]) {
+  if (freeocmds) free (freeocmds);
+  return status_failed;
+ }
 
  if (!(options & pexec_option_nopipe)) {
   if (pipe (pipefderr)) {
@@ -573,6 +582,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     status_update (status);
     status->string = strerror (errno);
    }
+   if (freeocmds) free (freeocmds);
    return status_failed;
   }
 /* make sure the read end won't survive an exec*() */
@@ -600,12 +610,14 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
   if (status)
    status->string = strerror (errno);
+  if (freeocmds) free (freeocmds);
   return status_failed;
  }
 #else
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
+  if (freeocmds) free (freeocmds);
   return status_failed;
  }
 #endif
@@ -749,6 +761,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
   }
  }
+
+ if (freeocmds) free (freeocmds);
 
  if (cs == status_failed) return status_failed;
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;

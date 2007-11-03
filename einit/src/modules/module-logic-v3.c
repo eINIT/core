@@ -571,12 +571,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
    plan->options |= plan_option_shutdown;
   }
 
-/* old syntax is old.... */
-  if (!enable)
-   enable  = str2set (':', cfg_getstring ("enable/mod", mode));
-  if (!disable)
-   disable = str2set (':', cfg_getstring ("disable/mod", mode));
-
   if (mode->arbattrs) for (; mode->arbattrs[xi]; xi+=2) {
    if (strmatch(mode->arbattrs[xi], "base")) {
     base = str2set (':', mode->arbattrs[xi+1]);
