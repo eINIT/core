@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
 #include <poll.h>
@@ -127,6 +128,7 @@ char einit_ipc_hub_connect_socket (char *name) {
 
  /* tag the fd as close-on-exec, just in case */
  fcntl (sock, F_SETFD, FD_CLOEXEC);
+// fcntl (sock, F_SETFD, O_NONBLOCK);
 
  if (sock == -1) {
   perror ("einit-ipc-hub: initialising socket");
@@ -166,15 +168,23 @@ char einit_ipc_hub_connect_socket (char *name) {
 void einit_ipc_hub_create_socket (char *name) {
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
  struct sockaddr_un saddr;
+ struct stat st;
 
 /* tag the fd as close-on-exec, just in case */
  fcntl (sock, F_SETFD, FD_CLOEXEC);
+// fcntl (sock, F_SETFD, O_NONBLOCK);
 
  if (sock == -1) {
   perror ("einit-ipc-hub: initialising socket");
 
   return;
  }
+
+#ifndef LINUX
+ if (stat ("/tmp/einit", &st)) { mkdir ("/tmp/einit", 0770); }
+ if (stat ("/tmp/einit/hub", &st)) { mkdir ("/tmp/einit/hub", 0770); }
+ if (unlink (name));
+#endif
 
  memset (&saddr, 0, sizeof(saddr));
  saddr.sun_family = AF_UNIX;
@@ -253,6 +263,11 @@ void einit_ipc_hub_connect () {
    free (socket_name);
   }
  }
+}
+
+void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
+ fprintf (stderr, "event message: %s", cbuf);
+ free (cbuf);
 }
 
 void *einit_ipc_hub_thread (void *irr) {
@@ -342,6 +357,9 @@ void *einit_ipc_hub_thread (void *irr) {
           fprintf (stderr, "new client connected.\n");
 
           einit_ipc_hub_schedule_connection_update();
+
+          fcntl (nf, F_SETFD, FD_CLOEXEC);
+//          fcntl (nf, F_SETFD, O_NONBLOCK);
          }
         }
         if (pfd[j].revents & (POLLERR | POLLHUP | POLLNVAL)) {
@@ -367,11 +385,38 @@ void *einit_ipc_hub_thread (void *irr) {
        if (einit_ipc_hub_connections_client[i]->connection == pfd[j].fd) {
         if ((einit_ipc_hub_connections_client[i]->type == hct_client) && (pfd[j].revents & POLLIN)) {
          char buf[MAX_PACKET_SIZE];
+		 char *cbuf = NULL;
          ssize_t l = 0;
+         ssize_t tlen = 1;
+         ssize_t cp = 0;
 
-         if ((l = recv (pfd[j].fd, buf, MAX_PACKET_SIZE, MSG_DONTWAIT)) > 0) {
-         }
-         if ((l == -1) && (errno != EAGAIN)) {
+         memset (buf, 0, MAX_PACKET_SIZE);
+
+         errno = 0;
+		 do {
+          if ((l = recv (pfd[j].fd, buf, MAX_PACKET_SIZE-1, MSG_DONTWAIT)) > 0) {
+		   tlen += l;
+		   if (!cbuf) {
+		    cbuf = emalloc (tlen);
+		   } else {
+		    cbuf = erealloc (cbuf, tlen);
+		   }
+
+		   memcpy (cbuf + cp, buf, l);
+
+		   cp += l;
+          }
+
+          perror ("received sth...");
+		 } while (!errno && (l > 0));
+
+	     if (cbuf) {
+		  cbuf [tlen-1] = 0;
+		  
+		  einit_ipc_hub_handle_block (cbuf, tlen);
+		 }
+//         if ((l == -1) && (errno != EAGAIN)) {
+         if (errno != EAGAIN) {
           einit_ipc_hub_connections_client = (struct hub_connection **)setdel ((void **)einit_ipc_hub_connections_client, einit_ipc_hub_connections_client[i]);
 
           eclose (pfd[j].fd);
@@ -419,8 +464,85 @@ void *einit_ipc_hub_thread (void *irr) {
  return NULL;
 }
 
+void einit_ipc_hub_send_event (struct einit_event *ev) {
+ int *targets = NULL;
+ int c = 0;
+ int i;
+
+ emutex_lock (&einit_ipc_hub_connections_client_mutex);
+ if (einit_ipc_hub_connections_client) {
+  c = setcount ((const void **)einit_ipc_hub_connections_client);
+  targets = malloc (c*sizeof(int));
+  for (i = 0; einit_ipc_hub_connections_client[i]; i++) {
+   if (einit_ipc_hub_connections_client[i]->type == hct_socket) {
+    targets[i] = einit_ipc_hub_connections_client[i]->connection;
+   }
+  }
+ }
+ emutex_unlock (&einit_ipc_hub_connections_client_mutex);
+
+ if (targets) {
+  for (i = 0; i < c; i++) {
+   char buffer[MAX_PACKET_SIZE];
+   char buffer2[MAX_PACKET_SIZE];
+
+   esprintf (buffer, MAX_PACKET_SIZE, "event:%i\n", ev->type);
+
+   if (ev->integer) {
+    esprintf (buffer2, MAX_PACKET_SIZE, "int:%i\n", ev->integer);
+    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    }
+   }
+   if (ev->task) {
+    esprintf (buffer2, MAX_PACKET_SIZE, "task:%i\n", ev->task);
+    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    }
+   }
+   if (ev->status) {
+    esprintf (buffer2, MAX_PACKET_SIZE, "status:%i\n", ev->status);
+    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    }
+   }
+
+   if (ev->task == einit_event_subsystem_ipc) {
+    if (ev->command) {
+     esprintf (buffer2, MAX_PACKET_SIZE, "command:%lu:%s\n", strlen(ev->command), ev->command);
+     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+	  notice (1, "ipc-hub: event packet too big.");
+      continue;
+     }
+    }
+   } else {
+    if (ev->string) {
+     esprintf (buffer2, MAX_PACKET_SIZE, "string:%lu:%s\n", strlen(ev->string), ev->string);
+     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+	  notice (1, "ipc-hub: event packet too big.");
+      continue;
+     }
+    }
+   }
+
+   send (targets[i], buffer, strlen(buffer), 0);
+  }
+
+  free (targets);
+ }
+}
+
+void einit_ipc_hub_generic_event_handler (struct einit_event *ev) {
+ einit_ipc_hub_send_event (ev);
+}
+
 int einit_ipc_hub_cleanup (struct lmodule *tm) {
  ipc_cleanup (tm);
+
+ event_listen (einit_event_subsystem_any, einit_ipc_hub_generic_event_handler);
 
  return 0;
 }
@@ -431,10 +553,11 @@ int einit_ipc_hub_configure (struct lmodule *tm) {
  module_init (tm);
  ipc_configure (tm);
 
+ event_listen (einit_event_subsystem_any, einit_ipc_hub_generic_event_handler);
+
  tm->cleanup = einit_ipc_hub_cleanup;
 
-/* ethread_create (&th, &thread_attribute_detached, einit_ipc_hub_thread, NULL);
+// ethread_create (&th, &thread_attribute_detached, einit_ipc_hub_thread, NULL);
 
- sleep (50);*/
  return 1;
 }
