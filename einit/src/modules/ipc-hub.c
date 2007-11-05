@@ -132,8 +132,6 @@ char einit_ipc_hub_connect_socket (char *name) {
 
  if (sock == -1) {
   perror ("einit-ipc-hub: initialising socket");
-
-  fprintf (stderr, "\nno connection to any running server...\n");
   return 0;
  }
 
@@ -149,8 +147,6 @@ char einit_ipc_hub_connect_socket (char *name) {
  if (connect (sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
   eclose (sock);
   perror ("einit-ipc-hub: connecting socket");
-
-  fprintf (stderr, "\nno connection to any running server...\n");
   return 0;
  }
 
@@ -201,7 +197,7 @@ void einit_ipc_hub_create_socket (char *name) {
   if (bind(sock, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) {
 #endif
    eclose (sock);
-   perror ("einit-ipc-hub: connecting socket");
+   perror ("einit-ipc-hub: binding socket");
 
    return;
 #ifdef LINUX
@@ -266,8 +262,42 @@ void einit_ipc_hub_connect () {
 }
 
 void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
- fprintf (stderr, "event message: %s", cbuf);
+ char **messages = str2set ('\x4', cbuf);
+ ssize_t i;
+
  free (cbuf);
+
+ if (messages) {
+  for (; messages[i]; i++) {
+   char **fields = str2set ('\x4', messages[i]);
+   ssize_t j;
+   struct einit_event ev = evstaticinit (0);
+
+   if (fields) {
+    for (j = 0; fields[j]; j++) {
+/* this crashes us... presumably because we're never transmitting values for stringsets */
+     if (strstr (fields[j], "event:") == fields[j]) {
+      ev.type = parse_integer (fields[j] + 6); // add "event:"
+     } else if (strstr (fields[j], "int:") == fields[j]) {
+      ev.integer = parse_integer (fields[j] + 4); // add "int:"
+     } else if (strstr (fields[j], "task:") == fields[j]) {
+      ev.task = parse_integer (fields[j] + 5); // add "task:"
+     } else if (strstr (fields[j], "status:") == fields[j]) {
+      ev.status = parse_integer (fields[j] + 7); // add "status:"
+     } else if (strstr (fields[j], "command:") == fields[j]) {
+      ev.command = estrdup (fields[j] + 8); // add "command:"
+     } else if (strstr (fields[j], "string:") == fields[j]) {
+      ev.string = estrdup (fields[j] + 7); // add "string:"
+     }
+    }
+    free (fields);
+   }
+
+   event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  }
+
+  free (messages);
+ }
 }
 
 void *einit_ipc_hub_thread (void *irr) {
@@ -406,8 +436,6 @@ void *einit_ipc_hub_thread (void *irr) {
 
 		   cp += l;
           }
-
-          perror ("received sth...");
 		 } while (!errno && (l > 0));
 
 	     if (cbuf) {
@@ -486,24 +514,25 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
    char buffer[MAX_PACKET_SIZE];
    char buffer2[MAX_PACKET_SIZE];
 
-   esprintf (buffer, MAX_PACKET_SIZE, "event:%i\n", ev->type);
+/* we're using ascii record separators here... */
+   esprintf (buffer, MAX_PACKET_SIZE, "event:%i" "\x1e", ev->type);
 
    if (ev->integer) {
-    esprintf (buffer2, MAX_PACKET_SIZE, "int:%i\n", ev->integer);
+    esprintf (buffer2, MAX_PACKET_SIZE, "int:%i" "\x1e", ev->integer);
     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
       notice (1, "ipc-hub: event packet too big.");
      continue;
     }
    }
    if (ev->task) {
-    esprintf (buffer2, MAX_PACKET_SIZE, "task:%i\n", ev->task);
+    esprintf (buffer2, MAX_PACKET_SIZE, "task:%i" "\x1e", ev->task);
     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
       notice (1, "ipc-hub: event packet too big.");
      continue;
     }
    }
    if (ev->status) {
-    esprintf (buffer2, MAX_PACKET_SIZE, "status:%i\n", ev->status);
+    esprintf (buffer2, MAX_PACKET_SIZE, "status:%i" "\x1e", ev->status);
     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
       notice (1, "ipc-hub: event packet too big.");
      continue;
@@ -512,7 +541,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
 
    if (ev->task == einit_event_subsystem_ipc) {
     if (ev->command) {
-     esprintf (buffer2, MAX_PACKET_SIZE, "command:%lu:%s\n", strlen(ev->command), ev->command);
+     esprintf (buffer2, MAX_PACKET_SIZE, "command:%s" "\x1e", ev->command);
      if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
 	  notice (1, "ipc-hub: event packet too big.");
       continue;
@@ -520,12 +549,19 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
     }
    } else {
     if (ev->string) {
-     esprintf (buffer2, MAX_PACKET_SIZE, "string:%lu:%s\n", strlen(ev->string), ev->string);
+     esprintf (buffer2, MAX_PACKET_SIZE, "string:%s" "\x1e", ev->string);
      if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
 	  notice (1, "ipc-hub: event packet too big.");
       continue;
      }
     }
+   }
+
+/* last byte in the message is an ascii end-of-transmission char */
+   snprintf (buffer2, MAX_PACKET_SIZE, "\x4");
+   if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+    notice (1, "ipc-hub: event packet too big.");
+    continue;
    }
 
    send (targets[i], buffer, strlen(buffer), 0);
