@@ -183,7 +183,7 @@ void sh_add_environ_callback (char **data, uint8_t status, void *ignored) {
     nnode.id = estrdup ("configuration-environment-global");
     nnode.arbattrs = (char **)setdup ((const void **)&narb, SET_TYPE_STRING);
     nnode.svalue = nnode.arbattrs[3];
-    nnode.source = self->rid;
+//    nnode.source = self->rid;
 //    nnode.source_file = "/etc/profile.env";
 
     cfg_addnode (&nnode);
@@ -277,7 +277,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     newnode.type = einit_node_mode;
     newnode.id = estrdup(arbattrs[1]);
-    newnode.source   = self->rid;
+//    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
     cfg_addnode (&newnode);
@@ -375,7 +375,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        newnode.type = einit_node_regular;
 //       newnode.mode     = currentmode;
        newnode.id       = cfgid;
-       newnode.source   = self->rid;
+//       newnode.source   = self->rid;
        newnode.arbattrs = arbattrs;
 
        cfg_addnode (&newnode);
@@ -433,7 +433,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     newnode.type = einit_node_regular;
     newnode.mode     = currentmode;
     newnode.id       = estrdup("mode-enable");
-    newnode.source   = self->rid;
+//    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
     cfg_addnode (&newnode);
