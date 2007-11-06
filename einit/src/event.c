@@ -78,7 +78,7 @@ void event_do_wakeup_calls (enum einit_event_code c) {
 
    if (m) {
     mod(einit_module_resume, m, NULL);
-	time_t nt = time(NULL) + 60;
+    time_t nt = time(NULL) + 60;
     emutex_lock (&event_wakeup_mutex);
     if (!event_snooze_time || ((event_snooze_time+30) < nt)) {
      event_snooze_time = nt;
