@@ -100,8 +100,11 @@ enum einit_module_options {
 /*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
  einit_module_generic    = 0x4,
 /*!< Module-type: Regular modules, i.e. those that provide services. */
- einit_module_deprecated = 0x10
+ einit_module_deprecated = 0x10,
 /*!< Module-option: Deprecated module: only try if nothing else worked */
+
+ einit_feedback_job      = 0x1000
+/*!< Feedback-option: Say "OK" when this module is enabled, don't say anything when disabled */
 };
 /*!\} */
 

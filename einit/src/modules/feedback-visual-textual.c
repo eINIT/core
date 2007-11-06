@@ -388,8 +388,10 @@ void feedback_textual_update_streams () {
 
       if (feedback_textual_modules[y]->module->status & status_failed) {
        eprintf (feedback_streams[i]->stream, " [ \e[31mfail\e[0m ] %s: command failed, module is enabled\n", feedback_textual_modules[y]->module->module->name);
-      } else {
+      } else if (!(feedback_textual_modules[y]->module->module->mode & einit_feedback_job)) {
        eprintf (feedback_streams[i]->stream, " [ \e[32menab\e[0m ] %s\n", feedback_textual_modules[y]->module->module->name);
+      } else {
+       eprintf (feedback_streams[i]->stream, " [ \e[32m OK \e[0m ] %s\n", feedback_textual_modules[y]->module->module->name);
       }
 
       feedback_textual_modules[y]->laststatus = feedback_textual_modules[y]->module->status;
@@ -399,7 +401,7 @@ void feedback_textual_update_streams () {
 
       if (feedback_textual_modules[y]->module->status & status_failed) {
        eprintf (feedback_streams[i]->stream, " [ \e[31mfail\e[0m ] %s: command failed, module is disabled\n", feedback_textual_modules[y]->module->module->name);
-      } else {
+      } else if (!(feedback_textual_modules[y]->module->module->mode & einit_feedback_job)) {
        eprintf (feedback_streams[i]->stream, " [ \e[32mdisa\e[0m ] %s\n", feedback_textual_modules[y]->module->module->name);
       }
 

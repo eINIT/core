@@ -66,7 +66,7 @@ const struct smodule einit_module_logic_v3_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module_generic,
  .name      = "Module Logic Core (V3)",
  .rid       = "einit-module-logic-v3",
  .si        = {
@@ -574,6 +574,13 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
   if (mode->arbattrs) for (; mode->arbattrs[xi]; xi+=2) {
    if (strmatch(mode->arbattrs[xi], "base")) {
     base = str2set (':', mode->arbattrs[xi+1]);
+   } else if (strmatch (mode->arbattrs[xi], "wait-for-base") && parse_boolean (mode->arbattrs[xi+1])) {
+    char tmp[BUFFERSIZE];
+
+    esprintf (tmp, BUFFERSIZE, "checkpoint-mode-%s", mode->id);
+
+    if (!enable || !inset ((const void **)enable, tmp, SET_TYPE_STRING))
+     enable = (char **)setadd ((void **)enable, tmp, SET_TYPE_STRING);
    }
   }
 

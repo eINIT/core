@@ -296,6 +296,8 @@ Subsystems = element subsystem {
 Mode = element mode {
   IDAttribute &
   attribute base { text }? &
+  attribute wait-for-base { text }? &
+  attribute cooldown { text }? &
 
   element enable { attribute services { List_of_services } & attribute critical { text }? }? &
   element disable { attribute services { List_of_services } }? &
