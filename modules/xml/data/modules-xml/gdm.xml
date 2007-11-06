@@ -1,6 +1,7 @@
 <module>
  <v-gdm
   name="The GNOME Display Manager (gdm)"
+  requires="dbus"
   provides="x11:displaymanager">
 
   <execute id="prepare" code="if [ ! -d /var/log/gdm ]; then  mkdir /var/log/gdm; fi; true" />
