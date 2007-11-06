@@ -86,16 +86,16 @@ char *linux_reboot_use_kexec_command = NULL;
 
 void linux_reboot () {
  if (linux_reboot_use_kexec) {
-  if (einit_initial_environment) free (einit_initial_environment);
+//  if (einit_initial_environment) free (einit_initial_environment);
   _exit (einit_exit_status_last_rites_kexec);
  }
 
- if (einit_initial_environment) free (einit_initial_environment);
+// if (einit_initial_environment) free (einit_initial_environment);
  _exit (einit_exit_status_last_rites_reboot);
 }
 
 void linux_power_off () {
- if (einit_initial_environment) free (einit_initial_environment);
+// if (einit_initial_environment) free (einit_initial_environment);
  _exit (einit_exit_status_last_rites_halt);
 }
 
