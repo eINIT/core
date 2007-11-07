@@ -263,19 +263,18 @@ void einit_ipc_hub_connect () {
 
 void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
  char **messages = str2set ('\x4', cbuf);
- ssize_t i;
+ ssize_t i = 0;
 
  free (cbuf);
 
  if (messages) {
   for (; messages[i]; i++) {
-   char **fields = str2set ('\x4', messages[i]);
+   char **fields = str2set ('\x1e', messages[i]);
    ssize_t j;
    struct einit_event ev = evstaticinit (0);
 
    if (fields) {
     for (j = 0; fields[j]; j++) {
-/* this crashes us... presumably because we're never transmitting values for stringsets */
      if (strstr (fields[j], "event:") == fields[j]) {
       ev.type = parse_integer (fields[j] + 6); // add "event:"
      } else if (strstr (fields[j], "int:") == fields[j]) {
@@ -299,9 +298,9 @@ void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
 
    if (ev.type == einit_event_subsystem_ipc) {
     if (ev.argv) {
-	 ev.argc = setcount ((const void **)ev.argv);
+     ev.argc = setcount ((const void **)ev.argv);
      event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-	}
+    }
    } else {
     event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
    }
@@ -535,7 +534,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
      continue;
     } else {
      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
- 	}
+    }
    }
    if (ev->task) {
     esprintf (buffer2, MAX_PACKET_SIZE, "task:%i" "\x1e", ev->task);
@@ -548,7 +547,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
      continue;
     } else {
      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
- 	}
+    }
    }
    if (ev->status) {
     esprintf (buffer2, MAX_PACKET_SIZE, "status:%i" "\x1e", ev->status);
@@ -561,7 +560,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
      continue;
     } else {
      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
- 	}
+    }
    }
 
    if (ev->task == einit_event_subsystem_ipc) {
@@ -575,9 +574,9 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
      }
     } else if (ev->argv) {
 /* ASCII group separators here... */
-	 char *r = set2str ('\x1d', (const char **)ev->argv);
+     char *r = set2str ('\x1d', (const char **)ev->argv);
      esprintf (buffer2, MAX_PACKET_SIZE, "argv:%s" "\x1e", r);
-	 free (r);
+     free (r);
      if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
        notice (1, "ipc-hub: event packet too big.");
       continue;
@@ -596,9 +595,9 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
      }
     } else if (ev->stringset) {
 /* ASCII group separators here... */
-	 char *r = set2str ('\x1d', (const char **)ev->stringset);
+     char *r = set2str ('\x1d', (const char **)ev->stringset);
      esprintf (buffer2, MAX_PACKET_SIZE, "stringset:%s" "\x1e", r);
-	 free (r);
+     free (r);
      if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
        notice (1, "ipc-hub: event packet too big.");
       continue;
@@ -619,9 +618,9 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
      continue;
     } else {
      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
- 	}
+    }
 
-   send (targets[i], buffer, strlen(buffer), 0);
+    send (targets[i], buffer, strlen(buffer), MSG_DONTWAIT);
   }
 
   free (targets);
