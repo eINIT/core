@@ -1344,7 +1344,7 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
    if (strmatch (options[fi], "remount")) (*mntflags) |= MS_REMOUNT;
   else
 #endif
-   if (strmatch (options[fi], "system") || strmatch (options[fi], "critical") || strmatch (options[fi], "network") || strmatch (options[fi], "skip-fsck")) ; // ignore our own specifiers
+   if (strmatch (options[fi], "auto") || strmatch (options[fi], "noauto") || strmatch (options[fi], "system") || strmatch (options[fi], "critical") || strmatch (options[fi], "network") || strmatch (options[fi], "skip-fsck")) ; // ignore our own specifiers, as well as auto/noauto
   else
 
    if (!ret) {
