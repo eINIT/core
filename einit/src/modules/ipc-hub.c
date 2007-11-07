@@ -288,12 +288,23 @@ void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
       ev.command = estrdup (fields[j] + 8); // add "command:"
      } else if (strstr (fields[j], "string:") == fields[j]) {
       ev.string = estrdup (fields[j] + 7); // add "string:"
+     } else if (strstr (fields[j], "argv:") == fields[j]) {
+      ev.argv = str2set ('\x1d', (const char *)(fields[j] + 5)); // add "argv:"
+     } else if (strstr (fields[j], "stringset:") == fields[j]) {
+      ev.stringset = str2set ('\x1d', (const char *)(fields[j] + 10)); // add "stringset:"
      }
     }
     free (fields);
    }
 
-   event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+   if (ev.type == einit_event_subsystem_ipc) {
+    if (ev.argv) {
+	 ev.argc = setcount ((const void **)ev.argv);
+     event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+	}
+   } else {
+    event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+   }
   }
 
   free (messages);
@@ -519,50 +530,96 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
 
    if (ev->integer) {
     esprintf (buffer2, MAX_PACKET_SIZE, "int:%i" "\x1e", ev->integer);
-    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+    if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
       notice (1, "ipc-hub: event packet too big.");
      continue;
-    }
+    } else {
+     strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
+ 	}
    }
    if (ev->task) {
     esprintf (buffer2, MAX_PACKET_SIZE, "task:%i" "\x1e", ev->task);
-    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+/*    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
       notice (1, "ipc-hub: event packet too big.");
      continue;
-    }
+    }*/
+    if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    } else {
+     strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
+ 	}
    }
    if (ev->status) {
     esprintf (buffer2, MAX_PACKET_SIZE, "status:%i" "\x1e", ev->status);
-    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+/*    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
       notice (1, "ipc-hub: event packet too big.");
      continue;
-    }
+    }*/
+    if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    } else {
+     strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
+ 	}
    }
 
    if (ev->task == einit_event_subsystem_ipc) {
     if (ev->command) {
      esprintf (buffer2, MAX_PACKET_SIZE, "command:%s" "\x1e", ev->command);
-     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
-	  notice (1, "ipc-hub: event packet too big.");
+     if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+       notice (1, "ipc-hub: event packet too big.");
       continue;
+     } else {
+      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
+     }
+    } else if (ev->argv) {
+/* ASCII group separators here... */
+	 char *r = set2str ('\x1d', (const char **)ev->argv);
+     esprintf (buffer2, MAX_PACKET_SIZE, "argv:%s" "\x1e", r);
+	 free (r);
+     if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+       notice (1, "ipc-hub: event packet too big.");
+      continue;
+     } else {
+      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
      }
     }
    } else {
     if (ev->string) {
      esprintf (buffer2, MAX_PACKET_SIZE, "string:%s" "\x1e", ev->string);
-     if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
-	  notice (1, "ipc-hub: event packet too big.");
+     if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+       notice (1, "ipc-hub: event packet too big.");
       continue;
+     } else {
+      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
+     }
+    } else if (ev->stringset) {
+/* ASCII group separators here... */
+	 char *r = set2str ('\x1d', (const char **)ev->stringset);
+     esprintf (buffer2, MAX_PACKET_SIZE, "stringset:%s" "\x1e", r);
+	 free (r);
+     if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+       notice (1, "ipc-hub: event packet too big.");
+      continue;
+     } else {
+      strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
      }
     }
    }
 
 /* last byte in the message is an ascii end-of-transmission char */
    snprintf (buffer2, MAX_PACKET_SIZE, "\x4");
-   if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
-    notice (1, "ipc-hub: event packet too big.");
-    continue;
-   }
+/*    if (strlcat(buffer, buffer2, MAX_PACKET_SIZE) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    }*/
+    if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
+      notice (1, "ipc-hub: event packet too big.");
+     continue;
+    } else {
+     strncat(buffer, buffer2, MAX_PACKET_SIZE - strlen (buffer) - 1);
+ 	}
 
    send (targets[i], buffer, strlen(buffer), 0);
   }
