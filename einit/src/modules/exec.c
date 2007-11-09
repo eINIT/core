@@ -275,6 +275,9 @@ char *apply_envfile_f (char *command, const char **environment) {
  if (variables) {
   command = apply_variables (command, (const char **)variables);
 
+  write (2, command, strlen (command));
+  write (2, "\n", 1);
+
   free (variables);
  }
 
