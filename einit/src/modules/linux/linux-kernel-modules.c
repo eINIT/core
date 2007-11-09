@@ -212,114 +212,6 @@ char **linux_kernel_modules_get_by_subsystem (char *subsystem, char *dwait) {
  return NULL;
 }
 
-#if 0
-
-int linux_kernel_modules_unload (char **modules) {
- if (!modules) return status_failed;
- char *modprobe_command = cfg_getstring ("configuration-command-rmmod/with-env", 0);
- uint32_t i = 0;
-
- for (; modules[i]; i++) {
-  const char *tpldata[] = { "module", modules[i], NULL };
-  char *applied = apply_variables (modprobe_command, tpldata);
-
-  if (applied) {
-   notice (4, "unloading kernel module: %s", modules[i]);
-
-   if (pexec (applied, NULL, 0, 0, NULL, NULL, NULL, NULL) & status_failed) {
-    notice (2, "unloading kernel module \"%s\" failed", modules[i]);
-   }
-  }
- }
-
- free (modules);
- return status_ok;
-}
-
-int linux_kernel_modules_run (enum lkm_run_code code) {
- pthread_t **threads = NULL;
- struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
-
- if (linux_kernel_modules_nodes) {
-  struct stree *cur = linux_kernel_modules_nodes;
-
-  while (cur) {
-   struct cfgnode *node = cur->value;
-   if (node && node->svalue) {
-    char **modules = str2set (':', node->svalue);
-
-    if (modules) {
-     if (code == lkm_shutdown) {
-      pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-      if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_unload, modules)) {
-       linux_kernel_modules_unload (modules);
-      } else {
-       if (!node->flag)
-        threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
-      }
-     } else {
-      pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-      if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-       linux_kernel_modules_load (modules);
-      } else {
-       if (!node->flag)
-        threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
-      }
-     }
-    }
-   }
-
-   cur = streenext (cur);
-  }
-
-  streefree (linux_kernel_modules_nodes);
- }
-
- char **kamodules = linux_kernel_modules_autoload_d();
- if (kamodules) {
-  if (code == lkm_shutdown) {
-   pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_unload, kamodules)) {
-    linux_kernel_modules_unload (kamodules);
-   } else
-    threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
-  } else {
-   pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, kamodules)) {
-    linux_kernel_modules_load (kamodules);
-   } else
-    threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
-  }
- }
-
-
- if (threads) {
-  int i = 0;
-
-  for (; threads[i]; i++) {
-   pthread_join (*(threads[i]), NULL);
-
-   free (threads[i]);
-  }
-
-  free (threads);
- }
-
- return status_ok;
-}
-
-void linux_kernel_modules_power_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_power_down_imminent) || (ev->type == einit_power_reset_imminent)) {
-  linux_kernel_modules_run(lkm_shutdown);
- }
-}
-
-#else
-
 int linux_kernel_modules_run (enum lkm_run_code code) {
  pthread_t **threads = NULL;
 
@@ -347,6 +239,16 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
 
    while (cur) {
     char *subsystem = cur->key + sizeof (MPREFIX);
+    struct cfgnode *nod = cur->value;
+
+    if (nod && nod->arbattrs) {
+     size_t i;
+     for (i = 0; nod->arbattrs[i]; i+=2) {
+      if (strmatch (nod->arbattrs[i], "provide-service") && parse_boolean (nod->arbattrs[i+1])) {
+       goto nextgroup;
+      }
+     }
+    }
 
     if (strmatch (subsystem, "storage")) {
     } else {
@@ -373,6 +275,8 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
       }
      }
     }
+
+    nextgroup:
 
     cur = streenext (cur);
    }
@@ -428,8 +332,6 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
  return status_ok;
 }
 
-#endif
-
 void linux_kernel_modules_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_early:
@@ -442,6 +344,104 @@ void linux_kernel_modules_boot_event_handler (struct einit_event *ev) {
 
    default: break;
  }
+}
+
+int linux_kernel_modules_module_enable (char *subsys, struct einit_event *status) {
+ char dwait = 0;
+ char **modules = linux_kernel_modules_get_by_subsystem (subsys, &dwait);
+
+ if (modules) {
+  pthread_t threadid;
+
+  if (dwait) {
+   linux_kernel_modules_load (modules);
+  } else if (ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))linux_kernel_modules_load, modules)) {
+   linux_kernel_modules_load (modules);
+  }
+ }
+
+ return status_ok;
+}
+
+int linux_kernel_modules_module_disable (char *p, struct einit_event *status) {
+ return status_ok;
+}
+
+int linux_kernel_modules_module_configure (struct lmodule *this) {
+ this->enable = (int (*)(void *, struct einit_event *))linux_kernel_modules_module_enable;
+ this->disable = (int (*)(void *, struct einit_event *))linux_kernel_modules_module_disable;
+
+ this->param = this->module->rid + 21;
+
+ return 0;
+}
+
+int linux_kernel_modules_scanmodules (struct lmodule *lm) {
+ struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+
+ if (linux_kernel_modules_nodes) {
+  struct stree *cur = linux_kernel_modules_nodes;
+
+  while (cur) {
+   char *subsystem = cur->key + sizeof (MPREFIX);
+   char usegroup = 0;
+
+   if (!strmatch (subsystem, "storage")) {
+    struct cfgnode *nod = cur->value;
+
+    if (nod && nod->arbattrs) {
+     size_t i;
+     for (i = 0; nod->arbattrs[i]; i+=2) {
+      if (strmatch (nod->arbattrs[i], "provide-service") && parse_boolean (nod->arbattrs[i+1])) {
+       usegroup = 1;
+      }
+     }
+    }
+   }
+
+   if (usegroup) {
+    char tmp[BUFFERSIZE];
+    struct lmodule *m = lm;
+    struct smodule *sm;
+
+    esprintf (tmp, BUFFERSIZE, "linux-kernel-modules-%s", subsystem);
+
+    while (m) {
+     if (m->module && strmatch (m->module->rid, tmp)) {
+      mod_update(m);
+      goto nextgroup;
+     }
+
+     m = m->next;
+    }
+
+    sm = emalloc (sizeof(struct smodule));
+    memset (sm, 0, sizeof (struct smodule));
+
+    sm->rid = estrdup (tmp);
+
+    esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (Group \"%s\")", subsystem);
+    sm->name = estrdup (tmp);
+
+    sm->eiversion = EINIT_VERSION;
+    sm->eibuild = BUILDNUMBER;
+    sm->mode = einit_module_generic | einit_feedback_job;
+
+    esprintf (tmp, BUFFERSIZE, "kern-%s", subsystem);
+    sm->si.provides = (char **)setadd ((void **)sm->si.provides, tmp, SET_TYPE_STRING);
+
+    sm->configure = linux_kernel_modules_module_configure;
+
+    mod_add (NULL, sm);
+   }
+
+   nextgroup:
+
+   cur = streenext(cur);
+  }
+ }
+
+ return 0;
 }
 
 int linux_kernel_modules_cleanup (struct lmodule *this) {
@@ -461,6 +461,7 @@ int linux_kernel_modules_configure (struct lmodule *this) {
  exec_configure (this);
 
  thismodule->cleanup = linux_kernel_modules_cleanup;
+ thismodule->scanmodules = linux_kernel_modules_scanmodules;
 
  event_listen (einit_event_subsystem_boot, linux_kernel_modules_boot_event_handler);
 

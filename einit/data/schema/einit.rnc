@@ -143,7 +143,7 @@ Configuration = element configuration {
   element kernel {
     element modules {
       element autoload.d { attribute file { text } }? &
-      element * { StringAttribute, BooleanAttribute? }*
+      element * { StringAttribute, BooleanAttribute?, attribute provide-service { Boolean }? }*
     }*
   }* &
 
