@@ -461,6 +461,7 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
 
 void exec_run_sh (char *command, enum pexec_options options, char **exec_environment) {
  struct exec_parser_data pd;
+ char *ocmd = estrdup (command);
 
  memset (&pd, 0, sizeof (pd));
 
@@ -517,7 +518,7 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
 
   if (pd.command) free (pd.command);
 
-  cmdsetdup = str2set ('\0', command);
+  cmdsetdup = str2set ('\0', ocmd);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
   if (options & pexec_option_safe_environment) {
