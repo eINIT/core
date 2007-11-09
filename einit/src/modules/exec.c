@@ -459,10 +459,12 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
  }
 }
 
-void exec_run_sh (const char *command, enum pexec_options options, char **exec_environment) {
+void exec_run_sh (char *command, enum pexec_options options, char **exec_environment) {
  struct exec_parser_data pd;
 
  memset (&pd, 0, sizeof (pd));
+
+ command = strip_empty_variables (command);
 
 // fprintf (stderr, "einit/sh: parsing...\n");
  parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
@@ -670,7 +672,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   command = apply_envfile_f ((char *)command, (const char **)exec_environment);
 
-  exec_run_sh (command, options, exec_environment);
+  exec_run_sh ((char *)command, options, exec_environment);
  } else {
   FILE *fx;
 

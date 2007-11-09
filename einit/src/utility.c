@@ -892,3 +892,33 @@ int unlink_recursive (const char *file, char self) {
 }
 
 #endif
+
+char *strip_empty_variables (char *string) {
+ size_t i = 0, start = 0;
+ char lev = 0;
+
+ for (; string[i]; i++) {
+  if (string[i] == '$') {
+   lev = 1;
+   start = i;
+  } else if (lev == 1) {
+   if (string[i] == '{') {
+    lev = 2;
+   } else {
+    lev = 0;
+   }
+  } else if (lev == 2) {
+   if (string[i] == '}') {
+    for (i++; string[i]; i++, start++) {
+     string[start] = string[i];
+    }
+
+    string[start] = 0;
+
+    return strip_empty_variables (string);
+   }
+  }
+ }
+
+ return string;
+}

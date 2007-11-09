@@ -203,6 +203,7 @@ signed int parse_integer (const char *);
 char parse_boolean (const char *);
 
 char *apply_variables (const char *ostring, const char **env);
+char *strip_empty_variables (char *string);
 
 char *escape_xml (const char *input);
 
