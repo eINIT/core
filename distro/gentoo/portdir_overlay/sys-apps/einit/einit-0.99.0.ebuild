@@ -28,7 +28,8 @@ RDEPEND="app-text/rnv
 	>=dev-libs/libnl-1.0_pre6
 	dbus? ( >=sys-apps/dbus-1.0.2-r2 )
 	baselayout2? ( >=sys-apps/baselayout-2.0.0_rc2-r1 )
-	!sys-apps/einit-modules-gentoo"
+	!sys-apps/einit-modules-gentoo
+	scheme? ( >=dev-scheme/guile-1.8 )"
 DEPEND="${RDEPEND}
 	doc? ( app-text/docbook-sgml app-doc/doxygen )
 	>=sys-apps/portage-2.1.2-r11"
