@@ -30,4 +30,7 @@ linux-netlink.so: linux-netlink.o
 distro-gentoo.so: distro-gentoo.o
 	${LLD} -Wl,--no-as-needed distro-gentoo.o -leinfo -lrc -o distro-gentoo.so
 
+module-scheme-guile.so: module-scheme-guile.o
+	${LLD} module-scheme-guile.o -lguile -o module-scheme-guile.so
+
 test:

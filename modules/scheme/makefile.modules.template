@@ -1,6 +1,0 @@
-modules: $(objects)
-
-install: install-auto
-
-module-scheme.so: scheme.o module-scheme.o
-	${LXXLD} scheme.o module-scheme.o -o module-scheme.so

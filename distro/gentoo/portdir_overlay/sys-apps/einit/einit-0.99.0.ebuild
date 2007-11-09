@@ -3,7 +3,7 @@
 # $Header: $
 
 #
-# eINIT SVN ebuild (v31)
+# eINIT SVN ebuild (v32)
 #
 
 inherit subversion
@@ -21,7 +21,7 @@ SLOT="0"
 KEYWORDS="-*"
 RESTRICT="strip"
 
-IUSE="doc static debug nowtf externalise fbsplash aural dbus noxml baselayout2"
+IUSE="doc static debug nowtf externalise fbsplash aural dbus noxml baselayout2 scheme"
 
 RDEPEND="app-text/rnv
 	sys-apps/iproute2
@@ -82,6 +82,10 @@ src_compile() {
 	fi
 	if ! use aural ; then
 		local myconf="${myconf} --no-feedback-aural --no-feedback-aural-festival"
+	fi
+
+	if use scheme; then
+		local myconf="${myconf} --enable-module-scheme-guile"
 	fi
 	
 	echo ${myconf}
