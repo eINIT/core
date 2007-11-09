@@ -1,14 +1,14 @@
 <einit>
 
  <mode id="boot">
-  <enable services="mount-local:keyboard:logger:urandom" critical="mount-critical" />
+  <enable services="keyboard:logger:urandom" />
   <overrides>
    <ttys s="tty1-regular" />
   </overrides>
  </mode>
 
  <mode id="default" base="boot">
-  <enable services="network:audio:portmap:dbus:hal:displaymanager:mount-remote:ipc-dbus" />
+  <enable services="network:audio:portmap:dbus:hal:displaymanager:ipc-dbus" />
   <overrides>
    <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
   </overrides>

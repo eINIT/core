@@ -298,11 +298,17 @@ void *emalloc (size_t s) {
 
 void *ecalloc (size_t c, size_t s) {
  void *p = NULL;
+ size_t l = c*s;
 
+ p = emalloc (l);
+ memset (p, 0, l);
+
+#if 0
  while (!(p = calloc (c, s))) {
   bitch(bitch_emalloc, 0, "call to calloc() failed.");
   sleep (1);
  }
+#endif
 
  return p;
 }
