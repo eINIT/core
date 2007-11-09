@@ -60,7 +60,7 @@ const struct smodule einit_linux_kernel_modules_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_generic,
+ .mode      = einit_module_loader,
  .name      = "Linux Kernel Module Support",
  .rid       = "linux-kernel-modules",
  .si        = {
@@ -238,7 +238,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
    struct stree *cur = linux_kernel_modules_nodes;
 
    while (cur) {
-    char *subsystem = cur->key + sizeof (MPREFIX);
+    char *subsystem = cur->key + sizeof (MPREFIX) -1;
     struct cfgnode *nod = cur->value;
 
     if (nod && nod->arbattrs) {
@@ -383,7 +383,7 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
   struct stree *cur = linux_kernel_modules_nodes;
 
   while (cur) {
-   char *subsystem = cur->key + sizeof (MPREFIX);
+   char *subsystem = cur->key + sizeof (MPREFIX) -1;
    char usegroup = 0;
 
    if (!strmatch (subsystem, "storage")) {
