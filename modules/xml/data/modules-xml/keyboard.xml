@@ -31,5 +31,7 @@
 
   <variables s="configuration-services-keyboard/.*" />
   <need-files s="loadkeys:dumpkeys:kbd_mode" />
+
+  <options s="run-once" />
  </v-keyboard>
 </module>

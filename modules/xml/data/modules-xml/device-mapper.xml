@@ -4,7 +4,7 @@
   name="Device-mapper"
   provides="device-mapper">
 
-  <script file="device-mapper.sh" actions="enable:disable:on-shutdown" />
+  <script file="device-mapper.sh" actions="enable:disable" />
 
   <need-files s="vgchange" />
 

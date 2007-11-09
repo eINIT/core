@@ -5,5 +5,7 @@
 
   <execute id="enable" code="modprobe -q bridge; true" />
   <execute id="disable" code="true" />
+
+  <options s="run-once" />
  </v-kern-bridge>
 </module>

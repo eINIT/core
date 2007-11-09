@@ -18,5 +18,6 @@
             dd if=/dev/urandom of=${configuration_services_urandom_seed} count=1 bs=512 &amp;&gt;/dev/null" />
 
   <variables s="configuration-services-urandom/.*" />
+  <options s="run-once" />
  </v-urandom>
 </module>

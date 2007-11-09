@@ -10,5 +10,6 @@
 
   <variables s="configuration-services-alsa-mixer/.*" />
   <need-files s="alsactl" />
+  <options s="run-once" />
  </v-alsa>
 </module>

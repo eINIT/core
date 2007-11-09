@@ -14,5 +14,6 @@
 
   <need-files s="splash_util" />
   <variables s="configuration-feedback-visual-fbsplash-ttys:configuration-feedback-visual-fbsplash-theme" />
+  <options s="run-once" />
  </v-fbsplash>
 </module>

@@ -8,5 +8,6 @@
   <execute id="disable" code="true" />
 
   <need-files s="irqbalance" />
+  <options s="run-once" />
  </v-irqbalance>
 </module>

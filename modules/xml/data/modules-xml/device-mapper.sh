@@ -1,10 +1,6 @@
 #!/bin/bash
 if [ $1 = "enable" ]; then
-./lvm-start.sh;
- 
+/lib/einit/modules-xml/lvm-start.sh;
+
 elif  [ $1 = "disable" ]; then
-./lvm-stop.sh;
- 
-elif [ $1 = "on-shutdown" ]; then
-./lvm-stop.sh;
-fi
+/lib/einit/modules-xml/lvm-stop.sh;

@@ -8,5 +8,6 @@
   <execute id="disable" code="true" />
 
   <need-files s="hid2hci" />
-</v-bluez-hid2hci>
+  <options s="run-once" />
+ </v-bluez-hid2hci>
 </module>

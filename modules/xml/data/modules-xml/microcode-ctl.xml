@@ -9,5 +9,6 @@
 
   <need-files s="microcode_ctl" />
   <variables s="configuration-services-microcode-ctl/.*" />
+  <options s="run-once" />
  </v-microcode-ctl>
 </module>

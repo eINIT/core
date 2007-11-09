@@ -10,5 +10,6 @@
 
   <need-files s="sensors" />
   <variables s="configuration-services-sensors/.*" />
+  <options s="run-once" />
  </v-sensors>
 </module>

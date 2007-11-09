@@ -420,7 +420,7 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
 
     sm->rid = estrdup (tmp);
 
-    esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (Group \"%s\")", subsystem);
+    esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
     sm->name = estrdup (tmp);
 
     sm->eiversion = EINIT_VERSION;

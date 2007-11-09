@@ -14,5 +14,6 @@
   <execute id="disable" code="true" />
 
   <variables s="configuration-services-ntp-client/.*" />
+  <options s="run-once" />
  </v-ntp-client>
 </module>

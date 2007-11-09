@@ -15,5 +15,6 @@
 
   <need-files s="setfont" />
   <variables s="configuration-services-setfont/.*" />
+  <options s="run-once" />
  </v-setfont>
 </module>
