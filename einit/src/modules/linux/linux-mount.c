@@ -181,9 +181,9 @@ int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *d
  }
 
  if (fsdata) {
-  esprintf (command, BUFFERSIZE, "/bin/mount \"%s\" \"%s\" -t \"%s\" -o \"%s\"", dd->device, mountpoint, fs, fsdata);
+  esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s -o %s", dd->device, mountpoint, fs, fsdata);
  } else {
-  esprintf (command, BUFFERSIZE, "/bin/mount \"%s\" \"%s\" -t \"%s\"", dd->device, mountpoint, fs);
+  esprintf (command, BUFFERSIZE, "/bin/mount %s %s -t %s", dd->device, mountpoint, fs);
  }
 
  return pexec_simple (command, status);
