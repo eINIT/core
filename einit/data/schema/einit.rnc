@@ -290,6 +290,10 @@ Subsystems = element subsystem {
   element compile-to { StringAttribute }? &
   element compile { attribute c { text } }? &
   element sources { IDAttribute & PathAttributes } *
+ } ? &
+
+ element scheme {
+  element modules { IDAttribute & PathAttributes } *
  } ?
 }
 
