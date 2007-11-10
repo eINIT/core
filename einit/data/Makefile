@@ -16,6 +16,7 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/schemata
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/defaults/subsystems.d
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/modules-scheme
 #	${INSTALL} ${IPARAM} -m 0644 einit.xml ${DESTDIR}/${LIBDIR}
 	sed -e "s/\/lib/\/${ELIBDIR}/" < einit.xml >einit.xml.n
 	${INSTALL} ${IPARAM} -m 0644 einit.xml.n ${DESTDIR}/${LIBDIR}/einit.xml
@@ -26,4 +27,5 @@ install:
 	for i in subsystems.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
 	for i in local.xml fstab.xml modes.xml network.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" "" "${CONFIGINSTALLMETHOD}"; done
 	
+	${INSTALL} ${IPARAM} -m 0644 modules-scheme/*.scm ${DESTDIR}/${LIBDIR}/modules-scheme
 	ln -sfn ../../../sbin/einit ${DESTDIR}/${ETCDIR}/init.d/einit

@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/utility.h>
 
+#include <libguile.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -77,8 +79,82 @@ int module_scheme_guile_cleanup (struct lmodule *pa) {
  return 0;
 }
 
+void module_scheme_guile_scanmodules_work_scheme (char **modules) {
+ size_t i = 0;
+
+ for (; modules[i]; i++) {
+  scm_c_primitive_load (modules[i]);
+ }
+
+ return;
+}
+
 int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
+ char **modules = NULL;
+ struct cfgnode *node = NULL;
+
+ while ((node = cfg_findnode ("subsystem-scheme-modules", 0, node))) {
+  char **nmodules = readdirfilter(node, "/lib/einit/modules-scheme/", ".*\\.scm$", NULL, 0);
+
+  if (nmodules) {
+   modules = (char **)setcombine_nc ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
+
+   free (nmodules);
+  }
+ }
+
+ if (modules) {
+//  struct lmodule *lm = modchain;
+
+  scm_with_guile ((void *(*)(void *))module_scheme_guile_scanmodules_work_scheme, (void *)modules);
+
+  free (modules);
+ }
+
  return 1;
+}
+
+void module_scheme_guile_notice_wo (char *n) {
+ notice (5, n);
+}
+
+SCM module_scheme_guile_notice (SCM message) {
+ char *msg;
+
+ scm_dynwind_begin (0);
+
+ msg = scm_to_locale_string (message);
+ scm_dynwind_unwind_handler (free, msg, SCM_F_WIND_EXPLICITLY);
+
+ scm_without_guile ((void *(*)(void *))module_scheme_guile_notice_wo, msg);
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_T;
+}
+
+void module_scheme_guile_critical_wo (char *n) {
+ notice (2, n);
+}
+
+SCM module_scheme_guile_critical (SCM message) {
+ char *msg;
+
+ scm_dynwind_begin (0);
+
+ msg = scm_to_locale_string (message);
+ scm_dynwind_unwind_handler (free, msg, SCM_F_WIND_EXPLICITLY);
+
+ scm_without_guile ((void *(*)(void *))module_scheme_guile_critical_wo, msg);
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_T;
+}
+
+void module_scheme_guile_configure_scheme (void *n) {
+ scm_c_define_gsubr ("notice", 1, 0, 0, module_scheme_guile_notice);
+ scm_c_define_gsubr ("critical", 1, 0, 0, module_scheme_guile_critical);
 }
 
 int module_scheme_guile_configure (struct lmodule *pa) {
@@ -86,6 +162,8 @@ int module_scheme_guile_configure (struct lmodule *pa) {
 
  pa->scanmodules = module_scheme_guile_scanmodules;
  pa->cleanup = module_scheme_guile_cleanup;
+
+ scm_with_guile ((void *(*)(void *))module_scheme_guile_configure_scheme, NULL);
 
  return 0;
 }
