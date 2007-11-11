@@ -79,8 +79,18 @@ module_register(module_scheme_guile_self);
 
 #endif
 
-char **module_scheme_guile_parsed_modules = NULL;
-pthread_mutex_t module_scheme_guile_parsed_modules_mutex = PTHREAD_MUTEX_INITIALIZER;
+struct stree *module_scheme_guile_modules = NULL,
+ *module_scheme_guile_module_actions = NULL;
+
+struct scheme_action {
+ SCM action;
+ struct einit_event *status;
+ char *id;
+};
+
+pthread_mutex_t
+ module_scheme_guile_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
+ module_scheme_guile_module_actions_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int module_scheme_guile_cleanup (struct lmodule *pa) {
  return 0;
@@ -90,18 +100,7 @@ void module_scheme_guile_scanmodules_work_scheme (char **modules) {
  size_t i = 0;
 
  for (; modules[i]; i++) {
-  char use_mod = 0;
-
-  scm_pthread_mutex_lock (&module_scheme_guile_parsed_modules_mutex);
-  if (!inset ((const void **)module_scheme_guile_parsed_modules, modules[i], SET_TYPE_STRING)) {
-   use_mod = 1;
-   module_scheme_guile_parsed_modules = (char **)setadd ((void **)module_scheme_guile_parsed_modules, modules[i], SET_TYPE_STRING);
-  }
-  emutex_unlock (&module_scheme_guile_parsed_modules_mutex);
-
-  if (use_mod) {
-   scm_c_primitive_load (modules[i]);
-  }
+  scm_c_primitive_load (modules[i]);
  }
 
  return;
@@ -134,16 +133,48 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
 
 /* glue-code for making these buggers service-providing modules */
 
-int module_scheme_guile_module_enable (void *p, struct einit_event *status) {
- return status_ok;
-}
-
-int module_scheme_guile_module_disable (void *p, struct einit_event *status) {
- return status_ok;
+uintptr_t module_scheme_guile_module_custom_w (struct scheme_action *na) {
+ SCM rv = scm_call_1 (na->action, scm_take_locale_symbol (na->id));
+ return scm_is_true (rv);
 }
 
 int module_scheme_guile_module_custom (void *p, char *action, struct einit_event *status) {
- return status_ok;
+ if (status && status->module && status->module->module && status->module->module->rid) {
+  size_t indexlen = strlen (status->module->module->rid) + strlen (action) + 2;
+  char *index = emalloc (indexlen);
+  struct stree *st;
+
+  esprintf (index, indexlen, "%s#%s", status->module->module->rid, action);
+
+  emutex_lock (&module_scheme_guile_module_actions_mutex);
+  st = streefind (module_scheme_guile_module_actions, index, tree_find_first);
+  emutex_unlock (&module_scheme_guile_module_actions_mutex);
+
+  if (st) {
+   struct scheme_action *sa = st->value;
+   sa->status = status;
+   sa->id = st->key;
+
+   uintptr_t rv = (uintptr_t)scm_with_guile ((void *(*)(void *))module_scheme_guile_module_custom_w, sa);
+
+   sa->status = NULL;
+   sa->id = NULL;
+
+   if (rv) return status_ok;
+  }
+
+  return status_failed;
+ }
+
+ return status_failed;
+}
+
+int module_scheme_guile_module_enable (void *p, struct einit_event *status) {
+ return module_scheme_guile_module_custom (p, "enable", status);
+}
+
+int module_scheme_guile_module_disable (void *p, struct einit_event *status) {
+ return module_scheme_guile_module_custom (p, "disable", status);
 }
 
 int module_scheme_guile_module_cleanup (struct lmodule *lm) {
@@ -161,19 +192,52 @@ int module_scheme_guile_module_configure (struct lmodule *lm) {
 
 /* library functions below here */
 
-uintptr_t module_scheme_register_module_wo (struct smodule *sm) {
- sm->eiversion = EINIT_VERSION;
- sm->eibuild = BUILDNUMBER;
- sm->version = 1;
+uintptr_t module_scheme_make_module_wo (struct smodule *sm) {
+ struct lmodule *lm = NULL;
+ struct stree *st = NULL;
 
- sm->configure = module_scheme_guile_module_configure;
+ emutex_lock (&module_scheme_guile_modules_mutex);
 
- mod_add (NULL, sm);
+ st = streefind (module_scheme_guile_modules, sm->rid, tree_find_first);
+
+ emutex_unlock (&module_scheme_guile_modules_mutex);
+
+ if (st && st->value) {
+  lm = st->value;
+  struct smodule *smo = (struct smodule *)lm->module;
+
+  lm->module = sm;
+  mod_update (lm);
+
+  if (smo->si.provides) free (smo->si.provides);
+  if (smo->si.requires) free (smo->si.requires);
+  if (smo->si.after) free (smo->si.after);
+  if (smo->si.before) free (smo->si.before);
+  if (smo->rid) free (smo->rid);
+  if (smo->name) free (smo->name);
+  if (smo) free (smo);
+
+  return 2;
+ } else {
+  sm->eiversion = EINIT_VERSION;
+  sm->eibuild = BUILDNUMBER;
+  sm->version = 1;
+
+  sm->configure = module_scheme_guile_module_configure;
+
+  lm = mod_add (NULL, sm);
+
+  emutex_lock (&module_scheme_guile_modules_mutex);
+
+  module_scheme_guile_modules = streeadd (module_scheme_guile_modules, sm->rid, lm, SET_NOALLOC, NULL);
+
+  emutex_unlock (&module_scheme_guile_modules_mutex);
+ }
 
  return 1;
 }
 
-SCM module_scheme_register_module (SCM ids, SCM name) {
+SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
  char *id_c, *name_c;
  struct smodule *sm;
  SCM id;
@@ -200,7 +264,70 @@ SCM module_scheme_register_module (SCM ids, SCM name) {
  sm->rid = estrdup (id_c);
  sm->name = estrdup (name_c);
 
- rv = (uintptr_t)scm_without_guile ((void *(*)(void *))module_scheme_register_module_wo, sm);
+ if (scm_is_true(scm_list_p (rest))) {
+  SCM re = rest;
+
+  while (!scm_is_null (re)) {
+   SCM va = scm_car (re);
+
+   if (scm_is_true (scm_list_p (va))) {
+    SCM vare = va;
+    char elec = 1;
+	char *sym = NULL;
+    char **vs = NULL;
+
+    while (!scm_is_null (vare)) {
+     SCM val = scm_car (vare);
+     vare = scm_cdr (vare);
+
+     if (elec == 1) {
+      if (scm_is_true(scm_symbol_p (val))) {
+       SCM vals = scm_symbol_to_string (val);
+       sym = scm_to_locale_string (vals);
+
+       scm_dynwind_unwind_handler (free, sym, SCM_F_WIND_EXPLICITLY);
+      }
+
+      elec++;
+     } else {
+      if (scm_is_true(scm_string_p (val))) {
+       char *da = scm_to_locale_string (val);
+
+	   scm_dynwind_unwind_handler (free, da, SCM_F_WIND_EXPLICITLY);
+
+       vs = (char **)setadd ((void **)vs, da, SET_TYPE_STRING);
+      }
+     }
+    }
+
+    if (sym && vs) {
+     if (strmatch (sym, "provides")) {
+      sm->si.provides = vs;
+     } else if (strmatch (sym, "requires")) {
+      sm->si.requires = vs;
+     } else if (strmatch (sym, "after")) {
+      sm->si.after = vs;
+     } else if (strmatch (sym, "before")) {
+      sm->si.before = vs;
+     } else {
+      fprintf (stderr, "ERROR: unexpected attribute: %s\n", sym);
+      free (vs);
+	 }
+	} else {
+     if (sym) {
+      fprintf (stderr, "ERROR: symbol without vs: %s\n", sym);
+     }
+     if (vs) free (vs);
+    }
+   } else {
+    fprintf (stderr, "ERROR: list expected\n");
+   }
+
+   re = scm_cdr (re);
+  }
+ }
+
+ rv = (uintptr_t)scm_without_guile ((void *(*)(void *))module_scheme_make_module_wo, sm);
 
  scm_dynwind_end ();
 
@@ -251,14 +378,112 @@ SCM module_scheme_guile_critical (SCM message) {
  return SCM_BOOL_T;
 }
 
-/* module initialisation -- there's two parts of it because we need some stuff to be defined in the
-   scheme environment, scm_with_guile() needs to be used... */
+struct scheme_feedback {
+ struct einit_event *ev;
+ char *message;
+};
+
+void module_scheme_guile_feedback_wo (struct scheme_feedback *n) {
+ fbprintf (n->ev, n->message);
+}
+
+SCM module_scheme_guile_feedback (SCM id, SCM message) {
+ SCM ids;
+ char *msg, *id_c;
+ struct scheme_feedback n; 
+ struct scheme_action *na = NULL;
+ struct stree *st;
+
+ if (scm_is_false(scm_symbol_p (id))) return SCM_BOOL_F;
+ if (scm_is_false(scm_string_p (message))) return SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ ids = scm_symbol_to_string(id);
+ id_c = scm_to_locale_string (ids);
+ scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+
+ msg = scm_to_locale_string (message);
+ scm_dynwind_unwind_handler (free, msg, SCM_F_WIND_EXPLICITLY);
+
+
+ scm_pthread_mutex_lock (&module_scheme_guile_module_actions_mutex);
+ st = streefind (module_scheme_guile_module_actions, id_c, tree_find_first);
+ emutex_unlock (&module_scheme_guile_module_actions_mutex);
+
+ if (st) {
+  na = st->value;
+
+  n.ev = na->status;
+  n.message = msg;
+
+  scm_without_guile ((void *(*)(void *))module_scheme_guile_feedback_wo, &n);
+ }
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_T;
+}
+
+SCM module_scheme_define_module_action (SCM rid, SCM action, SCM command) {
+ SCM rids, actions;
+ char *rid_c, *action_c, *index;
+ size_t indexlen;
+ struct stree *st = NULL;
+
+ if (scm_is_false(scm_symbol_p (rid))) return SCM_BOOL_F;
+ if (scm_is_false(scm_symbol_p (action))) return SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ rids = scm_symbol_to_string(rid);
+ rid_c = scm_to_locale_string (rids);
+ scm_dynwind_unwind_handler (free, rid_c, SCM_F_WIND_EXPLICITLY);
+
+ actions = scm_symbol_to_string(action);
+ action_c = scm_to_locale_string (actions);
+ scm_dynwind_unwind_handler (free, action_c, SCM_F_WIND_EXPLICITLY);
+
+ indexlen = strlen (rid_c) + strlen (action_c) + 2;
+ index = emalloc (indexlen);
+ esprintf (index, indexlen, "%s#%s", rid_c, action_c);
+
+ scm_pthread_mutex_lock (&module_scheme_guile_module_actions_mutex);
+ st = streefind (module_scheme_guile_module_actions, index, tree_find_first);
+
+ struct scheme_action *na = emalloc (sizeof (struct scheme_action));
+
+ na->action = command;
+ scm_gc_protect_object (na->action);
+
+ if (!st) {
+  module_scheme_guile_module_actions = streeadd (module_scheme_guile_module_actions, index, na, SET_NOALLOC, NULL);
+ } else {
+  struct scheme_action *sa = st->value;
+  scm_gc_unprotect_object (na->action);
+  st->value = na;
+  free (sa);
+ }
+ emutex_unlock (&module_scheme_guile_module_actions_mutex);
+
+ free (index);
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_T;
+}
+
+/* module initialisation -- there's two parts to this because we need some stuff to be defined in the
+   scheme environment, so scm_with_guile() needs to be used... */
 
 void module_scheme_guile_configure_scheme (void *n) {
  scm_c_define_gsubr ("notice", 1, 0, 0, module_scheme_guile_notice);
  scm_c_define_gsubr ("critical", 1, 0, 0, module_scheme_guile_critical);
 
- scm_c_define_gsubr ("register-module", 2, 0, 0, module_scheme_register_module);
+ scm_c_define_gsubr ("feedback", 2, 0, 0, module_scheme_guile_feedback);
+
+ scm_c_define_gsubr ("make-module", 2, 0, 1, module_scheme_make_module);
+ scm_c_define_gsubr ("define-module-action", 3, 0, 0, module_scheme_define_module_action);
 }
 
 int module_scheme_guile_configure (struct lmodule *pa) {

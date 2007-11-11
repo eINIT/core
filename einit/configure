@@ -462,6 +462,11 @@ if [ "${NETLINK}" = "netlink" ]; then
 	NETLINK_LIBS=$(pkg-config --libs libnl-1)
 fi
 
+echo "getting libguile flags using guile-config..."
+
+GUILE_CFLAGS=$(guile-config compile)
+GUILE_LIBS=$(guile-config link)
+
 if [ "${NOTIFY}" = "notify" ]; then
 	echo "getting libnotify flags off pkg-config..."
 	LIBNOTIFY_CFLAGS=$(pkg-config --cflags libnotify)
@@ -622,6 +627,9 @@ GTK = ${GTK}
 NETLINK_CFLAGS = ${NETLINK_CFLAGS}
 NETLINK_LIBS = ${NETLINK_LIBS}
 
+GUILE_CFLAGS = ${GUILE_CFLAGS}
+GUILE_LIBS = ${GUILE_LIBS}
+
 LIBNOTIFY_CFLAGS = ${LIBNOTIFY_CFLAGS}
 LIBNOTIFY_LIBS = ${LIBNOTIFY_LIBS}
 
@@ -704,6 +712,9 @@ GTK=\"${GTK}\"
 
 NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
 NETLINK_LIBS=\"${NETLINK_LIBS}\"
+
+GUILE_CFLAGS=\"${GUILE_CFLAGS}\"
+GUILE_LIBS=\"${GUILE_LIBS}\"
 
 LIBNOTIFY_CFLAGS=\"${LIBNOTIFY_CFLAGS}\"
 LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
@@ -792,6 +803,9 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
     NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
     NETLINK_LIBS=\"${NETLINK_LIBS}\"
+
+    GUILE_CFLAGS=\"${GUILE_CFLAGS}\"
+    GUILE_LIBS=\"${GUILE_LIBS}\"
 
     LIBNOTIFY_CFLAGS=\"${LIBNOTIFY_CFLAGS}\"
     LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
