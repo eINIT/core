@@ -17,7 +17,8 @@
    (feedback status "abc")
    (feedback status "def")
    (feedback status "ghi")
-   #t)))
+   (shell "echo hello world; sleep 10; true"
+          'feedback: status))))
 
 (define-module-action 's-hello 'disable
  (lambda (status) #t))

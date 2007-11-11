@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <einit/utility.h>
 
+#include <einit-modules/exec.h>
+
 #include <string.h>
 
 #include <libguile.h>
@@ -93,6 +95,8 @@ pthread_mutex_t
  module_scheme_guile_module_actions_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int module_scheme_guile_cleanup (struct lmodule *pa) {
+ exec_cleanup (pa);
+
  return 0;
 }
 
@@ -473,6 +477,80 @@ SCM module_scheme_define_module_action (SCM rid, SCM action, SCM command) {
  return SCM_BOOL_T;
 }
 
+struct scheme_pexec_data {
+ char *command;
+ char *user;
+ char *group;
+ struct einit_event *status;
+};
+
+intptr_t module_scheme_guile_pexec_wo (struct scheme_pexec_data *p) {
+ return pexec (p->command, NULL, 0, 0, p->user, p->group, NULL, p->status);
+}
+
+SCM module_scheme_guile_pexec (SCM command, SCM rest) {
+ struct scheme_pexec_data p;
+ char *nv = NULL;
+ 
+ if (scm_is_false(scm_string_p (command))) {
+  return SCM_BOOL_F;
+ }
+
+ memset (&p, 0, sizeof (struct scheme_pexec_data));
+
+ scm_dynwind_begin (0);
+
+ p.command = scm_to_locale_string (command);
+ scm_dynwind_unwind_handler (free, p.command, SCM_F_WIND_EXPLICITLY);
+
+ while (!scm_is_null (rest)) {
+  SCM r = scm_car (rest);
+
+  if (!nv && scm_is_true(scm_symbol_p (r))) {
+   SCM rvs;
+
+   rvs = scm_symbol_to_string(r);
+   nv = scm_to_locale_string (rvs);
+   scm_dynwind_unwind_handler (free, nv, SCM_F_WIND_EXPLICITLY);
+  } else if (nv) {
+   if (strmatch (nv, "user:") && scm_is_true(scm_string_p (r))) {
+    p.user = scm_to_locale_string (r);
+    scm_dynwind_unwind_handler (free, p.user, SCM_F_WIND_EXPLICITLY);
+   } else if (strmatch (nv, "group:") && scm_is_true(scm_string_p (r))) {
+    p.group = scm_to_locale_string (r);
+    scm_dynwind_unwind_handler (free, p.group, SCM_F_WIND_EXPLICITLY);
+   } else if (strmatch (nv, "feedback:") && scm_is_true(scm_symbol_p (r))) {
+    char *sym = NULL;
+	struct stree *st;
+    SCM rvs;
+
+    rvs = scm_symbol_to_string(r);
+    sym = scm_to_locale_string (rvs);
+    scm_dynwind_unwind_handler (free, sym, SCM_F_WIND_EXPLICITLY);
+
+    emutex_lock (&module_scheme_guile_module_actions_mutex);
+    st = streefind (module_scheme_guile_module_actions, sym, tree_find_first);
+    emutex_unlock (&module_scheme_guile_module_actions_mutex);
+
+    if (st) {
+     struct scheme_action *sa = st->value;
+     p.status = sa->status;
+    }
+   }
+
+   nv = NULL;
+  }
+
+  rest = scm_cdr (rest);
+ }
+
+ intptr_t rv = (intptr_t)scm_without_guile ((void *(*)(void *))module_scheme_guile_pexec_wo, &p);
+
+ scm_dynwind_end ();
+
+ return (rv == status_ok) ? SCM_BOOL_T : SCM_BOOL_F;
+}
+
 /* module initialisation -- there's two parts to this because we need some stuff to be defined in the
    scheme environment, so scm_with_guile() needs to be used... */
 
@@ -482,12 +560,15 @@ void module_scheme_guile_configure_scheme (void *n) {
 
  scm_c_define_gsubr ("feedback", 2, 0, 0, module_scheme_guile_feedback);
 
+ scm_c_define_gsubr ("shell", 1, 0, 1, module_scheme_guile_pexec);
+
  scm_c_define_gsubr ("make-module", 2, 0, 1, module_scheme_make_module);
  scm_c_define_gsubr ("define-module-action", 3, 0, 0, module_scheme_define_module_action);
 }
 
 int module_scheme_guile_configure (struct lmodule *pa) {
  module_init (pa);
+ exec_configure (pa);
 
  pa->scanmodules = module_scheme_guile_scanmodules;
  pa->cleanup = module_scheme_guile_cleanup;
