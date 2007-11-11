@@ -132,6 +132,81 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
  return 1;
 }
 
+/* glue-code for making these buggers service-providing modules */
+
+int module_scheme_guile_module_enable (void *p, struct einit_event *status) {
+ return status_ok;
+}
+
+int module_scheme_guile_module_disable (void *p, struct einit_event *status) {
+ return status_ok;
+}
+
+int module_scheme_guile_module_custom (void *p, char *action, struct einit_event *status) {
+ return status_ok;
+}
+
+int module_scheme_guile_module_cleanup (struct lmodule *lm) {
+ return status_ok;
+}
+
+int module_scheme_guile_module_configure (struct lmodule *lm) {
+ lm->enable = module_scheme_guile_module_enable;
+ lm->disable = module_scheme_guile_module_disable;
+ lm->custom = module_scheme_guile_module_custom;
+ lm->cleanup = module_scheme_guile_module_cleanup;
+
+ return status_ok;
+}
+
+/* library functions below here */
+
+uintptr_t module_scheme_register_module_wo (struct smodule *sm) {
+ sm->eiversion = EINIT_VERSION;
+ sm->eibuild = BUILDNUMBER;
+ sm->version = 1;
+
+ sm->configure = module_scheme_guile_module_configure;
+
+ mod_add (NULL, sm);
+
+ return 1;
+}
+
+SCM module_scheme_register_module (SCM ids, SCM name) {
+ char *id_c, *name_c;
+ struct smodule *sm;
+ SCM id;
+ uintptr_t rv;
+
+ if (scm_is_false(scm_symbol_p (ids))) return SCM_BOOL_F;
+ if (scm_is_false(scm_string_p (name))) return SCM_BOOL_F;
+
+ sm = emalloc (sizeof (struct smodule));
+ memset (sm, 0, sizeof (struct smodule));
+
+ sm->mode = einit_module_generic;
+
+ scm_dynwind_begin (0);
+
+ id = scm_symbol_to_string(ids);
+ id_c = scm_to_locale_string (id);
+ scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+
+ name_c = scm_to_locale_string (name);
+ scm_dynwind_unwind_handler (free, name_c, SCM_F_WIND_EXPLICITLY);
+
+ /* don't quite trust guile's garbage collector yet... */
+ sm->rid = estrdup (id_c);
+ sm->name = estrdup (name_c);
+
+ rv = (uintptr_t)scm_without_guile ((void *(*)(void *))module_scheme_register_module_wo, sm);
+
+ scm_dynwind_end ();
+
+ return rv ? SCM_BOOL_T : SCM_BOOL_F;
+}
+
 void module_scheme_guile_notice_wo (char *n) {
  notice (5, n);
 }
@@ -176,49 +251,8 @@ SCM module_scheme_guile_critical (SCM message) {
  return SCM_BOOL_T;
 }
 
-uintptr_t module_scheme_register_module_wo (struct smodule *sm) {
- sm->eiversion = EINIT_VERSION;
- sm->eibuild = BUILDNUMBER;
- sm->version = 1;
-
- mod_add (NULL, sm);
-
- return 1;
-}
-
-SCM module_scheme_register_module (SCM ids, SCM name) {
- char *id_c, *name_c;
- struct smodule *sm;
- SCM id;
- uintptr_t rv;
-
- if (scm_is_false(scm_symbol_p (ids))) return SCM_BOOL_F;
- if (scm_is_false(scm_string_p (name))) return SCM_BOOL_F;
-
- sm = emalloc (sizeof (struct smodule));
- memset (sm, 0, sizeof (struct smodule));
-
- sm->mode = einit_module_generic;
-
- scm_dynwind_begin (0);
-
- id = scm_symbol_to_string(ids);
- id_c = scm_to_locale_string (id);
- scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
-
- name_c = scm_to_locale_string (name);
- scm_dynwind_unwind_handler (free, name_c, SCM_F_WIND_EXPLICITLY);
-
-/* don't quite trust guile's garbage collector yet... */
- sm->rid = estrdup (id_c);
- sm->name = estrdup (name_c);
-
- rv = (uintptr_t)scm_without_guile ((void *(*)(void *))module_scheme_register_module_wo, sm);
-
- scm_dynwind_end ();
-
- return rv ? SCM_BOOL_T : SCM_BOOL_F;
-}
+/* module initialisation -- there's two parts of it because we need some stuff to be defined in the
+   scheme environment, scm_with_guile() needs to be used... */
 
 void module_scheme_guile_configure_scheme (void *n) {
  scm_c_define_gsubr ("notice", 1, 0, 0, module_scheme_guile_notice);
