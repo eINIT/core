@@ -138,7 +138,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
 /* glue-code for making these buggers service-providing modules */
 
 uintptr_t module_scheme_guile_module_custom_w (struct scheme_action *na) {
- SCM rv = scm_call_1 (na->action, scm_take_locale_symbol (na->id));
+ SCM rv = scm_call_1 (na->action, scm_from_locale_symbol (na->id));
  return scm_is_true (rv);
 }
 
