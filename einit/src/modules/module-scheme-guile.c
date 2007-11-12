@@ -795,7 +795,7 @@ void module_scheme_guile_configure_scheme (void *n) {
 }
 
 struct einit_event_call {
- SCM *evh;
+ struct scheme_event_handler **evh;
  struct einit_event *ev;
 };
 
@@ -805,9 +805,7 @@ void module_scheme_guile_generic_event_handler_w (struct einit_event_call *c) {
   int i;
 
   for (i = 0; c->evh[i]; i++) {
-//  scm_gc_protect_object (*(c->evh[i]));
-   scm_call_1 (c->evh[i], ev);
-//  scm_gc_unprotect_object (*(c->evh[i]));
+   scm_call_1 (c->evh[i]->handler, ev);
   }
  }
 }
@@ -815,7 +813,7 @@ void module_scheme_guile_generic_event_handler_w (struct einit_event_call *c) {
 void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
 // if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_core) return;
 
-/* if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_ipc) return;
+ if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_ipc) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_mount) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_feedback) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_power) return;
@@ -823,7 +821,7 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_network) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_process) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_boot) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_hotplug) return;*/
+ if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_hotplug) return;
 
 /* if (ev->type == einit_core_panic) return;
  if (ev->type == einit_core_module_update) return;
@@ -846,7 +844,7 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  if (ev->type == einit_core_recover) return;
  if (ev->type == einit_core_main_loop_reached) return;
 
- SCM *evh = NULL;
+ struct scheme_event_handler **evh = NULL;
  char *typename = event_code_to_string(ev->type);
 
  emutex_lock (&module_scheme_guile_event_handlers_mutex);
@@ -855,9 +853,7 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  while (st) {
   struct scheme_event_handler *h = st->value;
   if (strmatch (st->key, "any") || strmatch (st->key, typename)) {
-//   scm_with_guile ((void *(*)(void *))scm_gc_protect_object, h->handler);
-
-   evh = (SCM *)setadd ((void **)evh, h->handler, SET_NOALLOC);
+   evh = (struct scheme_event_handler **)setadd ((void **)evh, h, SET_NOALLOC);
   }
   st = streenext (st);
  }
@@ -870,7 +866,6 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
   c.ev = ev;
 
   scm_with_guile ((void *(*)(void *))module_scheme_guile_generic_event_handler_w, &c);
-// scm_with_guile ((void *(*)(void *))module_scheme_guile_generic_event_handler_w, NULL);
 
   free (evh);
   evh = NULL;
