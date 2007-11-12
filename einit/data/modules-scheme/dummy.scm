@@ -27,12 +27,21 @@
 (define-module-action 's-hello 'disable
  (lambda (status) #t))
 
-; make-event : symbol -> einit-event
-(display
- (make-event 'core/update-configuration
-  'status: 22
-  "some string"
-  '("a" "b" "c")))
+; make-event : symbol ['symbol: value]* [string] [list(string)] -> einit-event
+;(display
+; (make-event 'core/update-configuration
+;  'status: 22
+;  "some string"
+;  '("a" "b" "c")))
 
 ; event-emit : einit-event -> #void
 ;(event-emit (make-event 'core/update-configuration))
+
+; event-listen : symbol procedure(event -> #void) -> boolean
+(event-listen 'any
+ (lambda (event)
+  (begin
+   (display "dummy.scm: received event: ")
+   (display event)
+   (newline))))
+
