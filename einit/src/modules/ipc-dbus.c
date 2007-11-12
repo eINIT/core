@@ -536,8 +536,6 @@ struct einit_event *einit_dbus_read_event (DBusMessage *message) {
  DBusMessageIter args;
  DBusMessageIter sub;
 
- emutex_init (&(ev->mutex), NULL);
-
  if (!dbus_message_iter_init(message, &args)) { fprintf(stderr, "Message has no arguments!\n"); evdestroy(ev); return NULL; }
  else if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_UINT32) { fprintf(stderr, "Argument has incorrect type (event type).\n"); evdestroy(ev); return NULL; }
  else dbus_message_iter_get_basic(&args, &(ev->type));
