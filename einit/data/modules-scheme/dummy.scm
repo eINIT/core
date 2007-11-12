@@ -1,7 +1,10 @@
-(notice "hello world, from a scheme module")
+; notice : string -> boolean
+; (notice "hello world, from a scheme module")
 
-(critical "hello world, from a scheme module, as a critical message")
+; critical : string -> boolean
+; (critical "hello world, from a scheme module, as a critical message")
 
+; make-module : symbol string list(symbol string*)* -> boolean
 (if (make-module 's-hello "some dummy module"
                  (list 'provides "s-dummy")
 ;                 (list 'requires "c" "d")
@@ -11,6 +14,7 @@
     (notice "dummy module created")
     (critical "couldn't create dummy module"))
 
+; define-module-action : symbol symbol procedure -> boolean
 (define-module-action 's-hello 'enable
  (lambda (status)
   (begin
@@ -22,3 +26,10 @@
 
 (define-module-action 's-hello 'disable
  (lambda (status) #t))
+
+; make-event : symbol -> einit-event
+(display
+ (make-event 'core/update-configuration))
+
+; event-emit : einit-event -> #void
+; (event-emit (make-event 'core/update-configuration))

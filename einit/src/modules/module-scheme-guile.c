@@ -90,6 +90,8 @@ struct scheme_action {
  char *id;
 };
 
+scm_t_bits einit_event_smob;
+
 pthread_mutex_t
  module_scheme_guile_modules_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_scheme_guile_module_actions_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -521,7 +523,7 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
     scm_dynwind_unwind_handler (free, p.group, SCM_F_WIND_EXPLICITLY);
    } else if (strmatch (nv, "feedback:") && scm_is_true(scm_symbol_p (r))) {
     char *sym = NULL;
-	struct stree *st;
+    struct stree *st;
     SCM rvs;
 
     rvs = scm_symbol_to_string(r);
@@ -551,6 +553,60 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
  return (rv == status_ok) ? SCM_BOOL_T : SCM_BOOL_F;
 }
 
+void module_scheme_guile_event_emit_wo (struct einit_event *ev) {
+ event_emit (ev, einit_event_flag_broadcast);
+}
+
+/* stuff for the einit_event type */
+SCM module_scheme_guile_event_emit (SCM event) {
+ struct einit_event *ev;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ scm_without_guile ((void *(*)(void *))module_scheme_guile_event_emit_wo, ev);
+
+ scm_remember_upto_here_1 (event);
+ return SCM_UNSPECIFIED;
+}
+
+SCM module_scheme_guile_make_einit_event (SCM type) {
+ SCM smob;
+ struct einit_event *ev;
+
+ if (scm_is_false(scm_symbol_p (type))) return SCM_BOOL_F;
+
+ if (!(ev = (struct einit_event *) scm_gc_malloc (sizeof (struct einit_event), "einit-event"))) return SCM_BOOL_F;
+
+ memset (ev, 0, sizeof (struct einit_event));
+ pthread_mutex_init (&(ev->mutex), NULL);
+
+ SCM_NEWSMOB (smob, einit_event_smob, ev);
+
+ scm_dynwind_begin (0);
+
+ SCM types = scm_symbol_to_string(type);
+ char *type_c = scm_to_locale_string (types);
+ scm_dynwind_unwind_handler (free, type_c, SCM_F_WIND_EXPLICITLY);
+
+ ev->type = event_string_to_code (type_c);
+
+ scm_dynwind_end ();
+
+ return smob;
+}
+
+void init_einit_event_type (void) {
+ einit_event_smob = scm_make_smob_type ("einit-event", sizeof (struct einit_event));
+// scm_set_smob_mark (image_tag, module_scheme_guile_einit_event_mark);
+// scm_set_smob_free (image_tag, module_scheme_guile_einit_event_free);
+// scm_set_smob_print (image_tag, module_scheme_guile_einit_event_print);
+
+ scm_c_define_gsubr ("event-emit", 1, 0, 0, module_scheme_guile_event_emit);
+ scm_c_define_gsubr ("make-event", 1, 0, 0, module_scheme_guile_make_einit_event);
+}
+
 /* module initialisation -- there's two parts to this because we need some stuff to be defined in the
    scheme environment, so scm_with_guile() needs to be used... */
 
@@ -564,6 +620,8 @@ void module_scheme_guile_configure_scheme (void *n) {
 
  scm_c_define_gsubr ("make-module", 2, 0, 1, module_scheme_make_module);
  scm_c_define_gsubr ("define-module-action", 3, 0, 0, module_scheme_define_module_action);
+
+ init_einit_event_type();
 }
 
 int module_scheme_guile_configure (struct lmodule *pa) {
