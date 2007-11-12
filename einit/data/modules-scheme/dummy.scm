@@ -29,7 +29,10 @@
 
 ; make-event : symbol -> einit-event
 (display
- (make-event 'core/update-configuration))
+ (make-event 'core/update-configuration
+  'status: 22
+  "some string"
+  '("a" "b" "c")))
 
 ; event-emit : einit-event -> #void
-; (event-emit (make-event 'core/update-configuration))
+;(event-emit (make-event 'core/update-configuration))

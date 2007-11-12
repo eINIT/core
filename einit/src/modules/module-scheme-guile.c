@@ -571,7 +571,7 @@ SCM module_scheme_guile_event_emit (SCM event) {
  return SCM_UNSPECIFIED;
 }
 
-SCM module_scheme_guile_make_einit_event (SCM type) {
+SCM module_scheme_guile_make_einit_event (SCM type, SCM rest) {
  SCM smob;
  struct einit_event *ev;
 
@@ -592,19 +592,118 @@ SCM module_scheme_guile_make_einit_event (SCM type) {
 
  ev->type = event_string_to_code (type_c);
 
+ char *nextpara = NULL;
+
+ while (!scm_is_null (rest)) {
+  SCM val = scm_car (rest);
+
+  if (scm_is_true(scm_string_p (val))) {
+   char *t = scm_to_locale_string(val);
+   scm_dynwind_unwind_handler (free, t, SCM_F_WIND_EXPLICITLY);
+
+   ev->string = estrdup (t);
+  } else if (scm_is_true(scm_symbol_p (val))) {
+   SCM syms = scm_symbol_to_string(val);
+   nextpara = scm_to_locale_string (syms);
+   scm_dynwind_unwind_handler (free, nextpara, SCM_F_WIND_EXPLICITLY);
+  } else if (scm_is_true(scm_list_p (val))) {
+   SCM list = val;
+
+   while (!scm_is_null (list)) {
+    SCM lval = scm_car (list);
+
+    if (scm_is_true(scm_string_p (lval))) {
+     char *t = scm_to_locale_string(lval);
+     scm_dynwind_unwind_handler (free, t, SCM_F_WIND_EXPLICITLY);
+
+     ev->stringset = (char **)setadd ((void **)ev->stringset, t, SET_TYPE_STRING);
+    }
+
+    list = scm_cdr (list);
+   }
+  } else if (nextpara) {
+   if (strmatch (nextpara, "task:")) {
+    ev->task = scm_to_int (val);
+   } else if (strmatch (nextpara, "status:")) {
+    ev->status = scm_to_int (val);
+   } else if (strmatch (nextpara, "integer:")) {
+    ev->integer = scm_to_int (val);
+   }
+  }
+
+  rest = scm_cdr (rest);
+ }
+
  scm_dynwind_end ();
 
  return smob;
 }
 
+static int module_scheme_guile_einit_event_print (SCM event, SCM port, scm_print_state *pstate) {
+ struct einit_event *ev = (struct einit_event *) SCM_SMOB_DATA (event);
+ char buffer[BUFFERSIZE];
+
+ scm_puts ("#<einit-event type=", port);
+ scm_puts (event_code_to_string (ev->type), port);
+
+ if (ev->type != einit_event_subsystem_ipc) {
+  if (ev->task) {
+   esprintf (buffer, BUFFERSIZE, ", task=%i", ev->task);
+   scm_puts (buffer, port);
+  }
+
+  if (ev->status) {
+   esprintf (buffer, BUFFERSIZE, ", status=%i", ev->status);
+   scm_puts (buffer, port);
+  }
+
+  if (ev->integer) {
+   esprintf (buffer, BUFFERSIZE, ", integer=%i", ev->integer);
+   scm_puts (buffer, port);
+  }
+
+  if (ev->string) {
+   scm_puts (", string=", port);
+   scm_puts (ev->string, port);
+  }
+
+  if (ev->stringset) {
+   int i = 0;
+   scm_puts (", stringset=#<", port);
+
+   for (; ev->stringset[i]; i++) {
+    if (i) scm_puts (", ", port);
+    scm_puts (ev->stringset[i], port);
+   }
+   scm_puts (">", port);
+  }
+ }
+
+ scm_puts (">", port);
+
+ return 1;
+}
+
+size_t module_scheme_guile_einit_event_free (SCM event) {
+ struct einit_event *ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ pthread_mutex_destroy (&(ev->mutex));
+
+ if (ev->string) free (ev->string);
+
+ scm_gc_free (ev, sizeof (struct einit_event), "einit-event");
+
+ return 0;
+}
+
 void init_einit_event_type (void) {
  einit_event_smob = scm_make_smob_type ("einit-event", sizeof (struct einit_event));
-// scm_set_smob_mark (image_tag, module_scheme_guile_einit_event_mark);
-// scm_set_smob_free (image_tag, module_scheme_guile_einit_event_free);
-// scm_set_smob_print (image_tag, module_scheme_guile_einit_event_print);
+// scm_set_smob_mark (einit_event_smob, module_scheme_guile_einit_event_mark);
+ scm_set_smob_free (einit_event_smob, module_scheme_guile_einit_event_free);
+ scm_set_smob_print (einit_event_smob, module_scheme_guile_einit_event_print);
 
  scm_c_define_gsubr ("event-emit", 1, 0, 0, module_scheme_guile_event_emit);
- scm_c_define_gsubr ("make-event", 1, 0, 0, module_scheme_guile_make_einit_event);
+ scm_c_define_gsubr ("make-event", 1, 0, 1, module_scheme_guile_make_einit_event);
 }
 
 /* module initialisation -- there's two parts to this because we need some stuff to be defined in the
