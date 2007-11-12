@@ -382,7 +382,6 @@ struct einit_event *evdup (const struct einit_event *ev) {
  struct einit_event *nev = emalloc (sizeof (struct einit_event));
 
  memcpy (nev, ev, sizeof (struct einit_event));
- memset (&nev->mutex, 0, sizeof (pthread_mutex_t));
 
  if (subsystem == einit_event_subsystem_ipc) {
   if (nev->command) {
@@ -410,8 +409,6 @@ struct einit_event *evdup (const struct einit_event *ev) {
   if (ev->stringset) nev->stringset = (char **)setdup ((const void **)ev->stringset, SET_TYPE_STRING);
  }
 
- emutex_init (&nev->mutex, NULL);
-
  return nev;
 }
 
@@ -419,7 +416,6 @@ struct einit_event *evinit (uint32_t type) {
  struct einit_event *nev = ecalloc (1, sizeof (struct einit_event));
 
  nev->type = type;
- emutex_init (&nev->mutex, NULL);
 
  return nev;
 }
@@ -439,7 +435,6 @@ void evpurge (struct einit_event *ev) {
 }
 
 void evdestroy (struct einit_event *ev) {
- emutex_destroy (&ev->mutex);
  free (ev);
 }
 

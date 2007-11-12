@@ -43,5 +43,6 @@
   (begin
    (display "dummy.scm: received event: ")
    (display event)
-   (newline))))
-
+   (newline)
+;   (gc)
+  )))

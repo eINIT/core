@@ -194,8 +194,8 @@ enum einit_ipc_options {
  einit_ipc_implemented   = 0x1000
 };
 
-#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, NULL, PTHREAD_MUTEX_INITIALIZER }
-#define evstaticdestroy(ev) { pthread_mutex_destroy (&(ev.mutex)); }
+#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, NULL }
+#define evstaticdestroy(ev) { }
 
 struct einit_event {
  enum einit_event_code type;       /*!< the event or subsystem to watch */
@@ -237,8 +237,6 @@ struct einit_event {
  };
 
  FILE *output;
-
- pthread_mutex_t mutex;          /*!< mutex for this event to be used by handlers */
 };
 
 struct event_function {
