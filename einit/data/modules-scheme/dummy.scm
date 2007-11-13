@@ -1,3 +1,5 @@
+#!
+
 ; notice : string -> boolean
 ; (notice "hello world, from a scheme module")
 
@@ -56,3 +58,5 @@
 ; get-configuration : symbol -> list(cons(string . string))
 ;(display
 ; (get-configuration 'subsystem-scheme-modules))
+
+!#
