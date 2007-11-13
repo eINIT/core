@@ -38,7 +38,6 @@
 ; event-emit : einit-event -> #void
 ;(event-emit (make-event 'core/update-configuration))
 
-
 #!
 ; event-listen : symbol procedure(event -> #void) -> boolean
 (event-listen 'any
