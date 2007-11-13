@@ -487,6 +487,54 @@ SCM module_scheme_guile_get_configuration (SCM id) {
  return SCM_BOOL_F;
 }
 
+SCM module_scheme_guile_set_configuration (SCM id, SCM attributes) {
+ SCM ids;
+ char *id_c;
+ int sindex = 0;
+
+ if (scm_is_false(scm_symbol_p (id))) return SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ ids = scm_symbol_to_string(id);
+ id_c = scm_to_locale_string (ids);
+ scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+
+ struct cfgnode node;
+ memset (&node, 0, sizeof (struct cfgnode));
+
+ while (!scm_is_null (attributes)) {
+  SCM v = scm_car (attributes);
+  char *a = scm_to_locale_string (scm_car(v));
+  scm_dynwind_unwind_handler (free, a, SCM_F_WIND_EXPLICITLY);
+  char *b = scm_to_locale_string (scm_cdr(v));
+  scm_dynwind_unwind_handler (free, b, SCM_F_WIND_EXPLICITLY);
+
+  node.arbattrs = (char **)setadd ((void **)node.arbattrs, a, SET_TYPE_STRING);
+  node.arbattrs = (char **)setadd ((void **)node.arbattrs, b, SET_TYPE_STRING);
+
+  if (strmatch (a, "i")) {
+   node.value = parse_integer (b);
+  } else if (strmatch (a, "b")) {
+   node.flag = parse_boolean (b);
+  } else if (strmatch (a, "s")) {
+   sindex = setcount ((const void **)node.arbattrs);
+  }
+
+  attributes = scm_cdr (attributes);
+ }
+
+ if (sindex) node.svalue = node.arbattrs[sindex];
+
+ node.id = estrdup(id_c);
+
+ cfg_addnode (&node);
+
+ scm_dynwind_end ();
+
+ return SCM_UNSPECIFIED;
+}
+
 SCM module_scheme_define_module_action (SCM rid, SCM action, SCM command) {
  SCM rids, actions;
  char *rid_c, *action_c, *index;
@@ -989,6 +1037,7 @@ void module_scheme_guile_configure_scheme (void *n) {
  scm_c_define_gsubr ("define-module-action", 3, 0, 0, module_scheme_define_module_action);
 
  scm_c_define_gsubr ("get-configuration", 1, 0, 0, module_scheme_guile_get_configuration);
+ scm_c_define_gsubr ("set-configuration!", 2, 0, 0, module_scheme_guile_set_configuration);
 
  init_einit_event_type();
 }

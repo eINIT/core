@@ -46,5 +46,13 @@
 ;   (display event)
 ;  (newline))))
 
-(display
- (get-configuration 'subsystem-scheme-modules))
+; set-configuration! : symbol list(cons(string . string)) -> #void
+;(set-configuration! 's-config-meow
+; '(("s" . "hello") ("i" . "5") ("b" . "false") ("id" . "meow")))
+
+;(display
+; (get-configuration 's-config-meow))
+
+; get-configuration : symbol -> list(cons(string . string))
+;(display
+; (get-configuration 'subsystem-scheme-modules))
