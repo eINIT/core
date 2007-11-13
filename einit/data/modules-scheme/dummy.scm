@@ -4,6 +4,7 @@
 ; critical : string -> boolean
 ; (critical "hello world, from a scheme module, as a critical message")
 
+
 ; make-module : symbol string list(symbol string*)* -> boolean
 (if (make-module 's-hello "some dummy module"
                  (list 'provides "s-dummy")
@@ -37,12 +38,13 @@
 ; event-emit : einit-event -> #void
 ;(event-emit (make-event 'core/update-configuration))
 
+
+#!
 ; event-listen : symbol procedure(event -> #void) -> boolean
 (event-listen 'any
  (lambda (event)
   (begin
    (display "dummy.scm: received event: ")
    (display event)
-   (newline)
-;   (gc)
-  )))
+   (newline))))
+!#

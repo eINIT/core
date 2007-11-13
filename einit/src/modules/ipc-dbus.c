@@ -586,7 +586,7 @@ struct einit_event *einit_dbus_read_event (DBusMessage *message) {
 
    if ((!dbus_message_iter_next(&args)) || (dbus_message_iter_get_arg_type(&args) == DBUS_TYPE_INVALID)) { goto message_read; }
   }
- 
+
   if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_ARRAY) { fprintf(stderr, "Argument has incorrect type (ipc argv).\n"); evdestroy(ev); return NULL; }
   dbus_message_iter_recurse (&args, &sub);
   while (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_INVALID) {

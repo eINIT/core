@@ -137,7 +137,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
 
  if (modules) {
 //  emutex_lock (&module_scheme_guile_event_handlers_mutex);
-/*  struct stree *st = module_scheme_guile_event_handlers;
+  struct stree *st = module_scheme_guile_event_handlers;
 
   while (st) {
    struct scheme_event_handler *h = st->value;
@@ -150,7 +150,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
   }
 
 //  streefree (module_scheme_guile_event_handlers);
-  module_scheme_guile_event_handlers = NULL;*/
+  module_scheme_guile_event_handlers = NULL;
 //  emutex_unlock (&module_scheme_guile_event_handlers_mutex);
 
   scm_with_guile ((void *(*)(void *))module_scheme_guile_scanmodules_work_scheme, (void *)modules);
@@ -674,11 +674,15 @@ SCM module_scheme_guile_make_einit_event_from_struct (struct einit_event *evo) {
  SCM_NEWSMOB (smob, einit_event_smob, ev);
 
  if (evo->type != einit_event_subsystem_ipc) {
-  if (evo->string) ev->string = estrdup (evo->string);
-  if (evo->stringset) ev->stringset = (char **)setdup ((const void **)evo->stringset, SET_TYPE_STRING);
+/*  if (evo->string) ev->string = estrdup (evo->string);
+  if (evo->stringset) ev->stringset = (char **)setdup ((const void **)evo->stringset, SET_TYPE_STRING);*/
+  ev->string = NULL;
+  ev->stringset = NULL;
  } else {
-  if (evo->command) ev->command = estrdup (evo->command);
-  if (evo->argv) ev->argv = (char **)setdup ((const void **)evo->argv, SET_TYPE_STRING);
+/*  if (evo->command) ev->command = estrdup (evo->command);
+  if (evo->argv) ev->argv = (char **)setdup ((const void **)evo->argv, SET_TYPE_STRING);*/
+  ev->command = NULL;
+  ev->argv = NULL;
  }
 
  return smob;
@@ -778,9 +782,9 @@ size_t module_scheme_guile_einit_event_free (SCM event) {
 
 void init_einit_event_type (void) {
  einit_event_smob = scm_make_smob_type ("einit-event", sizeof (struct einit_event));
-/* scm_set_smob_mark (einit_event_smob, module_scheme_guile_einit_event_mark);
+ scm_set_smob_mark (einit_event_smob, module_scheme_guile_einit_event_mark);
  scm_set_smob_free (einit_event_smob, module_scheme_guile_einit_event_free);
- scm_set_smob_print (einit_event_smob, module_scheme_guile_einit_event_print);*/
+ scm_set_smob_print (einit_event_smob, module_scheme_guile_einit_event_print);
 
  scm_c_define_gsubr ("event-emit", 1, 0, 0, module_scheme_guile_event_emit);
  scm_c_define_gsubr ("event-listen", 2, 0, 0, module_scheme_guile_event_listen);
@@ -791,6 +795,9 @@ void init_einit_event_type (void) {
    scheme environment, so scm_with_guile() needs to be used... */
 
 void module_scheme_guile_configure_scheme (void *n) {
+// scm_init_threads();
+// scm_threads_init_first_thread();
+
  scm_c_define_gsubr ("notice", 1, 0, 0, module_scheme_guile_notice);
  scm_c_define_gsubr ("critical", 1, 0, 0, module_scheme_guile_critical);
 
@@ -810,6 +817,8 @@ struct einit_event_call {
 };
 
 void module_scheme_guile_generic_event_handler_w (struct einit_event_call *c) {
+ scm_dynwind_begin (0);
+
  SCM ev = module_scheme_guile_make_einit_event_from_struct (c->ev);
  int i;
 
@@ -819,6 +828,8 @@ void module_scheme_guile_generic_event_handler_w (struct einit_event_call *c) {
  }
 
  scm_remember_upto_here_1 (ev);
+
+ scm_dynwind_end();
 }
 
 void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
@@ -826,14 +837,13 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  struct stree *st = NULL;
  char *typename = event_code_to_string(ev->type);
 
+/* if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_core) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_mount) return;
-
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_core) return;
+ if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_power) return;*/
 
 /* if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_ipc) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_mount) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_feedback) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_power) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_timer) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_network) return;
  if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_process) return;
@@ -849,7 +859,7 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
 // if (ev->type == einit_core_mode_switch_done) return;
 // if (ev->type == einit_core_crash_data) return;
 
- if (ev->type == einit_core_service_update) return;
+/* if (ev->type == einit_core_service_update) return;
  if (ev->type == einit_core_manipulate_services) return;
 
  if (ev->type == einit_core_update_configuration) return;
@@ -867,9 +877,9 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  if (ev->type == einit_core_resume_all) return;
 
  if (ev->type == einit_core_recover) return;
- if (ev->type == einit_core_main_loop_reached) return;
+ if (ev->type == einit_core_main_loop_reached) return;*/
 
-// emutex_lock (&module_scheme_guile_event_handlers_mutex);
+ emutex_lock (&module_scheme_guile_event_handlers_mutex);
  st = module_scheme_guile_event_handlers;
 
  while (st && module_scheme_guile_event_handlers) {
@@ -881,7 +891,7 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
 
   st = streenext (st);
  }
-// emutex_unlock (&module_scheme_guile_event_handlers_mutex);
+ emutex_unlock (&module_scheme_guile_event_handlers_mutex);
 
  if (evh) {
   struct einit_event_call c;
