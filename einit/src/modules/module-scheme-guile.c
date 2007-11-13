@@ -454,6 +454,39 @@ SCM module_scheme_guile_feedback (SCM id, SCM message) {
  return SCM_BOOL_T;
 }
 
+SCM module_scheme_guile_get_configuration (SCM id) {
+ SCM ids;
+ char *id_c;
+
+ if (scm_is_false(scm_symbol_p (id))) return SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ ids = scm_symbol_to_string(id);
+ id_c = scm_to_locale_string (ids);
+ scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+
+ struct cfgnode *node = cfg_getnode (id_c, NULL);
+
+ if (node && node->arbattrs) {
+  SCM rv = scm_list_1 (scm_cons (scm_from_locale_string (node->arbattrs[0]),
+                                 scm_from_locale_string (node->arbattrs[1])));
+  int i;
+
+  for (i = 2; node->arbattrs[i]; i+=2) {
+   rv = scm_cons (scm_cons (scm_from_locale_string (node->arbattrs[i]),
+                            scm_from_locale_string (node->arbattrs[i+1])),
+                  rv);
+  }
+
+  return rv;
+ }
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_F;
+}
+
 SCM module_scheme_define_module_action (SCM rid, SCM action, SCM command) {
  SCM rids, actions;
  char *rid_c, *action_c, *index;
@@ -954,6 +987,8 @@ void module_scheme_guile_configure_scheme (void *n) {
 
  scm_c_define_gsubr ("make-module", 2, 0, 1, module_scheme_make_module);
  scm_c_define_gsubr ("define-module-action", 3, 0, 0, module_scheme_define_module_action);
+
+ scm_c_define_gsubr ("get-configuration", 1, 0, 0, module_scheme_guile_get_configuration);
 
  init_einit_event_type();
 }
