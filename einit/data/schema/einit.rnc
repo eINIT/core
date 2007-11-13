@@ -189,9 +189,8 @@ Configuration = element configuration {
     }* &
 
     element aural {
-      element tts {
-        element synthesizer-command { StringAttribute }? &
-        element vocalising-threshold { IntegerAttribute }?
+      element festival {
+        element active { BooleanAttribute }?
       }*
     }*
   }* &

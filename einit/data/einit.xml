@@ -161,10 +161,9 @@
    </visual>
 
    <aural>
-    <tts>
-     <synthesizer-command s="/usr/bin/festival --tts --pipe" />
-     <vocalising-threshold i="6" />
-    </tts>
+    <festival>
+     <active b="no" />
+    </festival>
    </aural>
   </feedback>
 

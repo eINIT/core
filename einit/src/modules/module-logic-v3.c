@@ -715,6 +715,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
   struct einit_event eex = evstaticinit (einit_core_mode_switching);
   eex.para = (void *)plan->mode;
+  eex.string = plan->mode->id;
   event_emit (&eex, einit_event_flag_broadcast);
   evstaticdestroy (eex);
 
@@ -800,6 +801,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
   struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
   eex.para = (void *)plan->mode;
+  eex.string = plan->mode->id;
   event_emit (&eex, einit_event_flag_broadcast);
   evstaticdestroy (eex);
 

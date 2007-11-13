@@ -601,13 +601,13 @@ uint32_t event_string_to_code (const char *code) {
      if (strmatch (tcode[1], "tick"))                             ret = einit_timer_tick;
      else if (strmatch (tcode[1], "set"))                         ret = einit_timer_set;
      else if (strmatch (tcode[1], "cancel"))                      ret = einit_timer_cancel;
-	 break;
+     break;
     case einit_event_subsystem_network:
      if (strmatch (tcode[1], "do-update"))                        ret = einit_network_do_update;
-	 break;
+     break;
     case einit_event_subsystem_process:
      if (strmatch (tcode[1], "died"))                             ret = einit_process_died;
-	 break;
+     break;
     case einit_event_subsystem_boot:
      if (strmatch (tcode[1], "early"))                            ret = einit_boot_early;
      else if (strmatch (tcode[1], "load-kernel-extensions"))      ret = einit_boot_load_kernel_extensions;
