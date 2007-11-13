@@ -434,26 +434,92 @@ struct exported_function *function_look_up_one (const char *name, const uint32_t
 
 char *event_code_to_string (const uint32_t code) {
  switch (code) {
-  case einit_core_update_configuration:   return "core/update-configuration";
-  case einit_core_module_update:          return "core/module-status-update";
-  case einit_core_service_update:         return "core/service-status-update";
-  case einit_core_configuration_update:   return "core/configuration-status-update";
+  case einit_core_panic:                       return "core/panic";
+  case einit_core_module_update:               return "core/module-update";
+  case einit_core_service_update:              return "core/service-update";
+  case einit_core_configuration_update:        return "core/configuration-update";
+  case einit_core_plan_update:                 return "core/plan-update";
+  case einit_core_module_list_update:          return "core/module-list-update";
+  case einit_core_module_list_update_complete: return "core/module-list-update-complete";
 
-  case einit_mount_do_update:              return "mount/update";
+  case einit_core_update_configuration:        return "core/update-configuration";
+  case einit_core_change_service_status:       return "core/change-service-status";
+  case einit_core_switch_mode:                 return "core/switch-mode";
+  case einit_core_update_modules:              return "core/update-modules";
+  case einit_core_update_module:               return "core/update-module";
+  case einit_core_manipulate_services:         return "core/manipulate-services";
 
-  case einit_feedback_module_status: return "feedback/module";
-  case einit_feedback_plan_status:   return "feedback/plan";
-  case einit_feedback_notice:        return "feedback/notice";
+  case einit_core_mode_switching:              return "core/mode-switching";
+  case einit_core_mode_switch_done:            return "core/mode-switch-done";
+
+  case einit_core_suspend_all:                 return "core/suspend-all";
+  case einit_core_resume_all:                  return "core/resume-all";
+
+  case einit_core_crash_data:                  return "core/crash-data";
+  case einit_core_recover:                     return "core/recover";
+  case einit_core_main_loop_reached:           return "core/main-loop-reached";
+
+  case einit_mount_do_update:                  return "mount/do-update";
+  case einit_mount_node_mounted:               return "mount/node-mounted";
+  case einit_mount_node_unmounted:             return "mount/node-unmounted";
+  case einit_mount_new_mount_level:            return "mount/new-mount-level";
+
+  case einit_feedback_module_status:           return "feedback/module-status";
+  case einit_feedback_plan_status:             return "feedback/plan-status";
+  case einit_feedback_notice:                  return "feedback/notice";
+  case einit_feedback_register_fd:             return "feedback/register-fd";
+  case einit_feedback_unregister_fd:           return "feedback/unregister-fd";
+
+  case einit_feedback_broken_services:         return "feedback/broken-services";
+  case einit_feedback_unresolved_services:     return "feedback/unresolved-services";
+
+  case einit_power_down_scheduled:             return "power/down-scheduled";
+  case einit_power_down_imminent:              return "power/down-imminent";
+  case einit_power_reset_scheduled:            return "power/reset-scheduled";
+  case einit_power_reset_imminent:             return "power/reset-imminent";
+
+  case einit_power_failing:                    return "power/failing";
+  case einit_power_failure_imminent:           return "power/failure-imminent";
+  case einit_power_restored:                   return "power/restored";
+
+  case einit_timer_tick:                       return "timer/tick";
+  case einit_timer_set:                        return "timer/set";
+  case einit_timer_cancel:                     return "timer/cancel";
+
+  case einit_network_do_update:                return "network/do-update";
+
+  case einit_process_died:                     return "process/died";
+
+  case einit_boot_early:                       return "boot/early";
+  case einit_boot_load_kernel_extensions:      return "boot/load-kernel-extensions";
+  case einit_boot_devices_available:           return "boot/devices-available";
+  case einit_boot_root_device_ok:              return "boot/root-device-ok";
+  case einit_boot_critical_devices_ok:         return "boot/critical-devices-ok";
+
+  case einit_hotplug_add:                      return "hotplug/add";
+  case einit_hotplug_remove:                   return "hotplug/remove";
+  case einit_hotplug_change:                   return "hotplug/change";
+  case einit_hotplug_online:                   return "hotplug/online";
+  case einit_hotplug_offline:                  return "hotplug/offline";
+  case einit_hotplug_move:                     return "hotplug/move";
+  case einit_hotplug_generic:                  return "hotplug/generic";
  }
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
-  case einit_event_subsystem_core:    return "core/{unknown}";
-  case einit_event_subsystem_ipc:      return "ipc/{unknown}";
+  case einit_event_subsystem_core:     return "core/{unknown}";
+  case einit_event_subsystem_ipc:      return "ipc";
   case einit_event_subsystem_mount:    return "mount/{unknown}";
   case einit_event_subsystem_feedback: return "feedback/{unknown}";
   case einit_event_subsystem_power:    return "power/{unknown}";
   case einit_event_subsystem_timer:    return "timer/{unknown}";
-  case einit_event_subsystem_custom:   return "custom/{unknown}";
+
+  case einit_event_subsystem_network:  return "network/{unknown}";
+  case einit_event_subsystem_process:  return "process/{unknown}";
+  case einit_event_subsystem_boot:     return "boot/{unknown}";
+  case einit_event_subsystem_hotplug:  return "hotplug/{unknown}";
+
+  case einit_event_subsystem_any:      return "any";
+  case einit_event_subsystem_custom:   return "custom";
  }
 
  return "unknown/custom";
@@ -470,28 +536,93 @@ uint32_t event_string_to_code (const char *code) {
   else if (strmatch (tcode[0], "feedback")) ret = einit_event_subsystem_feedback;
   else if (strmatch (tcode[0], "power"))    ret = einit_event_subsystem_power;
   else if (strmatch (tcode[0], "timer"))    ret = einit_event_subsystem_timer;
+  else if (strmatch (tcode[0], "network"))  ret = einit_event_subsystem_network;
+  else if (strmatch (tcode[0], "process"))  ret = einit_event_subsystem_process;
+  else if (strmatch (tcode[0], "boot"))     ret = einit_event_subsystem_boot;
+  else if (strmatch (tcode[0], "hotplug"))  ret = einit_event_subsystem_hotplug;
+  else if (strmatch (tcode[0], "any"))      ret = einit_event_subsystem_any;
+  else if (strmatch (tcode[0], "custom"))   ret = einit_event_subsystem_custom;
 
   if (tcode[1])
    switch (ret) {
     case einit_event_subsystem_core:
-     if (strmatch (tcode[1], "update-configuration")) ret = einit_core_update_configuration;
-     else if (strmatch (tcode[1], "module-status-update")) ret = einit_core_module_update;
-     else if (strmatch (tcode[1], "service-status-update")) ret = einit_core_service_update;
-     else if (strmatch (tcode[1], "configuration-status-update")) ret = einit_core_configuration_update;
+     if (strmatch (tcode[1], "panic"))                            ret = einit_core_panic;
+     else if (strmatch (tcode[1], "module-update"))               ret = einit_core_module_update;
+     else if (strmatch (tcode[1], "service-update"))              ret = einit_core_service_update;
+     else if (strmatch (tcode[1], "configuration-update"))        ret = einit_core_configuration_update;
+     else if (strmatch (tcode[1], "plan-update"))                 ret = einit_core_plan_update;
+     else if (strmatch (tcode[1], "module-list-update"))          ret = einit_core_module_list_update;
+     else if (strmatch (tcode[1], "module-list-update-complete")) ret = einit_core_module_list_update_complete;
+
+     else if (strmatch (tcode[1], "update-configuration"))        ret = einit_core_update_configuration;
+     else if (strmatch (tcode[1], "change-service-status"))       ret = einit_core_change_service_status;
+     else if (strmatch (tcode[1], "switch-mode"))                 ret = einit_core_switch_mode;
+     else if (strmatch (tcode[1], "update-modules"))              ret = einit_core_update_modules;
+     else if (strmatch (tcode[1], "update-module"))               ret = einit_core_update_module;
+     else if (strmatch (tcode[1], "manipulate-services"))         ret = einit_core_manipulate_services;
+
+     else if (strmatch (tcode[1], "mode-switching"))              ret = einit_core_mode_switching;
+     else if (strmatch (tcode[1], "mode-switch-done"))            ret = einit_core_mode_switch_done;
+
+     else if (strmatch (tcode[1], "suspend-all"))                 ret = einit_core_suspend_all;
+     else if (strmatch (tcode[1], "resume-all"))                  ret = einit_core_resume_all;
+
+     else if (strmatch (tcode[1], "crash-data"))                  ret = einit_core_crash_data;
+     else if (strmatch (tcode[1], "recover"))                     ret = einit_core_recover;
+     else if (strmatch (tcode[1], "main-loop-reached"))           ret = einit_core_main_loop_reached;
      break;
     case einit_event_subsystem_mount:
-     if (strmatch (tcode[1], "update")) ret = einit_mount_do_update;
+     if (strmatch (tcode[1], "do-update"))                        ret = einit_mount_do_update;
+     else if (strmatch (tcode[1], "node-mounted"))                ret = einit_mount_node_mounted;
+     else if (strmatch (tcode[1], "node-unmounted"))              ret = einit_mount_node_unmounted;
+     else if (strmatch (tcode[1], "new-mount-level"))             ret = einit_mount_new_mount_level;
      break;
     case einit_event_subsystem_feedback:
-     if (strmatch (tcode[1], "module")) ret = einit_feedback_module_status;
-     else if (strmatch (tcode[1], "plan")) ret = einit_feedback_plan_status;
-     else if (strmatch (tcode[1], "notice")) ret = einit_feedback_notice;
+     if (strmatch (tcode[1], "module-status"))                    ret = einit_feedback_module_status;
+     else if (strmatch (tcode[1], "plan-status"))                 ret = einit_feedback_plan_status;
+     else if (strmatch (tcode[1], "notice"))                      ret = einit_feedback_notice;
+     else if (strmatch (tcode[1], "register-fd"))                 ret = einit_feedback_register_fd;
+     else if (strmatch (tcode[1], "unregister-fd"))               ret = einit_feedback_unregister_fd;
+
+     else if (strmatch (tcode[1], "broken-services"))             ret = einit_feedback_broken_services;
+     else if (strmatch (tcode[1], "unresolved-services"))         ret = einit_feedback_unresolved_services;
      break;
     case einit_event_subsystem_power:
-     if (strmatch (tcode[1], "reset-scheduled")) ret = einit_power_reset_scheduled;
-     else if (strmatch (tcode[1], "reset-imminent")) ret = einit_power_reset_imminent;
-     else if (strmatch (tcode[1], "mps-down-scheduled")) ret = einit_power_down_scheduled;
-     else if (strmatch (tcode[1], "mps-down-imminent")) ret = einit_power_down_imminent;
+     if (strmatch (tcode[1], "down-scheduled"))                   ret = einit_power_down_scheduled;
+     else if (strmatch (tcode[1], "down-imminent"))               ret = einit_power_down_imminent;
+     else if (strmatch (tcode[1], "reset-scheduled"))             ret = einit_power_reset_scheduled;
+     else if (strmatch (tcode[1], "reset-imminent"))              ret = einit_power_reset_imminent;
+
+     else if (strmatch (tcode[1], "failing"))                     ret = einit_power_failing;
+     else if (strmatch (tcode[1], "failure-imminent"))            ret = einit_power_failure_imminent;
+     else if (strmatch (tcode[1], "restored"))                    ret = einit_power_restored;
+     break;
+    case einit_event_subsystem_timer:
+     if (strmatch (tcode[1], "tick"))                             ret = einit_timer_tick;
+     else if (strmatch (tcode[1], "set"))                         ret = einit_timer_set;
+     else if (strmatch (tcode[1], "cancel"))                      ret = einit_timer_cancel;
+	 break;
+    case einit_event_subsystem_network:
+     if (strmatch (tcode[1], "do-update"))                        ret = einit_network_do_update;
+	 break;
+    case einit_event_subsystem_process:
+     if (strmatch (tcode[1], "died"))                             ret = einit_process_died;
+	 break;
+    case einit_event_subsystem_boot:
+     if (strmatch (tcode[1], "early"))                            ret = einit_boot_early;
+     else if (strmatch (tcode[1], "load-kernel-extensions"))      ret = einit_boot_load_kernel_extensions;
+     else if (strmatch (tcode[1], "devices-available"))           ret = einit_boot_devices_available;
+     else if (strmatch (tcode[1], "root-device-ok"))              ret = einit_boot_root_device_ok;
+     else if (strmatch (tcode[1], "critical-devices-ok"))         ret = einit_boot_critical_devices_ok;
+     break;
+    case einit_event_subsystem_hotplug:
+     if (strmatch (tcode[1], "add"))                              ret = einit_hotplug_add;
+     else if (strmatch (tcode[1], "remove"))                      ret = einit_hotplug_remove;
+     else if (strmatch (tcode[1], "change"))                      ret = einit_hotplug_change;
+     else if (strmatch (tcode[1], "online"))                      ret = einit_hotplug_online;
+     else if (strmatch (tcode[1], "offline"))                     ret = einit_hotplug_offline;
+     else if (strmatch (tcode[1], "move"))                        ret = einit_hotplug_move;
+     else if (strmatch (tcode[1], "generic"))                     ret = einit_hotplug_generic;
      break;
    }
 

@@ -596,6 +596,138 @@ SCM module_scheme_guile_event_emit (SCM event) {
  return SCM_UNSPECIFIED;
 }
 
+SCM module_scheme_guile_event_p (SCM event) {
+ if (SCM_SMOB_PREDICATE (einit_event_smob, event))
+  return SCM_BOOL_T;
+
+ return SCM_BOOL_F;
+}
+
+SCM module_scheme_guile_event_string (SCM event) {
+ struct einit_event *ev;
+ SCM rv = SCM_BOOL_F;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ if (ev->string) {
+  rv = scm_from_locale_string (ev->string);
+ }
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_string_set (SCM event) {
+ SCM rv = SCM_BOOL_F;
+ struct einit_event *ev;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ if (ev->stringset) {
+  rv = scm_c_make_vector (setcount ((const void **)ev->stringset), SCM_BOOL_F);
+  int i = 0;
+
+  for (; ev->stringset[i]; i++)
+   SCM_SIMPLE_VECTOR_SET (rv, i, scm_from_locale_string(ev->stringset[i]));
+ }
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_argv (SCM event) {
+ SCM rv = SCM_BOOL_F;
+ struct einit_event *ev;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ if ((ev->type == einit_event_subsystem_ipc) && ev->argv) {
+  rv = scm_c_make_vector (ev->argc, SCM_BOOL_F);
+  int i = 0;
+
+  for (; ev->stringset[i]; i++)
+   SCM_SIMPLE_VECTOR_SET (rv, i, scm_from_locale_string(ev->argv[i]));
+ }
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_type (SCM event) {
+ struct einit_event *ev;
+ SCM rv = SCM_BOOL_F;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ rv = scm_from_locale_symbol (event_code_to_string (ev->type));
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_command (SCM event) {
+ struct einit_event *ev;
+ SCM rv = SCM_BOOL_F;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ if (ev->command) {
+  rv = scm_from_locale_string (ev->command);
+ }
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_task (SCM event) {
+ struct einit_event *ev;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ SCM rv = scm_from_int (ev->task);
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_status (SCM event) {
+ struct einit_event *ev;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ SCM rv = scm_from_int (ev->status);
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
+SCM module_scheme_guile_event_integer (SCM event) {
+ struct einit_event *ev;
+
+ scm_assert_smob_type (einit_event_smob, event);
+
+ ev = (struct einit_event *) SCM_SMOB_DATA (event);
+
+ SCM rv = scm_from_int (ev->integer);
+
+ scm_remember_upto_here_1 (event);
+ return rv;
+}
+
 SCM module_scheme_guile_make_einit_event (SCM type, SCM rest) {
  SCM smob;
  struct einit_event *ev;
@@ -674,15 +806,11 @@ SCM module_scheme_guile_make_einit_event_from_struct (struct einit_event *evo) {
  SCM_NEWSMOB (smob, einit_event_smob, ev);
 
  if (evo->type != einit_event_subsystem_ipc) {
-/*  if (evo->string) ev->string = estrdup (evo->string);
-  if (evo->stringset) ev->stringset = (char **)setdup ((const void **)evo->stringset, SET_TYPE_STRING);*/
-  ev->string = NULL;
-  ev->stringset = NULL;
+  if (evo->string) ev->string = estrdup (evo->string);
+  if (evo->stringset) ev->stringset = (char **)setdup ((const void **)evo->stringset, SET_TYPE_STRING);
  } else {
-/*  if (evo->command) ev->command = estrdup (evo->command);
-  if (evo->argv) ev->argv = (char **)setdup ((const void **)evo->argv, SET_TYPE_STRING);*/
-  ev->command = NULL;
-  ev->argv = NULL;
+  if (evo->command) ev->command = estrdup (evo->command);
+  if (evo->argv) ev->argv = (char **)setdup ((const void **)evo->argv, SET_TYPE_STRING);
  }
 
  return smob;
@@ -786,9 +914,28 @@ void init_einit_event_type (void) {
  scm_set_smob_free (einit_event_smob, module_scheme_guile_einit_event_free);
  scm_set_smob_print (einit_event_smob, module_scheme_guile_einit_event_print);
 
+/* need to create the type in some way... */
+ scm_c_define_gsubr ("make-event", 1, 0, 1, module_scheme_guile_make_einit_event);
+
+/* predicate */
+ scm_c_define_gsubr ("event?", 1, 0, 0, module_scheme_guile_event_p);
+
+/* element access */
+ scm_c_define_gsubr ("event-type", 1, 0, 0, module_scheme_guile_event_type);
+
+ scm_c_define_gsubr ("event-task", 1, 0, 0, module_scheme_guile_event_task);
+ scm_c_define_gsubr ("event-status", 1, 0, 0, module_scheme_guile_event_status);
+ scm_c_define_gsubr ("event-integer", 1, 0, 0, module_scheme_guile_event_integer);
+
+ scm_c_define_gsubr ("event-string", 1, 0, 0, module_scheme_guile_event_string);
+ scm_c_define_gsubr ("event-string-set", 1, 0, 0, module_scheme_guile_event_string_set);
+
+ scm_c_define_gsubr ("event-argv", 1, 0, 0, module_scheme_guile_event_argv);
+ scm_c_define_gsubr ("event-command", 1, 0, 0, module_scheme_guile_event_command);
+
+/* operations with the event type */
  scm_c_define_gsubr ("event-emit", 1, 0, 0, module_scheme_guile_event_emit);
  scm_c_define_gsubr ("event-listen", 2, 0, 0, module_scheme_guile_event_listen);
- scm_c_define_gsubr ("make-event", 1, 0, 1, module_scheme_guile_make_einit_event);
 }
 
 /* module initialisation -- there's two parts to this because we need some stuff to be defined in the
@@ -831,6 +978,8 @@ void module_scheme_guile_generic_event_handler_w (struct einit_event_call *c) {
 
  scm_dynwind_end();
 }
+
+#if 0
 
 void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  struct scheme_event_handler **evh = NULL;
@@ -904,6 +1053,147 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
   free (evh);
   evh = NULL;
  }
+
+// usleep (100000);
+}
+
+#endif
+
+struct msg_event_queue {
+ struct einit_event *ev;
+ struct msg_event_queue *next;
+};
+
+struct msg_event_queue *module_scheme_guile_event_queue = NULL;
+
+pthread_mutex_t
+ module_scheme_guile_ping_mutex = PTHREAD_MUTEX_INITIALIZER,
+ module_scheme_guile_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_cond_t
+ module_scheme_guile_ping_cond = PTHREAD_COND_INITIALIZER;
+
+void module_scheme_guile_ping_all_threads() {
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&module_scheme_guile_ping_cond);
+}
+
+void module_scheme_guile_wait_for_ping() {
+ int e;
+
+ emutex_lock (&module_scheme_guile_ping_mutex);
+#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
+ struct timespec ts;
+
+ if (clock_gettime(CLOCK_REALTIME, &ts))
+  bitch (bitch_stdio, errno, "gettime failed!");
+
+ ts.tv_sec += 1; /* max wait before re-evaluate */
+
+ e = pthread_cond_timedwait (&module_scheme_guile_ping_cond, &module_scheme_guile_ping_mutex, &ts);
+#elif defined(DARWIN)
+#if 1
+ struct timespec ts;
+ struct timeval tv;
+
+ gettimeofday (&tv, NULL);
+
+ ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
+
+ e = pthread_cond_timedwait (&module_scheme_guile_ping_cond, &module_scheme_guile_ping_mutex, &ts);
+#else
+// notice (2, "warning: un-timed lock.");
+ e = pthread_cond_wait (&module_scheme_guile_ping_cond, &module_scheme_guile_ping_mutex);
+#endif
+#else
+ notice (2, "warning: un-timed module_scheme_guile_ping_cond.");
+ e = pthread_cond_wait (&ml_cond_service_update, &module_scheme_guile_ping_mutex);
+#endif
+ emutex_unlock (&module_scheme_guile_ping_mutex);
+
+ if (e
+#ifdef ETIMEDOUT
+     && (e != ETIMEDOUT)
+#endif
+    ) {
+  bitch (bitch_epthreads, e, "waiting on conditional variable...");
+ }
+}
+
+void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
+ struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
+
+ e->ev = evdup(ev);
+ e->next = NULL;
+
+// struct msg_event_queue *n = module_scheme_guile_event_queue;
+
+ emutex_lock (&module_scheme_guile_event_queue_mutex);
+
+ e->next = module_scheme_guile_event_queue;
+ module_scheme_guile_event_queue = e;
+
+ emutex_unlock (&module_scheme_guile_event_queue_mutex);
+
+ module_scheme_guile_ping_all_threads();
+}
+
+void module_scheme_guile_event_dispatcher_thread (void *na) {
+ while (1) {
+  while (module_scheme_guile_event_queue) {
+   struct msg_event_queue *e;
+   struct einit_event *ev;
+
+   emutex_lock (&module_scheme_guile_event_queue_mutex);
+
+   e = module_scheme_guile_event_queue;
+   module_scheme_guile_event_queue = e->next;
+
+   emutex_unlock (&module_scheme_guile_event_queue_mutex);
+
+   ev = e->ev;
+   free (e);
+
+   {
+    struct scheme_event_handler **evh = NULL;
+    struct stree *st = NULL;
+    char *typename = event_code_to_string(ev->type);
+
+    emutex_lock (&module_scheme_guile_event_handlers_mutex);
+    st = module_scheme_guile_event_handlers;
+
+    while (st && module_scheme_guile_event_handlers) {
+     struct scheme_event_handler *h = st->value;
+     if (strmatch (st->key, "any") || strmatch (st->key, typename)) {
+      scm_with_guile ((void *(*)(void *))module_scheme_guile_protect_event_handler, h);
+      evh = (struct scheme_event_handler **)setadd ((void **)evh, h, SET_NOALLOC);
+     }
+
+     st = streenext (st);
+    }
+    emutex_unlock (&module_scheme_guile_event_handlers_mutex);
+
+    if (evh) {
+     struct einit_event_call c;
+
+     c.evh = evh;
+     c.ev = ev;
+
+     scm_with_guile ((void *(*)(void *))module_scheme_guile_generic_event_handler_w, &c);
+
+     free (evh);
+     evh = NULL;
+    }
+   }
+
+   evdestroy (ev);
+  }
+
+  module_scheme_guile_wait_for_ping();
+ }
 }
 
 int module_scheme_guile_cleanup (struct lmodule *pa) {
@@ -916,6 +1206,7 @@ int module_scheme_guile_cleanup (struct lmodule *pa) {
 }
 
 int module_scheme_guile_configure (struct lmodule *pa) {
+ pthread_t th;
  module_init (pa);
  exec_configure (pa);
  ipc_configure (pa);
@@ -926,6 +1217,8 @@ int module_scheme_guile_configure (struct lmodule *pa) {
  event_listen (einit_event_subsystem_any, module_scheme_guile_generic_event_handler);
 
  scm_with_guile ((void *(*)(void *))module_scheme_guile_configure_scheme, NULL);
+
+ ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))module_scheme_guile_event_dispatcher_thread, NULL);
 
  return 0;
 }

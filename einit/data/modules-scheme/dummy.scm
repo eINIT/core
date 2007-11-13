@@ -38,12 +38,18 @@
 ; event-emit : einit-event -> #void
 ;(event-emit (make-event 'core/update-configuration))
 
-#!
 ; event-listen : symbol procedure(event -> #void) -> boolean
-(event-listen 'any
+(event-listen 'feedback/notice
  (lambda (event)
   (begin
    (display "dummy.scm: received event: ")
    (display event)
    (newline))))
-!#
+
+;(event-listen 'any
+; (lambda (event)
+;  (let ((a (event-argv event)))
+;   (if (equal? (event-type event) 'ipc)
+;       (begin
+;	    (display a)
+;		(newline))))))
