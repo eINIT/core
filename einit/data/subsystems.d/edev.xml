@@ -42,7 +42,7 @@
                     chmod="0660"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
-   <devicefile-rule DEVPATH_BASE="^(zero|null|ptmx|random|urandom)$"
+   <devicefile-rule DEVPATH_BASE="^(zero|null|ptmx|random|urandom|tty)$"
                     chmod="0666"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
