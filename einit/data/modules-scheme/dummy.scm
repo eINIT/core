@@ -11,7 +11,7 @@
 (if (make-module 's-hello "some dummy module"
                  (list 'provides "s-dummy")
 ;                 (list 'requires "c" "d")
-;                 (list 'after "e" "f")
+;                 (list 'after yes"e" "f")
 ;                 (list 'before "g" "h")
     )
     (notice "dummy module created")
