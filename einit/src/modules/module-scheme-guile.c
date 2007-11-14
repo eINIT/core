@@ -1063,86 +1063,6 @@ void module_scheme_guile_generic_event_handler_w (struct einit_event_call *c) {
  scm_dynwind_end();
 }
 
-#if 0
-
-void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
- struct scheme_event_handler **evh = NULL;
- struct stree *st = NULL;
- char *typename = event_code_to_string(ev->type);
-
-/* if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_core) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_mount) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_power) return;*/
-
-/* if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_ipc) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_mount) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_feedback) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_timer) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_network) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_process) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_boot) return;
- if ((EVENT_SUBSYSTEM_MASK & ev->type) == einit_event_subsystem_hotplug) return;*/
-
-/* if (ev->type == einit_core_panic) return;*/
-
-/* if (ev->type == einit_core_change_service_status) return;
- if (ev->type == einit_core_switch_mode) return;*/
-
-// if (ev->type == einit_core_mode_switching) return;
-// if (ev->type == einit_core_mode_switch_done) return;
-// if (ev->type == einit_core_crash_data) return;
-
-/* if (ev->type == einit_core_service_update) return;
- if (ev->type == einit_core_manipulate_services) return;
-
- if (ev->type == einit_core_update_configuration) return;
-
- if (ev->type == einit_core_module_update) return;
- if (ev->type == einit_core_update_modules) return;
- if (ev->type == einit_core_update_module) return;
-
- if (ev->type == einit_core_configuration_update) return;
- if (ev->type == einit_core_plan_update) return;
- if (ev->type == einit_core_module_list_update) return;
- if (ev->type == einit_core_module_list_update_complete) return;
-
- if (ev->type == einit_core_suspend_all) return;
- if (ev->type == einit_core_resume_all) return;
-
- if (ev->type == einit_core_recover) return;
- if (ev->type == einit_core_main_loop_reached) return;*/
-
- emutex_lock (&module_scheme_guile_event_handlers_mutex);
- st = module_scheme_guile_event_handlers;
-
- while (st && module_scheme_guile_event_handlers) {
-  struct scheme_event_handler *h = st->value;
-  if (strmatch (st->key, "any") || strmatch (st->key, typename)) {
-   scm_with_guile ((void *(*)(void *))module_scheme_guile_protect_event_handler, h);
-   evh = (struct scheme_event_handler **)setadd ((void **)evh, h, SET_NOALLOC);
-  }
-
-  st = streenext (st);
- }
- emutex_unlock (&module_scheme_guile_event_handlers_mutex);
-
- if (evh) {
-  struct einit_event_call c;
-
-  c.evh = evh;
-  c.ev = ev;
-
-  scm_with_guile ((void *(*)(void *))module_scheme_guile_generic_event_handler_w, &c);
-
-  free (evh);
-  evh = NULL;
- }
-
-// usleep (100000);
-}
-
-#endif
-
 struct msg_event_queue {
  struct einit_event *ev;
  struct msg_event_queue *next;
@@ -1213,8 +1133,6 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
  e->ev = evdup(ev);
  e->next = NULL;
 
-// struct msg_event_queue *n = module_scheme_guile_event_queue;
-
  emutex_lock (&module_scheme_guile_event_queue_mutex);
 
  e->next = module_scheme_guile_event_queue;
@@ -1228,20 +1146,22 @@ void module_scheme_guile_generic_event_handler (struct einit_event *ev) {
 void module_scheme_guile_event_dispatcher_thread (void *na) {
  while (1) {
   while (module_scheme_guile_event_queue) {
-   struct msg_event_queue *e;
-   struct einit_event *ev;
+   struct msg_event_queue *e = NULL;
+   struct einit_event *ev = NULL;
 
    emutex_lock (&module_scheme_guile_event_queue_mutex);
 
-   e = module_scheme_guile_event_queue;
-   module_scheme_guile_event_queue = e->next;
+   if (module_scheme_guile_event_queue) {
+    e = module_scheme_guile_event_queue;
+    module_scheme_guile_event_queue = e->next;
+   }
 
    emutex_unlock (&module_scheme_guile_event_queue_mutex);
 
-   ev = e->ev;
-   free (e);
+   if (e && e->ev) {
+    ev = e->ev;
+    free (e);
 
-   {
     struct scheme_event_handler **evh = NULL;
     struct stree *st = NULL;
     char *typename = event_code_to_string(ev->type);
@@ -1271,9 +1191,9 @@ void module_scheme_guile_event_dispatcher_thread (void *na) {
      free (evh);
      evh = NULL;
     }
-   }
 
-   evdestroy (ev);
+    evdestroy (ev);
+   }
   }
 
   module_scheme_guile_wait_for_ping();
