@@ -7,7 +7,13 @@ eINIT = element einit {
 
   ( attribute prefix { "configuration-network" } & NetworkContents* ) |
 
-  ( attribute prefix { "configuration-services" } & element * { attribute * { text }* }* ) |
+  ( attribute prefix { "configuration-services" } &
+    element * {
+      attribute * { text }* &
+      element * {
+        attribute * { text }*
+      }*
+    }* ) |
 
   ( attribute prefix { "configuration-storage-fstab" } & FSTab ) |
 
