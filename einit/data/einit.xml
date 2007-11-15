@@ -126,9 +126,9 @@
   </bootchart>
 
   <environment>
-   <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin" />
+   <global id="PATH" s="/bin:/sbin:/usr/bin:/usr/sbin:/opt/bin:/opt/sbin" />
    <global id="TERM" s="linux" />
-   <safe PATH="/bin:/sbin:/usr/bin:/usr/sbin" TERM="dumb" />
+   <safe PATH="/bin:/sbin:/usr/bin:/usr/sbin:/opt/bin:/opt/sbin" TERM="dumb" />
   </environment>
 
   <kernel>
