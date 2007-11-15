@@ -1,0 +1,80 @@
+<chapter id="users">
+ <title>User's Guide</title>
+
+ <sect1 id="users-installation">
+  <title>Installing eINIT</title>
+  <titleabbrev>Installation</titleabbrev>
+
+  <para></para>
+ </sect1>
+
+ <sect1 id="users-configuration">
+  <title>Configuring eINIT</title>
+  <titleabbrev>Configuration</titleabbrev>
+
+  <para></para>
+
+  <sect2 id="users-configuration-etc-einit">
+   <title>The Configuration Files: /etc/einit</title>
+   <titleabbrev>/etc/einit</titleabbrev>
+
+   <para></para>
+
+   <sect3 id="users-configuration-etc-einit-network-xml">
+    <title>Network Configuration: /etc/einit/network.xml</title>
+    <titleabbrev>/etc/einit/network.xml</titleabbrev>
+
+    <para></para>
+   </sect3>
+
+   <sect3 id="users-configuration-etc-einit-modes-xml">
+    <title>What Services to start: /etc/einit/modes.xml</title>
+    <titleabbrev>/etc/einit/modes.xml</titleabbrev>
+
+    <para></para>
+   </sect3>
+
+   <sect3 id="users-configuration-etc-einit-conf-d">
+    <title>Service-Configuration: /etc/einit/conf.d</title>
+    <titleabbrev>/etc/einit/conf.d</titleabbrev>
+
+    <para></para>
+   </sect3>
+
+   <sect3 id="users-configuration-etc-einit-fstab-xml">
+    <title>(Optional) Advanced fstab: /etc/einit/fstab.xml</title>
+    <titleabbrev>/etc/einit/fstab.xml</titleabbrev>
+
+    <para></para>
+   </sect3>
+  </sect2>
+ </sect1>
+
+ <sect1 id="users-using">
+  <title>Using eINIT</title>
+  <titleabbrev>Using</titleabbrev>
+
+  <para></para>
+
+  <sect2 id="users-using-einit-control">
+   <title>The "einit-control"-Command: Have a chat with eINIT</title>
+   <titleabbrev>einit-control</titleabbrev>
+
+   <para></para>
+
+   <sect3 id="users-using-erc">
+    <title>The "erc"-Command: Manipulating Services' Status</title>
+    <titleabbrev>erc</titleabbrev>
+
+    <para></para>
+   </sect3>
+
+   <sect3 id="users-using-power">
+    <title>The "power"-Command: Shutting Down and Rebooting</title>
+    <titleabbrev>power</titleabbrev>
+
+    <para></para>
+   </sect3>
+  </sect2>
+ </sect1>
+</chapter>

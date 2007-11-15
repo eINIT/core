@@ -1,0 +1,470 @@
+<appendix id="concepts">
+ <title>Terms and Concepts</title>
+ <sect1 id="concepts-modules">
+  <title>Modules</title>
+  <titleabbrev>Modules</titleabbrev>
+  <para>Modules are the "building blocks" for eINIT. They can be a lot of things, ranging from simple
+   "start-this-program-when-you're-called" modules to more complex "store-and-retrieve-configuration-data" ones
+   or even more complex managers that determine the order in which modules are started or that tackle
+   the whole issue of mounting things while booting.</para>
+
+  <para>Since modules are pretty much everything, some people will long for a way to categorise them,
+   (even though this is blatantly contradictory to everything tought in books like Lao Tse's "Tao Te King").</para>
+
+  <para><xref linkend="concepts-modules-core-interaction" /> illustrates the interaction between the core
+   and the modules. All the modules (middle column) are loaded by a module loader (left column). This loading
+   is requested by the core itself, when it invokes the scanmodules()-function of the module loader. The
+   "code"-section spans both the module loader and the module itself, because many types of modules require
+   wrapper-code from the module-loader to function as intended (e.g. XML-Modules need a wrapper like this,
+   since XML is definitely not compiled object code, and thus the core cannot execute functions of these
+   modules directly).</para>
+
+  <para>As indicated in the figure, there's two kinds of descriptors around for every eINIT module: one "static
+   descriptor", and another one called the "core descriptor" (the figure has two static descriptors, because
+   the module loader to the left is just a module too, albeit one with a scanmodules()-function). The reason
+   for two descriptors is simple, the static one acts as a reference entry (especially for the dependencies),
+   and the core descriptor lists the "current" data and some function pointers as shortcuts. See the guide on
+   C-Modules for details on what function pointers need to be provided. Additionally, the core descriptor keeps
+   track of a module's "status", that is, whether it's enabled, disabled, broken, etc...</para>
+
+  <figure id="concepts-modules-core-interaction" float="1" pgwide="0" floatstyle="right">
+   <title>Modules, Module Loaders and the Core</title>
+   <mediaobject>
+    <imageobject>
+     <imagedata fileref="images/module.svg" format="SVG" />
+    </imageobject>
+    <imageobject>
+     <imagedata fileref="images/module.png" format="PNG" />
+    </imageobject>
+   </mediaobject>
+  </figure>
+
+  <note><para>Remember that none of these names are normative or absolute. They're not mutually exclusive either,
+   they're just here to help you get started.</para></note>
+
+  <para>One thing that all these modules have in common, is that there absolutely <emphasis>must</emphasis> be an
+   "RID" (the unique identifier for a module) and a name for each and every one of them.</para>
+
+  <para>Now that you've gotten a little heads-up on modules, let's get a wee bit dirty with them, shall we?</para>
+
+  <sect2 id="concepts-modules-service">
+   <title>Modules that provide Services</title>
+   <titleabbrev>Regular Modules</titleabbrev>
+
+   <para>This is the easy type of modules. Anything that has something in the "provides"-field of its dependency-
+    descriptor falls in this category. A lot of these modules are XML-modules, simply because a lot of services
+    aren't provided by einit itself, but some other program, which needs to be executed. XML modules were designed
+    for this task. Examples for such modules are the whole series of "displaymanager-modules", such as daemon-kdm
+    and daemon-gdm, logger/syslog modules like daemon-metalog, or plain ol' apache and gpm.</para>
+
+   <para>That's not to say that there weren't any C-Modules dealing with this. Some things provide these services,
+    but they don't just "simply" start a daemon. Examples for this are the "tty" and "ipc" services: the tty-module
+    provides you with gettys on your virtual terminals ((ctrl+)alt+f1 to (ctrl+)alt-f6), and makes sure the started
+    gettys will respawn, should they die (because maybe someone logged in and then back out). The "ipc"-service,
+    on the other hand, is responsible for getting all the external programs to work that interact with eINIT:
+    einit-control, erc, power, etc.</para>
+
+   <para>Logics dictate that since this type of module provides something, it also needs enable()- and disable()-
+    functions, which are described in the Developer's Guide.</para>
+
+   <para>In essence, this is any type of module that is most likely optional, provides a service and which will
+    usually participate in global depedency resolution.</para>
+  </sect2>
+  <sect2 id="concepts-modules-loaders">
+   <title>Modules that provide Modules ("Module Loaders")</title>
+   <titleabbrev>Module Loaders</titleabbrev>
+
+   <para>This is part of the magic that makes everything tick. These modules are usually passive (or mostly
+    passive), since the scanmodules()-function (which should at least be part of their primary function) is out
+    of dependency resolution's scope entirely.</para>
+
+   <para>Examples for this module type are module-so, module-xml, module-scheme and distro-gentoo (not module-c,
+    however). As is demonstrated by the distro-gentoo module, this type of module is not limited to providing
+    other modules, but other functions are often appropriate there as well. In distro-gentoo, there is also
+    "glue code", which makes gentoo-baselayout modules aware of dependencies that are already fulfilled, so
+    that they won't try to bring up dependencies by themselves.</para>
+
+   <para>Obviously, this type of module is a good starting point for any form of compatibility module, for example
+    for distro-specific sysv-initscripts, or other alternative init systems. It's conceivable that one might write
+    complete compatibility modules for InitNG, Upstart, Launchd and the like.</para>
+
+   <para>Requirements for this type of module are at least a scanmodules()-function.</para>
+  </sect2>
+  <sect2 id="concepts-modules-passive">
+   <title>Passive Modules</title>
+   <titleabbrev>Passive Modules</titleabbrev>
+
+   <para>"Passive" modules are modules that do whatever they're supposed to do with the user knowing little
+    or nothing of their existance. Most of them have no use for enable()- and disable()-functions.</para>
+
+   <para>Examples include the compat module for initctl (which makes sysv shutdown/reboot/halt commands work),
+    and various parts of the mounter and process manipulation code, as well as the modules that deal with reading,
+    storing and retrieving configuration data. (yes, those are modules as well, they're not hardcoded in any way).
+    Most "module loaders" are passive modules as well.</para>
+  </sect2>
+  <sect2 id="concepts-modules-shadows">
+   <title>Shadow Modules</title>
+   <titleabbrev>Shadows</titleabbrev>
+
+   <para>This is what Ryan dubbed a type of module that can execute things "around" other modules, for example
+    when they're enabled and disabled. There's an interface for writing this type of module with XML, and after
+    that they need to be specifically enabled. This is mostly intended for "hotfixes", along with dependency
+    overrides.</para>
+
+   <para>Another example of this are the initctl and logger-modules, which get automatically enabled along with
+    appropriate mountpoints.</para>
+  </sect2>
+  <sect2 id="concepts-modules-core">
+   <title>Modules that provide Core Functionality</title>
+   <titleabbrev>Core Modules</titleabbrev>
+
+   <para>This describes all modules that provide essential core functionality, like the whole configuration data
+    parsing, or the module for dependency resolution.</para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="concepts-variables">
+  <title>Variables / Configuration Data</title>
+  <titleabbrev>Variables</titleabbrev>
+
+  <para>All configuration from all sources is merged together by eINIT into a single big lookup table. Since all
+   the entries in this table tend to have name/value pairs, they're dubbed "variables". Variables are name/value
+   pairs themselves, so in eINIT you could think of the whole configuration thing as one big associative array of
+   of associative arrays. With the difference that in the primary array keys may occur more than once.</para>
+
+  <sect2 id="concepts-variables-xml">
+   <title>What is the 'native' Configuration Format? It's XML, right?</title>
+   <titleabbrev>Native Configuration</titleabbrev>
+
+   <para>Nope, XML is not the native format of eINIT configuration data. The native format is an associative array
+    (that allows colliding keys) that maps strings to associative arrays (which in turn does not allow colloding
+    keys). The latter array maps strings to strings.</para>
+
+   <para><xref linkend="concepts-variables-format" /> should illustrate this. Actually, we're just misusing XML as
+    a pretty clear carrier for our data. I guess a lot of people would want to kill me for the ways I'm using XML
+    data. For one thing, I'm not using the whole concept of "element values" at all, because it's somewhat awkward
+    for eINIT's native data format, but on the other hand it's pretty much essential to XML, since it is actually
+    supposed to be a markup language for... well, those same element values. I just know I'm going to get flames
+    from both XML proponents and opponents alike.</para>
+
+   <figure id="concepts-variables-format" float="1" pgwide="0" floatstyle="right">
+    <title>'native' eINIT Configuration Data Format</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
+  </sect2>
+  <sect2 id="concepts-variables-xml-why">
+   <title>Why does eINIT use XML by default?</title>
+   <titleabbrev>Why XML?</titleabbrev>
+
+   <para>Mostly because XML is easy to parse and quite well defined. Seriously, pretty much any language has at
+    least one parser library for XML data, including most scripting languages (with the possible exception of
+    sh/bash, but to be honest, I wouldn't be suprised if there really was a parser library for xml in sh).</para>
+
+   <para>"Easy to parse" as in "easy to parse for a machine", because there's very few rules to implement, and
+    they're well-defined with little ambiguity. "Easy to parse" also applies to humans, however. Yeah I know,
+    people despise editing XML files by hand, but at least it's possible, isn't it? Better than being stuck with
+    a binary format and needing to resort to arcane tools that hopefully work to get the job done. No automated
+    text processing macros either... that'd suck. Especially if you somehow messed the data up and then somehow
+    the tools would stop working. That'd be great, wouldn't it? Well, luckily XML is hand-editable with any
+    common text editor, and the formatting rules are dead-simple.</para>
+
+   <para>Additionally, Eliminating the need for my own parser library obviously has the advantage of making sure
+    I can't screw one up myself, thus eliminating a whole class of nasty potential errors as well.</para>
+  </sect2>
+ </sect1>
+ <sect1 id="concepts-dependencies">
+  <title>Dependencies</title>
+  <titleabbrev>Dependencies</titleabbrev>
+
+  <para>Dependencies are intended for service-providing modules. They express what a module needs, what it works
+   with and when it should start.</para>
+
+  <para>Right now there are four majour types of dependencies: the "provides"- and then "requires"-dependencies,
+   and the "before"- and "after"-dependencies. <xref linkend="concepts-dependencies-explained" /> should serve as
+   a quick sum-up of the possible dependency-types.</para>
+
+  <para>What a module "provides" isn't actually a dependency per-se, but it's what other modules can "require",
+   so it's explained here. By telling eINIT and the user what it provides, a module can express abstract services
+   to the user. For example the apache module would provide an "httpd" service, while gdm and kdm modules would
+   provide a "displaymanager". Note how they don't explicitly provide apache or gdm/kdm: they provide what they do
+   <emphasis>in general</emphasis>, not their exact implementation of that general thing.</para>
+
+  <para>"Requirements" are a set of things that a module really needs. For example the music player daemon will
+   always need one sound system or another, and network daemons will inevitably need some form of networking
+   available to them. Things that a module "requires" must be aforementioned abstract service names. If one of the
+   requirements can't be fulfilled, then a module that requires them is considered "broken", and it will not be
+   started.</para>
+
+  <para>"Before"- and "after"-dependencies can be used to hint eINIT about the order in which things should start.
+   These dependencies are not expressed as service names, but instead they're regular expressions that match against
+   service names that would be started alongside a module.</para>
+
+  <figure id="concepts-dependencies-explained" float="1" pgwide="0" floatstyle="right">
+   <title>eINIT Dependencies</title>
+   <mediaobject>
+    <textobject>
+     <para>illustrate all this right here.</para>
+    </textobject>
+   </mediaobject>
+  </figure>
+
+  <sect2 id="concepts-dependencies-overrides">
+   <title>Dependency Overrides</title>
+   <titleabbrev>Overrides</titleabbrev>
+
+   <para>Dependencies can be overriden in configuration files. Actually they can even have complex manipulations
+    applied to them, which is intended to be used by module loaders that provide compatibility to alternative init
+    systems or sysv distribution data. Doing this is called a "dependency override". The User's Guide should have
+    more data on this.</para>
+  </sect2>
+ </sect1>
+ <sect1 id="concepts-services">
+  <title>Services</title>
+  <titleabbrev>Services</titleabbrev>
+
+  <para>A "service" is an abstract name for something that is done by a module. "Abstract" as in <emphasis>the
+   general thing</emphasis>. That means that, for example, the service provided by all of gdm, xdm, kdm and
+   entranced is "displaymanager", and not their respective service names.</para>
+
+  <para>Now, why would we want to do that? It's fairly simple, really. The advantage is that using this method
+   we can easily arrange for "backups" (see <xref linkend="concepts-services-backups" />). This has the handy
+   side-effect of allowing us some degree of auto-detection.</para>
+
+  <para>The other advantage is that modules don't need to be hard-coded to work for every possible combination
+   of daemons that all essentially provide the same thing. A lot of services, for example, will require (or at
+   least use) some form of syslog daemon. If we required specific syslog daemons, then things would get nasty
+   fairly soon, since we'd need to write different editions of that one same module for all the different types
+   of system loggers. Then when a new one comes around, we'd have to write new modules for all syslog-users.
+   That's not very practical.</para>
+
+  <para>The idea isn't entirely new either, while a lot of other systems provide very specific service names, most
+   of them also seem to use "virtual" service-names for special services (especially syslog/syslog-ng/metalog,
+   which get grouped together as "syslog" or "logger"). eINIT is just taking it a little farther by making this
+   the native form right away.</para>
+
+  <figure id="concepts-services-explained" float="1" pgwide="0" floatstyle="right">
+   <title>eINIT Services: The Big Picture</title>
+   <mediaobject>
+    <textobject>
+     <para>illustrate all this right here.</para>
+    </textobject>
+   </mediaobject>
+  </figure>
+
+  <sect2 id="concepts-services-backups">
+   <title>Backup-Modules</title>
+   <titleabbrev>Backups</titleabbrev>
+
+   <para>One of the advantages of this abstraction is that eINIT has a list of possible modules to choose from for
+    some modules. As in last chapter's example, if eINIT can't bring up metalog (maybe because it's broken, or
+    because it's not even installed), it can try to bring up alternatives that still do the same thing: syslog-ng,
+    for example.</para>
+
+   <para>A more practical example would be a webserver. If, for some reason (broken config, we don't know how it
+    happened), Apache cannot start, and there's a module providing the same service, maybe tinyhttpd, then eINIT
+    would try to fall back to the latter. This could be used to provide a simpler service to users while apache is
+    under maintenance, or to at least provide a warning message ("This server is currently down for scheduled
+    maintenance. This is normal, our Tech Department did not screw up!"). Something like that could be beneficial,
+    since instead of an annoying timeout, followed by a "page cannot be displayed"-warning from the browser, which
+    looks rather unprofessional, any user would instead see a (possibly fancy-looking) "maintenance notice", which
+    at least looks somewhat more professional, and should result in less people calling in.</para>
+
+   <para>Using and relying on backup services will almost always also rely on preferring services, see
+    <xref linkend="concepts-services-preferences" /> for more on this.</para>
+  </sect2>
+  <sect2 id="concepts-services-rid-vs-service">
+   <title>Module-IDs v.s. Service Names</title>
+   <titleabbrev>RID vs Services</titleabbrev>
+
+   <para>This distinction may be a bit unclear to some. The Module-ID, or "RID", is that long name a module has,
+    usually prefixed with the subsystem name (for example daemon-gdm or gentoo-acpid). The Service Name is that
+    shorter one that can refer to more than one specific module, like with all the displaymanagers. You can't
+    have a module-id as any form of dependency, other than specifying it in a mode to enable or disable it.</para>
+
+   <para>Conversely, you can't specify an RID as something that a module provides, since then the RID wouldn't
+    be unique anymore, and you'd instead be specifying a service name.</para>
+
+   <para>Don't mix these two up. When it says RID, don't place service names in there, and if it says service names,
+    don't use an RID!</para>
+  </sect2>
+  <sect2 id="concepts-services-preferences">
+   <title>"Preferring" Modules for Services</title>
+   <titleabbrev>Service-Preferences</titleabbrev>
+
+   <para>Preferring services is quite straightforward, and works in the way described in
+    <xref linkend="concepts-services-explained" />. Unless something is preferred, the order in which modules are
+    attempted to be enabled for any given service is essentially random. However, with preferences you can specify
+    the order in which things are attempted. Usually, you will only prefer one service, maybe two, and then don't
+    really care about the remaining modules.</para>
+
+   <para>There's three ways of specifying these preferences: Directly, by using "prefer-lines" (see the User's
+    Guide) used to be the primary one, but maybe you shouldn't use it that much anymore, since it's harder to dig.
+    The other two ways are indirect. They work by specifying either an "unambiguous" additional service
+    provided by a module, or by specifying a module's RID as a service name, along with the service name (in the
+    same mode, for example). All of this should be explained well in
+    <xref linkend="concepts-services-preferences-explained" />.</para>
+
+   <figure id="concepts-services-preferences-explained" float="1" pgwide="0" floatstyle="right">
+    <title>eINIT Services and Service Preferences</title>
+    <mediaobject>
+     <textobject>
+      <para>illustrate all this right here.</para>
+     </textobject>
+    </mediaobject>
+   </figure>
+
+   <para>So, to be clear about which displaymanager to start, for example "GDM", in your mode you would put
+    <emphasis>both</emphasis> "displaymanager", being the abstract service to start, and "daemon-gdm", which is
+    the RID, a.k.a. the unique module-ID, for the gdm daemon. (this is the second indirect method, and usually the
+    easiest one as well).</para>
+  </sect2>
+ </sect1>
+ <sect1 id="concepts-groups">
+  <title>Service Groups</title>
+  <titleabbrev>Service Groups</titleabbrev>
+
+  <para>Service groups are collections of other services under a common name. An example here is the "network"
+   group, which is used to sum up all the network interfaces that should start automatically (like net-eth0).</para>
+
+  <para>These groups will usually have members (in XML that's what's in the group= attribute) and a "sequence
+   identifier" (seq=). The latter is either of "any", "any-iop", "most" and "all", which determines how many
+   members of the group need to be enabled for the group to be considered "up", or "enabled".</para>
+
+  <para>"All" means that unless every single one of the services is enabled, the group is not. "Most" means that
+   eINIT will try to bring up everything, but in general the group is considered good if one of them ran fine.
+   "Any" means just that: any of the services OK means the group is as well. For these groups eINIT will try to
+   only bring one member up, unless one of them is already up. "Any-iop" means "any, in order of preference", which
+   tells eINIT that it really should try to start any of the members of the group, but the order you specified is
+   the order you expect eINIT to try the services in, until one succeeds.</para>
+
+  <note><para>As of version 0.24.3, there is no difference between seq="any" and seq="any-iop" in groups, but this
+   is intended to change with a future release, effectively making seq="any" always try the service that needs the
+   least changes to get up.</para></note>
+
+  <para>See the User's Guide for more details on specifying service groups.</para>
+ </sect1>
+ <sect1 id="concepts-modes">
+  <title>Modes</title>
+  <titleabbrev>Modes</titleabbrev>
+
+  <para>A "mode" is what is used to tell eINIT what to start at boot-time, among other things.</para>
+
+  <para>Modes are related to runlevels. In their easiest form, they're just named runlevels, but they can also
+   contain other special attributes, inherit other runlevels' data and have their own variables that come with them
+   and which are only valid in that specific mode. Especially the latter is an important difference to a runlevel,
+   since it allows for completely different usage profiles depending on the mode, and actually even drastically
+   different configuration data as well.</para>
+
+  <para><xref linkend="concepts-modes-explained" /> should explain this in greater detail. For information on how
+   to specify modes, see the User's Guide.</para>
+
+  <figure id="concepts-modes-explained" float="1" pgwide="0" floatstyle="right">
+   <title>Modes: nicer Runlevels</title>
+   <mediaobject>
+    <textobject>
+     <para>illustrate all this right here.</para>
+    </textobject>
+   </mediaobject>
+  </figure>
+
+  <sect2 id="concepts-modes-switches">
+   <title>Mode Switches</title>
+   <titleabbrev>Mode Switches</titleabbrev>
+
+   <para>A "Mode Switch" is what happens when you tell eINIT to go from one mode to another, for example if you
+    tell eINIT to boot, it performs such a "Mode Switch" from nothing to "default". Shutting down and rebooting are
+    also implemented as mode switches, in those cases they're from anything that is currently active to "power-down"
+    or "power-reset", respectively. If you have a close look at modes.xml, you'll see that the latter two modes
+    aren't even anything special, they're just tagged with some extra commands to run that will make eINIT do those
+    special actions.</para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="concepts-events">
+  <title>Events</title>
+  <titleabbrev>Events</titleabbrev>
+
+  <para>eINIT has a rather strong event-system that works a lot of the magic in the background. Events are all sorts
+   of things that eINIT would want to act on, they include, but aren't limited to, notifications for module status
+   changes, IPC requests from the user or other parts of eINIT, various requests (i.e. for switching modes, shutting
+   down, etc.), module feedback, etc...</para>
+
+  <para>Events work by having some modules register "handlers" or "listeners" for event subsystems. These handlers
+   are functions, which get called whenever an event of that specific subsystem is emitted. Events can be emitted
+   by any portion of the code, including code from modules.</para>
+
+  <para><xref linkend="concepts-events-details" /> contains some details on the internals of this.</para>
+
+  <figure id="concepts-events-details" float="1" pgwide="0" floatstyle="right">
+   <title>Events</title>
+   <mediaobject>
+    <textobject>
+     <para>illustrate all this right here.</para>
+    </textobject>
+   </mediaobject>
+  </figure>
+
+  <sect2 id="concepts-events-subsystems">
+   <title>Events and Event Subsystems</title>
+   <titleabbrev>Subsystems</titleabbrev>
+
+   <para>As indicated in <xref linkend="concepts-events-details" />, all events have an ID that determine their type.
+    This ID is an integer, with the upper bits indicating a subsystem. Subsystems aren't actual subsystems of any form,
+    they're just there to group certain types of events together.</para>
+
+   <para>These subsystems are things such as "power", "ipc" and "core", and then events are things like "power failure
+    imminent", "ipc request" or "request for core mode-switch".</para>
+  </sect2>
+
+  <sect2 id="concepts-events-ipc">
+   <title>IPC Events</title>
+   <titleabbrev>IPC Events</titleabbrev>
+
+   <para>IPC events are a form of "catchall" for events. Like regular events, they have a subsystem: ipc. Unlike other
+    events, however, they don't have any meaningful byte-code for the actual request. Instead they require a string,
+    which tells the event listeners what the ipc request is all about, and they turn that into a reply string.</para>
+
+   <para>All listeners write their output (if any) to a FILE* structure that they get in the event-header. This pointer
+    will either refer to stderr, to the stdout of an einit-control instance that caused the request, or to a pipe or
+    a socket. The latter is a trick used by ipc-dbus to grab the output of ipc commands as strings.</para>
+
+   <para>The command "einit-control" in all its forms (also including "power", "erc" and "einit-control-dbus", as well
+    as most functions from libeinit) is used to create "raw" IPC requests: the command connects to einit in some form,
+    requests an IPC to be emitted and the output of that is redirected to the client, which will most likely write it
+    to stdout.</para>
+
+   <para>One other curiousity of IPC requests is that they have a flag in the event handler,
+    (struct einit_event *)->implemented, which must be set to anything but 0 to tell eINIT that an IPC command has been
+    handled and was implemented.</para>
+  </sect2>
+
+  <sect2 id="concepts-events-relays">
+   <title>Event Relays (e.g. via D-Bus)</title>
+   <titleabbrev>Event Relays</titleabbrev>
+
+   <para>An event "relay" is something that takes internal events and puts them onto some other system for other
+    programs to play with. The only current example for this is the eINIT-D-Bus connector, which, among other things,
+    can take internal events and push them to other programs on the system via dbus-signals.</para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="concepts-functions">
+  <title>Registered Functions</title>
+  <titleabbrev>Registered Functions</titleabbrev>
+
+  <para>A "registered function" is way to share code or functions across modules. The main idea here is to allow
+   big modules into smaller parts, for example one generic part and a system-dependant one (like the process-handler
+   code or the mounter-modules).</para>
+
+  <para>These functions get registered (or unregistered) with three attributes: a string, which identifies them,
+   the function itself and a "version code". The latter is just an ordinary integer, but it's there to help you in case
+   you ever decide to change the arguments of a function around: just bump the version number for your function, and
+   all code that hasn't been updated yet won't "see" your function any more.</para>
+
+  <para>For more details on using this, see the developer's guide, especially the part on C-modules.</para>
+ </sect1>
+</appendix>

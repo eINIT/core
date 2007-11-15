@@ -1,0 +1,834 @@
+<chapter id="developers">
+ <title>Developer's Guide</title>
+
+ <sect1 id="developers-intro">
+  <title>Introduction</title>
+  <titleabbrev>Introduction</titleabbrev>
+
+  <para>So eINIT lacks some feature you want, and you'd like to help us by writing it, eh? Excellent, so then this is
+   exactly the spot to look at! This chapter covers all the details of the core that you need to know about to write
+   your very own eINIT modules.</para>
+
+  <sect2 id="developers-intro-writing-modules">
+   <title>Writing Modules</title>
+   <titleabbrev>Writing Modules</titleabbrev>
+
+   <para>This is the most general thing: writing modules.</para>
+  </sect2>
+
+  <sect2 id="developers-intro-testing">
+   <title>Testing Modules</title>
+   <titleabbrev>Testing</titleabbrev>
+
+   <para></para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="developers-writing-modules-c">
+  <title>C Modules</title>
+  <titleabbrev>C Modules</titleabbrev>
+
+  <para>This is the "mother of all modules". It's eINIT's native module format, so to speak; as native as it gets,
+   anyway (writing your code in C++ or pascal or anything like that is as native as C-Modules are, provided you stick
+   to the right calling conventions and can generate either a .o file to link into eINIT or a .so file to load).</para>
+
+  <para><xref linkend="developers-writing-modules-c-format" /> sums up the generic form of C modules. It all starts
+   with a static module descriptor, which contains a reference entry for the dependencies, an RID, a name, some options
+   and a pointer to a configure()-function.</para>
+
+  <para>When the module is loaded, the core will call the configure()-function, and pass it the core's module-
+   descriptor of itself, which can then be used to modify the list of functions and some other parameters of a
+   module.</para>
+
+  <figure id="developers-writing-modules-c-format" float="1" pgwide="0" floatstyle="right">
+   <title>C-Module Format</title>
+   <mediaobject>
+    <textobject>
+     <para>illustrate all this right here.</para>
+    </textobject>
+   </mediaobject>
+  </figure>
+
+  <sect2 id="developers-writing-modules-c-descriptors">
+   <title>Module Descriptors</title>
+   <titleabbrev>Descriptors</titleabbrev>
+
+   <para><xref linkend="developers-writing-modules-c-descriptor-example" /> demonstrates how to write a module
+    descriptor in C. Yes I know it's ugly, but you don't usually need to bother with thinking how it works, just copy
+    that one verbatim and modify the my_module_ prefixes to fit your module, then adjust the settings in there.</para>
+
+   <example id="developers-writing-modules-c-descriptor-example">
+    <title>A typical module descriptor</title>
+    <programlisting language="C"><![CDATA[#include <einit/module.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+char * my_module_provides[] = { "coolness", NULL };
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "My Shiny New Module",
+ .rid       = "module-mine",
+ .si        = {
+  .provides = my_module_provides,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif]]></programlisting>
+   </example>
+
+   <para>The reason it looks so ugly is only that bit of preprocessor magic actually. The first #include is fairly
+    obvious: you need to know how to do these structures, so that's why that one is needed. The #define EXPECTED_EIV
+    is there to make it easier to adjust the next test, which checks said macro against EINIT_VERSION. This test is
+    to ensure that you're compiling the module for an appropriate API version of eINIT, and to at least throw a
+    #warning if there's a mismatch. After that there's your typical function declaration for my_module_configure(),
+    which is generally a good idea, and so that you can write the code for that function later but already reference
+    it now. The next preprocessor directive, that second #if, is used to find out if we're clear to define a module
+    header at all. If we are, we're just defining a struct smodule (which needs to be constant, thus the 'const') and
+    we initialise that using the rather convenient C99 way. After that we register this module descriptor as <emphasis>
+    this module's descriptor</emphasis> using module_register(). That last bit is actually some preprocessor magic
+    which makes sure the same module file works for both linking statically into the core and for linking as a .so
+    module.</para>
+
+   <para>Now you know. And also remember that you don't really need to bother with this, just copy it and modify it
+    to suite your needs. ;)</para>
+  </sect2>
+
+  <sect2 id="developers-writing-modules-c-functions">
+   <title>Module Functions</title>
+   <titleabbrev>Functions</titleabbrev>
+
+   <para>The main purpose of any module is <emphasis>doing something</emphasis>, and in C you do things in functions,
+    so the first thing we'll do is explain all the functions a module can have that may get called by the core
+    directly.</para>
+
+   <sect3 id="developers-writing-modules-c-functions-configure">
+    <title>configure()</title>
+    <titleabbrev>configure()</titleabbrev>
+
+    <para>This function is the main entry-point for your module. It gets run as soon as the module is registered to the
+     core, and it gets a pointer to the core's descriptor so that the module can tell the core what it can do.</para>
+
+    <example id="developers-writing-modules-c-functions-configure-definition">
+     <title>A configure()-function in C</title>
+     <programlisting language="C"><![CDATA[int my_module_configure (struct lmodule *me) {
+ /* code */
+
+ return 0;
+}]]></programlisting>
+    </example>
+
+    <para>The configure-function's job is to initialise your module so that it can carry out all the actions you want
+     it to carry out. Such initialisation includes - but is not limited to - setting up libraries that you linked in,
+     setting the core-descriptor's function pointers, reading certain configuration entries or allocating chunks of
+     memory to work with. Do note that the return value is pretty much ignored as of this version of eINIT. You can't
+     really indicate that your module won't work and should thus be ignored, yet.</para>
+
+    <para><xref linkend="developers-writing-modules-c-functions-configure-usage" /> shows a typical configure-function
+     that sets some of the important pointers in the core-descriptor. That example would assume having enable()-,
+     disable()- and cleanup()-functions in your module, of course.</para>
+
+    <example id="developers-writing-modules-c-functions-configure-usage">
+     <title>A configure()-function that initialises parts of the core-descriptor</title>
+     <programlisting language="C"><![CDATA[int my_module_configure (struct lmodule *me) {
+ me->enable = my_module_enable;
+ me->disable = my_module_disable;
+
+ me->cleanup = my_module_cleanup;
+
+ return 0;
+}]]></programlisting>
+    </example>
+   </sect3>
+
+   <sect3 id="developers-writing-modules-c-functions-cleanup">
+    <title>cleanup()</title>
+    <titleabbrev>cleanup()</titleabbrev>
+
+    <para>This function is called whenever a module needs to be unloaded or otherwise de-initialised. This is,
+     admittedly, not done very often yet, but you should still make sure to provide such a function.</para>
+
+    <example id="developers-writing-modules-c-functions-cleanup-definition">
+     <title>A cleanup()-function in C that gets registered in the configure()-function</title>
+     <programlisting language="C"><![CDATA[int my_module_cleanup (struct lmodule *me) {
+ /* cleanup code here */
+
+ return 0;
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->cleanup = my_module_cleanup;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+    </example>
+
+    <para>The cleanup-function's job is to deallocate data structures used by your module and to get rid of event-
+     handlers and the like, so that after this module is done, the module may safely be unloaded. As with the
+     configure-function, the return value is currently ignored.</para>
+
+    <note><para>This function is more of a stub right now, since there are practically no occasions where a module is
+     actually unloaded. This is expected to change soon, however, so you should write this function anyway.</para></note>
+
+   </sect3>
+
+   <sect3 id="developers-writing-modules-c-functions-enable">
+    <title>enable()</title>
+    <titleabbrev>enable()</titleabbrev>
+
+    <para>This function is used to "enable" a service. It's only used in functions that provide a service.</para>
+
+    <example id="developers-writing-modules-c-functions-enable-definition">
+     <title>An enable()-function in C that gets registered in the configure()-function</title>
+     <programlisting language="C"><![CDATA[int my_module_enable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not enable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->enable = my_module_enable;
+ me->param = NULL;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+    </example>
+
+    <para>Enable-functions are very important, since a lot of the modules that need to be written will actually
+     provide a service. In order to provide a service, there must be an enable()-function that arranges for the service
+     to be provided, for example by starting a daemon, by running gettys, by spawning a thread that allows some form
+     of interaction and so on.</para>
+
+    <para>The return value of this type of function is very important: the return code "status_ok" means "all good,
+     the service is now provided", whereas the return code "status_failed" means "no go, something's wrong". You'd
+     use the former if you're at least reasonably sure things worked, and the latter if either you tried your thing
+     and you know it failed, or if you can be sure it'll fail if you tried it (for example a daemon's binary or
+     configuration data is missing, so running it would be pointless).</para>
+
+    <para>Arguments to this functions are a (void *) and a (struct einit_event *) pointer. The former is the same
+     pointer that is also in the core-descriptor's param-field (see
+     <xref linkend="developers-writing-modules-c-functions-enable-definition" /> for how to set that), and the latter
+     is a convenience for module authors that wish to provide feedback for their module's status. For example it's
+     fairly easy to write module output with fbprintf(), as shown in
+     <xref linkend="developers-writing-modules-c-functions-enable-definition" />.</para>
+
+    <note><para>Make sure you also understand about the whole thing of backup modules for services. Just because your
+     module is providing some service doesn't necessarily mean it's the only candidate and it thus also doesn't mean
+     that it'll be chosen to provide a service if it's requested. That also means that even if your module indicates
+     failure, the service might still get provided eventually by some other module.</para></note>
+
+   </sect3>
+
+   <sect3 id="developers-writing-modules-c-functions-disable">
+    <title>disable()</title>
+    <titleabbrev>disable()</titleabbrev>
+
+    <para>This function is used to "disable" a service. It's analogous to enable()-functions, it just does the exact
+     opposite. Even the parameters and expected return-values are the same.</para>
+
+    <example id="developers-writing-modules-c-functions-disable-definition">
+     <title>A disable()-function in C that gets registered in the configure()-function</title>
+     <programlisting language="C"><![CDATA[int my_module_disable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not disable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->disable = my_module_disable;
+ me->param = NULL;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+    </example>
+
+    <para>All the notes that apply to an enable-function apply to disable-functions as well. There is only one
+     important difference: if your disable-function for a service fails, and the system is shutting down, then your
+     module will get "zapped". This is done without even informing you, so you really should make sure to clean up
+     properly.</para>
+
+    <note><para>Disable functions will only ever be called for modules that are actually enabled in the first place.
+     This should be kind of obvious, but it may be good to know when it comes to services that have multiple modules
+     to provide it.</para></note>
+   </sect3>
+
+   <sect3 id="developers-writing-modules-c-functions-scanmodules">
+    <title>scanmodules()</title>
+    <titleabbrev>scanmodules()</titleabbrev>
+
+    <para>This function gets called by the core whenever your module is supposed to give the core a list of modules.
+     Obviously, this only makes sense for module-loaders. Unless you're writing a specialised .so module loader, this
+     function will also need to generate a static module-descriptor and maybe substitute wrapper functions for your
+     new module's functionality.</para>
+
+    <example id="developers-writing-modules-c-functions-scanmodules-definition">
+     <title>A scanmodules()-function in C that gets registered in the configure()-function</title>
+     <programlisting language="C"><![CDATA[int my_module_scanmodules (struct lmodule *modules) {
+ /* scanmodules code here */
+
+ return 0;
+}
+
+int my_module_configure (struct lmodule *me) {
+ /* other initialisation code */
+
+ me->scanmodules = my_module_scanmodules;
+
+ /* other initialisation code */
+
+ return 0;
+}]]></programlisting>
+    </example>
+
+    <para>This module is supposed to get a list of modules off an applicable source and to register those modules with
+     the core using the core's mod_add() function, or to update the module's data that the core has and to tell the
+     core about such an update.</para>
+
+    <note><para>This function will only ever be called if your module's static descriptor has the option
+     'einit_module_loader' in its mode-field.</para></note>
+
+   </sect3>
+  </sect2>
+
+  <sect2 id="developers-writing-modules-c-events">
+   <title>Using Events</title>
+   <titleabbrev>Events</titleabbrev>
+
+   <para></para>
+
+   <sect3 id="developers-writing-modules-c-events-handlers">
+    <title>Event Handlers</title>
+    <titleabbrev>Handlers</titleabbrev>
+
+    <para><xref linkend="developers-writing-modules-c-events-handlers-example"/> shows a definition for a typical
+     event-handler. Those handlers return void and get exactly one argument, a (struct einit_event *).</para>
+
+    <example id="developers-writing-modules-c-events-handlers-example">
+     <title>An Event-Handler</title>
+     <programlisting language="C"><![CDATA[void my_module_core_event_handler (struct einit_event *ev) {
+ /* event handler code */
+}]]></programlisting>
+    </example>
+
+    <para>To get these event-handlers called, you need to use event_listen(); to stop them from being called, you'd use
+     event_ignore(), like in <xref linkend="developers-writing-modules-c-events-handlers-registering" />. In that
+     example my_module_core_event_handler() is registered to listen for anything that has the subsystem id of
+     'einit_event_subsystem_core', then some stuff is done and at the end of the function, einit is told to ignore any
+     events from then on.</para>
+
+    <para>That example is fairly synthetic, however, since normally you'd rather register such an event-handler in
+     either the configure()-function or the enable()-function, and you tell einit to ignore it again in the
+     cleanup()-function or the disable()-function.</para>
+
+    <example id="developers-writing-modules-c-events-handlers-registering">
+     <title>Registering an Event-Handler</title>
+     <programlisting language="C"><![CDATA[void somefunction () {
+/* ... some code ... */
+
+/* register event handler */
+ event_listen (einit_event_subsystem_core, my_module_core_event_handler);
+
+/* ... some more code ... */
+
+/* de-register event handler */
+ event_ignore (einit_event_subsystem_core, my_module_core_event_handler);
+
+/* ... yet more code ... */
+
+ return;
+}]]></programlisting>
+    </example>
+
+   </sect3>
+  </sect2>
+
+  <sect2 id="developers-writing-modules-c-templates">
+   <title>Small Module Templates</title>
+   <titleabbrev>Template</titleabbrev>
+
+   <para>To help you get started, I've written a couple of module templates for you to use. They're obviously not
+    doing much, but they should get you started and hacking in no time.</para>
+
+   <sect3 id="developers-writing-modules-c-templates-service">
+    <title>Template for a service-providing Module</title>
+    <titleabbrev>Regular Module Template</titleabbrev>
+
+    <para>These are easy, just make sure you have enable() and disable()-functions and don't forget to fill out that
+     .provides pointer.</para>
+
+    <example id="developers-writing-modules-c-service-template">
+     <title>A Blank Service-Providing Module</title>
+     <programlisting language="C"><![CDATA[/*
+ *  my-module.c
+ *  einit
+ *
+ *  Created on DD/MM/YYYY.
+ *  Copyright 2007 Me - myself - Mineson. All rights reserved.
+ *
+ */
+
+/*
+ LONG LEGAL MUMBO JUMBO APPROPRIATE TO MODULE'S LICENSE
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/utility.h>
+#include <errno.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+char * my_module_provides[] = {"my-service", NULL};
+char * my_module_requires[] = {"mount-system", NULL};
+  /* the .requires attribute is optional... */
+char * my_module_after[]    = {"^(fqdn|net-lo)$", NULL};
+  /* ... as is the .after one... */
+char * my_module_before[]   = {"^displaymanager$", NULL};
+  /* ... and the .before attribute */
+
+/* remember that .after and .before don't specify a set of service names but a
+   set of regular expressions that are supposed to match service names. */
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "My Modules' Verbose Name",
+ .rid       = "my-module",
+ .si        = {
+  .provides = my_module_provides,
+  .requires = my_module_requires,
+  .after    = my_module_after,
+  .before   = my_module_before
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif
+
+int my_module_enable  (void *, struct einit_event *);
+int my_module_disable (void *, struct einit_event *);
+
+int my_module_cleanup (struct lmodule *pa) {
+/* cleanup code here */
+
+ return 0;
+}
+
+int my_module_enable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not enable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_disable (void *param, struct einit_event *status) {
+ /* code here */
+
+ /* do something that may fail */
+
+ if (things_worked_out) {
+  return status_ok; /* return this way if your module succeeds */
+ } else {
+/* you can provide module-feedback like this: */
+  fbprintf (status, "Could not disable module: %s", strerror (errno));
+
+  return status_failed; /* return like this if your module screwed up... */
+ }
+
+ return status_ok; /* be good, assume it worked */
+}
+
+int my_module_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ pa->enable = my_module_enable;
+ pa->disable = my_module_disable; /* yes, ->disable is required! */
+ pa->cleanup = my_module_cleanup;
+
+/* more configure code here */
+
+ return 0;
+}]]></programlisting>
+    </example>
+   </sect3>
+
+   <sect3 id="developers-writing-modules-c-templates-passive">
+    <title>Template for a passive Module</title>
+    <titleabbrev>Passive Module Template</titleabbrev>
+
+    <para>Passive modules tend to not have enable/disable functions, but instead only grab events and register
+     functions for other modules to use.</para>
+
+    <example id="developers-writing-modules-c-passive-template">
+     <title>A Blank Passive Module, which registers two Event Handlers and one Registered Function</title>
+     <programlisting language="C"><![CDATA[/*
+ *  my-module.c
+ *  einit
+ *
+ *  Created on DD/MM/YYYY.
+ *  Copyright 2007 Me - myself - Mineson. All rights reserved.
+ *
+ */
+
+/*
+ LONG LEGAL MUMBO JUMBO APPROPRIATE TO MODULE'S LICENSE
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/utility.h>
+#include <errno.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_generic,
+ .name      = "My Modules' Verbose Name",
+ .rid       = "my-module",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif
+
+void my_module_core_event_handler (struct einit_event *ev) {
+ switch (ev->type) {
+  case einit_core_configuration_update:
+   /* some code */
+   break;
+
+  default:
+   /* default: is necessary to make sure the compiler won't warn us of
+      unhandled events. */
+   break;
+ }
+}
+
+void my_module_ipc_event_handler (struct einit_event *ev) {
+ /* mess with ev->argv here */
+}
+
+void *my_module_some_function (void *arg1, int arg2, char **arg3) {
+ /* do whatever your function is supposed to do */
+
+ /* do note that it's YOUR JOB to make sure the arguments in your function
+    match up with the arguments that the callees think your function will have.
+    neither eINIT nor GCC will complain if there's a mismatch! */
+}
+
+int my_module_cleanup (struct lmodule *pa) {
+ /* cleanup code here */
+
+ function_unregister ("my-fancy-new-function", 1, my_module_some_function);
+
+ event_ignore (einit_event_subsystem_ipc, my_module_ipc_event_handler);
+ event_ignore (einit_event_subsystem_core, my_module_core_event_handler);
+
+ return 0;
+}
+
+int my_module_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ pa->cleanup = my_module_cleanup;
+
+ event_listen (einit_event_subsystem_core, my_module_core_event_handler);
+ event_listen (einit_event_subsystem_ipc, my_module_ipc_event_handler);
+
+ function_register ("my-fancy-new-function", 1, my_module_some_function);
+
+ /* more configure code here */
+
+ return 0;
+}]]></programlisting>
+    </example></sect3>
+
+   <sect3 id="developers-writing-modules-c-templates-loader">
+    <title>Template for a Module-Loader</title>
+    <titleabbrev>Module-Loader Template</titleabbrev>
+
+    <para>Module-loaders can be a bit intriguing, but there's not much magic behind them. Remember to use mod_add()
+     and mod_update() and that the .mode = einit_module_loader isn't just for cosmetics. :)</para>
+
+    <example id="developers-writing-modules-c-loader-template">
+     <title>A Blank Module-Loader Module</title>
+     <programlisting language="C"><![CDATA[/*
+ *  my-module.c
+ *  einit
+ *
+ *  Created on DD/MM/YYYY.
+ *  Copyright 2007 Me - myself - Mineson. All rights reserved.
+ *
+ */
+
+/*
+ LONG LEGAL MUMBO JUMBO APPROPRIATE TO MODULE'S LICENSE
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <einit/module.h>
+#include <einit/config.h>
+#include <einit/bitch.h>
+#include <einit/utility.h>
+#include <errno.h>
+
+#define EXPECTED_EIV 1
+
+#if EXPECTED_EIV != EINIT_VERSION
+#warning "This module was developed for a different version of eINIT, you might experience problems"
+#endif
+
+int my_module_configure (struct lmodule *);
+
+#if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
+
+const struct smodule my_module_self = {
+ .eiversion = EINIT_VERSION,
+ .eibuild   = BUILDNUMBER,
+ .version   = 1,
+ .mode      = einit_module_loader,
+ .name      = "Module Support (My Modules)",
+ .rid       = "my-module",
+ .si        = {
+  .provides = NULL,
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
+ },
+ .configure = my_module_configure
+};
+
+module_register(my_module_self);
+
+#endif
+
+int my_module_scanmodules (struct lmodule *);
+
+int my_module_cleanup (struct lmodule *pa) {
+/* cleanup code here */
+
+ return 0;
+}
+
+int my_module_scanmodules (struct lmodule *modchain) {
+/* You need to get your modules from somewhere, see if they're there, if so invoke mod_update() on them,
+   and if not invoke mod_add() to get them onto the list. */
+
+ while (modchain) {
+  if (modchain->module && modchain->module->rid && see_if_my_module_knows_rid (modchain->module->rid)) {
+/* modify the module if necessary */
+
+   mod_update (modchain);
+   remember_that_we_did_stuff_for_this_rid (modchain->module->rid);
+  }
+
+  modchain = modchain->next;
+ }
+
+ add_all_new_modules_using_mod_add ();
+
+/* Note that the pseudocode above suggests using the rids of modules to remember your own modules.
+   There's also  other ways to do this, like using a set to store their (struct lmodule *) pointers,
+   or using the source field. It's all up to you, really. */
+
+/* remember to construct a (struct smodule *) if necessary */
+
+ return 1;
+}
+
+int my_module_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ pa->scanmodules = my_module_scanmodules;
+ pa->cleanup = my_module_cleanup;
+
+/* more configure code here */
+
+ return 0;
+}
+]]></programlisting>
+    </example>
+   </sect3>
+
+   <sect3 id="developers-writing-modules-c-templates-shadow">
+    <title>Template for a Shadow Module</title>
+    <titleabbrev>Shadow Module Template</titleabbrev>
+
+    <para></para>
+   </sect3>
+  </sect2>
+ </sect1>
+
+ <sect1 id="developers-writing-modules-xml">
+  <title>XML/SH Modules</title>
+  <titleabbrev>XML</titleabbrev>
+
+  <para>XML modules are more-or-less bindings to run commands through sh. They only offer a small subset of the
+   C-Modules' functionality, but usually it's adequate. From a technical point of view, these modules should rather
+   be called "Configuration Modules", since the governing module-loader doesn't care if the configuration-data it
+   uses to genereate these modules actually comes from an XML file or not.</para>
+
+  <sect2 id="developers-writing-modules-xml-drawbacks">
+   <title>Things you can't do with XML/SH modules</title>
+   <titleabbrev>XML/SH Drawbacks</titleabbrev>
+
+   <para></para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="developers-writing-modules-scheme">
+  <title>Scheme Modules</title>
+  <titleabbrev>Scheme Modules</titleabbrev>
+
+  <para>At the time of this writing, Scheme modules are not fully implemented yet. We've got an additional developer
+   working on this, or at least looking into it, so it shouldn't be long before these can be used properly.</para>
+  <para>Even so, some things can already be done a lot better in Scheme modules than in C or XML modules, most notably
+   everything related to manipulating eINIT variables/configuration data.</para>
+
+  <sect2 id="developers-writing-modules-scheme-drawbacks">
+   <title>Things you can't do with Scheme modules</title>
+   <titleabbrev>Scheme Drawbacks</titleabbrev>
+
+   <para></para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="developers-sandbox">
+  <title>Testing Code: Sandbox-Mode</title>
+  <titleabbrev>Sandbox Mode</titleabbrev>
+
+  <para></para>
+ </sect1>
+
+ <sect1 id="developers-submitting-modules">
+  <title>Submitting Modules</title>
+  <titleabbrev>Submitting</titleabbrev>
+
+  <para>If you wish to submit any modules you write, you're very much encouraged to do so. Submissions through #einit
+   on freenode would probably be best, but if you don't want to do that then there's always einit.org's issue tracker,
+   various threads on fgo or you could mail us. Your submission will of course also lead to you being mentioned in
+   the contributors section.</para>
+
+  <sect2 id="developers-submitting-modules-license">
+   <title>License and License Issues</title>
+   <titleabbrev>License</titleabbrev>
+
+   <para>One thing first: I personally don't really care what license you'd want to place your modules under. Really,
+    I don't care. Ideally it'd be a BSD-style license, of course, but which license you choose is your thing. Now,
+    As you've probably noticed, the core is under a BSD-style license. That means that in order to get your submissions
+    into the actual core-distribution, you need to put your code under a BSD-compatible license. There's a lot of
+    those, but unfortunately the GNU GPL is not one of them.</para>
+
+   <para>Now, I have nothing against the GNU GPL in and of itself, but unfortunately if I bundled GPL'd code with BSD'd
+    code, then the GPL'd code would probably override the BSD license, which means that all GPL'd code will have to be
+    bundled in a separate package. Users would probably not even notice anything of this, however, since most package
+    managers should be able to merge this stuff together before installing, but the core tarball won't be able to
+    include code that is under a license which is not compatible with the BSD license. I'm sorry, but I can't change
+    the license details :/. (Just google for the issue if you want details.)</para>
+  </sect2>
+ </sect1>
+</chapter>

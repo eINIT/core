@@ -1,0 +1,76 @@
+<appendix id="credits">
+ <title>Credits and Legalities</title>
+
+ <para>Yes, we all love those legalities, don't we? Without further ado, here's (hopefully) all of the credits.</para>
+
+ <note><para>If you feel left out, be assured that it wasn't on purpose. Just mail me and I'll add you to the
+  list.</para></note>
+
+ <sect1 id="credits-expat">
+  <title>&lt;eXpat/&gt;</title>
+  <titleabbrev>expat</titleabbrev>
+
+  <para>This software relies on the expat library for parsing XML files, which is released under the following license
+   terms.</para>
+
+  <para>Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd and Clark Cooper</para>
+  <para>Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat maintainers.</para>
+  <para>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+   documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+   rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+   permit persons to whom the Software is furnished to do so, subject to the following conditions:</para>
+  <para>The above copyright notice and this permission notice shall be included in all copies or substantial portions
+   of the Software.</para>
+  <para>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+   TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.</para>
+
+  <itemizedlist>
+   <listitem><para><ulink url="http://expat.sourceforge.net/">Expat Homepage</ulink></para></listitem>
+  </itemizedlist>
+ </sect1>
+
+ <sect1 id="credits-contributors">
+  <title>Contributors</title>
+  <titleabbrev>Contributors</titleabbrev>
+
+  <para>This is in no particular order and might in fact accidentally omit one person or another. If you feel left
+   out, please say so so i can add ya :)</para>
+
+  <itemizedlist>
+   <listitem><para>KKtm</para></listitem>
+   <listitem><para>DieselPower</para></listitem>
+   <listitem><para>AidanJT</para></listitem>
+   <listitem><para>nikolavp</para></listitem>
+   <listitem><para>niick</para></listitem>
+   <listitem><para>teppic</para></listitem>
+   <listitem><para>haader</para></listitem>
+   <listitem><para>olof</para></listitem>
+   <listitem><para>lonn</para></listitem>
+   <listitem><para>yoyo</para></listitem>
+   <listitem><para>Lloeki</para></listitem>
+   <listitem><para>Janax</para></listitem>
+   <listitem><para>shaumux</para></listitem>
+  </itemizedlist>
+ </sect1>
+
+ <sect1 id="credits-authors">
+  <title>Authors/Developers</title>
+  <titleabbrev>Authors</titleabbrev>
+
+  <para>Not many current "real" developers around, but since this is the credits section, might as well list us all.
+   :D</para>
+
+  <para>The order is straight from the "AUTHORS" file shipped with the XML modules, so it's pretty much the order in
+   which people joined up.</para>
+
+  <itemizedlist>
+   <listitem><para>mdeininger/jyujin: Magnus Deininger, dma05@web.de</para></listitem>
+   <listitem><para>rmh3093: Ryan Hope, rmh3093@gmail.com</para></listitem>
+   <listitem><para>creidiki: Leonardo Valeri Manera, l.valerimanera@gmail.com</para></listitem>
+  </itemizedlist>
+ </sect1>
+
+</appendix>
