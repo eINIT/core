@@ -9,6 +9,7 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/init.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/subsystems.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/hotplug.d
+	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/conf.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
@@ -29,3 +30,5 @@ install:
 	
 	${INSTALL} ${IPARAM} -m 0644 modules-scheme/*.scm ${DESTDIR}/${LIBDIR}/modules-scheme
 	ln -sfn ../../../sbin/einit ${DESTDIR}/${ETCDIR}/init.d/einit
+
+	for i in conf.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" conf.d "${CONFIGINSTALLMETHOD}"; done

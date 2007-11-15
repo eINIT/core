@@ -10,7 +10,7 @@
  (if (and (list? a) (pair? (car a)) (string? (cdr (car a))) (string=? (cdr (car a)) "yes"))
   (begin
 
-   (make-module 'scheme-feedback-aural-festival "Feedback :: Aural/Festival")
+   (make-module 's-feedback-aural-festival "Feedback :: Aural/Festival")
 
    (event-listen 'core/mode-switching
     (lambda (event)
