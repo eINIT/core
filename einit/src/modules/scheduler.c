@@ -588,6 +588,32 @@ void *sched_run_sigchild (void *p) {
   }
 
   emutex_unlock (&schedcpidmutex);
+
+  if (einit_join_threads) {
+   pthread_t thread;
+   struct einit_join_thread *t = NULL;
+
+   emutex_lock (&thread_key_detached_mutex);
+   if (einit_join_threads) {
+    t = einit_join_threads;
+
+    einit_join_threads = t->next;
+
+    thread = t->thread;
+   }
+   emutex_unlock (&thread_key_detached_mutex);
+
+   if (t) {
+    void **n = NULL;
+    pthread_join (thread, n);
+
+//    fprintf (stderr, "reaped thread...\n");
+
+    check = 1;
+    free (t);
+   }
+  }
+
   if (!check) {
    sched_handle_timers();
 

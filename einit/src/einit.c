@@ -113,6 +113,10 @@ struct lmodule *mlist;
 int einit_task_niceness_increment = 0;
 int einit_core_niceness_increment = 0;
 
+struct einit_join_thread *einit_join_threads = NULL;
+
+void thread_autojoin_function (void *);
+
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
   "Usage:\n"
@@ -506,7 +510,7 @@ int main(int argc, char **argv) {
 
     int n = 5;
     fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.\n");
-    if (einit_crash_data = readfd (debugsocket[0])) {
+    if ((einit_crash_data = readfd (debugsocket[0]))) {
      fprintf (stderr, " > neat, received crash data\n");
     }
     while ((n = sleep (n)));

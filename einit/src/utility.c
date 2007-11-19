@@ -362,17 +362,48 @@ void strtrim (char *s) {
 
 #if ! defined (EINIT_UTIL)
 
+pthread_mutex_t thread_key_detached_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct thread_wrapper_data {
+ void *(*thread)(void *);
+ void *param;
+};
+
+void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
+ d->thread (d->param);
+ free (d);
+
+ struct einit_join_thread *t = emalloc (sizeof (struct einit_join_thread));
+
+ t->thread = pthread_self();
+
+ emutex_lock (&thread_key_detached_mutex);
+ t->next = einit_join_threads;
+ einit_join_threads = t;
+ emutex_unlock (&thread_key_detached_mutex);
+}
+
 /* thread helpers */
 void ethread_spawn_detached (void *(*thread)(void *), void *param) {
+ struct thread_wrapper_data *d = emalloc (sizeof (struct thread_wrapper_data));
  pthread_t th;
 
- ethread_create (&th, &thread_attribute_detached, thread, param);
+ d->thread = thread;
+ d->param = param;
+
+ if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d))
+  free (d);
 }
 
 void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
+ struct thread_wrapper_data *d = emalloc (sizeof (struct thread_wrapper_data));
  pthread_t th;
 
- if (ethread_create (&th, &thread_attribute_detached, thread, param)) {
+ d->thread = thread;
+ d->param = param;
+
+ if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d)) {
+  free (d);
   thread(param);
  }
 }
