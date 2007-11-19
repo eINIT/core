@@ -308,8 +308,7 @@ void * ipc_wait (void *unused_parameter) {
    if (errno == EINTR) continue;
    if (errno == ECONNABORTED) continue;
   } else {
-   pthread_t thread;
-   ethread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd);
+   ethread_spawn_detached ((void *(*)(void *))ipc_read, (void *)&nfd);
   }
  }
 

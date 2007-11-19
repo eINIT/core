@@ -1210,7 +1210,6 @@ int module_scheme_guile_cleanup (struct lmodule *pa) {
 }
 
 int module_scheme_guile_configure (struct lmodule *pa) {
- pthread_t th;
  module_init (pa);
  exec_configure (pa);
  ipc_configure (pa);
@@ -1222,7 +1221,7 @@ int module_scheme_guile_configure (struct lmodule *pa) {
 
  scm_with_guile ((void *(*)(void *))module_scheme_guile_configure_scheme, NULL);
 
- ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))module_scheme_guile_event_dispatcher_thread, NULL);
+ ethread_spawn_detached ((void *(*)(void *))module_scheme_guile_event_dispatcher_thread, (void *)NULL);
 
  return 0;
 }

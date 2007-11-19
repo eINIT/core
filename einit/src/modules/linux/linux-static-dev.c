@@ -263,8 +263,6 @@ int linux_static_dev_run() {
  char *dm;
 
  if (!linux_static_dev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "static")) {
-  pthread_t th;
-
   linux_static_dev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
@@ -274,7 +272,7 @@ int linux_static_dev_run() {
 
   mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
 
-  ethread_create (&th, &thread_attribute_detached, linux_static_dev_hotplug, NULL);
+  ethread_spawn_detached ((void *(*)(void *))linux_static_dev_hotplug, (void *)NULL);
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {

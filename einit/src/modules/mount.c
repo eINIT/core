@@ -2072,8 +2072,7 @@ void einit_mount_analyse_fs (char *device) {
  emutex_unlock (&mounter_dd_by_devicefile_mutex);
 
  if (dd) {
-  pthread_t th;
-  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))einit_mount_fsck_thread, dd);
+  ethread_spawn_detached ((void *(*)(void *))einit_mount_fsck_thread, (void *)dd);
  }
 }
 

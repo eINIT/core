@@ -255,10 +255,6 @@ int linux_netlink_connect() {
 }
 
 int linux_netlink_configure (struct lmodule *irr) {
-#if DO_UEVENTS
- pthread_t thread;
-#endif
-
  module_init (irr);
 
  thismodule->cleanup = linux_netlink_cleanup;
@@ -269,7 +265,7 @@ int linux_netlink_configure (struct lmodule *irr) {
  } else {
   notice (2, "eINIT <-> NetLink: connected");
 #if DO_UEVENTS
-  ethread_create (&thread, &thread_attribute_detached, linux_netlink_read_thread, NULL);
+  ethread_spawn_detached ((void *(*)(void *))linux_netlink_read_thread, (void *)NULL);
 #endif
 
   linux_netlink_get_interface_data ("eth1");

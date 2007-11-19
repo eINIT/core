@@ -258,39 +258,11 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
      }
      cur = cur->next;
     }
-   }/* else if (strmatch (ev->argv[1], "modes")) {
-    struct stree *modes = NULL;
-    struct cfgnode *cfgn = cfg_findnode ("mode-enable", 0, NULL);
-
-    while (cfgn) {
-     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !streefind (modes, cfgn->mode->id, tree_find_first))) {
-      uint32_t i = 0;
-      for (i = 0; cfgn->arbattrs[i]; i+=2) {
-       if (strmatch(cfgn->arbattrs[i], "services")) {
-        char **tmps = str2set (':', cfgn->arbattrs[i+1]);
-
-        modes = streeadd (modes, cfgn->mode->id, tmps, SET_NOALLOC, tmps);
-
-        break;
-       }
-      }
-     }
-
-     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
-    }
-   }*/
+   }
   }
 
-/*  if ((ev->argc >= 3)) {
-   if (strmatch (ev->argv[0], "module-rc")) {
-    pthread_t th;
-    ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))einit_ipc_core_helpers_detached_module_action, (void *)setdup ((const void **)ev->argv, SET_TYPE_STRING)); // we must do this detached, so as not to lock up the ipc interface
-
-    ev->implemented = 1;
-   }
-  }*/
  }
- 
+
  done:
  einit_ipc_core_helpers_event_usage--;
  return;

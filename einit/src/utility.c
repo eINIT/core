@@ -362,6 +362,21 @@ void strtrim (char *s) {
 
 #if ! defined (EINIT_UTIL)
 
+/* thread helpers */
+void ethread_spawn_detached (void *(*thread)(void *), void *param) {
+ pthread_t th;
+
+ ethread_create (&th, &thread_attribute_detached, thread, param);
+}
+
+void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
+ pthread_t th;
+
+ if (ethread_create (&th, &thread_attribute_detached, thread, param)) {
+  thread(param);
+ }
+}
+
 /* event-helpers */
 void notice_macro (unsigned char severity, const char *message) {
  struct einit_event *ev = evinit (einit_feedback_notice);

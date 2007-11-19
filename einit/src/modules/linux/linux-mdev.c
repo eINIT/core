@@ -263,8 +263,6 @@ int linux_mdev_run() {
  char *dm;
 
  if (!linux_mdev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "mdev")) {
-  pthread_t th;
-
   linux_mdev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
@@ -282,7 +280,7 @@ int linux_mdev_run() {
   symlink ("fd/1", "/dev/stdout");
   symlink ("fd/2", "/dev/stderr");
 
-  ethread_create (&th, &thread_attribute_detached, linux_mdev_hotplug, NULL);
+  ethread_spawn_detached ((void *(*)(void *))linux_mdev_hotplug, (void *)NULL);
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {

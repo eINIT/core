@@ -541,8 +541,7 @@ void *sched_pidthread_processor(FILE *pipe) {
 void sched_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_main_loop_reached) {
   if (ev->file) {
-   pthread_t thread;
-   ethread_create (&thread, &thread_attribute_detached, (void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
+   ethread_spawn_detached ((void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
   }
 
   sched_run_sigchild(NULL);
@@ -571,10 +570,6 @@ void *sched_run_sigchild (void *p) {
     evstaticdestroy (ee);
 
     check++;
-/*    if (cur->cfunc) {
-     pthread_t th;
-     ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))cur->cfunc, (void *)cur);
-    }*/
 
     if (prev)
      prev->next = cur->next;
@@ -681,8 +676,6 @@ int einit_scheduler_configure (struct lmodule *tm) {
  event_listen (einit_event_subsystem_ipc, sched_ipc_event_handler);
 
  function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
-
-// pthread_create (&schedthreadsigchild, &thread_attribute_detached, sched_run_sigchild, NULL);
 
  sched_reset_event_handlers ();
 

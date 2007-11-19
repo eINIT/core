@@ -88,8 +88,6 @@ module_register(einit_dbus_self);
 
 #endif
 
-pthread_attr_t einit_ipc_dbus_thread_attribute_detached;
-
 DBusError einit_dbus_error;
 DBusConnection *einit_dbus_connection;
 dbus_uint32_t einit_dbus_sequence = 1;
@@ -126,11 +124,6 @@ void *einit_dbus_ipc_spawn(DBusMessage *);
 int einit_dbus_configure(struct lmodule *irr) {
  int pthread_errno;
  module_init (irr);
-
- pthread_attr_init (&einit_ipc_dbus_thread_attribute_detached);
- if ((pthread_errno = pthread_attr_setdetachstate (&einit_ipc_dbus_thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
-  bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
- }
 
  thismodule->enable = einit_ipc_dbus_enable;
  thismodule->disable = einit_ipc_dbus_disable;
@@ -277,11 +270,7 @@ int einit_dbus_enable (struct einit_event *status) {
  einit_dbus_terminate_thread = 0;
  einit_dbus_active = 1;
 
- if ((errno = pthread_create (&(einit_dbus_message_thread_id), /*&einit_ipc_dbus_thread_attribute_detached*/ NULL, einit_dbus_message_thread, NULL))) {
-  fbprintf (status, "could not create detached I/O thread, creating non-detached thread. (error = %s)", strerror(errno));
-
-  ethread_create (&(einit_dbus_message_thread_id), NULL, einit_dbus_message_thread, NULL);
- }
+ ethread_spawn_detached (einit_dbus_message_thread, NULL);
 
  return status_ok;
 }
@@ -327,20 +316,11 @@ void *einit_dbus_message_thread(void *ign) {
     dbus_message_unref(reply);
 // 'old fashioned' ipc via dbus
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Information", "IPC")) {
-    pthread_t th;
-    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))einit_dbus_ipc_spawn_safe, message)) {
-     einit_dbus_ipc_spawn_safe(message);
-    }
+    ethread_spawn_detached_run ((void *(*)(void *))einit_dbus_ipc_spawn_safe, message);
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "IPC")) {
-    pthread_t th;
-    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))einit_dbus_ipc_spawn, message)) {
-     einit_dbus_ipc_spawn(message);
-    }
+    ethread_spawn_detached_run ((void *(*)(void *))einit_dbus_ipc_spawn, message);
    } else if (dbus_message_is_method_call(message, "org.einit.Einit.Command", "EmitEvent")) {
-    pthread_t th;
-    if (pthread_create (&th, &einit_ipc_dbus_thread_attribute_detached, (void *(*)(void *))einit_dbus_handle_event, message)) {
-     einit_dbus_handle_event(message);
-    }
+    ethread_spawn_detached_run ((void *(*)(void *))einit_dbus_handle_event, message);
    }
   }
 

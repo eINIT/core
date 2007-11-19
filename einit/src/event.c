@@ -163,14 +163,10 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
  event_do_wakeup_calls (event->type);
 
  if (flags & einit_event_flag_spawn_thread) {
-  pthread_t threadid;
-
   struct einit_event *ev = evdup(event);
   if (!ev) return NULL;
 
-  if (ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))event_subthread, ev)) {
-   event_subthread (ev);
-  }
+  ethread_spawn_detached_run ((void *(*)(void *))event_subthread, (void *)ev);
 
   return NULL;
  }

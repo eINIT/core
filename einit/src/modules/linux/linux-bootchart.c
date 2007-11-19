@@ -415,10 +415,9 @@ void linux_bootchart_switch () {
   }
 
   if (!linux_bootchart_have_thread) {
-   pthread_t th;
    linux_bootchart_have_thread = 1;
 
-   ethread_create (&th, &thread_attribute_detached, linux_bootchart_thread, NULL);
+   ethread_spawn_detached ((void *(*)(void *))linux_bootchart_thread, (void *)NULL);
   }
  }
 

@@ -190,9 +190,6 @@ void einit_exec_process_event_handler (struct einit_event *ev) {
   spid->pid = ev->integer;
   spid->status = ev->status;
 
-//  pthread_t th;
-
-//  ethread_create (&th, &thread_attribute_detached, dexec_watcher, spid);
   dexec_watcher(spid);
 
   free (spid);

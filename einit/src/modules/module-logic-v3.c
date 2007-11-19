@@ -1008,10 +1008,9 @@ int mod_switchmode (char *mode) {
  if (!plan) {
   notice (1, "module-logic-v3: scheduled mode \"%s\" defined but nothing to be done", mode);
  } else {
-  pthread_t th;
   mod_plan_commit (plan);
   /* make it so that the erase operation will not disturb the flow of the program */
-  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+  ethread_spawn_detached ((void *(*)(void *))mod_plan_free, (void *)plan);
  }
 
  emutex_lock (&ml_current_switches_mutex);
@@ -1144,8 +1143,6 @@ int mod_modaction (char **argv, FILE *output) {
  argv[1] = NULL;
 
  if ((plan = mod_plan (NULL, argv, task, NULL))) {
-  pthread_t th;
-
   ret = mod_plan_commit (plan);
 
   if (task & einit_module_enable) {
@@ -1154,7 +1151,7 @@ int mod_modaction (char **argv, FILE *output) {
    ret = mod_isprovided (argv[0]);
   }
 
-  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+  ethread_spawn_detached ((void *(*)(void *))mod_plan_free, (void *)plan);
  }
 
  argv[1] = targv; /* make sure to leave argv1 as it was */
@@ -1297,11 +1294,9 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
     struct mloadplan *plan;
 
     if ((plan = mod_plan (NULL, ev->stringset, ev->task, NULL))) {
-     pthread_t th;
-
      mod_plan_commit (plan);
 
-     ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_plan_free, (void *)plan);
+     ethread_spawn_detached ((void *(*)(void *))mod_plan_free, (void *)plan);
     }
    }
    goto done;
@@ -2311,17 +2306,6 @@ void mod_decrease_deferred_by (char *service) {
  }
 
  emutex_unlock(&ml_chain_examine);
-
-/* if (do_examine) {
-  uint32_t i = 0;
-
-  for (; do_examine[i]; i++) {
-   pthread_t th;
-   ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, estrdup (do_examine[i]));
-//   mod_examine (do_examine[i]);
-  }
-  free (do_examine);
- }*/
 }
 
 char mod_isdeferred (char *service) {
@@ -3810,7 +3794,6 @@ void mod_examine (char *service) {
   emutex_unlock (&ml_service_list_mutex);
 
   if (lm && lm[0]) {
-   pthread_t th;
    char hd;
    hd = mod_reorder (lm[0], task, service, 1);
 
@@ -3837,13 +3820,9 @@ void mod_examine (char *service) {
 #endif
 
    if (task & einit_module_enable) {
-    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_enable, v)) {
-     mod_apply_enable(v);
-    }
+    ethread_spawn_detached_run ((void *(*)(void *))mod_apply_enable, (void *)v);
    } else {
-    if (ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))mod_apply_disable, v)) {
-     mod_apply_disable(v);
-    }
+    ethread_spawn_detached_run ((void *(*)(void *))mod_apply_disable, (void *)v);
    }
   } else {
    notice (2, "cannot resolve service %s.", service);
@@ -3865,14 +3844,13 @@ void workthread_examine (char *service) {
 
 void mod_workthread_create(char *service) {
  if (mod_haschanged (service) || mod_isbroken(service)) {
-  mod_post_examine (service);  
+  mod_post_examine (service);
  } else if (mod_workthreads_inc(service)) {
   mod_ping_all_threads();
  } else {
   char *drx = estrdup (service);
-  pthread_t th;
 
-  ethread_create (&th, &thread_attribute_detached, (void *(*)(void *))workthread_examine, drx);
+  ethread_spawn_detached ((void *(*)(void *))workthread_examine, (void *)drx);
  }
 }
 

@@ -488,8 +488,7 @@ void *einit_ipc_hub_thread (void *irr) {
    if (errno == EINTR) continue;
    if (errno == ECONNABORTED) continue;
   } else {
-   pthread_t thread;
-   ethread_create (&thread, &thread_attribute_detached, (void *(*)(void *))ipc_read, (void *)&nfd);
+   ethread_spawn_detached ((void *(*)(void *))ipc_read, (void *)&nfd);
   }
  }
 
@@ -649,7 +648,8 @@ int einit_ipc_hub_configure (struct lmodule *tm) {
 
  tm->cleanup = einit_ipc_hub_cleanup;
 
-// ethread_create (&th, &thread_attribute_detached, einit_ipc_hub_thread, NULL);
+
+// ethread_spawn_detached ((void *(*)(void *))einit_ipc_hub_thread, (void *)NULL);
 
  return 1;
 }

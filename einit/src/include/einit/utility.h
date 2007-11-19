@@ -262,6 +262,9 @@ char **which (char *binary);
 
 int unlink_recursive (const char *file, char self);
 
+void ethread_spawn_detached (void *(*thread)(void *), void *param);
+void ethread_spawn_detached_run (void *(*thread)(void *), void *param);
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus

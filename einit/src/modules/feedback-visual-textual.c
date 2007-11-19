@@ -197,6 +197,7 @@ void feedback_textual_queue_fd_command (enum feedback_textual_commands command, 
 
 // pthread_cond_broadcast (&feedback_textual_commandQ_cond);
  if (!einit_feedback_visual_textual_worker_thread_running) {
+  einit_feedback_visual_textual_worker_thread_running = 1;
   ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
  }
 }
@@ -246,6 +247,7 @@ void feedback_textual_queue_update (struct lmodule *module, enum einit_module_st
 
 // pthread_cond_broadcast (&feedback_textual_commandQ_cond);
  if (!einit_feedback_visual_textual_worker_thread_running) {
+  einit_feedback_visual_textual_worker_thread_running = 1;
   ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
  }
 }

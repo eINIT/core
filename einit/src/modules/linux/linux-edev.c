@@ -560,7 +560,6 @@ int linux_edev_run() {
  linux_edev_retrieve_rules();
 
  if (!linux_edev_enabled && strmatch (dm, "edev")) {
-  pthread_t th;
   linux_edev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
@@ -578,7 +577,7 @@ int linux_edev_run() {
   symlink ("fd/1", "/dev/stdout");
   symlink ("fd/2", "/dev/stderr");
 
-  ethread_create (&th, &thread_attribute_detached, linux_edev_hotplug, NULL);
+  ethread_spawn_detached ((void *(*)(void *))linux_edev_hotplug, (void *)NULL);
 
   FILE *he = fopen ("/proc/sys/kernel/hotplug", "w");
   if (he) {

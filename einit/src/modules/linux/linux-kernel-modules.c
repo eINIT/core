@@ -351,13 +351,9 @@ int linux_kernel_modules_module_enable (char *subsys, struct einit_event *status
  char **modules = linux_kernel_modules_get_by_subsystem (subsys, &dwait);
 
  if (modules) {
-  pthread_t threadid;
-
   if (dwait) {
    linux_kernel_modules_load (modules);
-  } else if (ethread_create (&threadid, &thread_attribute_detached, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-   linux_kernel_modules_load (modules);
-  }
+  } else ethread_spawn_detached_run ((void *(*)(void *))linux_kernel_modules_load, (void *)modules);
  }
 
  return status_ok;
