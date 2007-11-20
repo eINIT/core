@@ -6,7 +6,7 @@
 # eINIT SVN ebuild (v32)
 #
 
-inherit subversion
+inherit subversion flag-o-matic
 
 EXPATVERSION="2.0.1"
 
@@ -52,6 +52,8 @@ src_unpack() {
 
 src_compile() {
 	local myconf
+
+	filter-flags "-fomit-frame-pointer"
 
 	pushd ${WORKDIR}/expat-${EXPATVERSION}
 		CFLAGS=-fPIC econf
