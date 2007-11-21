@@ -416,7 +416,7 @@ if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	if [ "${COREFILE}" != "" ]; then
 		LLD="-bundle -Wl,-bundle_loader,${COREFILE}";
 	else
-		LLD="-bundle -Wl,-bundle_loader,`pwd`/build/core/einit";
+		LLD="-bundle -Wl,-bundle_loader,`pwd`/build/core/einit-core";
 	fi
 	STATIC="";
 	LIBRT=""

@@ -1,10 +1,15 @@
-core: einit
+core: einit-core einit-monitor
 
-install: einit
+install: einit-core einit-monitor
+	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${SBINDIR}
-	${INSTALL} -g einit -m 0750 einit ${DESTDIR}/${SBINDIR}
+	${INSTALL} -g einit -m 0750 einit-core ${DESTDIR}/${LIBDIR}/bin
+	${INSTALL} -g einit -m 0750 einit-monitor ${DESTDIR}/${SBINDIR}/einit
 
-einit: $(objects) module-configuration.o
-	$(CLD) $(objects) module-configuration.o -o einit $(STATIC) $(CORELIBS) $(LPA) $(XDYNAMIC)
+einit-core: $(objects) module-configuration.o
+	$(CLD) $$(echo ${objects}|sed s/einit-monitor.o//) module-configuration.o -o einit-core $(STATIC) $(CORELIBS) $(LPA) $(XDYNAMIC)
+
+einit-monitor: einit-monitor.o
+	$(CLD) einit-monitor.o -o einit-monitor
 
 test:
