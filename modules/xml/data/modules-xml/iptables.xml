@@ -2,7 +2,7 @@
  <v-iptables
   name="Ipv4 Linux firewall, NAT and packet mangling tools"
   provides="iptables"
-  requires="network">
+  after="network">
 
   <execute id="prepare" code="touch ${configuration_services_iptables_rules_file} ;
            chmod 0600 ${configuration_services_iptables_rules_file}" />
