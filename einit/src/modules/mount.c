@@ -970,9 +970,11 @@ int einit_mount_critical_enable (void *ign, struct einit_event *status) {
   } while (repeat);
  }
 
+/*
  struct einit_event eml = evstaticinit(einit_boot_critical_devices_ok);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
  evstaticdestroy(eml);
+*/
 
  return status_ok;
 }
