@@ -1,3 +1,0 @@
-sys-apps/einit:efl - Use the EFL -- Evas/Edje/Ecore
-sys-apps/einit:nowtf - Don't compile code for the --wtf flag
-sys-apps/einit:externalise - Compile as much as possible externally
