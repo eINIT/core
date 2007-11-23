@@ -121,6 +121,8 @@
 <!--   <stop-logging-on-process s="x:y:z" /> -->
    <extra-waiting-time i="5000000" /> <!-- ... also in microseconds -->
 
+   <max-log-size i="1000000" /> <!-- 1MB should be a reasonable default -->
+
    <chart-directory s="/var/log" />
    <chart-format s="png" />
   </bootchart>

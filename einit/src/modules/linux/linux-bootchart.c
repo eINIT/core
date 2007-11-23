@@ -237,6 +237,7 @@ char *linux_bootchart_update_st (char *st, char *uptime) {
 void *linux_bootchart_thread (void *ignored) {
  struct cfgnode *node;
  char *save_to = "/var/log/bootchart.tgz";
+ size_t max_log_size = 1024*1024;
  FILE *f;
  char try_acct = 1;
  signed int extra_wait = 0;
@@ -245,11 +246,16 @@ void *linux_bootchart_thread (void *ignored) {
   extra_wait = node->value;
  }
 
+ if ((node = cfg_getnode ("configuration-bootchart-max-log-size", NULL)) && node->value) {
+  max_log_size = node->value;
+ }
+
  char *buffer_ds = NULL;
  char *buffer_ps = NULL;
  char *buffer_st = NULL;
 
  while (!shutting_down && (linux_bootchart_have_thread || (extra_wait > 0))) {
+  size_t log_size = 0;
   char *uptime = linux_bootchart_get_uptime();
 
   if (linux_bootchart_process_accounting && try_acct) {
@@ -269,6 +275,15 @@ void *linux_bootchart_thread (void *ignored) {
   usleep (linux_bootchart_sleep_time);
   if (!linux_bootchart_have_thread)
    extra_wait -= linux_bootchart_sleep_time;
+
+  if (buffer_ds) log_size += strlen (buffer_ds);
+  if (buffer_ps) log_size += strlen (buffer_ps);
+  if (buffer_st) log_size += strlen (buffer_st);
+
+  if (log_size > max_log_size) {
+   notice (1, "linux-bootchart: boot log exceeded maximum log size, stopping log");
+   break;
+  }
  }
 
  if ((node = cfg_getnode ("configuration-bootchart-save-to", NULL)) && node->svalue) {
