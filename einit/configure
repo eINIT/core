@@ -146,9 +146,6 @@ for param in $@; do
 	elif test "$param" = "--no-posix-regex"; then
 		echo -n " NOREGEX";
 		XCFLAGS="$(echo ${XCFLAGS} | sed 's/-DPOSIXREGEX//')";
-	elif test "$param" = "--no-nix-environ"; then
-		echo -n " NO-NIX-ENVIRON";
-		XCFLAGS="$XCFLAGS -DNONIXENVIRON";
 	elif test "$param" = "--avoid-usr"; then
 		echo -n " EXUSR";
 		EXUSR="yes";

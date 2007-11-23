@@ -1,5 +1,5 @@
 /*
- *  einit.c
+ *  einit-core.c
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
@@ -70,11 +70,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char shutting_down = 0;
 int sched_trace_target = STDOUT_FILENO;
 
-#ifndef NONIXENVIRON
 int main(int, char **, char **);
-#else
-int main(int, char **);
-#endif
 int print_usage_info ();
 int cleanup ();
 
@@ -105,10 +101,6 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list 
 char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NULL };
 
 int einit_have_feedback = 0;
-
-#ifdef NONIXENVIRON
-char ** environ;
-#endif
 
 char *bootstrapmodulepath = BOOTSTRAP_MODULE_PATH;
 
@@ -292,11 +284,7 @@ void core_einit_event_handler (struct einit_event *ev) {
 }
 
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
-#ifndef NONIXENVIRON
 int main(int argc, char **argv, char **environ) {
-#else
-int main(int argc, char **argv) {
-#endif
  int i, ret = EXIT_SUCCESS;
  pid_t pid = getpid(), wpid = 0;
  char **ipccommands = NULL;
