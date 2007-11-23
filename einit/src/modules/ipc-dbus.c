@@ -94,7 +94,6 @@ dbus_uint32_t einit_dbus_sequence = 1;
 char einit_dbus_terminate_thread;
 char einit_dbus_active = 0;
 pthread_mutex_t einit_dbus_sequence_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_t einit_dbus_message_thread_id;
 
 const char * einit_dbus_introspection_data =
   "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
@@ -122,7 +121,6 @@ void *einit_dbus_ipc_spawn_safe(DBusMessage *);
 void *einit_dbus_ipc_spawn(DBusMessage *);
 
 int einit_dbus_configure(struct lmodule *irr) {
- int pthread_errno;
  module_init (irr);
 
  thismodule->enable = einit_ipc_dbus_enable;
@@ -280,8 +278,6 @@ int einit_dbus_disable (struct einit_event *status) {
  /* dbus_connection_flush(einit_dbus_connection);*/
  einit_dbus_terminate_thread = 1;
  einit_dbus_active = 0;
-
- pthread_join (einit_dbus_message_thread_id, NULL);
 
  return status_ok;
 }
