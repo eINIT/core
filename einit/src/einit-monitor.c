@@ -40,7 +40,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <stdio.h>
 
+#if defined(LINUX)
+#include <sys/prctl.h>
+#endif
+
 int main(int argc, char **argv, char **env) {
+ char **argv_mutable = argv;
+
+#if defined(LINUX) && defined(PR_SET_NAME)
+ prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
+#endif
+
  execve (EINIT_LIB_BASE "/bin/einit-core", argv, env);
 
  perror ("couldn't execute eINIT");

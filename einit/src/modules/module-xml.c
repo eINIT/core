@@ -53,6 +53,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <dlfcn.h>
 
+#if defined(LINUX)
+#include <sys/prctl.h>
+#endif
+
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -731,6 +736,10 @@ void module_xml_v2_preload_fork() {
 
   switch (p) {
    case 0:
+#if defined(LINUX) && defined(PR_SET_NAME)
+    prctl (PR_SET_NAME, "einit [preload-xml-sh]", 0, 0, 0);
+#endif
+
     module_xml_v2_preload();
     _exit (EXIT_SUCCESS);
 

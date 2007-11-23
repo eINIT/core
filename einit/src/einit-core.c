@@ -63,6 +63,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/mount.h>
 #endif
 
+#if defined(LINUX)
+#include <sys/prctl.h>
+#endif
+
 char shutting_down = 0;
 int sched_trace_target = STDOUT_FILENO;
 
@@ -305,6 +309,10 @@ int main(int argc, char **argv) {
  int debugme_pipe = 0;
  char crash_threshold = 5;
  char *einit_crash_data = NULL;
+
+#if defined(LINUX) && defined(PR_SET_NAME)
+ prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
+#endif
 
  boottime = time(NULL);
 

@@ -48,6 +48,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <dlfcn.h>
 
+#if defined(LINUX)
+#include <sys/prctl.h>
+#endif
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -138,6 +142,10 @@ void einit_preload_boot_event_handler (struct einit_event *ev) {
 
      switch (p) {
       case 0:
+#if defined(LINUX) && defined(PR_SET_NAME)
+       prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
+#endif
+
        einit_preload_run();
        _exit (EXIT_SUCCESS);
 
