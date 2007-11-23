@@ -30,7 +30,7 @@
   <execute id="disable" code="true" />
 
   <variables s="configuration-services-keyboard/.*" />
-  <need-files s="loadkeys:dumpkeys:kbd_mode" />
+  <need-files s="loadkeys:dumpkeys:kbd_mode:/usr/share/keymaps/." />
 
   <options s="run-once" />
  </v-keyboard>
