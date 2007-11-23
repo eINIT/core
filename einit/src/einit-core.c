@@ -154,10 +154,6 @@ int cleanup () {
  return 0;
 }
 
-void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
- kill (einit_sub, SIGINT);
-}
-
 void core_timer_event_handler (struct einit_event *ev) {
  if ((ev->type == einit_timer_tick) && (event_snooze_time)) {
   struct lmodule *lm = mlist;
@@ -286,16 +282,14 @@ void core_einit_event_handler (struct einit_event *ev) {
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i, ret = EXIT_SUCCESS;
- pid_t pid = getpid(), wpid = 0;
  char **ipccommands = NULL;
  int pthread_errno;
- FILE *commandpipe_in, *commandpipe_out;
- int commandpipe[2];
- int debugsocket[2];
+ FILE *commandpipe_in = NULL;
  char need_recovery = 0;
  char debug = 0;
- int debugme_pipe = 0;
- char crash_threshold = 5;
+ int command_pipe = 0;
+ int crash_pipe = 0;
+// char crash_threshold = 5;
  char *einit_crash_data = NULL;
 
 #if defined(LINUX) && defined(PR_SET_NAME)
@@ -354,12 +348,26 @@ int main(int argc, char **argv, char **environ) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       coremode = einit_mode_sandbox;
       need_recovery = 1;
+     } else if (strmatch(argv[i], "--recover")) {
+      need_recovery = 1;
      } else if (strmatch(argv[i], "--metadaemon")) {
       coremode = einit_mode_metadaemon;
      } else if (strmatch(argv[i], "--bootstrap-modules")) {
       bootstrapmodulepath = argv[i+1];
-     } else if (strmatch(argv[i], "--debugme")) {
-      debugme_pipe = parse_integer (argv[i+1]);
+     } else if (strmatch(argv[i], "--command-pipe")) {
+      command_pipe = parse_integer (argv[i+1]);
+      fcntl (command_pipe, F_SETFD, FD_CLOEXEC);
+
+      i++;
+      initoverride = 1;
+     } else if (strmatch(argv[i], "--crash-pipe")) {
+      crash_pipe = parse_integer (argv[i+1]);
+      fcntl (crash_pipe, F_SETFD, FD_CLOEXEC);
+
+      i++;
+      initoverride = 1;
+     } else if (strmatch(argv[i], "--crash-data")) {
+      einit_crash_data = estrdup (argv[i+1]);
       i++;
       initoverride = 1;
      } else if (strmatch(argv[i], "--debug")) {
@@ -424,167 +432,59 @@ int main(int argc, char **argv, char **environ) {
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;
  if (!einit_startup_configuration_files) einit_startup_configuration_files = einit_default_startup_configuration_files;
 
- respawn:
+ enable_core_dumps ();
 
- pipe (commandpipe);
+ sched_trace_target = crash_pipe;
 
- fcntl (commandpipe[1], F_SETFD, FD_CLOEXEC);
-
- socketpair (AF_UNIX, SOCK_STREAM, 0, debugsocket);
- fcntl (debugsocket[0], F_SETFD, FD_CLOEXEC);
- fcntl (debugsocket[1], F_SETFD, FD_CLOEXEC);
-
- if (!debug) {
-  fcntl (commandpipe[0], F_SETFD, FD_CLOEXEC);
-  commandpipe_in = fdopen (commandpipe[0], "r");
- }
- commandpipe_out = fdopen (commandpipe[1], "w");
-
- if (!initoverride && ((pid == 1) || ((coremode & einit_mode_sandbox) && !ipccommands))) {
-// if (pid == 1) {
-  initoverride = 1;
 #if 0
+ if (debug) {
+  char **xargv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
+  char tbuffer[BUFFERSIZE];
+  struct stat st;
+  char have_valgrind = 0;
+  char have_gdb = 0;
+
+  fputs ("eINIT needs to be debugged, starting in debugger mode\n.", stderr);
+
+  xargv = (char **)setadd ((void **)xargv, (void *)"--debugme", SET_TYPE_STRING);
+  snprintf (tbuffer, BUFFERSIZE, "%i", commandpipe[0]);
+  xargv = (char **)setadd ((void **)xargv, (void *)tbuffer, SET_TYPE_STRING);
+
+  xargv = strsetdel (xargv, "--debug"); // don't keep the --debug flag
+
+  if (!stat ("/usr/bin/valgrind", &st)) have_valgrind = 1;
+  if (!stat ("/usr/bin/gdb", &st)) have_gdb = 1;
+
+  if (have_valgrind) {
+   char **nargv = NULL;
+   uint32_t i = 1;
+
 #ifdef LINUX
-  if ((einit_sub = syscall(__NR_clone, CLONE_PTRACE | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
-   bitch (bitch_stdio, errno, "Could not fork()");
-   eputs (" !! Haven't been able to fork a secondary worker process. This is VERY bad, you will get a lot of zombie processes! (provided that things work at all)\n", stderr);
-  }
-#else
+   if (!(coremode & einit_mode_sandbox)) {
+    mount ("proc", "/proc", "proc", 0, NULL);
+    mount ("sys", "/sys", "sysfs", 0, NULL);
+
+    system ("mount / -o remount,rw");
+   }
 #endif
-#endif
-  if ((einit_sub = fork()) < 0) {
-   bitch (bitch_stdio, errno, "Could not fork()");
-   eputs (" !! Haven't been able to fork a secondary worker process. This is VERY bad, you will get a lot of zombie processes! (provided that things work at all)\n", stderr);
+
+   nargv = (char **)setadd ((void **)nargv, "/usr/bin/valgrind", SET_TYPE_STRING);
+   nargv = (char **)setadd ((void **)nargv, "--log-file=/einit.valgrind", SET_TYPE_STRING);
+   nargv = (char **)setadd ((void **)nargv, (coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", SET_TYPE_STRING);
+
+   for (; xargv[i]; i++) {
+    nargv = (char **)setadd ((void **)nargv, xargv[i], SET_TYPE_STRING);
+   }
+
+   execv ("/usr/bin/valgrind", nargv);
+  } else {
+   execv ((coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", xargv);
   }
  }
-
- if (einit_sub) {
-/* PID==1 part */
-  int rstatus;
-  struct sigaction action;
-
-/* signal handlers */
-  action.sa_sigaction = einit_sigint;
-  sigemptyset(&(action.sa_mask));
-  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER;
-  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-
-/* ignore sigpipe */
-  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
-
-  if ( sigaction (SIGPIPE, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-
-  close (debugsocket[1]);
-  if (einit_crash_data) {
-   free (einit_crash_data);
-   einit_crash_data = NULL;
-  }
-
-  while (1) {
-   wpid = waitpid(-1, &rstatus, 0); /* this ought to wait for ANY process */
-
-   if (wpid == einit_sub) {
-//    goto respawn; /* try to recover by re-booting */
-    if (!debug) if (commandpipe_in) fclose (commandpipe_in);
-    if (commandpipe_out) fclose (commandpipe_out);
-
-    if (WIFEXITED(rstatus) && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
-     fprintf (stderr, "eINIT has quit properly.\n");
-
-     if (!(coremode & einit_mode_sandbox)) {
-      if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_halt) {
-       execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "h", NULL);
-      } else if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_reboot) {
-       execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "r", NULL);
-      } else if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_kexec) {
-       execl (EINIT_LIB_BASE "/bin/last-rites", EINIT_LIB_BASE "/bin/last-rites", "k", NULL);
-      }
-     }
-
-     exit (EXIT_SUCCESS);
-    }
-
-    int n = 5;
-    fprintf (stderr, "The secondary eINIT process has died, waiting a while before respawning.\n");
-    if ((einit_crash_data = readfd (debugsocket[0]))) {
-     fprintf (stderr, " > neat, received crash data\n");
-    }
-    while ((n = sleep (n)));
-    fprintf (stderr, "Respawning secondary eINIT process.\n");
-
-    if (crash_threshold) crash_threshold--;
-    else debug = 1;
-    need_recovery = 1;
-    initoverride = 0;
-
-    close (debugsocket[0]);
-
-    goto respawn;
-   } else {
-    if (commandpipe_out) {
-     if (WIFEXITED(rstatus)) {
-      fprintf (commandpipe_out, "pid %i terminated\n\n", wpid);
-     } else {
-      fprintf (commandpipe_out, "pid %i died\n\n", wpid);
-     }
-     fflush (commandpipe_out);
-    }
-   }
-  }
- } else {
-  enable_core_dumps ();
-
-  close (debugsocket[0]);
-  sched_trace_target = debugsocket[1];
-
-  if (debug) {
-   char **xargv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
-   char tbuffer[BUFFERSIZE];
-   struct stat st;
-   char have_valgrind = 0;
-   char have_gdb = 0;
-
-   fputs ("eINIT needs to be debugged, starting in debugger mode\n.", stderr);
-
-   xargv = (char **)setadd ((void **)xargv, (void *)"--debugme", SET_TYPE_STRING);
-   snprintf (tbuffer, BUFFERSIZE, "%i", commandpipe[0]);
-   xargv = (char **)setadd ((void **)xargv, (void *)tbuffer, SET_TYPE_STRING);
-
-   xargv = strsetdel (xargv, "--debug"); // don't keep the --debug flag
-
-   if (!stat ("/usr/bin/valgrind", &st)) have_valgrind = 1;
-   if (!stat ("/usr/bin/gdb", &st)) have_gdb = 1;
-
-   if (have_valgrind) {
-    char **nargv = NULL;
-    uint32_t i = 1;
-
-#ifdef LINUX
-    if (!(coremode & einit_mode_sandbox)) {
-     mount ("proc", "/proc", "proc", 0, NULL);
-     mount ("sys", "/sys", "sysfs", 0, NULL);
-
-     system ("mount / -o remount,rw");
-    }
 #endif
 
-    nargv = (char **)setadd ((void **)nargv, "/usr/bin/valgrind", SET_TYPE_STRING);
-    nargv = (char **)setadd ((void **)nargv, "--log-file=/einit.valgrind", SET_TYPE_STRING);
-    nargv = (char **)setadd ((void **)nargv, (coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", SET_TYPE_STRING);
-
-    for (; xargv[i]; i++) {
-     nargv = (char **)setadd ((void **)nargv, xargv[i], SET_TYPE_STRING);
-    }
-
-    execv ("/usr/bin/valgrind", nargv);
-   } else {
-    execv ((coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", xargv);
-   }
-  }
-
-  if (debugme_pipe) { // commandpipe[0]
-   fcntl (commandpipe[0], F_SETFD, FD_CLOEXEC);
-   commandpipe_in = fdopen (debugme_pipe, "r");
+  if (command_pipe) { // commandpipe[0]
+   commandpipe_in = fdopen (command_pipe, "r");
   }
 
 /* actual system initialisation */
@@ -723,7 +623,6 @@ int main(int argc, char **argv, char **environ) {
 
   if (einit_initial_environment) free (einit_initial_environment);
   return ret;
- }
 
 /* this should never be reached... */
  if (einit_initial_environment) free (einit_initial_environment);

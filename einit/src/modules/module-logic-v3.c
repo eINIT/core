@@ -1201,10 +1201,13 @@ void module_logic_einit_event_handler(struct einit_event *ev) {
 
 /* need to defer-free this at some point... */
 //  if (module_logics_service_list) streefree (module_logics_service_list);
+#if 0
+/* this'll need to get fixed up */
   emutex_lock (&ml_garbage_mutex);
   if (module_logics_service_list)
    einit_module_logic_v3_garbage.strees = (struct stree **)setadd ((void **)einit_module_logic_v3_garbage.strees, module_logics_service_list, SET_NOALLOC);
   emutex_unlock (&ml_garbage_mutex);
+#endif
 
   emutex_lock (&ml_rid_list_mutex);
   if (module_logic_rid_list) {
@@ -1884,7 +1887,8 @@ char mod_workthreads_dec (char *service) {
   char spawn = 0;
   emutex_unlock (&ml_workthreads_mutex);
 
-  einit_module_logic_v3_garbage_free();
+  if (!ml_workthreads)
+   einit_module_logic_v3_garbage_free();
 
   emutex_lock (&ml_tb_current_mutex);
   if (current.enable) {

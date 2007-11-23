@@ -48,51 +48,9 @@ struct cfgnode;
 #include <einit/utility.h>
 #include <sys/utsname.h>
 #include <einit/tree.h>
+#include <einit/configuration-static.h>
 
 #include <einit/configuration.h>
-
-#define BSDLICENSE "All rights reserved.\n"\
- "\n"\
- "Redistribution and use in source and binary forms, with or without modification,\n"\
- "are permitted provided that the following conditions are met:\n"\
- "\n"\
- "    * Redistributions of source code must retain the above copyright notice,\n"\
- "      this list of conditions and the following disclaimer.\n"\
- "    * Redistributions in binary form must reproduce the above copyright notice,\n"\
- "      this list of conditions and the following disclaimer in the documentation\n"\
- "      and/or other materials provided with the distribution.\n"\
- "    * Neither the name of the project nor the names of its contributors may be\n"\
- "      used to endorse or promote products derived from this software without\n"\
- "      specific prior written permission.\n"\
- "\n"\
- "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
- "ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
- "WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
- "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
- "ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
- "(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
- "LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
- "ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
- "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
- "SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-
-#define NODE_MODE 1
-
-#define EINIT_VERSION 1
-
-#if defined (ISSVN) && (ISSVN > 0)
-#define EINIT_VERSION_LITERAL_NUMBER "live"
-#else
-#define EINIT_VERSION_LITERAL_NUMBER "0.25.1"
-#endif
-
-#define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER EINIT_VERSION_LITERAL_SUFFIX
-
-#define einit_exit_status_last_rites_halt 42
-#define einit_exit_status_last_rites_reboot 43
-#define einit_exit_status_last_rites_kexec 44
-
-#define einit_exit_status_die_respawn 50
 
 enum einit_cfg_node_options {
  einit_node_regular = 0x02,
