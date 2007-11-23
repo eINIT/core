@@ -325,7 +325,7 @@ void * ipc_wait (void *unused_parameter) {
 void einit_ipc_boot_event_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_boot_root_device_ok:
-   notice (4, "enabling IPC (core)");
+   notice (6, "enabling IPC (core)");
    ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
    break;
 
