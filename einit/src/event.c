@@ -490,7 +490,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_boot_load_kernel_extensions:      return "boot/load-kernel-extensions";
   case einit_boot_devices_available:           return "boot/devices-available";
   case einit_boot_root_device_ok:              return "boot/root-device-ok";
-  case einit_boot_critical_devices_ok:         return "boot/critical-devices-ok";
 
   case einit_hotplug_add:                      return "hotplug/add";
   case einit_hotplug_remove:                   return "hotplug/remove";
@@ -609,7 +608,6 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "load-kernel-extensions"))      ret = einit_boot_load_kernel_extensions;
      else if (strmatch (tcode[1], "devices-available"))           ret = einit_boot_devices_available;
      else if (strmatch (tcode[1], "root-device-ok"))              ret = einit_boot_root_device_ok;
-     else if (strmatch (tcode[1], "critical-devices-ok"))         ret = einit_boot_critical_devices_ok;
      break;
     case einit_event_subsystem_hotplug:
      if (strmatch (tcode[1], "add"))                              ret = einit_hotplug_add;
