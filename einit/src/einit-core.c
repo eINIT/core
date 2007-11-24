@@ -336,18 +336,17 @@ int main(int argc, char **argv, char **environ) {
           BSDLICENSE "\n", stdout);
      return 0;
     case '-':
-     if (strmatch(argv[i], "--check-configuration") || strmatch(argv[i], "--checkup") || strmatch(argv[i], "--wtf")) {
-      ipccommands = (char **)setadd ((void **)ipccommands, "examine configuration", SET_TYPE_STRING);
-     } else if (strmatch(argv[i], "--help"))
+     if (strmatch(argv[i], "--help"))
       return print_usage_info ();
      else if (strmatch(argv[i], "--ipc") && argv[i+1])
       ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
-     else if (strmatch(argv[i], "--override-init-check"))
+     else if (strmatch(argv[i], "--force-init"))
       initoverride = 1;
      else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       coremode = einit_mode_sandbox;
       need_recovery = 1;
+      initoverride = 1;
      } else if (strmatch(argv[i], "--recover")) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--metadaemon")) {

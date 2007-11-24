@@ -231,7 +231,7 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 int main(int argc, char **argv, char **env) {
  char *argv_mutable[argc+1];
  int i = 0, it = 0;
- char force_init = 0;
+ char force_init = (getpid() == 1);
  char need_recovery = 0;
  char is_ipc = 0;
 
@@ -242,11 +242,8 @@ int main(int argc, char **argv, char **env) {
  for (; i < argc; i++) {
   if (!strcmp(argv[i], "--force-init")) {
    force_init = 1;
-   continue;
-  }
-
-  if (!strcmp(argv[i], "--sandbox")) {
-   force_init = 1;
+//   continue;
+  } else if (!strcmp(argv[i], "--sandbox")) {
    need_recovery = 1;
    is_sandbox = 1;
   } else if (!strcmp(argv[i], "--ipc")) {
@@ -258,7 +255,7 @@ int main(int argc, char **argv, char **env) {
   it++;
  }
 
- if ((force_init || (getpid() == 1)) && !is_ipc) {
+ if (force_init) {
   struct sigaction action;
 
   /* signal handlers */
@@ -283,7 +280,7 @@ int main(int argc, char **argv, char **env) {
 
 /* non-ipc, non-core */
  argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
- execve (EINIT_LIB_BASE "/bin/einit-helper", argv, env);
+ execve (EINIT_LIB_BASE "/bin/einit-helper", argv_mutable, env);
  perror ("couldn't execute " EINIT_LIB_BASE "/bin/einit-helper");
  return -1;
 }

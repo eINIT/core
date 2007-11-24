@@ -4,7 +4,29 @@
  a nice helper to (hopefully) ease the pain associated with configuring einit
 !#
 
+(define (help)
+        (display "please tell me what to do!")
+        (newline))
+
+(define ipc-commands (list))
+(define is-sandbox #f)
+
 (define (main args)
-        (map (lambda (arg) (display arg) (display " "))
-             args)
+        (map (lambda (arg)
+                     (cond
+                        ((string=? arg "--wtf") (set! ipc-commands (append (list "examine configuration") ipc-commands)))
+                        ((string=? arg "--sandbox") (set! is-sandbox #t))
+                        (else #f)))
+             (cdr args))
+
+        (if (> (length ipc-commands) 0)
+            (system (string-append 
+                      (dirname (car args))
+                      "/einit-core"
+                      (if is-sandbox " --sandbox" "")
+                      (letrec ((collect (lambda (lis str)
+                                               (if (null? lis) str
+                                                   (string-append " --ipc \"" (car lis) "\"" (collect (cdr lis) str))))))
+                        (collect ipc-commands ""))))
+            (help))
         (newline))
