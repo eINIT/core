@@ -4,6 +4,9 @@
  a nice helper to (hopefully) ease the pain associated with configuring einit
 !#
 
+(use-modules (ice-9 popen))
+(use-modules (ice-9 rdelim))
+
 (define ipc-commands (list))
 (define is-sandbox #f)
 (define is-version-request #f)
@@ -13,9 +16,6 @@
 
 (define einit-core "einit-core")
 (define einit-control "einit-control")
-
-(use-modules (ice-9 popen))
-(use-modules (ice-9 rdelim))
 
 (define use-existing-einit-process #f)
 (define (ipc-read cmd)
