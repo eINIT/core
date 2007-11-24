@@ -86,6 +86,8 @@ struct stree *module_scheme_guile_modules = NULL,
  *module_scheme_guile_module_actions = NULL,
  *module_scheme_guile_event_handlers = NULL;
 
+char module_scheme_guile_have_event_thread = 0;
+
 struct scheme_action {
  SCM action;
  struct einit_event *status;
@@ -1221,7 +1223,10 @@ int module_scheme_guile_configure (struct lmodule *pa) {
 
  scm_with_guile ((void *(*)(void *))module_scheme_guile_configure_scheme, NULL);
 
- ethread_spawn_detached ((void *(*)(void *))module_scheme_guile_event_dispatcher_thread, (void *)NULL);
+ if (!module_scheme_guile_have_event_thread) {
+  module_scheme_guile_have_event_thread = 1;
+  ethread_spawn_detached ((void *(*)(void *))module_scheme_guile_event_dispatcher_thread, (void *)NULL);
+ }
 
  return 0;
 }
