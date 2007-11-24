@@ -272,6 +272,8 @@ int main(int argc, char **argv, char **env) {
   return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
  }
 
+ execve (EINIT_LIB_BASE "/bin/einit-core", argv, env);
+
  perror ("couldn't execute eINIT");
  return -1;
 }
