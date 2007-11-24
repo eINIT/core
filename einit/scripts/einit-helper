@@ -4,34 +4,45 @@
  a nice helper to (hopefully) ease the pain associated with configuring einit
 !#
 
-(define (help)
-        (display "please tell me what to do!")
-        (newline))
-
 (define ipc-commands (list))
 (define is-sandbox #f)
 (define is-version-request #f)
 (define is-licence-request #f)
+(define is-help-request #f)
+
+(define einit-core "einit-core")
+
+(define (help)
+        (display " :: Core Options ::")
+        (newline)
+        (system (string-append einit-core " --help"))
+        (newline)
+        (display " :: Advanced Options ::")(newline)
+        (display " --wtf                Tell eINIT to check its configuration")(newline))
 
 (define (main args)
+        (set! einit-core (string-append (dirname (car args)) "/einit-core"))
+
         (map (lambda (arg)
                      (cond
                         ((or (string=? arg "-v")
                              (string=? arg "--version")) (set! is-version-request #t))
                         ((or (string=? arg "-L")
                              (string=? arg "--licence")) (set! is-licence-request #t))
+                        ((or (string=? arg "-h")
+                             (string=? arg "--help")) (set! is-help-request #t))
                         ((string=? arg "--wtf") (set! ipc-commands (append (list "examine configuration") ipc-commands)))
                         ((string=? arg "--sandbox") (set! is-sandbox #t))
                         (else #f)))
              (cdr args))
 
         (cond
-          (is-licence-request (system (string-append (dirname (car args)) "/einit-core -L")))
-          (is-version-request (system (string-append (dirname (car args)) "/einit-core -v")))
+          (is-help-request (system (string-append einit-core " --help")))
+          (is-licence-request (system (string-append einit-core " -L")))
+          (is-version-request (system (string-append einit-core " -v")))
           ((> (length ipc-commands) 0)
-            (system (string-append 
-                      (dirname (car args))
-                      "/einit-core"
+            (system (string-append
+                      einit-core
                       (if is-sandbox " --sandbox" "")
                       (letrec ((collect (lambda (lis str)
                                                (if (null? lis) str
