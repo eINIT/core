@@ -124,7 +124,7 @@ int print_usage_info () {
   "-v                    print version, then exit\n"
   "-L                    print copyright notice, then exit\n"
   "--bootstrap-modules   use this path to load bootstrap-modules\n"
-  "--ipc-command         don't boot, only run specified ipc-command\n"
+  "--ipc                 don't boot, only run specified ipc-command\n"
   "                      (you can use this more than once)\n"
   "--override-init-check einit will check if it's pid=1, override with this flag\n"
   "--check-configuration tell all modules to check for configuration errors. use this!\n"
@@ -340,7 +340,7 @@ int main(int argc, char **argv, char **environ) {
       ipccommands = (char **)setadd ((void **)ipccommands, "examine configuration", SET_TYPE_STRING);
      } else if (strmatch(argv[i], "--help"))
       return print_usage_info ();
-     else if (strmatch(argv[i], "--ipc-command") && argv[i+1])
+     else if (strmatch(argv[i], "--ipc") && argv[i+1])
       ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
      else if (strmatch(argv[i], "--override-init-check"))
       initoverride = 1;

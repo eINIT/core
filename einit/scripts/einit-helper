@@ -1,0 +1,10 @@
+#!/usr/bin/guile \
+-e main -s
+
+ a nice helper to (hopefully) ease the pain associated with configuring einit
+!#
+
+(define (main args)
+        (map (lambda (arg) (display arg) (display " "))
+             args)
+        (newline))

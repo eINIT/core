@@ -233,6 +233,7 @@ int main(int argc, char **argv, char **env) {
  int i = 0, it = 0;
  char force_init = 0;
  char need_recovery = 0;
+ char is_ipc = 0;
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
@@ -248,6 +249,8 @@ int main(int argc, char **argv, char **env) {
    force_init = 1;
    need_recovery = 1;
    is_sandbox = 1;
+  } else if (!strcmp(argv[i], "--ipc")) {
+   is_ipc = 1;
   }
 
   argv_mutable[it] = argv[i];
@@ -255,7 +258,7 @@ int main(int argc, char **argv, char **env) {
   it++;
  }
 
- if (force_init || (getpid() == 1)) {
+ if ((force_init || (getpid() == 1)) && !is_ipc) {
   struct sigaction action;
 
   /* signal handlers */
@@ -272,8 +275,15 @@ int main(int argc, char **argv, char **env) {
   return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
  }
 
- execve (EINIT_LIB_BASE "/bin/einit-core", argv, env);
+ if (is_ipc) {
+  execve (EINIT_LIB_BASE "/bin/einit-core", argv, env);
+  perror ("couldn't execute eINIT");
+  return -1;
+ }
 
- perror ("couldn't execute eINIT");
+/* non-ipc, non-core */
+ argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
+ execve (EINIT_LIB_BASE "/bin/einit-helper", argv, env);
+ perror ("couldn't execute " EINIT_LIB_BASE "/bin/einit-helper");
  return -1;
 }
