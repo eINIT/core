@@ -10,16 +10,25 @@
 
 (define ipc-commands (list))
 (define is-sandbox #f)
+(define is-version-request #f)
+(define is-licence-request #f)
 
 (define (main args)
         (map (lambda (arg)
                      (cond
+                        ((or (string=? arg "-v")
+                             (string=? arg "--version")) (set! is-version-request #t))
+                        ((or (string=? arg "-L")
+                             (string=? arg "--licence")) (set! is-licence-request #t))
                         ((string=? arg "--wtf") (set! ipc-commands (append (list "examine configuration") ipc-commands)))
                         ((string=? arg "--sandbox") (set! is-sandbox #t))
                         (else #f)))
              (cdr args))
 
-        (if (> (length ipc-commands) 0)
+        (cond
+          (is-licence-request (system (string-append (dirname (car args)) "/einit-core -L")))
+          (is-version-request (system (string-append (dirname (car args)) "/einit-core -v")))
+          ((> (length ipc-commands) 0)
             (system (string-append 
                       (dirname (car args))
                       "/einit-core"
@@ -27,6 +36,6 @@
                       (letrec ((collect (lambda (lis str)
                                                (if (null? lis) str
                                                    (string-append " --ipc \"" (car lis) "\"" (collect (cdr lis) str))))))
-                        (collect ipc-commands ""))))
-            (help))
-        (newline))
+                        (collect ipc-commands "")))))
+          (else
+            (help))))
