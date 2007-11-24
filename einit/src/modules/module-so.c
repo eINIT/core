@@ -93,6 +93,7 @@ int einit_mod_so_cleanup (struct lmodule *pa) {
  return 0;
 }
 
+#if 0
 int einit_mod_so_do_suspend (struct lmodule *pa) {
  if (pa->sohandle) {
   const struct smodule *o = pa->module;
@@ -168,6 +169,7 @@ int einit_mod_so_do_resume (struct lmodule *pa) {
 
  return status_ok;
 }
+#endif
 
 int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  void *sohandle;
@@ -200,6 +202,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 /* make sure all bootstrap modules get updated */
  while (lm) {
   if (lm->source && (strstr(lm->source, bootstrapmodulepath) == lm->source)) {
+#if 0
    if (einit_allow_code_unloading) {
     lm->do_suspend = einit_mod_so_do_suspend;
     lm->do_resume = einit_mod_so_do_resume;
@@ -207,6 +210,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     lm->do_suspend = NULL;
     lm->do_resume = NULL;
    }
+#endif
 
    lm = mod_update (lm);
 
@@ -227,6 +231,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
    while (lm) {
     if (lm->source && strmatch(lm->source, modules[z])) {
+#if 0
      if (einit_allow_code_unloading) {
       lm->do_suspend = einit_mod_so_do_suspend;
       lm->do_resume = einit_mod_so_do_resume;
@@ -234,6 +239,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
       lm->do_suspend = NULL;
       lm->do_resume = NULL;
      }
+#endif
 
      lm = mod_update (lm);
 
@@ -261,10 +267,12 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
      if (new) {
       new->source = estrdup(modules[z]);
 
+#if 0
       if (einit_allow_code_unloading) {
        new->do_suspend = einit_mod_so_do_suspend;
        new->do_resume = einit_mod_so_do_resume;
       }
+#endif
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);
