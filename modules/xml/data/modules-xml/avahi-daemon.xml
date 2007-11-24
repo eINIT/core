@@ -1,10 +1,9 @@
 <module>
  <v-avahi-daemon
   name="avahi-daemon"
-  provides="avahi-daemon"
-  requires="mount-critical">
+  provides="avahi-daemon">
 
-  <execute id="daemon" code="avahi-daemon" />
+  <execute id="daemon" code="avahi-daemon -D" />
 
   <restart b="yes" />
   <need-files s="avahi-daemon" />
