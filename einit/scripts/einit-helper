@@ -20,8 +20,8 @@
 (define use-existing-einit-process #f)
 (define (ipc-read cmd)
         (let* ((port (if use-existing-einit-process
-                          (open-input-pipe (string-append einit-control " -- " cmd))
-                          (open-input-pipe (string-append einit-core (if is-sandbox " --sandbox" "") " -s --ipc \"" cmd "\""))))
+                          (open-input-pipe (string-append einit-control " -- --xml " cmd))
+                          (open-input-pipe (string-append einit-core (if is-sandbox " --sandbox" "") " -s --ipc \"--xml " cmd "\""))))
                (str (read-delimited "" port)))
 
               (close-port port)
@@ -33,7 +33,8 @@
         (system (string-append einit-core " --help"))
         (newline)
         (display " :: Advanced Options ::")(newline)
-        (display " --wtf                Tell eINIT to check its configuration")(newline))
+        (display " --wtf                Tell eINIT to check its configuration")(newline)
+        (display " --live, -q           Use running eINIT instead of a new one")(newline))
 
 (define (main args)
         (set! einit-core (string-append (dirname (car args)) "/einit-core"))
@@ -49,6 +50,8 @@
                              (string=? arg "--help")) (set! is-help-request #t))
                         ((or (string=? arg "-l")
                              (string=? arg "--list-modules")) (set! is-module-list-request #t))
+                        ((or (string=? arg "-q")
+                             (string=? arg "--live")) (set! use-existing-einit-process #t))
                         ((string=? arg "--wtf") (set! ipc-commands (append (list "examine configuration") ipc-commands)))
                         ((string=? arg "--sandbox") (set! is-sandbox #t))
                         (else #f)))
@@ -60,12 +63,16 @@
           (is-version-request (system (string-append einit-core " -v")))
           (is-module-list-request (display (ipc-read "list modules")))
           ((> (length ipc-commands) 0)
-            (system (string-append
-                      einit-core
-                      (if is-sandbox " --sandbox" "")
-                      (letrec ((collect (lambda (lis str)
-                                               (if (null? lis) str
-                                                   (string-append " --ipc \"" (car lis) "\"" (collect (cdr lis) str))))))
-                        (collect ipc-commands "")))))
+            (if use-existing-einit-process
+                (map (lambda (c)
+                             (system (string-append einit-control " -- " c)))
+                     ipc-commands)
+                (system (string-append
+                          einit-core
+                          (if is-sandbox " --sandbox" "")
+                          (letrec ((collect (lambda (lis str)
+                                                    (if (null? lis) str
+                                                        (string-append " --ipc \"" (car lis) "\"" (collect (cdr lis) str))))))
+                            (collect ipc-commands ""))))))
           (else
             (help))))
