@@ -289,6 +289,7 @@ int main(int argc, char **argv, char **environ) {
  int crash_pipe = 0;
 // char crash_threshold = 5;
  char *einit_crash_data = NULL;
+ char suppress_version = 0;
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
@@ -322,6 +323,9 @@ int main(int argc, char **argv, char **environ) {
      break;
     case 'h':
      return print_usage_info ();
+     break;
+    case 's':
+     suppress_version = 1;
      break;
     case 'v':
      eputs("eINIT " EINIT_VERSION_LITERAL "\n", stdout);
@@ -491,7 +495,9 @@ int main(int argc, char **argv, char **environ) {
    coremode = einit_mode_ipconly;
   }
 
-  eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
+  if (!suppress_version) {
+   eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
+  }
 
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
    bitch(bitch_epthreads, pthread_errno, "pthread_attr_init() failed.");
@@ -515,17 +521,20 @@ int main(int argc, char **argv, char **environ) {
    if (coremodules) {
     uint32_t cp = 0;
 
-    eputs (" >> initialising in-core modules:", stderr);
+    if (!suppress_version)
+     eputs (" >> initialising in-core modules:", stderr);
 
     for (; coremodules[cp]; cp++) {
      struct lmodule *lmm;
-     eprintf (stderr, " [%s]", (*coremodules[cp])->rid);
+     if (!suppress_version)
+      eprintf (stderr, " [%s]", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
      lmm->source = estrdup("core");
     }
 
-    eputs (" OK\n", stderr);
+    if (!suppress_version)
+     eputs (" OK\n", stderr);
    }
 
 /* emit events to read configuration files */

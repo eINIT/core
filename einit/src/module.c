@@ -142,6 +142,20 @@ struct lmodule *mod_update (struct lmodule *module) {
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
 
+ emutex_lock (&mlist_mutex);
+ struct lmodule *m = mlist;
+
+ while (m) {
+  if (m->module && m->module->rid && module && module->rid && strmatch (m->module->rid, module->rid)) {
+   break;
+  }
+
+  m = m->next;
+ }
+ emutex_unlock (&mlist_mutex);
+
+ if (m) return m;
+
  nmod = ecalloc (1, sizeof (struct lmodule));
 
  emutex_lock (&mlist_mutex);

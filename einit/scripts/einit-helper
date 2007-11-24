@@ -9,8 +9,23 @@
 (define is-version-request #f)
 (define is-licence-request #f)
 (define is-help-request #f)
+(define is-module-list-request #f)
 
 (define einit-core "einit-core")
+(define einit-control "einit-control")
+
+(use-modules (ice-9 popen))
+(use-modules (ice-9 rdelim))
+
+(define use-existing-einit-process #f)
+(define (ipc-read cmd)
+        (let* ((port (if use-existing-einit-process
+                          (open-input-pipe (string-append einit-control " -- " cmd))
+                          (open-input-pipe (string-append einit-core (if is-sandbox " --sandbox" "") " -s --ipc \"" cmd "\""))))
+               (str (read-delimited "" port)))
+
+              (close-port port)
+              str))
 
 (define (help)
         (display " :: Core Options ::")
@@ -22,6 +37,7 @@
 
 (define (main args)
         (set! einit-core (string-append (dirname (car args)) "/einit-core"))
+        (set! einit-control (string-append (dirname (car args)) "/../../../bin/einit-control"))
 
         (map (lambda (arg)
                      (cond
@@ -31,15 +47,18 @@
                              (string=? arg "--licence")) (set! is-licence-request #t))
                         ((or (string=? arg "-h")
                              (string=? arg "--help")) (set! is-help-request #t))
+                        ((or (string=? arg "-l")
+                             (string=? arg "--list-modules")) (set! is-module-list-request #t))
                         ((string=? arg "--wtf") (set! ipc-commands (append (list "examine configuration") ipc-commands)))
                         ((string=? arg "--sandbox") (set! is-sandbox #t))
                         (else #f)))
              (cdr args))
 
         (cond
-          (is-help-request (system (string-append einit-core " --help")))
+          (is-help-request (help))
           (is-licence-request (system (string-append einit-core " -L")))
           (is-version-request (system (string-append einit-core " -v")))
+          (is-module-list-request (display (ipc-read "list modules")))
           ((> (length ipc-commands) 0)
             (system (string-append
                       einit-core
