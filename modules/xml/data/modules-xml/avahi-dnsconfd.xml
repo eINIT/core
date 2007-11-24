@@ -4,7 +4,7 @@
   provides="avahi-dnsconfd"
   requires="avahi-daemon">
 
-  <execute id="daemon" code="avahi-dnsconfd" />
+  <execute id="daemon" code="avahi-dnsconfd -D" />
 
   <restart b="yes" />
   <need-files s="avahi-dnsconfd" />
