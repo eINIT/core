@@ -116,10 +116,7 @@ void *event_thread_wrapper (struct evt_wrapper_data *d) {
  return NULL;
 }
 
-void *event_subthread (struct einit_event *event) {
- static char recurse = 0;
- if (!event) return NULL;
-
+void event_subthread_a (struct einit_event *event) {
  uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
  /* initialise sequence id and timestamp of the event */
@@ -128,7 +125,7 @@ void *event_subthread (struct einit_event *event) {
 
  struct event_function *cur = event_functions;
  while (cur) {
-  if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
+  if (((cur->type == event->type) || (cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
    cur->handler (event);
   }
   cur = cur->next;
@@ -138,20 +135,22 @@ void *event_subthread (struct einit_event *event) {
   event->type = event->chain_type;
   event->chain_type = 0;
 
-  recurse++;
-  event_subthread (event);
-  recurse--;
+  event_subthread_a (event);
+ }
+}
+
+void *event_subthread (struct einit_event *event) {
+ if (!event) return NULL;
+
+ event_subthread_a (event);
+
+ if ((event->type & EVENT_SUBSYSTEM_MASK) == einit_event_subsystem_ipc) {
+  if (event->argv) free (event->argv);
+ } else {
+  if (event->stringset) free (event->stringset);
  }
 
- if (!recurse) {
-  if (subsystem == einit_event_subsystem_ipc) {
-   if (event->argv) free (event->argv);
-  } else {
-   if (event->stringset) free (event->stringset);
-  }
-
-  evdestroy (event);
- }
+ evdestroy (event);
 
  return NULL;
 }
@@ -179,7 +178,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 
   struct event_function *cur = event_functions;
   while (cur) {
-   if (((cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
+   if (((cur->type == event->type) || (cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
     if (flags & einit_event_flag_spawn_thread_multi_wait) {
      pthread_t *threadid = emalloc (sizeof (pthread_t));
      struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
@@ -201,7 +200,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   event_emit (event, flags);
  }
 
- if ((flags & einit_event_flag_spawn_thread_multi_wait) && threads) {
+ if (threads) {
   int i = 0;
 
   for (; threads[i]; i++) {
@@ -219,7 +218,8 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 void event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
  struct event_function *fstruct = ecalloc (1, sizeof (struct event_function));
 
- fstruct->type = type & EVENT_SUBSYSTEM_MASK;
+// fstruct->type = type & EVENT_SUBSYSTEM_MASK;
+ fstruct->type = type;
  fstruct->handler = handler;
 
  emutex_lock (&evf_mutex);
@@ -233,7 +233,8 @@ void event_listen (enum einit_event_subsystems type, void (* handler)(struct ein
 void event_ignore (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
  if (!event_functions) return;
 
- uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
+// uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
+ uint32_t ltype = type;
 
  emutex_lock (&evf_mutex);
   struct event_function *cur = event_functions;

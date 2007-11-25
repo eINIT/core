@@ -325,16 +325,10 @@ void linux_mdev_power_event_handler (struct einit_event *ev) {
 }
 
 void linux_mdev_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_early:
-   if (linux_mdev_run() == status_ok) {
-    struct einit_event eml = evstaticinit(einit_boot_devices_available);
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-    evstaticdestroy(eml);
-   }
-   break;
-
-  default: break;
+ if (linux_mdev_run() == status_ok) {
+  struct einit_event eml = evstaticinit(einit_boot_devices_available);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  evstaticdestroy(eml);
  }
 }
 
@@ -342,7 +336,7 @@ int linux_mdev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
  event_ignore (einit_event_subsystem_power, linux_mdev_power_event_handler);
- event_ignore (einit_event_subsystem_boot, linux_mdev_boot_event_handler);
+ event_ignore (einit_boot_early, linux_mdev_boot_event_handler);
 
  return 0;
 }
@@ -353,7 +347,7 @@ int linux_mdev_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_mdev_cleanup;
 
- event_listen (einit_event_subsystem_boot, linux_mdev_boot_event_handler);
+ event_listen (einit_boot_early, linux_mdev_boot_event_handler);
  event_listen (einit_event_subsystem_power, linux_mdev_power_event_handler);
 
  return 0;

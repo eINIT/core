@@ -1939,7 +1939,7 @@ int einit_mount_cleanup (struct lmodule *tm) {
  event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
- event_ignore (einit_event_subsystem_boot, einit_mount_boot_event_handler);
+ event_ignore (einit_boot_devices_available, einit_mount_boot_event_handler);
  event_ignore (einit_event_subsystem_power, einit_mount_power_event_handler);
 
  function_unregister ("fs-mount", 1, (void *)emount);
@@ -2011,30 +2011,23 @@ void eumount_root () {
 }
 
 void einit_mount_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_devices_available:
-   emount_root ();
+ emount_root ();
 
-   emutex_lock (&mount_autostart_mutex);
-   if (mount_autostart) {
-    struct einit_event eml = evstaticinit(einit_core_manipulate_services);
-    eml.stringset = mount_autostart;
-    eml.task = einit_module_enable;
+ emutex_lock (&mount_autostart_mutex);
+ if (mount_autostart) {
+  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+  eml.stringset = mount_autostart;
+  eml.task = einit_module_enable;
 
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-    evstaticdestroy(eml);
-   }
-   emutex_unlock (&mount_autostart_mutex);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  evstaticdestroy(eml);
+ }
+ emutex_unlock (&mount_autostart_mutex);
 
-   {
-    struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-    evstaticdestroy(eml);
-   }
-
-   break;
-
-  default: break;
+ {
+  struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  evstaticdestroy(eml);
  }
 }
 
@@ -2101,7 +2094,7 @@ int einit_mount_configure (struct lmodule *r) {
  exec_configure (this);
 
  event_listen (einit_event_subsystem_power, einit_mount_power_event_handler);
- event_listen (einit_event_subsystem_boot, einit_mount_boot_event_handler);
+ event_listen (einit_boot_devices_available, einit_mount_boot_event_handler);
  event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_listen (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);

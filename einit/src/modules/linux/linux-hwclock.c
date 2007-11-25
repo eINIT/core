@@ -81,7 +81,7 @@ module_register(linux_hwclock_self);
 
 char linux_hwclock_enabled = 0;
 
-int linux_hwclock_run() {
+void linux_hwclock_run() {
  if (!linux_hwclock_enabled) {
   linux_hwclock_enabled = 1;
   char *options = cfg_getstring ("configuration-services-hwclock/options", NULL);
@@ -92,8 +92,6 @@ int linux_hwclock_run() {
 
   system (tmp);
  }
-
- return status_ok;
 }
 
 int linux_hwclock_shutdown() {
@@ -118,23 +116,11 @@ void linux_hwclock_power_event_handler (struct einit_event *ev) {
  }
 }
 
-void linux_hwclock_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_devices_available:
-   linux_hwclock_run();
-
-   /* some code */
-   break;
-
-  default: break;
- }
-}
-
 int linux_hwclock_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
  event_ignore (einit_event_subsystem_power, linux_hwclock_power_event_handler);
- event_ignore (einit_event_subsystem_boot, linux_hwclock_boot_event_handler);
+ event_ignore (einit_boot_devices_available, linux_hwclock_run);
 
  return 0;
 }
@@ -145,7 +131,7 @@ int linux_hwclock_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_hwclock_cleanup;
 
- event_listen (einit_event_subsystem_boot, linux_hwclock_boot_event_handler);
+ event_listen (einit_boot_devices_available, linux_hwclock_run);
  event_listen (einit_event_subsystem_power, linux_hwclock_power_event_handler);
 
  return 0;

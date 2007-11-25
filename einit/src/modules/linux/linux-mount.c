@@ -245,8 +245,6 @@ int linux_mount_configure (struct lmodule *this) {
 /* pexec configuration */
  exec_configure (this);
 
- struct einit_event *ev = evinit (einit_mount_do_update);
-
  function_register ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
 /* register some functions for swap */
  function_register ("fs-mount-linux-swap", 1, (void *)linux_mount_do_mount_swap);
@@ -268,9 +266,6 @@ int linux_mount_configure (struct lmodule *this) {
  function_register ("fs-mount-linux-any-backup", 1, (void *)linux_mount_do_mount_real);
  function_register ("fs-mount-Linux-any-backup", 1, (void *)linux_mount_do_mount_real);
  function_register ("fs-mount-generic-any-backup", 1, (void *)linux_mount_do_mount_real);
-
- event_emit (ev, einit_event_flag_broadcast);
- evdestroy (ev);
 
  return 0;
 }

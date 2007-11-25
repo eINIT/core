@@ -150,21 +150,9 @@ void linux_cpufreq_switch_done () {
  }
 }
 
-void linux_cpufreq_core_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_core_mode_switching:
-   linux_cpufreq_switch ();
-   break;
-
-  case einit_core_mode_switch_done:
-   linux_cpufreq_switch_done ();
-   break;
-   default: break;
- }
-}
-
 int linux_cpufreq_cleanup (struct lmodule *pa) {
- event_ignore (einit_event_subsystem_core, linux_cpufreq_core_event_handler);
+ event_ignore (einit_core_mode_switching, linux_cpufreq_switch);
+ event_ignore (einit_core_mode_switch_done, linux_cpufreq_switch_done);
 
  return 0;
 }
@@ -174,7 +162,8 @@ int linux_cpufreq_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_cpufreq_cleanup;
 
- event_listen (einit_event_subsystem_core, linux_cpufreq_core_event_handler);
+ event_listen (einit_core_mode_switching, linux_cpufreq_switch);
+ event_listen (einit_core_mode_switch_done, linux_cpufreq_switch_done);
 
  return 0;
 }
