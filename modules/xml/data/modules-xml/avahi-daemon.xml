@@ -3,9 +3,11 @@
   name="avahi-daemon"
   provides="avahi-daemon">
 
-  <execute id="daemon" code="avahi-daemon -D" />
+  <execute id="daemon" code="avahi-daemon --no-chroot -D" />
 
   <restart b="yes" />
   <need-files s="avahi-daemon" />
+  <options s="forking" />
+  <pidfile s="/var/run/avahi-daemon/" />
  </v-avahi-daemon>
 </module>

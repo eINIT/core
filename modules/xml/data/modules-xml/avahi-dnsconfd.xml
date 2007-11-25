@@ -8,5 +8,7 @@
 
   <restart b="yes" />
   <need-files s="avahi-dnsconfd" />
+  <options s="forking" />
+  <pidfile s="/var/run/avahi-dnsconfd.pid" />
  </v-avahi-dnsconfd>
 </module>
