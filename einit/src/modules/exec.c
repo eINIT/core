@@ -610,7 +610,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  }*/
 // notice (10, (char *)command);
 
-#ifdef LINUX
+#if 0
 // void *stack = emalloc (4096);
 // if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, stack+4096)) < 0) {
 
@@ -621,9 +621,14 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   return status_failed;
  }
 #else
+ retry_fork:
+
  if ((child = fork()) < 0) {
   if (status)
    status->string = strerror (errno);
+
+  goto retry_fork;
+
   if (freeocmds) free (freeocmds);
   return status_failed;
  }
@@ -1014,7 +1019,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    status_update (status);
   }
 
-#ifdef LINUX
+#if 0
   if ((child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
    if (status) {
     status->string = strerror (errno);
@@ -1022,10 +1027,14 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    return status_failed;
   }
 #else
+  retry_fork:
+
   if ((child = fork()) < 0) {
    if (status) {
     status->string = strerror (errno);
    }
+
+   goto retry_fork;
    return status_failed;
   }
 #endif

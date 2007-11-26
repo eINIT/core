@@ -429,23 +429,23 @@ char *cfg_getpath_f (const char *id) {
  return svpath;
 }
 
-void bootstrap_einit_configuration_stree_einit_event_handler (struct einit_event *ev) {
+void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update (struct einit_event *ev) {
  bootstrap_einit_configuration_stree_usage++;
- if (ev->type == einit_core_configuration_update) {
-// update global environment here
-  char **env = einit_global_environment;
-  einit_global_environment = NULL;
-  struct cfgnode *node = NULL;
-  free (env);
 
-  env = NULL;
-  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
-   if (node->idattr && node->svalue) {
-    env = straddtoenviron (env, node->idattr, node->svalue);
-   }
+// update global environment here
+ char **env = einit_global_environment;
+ einit_global_environment = NULL;
+ struct cfgnode *node = NULL;
+ free (env);
+
+ env = NULL;
+ while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
+  if (node->idattr && node->svalue) {
+   env = straddtoenviron (env, node->idattr, node->svalue);
   }
-  einit_global_environment = env;
  }
+ einit_global_environment = env;
+
  bootstrap_einit_configuration_stree_usage--;
 }
 
@@ -540,7 +540,7 @@ int bootstrap_einit_configuration_stree_suspend (struct lmodule *this) {
   sleep (1);
 
   if (!bootstrap_einit_configuration_stree_usage) {
-   event_ignore (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
+   event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
    event_ignore (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
 
    event_wakeup (einit_core_configuration_update, this);
@@ -572,7 +572,7 @@ int bootstrap_einit_configuration_stree_resume (struct lmodule *this) {
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
- event_ignore (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
+ event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
  event_ignore (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
 
  function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
@@ -597,7 +597,7 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 */
 
  event_listen (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
- event_listen (einit_event_subsystem_core, bootstrap_einit_configuration_stree_einit_event_handler);
+ event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
 
  function_register ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_register ("einit-configuration-node-get", 1, cfg_getnode_f);
