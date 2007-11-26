@@ -66,7 +66,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
 
-void einit_config_xml_expat_event_handler (struct einit_event *);
+void einit_config_xml_expat_event_handler_core_update_configuration (struct einit_event *);
 void einit_config_xml_expat_ipc_event_handler (struct einit_event *);
 char *einit_config_xml_cfg_to_xml (struct stree *);
 
@@ -107,7 +107,7 @@ int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
  event_ignore (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
- event_ignore (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
+ event_ignore (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
 
  exec_cleanup (this);
 
@@ -119,7 +119,7 @@ int bootstrap_einit_configuration_xml_expat_suspend (struct lmodule *this) {
   function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
   event_ignore (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
-  event_ignore (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
+  event_ignore (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
 
   struct ecx_resume_data *rd = ecalloc (1, sizeof (struct ecx_resume_data));
   rd->xml_configuration_files = xml_configuration_files;
@@ -157,7 +157,7 @@ int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
  thismodule->suspend = bootstrap_einit_configuration_xml_expat_suspend;
  thismodule->resume = bootstrap_einit_configuration_xml_expat_resume;
 
- event_listen (einit_event_subsystem_core, einit_config_xml_expat_event_handler);
+ event_listen (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
  event_listen (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
 
  function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
@@ -434,31 +434,29 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  return hconfiguration != NULL;
 }
 
-void einit_config_xml_expat_event_handler (struct einit_event *ev) {
+void einit_config_xml_expat_event_handler_core_update_configuration (struct einit_event *ev) {
  bootstrap_einit_configuration_xml_expat_usage++;
 
- if (ev->type == einit_core_update_configuration) {
-  if (!ev->string && xml_configuration_files) {
-   struct stat st;
-   uint32_t i = 0;
+ if (!ev->string && xml_configuration_files) {
+  struct stat st;
+  uint32_t i = 0;
 
-   for (; xml_configuration_files && xml_configuration_files [i]; i++) {
-    stat (xml_configuration_files [i], &st); // see if any files were modified
-    if (st.st_mtime > xml_configuration_files_highest_mtime) { // need to update configuration
-     for (i = 0; xml_configuration_files && xml_configuration_files [i]; i++) {
-      einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
-     }
-     ev->chain_type = einit_core_configuration_update;
-
-     break;
+  for (; xml_configuration_files && xml_configuration_files [i]; i++) {
+   stat (xml_configuration_files [i], &st); // see if any files were modified
+   if (st.st_mtime > xml_configuration_files_highest_mtime) { // need to update configuration
+    for (i = 0; xml_configuration_files && xml_configuration_files [i]; i++) {
+     einit_config_xml_expat_parse_configuration_file (xml_configuration_files [i]);
     }
+    ev->chain_type = einit_core_configuration_update;
+
+    break;
    }
   }
+ }
 
-  if (ev->string) {
-   einit_config_xml_expat_parse_configuration_file (ev->string);
-   ev->chain_type = einit_core_configuration_update;
-  }
+ if (ev->string) {
+  einit_config_xml_expat_parse_configuration_file (ev->string);
+  ev->chain_type = einit_core_configuration_update;
  }
 
  bootstrap_einit_configuration_xml_expat_usage--;
