@@ -88,44 +88,25 @@ module_register(einit_fqdn_self);
 
 #endif
 
-void einit_fqdn_boot_event_handler (struct einit_event *);
 int einit_fqdn_usage = 0;
 
-int einit_fqdn_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
-
- return 0;
-}
-
 void einit_fqdn_set () {
+ einit_fqdn_usage++;
+
  char *hname, *dname;
  if ((hname = cfg_getstring ("configuration-network-hostname", NULL)))
   sethostname (hname, strlen (hname));
  if ((dname = cfg_getstring ("configuration-network-domainname", NULL)))
   setdomainname (dname, strlen (dname));
  notice (4, "hostname set to: %s.%s", hname, dname);
-}
 
-void einit_fqdn_boot_event_handler (struct einit_event *ev) {
- einit_fqdn_usage++;
- switch (ev->type) {
-  case einit_boot_early:
-   einit_fqdn_set();
-   break;
-
-/*  case einit_boot_devices_available:
-   break;*/
-/* this latter hook is gonna be needed for domainname setting via proc */
-
-  default: break;
- }
  einit_fqdn_usage--;
 }
 
 int einit_fqdn_suspend (struct lmodule *irr) {
  if (!einit_fqdn_usage) {
   event_wakeup (einit_boot_early, irr);
-  event_ignore (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
+  event_ignore (einit_boot_early, einit_fqdn_set);
 
   return status_ok;
  } else
@@ -138,6 +119,12 @@ int einit_fqdn_resume (struct lmodule *irr) {
  return status_ok;
 }
 
+int einit_fqdn_cleanup (struct lmodule *this) {
+ event_ignore (einit_boot_early, einit_fqdn_set);
+
+ return 0;
+}
+
 int einit_fqdn_configure (struct lmodule *irr) {
  module_init (irr);
 
@@ -145,7 +132,7 @@ int einit_fqdn_configure (struct lmodule *irr) {
  thismodule->suspend = einit_fqdn_suspend;
  thismodule->resume  = einit_fqdn_resume;
 
- event_listen (einit_event_subsystem_boot, einit_fqdn_boot_event_handler);
+ event_listen (einit_boot_early, einit_fqdn_set);
 
  return 0;
 }
