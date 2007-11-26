@@ -162,26 +162,6 @@ void compatibility_sysv_initctl_power_event_handler (struct einit_event *ev) {
  }
 }
 
-void compatibility_sysv_initctl_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_devices_available:
-   compatibility_sysv_initctl_run();
-
-   break;
-
-  default: break;
- }
-}
-
-int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
- ipc_cleanup (irr);
-
- event_ignore (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
- event_ignore (einit_event_subsystem_boot, compatibility_sysv_initctl_boot_event_handler);
-
- return 0;
-}
-
 void * initctl_wait (char *fifo) {
  int nfd;
  compatibility_sysv_initctl_running = 1;
@@ -305,6 +285,15 @@ int compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
  return status_ok;
 }
 
+int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
+ ipc_cleanup (irr);
+
+ event_ignore (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
+ event_ignore (einit_boot_devices_available, compatibility_sysv_initctl_run);
+
+ return 0;
+}
+
 int compatibility_sysv_initctl_configure (struct lmodule *r) {
  module_init (r);
 
@@ -313,7 +302,7 @@ int compatibility_sysv_initctl_configure (struct lmodule *r) {
  ipc_configure (r);
 
  event_listen (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
- event_listen (einit_event_subsystem_boot, compatibility_sysv_initctl_boot_event_handler);
+ event_listen (einit_boot_devices_available, compatibility_sysv_initctl_run);
 
  return 0;
 }
