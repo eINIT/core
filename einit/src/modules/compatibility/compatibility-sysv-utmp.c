@@ -82,14 +82,6 @@ module_register(module_compatibility_sysv_utmp_self);
 
 char updateutmp_f (enum utmp_action, struct utmp *);
 
-int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
-// event_ignore (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
- function_unregister ("einit-utmp-update", 1, updateutmp_f);
- utmp_cleanup (irr);
-
- return 0;
-}
-
 char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
  int ufile;
  struct stat st;
@@ -220,36 +212,49 @@ char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
 
 void compatibility_sysv_utmp_clean() {
  char utmp_cfg = parse_boolean (cfg_getstring ("configuration-compatibility-sysv/utmp", NULL));
+ char wtmp_cfg = parse_boolean (cfg_getstring ("configuration-compatibility-sysv/wtmp", NULL));
 
  if (utmp_cfg) {
   notice (4, "cleaning utmp");
-  updateutmp_f (utmp_clean, NULL);
+//  updateutmp_f (utmp_clean, NULL);
+  FILE *f = fopen ("/var/run/utmp", "w");
+  if (f) {
+   fputs ("", f);
+   fflush (f);
+   fclose (f);
+  }
+ }
+
+ if (wtmp_cfg) {
+  notice (4, "cleaning wtmp");
+//  updateutmp_f (utmp_clean, NULL);
+  FILE *f = fopen ("/var/log/wtmp", "w");
+  if (f) {
+   fputs ("", f);
+   fflush (f);
+   fclose (f);
+  }
  }
 
 /* don't worry if it's not OK, as utmp is pretty much useless to eINIT, so no reason
    to bitch about it... */
 }
 
-void compatibility_sysv_utmp_core_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_core_service_update:
-   if ((ev->status & status_enabled) && ev->set && (inset ((const void **)ev->set, "fs-var", SET_TYPE_STRING) || inset ((const void **)ev->set, "fs-var-run", SET_TYPE_STRING))) {
-    compatibility_sysv_utmp_clean();
-   }
-   break;
-
-  default: break;
+void compatibility_sysv_utmp_core_event_handler_core_service_update (struct einit_event *ev) {
+ if ((ev->status & status_enabled) && ev->set && (inset ((const void **)ev->set, "fs-var", SET_TYPE_STRING) || inset ((const void **)ev->set, "fs-var-run", SET_TYPE_STRING))) {
+  compatibility_sysv_utmp_clean();
  }
 }
 
-void compatibility_sysv_utmp_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_root_device_ok:
-   compatibility_sysv_utmp_clean();
-   break;
+int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
+// event_ignore (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
+ event_ignore (einit_boot_root_device_ok, compatibility_sysv_utmp_clean);
+ event_ignore (einit_core_service_update, compatibility_sysv_utmp_core_event_handler_core_service_update);
 
-  default: break;
- }
+ function_unregister ("einit-utmp-update", 1, updateutmp_f);
+ utmp_cleanup (irr);
+
+ return 0;
 }
 
 int compatibility_sysv_utmp_configure (struct lmodule *irr) {
@@ -261,8 +266,8 @@ int compatibility_sysv_utmp_configure (struct lmodule *irr) {
  function_register ("einit-utmp-update", 1, updateutmp_f);
 // event_listen (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
 
- event_listen (einit_event_subsystem_core, compatibility_sysv_utmp_core_event_handler);
- event_listen (einit_event_subsystem_boot, compatibility_sysv_utmp_boot_event_handler);
+ event_listen (einit_core_service_update, compatibility_sysv_utmp_core_event_handler_core_service_update);
+ event_listen (einit_boot_root_device_ok, compatibility_sysv_utmp_clean);
 
  return 0;
 }
