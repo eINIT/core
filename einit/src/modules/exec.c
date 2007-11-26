@@ -114,7 +114,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
 void einit_exec_ipc_event_handler (struct einit_event *);
-void einit_exec_einit_event_handler (struct einit_event *);
+void einit_exec_einit_event_handler_core_configuration_update (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
 void *dexec_watcher (struct spidcb *spid);
@@ -132,18 +132,16 @@ int einit_exec_cleanup (struct lmodule *irr) {
 
  event_ignore (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
  event_ignore (einit_event_subsystem_process, einit_exec_process_event_handler);
- event_ignore (einit_event_subsystem_core, einit_exec_einit_event_handler);
+ event_ignore (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
 
  sched_cleanup(irr);
 
  return 0;
 }
 
-void einit_exec_einit_event_handler (struct einit_event *ev) {
- if (ev->type == einit_core_configuration_update) {
-  if (!(envfilebase = cfg_getpath("configuration-system-exec-envfile-base")))
-   envfilebase = estrdup("/etc/econf.d/");
- }
+void einit_exec_einit_event_handler_core_configuration_update (struct einit_event *ev) {
+ if (!(envfilebase = cfg_getpath("configuration-system-exec-envfile-base")))
+  envfilebase = estrdup("/etc/econf.d/");
 }
 
 void einit_exec_update_daemons_from_pidfiles() {
@@ -1203,7 +1201,7 @@ int einit_exec_configure (struct lmodule *irr) {
   kill_timeout_secondary = node->value;
 
  event_listen (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
- event_listen (einit_event_subsystem_core, einit_exec_einit_event_handler);
+ event_listen (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
  event_listen (einit_event_subsystem_process, einit_exec_process_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
