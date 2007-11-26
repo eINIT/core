@@ -1,3 +1,9 @@
+2007/11/26: Ryan Hope
+ * scheme modules
+ * edev
+ * switched to git
+ * hotplug handler
+
 2007/04/30: mdeininger
  * enhanced feedback
  * fixed some deadlocks
