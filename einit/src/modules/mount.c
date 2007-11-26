@@ -123,7 +123,7 @@ int einit_mount_recover_module (struct lmodule *);
 void einit_mount_mount_ipc_handler(struct einit_event *);
 void einit_mount_mount_handler(struct einit_event *);
 void einit_mount_einit_event_handler(struct einit_event *);
-void einit_mount_boot_event_handler (struct einit_event *);
+void einit_mount_event_boot_devices_available (struct einit_event *);
 void einit_mount_power_event_handler (struct einit_event *);
 void einit_mount_hotplug_event_handler (struct einit_event *);
 
@@ -1934,20 +1934,6 @@ void einit_mount_update_configuration () {
  mount_update_devices();
 }
 
-int einit_mount_cleanup (struct lmodule *tm) {
- event_ignore (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
- event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
- event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
- event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
- event_ignore (einit_boot_devices_available, einit_mount_boot_event_handler);
- event_ignore (einit_event_subsystem_power, einit_mount_power_event_handler);
-
- function_unregister ("fs-mount", 1, (void *)emount);
- function_unregister ("fs-umount", 1, (void *)eumount);
-
- return 0;
-}
-
 int einit_mount_recover (struct lmodule *lm) {
 
  return status_ok;
@@ -2010,7 +1996,7 @@ void eumount_root () {
  evstaticdestroy (ev);
 }
 
-void einit_mount_boot_event_handler (struct einit_event *ev) {
+void einit_mount_event_boot_devices_available (struct einit_event *ev) {
  emount_root ();
 
  emutex_lock (&mount_autostart_mutex);
@@ -2082,6 +2068,21 @@ void einit_mount_hotplug_event_handler (struct einit_event *ev) {
  }
 }
 
+int einit_mount_cleanup (struct lmodule *tm) {
+ event_ignore (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
+ event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
+ event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
+ event_ignore (einit_event_subsystem_power, einit_mount_power_event_handler);
+
+ event_ignore (einit_boot_devices_available, einit_mount_event_boot_devices_available);
+
+ function_unregister ("fs-mount", 1, (void *)emount);
+ function_unregister ("fs-umount", 1, (void *)eumount);
+
+ return 0;
+}
+
 int einit_mount_configure (struct lmodule *r) {
  struct stat st;
  module_init (r);
@@ -2094,11 +2095,12 @@ int einit_mount_configure (struct lmodule *r) {
  exec_configure (this);
 
  event_listen (einit_event_subsystem_power, einit_mount_power_event_handler);
- event_listen (einit_boot_devices_available, einit_mount_boot_event_handler);
  event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
  event_listen (einit_event_subsystem_mount, einit_mount_mount_handler);
  event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);
  event_listen (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
+
+ event_listen (einit_boot_devices_available, einit_mount_event_boot_devices_available);
 
  function_register ("fs-mount", 1, (void *)emount);
  function_register ("fs-umount", 1, (void *)eumount);
