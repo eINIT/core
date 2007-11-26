@@ -753,12 +753,6 @@ void einit_feedback_visual_feedback_event_handler(struct einit_event *ev) {
  }
 }
 
-void einit_feedback_visual_boot_event_handler(struct einit_event *ev) {
- if (ev->type == einit_boot_devices_available) {
-  feedback_textual_enable();
- }
-}
-
 void einit_feedback_visual_einit_event_handler(struct einit_event *ev) {
  if (ev->type == einit_core_service_update) {
   feedback_textual_queue_update (ev->module, ev->status, NULL, ev->seqid, ev->timestamp, NULL, ev->flag);
@@ -837,16 +831,6 @@ void einit_feedback_visual_ipc_event_handler(struct einit_event *ev) {
 
   ev->implemented = 1;
  }
-}
-
-int einit_feedback_visual_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_boot, einit_feedback_visual_boot_event_handler);
- event_ignore (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
- event_ignore (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
- event_ignore (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
- event_ignore (einit_event_subsystem_ipc, einit_feedback_visual_ipc_event_handler);
-
- return 0;
 }
 
 /*
@@ -1015,6 +999,16 @@ void feedback_textual_enable() {
  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
 }
 
+int einit_feedback_visual_cleanup (struct lmodule *this) {
+ event_ignore (einit_boot_devices_available, feedback_textual_enable);
+ event_ignore (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
+ event_ignore (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
+ event_ignore (einit_event_subsystem_feedback, einit_feedback_visual_feedback_event_handler);
+ event_ignore (einit_event_subsystem_ipc, einit_feedback_visual_ipc_event_handler);
+
+ return 0;
+}
+
 int einit_feedback_visual_configure (struct lmodule *irr) {
  module_init (irr);
 
@@ -1024,7 +1018,7 @@ int einit_feedback_visual_configure (struct lmodule *irr) {
  event_listen (einit_event_subsystem_core, einit_feedback_visual_einit_event_handler);
  event_listen (einit_event_subsystem_power, einit_feedback_visual_power_event_handler);
 
- event_listen (einit_event_subsystem_boot, einit_feedback_visual_boot_event_handler);
+ event_listen (einit_boot_devices_available, feedback_textual_enable);
 
  event_listen (einit_event_subsystem_ipc, einit_feedback_visual_ipc_event_handler);
 

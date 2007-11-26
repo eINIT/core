@@ -113,9 +113,9 @@ void einit_feedback_visual_fbsplash_power_event_handler(struct einit_event *ev) 
  }
 }
 
-void einit_feedback_visual_fbsplash_boot_event_handler(struct einit_event *ev) {
+void einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available (struct einit_event *ev) {
 /* preinit */
- if ((ev->type == einit_boot_devices_available) && !(coremode & einit_mode_ipconly)) {
+ if (!(coremode & einit_mode_ipconly)) {
   if (einit_initial_environment) {
 /* check for kernel params */
    uint32_t i = 0;
@@ -450,7 +450,7 @@ int einit_feedback_visual_fbsplash_disable () {
 }
 
 int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
- event_ignore (einit_event_subsystem_boot, einit_feedback_visual_fbsplash_boot_event_handler);
+ event_ignore (einit_boot_devices_available, einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available);
  event_ignore (einit_event_subsystem_power, einit_feedback_visual_fbsplash_power_event_handler);
  event_ignore (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
 
@@ -464,7 +464,7 @@ int einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
  tm->cleanup = einit_feedback_visual_fbsplash_cleanup;
 
  event_listen (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
- event_listen (einit_event_subsystem_boot, einit_feedback_visual_fbsplash_boot_event_handler);
+ event_listen (einit_boot_devices_available, einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available);
  event_listen (einit_event_subsystem_power, einit_feedback_visual_fbsplash_power_event_handler);
 
  return 0;
