@@ -819,12 +819,6 @@ int network_interface_custom (struct interface_descriptor *id, char *action, str
  return status_ok | status_enabled;
 }
 
-int network_cleanup (struct lmodule *this) {
- exec_cleanup (this);
-
- return 0;
-}
-
 int network_interface_cleanup (struct lmodule *this) {
  return 0;
 }
@@ -860,17 +854,19 @@ int network_interface_configure (struct lmodule *tm) {
  return 0;
 }
 
-void network_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_devices_available:
+void network_boot_event_handler_devices_available (struct einit_event *ev) {
 /* enable net-lo here */
-   if (network_loopback_interface_module) {
-    mod (einit_module_enable, network_loopback_interface_module, NULL);
-   }
-   break;
-
-   default: break;
+ if (network_loopback_interface_module) {
+  mod (einit_module_enable, network_loopback_interface_module, NULL);
  }
+}
+
+int network_cleanup (struct lmodule *this) {
+ exec_cleanup (this);
+
+ event_ignore (einit_boot_devices_available, network_boot_event_handler_devices_available);
+
+ return 0;
 }
 
 int network_configure (struct lmodule *this) {
@@ -880,7 +876,7 @@ int network_configure (struct lmodule *this) {
  thismodule->cleanup = network_cleanup;
  thismodule->scanmodules = network_scanmodules;
 
- event_listen (einit_event_subsystem_boot, network_boot_event_handler);
+ event_listen (einit_boot_devices_available, network_boot_event_handler_devices_available);
 
 #if 0
  event_listen (einit_event_subsystem_core, network_einit_event_handler);

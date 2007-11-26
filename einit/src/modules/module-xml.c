@@ -754,17 +754,6 @@ void module_xml_v2_preload_fork() {
  }
 }
 
-
-void module_xml_v2_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_early:
-   module_xml_v2_allow_preloads = 1;
-   module_xml_v2_preload_fork ();
-   break;
-  default: break;
- }
-}
-
 void module_xml_v2_auto_enable (char *mode) {
  if (!mode) return;
 
@@ -811,13 +800,19 @@ void module_xml_v2_core_event_handler (struct einit_event *ev) {
   }
 }
 
+void module_xml_v2_boot_event_handler_early (struct einit_event *ev) {
+ module_xml_v2_allow_preloads = 1;
+ module_xml_v2_preload_fork ();
+}
+
 int module_xml_v2_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
  sched_cleanup(irr);
 
  event_ignore (einit_event_subsystem_power, module_xml_v2_power_event_handler);
- event_ignore (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
  event_ignore (einit_event_subsystem_core, module_xml_v2_core_event_handler);
+
+ event_ignore (einit_boot_early, module_xml_v2_boot_event_handler_early);
 
  return 0;
 }
@@ -831,8 +826,9 @@ int module_xml_v2_configure (struct lmodule *pa) {
  pa->cleanup = module_xml_v2_cleanup;
 
  event_listen (einit_event_subsystem_power, module_xml_v2_power_event_handler);
- event_listen (einit_event_subsystem_boot, module_xml_v2_boot_event_handler);
  event_listen (einit_event_subsystem_core, module_xml_v2_core_event_handler);
+
+ event_listen (einit_boot_early, module_xml_v2_boot_event_handler_early);
 
  return 0;
 }

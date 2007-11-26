@@ -82,13 +82,13 @@ module_register(einit_preload_self);
 
 #endif
 
-void einit_preload_boot_event_handler (struct einit_event *);
+void einit_preload_boot_event_handler_early (struct einit_event *);
 int einit_preload_usage = 0;
 
 int einit_preload_cleanup (struct lmodule *this) {
  sched_cleanup(irr);
 
- event_ignore (einit_event_subsystem_boot, einit_preload_boot_event_handler);
+ event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
 
  return 0;
 }
@@ -130,46 +130,40 @@ void einit_preload_run () {
  }
 }
 
-void einit_preload_boot_event_handler (struct einit_event *ev) {
+void einit_preload_boot_event_handler_early (struct einit_event *ev) {
  einit_preload_usage++;
- switch (ev->type) {
-  case einit_boot_early:
-   {
-    struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
 
-    if (node && node->flag) {
-     pid_t p = fork();
+ struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
 
-     switch (p) {
-      case 0:
+ if (node && node->flag) {
+  pid_t p = fork();
+
+  switch (p) {
+   case 0:
 #if defined(LINUX) && defined(PR_SET_NAME)
-       prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
+    prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
 #endif
 
-       einit_preload_run();
-       _exit (EXIT_SUCCESS);
+    einit_preload_run();
+    _exit (EXIT_SUCCESS);
 
-      case -1:
-       notice (3, "fork failed, cannot preload");
-       break;
+   case -1:
+    notice (3, "fork failed, cannot preload");
+    break;
 
-      default:
-       sched_watch_pid(p);
-       break;
-     }
-    }
-   }
-   break;
-
-  default: break;
+   default:
+    sched_watch_pid(p);
+    break;
+  }
  }
+
  einit_preload_usage--;
 }
 
 int einit_preload_suspend (struct lmodule *irr) {
  if (!einit_preload_usage) {
   event_wakeup (einit_boot_early, irr);
-  event_ignore (einit_event_subsystem_boot, einit_preload_boot_event_handler);
+  event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
 
   return status_ok;
  } else
@@ -190,7 +184,7 @@ int einit_preload_configure (struct lmodule *irr) {
  thismodule->suspend = einit_preload_suspend;
  thismodule->resume  = einit_preload_resume;
 
- event_listen (einit_event_subsystem_boot, einit_preload_boot_event_handler);
+ event_listen (einit_boot_early, einit_preload_boot_event_handler_early);
 
  return 0;
 }

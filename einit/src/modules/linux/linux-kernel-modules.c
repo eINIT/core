@@ -332,20 +332,6 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
  return status_ok;
 }
 
-void linux_kernel_modules_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_early:
-   linux_kernel_modules_run(lkm_pre_dev);
-   break;
-
-  case einit_boot_load_kernel_extensions:
-   linux_kernel_modules_run(lkm_post_dev);
-   break;
-
-   default: break;
- }
-}
-
 int linux_kernel_modules_module_enable (char *subsys, struct einit_event *status) {
  char dwait = 0;
  char **modules = linux_kernel_modules_get_by_subsystem (subsys, &dwait);
@@ -440,10 +426,19 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
  return 0;
 }
 
+void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
+ linux_kernel_modules_run(lkm_pre_dev);
+}
+
+void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct einit_event *ev) {
+ linux_kernel_modules_run(lkm_post_dev);
+}
+
 int linux_kernel_modules_cleanup (struct lmodule *this) {
  exec_cleanup (this);
 
- event_ignore (einit_event_subsystem_boot, linux_kernel_modules_boot_event_handler);
+ event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
+ event_ignore (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
 #if 0
  event_ignore (einit_event_subsystem_power, linux_kernel_modules_power_event_handler);
@@ -459,7 +454,8 @@ int linux_kernel_modules_configure (struct lmodule *this) {
  thismodule->cleanup = linux_kernel_modules_cleanup;
  thismodule->scanmodules = linux_kernel_modules_scanmodules;
 
- event_listen (einit_event_subsystem_boot, linux_kernel_modules_boot_event_handler);
+ event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
+ event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
 #if 0
  event_listen (einit_event_subsystem_power, linux_kernel_modules_power_event_handler);

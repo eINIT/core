@@ -93,7 +93,7 @@ module_register(einit_ipc_self);
 pthread_t ipc_thread;
 char einit_ipc_running = 0;
 
-void einit_ipc_boot_event_handler (struct einit_event *);
+void einit_ipc_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_power_event_handler (struct einit_event *);
 
 int ipc_process_f (const char *cmd, FILE *f) {
@@ -211,6 +211,7 @@ void einit_ipc_ipc_event_handler (struct einit_event *ev) {
 
 int einit_ipc_cleanup (struct lmodule *this) {
  event_ignore (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);
+ event_ignore (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
  function_unregister ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;
@@ -322,15 +323,9 @@ void * ipc_wait (void *unused_parameter) {
  return NULL;
 }
 
-void einit_ipc_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_root_device_ok:
-   notice (6, "enabling IPC (core)");
-   ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
-   break;
-
-  default: break;
- }
+void einit_ipc_boot_event_handler_root_device_ok (struct einit_event *ev) {
+ notice (6, "enabling IPC (core)");
+ ethread_create (&ipc_thread, NULL, ipc_wait, NULL);
 }
 
 void einit_ipc_power_event_handler (struct einit_event *ev) {
@@ -351,7 +346,7 @@ int einit_ipc_configure (struct lmodule *irr) {
 
  irr->cleanup = einit_ipc_cleanup;
 
- event_listen (einit_event_subsystem_boot, einit_ipc_boot_event_handler);
+ event_listen (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
  event_listen (einit_event_subsystem_power, einit_ipc_power_event_handler);
 
  event_listen (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);

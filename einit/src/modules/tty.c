@@ -116,16 +116,6 @@ int einit_tty_texec (struct cfgnode *);
 
 void einit_tty_process_event_handler (struct einit_event *);
 
-int einit_tty_cleanup (struct lmodule *this) {
- exec_cleanup(this);
- utmp_cleanup(this);
- sched_configure(this);
-
- event_ignore (einit_event_subsystem_process, einit_tty_process_event_handler);
-
- return 0;
-}
-
 void *einit_tty_watcher (struct spidcb *spid) {
  pid_t pid = spid->pid;
  emutex_lock (&ttys_mutex);
@@ -370,24 +360,18 @@ void einit_tty_update() {
  free (enab_ttys);
 }
 
-void einit_tty_boot_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_boot_devices_available:
-   einit_tty_update();
-   break;
+int einit_tty_cleanup (struct lmodule *this) {
+ exec_cleanup(this);
+ utmp_cleanup(this);
+ sched_configure(this);
 
-   default: break;
- }
-}
+ event_ignore (einit_event_subsystem_process, einit_tty_process_event_handler);
 
-void einit_tty_core_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_core_mode_switching:
-   einit_tty_update();
-   break;
+ event_ignore (einit_core_mode_switching, einit_tty_update);
+ event_ignore (einit_core_mode_switch_done, einit_tty_update);
+ event_ignore (einit_boot_devices_available, einit_tty_update);
 
-   default: break;
- }
+ return 0;
 }
 
 int einit_tty_configure (struct lmodule *this) {
@@ -401,8 +385,9 @@ int einit_tty_configure (struct lmodule *this) {
 
  event_listen (einit_event_subsystem_process, einit_tty_process_event_handler);
 
- event_listen (einit_event_subsystem_core, einit_tty_core_event_handler);
- event_listen (einit_event_subsystem_boot, einit_tty_boot_event_handler);
+ event_listen (einit_core_mode_switching, einit_tty_update);
+ event_listen (einit_core_mode_switch_done, einit_tty_update);
+ event_listen (einit_boot_devices_available, einit_tty_update);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
