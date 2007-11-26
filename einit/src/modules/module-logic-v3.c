@@ -4059,7 +4059,6 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
 
   sleep (1);
   event_wakeup (einit_event_subsystem_ipc, this);
-  event_wakeup (einit_core_update_configuration, this);
   event_wakeup (einit_core_module_list_update, this);
   event_wakeup (einit_core_service_update, this);
   event_wakeup (einit_core_switch_mode, this);
