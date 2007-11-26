@@ -71,8 +71,8 @@ extern "C" {
 
 #define EINIT_VERSION 1
 
-#if defined (ISSVN) && (ISSVN > 0)
-#define EINIT_VERSION_LITERAL_NUMBER "live"
+#if defined (ISGIT) && (ISGIT > 0)
+#define EINIT_VERSION_LITERAL_NUMBER "git"
 #else
 #define EINIT_VERSION_LITERAL_NUMBER "0.25.1"
 #endif

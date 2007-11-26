@@ -34,11 +34,11 @@ alias echo="echo -e"
 fi
 
 BUILDNUMBER=`cat buildnumber`
-if test -d .svn; then
-	ISSVN=1
-	echo "configuring eINIT-svn-${BUILDNUMBER}..."
+if test -d .git; then
+	ISGIT=1
+	echo "configuring eINIT-git-${BUILDNUMBER}..."
 else
-	ISSVN=0
+	ISGIT=0
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
@@ -162,9 +162,9 @@ for param in $@; do
 		fi
         elif test "$short" = "--libdir-name"; then
                 ELIBDIR="${param#*=}";
-        elif test "$param" = "--svn"; then
-                echo -n " SVN";
-                ISSVN=1;
+        elif test "$param" = "--git"; then
+                echo -n " GIT";
+                ISGIT=1;
         elif test "$param" = "--static"; then
                 echo -n " STATIC";
                 STATIC=1;
@@ -297,7 +297,7 @@ Options:
  --debug                will #define DEBUG.
  --static               build with static libs
  --help                 display this text and exit.
- --svn                  indicate that this is a build off SVN.
+ --git                  indicate that this is a build off GIT.
  --ebuild               indicate that this script was called from portage/e.a.";
 exit;
 fi;
@@ -583,7 +583,7 @@ INCLUDE = $INCLUDE
 XDYNAMIC = $XDYNAMIC
 XDYNAMIC_SIMPLE = $XDYNAMIC_SIMPLE
 BUILDNUMBER = $BUILDNUMBER
-ISSVN = $ISSVN
+ISGIT = $ISGIT
 
 INTERNALMODULES = ${INTERNALMODULES}
 EXTERNALMODULES = ${EXTERNALMODULES}
@@ -607,8 +607,8 @@ STATIC = $STATIC
 LPA = $LPA
 
 CXX = $CXX ${GCCFLAGS}
-CXXC = \${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}
-XXL = $XXL -DISSVN=\${ISSVN}
+CXXC = \${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISGIT=\${ISGIT}
+XXL = $XXL -DISGIT=\${ISGIT}
 CXXLD = \${CXX} \${LDFLAGS}
 CXXLD = \${CXXC} \${LDFLAGS}
 LXXLD = \${CXXC} \${LDFLAGS} $LLD
@@ -669,7 +669,7 @@ INCLUDE=\"$INCLUDE\"
 
 XDYNAMIC=\"$XDYNAMIC\"
 BUILDNUMBER=\"$BUILDNUMBER\"
-ISSVN=\"$ISSVN\"
+ISGIT=\"$ISGIT\"
 
 INTERNALMODULES=\"${INTERNALMODULES}\"
 EXTERNALMODULES=\"${EXTERNALMODULES}\"
@@ -693,8 +693,8 @@ STATIC=\"$STATIC\"
 LPA=\"$LPA\"
 
 CXX=\"$CXX\"
-CXXC=\"\${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}\"
-XXL=\"$XXL -DISSVN=\${ISSVN}\"
+CXXC=\"\${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISGIT=\${ISGIT}\"
+XXL=\"$XXL -DISGIT=\${ISGIT}\"
 CXXLD=\"\${CXX} \${LDFLAGS}\"
 CXXLD=\"\${CXXC} \${LDFLAGS}\"
 LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
@@ -760,7 +760,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
     XDYNAMIC=\"$XDYNAMIC\"
     BUILDNUMBER=\"$BUILDNUMBER\"
-    ISSVN=\"$ISSVN\"
+    ISGIT=\"$ISGIT\"
 
     INTERNALMODULES=\"${INTERNALMODULES}\"
     EXTERNALMODULES=\"${EXTERNALMODULES}\"
@@ -784,8 +784,8 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     LPA=\"$LPA\"
 
     CXX=\"$CXX\"
-    CXXC=\"${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISSVN=\${ISSVN}\"
-    XXL=\"$XXL -DISSVN=\${ISSVN}\"
+    CXXC=\"${CXX} \${INCLUDE} \${CXXFLAGS} \${CFLAGS} -DISGIT=\${ISGIT}\"
+    XXL=\"$XXL -DISGIT=\${ISGIT}\"
     CXXLD=\"${CXX} \${LDFLAGS}\"
     CXXLD=\"${CXXC} \${LDFLAGS}\"
     LXXLD=\"${CXXC} \${LDFLAGS} $LLD\"
@@ -950,7 +950,7 @@ collect_and_install_headers() {
 #define EINIT_CONFIGURATION_H
 
 #define BUILDNUMBER ${BUILDNUMBER}
-#define ISSVN ${ISSVN}
+#define ISGIT ${ISGIT}
 
 #define BUFFERSIZE 1024
 
@@ -960,8 +960,8 @@ collect_and_install_headers() {
 
 " > build/headers/einit/configuration.h
 
-	if test "${ISSVN}" = "1"; then
-		echo "#define EINIT_VERSION_LITERAL_SUFFIX \"-svn-${BUILDNUMBER}\" " >> build/headers/einit/configuration.h;
+	if test "${ISGIT}" = "1"; then
+		echo "#define EINIT_VERSION_LITERAL_SUFFIX \"-git-${BUILDNUMBER}\" " >> build/headers/einit/configuration.h;
 	else
 		echo "#define EINIT_VERSION_LITERAL_SUFFIX \"#${BUILDNUMBER}\" " >> build/headers/einit/configuration.h;
 	fi;
