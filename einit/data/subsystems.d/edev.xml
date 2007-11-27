@@ -68,6 +68,10 @@
                     chmod="0666"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
+   <devicefile-rule DEVPATH_BASE="^(rtc|rtc0)$"
+                    chmod="0644"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
    <devicefile-rule SUBSYSTEM="^block$"
                     group="disk"
                     devicefile="/dev/${DEVPATH_BASE}" />
