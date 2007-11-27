@@ -362,16 +362,126 @@ void strtrim (char *s) {
 
 #if ! defined (EINIT_UTIL)
 
-pthread_mutex_t thread_key_detached_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t thread_key_detached_mutex = PTHREAD_MUTEX_INITIALIZER,
+ thread_rendezvous_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_cond_t
+ thread_rendezvous_cond = PTHREAD_COND_INITIALIZER;
+
+int thread_pool_count = 0;
+int thread_pool_free_count = 0;
+int thread_pool_max_count = 0;
+int thread_pool_max_pool_size = 10;
 
 struct thread_wrapper_data {
  void *(*thread)(void *);
  void *param;
 };
 
+struct thread_rendezvous_data_s {
+ struct thread_wrapper_data *d;
+ struct thread_rendezvous_data_s *next;
+} *thread_rendezvous_data = NULL;
+
+struct thread_wrapper_data *thread_wrapper_rendezvous () {
+ emutex_lock (&thread_rendezvous_mutex);
+
+ moar:
+
+ if (thread_rendezvous_data) {
+  struct thread_wrapper_data *d = thread_rendezvous_data->d;
+  struct thread_rendezvous_data_s *s = thread_rendezvous_data;
+
+  thread_rendezvous_data = thread_rendezvous_data->next;
+  free (s);
+  emutex_unlock (&thread_rendezvous_mutex);
+
+#if 1
+  fprintf (stderr, " ** thread recycled!\n");
+#endif
+  return (d);
+ }
+
+ if (!pthread_cond_wait (&thread_rendezvous_cond, &thread_rendezvous_mutex)) {
+  goto moar;
+ }
+
+ emutex_unlock (&thread_rendezvous_mutex);
+
+ return NULL;
+}
+
+char run_thread_function_in_pool (struct thread_wrapper_data *d) {
+ struct thread_rendezvous_data_s *s = emalloc (sizeof (struct thread_rendezvous_data_s));
+
+ s->d = d;
+ emutex_lock (&thread_rendezvous_mutex);
+ s->next = thread_rendezvous_data;
+ thread_rendezvous_data = s;
+ emutex_unlock (&thread_rendezvous_mutex);
+
+ pthread_cond_signal (&thread_rendezvous_cond);
+ sched_yield();
+
+ emutex_lock (&thread_rendezvous_mutex);
+ struct thread_rendezvous_data_s *p = NULL;
+ s = thread_rendezvous_data;
+
+ while (s) {
+  if (s->d == d) {
+   if (p) {
+    p->next = s->next;
+   } else {
+    thread_rendezvous_data = s->next;
+   }
+
+   free (s);
+   emutex_unlock (&thread_rendezvous_mutex);
+
+   return 0;
+  }
+
+  p = s;
+  s = s->next;
+ }
+ emutex_unlock (&thread_rendezvous_mutex);
+
+ return 1;
+}
+
 void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
+ thread_pool_count++;
+#if 1
+ int n = thread_pool_count;
+ if (n > thread_pool_max_count) {
+  thread_pool_max_count = n;
+
+  fprintf (stderr, " ** max thread count: %i\n", thread_pool_max_count);
+  fflush (stderr);
+ }
+#endif
+
+ moar:
+
  d->thread (d->param);
  free (d);
+
+ thread_pool_free_count++;
+
+ if (thread_pool_free_count < thread_pool_max_pool_size) {
+  if ((d = thread_wrapper_rendezvous ())) {
+   thread_pool_free_count--;
+   goto moar;
+  }
+ }
+#if 1
+ else {
+  fprintf (stderr, " ** pool getting too big: %i\n", thread_pool_free_count);
+ }
+#endif
+
+ thread_pool_free_count--;
+ thread_pool_count--;
 
  struct einit_join_thread *t = emalloc (sizeof (struct einit_join_thread));
 
@@ -391,6 +501,8 @@ void ethread_spawn_detached (void *(*thread)(void *), void *param) {
  d->thread = thread;
  d->param = param;
 
+ if (run_thread_function_in_pool (d)) return;
+
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d))
   free (d);
 }
@@ -401,6 +513,8 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
 
  d->thread = thread;
  d->param = param;
+
+ if (run_thread_function_in_pool (d)) return;
 
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d)) {
   free (d);
