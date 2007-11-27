@@ -58,7 +58,7 @@
                     chmod="0640" />
 
    <devicefile-rule SUBSYSTEM="^fb$"
-                    group="${SUBSYSTEM}"
+                    group="video"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule SUBSYSTEM="^vc$"
