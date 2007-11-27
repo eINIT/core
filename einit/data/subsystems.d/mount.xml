@@ -43,6 +43,7 @@
    <type id="squashfs" />
    <type id="romfs" />
    <type id="cramfs" />
+   <type id="fuse" />
 
    <!-- network filesystems -->
    <type id="nfs" flags="network:nofsck" />
@@ -50,6 +51,7 @@
    <!-- dos-ish filesystems -->
    <type id="vfat" flags="rw" />
    <type id="ntfs" />
+   <type id="ntfs-3g" />
 
    <!-- popular on cd/dvd media -->
    <type id="iso9660" />
