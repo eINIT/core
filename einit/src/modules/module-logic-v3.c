@@ -3262,7 +3262,8 @@ char mod_examine_group (char *groupname) {
 
    if (mod_isbroken (members[x])) {
     failed++;
-   } else {
+   }/* else {*/
+   {
     struct stree *serv = NULL;
 
     emutex_lock (&ml_service_list_mutex);
@@ -3318,6 +3319,10 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_changed_mutex);
   }
 #endif
+
+  if (!on && (changed >= mem)) {
+   on = (mem - failed); /* this one's a bit odd */
+  }
 
   if (!on || ((task & einit_module_disable) && ((changed >= mem) || (on == groupc)))) {
    if (task & einit_module_disable) {
