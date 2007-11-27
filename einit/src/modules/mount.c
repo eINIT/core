@@ -1493,6 +1493,8 @@ int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_dat
 
   if (mp->before_mount)
    pexec_v1 (mp->before_mount, (const char **)mp->variables, NULL, status);
+ } else {
+  fbprintf (status, "not fscking %s", dd->device);
  }
 
  if (strmatch (mp->fs, "auto")) {
