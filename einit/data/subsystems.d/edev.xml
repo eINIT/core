@@ -61,7 +61,7 @@
                     group="video"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^vc$"
+   <devicefile-rule SUBSYSTEM="^(vcs|vcs[0-9]*|vcsa|vcsa[0-9]*)$"
 		    group="tty"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
