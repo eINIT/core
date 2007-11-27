@@ -57,6 +57,10 @@
    <devicefile-rule SUBSYSTEM="^input$"
                     chmod="0640" />
 
+   <devicefile-rule SUBSYSTEM="^fb$"
+                    group="${SUBSYSTEM}"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
    <devicefile-rule SUBSYSTEM="^block$"
                     group="disk"
                     devicefile="/dev/${DEVPATH_BASE}" />
