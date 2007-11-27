@@ -51,7 +51,7 @@
    <!-- dos-ish filesystems -->
    <type id="vfat" flags="rw" />
    <type id="ntfs" />
-   <type id="ntfs-3g" />
+   <type id="ntfs-3g" flags="rw" />
 
    <!-- popular on cd/dvd media -->
    <type id="iso9660" />
