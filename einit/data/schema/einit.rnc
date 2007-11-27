@@ -184,7 +184,7 @@ Configuration = element configuration {
       element suppress-status-notices { BooleanAttribute }? &
 
       element fbsplash {
-        element ttys { StringAttribute }? &
+        element ttys { StringAttribute, attribute sysv-style { Boolean }? }? &
         element theme { StringAttribute }? &
 
         element daemon {

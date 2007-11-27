@@ -307,10 +307,15 @@ char einit_tty_is_present (char *ttyname) {
  return present;
 }
 
+int einit_tty_in_switch = 0;
+
 void einit_tty_update() {
  struct cfgnode *node = NULL;
  char **enab_ttys = NULL, *blocked_tty = cfg_getstring ("configuration-feedback-visual-std-io/stdio", NULL);
  int i = 0;
+ char sysv_semantics = parse_boolean(cfg_getstring("ttys/sysv-style", NULL));
+
+ if (sysv_semantics && einit_tty_in_switch) return;
 
  enab_ttys = str2set (':', cfg_getstring("ttys", NULL));
 
@@ -360,6 +365,18 @@ void einit_tty_update() {
  free (enab_ttys);
 }
 
+void einit_tty_update_switching () {
+ einit_tty_in_switch++;
+
+ einit_tty_update();
+}
+
+void einit_tty_update_switch_done () {
+ einit_tty_in_switch--;
+
+ einit_tty_update();
+}
+
 int einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
@@ -385,8 +402,8 @@ int einit_tty_configure (struct lmodule *this) {
 
  event_listen (einit_event_subsystem_process, einit_tty_process_event_handler);
 
- event_listen (einit_core_mode_switching, einit_tty_update);
- event_listen (einit_core_mode_switch_done, einit_tty_update);
+ event_listen (einit_core_mode_switching, einit_tty_update_switching);
+ event_listen (einit_core_mode_switch_done, einit_tty_update_switch_done);
  event_listen (einit_boot_devices_available, einit_tty_update);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
