@@ -50,7 +50,7 @@
                     group="audio"
                     devicefile="/dev/snd/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^(card*|nvidia*|3dfx*)$"
+   <devicefile-rule SUBSYSTEM="^(card[0-9]*|nvidia[0-9]*|3dfx[0-9]*)$"
                     group="video"
                     devicefile="/dev/dri/${DEVPATH_BASE}" />
 
