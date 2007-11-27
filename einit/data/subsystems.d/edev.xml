@@ -61,6 +61,11 @@
                     group="${SUBSYSTEM}"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
+   <devicefile-rule SUBSYSTEM="^fuse$"
+                    group="${SUBSYSTEM}"
+		    chmod="666"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+
    <devicefile-rule SUBSYSTEM="^block$"
                     group="disk"
                     devicefile="/dev/${DEVPATH_BASE}" />
