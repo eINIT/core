@@ -397,7 +397,7 @@ struct thread_wrapper_data *thread_wrapper_rendezvous () {
   free (s);
   emutex_unlock (&thread_rendezvous_mutex);
 
-#if 1
+#if 0
   fprintf (stderr, " ** thread recycled!\n");
 #endif
   return (d);
@@ -475,7 +475,7 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
    goto moar;
   }
  }
-#if 1
+#if 0
  else {
   fprintf (stderr, " ** pool getting too big: %i\n", thread_pool_free_count);
  }
