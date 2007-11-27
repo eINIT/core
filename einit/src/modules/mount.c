@@ -1488,13 +1488,14 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
 
 int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
  if (!(coremode & einit_mode_sandbox)) {
-  if ((dd->device_status & (device_status_dirty | device_status_error_notint)) && (!inset ((const void **)mp->options, "skip-fsck", SET_TYPE_STRING)))
+  if ((dd->device_status & (device_status_dirty | device_status_error_notint)) && (!inset ((const void **)mp->options, "skip-fsck", SET_TYPE_STRING))) {
    mount_fsck (mp->fs, dd->device, status);
+  } else {
+   fbprintf (status, "not fscking %s", dd->device);
+  }
 
   if (mp->before_mount)
    pexec_v1 (mp->before_mount, (const char **)mp->variables, NULL, status);
- } else {
-  fbprintf (status, "not fscking %s", dd->device);
  }
 
  if (strmatch (mp->fs, "auto")) {
@@ -1578,8 +1579,9 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
 }
 
 int mount_fsck (char *fs, char *device, struct einit_event *status) {
- char ping_loop = 0, finished = 1, waited = 0;
+ char ping_loop = 0, finished = 0, waited = 0;
  if (mount_fastboot || (fs && (mount_get_filesystem_options(fs) & filesystem_capability_no_fsck))) {
+  fbprintf (status, "fastboot // no fsck for this fs");
   return status_ok;
  }
 
