@@ -62,6 +62,7 @@
                     devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule SUBSYSTEM="^vc$"
+		    group="tty"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule DEVPATH_BASE="^fuse$"
