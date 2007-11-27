@@ -72,6 +72,9 @@
                     chmod="0644"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
+   <devicefile-rule DEVPATH_BASE="^rtc0$"
+                    symlink="/dev/rtc" />
+
    <devicefile-rule SUBSYSTEM="^block$"
                     group="disk"
                     devicefile="/dev/${DEVPATH_BASE}" />
