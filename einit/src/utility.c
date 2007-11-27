@@ -372,6 +372,7 @@ int thread_pool_count = 0;
 int thread_pool_free_count = 0;
 int thread_pool_max_count = 0;
 int thread_pool_max_pool_size = 10;
+char thread_pool_prune = 0;
 
 struct thread_wrapper_data {
  void *(*thread)(void *);
@@ -402,7 +403,7 @@ struct thread_wrapper_data *thread_wrapper_rendezvous () {
   return (d);
  }
 
- if (!pthread_cond_wait (&thread_rendezvous_cond, &thread_rendezvous_mutex)) {
+ if (!thread_pool_prune && !pthread_cond_wait (&thread_rendezvous_cond, &thread_rendezvous_mutex)) {
   goto moar;
  }
 
@@ -483,6 +484,10 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
  thread_pool_free_count--;
  thread_pool_count--;
 
+ if (!thread_pool_free_count) {
+  thread_pool_prune = 0;
+ }
+
  struct einit_join_thread *t = emalloc (sizeof (struct einit_join_thread));
 
  t->thread = pthread_self();
@@ -520,6 +525,12 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
   free (d);
   thread(param);
  }
+}
+
+void ethread_prune_thread_pool () {
+ thread_pool_prune = 1;
+
+ pthread_cond_broadcast (&thread_rendezvous_cond);
 }
 
 /* event-helpers */

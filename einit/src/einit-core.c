@@ -167,6 +167,8 @@ void core_timer_event_handler (struct einit_event *ev) {
    notice (4, "%i modules suspended", ok);
 
   event_snooze_time = 0;
+
+  ethread_prune_thread_pool ();
  }
 }
 

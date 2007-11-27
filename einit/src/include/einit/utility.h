@@ -264,6 +264,7 @@ int unlink_recursive (const char *file, char self);
 
 void ethread_spawn_detached (void *(*thread)(void *), void *param);
 void ethread_spawn_detached_run (void *(*thread)(void *), void *param);
+void ethread_prune_thread_pool ();
 
 struct einit_join_thread {
  pthread_t thread;
