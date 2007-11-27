@@ -457,7 +457,7 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
  if (n > thread_pool_max_count) {
   thread_pool_max_count = n;
 
-  fprintf (stderr, " ** max thread count: %i\n", thread_pool_max_count);
+//  fprintf (stderr, " ** max thread count: %i\n", thread_pool_max_count);
   fflush (stderr);
  }
 #endif
@@ -486,6 +486,8 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
 
  if (!thread_pool_free_count) {
   thread_pool_prune = 0;
+
+  fprintf (stderr, " ** thread pool pruning complete; %i/%i/%i\n", thread_pool_count, thread_pool_max_count, thread_pool_free_count);
  }
 
  struct einit_join_thread *t = emalloc (sizeof (struct einit_join_thread));
