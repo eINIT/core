@@ -61,6 +61,9 @@
                     group="video"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
+   <devicefile-rule DEVPATH_BASE="^fb0$"
+                    symlink="/dev/fb" />
+
    <devicefile-rule SUBSYSTEM="^(vcs|vcs[0-9]*|vcsa|vcsa[0-9]*)$"
 		    group="tty"
                     devicefile="/dev/${DEVPATH_BASE}" />
