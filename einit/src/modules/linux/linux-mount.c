@@ -89,7 +89,9 @@ int linux_mount_configure (struct lmodule *);
 int linux_mount_cleanup (struct lmodule *);
 
 int linux_mount_do_mount_real (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
+int linux_mount_do_mount_ntfs_3g (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
 int linux_mount_do_mount_swap (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
+int linux_mount_do_umount_swap (char *, char *, char, struct device_data *, struct mountpoint_data *, struct einit_event *);
 
 unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
  FILE *f = efopen ("/proc/partitions", "r");
@@ -189,6 +191,38 @@ int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *d
  return pexec_simple (command, status);
 }
 
+int linux_mount_do_mount_ntfs_3g (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
+ fbprintf (status, "mounting %s on %s (fs=%s; using specialised ntfs-3g command)", dd->device, mountpoint, fs);
+
+ char *fsdata = NULL;
+ char command[BUFFERSIZE];
+
+ if (mp->options) {
+  int fi = 0;
+  for (; mp->options[fi]; fi++) {
+   if (strmatch (mp->options[fi], "auto") || strmatch (mp->options[fi], "noauto") || strmatch (mp->options[fi], "system") || strmatch (mp->options[fi], "critical") || strmatch (mp->options[fi], "network") || strmatch (mp->options[fi], "skip-fsck")) ; // ignore our own specifiers, as well as auto/noauto
+   else if (!fsdata) {
+    uint32_t slen = strlen (mp->options[fi])+1;
+    fsdata = ecalloc (1, slen);
+    memcpy (fsdata, mp->options[fi], slen);
+   } else {
+    uint32_t fsdl = strlen(fsdata) +1, slen = strlen (mp->options[fi])+1;
+    fsdata = erealloc (fsdata, fsdl+slen);
+    *(fsdata + fsdl -1) = ',';
+    memcpy (fsdata+fsdl, mp->options[fi], slen);
+   }
+  }
+ }
+
+ if (fsdata) {
+  esprintf (command, BUFFERSIZE, "/bin/ntfs-3g %s %s -t %s -o %s", dd->device, mountpoint, fs, fsdata);
+ } else {
+  esprintf (command, BUFFERSIZE, "/bin/ntfs-3g %s %s -t %s", dd->device, mountpoint, fs);
+ }
+
+ return pexec_simple (command, status);
+}
+
 int linux_mount_do_mount_swap (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
  fbprintf (status, "using %s as swap (using swapon()-syscall)", dd->device);
 
@@ -232,6 +266,10 @@ int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("fs-umount-Linux-swap", 1, (void *)linux_mount_do_umount_swap);
  function_unregister ("fs-umount-generic-swap", 1, (void *)linux_mount_do_umount_swap);
 
+ function_unregister ("fs-mount-linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
+ function_unregister ("fs-mount-Linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
+ function_unregister ("fs-mount-generic-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
+
  exec_cleanup(this);
 
  return 0;
@@ -260,6 +298,11 @@ int linux_mount_configure (struct lmodule *this) {
  function_register ("fs-mount-linux-nfs", 1, (void *)linux_mount_do_mount_real);
  function_register ("fs-mount-Linux-nfs", 1, (void *)linux_mount_do_mount_real);
  function_register ("fs-mount-generic-nfs", 1, (void *)linux_mount_do_mount_real);
+
+/* ntfs-3g has its own handler for things */
+ function_register ("fs-mount-linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
+ function_register ("fs-mount-Linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
+ function_register ("fs-mount-generic-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
 
 /* register our handler as a generic backup-mounter */
 /* this oughta come in handy */
