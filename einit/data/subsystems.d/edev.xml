@@ -57,7 +57,8 @@
    <devicefile-rule SUBSYSTEM="^input$"
                     chmod="0640" />
 
-   <devicefile-rule SUBSYSTEM="^fb$"
+   <devicefile-rule SUBSYSTEM="^graphics$"
+		    DEVPATH_BASE="^fb[0-9]*$"
                     group="video"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
