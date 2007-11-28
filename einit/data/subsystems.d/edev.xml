@@ -26,6 +26,10 @@
    <devicefile-rule SUBSYSTEM="^block$"
                     blockdevice="yes" />
 
+   <devicefile-rule SUBSYSTEM="^block$"
+                    DEVPATH_BASE="^sr[0-9]*$"
+                    cdrom="yes" />
+
    <devicefile-rule chmod="0660"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
