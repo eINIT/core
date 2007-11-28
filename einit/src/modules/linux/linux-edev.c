@@ -703,21 +703,21 @@ void linux_edev_get_cdrom_capabilities (char devicefile) {
   return 1;
  }
  printf("ID_CDROM=1\n");
- if (result & CDC_CD_R)
+ if (out & CDC_CD_R)
   printf("ID_CDROM_CD_R=1\n");
- if (result & CDC_CD_RW)
+ if (out & CDC_CD_RW)
   printf("ID_CDROM_CD_RW=1\n");
- if (result & CDC_DVD)
+ if (out & CDC_DVD)
   printf("ID_CDROM_DVD=1\n");
- if (result & CDC_DVD_R)
+ if (out & CDC_DVD_R)
   printf("ID_CDROM_DVD_R=1\n");
- if (result & CDC_DVD_RAM)
+ if (out & CDC_DVD_RAM)
   printf("ID_CDROM_DVD_RAM=1\n");
- if (result & CDC_MRW)
+ if (out & CDC_MRW)
   printf("ID_CDROM_MRW=1\n");
- if (result & CDC_MRW_W)
+ if (out & CDC_MRW_W)
   printf("ID_CDROM_MRW_W=1\n");
- if (result & CDC_RAM)
+ if (out & CDC_RAM)
   printf("ID_CDROM_RAM=1\n");
  return 0;
 }
