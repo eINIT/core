@@ -130,10 +130,9 @@ void einit_module_transformations_garbage_free () {
  emutex_unlock (&einit_module_transformations_garbage_mutex);
 }
 
-void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
+void einit_module_transformations_einit_event_handler_configuration_update (struct einit_event *ev) {
  einit_module_transformations_usage++;
 
- if (ev->type == einit_core_configuration_update) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
 #ifdef POSIXREGEX
@@ -208,7 +207,13 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
   if (ca)
    streefree (ca);
 #endif
- } else if (ev->type == einit_core_update_module) {
+
+ einit_module_transformations_usage--;
+}
+
+void einit_module_transformations_einit_event_handler_update_module (struct einit_event *ev) {
+ einit_module_transformations_usage++;
+
   struct lmodule *module = ev->para;
   struct cfgnode *lnode = NULL;
 
@@ -468,13 +473,13 @@ void einit_module_transformations_einit_event_handler (struct einit_event *ev) {
     }
    }
 #endif
- }
 
  einit_module_transformations_usage--;
 }
 
 int einit_module_transformations_cleanup (struct lmodule *r) {
- event_ignore (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
+ event_ignore (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
+ event_ignore (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);
 
  return 0;
 }
@@ -483,7 +488,8 @@ int einit_module_transformations_suspend (struct lmodule *r) {
  if (!einit_module_transformations_usage) {
   event_wakeup (einit_core_configuration_update, r);
   event_wakeup (einit_core_update_module, r);
-  event_ignore (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
+  event_ignore (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
+  event_ignore (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);
 
   einit_module_transformations_garbage_free();
 
@@ -507,7 +513,8 @@ int einit_module_transformations_configure (struct lmodule *r) {
  thismodule->suspend = einit_module_transformations_suspend;
  thismodule->resume = einit_module_transformations_resume;
 
- event_listen (einit_event_subsystem_core, einit_module_transformations_einit_event_handler);
+ event_listen (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
+ event_listen (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);
 
  return 0;
 }

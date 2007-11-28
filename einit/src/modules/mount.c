@@ -120,12 +120,14 @@ int mount_do_umount_generic (char *, char *, char, struct device_data *, struct 
 int einit_mount_recover (struct lmodule *);
 int einit_mount_recover_module (struct lmodule *);
 
+#if 0
 void einit_mount_mount_ipc_handler(struct einit_event *);
 void einit_mount_mount_handler(struct einit_event *);
-void einit_mount_einit_event_handler(struct einit_event *);
+#endif
+
 void einit_mount_event_boot_devices_available (struct einit_event *);
-void einit_mount_power_event_handler (struct einit_event *);
-void einit_mount_hotplug_event_handler (struct einit_event *);
+
+void einit_mount_hotplug_event_handler_add (struct einit_event *);
 
 int einit_mount_scanmodules (struct lmodule *);
 int einit_mount_cleanup (struct lmodule *);
@@ -876,20 +878,10 @@ void mount_update_devices () {
  emutex_unlock (&mount_device_data_mutex);
 }
 
+#if 0
 void einit_mount_mount_ipc_handler(struct einit_event *ev) {
 }
-
-void einit_mount_mount_handler(struct einit_event *ev) {
-}
-
-void einit_mount_einit_event_handler(struct einit_event *ev) {
- if ((ev->type == einit_core_configuration_update) || (ev->type == einit_core_module_list_update_complete)) {
-  einit_mount_update_configuration();
- } else if (ev->type == einit_core_crash_data) {
-  notice (4, "storing crash data to save it afer / is back to r/w status");
-  mount_crash_data = estrdup (ev->string);
- }
-}
+#endif
 
 char *mount_mp_to_service_name (char *mp) {
  if (strmatch (mp, "/"))
@@ -2021,17 +2013,6 @@ void einit_mount_event_boot_devices_available (struct einit_event *ev) {
  }
 }
 
-void einit_mount_power_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_power_down_imminent:
-  case einit_power_reset_imminent:
-   eumount_root ();
-   break;
-
-  default: break;
- }
-}
-
 void *einit_mount_fsck_thread (struct device_data *dd) {
  if (dd->fs) {
   mount_fsck (dd->fs, dd->device, NULL);
@@ -2061,25 +2042,30 @@ void einit_mount_analyse_fs (char *device) {
  }
 }
 
-void einit_mount_hotplug_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_hotplug_add:
-   if (ev->string) {
-    einit_mount_analyse_fs (ev->string);
-   }
-   break;
-  default: break;
+void einit_mount_hotplug_event_handler_add (struct einit_event *ev) {
+ if (ev->string) {
+  einit_mount_analyse_fs (ev->string);
+ }
+}
+
+void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
+ if (ev->type == einit_core_crash_data) {
+  notice (4, "storing crash data to save it afer / is back to r/w status");
+  mount_crash_data = estrdup (ev->string);
  }
 }
 
 int einit_mount_cleanup (struct lmodule *tm) {
- event_ignore (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
- event_ignore (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
- event_ignore (einit_event_subsystem_mount, einit_mount_mount_handler);
- event_ignore (einit_event_subsystem_core, einit_mount_einit_event_handler);
- event_ignore (einit_event_subsystem_power, einit_mount_power_event_handler);
-
+ event_ignore (einit_core_crash_data, einit_mount_einit_event_handler_crash_data);
+ event_ignore (einit_core_configuration_update, einit_mount_update_configuration);
+ event_ignore (einit_core_module_list_update_complete, einit_mount_update_configuration);
+ event_ignore (einit_power_down_imminent, eumount_root);
+ event_ignore (einit_power_reset_imminent, eumount_root);
  event_ignore (einit_boot_devices_available, einit_mount_event_boot_devices_available);
+ event_ignore (einit_hotplug_add, einit_mount_hotplug_event_handler_add);
+#if 0
+ event_ignore (einit_ipc_request, einit_mount_mount_ipc_handler);
+#endif
 
  function_unregister ("fs-mount", 1, (void *)emount);
  function_unregister ("fs-umount", 1, (void *)eumount);
@@ -2098,13 +2084,16 @@ int einit_mount_configure (struct lmodule *r) {
  /* pexec configuration */
  exec_configure (this);
 
- event_listen (einit_event_subsystem_power, einit_mount_power_event_handler);
- event_listen (einit_event_subsystem_ipc, einit_mount_mount_ipc_handler);
- event_listen (einit_event_subsystem_mount, einit_mount_mount_handler);
- event_listen (einit_event_subsystem_core, einit_mount_einit_event_handler);
- event_listen (einit_event_subsystem_hotplug, einit_mount_hotplug_event_handler);
-
+ event_listen (einit_core_crash_data, einit_mount_einit_event_handler_crash_data);
+ event_listen (einit_core_configuration_update, einit_mount_update_configuration);
+ event_listen (einit_core_module_list_update_complete, einit_mount_update_configuration);
+ event_listen (einit_power_down_imminent, eumount_root);
+ event_listen (einit_power_reset_imminent, eumount_root);
  event_listen (einit_boot_devices_available, einit_mount_event_boot_devices_available);
+ event_listen (einit_hotplug_add, einit_mount_hotplug_event_handler_add);
+#if 0
+ event_listen (einit_ipc_request, einit_mount_mount_ipc_handler);
+#endif
 
  function_register ("fs-mount", 1, (void *)emount);
  function_register ("fs-umount", 1, (void *)eumount);

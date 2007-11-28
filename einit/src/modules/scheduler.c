@@ -103,33 +103,6 @@ extern char shutting_down;
 int cleanup ();
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context);
 
-int scheduler_cleanup () {
- sem_t *sembck = signal_semaphore;
- stack_t curstack;
- signal_semaphore = NULL;
-
- if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
-  curstack.ss_size = SIGSTKSZ;
-  curstack.ss_flags = SS_DISABLE;
-  sigaltstack (&curstack, NULL);
-//  free (curstack.ss_sp);
- } else {
-  notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
- }
-
-#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
- sem_destroy (sembck);
-// free (sembck);
-#elif defined(DARWIN)
- sem_close (sembck);
-#else
- if (sem_destroy (sembck))
-  sem_close (sembck);
-#endif
-
- return 0;
-}
-
 time_t *sched_timer_data = NULL;
 
 int scheduler_compare_time (time_t a, time_t b) {
@@ -189,15 +162,12 @@ void sched_handle_timers () {
  }
 }
 
-void sched_timer_event_handler(struct einit_event *ev) {
- if (ev->type == einit_timer_set) {
-//  notice (1, "setting timer...");
+void sched_timer_event_handler_set (struct einit_event *ev) {
+ emutex_lock (&sched_timer_data_mutex);
 
-  emutex_lock (&sched_timer_data_mutex);
-
-  uintptr_t tmpinteger = ev->integer;
-  sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)tmpinteger, SET_NOALLOC);
-  setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
+ uintptr_t tmpinteger = ev->integer;
+ sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)tmpinteger, SET_NOALLOC);
+ setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
 
 /*  if (sched_timer_data) {
    uint32_t i = 0;
@@ -209,10 +179,9 @@ void sched_timer_event_handler(struct einit_event *ev) {
    }
   }*/
 
-  emutex_unlock (&sched_timer_data_mutex);
+ emutex_unlock (&sched_timer_data_mutex);
 
-  sched_handle_timers();
- }
+ sched_handle_timers();
 }
 
 #ifdef __GLIBC__
@@ -375,7 +344,7 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
-void sched_ipc_event_handler(struct einit_event *ev) {
+void sched_ipc_event_handler (struct einit_event *ev) {
  errno = 0;
  if (!ev) return;
  else {
@@ -538,14 +507,12 @@ void *sched_pidthread_processor(FILE *pipe) {
  return NULL;
 }
 
-void sched_einit_event_handler(struct einit_event *ev) {
- if (ev->type == einit_core_main_loop_reached) {
-  if (ev->file) {
-   ethread_spawn_detached ((void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
-  }
-
-  sched_run_sigchild(NULL);
+void sched_einit_event_handler_main_loop_reached (struct einit_event *ev) {
+ if (ev->file) {
+  ethread_spawn_detached ((void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
  }
+
+ sched_run_sigchild(NULL);
 }
 
 void *sched_run_sigchild (void *p) {
@@ -665,6 +632,33 @@ void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
+int scheduler_cleanup () {
+ sem_t *sembck = signal_semaphore;
+ stack_t curstack;
+ signal_semaphore = NULL;
+
+ if (!sigaltstack (NULL, &curstack) && !(curstack.ss_flags & SS_ONSTACK)) {
+  curstack.ss_size = SIGSTKSZ;
+  curstack.ss_flags = SS_DISABLE;
+  sigaltstack (&curstack, NULL);
+//  free (curstack.ss_sp);
+ } else {
+  notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
+ }
+
+#if ((_POSIX_SEMAPHORES - 200112L) >= 0)
+ sem_destroy (sembck);
+// free (sembck);
+#elif defined(DARWIN)
+ sem_close (sembck);
+#else
+ if (sem_destroy (sembck))
+  sem_close (sembck);
+#endif
+
+ return 0;
+}
+
 int einit_scheduler_configure (struct lmodule *tm) {
  module_init(tm);
 
@@ -697,9 +691,9 @@ int einit_scheduler_configure (struct lmodule *tm) {
  }
 #endif
 
- event_listen (einit_event_subsystem_timer, sched_timer_event_handler);
- event_listen (einit_event_subsystem_core, sched_einit_event_handler);
- event_listen (einit_event_subsystem_ipc, sched_ipc_event_handler);
+ event_listen (einit_timer_set, sched_timer_event_handler_set);
+ event_listen (einit_core_main_loop_reached, sched_einit_event_handler_main_loop_reached);
+ event_listen (einit_ipc_request, sched_ipc_event_handler);
 
  function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
 

@@ -662,21 +662,6 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
  return 1;
 }
 
-void module_xml_v2_power_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  struct stree *modules = module_xml_v2_modules;
-
-  while (modules) {
-   if (module_xml_v2_module_have_action (modules->key, "on-shutdown")) {
-    struct lmodule *mo = modules->value;
-    if (mo && (mo->status & status_enabled))
-     mod (einit_module_custom, mo, "on-shutdown");
-   }
-   modules = streenext (modules);
-  }
- }
-}
-
 void module_xml_v2_do_preload(char **files) {
  if (files) {
   int i = 0;
@@ -790,14 +775,9 @@ void module_xml_v2_auto_enable (char *mode) {
  }
 }
 
-void module_xml_v2_core_event_handler (struct einit_event *ev) {
+void module_xml_v2_core_event_handler_mode_switching (struct einit_event *ev) {
  if (ev->para)
-  switch (ev->type) {
-   case einit_core_mode_switching:
-    module_xml_v2_auto_enable (((struct cfgnode *)ev->para)->id);
-    break;
-    default: break;
-  }
+  module_xml_v2_auto_enable (((struct cfgnode *)ev->para)->id);
 }
 
 void module_xml_v2_boot_event_handler_early (struct einit_event *ev) {
@@ -805,14 +785,27 @@ void module_xml_v2_boot_event_handler_early (struct einit_event *ev) {
  module_xml_v2_preload_fork ();
 }
 
+void module_xml_v2_power_event_handler (struct einit_event *ev) {
+ struct stree *modules = module_xml_v2_modules;
+
+ while (modules) {
+  if (module_xml_v2_module_have_action (modules->key, "on-shutdown")) {
+   struct lmodule *mo = modules->value;
+   if (mo && (mo->status & status_enabled))
+    mod (einit_module_custom, mo, "on-shutdown");
+  }
+  modules = streenext (modules);
+ }
+}
+
 int module_xml_v2_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
  sched_cleanup(irr);
 
- event_ignore (einit_event_subsystem_power, module_xml_v2_power_event_handler);
- event_ignore (einit_event_subsystem_core, module_xml_v2_core_event_handler);
-
+ event_ignore (einit_power_reset_scheduled, module_xml_v2_power_event_handler);
+ event_ignore (einit_power_down_scheduled, module_xml_v2_power_event_handler);
  event_ignore (einit_boot_early, module_xml_v2_boot_event_handler_early);
+ event_ignore (einit_core_mode_switching, module_xml_v2_core_event_handler_mode_switching);
 
  return 0;
 }
@@ -825,10 +818,10 @@ int module_xml_v2_configure (struct lmodule *pa) {
  pa->scanmodules = module_xml_v2_scanmodules;
  pa->cleanup = module_xml_v2_cleanup;
 
- event_listen (einit_event_subsystem_power, module_xml_v2_power_event_handler);
- event_listen (einit_event_subsystem_core, module_xml_v2_core_event_handler);
-
+ event_listen (einit_power_reset_scheduled, module_xml_v2_power_event_handler);
+ event_listen (einit_power_down_scheduled, module_xml_v2_power_event_handler);
  event_listen (einit_boot_early, module_xml_v2_boot_event_handler_early);
+ event_listen (einit_core_mode_switching, module_xml_v2_core_event_handler_mode_switching);
 
  return 0;
 }
