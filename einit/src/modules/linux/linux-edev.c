@@ -719,5 +719,6 @@ int linux_edev_get_cdrom_capabilities (char devicefile) {
   printf("ID_CDROM_MRW_W=1\n");
  if (out & CDC_RAM)
   printf("ID_CDROM_RAM=1\n");
+ close(fd);
  return 0;
 }
