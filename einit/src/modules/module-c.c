@@ -220,18 +220,18 @@ char module_c_update_modules () {
  return ret;
 }
 
-void module_c_einit_event_handler (struct einit_event *ev) {
+void module_c_einit_event_handler_update_configuration (struct einit_event *ev) {
  module_c_usage++;
- if (ev->type == einit_core_update_configuration) {
-  if (module_c_update_modules()) {
-   ev->chain_type = einit_core_configuration_update;
-  }
+
+ if (module_c_update_modules()) {
+  ev->chain_type = einit_core_configuration_update;
  }
+
  module_c_usage--;
 }
 
 int module_c_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_core, module_c_einit_event_handler);
+ event_ignore (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 
  return 0;
 }
@@ -239,7 +239,7 @@ int module_c_cleanup (struct lmodule *this) {
 int module_c_suspend (struct lmodule *this) {
  if (!module_c_usage) {
   event_wakeup (einit_core_update_configuration, this);
-  event_ignore (einit_event_subsystem_core, module_c_einit_event_handler);
+  event_ignore (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 
   return status_ok;
  } else
@@ -260,7 +260,7 @@ int module_c_configure (struct lmodule *irr) {
  thismodule->suspend = module_c_suspend;
  thismodule->resume = module_c_resume;
  
- event_listen (einit_event_subsystem_core, module_c_einit_event_handler);
+ event_listen (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 
  return 0;
 }

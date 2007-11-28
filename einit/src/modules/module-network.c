@@ -819,10 +819,6 @@ int network_interface_custom (struct interface_descriptor *id, char *action, str
  return status_ok | status_enabled;
 }
 
-int network_interface_cleanup (struct lmodule *this) {
- return 0;
-}
-
 struct lmodule *network_loopback_interface_module = NULL;
 
 int network_interface_configure (struct lmodule *tm) {
@@ -866,6 +862,10 @@ int network_cleanup (struct lmodule *this) {
 
  event_ignore (einit_boot_devices_available, network_boot_event_handler_devices_available);
 
+ return 0;
+}
+
+int network_interface_cleanup (struct lmodule *this) {
  return 0;
 }
 
