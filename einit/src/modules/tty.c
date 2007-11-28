@@ -160,15 +160,13 @@ void *einit_tty_watcher (struct spidcb *spid) {
 }
 
 void einit_tty_process_event_handler (struct einit_event *ev) {
- if (ev->type == einit_process_died) {
-  struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
-  spid->pid = ev->integer;
-  spid->status = ev->status;
+ struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
+ spid->pid = ev->integer;
+ spid->status = ev->status;
 
-  einit_tty_watcher(spid);
+ einit_tty_watcher(spid);
 
-  free (spid);
- }
+ free (spid);
 }
 
 int einit_tty_texec (struct cfgnode *node) {
@@ -382,8 +380,7 @@ int einit_tty_cleanup (struct lmodule *this) {
  utmp_cleanup(this);
  sched_configure(this);
 
- event_ignore (einit_event_subsystem_process, einit_tty_process_event_handler);
-
+ event_ignore (einit_process_died, einit_tty_process_event_handler);
  event_ignore (einit_core_mode_switching, einit_tty_update);
  event_ignore (einit_core_mode_switch_done, einit_tty_update);
  event_ignore (einit_boot_devices_available, einit_tty_update);
@@ -400,8 +397,7 @@ int einit_tty_configure (struct lmodule *this) {
  utmp_configure(this);
  exec_configure(this);
 
- event_listen (einit_event_subsystem_process, einit_tty_process_event_handler);
-
+ event_listen (einit_process_died, einit_tty_process_event_handler);
  event_listen (einit_core_mode_switching, einit_tty_update_switching);
  event_listen (einit_core_mode_switch_done, einit_tty_update_switch_done);
  event_listen (einit_boot_devices_available, einit_tty_update);

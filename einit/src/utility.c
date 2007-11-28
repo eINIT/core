@@ -404,6 +404,7 @@ struct thread_wrapper_data *thread_wrapper_rendezvous () {
  }
 
  if (!thread_pool_prune && !pthread_cond_wait (&thread_rendezvous_cond, &thread_rendezvous_mutex)) {
+  fflush (stderr);
   goto moar;
  }
 
@@ -532,9 +533,12 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
 void ethread_prune_thread_pool () {
  thread_pool_prune = 1;
 
- fprintf (5, "pool's closed!");
-
  pthread_cond_broadcast (&thread_rendezvous_cond);
+
+// while (thread_pool_prune)
+//  pthread_cond_signal (&thread_rendezvous_cond);
+
+ fprintf (stderr, "pool's closed!\n");
 }
 
 /* event-helpers */

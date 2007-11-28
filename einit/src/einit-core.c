@@ -152,8 +152,8 @@ int cleanup () {
  return 0;
 }
 
-void core_timer_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_timer_tick) && (event_snooze_time)) {
+void core_timer_event_handler_tick (struct einit_event *ev) {
+ if (ev->integer == event_snooze_time) {
   struct lmodule *lm = mlist;
   int ok = 0;
 
@@ -168,115 +168,124 @@ void core_timer_event_handler (struct einit_event *ev) {
 
   event_snooze_time = 0;
 
+  fprintf (stderr, "pruning thread pool...\n");
+  fflush (stderr);
+
   ethread_prune_thread_pool ();
  }
 }
 
-void core_einit_event_handler (struct einit_event *ev) {
- if (ev->type == einit_core_configuration_update) {
-  struct cfgnode *node;
-  char *str;
+void core_einit_event_handler_configuration_update (struct einit_event *ev) {
+ struct cfgnode *node;
+ char *str;
 
-  ev->chain_type = einit_core_update_modules;
+ ev->chain_type = einit_core_update_modules;
 
-  if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
-   mortality[bitch_emalloc] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
+  mortality[bitch_emalloc] = node->value;
 
-  if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
-   mortality[bitch_stdio] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
+  mortality[bitch_stdio] = node->value;
 
-  if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
-   mortality[bitch_regex] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
+  mortality[bitch_regex] = node->value;
 
-  if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
-   mortality[bitch_expat] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
+  mortality[bitch_expat] = node->value;
 
-  if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
-   mortality[bitch_dl] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
+  mortality[bitch_dl] = node->value;
 
-  if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
-   mortality[bitch_lookup] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
+  mortality[bitch_lookup] = node->value;
 
-  if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
-   mortality[bitch_epthreads] = node->value;
+ if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
+  mortality[bitch_epthreads] = node->value;
 
-  if ((node = cfg_getnode ("core-settings-allow-code-unloading", NULL)))
-   einit_allow_code_unloading = node->flag;
+ if ((node = cfg_getnode ("core-settings-allow-code-unloading", NULL)))
+  einit_allow_code_unloading = node->flag;
 
-  if ((str = cfg_getstring ("core-scheduler-niceness/core", NULL)))
-   einit_core_niceness_increment = parse_integer (str);
+ if ((str = cfg_getstring ("core-scheduler-niceness/core", NULL)))
+  einit_core_niceness_increment = parse_integer (str);
 
-  if ((str = cfg_getstring ("core-scheduler-niceness/tasks", NULL)))
-   einit_task_niceness_increment = parse_integer (str);
- } else if (ev->type == einit_core_update_modules) {
-  struct lmodule *lm;
+ if ((str = cfg_getstring ("core-scheduler-niceness/tasks", NULL)))
+  einit_task_niceness_increment = parse_integer (str);
+}
 
-  repeat:
+void core_einit_event_handler_update_modules (struct einit_event *ev) {
+ struct lmodule *lm;
 
-  lm = mlist;
-  einit_new_node = 0;
+ repeat:
 
-  while (lm) {
-   if (lm->source && strmatch(lm->source, "core")) {
-    lm = mod_update (lm);
+ lm = mlist;
+ einit_new_node = 0;
+
+ while (lm) {
+  if (lm->source && strmatch(lm->source, "core")) {
+   lm = mod_update (lm);
 
 // tell module to scan for changes if it's a module-loader
-    if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
-     notice (8, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
+   if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
+    notice (8, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
 
-     lm->scanmodules (mlist);
+    lm->scanmodules (mlist);
 
 /* if an actual new node has been added to the configuration,
    repeat this step */
-     if (einit_new_node) goto repeat;
-    }
-
+    if (einit_new_node) goto repeat;
    }
-   lm = lm->next;
+
   }
+  lm = lm->next;
+ }
 
 /* give the module-logic code and others a chance at processing the current list */
-  struct einit_event update_event = evstaticinit(einit_core_module_list_update);
-  update_event.para = mlist;
-  event_emit (&update_event, einit_event_flag_broadcast);
-  evstaticdestroy(update_event);
- } else if (ev->type == einit_core_recover) { // call everyone's recover-function (if defined)
-  struct lmodule *lm = mlist;
+ struct einit_event update_event = evstaticinit(einit_core_module_list_update);
+ update_event.para = mlist;
+ event_emit (&update_event, einit_event_flag_broadcast);
+ evstaticdestroy(update_event);
+}
 
-  while (lm) {
-   if (lm->recover) {
-    lm->recover (lm);
-   }
+void core_einit_event_handler_recover (struct einit_event *ev) {
+ struct lmodule *lm = mlist;
 
-   lm = lm->next;
-  }
- } else if (ev->type == einit_core_suspend_all) { // suspend everyone (if possible)
-  struct lmodule *lm = mlist;
-  int ok = 0;
-
-  while (lm) {
-   ok += (mod (einit_module_suspend, lm, NULL) == status_ok) ? 1 : 0;
-
-   lm = lm->next;
+ while (lm) {
+  if (lm->recover) {
+   lm->recover (lm);
   }
 
-  if (ok)
-   notice (4, "%i modules suspended", ok);
-
-  event_snooze_time = event_timer_register_timeout(60);
- } else if (ev->type == einit_core_resume_all) { // resume everyone (if necessary)
-  struct lmodule *lm = mlist;
-  int ok = 0;
-
-  while (lm) {
-   ok += (mod (einit_module_resume, lm, NULL) == status_ok) ? 1 : 0;
-
-   lm = lm->next;
-  }
-
-  if (ok)
-   notice (4, "%i available", ok);
+  lm = lm->next;
  }
+}
+
+void core_einit_event_handler_suspend_all (struct einit_event *ev) {
+ struct lmodule *lm = mlist;
+ int ok = 0;
+
+ while (lm) {
+  ok += (mod (einit_module_suspend, lm, NULL) == status_ok) ? 1 : 0;
+
+  lm = lm->next;
+ }
+
+ if (ok)
+  notice (4, "%i modules suspended", ok);
+
+ event_snooze_time = event_timer_register_timeout(60);
+}
+
+void core_einit_event_handler_resume_all (struct einit_event *ev) {
+ struct lmodule *lm = mlist;
+ int ok = 0;
+
+ while (lm) {
+  ok += (mod (einit_module_resume, lm, NULL) == status_ok) ? 1 : 0;
+
+  lm = lm->next;
+ }
+
+ if (ok)
+  notice (4, "%i available", ok);
 }
 
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
@@ -308,8 +317,12 @@ int main(int argc, char **argv, char **environ) {
 // is this the system's init-process?
  isinit = getpid() == 1;
 
- event_listen (einit_event_subsystem_core, core_einit_event_handler);
- event_listen (einit_event_subsystem_timer, core_timer_event_handler);
+ event_listen (einit_timer_tick, core_timer_event_handler_tick);
+ event_listen (einit_core_configuration_update, core_einit_event_handler_configuration_update);
+ event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
+ event_listen (einit_core_recover, core_einit_event_handler_recover);
+ event_listen (einit_core_suspend_all, core_einit_event_handler_suspend_all);
+ event_listen (einit_core_resume_all, core_einit_event_handler_resume_all);
 
  if (argv) einit_argv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
 
