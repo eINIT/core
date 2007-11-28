@@ -532,6 +532,8 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
 void ethread_prune_thread_pool () {
  thread_pool_prune = 1;
 
+ fprintf (5, "pool's closed!");
+
  pthread_cond_broadcast (&thread_rendezvous_cond);
 }
 

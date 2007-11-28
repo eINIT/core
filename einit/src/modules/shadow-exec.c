@@ -148,48 +148,48 @@ void update_shadows(struct cfgnode *xmode) {
  emutex_unlock(&einit_shadow_exec_shadow_mutex);
 }
 
-void einit_shadow_exec_einit_event_handler (struct einit_event *ev) {
- if (ev->type == einit_core_update_configuration) {
-  update_shadows(cmode);
- } else if (ev->type == einit_core_mode_switching) {
-  update_shadows(ev->para);
- } else if (ev->type == einit_core_service_update) {
-  if (einit_shadow_exec_shadows && ev->set) {
-   ssize_t i = 0;
+void einit_shadow_exec_einit_event_handler_core_update_configuration () {
+ update_shadows(cmode);
+}
 
-   for (; ev->set[i]; i++) {
-    struct stree *cur = streefind(einit_shadow_exec_shadows, (char *)ev->set[i], tree_find_first);
+void einit_shadow_exec_einit_event_handler_core_service_update (struct einit_event *ev) {
+ if (einit_shadow_exec_shadows && ev->set) {
+  ssize_t i = 0;
 
-    while (cur) {
-     struct shadow_descriptor *sd = cur->value;
+  for (; ev->set[i]; i++) {
+   struct stree *cur = streefind(einit_shadow_exec_shadows, (char *)ev->set[i], tree_find_first);
 
-     if (ev->task & einit_module_enable) {
-      if (ev->status == status_working) {
-       if (sd->before_enable)
-        pexec (sd->before_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      } else if (ev->status & status_enabled) {
-       if (sd->after_enable)
-        pexec (sd->after_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      }
-     } else if (ev->task & einit_module_disable) {
-      if (ev->status == status_working) {
-       if (sd->before_disable)
-        pexec (sd->before_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      } else if (ev->status & status_disabled) {
-       if (sd->after_disable)
-        pexec (sd->after_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
-      }
+   while (cur) {
+    struct shadow_descriptor *sd = cur->value;
+
+    if (ev->task & einit_module_enable) {
+     if (ev->status == status_working) {
+      if (sd->before_enable)
+       pexec (sd->before_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+     } else if (ev->status & status_enabled) {
+      if (sd->after_enable)
+       pexec (sd->after_enable, NULL, 0, 0, NULL, NULL, NULL, NULL);
      }
-
-     cur = streefind(cur, (char *)ev->set[i], tree_find_next);
+    } else if (ev->task & einit_module_disable) {
+     if (ev->status == status_working) {
+      if (sd->before_disable)
+       pexec (sd->before_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+     } else if (ev->status & status_disabled) {
+      if (sd->after_disable)
+       pexec (sd->after_disable, NULL, 0, 0, NULL, NULL, NULL, NULL);
+     }
     }
+
+    cur = streefind(cur, (char *)ev->set[i], tree_find_next);
    }
   }
  }
 }
 
 int einit_shadow_exec_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_core, einit_shadow_exec_einit_event_handler);
+ event_ignore (einit_core_update_configuration, einit_shadow_exec_einit_event_handler_core_update_configuration);
+ event_ignore (einit_core_mode_switching, einit_shadow_exec_einit_event_handler_core_update_configuration);
+ event_ignore (einit_core_service_update, einit_shadow_exec_einit_event_handler_core_service_update);
 
  exec_cleanup(this);
 
@@ -203,7 +203,9 @@ int einit_shadow_exec_configure (struct lmodule *this) {
 
  exec_configure(this);
 
- event_listen (einit_event_subsystem_core, einit_shadow_exec_einit_event_handler);
+ event_listen (einit_core_update_configuration, einit_shadow_exec_einit_event_handler_core_update_configuration);
+ event_listen (einit_core_mode_switching, einit_shadow_exec_einit_event_handler_core_update_configuration);
+ event_listen (einit_core_service_update, einit_shadow_exec_einit_event_handler_core_service_update);
 
  return 0;
 }
