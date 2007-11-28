@@ -1,0 +1,36 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# Normal rules
+#
+.*
+*.o
+*.o.*
+*.a
+*.s
+*.so
+*.so.dbg
+*.la
+
+#
+# Top-level generic files
+#
+tags
+TAGS
+!.gitignore
+
+
+# Generated include files
+#
+einit/build
+einit/build/*
+einit/config.mk
+einit/config.sh
+einit/config.xml
+
+
+*.orig
+*.rej
+*.swp
