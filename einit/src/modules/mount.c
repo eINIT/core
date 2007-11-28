@@ -2028,6 +2028,7 @@ void *einit_mount_fsck_thread (struct device_data *dd) {
 }
 
 void einit_mount_analyse_fs (char *device) {
+#if 0
  struct device_data *dd = NULL;
  struct stree *t = NULL;
 
@@ -2040,6 +2041,7 @@ void einit_mount_analyse_fs (char *device) {
  if (dd) {
   ethread_spawn_detached ((void *(*)(void *))einit_mount_fsck_thread, (void *)dd);
  }
+#endif
 }
 
 void einit_mount_hotplug_event_handler_add (struct einit_event *ev) {
