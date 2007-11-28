@@ -71,6 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 int linux_edev_configure (struct lmodule *);
+int linux_edev_get_cdrom_capabilities (char *devicefile);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
@@ -690,7 +691,7 @@ int linux_edev_configure (struct lmodule *pa) {
  return 0;
 }
 
-int linux_edev_get_cdrom_capabilities (char devicefile) {
+int linux_edev_get_cdrom_capabilities (char *devicefile) {
  int out,fd;
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
