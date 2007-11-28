@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <string.h>
 #include <einit/module.h>
 #include <einit/config.h>
@@ -55,6 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <linux/types.h>
 #include <linux/netlink.h>
+#include <linux/cdrom.h>
 
 #include <sys/socket.h>
 
@@ -236,7 +238,7 @@ void linux_edev_hotplug_handle (char **v) {
 
    if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
-    char *base = strrchr (device, '/');
+    char * = strrchr (device, '/');
     if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
      char *devicefile = NULL;
      char **symlinks = NULL;
@@ -678,5 +680,37 @@ int linux_edev_configure (struct lmodule *pa) {
  event_listen (einit_boot_early, linux_edev_boot_event_handler);
  event_listen (einit_event_subsystem_power, linux_edev_power_event_handler);
 
+ return 0;
+}
+
+void linux_dev_get_cdrom_capabilities (char devicefile) {
+ int out,fd;
+ fd = open(devicefile, O_RDONLY|O_NONBLOCK);
+ if (fd < 0) {
+  close(fd);
+  return 1;
+ }
+ out = ioctl(fd, CDROM_GET_CAPABILITY, NULL);
+ if (out < 0) {
+  close(fd);
+  return 1;
+ }
+ printf("ID_CDROM=1\n");
+ if (result & CDC_CD_R)
+  printf("ID_CDROM_CD_R=1\n");
+ if (result & CDC_CD_RW)
+  printf("ID_CDROM_CD_RW=1\n");
+ if (result & CDC_DVD)
+  printf("ID_CDROM_DVD=1\n");
+ if (result & CDC_DVD_R)
+  printf("ID_CDROM_DVD_R=1\n");
+ if (result & CDC_DVD_RAM)
+  printf("ID_CDROM_DVD_RAM=1\n");
+ if (result & CDC_MRW)
+  printf("ID_CDROM_MRW=1\n");
+ if (result & CDC_MRW_W)
+  printf("ID_CDROM_MRW_W=1\n");
+ if (result & CDC_RAM)
+  printf("ID_CDROM_RAM=1\n");
  return 0;
 }
