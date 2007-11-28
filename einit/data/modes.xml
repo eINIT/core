@@ -1,7 +1,7 @@
 <einit>
 
  <mode id="boot">
-  <enable services="keyboard:logger:urandom" />
+  <enable services="keyboard:logger:urandom:cron" />
   <overrides>
    <ttys s="tty1-regular" />
   </overrides>
