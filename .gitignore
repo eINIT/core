@@ -30,6 +30,7 @@ einit/config.mk
 einit/config.sh
 einit/config.xml
 
+einit/data/einit.xml.n
 
 *.orig
 *.rej
