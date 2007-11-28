@@ -197,7 +197,7 @@ int pekill_f (struct pc_conditional **pcc) {
 }
 
 int einit_process_cleanup (struct lmodule *irr) {
- event_ignore (einit_ipc_request, einit_process_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, einit_process_ipc_event_handler);
  function_unregister ("einit-process-killing-spree", 1, pekill_f);
  function_unregister ("einit-process-ekill", 1, ekill_f);
  function_unregister ("einit-process-collect", 1, collect_processes);
@@ -218,7 +218,7 @@ int einit_process_configure (struct lmodule *irr) {
  function_register ("einit-process-collect", 1, collect_processes);
  function_register ("einit-process-ekill", 1, ekill_f);
  function_register ("einit-process-killing-spree", 1, pekill_f);
- event_listen (einit_ipc_request, einit_process_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, einit_process_ipc_event_handler);
 
  return 0;
 }

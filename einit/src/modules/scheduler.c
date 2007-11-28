@@ -693,7 +693,7 @@ int einit_scheduler_configure (struct lmodule *tm) {
 
  event_listen (einit_timer_set, sched_timer_event_handler_set);
  event_listen (einit_core_main_loop_reached, sched_einit_event_handler_main_loop_reached);
- event_listen (einit_ipc_request, sched_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, sched_ipc_event_handler);
 
  function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
 

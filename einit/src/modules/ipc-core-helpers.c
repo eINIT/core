@@ -270,15 +270,15 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
 
 
 int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
- event_ignore (einit_ipc_request, einit_ipc_core_helpers_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
 
  return 0;
 }
 
 int einit_ipc_core_helpers_suspend (struct lmodule *irr) {
  if (!einit_ipc_core_helpers_event_usage) {
-  event_wakeup (einit_ipc_request, irr);
-  event_ignore (einit_ipc_request, einit_ipc_core_helpers_ipc_event_handler);
+  event_wakeup (einit_ipc_request_generic, irr);
+  event_ignore (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
 
   return status_ok;
  } else
@@ -286,7 +286,7 @@ int einit_ipc_core_helpers_suspend (struct lmodule *irr) {
 }
 
 int einit_ipc_core_helpers_resume (struct lmodule *irr) {
- event_wakeup_cancel (einit_ipc_request, irr);
+ event_wakeup_cancel (einit_ipc_request_generic, irr);
 
  return status_ok;
 }
@@ -298,7 +298,7 @@ int einit_ipc_core_helpers_configure (struct lmodule *r) {
  thismodule->resume = einit_ipc_core_helpers_resume;
  thismodule->suspend = einit_ipc_core_helpers_suspend;
 
- event_listen (einit_ipc_request, einit_ipc_core_helpers_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
 
  return 0;
 }

@@ -122,7 +122,7 @@ enum einit_event_code {
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
 
- einit_ipc_request                  =  einit_event_subsystem_ipc,
+ einit_ipc_request_generic          =  einit_event_subsystem_ipc,
 
 /* einit_event_subsystem_mount: */
  einit_mount_do_update              = einit_event_subsystem_mount    | 0x001,

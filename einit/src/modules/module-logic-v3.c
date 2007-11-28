@@ -4054,7 +4054,7 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
  if (!einit_module_logic_v3_usage) {
   function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
-  event_ignore (einit_ipc_request, module_logic_ipc_event_handler);
+  event_ignore (einit_ipc_request_generic, module_logic_ipc_event_handler);
   event_ignore (einit_core_module_list_update, module_logic_einit_event_handler_core_module_list_update);
   event_ignore (einit_core_service_update, module_logic_einit_event_handler_core_service_update);
   event_ignore (einit_core_switch_mode, module_logic_einit_event_handler_core_switch_mode);
@@ -4062,7 +4062,7 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
   event_ignore (einit_core_change_service_status, module_logic_einit_event_handler_core_change_service_status);
 
   sleep (1);
-  event_wakeup (einit_ipc_request, this);
+  event_wakeup (einit_ipc_request_generic, this);
   event_wakeup (einit_core_module_list_update, this);
   event_wakeup (einit_core_service_update, this);
   event_wakeup (einit_core_switch_mode, this);
@@ -4088,7 +4088,7 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
 }
 
 int einit_module_logic_v3_resume (struct lmodule *this) {
- event_wakeup_cancel (einit_ipc_request, this);
+ event_wakeup_cancel (einit_ipc_request_generic, this);
  event_wakeup_cancel (einit_core_update_configuration, this);
  event_wakeup_cancel (einit_core_module_list_update, this);
  event_wakeup_cancel (einit_core_service_update, this);
@@ -4117,7 +4117,7 @@ int einit_module_logic_v3_resume (struct lmodule *this) {
 int einit_module_logic_v3_cleanup (struct lmodule *this) {
  function_unregister ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
- event_ignore (einit_ipc_request, module_logic_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, module_logic_ipc_event_handler);
  event_ignore (einit_core_module_list_update, module_logic_einit_event_handler_core_module_list_update);
  event_ignore (einit_core_service_update, module_logic_einit_event_handler_core_service_update);
  event_ignore (einit_core_switch_mode, module_logic_einit_event_handler_core_switch_mode);
@@ -4135,7 +4135,7 @@ int einit_module_logic_v3_configure (struct lmodule *this) {
  thismodule->suspend = einit_module_logic_v3_suspend;
  thismodule->resume = einit_module_logic_v3_resume;
 
- event_listen (einit_ipc_request, module_logic_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, module_logic_ipc_event_handler);
  event_listen (einit_core_module_list_update, module_logic_einit_event_handler_core_module_list_update);
  event_listen (einit_core_service_update, module_logic_einit_event_handler_core_service_update);
  event_listen (einit_core_switch_mode, module_logic_einit_event_handler_core_switch_mode);

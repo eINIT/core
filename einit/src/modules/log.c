@@ -417,7 +417,7 @@ void einit_log_feedback_event_handler_notice (struct einit_event *ev) {
 }
 
 int einit_log_cleanup (struct lmodule *this) {
- event_ignore (einit_ipc_request, einit_log_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, einit_log_ipc_event_handler);
  event_ignore (einit_core_service_update, einit_log_einit_event_handler_service_update);
  event_ignore (einit_core_mode_switching, einit_log_einit_event_handler_mode_switching);
  event_ignore (einit_core_mode_switch_done, einit_log_einit_event_handler_mode_switch_done);
@@ -434,7 +434,7 @@ int einit_log_configure (struct lmodule *r) {
 
  r->cleanup = einit_log_cleanup;
 
- event_listen (einit_ipc_request, einit_log_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, einit_log_ipc_event_handler);
  event_listen (einit_core_service_update, einit_log_einit_event_handler_service_update);
  event_listen (einit_core_mode_switching, einit_log_einit_event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, einit_log_einit_event_handler_mode_switch_done);

@@ -1006,7 +1006,7 @@ void feedback_textual_enable() {
 
 int einit_feedback_visual_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_devices_available, feedback_textual_enable);
- event_ignore (einit_ipc_request, einit_feedback_visual_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, einit_feedback_visual_ipc_event_handler);
  event_ignore (einit_power_down_imminent, einit_feedback_visual_power_event_handler);
  event_ignore (einit_power_reset_imminent, einit_feedback_visual_power_event_handler);
  event_ignore (einit_feedback_broken_services, einit_feedback_visual_feedback_event_handler_broken_services);
@@ -1027,7 +1027,7 @@ int einit_feedback_visual_configure (struct lmodule *irr) {
  irr->cleanup = einit_feedback_visual_cleanup;
 
  event_listen (einit_boot_devices_available, feedback_textual_enable);
- event_listen (einit_ipc_request, einit_feedback_visual_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, einit_feedback_visual_ipc_event_handler);
  event_listen (einit_power_down_imminent, einit_feedback_visual_power_event_handler);
  event_listen (einit_power_reset_imminent, einit_feedback_visual_power_event_handler);
  event_listen (einit_feedback_broken_services, einit_feedback_visual_feedback_event_handler_broken_services);

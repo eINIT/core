@@ -101,7 +101,7 @@ int ipc_process_f (const char *cmd, FILE *f) {
 
 // setvbuf (f, NULL, _IONBF, 0);
 
- struct einit_event *event = evinit (einit_ipc_request);
+ struct einit_event *event = evinit (einit_ipc_request_generic);
  uint32_t ic;
  int ret = 0;
 
@@ -330,7 +330,7 @@ int einit_ipc_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
  event_ignore (einit_power_down_scheduled, einit_ipc_power_event_handler);
  event_ignore (einit_power_reset_scheduled, einit_ipc_power_event_handler);
- event_ignore (einit_ipc_request, einit_ipc_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, einit_ipc_ipc_event_handler);
  function_unregister ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;
@@ -344,7 +344,7 @@ int einit_ipc_configure (struct lmodule *irr) {
  event_listen (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
  event_listen (einit_power_down_scheduled, einit_ipc_power_event_handler);
  event_listen (einit_power_reset_scheduled, einit_ipc_power_event_handler);
- event_listen (einit_ipc_request, einit_ipc_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, einit_ipc_ipc_event_handler);
  function_register ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;
