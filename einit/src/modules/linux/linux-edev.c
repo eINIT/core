@@ -223,6 +223,7 @@ void linux_edev_hotplug_handle (char **v) {
    unsigned char minor = 0;
    char have_id = 0;
    char blockdevice = 0;
+   char cdrom = 0;
 
    for (i = 0; args[i]; i+=2) {
     if (strmatch (args[i], "MAJOR")) {
@@ -351,6 +352,8 @@ void linux_edev_hotplug_handle (char **v) {
           group = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
          } else if (strmatch (linux_edev_device_rules[i][j], "blockdevice")) {
           blockdevice = parse_boolean (linux_edev_device_rules[i][j+1]);
+         } else if (strmatch (linux_edev_device_rules[i][j], "cdrom")) {
+          cdrom = parse_boolean (linux_edev_device_rules[i][j+1]);
          }
         }
        }
@@ -402,6 +405,10 @@ void linux_edev_hotplug_handle (char **v) {
        chown (devicefile, uid, gid);
       }
 
+	  if (cdrom) {
+	   linux_edev_get_cdrom_capabilities(devicefile);
+	  }
+	  
       if (symlinks) {
        for (i = 0; symlinks[i]; i++) {
         if (symlink (devicefile, symlinks[i]) != 0) {
@@ -683,7 +690,7 @@ int linux_edev_configure (struct lmodule *pa) {
  return 0;
 }
 
-void linux_dev_get_cdrom_capabilities (char devicefile) {
+void linux_edev_get_cdrom_capabilities (char devicefile) {
  int out,fd;
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
