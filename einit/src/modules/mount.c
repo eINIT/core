@@ -2064,7 +2064,7 @@ int einit_mount_cleanup (struct lmodule *tm) {
  event_ignore (einit_boot_devices_available, einit_mount_event_boot_devices_available);
  event_ignore (einit_hotplug_add, einit_mount_hotplug_event_handler_add);
 #if 0
- event_ignore (einit_ipc_request, einit_mount_mount_ipc_handler);
+ event_ignore (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
 
  function_unregister ("fs-mount", 1, (void *)emount);
@@ -2092,7 +2092,7 @@ int einit_mount_configure (struct lmodule *r) {
  event_listen (einit_boot_devices_available, einit_mount_event_boot_devices_available);
  event_listen (einit_hotplug_add, einit_mount_hotplug_event_handler_add);
 #if 0
- event_listen (einit_ipc_request, einit_mount_mount_ipc_handler);
+ event_listen (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
 
  function_register ("fs-mount", 1, (void *)emount);
