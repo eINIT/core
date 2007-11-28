@@ -239,7 +239,7 @@ void linux_edev_hotplug_handle (char **v) {
 
    if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
-    char * = strrchr (device, '/');
+    char *base = strrchr (device, '/');
     if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
      char *devicefile = NULL;
      char **symlinks = NULL;
@@ -690,7 +690,7 @@ int linux_edev_configure (struct lmodule *pa) {
  return 0;
 }
 
-void linux_edev_get_cdrom_capabilities (char devicefile) {
+int linux_edev_get_cdrom_capabilities (char devicefile) {
  int out,fd;
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
