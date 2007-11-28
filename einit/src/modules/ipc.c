@@ -101,7 +101,7 @@ int ipc_process_f (const char *cmd, FILE *f) {
 
 // setvbuf (f, NULL, _IONBF, 0);
 
- struct einit_event *event = evinit (einit_event_subsystem_ipc);
+ struct einit_event *event = evinit (einit_ipc_request);
  uint32_t ic;
  int ret = 0;
 
@@ -207,14 +207,6 @@ void einit_ipc_ipc_event_handler (struct einit_event *ev) {
 
   ev->implemented = 1;
  }
-}
-
-int einit_ipc_cleanup (struct lmodule *this) {
- event_ignore (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);
- event_ignore (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
- function_unregister ("einit-ipc-process-string", 1, ipc_process_f);
-
- return 0;
 }
 
 int ipc_read (int *nfd) {
@@ -329,16 +321,19 @@ void einit_ipc_boot_event_handler_root_device_ok (struct einit_event *ev) {
 }
 
 void einit_ipc_power_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_power_down_scheduled:
-  case einit_power_reset_scheduled:
-   notice (4, "disabling IPC (core)");
-   if (einit_ipc_running)
-    ethread_cancel (ipc_thread);
-   break;
+ notice (4, "disabling IPC (core)");
+ if (einit_ipc_running)
+  ethread_cancel (ipc_thread);
+}
 
-  default: break;
- }
+int einit_ipc_cleanup (struct lmodule *this) {
+ event_ignore (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
+ event_ignore (einit_power_down_scheduled, einit_ipc_power_event_handler);
+ event_ignore (einit_power_reset_scheduled, einit_ipc_power_event_handler);
+ event_ignore (einit_ipc_request, einit_ipc_ipc_event_handler);
+ function_unregister ("einit-ipc-process-string", 1, ipc_process_f);
+
+ return 0;
 }
 
 int einit_ipc_configure (struct lmodule *irr) {
@@ -347,9 +342,9 @@ int einit_ipc_configure (struct lmodule *irr) {
  irr->cleanup = einit_ipc_cleanup;
 
  event_listen (einit_boot_root_device_ok, einit_ipc_boot_event_handler_root_device_ok);
- event_listen (einit_event_subsystem_power, einit_ipc_power_event_handler);
-
- event_listen (einit_event_subsystem_ipc, einit_ipc_ipc_event_handler);
+ event_listen (einit_power_down_scheduled, einit_ipc_power_event_handler);
+ event_listen (einit_power_reset_scheduled, einit_ipc_power_event_handler);
+ event_listen (einit_ipc_request, einit_ipc_ipc_event_handler);
  function_register ("einit-ipc-process-string", 1, ipc_process_f);
 
  return 0;

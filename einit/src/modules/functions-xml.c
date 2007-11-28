@@ -218,19 +218,8 @@ void einit_functions_xml_update_functions () {
  }*/
 }
 
-void einit_functions_xml_core_event_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_core_configuration_update:
-   einit_functions_xml_update_functions ();
-   break;
-
-  default:
-   break;
- }
-}
-
 int einit_functions_xml_cleanup (struct lmodule *pa) {
- event_ignore (einit_event_subsystem_core, einit_functions_xml_core_event_handler);
+ event_ignore (einit_core_configuration_update, einit_functions_xml_update_functions);
 
  if (einit_functions_xml_registered) {
   int i = 0;
@@ -253,7 +242,7 @@ int einit_functions_xml_configure (struct lmodule *pa) {
 
  pa->cleanup = einit_functions_xml_cleanup;
 
- event_listen (einit_event_subsystem_core, einit_functions_xml_core_event_handler);
+ event_listen (einit_core_configuration_update, einit_functions_xml_update_functions);
 
  return 0;
 }
