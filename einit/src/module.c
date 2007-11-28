@@ -93,16 +93,13 @@ int mod_resume (struct lmodule *m) {
 
 void mod_freedesc (struct lmodule *m) {
  emutex_lock (&m->mutex);
- emutex_lock (&m->imutex);
 
  if (m->next != NULL)
   mod_freedesc (m->next);
 
  m->next = NULL;
  if (m->status & status_enabled) {
-  emutex_unlock (&m->imutex);
   mod (einit_module_disable | einit_module_ignore_dependencies | einit_module_ignore_mutex, m, NULL);
-  emutex_lock (&m->imutex);
  }
 
  if (m->cleanup)
@@ -112,8 +109,6 @@ void mod_freedesc (struct lmodule *m) {
 
  emutex_unlock (&m->mutex);
  emutex_destroy (&m->mutex);
- emutex_unlock (&m->imutex);
- emutex_destroy (&m->imutex);
 
 // if (m->sohandle)
 //  dlclose (m->sohandle);
@@ -166,7 +161,6 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  nmod->sohandle = sohandle;
  nmod->module = module;
  emutex_init (&nmod->mutex, NULL);
- emutex_init (&nmod->imutex, NULL);
 
  if (module->si.provides || module->si.requires || module->si.after || module->si.before) {
   nmod->si = ecalloc (1, sizeof (struct service_information));

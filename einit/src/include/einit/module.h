@@ -265,7 +265,6 @@ struct lmodule {
  enum einit_module_status status;               /*!< Current module status (enabled, disabled, ...) */
  void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
- pthread_mutex_t imutex;                        /*!< Internal module-mutex; to be used by the module */
  const struct smodule *module;                  /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
  uint32_t fbseq;                                /*!< Feedback sequence-number */
