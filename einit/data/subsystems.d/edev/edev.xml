@@ -26,11 +26,9 @@
    <devicefile-rule SUBSYSTEM="^block$"
                     blockdevice="yes" />
 
-   <devicefile-rule CDROM_ATTRIBUTES="CD_RW"
-                    symlink="/dev/cdrw" />
-
-   <devicefile-rule CDROM_ATTRIBUTES="CDROM"
-                    symlink="/dev/cdrom" />
+   <devicefile-rule SUBSYSTEM="^block$"
+                    DEVPATH_BASE="^sr[0-9]*$"
+                    cdrom="yes" />
 
    <devicefile-rule chmod="0660"
                     devicefile="/dev/${DEVPATH_BASE}" />
