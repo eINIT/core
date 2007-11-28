@@ -71,7 +71,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 int linux_edev_configure (struct lmodule *);
-int linux_edev_get_cdrom_capabilities (char *devicefile);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
@@ -105,6 +104,8 @@ struct stree *linux_edev_compiled_regexes = NULL;
 
 char ***linux_edev_device_rules = NULL;
 pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 
 void linux_edev_load_kernel_extensions() {
  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
@@ -224,7 +225,7 @@ void linux_edev_hotplug_handle (char **v) {
    unsigned char minor = 0;
    char have_id = 0;
    char blockdevice = 0;
-   char cdrom = 0;
+   char *subsys = NULL;
 
    for (i = 0; args[i]; i+=2) {
     if (strmatch (args[i], "MAJOR")) {
@@ -235,6 +236,8 @@ void linux_edev_hotplug_handle (char **v) {
      minor = parse_integer (args[i+1]);
     } else if (strmatch (args[i], "DEVPATH")) {
      device = estrdup(args[i+1]);
+    } else if (strmatch (args[i], "SUBSYSTEM")) {
+     subsys = estrdup(args[i+1]);
     }
    }
 
@@ -298,6 +301,10 @@ void linux_edev_hotplug_handle (char **v) {
       free (tmpsysdev);
      }
 
+     if(strmatch (subsys, "block")) {
+      args = linux_edev_get_cdrom_capabilities(args, devicefile);
+     }
+
      emutex_lock (&linux_edev_device_rules_mutex);
      if (linux_edev_device_rules) {
       for (i = 0; linux_edev_device_rules[i]; i++) {
@@ -353,8 +360,6 @@ void linux_edev_hotplug_handle (char **v) {
           group = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
          } else if (strmatch (linux_edev_device_rules[i][j], "blockdevice")) {
           blockdevice = parse_boolean (linux_edev_device_rules[i][j+1]);
-         } else if (strmatch (linux_edev_device_rules[i][j], "cdrom")) {
-          cdrom = parse_boolean (linux_edev_device_rules[i][j+1]);
          }
         }
        }
@@ -406,10 +411,6 @@ void linux_edev_hotplug_handle (char **v) {
        chown (devicefile, uid, gid);
       }
 
-	  if (cdrom) {
-	   linux_edev_get_cdrom_capabilities(devicefile);
-	  }
-	  
       if (symlinks) {
        for (i = 0; symlinks[i]; i++) {
         if (symlink (devicefile, symlinks[i]) != 0) {
@@ -691,18 +692,25 @@ int linux_edev_configure (struct lmodule *pa) {
  return 0;
 }
 
-int linux_edev_get_cdrom_capabilities (char *devicefile) {
- int out,fd;
+char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
+ int out, fd;
+ char **cdrom_attrs = NULL, *cdattrs = NULL;
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
   close(fd);
-  return 1;
+  return args;
  }
+
  out = ioctl(fd, CDROM_GET_CAPABILITY, NULL);
+
  if (out < 0) {
   close(fd);
-  return 1;
+  return args;
  }
+
+ close(fd);
+
+/*
  notice(5,"ID_CDROM=1\n");
  if (out & CDC_CD_R)
   notice(5,"ID_CDROM_CD_R=1\n");
@@ -719,7 +727,34 @@ int linux_edev_get_cdrom_capabilities (char *devicefile) {
  if (out & CDC_MRW_W)
   notice(5,"ID_CDROM_MRW_W=1\n");
  if (out & CDC_RAM)
-  notice(5,"ID_CDROM_RAM=1\n");
- close(fd);
- return 0;
+  notice(5,"ID_CDROM_RAM=1\n");*/
+
+ cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CDROM", SET_TYPE_STRING);
+ if (out & CDC_CD_R)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_R", SET_TYPE_STRING);
+ if (out & CDC_CD_RW)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_RW", SET_TYPE_STRING);
+ if (out & CDC_DVD)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_DVD", SET_TYPE_STRING);
+ if (out & CDC_DVD_R)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_DVD_R", SET_TYPE_STRING);
+ if (out & CDC_DVD_RAM)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_DVD_RAM", SET_TYPE_STRING);
+ if (out & CDC_MRW)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_MRW", SET_TYPE_STRING);
+ if (out & CDC_MRW_W)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_MRW_W", SET_TYPE_STRING);
+ if (out & CDC_RAM)
+  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_RAM", SET_TYPE_STRING);
+
+ cdattrs = set2str (':', (const char **)cdrom_attrs);
+ free (cdrom_attrs);
+
+ args = (char **)setadd ((void **)args, "CDROM_ATTRIBUTES", SET_TYPE_STRING);
+ args = (char **)setadd ((void **)args, cdattrs, SET_TYPE_STRING);
+
+ notice (5, "CDROM ATTRIBUTES: %s", cdattrs);
+ free (cdattrs);
+
+ return args;
 }
