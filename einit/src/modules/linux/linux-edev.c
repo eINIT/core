@@ -710,25 +710,6 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
 
  close(fd);
 
-/*
- notice(5,"ID_CDROM=1\n");
- if (out & CDC_CD_R)
-  notice(5,"ID_CDROM_CD_R=1\n");
- if (out & CDC_CD_RW)
-  notice(5,"ID_CDROM_CD_RW=1\n");
- if (out & CDC_DVD)
-  notice(5,"ID_CDROM_DVD=1\n");
- if (out & CDC_DVD_R)
-  notice(5,"ID_CDROM_DVD_R=1\n");
- if (out & CDC_DVD_RAM)
-  notice(5,"ID_CDROM_DVD_RAM=1\n");
- if (out & CDC_MRW)
-  notice(5,"ID_CDROM_MRW=1\n");
- if (out & CDC_MRW_W)
-  notice(5,"ID_CDROM_MRW_W=1\n");
- if (out & CDC_RAM)
-  notice(5,"ID_CDROM_RAM=1\n");*/
-
  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CDROM", SET_TYPE_STRING);
  if (out & CDC_CD_R)
   cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_R", SET_TYPE_STRING);
