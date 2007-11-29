@@ -10,27 +10,27 @@
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CDROM"
-                    symlink="/dev/cdrom" />
+                    symlink="/dev/cdrom${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CD_R"
-                    symlink="/dev/cdr" />
+                    symlink="/dev/cdr${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CD_RW"
-                    symlink="/dev/cdrw" />                                
+                    symlink="/dev/cdrw${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CD_DVD"
-                    symlink="/dev/dvd" />
+                    symlink="/dev/dvd${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CD_DVD_R"
-                    symlink="/dev/dvdr" />                                        
+                    symlink="/dev/dvdr${NUM+}" />                                        
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CD_DVD_RAM"
-                    symlink="/dev/dvdrw" />
+                    symlink="/dev/dvdrw${NUM+}" />
   </edev>
  </configuration>
 </einit>
