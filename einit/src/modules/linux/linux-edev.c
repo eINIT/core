@@ -36,10 +36,17 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdlib.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <ctype.h>
 #include <string.h>
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <einit/module.h>
@@ -109,6 +116,7 @@ pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
+static void set_str(char *to, const char *from, size_t count);
 
 void linux_edev_load_kernel_extensions() {
  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
@@ -742,6 +750,31 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
  free (cdattrs);
 
  return args;
+}
+
+static void set_str(char *to, const char *from, size_t count)
+{
+	size_t i, j, len;
+	len = strnlen(from, count);
+	while (len && isspace(from[len-1]))
+		len--;
+	i = 0;
+	while (isspace(from[i]) && (i < len))
+		i++;
+	j = 0;
+	while (i < len) {
+		if (isspace(from[i])) {
+			while (isspace(from[i]))
+				i++;
+			to[j++] = '_';
+		}
+		if (from[i] == '/') {
+			i++;
+			continue;
+		}
+		to[j++] = from[i++];
+	}
+	to[j] = '\0';
 }
 
 char **linux_edev_get_ata_identity (char **args, char *devicefile) {
