@@ -787,19 +787,8 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  char sn[21];
  char rev[9];
  char mod[41];
-/*
- char buffer [50];
- char* sn_s, mod_s, rev_s;
- */
  char **ata_type = NULL, *atatype = NULL;
  
-/*
- char **ata_model = NULL, *atamodel = NULL;
- char **ata_serial = NULL, *ataserial = NULL;
- char **ata_revision = NULL, *atarevision = NULL;
- char **ata_bus = NULL, *atabus = NULL;
- */
-
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
   close(fd);
@@ -834,27 +823,6 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
   }
  } else {
   ata_type = (char **)setadd ((void **)ata_type, "DISK", SET_TYPE_STRING);
- }
- 
-/* 
- sn_s = sprintf(buffer, "ID_SERIAL=%s\n", sn);
- rev_s = sprintf(buffer, "ID_REVISION=%s\n", rev);
- mod_s = sprintf(buffer, "ID_MODEL=%s\n", (char*)mod);
- ata_bus = (char **)setadd ((void **)ata_bus, "ID_BUS=ata", SET_TYPE_STRING);
- ata_serial = (char **)setadd ((void **)ata_serial, sn_s, SET_TYPE_STRING);
- ata_revision = (char **)setadd ((void **)ata_revision, rev_s, SET_TYPE_STRING);
- ata_model = (char **)setadd ((void **)ata_model, mod_s, SET_TYPE_STRING);
- */
-
- close(fd);
-
- atatype = set2str (':', (const char **)ata_type);
- free (ata_type);
-
- args = (char **)setadd ((void **)args, "ATA_TYPE", SET_TYPE_STRING);
- args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
- notice (5, "ATA_TYPE: %s", atatype);
- free (atatype);
 
 // ATA_MODEL=mod
  args = (char **)setadd ((void **)args, "ATA_MODEL", SET_TYPE_STRING);
@@ -867,6 +835,18 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
 // ATA_REVISION=rev
  args = (char **)setadd ((void **)args, "ATA_REVISION", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, rev, SET_TYPE_STRING);
+
+ }
+ 
+ close(fd);
+
+ atatype = set2str (':', (const char **)ata_type);
+ free (ata_type);
+
+ args = (char **)setadd ((void **)args, "ATA_TYPE", SET_TYPE_STRING);
+ args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
+ notice (5, "ATA_TYPE: %s", atatype);
+ free (atatype);
 
  return args;
 }
