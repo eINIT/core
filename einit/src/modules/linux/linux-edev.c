@@ -39,9 +39,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <string.h>
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
@@ -58,7 +58,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <linux/cdrom.h>
-#include <linux/types.h>
 #include <linux/hdreg.h>
 
 #include <sys/socket.h>
@@ -109,6 +108,7 @@ char ***linux_edev_device_rules = NULL;
 pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
+char **linux_edev_get_ata_identity (char **args, char *devicefile);
 
 void linux_edev_load_kernel_extensions() {
  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
@@ -306,6 +306,7 @@ void linux_edev_hotplug_handle (char **v) {
 
      if(strmatch (subsys, "block")) {
       args = linux_edev_get_cdrom_capabilities(args, devicefile);
+      args = linux_edev_get_ata_identity(args, devicefile);
      }
 
      emutex_lock (&linux_edev_device_rules_mutex);
@@ -740,5 +741,83 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
  notice (5, "CDROM ATTRIBUTES: %s", cdattrs);
  free (cdattrs);
 
+ return args;
+}
+
+char **linux_edev_get_ata_identity (char **args, char *devicefile) {
+ int fd;
+ struct hd_driveid ata_ident;
+ char sn[21];
+ char rev[9];
+ char mod[41];
+/*
+ char buffer [50];
+ char* sn_s, mod_s, rev_s;
+ */
+ char **ata_type = NULL, *atatype = NULL;
+ 
+/*
+ char **ata_model = NULL, *atamodel = NULL;
+ char **ata_serial = NULL, *ataserial = NULL;
+ char **ata_revision = NULL, *atarevision = NULL;
+ char **ata_bus = NULL, *atabus = NULL;
+ */
+
+ fd = open(devicefile, O_RDONLY|O_NONBLOCK);
+ if (fd < 0) {
+  close(fd);
+  return args;
+ }
+ 
+ if (ioctl(fd, HDIO_GET_IDENTITY, &ata_ident)) {
+  close(fd);
+ }
+ 
+ set_str(sn, (char *) ata_ident.serial_no, 20);
+ set_str(rev, (char *) ata_ident.fw_rev, 8);
+ set_str(mod, (char *) ata_ident.model, 40);
+ 
+ if ((ata_ident.config >> 8) & 0x80) {
+  switch ((ata_ident.config >> 8) & 0x1f) {
+   case 0:
+    ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
+	break;
+   case 1:
+	ata_type = (char **)setadd ((void **)ata_type, "TAPE", SET_TYPE_STRING);
+	break;
+   case 5:
+	ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
+	break;
+   case 7:
+	ata_type = (char **)setadd ((void **)ata_type, "OPTICAL", SET_TYPE_STRING);
+	break;
+   default:
+	ata_type = (char **)setadd ((void **)ata_type, "GENERIC", SET_TYPE_STRING);
+	break;
+  }
+ } else {
+  ata_type = (char **)setadd ((void **)ata_type, "DISK", SET_TYPE_STRING);
+ }
+ 
+/* 
+ sn_s = sprintf(buffer, "ID_SERIAL=%s\n", sn);
+ rev_s = sprintf(buffer, "ID_REVISION=%s\n", rev);
+ mod_s = sprintf(buffer, "ID_MODEL=%s\n", (char*)mod);
+ ata_bus = (char **)setadd ((void **)ata_bus, "ID_BUS=ata", SET_TYPE_STRING);
+ ata_serial = (char **)setadd ((void **)ata_serial, sn_s, SET_TYPE_STRING);
+ ata_revision = (char **)setadd ((void **)ata_revision, rev_s, SET_TYPE_STRING);
+ ata_model = (char **)setadd ((void **)ata_model, mod_s, SET_TYPE_STRING);
+ */
+
+ close(fd);
+
+ atatype = set2str (':', (const char **)ata_type);
+ free (ata_type);
+
+ args = (char **)setadd ((void **)args, "ATA_TYPE", SET_TYPE_STRING);
+ args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
+ notice (5, "ATA_TYPE: %s", atatype);
+ free (atatype);
+ 
  return args;
 }

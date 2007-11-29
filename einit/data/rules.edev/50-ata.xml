@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <edev>
+   <!-- libata compat -->
+   <devicefile-rule SUBSYSTEM="^block$"
+                    DEVPATH_BASE="^sd*[0-9]$"
+                    ATA_TYPE="DISK"
+                    symlink="/dev/disk/by-id/ata-${DEVPATH_BASE}" />
+  </edev>
+ </configuration>
+</einit>
