@@ -824,6 +824,10 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  } else {
   ata_type = (char **)setadd ((void **)ata_type, "DISK", SET_TYPE_STRING);
 
+ }
+ 
+ close(fd);
+
 // ATA_MODEL=mod
  args = (char **)setadd ((void **)args, "ATA_MODEL", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, mod, SET_TYPE_STRING);
@@ -835,10 +839,6 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
 // ATA_REVISION=rev
  args = (char **)setadd ((void **)args, "ATA_REVISION", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, rev, SET_TYPE_STRING);
-
- }
- 
- close(fd);
 
  atatype = set2str (':', (const char **)ata_type);
  free (ata_type);
