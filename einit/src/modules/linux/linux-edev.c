@@ -4,11 +4,12 @@
  *
  *  Created on 12/10/2007.
  *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007 Ryan Hope. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007, Magnus Deininger, Ryan Hope
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -57,6 +58,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <linux/cdrom.h>
+#include <linux/types.h>
+#include <linux/hdreg.h>
 
 #include <sys/socket.h>
 
