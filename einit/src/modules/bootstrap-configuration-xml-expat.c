@@ -385,8 +385,10 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
     if (files) {
      int ixx = 0;
+     setsort ((void **)files, set_sort_order_string_lexical, NULL);
 
      for (; files[ixx]; ixx++) {
+      fprintf (stderr, " * %s\n", files[ixx]);
       recursion++;
       einit_config_xml_expat_parse_configuration_file (files[ixx]);
       recursion--;

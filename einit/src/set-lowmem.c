@@ -317,6 +317,10 @@ int setcount (const void **set) {
  return i;
 }
 
+signed int sortfunction_lexical (const void *a, const void *b) {
+ return -1 * strcmp (a, b);
+}
+
 /* not exactly efficient, but it works, better than before */
 void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(const void *, const void*)) {
  uint32_t i = 0;
@@ -324,7 +328,7 @@ void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(co
  if (!set || !set[0] || !set[1]) return; // need a set with at least two elements to do anything meaningful.
 
  if (task == set_sort_order_string_lexical)
-  sortfunction = (signed int(*)(const void *, const void*))strcmp;
+  sortfunction = sortfunction_lexical;
  else if (!sortfunction) return;
 
  for (;set[i];i++) {
@@ -337,7 +341,7 @@ void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(co
 
   if (ex) {
    void *cur = set[i];
-   
+
    uint32_t k = i+1;
    for (;set[k];k++) {
     set[k-1] = set[k];
