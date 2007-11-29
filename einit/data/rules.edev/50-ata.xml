@@ -5,6 +5,7 @@
    <!-- libata compat -->
    <devicefile-rule SUBSYSTEM="^block$"
                     ATA_TYPE="DISK"
+                    DEVPATH_BASE="[hsm]d[a-z]$"
                     symlink="/dev/disk/by-id/ata-${ATA_MODEL}_${ATA_SERIAL}" />
   </edev>
  </configuration>

@@ -105,7 +105,7 @@ module_register(linux_edev_self);
 
 char linux_edev_enabled = 0;
 
-#define NETLINK_BUFFER 1024*1024*64
+#define NETLINK_BUFFER 1024*1024*128
 
 struct stree *linux_edev_gids = NULL;
 struct stree *linux_edev_uids = NULL;
@@ -116,7 +116,7 @@ pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
-char *linux_edev_mangle_filename (char *filename);
+char *linux_edev_mangle_filename (char *filename, char do_free);
 
 static void set_str(char *to, const char *from, size_t count);
 
@@ -315,9 +315,32 @@ void linux_edev_hotplug_handle (char **v) {
      }
 
      if(strmatch (subsys, "block")) {
-      args = linux_edev_get_cdrom_capabilities(args, devicefile);
-      args = linux_edev_get_ata_identity(args, devicefile);
+      char *dummyblock = linux_edev_mangle_filename("/dev/.einit/block${NUM+}", 0);
+
+      if (mknod (dummyblock, S_IFBLK, ldev) != 0) {
+       perror ("mkdnod/dummy");
+       linux_edev_mkdir_p (dummyblock);
+
+       if (mknod (dummyblock, S_IFBLK, ldev) != 0) {
+        perror ("mkdnod/dummy");
+        goto noblock;
+       }
+      }
+
+      args = linux_edev_get_cdrom_capabilities(args, dummyblock);
+      args = linux_edev_get_ata_identity(args, dummyblock);
+
+      free (dummyblock);
+
+#if 0
+      char *gnb = set2str (',', (const char **)args);
+      fprintf (stderr, " ** args: %s\n", gnb);
+// fflush (stderr);
+      free (gnb);
+#endif
      }
+
+     noblock:
 
      emutex_lock (&linux_edev_device_rules_mutex);
      if (linux_edev_device_rules) {
@@ -360,11 +383,11 @@ void linux_edev_hotplug_handle (char **v) {
         for (j = 0; linux_edev_device_rules[i][j] && linux_edev_device_rules[i][j+1]; j += 2) {
          if (!devicefile && strmatch (linux_edev_device_rules[i][j], "devicefile")) {
           devicefile = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
-          devicefile = linux_edev_mangle_filename (devicefile);
+          devicefile = linux_edev_mangle_filename (devicefile, 1);
          } else if (strmatch (linux_edev_device_rules[i][j], "symlink")) {
           char *symlink = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
           if (symlink) {
-           symlink = linux_edev_mangle_filename (symlink);
+           symlink = linux_edev_mangle_filename (symlink, 1);
            symlinks = (char **)setadd ((void **)symlinks, symlink, SET_TYPE_STRING);
            free (symlink);
           }
@@ -713,6 +736,7 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
  char **cdrom_attrs = NULL, *cdattrs = NULL;
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
+  perror ("opening device file (get_cdrom_capabilities)");
   close(fd);
   return args;
  }
@@ -720,6 +744,7 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
  out = ioctl(fd, CDROM_GET_CAPABILITY, NULL);
 
  if (out < 0) {
+  perror ("ioctl/CDROM_GET_CAPABILITY");
   close(fd);
   return args;
  }
@@ -750,7 +775,7 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
  args = (char **)setadd ((void **)args, "CDROM_ATTRIBUTES", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, cdattrs, SET_TYPE_STRING);
 
- notice (5, "CDROM ATTRIBUTES: %s", cdattrs);
+// notice (5, "CDROM ATTRIBUTES: %s", cdattrs);
  free (cdattrs);
 
  return args;
@@ -788,44 +813,46 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  char rev[9];
  char mod[41];
  char **ata_type = NULL, *atatype = NULL;
- 
+
  fd = open(devicefile, O_RDONLY|O_NONBLOCK);
  if (fd < 0) {
+  perror ("opening device file (get_ata_identity)");
   close(fd);
   return args;
  }
- 
+
  if (ioctl(fd, HDIO_GET_IDENTITY, &ata_ident)) {
+  perror ("ioctl/HDIO_GET_IDENTITY");
   close(fd);
+  return args;
  }
- 
+
  set_str(sn, (char *) ata_ident.serial_no, 20);
  set_str(rev, (char *) ata_ident.fw_rev, 8);
  set_str(mod, (char *) ata_ident.model, 40);
- 
+
  if ((ata_ident.config >> 8) & 0x80) {
   switch ((ata_ident.config >> 8) & 0x1f) {
    case 0:
     ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
-	break;
+    break;
    case 1:
-	ata_type = (char **)setadd ((void **)ata_type, "TAPE", SET_TYPE_STRING);
-	break;
+    ata_type = (char **)setadd ((void **)ata_type, "TAPE", SET_TYPE_STRING);
+    break;
    case 5:
-	ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
-	break;
+    ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
+    break;
    case 7:
-	ata_type = (char **)setadd ((void **)ata_type, "OPTICAL", SET_TYPE_STRING);
-	break;
+    ata_type = (char **)setadd ((void **)ata_type, "OPTICAL", SET_TYPE_STRING);
+    break;
    default:
-	ata_type = (char **)setadd ((void **)ata_type, "GENERIC", SET_TYPE_STRING);
-	break;
+    ata_type = (char **)setadd ((void **)ata_type, "GENERIC", SET_TYPE_STRING);
+    break;
   }
  } else {
   ata_type = (char **)setadd ((void **)ata_type, "DISK", SET_TYPE_STRING);
-
  }
- 
+
  close(fd);
 
 // ATA_MODEL=mod
@@ -845,13 +872,20 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
 
  args = (char **)setadd ((void **)args, "ATA_TYPE", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
- notice (5, "ATA_TYPE: %s", atatype);
+// notice (5, "ATA_TYPE: %s", atatype);
  free (atatype);
+
+#if 0
+ atatype = set2str (',', (const char **)args);
+ fprintf (stderr, " ** args: %s\n", atatype);
+// fflush (stderr);
+ free (atatype);
+#endif
 
  return args;
 }
 
-char *linux_edev_mangle_filename (char *filename) {
+char *linux_edev_mangle_filename (char *filename, char do_free) {
  if (strstr (filename, "${NUM+}")) {
   char *new_filename = NULL;
   char **temp_environment = (char **)setadd (NULL, "NUM+", SET_NOALLOC);
@@ -870,7 +904,7 @@ char *linux_edev_mangle_filename (char *filename) {
 /* see if we can stat the file... if we can, it exists, and lstat returns 0, and we increased the num by one for the next run */
   } while (!lstat (new_filename, &st));
 
-  free (filename);
+  if (do_free) free (filename);
   free (temp_environment);
 
   return (new_filename);
