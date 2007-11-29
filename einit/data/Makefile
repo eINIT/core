@@ -28,8 +28,8 @@ install:
 	${INSTALL} ${IPARAM} -m 0644 schema/*.rn? ${DESTDIR}/${LIBDIR}/schemata
 	${INSTALL} ${IPARAM} -m 0644 einit.conf ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	
-	for i in subsystems.d/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
-	for i in subsystems.d/edev/*; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d/edev "${CONFIGINSTALLMETHOD}"; done
+	for i in subsystems.d/*.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
+	for i in subsystems.d/edev/*.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d/edev "${CONFIGINSTALLMETHOD}"; done
 	for i in local.xml fstab.xml modes.xml network.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" "" "${CONFIGINSTALLMETHOD}"; done
 	
 	${INSTALL} ${IPARAM} -m 0644 modules-scheme/*.scm ${DESTDIR}/${LIBDIR}/modules-scheme
