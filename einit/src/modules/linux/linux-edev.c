@@ -116,6 +116,8 @@ pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
+char *linux_edev_mangle_filename (char *filename);
+
 static void set_str(char *to, const char *from, size_t count);
 
 void linux_edev_load_kernel_extensions() {
@@ -358,9 +360,11 @@ void linux_edev_hotplug_handle (char **v) {
         for (j = 0; linux_edev_device_rules[i][j] && linux_edev_device_rules[i][j+1]; j += 2) {
          if (!devicefile && strmatch (linux_edev_device_rules[i][j], "devicefile")) {
           devicefile = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
+          devicefile = linux_edev_mangle_filename (devicefile);
          } else if (strmatch (linux_edev_device_rules[i][j], "symlink")) {
           char *symlink = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
           if (symlink) {
+           symlink = linux_edev_mangle_filename (symlink);
            symlinks = (char **)setadd ((void **)symlinks, symlink, SET_TYPE_STRING);
            free (symlink);
           }
@@ -851,6 +855,33 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
  notice (5, "ATA_TYPE: %s", atatype);
  free (atatype);
- 
+
  return args;
+}
+
+char *linux_edev_mangle_filename (char *filename) {
+ if (strstr (filename, "${NUM+}")) {
+  char *new_filename = NULL;
+  char **temp_environment = (char **)setadd (NULL, "NUM+", SET_NOALLOC);
+  char buffer[32]; // no file will get more than a 32-digit suffix num... no, really
+  int num = 0;
+  struct stat st;
+
+  temp_environment = (char **)setadd ((void **)temp_environment, buffer, SET_NOALLOC);
+
+  do {
+   esprintf (buffer, 32, "%i", num);
+   num++;
+
+   new_filename = apply_variables (filename, (const char **)temp_environment);
+
+/* see if we can stat the file... if we can, it exists, and lstat returns 0, and we increased the num by one for the next run */
+  } while (!lstat (new_filename, &st));
+
+  free (filename);
+  free (temp_environment);
+
+  return (new_filename);
+ } else
+  return filename;
 }
