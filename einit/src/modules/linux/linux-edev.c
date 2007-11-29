@@ -856,6 +856,18 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  notice (5, "ATA_TYPE: %s", atatype);
  free (atatype);
 
+// ATA_MODEL=mod
+ args = (char **)setadd ((void **)args, "ATA_MODEL", SET_TYPE_STRING);
+ args = (char **)setadd ((void **)args, mod, SET_TYPE_STRING);
+
+// ATA_SERIAL=sn
+ args = (char **)setadd ((void **)args, "ATA_SERIAL", SET_TYPE_STRING);
+ args = (char **)setadd ((void **)args, sn, SET_TYPE_STRING);
+
+// ATA_REVISION=rev
+ args = (char **)setadd ((void **)args, "ATA_REVISION", SET_TYPE_STRING);
+ args = (char **)setadd ((void **)args, rev, SET_TYPE_STRING);
+
  return args;
 }
 
