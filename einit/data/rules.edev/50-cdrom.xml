@@ -6,6 +6,11 @@
                     DEVPATH_BASE="^sr[0-9]*$"
                     CDROM_ATTRIBUTES="CDROM"
 		    group="cdrom"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+   <devicefile-rule SUBSYSTEM="^block$"
+                    DEVPATH_BASE="^sr[0-9]*$"
+                    CDROM_ATTRIBUTES="CDROM"
+		    group="cdrom"
                     symlink="/dev/cdrom" />
    <devicefile-rule SUBSYSTEM="^block$"
                     DEVPATH_BASE="^sr[0-9]*$"
