@@ -118,7 +118,6 @@
 	int network_cleanup (struct lmodule *);
 	int network_configure (struct lmodule *);
 
-	int check_rfkill (struct interface_descriptor *, struct einit_event *);
 	int flush_ip (struct interface_descriptor *, struct einit_event *);
 
 	struct interface_descriptor *network_import_interface_descriptor (struct lmodule *);
@@ -542,82 +541,15 @@
 	 return status_failed;
 	}
 
-	int check_rfkill (struct interface_descriptor *id, struct einit_event *status) {
-	 struct stat st;
-	 char path[BUFFERSIZE];
-
-	 esprintf (path, BUFFERSIZE, "/sys/class/net/%s/device/rf_kill", id->interface_name);
-
-	 if (stat (path, &st)) { /* device doesn't have a killswitch, so it's alright */
-	  return status_ok;
-	 } else {
-	  char *ifbuffer;
-
-	  if ((ifbuffer = readfile (path))) {
-	   int flags = parse_integer (ifbuffer);
-	   free (ifbuffer);
-
-	   if (flags & 1) { // hardware killswitch active
-		notice (4, "hardware killswitch on network device %s active", id->interface_name);
-		fbprintf (status, "hardware killswitch on network device %s active, please turn your device on.", id->interface_name);
-		return status_failed;
-	   }
-
-	   if (flags & 2) { // software killswitch active
-		FILE *f = fopen (path, "w");
-		notice (4, "software killswitch on network device %s active, clearing", id->interface_name);
-
-		if (f) {
-		 fputs ("0", f);
-		 fclose (f);
-		}
-		return status_ok;
-	   }
-	  }
-	 }
-
-	 return status_ok;
-	}
-
-	int network_ready (struct interface_descriptor *id, struct einit_event *status) {
-	#ifdef LINUX
-	/* made linux-specific, because only linux has sysfs */
-	 uint32_t retries = 0;
-	 int ret = status_ok;
-	 struct stat st;
-	 fbprintf (status, "waiting for interface to exist");
-	 char interface_path[BUFFERSIZE];
-	 esprintf (interface_path, BUFFERSIZE, "/sys/class/net/%s", id->interface_name); 
-	 while (stat(interface_path, &st)) {
-	  if (retries > 10000000) {
-	   fbprintf (status, "too many retries, giving up.");
-
-	   return status_failed;
-	  }
-
-	  usleep(100000);
-	  retries++;
-	 }
-	 return ret;
-	#else
-	/* non-linux systems: hope for the best */
-	 return status_ok;
-	#endif
-	}
-
 	int network_interface_enable (struct interface_descriptor *id, struct einit_event *status) {
 	 int ret = 0;
 	 if (!id && !(id = network_import_interface_descriptor(status->para))) return status_failed;
 	 status->module->param = id;
 
 	 fbprintf (status, "enabling network interface %s", id->interface_name);
-	 if (id->kernel_module) {
-	  if (network_ready(id,status) == status_failed)
+	 if (id->kernel_module == status_failed) {
 	   goto fail;
 	 }
-
-	 if (check_rfkill (id,status) == status_failed)
-	  goto fail;
 
 	 if (flush_ip(id,status) == status_failed)
 	  goto fail;
