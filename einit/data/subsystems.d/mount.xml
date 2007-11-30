@@ -16,7 +16,8 @@
    </mountpoints>
    <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
    <fsck-command id="generic" s="pexec-options no-pipe; /sbin/fsck -a -T -t ${fs} ${device}" />
-   <fsck-command id="jfs" s="pexec-options no-pipe; /sbin/fsck.jfs ${device}" />
+   <fsck-command id="ext3" s="pexec-options no-pipe; /sbin/fsck.ext3 -p ${device}" />
+   <fsck-command id="jfs" s="pexec-options no-pipe; /sbin/fsck.jfs -p ${device}" />
    <fsck-command id="reiser4" s="pexec-options no-pipe; /sbin/fsck.${fs} -a ${device}" />
    <block-devices>
     <dev-constraints path="/dev/"
