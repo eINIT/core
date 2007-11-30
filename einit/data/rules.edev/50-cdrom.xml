@@ -3,32 +3,25 @@
  <configuration>
   <edev>
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CDROM"
 		    group="cdrom"
                     devicefile="/dev/${DEVPATH_BASE}" />
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CDROM"
                     symlink="/dev/cdrom${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CD_R"
                     symlink="/dev/cdr${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CD_RW"
                     symlink="/dev/cdrw${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CD_DVD"
                     symlink="/dev/dvd${NUM+}" />
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CD_DVD_R"
                     symlink="/dev/dvdr${NUM+}" />                                        
    <devicefile-rule SUBSYSTEM="^block$"
-                    DEVPATH_BASE="^(sr|[hd]d[a-z])[0-9]*$"
                     CDROM_ATTRIBUTES="CD_DVD_RAM"
                     symlink="/dev/dvdrw${NUM+}" />
   </edev>
