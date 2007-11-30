@@ -120,20 +120,12 @@ int linux_udev_run() {
   return status_failed;
 }
 
-int linux_udev_shutdown() {
+void linux_udev_shutdown() {
  if (linux_udev_enabled) {
   system (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
   system (EINIT_LIB_BASE "/modules-xml/udev.sh disable");
 
   linux_udev_enabled = 0;
- }
-
- return status_ok;
-}
-
-void linux_udev_power_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  linux_udev_shutdown();
  }
 }
 
@@ -148,8 +140,9 @@ void linux_udev_boot_event_handler (struct einit_event *ev) {
 int linux_udev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
- event_ignore (einit_event_subsystem_power, linux_udev_power_event_handler);
  event_ignore (einit_boot_early, linux_udev_boot_event_handler);
+ event_ignore (einit_power_down_scheduled, linux_udev_shutdown);
+ event_ignore (einit_power_reset_scheduled, linux_udev_shutdown);
 
  return 0;
 }
@@ -161,7 +154,8 @@ int linux_udev_configure (struct lmodule *pa) {
  pa->cleanup = linux_udev_cleanup;
 
  event_listen (einit_boot_early, linux_udev_boot_event_handler);
- event_listen (einit_event_subsystem_power, linux_udev_power_event_handler);
+ event_listen (einit_power_down_scheduled, linux_udev_shutdown);
+ event_listen (einit_power_reset_scheduled, linux_udev_shutdown);
 
  return 0;
 }

@@ -661,19 +661,13 @@ int linux_edev_run() {
  return status_failed;
 }
 
-int linux_edev_shutdown() {
+void linux_edev_shutdown() {
  if (linux_edev_enabled) {
   linux_edev_enabled = 0;
 
   return status_ok;
  } else
   return status_failed;
-}
-
-void linux_edev_power_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  linux_edev_shutdown();
- }
 }
 
 void linux_edev_boot_event_handler (struct einit_event *ev) {
@@ -711,9 +705,10 @@ void linux_edev_retrieve_rules () {
 int linux_edev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
- event_ignore (einit_event_subsystem_power, linux_edev_power_event_handler);
  event_ignore (einit_boot_early, linux_edev_boot_event_handler);
  event_ignore (einit_core_configuration_update, linux_edev_retrieve_rules);
+ event_ignore (einit_power_down_scheduled, linux_edev_shutdown);
+ event_ignore (einit_power_reset_scheduled, linux_edev_shutdown);
 
  return 0;
 }
@@ -726,7 +721,8 @@ int linux_edev_configure (struct lmodule *pa) {
 
  event_listen (einit_core_configuration_update, linux_edev_retrieve_rules);
  event_listen (einit_boot_early, linux_edev_boot_event_handler);
- event_listen (einit_event_subsystem_power, linux_edev_power_event_handler);
+ event_listen (einit_power_down_scheduled, linux_edev_shutdown);
+ event_listen (einit_power_reset_scheduled, linux_edev_shutdown);
 
  return 0;
 }

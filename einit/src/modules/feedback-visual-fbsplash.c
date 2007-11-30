@@ -107,10 +107,8 @@ void fbsplash_queue_comand (const char *command) {
 }
 
 void einit_feedback_visual_fbsplash_power_event_handler(struct einit_event *ev) {
- if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  notice (4, "disabling feedack (fbsplash)");
-  einit_feedback_visual_fbsplash_disable();
- }
+ notice (4, "disabling feedack (fbsplash)");
+ einit_feedback_visual_fbsplash_disable();
 }
 
 void einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available (struct einit_event *ev) {
@@ -223,8 +221,8 @@ void einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available (s
  }
 }
 
-void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) {
- if ((ev->type == einit_core_mode_switching) && !fbsplash_disabled) {
+void einit_feedback_visual_fbsplash_einit_event_handler_mode_switching (struct einit_event *ev) {
+ if (!fbsplash_disabled) {
   char tmp[BUFFERSIZE];
 
   fbsplash_queue_comand("set mode silent");
@@ -236,7 +234,10 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
 
   fbsplash_queue_comand("repaint");
  }
- if ((ev->type == einit_core_mode_switch_done) && !fbsplash_disabled) {
+}
+
+void einit_feedback_visual_fbsplash_einit_event_handler_mode_switch_done (struct einit_event *ev) {
+ if (!fbsplash_disabled) {
   char tmp[BUFFERSIZE];
 
   if (ev->para && ((struct cfgnode *)ev->para)->id) {
@@ -247,8 +248,10 @@ void einit_feedback_visual_fbsplash_einit_event_handler(struct einit_event *ev) 
   fbsplash_queue_comand("repaint");
 //  fbsplash_queue_comand("set mode verbose");
  }
+}
 
- if ((ev->type == einit_core_service_update) && ev->set && !fbsplash_disabled) {
+void einit_feedback_visual_fbsplash_einit_event_handler_service_update (struct einit_event *ev) {
+ if (ev->set && !fbsplash_disabled) {
   char tmp[BUFFERSIZE];
   uint32_t i = 0;
 
@@ -451,8 +454,11 @@ int einit_feedback_visual_fbsplash_disable () {
 
 int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
  event_ignore (einit_boot_devices_available, einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available);
- event_ignore (einit_event_subsystem_power, einit_feedback_visual_fbsplash_power_event_handler);
- event_ignore (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
+ event_ignore (einit_power_down_scheduled, einit_feedback_visual_fbsplash_power_event_handler);
+ event_ignore (einit_power_reset_scheduled, einit_feedback_visual_fbsplash_power_event_handler);
+ event_ignore (einit_core_mode_switching, einit_feedback_visual_fbsplash_einit_event_handler_mode_switching);
+ event_ignore (einit_core_mode_switch_done, einit_feedback_visual_fbsplash_einit_event_handler_mode_switch_done);
+ event_ignore (einit_core_service_update, einit_feedback_visual_fbsplash_einit_event_handler_service_update);
 
  return 0;
 }
@@ -463,9 +469,12 @@ int einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
 
  tm->cleanup = einit_feedback_visual_fbsplash_cleanup;
 
- event_listen (einit_event_subsystem_core, einit_feedback_visual_fbsplash_einit_event_handler);
  event_listen (einit_boot_devices_available, einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available);
- event_listen (einit_event_subsystem_power, einit_feedback_visual_fbsplash_power_event_handler);
+ event_listen (einit_power_down_scheduled, einit_feedback_visual_fbsplash_power_event_handler);
+ event_listen (einit_power_reset_scheduled, einit_feedback_visual_fbsplash_power_event_handler);
+ event_listen (einit_core_mode_switching, einit_feedback_visual_fbsplash_einit_event_handler_mode_switching);
+ event_listen (einit_core_mode_switch_done, einit_feedback_visual_fbsplash_einit_event_handler_mode_switch_done);
+ event_listen (einit_core_service_update, einit_feedback_visual_fbsplash_einit_event_handler_service_update);
 
  return 0;
 }

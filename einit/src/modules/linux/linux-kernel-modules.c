@@ -440,10 +440,6 @@ int linux_kernel_modules_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_ignore (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
-#if 0
- event_ignore (einit_event_subsystem_power, linux_kernel_modules_power_event_handler);
-#endif
-
  return 0;
 }
 
@@ -456,10 +452,6 @@ int linux_kernel_modules_configure (struct lmodule *this) {
 
  event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
-
-#if 0
- event_listen (einit_event_subsystem_power, linux_kernel_modules_power_event_handler);
-#endif
 
  return 0;
 }

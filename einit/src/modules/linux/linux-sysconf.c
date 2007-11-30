@@ -180,7 +180,7 @@ void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
 int linux_sysconf_cleanup (struct lmodule *this) {
  function_unregister ("core-power-reset-linux", 1, linux_reboot);
  function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, linux_sysconf_ipc_event_handler);
  event_ignore (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_ignore (einit_boot_devices_available, linux_sysconf_sysctl);
 
@@ -279,7 +279,7 @@ int linux_sysconf_configure (struct lmodule *irr) {
  thismodule->enable = linux_sysconf_enable;
  thismodule->disable = linux_sysconf_disable;
 
- event_listen (einit_event_subsystem_ipc, linux_sysconf_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, linux_sysconf_ipc_event_handler);
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_sysctl);
  function_register ("core-power-off-linux", 1, linux_power_off);

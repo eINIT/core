@@ -314,16 +314,6 @@ int linux_mdev_run() {
   return status_failed;
 }
 
-int linux_mdev_shutdown() {
- return status_ok;
-}
-
-void linux_mdev_power_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  linux_mdev_shutdown();
- }
-}
-
 void linux_mdev_boot_event_handler (struct einit_event *ev) {
  if (linux_mdev_run() == status_ok) {
   struct einit_event eml = evstaticinit(einit_boot_devices_available);
@@ -335,7 +325,6 @@ void linux_mdev_boot_event_handler (struct einit_event *ev) {
 int linux_mdev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
- event_ignore (einit_event_subsystem_power, linux_mdev_power_event_handler);
  event_ignore (einit_boot_early, linux_mdev_boot_event_handler);
 
  return 0;
@@ -348,7 +337,6 @@ int linux_mdev_configure (struct lmodule *pa) {
  pa->cleanup = linux_mdev_cleanup;
 
  event_listen (einit_boot_early, linux_mdev_boot_event_handler);
- event_listen (einit_event_subsystem_power, linux_mdev_power_event_handler);
 
  return 0;
 }

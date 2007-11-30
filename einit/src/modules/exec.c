@@ -130,9 +130,9 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-check-variables", 1, check_variables_f);
  function_unregister ("einit-apply-envfile", 1, apply_envfile_f);
 
- event_ignore (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
- event_ignore (einit_event_subsystem_process, einit_exec_process_event_handler);
+ event_ignore (einit_process_died, einit_exec_process_event_handler);
  event_ignore (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
+ event_ignore (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  sched_cleanup(irr);
 
@@ -180,18 +180,16 @@ void einit_exec_update_daemons_from_pidfiles() {
 }
 
 void einit_exec_process_event_handler (struct einit_event *ev) {
- if (ev->type == einit_process_died) {
-  einit_exec_update_daemons_from_pidfiles();
+ einit_exec_update_daemons_from_pidfiles();
 
 /* something needs to be done right here */
-  struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
-  spid->pid = ev->integer;
-  spid->status = ev->status;
+ struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
+ spid->pid = ev->integer;
+ spid->status = ev->status;
 
-  dexec_watcher(spid);
+ dexec_watcher(spid);
 
-  free (spid);
- }
+ free (spid);
 }
 
 void einit_exec_ipc_event_handler (struct einit_event *ev) {
@@ -1200,9 +1198,9 @@ int einit_exec_configure (struct lmodule *irr) {
  if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
 
- event_listen (einit_event_subsystem_ipc, einit_exec_ipc_event_handler);
  event_listen (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
- event_listen (einit_event_subsystem_process, einit_exec_process_event_handler);
+ event_listen (einit_process_died, einit_exec_process_event_handler);
+ event_listen (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);
