@@ -2,18 +2,23 @@
 <einit>
  <configuration>
   <edev>
+
    <devicefile-rule SUBSYSTEM="^block$"
                     group="disk"
                     devicefile="/dev/${DEVPATH_BASE}" />
+
    <!-- libata compat -->
+
    <devicefile-rule SUBSYSTEM="^block$"
                     ATA_TYPE="DISK"
                     DEVPATH_BASE="[hsm]d[a-z]$"
                     symlink="/dev/disk/by-id/ata-${ATA_MODEL}_${ATA_SERIAL}" />
+
    <devicefile-rule SUBSYSTEM="^block$"
                     ATA_TYPE="DISK"
                     DEVPATH_BASE="[hsm]d[a-z][0-9]+$"
                     symlink="/dev/disk/by-id/ata-${ATA_MODEL}_${ATA_SERIAL}-part${MINOR}" />
+
   </edev>
  </configuration>
 </einit>

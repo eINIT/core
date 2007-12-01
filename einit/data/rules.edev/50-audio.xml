@@ -2,9 +2,11 @@
 <einit>
  <configuration>
   <edev>
+
    <devicefile-rule SUBSYSTEM="^(snd|sound)$"
                     group="audio"
                     devicefile="/dev/snd/${DEVPATH_BASE}" />
+
   </edev>
  </configuration>
 </einit>

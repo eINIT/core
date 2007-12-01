@@ -34,7 +34,7 @@
                     symlink="/dev/${DEVPATH_BASE}"
                     devicefile="/dev/${SUBSYSTEM}/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^(mem|tty)$"
+   <devicefile-rule SUBSYSTEM="^mem$"
                     group="${SUBSYSTEM}"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
@@ -42,16 +42,12 @@
                     chmod="0660"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
-   <devicefile-rule DEVPATH_BASE="^(zero|null|ptmx|random|urandom|tty)$"
+   <devicefile-rule DEVPATH_BASE="^(zero|null|ptmx|random|urandom)$"
                     chmod="0666"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule SUBSYSTEM="^input$"
                     chmod="0640" />
-
-   <devicefile-rule SUBSYSTEM="^(vcs|vcs[0-9]*|vcsa|vcsa[0-9]*)$"
-		    group="tty"
-                    devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule DEVPATH_BASE="^fuse$"
                     chmod="0666"
