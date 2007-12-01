@@ -345,38 +345,58 @@ void linux_edev_hotplug_handle (char **v) {
      emutex_lock (&linux_edev_device_rules_mutex);
      if (linux_edev_device_rules) {
       for (i = 0; linux_edev_device_rules[i]; i++) {
-       int j;
+       int j, k;
        char match = 1;
 
-       for (j = 0; args[j]; j += 2) {
-        int k;
+/* see if all rules are set, skip the rule if not */
+       for (k = 0; linux_edev_device_rules[i][k]; k += 2) {
+        char could_match = 0;
 
-        for (k = 0; linux_edev_device_rules[i][k]; k += 2) {
-         if (strmatch (args[j], linux_edev_device_rules[i][k])) { // and we got something to match
-          struct stree *s = streefind (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], tree_find_first);
-          regex_t *reg;
+	    if (strmatch (linux_edev_device_rules[i][k], "symlink") ||
+            strmatch (linux_edev_device_rules[i][k], "devicefile") ||
+            strmatch (linux_edev_device_rules[i][k], "group") ||
+            strmatch (linux_edev_device_rules[i][k], "user") ||
+            strmatch (linux_edev_device_rules[i][k], "chmod") ||
+            strmatch (linux_edev_device_rules[i][k], "blockdevice")) ;
+        else for (j = 0; args[j]; j += 2) {
+         if (strmatch (linux_edev_device_rules[i][k], args[j]))
+          could_match = 1;
+        }
 
-          if (s) {
-           reg = s->value;
-          } else {
-           reg = emalloc (sizeof (regex_t));
-           if (regcomp (reg, linux_edev_device_rules[i][k+1], REG_NOSUB | REG_EXTENDED) == 0) {
-            linux_edev_compiled_regexes = streeadd (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], reg, SET_NOALLOC, NULL);
+        if (!could_match) {
+         match = 0;
+         break;
+        }
+       }
+
+       if (match)
+        for (j = 0; args[j]; j += 2) {
+         for (k = 0; linux_edev_device_rules[i][k]; k += 2) {
+          if (strmatch (args[j], linux_edev_device_rules[i][k])) { // and we got something to match
+           struct stree *s = streefind (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], tree_find_first);
+           regex_t *reg;
+
+           if (s) {
+            reg = s->value;
            } else {
-            free (reg);
-            reg = NULL;
+            reg = emalloc (sizeof (regex_t));
+            if (regcomp (reg, linux_edev_device_rules[i][k+1], REG_NOSUB | REG_EXTENDED) == 0) {
+             linux_edev_compiled_regexes = streeadd (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], reg, SET_NOALLOC, NULL);
+            } else {
+             free (reg);
+             reg = NULL;
+            }
            }
-          }
 
-          if (reg) {
-           if (regexec (reg, args[j+1], 0, NULL, 0) == REG_NOMATCH) {
-            match = 0;
-            break;
+           if (reg) {
+            if (regexec (reg, args[j+1], 0, NULL, 0) == REG_NOMATCH) {
+             match = 0;
+             break;
+            }
            }
           }
          }
         }
-       }
 
        if (match) {
 //        notice (1, "have match!");
