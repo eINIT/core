@@ -4,11 +4,13 @@
   <edev>
 
    <devicefile-rule SUBSYSTEM="^(tty)$"
-                    group="${SUBSYSTEM}"
                     chmod="0666"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^(vcs|vcs[0-9]*|vcsa|vcsa[0-9]*)$"
+<!-- i could bet the SUBSYSTEM is actually called vcs... but either way,
+     these are device files, and we want to match DEVPATH_BASE
+     also: vcsa|vcsa[0-9]* -same-as-> vcsa[0-9]* -->
+   <devicefile-rule DEVPATH_BASE="^(vcs[0-9]*|vcsa[0-9]*)$"
                     group="tty"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
