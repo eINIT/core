@@ -352,12 +352,12 @@ void linux_edev_hotplug_handle (char **v) {
        for (k = 0; linux_edev_device_rules[i][k]; k += 2) {
         char could_match = 0;
 
-	    if (strmatch (linux_edev_device_rules[i][k], "symlink") ||
+        if (strmatch (linux_edev_device_rules[i][k], "symlink") ||
             strmatch (linux_edev_device_rules[i][k], "devicefile") ||
             strmatch (linux_edev_device_rules[i][k], "group") ||
             strmatch (linux_edev_device_rules[i][k], "user") ||
             strmatch (linux_edev_device_rules[i][k], "chmod") ||
-            strmatch (linux_edev_device_rules[i][k], "blockdevice")) ;
+            strmatch (linux_edev_device_rules[i][k], "blockdevice")) continue;
         else for (j = 0; args[j]; j += 2) {
          if (strmatch (linux_edev_device_rules[i][k], args[j]))
           could_match = 1;
