@@ -3,6 +3,7 @@
  <configuration>
   <edev>
    <devicefile-rule SUBSYSTEM="^block$"
+                    DEVPATH_BASE="^(hd[a-z]|sr[0-9]*)$"
                     CDROM_ATTRIBUTES="CDROM"
 		    group="cdrom"
                     devicefile="/dev/${DEVPATH_BASE}" />

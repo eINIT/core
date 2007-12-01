@@ -3,20 +3,8 @@
  <configuration>
   <edev>
 
-   <devicefile-rule SUBSYSTEM="^(tty)$"
-                    group="${SUBSYSTEM}"
-                    chmod="0666"
-		    group="tty"
-                    devicefile="/dev/${DEVPATH_BASE}" />
-
-   <devicefile-rule SUBSYSTEM="^(vcs|vcs[0-9]*|vcsa|vcsa[0-9]*)$"
-                    group="tty"
-                    devicefile="/dev/${DEVPATH_BASE}" />
-
-   <devicefile-rule DEVPATH_BASE="^ttyS[0-9]*$"
-                    group="uucp"
-                    devicefile="/dev/${DEVPATH_BASE}" />
-
+   <devicefile-rule SUBSYSTEM="^(usb)$"
+                    group="usb"  />
 
   </edev>
  </configuration>
