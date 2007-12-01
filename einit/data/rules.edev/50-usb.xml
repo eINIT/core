@@ -3,8 +3,7 @@
  <configuration>
   <edev>
 
-   <devicefile-rule SUBSYSTEM="^(usb)$"
-                    group="usb"  />
+<!--   <devicefile-rule SUBSYSTEM="^(usb)$" /> -->
 
   </edev>
  </configuration>

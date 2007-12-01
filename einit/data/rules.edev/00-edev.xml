@@ -35,7 +35,6 @@
                     devicefile="/dev/${SUBSYSTEM}/${DEVPATH_BASE}" />
 
    <devicefile-rule SUBSYSTEM="^mem$"
-                    group="${SUBSYSTEM}"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
    <devicefile-rule DEVPATH_BASE="^(console|mem)$"
