@@ -547,9 +547,9 @@
 	 status->module->param = id;
 
 	 fbprintf (status, "enabling network interface %s", id->interface_name);
-	 if (id->kernel_module == status_failed) {
+/*	 if (id->kernel_module == status_failed) {
 	   goto fail;
-	 }
+	 }*/
 
 	 if (flush_ip(id,status) == status_failed)
 	  goto fail;
