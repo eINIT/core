@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <edev>
+   <devicefile-rule SUBSYSTEM="^(card[0-9]*|nvidia[0-9]*|3dfx[0-9]*)$"
+                    group="video"
+                    devicefile="/dev/dri/${DEVPATH_BASE}" />
+   <devicefile-rule SUBSYSTEM="^graphics$"
+                    DEVPATH_BASE="^fb[0-9]*$"
+                    group="video"
+                    devicefile="/dev/${DEVPATH_BASE}" />
+   <devicefile-rule DEVPATH_BASE="^fb0$"
+                    symlink="/dev/fb" />
+  </edev>
+ </configuration>
+</einit>

@@ -2,6 +2,9 @@
 <einit>
  <configuration>
   <edev>
+   <devicefile-rule SUBSYSTEM="^block$"
+                    group="disk"
+                    devicefile="/dev/${DEVPATH_BASE}" />
    <!-- libata compat -->
    <devicefile-rule SUBSYSTEM="^block$"
                     ATA_TYPE="DISK"

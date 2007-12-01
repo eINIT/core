@@ -46,24 +46,8 @@
                     chmod="0666"
                     devicefile="/dev/${DEVPATH_BASE}" />
 
-   <devicefile-rule SUBSYSTEM="^(snd|sound)$"
-                    group="audio"
-                    devicefile="/dev/snd/${DEVPATH_BASE}" />
-
-   <devicefile-rule SUBSYSTEM="^(card[0-9]*|nvidia[0-9]*|3dfx[0-9]*)$"
-                    group="video"
-                    devicefile="/dev/dri/${DEVPATH_BASE}" />
-
    <devicefile-rule SUBSYSTEM="^input$"
                     chmod="0640" />
-
-   <devicefile-rule SUBSYSTEM="^graphics$"
-		    DEVPATH_BASE="^fb[0-9]*$"
-                    group="video"
-                    devicefile="/dev/${DEVPATH_BASE}" />
-
-   <devicefile-rule DEVPATH_BASE="^fb0$"
-                    symlink="/dev/fb" />
 
    <devicefile-rule SUBSYSTEM="^(vcs|vcs[0-9]*|vcsa|vcsa[0-9]*)$"
 		    group="tty"
@@ -79,10 +63,6 @@
 
    <devicefile-rule DEVPATH_BASE="^rtc0$"
                     symlink="/dev/rtc" />
-
-   <devicefile-rule SUBSYSTEM="^block$"
-                    group="disk"
-                    devicefile="/dev/${DEVPATH_BASE}" />
 
 <!-- the following rules /would/ usually make sense, however due to the
      handling, they're completely obsolete and would thus only increase the
