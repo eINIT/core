@@ -1,10 +1,11 @@
-util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0 libeinit-ipc-socket.so
+util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0 libeinit-ipc-socket.so einit-helper
 
 install: util $(DBUS)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} -g einit -m 0750 einit-control ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} last-rites ${DESTDIR}/${LIBDIR}/bin
+	${INSTALL} ${BINIPARAM} einit-helper ${DESTDIR}/${LIBDIR}/bin
 	ln -fs einit-control ${DESTDIR}/${BINDIR}/power
 	ln -fs einit-control ${DESTDIR}/${BINDIR}/erc
 	${INSTALL} ${BINIPARAM} libeinit.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../
@@ -18,6 +19,9 @@ install: util $(DBUS)
 
 einit-control: einit-control.o bitch.o utility.o $(asmobjects) libeinit.${SO}
 	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC) -L. -leinit
+
+einit-helper: einit-helper.o bitch.o utility.o $(asmobjects) set-lowmem.o
+	$(CLD) einit-helper.o bitch.o utility.o $(asmobjects) set-lowmem.o -o einit-helper
 
 last-rites: last-rites.o bitch.o utility.o $(asmobjects)
 	$(CLD) last-rites.o bitch.o utility.o $(asmobjects) -o last-rites $(STATIC)
