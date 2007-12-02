@@ -22,12 +22,14 @@ export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 
 export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
-export COREOBJECTS="einit-core module bitch utility event tree-linear set-lowmem ${ASMFUNCTIONS} einit-monitor"
-export UTILOBJECTS="einit-control bitch utility tree-linear set-lowmem ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper"
+export USE_SET_CODE="set-lowmem"
+
+export COREOBJECTS="einit-core module bitch utility event tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor"
+export UTILOBJECTS="einit-control bitch utility tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper"
 
 export UTILOBJECTS_TESTS="test-core-apply-variables"
 
 export BUILDCOMPONENTS="core util modules headers"
 
 export HEADERSOURCES="src/include/einit src/include/einit-modules"
-export HEADERPREPARE="sed -e s/set-lowmem/set/ -e s/einit-// -e s/module-logic-v3/module-logic/ -e s/tree-linear/tree/"
+export HEADERPREPARE="sed -e s/einit-// -e s/module-logic-v3/module-logic/ -e s/tree-linear/tree/"
