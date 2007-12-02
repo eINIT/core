@@ -53,6 +53,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char o_use_running_einit = 0;
 char o_sandbox = 0;
 
+void help_preface () {
+ fprintf (stdout, " :: Advanced Options ::\n"
+                  " --wtf                Examine Configuration Files\n\n"
+                  " :: Core Help ::\n");
+}
+
 int main(int argc, char **argv, char **env) {
  char c_version = 0;
  char c_licence = 0;
@@ -100,8 +106,8 @@ int main(int argc, char **argv, char **env) {
    }
   }
 
-  fprintf (stdout, " :: Advanced Options ::\n --wtf                Examine Configuration Files\n\n");
-  fprintf (stdout, " :: Core Help ::\n");
+  if (c_help)
+   help_preface();
 
   execve (EINIT_LIB_BASE "/bin/einit-core", c, env);
   perror ("couldn't execute eINIT!");
