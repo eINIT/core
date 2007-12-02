@@ -136,16 +136,16 @@ int einit_mod_so_do_resume (struct lmodule *pa) {
    pa->module = *modinfo;
 
    if (sm) {
-    if (sm->si.provides) free (sm->si.provides);
-    if (sm->si.requires) free (sm->si.requires);
-    if (sm->si.after) free (sm->si.after);
-    if (sm->si.before) free (sm->si.before);
-    if (sm->si.shutdown_after) free (sm->si.shutdown_after);
-    if (sm->si.shutdown_before) free (sm->si.shutdown_before);
+    if (sm->si.provides) efree (sm->si.provides);
+    if (sm->si.requires) efree (sm->si.requires);
+    if (sm->si.after) efree (sm->si.after);
+    if (sm->si.before) efree (sm->si.before);
+    if (sm->si.shutdown_after) efree (sm->si.shutdown_after);
+    if (sm->si.shutdown_before) efree (sm->si.shutdown_before);
 
-    free (sm->rid);
-    free (sm->name);
-    free (sm);
+    efree (sm->rid);
+    efree (sm->name);
+    efree (sm);
    }
 
    pa->do_suspend = einit_mod_so_do_suspend;
@@ -185,7 +185,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   if (nmodules) {
    modules = (char **)setcombine_nc ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
 
-   free (nmodules);
+   efree (nmodules);
   }
  }
 
@@ -288,7 +288,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
    cleanup_continue: ;
   }
 
-  free (modules);
+  efree (modules);
  }
 
 

@@ -186,7 +186,7 @@ struct stree *mount_critical_filesystems = NULL;
     efclose (mtabfile);\
 }\
 \
-   free (tmpmtab);\
+   efree (tmpmtab);\
 }\
 }\
 }
@@ -265,10 +265,10 @@ void mount_garbage_free () {
   int i = 0;
 
   for (; mount_garbage.chunks[i]; i++) {
-   free (mount_garbage.chunks[i]);
+   efree (mount_garbage.chunks[i]);
   }
 
-  free (mount_garbage.chunks);
+  efree (mount_garbage.chunks);
   mount_garbage.chunks = NULL;
  }
  emutex_unlock (&mount_garbage_mutex);
@@ -329,7 +329,7 @@ char *generate_legacy_mtab () {
 
      strcat (ret, tmp);
 
-     if (tset) free (tset);
+     if (tset) efree (tset);
     }
    }
   }
@@ -376,7 +376,7 @@ void mount_add_filesystem (char *name, char *options) {
    else if (strmatch (t[i], "nofsck"))
     flags |= filesystem_capability_no_fsck;
   }
-  free (t);
+  efree (t);
  }
 
 // notice (1, "adding/updating filesystem: %s (0x%x)", name, (unsigned int)flags);
@@ -525,7 +525,7 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
  mp->variables = variables;
  mp->mountflags = mountflags;
 
- if (mp->flatoptions) free (mp->flatoptions);
+ if (mp->flatoptions) efree (mp->flatoptions);
  mp->flatoptions = options_string_to_mountflags (mp->options, &(mp->mountflags), mountpoint);
 
  struct stree *t = NULL;
@@ -568,7 +568,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
  }
 
  if (dd) {
-  if (device) free (device);
+  if (device) efree (device);
   mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  } else {
   struct device_data *d = emalloc(sizeof(struct device_data));
@@ -595,7 +595,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
    streeadd (mounter_dd_by_devicefile, d->device, mounter_device_data[y], SET_NOALLOC, NULL);
   emutex_unlock (&mounter_dd_by_devicefile_mutex);
 
-//  if (device) free (device);
+//  if (device) efree (device);
 
   mount_add_update_fstab_data (d, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
  }
@@ -693,7 +693,7 @@ void mount_update_fstab_nodes () {
     if (strmatch(node->arbattrs[i], "mountpoint"))
      mountpoint = estrdup (node->arbattrs[i+1]);
     else if (strmatch(node->arbattrs[i], "device")) {
-     if (device) free (device);
+     if (device) efree (device);
      device = estrdup (node->arbattrs[i+1]);
     } else if (strmatch(node->arbattrs[i], "fs"))
      fs = estrdup (node->arbattrs[i+1]);
@@ -716,13 +716,13 @@ void mount_update_fstab_nodes () {
      char tmp[BUFFERSIZE];
 
      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-label/%s", node->arbattrs[i+1]);
-     if (device) free (device);
+     if (device) efree (device);
      device = estrdup(tmp);
     } else if (strmatch(node->arbattrs[i], "uuid")) {
      char tmp[BUFFERSIZE];
 
      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s", node->arbattrs[i+1]);
-     if (device) free (device);
+     if (device) efree (device);
      device = estrdup(tmp);
     }
    }
@@ -861,7 +861,7 @@ void mount_update_devices () {
    emutex_unlock (&mounter_dd_by_devicefile_mutex);
   }
 
-  free (devices);
+  efree (devices);
  }
 
  if (mounter_device_data) {
@@ -1078,11 +1078,11 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
     tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
 
-    free (comb);
+    efree (comb);
    }
 
    if (tmp_split) {
-    free (tmp_split);
+    efree (tmp_split);
     tmp_split = NULL;
    }
 
@@ -1104,7 +1104,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
         tmpxt = (char **)setadd ((void **)tmpxt, (void *)comb, SET_TYPE_STRING);
        }
 
-       free (comb);
+       efree (comb);
       }
      }
     }
@@ -1114,21 +1114,21 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
    if (tmpxt) {
     tmpx = set2str ('|', (const char **)tmpxt);
-    free (tmpxt);
+    efree (tmpxt);
    }
 
    if (tmpx) {
     esprintf (tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$", tmpx);
     after = (char **)setadd ((void **)after, (void *)tmp, SET_TYPE_STRING);
-    free (tmpx);
+    efree (tmpx);
    }
 
    if (tmp_split) {
-    free (tmp_split);
+    efree (tmp_split);
     tmp_split = NULL;
    }
 
-//   free (tmpxt);
+//   efree (tmpxt);
   }
 
 /*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
@@ -1172,7 +1172,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
     lm = mod_update (lm);
 
-    free (newmodule);
+    efree (newmodule);
 
     goto do_next;
    }
@@ -1202,7 +1202,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
   do_next:
 
-  free (servicename);
+  efree (servicename);
   s = s->next;
  }
 
@@ -1408,8 +1408,8 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
   for (; functions[r]; r++) {
    einit_mount_function f = functions[r];
    if (f (mountpoint, fs, dd, mp, status) == status_ok) {
-    free (functions);
-    free (fnames);
+    efree (functions);
+    efree (fnames);
 
     if (!(coremode & einit_mode_sandbox)) {
      if (mp->after_mount)
@@ -1441,10 +1441,10 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
     return status_ok;
    }
   }
-  free (functions);
+  efree (functions);
  }
 
- free (fnames);
+ efree (fnames);
 
  fbprintf (status, "none of the functions worked, giving up.");
 
@@ -1463,17 +1463,17 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
    einit_umount_function f = functions[r];
 
    if (f (mountpoint, mp->fs, step, dd, mp, status) == status_ok) {
-    free (functions);
-    free (fnames);
+    efree (functions);
+    efree (fnames);
 
     update_real_mtab();
     return status_ok;
    }
   }
-  free (functions);
+  efree (functions);
  }
 
- free (fnames);
+ efree (fnames);
 
  return status_failed;
 }
@@ -1501,13 +1501,13 @@ int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_dat
 
     for (; guesses[i]; i++) {
      if (mount_try_mount(mountpoint, guesses[i], dd, mp, status) == status_ok) {
-      free (guesses);
+      efree (guesses);
 
       return status_ok;
      }
     }
 
-    free (guesses);
+    efree (guesses);
    }
   }
  } else {
@@ -1639,10 +1639,10 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
     status_update (status);
    }
 
-   free (command);
+   efree (command);
   }
 
-  free (d);
+  efree (d);
  } else {
   status->string = "WARNING: filesystem dirty, but no fsck command known";
   status_update (status);
@@ -1705,7 +1705,7 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 // mount_success:
 
  if (strmatch (mp->fs, "auto")) {
-  free (mp->fs);
+  efree (mp->fs);
   mp->fs = estrdup (fs);
  }
 
@@ -1855,7 +1855,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
    }
   }
 
-  free (cm);
+  efree (cm);
  }
 
  struct device_data *dd = mount_get_device_data (mountpoint, NULL);
@@ -1909,16 +1909,16 @@ void einit_mount_update_configuration () {
    if (strmatch (tmp[c], "metadata")) mount_options |= mount_update_metadata;
    else if (strmatch (tmp[c], "block-devices")) mount_options |= mount_update_block_devices;
   }
-  free (tmp);
+  efree (tmp);
  }
 
  if ((node = cfg_findnode ("configuration-storage-mountpoints-critical",0,NULL)) && node->svalue) {
-  if (mount_critical) free (mount_critical);
+  if (mount_critical) efree (mount_critical);
   mount_critical = str2set(':', node->svalue);
  }
 
  if ((node = cfg_findnode ("configuration-storage-mountpoints-no-umount",0,NULL)) && node->svalue) {
-  if (mount_dont_umount) free (mount_dont_umount);
+  if (mount_dont_umount) efree (mount_dont_umount);
   mount_dont_umount = str2set(':', node->svalue);
  }
 
@@ -1980,7 +1980,7 @@ void emount_root () {
                " >> END OF eINIT CRASH DATA <<\n", ctime(&t), mount_crash_data);
    fclose (f);
   }
-  free (mount_crash_data);
+  efree (mount_crash_data);
   mount_crash_data = NULL;
  }
 }

@@ -189,7 +189,7 @@ void sh_add_environ_callback (char **data, uint8_t status, void *ignored) {
     cfg_addnode (&nnode);
 
     if (yt) {
-     free (yt);
+     efree (yt);
      yt = NULL;
     }
 //    puts (x);
@@ -252,7 +252,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
           base = (char **)setadd ((void **)base, (void *)curmodebase[i], SET_TYPE_STRING);
          }
         }
-        free (curmodebase);
+        efree (curmodebase);
        }
       }
      }
@@ -271,7 +271,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      if (nbase) {
       arbattrs = (char **)setadd ((void **)arbattrs, (void *)"base", SET_TYPE_STRING);
       arbattrs = (char **)setadd ((void **)arbattrs, (void *)nbase, SET_TYPE_STRING);
-      free (nbase);
+      efree (nbase);
      }
     }
 
@@ -320,7 +320,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
          new_services_for_group = (char **)setadd((void **)new_services_for_group, (void *)workingset[ci], SET_TYPE_STRING);
         }
        }
-       free (workingset);
+       efree (workingset);
       }
 
       if (new_services_for_group) {
@@ -348,7 +348,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
              new_services_for_group = (char **)setadd ((void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING);
             }
            }
-           free (groupmembers);
+           efree (groupmembers);
           }
 
          } else if (!strcmp (curgroup->arbattrs[y], "seq")) {
@@ -416,7 +416,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
 //      fprintf (stderr, " >> DEBUG: mode \"%s\": before merge: %s;\n    now: %s\n", currentmode->id, set2str(' ', curmodeena), set2str(' ', nservices));
 
-      free (curmodeena);
+      efree (curmodeena);
      }
     }
 
@@ -442,7 +442,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
    }
 
    if (nservices)
-    free (nservices);
+    efree (nservices);
   }
 
   eclosedir (dir);
@@ -475,7 +475,7 @@ void einit_event_handler (struct einit_event *ev) {
 //      puts ("compatibility-sysv-gentoo: updating configuration with env.d");
       parse_sh (data, (void (*)(const char **, enum einit_sh_parser_pa, void *))sh_add_environ_callback);
 
-      free (data);
+      efree (data);
      }
      ev->chain_type = einit_core_configuration_update;
     }
@@ -606,16 +606,16 @@ int compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
 #if 0
  if (this->module) {
  if (this->module->provides)
- free (this->module->provides);
+ efree (this->module->provides);
  if (this->module->requires)
- free (this->module->requires);
+ efree (this->module->requires);
  if (this->module->notwith)
- free (this->module->notwith);
- free (this->module);
+ efree (this->module->notwith);
+ efree (this->module);
 }
 
  if (this->param) {
- free (this->param);
+ efree (this->param);
 }
 #endif
  return 0;
@@ -631,15 +631,15 @@ char **gentoo_resolve_dependency_type (rc_depinfo_t *deptree, char *type, char *
   serv = (char **)setdup ((const void **)tmp_dependencies, SET_TYPE_STRING);
 //  eprintf (stderr, "deps: %s %s\n", set2str (' ', dependencies->services), set2str (' ', serv));
 
-  free (tmp_dependencies);
+  efree (tmp_dependencies);
  }
 
- free (tmp_type);
+ efree (tmp_type);
 
  if (current) {
   if (serv) {
    serv = (char **)setcombine ((const void **)serv, (const void **)current, SET_TYPE_STRING);
-   free (current);
+   efree (current);
   } else {
    return current;
   }
@@ -665,7 +665,7 @@ void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptr
   module->si.after = gentoo_resolve_dependency_type(gentoo_deptree, "iuse", module->si.after, runlevels[i], name);
  }
 
- free (runlevels);
+ efree (runlevels);
 
 // modinfo->si.after = str2set (' ', serv);
 
@@ -801,11 +801,11 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 
    }
    if (nrid) {
-    free (nrid);
+    efree (nrid);
     nrid = NULL;
    }
    if (tmp) {
-    free (tmp);
+    efree (tmp);
     tmp = NULL;
    }
   }

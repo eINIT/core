@@ -114,10 +114,10 @@ char module_c_compile_file (char *oname, char *base, char *nname) {
 	}
    }
 
-   free (compiler_command);
+   efree (compiler_command);
   }
 
-  free (data);
+  efree (data);
  }
 
  return ret;
@@ -176,7 +176,7 @@ char module_c_update_modules () {
     struct stat st1, st2;
 
     if (stat (oname, &st1)) {
-     free (oname); continue;
+     efree (oname); continue;
     }
 
     if (!base) base = modules[i];
@@ -209,11 +209,11 @@ char module_c_update_modules () {
 
     if (shift) nname--;
 
-    free (oname);
-	free (nname);
+    efree (oname);
+	efree (nname);
    }
 
-   free (modules);
+   efree (modules);
   }
  }
 

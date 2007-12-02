@@ -110,7 +110,7 @@ void *event_thread_wrapper (struct evt_wrapper_data *d) {
   d->handler (d->event);
 
   evdestroy (d->event);
-  free (d);
+  efree (d);
  }
 
  return NULL;
@@ -145,9 +145,9 @@ void *event_subthread (struct einit_event *event) {
  event_subthread_a (event);
 
  if ((event->type & EVENT_SUBSYSTEM_MASK) == einit_event_subsystem_ipc) {
-  if (event->argv) free (event->argv);
+  if (event->argv) efree (event->argv);
  } else {
-  if (event->stringset) free (event->stringset);
+  if (event->stringset) efree (event->stringset);
  }
 
  evdestroy (event);
@@ -206,10 +206,10 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   for (; threads[i]; i++) {
    pthread_join (*(threads[i]), NULL);
 
-   free (threads[i]);
+   efree (threads[i]);
   }
 
-  free (threads);
+  efree (threads);
  }
 
  return NULL;
@@ -243,11 +243,11 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
    if ((cur->type==ltype) && (cur->handler==handler)) {
     if (prev == NULL) {
      event_functions = cur->next;
-     free (cur);
+     efree (cur);
      cur = event_functions;
     } else {
      prev->next = cur->next;
-     free (cur);
+     efree (cur);
      cur = prev->next;
     }
    } else {
@@ -295,7 +295,7 @@ void function_register_type (const char *name, uint32_t version, void const *fun
    exported_functions = streeadd (exported_functions, name, (void *)fstruct, sizeof(struct exported_function), NULL);
   emutex_unlock (&pof_mutex);
 
-  free (fstruct);
+  efree (fstruct);
  }
 }
 
@@ -356,7 +356,7 @@ void **function_find (const char *name, const uint32_t version, const char ** su
    }
   }
 
-  if (n) free (n);
+  if (n) efree (n);
  }
  emutex_unlock (&pof_mutex);
 
@@ -367,7 +367,7 @@ void *function_find_one (const char *name, const uint32_t version, const char **
  void **t = function_find(name, version, sub);
  void *f = (t? t[0] : NULL);
 
- if (t) free (t);
+ if (t) efree (t);
 
  return f;
 }
@@ -413,7 +413,7 @@ struct exported_function **function_look_up (const char *name, const uint32_t ve
    }
   }
 
-  if (n) free (n);
+  if (n) efree (n);
  }
  emutex_unlock (&pof_mutex);
 
@@ -424,7 +424,7 @@ struct exported_function *function_look_up_one (const char *name, const uint32_t
  struct exported_function **t = function_look_up(name, version, sub);
  struct exported_function *f = (t? t[0] : NULL);
 
- if (t) free (t);
+ if (t) efree (t);
 
  return f;
 }
@@ -621,7 +621,7 @@ uint32_t event_string_to_code (const char *code) {
      break;
    }
 
-  free (tcode);
+  efree (tcode);
  }
 
  return ret;

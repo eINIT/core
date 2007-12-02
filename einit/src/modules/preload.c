@@ -120,12 +120,12 @@ void einit_preload_run () {
        }
       }
 
-      free (w);
+      efree (w);
      }
     }
    }
 
-   free (files);
+   efree (files);
   }
  }
 }

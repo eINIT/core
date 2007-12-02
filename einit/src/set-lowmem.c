@@ -115,7 +115,7 @@ void **setslice_nc (void **set1, const void **set2, const int32_t esize) {
   }
  }
 
- free (set1);
+ efree (set1);
 
  return newset;
 }
@@ -139,13 +139,13 @@ void **setadd (void **set, const void *item, int32_t esize) {
   if (set) {
    while (set[x]) {
     if (set[x] == item) {
-     free (newset);
+     efree (newset);
      return set;
     }
     newset [x] = set[x];
     x++;
    }
-   free (set);
+   efree (set);
   }
 
   newset[x] = (void *)item;
@@ -181,7 +181,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
 
    while (set[x]) {
 /*    if (set[x] == item) {
-     free (newset);
+     efree (newset);
      return set;
     }*/
     memcpy (cpnt, set[x], strlencache[x]);
@@ -189,7 +189,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
     cpnt += strlencache[x];
     x++;
    }
-   free (set);
+   efree (set);
   } else {
    newset = ecalloc (1, sizeof(void*)*2 + strlen_item);
    cpnt = ((char *)newset) + (count+2)*sizeof(void*);
@@ -211,7 +211,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
   if (set) {
    while (set[x]) {
     if (set[x] == item) {
-     free (newset);
+     efree (newset);
      return set;
     }
     memcpy (cpnt, set[x], esize);
@@ -219,7 +219,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
     cpnt += esize;
     x++;
    }
-   free (set);
+   efree (set);
   }
 
   memcpy (cpnt, item, esize);
@@ -298,7 +298,7 @@ void **setdel (void **set, const void *item) {
  }
 
  if (!x) {
-  free (set);
+  efree (set);
   return NULL;
  }
 
@@ -428,7 +428,7 @@ char **str2set (const char sep, const char *oinput) {
  }
  ret = ecalloc (1, ((sc+1)*sizeof(char *)) + 3 + l);
  memcpy ((((char *)ret) + ((sc+1)*sizeof(char *))), input, 2 + l);
- free (input);
+ efree (input);
  input = (char *)(((char *)ret) + ((sc+1)*sizeof(char *)));
  ret[0] = input;
  for (i = 0; i < l; i++) {
@@ -472,7 +472,7 @@ char **strsetdel (char **set, char *item) {
 
  if (!item || !set) return NULL;
  if (!set[0]) {
-  free (set);
+  efree (set);
   return NULL;
  }
 
@@ -488,7 +488,7 @@ char **strsetdel (char **set, char *item) {
  }
 
  if (!x) {
-  free (set);
+  efree (set);
   return NULL;
  }
 
@@ -517,7 +517,7 @@ char **strsetdeldupes (char **set) {
  }
 
  if (!x) {
-  free (set);
+  efree (set);
   return NULL;
  }
 

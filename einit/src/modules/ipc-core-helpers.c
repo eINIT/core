@@ -111,7 +111,7 @@ void *einit_ipc_core_helpers_detached_module_action (char **argv) {
   cur = cur->next;
  }
 
- free (argv);
+ efree (argv);
 
  einit_ipc_core_helpers_event_usage--;
 
@@ -149,7 +149,7 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
          else
           eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
 
-         free (r);
+         efree (r);
         } else
          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
        }
@@ -177,9 +177,9 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
        eprintf (ev->output, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
                  id, name, status);
 
-       free (name);
-       free (id);
-       free (status);
+       efree (name);
+       efree (id);
+       efree (status);
       } else {
        eprintf (ev->output, "[%s] %s (%s)",
                  STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
@@ -191,44 +191,44 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
         if (ev->ipc_options & einit_ipc_output_xml) {
          char *y = escape_xml (x);
          eprintf (ev->output, "\n  provides=\"%s\"", y);
-         free (y);
+         efree (y);
         } else {
          eprintf (ev->output, "\n > provides: %s", x);
         }
-        free (x);
+        efree (x);
        }
        if (cur->si->requires) {
         char *x = set2str(':', (const char **)cur->si->requires);
         if (ev->ipc_options & einit_ipc_output_xml) {
          char *y = escape_xml (x);
          eprintf (ev->output, "\n  requires=\"%s\"", y);
-         free (y);
+         efree (y);
         } else {
          eprintf (ev->output, "\n > requires: %s", x);
         }
-        free (x);
+        efree (x);
        }
        if (cur->si->after) {
         char *x = set2str(':', (const char **)cur->si->after);
         if (ev->ipc_options & einit_ipc_output_xml) {
          char *y = escape_xml (x);
          eprintf (ev->output, "\n  after=\"%s\"", y);
-         free (y);
+         efree (y);
         } else {
          eprintf (ev->output, "\n > after: %s", x);
         }
-        free (x);
+        efree (x);
        }
        if (cur->si->before) {
         char *x = set2str(':', (const char **)cur->si->before);
         if (ev->ipc_options & einit_ipc_output_xml) {
          char *y = escape_xml (x);
          eprintf (ev->output, "\n  before=\"%s\"", y);
-         free (y);
+         efree (y);
         } else {
          eprintf (ev->output, "\n > before: %s", x);
         }
-        free (x);
+        efree (x);
        }
       }
 
@@ -242,10 +242,10 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
         char *x = set2str(':', (const char **)functions);
         char *y = escape_xml (x);
         eprintf (ev->output, "\n  functions=\"%s\"", y);
-        free (y);
-        free (x);
+        efree (y);
+        efree (x);
 
-        free (functions);
+        efree (functions);
        }
       }
 

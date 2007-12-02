@@ -581,7 +581,7 @@ void feedback_textual_process_command (struct feedback_textual_command *command)
   feedback_textual_update_screen ();
 
   feedback_textual_statusline = NULL;
-  free (command->statusline);
+  efree (command->statusline);
  }
 
  if (command->module) {
@@ -628,7 +628,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
      case ftc_module_update:
       feedback_textual_process_command (command);
 
-      free (command);
+      efree (command);
 
       if (cs >= 1) {
        feedback_textual_update_screen ();
@@ -710,7 +710,7 @@ void einit_feedback_visual_feedback_event_handler_broken_services (struct einit_
   esprintf (tmp2, BUFFERSIZE, "\e[31m ** BROKEN SERVICES:\e[0m %s\n", tmp);
   feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp2), 0);
 
-  free (tmp);
+  efree (tmp);
  }
 }
 
@@ -724,7 +724,7 @@ void einit_feedback_visual_feedback_event_handler_unresolved_services (struct ei
   esprintf (tmp2, BUFFERSIZE, "\e[31m ** UNRESOLVED SERVICES:\e[0m %s\n", tmp);
   feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp2), 0);
  
-  free (tmp);
+  efree (tmp);
  }
 }
 

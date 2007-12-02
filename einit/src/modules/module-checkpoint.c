@@ -234,9 +234,9 @@ int checkpoint_scanmodules (struct lmodule *list) {
 
       sm->si.after = str2set ('\0', af);
 
-      free (comb);
-      free (base_services);
-      free (af);
+      efree (comb);
+      efree (base_services);
+      efree (af);
      }
 
      if (services) {
@@ -248,9 +248,9 @@ int checkpoint_scanmodules (struct lmodule *list) {
 
       sm->si.before = str2set ('\0', be);
 
-      free (comb);
-      free (services);
-      free (be);
+      efree (comb);
+      efree (services);
+      efree (be);
      }
 
      sm->eiversion = EINIT_VERSION;

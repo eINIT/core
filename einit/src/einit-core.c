@@ -146,7 +146,7 @@ int cleanup () {
 // bitch (BTCH_DL + BTCH_ERRNO);
 
  if (einit_startup_mode_switches != einit_default_startup_mode_switches) {
-  free (einit_startup_mode_switches);
+  efree (einit_startup_mode_switches);
  }
 
  return 0;
@@ -433,13 +433,13 @@ int main(int argc, char **argv, char **environ) {
       einit_quietness = 1;
      }
 
-     free (atom);
+     efree (atom);
     }
 
-    free (tmpstrset);
+    efree (tmpstrset);
    }
 
-   free (ed);
+   efree (ed);
   }
 
   einit_initial_environment = (char **)setdup ((const void **)environ, SET_TYPE_STRING);
@@ -517,7 +517,7 @@ int main(int argc, char **argv, char **environ) {
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
    bitch(bitch_epthreads, pthread_errno, "pthread_attr_init() failed.");
 
-   if (einit_initial_environment) free (einit_initial_environment);
+   if (einit_initial_environment) efree (einit_initial_environment);
    return -1;
   } else {
    if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
@@ -528,7 +528,7 @@ int main(int argc, char **argv, char **environ) {
   if ((pthread_errno = pthread_key_create(&einit_function_macro_key, NULL))) {
    bitch(bitch_epthreads, pthread_errno, "pthread_key_create(einit_function_macro_key) failed.");
 
-   if (einit_initial_environment) free (einit_initial_environment);
+   if (einit_initial_environment) efree (einit_initial_environment);
    return -1;
   }
 
@@ -561,7 +561,7 @@ int main(int argc, char **argv, char **environ) {
    }
 
    if (einit_startup_configuration_files != einit_default_startup_configuration_files) {
-    free (einit_startup_configuration_files);
+    efree (einit_startup_configuration_files);
    }
   }
 
@@ -586,8 +586,8 @@ int main(int argc, char **argv, char **environ) {
 //   if (gmode == EINIT_GMODE_SANDBOX)
 //    cleanup ();
 
-   free (ipccommands);
-   if (einit_initial_environment) free (einit_initial_environment);
+   efree (ipccommands);
+   if (einit_initial_environment) efree (einit_initial_environment);
    return ret;
   } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {
    eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
@@ -614,7 +614,7 @@ int main(int argc, char **argv, char **environ) {
     event_emit (&eml, einit_event_flag_broadcast);
     evstaticdestroy(eml);
 
-    free (einit_crash_data);
+    efree (einit_crash_data);
     einit_crash_data = NULL;
    }
 
@@ -642,10 +642,10 @@ int main(int argc, char **argv, char **environ) {
    evstaticdestroy(eml);
   }
 
-  if (einit_initial_environment) free (einit_initial_environment);
+  if (einit_initial_environment) efree (einit_initial_environment);
   return ret;
 
 /* this should never be reached... */
- if (einit_initial_environment) free (einit_initial_environment);
+ if (einit_initial_environment) efree (einit_initial_environment);
  return 0;
 }

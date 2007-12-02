@@ -92,7 +92,7 @@ pid_t *collect_processes(struct pc_conditional **pcc) {
 
  if (pse) {
   struct process_status **nps = pse (ps);
-  free (ps);
+  efree (ps);
   ps = nps;
  }
 
@@ -160,7 +160,7 @@ void einit_process_ipc_event_handler (struct einit_event *ev) {
       eprintf (ev->output, "process [pid=%i]\n", process_list[i]);
      }
     }
-    free (process_list);
+    efree (process_list);
    } else {
     eputs ("einit-process: ipc-event-handler: your query has matched no processes\n", ev->output);
    }
@@ -184,7 +184,7 @@ int ekill_f (struct pc_conditional **pcc, int sign) {
   }
  }
 
- free (pl);
+ efree (pl);
 
  return i;
 }
@@ -192,7 +192,7 @@ int ekill_f (struct pc_conditional **pcc, int sign) {
 int pekill_f (struct pc_conditional **pcc) {
 /* pid **pl = pcollect (pcc);
 
- free (pl);*/
+ efree (pl);*/
  return ekill (pcc, SIGKILL);
 }
 

@@ -149,7 +149,7 @@ int ipc_process_f (const char *cmd, FILE *f) {
  } else
   ret = event->ipc_return;
 
- if (event->argv) free (event->argv);
+ if (event->argv) efree (event->argv);
 
  if (event->ipc_options & einit_ipc_output_xml) {
   eputs ("</einit-ipc>\n", f);

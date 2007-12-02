@@ -325,33 +325,33 @@ int network_scanmodules (struct lmodule *mainlist) {
 void network_free_interface_descriptor (struct interface_descriptor *id) {
  if (!id) return;
 
- if (id->variables) free (id->variables);
+ if (id->variables) efree (id->variables);
  if (id->controller) {
   uint32_t i = 0;
   for (; id->controller[i]; i++) {
-   if (id->controller[i]->variables) free (id->controller[i]->variables);
-   if (id->controller[i]->environment) free (id->controller[i]->environment);
+   if (id->controller[i]->variables) efree (id->controller[i]->variables);
+   if (id->controller[i]->environment) efree (id->controller[i]->environment);
    if (id->controller[i]->action) streefree (id->controller[i]->action);
   }
  }
  if (id->ip_manager) {
   uint32_t i = 0;
   for (; id->ip_manager[i]; i++) {
-   if (id->ip_manager[i]->variables) free (id->ip_manager[i]->variables);
-   if (id->ip_manager[i]->environment) free (id->ip_manager[i]->environment);
+   if (id->ip_manager[i]->variables) efree (id->ip_manager[i]->variables);
+   if (id->ip_manager[i]->environment) efree (id->ip_manager[i]->environment);
    if (id->ip_manager[i]->action) streefree (id->ip_manager[i]->action);
   }
  }
  if (id->macchanger) {
   uint32_t i = 0;
   for (; id->macchanger[i]; i++) {
-   if (id->macchanger[i]->variables) free (id->macchanger[i]->variables);
-   if (id->macchanger[i]->environment) free (id->macchanger[i]->environment);
+   if (id->macchanger[i]->variables) efree (id->macchanger[i]->variables);
+   if (id->macchanger[i]->environment) efree (id->macchanger[i]->environment);
    if (id->macchanger[i]->action) streefree (id->macchanger[i]->action);
   }
  }
 
- free (id);
+ efree (id);
 }
 
 struct interface_template_item **network_import_templates (char *type, char *list, struct interface_descriptor *id) {
@@ -391,12 +391,12 @@ struct interface_template_item **network_import_templates (char *type, char *lis
 	  if (tmp) {
 	   ni.action = streeadd (ni.action, name, tmp, SET_TYPE_STRING, NULL);
 
-	   free (tmp);
+	   efree (tmp);
 	  }
 	 } else if (strmatch (node->arbattrs[y], "variables")) {
 	  char *tmp = apply_variables (node->arbattrs[y+1], (const char **)if_vars);
 	  ni.variables = str2set (':', tmp);
-	  free (tmp);
+	  efree (tmp);
 	 } else if (strmatch (node->arbattrs[y], "pid")) {
 	  char *tmp = apply_variables (node->arbattrs[y+1], (const char **)if_vars);
 	  ni.pidfile = tmp;
@@ -406,7 +406,7 @@ struct interface_template_item **network_import_templates (char *type, char *lis
 	 } else {
 	  char *tmp = apply_variables (node->arbattrs[y+1], (const char **)if_vars);
 	  ni.environment = straddtoenviron(ni.environment, node->arbattrs[y], tmp);
-	  free (tmp);
+	  efree (tmp);
 	 }
 	}
 
@@ -417,8 +417,8 @@ struct interface_template_item **network_import_templates (char *type, char *lis
   }
  }
 
- free (if_vars);
- free (ll);
+ efree (if_vars);
+ efree (ll);
 
  return retval;
 }
@@ -451,7 +451,7 @@ struct interface_descriptor *network_import_interface_descriptor_string (char *i
    }
   }
  } else {
-  free (id);
+  efree (id);
   return NULL;
  }
 

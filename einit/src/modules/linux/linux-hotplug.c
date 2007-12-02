@@ -131,7 +131,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
        if (cm) {
         commands = (char **)setcombine_nc ((void **)commands, (const void **)cm, SET_TYPE_STRING);
-        free (cm);
+        efree (cm);
        }
       }
      }
@@ -154,7 +154,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
      esprintf (t, len, "%s %s", commands[i], subsystem);
      cd = (char **)setadd ((void **)cd, t, SET_TYPE_STRING);
-     free (t);
+     efree (t);
     }
 
     if (cd) {
@@ -162,12 +162,12 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
      pexec(command, NULL, 0, 0, NULL, NULL, env, NULL);
 
-     free (cd);
-     free (command);
+     efree (cd);
+     efree (command);
     }
 
-    free (env);
-    free (commands);
+    efree (env);
+    efree (commands);
    }
   }
 
@@ -236,7 +236,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
 
    notice (3, "done loading firmware: %s", buffer);
 
-   free (targetbuffer);
+   efree (targetbuffer);
   }
  }
 }

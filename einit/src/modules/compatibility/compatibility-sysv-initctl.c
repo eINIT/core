@@ -250,7 +250,7 @@ void * initctl_wait (char *fifo) {
        }
       }
 
-      free (cx);
+      efree (cx);
      }
     } else
       notice (4, "invalid initctl received: unknown command");

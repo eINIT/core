@@ -139,7 +139,7 @@ void *einit_tty_watcher (struct spidcb *spid) {
    } else {
     ttys = cur->next;
    }
-   free (cur);
+   efree (cur);
    break;
   }
   prev = cur;
@@ -166,7 +166,7 @@ void einit_tty_process_event_handler (struct einit_event *ev) {
 
  einit_tty_watcher(spid);
 
- free (spid);
+ efree (spid);
 }
 
 int einit_tty_texec (struct cfgnode *node) {
@@ -190,7 +190,7 @@ int einit_tty_texec (struct cfgnode *node) {
  }
 
  environment = create_environment(environment, (const char **)variables);
- if (variables) free (variables);
+ if (variables) efree (variables);
 
  if (command) {
   char **cmds = str2set (' ', command);
@@ -260,11 +260,11 @@ int einit_tty_texec (struct cfgnode *node) {
  }
 
  if (environment) {
-  free (environment);
+  efree (environment);
   environment = NULL;
  }
  if (variables) {
-  free (variables);
+  efree (variables);
   variables = NULL;
  }
 
@@ -357,10 +357,10 @@ void einit_tty_update() {
    notice (4, "einit-tty: node %s not found", tmpnodeid);
   }
 
-  free (tmpnodeid);
+  efree (tmpnodeid);
  }
 
- free (enab_ttys);
+ efree (enab_ttys);
 }
 
 void einit_tty_update_switching () {

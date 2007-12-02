@@ -100,10 +100,10 @@ void cfg_stree_garbage_free () {
   int i = 0;
 
   for (; cfg_stree_garbage.chunks[i]; i++) {
-   free (cfg_stree_garbage.chunks[i]);
+   efree (cfg_stree_garbage.chunks[i]);
   }
 
-  free (cfg_stree_garbage.chunks);
+  efree (cfg_stree_garbage.chunks);
   cfg_stree_garbage.chunks = NULL;
  }
  emutex_unlock (&cfg_stree_garbage_mutex);
@@ -117,9 +117,9 @@ int cfg_free () {
  while (cur) {
   if ((node = (struct cfgnode *)cur->value)) {
    if (node->id)
-    free (node->id);
+    efree (node->id);
    if (node->path)
-    free (node->path);
+    efree (node->path);
   }
   cur = streenext (cur);
  }
@@ -160,7 +160,7 @@ int cfg_addnode_f (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->arbattrs = node->arbattrs;
     cur->luggage = node->arbattrs;
 
-    free (bsl);
+    efree (bsl);
 
     doop = 0;
 
@@ -274,7 +274,7 @@ char *cfg_getstring_f (const char *id, const struct cfgnode *mode) {
    if (node)
     ret = node->svalue;
 
-   free (sub);
+   efree (sub);
    bootstrap_einit_configuration_stree_usage--;
    return ret;
   }
@@ -291,7 +291,7 @@ char *cfg_getstring_f (const char *id, const struct cfgnode *mode) {
    }
   }
 
-  free (sub);
+  efree (sub);
  } else {
   node = cfg_getnode (id, mode);
   if (node)
@@ -329,7 +329,7 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
    }
   }
 
-  free (tmpnodename);
+  efree (tmpnodename);
 
   tmpnodename = emalloc (16+strlen (id));
   *tmpnodename = 0;
@@ -344,7 +344,7 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
    }
   }
 
-  free (tmpnodename);
+  efree (tmpnodename);
  }
 
  if (!ret && (node = cfg_findnode (id, 0, NULL)))
@@ -436,7 +436,7 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
  char **env = einit_global_environment;
  einit_global_environment = NULL;
  struct cfgnode *node = NULL;
- free (env);
+ efree (env);
 
  env = NULL;
  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
@@ -487,7 +487,7 @@ void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *
 
        fprintf (ev->output, " %s=\"%s\"", modes[i]->arbattrs[y], escapeda);
 
-       free (escapeda);
+       efree (escapeda);
       }
 
       eputs (">\n", ev->output);
@@ -503,12 +503,12 @@ void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *
        char *escaped_x = escape_xml (tmpx);
        fprintf (ev->output, "  <enable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
 
-       free (tmpx);
+       efree (tmpx);
       } else {
        fprintf (ev->output, "  <enable services=\"%s\" />\n", escaped_s);
       }
 
-      free (escaped_s);
+      efree (escaped_s);
      }
 
      if ((tmp = cfg_getstring ("disable/services", modes[i]))) {
@@ -519,12 +519,12 @@ void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *
        char *escaped_x = escape_xml (tmpx);
        fprintf (ev->output, "  <disable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
 
-       free (tmpx);
+       efree (tmpx);
       } else {
        fprintf (ev->output, "  <disable services=\"%s\" />\n", escaped_s);
       }
 
-      free (escaped_s);
+      efree (escaped_s);
      }
 
      eputs (" </mode>\n", ev->output);

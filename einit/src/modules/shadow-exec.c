@@ -133,12 +133,12 @@ void update_shadows(struct cfgnode *xmode) {
         einit_shadow_exec_shadows = streeadd (einit_shadow_exec_shadows, nserv[i], &nshadow, sizeof(struct shadow_descriptor), NULL);
        }
 
-       free (nserv);
+       efree (nserv);
       }
      }
     }
 
-    free (tmps);
+    efree (tmps);
    }
   }
 

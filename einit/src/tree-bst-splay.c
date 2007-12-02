@@ -286,7 +286,7 @@ struct stree *streedel (struct stree *subject) {
  if (cur == subject) {
   be = cur->next;
   *(subject->lbase) = be;
-  if (cur->luggage) free (cur->luggage);
+  if (cur->luggage) efree (cur->luggage);
 
   if (cur->parent) {
    if (cur->parent->left == cur) cur->parent->left = NULL;
@@ -298,7 +298,7 @@ struct stree *streedel (struct stree *subject) {
   if (cur->left)  cur->left->parent  = cur->parent;
   if (cur->right) cur->right->parent = cur->parent;
 
-  free (cur);
+  efree (cur);
   return be;
  }
 
@@ -307,7 +307,7 @@ struct stree *streedel (struct stree *subject) {
 
  if (cur && (cur->next == subject)) {
   cur->next = subject->next;
-  if (subject->luggage) free (subject->luggage);
+  if (subject->luggage) efree (subject->luggage);
 
   if (subject->parent) {
    if (subject->parent->left == subject) subject->parent->left = NULL;
@@ -320,7 +320,7 @@ struct stree *streedel (struct stree *subject) {
   if (subject->left)  subject->left->parent  = subject->parent;
   if (subject->right) subject->right->parent = subject->parent;
 
-  free (subject);
+  efree (subject);
  }
 
  return be;
@@ -357,7 +357,7 @@ void streefree (struct stree *stree) {
  while (c) {
   struct stree *d = c;
   c = c->next;
-  if (d->luggage) free (d->luggage);
-  free (d);
+  if (d->luggage) efree (d->luggage);
+  efree (d);
  }
 }

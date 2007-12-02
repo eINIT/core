@@ -120,7 +120,7 @@ void einit_exec_process_event_handler (struct einit_event *);
 void *dexec_watcher (struct spidcb *spid);
 
 int einit_exec_cleanup (struct lmodule *irr) {
- if (shell && (shell != dshell)) free (shell);
+ if (shell && (shell != dshell)) efree (shell);
  exec_cleanup (irr);
 
  function_unregister ("einit-execute-command", 1, pexec_f);
@@ -162,7 +162,7 @@ void einit_exec_update_daemons_from_pidfiles() {
       cur->pid = daemon_pid;
       dx->pidfiles_last_update = st.st_mtime;
 
-      free (contents);
+      efree (contents);
 
       if (cur->module && cur->module->module && cur->module->module->rid) {
        notice (2, "exec: modules %s updated and is now known with pid %i.", cur->module->module->rid, cur->pid);
@@ -189,7 +189,7 @@ void einit_exec_process_event_handler (struct einit_event *ev) {
 
  dexec_watcher(spid);
 
- free (spid);
+ efree (spid);
 }
 
 void einit_exec_ipc_event_handler (struct einit_event *ev) {
@@ -212,9 +212,9 @@ char *apply_envfile_f (char *command, const char **environment) {
  if (environment) {
   for (; environment[i]; i++) {
    if (strstr(environment[i], "envfile=") == environment[i]) {
-    if (envfiles) free (envfiles);
+    if (envfiles) efree (envfiles);
 
-    if (envfiles) free (envfiles);
+    if (envfiles) efree (envfiles);
     envfiles = str2set (':', environment[i]+8);
    } else if (strstr(environment[i], "services=") == environment[i]) {
     if (!envfiles) envfiles = str2set (':', environment[i]+9);
@@ -232,7 +232,7 @@ char *apply_envfile_f (char *command, const char **environment) {
      }
     }
 
-    free (r);
+    efree (r);
    }
   }
  }
@@ -273,7 +273,7 @@ char *apply_envfile_f (char *command, const char **environment) {
   write (2, "\n", 1);
 #endif
 
-  free (variables);
+  efree (variables);
  }
 
  return command;
@@ -331,8 +331,8 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
    eprintf (output, " * module: %s: undefined variable: %s\n", id, e);
   }
 
-  if (x[0] != e) free (x[0]);
-  free (e);
+  if (x[0] != e) efree (x[0]);
+  efree (e);
  }
 
  return (char **)variables;
@@ -371,7 +371,7 @@ char **create_environment_f (char **environment, const char **variables) {
       strcat (subkey, key);
       strcat (subkey, node->arbattrs[y]);
       environment = straddtoenviron (environment, subkey, node->arbattrs[y+1]);
-      free (subkey);
+      efree (subkey);
 
       if (pvalue) {
        pvalue=erealloc (pvalue, pvlen+attrlen);
@@ -398,10 +398,10 @@ char **create_environment_f (char **environment, const char **variables) {
      *(key+bkeylen-2) = 0;
      environment = straddtoenviron (environment, key, pvalue);
 
-     free (pvalue);
+     efree (pvalue);
     }
-    free (key);
-    free (name);
+    efree (key);
+    efree (name);
    }
   } else {
 /* else: just add it */
@@ -442,7 +442,7 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
   case pa_new_context:
   case pa_new_context_fork:
    if (pd->command) {
-    free (pd->command);
+    efree (pd->command);
    }
 
    pd->command = (char **)setdup((const void **)data, SET_TYPE_STRING);
@@ -479,7 +479,7 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
    char *cmdtx = set2str (',', (const char **)pd.command);
    if (cmdtx) {
 //    fprintf (stdout, "einit/sh: running command: (%s)\n", cmdtx);
-    free (cmdtx);
+    efree (cmdtx);
 
 //    sleep (1);
    }
@@ -492,7 +492,7 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
 
    perror (pd.command[0]);
 
-   if (r) free (r);
+   if (r) efree (r);
   }
 
 /*  if (forkres == -1) {
@@ -504,14 +504,14 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
    _exit (EXIT_SUCCESS);
   }
 
-  free (pd.command);
+  efree (pd.command);
 
 //  fprintf (stderr, "einit/sh: failed to run the command.\n");
   _exit (EXIT_FAILURE);
  } else {
   char **cmdsetdup, **cmd;
 
-  if (pd.command) free (pd.command);
+  if (pd.command) efree (pd.command);
 
   cmdsetdup = str2set ('\0', ocmd);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
@@ -522,8 +522,8 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
    execve (cmd[0], cmd, exec_environment);
   }
   perror (cmd[0]);
-  free (cmd);
-  free (cmdsetdup);
+  efree (cmd);
+  efree (cmdsetdup);
   _exit (EXIT_FAILURE);
  }
 }
@@ -546,7 +546,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
   if (!rcmds) {
-   free (ocmds);
+   efree (ocmds);
    return status_failed;
   }
 
@@ -570,11 +570,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     }
    }
 
-   free (optx);
+   efree (optx);
   }
  }
  if (!command || !command[0]) {
-  if (freeocmds) free (freeocmds);
+  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 
@@ -585,7 +585,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     status_update (status);
     status->string = strerror (errno);
    }
-   if (freeocmds) free (freeocmds);
+   if (freeocmds) efree (freeocmds);
    return status_failed;
   }
 /* make sure the read end won't survive an exec*() */
@@ -613,7 +613,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
   if (status)
    status->string = strerror (errno);
-  if (freeocmds) free (freeocmds);
+  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 #else
@@ -625,7 +625,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   goto retry_fork;
 
-  if (freeocmds) free (freeocmds);
+  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 #endif
@@ -734,7 +734,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
        }
       }
 
-      free (fbc);
+      efree (fbc);
      }
 
      if (orest) {
@@ -770,7 +770,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   }
  }
 
- if (freeocmds) free (freeocmds);
+ if (freeocmds) efree (freeocmds);
 
  if (cs == status_failed) return status_failed;
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
@@ -864,7 +864,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  if ((shellcmd->options & daemon_did_recovery) && shellcmd->pidfile && (pidfile = readfile (shellcmd->pidfile))) {
   pid_t pid = parse_integer (pidfile);
 
-  free (pidfile);
+  efree (pidfile);
   pidfile = NULL;
 
   if (pidexists (pid)) {
@@ -911,7 +911,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
      return status_failed;
     } else {
-     free (w);
+     efree (w);
     }
    }
   }
@@ -931,7 +931,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   retval = pexec (ncommand, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
 
-  free (ncommand);
+  efree (ncommand);
 
   if (retval == status_failed) return status_failed;
  } else if (shellcmd->prepare) {
@@ -966,7 +966,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
    retval = pexec (ncommand, (const char **)shellcmd->variables, uid, gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
-   free (ncommand);
+   efree (ncommand);
   } else retval = pexec_f (shellcmd->command, (const char **)shellcmd->variables, uid, gid, shellcmd->user, shellcmd->group, shellcmd->environment, status);
 
   if (retval == status_ok) {
@@ -1065,8 +1065,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 //  close (1);
 //  close (2);
    execve (cmd[0], cmd, daemon_environment);
-   free (cmd);
-   free (cmdsetdup);
+   efree (cmd);
+   efree (cmdsetdup);
    exit (EXIT_FAILURE);*/
   } else {
    new->pid = child;
@@ -1164,7 +1164,7 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   retval = pexec (ncommand, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
 
-  free (ncommand);
+  efree (ncommand);
 
   if (retval == status_failed) return status_ok;
  } else if (shellcmd->cleanup) {

@@ -177,7 +177,7 @@ char **linux_netlink_get_all_interfaces () {
 
  if (linux_netlink_link_cache) {
   if (linux_netlink_interfaces) {
-   free (linux_netlink_interfaces);
+   efree (linux_netlink_interfaces);
    linux_netlink_interfaces = NULL;
   }
   nl_cache_foreach (linux_netlink_link_cache, linux_netlink_interface_data_collector, NULL);
@@ -279,7 +279,7 @@ int linux_netlink_configure (struct lmodule *irr) {
    notice (2, "found the following interfaces: (%s)", n);
 
    if (n) {
-    free (n);
+    efree (n);
    }
 
    int xr = 0;
@@ -289,7 +289,7 @@ int linux_netlink_configure (struct lmodule *irr) {
     if (ifd) {
      notice (2, "network interface: %s, flags=%i", ifd->name, ifd->flags);
 
-     free (ifd);
+     efree (ifd);
     }
    }
   } else {

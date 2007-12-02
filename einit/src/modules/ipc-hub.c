@@ -256,7 +256,7 @@ void einit_ipc_hub_connect () {
     einit_ipc_hub_create_socket (socket_name);
    }
 
-   free (socket_name);
+   efree (socket_name);
   }
  }
 }
@@ -265,7 +265,7 @@ void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
  char **messages = str2set ('\x4', cbuf);
  ssize_t i = 0;
 
- free (cbuf);
+ efree (cbuf);
 
  if (messages) {
   for (; messages[i]; i++) {
@@ -293,7 +293,7 @@ void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
       ev.stringset = str2set ('\x1d', (const char *)(fields[j] + 10)); // add "stringset:"
      }
     }
-    free (fields);
+    efree (fields);
    }
 
    if (ev.type == einit_event_subsystem_ipc) {
@@ -306,7 +306,7 @@ void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
    }
   }
 
-  free (messages);
+  efree (messages);
  }
 }
 
@@ -319,7 +319,7 @@ void *einit_ipc_hub_thread (void *irr) {
    struct pollfd **pfdx = NULL;
 
    if (pfd) {
-    free (pfd);
+    efree (pfd);
    }
    nfds = 0;
 
@@ -364,7 +364,7 @@ void *einit_ipc_hub_thread (void *irr) {
      memcpy (pfd + i, pfdx[i], sizeof (struct pollfd));
     }
 
-    free (pfdx);
+    efree (pfdx);
    }
   }
 
@@ -575,7 +575,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
 /* ASCII group separators here... */
      char *r = set2str ('\x1d', (const char **)ev->argv);
      esprintf (buffer2, MAX_PACKET_SIZE, "argv:%s" "\x1e", r);
-     free (r);
+     efree (r);
      if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
        notice (1, "ipc-hub: event packet too big.");
       continue;
@@ -596,7 +596,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
 /* ASCII group separators here... */
      char *r = set2str ('\x1d', (const char **)ev->stringset);
      esprintf (buffer2, MAX_PACKET_SIZE, "stringset:%s" "\x1e", r);
-     free (r);
+     efree (r);
      if ((strlen (buffer) + strlen(buffer2) + 1) >= MAX_PACKET_SIZE) {
        notice (1, "ipc-hub: event packet too big.");
       continue;
@@ -622,7 +622,7 @@ void einit_ipc_hub_send_event (struct einit_event *ev) {
     send (targets[i], buffer, strlen(buffer), MSG_DONTWAIT);
   }
 
-  free (targets);
+  efree (targets);
  }
 }
 

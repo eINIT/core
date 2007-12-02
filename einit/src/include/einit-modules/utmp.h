@@ -108,7 +108,7 @@ utmp_function utmp_update_fp;
   char *tmpstr = estrdup (uline);\
   if (tmpstr) {\
    strncpy (record.ut_line, (strstr(tmpstr, "/dev/") == tmpstr ? tmpstr + 5 : tmpstr), UT_LINESIZE); \
-   free (tmpstr);\
+   efree (tmpstr);\
   }\
  } \
  else memset (record.ut_line, 0, UT_LINESIZE);\
@@ -116,21 +116,21 @@ utmp_function utmp_update_fp;
   char *tmpstr = estrdup (uid);\
   if (tmpstr) {\
    strncpy (record.ut_id, tmpstr, 4); \
-   free (tmpstr);\
+   efree (tmpstr);\
   }\
  } else memset (record.ut_id, 0, 4);\
  if (uuser) {\
   char *tmpstr = estrdup (uuser);\
   if (tmpstr) {\
    strncpy (record.ut_user, tmpstr, UT_NAMESIZE); \
-   free (tmpstr);\
+   efree (tmpstr);\
   }\
  } else memset (record.ut_user, 0, UT_NAMESIZE);\
  if (uhost) {\
   char *tmpstr = estrdup (uhost);\
   if (tmpstr) {\
    strncpy (record.ut_host, tmpstr, UT_HOSTSIZE); \
-   free (tmpstr);\
+   efree (tmpstr);\
   }\
  } else memset (record.ut_host, 0, UT_HOSTSIZE);\
  { struct timeval tv; \

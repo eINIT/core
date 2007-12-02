@@ -113,6 +113,13 @@ void * erealloc (void *, size_t);
  * that this function will not fail.
 */
 char * estrdup (const char *);
+
+/*!\brief free()-wrapper
+ *
+ * This is a wrapper around free(). Usage and return conditions are exactly the same as for free(), except
+ * that this function will not fail.
+*/
+void efree (void *p);
 /*!\}*/
 
 /*!\ingroup utilityfunctionsstrings

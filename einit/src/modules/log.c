@@ -124,7 +124,7 @@ char flush_log_buffer_to_syslog() {
            ((severity <= 8) ? LOG_NOTICE :
       LOG_DEBUG)))*/ LOG_NOTICE,
     slmessage);
-    free (slmessage);
+    efree (slmessage);
    }
 
    if (pthread_mutex_trylock(&logmutex)) return -1;
@@ -152,7 +152,7 @@ void flush_log_buffer_free() {
   pthread_mutex_unlock(&logmutex);
 
   if (slmessage) {
-   free (slmessage);
+   efree (slmessage);
   }
 
   if (pthread_mutex_trylock(&logmutex)) return;
@@ -297,7 +297,7 @@ void einit_log_feedback_event_handler_unresolved_broken_services(struct einit_ev
 
 //  if (have_syslog) flush_log_buffer();
 
-  free (tmp);
+  efree (tmp);
  }
 }
 

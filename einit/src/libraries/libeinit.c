@@ -190,7 +190,7 @@ char *einit_ipc_request_xml(const char *command) {
 
  rv = einit_ipc_request(tmp);
 
- free (tmp);
+ efree (tmp);
 
  return rv;
 }
@@ -351,7 +351,7 @@ struct stree *einit_add_xmlstree_as_module (struct stree *rtree, struct stree *m
     if (inset ((const void **)statusbits, (void *)"working", SET_TYPE_STRING)) {
      module.status |= status_working;
     }
-    free (statusbits);
+    efree (statusbits);
    }
   }
 
@@ -402,7 +402,7 @@ struct stree *einit_add_xmlstree_as_service (struct stree *rtree, struct stree *
     }
 
     service.group = group;
-   } else free (group);
+   } else efree (group);
   }
 
   rtree = streeadd (rtree, service.name, &service, sizeof (struct einit_service), NULL);
@@ -439,7 +439,7 @@ struct stree *einit_get_all_modules () {
    xmlstree_free (tree);
   }
 
-  free (module_data);
+  efree (module_data);
  }
 
  return rtree;
@@ -477,15 +477,15 @@ struct einit_module *einit_get_module_status (char *module) {
 
 void einit_module_free (struct einit_module *module) {
  if (module) {
-  if (module->id) free (module->id);
-  if (module->name) free (module->name);
-  if (module->requires) free (module->requires);
-  if (module->provides) free (module->provides);
-  if (module->after) free (module->after);
-  if (module->functions) free (module->functions);
-  if (module->before) free (module->before);
+  if (module->id) efree (module->id);
+  if (module->name) efree (module->name);
+  if (module->requires) efree (module->requires);
+  if (module->provides) efree (module->provides);
+  if (module->after) efree (module->after);
+  if (module->functions) efree (module->functions);
+  if (module->before) efree (module->before);
 
-  free (module);
+  efree (module);
  }
 }
 
@@ -497,13 +497,13 @@ void modulestree_free(struct stree *tree) {
   struct einit_module *module = cur->value;
 
   if (module) {
-   if (module->id) free (module->id);
-   if (module->name) free (module->name);
-   if (module->requires) free (module->requires);
-   if (module->provides) free (module->provides);
-   if (module->after) free (module->after);
-   if (module->functions) free (module->functions);
-   if (module->before) free (module->before);
+   if (module->id) efree (module->id);
+   if (module->name) efree (module->name);
+   if (module->requires) efree (module->requires);
+   if (module->provides) efree (module->provides);
+   if (module->after) efree (module->after);
+   if (module->functions) efree (module->functions);
+   if (module->before) efree (module->before);
   }
 
   cur = streenext (cur);
@@ -539,7 +539,7 @@ struct stree *einit_get_all_services () {
    xmlstree_free (tree);
   }
 
-  free (module_data);
+  efree (module_data);
  }
 
  return rtree;
@@ -554,15 +554,15 @@ void servicestree_free_protect(struct stree *tree, char *pserv) {
    struct einit_service *service = cur->value;
 
    if (service) {
-    if (service->name) free (service->name);
-    if (service->used_in_mode) free (service->used_in_mode);
+    if (service->name) efree (service->name);
+    if (service->used_in_mode) efree (service->used_in_mode);
     if (service->group) {
      if (service->group->services)
-      free (service->group->services);
+      efree (service->group->services);
      if (service->group->seq)
-      free (service->group->seq);
+      efree (service->group->seq);
 
-     free (service->group);
+     efree (service->group);
     }
     if (service->modules) modulestree_free (service->modules);
    }
@@ -601,15 +601,15 @@ struct einit_service *einit_get_service_status (char *service) {
 
 void einit_service_free (struct einit_service *service) {
  if (service) {
-  if (service->name) free (service->name);
-  if (service->used_in_mode) free (service->used_in_mode);
+  if (service->name) efree (service->name);
+  if (service->used_in_mode) efree (service->used_in_mode);
   if (service->group) {
    if (service->group->services)
-    free (service->group->services);
+    efree (service->group->services);
    if (service->group->seq)
-    free (service->group->seq);
+    efree (service->group->seq);
 
-   free (service->group);
+   efree (service->group);
   }
   if (service->modules) modulestree_free (service->modules);
  }
@@ -623,15 +623,15 @@ void servicestree_free(struct stree *tree) {
   struct einit_service *service = cur->value;
 
   if (service) {
-   if (service->name) free (service->name);
-   if (service->used_in_mode) free (service->used_in_mode);
+   if (service->name) efree (service->name);
+   if (service->used_in_mode) efree (service->used_in_mode);
    if (service->group) {
     if (service->group->services)
-     free (service->group->services);
+     efree (service->group->services);
     if (service->group->seq)
-     free (service->group->seq);
+     efree (service->group->seq);
 
-    free (service->group);
+    efree (service->group);
    }
    if (service->modules) modulestree_free (service->modules);
   }
@@ -645,12 +645,12 @@ void servicestree_free(struct stree *tree) {
 
 void einit_power_down () { // shut down
  char *r = einit_ipc_request_xml ("power down");
- free (r);
+ efree (r);
 }
 
 void einit_power_reset () { // reboot
  char *r = einit_ipc_request_xml ("power reset");
- free (r);
+ efree (r);
 }
 
 void einit_service_call (const char *service, const char *command) {
@@ -664,7 +664,7 @@ void einit_service_call (const char *service, const char *command) {
 
  einit_ipc_request_xml(tmp);
 
- free (tmp);
+ efree (tmp);
 }
 
 void einit_service_enable (const char *service) {
@@ -687,7 +687,7 @@ void einit_module_id_call (const char *module, const char *command) {
 
  einit_ipc_request_xml(tmp);
 
- free (tmp);
+ efree (tmp);
 }
 
 void einit_module_id_enable (const char *module) {
@@ -709,12 +709,12 @@ void einit_switch_mode (const char *mode) { // think "runlevel"
 
  einit_ipc_request_xml(tmp);
 
- free (tmp);
+ efree (tmp);
 }
 
 void einit_reload_configuration () { // "update configuration"
  char *r = einit_ipc_request_xml ("update configuration");
- free (r);
+ efree (r);
 }
 
 struct stree *einit_add_xmlstree_as_mode (struct stree *rtree, struct stree *modenode) {
@@ -788,7 +788,7 @@ struct stree *einit_get_all_modes() {
    xmlstree_free (tree);
   }
 
-  free (mode_data);
+  efree (mode_data);
  }
 
  return rtree;
@@ -802,11 +802,11 @@ void modestree_free(struct stree *tree) {
   struct einit_mode_summary *mode = cur->value;
 
   if (mode) {
-   if (mode->id) free (mode->id);
-   if (mode->base) free (mode->base);
-   if (mode->services) free (mode->services);
-   if (mode->critical) free (mode->critical);
-   if (mode->disable) free (mode->disable);
+   if (mode->id) efree (mode->id);
+   if (mode->base) efree (mode->base);
+   if (mode->services) efree (mode->services);
+   if (mode->critical) efree (mode->critical);
+   if (mode->disable) efree (mode->disable);
   }
 
   cur = streenext (cur);
@@ -841,11 +841,11 @@ void einit_remote_event_ignore (enum einit_event_subsystems type, void (* handle
    if ((cur->type==ltype) && (cur->handler==handler)) {
     if (prev == NULL) {
      event_remote_event_functions = cur->next;
-     free (cur);
+     efree (cur);
      cur = event_remote_event_functions;
     } else {
      prev->next = cur->next;
-     free (cur);
+     efree (cur);
      cur = prev->next;
     }
    } else {
@@ -879,5 +879,5 @@ struct einit_remote_event *einit_remote_event_create (uint32_t type) {
 }
 
 void einit_remote_event_destroy (struct einit_remote_event *ev) {
- free (ev);
+ efree (ev);
 }

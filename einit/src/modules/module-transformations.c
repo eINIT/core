@@ -121,10 +121,10 @@ void einit_module_transformations_garbage_free () {
   int i = 0;
 
   for (; einit_module_transformations_garbage.chunks[i]; i++) {
-   free (einit_module_transformations_garbage.chunks[i]);
+   efree (einit_module_transformations_garbage.chunks[i]);
   }
 
-  free (einit_module_transformations_garbage.chunks);
+  efree (einit_module_transformations_garbage.chunks);
   einit_module_transformations_garbage.chunks = NULL;
  }
  emutex_unlock (&einit_module_transformations_garbage_mutex);
@@ -184,7 +184,7 @@ void einit_module_transformations_einit_event_handler_configuration_update (stru
        if (inset ((const void **)tmp, (void *)"shutdown-after", SET_TYPE_STRING))
         new_transformation.options |= SVT_STRIP_SD_AFTER;
 
-       free (tmp);
+       efree (tmp);
       }
      } else if (strmatch (node->arbattrs[sti], "module-id")) {
       regex_t *buffer = emalloc (sizeof (regex_t));

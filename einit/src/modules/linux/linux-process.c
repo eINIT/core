@@ -138,8 +138,8 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
        if (npstat[i]->pid == tmppse.pid) {
         recycled = 1;
 
-        if (npstat[i]->cwd) free (npstat[i]->cwd);
-        if (npstat[i]->cmd) free (npstat[i]->cmd);
+        if (npstat[i]->cwd) efree (npstat[i]->cwd);
+        if (npstat[i]->cmd) efree (npstat[i]->cmd);
         memcpy (npstat[i], &tmppse, sizeof(struct process_status));
        }
       }
@@ -151,7 +151,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
     }
 
    }
-   if (txf) free (txf);
+   if (txf) efree (txf);
 
    eclosedir (dir);
   }

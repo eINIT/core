@@ -117,7 +117,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   } else if (strmatch (attributes[i], "months") || strmatch (attributes[i], "month")) {
    char **x = str2set (':', attributes[i+1]);
    uint32_t j = 0;
@@ -130,7 +130,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   } else if (strmatch (attributes[i], "days") || strmatch (attributes[i], "day")) {
    char **x = str2set (':', attributes[i+1]);
    uint32_t j = 0;
@@ -143,7 +143,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   } else if (strmatch (attributes[i], "hours") || strmatch (attributes[i], "hour")) {
    char **x = str2set (':', attributes[i+1]);
    uint32_t j = 0;
@@ -156,7 +156,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   } else if (strmatch (attributes[i], "minutes") || strmatch (attributes[i], "minute")) {
    char **x = str2set (':', attributes[i+1]);
    uint32_t j = 0;
@@ -169,7 +169,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   } else if (strmatch (attributes[i], "seconds") || strmatch (attributes[i], "second")) {
    char **x = str2set (':', attributes[i+1]);
    uint32_t j = 0;
@@ -182,7 +182,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   } else if (strmatch (attributes[i], "weekdays") || strmatch (attributes[i], "weekday")) {
    char **x = str2set (':', attributes[i+1]);
    uint32_t j = 0;
@@ -205,7 +205,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 	}
    }
 
-   free (x);
+   efree (x);
   }
  }
 

@@ -133,7 +133,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
   if (nmodules) {
    modules = (char **)setcombine_nc ((void **)modules, (const void **)nmodules, SET_TYPE_STRING);
 
-   free (nmodules);
+   efree (nmodules);
   }
  }
 
@@ -146,7 +146,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
 
    scm_with_guile ((void *(*)(void *))module_scheme_guile_unprotect_event_handler, h);
 
-//   free (h);
+//   efree (h);
 
    st = streenext (st);
   }
@@ -157,7 +157,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
 
   scm_with_guile ((void *(*)(void *))module_scheme_guile_scanmodules_work_scheme, (void *)modules);
 
-  free (modules);
+  efree (modules);
  }
 
  return 1;
@@ -241,13 +241,13 @@ uintptr_t module_scheme_make_module_wo (struct smodule *sm) {
   lm->module = sm;
   mod_update (lm);
 
-  if (smo->si.provides) free (smo->si.provides);
-  if (smo->si.requires) free (smo->si.requires);
-  if (smo->si.after) free (smo->si.after);
-  if (smo->si.before) free (smo->si.before);
-  if (smo->rid) free (smo->rid);
-  if (smo->name) free (smo->name);
-  if (smo) free (smo);
+  if (smo->si.provides) efree (smo->si.provides);
+  if (smo->si.requires) efree (smo->si.requires);
+  if (smo->si.after) efree (smo->si.after);
+  if (smo->si.before) efree (smo->si.before);
+  if (smo->rid) efree (smo->rid);
+  if (smo->name) efree (smo->name);
+  if (smo) efree (smo);
 
   return 2;
  } else {
@@ -287,10 +287,10 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
 
  id = scm_symbol_to_string(ids);
  id_c = scm_to_locale_string (id);
- scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, id_c, SCM_F_WIND_EXPLICITLY);
 
  name_c = scm_to_locale_string (name);
- scm_dynwind_unwind_handler (free, name_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, name_c, SCM_F_WIND_EXPLICITLY);
 
  /* don't quite trust guile's garbage collector yet... */
  sm->rid = estrdup (id_c);
@@ -317,7 +317,7 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
        SCM vals = scm_symbol_to_string (val);
        sym = scm_to_locale_string (vals);
 
-       scm_dynwind_unwind_handler (free, sym, SCM_F_WIND_EXPLICITLY);
+       scm_dynwind_unwind_handler (efree, sym, SCM_F_WIND_EXPLICITLY);
       }
 
       elec++;
@@ -325,7 +325,7 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
       if (scm_is_true(scm_string_p (val))) {
        char *da = scm_to_locale_string (val);
 
-       scm_dynwind_unwind_handler (free, da, SCM_F_WIND_EXPLICITLY);
+       scm_dynwind_unwind_handler (efree, da, SCM_F_WIND_EXPLICITLY);
 
        vs = (char **)setadd ((void **)vs, da, SET_TYPE_STRING);
       }
@@ -343,13 +343,13 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
       sm->si.before = vs;
      } else {
       fprintf (stderr, "ERROR: unexpected attribute: %s\n", sym);
-      free (vs);
+      efree (vs);
      }
     } else {
      if (sym) {
       fprintf (stderr, "ERROR: symbol without vs: %s\n", sym);
      }
-     if (vs) free (vs);
+     if (vs) efree (vs);
     }
    } else {
     fprintf (stderr, "ERROR: list expected\n");
@@ -378,7 +378,7 @@ SCM module_scheme_guile_notice (SCM message) {
  scm_dynwind_begin (0);
 
  if ((msg = scm_to_locale_string (message))) {
-  scm_dynwind_unwind_handler (free, msg, SCM_F_WIND_EXPLICITLY);
+  scm_dynwind_unwind_handler (efree, msg, SCM_F_WIND_EXPLICITLY);
 
   scm_without_guile ((void *(*)(void *))module_scheme_guile_notice_wo, msg);
  }
@@ -400,7 +400,7 @@ SCM module_scheme_guile_critical (SCM message) {
  scm_dynwind_begin (0);
 
  if ((msg = scm_to_locale_string (message))) {
-  scm_dynwind_unwind_handler (free, msg, SCM_F_WIND_EXPLICITLY);
+  scm_dynwind_unwind_handler (efree, msg, SCM_F_WIND_EXPLICITLY);
 
   scm_without_guile ((void *(*)(void *))module_scheme_guile_critical_wo, msg);
  }
@@ -433,10 +433,10 @@ SCM module_scheme_guile_feedback (SCM id, SCM message) {
 
  ids = scm_symbol_to_string(id);
  id_c = scm_to_locale_string (ids);
- scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, id_c, SCM_F_WIND_EXPLICITLY);
 
  msg = scm_to_locale_string (message);
- scm_dynwind_unwind_handler (free, msg, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, msg, SCM_F_WIND_EXPLICITLY);
 
  scm_pthread_mutex_lock (&module_scheme_guile_module_actions_mutex);
  st = streefind (module_scheme_guile_module_actions, id_c, tree_find_first);
@@ -466,7 +466,7 @@ SCM module_scheme_guile_get_configuration (SCM id) {
 
  ids = scm_symbol_to_string(id);
  id_c = scm_to_locale_string (ids);
- scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, id_c, SCM_F_WIND_EXPLICITLY);
 
  struct cfgnode *node = cfg_getnode (id_c, NULL);
 
@@ -500,7 +500,7 @@ SCM module_scheme_guile_set_configuration (SCM id, SCM attributes) {
 
  ids = scm_symbol_to_string(id);
  id_c = scm_to_locale_string (ids);
- scm_dynwind_unwind_handler (free, id_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, id_c, SCM_F_WIND_EXPLICITLY);
 
  struct cfgnode node;
  memset (&node, 0, sizeof (struct cfgnode));
@@ -508,9 +508,9 @@ SCM module_scheme_guile_set_configuration (SCM id, SCM attributes) {
  while (!scm_is_null (attributes)) {
   SCM v = scm_car (attributes);
   char *a = scm_to_locale_string (scm_car(v));
-  scm_dynwind_unwind_handler (free, a, SCM_F_WIND_EXPLICITLY);
+  scm_dynwind_unwind_handler (efree, a, SCM_F_WIND_EXPLICITLY);
   char *b = scm_to_locale_string (scm_cdr(v));
-  scm_dynwind_unwind_handler (free, b, SCM_F_WIND_EXPLICITLY);
+  scm_dynwind_unwind_handler (efree, b, SCM_F_WIND_EXPLICITLY);
 
   node.arbattrs = (char **)setadd ((void **)node.arbattrs, a, SET_TYPE_STRING);
   node.arbattrs = (char **)setadd ((void **)node.arbattrs, b, SET_TYPE_STRING);
@@ -550,11 +550,11 @@ SCM module_scheme_define_module_action (SCM rid, SCM action, SCM command) {
 
  rids = scm_symbol_to_string(rid);
  rid_c = scm_to_locale_string (rids);
- scm_dynwind_unwind_handler (free, rid_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, rid_c, SCM_F_WIND_EXPLICITLY);
 
  actions = scm_symbol_to_string(action);
  action_c = scm_to_locale_string (actions);
- scm_dynwind_unwind_handler (free, action_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, action_c, SCM_F_WIND_EXPLICITLY);
 
  indexlen = strlen (rid_c) + strlen (action_c) + 2;
  index = emalloc (indexlen);
@@ -574,11 +574,11 @@ SCM module_scheme_define_module_action (SCM rid, SCM action, SCM command) {
   struct scheme_action *sa = st->value;
   scm_gc_unprotect_object (sa->action);
   st->value = na;
-  free (sa);
+  efree (sa);
  }
  emutex_unlock (&module_scheme_guile_module_actions_mutex);
 
- free (index);
+ efree (index);
 
  scm_dynwind_end ();
 
@@ -611,7 +611,7 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
  scm_dynwind_begin (0);
 
  p.command = scm_to_locale_string (command);
- scm_dynwind_unwind_handler (free, p.command, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, p.command, SCM_F_WIND_EXPLICITLY);
 
  while (!scm_is_null (rest)) {
   SCM r = scm_car (rest);
@@ -621,14 +621,14 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
 
    rvs = scm_symbol_to_string(r);
    nv = scm_to_locale_string (rvs);
-   scm_dynwind_unwind_handler (free, nv, SCM_F_WIND_EXPLICITLY);
+   scm_dynwind_unwind_handler (efree, nv, SCM_F_WIND_EXPLICITLY);
   } else if (nv) {
    if (strmatch (nv, "user:") && scm_is_true(scm_string_p (r))) {
     p.user = scm_to_locale_string (r);
-    scm_dynwind_unwind_handler (free, p.user, SCM_F_WIND_EXPLICITLY);
+    scm_dynwind_unwind_handler (efree, p.user, SCM_F_WIND_EXPLICITLY);
    } else if (strmatch (nv, "group:") && scm_is_true(scm_string_p (r))) {
     p.group = scm_to_locale_string (r);
-    scm_dynwind_unwind_handler (free, p.group, SCM_F_WIND_EXPLICITLY);
+    scm_dynwind_unwind_handler (efree, p.group, SCM_F_WIND_EXPLICITLY);
    } else if (strmatch (nv, "feedback:") && scm_is_true(scm_symbol_p (r))) {
     char *sym = NULL;
     struct stree *st;
@@ -636,7 +636,7 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
 
     rvs = scm_symbol_to_string(r);
     sym = scm_to_locale_string (rvs);
-    scm_dynwind_unwind_handler (free, sym, SCM_F_WIND_EXPLICITLY);
+    scm_dynwind_unwind_handler (efree, sym, SCM_F_WIND_EXPLICITLY);
 
     emutex_lock (&module_scheme_guile_module_actions_mutex);
     st = streefind (module_scheme_guile_module_actions, sym, tree_find_first);
@@ -827,7 +827,7 @@ SCM module_scheme_guile_make_einit_event (SCM type, SCM rest) {
 
  SCM types = scm_symbol_to_string(type);
  char *type_c = scm_to_locale_string (types);
- scm_dynwind_unwind_handler (free, type_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, type_c, SCM_F_WIND_EXPLICITLY);
 
  ev->type = event_string_to_code (type_c);
 
@@ -838,13 +838,13 @@ SCM module_scheme_guile_make_einit_event (SCM type, SCM rest) {
 
   if (scm_is_true(scm_string_p (val))) {
    char *t = scm_to_locale_string(val);
-   scm_dynwind_unwind_handler (free, t, SCM_F_WIND_EXPLICITLY);
+   scm_dynwind_unwind_handler (efree, t, SCM_F_WIND_EXPLICITLY);
 
    ev->string = estrdup (t);
   } else if (scm_is_true(scm_symbol_p (val))) {
    SCM syms = scm_symbol_to_string(val);
    nextpara = scm_to_locale_string (syms);
-   scm_dynwind_unwind_handler (free, nextpara, SCM_F_WIND_EXPLICITLY);
+   scm_dynwind_unwind_handler (efree, nextpara, SCM_F_WIND_EXPLICITLY);
   } else if (scm_is_true(scm_list_p (val))) {
    SCM list = val;
 
@@ -853,7 +853,7 @@ SCM module_scheme_guile_make_einit_event (SCM type, SCM rest) {
 
     if (scm_is_true(scm_string_p (lval))) {
      char *t = scm_to_locale_string(lval);
-     scm_dynwind_unwind_handler (free, t, SCM_F_WIND_EXPLICITLY);
+     scm_dynwind_unwind_handler (efree, t, SCM_F_WIND_EXPLICITLY);
 
      ev->stringset = (char **)setadd ((void **)ev->stringset, t, SET_TYPE_STRING);
     }
@@ -906,7 +906,7 @@ SCM module_scheme_guile_event_listen (SCM event_type, SCM event_handler) {
 
  SCM types = scm_symbol_to_string(event_type);
  char *type_c = scm_to_locale_string (types);
- scm_dynwind_unwind_handler (free, type_c, SCM_F_WIND_EXPLICITLY);
+ scm_dynwind_unwind_handler (efree, type_c, SCM_F_WIND_EXPLICITLY);
 
  struct scheme_event_handler *handler = emalloc (sizeof (struct scheme_event_handler));
  handler->handler = event_handler;
@@ -982,8 +982,8 @@ size_t module_scheme_guile_einit_event_free (SCM event) {
  struct einit_event *ev = (struct einit_event *) SCM_SMOB_DATA (event);
 
  if (ev->type != einit_event_subsystem_ipc) {
-  if (ev->string) free (ev->string);
-  if (ev->stringset) free (ev->stringset);
+  if (ev->string) efree (ev->string);
+  if (ev->stringset) efree (ev->stringset);
  }
 
  scm_gc_free (ev, sizeof (struct einit_event), "einit-event");
@@ -1162,7 +1162,7 @@ void module_scheme_guile_event_dispatcher_thread (void *na) {
 
    if (e && e->ev) {
     ev = e->ev;
-    free (e);
+    efree (e);
 
     struct scheme_event_handler **evh = NULL;
     struct stree *st = NULL;
@@ -1190,7 +1190,7 @@ void module_scheme_guile_event_dispatcher_thread (void *na) {
 
      scm_with_guile ((void *(*)(void *))module_scheme_guile_generic_event_handler_w, &c);
 
-     free (evh);
+     efree (evh);
      evh = NULL;
     }
 

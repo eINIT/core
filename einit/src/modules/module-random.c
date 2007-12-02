@@ -119,9 +119,9 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
   onode->arbattrs = narb;
 
   if (oarb) {
-   free (oarb);
+   efree (oarb);
   }
-  free (jele);
+  efree (jele);
 
  } else {
   char *jele = set2str (':', (const char **)elements);
@@ -137,7 +137,7 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)seq, SET_TYPE_STRING);
 
   cfg_addnode (&newnode);
-  free (jele);
+  efree (jele);
  }
 }
 

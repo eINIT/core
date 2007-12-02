@@ -152,7 +152,7 @@ void einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available (s
         fbmode = estrdup(p[i]);
        }*/
       }
-      free (p);
+      efree (p);
      }
     }
 
@@ -329,7 +329,7 @@ void *einit_feedback_visual_fbsplash_worker_thread (void *irr) {
      fclose (fifo);
     }
 
-    free (command);
+    efree (command);
    }/* else {
     notice (1, "repaint");
     FILE *fifo = efopen (fbsplash_fifo, "w");
@@ -379,10 +379,10 @@ int einit_feedback_visual_fbsplash_enable () {
         freemode = 1;
        }
       }
-      free (p);
+      efree (p);
      }
 
-     free (params);
+     efree (params);
     }
 
     break;
@@ -396,7 +396,7 @@ int einit_feedback_visual_fbsplash_enable () {
   esprintf (tmpx, BUFFERSIZE, "set theme %s", fbtheme);
   fbsplash_queue_comand(tmpx);
 
-  if (freetheme) free (fbtheme);
+  if (freetheme) efree (fbtheme);
 //  notice (1, tmpx);
  }*/
  if ((tmp = cfg_getstring ("configuration-feedback-visual-fbsplash-daemon-ttys/silent", NULL))) {
@@ -436,7 +436,7 @@ int einit_feedback_visual_fbsplash_enable () {
 
   fbsplash_queue_comand("repaint");
 
-  if (freemode) free (fbmode);
+  if (freemode) efree (fbmode);
 //  notice (1, tmpx);
  }
 

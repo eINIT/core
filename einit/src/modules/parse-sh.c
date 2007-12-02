@@ -141,7 +141,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
      else
       callback ((const char **)command, pa_new_context, ud);
 
-     free (command);
+     efree (command);
      command = NULL;
     }
 
@@ -182,12 +182,12 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
  if (command) {
   callback ((const char **)command, pa_new_context, ud);
 
-  free (command);
+  efree (command);
   command = NULL;
  }
 
  callback (NULL, pa_end_of_file, ud);
- free (ndp);
+ efree (ndp);
 
  return 0;
 }

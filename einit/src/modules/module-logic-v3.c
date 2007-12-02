@@ -202,7 +202,7 @@ void einit_module_logic_v3_garbage_free () {
    streefree (einit_module_logic_v3_garbage.strees[i]);
   }
 
-  free (einit_module_logic_v3_garbage.strees);
+  efree (einit_module_logic_v3_garbage.strees);
   einit_module_logic_v3_garbage.strees = NULL;
  }
 
@@ -210,10 +210,10 @@ void einit_module_logic_v3_garbage_free () {
   int i = 0;
 
   for (; einit_module_logic_v3_garbage.chunks[i]; i++) {
-   free (einit_module_logic_v3_garbage.chunks[i]);
+   efree (einit_module_logic_v3_garbage.chunks[i]);
   }
 
-  free (einit_module_logic_v3_garbage.chunks);
+  efree (einit_module_logic_v3_garbage.chunks);
   einit_module_logic_v3_garbage.chunks = NULL;
  }
  emutex_unlock (&ml_garbage_mutex);
@@ -408,10 +408,10 @@ struct group_data *mod_group_get_data (char *group) {
     }
    }
   }
-  free (tnodeid);
+  efree (tnodeid);
 
   if (!ret->members || !ret->options) {
-   free (ret);
+   efree (ret);
    ret = NULL;
   } else {
    module_logics_group_data = streeadd (module_logics_group_data, group, (void *)ret, SET_NOALLOC, (void *)ret);
@@ -426,30 +426,30 @@ struct group_data *mod_group_get_data (char *group) {
 void cross_taskblock (struct module_taskblock *source, struct module_taskblock *target) {
  if (source->enable) {
   char **tmp = (char **)setcombine ((const void **)target->enable, (const void **)source->enable, SET_TYPE_STRING);
-  if (target->enable) free (target->enable);
+  if (target->enable) efree (target->enable);
   target->enable = tmp;
 
   tmp = (char **)setslice ((const void **)target->disable, (const void **)source->enable, SET_TYPE_STRING);
-  if (target->disable) free (target->disable);
+  if (target->disable) efree (target->disable);
   target->disable = tmp;
  }
  if (source->critical) {
   char **tmp = (char **)setcombine ((const void **)target->critical, (const void **)source->critical, SET_TYPE_STRING);
-  if (target->critical) free (target->critical);
+  if (target->critical) efree (target->critical);
   target->critical = tmp;
  }
 
  if (source->disable) {
   char **tmp = (char **)setcombine ((const void **)target->disable, (const void **)source->disable, SET_TYPE_STRING);
-  if (target->disable) free (target->disable);
+  if (target->disable) efree (target->disable);
   target->disable = tmp;
 
   tmp = (char **)setslice ((const void **)target->enable, (const void **)source->disable, SET_TYPE_STRING);
-  if (target->enable) free (target->enable);
+  if (target->enable) efree (target->enable);
   target->enable = tmp;
 
   tmp = (char **)setslice ((const void **)target->critical, (const void **)source->disable, SET_TYPE_STRING);
-  if (target->critical) free (target->critical);
+  if (target->critical) efree (target->critical);
   target->critical = tmp;
  }
 }
@@ -489,17 +489,17 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   if (enable) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.enable, (const void **)enable, SET_TYPE_STRING);
-   if (plan->changes.enable) free (plan->changes.enable);
+   if (plan->changes.enable) efree (plan->changes.enable);
    plan->changes.enable = tmp;
   }
   if (disable) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.disable, (const void **)disable, SET_TYPE_STRING);
-   if (plan->changes.disable) free (plan->changes.disable);
+   if (plan->changes.disable) efree (plan->changes.disable);
    plan->changes.disable = tmp;
   }
   if (critical) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.critical, (const void **)critical, SET_TYPE_STRING);
-   if (plan->changes.critical) free (plan->changes.critical);
+   if (plan->changes.critical) efree (plan->changes.critical);
    plan->changes.critical = tmp;
   }
 
@@ -517,7 +517,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     y++;
    }
 
-   free (base);
+   efree (base);
   }
 
   if (mode->id) {
@@ -528,12 +528,12 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  } else {
   if (task & einit_module_enable) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.enable, (const void **)atoms, SET_TYPE_STRING);
-   if (plan->changes.enable) free (plan->changes.enable);
+   if (plan->changes.enable) efree (plan->changes.enable);
    plan->changes.enable = tmp;
   }
   if (task & einit_module_disable) {
    char **tmp = (char **)setcombine ((const void **)plan->changes.disable, (const void **)atoms, SET_TYPE_STRING);
-   if (plan->changes.disable) free (plan->changes.disable);
+   if (plan->changes.disable) efree (plan->changes.disable);
    plan->changes.disable = tmp;
   }
  }
@@ -555,11 +555,11 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 
   char **tmp = (char **)setcombine ((const void **)tmpx, (const void **)plan->changes.disable, SET_TYPE_STRING);
 
-  free (tmpx);
-  free (tmpy);
+  efree (tmpx);
+  efree (tmpy);
 
   if (plan->changes.disable) {
-   free (plan->changes.disable);
+   efree (plan->changes.disable);
    plan->changes.disable = NULL;
   }
 
@@ -593,7 +593,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
     }
    }
 
-   free (tmp);
+   efree (tmp);
   }
 
   emutex_unlock (&ml_service_list_mutex);
@@ -636,7 +636,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
     for (; cmdts[in]; in++)
      ipc_process(cmdts[in], stderr);
 
-    free (cmdts);
+    efree (cmdts);
    }
   }
  }
@@ -671,7 +671,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
      tmp = (char **)setadd ((void **)tmp, (void *)current.enable[i], SET_TYPE_STRING);
     }
    }
-   free (current.enable);
+   efree (current.enable);
    current.enable = tmp;
   }
   if (current.disable) {
@@ -681,7 +681,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
      tmp = (char **)setadd ((void **)tmp, (void *)current.disable[i], SET_TYPE_STRING);
     }
    }
-   free (current.disable);
+   efree (current.disable);
    current.disable = tmp;
   }
 
@@ -715,7 +715,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    eema.string = estrdup(amode->id);
    eema.para   = (void *)amode;
    event_emit (&eema, einit_event_flag_broadcast);
-   free (eema.string);
+   efree (eema.string);
    evstaticdestroy (eema);
   }
 
@@ -729,7 +729,7 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
     for (; cmdts[in]; in++) {
      ipc_process(cmdts[in], stderr);
     }
-    free (cmdts);
+    efree (cmdts);
    }
   }
 
@@ -752,13 +752,13 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 
 int mod_plan_free (struct mloadplan *plan) {
  if (plan) {
-  if (plan->changes.enable) free (plan->changes.enable);
-  if (plan->changes.disable) free (plan->changes.disable);
-  if (plan->changes.critical) free (plan->changes.critical);
+  if (plan->changes.enable) efree (plan->changes.enable);
+  if (plan->changes.disable) efree (plan->changes.disable);
+  if (plan->changes.critical) efree (plan->changes.critical);
 
-  if (plan->used_modes) free (plan->used_modes);
+  if (plan->used_modes) efree (plan->used_modes);
 
-  free (plan);
+  efree (plan);
  }
  return 0;
 }
@@ -834,10 +834,10 @@ void mod_sort_service_list_items_by_preference() {
       }
      }
     }
-    free (preference);
+    efree (preference);
    }
 
-   free (pnode);
+   efree (pnode);
 
    /* step 2: sort using the names of services specified (to get "virtual" services sorted properly) */
    mpz = 0;
@@ -976,7 +976,7 @@ int mod_modaction (char **argv, FILE *output) {
 
    if (members) {
     eprintf (output, " \e[34m>>\e[0m group members: ( %s )\n", members);
-	free (members);
+	efree (members);
    }
   }
 
@@ -1106,7 +1106,7 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
   cur = cur->next;
  }
 
- /* need to defer-free this at some point... */
+ /* need to defer-efree this at some point... */
 //  if (module_logics_service_list) streefree (module_logics_service_list);
 #if 0
  /* this'll need to get fixed up */
@@ -1133,11 +1133,11 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
  emutex_lock (&ml_unresolved_mutex);
 
  if (unresolved_services) {
-  free (unresolved_services);
+  efree (unresolved_services);
   unresolved_services = NULL;
  }
  if (broken_services) {
-  free (broken_services);
+  efree (broken_services);
   broken_services = NULL;
  }
 
@@ -1242,15 +1242,15 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
        char *x = set2str (' ', (const char **)senable);
 
        eprintf (ev->output, "\n \e[33m** will also enable: %s\e[0m", x);
-       free (senable);
-       free (x);
+       efree (senable);
+       efree (x);
       }
       if (sdisable) {
        char *x = set2str (' ', (const char **)sdisable);
 
        eprintf (ev->output, "\n \e[33m** will also disable: %s\e[0m", x);
-       free (sdisable);
-       free (x);
+       efree (sdisable);
+       efree (x);
       }
       eputs ("\n \e[32m>> check complete.\e[0m\n", ev->output);
      }
@@ -1363,7 +1363,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
         emutex_unlock(&ml_service_list_mutex);
 
-        free (tmps);
+        efree (tmps);
        }
        break;
       }
@@ -1373,7 +1373,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     cfgn = cfg_findnode ("mode-enable", 0, cfgn);
    }
 
-   if (modes) free (modes);
+   if (modes) efree (modes);
 
    ev->implemented = 1;
   } else if (strmatch (ev->argv[0], "list")) {
@@ -1435,8 +1435,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
        } else
         eprintf (ev->output, "%s |", cur->key);
       }
-      if (modestr) free (modestr);
-      free (inmodes);
+      if (modestr) efree (modestr);
+      efree (inmodes);
      } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        eprintf (ev->output, " <service id=\"%s\" provided=\"%s\">\n", cur->key, mod_isprovided(cur->key) ? "yes" : "no");
@@ -1466,8 +1466,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
                    ((gd->options & MOD_PLAN_GROUP_SEQ_MOST) ? "most" :
                    ((gd->options & MOD_PLAN_GROUP_SEQ_ALL) ? "all" : "unknown")))));
 
-        free (members_escaped);
-        free (members);
+        efree (members_escaped);
+        efree (members);
        }
 
        if (cur->value) {
@@ -1480,37 +1480,37 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
          eprintf (ev->output, "  <module id=\"%s\" name=\"%s\" status=\"%s\"",
                   rid, name, STATUS2STRING(xs[u]->status));
 
-         free (name);
-         free (rid);
+         efree (name);
+         efree (rid);
 
          if (xs[u]->si) {
           if (xs[u]->si->provides) {
            char *x = set2str(':', (const char **)xs[u]->si->provides);
            char *y = escape_xml (x);
            eprintf (ev->output, "\n  provides=\"%s\"", y);
-           free (y);
-           free (x);
+           efree (y);
+           efree (x);
           }
           if (xs[u]->si->requires) {
            char *x = set2str(':', (const char **)xs[u]->si->requires);
            char *y = escape_xml (x);
            eprintf (ev->output, "\n  requires=\"%s\"", y);
-           free (y);
-           free (x);
+           efree (y);
+           efree (x);
           }
           if (xs[u]->si->after) {
            char *x = set2str(':', (const char **)xs[u]->si->after);
            char *y = escape_xml (x);
            eprintf (ev->output, "\n  after=\"%s\"", y);
-           free (y);
-           free (x);
+           efree (y);
+           efree (x);
           }
           if (xs[u]->si->before) {
            char *x = set2str(':', (const char **)xs[u]->si->before);
            char *y = escape_xml (x);
            eprintf (ev->output, "\n  before=\"%s\"", y);
-           free (y);
-           free (x);
+           efree (y);
+           efree (x);
           }
          }
 
@@ -1523,10 +1523,10 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
           char *x = set2str(':', (const char **)functions);
           char *y = escape_xml (x);
           eprintf (ev->output, "\n  functions=\"%s\"", y);
-          free (y);
-          free (x);
+          efree (y);
+          efree (x);
 
-          free (functions);
+          efree (functions);
          }
 
          eputs (" />\n", ev->output);
@@ -1604,11 +1604,11 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        modestr = set2str (':', (const char **)inmodes);
        eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\" provided=\"%s\">\n", cur->key, modestr, mod_isprovided(cur->key) ? "yes" : "no");
-       free (modestr);
+       efree (modestr);
       } else {
        eprintf (ev->output, "%s (group)\n", cur->key);
       }
-      free (inmodes);
+      efree (inmodes);
      } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
       if (ev->ipc_options & einit_ipc_output_xml) {
        eprintf (ev->output, " <service id=\"%s\" provided=\"%s\">\n", cur->key, mod_isprovided(cur->key) ? "yes" : "no");
@@ -1629,8 +1629,8 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
                    ((gd->options & MOD_PLAN_GROUP_SEQ_MOST) ? "most" :
                    ((gd->options & MOD_PLAN_GROUP_SEQ_ALL) ? "all" : "unknown")))));
 
-        free (members_escaped);
-        free (members);
+        efree (members_escaped);
+        efree (members);
        }
 
        eputs (" </service>\n", ev->output);
@@ -1654,21 +1654,21 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      char *r = set2str (' ', (const char **)target_state.enable);
      if (r) {
       eprintf (ev->output, "target_state.enable = { %s }\n", r);
-      free (r);
+      efree (r);
      }
     }
     if (target_state.disable) {
      char *r = set2str (' ', (const char **)target_state.disable);
      if (r) {
       eprintf (ev->output, "target_state.disable = { %s }\n", r);
-      free (r);
+      efree (r);
      }
     }
     if (target_state.critical) {
      char *r = set2str (' ', (const char **)target_state.critical);
      if (r) {
       eprintf (ev->output, "target_state.critical = { %s }\n", r);
-      free (r);
+      efree (r);
      }
     }
 
@@ -1679,21 +1679,21 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      char *r = set2str (' ', (const char **)current.enable);
      if (r) {
       eprintf (ev->output, "current.enable = { %s }\n", r);
-      free (r);
+      efree (r);
      }
     }
     if (current.disable) {
      char *r = set2str (' ', (const char **)current.disable);
      if (r) {
       eprintf (ev->output, "current.disable = { %s }\n", r);
-      free (r);
+      efree (r);
      }
     }
     if (current.critical) {
      char *r = set2str (' ', (const char **)current.critical);
      if (r) {
       eprintf (ev->output, "current.critical = { %s }\n", r);
-      free (r);
+      efree (r);
      }
     }
 
@@ -1747,7 +1747,7 @@ void print_defer_lists() {
   do {
    char *val = set2str (' ', st->value);
    eprintf (debugfile, "%s: (%s)\n", st->key, val);
-   free (val);
+   efree (val);
 
    st = streenext (st);
   } while (st);
@@ -1763,7 +1763,7 @@ void print_defer_lists() {
   do {
    char *val = set2str (' ', st->value);
    eprintf (debugfile, "%s: (%s)\n", st->key, val);
-   free (val);
+   efree (val);
 
    st = streenext (st);
   } while (st);
@@ -1909,7 +1909,7 @@ void mod_commits_dec () {
   event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);
 
-  free (broken);
+  efree (broken);
  }
  if (unresolved) {
   struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
@@ -1919,7 +1919,7 @@ void mod_commits_dec () {
   event_emit (&ee, einit_event_flag_broadcast);
   evstaticdestroy (ee);
 
-  free (unresolved);
+  efree (unresolved);
  }
 
  emutex_lock (&ml_commits_mutex);
@@ -1931,18 +1931,18 @@ void mod_commits_dec () {
  if (clean_broken) {
   emutex_lock (&ml_unresolved_mutex);
   if (unresolved_services) {
-   free (unresolved_services);
+   efree (unresolved_services);
    unresolved_services = NULL;
   }
   if (broken_services) {
-   free (broken_services);
+   efree (broken_services);
    broken_services = NULL;
   }
   emutex_unlock (&ml_unresolved_mutex);
 
   emutex_lock (&ml_changed_mutex);
   if (changed_recently) {
-   free (changed_recently);
+   efree (changed_recently);
    changed_recently = NULL;
   }
   emutex_unlock (&ml_changed_mutex);
@@ -1992,18 +1992,18 @@ void mod_commits_inc () {
  if (clean_broken) {
   emutex_lock (&ml_unresolved_mutex);
   if (unresolved_services) {
-   free (unresolved_services);
+   efree (unresolved_services);
    unresolved_services = NULL;
   }
   if (broken_services) {
-   free (broken_services);
+   efree (broken_services);
    broken_services = NULL;
   }
   emutex_unlock (&ml_unresolved_mutex);
 
   emutex_lock (&ml_changed_mutex);
   if (changed_recently) {
-   free (changed_recently);
+   efree (changed_recently);
    changed_recently = NULL;
   }
   emutex_unlock (&ml_changed_mutex);
@@ -2041,7 +2041,7 @@ void mod_defer_notice (struct lmodule *mod, char **services) {
  event_emit (&ee, einit_event_flag_broadcast);
  evstaticdestroy (ee);
 
- if (s) free (s);
+ if (s) efree (s);
 }
 
 char mod_check_circular_defer_rec (char *service, char *after, int depth) {
@@ -2080,7 +2080,7 @@ char mod_check_circular_defer_rec (char *service, char *after, int depth) {
    }
   }
 
-  free (deferrees);
+  efree (deferrees);
  }
 
  return ret;
@@ -2246,7 +2246,7 @@ char mod_isdeferred (char *service) {
    mod_workthread_create (deferrees[i]);
   }
 
-  free (deferrees);
+  efree (deferrees);
  }
 
 // ret = (ret > 0);
@@ -2362,7 +2362,7 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
    for (; gd->members[i]; i++) {
     if (((task & einit_module_enable) && mod_isprovided (gd->members[i])) ||
           ((task & einit_module_disable) && !mod_isprovided (gd->members[i]))) {
-     free (service);
+     efree (service);
      return 0;
     }
 
@@ -2385,11 +2385,11 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
       current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
      }
 
-     free (service);
+     efree (service);
      return 1;
     }
 
-    free (service);
+    efree (service);
     return 0;
    }
 
@@ -2458,7 +2458,7 @@ signed char mod_flatten_current_tb_group(char *serv, char task) {
    }
   }
 
-  free (service);
+  efree (service);
   return changes != 0;
  }
 
@@ -2561,7 +2561,7 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
 
   emutex_unlock (&ml_service_list_mutex);
 
-  free (service);
+  efree (service);
 
   return changes != 0;
  }
@@ -2756,7 +2756,7 @@ void mod_post_examine (char *service) {
    mod_workthread_create (pex[j]);
   }
 
-  free (pex);
+  efree (pex);
  }
 }
 
@@ -2792,7 +2792,7 @@ void mod_pre_examine (char *service) {
     mod_workthread_create (pex[j]);
    }
   }
-  free (pex);
+  efree (pex);
 
   if ((broken + done) == j) {
    mod_remove_defer (service);
@@ -2812,7 +2812,7 @@ char mod_disable_users (struct lmodule *module, char *sname) {
   if (t) {
    for (; t[i]; i++) {
     if (mod_isbroken (t[i]) && !shutting_down) { /* the is-broken rule actually only holds true if we're not shutting down (if we are, then broken services get zapp'd, so they're still gone */
-     if (need) free (need);
+     if (need) efree (need);
      return 0;
     } else {
      emutex_lock (&ml_tb_current_mutex);
@@ -2856,7 +2856,7 @@ char mod_disable_users (struct lmodule *module, char *sname) {
     emutex_lock (&ml_tb_current_mutex);
 
     char **tmp = (char **)setcombine ((const void **)current.disable, (const void **)need, SET_TYPE_STRING);
-    if (current.disable) free (current.disable);
+    if (current.disable) efree (current.disable);
     current.disable = tmp;
 
     emutex_unlock (&ml_tb_current_mutex);
@@ -2900,7 +2900,7 @@ char mod_enable_requirements (struct lmodule *module, char *sname) {
 
    for (; module->si->requires[i]; i++) {
     if (mod_isbroken (module->si->requires[i])) {
-     if (need) free (need);
+     if (need) efree (need);
      return 0;
     } else if (!service_usage_query (service_is_provided, NULL, module->si->requires[i])) {
      emutex_lock (&ml_tb_current_mutex);
@@ -2938,7 +2938,7 @@ char mod_enable_requirements (struct lmodule *module, char *sname) {
     emutex_lock (&ml_tb_current_mutex);
 
     char **tmp = (char **)setcombine ((const void **)current.enable, (const void **)need, SET_TYPE_STRING);
-    if (current.enable) free (current.enable);
+    if (current.enable) efree (current.enable);
     current.enable = tmp;
 
     emutex_unlock (&ml_tb_current_mutex);
@@ -3436,9 +3436,9 @@ char mod_examine_group (char *groupname) {
    emutex_unlock (&ml_tb_current_mutex);
   }
 
-  if (providers) free (providers);
+  if (providers) efree (providers);
 
-  free (members);
+  efree (members);
  }
 
  if (post_examine) {
@@ -3525,7 +3525,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
      }
     }
 
-    free (d);
+    efree (d);
    } else {
     if (dolock) emutex_unlock (&ml_tb_current_mutex);
    }
@@ -3572,14 +3572,14 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
 //    mod_defer_notice (lm, d);
 
-    free (d);
+    efree (d);
    } else {
     if (dolock) emutex_unlock (&ml_tb_current_mutex);
    }
   }
  }
 
- if (xbefore) free (xbefore);
+ if (xbefore) efree (xbefore);
 
  return hd;
 }
@@ -3748,7 +3748,7 @@ void mod_examine (char *service) {
 
 void workthread_examine (char *service) {
  mod_examine (service);
- free (service);
+ efree (service);
 }
 
 void mod_workthread_create(char *service) {
@@ -3772,7 +3772,7 @@ void mod_spawn_batch(char **batch, int task) {
  deferred = 0; broken = 0; groupc = 0;
 
  if (dospawn) {
-  free(dospawn);
+  efree(dospawn);
   dospawn = NULL;
  }
 
@@ -3807,7 +3807,7 @@ void mod_spawn_batch(char **batch, int task) {
 
  eprintf (stderr, "i=%i (%s), broken=%i, deferred=%i, groups=%i\n", i, alist ? alist : "none", broken, deferred, groupc);
 
- if (alist) free (alist);
+ if (alist) efree (alist);
 #endif
 
  if (i == (broken + deferred + groupc)) {
@@ -3829,7 +3829,7 @@ void mod_spawn_batch(char **batch, int task) {
    mod_workthread_create (dospawn[i]);
   }
 
-  free (dospawn);
+  efree (dospawn);
   dospawn = NULL;
  }
 
@@ -4108,7 +4108,7 @@ int einit_module_logic_v3_resume (struct lmodule *this) {
   target_state.enable = rd->target_state.enable;
   target_state.disable = rd->target_state.disable;
 
-  free (this->resumedata);
+  efree (this->resumedata);
  }
 
  return status_ok;

@@ -53,8 +53,8 @@ int example_setfont () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }
@@ -72,8 +72,8 @@ int example_simple_start () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }
@@ -91,8 +91,8 @@ int example_simple_start_half () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }
@@ -110,8 +110,8 @@ int example_half_simple_start () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }
@@ -130,8 +130,8 @@ int example_double () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }
@@ -149,8 +149,8 @@ int example_broken () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }
@@ -168,8 +168,8 @@ int example_middle () {
   fprintf (stdout, "setfont example failed:\n expected result:\n\"%s\"\n actual result:\n\"%s\"\n", expected_result, res);
  }
 
- free (vars);
- free (res);
+ efree (vars);
+ efree (res);
 
  return test_failed;
 }

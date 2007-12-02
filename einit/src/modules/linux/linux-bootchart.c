@@ -105,14 +105,14 @@ char *linux_bootchart_get_uptime () {
       uptime = estrdup (buffer);
      }
 
-     free (r);
+     efree (r);
     }
    }
 
-   free (t);
+   efree (t);
   }
 
-  free (tmp);
+  efree (tmp);
  }
 
  return uptime;
@@ -126,12 +126,12 @@ char *linux_bootchart_update_ds (char *ds, char *uptime) {
 
   if (ds) {
    esprintf (tx, len, "%s\n%s\n%s\n", ds, uptime, t);
-   free (ds);
+   efree (ds);
   } else {
    esprintf (tx, len, "%s\n%s\n", uptime, t);
   }
 
-  free (t);
+  efree (t);
 
   ds = tx;
  }
@@ -159,7 +159,7 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
       da = readfile (u);
      }
 
-     free (u);
+     efree (u);
     }
 
 /*    if ((u = joinpath (t, "cmdline"))) {
@@ -172,15 +172,15 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
       }
      }
 
-     free (u);
+     efree (u);
     }*/
 
-    free (t);
+    efree (t);
    }
 
    if (da) {
     data = (char **)setadd ((void **)data, da, SET_TYPE_STRING);
-    free (da);
+    efree (da);
     da = NULL;
    }
   }
@@ -197,17 +197,17 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
 
    if (ps) {
     esprintf (tx, len, "%s\n%s\n%s\n", ps, uptime, t);
-    free (ps);
+    efree (ps);
    } else {
     esprintf (tx, len, "%s\n%s\n", uptime, t);
    }
 
-   free (t);
+   efree (t);
 
    ps = tx;
   }
 
-  free (data);
+  efree (data);
  }
 
  return ps;
@@ -221,12 +221,12 @@ char *linux_bootchart_update_st (char *st, char *uptime) {
 
   if (st) {
    esprintf (tx, len, "%s\n%s\n%s\n", st, uptime, t);
-   free (st);
+   efree (st);
   } else {
    esprintf (tx, len, "%s\n%s\n", uptime, t);
   }
 
-  free (t);
+  efree (t);
 
   st = tx;
  }
@@ -268,7 +268,7 @@ void *linux_bootchart_thread (void *ignored) {
    buffer_ps = linux_bootchart_update_ps (buffer_ps, uptime);
    buffer_st = linux_bootchart_update_st (buffer_st, uptime);
 
-   free (uptime);
+   efree (uptime);
    uptime = NULL;
   }
 
@@ -303,7 +303,7 @@ void *linux_bootchart_thread (void *ignored) {
    fclose (f);
   }
 
-  free (buffer_ds);
+  efree (buffer_ds);
   buffer_ds = NULL;
  }
 
@@ -314,7 +314,7 @@ void *linux_bootchart_thread (void *ignored) {
    fclose (f);
   }
 
-  free (buffer_ps);
+  efree (buffer_ps);
   buffer_ps = NULL;
  }
 
@@ -325,7 +325,7 @@ void *linux_bootchart_thread (void *ignored) {
    fclose (f);
   }
 
-  free (buffer_st);
+  efree (buffer_st);
   buffer_st = NULL;
  }
 
@@ -361,7 +361,7 @@ void *linux_bootchart_thread (void *ignored) {
   if ((t = readfile ("/etc/gentoo-release"))) {
    strtrim (t);
    eprintf (f, "system.release = %s\n", t);
-   free (t);
+   efree (t);
   } else {
    eputs ("system.release = unknown\n", f);
   }
@@ -385,14 +385,14 @@ void *linux_bootchart_thread (void *ignored) {
      eputs ("system.cpu = unknown\n", f);
    }
 
-   free (t);
+   efree (t);
   } else {
    eputs ("system.cpu = unknown\n", f);
   }
 
   if ((t = readfile ("/proc/cmdline"))) {
    eprintf (f, "system.kernel.options = %s\n", t);
-   free (t);
+   efree (t);
   }
 
   fclose (f);

@@ -123,14 +123,14 @@ void *einit_event_emit_remote_dispatch (struct einit_remote_event *ev) {
  }
 
  if (subsystem == einit_event_subsystem_ipc) {
-  if (ev->argv) free (ev->argv);
-  if (ev->command) free (ev->command);
+  if (ev->argv) efree (ev->argv);
+  if (ev->command) efree (ev->command);
  } else {
-  if (ev->string) free (ev->string);
-  if (ev->stringset) free (ev->stringset);
+  if (ev->string) efree (ev->string);
+  if (ev->stringset) efree (ev->stringset);
  }
 
- free (ev);
+ efree (ev);
 
  return NULL;
 }
@@ -297,7 +297,7 @@ char einit_connect(int *argc, char **argv) {
  }
 
  if ((pingres = einit_ipc_safe ("ping"))) {
-  free (pingres);
+  efree (pingres);
  } else {
   einit_disconnect();
   return 0;
@@ -506,14 +506,14 @@ void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
  uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
 
  if (subsystem == einit_event_subsystem_ipc) {
-  if (ev->argv) free (ev->argv);
-  if (ev->command) free (ev->command);
+  if (ev->argv) efree (ev->argv);
+  if (ev->command) efree (ev->command);
  } else {
-  if (ev->string) free (ev->string);
-  if (ev->stringset) free (ev->stringset);
+  if (ev->string) efree (ev->string);
+  if (ev->stringset) efree (ev->stringset);
  }
 
- free (ev);
+ efree (ev);
 
  dbus_message_unref(call);
  dbus_message_unref(message);
@@ -574,7 +574,7 @@ void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_em
   }
 
   memcpy (ev, rv, sizeof (struct einit_remote_event));
-  free (rv);
+  efree (rv);
 
   dbus_message_unref(call);
   dbus_message_unref(message);

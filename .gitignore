@@ -32,6 +32,11 @@ einit/config.xml
 
 einit/data/einit.xml.n
 
+build
+einit/sandbox
+eINIT.xcode
+modules/xml/config.sh
+
 *.orig
 *.rej
 *.swp

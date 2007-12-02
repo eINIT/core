@@ -114,7 +114,7 @@ int linux_kernel_modules_load (char **modules) {
   }
  }
 
- free (modules);
+ efree (modules);
 
  if (threads) {
   int i = 0;
@@ -122,10 +122,10 @@ int linux_kernel_modules_load (char **modules) {
   for (; threads[i]; i++) {
    pthread_join (*(threads[i]), NULL);
 
-   free (threads[i]);
+   efree (threads[i]);
   }
 
-  free (threads);
+  efree (threads);
  }
 
  return status_ok;
@@ -151,8 +151,8 @@ char **linux_kernel_modules_autoload_d() {
     }
    }
 
-   free (t);
-   free (d);
+   efree (t);
+   efree (d);
   }
  }
 
@@ -323,10 +323,10 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
   for (; threads[i]; i++) {
    pthread_join (*(threads[i]), NULL);
 
-   free (threads[i]);
+   efree (threads[i]);
   }
 
-  free (threads);
+  efree (threads);
  }
 
  return status_ok;

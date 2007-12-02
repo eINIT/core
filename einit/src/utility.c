@@ -156,7 +156,7 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
 
      if (n) {
       retval = (char **)setcombine_nc ((void **)retval, (const void **)n, SET_TYPE_STRING);
-      free (n);
+      efree (n);
      }
 
      /* add the dir itself afterwards */
@@ -171,7 +171,7 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
    retval = (char **)setadd((void **)retval, (void *)tmp, SET_TYPE_STRING);
 
    cleanup_continue:
-   free (tmp);
+   efree (tmp);
   }
   eclosedir (dir);
  }
@@ -181,7 +181,7 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
 #endif
 
- free (px);
+ efree (px);
 
  return retval;
 }
@@ -208,7 +208,7 @@ char **straddtoenviron (char **environment, const char *key, const char *value) 
  if (value) newitem = strcat (newitem, value);
 
  ret = (char**) setadd ((void**)environment, (void*)newitem, SET_TYPE_STRING);
- free (newitem);
+ efree (newitem);
 
  return ret;
 }
@@ -241,7 +241,7 @@ char *readfd_l (int fd, ssize_t *rl) {
   if (blen > 0) {
    *(data+blen-1) = 0;
   } else {
-   free (data);
+   efree (data);
    data = NULL;
   }
 
@@ -333,6 +333,10 @@ char *estrdup (const char *s) {
  return p;
 }
 
+void efree (void *p) {
+ free (p);
+}
+
 /* nifty string functions */
 void strtrim (char *s) {
  if (!s) return;
@@ -394,7 +398,7 @@ struct thread_wrapper_data *thread_wrapper_rendezvous () {
   struct thread_rendezvous_data_s *s = thread_rendezvous_data;
 
   thread_rendezvous_data = thread_rendezvous_data->next;
-  free (s);
+  efree (s);
   emutex_unlock (&thread_rendezvous_mutex);
 
 #if 0
@@ -437,7 +441,7 @@ char run_thread_function_in_pool (struct thread_wrapper_data *d) {
     thread_rendezvous_data = s->next;
    }
 
-   free (s);
+   efree (s);
    emutex_unlock (&thread_rendezvous_mutex);
 
    return 0;
@@ -466,7 +470,7 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
  moar:
 
  d->thread (d->param);
- free (d);
+ efree (d);
 
  thread_pool_free_count++;
 
@@ -512,7 +516,7 @@ void ethread_spawn_detached (void *(*thread)(void *), void *param) {
  if (run_thread_function_in_pool (d)) return;
 
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d))
-  free (d);
+  efree (d);
 }
 
 void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
@@ -525,7 +529,7 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
  if (run_thread_function_in_pool (d)) return;
 
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d)) {
-  free (d);
+  efree (d);
   thread(param);
  }
 }
@@ -603,18 +607,18 @@ void evpurge (struct einit_event *ev) {
  uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
 
  if (subsystem == einit_event_subsystem_ipc) {
-  if (ev->argv) free (ev->argv);
-  if (ev->command) free (ev->command);
+  if (ev->argv) efree (ev->argv);
+  if (ev->command) efree (ev->command);
  } else {
-  if (ev->string) free (ev->string);
-  if (ev->stringset) free (ev->stringset);
+  if (ev->string) efree (ev->string);
+  if (ev->stringset) efree (ev->stringset);
  }
 
  evdestroy (ev);
 }
 
 void evdestroy (struct einit_event *ev) {
- free (ev);
+ efree (ev);
 }
 
 
@@ -637,12 +641,12 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
     case ENFILE:
     case ERANGE:
      perror ("getpwnam_r");
-     free (buffer);
+     efree (buffer);
      return -1;
     case EINTR:
      continue;
     default:
-     free (buffer);
+     efree (buffer);
      goto abortusersearch;
    }
   }
@@ -652,7 +656,7 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
 
    if (!group && gid) *gid = pwd.pw_gid;
   }
-  free (buffer);
+  efree (buffer);
  }
 
  abortusersearch:
@@ -671,17 +675,17 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
     case ENFILE:
     case ERANGE:
      perror ("getgrnam_r");
-     free (buffer);
+     efree (buffer);
      return -2;
     default:
-     free (buffer);
+     efree (buffer);
      goto abortgroupsearch;
    }
   }
 
   if (grp.gr_name && strmatch (grp.gr_name, group))
    *gid = grp.gr_gid;
-  free (buffer);
+  efree (buffer);
  }
 
  abortgroupsearch:
@@ -771,7 +775,7 @@ char *apply_variables (const char *ostring, const char **env) {
  }
  ret[rpos] = 0;
 
- free (string);
+ efree (string);
 
  return ret;
 }
@@ -1001,10 +1005,10 @@ char **which (char *binary) {
          rv = (char **)setadd ((void **)rv, t, SET_TYPE_STRING);
        }
 
-       free (t);
+       efree (t);
       }
 
-      free (paths);
+      efree (paths);
      }
 
      break;
@@ -1049,7 +1053,7 @@ int unlink_recursive (const char *file, char self) {
 
      c++;
 
-     free (f);
+     efree (f);
     }
    }
 

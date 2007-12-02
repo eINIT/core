@@ -155,7 +155,7 @@ void linux_edev_ping_for_uevents(char *dir, char depth) {
       }
      }
 
-     free (f);
+     efree (f);
     }
    }
 
@@ -171,7 +171,7 @@ void linux_edev_ping_for_uevents(char *dir, char depth) {
   fclose (uev);
  }
 
- free (x);
+ efree (x);
 }
 
 void linux_edev_mkdir_p (char *path) {
@@ -190,14 +190,14 @@ void linux_edev_mkdir_p (char *path) {
 
     if (p) {
      mkdir (p, 0777);
-     free (p);
+     efree (p);
      p = NULL;
     }
    }
   }
 
   if (cur)
-   free (cur);
+   efree (cur);
  }
 }
 
@@ -281,10 +281,10 @@ void linux_edev_hotplug_handle (char **v) {
         args = (char **)setadd ((void **)args, "VENDOR", SET_TYPE_STRING);
         args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
 
-        free (data);
+        efree (data);
        }
 
-       free (tn);
+       efree (tn);
       }
 
       tn = joinpath(tmpsysdev, "device");
@@ -293,10 +293,10 @@ void linux_edev_hotplug_handle (char **v) {
         args = (char **)setadd ((void **)args, "DEVICE", SET_TYPE_STRING);
         args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
 
-        free (data);
+        efree (data);
        }
 
-       free (tn);
+       efree (tn);
       }
 
       tn = joinpath(tmpsysdev, "class");
@@ -305,13 +305,13 @@ void linux_edev_hotplug_handle (char **v) {
         args = (char **)setadd ((void **)args, "CLASS", SET_TYPE_STRING);
         args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
 
-        free (data);
+        efree (data);
        }
 
-       free (tn);
+       efree (tn);
       }
 
-      free (tmpsysdev);
+      efree (tmpsysdev);
      }
 
      if(strmatch (subsys, "block")) {
@@ -330,13 +330,13 @@ void linux_edev_hotplug_handle (char **v) {
       args = linux_edev_get_cdrom_capabilities(args, dummyblock);
       args = linux_edev_get_ata_identity(args, dummyblock);
 
-      free (dummyblock);
+      efree (dummyblock);
 
 #if 0
       char *gnb = set2str (',', (const char **)args);
       fprintf (stderr, " ** args: %s\n", gnb);
 // fflush (stderr);
-      free (gnb);
+      efree (gnb);
 #endif
      }
 
@@ -383,7 +383,7 @@ void linux_edev_hotplug_handle (char **v) {
             if (regcomp (reg, linux_edev_device_rules[i][k+1], REG_NOSUB | REG_EXTENDED) == 0) {
              linux_edev_compiled_regexes = streeadd (linux_edev_compiled_regexes, linux_edev_device_rules[i][k+1], reg, SET_NOALLOC, NULL);
             } else {
-             free (reg);
+             efree (reg);
              reg = NULL;
             }
            }
@@ -409,7 +409,7 @@ void linux_edev_hotplug_handle (char **v) {
           if (symlink) {
            symlink = linux_edev_mangle_filename (symlink, 1);
            symlinks = (char **)setadd ((void **)symlinks, symlink, SET_TYPE_STRING);
-           free (symlink);
+           efree (symlink);
           }
          } else if (!chmode && strmatch (linux_edev_device_rules[i][j], "chmod")) {
           chmode = parse_integer (linux_edev_device_rules[i][j+1]);
@@ -482,7 +482,7 @@ void linux_edev_hotplug_handle (char **v) {
     }
    }
 
-   if (device) free (device);
+   if (device) efree (device);
   }
 
   no_devicefile:
@@ -492,11 +492,11 @@ void linux_edev_hotplug_handle (char **v) {
 /* emit the event, waiting for it to be processed */
   event_emit (&ev, einit_event_flag_broadcast);
 
-  if (ev.string) free (ev.string);
+  if (ev.string) efree (ev.string);
 
   evstaticdestroy (ev);
 
-  if (args) free (args);
+  if (args) efree (args);
  }
 }
 
@@ -566,7 +566,7 @@ void *linux_edev_hotplug(void *ignored) {
      if (v) {
       linux_edev_hotplug_handle(v);
 
-      free (v);
+      efree (v);
       v = NULL;
      }
     }
@@ -590,7 +590,7 @@ void *linux_edev_hotplug(void *ignored) {
    if (v) {
     linux_edev_hotplug_handle(v);
 
-    free (v);
+    efree (v);
     v = NULL;
    }
   }
@@ -601,7 +601,7 @@ void *linux_edev_hotplug(void *ignored) {
  if (v) {
   linux_edev_hotplug_handle(v);
 
-  free (v);
+  efree (v);
   v = NULL;
  }
 
@@ -714,9 +714,9 @@ void linux_edev_retrieve_rules () {
  if (linux_edev_device_rules) {
   int i = 0;
   for (; linux_edev_device_rules[i]; i++) {
-   free (linux_edev_device_rules[i]);
+   efree (linux_edev_device_rules[i]);
   }
-  free (linux_edev_device_rules);
+  efree (linux_edev_device_rules);
  }
  linux_edev_device_rules = new_rules;
  emutex_unlock (&linux_edev_device_rules_mutex);
@@ -786,13 +786,13 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
   cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_RAM", SET_TYPE_STRING);
 
  cdattrs = set2str (':', (const char **)cdrom_attrs);
- free (cdrom_attrs);
+ efree (cdrom_attrs);
 
  args = (char **)setadd ((void **)args, "CDROM_ATTRIBUTES", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, cdattrs, SET_TYPE_STRING);
 
 // notice (5, "CDROM ATTRIBUTES: %s", cdattrs);
- free (cdattrs);
+ efree (cdattrs);
 
  return args;
 }
@@ -884,18 +884,18 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  args = (char **)setadd ((void **)args, rev, SET_TYPE_STRING);
 
  atatype = set2str (':', (const char **)ata_type);
- free (ata_type);
+ efree (ata_type);
 
  args = (char **)setadd ((void **)args, "ATA_TYPE", SET_TYPE_STRING);
  args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
 // notice (5, "ATA_TYPE: %s", atatype);
- free (atatype);
+ efree (atatype);
 
 #if 0
  atatype = set2str (',', (const char **)args);
  fprintf (stderr, " ** args: %s\n", atatype);
 // fflush (stderr);
- free (atatype);
+ efree (atatype);
 #endif
 
  return args;
@@ -920,8 +920,8 @@ char *linux_edev_mangle_filename (char *filename, char do_free) {
 /* see if we can stat the file... if we can, it exists, and lstat returns 0, and we increased the num by one for the next run */
   } while (!lstat (new_filename, &st));
 
-  if (do_free) free (filename);
-  free (temp_environment);
+  if (do_free) efree (filename);
+  efree (temp_environment);
 
   return (new_filename);
  } else

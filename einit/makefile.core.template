@@ -12,4 +12,7 @@ einit-core: $(objects) module-configuration.o
 einit-monitor: einit-monitor.o
 	$(CLD) einit-monitor.o -o einit-monitor
 
+#einit-monitor: einit-monitor.o
+#	$(CLD) einit-monitor.o -o einit-monitor
+
 test:

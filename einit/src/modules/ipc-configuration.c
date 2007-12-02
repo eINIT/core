@@ -112,7 +112,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
     if (x) {
      otree = cfg_filter (x, 0);
 
-     free (x);
+     efree (x);
     }
    } else {
     otree = hconfiguration;
@@ -195,7 +195,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
        newnode.arbattrs = attrs;
        match = 1;
 
-       free (tmpadup);
+       efree (tmpadup);
 
        if (strmatch ("s", subattr)) {
         newnode.svalue = attrs[ind+1];
@@ -220,7 +220,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 
    cfg_addnode (&newnode);
 
-   free (t);
+   efree (t);
   } else if (strmatch (ev->argv[0], "save") && strmatch (ev->argv[1], "configuration")) {
    struct stree *tmptree = cfg_filter (".*", einit_node_modified);
    char *buffer = NULL;

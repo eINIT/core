@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
  
  if ((res = einit_ipc_request(c))) {
   puts (res);
-  free (res);
+  efree (res);
  }
 
  return ret;

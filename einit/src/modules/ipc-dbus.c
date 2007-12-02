@@ -409,7 +409,7 @@ char *einit_dbus_ipc_request (char *command) {
 
      returnvalue = data;
     } else {
-     free (data);
+     efree (data);
      data = NULL;
     }
    }
@@ -440,9 +440,9 @@ void *einit_dbus_ipc_spawn(DBusMessage *message) {
    reply = dbus_message_new_method_return(message);
 
    dbus_message_iter_init_append(reply, &args);
-   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return NULL; }
+   if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { efree (returnvalue); return NULL; }
 
-   free (returnvalue);
+   efree (returnvalue);
 
    emutex_lock (&einit_dbus_sequence_mutex);
    einit_dbus_sequence++;
@@ -492,9 +492,9 @@ void *einit_dbus_ipc_spawn_safe(DBusMessage *message) {
   returnvalue = einit_dbus_ipc_request ((char*)command);
 
   dbus_message_iter_init_append(reply, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { free (returnvalue); return NULL; }
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &returnvalue)) { efree (returnvalue); return NULL; }
 
-  free (returnvalue);
+  efree (returnvalue);
 
   emutex_lock (&einit_dbus_sequence_mutex);
   einit_dbus_sequence++;

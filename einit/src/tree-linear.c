@@ -107,8 +107,8 @@ struct stree *streedel (struct stree *subject) {
  if (cur == subject) {
   be = cur->next;
   *(subject->lbase) = be;
-  if (cur->luggage) free (cur->luggage);
-  free (cur);
+  if (cur->luggage) efree (cur->luggage);
+  efree (cur);
 
   return be;
  }
@@ -118,8 +118,8 @@ struct stree *streedel (struct stree *subject) {
 
  if (cur && (cur->next == subject)) {
   cur->next = subject->next;
-  if (subject->luggage) free (subject->luggage);
-  free (subject);
+  if (subject->luggage) efree (subject->luggage);
+  efree (subject);
  }
 
  return be;
@@ -151,9 +151,9 @@ void streefree (struct stree *stree) {
  while (c) {
   struct stree *d = c;
   c = c->next;
-  if (d->luggage) free (d->luggage);
-  free (d);
+  if (d->luggage) efree (d->luggage);
+  efree (d);
  }
 
- free (base);
+ efree (base);
 }

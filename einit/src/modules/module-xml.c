@@ -144,7 +144,7 @@ char module_xml_v2_module_have_script_action (char *name, char *action) {
 
     rv = inset ((const void **)actions, action, SET_TYPE_STRING);
 
-    free (actions);
+    efree (actions);
     return rv;
    }
   }
@@ -175,21 +175,21 @@ char module_xml_v2_check_files (char *name) {
    for (; files[i]; i++) {
     if (files[i][0] == '/') {
      if (stat (files[i], &st)) {
-      free (files);
+      efree (files);
       return 0;
      }
     } else {
      char **w = which (files[i]);
      if (!w) {
-      free (files);
+      efree (files);
       return 0;
      } else {
-      free (w);
+      efree (w);
      }
     }
    }
 
-   free (files);
+   efree (files);
   }
  }
 
@@ -232,7 +232,7 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
     returnvalue = pexec (code, (const char **)split_variables, 0, 0, user, group, myenvironment, status);
 
-    free (split_variables);
+    efree (split_variables);
    } else
     returnvalue = pexec (code, NULL, 0, 0, user, group, myenvironment, status);
   } else
@@ -278,18 +278,18 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
     returnvalue = pexec (ncommand, (const char **)variables, 0, 0, user, group, myenvironment, status);
 
-    free (ncommand);
+    efree (ncommand);
 
-    free (scriptpath);
+    efree (scriptpath);
    }
 
-   if (variables) free (variables);
-   if (group) free (group);
-   if (user) free (user);
+   if (variables) efree (variables);
+   if (group) efree (group);
+   if (user) efree (user);
   }
  }
 
- if (myenvironment) free (myenvironment);
+ if (myenvironment) efree (myenvironment);
 
  return returnvalue;
 }
@@ -310,13 +310,13 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->command) free (dx->command);
+    if (dx->command) efree (dx->command);
     dx->command = estrdup(node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "user")) {
-    if (dx->user) free (dx->user);
+    if (dx->user) efree (dx->user);
     dx->user = estrdup(node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "group")) {
-    if (dx->group) free (dx->group);
+    if (dx->group) efree (dx->group);
     dx->group = estrdup (node->arbattrs[i+1]);
    }
   }
@@ -327,7 +327,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->prepare) free (dx->prepare);
+    if (dx->prepare) efree (dx->prepare);
     dx->prepare = estrdup(node->arbattrs[i+1]);
    }
   }
@@ -338,7 +338,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->cleanup) free (dx->cleanup);
+    if (dx->cleanup) efree (dx->cleanup);
     dx->cleanup = estrdup(node->arbattrs[i+1]);
    }
   }
@@ -349,7 +349,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->is_up) free (dx->is_up);
+    if (dx->is_up) efree (dx->is_up);
     dx->is_up = estrdup(node->arbattrs[i+1]);
    }
   }
@@ -360,7 +360,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->is_down) free (dx->is_down);
+    if (dx->is_down) efree (dx->is_down);
     dx->is_down = estrdup(node->arbattrs[i+1]);
    }
   }
@@ -371,17 +371,17 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
  }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "pidfile")) && node->svalue) {
-  if (dx->pidfile) free (dx->pidfile);
+  if (dx->pidfile) efree (dx->pidfile);
   dx->pidfile = estrdup (node->svalue);
  }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "variables")) && node->svalue) {
-  if (dx->variables) free (dx->variables);
+  if (dx->variables) efree (dx->variables);
   dx->variables = str2set (':', node->svalue);
  }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "need-files")) && node->svalue) {
-  if (dx->need_files) free (dx->need_files);
+  if (dx->need_files) efree (dx->need_files);
   dx->need_files = str2set (':', node->svalue);
  }
 
@@ -389,7 +389,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
   int i = 0;
 
   if (dx->environment) {
-   free (dx->environment);
+   efree (dx->environment);
    dx->environment = NULL;
   }
 
@@ -403,10 +403,10 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "file")) {
-    if (dx->script) free (dx->script);
+    if (dx->script) efree (dx->script);
     dx->script = estrdup (node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "actions")) {
-    if (dx->script_actions) free (dx->script_actions);
+    if (dx->script_actions) efree (dx->script_actions);
     dx->script_actions = str2set (':', node->arbattrs[i+1]);
    }
   }
@@ -421,7 +421,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
     dx->options |= daemon_model_forking;
   }
 
-  free (opt);
+  efree (opt);
  }
 
  return dx;
@@ -506,11 +506,11 @@ char **module_xml_v2_add_fs (char **xt, char *s) {
     xt = (char **)setadd ((void **)xt, (void *)comb, SET_TYPE_STRING);
    }
 
-   free (comb);
+   efree (comb);
   }
 
   if (tmp) {
-   free (tmp);
+   efree (tmp);
   }
  }
 
@@ -531,10 +531,10 @@ char *module_xml_v2_generate_defer_fs (char **tmpxt) {
 
  if (tmpx) {
   esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
-  free (tmpx);
+  efree (tmpx);
  }
 
- free (tmpxt);
+ efree (tmpxt);
 
  return tmp;
 }
@@ -593,7 +593,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
        }
       }
 
-      free (sx);
+      efree (sx);
      }
 
      if (fs) {
@@ -602,7 +602,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
       if (a) {
        after = (char **)setadd ((void **)after, a, SET_TYPE_STRING);
 
-       free (a);
+       efree (a);
       }
      }
 
@@ -640,7 +640,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
          new_sm->mode |= einit_feedback_job;
        }
 
-       free (opt);
+       efree (opt);
       }
 
       mod_add (NULL, new_sm);
@@ -682,12 +682,12 @@ void module_xml_v2_do_preload(char **files) {
        dlclose (dh);
       }
      }
-     free (w);
+     efree (w);
     }
    }
   }
 
-  free (files);
+  efree (files);
  }
 }
 
@@ -756,7 +756,7 @@ void module_xml_v2_auto_enable (char *mode) {
      automod = (char **)setadd ((void **)automod, modules->key, SET_TYPE_STRING);
     }
 
-    free (sp);
+    efree (sp);
    }
   }
 
@@ -771,7 +771,7 @@ void module_xml_v2_auto_enable (char *mode) {
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
   evstaticdestroy(eml);
 
-  free (automod);
+  efree (automod);
  }
 }
 

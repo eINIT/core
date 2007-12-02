@@ -143,7 +143,7 @@ int bootstrap_einit_configuration_xml_expat_resume (struct lmodule *this) {
   xml_configuration_files = rd->xml_configuration_files;
   xml_configuration_files_highest_mtime = rd->xml_configuration_files_highest_mtime;
   this->resumedata = NULL;
-  free (rd);
+  efree (rd);
  }
 
  return status_ok;
@@ -240,7 +240,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
      ((struct einit_xml_expat_user_data *)userData)->adds++;
     curmode = NULL;
     curmode = cfg_findnode (id, einit_node_mode, curmode);
-    free (newnode);
+    efree (newnode);
    }
   } else {
 /* parse the information presented in the element as a variable */
@@ -264,7 +264,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     }
    if (cfg_addnode (newnode) != -1)
     ((struct einit_xml_expat_user_data *)userData)->adds++;
-   free (newnode);
+   efree (newnode);
   }
 }
 
@@ -288,7 +288,7 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
    char *last = strrchr (((struct einit_xml_expat_user_data *)userData)->prefix, 0);
    if ((last-tlen) > ((struct einit_xml_expat_user_data *)userData)->prefix) *(last-tlen) = 0;
    else {
-    free (((struct einit_xml_expat_user_data *)userData)->prefix);
+    efree (((struct einit_xml_expat_user_data *)userData)->prefix);
     ((struct einit_xml_expat_user_data *)userData)->prefix = NULL;
    }
   }
@@ -351,7 +351,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      if (setcount ((const void **)tx) >= line) {
       notice (2, " * offending line:\n%s\n", tx[line-1]);
      }
-     free (tx);
+     efree (tx);
     }
 
     bitch (bitch_expat, 0, XML_ErrorString (XML_GetErrorCode (par)));
@@ -363,7 +363,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   } else {
    bitch (bitch_expat, 0, "XML Parser could not be created");
   }
-  free (data);
+  efree (data);
 
   xml_parser_auto_create_missing_directories =
     (node = cfg_getnode("core-settings-xml-parser-auto-create-missing-directories", NULL)) && node->flag;
@@ -394,7 +394,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       recursion--;
      }
 
-     free (files);
+     efree (files);
     }
 
     streedel (hnode);
@@ -411,8 +411,8 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
      einit_config_xml_expat_parse_configuration_file (includefile);
      recursion--;
-     free (includefile);
-     if (node->id) free (node->id);
+     efree (includefile);
+     if (node->id) efree (node->id);
 //     streedel (hconfiguration, hnode);
      streedel (hnode);
      goto rescan_node;
@@ -420,18 +420,18 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
    }
   }
 
-  if (expatuserdata.prefix) free (expatuserdata.prefix);
+  if (expatuserdata.prefix) efree (expatuserdata.prefix);
 
   return hconfiguration != NULL;
  } else if (errno) {
   notice (3, "could not read file \"%s\": %s\n", configfile, strerror (errno));
 
-  if (expatuserdata.prefix) free (expatuserdata.prefix);
+  if (expatuserdata.prefix) efree (expatuserdata.prefix);
 
   return errno;
  }
 
- if (expatuserdata.prefix) free (expatuserdata.prefix);
+ if (expatuserdata.prefix) efree (expatuserdata.prefix);
 
  return hconfiguration != NULL;
 }
@@ -482,8 +482,8 @@ void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
 
    evstaticdestroy (feedback_ev);
 
-   free (myenvironment);
-   free (xmlfiles);
+   efree (myenvironment);
+   efree (xmlfiles);
   }
  }
 
@@ -521,8 +521,8 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
 
      xattributes = strcat (xattributes, ytmp);
 
-     free (ytmp);
-     free (value);
+     efree (ytmp);
+     efree (value);
     }
    }
   }
@@ -533,7 +533,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
     xtmp = emalloc (rxlen);
     esprintf (xtmp, rxlen, " <%s %s/>\n", cur->key, xattributes);
    }
-   free (xattributes);
+   efree (xattributes);
   }
 
   if (xtmp) {
@@ -545,7 +545,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
 
    retval = strcat (retval, xtmp);
 
-   free (xtmp);
+   efree (xtmp);
   }
 
   cur = streenext(cur);

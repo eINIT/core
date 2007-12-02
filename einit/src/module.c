@@ -113,7 +113,7 @@ void mod_freedesc (struct lmodule *m) {
 // if (m->sohandle)
 //  dlclose (m->sohandle);
 
-// free (m);
+// efree (m);
 }
 
 int mod_freemodules ( void ) {
@@ -376,7 +376,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    }
   }
 
-  free (fb->stringset);
+  efree (fb->stringset);
   evdestroy (fb);
 
   service_usage_query(service_update, module, NULL);
@@ -542,7 +542,7 @@ uint16_t service_usage_query_group (enum einit_usage_query task, const struct lm
    struct service_usage_item *citem = (struct service_usage_item *)ha->value;
 
    if (citem) {
-    free (citem->provider);
+    efree (citem->provider);
     citem->provider = (struct lmodule **)setdup ((const void **)module, SET_NOALLOC);
    }
   }

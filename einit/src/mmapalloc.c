@@ -118,7 +118,7 @@ void *mmap_calloc(size_t c, size_t s) {
 
 void *mmap_realloc(void *p, size_t s) {
  if (!p) return mmap_malloc (s);
- if (!s) { free (p); return NULL; }
+ if (!s) { mmap_free (p); return NULL; }
 
  void *np = NULL;
  size_t oldsize = size2pages(((struct page_header *)(p-sizeof(struct page_header)))->size);

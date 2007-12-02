@@ -136,7 +136,7 @@ void linux_static_dev_hotplug_handle (char **v) {
   event_emit (&ev, einit_event_flag_broadcast);
   evstaticdestroy (ev);
 
-  if (args) free (args);
+  if (args) efree (args);
  }
 }
 
@@ -206,7 +206,7 @@ void *linux_static_dev_hotplug(void *ignored) {
      if (v) {
       linux_static_dev_hotplug_handle(v);
 
-      free (v);
+      efree (v);
       v = NULL;
      }
     }
@@ -227,7 +227,7 @@ void *linux_static_dev_hotplug(void *ignored) {
    if (v) {
     linux_static_dev_hotplug_handle(v);
 
-    free (v);
+    efree (v);
     v = NULL;
    }
   }
@@ -238,7 +238,7 @@ void *linux_static_dev_hotplug(void *ignored) {
  if (v) {
   linux_static_dev_hotplug_handle(v);
 
-  free (v);
+  efree (v);
   v = NULL;
  }
 

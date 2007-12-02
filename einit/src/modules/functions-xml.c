@@ -174,7 +174,7 @@ int einit_functions_xml_generic_wrapper (char *name, ...) {
 
     call_environment = straddtoenviron (call_environment, argname, argvalue);
 
-    free (argdefpair);
+    efree (argdefpair);
    }
   }
 
@@ -188,7 +188,7 @@ int einit_functions_xml_generic_wrapper (char *name, ...) {
    notice (1, "calling function with env=(%s)", set2str (' ', call_environment));
   }*/
 
-  free (sprototype);
+  efree (sprototype);
  } else {
   notice (1, "invalid function called: %s", name);
  }

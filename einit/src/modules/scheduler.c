@@ -411,7 +411,7 @@ void sched_ipc_event_handler (struct einit_event *ev) {
       _exit (einit_exit_status_last_rites_halt);
      }
 
-     if (shutdownfunctionsubnames) free (shutdownfunctionsubnames);
+     if (shutdownfunctionsubnames) efree (shutdownfunctionsubnames);
 
 // if we still live here, something's twocked
      eputs ("scheduler: failed, exiting\n", stderr);
@@ -486,14 +486,14 @@ void *sched_pidthread_processor(FILE *pipe) {
        evstaticdestroy(ev);
       }
 
-      free (command);
+      efree (command);
      } else {
       char *noticebuffer = set2str ('\n', (const char **)message);
 
-      free (noticebuffer);
+      efree (noticebuffer);
      }
 
-     free (message);
+     efree (message);
      message = NULL;
     }
    } else { // continue constructing
@@ -577,7 +577,7 @@ void *sched_run_sigchild (void *p) {
 //    fprintf (stderr, "reaped thread...\n");
 
     check = 1;
-    free (t);
+    efree (t);
    }
   }
 
@@ -641,14 +641,14 @@ int scheduler_cleanup () {
   curstack.ss_size = SIGSTKSZ;
   curstack.ss_flags = SS_DISABLE;
   sigaltstack (&curstack, NULL);
-//  free (curstack.ss_sp);
+//  efree (curstack.ss_sp);
  } else {
   notice (1, "schedule: no alternate signal stack or alternate stack in use; not cleaning up");
  }
 
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
  sem_destroy (sembck);
-// free (sembck);
+// efree (sembck);
 #elif defined(DARWIN)
  sem_close (sembck);
 #else
@@ -681,7 +681,7 @@ int einit_scheduler_configure (struct lmodule *tm) {
 
  signal_semaphore = ecalloc (1, sizeof (sem_t));
  if (sem_init (signal_semaphore, 0, 0) == -1) {
-  free (signal_semaphore);
+  efree (signal_semaphore);
   esprintf (tmp, BUFFERSIZE, "/einit-sigchild-semaphore-%i", getpid());
 
   if ((signal_semaphore = sem_open (tmp, O_CREAT, O_RDWR, 0)) == SEM_FAILED) {
