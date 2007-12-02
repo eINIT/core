@@ -1,7 +1,0 @@
-<einit prefix="services-virtual-network">
- <ifctl id="vconfig"
-  enable="iface=$(echo $a | sed &quot;s/.${b}$//&quot;);
-	  vconfig add ${iface} ${configuration_network_interfaces_${interface}_vlan}"
-  disable="vconfig rem ${interface}"
-  variables="configuration-network-interfaces-${interface}/.*" />
-</einit>

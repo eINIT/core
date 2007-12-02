@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- point his to your sysctl.conf -->
- <sysctl config="/etc/sysctl.conf" />
-</einit>

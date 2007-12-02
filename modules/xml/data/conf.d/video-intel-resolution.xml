@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- 915resolution options -->
-
- <video-intel-resolution x="1280" y="1024" bpp="32" mode="5c" />
-</einit>

@@ -1,7 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- Udev options -->
- <!-- someone should add a comment regarding what these actually _do_ ... -->
-
- <udev device-tarball="no" coldplug="no" />
-</einit>

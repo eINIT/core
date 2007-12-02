@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- set your XInetD options here. setting fork/detach or pidfile options will break module -->
- <xinetd options="-reuse -stayalive" />
-</einit>

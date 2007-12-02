@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
-  <!-- For ip6tables use the ip6tables module, the configuration is done from here-->
-	<iptables save_on_stop="yes"
-	rules_file="/var/lib/iptables/rules_save"
-    	options="-c" />
-</einit>

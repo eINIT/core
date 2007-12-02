@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- ACPI Daemon options -->
-
- <acpid options="" />
-</einit>

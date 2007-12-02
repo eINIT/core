@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- configuration for the HTTP-Replicator service -->
- <http-replicator options="" pidfile="/var/run/http-replicator.pid" />
-</einit>

@@ -1,4 +1,0 @@
-modules: $(objects)
-
-install: install-auto
-

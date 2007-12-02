@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- put any SSH daemon options here. making SSHd fork/detach will break the module -->
- <sshd options="" />
-</einit>

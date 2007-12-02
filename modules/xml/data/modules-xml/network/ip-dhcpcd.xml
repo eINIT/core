@@ -1,6 +1,0 @@
-<einit prefix="services-virtual-network">
- <ip id="dhcpcd"
-  pid="/var/run/dhcpcd-${interface}.pid"
-  enable="echo &quot;Using 'dhcpcd' to manage ip addresses.&quot;; dhcpcd ${interface}"
-  disable="echo &quot;Disabling 'dhcpcd'.&quot;; dhcpcd -k ${interface}" />
-</einit>

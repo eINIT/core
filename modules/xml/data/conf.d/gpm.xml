@@ -1,7 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- GPM options -->
- <!-- keep in mind double-quotes in options will have to be changed to &quot; or single quotes -->
-
- <gpm device="/dev/input/mice" type="ps2" options="" />
-</einit>

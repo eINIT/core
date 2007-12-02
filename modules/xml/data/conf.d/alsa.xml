@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
- <!-- set your Alsa-Mixer state file here -->
- <alsa-mixer file="/etc/asound.state" />
- <!-- set this to 'yes' if you would like the script-based kern-alsa module loader to load oss emulation kernel modules -->
- <kern-alsa oss-emulation="no" />
-</einit>

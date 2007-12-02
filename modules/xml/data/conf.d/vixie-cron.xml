@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- set your Vixie-Cron options here. setting fork/detach options will break module -->
- <vixie-cron options="" />
-</einit>

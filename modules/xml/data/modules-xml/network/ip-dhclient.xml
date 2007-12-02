@@ -1,5 +1,0 @@
-<einit prefix="services-virtual-network">
- <ip id="dhclient"
-  enable="echo &quot;Using 'dhclient' to manage ip addresses.&quot;; dhclient ${interface}"
-  disable="echo &quot;Disabling 'dhclient' to manage ip addresses.&quot;; /bin/true" />
-</einit>

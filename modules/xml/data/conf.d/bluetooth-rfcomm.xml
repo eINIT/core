@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- Bluetooth RFCOMM options-->
-
- <bluetooth-rfcomm file="/etc/bluetooth/rfcomm.conf" />
-</einit>

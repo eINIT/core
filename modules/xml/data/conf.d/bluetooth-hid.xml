@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- Bluetooth HID Daemon options-->
-
- <bluetooth-hid options="" />
-</einit>

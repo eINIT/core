@@ -1,5 +1,0 @@
-<einit prefix="configuration-services">
- <!-- put any extra metalog options here, like console-level or configfile -->
- <!-- note that using pidfile or daemonize will break the module -->
- <metalog options="" />
-</einit>

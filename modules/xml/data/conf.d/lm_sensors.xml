@@ -1,5 +1,0 @@
-<einit prefix="configuration-services">
- <!-- use this file to set lm_sensors options, like custom config files -->
- <sensors options="" />
- <sensord options="" />
-</einit>

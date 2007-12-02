@@ -1,5 +1,0 @@
-<einit prefix="services-virtual-network">
- <ip id="pump"
-  enable="echo -n &quot;feedback|notice|Using 'pump' to manage ip addresses.&quot;; pump -i ${interface}"
-  disable="echo -n &quot;feedback|notice|Disabling 'pump'.&quot;; pump -r -i ${interface}" />
-</einit>

@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- set your mysqld defaults file (full path ofc) here -->
- <mysqld defaults="/etc/mysql/my.cnf" />
-</einit>

@@ -1,9 +1,0 @@
-export INCLUDEPATH="/usr/local/include"
-
-export MODULES_GENERIC=""
-
-export ALLMODULES="${MODULES_GENERIC}"
-
-export EXTERNALMODULES="${MODULES_GENERIC}"
-
-export BUILDCOMPONENTS=""

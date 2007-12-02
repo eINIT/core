@@ -1,4 +1,0 @@
-<einit prefix="configuration-services">
- <!-- set your urandom seed here -->
- <urandom seed="/var/run/random-seed" />
-</einit>

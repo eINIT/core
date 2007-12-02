@@ -1,7 +1,0 @@
-<einit prefix="configuration-services">
- <!-- use this file to set nmbd, smbd and winbind options, like custom config-files -->
- <!-- using deamoniziation options will break the module, as will pidfile options -->
- <smbd options="" />
- <nmbd options="" />
- <winbindd options="" />
-</einit>

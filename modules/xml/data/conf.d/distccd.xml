@@ -1,6 +1,0 @@
-<einit prefix="configuration-services">
-
- <!-- DistCCd configuration -->
-
- <distccd listen="0.0.0.0" allow="192.168.0.0/24" port="3632" nice="15" />
-</einit>
