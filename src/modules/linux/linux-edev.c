@@ -663,7 +663,9 @@ int linux_edev_run() {
    fclose (he);
   }
 
-  linux_edev_ping_for_uevents("/sys", 6);
+//  linux_edev_ping_for_uevents("/sys", 6);
+  linux_edev_ping_for_uevents("/sys/class", 4);
+  linux_edev_ping_for_uevents("/sys/block", 3);
 
   if (coremode & einit_mode_sandbox) {
    while (1) {
