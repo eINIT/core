@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <edev>
+
+   <devicefile-rule SUBSYSTEM="^(ppp)$" 
+		    chmod="0600"
+		    devicefile="/dev/${DEVPATH_BASE}" />
+
+  </edev>
+ </configuration>
+</einit>
