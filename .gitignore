@@ -30,7 +30,7 @@ config.mk
 config.sh
 config.xml
 
-einit/data/einit.xml.n
+data/einit.xml.n
 
 build
 einit/sandbox
