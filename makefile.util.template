@@ -23,6 +23,12 @@ set.o: set-lowmem.o
 # set.o: set-prebuffer.o
 # 	cp set-prebuffer.o set.o
 
+itree.o: itree-trinary-splay.o
+	cp itree-trinary-splay.o itree.o
+
+tree.o: tree-linear.o
+	cp tree-linear.o tree.o
+
 einit-control: einit-control.o bitch.o utility.o $(asmobjects) libeinit.${SO}
 	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC) -L. -leinit
 
@@ -40,16 +46,16 @@ dbus: libeinit-ipc-dbus.so
 
 libeinit.${SO}: libeinit.${SO}.1.0.0
 
-libeinit.${SO}.1.0.0: libeinit.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects)
-	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit.so.1 libeinit.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects) -o libeinit.${SO}.1.0.0 ${EXPAT_LIBS} ${LPA} ${LDL}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects) -o libeinit.${SO}.1.0.0 ${EXPAT_LIBS} ${LPA} ${LDL}; fi
+libeinit.${SO}.1.0.0: libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
+	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit.so.1 libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit.${SO}.1.0.0 ${EXPAT_LIBS} ${LPA} ${LDL}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit.${SO}.1.0.0 ${EXPAT_LIBS} ${LPA} ${LDL}; fi
 	ln -fs libeinit.${SO}.1.0.0 libeinit.${SO}.1
 	ln -fs libeinit.${SO}.1 libeinit.${SO}
 
-libeinit-ipc-dbus.so: libeinit-ipc-dbus.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects)
-	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-dbus.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects) -o libeinit-ipc-dbus.so $(DBUS_LIBS) ${LPA}
+libeinit-ipc-dbus.so: libeinit-ipc-dbus.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
+	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-dbus.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit-ipc-dbus.so $(DBUS_LIBS) ${LPA}
 
-libeinit-ipc-socket.so: libeinit-ipc-socket.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects)
-	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-socket.o utility.o bitch.o tree-linear.o set.o set-common.o $(asmobjects) -o libeinit-ipc-socket.so ${LPA}
+libeinit-ipc-socket.so: libeinit-ipc-socket.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
+	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-socket.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit-ipc-socket.so ${LPA}
 
 libeinit++.${SO}: libeinit++.${SO}.1.0.0
 

@@ -23,13 +23,15 @@ export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
 export USE_SET_CODE="set-lowmem" # there's also set-prebuffer...
+export USE_ITREE_CODE="itree-trinary-splay"
+export USE_TREE_CODE="tree-linear"
 
-export COREOBJECTS="einit-core module bitch utility event tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor set-common"
-export UTILOBJECTS="einit-control bitch utility tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper set-common"
+export COREOBJECTS="einit-core module bitch utility event ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
+export UTILOBJECTS="einit-control bitch utility ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
 
 export UTILOBJECTS_TESTS="test-core-apply-variables"
 
 export BUILDCOMPONENTS="core util modules headers"
 
 export HEADERSOURCES="src/include/einit src/include/einit-modules"
-export HEADERPREPARE="sed -e s/einit-// -e s/module-logic-v3/module-logic/ -e s/tree-linear/tree/"
+export HEADERPREPARE="sed -e s/einit-// -e s/module-logic-v3/module-logic/ -e s/tree-linear/tree/ -e s/itree-trinary-splay/itree/"

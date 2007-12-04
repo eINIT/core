@@ -55,11 +55,7 @@ extern "C" {
 #include <inttypes.h>
 #include <einit/event.h>
 #include <sys/types.h>
-
-enum tree_search_base {
- tree_find_first = 0x1,
- tree_find_next  = 0x2
-};
+#include <einit/itree.h>
 
 /*!\ingroup trees
  * \brief Hash-Element

@@ -293,7 +293,6 @@ Options:
  --use-posix-regex      use posix.2 regular expressions
  --internal-modules     the modules to compile-in
  --external-modules     the modules to compile as loadable .so-files
- --tree-type=           define the type of tree-structures einit should use.
  --debug                will #define DEBUG.
  --static               build with static libs
  --help                 display this text and exit.
