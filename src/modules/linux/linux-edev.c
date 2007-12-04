@@ -257,6 +257,11 @@ void linux_edev_hotplug_handle (char **v) {
     }
    }
 
+   if (drivers) {
+    args = (char **)setadd ((void **)args, "DRIVERS", SET_TYPE_STRING);
+    args = (char **)setadd ((void **)args, drivers, SET_TYPE_STRING);
+   }
+
    if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
     char *base = strrchr (device, '/');
