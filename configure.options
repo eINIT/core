@@ -22,10 +22,10 @@ export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 
 export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
-export USE_SET_CODE="set-lowmem"
+export USE_SET_CODE="set-lowmem" # there's also set-prebuffer...
 
-export COREOBJECTS="einit-core module bitch utility event tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor"
-export UTILOBJECTS="einit-control bitch utility tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper"
+export COREOBJECTS="einit-core module bitch utility event tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor set-common"
+export UTILOBJECTS="einit-control bitch utility tree-linear ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper set-common"
 
 export UTILOBJECTS_TESTS="test-core-apply-variables"
 
