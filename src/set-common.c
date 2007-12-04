@@ -132,9 +132,6 @@ void **setdel (void **set, const void *item) {
    x++;
   }
   y++;
-/*  else {
-   set = set+1;
-  }*/
  }
 
  if (!x) {
@@ -150,7 +147,7 @@ void **setdel (void **set, const void *item) {
 int setcount (const void **set) {
  int i = 0;
  if (!set) return 0;
- if (!set[0]) return 0;
+
  while (set[i])
   i++;
 
@@ -294,9 +291,6 @@ char **strsetdel (char **set, char *item) {
    x++;
   }
   y++;
-/*  else {
-   set = set+1;
-  }*/
  }
 
  if (!x) {
@@ -323,9 +317,6 @@ char **strsetdeldupes (char **set) {
    x++;
   }
   y++;
-/*  else {
-   set = set+1;
-  }*/
  }
 
  if (!x) {
