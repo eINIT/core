@@ -24,11 +24,11 @@ TAGS
 
 # Generated include files
 #
-einit/build
-einit/build/*
-einit/config.mk
-einit/config.sh
-einit/config.xml
+build
+build/*
+config.mk
+config.sh
+config.xml
 
 einit/data/einit.xml.n
 

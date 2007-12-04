@@ -239,6 +239,7 @@ void linux_edev_hotplug_handle (char **v) {
    char have_id = 0;
    char blockdevice = 0;
    char *subsys = NULL;
+   char *drivers = NULL;
 
    for (i = 0; args[i]; i+=2) {
     if (strmatch (args[i], "MAJOR")) {
@@ -251,6 +252,8 @@ void linux_edev_hotplug_handle (char **v) {
      device = estrdup(args[i+1]);
     } else if (strmatch (args[i], "SUBSYSTEM")) {
      subsys = estrdup(args[i+1]);
+    } else if (strmatch (args[i], "DRIVERS")) {
+     drivers = estrdup(args[i+1]);
     }
    }
 
