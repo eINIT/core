@@ -73,12 +73,14 @@ void **setadd (void **set, const void *item, int32_t esize) {
   if (set) {
    do { elements++; } while (set[elements]);
 
+#if 0
 /* if we have SET_POINTERS*n new elements, that means we had SET_POINTERS-1 + the NULL before,
    so we need to reindex */
    if ((elements % SET_POINTERS) == 0)
     need_reindex = 1;
+#endif
 
-   elements++;
+   elements+=2;
 
    dt = div (elements +1, SET_POINTERS);
    indexsize = (dt.quot + ((dt.rem == 0) ? 0 : 1)) * SET_POINTERS * sizeof(void *);
@@ -104,7 +106,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
      size = (db->real_size - oldindexsize + indexsize) + strlen  (item) + 1;
      break;
     default:
-     size = indexsize + elements * esize;
+     size = indexsize + (elements+1) * esize;
      break;
    }
 
@@ -120,16 +122,16 @@ void **setadd (void **set, const void *item, int32_t esize) {
      for (i = 0; set[i]; i++) {
 //      fprintf (stderr, "count %s\n", set[i]);
 //      fflush (stderr);
-	  size_t l = strlen  (set[i]) + 1;
+      size_t l = strlen  (set[i]) + 1;
 
       size += l;
       oldsize += l;
-	 }
+     }
 
      size += strlen  (item) + 1;
      break;
     default:
-     oldsize += (elements -1) * esize;
+     oldsize += (elements-1) * esize;
      size += elements * esize;
      break;
    }
@@ -137,7 +139,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
 
    need_reindex = (oldindexsize != indexsize);
   } else {
-   elements = 1;
+   elements = 2;
    oldsize = 0;
    indexsize = (SET_POINTERS * sizeof (void *)) + sizeof (struct chunk_data_block);
 //   fprintf (stderr, "index blocks: 1 (%i)\n", indexsize);
@@ -157,7 +159,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
 
 /* at this point we got the minimum sizes we need... so we need to make that a multiple of SET_CHUNKSIZE*/
   dt = div (size, SET_CHUNKSIZE);
-//  size = (dt.quot + ((dt.rem == 0) ? 0 : 1)) * SET_CHUNKSIZE;
+  size = (dt.quot + ((dt.rem == 0) ? 0 : 1)) * SET_CHUNKSIZE;
 //  fprintf (stderr, "chunks: %i (%i)\n", (dt.quot + ((dt.rem == 0) ? 0 : 1)), size);
 
   dt = div (oldsize, SET_CHUNKSIZE);
@@ -168,7 +170,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
   if (need_reindex || (size != oldsize)) {
    newset = emalloc (size);
    memset (newset, 0, size);
-//   fprintf (stderr, "resize %i (block @%x)\n", size, newset);
+//   fprintf (stderr, "resize %i (block @%x, %i, %i)\n", size, newset, need_reindex, (size != oldsize));
 //   fflush (stderr);
 
    db = ((char *)newset) + indexsize - sizeof (struct chunk_data_block);
@@ -182,31 +184,32 @@ void **setadd (void **set, const void *item, int32_t esize) {
     switch (esize) {
      case SET_NOALLOC:
       for (i = 0; set[i]; i++) {
-	   newset[i] = set[i];
+       newset[i] = set[i];
       }
       break;
      case SET_TYPE_STRING:
       c = (uintptr_t)(((char *)newset) + indexsize);
       for (i = 0; set[i]; i++) {
-	   int l = strlen (set[i]) + 1;
+       int l = strlen (set[i]) + 1;
 
-	   newset[i] = (void *)c;
-	   memcpy (newset[i], set[i], l);
-	   c += l;
+       newset[i] = (void *)c;
+       memcpy (newset[i], set[i], l);
+       c += l;
        db->real_size += l;
-	  }
+      }
 
       break;
      default:
       for (i = 0; set[i]; i++) {
-	   newset[i] = ((char *)newset) + indexsize + (i * esize);
-	   memcpy (newset[i], set[i], esize);
+       newset[i] = ((char *)newset) + indexsize + (i * esize);
+       memcpy (newset[i], set[i], esize);
        db->real_size += esize;
-	  }
+      }
+      db->real_size += esize;
       break;
     }
 
-    free (set);
+    efree (set);
    }
 
    set = newset;
@@ -216,24 +219,28 @@ void **setadd (void **set, const void *item, int32_t esize) {
 
   switch (esize) {
    case SET_NOALLOC:
-    newset[elements -1] = (void *)item;
+//    newset[elements -1] = (void *)item;
+    for (i = 0; newset[i]; i++);
+
+    newset[i] = item;
     break;
    case SET_TYPE_STRING:
     c = (uintptr_t)(((char *)newset) + indexsize);
     for (i = 0; newset[i]; i++) {
-	 size_t l = strlen (newset[i]) + 1;
+     size_t l = strlen (newset[i]) + 1;
      c += l;
     }
 
     newset[i] = (void *)c;
-	{
-	 size_t l = strlen (item) + 1;
+    {
+     size_t l = strlen (item) + 1;
      memcpy (newset[i], item, l);
      db->real_size += l;
-	}
+    }
     break;
    default:
-    i = elements - 1;
+    for (i = 0; newset[i]; i++);
+//    i = elements - 1;
     newset[i] = ((char *)newset) + indexsize + (i * esize);
     memcpy (newset[i], item, esize);
     db->real_size += esize;
