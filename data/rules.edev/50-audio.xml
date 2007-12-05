@@ -7,6 +7,18 @@
                     group="audio"
                     devicefile="/dev/snd/${DEVPATH_BASE}" />
 
+   <devicefile-rule DEVPATH_BASE="^(mixer0)$"
+	            SUBSYSTEM="^(snd|sound)$"
+                    symlink="/dev/mixer" />
+
+   <devicefile-rule DEVPATH_BASE="^(dsp0)$"
+	            SUBSYSTEM="^(snd|sound)$"
+                    symlink="/dev/dsp" />
+
+   <devicefile-rule DEVPATH_BASE="^(audio0)$"
+	            SUBSYSTEM="^(snd|sound)$"
+                    symlink="/dev/audio" />
+
   </edev>
  </configuration>
 </einit>

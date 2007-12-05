@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <edev>
+
+   <devicefile-rule SOCKET="/org/kernel/udev/monitor" />
+
+  </edev>
+ </configuration>
+</einit>
+

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <edev>
+
+   <devicefile-rule DEVPATH_BASE="^ttyUSB[0-9]*$"
+                    PHYSDEVBUS="usb-serial"
+                    PHYSDEVDRIVER="ipaq"
+                    devicefile="/dev/ipaq${NUM+}" />
+
+
+  </edev>
+ </configuration>
+</einit>
+

@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _GNU_SOURCE 1
 #endif
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -59,6 +60,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit-modules/exec.h>
 
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 
@@ -114,6 +118,7 @@ struct stree *linux_edev_compiled_regexes = NULL;
 char ***linux_edev_device_rules = NULL;
 pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int **linux_edev_socket_relay(const char *sn, const char *dp, const char *a);
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
 char *linux_edev_mangle_filename (char *filename, char do_free);
@@ -202,7 +207,8 @@ void linux_edev_mkdir_p (char *path) {
 }
 
 void linux_edev_hotplug_handle (char **v) {
- if (v && v[0]) {
+ const char *a = v[0];
+ if (v && a) {
   int i = 0;
   char **args = NULL;
   struct einit_event ev = evstaticinit(einit_hotplug_generic);
@@ -236,12 +242,15 @@ void linux_edev_hotplug_handle (char **v) {
    char *device = NULL;
    unsigned char major = 0;
    unsigned char minor = 0;
-   char have_id = 0;
-   char blockdevice = 0;
+   char have_id, blockdevice, is_socket = 0;
    char *subsys = NULL;
+   const char *sn;
 
    for (i = 0; args[i]; i+=2) {
-    if (strmatch (args[i], "MAJOR")) {
+   	if (strmatch (args[i], "SOCKET")) {
+     is_socket = 1;
+     sn = estrdup(args[i+1]);
+    } else if (strmatch (args[i], "MAJOR")) {
      have_id = 1;
      major = parse_integer (args[i+1]);
     } else if (strmatch (args[i], "MINOR")) {
@@ -254,7 +263,9 @@ void linux_edev_hotplug_handle (char **v) {
     }
    }
 
-   if (have_id && device) {
+   if (is_socket) {
+   	linux_edev_socket_relay(sn,device,v[0]);
+   } else if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
     char *base = strrchr (device, '/');
     if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
@@ -801,27 +812,27 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
 
 static void set_str(char *to, const char *from, size_t count)
 {
-	size_t i, j, len;
-	len = strnlen(from, count);
-	while (len && isspace(from[len-1]))
-		len--;
-	i = 0;
-	while (isspace(from[i]) && (i < len))
-		i++;
-	j = 0;
-	while (i < len) {
-		if (isspace(from[i])) {
-			while (isspace(from[i]))
-				i++;
-			to[j++] = '_';
-		}
-		if (from[i] == '/') {
-			i++;
-			continue;
-		}
-		to[j++] = from[i++];
-	}
-	to[j] = '\0';
+ size_t i, j, len;
+ len = strnlen(from, count);
+ while (len && isspace(from[len-1]))
+  len--;
+  i = 0;
+ while (isspace(from[i]) && (i < len))
+  i++;
+  j = 0;
+ while (i < len) {
+  if (isspace(from[i])) {
+   while (isspace(from[i]))
+	i++;
+	to[j++] = '_';
+   }
+  if (from[i] == '/') {
+   i++;
+   continue;
+  }
+  to[j++] = from[i++];
+ }
+ to[j] = '\0';
 }
 
 char **linux_edev_get_ata_identity (char **args, char *devicefile) {
@@ -928,4 +939,35 @@ char *linux_edev_mangle_filename (char *filename, char do_free) {
   return (new_filename);
  } else
   return filename;
+}
+
+int **linux_edev_socket_relay(const char *sn, const char *dp, const char *a)
+{
+ char buffer[2048];
+ struct sockaddr_un s_addy;
+ socklen_t addy_len;
+ size_t pbuf = 0;
+ int i, s;
+ ssize_t c;
+ s = socket(AF_LOCAL, SOCK_DGRAM, 0);
+ memset(&s_addy, 0x00, sizeof(struct sockaddr_un));
+ s_addy.sun_family = AF_LOCAL;
+ strcpy(&s_addy.sun_path[1], sn);
+ addy_len = offsetof(struct sockaddr_un, sun_path) + strlen(s_addy.sun_path+1) + 1;
+ pbuf = snprintf(buffer, sizeof(buffer)-1, "%s@%s", a, dp);
+ pbuf++;
+ for (i = 0; environ[i] != NULL && pbuf < (sizeof(buffer)-1); i++) {
+  pbuf = strlcpy(&buffer[pbuf], environ[i], sizeof(buffer) - pbuf-1);
+  pbuf++;
+ }
+ if (pbuf > sizeof(buffer))
+  pbuf = sizeof(buffer);
+  c = sendto(s, &buffer, pbuf, 0, (struct sockaddr *)&s_addy, addy_len);
+ if (c < 0) {
+  return status_failed;
+ } else {
+  notice(5,"passed %zi bytes to socket '%s', ", c, sn);
+ }
+ close(s);
+ return status_ok; 
 }

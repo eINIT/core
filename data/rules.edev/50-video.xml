@@ -15,6 +15,44 @@
    <devicefile-rule DEVPATH_BASE="^fb0$"
                     symlink="/dev/fb" />
 
+   <devicefile-rule SUBSYSTEM="^dvb$"
+                    group="video" />
+
+   <devicefile-rule SUBSYSTEM="^video4linux$"
+                    DEVPATH_BASE="^video[0-9]*$"
+                    group="video"
+                    devicefile="/dev/v4l/video${NUM+}"
+		    symlink="/dev/video${NUM+}" />
+
+   <devicefile-rule SUBSYSTEM="^video4linux$"
+                    DEVPATH_BASE="^radio[0-9]*$"
+                    group="video"
+                    devicefile="/dev/v4l/radio${NUM+}"
+		    symlink="/dev/radio${NUM+}" />
+
+   <devicefile-rule SUBSYSTEM="^video4linux$"
+                    DEVPATH_BASE="^vbi[0-9]*$"
+                    group="video"
+                    devicefile="/dev/v4l/vbi${NUM+}"
+		    symlink="/dev/vbi${NUM+}" />
+
+   <devicefile-rule SUBSYSTEM="^video4linux$"
+                    DEVPATH_BASE="^vtx[0-9]*$"
+                    group="video"
+                    devicefile="/dev/v4l/vtx${NUM+}" />
+
+   <devicefile-rule DEVPATH_BASE="^(vbi0)$"
+                    SUBSYSTEM="^(video4linux)$"
+                    symlink="/dev/vbi" />
+
+   <devicefile-rule DEVPATH_BASE="^(radio0)$"
+                    SUBSYSTEM="^(video4linux)$"
+                    symlink="/dev/radio" />
+
+   <devicefile-rule DEVPATH_BASE="^(video0)$"
+                    SUBSYSTEM="^(video4linux)$"
+                    symlink="/dev/video" />
+
   </edev>
  </configuration>
 </einit>
