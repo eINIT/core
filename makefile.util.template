@@ -64,6 +64,8 @@ libeinit++.${SO}.1.0.0: libeinit.${SO}.1.0.0 libeinit++.o
 	ln -fs libeinit++.${SO}.1.0.0 libeinit++.${SO}.1
 	ln -fs libeinit++.${SO}.1 libeinit++.${SO}
 
-test: utility.o bitch.o $(asmobjects) set.o set-common.o test-core-apply-variables.o
+test: utility.o bitch.o $(asmobjects) set.o set-common.o test-core-apply-variables.o test-core-itree.o itree.o
 	$(CLD) test-core-apply-variables.o utility.o bitch.o $(asmobjects) set.o set-common.o -o test-core-apply-variables $(STATIC)
 	./test-core-apply-variables
+	$(CLD) test-core-itree.o itree.o utility.o bitch.o $(asmobjects) -o test-core-itree $(STATIC)
+	./test-core-itree

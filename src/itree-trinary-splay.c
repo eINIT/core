@@ -37,11 +37,122 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit/utility.h>
 #include <einit/itree.h>
+#include <string.h>
 
-struct itree *itree_splay (struct itree *tree) {
+struct itree *itree_rotate_left (struct itree *tree) {
+ if (tree->left) {
+  struct itree *u, *v, *w;
+ }
+
+ return tree;
 }
 
+struct itree *itree_rotate_right (struct itree *tree) {
+ return tree;
+}
+
+struct itree *itree_splay (struct itree *tree) {
+ struct itree *rt = tree;
+
+ while (tree->parent) {
+  if (tree->parent->equal == tree) {
+   tree = tree->parent;
+  } else if (tree->parent->left == tree) {
+   if (tree->parent->parent) {
+   }
+  } else if (tree->parent->right == tree) {
+   if (tree->parent->parent) {
+   }
+  }
+ }
+
+ return rt;
+}
+
+#define itree_splay(t) t
+
 struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_t size) {
+ size_t lsize = sizeof (struct itree);
+ struct itree *newnode;
+ size_t ssize;
+
+ switch (size) {
+  case tree_value_noalloc:
+   lsize = sizeof (struct itree);
+   break;
+  case tree_value_string:
+   ssize = strlen (value) + 1;
+   lsize = sizeof (struct itree) + ssize;
+   break;
+  default:
+   lsize = sizeof (struct itree) + size;
+   break;
+ }
+
+ newnode = emalloc (lsize);
+ newnode->key = key;
+
+ switch (size) {
+  case tree_value_noalloc:
+   newnode->value = value;
+   break;
+  case tree_value_string:
+   newnode->value = ((char *)newnode) + sizeof (struct itree);
+   memcpy (newnode->value, value, ssize);
+   break;
+  default:
+   newnode->value = ((char *)newnode) + sizeof (struct itree);
+   memcpy (newnode->value, value, size);
+   break;
+ }
+
+ newnode->left = NULL;
+ newnode->right = NULL;
+ newnode->equal = NULL;
+ newnode->parent = NULL;
+
+ while (tree) {
+  if (key == tree->key) {
+   tree->parent = newnode;
+   newnode->equal = tree;
+
+   if (tree->left) {
+    newnode->left = tree->left;
+    tree->left = NULL;
+    newnode->left->parent = newnode;
+   }
+   if (tree->right) {
+    newnode->right = tree->right;
+    tree->right = NULL;
+    newnode->right->parent = newnode;
+   }
+   if (newnode->parent) {
+    if (newnode->parent->left == tree) {
+     newnode->parent->left = newnode;
+	}
+    if (newnode->parent->right == tree) {
+     newnode->parent->right = newnode;
+	}
+   }
+
+   return itreebase(newnode);
+  } else if (key < tree->key) {
+   newnode->parent = tree;
+   tree = tree->left;
+  } else /* if (key > tree->key) */ {
+   newnode->parent = tree;
+   tree = tree->right;
+  }
+ }
+
+ if (newnode->parent) {
+  signed long pkey = newnode->parent->key;
+
+  if (key < pkey) newnode->parent->left = newnode;
+  else newnode->parent->right = newnode;
+ }
+
+ return itreebase(newnode);
 }
 
 struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_base base) {
@@ -51,9 +162,9 @@ struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_b
  do {
   if (key == tree->key) {
    if (base == tree_find_first) {
-    return tree;
+    return itree_splay (tree);
    } else {
-    return tree->equal;
+    return itree_splay (tree->equal);
    }
   } else if (key < tree->key) {
    tree = tree->left;
@@ -61,20 +172,31 @@ struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_b
    tree = tree->right;
   }
  } while (tree);
+
  return NULL;
 }
 
 struct itree *itreedel (struct itree *tree) {
+ return tree;
 }
 
 struct itree *itreedel_by_key (struct itree *tree, signed long key) {
  struct itree *it = itreefind (it, tree->key, tree_find_first);
 
+#if 0
  while (it) {
   struct itree *n = it->equal;
-  itreedel (n);
-  it = n;
+  if (n->parent) {
+   tree = itreebase (n);
+  } else {
+
+  }
+  tree = itreedel (n);
+  it = ;
  }
+#endif
+
+ return tree;
 }
 
 struct itree *itreebase (struct itree *tree) {
@@ -97,3 +219,47 @@ void itreefree_all (struct itree *tree, void (*free_node)(void *)) {
  tree = itreebase (tree);
  itreefree (tree, free_node);
 }
+
+#ifdef DEBUG
+void itreedump (struct itree *tree) {
+ static int indent = 0;
+
+ if (tree) {
+  int i = 0;
+  for (; i < indent; i++) {
+   fprintf (stderr, " ");
+  }
+
+  if (tree->parent) {
+   if (tree->parent->left == tree) {
+    fprintf (stderr, "(left) ");
+   } else if (tree->parent->right == tree) {
+    fprintf (stderr, "(right) ");
+   } else if (tree->parent->equal == tree) {
+    fprintf (stderr, "(equal) ");
+   } else {
+    fprintf (stderr, "(?) ");
+   }
+  }
+  fprintf (stderr, "node: key=%i, value=%i\n", tree->key, (int)tree->value);
+
+  fflush (stderr);
+
+  if (tree->left) {
+   indent++;
+   itreedump (tree->left);
+   indent--;
+  }
+  if (tree->right) {
+   indent++;
+   itreedump (tree->right);
+   indent--;
+  }
+  if (tree->equal) {
+   indent++;
+   itreedump (tree->equal);
+   indent--;
+  }
+ }
+}
+#endif

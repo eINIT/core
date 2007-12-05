@@ -63,4 +63,8 @@ void itreefree_all (struct itree *tree, void (*free_node)(void *));
 #define itreefree_simple(tree) itreefree (tree, efree);
 #define itreefree_simple_all(tree) itreefree_all (tree, efree);
 
+#ifdef DEBUG
+void itreedump (struct itree *tree);
+#endif
+
 #endif
