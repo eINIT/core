@@ -119,7 +119,7 @@ struct stree *linux_edev_compiled_regexes = NULL;
 char ***linux_edev_device_rules = NULL;
 pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int **linux_edev_socket_relay(char **args, const char *sn, const char *dp, const char *a);
+int **linux_edev_socket_relay(char **args, const char *sockn, const char *dp, const char *a);
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
 char *linux_edev_mangle_filename (char *filename, char do_free);
@@ -254,8 +254,7 @@ void linux_edev_hotplug_handle (char **v) {
    if (n) {
     *n = 0;
     n++;
-
-    args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
+	args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
     args = (char **)setadd ((void **)args, n, SET_TYPE_STRING);
    }
   }
@@ -264,15 +263,11 @@ void linux_edev_hotplug_handle (char **v) {
    char *device = NULL;
    unsigned char major = 0;
    unsigned char minor = 0;
-   char have_id, blockdevice, is_socket = 0;
+   char have_id, blockdevice = 0;
    char *subsys = NULL;
-   const char *sn;
 
    for (i = 0; args[i]; i+=2) {
-   	if (strmatch (args[i], "SOCKET")) {
-     is_socket = 1;
-     sn = estrdup(args[i+1]);
-    } else if (strmatch (args[i], "MAJOR")) {
+   	if (strmatch (args[i], "MAJOR")) {
      have_id = 1;
      major = parse_integer (args[i+1]);
     } else if (strmatch (args[i], "MINOR")) {
@@ -285,14 +280,13 @@ void linux_edev_hotplug_handle (char **v) {
     }
    }
 
-   if (is_socket) {
-   	linux_edev_socket_relay(args,sn,device,v[0]);
-   } else if (have_id && device) {
+   if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
     char *base = strrchr (device, '/');
     if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
      char *devicefile = NULL;
      char **symlinks = NULL;
+     char **sockets = NULL;
      char *group = NULL;
      char *user = NULL;
      mode_t chmode = 0;
@@ -390,6 +384,7 @@ void linux_edev_hotplug_handle (char **v) {
             strmatch (linux_edev_device_rules[i][k], "group") ||
             strmatch (linux_edev_device_rules[i][k], "user") ||
             strmatch (linux_edev_device_rules[i][k], "chmod") ||
+            strmatch (linux_edev_device_rules[i][k], "socket") ||
             strmatch (linux_edev_device_rules[i][k], "blockdevice")) continue;
         else for (j = 0; args[j]; j += 2) {
          if (strmatch (linux_edev_device_rules[i][k], args[j]))
@@ -452,6 +447,12 @@ void linux_edev_hotplug_handle (char **v) {
           group = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
          } else if (strmatch (linux_edev_device_rules[i][j], "blockdevice")) {
           blockdevice = parse_boolean (linux_edev_device_rules[i][j+1]);
+         } else if (strmatch (linux_edev_device_rules[i][j], "socket")) {
+          char *socket = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
+          if (socket) {
+           sockets = (char **)setadd ((void **)sockets, socket, SET_TYPE_STRING);
+           efree (socket);
+          }
          }
         }
        }
@@ -508,6 +509,13 @@ void linux_edev_hotplug_handle (char **v) {
         if (symlink (devicefile, symlinks[i]) != 0) {
          linux_edev_mkdir_p (symlinks[i]);
          symlink (devicefile, symlinks[i]);
+        }
+       }
+      }
+      if (sockets) {
+       for (i = 0; sockets[i]; i++) {
+        if (symlink (devicefile, symlinks[i]) != 0) {
+         linux_edev_socket_relay(args, sockets[i], device, a);
         }
        }
       }
@@ -963,7 +971,7 @@ char *linux_edev_mangle_filename (char *filename, char do_free) {
   return filename;
 }
 
-int **linux_edev_socket_relay(char **args, const char *sn, const char *dp, const char *a)
+int **linux_edev_socket_relay(char **args, const char *sockn, const char *dp, const char *a)
 {
  char buffer[2048];
  struct sockaddr_un s_addy;
@@ -974,7 +982,7 @@ int **linux_edev_socket_relay(char **args, const char *sn, const char *dp, const
  s = socket(AF_LOCAL, SOCK_DGRAM, 0);
  memset(&s_addy, 0x00, sizeof(struct sockaddr_un));
  s_addy.sun_family = AF_LOCAL;
- strcpy(&s_addy.sun_path[1], sn);
+ strcpy(&s_addy.sun_path[1], sockn);
  addy_len = offsetof(struct sockaddr_un, sun_path) + strlen(s_addy.sun_path+1) + 1;
  pbuf = snprintf(buffer, sizeof(buffer)-1, "%s@%s", a, dp);
  pbuf++;
@@ -988,7 +996,7 @@ int **linux_edev_socket_relay(char **args, const char *sn, const char *dp, const
  if (c < 0) {
   return status_failed;
  } else {
-  notice(5,"passed %zi bytes to socket '%s', ", c, sn);
+  notice(5,"passed %zi bytes to socket '%s', ", c, sockn);
  }
  close(s);
  return status_ok; 

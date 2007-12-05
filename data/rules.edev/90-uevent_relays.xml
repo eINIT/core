@@ -3,7 +3,7 @@
  <configuration>
   <edev>
 
-   <devicefile-rule SOCKET="/org/kernel/udev/monitor" />
+   <devicefile-rule socket="/org/kernel/udev/monitor" />
 
   </edev>
  </configuration>
