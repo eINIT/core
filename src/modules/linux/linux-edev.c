@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE 0
+#define _GNU_SOURCE 1
 #endif
 
 #include <string.h>
