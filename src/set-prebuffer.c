@@ -95,7 +95,7 @@ void **setadd (void **set, const void *item, int32_t esize) {
 
    db = ((char *)set) + oldindexsize - sizeof (struct chunk_data_block);
 
-#if 1
+#if 0
    oldsize = db->real_size;
 
    switch (esize) {
