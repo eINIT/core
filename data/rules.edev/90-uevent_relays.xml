@@ -3,7 +3,11 @@
  <configuration>
   <edev>
 
+   <!-- udevmonitor? -->
    <devicefile-rule socket="/org/kernel/udev/monitor" />
+
+   <!-- HAL -->
+   <devicefile-rule socket="/org/freedesktop/hal/udev_event" />
 
   </edev>
  </configuration>
