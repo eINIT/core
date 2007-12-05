@@ -37,16 +37,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
+#define _GNU_SOURCE 0
 #endif
 
+#include <string.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <syslog.h>
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -54,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
-#include <errno.h>
+
 
 #include <pthread.h>
 
@@ -118,7 +119,7 @@ struct stree *linux_edev_compiled_regexes = NULL;
 char ***linux_edev_device_rules = NULL;
 pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int **linux_edev_socket_relay(const char *sn, const char *dp, const char *a);
+int **linux_edev_socket_relay(char **args, const char *sn, const char *dp, const char *a);
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
 char *linux_edev_mangle_filename (char *filename, char do_free);
@@ -206,6 +207,27 @@ void linux_edev_mkdir_p (char *path) {
  }
 }
 
+size_t strlcpy(char *, const char *, size_t);
+size_t strlcpy(char *dst, const char *src, size_t siz)
+{
+ char *d = dst;
+ const char *s = src;
+ size_t n = siz;
+ if (n != 0 && --n != 0) {
+  do {
+   if ((*d++ = *s++) == 0)
+    break;
+  } while (--n != 0);
+ }
+ if (n == 0) {
+  if (siz != 0)
+   *d = '\0';
+  while (*s++)
+   ;
+  }
+ return(s - src - 1);
+}
+
 void linux_edev_hotplug_handle (char **v) {
  const char *a = v[0];
  if (v && a) {
@@ -264,7 +286,7 @@ void linux_edev_hotplug_handle (char **v) {
    }
 
    if (is_socket) {
-   	linux_edev_socket_relay(sn,device,v[0]);
+   	linux_edev_socket_relay(args,sn,device,v[0]);
    } else if (have_id && device) {
     dev_t ldev = (((major) << 8) | (minor));
     char *base = strrchr (device, '/');
@@ -941,7 +963,7 @@ char *linux_edev_mangle_filename (char *filename, char do_free) {
   return filename;
 }
 
-int **linux_edev_socket_relay(const char *sn, const char *dp, const char *a)
+int **linux_edev_socket_relay(char **args, const char *sn, const char *dp, const char *a)
 {
  char buffer[2048];
  struct sockaddr_un s_addy;
@@ -956,8 +978,8 @@ int **linux_edev_socket_relay(const char *sn, const char *dp, const char *a)
  addy_len = offsetof(struct sockaddr_un, sun_path) + strlen(s_addy.sun_path+1) + 1;
  pbuf = snprintf(buffer, sizeof(buffer)-1, "%s@%s", a, dp);
  pbuf++;
- for (i = 0; environ[i] != NULL && pbuf < (sizeof(buffer)-1); i++) {
-  pbuf = strlcpy(&buffer[pbuf], environ[i], sizeof(buffer) - pbuf-1);
+ for (i = 0; args[i] != NULL && pbuf < (sizeof(buffer)-1); i++) {
+  pbuf = strlcpy(&buffer[pbuf], args[i], sizeof(buffer) - pbuf-1);
   pbuf++;
  }
  if (pbuf > sizeof(buffer))
