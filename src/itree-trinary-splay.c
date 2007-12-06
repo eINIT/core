@@ -320,17 +320,20 @@ struct itree *itreebase (struct itree *tree) {
 }
 
 void itreefree (struct itree *tree, void (*free_node)(void *)) {
- itreefree (tree->left, free_node);
- itreefree (tree->right, free_node);
- itreefree (tree->equal, free_node);
+ if (tree) {
+  itreefree (tree->left, free_node);
+  itreefree (tree->right, free_node);
+  itreefree (tree->equal, free_node);
 
- if (free_node) free_node (tree->value);
- efree (tree);
+  if (free_node) free_node (tree->value);
+  efree (tree);
+ }
 }
 
 void itreefree_all (struct itree *tree, void (*free_node)(void *)) {
- tree = itreebase (tree);
- itreefree (tree, free_node);
+ if (tree);
+  tree = itreebase (tree);
+  itreefree (tree, free_node);
 }
 
 #ifdef DEBUG

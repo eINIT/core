@@ -179,7 +179,7 @@ int main () {
  }
  fprintf (stderr, "alright\n");
 
-// itreefree_all (tree, NULL);
+ itreefree_all (tree, NULL);
 
  return EXIT_SUCCESS;
 }
