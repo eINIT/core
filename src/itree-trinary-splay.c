@@ -40,14 +40,90 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 struct itree *itree_rotate_left (struct itree *tree) {
- if (tree->left) {
+// fprintf (stderr, "left rotation:");
+// fflush (stderr);
+ if (tree->right) {
   struct itree *u, *v, *w;
+
+  u = tree->right;
+  v = tree->left;
+  w = tree;
+
+//  fprintf (stderr, ".");
+//  fflush (stderr);
+
+  w->right = u->left;
+  u->left = w;
+  if (w->right)
+   w->right->parent = w;
+
+//  fprintf (stderr, ".");
+//  fflush (stderr);
+
+  u->parent = w->parent;
+  w->parent = u;
+
+//  fprintf (stderr, ".");
+//  fflush (stderr);
+
+  if (u->parent) {
+   if (u->parent->right == w) {
+    u->parent->right = u;
+   } else  if (u->parent->left == w) {
+    u->parent->left = u;
+   }
+  }
+
+//  fprintf (stderr, ".\n");
+//  fflush (stderr);
+
+  return u;
  }
 
  return tree;
 }
 
 struct itree *itree_rotate_right (struct itree *tree) {
+// fprintf (stderr, "right rotation:");
+// fflush (stderr);
+ if (tree->left) {
+  struct itree *u, *v, *w;
+
+  u = tree->left;
+  v = tree->right;
+  w = tree;
+
+//  fprintf (stderr, ".");
+//  fflush (stderr);
+
+  w->left = u->right;
+  u->right = w;
+  if (w->left)
+   w->left->parent = w;
+
+//  fprintf (stderr, ".");
+//  fflush (stderr);
+
+  u->parent = w->parent;
+  w->parent = u;
+
+//  fprintf (stderr, ".");
+//  fflush (stderr);
+
+  if (u->parent) {
+   if (u->parent->left == w) {
+    u->parent->left = u;
+   } else if (u->parent->right == w) {
+    u->parent->right = u;
+   }
+  }
+
+//  fprintf (stderr, ".\n");
+//  fflush (stderr);
+
+  return u;
+ }
+
  return tree;
 }
 
@@ -58,18 +134,50 @@ struct itree *itree_splay (struct itree *tree) {
   if (tree->parent->equal == tree) {
    tree = tree->parent;
   } else if (tree->parent->left == tree) {
+#if 1
    if (tree->parent->parent) {
+    if (tree->parent->parent->left == tree->parent) {
+     tree = itree_rotate_right (tree->parent);
+     tree = itree_rotate_right (tree->parent);
+    } else {
+     tree = itree_rotate_right (tree->parent);
+     tree = itree_rotate_left (tree->parent);
+    }
+   } else {
+    tree = itree_rotate_right (tree->parent);
    }
+#else
+   tree = itree_rotate_right (tree->parent);
+#endif
   } else if (tree->parent->right == tree) {
+#if 1
    if (tree->parent->parent) {
+    if (tree->parent->parent->left == tree->parent) {
+     tree = itree_rotate_left (tree->parent);
+     tree = itree_rotate_right (tree->parent);
+    } else {
+     tree = itree_rotate_left (tree->parent);
+     tree = itree_rotate_left (tree->parent);
+    }
+   } else {
+    tree = itree_rotate_left (tree->parent);
    }
+#else
+   tree = itree_rotate_left (tree->parent);
+#endif
+  } else {
+   fprintf (stderr, "BAD TREE!\n");
+   fflush (stderr);
+   return rt;
   }
  }
 
  return rt;
 }
 
+#if 0
 #define itree_splay(t) t
+#endif
 
 struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_t size) {
  size_t lsize = sizeof (struct itree);
@@ -110,6 +218,9 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
  newnode->right = NULL;
  newnode->equal = NULL;
  newnode->parent = NULL;
+
+ if (tree)
+  tree = itreebase (tree);
 
  while (tree) {
   if (key == tree->key) {
@@ -162,9 +273,11 @@ struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_b
  do {
   if (key == tree->key) {
    if (base == tree_find_first) {
-    return itree_splay (tree);
+    itree_splay (tree);
+    return tree;
    } else {
-    return itree_splay (tree->equal);
+    itree_splay (tree->equal);
+    return tree->equal;
    }
   } else if (key < tree->key) {
    tree = tree->left;
@@ -223,6 +336,10 @@ void itreefree_all (struct itree *tree, void (*free_node)(void *)) {
 #ifdef DEBUG
 void itreedump (struct itree *tree) {
  static int indent = 0;
+
+ if (!indent) {
+  tree = itreebase(tree);
+ }
 
  if (tree) {
   int i = 0;
