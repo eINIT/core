@@ -1042,6 +1042,8 @@ void module_scheme_guile_configure_scheme (void *n) {
  scm_c_define_gsubr ("set-configuration!", 2, 0, 0, module_scheme_guile_set_configuration);
 
  init_einit_event_type();
+
+ scm_c_primitive_load (EINIT_LIB_BASE "/einit.scm");
 }
 
 struct einit_event_call {
