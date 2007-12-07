@@ -56,7 +56,7 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
 struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_base base);
 struct itree *itreedel (struct itree *tree);
 struct itree *itreedel_by_key (struct itree *tree, signed long key);
-struct itree *itreebase (struct itree *tree);
+struct itree *itreeroot (struct itree *tree);
 void itreefree (struct itree *tree, void (*free_node)(void *));
 void itreefree_all (struct itree *tree, void (*free_node)(void *));
 

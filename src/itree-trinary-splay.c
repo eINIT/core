@@ -220,7 +220,7 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
  newnode->parent = NULL;
 
  if (tree)
-  tree = itreebase (tree);
+  tree = itreeroot (tree);
 
  while (tree) {
   if (key == tree->key) {
@@ -246,7 +246,7 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
 	}
    }
 
-   return itreebase(newnode);
+   return itreeroot(newnode);
   } else if (key < tree->key) {
    newnode->parent = tree;
    tree = tree->left;
@@ -263,12 +263,12 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
   else newnode->parent->right = newnode;
  }
 
- return itreebase(newnode);
+ return itreeroot(newnode);
 }
 
 struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_base base) {
  if (base == tree_find_first)
-  tree = itreebase (tree);
+  tree = itreeroot (tree);
 
  do {
   if (key == tree->key) {
@@ -300,7 +300,7 @@ struct itree *itreedel_by_key (struct itree *tree, signed long key) {
  while (it) {
   struct itree *n = it->equal;
   if (n->parent) {
-   tree = itreebase (n);
+  tree = itreeroot (n);
   } else {
 
   }
@@ -312,9 +312,9 @@ struct itree *itreedel_by_key (struct itree *tree, signed long key) {
  return tree;
 }
 
-struct itree *itreebase (struct itree *tree) {
+struct itree *itreeroot (struct itree *tree) {
  if (tree->parent)
-  return itreebase (tree->parent);
+  return itreeroot (tree->parent);
 
  return tree;
 }
@@ -332,7 +332,7 @@ void itreefree (struct itree *tree, void (*free_node)(void *)) {
 
 void itreefree_all (struct itree *tree, void (*free_node)(void *)) {
  if (tree);
-  tree = itreebase (tree);
+  tree = itreeroot (tree);
   itreefree (tree, free_node);
 }
 
@@ -341,7 +341,7 @@ void itreedump (struct itree *tree) {
  static int indent = 0;
 
  if (!indent) {
-  tree = itreebase(tree);
+  tree = itreeroot(tree);
  }
 
  if (tree) {
