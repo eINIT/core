@@ -270,7 +270,7 @@ void xmlstree_free (struct stree *tree) {
     xmlstree_free (cur);
     recursion--;
 
-    cur = cur->next;
+    cur = streenext(cur);
    }
 
    streefree (((struct einit_xml_tree_node *)(tree->value))->elements);

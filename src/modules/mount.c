@@ -1203,7 +1203,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   do_next:
 
   efree (servicename);
-  s = s->next;
+  s = streenext(s);
  }
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);

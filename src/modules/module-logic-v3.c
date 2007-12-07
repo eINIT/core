@@ -1315,7 +1315,7 @@ void module_logic_update_init_d () {
 
     symlink (einit_d->svalue, tmp);
 
-    cur = cur->next;
+    cur = streenext(cur);
    }
 
    emutex_unlock (&ml_service_list_mutex);
