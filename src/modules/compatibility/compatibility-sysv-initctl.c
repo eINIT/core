@@ -156,12 +156,6 @@ void compatibility_sysv_initctl_shutdown () {
  compatibility_sysv_initctl_running = 0;
 }
 
-void compatibility_sysv_initctl_power_event_handler (struct einit_event *ev) {
- if ((ev->type == einit_power_down_scheduled) || (ev->type == einit_power_reset_scheduled)) {
-  compatibility_sysv_initctl_shutdown();
- }
-}
-
 void * initctl_wait (char *fifo) {
  int nfd;
  compatibility_sysv_initctl_running = 1;
@@ -288,7 +282,8 @@ int compatibility_sysv_initctl_disable (void *pa, struct einit_event *status) {
 int compatibility_sysv_initctl_cleanup (struct lmodule *this) {
  ipc_cleanup (irr);
 
- event_ignore (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
+ event_ignore (einit_power_down_scheduled, compatibility_sysv_initctl_shutdown);
+ event_ignore (einit_power_reset_scheduled, compatibility_sysv_initctl_shutdown);
  event_ignore (einit_boot_devices_available, compatibility_sysv_initctl_run);
 
  return 0;
@@ -301,7 +296,8 @@ int compatibility_sysv_initctl_configure (struct lmodule *r) {
 
  ipc_configure (r);
 
- event_listen (einit_event_subsystem_power, compatibility_sysv_initctl_power_event_handler);
+ event_listen (einit_power_down_scheduled, compatibility_sysv_initctl_shutdown);
+ event_listen (einit_power_reset_scheduled, compatibility_sysv_initctl_shutdown);
  event_listen (einit_boot_devices_available, compatibility_sysv_initctl_run);
 
  return 0;

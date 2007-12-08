@@ -541,10 +541,10 @@ int bootstrap_einit_configuration_stree_suspend (struct lmodule *this) {
 
   if (!bootstrap_einit_configuration_stree_usage) {
    event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
-   event_ignore (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
+   event_ignore (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
 
    event_wakeup (einit_core_configuration_update, this);
-   event_wakeup (einit_event_subsystem_ipc, this);
+   event_wakeup (einit_ipc_request_generic, this);
 
 /*   function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
    function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
@@ -573,7 +573,7 @@ int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
  event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
- event_ignore (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
 
  function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
@@ -596,7 +596,7 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  thismodule->resume = bootstrap_einit_configuration_stree_resume;
 */
 
- event_listen (einit_event_subsystem_ipc, bootstrap_einit_configuration_stree_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
 
  function_register ("einit-configuration-node-add", 1, cfg_addnode_f);

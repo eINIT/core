@@ -106,7 +106,7 @@ char bootstrap_einit_configuration_xml_expat_usage = 0;
 int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
- event_ignore (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, einit_config_xml_expat_ipc_event_handler);
  event_ignore (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
 
  exec_cleanup (this);
@@ -118,7 +118,7 @@ int bootstrap_einit_configuration_xml_expat_suspend (struct lmodule *this) {
  if (!bootstrap_einit_configuration_xml_expat_usage) {
   function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
-  event_ignore (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
+  event_ignore (einit_ipc_request_generic, einit_config_xml_expat_ipc_event_handler);
   event_ignore (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
 
   struct ecx_resume_data *rd = ecalloc (1, sizeof (struct ecx_resume_data));
@@ -129,7 +129,7 @@ int bootstrap_einit_configuration_xml_expat_suspend (struct lmodule *this) {
   exec_cleanup (this);
 
   event_wakeup (einit_core_update_configuration, this);
-  event_wakeup (einit_event_subsystem_ipc, this);
+  event_wakeup (einit_ipc_request_generic, this);
 
   return status_ok;
  } else {
@@ -158,7 +158,7 @@ int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
  thismodule->resume = bootstrap_einit_configuration_xml_expat_resume;
 
  event_listen (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
- event_listen (einit_event_subsystem_ipc, einit_config_xml_expat_ipc_event_handler);
+ event_listen (einit_ipc_request_generic, einit_config_xml_expat_ipc_event_handler);
 
  function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 

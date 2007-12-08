@@ -143,7 +143,7 @@ void gentoo_fixname_set (char **set) {
 
 /* functions that module tend to need */
 int compatibility_sysv_gentoo_cleanup (struct lmodule *irr) {
- event_ignore (einit_event_subsystem_ipc, ipc_event_handler);
+ event_ignore (einit_ipc_request_generic, ipc_event_handler);
  event_ignore (einit_event_subsystem_core, einit_event_handler);
 
  parse_sh_cleanup (irr);
@@ -889,7 +889,7 @@ int compatibility_sysv_gentoo_configure (struct lmodule *irr) {
  parse_sh_configure (irr);
 
  event_listen (einit_event_subsystem_core, einit_event_handler);
- event_listen (einit_event_subsystem_ipc, ipc_event_handler);
+ event_listen (einit_ipc_request_generic, ipc_event_handler);
 
  return 0;
 }
