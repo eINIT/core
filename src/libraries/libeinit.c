@@ -264,7 +264,7 @@ void xmlstree_free (struct stree *tree) {
 
  if (tree->value) {
   if (((struct einit_xml_tree_node *)(tree->value))->elements) {
-   struct stree *cur = ((struct einit_xml_tree_node *)(tree->value))->elements;
+   struct stree *cur = streelinear_prepare(((struct einit_xml_tree_node *)(tree->value))->elements);
    while (cur) {
     recursion++;
     xmlstree_free (cur);
@@ -284,31 +284,6 @@ void xmlstree_free (struct stree *tree) {
  if (!recursion)
   streefree (tree);
 }
-
-/* void print_xmlstree (struct stree *node) {
- if (node) {
-  struct einit_xml_tree_node *da = node->value;
-
-  eprintf (stderr, "element: %s {\n", node->key);
-  if (da && da->attributes) {
-   struct stree *cur = da->attributes;
-   while (cur) {
-    fprintf (stderr, " .%s = \"%s\";\n", cur->key, (char *)cur->value);
-    cur = streenext(cur);
-   }
-  }
-
-  if (da && da->elements) {
-   struct stree *cur = da->elements;
-   while (cur) {
-    print_xmlstree(cur);
-    cur = streenext(cur);
-   }
-  }
-
-  eputs ("}\n", stderr);
- }
-}*/
 
 struct stree *einit_add_xmlstree_as_module (struct stree *rtree, struct stree *modulenode) {
  struct einit_module module;
@@ -492,7 +467,7 @@ void einit_module_free (struct einit_module *module) {
 void modulestree_free(struct stree *tree) {
  if (!tree) return;
 
- struct stree *cur = tree;
+ struct stree *cur = streelinear_prepare(tree);
  do {
   struct einit_module *module = cur->value;
 
@@ -548,7 +523,7 @@ struct stree *einit_get_all_services () {
 void servicestree_free_protect(struct stree *tree, char *pserv) {
  if (!tree) return;
 
- struct stree *cur = tree;
+ struct stree *cur = streelinear_prepare(tree);
  do {
   if (!strmatch (pserv, cur->key)) {
    struct einit_service *service = cur->value;
@@ -618,7 +593,7 @@ void einit_service_free (struct einit_service *service) {
 void servicestree_free(struct stree *tree) {
  if (!tree) return;
 
- struct stree *cur = tree;
+ struct stree *cur = streelinear_prepare(tree);
  do {
   struct einit_service *service = cur->value;
 
@@ -797,7 +772,7 @@ struct stree *einit_get_all_modes() {
 void modestree_free(struct stree *tree) {
  if (!tree) return;
 
- struct stree *cur = tree;
+ struct stree *cur = streelinear_prepare(tree);
  do {
   struct einit_mode_summary *mode = cur->value;
 

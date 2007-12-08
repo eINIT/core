@@ -118,6 +118,9 @@ struct stree *streedel (struct stree *subject);
 */
 void streefree (struct stree *stree);
 
+
+#define streelinear_prepare(h) h
+
 /*!\brief Return next stree element
  * \param[in] h the stree
  * \return This function will return the next stree element.

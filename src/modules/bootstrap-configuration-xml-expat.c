@@ -495,7 +495,7 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
  char *retval = NULL;
  char *xtemplate = "<?xml version=\"1.1\" encoding=\"UTF-8\" ?>\n<einit>\n%s</einit>\n";
  ssize_t sxlen;
- struct stree *cur = configuration;
+ struct stree *cur = streelinear_prepare(configuration);
 
  while (cur) {
   char *xtmp = NULL, *xattributes = NULL;

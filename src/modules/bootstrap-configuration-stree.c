@@ -112,7 +112,7 @@ void cfg_stree_garbage_free () {
 int cfg_free () {
  bootstrap_einit_configuration_stree_usage++;
 
- struct stree *cur = hconfiguration;
+ struct stree *cur = streelinear_prepare(hconfiguration);
  struct cfgnode *node = NULL;
  while (cur) {
   if ((node = (struct cfgnode *)cur->value)) {
@@ -361,7 +361,7 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
 
 #ifdef POSIXREGEX
  if (filter) {
-  struct stree *cur = hconfiguration;
+  struct stree *cur = streelinear_prepare(hconfiguration);
   regex_t pattern;
   if (!eregcomp(&pattern, filter)) {
    while (cur) {
@@ -388,7 +388,7 @@ struct stree *cfg_prefix_f (const char *prefix) {
 
 #ifdef POSIXREGEX
  if (prefix) {
-  struct stree *cur = hconfiguration;
+  struct stree *cur = streelinear_prepare(hconfiguration);
   while (cur) {
    if (strstr(cur->key, prefix) == cur->key) {
     retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
@@ -452,7 +452,7 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
 void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *ev) {
  if ((ev->argc >= 2) && (ev->ipc_options & einit_ipc_output_xml)) {
   if (strmatch (ev->argv[0], "list") && strmatch (ev->argv[1], "modes")) {
-   struct stree *cur = hconfiguration;
+   struct stree *cur = streelinear_prepare(hconfiguration);
    struct cfgnode **modes = NULL;
 
    ev->implemented = 1;

@@ -139,7 +139,7 @@ int module_scheme_guile_scanmodules ( struct lmodule *modchain ) {
 
  if (modules) {
 //  emutex_lock (&module_scheme_guile_event_handlers_mutex);
-  struct stree *st = module_scheme_guile_event_handlers;
+  struct stree *st = streelinear_prepare(module_scheme_guile_event_handlers);
 
   while (st) {
    struct scheme_event_handler *h = st->value;
@@ -1171,7 +1171,7 @@ void module_scheme_guile_event_dispatcher_thread (void *na) {
     char *typename = event_code_to_string(ev->type);
 
     emutex_lock (&module_scheme_guile_event_handlers_mutex);
-    st = module_scheme_guile_event_handlers;
+    st = streelinear_prepare(module_scheme_guile_event_handlers);
 
     while (st && module_scheme_guile_event_handlers) {
      struct scheme_event_handler *h = st->value;

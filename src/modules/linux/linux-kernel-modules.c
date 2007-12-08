@@ -235,7 +235,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
   char have_audio = 0;
 
   if (linux_kernel_modules_nodes) {
-   struct stree *cur = linux_kernel_modules_nodes;
+   struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
 
    while (cur) {
     char *subsystem = cur->key + sizeof (MPREFIX) -1;
@@ -362,7 +362,7 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
  struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
 
  if (linux_kernel_modules_nodes) {
-  struct stree *cur = linux_kernel_modules_nodes;
+  struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
 
   while (cur) {
    char *subsystem = cur->key + sizeof (MPREFIX) -1;

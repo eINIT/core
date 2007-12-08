@@ -540,7 +540,7 @@ char *module_xml_v2_generate_defer_fs (char **tmpxt) {
 }
 
 int module_xml_v2_scanmodules (struct lmodule *modchain) {
- struct stree *modules_to_update = module_xml_v2_modules;
+ struct stree *modules_to_update = streelinear_prepare(module_xml_v2_modules);
  int new_modules = 0;
 
  while (modules_to_update) {
@@ -552,7 +552,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
  struct stree *module_nodes = cfg_prefix(MODULES_PREFIX);
 
  if (module_nodes) {
-  struct stree *cur = module_nodes;
+  struct stree *cur = streelinear_prepare(module_nodes);
 
   for (; cur; cur = streenext (cur)) {
 /* exclude legacy nodes */
@@ -692,7 +692,7 @@ void module_xml_v2_do_preload(char **files) {
 }
 
 void module_xml_v2_preload() {
- struct stree *s = module_xml_v2_modules;
+ struct stree *s = streelinear_prepare(module_xml_v2_modules);
  struct cfgnode *node;
 
  while (s) {
@@ -744,7 +744,7 @@ void module_xml_v2_auto_enable (char *mode) {
 
  char **automod = NULL;
 
- struct stree *modules = module_xml_v2_modules;
+ struct stree *modules = streelinear_prepare(module_xml_v2_modules);
 
  while (modules) {
   struct cfgnode *s = module_xml_v2_module_get_attributive_node(modules->key, "auto-enable");
@@ -786,7 +786,7 @@ void module_xml_v2_boot_event_handler_early (struct einit_event *ev) {
 }
 
 void module_xml_v2_power_event_handler (struct einit_event *ev) {
- struct stree *modules = module_xml_v2_modules;
+ struct stree *modules = streelinear_prepare(module_xml_v2_modules);
 
  while (modules) {
   if (module_xml_v2_module_have_action (modules->key, "on-shutdown")) {

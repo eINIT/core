@@ -402,7 +402,7 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
 
  if (task & service_not_in_use) {
   ret |= service_not_in_use;
-  struct stree *ha = service_usage;
+  struct stree *ha = streelinear_prepare(service_usage);
 
 /* a service is "in use" if
   * it's the provider for something, and
@@ -475,7 +475,7 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
   }
 
 /* more cleanup code */
-  ha = service_usage;
+  ha = streelinear_prepare(service_usage);
   while (ha) {
    item = (struct service_usage_item *)ha->value;
 
@@ -487,7 +487,7 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
    if (!item->provider && !item->users) {
 //    service_usage = streedel (service_usage, ha);
     service_usage = streedel (ha);
-    ha = service_usage;
+    ha = streelinear_prepare(service_usage);
    } else
     ha = streenext (ha);
   }
@@ -555,7 +555,7 @@ uint16_t service_usage_query_group (enum einit_usage_query task, const struct lm
 char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule *module, const char *service) {
  emutex_lock (&service_usage_mutex);
 
- struct stree *ha = service_usage;
+ struct stree *ha = streelinear_prepare(service_usage);
  char **ret = NULL;
  uint32_t i;
 
@@ -606,7 +606,7 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
  }
 
  if (task & service_list_services) {
-  struct stree *ha = service_usage;
+  struct stree *ha = streelinear_prepare(service_usage);
 
   while (ha) {
    ret = (char **)setadd ((void **)ret, ha->key, SET_TYPE_STRING);

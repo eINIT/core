@@ -141,7 +141,7 @@ map<string, EinitModule *> Einit::getAllModules() {
  if (!this->modulesRaw) {
   this->modulesRaw = einit_get_all_modules();
  }
- struct stree *cur = this->modulesRaw;
+ struct stree *cur = streelinear_prepare(this->modulesRaw);
 
  while (cur) {
   this->getModule(cur->key);
@@ -156,7 +156,7 @@ map<string, EinitService *> Einit::getAllServices() {
  if (!this->servicesRaw) {
   this->servicesRaw = einit_get_all_services();
  }
- struct stree *cur = this->servicesRaw;
+ struct stree *cur = streelinear_prepare(this->servicesRaw);
 
  while (cur) {
   this->getService(cur->key);
@@ -171,7 +171,7 @@ map<string, EinitMode *> Einit::getAllModes() {
  if (!this->modesRaw) {
   this->modesRaw = einit_get_all_modes();
  }
- struct stree *cur = this->modesRaw;
+ struct stree *cur = streelinear_prepare(this->modesRaw);
 
  while (cur) {
   this->getMode(cur->key);
@@ -198,7 +198,7 @@ bool Einit::powerReset() {
 void Einit::update() {
  if (this->servicesRaw) {
   struct stree *services = einit_get_all_services();
-  struct stree *cur = services;
+  struct stree *cur = streelinear_prepare(services);
 
   while (cur) {
    map<string, EinitService *>::iterator it = this->services.find ((string)cur->key);
@@ -215,7 +215,7 @@ void Einit::update() {
 
  if (this->modulesRaw) {
   struct stree *modules = einit_get_all_modules();
-  struct stree *cur = modules;
+  struct stree *cur = streelinear_prepare(modules);
 
   while (cur) {
    map<string, EinitModule *>::iterator it = this->modules.find ((string)cur->key);
@@ -232,7 +232,7 @@ void Einit::update() {
 
  if (this->modesRaw) {
   struct stree *modes = einit_get_all_modes();
-  struct stree *cur = modes;
+  struct stree *cur = streelinear_prepare(modes);
 
   while (cur) {
    map<string, EinitMode *>::iterator it = this->modes.find ((string)cur->key);
@@ -340,7 +340,7 @@ bool EinitService::update(struct einit_service *s) {
  }
 
  if (s->modules) {
-  struct stree *cur = s->modules;
+  struct stree *cur = streelinear_prepare(s->modules);
 
   while (cur) {
    EinitModule *sp = this->main->getModule (cur->key);

@@ -52,13 +52,16 @@ struct stree {
  char *key;
  void *value;
  void *luggage;
+ struct stree *next;
 };
 
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage);
 struct stree *streefind (const struct stree *stree, const char *key, enum tree_search_base options);
 struct stree *streedel (struct stree *subject);
 void streefree (struct stree *stree);
-struct stree *streenext (struct stree *stree);
+
+struct stree *streelinear_prepare (struct stree *st);
+#define streenext(h) h->next
 
 #ifdef __cplusplus
 }

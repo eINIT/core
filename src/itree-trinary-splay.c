@@ -246,7 +246,7 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
     }
    }
 
-   return itreeroot(newnode);
+   return newnode;
   } else if (key < tree->key) {
    newnode->parent = tree;
    tree = tree->left;
@@ -275,10 +275,11 @@ struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_b
    if (base == tree_find_first) {
     itree_splay (tree);
     return tree;
-   } else {
+   } else if (tree->equal) {
     itree_splay (tree->equal);
     return tree->equal;
-   }
+   } else
+    return NULL;
   } else if (key < tree->key) {
    tree = tree->left;
   } else /* if (key > tree->key) */ {
@@ -290,7 +291,41 @@ struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_b
 }
 
 struct itree *itreedel (struct itree *tree) {
- return tree;
+ struct itree *t;
+
+ while (tree->left || tree->right) {
+  if (tree->right) {
+   itree_rotate_left (tree);
+  } else {
+   itree_rotate_right (tree);
+  }
+ }
+
+ if (tree->parent) {
+  if (tree->parent->left == tree) {
+   if (tree->equal) {
+    tree->parent->left = tree->equal;
+    tree->equal->parent = tree->parent;
+   } else {
+    tree->parent->left = NULL;
+   }
+  } else {
+   if (tree->equal) {
+    tree->parent->right = tree->equal;
+    tree->equal->parent = tree->parent;
+   } else {
+    tree->parent->right = NULL;
+   }
+  }
+ }
+
+ t = itreeroot (tree);
+
+ efree (tree);
+
+ if (t == tree) return NULL;
+
+ return t;
 }
 
 struct itree *itreedel_by_key (struct itree *tree, signed long key) {
@@ -334,6 +369,20 @@ void itreefree_all (struct itree *tree, void (*free_node)(void *)) {
  if (tree);
   tree = itreeroot (tree);
   itreefree (tree, free_node);
+}
+
+void itreemap_sub (struct itree *tree, void (*f)(struct itree *, void *), void *t) {
+ if (tree->left) itreemap_sub (tree->left, f, t);
+ if (tree->right) itreemap_sub (tree->right, f, t);
+
+ f (tree, t);
+ if (tree->equal) itreemap_sub (tree->equal, f, t);
+}
+
+void itreemap (struct itree *tree, void (*f)(struct itree *, void *), void *t) {
+ tree = itreeroot (tree);
+
+ itreemap_sub (tree, f, t);
 }
 
 #ifdef DEBUG

@@ -791,7 +791,7 @@ void mod_sort_service_list_items_by_preference() {
 
  emutex_lock (&ml_service_list_mutex);
 
- cur = module_logics_service_list;
+ cur = streelinear_prepare(module_logics_service_list);
 
  while (cur) {
   struct lmodule **lm = (struct lmodule **)cur->value;
@@ -1307,7 +1307,7 @@ void module_logic_update_init_d () {
    struct stree *cur;
    emutex_lock (&ml_service_list_mutex);
 //  struct stree *module_logics_service_list;
-   cur = module_logics_service_list;
+   cur = streelinear_prepare(module_logics_service_list);
 
    while (cur) {
     char tmp[BUFFERSIZE];
@@ -1401,7 +1401,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
     emutex_lock(&ml_service_list_mutex);
 
-    cur = module_logics_service_list;
+    cur = streelinear_prepare(module_logics_service_list);
 
     while (cur) {
      if (mod_is_rid (cur->key)) {
@@ -1410,7 +1410,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      }
 
      char **inmodes = NULL;
-     struct stree *mcur = modes;
+     struct stree *mcur = streelinear_prepare(modes);
 
      while (mcur) {
       if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
@@ -1575,7 +1575,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 /* eputs ("got mutex", stderr);
     fflush (stderr);*/
 
-    cur = module_logics_group_data;
+    cur = streelinear_prepare(module_logics_group_data);
     while (cur) {
      struct group_data *gd = (struct group_data *)cur->value;
 
@@ -1589,7 +1589,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      emutex_unlock(&ml_service_list_mutex);
 
      char **inmodes = NULL;
-     struct stree *mcur = modes;
+     struct stree *mcur = streelinear_prepare(modes);
 
      while (mcur) {
       if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
@@ -1740,10 +1740,10 @@ void print_defer_lists() {
  emutex_lock(&ml_chain_examine);
 
  if (module_logics_chain_examine_reverse) {
-  struct stree *st = module_logics_chain_examine_reverse;
+  struct stree *st = streelinear_prepare(module_logics_chain_examine_reverse);
 
   eputs ("module_logics_chain_examine_reverse:\n", debugfile);
-  
+
   do {
    char *val = set2str (' ', st->value);
    eprintf (debugfile, "%s: (%s)\n", st->key, val);
@@ -1756,10 +1756,10 @@ void print_defer_lists() {
  }
 
  if (module_logics_chain_examine) {
-  struct stree *st = module_logics_chain_examine;
+  struct stree *st = streelinear_prepare(module_logics_chain_examine);
 
   eputs ("module_logics_chain_examine:\n", debugfile);
-  
+
   do {
    char *val = set2str (' ', st->value);
    eprintf (debugfile, "%s: (%s)\n", st->key, val);

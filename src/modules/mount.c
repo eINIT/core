@@ -282,7 +282,7 @@ char *generate_legacy_mtab () {
  struct stree *t;
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
- t = mounter_dd_by_mountpoint;
+ t = streelinear_prepare(mounter_dd_by_mountpoint);
 
  while (t) {
   dd = t->value;
@@ -436,7 +436,7 @@ char **mount_get_mounted_mountpoints () {
  char **rv = NULL;
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
- t = mounter_dd_by_mountpoint;
+ t = streelinear_prepare(mounter_dd_by_mountpoint);
 
  while (t) {
   dd = t->value;
@@ -466,7 +466,7 @@ void mount_clear_all_mounted_flags () {
  struct stree *t;
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
- t = mounter_dd_by_mountpoint;
+ t = streelinear_prepare(mounter_dd_by_mountpoint);
 
  while (t) {
   dd = t->value;
@@ -738,9 +738,10 @@ void mount_update_fstab_nodes_from_fstab () {
  struct cfgnode *node = cfg_getnode ("configuration-storage-fstab-use-legacy-fstab", NULL);
  if (node && node->flag) {
   struct stree *workstree = read_fsspec_file ("/etc/fstab");
-  struct stree *cur = workstree;
+  struct stree *cur;
 
   if (workstree) {
+   cur = streelinear_prepare(workstree);
    mount_clear_all_mounted_flags();
 
    while (cur) {
@@ -782,9 +783,10 @@ void mount_update_nodes_from_mtab () {
 #else
  struct stree *workstree = read_fsspec_file ("/etc/mtab");
 #endif
- struct stree *cur = workstree;
+ struct stree *cur;
 
  if (workstree) {
+  cur = streelinear_prepare(workstree);
   mount_clear_all_mounted_flags();
 
   while (cur) {
@@ -947,7 +949,7 @@ int einit_mount_critical_enable (void *ign, struct einit_event *status) {
     repeat = 0;
    }
 
-   struct stree *s = mount_critical_filesystems;
+   struct stree *s = streelinear_prepare(mount_critical_filesystems);
 
    while (s) {
     struct lmodule *lm = s->value;
@@ -981,7 +983,7 @@ int einit_mount_critical_disable (void *ign, struct einit_event *status) {
     repeat = 0;
    }
 
-   struct stree *s = mount_critical_filesystems;
+   struct stree *s = streelinear_prepare(mount_critical_filesystems);
 
    while (s) {
     struct lmodule *lm = s->value;
@@ -1037,7 +1039,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
- s = mounter_dd_by_mountpoint;
+ s = streelinear_prepare(mounter_dd_by_mountpoint);
  while (s) {
   char *servicename = mount_mp_to_service_name(s->key);
   char tmp[BUFFERSIZE];

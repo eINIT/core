@@ -184,7 +184,7 @@ int network_scanmodules (struct lmodule *mainlist) {
  struct stree *network_nodes = cfg_prefix("configuration-network-interfaces-");
 
  if (network_nodes) {
-  struct stree *cur = network_nodes;
+  struct stree *cur = streelinear_prepare(network_nodes);
 
   while (cur) {
    if (cur->value) {

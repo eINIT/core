@@ -35,50 +35,65 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <inttypes.h>
 #include <einit/tree.h>
 #include <einit/itree.h>
 #include <einit/utility.h>
+#include <string.h>
 
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  if (!key) return NULL;
  signed long keyhash = hashp (key);
- size_t nodesize;
+ size_t nodesize, keylen = strlen (key) + 1;
  struct stree *newnode;
 
  switch (vlen) {
-  case SET_NOALLOC:
-   nodesize = sizeof (struct stree);
+  case tree_value_noalloc:
+   nodesize = sizeof (struct stree) + keylen;
    break;
-  case SET_TYPE_STRING:
-   vlen = strlen (key) + 1;
+  case tree_value_string:
+   vlen = strlen (value) + 1;
   default:
-   nodesize = sizeof (struct stree) + vlen;
+   nodesize = sizeof (struct stree) + keylen + vlen;
    break;
  }
 
  newnode = emalloc (nodesize);
- memset (newnode, 0, nodesize);
+ memset (newnode, 0, sizeof (struct stree));
+
+ newnode->key = ((char *)newnode) + sizeof (struct stree);
+ memcpy (newnode->key, key, keylen);
 
  switch (vlen) {
-  case SET_NOALLOC:
+  case tree_value_noalloc:
    newnode->value = value;
    break;
   default:
-   memcpy (((char *)newnode) + sizeof (struct stree), value, vlen);
+   newnode->value = ((char *)newnode) + sizeof (struct stree) + keylen;
+   memcpy (newnode->value, value, vlen);
    break;
  }
 
  newnode->luggage = luggage;
 
  newnode->treenode = itreeadd (stree ? stree->treenode : NULL, keyhash, newnode, tree_value_noalloc);
+
+// newnode->treenode = itreefind (newnode->treenode, keyhash, tree_find_first);
+
+/* if (newnode->treenode->value != newnode) {
+  fprintf (stderr, "TOOT TOOT!\n");
+ }*/
  return newnode;
 }
 
 struct stree *streedel (struct stree *subject) {
  struct itree *it = itreedel (subject->treenode);
- if (subject->luggage) free (subject->luggage);
- free (subject);
+ if (subject->luggage) efree (subject->luggage);
+ efree (subject);
 
  if (it)
   return it->value;
@@ -89,7 +104,7 @@ struct stree *streedel (struct stree *subject) {
 struct stree *streefind (const struct stree *stree, const char *key, enum tree_search_base options) {
  if (!key || !stree) return NULL;
  signed long keyhash;
- struct itree *it;
+ struct itree *it = stree->treenode;
 
  switch (options) {
   case tree_find_next:
@@ -100,15 +115,57 @@ struct stree *streefind (const struct stree *stree, const char *key, enum tree_s
    break;
  }
 
- it = itreefind (stree->treenode, keyhash, options);
- if (it)
-  return it->value;
+// fprintf (stderr, "search: %i, it=%i, sv=%i, options=%i\n", keyhash, it, stree, options);
 
+ while ((it = itreefind (it, keyhash, options))) {
+//  fprintf (stderr, "candidate: %i, %i, %i\n", keyhash, it, it->value);
+
+  struct stree *st = it->value;
+  if (strmatch (st->key, key)) {
+   return st;
+  } else {
+   options = tree_find_next;
+  }
+ }
+
+#if 0
+ fprintf (stderr, "i'm outta options...\n");
+#ifdef DEBUG
+ itreedump (stree->treenode);
+#endif
+ fflush (stderr);
+#endif
  return NULL;
 }
 
-void streefree (struct stree *stree) {
+void streefree_node (struct stree *st) {
+ if (st->luggage) efree (st->luggage);
+ efree (st);
 }
 
-struct stree *streenext (struct stree *stree) {
+void streefree (struct stree *stree) {
+ if (stree) {
+  itreefree_all (stree->treenode, streefree_node);
+ }
+}
+
+void streelinear_prepare_iterator (struct itree *it, struct stree **p) {
+ struct stree *st = it->value;
+
+ st->next = *p;
+ *p = st;
+}
+
+struct stree *streelinear_prepare (struct stree *st) {
+ if (st) {
+  struct itree *it = itreeroot (st->treenode);
+  struct stree *t = NULL;
+
+  itreemap(st->treenode, (void (*)(struct itree *, void *))streelinear_prepare_iterator, (void *)&t);
+
+  it = itreeroot (it);
+  return it->value;
+ }
+
+ return NULL;
 }

@@ -297,7 +297,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
   if (nservices) {
 #ifdef POSIXREGEX
    if (service_group_transformations) {
-    struct stree *cur = service_group_transformations;
+    struct stree *cur = streelinear_prepare(service_group_transformations);
 
     while (cur) {
      struct service_group_transformation *trans =
