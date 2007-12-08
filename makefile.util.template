@@ -29,6 +29,9 @@ itree.o: itree-trinary-splay.o
 tree.o: tree-linear.o
 	cp tree-linear.o tree.o
 
+#tree.o: tree-itree.o
+#	cp tree-itree.o tree.o
+
 einit-control: einit-control.o bitch.o utility.o $(asmobjects) libeinit.${SO}
 	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC) -L. -leinit
 
@@ -64,8 +67,10 @@ libeinit++.${SO}.1.0.0: libeinit.${SO}.1.0.0 libeinit++.o
 	ln -fs libeinit++.${SO}.1.0.0 libeinit++.${SO}.1
 	ln -fs libeinit++.${SO}.1 libeinit++.${SO}
 
-test: utility.o bitch.o $(asmobjects) set.o set-common.o test-core-apply-variables.o test-core-itree.o itree.o
+test: utility.o bitch.o $(asmobjects) set.o set-common.o test-core-apply-variables.o test-core-itree.o itree.o test-core-stree.o tree.o
 	$(CLD) test-core-apply-variables.o utility.o bitch.o $(asmobjects) set.o set-common.o -o test-core-apply-variables $(STATIC)
 	./test-core-apply-variables
 	$(CLD) test-core-itree.o itree.o utility.o bitch.o $(asmobjects) -o test-core-itree $(STATIC)
 	./test-core-itree
+	$(CLD) test-core-stree.o tree.o itree.o utility.o bitch.o $(asmobjects) -o test-core-stree $(STATIC)
+	./test-core-stree

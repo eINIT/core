@@ -88,19 +88,18 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
  struct cfgnode *onode = cfg_getnode (tmp, NULL);
  if (onode) {
   char *jele = NULL;
-  if (!onode->source || !strmatch (onode->source, self->rid)) {
-   uint32_t i = 0;
 
-   for (; onode->arbattrs[i]; i+=2) {
-    if (strmatch (onode->arbattrs[i], "group")) {
-     char **nele = str2set (':', onode->arbattrs[i+1]);
+  uint32_t i = 0;
 
-     nele = (char **)setcombine_nc ((void **)nele, (const void **)elements, SET_TYPE_STRING);
+  for (; onode->arbattrs[i]; i+=2) {
+   if (strmatch (onode->arbattrs[i], "group")) {
+    char **nele = str2set (':', onode->arbattrs[i+1]);
 
-     jele = set2str (':', (const char **)nele);
+    nele = (char **)setcombine_nc ((void **)nele, (const void **)elements, SET_TYPE_STRING);
 
-     break;
-    }
+    jele = set2str (':', (const char **)nele);
+
+    break;
    }
   }
 
@@ -128,7 +127,6 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
   memset (&newnode, 0, sizeof(struct cfgnode));
 
   newnode.id = estrdup (tmp);
-  newnode.source = self->rid;
   newnode.type = einit_node_regular;
 
   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"group", SET_TYPE_STRING);

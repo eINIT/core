@@ -38,14 +38,73 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <einit/tree.h>
 #include <einit/itree.h>
+#include <einit/utility.h>
 
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
+ if (!key) return NULL;
+ signed long keyhash = hashp (key);
+ size_t nodesize;
+ struct stree *newnode;
+
+ switch (vlen) {
+  case SET_NOALLOC:
+   nodesize = sizeof (struct stree);
+   break;
+  case SET_TYPE_STRING:
+   vlen = strlen (key) + 1;
+  default:
+   nodesize = sizeof (struct stree) + vlen;
+   break;
+ }
+
+ newnode = emalloc (nodesize);
+ memset (newnode, 0, nodesize);
+
+ switch (vlen) {
+  case SET_NOALLOC:
+   newnode->value = value;
+   break;
+  default:
+   memcpy (((char *)newnode) + sizeof (struct stree), value, vlen);
+   break;
+ }
+
+ newnode->luggage = luggage;
+
+ newnode->treenode = itreeadd (stree ? stree->treenode : NULL, keyhash, newnode, tree_value_noalloc);
+ return newnode;
 }
 
 struct stree *streedel (struct stree *subject) {
+ struct itree *it = itreedel (subject->treenode);
+ if (subject->luggage) free (subject->luggage);
+ free (subject);
+
+ if (it)
+  return it->value;
+
+ return NULL;
 }
 
 struct stree *streefind (const struct stree *stree, const char *key, enum tree_search_base options) {
+ if (!key || !stree) return NULL;
+ signed long keyhash;
+ struct itree *it;
+
+ switch (options) {
+  case tree_find_next:
+   keyhash = stree->treenode->key;
+   break;
+  default:
+   keyhash = hashp (key);
+   break;
+ }
+
+ it = itreefind (stree->treenode, keyhash, options);
+ if (it)
+  return it->value;
+
+ return NULL;
 }
 
 void streefree (struct stree *stree) {

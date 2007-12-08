@@ -240,10 +240,10 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
    if (newnode->parent) {
     if (newnode->parent->left == tree) {
      newnode->parent->left = newnode;
-	}
+    }
     if (newnode->parent->right == tree) {
      newnode->parent->right = newnode;
-	}
+    }
    }
 
    return itreeroot(newnode);
@@ -263,7 +263,7 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
   else newnode->parent->right = newnode;
  }
 
- return itreeroot(newnode);
+ return newnode;
 }
 
 struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_base base) {

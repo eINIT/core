@@ -24,12 +24,12 @@ export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
 export USE_SET_CODE="set-lowmem" # there's also set-prebuffer...
 export USE_ITREE_CODE="itree-trinary-splay"
-export USE_TREE_CODE="tree-linear"
+export USE_TREE_CODE="tree-linear" # there's also tree-itree
 
 export COREOBJECTS="einit-core module bitch utility event ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
 export UTILOBJECTS="einit-control bitch utility ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ libeinit-ipc-socket einit-helper set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
 
-export UTILOBJECTS_TESTS="test-core-apply-variables test-core-itree"
+export UTILOBJECTS_TESTS="test-core-apply-variables test-core-itree test-core-stree"
 
 export BUILDCOMPONENTS="core util modules headers"
 
