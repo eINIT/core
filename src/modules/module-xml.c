@@ -714,6 +714,7 @@ void module_xml_v2_preload() {
 
 void module_xml_v2_preload_fork() {
  struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
+ if ((coremode & einit_mode_sandbox)) return;
 
  if (module_xml_v2_allow_preloads && node && node->flag) {
   notice (3, "pre-loading binaries from XML modules");
@@ -724,6 +725,7 @@ void module_xml_v2_preload_fork() {
 #if defined(LINUX) && defined(PR_SET_NAME)
     prctl (PR_SET_NAME, "einit [preload-xml-sh]", 0, 0, 0);
 #endif
+    disable_core_dumps();
 
     module_xml_v2_preload();
     _exit (EXIT_SUCCESS);

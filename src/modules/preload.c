@@ -88,6 +88,8 @@ int einit_preload_usage = 0;
 int einit_preload_cleanup (struct lmodule *this) {
  sched_cleanup(irr);
 
+ if ((coremode & einit_mode_sandbox)) return 0;
+
  event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
 
  return 0;
@@ -143,6 +145,7 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
 #if defined(LINUX) && defined(PR_SET_NAME)
     prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
 #endif
+    disable_core_dumps();
 
     einit_preload_run();
     _exit (EXIT_SUCCESS);
@@ -162,8 +165,10 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
 
 int einit_preload_suspend (struct lmodule *irr) {
  if (!einit_preload_usage) {
-  event_wakeup (einit_boot_early, irr);
-  event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
+  if (!(coremode & einit_mode_sandbox)) {
+   event_wakeup (einit_boot_early, irr);
+   event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
+  }
 
   return status_ok;
  } else
@@ -183,6 +188,8 @@ int einit_preload_configure (struct lmodule *irr) {
  thismodule->cleanup = einit_preload_cleanup;
  thismodule->suspend = einit_preload_suspend;
  thismodule->resume  = einit_preload_resume;
+
+ if ((coremode & einit_mode_sandbox)) return 0;
 
  event_listen (einit_boot_early, einit_preload_boot_event_handler_early);
 
