@@ -69,7 +69,6 @@ int einit_have_feedback = 1;
 struct stree *service_aliases = NULL;
 struct stree *service_usage = NULL;
 char einit_new_node = 0;
-struct event_function *event_functions = NULL;
 struct stree *exported_functions = NULL;
 unsigned char *gdebug = 0;
 struct stree *hconfiguration = NULL;

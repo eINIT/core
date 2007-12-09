@@ -240,12 +240,6 @@ struct einit_event {
  FILE *output;
 };
 
-struct event_function {
- uint32_t type;                          /*!< type of function */
- void (*handler)(struct einit_event *);  /*!< handler function */
- struct event_function *next;            /*!< next function */
-};
-
 enum function_type {
  function_type_specific,
  function_type_generic
@@ -262,6 +256,10 @@ struct exported_function {
 enum einit_timer_options {
  einit_timer_once = 0x0001,
  einit_timer_until_cancelled = 0x0002
+};
+
+struct event_function {
+ void (*handler)(struct einit_event *);
 };
 
 extern pthread_key_t einit_function_macro_key;
@@ -311,7 +309,6 @@ struct exported_function *function_look_up_one (const char *, const uint32_t, co
  (pthread_setspecific(einit_function_macro_key, (void *)function_look_up_one(name, version, sub)),\
   function_call(rv, (struct exported_function *)pthread_getspecific(einit_function_macro_key), __VA_ARGS__))
 
-struct event_function *event_functions;
 struct stree *exported_functions;
 
 char *event_code_to_string (const uint32_t);

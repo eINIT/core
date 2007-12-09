@@ -47,9 +47,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <einit/bitch.h>
 #include <errno.h>
+#include <einit/itree.h>
 
 pthread_mutex_t evf_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct itree *event_handlers = NULL;
 
 uint32_t cseqid = 0;
 
@@ -118,17 +121,48 @@ void *event_thread_wrapper (struct evt_wrapper_data *d) {
 
 void event_subthread_a (struct einit_event *event) {
  uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
+ struct event_function **f = NULL;
 
  /* initialise sequence id and timestamp of the event */
  event->seqid = cseqid++;
  event->timestamp = time(NULL);
 
- struct event_function *cur = event_functions;
- while (cur) {
-  if (((cur->type == event->type) || (cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
-   cur->handler (event);
+ emutex_lock (&evf_mutex);
+ if (event_handlers) {
+  struct itree *it = NULL;
+  it = itreefind (event_handlers, event->type, tree_find_first);
+
+  while (it) {
+   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+
+   it = itreefind (it, event->type, tree_find_next);
   }
-  cur = cur->next;
+
+  it = itreefind (event_handlers, subsystem, tree_find_first);
+
+  while (it) {
+   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+
+   it = itreefind (it, subsystem, tree_find_next);
+  }
+
+  it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
+
+  while (it) {
+   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+
+   it = itreefind (it, einit_event_subsystem_any, tree_find_next);
+  }
+ }
+ emutex_unlock (&evf_mutex);
+
+ if (f) {
+  int i = 0;
+  for (; f[i]; i++) {
+   f[i]->handler(event);
+  }
+
+  free (f);
  }
 
  if (event->chain_type) {
@@ -170,29 +204,60 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   return NULL;
  }
 
+ struct event_function **f = NULL;
  uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
 
 /* initialise sequence id and timestamp of the event */
-  event->seqid = cseqid++;
-  event->timestamp = time(NULL);
+ event->seqid = cseqid++;
+ event->timestamp = time(NULL);
 
-  struct event_function *cur = event_functions;
-  while (cur) {
-   if (((cur->type == event->type) || (cur->type == subsystem) || (cur->type == einit_event_subsystem_any)) && cur->handler) {
-    if (flags & einit_event_flag_spawn_thread_multi_wait) {
-     pthread_t *threadid = emalloc (sizeof (pthread_t));
-     struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
+ emutex_lock (&evf_mutex);
+ if (event_handlers) {
+  struct itree *it = NULL;
+  it = itreefind (event_handlers, event->type, tree_find_first);
 
-     d->event = evdup(event);
-     d->handler = cur->handler;
+  while (it) {
+   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
 
-     ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
-     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
-    } else
-     cur->handler (event);
-   }
-   cur = cur->next;
+   it = itreefind (it, event->type, tree_find_next);
   }
+
+  it = itreefind (event_handlers, subsystem, tree_find_first);
+
+  while (it) {
+   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+
+   it = itreefind (it, subsystem, tree_find_next);
+  }
+
+  it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
+
+  while (it) {
+   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+
+   it = itreefind (it, einit_event_subsystem_any, tree_find_next);
+  }
+ }
+ emutex_unlock (&evf_mutex);
+
+ if (f) {
+  int i = 0;
+  for (; f[i]; i++) {
+   if (flags & einit_event_flag_spawn_thread_multi_wait) {
+    pthread_t *threadid = emalloc (sizeof (pthread_t));
+    struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
+
+    d->event = evdup(event);
+    d->handler = f[i]->handler;
+
+    ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
+    threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+   } else
+    f[i]->handler (event);
+  }
+
+  free (f);
+ }
 
  if (event->chain_type) {
   event->type = event->chain_type;
@@ -216,46 +281,33 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 }
 
 void event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
- struct event_function *fstruct = ecalloc (1, sizeof (struct event_function));
-
-// fstruct->type = type & EVENT_SUBSYSTEM_MASK;
- fstruct->type = type;
- fstruct->handler = handler;
+ struct event_function f = { .handler = handler };
 
  emutex_lock (&evf_mutex);
-  if (event_functions)
-   fstruct->next = event_functions;
-
-  event_functions = fstruct;
+ event_handlers = itreeadd (event_handlers, type, &f, sizeof(struct event_function));
  emutex_unlock (&evf_mutex);
 }
 
 void event_ignore (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
- if (!event_functions) return;
-
-// uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
- uint32_t ltype = type;
-
+ struct itree *it = NULL;
  emutex_lock (&evf_mutex);
-  struct event_function *cur = event_functions;
-  struct event_function *prev = NULL;
-  while (cur) {
-   if ((cur->type==ltype) && (cur->handler==handler)) {
-    if (prev == NULL) {
-     event_functions = cur->next;
-     efree (cur);
-     cur = event_functions;
-    } else {
-     prev->next = cur->next;
-     efree (cur);
-     cur = prev->next;
-    }
-   } else {
-    prev = cur;
-    cur = cur->next;
-   }
+ if (event_handlers) {
+  it = itreefind (event_handlers, type, tree_find_first);
+
+  while (it) {
+   struct event_function *f = it->value;
+   if (f->handler == handler) break;
+
+   it = itreefind (it, type, tree_find_next);
   }
+ }
  emutex_unlock (&evf_mutex);
+
+ if (it) {
+  emutex_lock (&evf_mutex);
+  event_handlers = itreedel (it);
+  emutex_unlock (&evf_mutex);
+ }
 
  return;
 }
