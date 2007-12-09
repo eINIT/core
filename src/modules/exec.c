@@ -692,7 +692,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  } else {
   FILE *fx;
 
-  efree (exec_environment);
+  if (exec_environment) efree (exec_environment);
+  if (exvec) efree (exvec);
 
   if (!(options & pexec_option_nopipe) && status) {
 /* tag the fd as close-on-exec, just in case */
@@ -1076,7 +1077,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
    execve (exvec[0], exvec, daemon_environment);
   } else {
-   efree (daemon_environment);
+   if (daemon_environment) efree (daemon_environment);
+   if (exvec) efree (exvec);
 
    new->pid = child;
 //  sched_watch_pid (child, dexec_watcher);
