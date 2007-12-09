@@ -475,7 +475,8 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
   }
 
 /* more cleanup code */
-  ha = streelinear_prepare(service_usage);
+  service_usage = streelinear_prepare(service_usage);
+  ha = service_usage;
   while (ha) {
    item = (struct service_usage_item *)ha->value;
 
@@ -487,7 +488,8 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
    if (!item->provider && !item->users) {
 //    service_usage = streedel (service_usage, ha);
     service_usage = streedel (ha);
-    ha = streelinear_prepare(service_usage);
+    service_usage = streelinear_prepare(service_usage);
+	ha = service_usage;
    } else
     ha = streenext (ha);
   }
