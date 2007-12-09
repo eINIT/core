@@ -1,5 +1,5 @@
 /*
- *  monitor.h
+ *  configuration-static.h
  *  einit
  *
  *  Created by Magnus Deininger on 23/11/2007.
@@ -74,7 +74,7 @@ extern "C" {
 #if defined (ISGIT) && (ISGIT > 0)
 #define EINIT_VERSION_LITERAL_NUMBER "git"
 #else
-#define EINIT_VERSION_LITERAL_NUMBER "0.25.1"
+#define EINIT_VERSION_LITERAL_NUMBER "0.25.2"
 #endif
 
 #define EINIT_VERSION_LITERAL EINIT_VERSION_LITERAL_NUMBER EINIT_VERSION_LITERAL_SUFFIX
