@@ -217,12 +217,15 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
  emutex_lock (&evf_mutex);
  if (event_handlers) {
   struct itree *it = NULL;
-  it = itreefind (event_handlers, event->type, tree_find_first);
 
-  while (it) {
-   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+  if (event->type != subsystem) {
+   it = itreefind (event_handlers, event->type, tree_find_first);
 
-   it = itreefind (it, event->type, tree_find_next);
+   while (it) {
+    f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+
+    it = itreefind (it, event->type, tree_find_next);
+   }
   }
 
   it = itreefind (event_handlers, subsystem, tree_find_first);
