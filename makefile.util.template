@@ -26,11 +26,11 @@ set.o: set-lowmem.o
 itree.o: itree-trinary-splay.o
 	cp itree-trinary-splay.o itree.o
 
-#tree.o: tree-linear.o
-#	cp tree-linear.o tree.o
+tree.o: tree-linear.o
+	cp tree-linear.o tree.o
 
-tree.o: tree-itree.o
-	cp tree-itree.o tree.o
+#tree.o: tree-itree.o
+#	cp tree-itree.o tree.o
 
 einit-control: einit-control.o bitch.o utility.o $(asmobjects) libeinit.${SO}
 	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC) -L. -leinit
