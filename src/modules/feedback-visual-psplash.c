@@ -167,8 +167,8 @@ void einit_feedback_visual_psplash_einit_event_handler_service_update (struct ei
     if (!(ev->status & status_failed)) {
      int i = 0;
 
-     for (; ev->set[i]; i++) {
-      if (strmatch (ev->set[i], "mount-critical")) {
+     for (; ev->stringset[i]; i++) {
+      if (strmatch (ev->stringset[i], "mount-critical")) {
        dorun = 1;
        break;
       }
@@ -177,6 +177,7 @@ void einit_feedback_visual_psplash_einit_event_handler_service_update (struct ei
    }
 
    if (dorun && !(coremode & einit_mode_sandbox) && (t = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
+    notice (2, "mount-critical is up, running exquisite");
     system (t);
    } else {
     psplash_type = sp_disabled;
