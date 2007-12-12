@@ -146,6 +146,8 @@
    <fbsplash b="true" />
    <aural b="false" />
 
+   <psplash s="no" />
+
    <visual>
     <std-io stdio="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" activate-vt="9" kernel-vt="12" />
 <!-- better verbosity on tty10: -->
@@ -162,6 +164,24 @@
      <ttys s="1 2 3 4 5 6" />
      <theme s="gentoo" />
     </fbsplash>
+
+    <psplash>
+     <fifo s="/dev/psplash_fifo" />
+     <run s="export TMPDIR=&quot;/dev&quot;;
+             psplash &amp;" />
+    </psplash>
+
+    <usplash>
+     <fifo s="/dev/usplash_fifo" />
+     <run s="export TMPDIR=&quot;/dev&quot;;
+             usplash &amp;" />
+    </usplash>
+
+    <exquisite>
+     <fifo s="/dev/exquisite_fifo" />
+     <run s="export TMPDIR=&quot;/dev&quot;;
+          exquisite &amp;" />
+    </exquisite>
    </visual>
 
    <aural>

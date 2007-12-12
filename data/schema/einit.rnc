@@ -166,6 +166,8 @@ Configuration = element configuration {
     element textual { BooleanAttribute }? &
     element fbsplash { BooleanAttribute }? &
     element aural { BooleanAttribute }? &
+
+    element aural { StringAttribute }? &
     element visual {
       element std-io {
         attribute stdio { text },
@@ -193,6 +195,21 @@ Configuration = element configuration {
           element mount-dir { BooleanAttribute, attribute size { text }, attribute path { text } } ?
         }?
       }*
+
+      element psplash {
+        element fifo { StringAttribute }&
+        element run { StringAttribute }
+      }?
+
+      element usplash {
+        element fifo { StringAttribute }&
+        element run { StringAttribute }
+      }?
+
+      element exquisite {
+        element fifo { StringAttribute }&
+        element run { StringAttribute }
+      }?
     }* &
 
     element aural {
