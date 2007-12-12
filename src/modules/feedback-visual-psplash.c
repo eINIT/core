@@ -159,6 +159,30 @@ void einit_feedback_visual_psplash_einit_event_handler_mode_switch_done (struct 
 }
 
 void einit_feedback_visual_psplash_einit_event_handler_service_update (struct einit_event *ev) {
+ if (ev->stringset) {
+  if (psplash_type == sp_exquisite) { /* for exquisite, we need to wait until mount-critical is up */
+   char *t = NULL, dorun = 0;
+
+   if (ev->task & einit_module_enable) {
+    if (!(ev->status & status_failed)) {
+     int i = 0;
+
+     for (; ev->set[i]; i++) {
+      if (strmatch (ev->set[i], "mount-critical")) {
+       dorun = 1;
+       break;
+      }
+     }
+    }
+   }
+
+   if (dorun && !(coremode & einit_mode_sandbox) && (t = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
+    system (t);
+   } else {
+    psplash_type = sp_disabled;
+   }
+  }
+ }
  char tmp[BUFFERSIZE];
 
  esprintf (tmp, BUFFERSIZE, "PROGRESS %i", (int)(get_plan_progress (NULL) * 100));
@@ -184,10 +208,17 @@ void *einit_feedback_visual_psplash_worker_thread (void *irr) {
    emutex_unlock (&psplash_commandQ_mutex);
 
    if (command) {
-    int fd = open (psplash_fifo, O_WRONLY | O_NONBLOCK);
-    if (fd != -1) {
-     write (fd, command, strlen(command) +1); /* \0 terminates commands in psplash */
-     eclose (fd);
+    if (psplash_type == sp_exquisite) {
+     char tmp[BUFFERSIZE];
+
+     esprintf (tmp, BUFFERSIZE, "exquisite-write \"%s\"", command);
+     system (tmp);
+    } else {
+     int fd = open (psplash_fifo, O_WRONLY | O_NONBLOCK);
+     if (fd != -1) {
+      write (fd, command, strlen(command) +1); /* \0 terminates commands in psplash */
+      eclose (fd);
+     }
     }
 
     efree (command);
@@ -245,15 +276,13 @@ int einit_feedback_visual_psplash_enable () {
    break;
 
   case sp_exquisite:
-   if ((tmp = cfg_getstring ("configuration-feedback-visual-exquisite-fifo", NULL))) {
-    psplash_fifo = tmp;
-   }
-
-   if ((tmp = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
+   if (coremode & einit_mode_sandbox) {
+    system ("exquisite -x11 -t /usr/share/exquisite/data/themes/default.edj &");
+   }/* else if ((tmp = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
     system (tmp);
    } else {
     psplash_type = sp_disabled;
-   }
+   }*/ /* need to wait for mount-critical for this 'ere... */
    break;
 
   default:

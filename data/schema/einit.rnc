@@ -207,7 +207,6 @@ Configuration = element configuration {
       }? &
 
       element exquisite {
-        element fifo { StringAttribute }&
         element run { StringAttribute }
       }?
     }* &

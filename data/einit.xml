@@ -178,9 +178,7 @@
     </usplash>
 
     <exquisite>
-     <fifo s="/dev/exquisite_fifo" />
-     <run s="export TMPDIR=&quot;/dev&quot;;
-          exquisite &amp;" />
+     <run s="exquisite -fb -fs -t /usr/share/exquisite/data/themes/default.edj &amp;" />
     </exquisite>
    </visual>
 
