@@ -96,12 +96,10 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
 double mod_get_plan_progress_f (struct mloadplan *);
 char mod_isbroken (char *service);
 char mod_mark (char *service, char task);
-struct group_data *mod_group_get_data (char *group);
 char mod_isprovided(char *service);
 void module_logic_update_init_d ();
 
 /* new functions: */
-char mod_examine_group (char *);
 void mod_examine_module (struct lmodule *);
 void mod_examine (char *);
 
@@ -133,13 +131,11 @@ struct module_taskblock
   target_state = { NULL, NULL, NULL };
 
 struct stree *module_logics_service_list = NULL; // value is a (struct lmodule **)
-struct stree *module_logics_group_data = NULL;
 
 pthread_mutex_t
   ml_tb_current_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_tb_target_state_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
-  ml_group_data_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_unresolved_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_currently_provided_mutex = PTHREAD_MUTEX_INITIALIZER,
   ml_service_update_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -152,16 +148,6 @@ pthread_cond_t
 char **unresolved_services = NULL;
 char **broken_services = NULL;
 char **current_switches = NULL;
-
-struct group_data {
- char **members;
- uint32_t options;
-};
-
-#define MOD_PLAN_GROUP_SEQ_ANY     0x00000001
-#define MOD_PLAN_GROUP_SEQ_ALL     0x00000002
-#define MOD_PLAN_GROUP_SEQ_ANY_IOP 0x00000004
-#define MOD_PLAN_GROUP_SEQ_MOST    0x00000008
 
 #define MARK_BROKEN                0x01
 #define MARK_UNRESOLVED            0x02
@@ -366,61 +352,6 @@ char mod_isbroken (char *service) {
  emutex_unlock (&ml_unresolved_mutex);
 
  return retval;
-}
-
-struct group_data *mod_group_get_data (char *group) {
- struct group_data *ret = NULL;
-
-/* eputs ("mod_group_get_data", stderr);
- fflush (stderr);*/
-
- emutex_lock (&ml_group_data_mutex);
-
-/* eputs ("got mutex", stderr);
- fflush (stderr);*/
-
- struct stree *cur = module_logics_group_data ? streefind (module_logics_group_data, group, tree_find_first) : NULL;
- if (cur) { ret = (struct group_data *)cur->value; }
- else {
-  char *tnodeid = emalloc (strlen (group)+17);
-  struct cfgnode *gnode = NULL;
-
-  memcpy (tnodeid, "services-alias-", 16);
-  strcat (tnodeid, group);
-
-  ret = ecalloc (1, sizeof (struct group_data));
-
-  if ((gnode = cfg_getnode (tnodeid, NULL)) && gnode->arbattrs) {
-   ssize_t r = 0;
-
-   for (r = 0; gnode->arbattrs[r]; r+=2) {
-    if (strmatch (gnode->arbattrs[r], "group")) {
-     ret->members = str2set (':', gnode->arbattrs[r+1]);
-    } else if (strmatch (gnode->arbattrs[r], "seq")) {
-     if (strmatch (gnode->arbattrs[r+1], "any"))
-      ret->options |=  MOD_PLAN_GROUP_SEQ_ANY;
-     else if (strmatch (gnode->arbattrs[r+1], "all"))
-      ret->options |=  MOD_PLAN_GROUP_SEQ_ALL;
-     else if (strmatch (gnode->arbattrs[r+1], "any-iop"))
-      ret->options |=  MOD_PLAN_GROUP_SEQ_ANY_IOP;
-     else if (strmatch (gnode->arbattrs[r+1], "most"))
-      ret->options |=  MOD_PLAN_GROUP_SEQ_MOST;
-    }
-   }
-  }
-  efree (tnodeid);
-
-  if (!ret->members || !ret->options) {
-   efree (ret);
-   ret = NULL;
-  } else {
-   module_logics_group_data = streeadd (module_logics_group_data, group, (void *)ret, SET_NOALLOC, (void *)ret);
-  }
- }
-
- emutex_unlock (&ml_group_data_mutex);
-
- return ret;
 }
 
 void cross_taskblock (struct module_taskblock *source, struct module_taskblock *target) {
@@ -949,8 +880,6 @@ int mod_modaction (char **argv, FILE *output) {
 
   ret = 1;
 
-  struct group_data *gd = mod_group_get_data (argv[0]);
-
   if (strmatch (argv[1], "zap")) {
    emutex_lock (&ml_tb_current_mutex);
    current.enable = strsetdel (current.enable, argv[0]);
@@ -965,27 +894,12 @@ int mod_modaction (char **argv, FILE *output) {
    emutex_unlock (&ml_tb_target_state_mutex);
   }
 
-  if (strmatch (argv[1], "status") && output && gd) {
-   char *members = set2str (' ', (const char **)gd->members);
-
-   ret = 0;
-
-   eprintf (output, "%s: \e[34mgroup\e[0m\n", argv[0]);
-   eprintf (output, " \e[32m**\e[0m service \"%s\" is currently %s\e[0m.\n", argv[0], mod_isprovided(argv[0]) ? "\e[32mprovided" : "\e[31mnot provided");
-   eprintf (output, " \e[34m>>\e[0m group type: %s\n", (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP) ? "any / any-iop" : (gd->options & (MOD_PLAN_GROUP_SEQ_MOST) ? "most" : "all")));
-
-   if (members) {
-    eprintf (output, " \e[34m>>\e[0m group members: ( %s )\n", members);
-	efree (members);
-   }
-  }
-
   if (tm) {
    if (strmatch (argv[1], "status") && output) {
     for (; tm[r]; r++) if (tm[r]->module) {
      if (r == 0) {
 	  eprintf (output, "%s: \"%s\".\n", argv[0], tm[r]->module->name);
-      if (!gd) eprintf (output, " \e[32m**\e[0m service \"%s\" is currently %s\e[0m.\n", argv[0], mod_isprovided(argv[0]) ? "\e[32mprovided" : "\e[31mnot provided");
+          eprintf (output, " \e[32m**\e[0m service \"%s\" is currently %s\e[0m.\n", argv[0], mod_isprovided(argv[0]) ? "\e[32mprovided" : "\e[31mnot provided");
 	 } else {
 	  eprintf (output, "backup candiate #%i: \"%s\".\n", r, tm[r]->module->name);
 	 }
@@ -1033,7 +947,7 @@ int mod_modaction (char **argv, FILE *output) {
       ret = 0;
     }
    }
-  } else if (strmatch (argv[1], "status") && output && !gd) {
+  } else if (strmatch (argv[1], "status") && output) {
    ret = 1;
 
    eprintf (output, " \e[31m!!\e[0m service \"%s\" is currently not defined.\n", argv[0]);
@@ -1142,14 +1056,6 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
  }
 
  emutex_unlock (&ml_unresolved_mutex);
- emutex_lock (&ml_group_data_mutex);
-
- if (module_logics_group_data) {
-  streefree (module_logics_group_data);
-  module_logics_group_data = NULL;
- }
-
- emutex_unlock (&ml_group_data_mutex);
 
  ev->chain_type = einit_core_module_list_update_complete;
 
@@ -1355,7 +1261,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
         emutex_lock(&ml_service_list_mutex);
 
         for (; tmps[i]; i++) {
-         if (!streefind (module_logics_service_list, tmps[i], tree_find_first) && !mod_group_get_data(tmps[i])) {
+         if (!streefind (module_logics_service_list, tmps[i], tree_find_first)) {
           eprintf (ev->output, " * mode \"%s\": service \"%s\" referenced but not found\n", cfgn->mode->id, tmps[i]);
           ev->ipc_return++;
          }
@@ -1453,23 +1359,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
      }
 
      if (inmodes || (!(ev->ipc_options & einit_ipc_only_relevant))) {
-      struct group_data *gd = mod_group_get_data (cur->key);
-
       if (ev->ipc_options & einit_ipc_output_xml) {
-       if (gd && gd->members) {
-        char *members = set2str (':', (const char **)gd->members);
-        char *members_escaped = escape_xml (members);
-        eprintf (ev->output, "  <group members=\"%s\" seq=\"%s\" />\n",
-                 members_escaped,
-                 ((gd->options & MOD_PLAN_GROUP_SEQ_ANY) ? "any" :
-                  ((gd->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) ? "any-iop" :
-                   ((gd->options & MOD_PLAN_GROUP_SEQ_MOST) ? "most" :
-                   ((gd->options & MOD_PLAN_GROUP_SEQ_ALL) ? "all" : "unknown")))));
-
-        efree (members_escaped);
-        efree (members);
-       }
-
        if (cur->value) {
         struct lmodule **xs = cur->value;
         uint32_t u = 0;
@@ -1570,78 +1460,6 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
     emutex_unlock(&ml_service_list_mutex);
 
-    emutex_lock (&ml_group_data_mutex);
-
-/* eputs ("got mutex", stderr);
-    fflush (stderr);*/
-
-    cur = streelinear_prepare(module_logics_group_data);
-    while (cur) {
-     struct group_data *gd = (struct group_data *)cur->value;
-
-     emutex_lock(&ml_service_list_mutex);
-     if (streefind (module_logics_service_list, cur->key, tree_find_first)) { // skip entries we already displayed
-      emutex_unlock(&ml_service_list_mutex);
-      cur = streenext (cur);
-      continue;
-     }
-
-     emutex_unlock(&ml_service_list_mutex);
-
-     char **inmodes = NULL;
-     struct stree *mcur = streelinear_prepare(modes);
-
-     while (mcur) {
-      if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
-       inmodes = (char **)setadd((void **)inmodes, (void *)mcur->key, SET_TYPE_STRING);
-      }
-
-      mcur = streenext(mcur);
-     }
-
-     if (inmodes) {
-      char *modestr;
-      if (ev->ipc_options & einit_ipc_output_xml) {
-       modestr = set2str (':', (const char **)inmodes);
-       eprintf (ev->output, " <service id=\"%s\" used-in=\"%s\" provided=\"%s\">\n", cur->key, modestr, mod_isprovided(cur->key) ? "yes" : "no");
-       efree (modestr);
-      } else {
-       eprintf (ev->output, "%s (group)\n", cur->key);
-      }
-      efree (inmodes);
-     } else if (!(ev->ipc_options & einit_ipc_only_relevant)) {
-      if (ev->ipc_options & einit_ipc_output_xml) {
-       eprintf (ev->output, " <service id=\"%s\" provided=\"%s\">\n", cur->key, mod_isprovided(cur->key) ? "yes" : "no");
-      } else {
-       eprintf (ev->output, "%s (group)\n", cur->key);
-      }
-     }
-
-     if (inmodes || (!(ev->ipc_options & einit_ipc_only_relevant))) {
-      if (ev->ipc_options & einit_ipc_output_xml) {
-       if (gd && gd->members) {
-        char *members = set2str (':', (const char **)gd->members);
-        char *members_escaped = escape_xml (members);
-        eprintf (ev->output, "  <group members=\"%s\" seq=\"%s\" />\n",
-                 members_escaped,
-                 ((gd->options & MOD_PLAN_GROUP_SEQ_ANY) ? "any" :
-                  ((gd->options & MOD_PLAN_GROUP_SEQ_ANY_IOP) ? "any-iop" :
-                   ((gd->options & MOD_PLAN_GROUP_SEQ_MOST) ? "most" :
-                   ((gd->options & MOD_PLAN_GROUP_SEQ_ALL) ? "all" : "unknown")))));
-
-        efree (members_escaped);
-        efree (members);
-       }
-
-       eputs (" </service>\n", ev->output);
-      }
-     }
-
-     cur = streenext (cur);
-    }
-
-    emutex_unlock (&ml_group_data_mutex);
-
     ev->implemented = 1;
    }
 
@@ -1725,7 +1543,6 @@ struct stree *module_logics_chain_examine = NULL; // value is a (char **)
 struct stree *module_logics_chain_examine_reverse = NULL;
 char **currently_provided = NULL;
 char **changed_recently = NULL;
-signed char mod_flatten_current_tb_group(char *serv, char task);
 void mod_spawn_workthreads ();
 char mod_haschanged(char *service);
 
@@ -2341,130 +2158,6 @@ void mod_queue_disable (char *service) {
  mod_workthread_create (service);
 }
 
-signed char mod_flatten_current_tb_group(char *serv, char task) {
- struct group_data *gd = mod_group_get_data (serv);
-
-#ifdef DEBUG
- eputs ("g", stderr);
- fflush (stderr);
-#endif
-
- if (gd) {
-  uint32_t changes = 0;
-  char *service = estrdup (serv);
-
-  if (!gd->members || !gd->members[0])
-   return -1;
-
-  if (gd->options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
-   uint32_t i = 0;
-
-   for (; gd->members[i]; i++) {
-    if (((task & einit_module_enable) && mod_isprovided (gd->members[i])) ||
-          ((task & einit_module_disable) && !mod_isprovided (gd->members[i]))) {
-     efree (service);
-     return 0;
-    }
-
-    if (mod_isbroken (gd->members[i])) {
-     continue;
-    }
-
-    if (mod_defer_until(service, gd->members[i])) {
-     mod_mark (gd->members[i], MARK_BROKEN);
-
-     continue;
-    }
-
-    if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
-     changes++;
-
-     if (task & einit_module_enable) {
-      current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
-     } else {
-      current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
-     }
-
-     efree (service);
-     return 1;
-    }
-
-    efree (service);
-    return 0;
-   }
-
-   notice (2, "marking group %s broken (...)", service);
-
-   mod_mark (service, MARK_BROKEN);
-  } else { // MOD_PLAN_GROUP_SEQ_ALL | MOD_PLAN_GROUP_SEQ_MOST
-   uint32_t i = 0, bc = 0, sc = 0;
-
-   for (; gd->members[i]; i++) {
-    if (((task & einit_module_enable) && mod_isprovided (gd->members[i])) ||
-        ((task & einit_module_disable) && !mod_isprovided (gd->members[i]))) {
-#ifdef DEBUG
-     eprintf (stderr, "%s: skipping %s (already in proper state)\n", service, gd->members[i]);
-#endif
-
-     sc++;
-     continue;
-    }
-
-    if (mod_isbroken (gd->members[i])) {
-#ifdef DEBUG
-     eprintf (stderr, "%s: skipping %s (broken)\n", service, gd->members[i]);
-#endif
-
-     bc++;
-     continue;
-    }
-
-    if (mod_defer_until(service, gd->members[i])) {
-     mod_mark (gd->members[i], MARK_BROKEN);
-
-     bc++;
-     continue;
-    }
-
-    if (!inset ((const void **)(task & einit_module_enable ? current.enable : current.disable), gd->members[i], SET_TYPE_STRING)) {
-     changes++;
-
-#ifdef DEBUG
-     eprintf (stderr, "%s: deferring after %s\n", service, gd->members[i]);
-#endif
-
-     if (task & einit_module_enable) {
-      current.enable = (char **)setadd ((void **)current.enable, (const void *)gd->members[i], SET_TYPE_STRING);
-     } else {
-      current.disable = (char **)setadd ((void **)current.disable, (const void *)gd->members[i], SET_TYPE_STRING);
-     }
-    }
-   }
-
-#ifdef DEBUG
-   notice (6, "group %s: i=%i; sc=%i; bc=%i\n", service, i, sc, bc);
-#endif
-
-   if (bc) {
-    if (bc == i) {
-     notice (5, "group %s broken!\n", service);
-
-     mod_mark (service, MARK_BROKEN);
-    } else if (gd->options & MOD_PLAN_GROUP_SEQ_ALL) {
-     notice (5, "group %s broken!\n", service);
-
-     mod_mark (service, MARK_BROKEN);
-    }
-   }
-  }
-
-  efree (service);
-  return changes != 0;
- }
-
- return -1;
-}
-
 signed char mod_flatten_current_tb_module(char *serv, char task) {
  emutex_lock (&ml_service_list_mutex);
  struct stree *xn = streefind (module_logics_service_list, serv, tree_find_first);
@@ -2596,8 +2289,7 @@ void mod_flatten_current_tb () {
    fflush (stderr);
 #endif
 
-   if (((t = mod_flatten_current_tb_group(current.enable[i], einit_module_enable)) == -1) &&
-       ((t = mod_flatten_current_tb_module(current.enable[i], einit_module_enable)) == -1)) {
+   if ((t = mod_flatten_current_tb_module(current.enable[i], einit_module_enable)) == -1) {
     notice (2, "can't resolve service %s\n", current.enable[i]);
 
     mod_mark (current.enable[i], MARK_UNRESOLVED);
@@ -2612,17 +2304,6 @@ void mod_flatten_current_tb () {
    fflush (stderr);
 #endif
   }
-
-#if 0
-  for (i = 0; current.enable[i]; i++) {
-   struct stree *xn = streefind (module_logics_service_list, current.enable[i], tree_find_first);
-
-   if (!mod_group_get_data (current.enable[i]) && xn && xn->value) {
-    struct lmodule **lm = xn->value;
-//    mod_defer_notice (lm[0], NULL);
-   }
-  }
-#endif
  }
 
  repeat_disa:
@@ -2646,8 +2327,7 @@ void mod_flatten_current_tb () {
    fflush (stderr);
 #endif
 
-   if (((t = mod_flatten_current_tb_group(current.disable[i], einit_module_disable)) == -1) &&
-       ((t = mod_flatten_current_tb_module(current.disable[i], einit_module_disable)) == -1)) {
+   if ((t = mod_flatten_current_tb_module(current.disable[i], einit_module_disable)) == -1) {
     notice (2, "can't resolve service %s\n", current.disable[i]);
 
     mod_mark (current.disable[i], MARK_UNRESOLVED);
@@ -2662,15 +2342,6 @@ void mod_flatten_current_tb () {
    fflush (stderr);
 #endif
   }
-
-/*  for (i = 0; current.disable[i]; i++) {
-   struct stree *xn = streefind (module_logics_service_list, current.disable[i], tree_find_first);
-
-   if (!mod_group_get_data (current.disable[i]) && xn && xn->value) {
-    struct lmodule **lm = xn->value;
-//    mod_defer_notice (lm[0], NULL);
-   }
-  }*/
  }
 
 #ifdef DEBUG
@@ -3222,235 +2893,6 @@ int mod_gettask (char * service) {
  return task;
 }
 
-char mod_examine_group (char *groupname) {
- struct group_data *gd = mod_group_get_data (groupname);
- if (!gd) return 0;
- char post_examine = 0;
- char **members = NULL;
- uint32_t options = 0;
-
- emutex_lock (&ml_group_data_mutex);
- if (gd->members) {
-  members = (char **)setdup ((const void **)gd->members, SET_TYPE_STRING);
- }
- options = gd->options;
- emutex_unlock (&ml_group_data_mutex);
-
- if (members) {
-  int task = mod_gettask (groupname);
-
-  if ((task & einit_module_enable) && mod_isprovided (groupname)) {
-   emutex_lock (&ml_changed_mutex);
-   if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
-    changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
-   emutex_unlock (&ml_changed_mutex);
-
-   mod_post_examine (groupname);
-
-   return 1;
-  }
-
-//  notice (2, "group %s: examining members", groupname);
-
-  ssize_t x = 0, mem = setcount ((const void **)members), failed = 0, on = 0, changed = 0, groupc = 0;
-  struct lmodule **providers = NULL;
-  char group_failed = 0, group_ok = 0;
-
-  for (; members[x]; x++) {
-   if (mod_haschanged (members[x]) || mod_isbroken (members[x]))
-    changed++;
-
-   if (mod_isbroken (members[x])) {
-    failed++;
-   }/* else {*/
-   {
-    struct stree *serv = NULL;
-
-    emutex_lock (&ml_service_list_mutex);
-
-    if (mod_isprovided(members[x])) {
-     on++;
-
-     if (module_logics_service_list && (serv = streefind(module_logics_service_list, members[x], tree_find_first))) {
-      struct lmodule **lm = (struct lmodule **)serv->value;
-
-      if (lm) {
-       ssize_t y = 0;
-
-       for (; lm[y]; y++) {
-        if ((lm[y]->status & status_enabled) && (!providers || !inset ((const void **)providers, (const void *)lm[y], SET_NOALLOC))) {
-         providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
-
-         break;
-        }
-       }
-      }
-     } else {
-      struct lmodule **lm = (struct lmodule **)service_usage_query_cr (service_get_providers, NULL, members[x]);
-
-      groupc++; /* must be a group... */
-
-      if (lm) {
-       ssize_t y = 0;
-
-       for (; lm[y]; y++) {
-        if (!providers || !inset ((const void **)providers, (const void *)lm[y], SET_NOALLOC)) {
-         providers = (struct lmodule **)setadd ((void **)providers, (void *)lm[y], SET_NOALLOC);
-
-#ifdef DEBUG
-         eprintf (stderr, " ** group %s provided by %s (groupc=%i)", groupname, lm[y]->module->name, (int)groupc);
-#endif
-        }
-       }
-      }
-     }
-    }
-
-    emutex_unlock (&ml_service_list_mutex);
-
-   }
-  }
-
-#if 0
-  if ((changed + failed) >= mem) { // well, no matter what's gonna happen, if all members changed or are broken, then this changed too
-   emutex_lock (&ml_changed_mutex);
-   if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
-    changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
-   emutex_unlock (&ml_changed_mutex);
-  }
-#endif
-
-  if (!on && (changed >= mem)) {
-   on = (mem - failed); /* this one's a bit odd */
-  }
-
-  if (!on || ((task & einit_module_disable) && ((changed >= mem) || (on == groupc)))) {
-   if (task & einit_module_disable) {
-    emutex_lock (&ml_changed_mutex);
-    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
-     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
-    emutex_unlock (&ml_changed_mutex);
-   }
-
-   if (mod_isprovided (groupname)) {
-    emutex_lock (&ml_currently_provided_mutex);
-    currently_provided = (char **)strsetdel ((char **)currently_provided, (char *)groupname);
-    emutex_unlock (&ml_currently_provided_mutex);
-
-    emutex_lock (&ml_tb_current_mutex);
-    current.enable = strsetdel (current.enable, groupname);
-    current.disable = strsetdel (current.disable, groupname);
-    emutex_unlock (&ml_tb_current_mutex);
-
-    emutex_lock (&ml_changed_mutex);
-    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
-     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
-    emutex_unlock (&ml_changed_mutex);
-
-#ifdef DEBUG
-    notice (2, "marking group %s off", groupname);
-#endif
-
-    post_examine = 1;
-
-    mod_ping_all_threads();
-   }
-
-   if (task & einit_module_disable) {
-    post_examine = 1;
-   }
-  }
-
-  if (task & einit_module_enable) {
-   if (on) {
-    if (options & (MOD_PLAN_GROUP_SEQ_ANY | MOD_PLAN_GROUP_SEQ_ANY_IOP)) {
-     if (on > 0) {
-      group_ok = 1;
-     }
-    } else if (options & MOD_PLAN_GROUP_SEQ_MOST) {
-     if (on && ((on + failed) >= mem)) {
-      group_ok = 1;
-     } else if (changed >= mem) {
-      if (on) group_ok = 1;
-      else group_failed = 1;
-     }
-    } else if (options & MOD_PLAN_GROUP_SEQ_ALL) {
-     if (on >= mem) {
-      group_ok = 1;
-     } else if (failed) {
-      group_failed = 1;
-     }
-    } else {
-#ifdef DEBUG
-     notice (2, "marking group %s broken (bad group type)", groupname);
-#endif
-
-     mod_mark (groupname, MARK_BROKEN);
-    }
-   } else {
-    if (failed >= mem) {
-     group_failed = 1;
-    } else if (changed >= mem) {
-     group_failed = 1;
-    }
-   }
-
-   if (group_ok) {
-    notice (5, "marking group %s up", groupname);
-
-    emutex_lock (&ml_tb_current_mutex);
-    current.enable = strsetdel (current.enable, groupname);
-    current.disable = strsetdel (current.disable, groupname);
-    emutex_unlock (&ml_tb_current_mutex);
-
-    emutex_lock (&ml_changed_mutex);
-    if (!inset ((const void **)changed_recently, (const void *)groupname, SET_TYPE_STRING))
-     changed_recently = (char **)setadd ((void **)changed_recently, (const void *)groupname, SET_TYPE_STRING);
-    emutex_unlock (&ml_changed_mutex);
-
-    service_usage_query_group (service_set_group_providers, (struct lmodule *)providers, groupname);
-
-    if (!mod_isprovided (groupname)) {
-     emutex_lock (&ml_currently_provided_mutex);
-     currently_provided = (char **)setadd ((void **)currently_provided, (void *)groupname, SET_TYPE_STRING);
-     emutex_unlock (&ml_currently_provided_mutex);
-    }
-
-    post_examine = 1;
-
-    mod_ping_all_threads();
-   } else if (group_failed) {
-    notice (2, "marking group %s broken (group requirements failed)", groupname);
-
-    mod_mark (groupname, MARK_BROKEN);
-   } else {
-/* just to make sure everything will actually be enabled/disabled */
-    emutex_lock (&ml_tb_current_mutex);
-    mod_flatten_current_tb_group(groupname, task);
-    emutex_unlock (&ml_tb_current_mutex);
-   }
-  } else { /* mod_disable */
-/* just to make sure everything will actually be enabled/disabled */
-   emutex_lock (&ml_tb_current_mutex);
-   mod_flatten_current_tb_group(groupname, task);
-   emutex_unlock (&ml_tb_current_mutex);
-  }
-
-  if (providers) efree (providers);
-
-  efree (members);
- }
-
- if (post_examine) {
-  mod_post_examine (groupname);
- }
-
-#if 0
- mod_ping_all_threads();
-#endif
- return 1;
-}
-
 char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
  char **before = NULL, **after = NULL, **xbefore = NULL, hd = 0;
 
@@ -3513,16 +2955,12 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
     for (y = 0; d[y]; y++) {
     if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
-     struct group_data *gd = mod_group_get_data(d[y]);
+//     notice (1, "%s is before: %s", service, d[y]);
 
-     if (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING)) {
-//      notice (1, "%s is before: %s", service, d[y]);
+     mod_defer_until (d[y], service);
+//     mod_defer_until (service, d[y]);
 
-      mod_defer_until (d[y], service);
-//      mod_defer_until (service, d[y]);
-
-      xbefore = (char **)setadd ((void **)xbefore, (void *)d[y], SET_TYPE_STRING);
-     }
+     xbefore = (char **)setadd ((void **)xbefore, (void *)d[y], SET_TYPE_STRING);
     }
 
     efree (d);
@@ -3559,10 +2997,8 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
     for (y = 0; d[y]; y++) {
      if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
-     struct group_data *gd = mod_group_get_data(d[y]);
 
-     if ((!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) &&
-           (!gd || !gd->members || !inset ((const void **)gd->members, (void *)service, SET_TYPE_STRING))) {
+     if (!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) {
       if (!mod_defer_until (service, d[y])) {
 //      notice (1, "%s goes after %s", service, d[y]);
        hd = 1;
@@ -3613,34 +3049,6 @@ void mod_examine (char *service) {
   }
 
   mod_post_examine(service);
-
-  return;
- } else if (mod_examine_group (service)) {
-#ifdef DEBUG
-  notice (2, "service %s: group examination complete", service);
-#endif
-
-  if (!mod_haschanged (service)) {
-   char retries = 5;
-
-   do {
-//    mod_pre_examine(service);
-
-    mod_wait_for_ping();
-
-    mod_examine_group (service);
-
-    retries--;
-
-    if ((retries <= 0) || mod_isbroken (service)) {
-     mod_workthreads_dec(service);
-
-     return;
-    }
-   } while ((mod_isdeferred(service) || (!mod_haschanged (service) && !mod_isbroken (service))));
-  }
-
-  mod_workthreads_dec(service);
 
   return;
  } else if (mod_isdeferred (service)) {
@@ -3765,11 +3173,11 @@ void mod_workthread_create(char *service) {
 
 void mod_spawn_batch(char **batch, int task) {
  char **dospawn = NULL;
- uint32_t i, deferred, broken, groupc;
+ uint32_t i, deferred, broken;
 
  retry:
- 
- deferred = 0; broken = 0; groupc = 0;
+
+ deferred = 0; broken = 0;;
 
  if (dospawn) {
   efree(dospawn);
@@ -3785,8 +3193,6 @@ void mod_spawn_batch(char **batch, int task) {
   } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i], 0)) {
    deferred++;
 //   eprintf (stderr, " !! %s\n", batch[i]);
-
-   groupc += mod_group_get_data (batch[i]) ? 1 : 0;
   } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
    current.enable = strsetdel (current.enable, batch[i]);
    batch = current.enable;
@@ -3797,20 +3203,18 @@ void mod_spawn_batch(char **batch, int task) {
    goto retry;
   } else {
    dospawn = (char **)setadd ((void **)dospawn, batch[i], SET_TYPE_STRING);
-
-   groupc += mod_group_get_data (batch[i]) ? 1 : 0;
   }
  }
 
 #ifdef DEBUG
  char *alist = set2str (' ', (const char **)batch);
 
- eprintf (stderr, "i=%i (%s), broken=%i, deferred=%i, groups=%i\n", i, alist ? alist : "none", broken, deferred, groupc);
+ eprintf (stderr, "i=%i (%s), broken=%i, deferred=%i\n", i, alist ? alist : "none", broken, deferred);
 
  if (alist) efree (alist);
 #endif
 
- if (i == (broken + deferred + groupc)) {
+ if (i == (broken + deferred)) {
 /* foo: circular dependencies? kill the whole chain and hope for something good... */
   emutex_lock(&ml_chain_examine);
   if (module_logics_chain_examine) {
@@ -4046,7 +3450,6 @@ void mod_commit_and_wait (char **en, char **dis) {
 
 struct eml_resume_data {
  struct stree *module_logics_service_list;
- struct stree *module_logics_group_data;
  struct module_taskblock current, target_state;
 };
 
@@ -4072,7 +3475,6 @@ int einit_module_logic_v3_suspend (struct lmodule *this) {
   struct eml_resume_data *rd = this->resumedata;
 
   rd->module_logics_service_list = module_logics_service_list;
-  rd->module_logics_group_data = module_logics_group_data;
   rd->current.critical = current.critical;
   rd->current.enable = current.enable;
   rd->current.disable = current.disable;
@@ -4099,7 +3501,6 @@ int einit_module_logic_v3_resume (struct lmodule *this) {
   struct eml_resume_data *rd = this->resumedata;
 
   module_logics_service_list = rd->module_logics_service_list;
-  module_logics_group_data = rd->module_logics_group_data;
 
   current.critical = rd->current.critical;
   current.enable = rd->current.enable;

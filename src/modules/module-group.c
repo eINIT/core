@@ -86,6 +86,13 @@ enum seq_type {
 
 int module_group_scanmodules (struct lmodule *modules);
 
+char module_group_module_is_provided (char *service) {
+ if (service_usage_query (service_is_provided, NULL, service)) return 1;
+
+ return 0;
+}
+
+
 int module_group_module_enable (char *nodename, struct einit_event *status) {
  struct cfgnode *cn = cfg_getnode (nodename, NULL);
 
@@ -110,14 +117,72 @@ int module_group_module_enable (char *nodename, struct einit_event *status) {
 
   if (group) {
    if ((seq == sq_all) || !group[1])
+/* we can bail at this point:
+   if we only had one member, that one was set as requires=, if we had seq=all, then
+   all of the members were set as requires=. */
     return status_ok;
 
    if (seq == sq_any) {
+/* see if any of the items are enabled */
+    for (i = 0; group[i]; i++) {
+     if (module_group_module_is_provided(group[i])) goto exit_good;
+    }
+
+    for (i = 0; group[i]; i++) {
+     char **set = str2set (0, group[i]);
+     int y;
+
+     struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+     eml.stringset = set;
+     eml.task = einit_module_enable;
+
+     event_emit (&eml, einit_event_flag_broadcast);
+     evstaticdestroy(eml);
+
+     efree (set);
+
+     for (y = 0; group[y]; y++) {
+      if (module_group_module_is_provided(group[y])) goto exit_good;
+     }
+    }
    }
+
+   if (seq == sq_most) {
+/* see if all of these are enabled... */
+    int enabled = 0;
+    for (i = 0; group[i]; i++) {
+     if (module_group_module_is_provided(group[i])) enabled++;
+    }
+
+    if (enabled == i)
+/* if everything is enabled, then we do know for sure that this group is up. */
+     goto exit_good;
+
+/* (try to... ) enable all of the group members... */
+    struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+    eml.stringset = group;
+    eml.task = einit_module_enable;
+
+    event_emit (&eml, einit_event_flag_broadcast);
+    /* this will block until all of this has been tried at least once... */
+    evstaticdestroy(eml);
+
+    /* see if we have at least one enabled item */
+    for (i = 0; group[i]; i++) {
+     if (module_group_module_is_provided(group[i])) goto exit_good;
+    }
+   }
+
+   efree (group);
+   return status_failed;
+
+   exit_good:
+   efree (group);
+   return status_ok;
   }
  }
 
- return status_ok;
+ return status_failed;
 }
 
 int module_group_module_disable (char *nodename, struct einit_event *status) {
@@ -150,7 +215,7 @@ int module_group_scanmodules (struct lmodule *modchain) {
    if (cn && cn->arbattrs) {
     int i = 0;
     char **group = NULL, **before = NULL, **after = NULL;
-	enum seq_type seq = sq_all;
+    enum seq_type seq = sq_all;
 
     for (; cn->arbattrs[i]; i+=2) {
      if (strmatch (cn->arbattrs[i], "group")) {
@@ -158,11 +223,11 @@ int module_group_scanmodules (struct lmodule *modchain) {
      } else if (strmatch (cn->arbattrs[i], "seq")) {
       if (strmatch (cn->arbattrs[i+1], "any") || strmatch (cn->arbattrs[i+1], "any")) {
        seq = sq_any;
-	  } else if (strmatch (cn->arbattrs[i+1], "most")) {
+      } else if (strmatch (cn->arbattrs[i+1], "most")) {
        seq = sq_most;
-	  } else if (strmatch (cn->arbattrs[i+1], "all")) {
+      } else if (strmatch (cn->arbattrs[i+1], "all")) {
        seq = sq_all;
-	  }
+      }
      } else if (strmatch (cn->arbattrs[i], "before")) {
       before = str2set (':', cn->arbattrs[i+1]);
      } else if (strmatch (cn->arbattrs[i], "after")) {
@@ -176,23 +241,24 @@ int module_group_scanmodules (struct lmodule *modchain) {
 
      if ((seq == sq_all) || !group[1]) {
       requires = (char **)setdup ((const void **)group, SET_TYPE_STRING);
-	 } else {
-	  char *member_string = set2str ('|', (const char **)group);
+     } else {
+      char *member_string = set2str ('|', (const char **)group);
 
       esprintf (t, BUFFERSIZE, "^(%s)$", member_string);
 
       after = (char **)setadd ((void **)after, t, SET_TYPE_STRING);
 
       efree (member_string);
-	 }
+     }
 
      provides = (char **)setadd ((void **)provides, (cur->key + MODULES_PREFIX_SIZE), SET_TYPE_STRING);
 
      struct smodule *sm = emalloc (sizeof (struct smodule));
-	 memset (sm, 0, sizeof (struct smodule));
+     memset (sm, 0, sizeof (struct smodule));
 
      esprintf (t, BUFFERSIZE, "group-%s", cur->key + MODULES_PREFIX_SIZE);
      sm->rid = estrdup (t);
+     sm->configure = module_group_module_configure;
 
      struct lmodule *lm = modchain;
 
@@ -220,21 +286,21 @@ int module_group_scanmodules (struct lmodule *modchain) {
 
        efree (sm->rid);
 
-	   goto next;
-	  }
+       goto next;
+      }
 
       lm = lm->next;
-	 }
+     }
 
      esprintf (t, BUFFERSIZE, "Group (%s)", cur->key + MODULES_PREFIX_SIZE);
      sm->name = estrdup (t);
-	 sm->si.requires = requires;
-	 sm->si.provides = provides;
-	 sm->si.before = before;
-	 sm->si.after = after;
+     sm->si.requires = requires;
+     sm->si.provides = provides;
+     sm->si.before = before;
+     sm->si.after = after;
 
      lm = mod_add (NULL, sm);
-	 lm->param = estrdup (cur->key);
+     lm->param = estrdup (cur->key);
 
      next: ;
     }
