@@ -12,7 +12,7 @@
 	 writing, and einit can't kill itself for things to work, so / simply won't be unmounted by
 	 einit, but instead we'll rely on this program to do it for us... -->
     <no-umount s="/dev:/proc:/sys:/lib/splash/cache:/lib64/splash/cache:/lib32/splash/cache:/" />
-    <critical s="/usr:/var" />
+    <critical s="/usr:/var:/tmp" />
    </mountpoints>
    <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
    <fsck-command id="generic" s="pexec-options no-pipe; /sbin/fsck -a -T -t ${fs} ${device}" />
