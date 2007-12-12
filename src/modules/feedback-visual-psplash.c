@@ -211,7 +211,7 @@ void *einit_feedback_visual_psplash_worker_thread (void *irr) {
     if (psplash_type == sp_exquisite) {
      char tmp[BUFFERSIZE];
 
-     esprintf (tmp, BUFFERSIZE, "exquisite-write \"%s\"", command);
+     esprintf (tmp, BUFFERSIZE, "exquisite-write \"%s\" &>/dev/null", command);
      system (tmp);
     } else {
      int fd = open (psplash_fifo, O_WRONLY | O_NONBLOCK);

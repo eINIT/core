@@ -178,7 +178,7 @@
     </usplash>
 
     <exquisite>
-     <run s="exquisite -fb -fs -t /usr/share/exquisite/data/themes/default.edj &amp;" />
+     <run s="cd /tmp; nohup exquisite -fb -fs -t /usr/share/exquisite/data/themes/default.edj &amp;" />
     </exquisite>
    </visual>
 
