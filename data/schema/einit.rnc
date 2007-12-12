@@ -167,7 +167,7 @@ Configuration = element configuration {
     element fbsplash { BooleanAttribute }? &
     element aural { BooleanAttribute }? &
 
-    element psplash { StringAttribute }? &
+    element psplash { StringAttribute }* &
     element visual {
       element std-io {
         attribute stdio { text },
@@ -199,7 +199,7 @@ Configuration = element configuration {
       element psplash {
         element fifo { StringAttribute }&
         element run { StringAttribute }
-      }? &
+      }* &
 
       element usplash {
         element fifo { StringAttribute }&
