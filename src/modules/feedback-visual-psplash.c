@@ -159,7 +159,7 @@ void einit_feedback_visual_psplash_einit_event_handler_mode_switch_done (struct 
 }
 
 void einit_feedback_visual_psplash_einit_event_handler_service_update (struct einit_event *ev) {
- if (ev->stringset) {
+ if (ev->set) {
   if (psplash_type == sp_exquisite) { /* for exquisite, we need to wait until mount-critical is up */
    char *t = NULL, dorun = 0;
 
@@ -167,8 +167,8 @@ void einit_feedback_visual_psplash_einit_event_handler_service_update (struct ei
     if (!(ev->status & status_failed)) {
      int i = 0;
 
-     for (; ev->stringset[i]; i++) {
-      if (strmatch (ev->stringset[i], "mount-critical")) {
+     for (; ev->set[i]; i++) {
+      if (strmatch (ev->set[i], "mount-critical")) {
        dorun = 1;
        break;
       }
