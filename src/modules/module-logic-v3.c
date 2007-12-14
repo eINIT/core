@@ -52,12 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sched.h>
 #endif
 
-#if 0
-#ifdef DEBUG
-#undef DEBUG
-#endif
-#endif
-
 #define MAX_ITERATIONS 1000
 #define EINIT_PLAN_CHANGE_STALL_TIMEOUT 10
 
@@ -122,11 +116,6 @@ void mod_wait_for_ping();
 void mod_workthread_create(char *);
 
 char mod_reorder (struct lmodule *, int, char *, char);
-
-#ifdef DEBUG
-#define debugfile stderr
-// FILE *debugfile = stderr;
-#endif
 
 struct module_taskblock
   current = { NULL, NULL, NULL },
@@ -583,9 +572,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
  do {
   currentlistrev = einit_module_logic_list_revision;
 
-#ifdef DEBUG
-  notice (2, "plan iteration");
-#endif
 
   emutex_lock (&ml_tb_target_state_mutex);
 
@@ -753,8 +739,6 @@ void mod_sort_service_list_items_by_preference() {
    strcat (pnode, cur->key);
 
    if ((preference = str2set (':', cfg_getstring (pnode, NULL)))) {
-    debugx ("applying module preferences for service %s", cur->key);
-
     for (mpx = 0; preference[mpx]; mpx++) {
      for (mpy = 0; lm[mpy]; mpy++) {
       if (lm[mpy]->module && lm[mpy]->module->rid && strmatch(lm[mpy]->module->rid, preference[mpx])) {
@@ -1213,10 +1197,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
 void module_logic_update_init_d () {
  struct cfgnode *einit_d = cfg_getnode ("core-module-logic-maintain-init.d", NULL);
 
-#ifdef DEBUG
- notice (2, "module_logic_update_init_d(): regenerating list of services in init.d.");
-#endif
-
  if (einit_d && einit_d->flag && einit_d->svalue) {
   char *init_d_path = cfg_getstring ("core-module-logic-init.d-path", NULL);
 
@@ -1474,63 +1454,6 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
     ev->implemented = 1;
    }
 
-
-#ifdef DEBUG
-   else if (strmatch (ev->argv[1], "control-blocks")) {
-    emutex_lock (&ml_tb_target_state_mutex);
-
-    if (target_state.enable) {
-     char *r = set2str (' ', (const char **)target_state.enable);
-     if (r) {
-      eprintf (ev->output, "target_state.enable = { %s }\n", r);
-      efree (r);
-     }
-    }
-    if (target_state.disable) {
-     char *r = set2str (' ', (const char **)target_state.disable);
-     if (r) {
-      eprintf (ev->output, "target_state.disable = { %s }\n", r);
-      efree (r);
-     }
-    }
-    if (target_state.critical) {
-     char *r = set2str (' ', (const char **)target_state.critical);
-     if (r) {
-      eprintf (ev->output, "target_state.critical = { %s }\n", r);
-      efree (r);
-     }
-    }
-
-    emutex_unlock (&ml_tb_target_state_mutex);
-    emutex_lock (&ml_tb_current_mutex);
-
-    if (current.enable) {
-     char *r = set2str (' ', (const char **)current.enable);
-     if (r) {
-      eprintf (ev->output, "current.enable = { %s }\n", r);
-      efree (r);
-     }
-    }
-    if (current.disable) {
-     char *r = set2str (' ', (const char **)current.disable);
-     if (r) {
-      eprintf (ev->output, "current.disable = { %s }\n", r);
-      efree (r);
-     }
-    }
-    if (current.critical) {
-     char *r = set2str (' ', (const char **)current.critical);
-     if (r) {
-      eprintf (ev->output, "current.critical = { %s }\n", r);
-      efree (r);
-     }
-    }
-
-    emutex_unlock (&ml_tb_current_mutex);
-
-    ev->implemented = 1;
-   }
-#endif
   }
  }
 
@@ -1563,59 +1486,9 @@ int32_t ignorereorderfor = 0;
 
 char **lm_workthreads_list = NULL;
 
-#ifdef DEBUG
-void print_defer_lists() {
- emutex_lock(&ml_chain_examine);
-
- if (module_logics_chain_examine_reverse) {
-  struct stree *st = streelinear_prepare(module_logics_chain_examine_reverse);
-
-  eputs ("module_logics_chain_examine_reverse:\n", debugfile);
-
-  do {
-   char *val = set2str (' ', st->value);
-   eprintf (debugfile, "%s: (%s)\n", st->key, val);
-   efree (val);
-
-   st = streenext (st);
-  } while (st);
- } else {
-  eputs ("module_logics_chain_examine_reverse is empty.\n", debugfile);
- }
-
- if (module_logics_chain_examine) {
-  struct stree *st = streelinear_prepare(module_logics_chain_examine);
-
-  eputs ("module_logics_chain_examine:\n", debugfile);
-
-  do {
-   char *val = set2str (' ', st->value);
-   eprintf (debugfile, "%s: (%s)\n", st->key, val);
-   efree (val);
-
-   st = streenext (st);
-  } while (st);
- } else {
-  eputs ("module_logics_chain_examine is empty.\n", debugfile);
- }
-
- emutex_unlock(&ml_chain_examine);
-
- fflush (debugfile);
-}
-#endif
-
 char mod_workthreads_dec (char *service) {
-#ifdef DEBUG
- notice (1, "\ndone with: %s\n", service);
-#endif
-
 // char **donext = NULL;
  uint32_t i = 0;
-
-#ifdef DEBUG
- print_defer_lists();
-#endif
 
  emutex_lock (&ml_workthreads_mutex);
 
@@ -1715,10 +1588,6 @@ char mod_have_workthread (char *service) {
 }
 
 void mod_commits_dec () {
-#ifdef DEBUG
- notice (5, "plan finished.");
-#endif
-
  char clean_broken = 0, **unresolved = NULL, **broken = NULL, suspend_all = 0;
  emutex_lock (&ml_unresolved_mutex);
  if (broken_services) {
@@ -1808,10 +1677,6 @@ void mod_commits_inc () {
  modules_last_change = time (NULL);
 
 // char spawn = 0;
-#ifdef DEBUG
- notice (5, "plan started.");
-#endif
-
  emutex_lock (&ml_commits_mutex);
  clean_broken = (ml_commits <= 0);
  ml_commits++;
@@ -1935,9 +1800,6 @@ char mod_defer_until (char *service, char *after) {
 
   return 1;
  }
-#ifdef DEBUG
- eprintf (debugfile, "\n ** deferring %s until after %s\n", service, after);
-#endif
 
  emutex_lock(&ml_chain_examine);
 
@@ -1971,10 +1833,6 @@ char mod_defer_until (char *service, char *after) {
 
  emutex_unlock(&ml_chain_examine);
 
-#ifdef DEBUG
- print_defer_lists();
-#endif
-
 #if 0
  mod_ping_all_threads();
 #endif
@@ -1983,10 +1841,6 @@ char mod_defer_until (char *service, char *after) {
 
 void mod_remove_defer (char *service) {
  struct stree *xn = NULL;
-
-#ifdef DEBUG
- eprintf (debugfile, "\n ** removing deferred-status from %s\n", service);
-#endif
 
  emutex_lock(&ml_chain_examine);
 
@@ -2013,10 +1867,6 @@ void mod_remove_defer (char *service) {
  }
 
  emutex_unlock(&ml_chain_examine);
-
-#ifdef DEBUG
- print_defer_lists();
-#endif
 }
 
 void mod_decrease_deferred_by (char *service) {
@@ -2072,15 +1922,7 @@ char mod_isdeferred (char *service) {
   for (; deferrees[i]; i++) {
    if (!mod_haschanged(deferrees[i]) && !mod_isbroken(deferrees[i])) {
     ret++;
-#ifdef DEBUG
-    notice (1, " -- %s: deferred by %s\n", service, deferrees[i]);
-#endif
    }
-#ifdef DEBUG
-   else {
-    notice (1, " -- %s: invalid defer: %s\n", service, deferrees[i]);
-   }
-#endif
 
    mod_workthread_create (deferrees[i]);
   }
@@ -2089,14 +1931,6 @@ char mod_isdeferred (char *service) {
  }
 
 // ret = (ret > 0);
-
-#ifdef DEBUG
- if (ret) {
-  notice (1, "service %s is deferred! (%i)", service, ret);
- } else {
-  notice (1, "service %s is NOT deferred! (%i)", service, ret);
- }
-#endif
 
  return ret;
 }
@@ -2183,11 +2017,6 @@ void mod_queue_disable (char *service) {
 signed char mod_flatten_current_tb_module(char *serv, char task) {
  emutex_lock (&ml_service_list_mutex);
  struct stree *xn = streefind (module_logics_service_list, serv, tree_find_first);
-
-#ifdef DEBUG
- eputs ("m", stderr);
- fflush (stderr);
-#endif
 
  if (xn && xn->value) {
   struct lmodule **lm = xn->value;
@@ -2293,23 +2122,12 @@ void mod_flatten_current_tb () {
  if (current.enable) {
   uint32_t i;
 
-#ifdef DEBUG
-  eputs ("e", stderr);
-  fflush (stderr);
-#endif
-
   for (i = 0; current.enable[i]; i++) {
    signed char t = 0;
    if (mod_isprovided (current.enable[i]) || mod_isbroken(current.enable[i])) {
     current.enable = (char **)setdel ((void **)current.enable, current.enable[i]);
     goto repeat_ena;
    }
-
-#ifdef DEBUG
-   eputs ("+", stderr);
-/*   eputs (current.enable[i], stderr);*/
-   fflush (stderr);
-#endif
 
    if ((t = mod_flatten_current_tb_module(current.enable[i], einit_module_enable)) == -1) {
     notice (2, "can't resolve service %s\n", current.enable[i]);
@@ -2320,11 +2138,6 @@ void mod_flatten_current_tb () {
      goto repeat_ena;
     }
    }
-
-#ifdef DEBUG
-   eputs ("-", stderr);
-   fflush (stderr);
-#endif
   }
  }
 
@@ -2332,22 +2145,12 @@ void mod_flatten_current_tb () {
  if (current.disable) {
   uint32_t i;
 
-#ifdef DEBUG
-  eputs ("d", stderr);
-  fflush (stderr);
-#endif
-
   for (i = 0; current.disable[i]; i++) {
    signed char t = 0;
    if (!mod_isprovided (current.disable[i]) || mod_isbroken(current.disable[i])) {
     current.disable = (char **)setdel ((void **)current.disable, current.disable[i]);
     goto repeat_disa;
    }
-
-#ifdef DEBUG
-   eputs ("z", stderr);
-   fflush (stderr);
-#endif
 
    if ((t = mod_flatten_current_tb_module(current.disable[i], einit_module_disable)) == -1) {
     notice (2, "can't resolve service %s\n", current.disable[i]);
@@ -2358,18 +2161,8 @@ void mod_flatten_current_tb () {
      goto repeat_disa;
     }
    }
-
-#ifdef DEBUG
-   eputs ("!", stderr);
-   fflush (stderr);
-#endif
   }
  }
-
-#ifdef DEBUG
- eputs ("R", stderr);
- fflush (stderr);
-#endif
 
  emutex_unlock (&ml_tb_current_mutex);
 }
@@ -2437,10 +2230,6 @@ void mod_post_examine (char *service) {
  emutex_unlock (&ml_chain_examine);
 
  mod_decrease_deferred_by (service);
-
-#ifdef DEBUG
- notice (1, "post-examining service %s: (%s)", service, pex ? set2str (' ', pex) : "none");
-#endif
 
  if (pex) {
   uint32_t j = 0;
@@ -2598,14 +2387,6 @@ char mod_enable_requirements (struct lmodule *module, char *sname) {
     } else if (!service_usage_query (service_is_provided, NULL, module->si->requires[i])) {
      emutex_lock (&ml_tb_current_mutex);
 
-#ifdef DEBUG
-     notice (4, "(%s) still need %s:", set2str(' ', (const char **)module->si->provides), module->si->requires[i]);
-
-     if (mod_haschanged (module->si->requires[i])) {
-      notice (4, "not provided but still has changed?");
-     }
-#endif
-
      if (!inset ((const void **)current.enable, (void *)module->si->requires[i], SET_TYPE_STRING)) {
       retval = 2;
       need = (char **)setadd ((void **)need, module->si->requires[i], SET_TYPE_STRING);
@@ -2659,9 +2440,6 @@ void mod_apply_enable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if (current->status & status_enabled) {
-#ifdef DEBUG
-     notice (4, "not spawning thread thread for %s; (already up)", des->key);
-#endif
 
      mod_post_examine(des->key);
 
@@ -2671,9 +2449,6 @@ void mod_apply_enable (struct stree *des) {
 
 //    if (mod_isprovided (des->key) || mod_haschanged(des->key) || mod_isbroken(des->key)) {
     if (mod_isprovided (des->key)) {
-#ifdef DEBUG
-     notice (4, "%s; exiting (is already up)", des->key);
-#endif
 
      mod_post_examine(des->key);
 
@@ -2682,9 +2457,6 @@ void mod_apply_enable (struct stree *des) {
     }
 
     if (mod_enable_requirements (current, des->key)) {
-#ifdef DEBUG
-     notice (4, "not spawning thread thread for %s; exiting (not quite there yet)", des->key);
-#endif
      mod_pre_examine(des->key);
 
      mod_workthreads_dec(des->key);
@@ -2695,9 +2467,6 @@ void mod_apply_enable (struct stree *des) {
 
 /* check module status or return value to find out if it's appropriate for the task */
     if ((current->status & status_enabled) || mod_isprovided (des->key)) {
-#ifdef DEBUG
-     notice (4, "%s; exiting (is up)", des->key);
-#endif
 
      mod_post_examine(des->key);
 
@@ -2711,10 +2480,6 @@ void mod_apply_enable (struct stree *des) {
 /* make sure there's not been a different thread that did what we want to do */
     if ((lm[0] == current) && lm[1]) {
      ssize_t rx = 1;
-
-#ifdef DEBUG
-     notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
-#endif
 
      for (; lm[rx]; rx++) {
       lm[rx-1] = lm[rx];
@@ -2738,9 +2503,6 @@ void mod_apply_enable (struct stree *des) {
    mod_mark (des->key, MARK_BROKEN);
   }
 
-#ifdef DEBUG
-  notice (4, "not spawning thread thread for %s; exiting (end of function)", des->key);
-#endif
   mod_post_examine(des->key);
 
   mod_workthreads_dec(des->key);
@@ -2760,9 +2522,6 @@ void mod_apply_disable (struct stree *des) {
     struct lmodule *current = lm[0];
 
     if (!mod_isprovided (des->key) || mod_haschanged(des->key) || mod_isbroken(des->key)) {
-#ifdef DEBUG
-     notice (4, "%s; exiting (not up yet)", des->key);
-#endif
 
      mod_post_examine(des->key);
 
@@ -2771,17 +2530,11 @@ void mod_apply_disable (struct stree *des) {
     }
 
     if ((current->status & status_disabled) || (current->status == status_idle)) {
-#ifdef DEBUG
-     eprintf (stderr, "%s (%s) disabled...", des->key, current->module->rid);
-#endif
      any_ok = 1;
      goto skip_module;
     }
 
     if (mod_disable_users (current, des->key)) {
-#ifdef DEBUG
-     eprintf (stderr, "cannot disable %s yet...", des->key);
-#endif
 
      mod_pre_examine(des->key);
 
@@ -2800,9 +2553,6 @@ void mod_apply_disable (struct stree *des) {
     }
 
     if (!mod_isprovided (des->key)) {
-#ifdef DEBUG
-     notice (4, "%s; exiting (done already)", des->key);
-#endif
 
      mod_post_examine(des->key);
 
@@ -2817,10 +2567,6 @@ void mod_apply_disable (struct stree *des) {
 /* make sure there's not been a different thread that did what we want to do */
     if ((lm[0] == current) && lm[1]) {
      ssize_t rx = 1;
-
-#ifdef DEBUG
-     notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
-#endif
 
      for (; lm[rx]; rx++) {
       lm[rx-1] = lm[rx];
@@ -2852,10 +2598,6 @@ void mod_apply_disable (struct stree *des) {
      emutex_lock (&ml_service_list_mutex);
      if ((lm[0] == current) && lm[1]) {
       ssize_t rx = 1;
-
-#ifdef DEBUG
-      notice (10, "service %s: done with module %s, rotating the list", des->key, (current->module && current->module->rid ? current->module->rid : "unknown"));
-#endif
 
       for (; lm[rx]; rx++) {
        lm[rx-1] = lm[rx];
@@ -3079,25 +2821,12 @@ void mod_examine (char *service) {
       ((task & einit_module_enable) && mod_isprovided (service)) ||
       ((task & einit_module_disable) && !mod_isprovided (service))) {
 
-#ifdef DEBUG
-   notice (1, "service %s is already in the right state", service);
-#endif
-
    mod_post_examine (service);
 
    mod_workthreads_dec_changed(service);
 
    return;
-  } else {
-#ifdef DEBUG
-   notice (1, "service %s is not in the right state", service);
-#endif
   }
-
-#ifdef DEBUG
-  notice (1, " ** examining service %s (%s).\n", service,
-                   task & einit_module_enable ? "enable" : "disable");
-#endif
 
   emutex_lock (&ml_service_list_mutex);
   struct stree *v = streefind (module_logics_service_list, service, tree_find_first);
@@ -3113,10 +2842,6 @@ void mod_examine (char *service) {
 
     return;
    }
-
-#ifdef DEBUG
-   notice (1, "service %s: spawning thread", service);
-#endif
 
    if (task & einit_module_enable) {
     ethread_spawn_detached_run ((void *(*)(void *))mod_apply_enable, (void *)v);
@@ -3188,14 +2913,6 @@ void mod_spawn_batch(char **batch, int task) {
   }
  }
 
-#ifdef DEBUG
- char *alist = set2str (' ', (const char **)batch);
-
- eprintf (stderr, "i=%i (%s), broken=%i, deferred=%i\n", i, alist ? alist : "none", broken, deferred);
-
- if (alist) efree (alist);
-#endif
-
  if (i == (broken + deferred)) {
 /* foo: circular dependencies? kill the whole chain and hope for something good... */
   emutex_lock(&ml_chain_examine);
@@ -3259,16 +2976,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
  mod_sort_service_list_items_by_preference();
 
-#ifdef DEBUG
- eputs ("flattening...\n", stderr);
- fflush(stderr);
-#endif
  mod_flatten_current_tb();
-
-#ifdef DEBUG
- eputs ("flat as a pancake now...\n", stderr);
- fflush(stderr);
-#endif
 
  mod_commits_inc();
 
@@ -3276,29 +2984,17 @@ void mod_commit_and_wait (char **en, char **dis) {
   remainder = 0;
 //  iterations++;
 
-#ifdef DEBUG
-  char **stillneed = NULL;
-#endif
-
   if (en) {
    uint32_t i = 0;
 
    for (; en[i]; i++) {
     if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
-#ifdef DEBUG
-     eprintf (stderr, "not yet provided: %s\n", en[i]);
-     stillneed = (char **)setadd ((void **)stillneed, en[i], SET_TYPE_STRING);
-#endif
 
      remainder++;
 
      emutex_lock (&ml_tb_current_mutex);
      if (!inset ((const void **)current.enable, en[i], SET_TYPE_STRING)) {
       emutex_unlock (&ml_tb_current_mutex);
-
-#ifdef DEBUG
-      notice (2, "something must've gone wrong with service %s...", en[i]);
-#endif
 
       remainder--;
      } else
@@ -3312,10 +3008,6 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; dis[i]; i++) {
     if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
-#ifdef DEBUG
-     eprintf (stderr, "still provided: %s\n", dis[i]);
-     stillneed = (char **)setadd ((void **)stillneed, dis[i], SET_TYPE_STRING);
-#endif
 
      remainder++;
 
@@ -3323,10 +3015,6 @@ void mod_commit_and_wait (char **en, char **dis) {
      if (!inset ((const void **)current.disable, dis[i], SET_TYPE_STRING)) {
       current.disable = (char **)setadd ((void **)current.disable, dis[i], SET_TYPE_STRING);
       emutex_unlock (&ml_tb_current_mutex);
-
-#ifdef DEBUG
-      notice (2, "something must've gone wrong with service %s...", dis[i]);
-#endif
 
       remainder--;
      } else
@@ -3342,28 +3030,9 @@ void mod_commit_and_wait (char **en, char **dis) {
    return;
   }
 
-#ifdef DEBUG
-  if (!stillneed) {
-   notice (4, "still need %i services\n", remainder);
-  } else {
-   notice (4, "still need %i services (%s)\n", remainder, set2str (' ', (const char **)stillneed));
-  }
-  fflush (stderr);
-
-  emutex_lock (&ml_workthreads_mutex);
-
-  notice (4, "workthreads: %i (%s)\n", ml_workthreads, set2str (' ', (const char **)lm_workthreads_list));
-  emutex_unlock (&ml_workthreads_mutex);
-#endif
-
 #if 0
   if (iterations >= MAX_ITERATIONS) {
    notice (1, "plan aborted (too many iterations: %i).\n", iterations);
-
-#ifdef DEBUG
-   notice (4, "aborted: enable=%s; disable=%s\n", en ? set2str (' ', (const char **)en) : "none", dis ? set2str (' ', (const char **)dis) : "none");
-   fflush (stderr);
-#endif
 
    mod_commits_dec();
 //   pthread_mutex_destroy (&ml_service_update_mutex);
