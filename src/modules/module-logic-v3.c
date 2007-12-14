@@ -1816,6 +1816,15 @@ void mod_commits_inc () {
    efree (broken_services);
    broken_services = NULL;
   }
+
+  emutex_lock (&ml_tb_target_state_mutex);
+  emutex_lock (&ml_tb_current_mutex);
+
+  cross_taskblock (&target_state, &current);
+
+  emutex_unlock (&ml_tb_current_mutex);
+  emutex_unlock (&ml_tb_target_state_mutex);
+
   emutex_unlock (&ml_unresolved_mutex);
 
   emutex_lock (&ml_changed_mutex);
@@ -3021,13 +3030,6 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 }
 
 void mod_examine (char *service) {
- char rdloops = 5;
-
-/* if (mod_haschanged (service)) {
-  mod_post_examine (service);
-  
- }*/
-
  if (mod_isbroken (service)) {
   is_broken:
 
@@ -3052,30 +3054,9 @@ void mod_examine (char *service) {
 
   return;
  } else if (mod_isdeferred (service)) {
+  mod_workthreads_dec(service);
 
-  recycle_wait:
-  { /* try to save some threads */
-   char retries = 5;
-
-   do {
-
-//    mod_pre_examine(service);
-
-    mod_wait_for_ping();
-
-    if (mod_isbroken (service) || mod_haschanged (service)) {
-     goto is_broken;
-    }
-
-    retries--;
-
-    if ((retries <= 0) || mod_isbroken (service)) {
-     mod_workthreads_dec(service);
-
-     return;
-    }
-   } while (mod_isdeferred (service));
-  }
+  return;
  }
 
  {
@@ -3115,21 +3096,9 @@ void mod_examine (char *service) {
    hd = mod_reorder (lm[0], task, service, 1);
 
    if (hd) {
-    if (rdloops > 0) {
-#ifdef DEBUG
-     notice (1, "service %s: jumping back", service);
-#endif
-     rdloops--;
-     goto recycle_wait;
-    } else {
-#ifdef DEBUG
-     notice (1, "service %s: giving up", service);
-#endif
+    if (mod_workthreads_dec(service)) return;
 
-     if (mod_workthreads_dec(service)) return;
-
-     return;
-    }
+    return;
    }
 
 #ifdef DEBUG
