@@ -172,8 +172,8 @@
     </psplash>
 
     <usplash>
-     <fifo s="/dev/usplash_fifo" />
-     <run s="export TMPDIR=&quot;/dev&quot;;
+     <fifo s="/dev/.initramfs/usplash_fifo" />
+     <run s="mkdir -p /dev/.initramfs;
              usplash &amp;" />
     </usplash>
 
