@@ -52,8 +52,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sched.h>
 #endif
 
+#if 0
 #ifdef DEBUG
 #undef DEBUG
+#endif
 #endif
 
 #define MAX_ITERATIONS 1000
