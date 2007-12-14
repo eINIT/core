@@ -1055,6 +1055,15 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
   broken_services = NULL;
  }
 
+/* reset TBs */
+ emutex_lock (&ml_tb_target_state_mutex);
+ emutex_lock (&ml_tb_current_mutex);
+
+ cross_taskblock (&target_state, &current);
+
+ emutex_unlock (&ml_tb_current_mutex);
+ emutex_unlock (&ml_tb_target_state_mutex);
+
  emutex_unlock (&ml_unresolved_mutex);
 
  ev->chain_type = einit_core_module_list_update_complete;
@@ -1808,6 +1817,8 @@ void mod_commits_inc () {
 
  if (clean_broken) {
   emutex_lock (&ml_unresolved_mutex);
+  emutex_lock (&ml_changed_mutex);
+
   if (unresolved_services) {
    efree (unresolved_services);
    unresolved_services = NULL;
@@ -1815,6 +1826,13 @@ void mod_commits_inc () {
   if (broken_services) {
    efree (broken_services);
    broken_services = NULL;
+  }
+
+  emutex_unlock (&ml_unresolved_mutex);
+
+  if (changed_recently) {
+   efree (changed_recently);
+   changed_recently = NULL;
   }
 
   emutex_lock (&ml_tb_target_state_mutex);
@@ -1825,13 +1843,6 @@ void mod_commits_inc () {
   emutex_unlock (&ml_tb_current_mutex);
   emutex_unlock (&ml_tb_target_state_mutex);
 
-  emutex_unlock (&ml_unresolved_mutex);
-
-  emutex_lock (&ml_changed_mutex);
-  if (changed_recently) {
-   efree (changed_recently);
-   changed_recently = NULL;
-  }
   emutex_unlock (&ml_changed_mutex);
 
   emutex_lock(&ml_chain_examine);
