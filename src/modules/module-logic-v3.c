@@ -1558,7 +1558,7 @@ char mod_workthreads_inc (char *service) {
  emutex_lock (&ml_workthreads_mutex);
 
  if (inset ((const void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING)) {
-  notice (1, " XX someone's already working on %s...\n", service);
+//  notice (1, " XX someone's already working on %s...\n", service);
 //  fflush (stderr);
   retval = 1;
  } else {
@@ -2716,7 +2716,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
     for (y = 0; d[y]; y++) {
     if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
-     notice (1, "%s is before: %s", service, d[y]);
+//     notice (1, "%s is before: %s", service, d[y]);
 
      mod_defer_until (d[y], service);
 //     mod_defer_until (service, d[y]);
@@ -2761,7 +2761,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
      if (!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) {
       if (!mod_defer_until (service, d[y])) {
-       notice (1, "%s goes after %s", service, d[y]);
+//       notice (1, "%s goes after %s", service, d[y]);
        hd = 1;
       }
      }
@@ -2893,30 +2893,30 @@ void mod_spawn_batch(char **batch, int task) {
  for (i = 0; batch[i]; i++) {
   if (mod_isbroken(batch[i])) {
    broken++;
-   notice (1, " broken: %s\n", batch[i]);
+//   notice (1, " broken: %s\n", batch[i]);
   } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i], 0)) {
    deferred++;
-   notice (1, " deferred: %s\n", batch[i]);
+//   notice (1, " deferred: %s\n", batch[i]);
   } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
-   notice (1, "already provided: %s\n", batch[i]);
+//   notice (1, "already provided: %s\n", batch[i]);
 
    current.enable = strsetdel (current.enable, batch[i]);
    batch = current.enable;
    goto retry;
   } else if ((task == einit_module_disable) && !mod_isprovided (batch[i])) {
-   notice (1, "not provided: %s\n", batch[i]);
+//   notice (1, "not provided: %s\n", batch[i]);
 
    current.disable = strsetdel (current.disable, batch[i]);
    batch = current.disable;
    goto retry;
   } else {
-   notice (1, " spawning: %s\n", batch[i]);
+//   notice (1, " spawning: %s\n", batch[i]);
    dospawn = (char **)setadd ((void **)dospawn, batch[i], SET_TYPE_STRING);
   }
  }
 
  if (i == (broken + deferred)) {
-  notice (1, "foo?");
+//  notice (1, "foo?");
 
 /* foo: circular dependencies? kill the whole chain and hope for something good... */
   emutex_lock(&ml_chain_examine);
@@ -2993,7 +2993,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; en[i]; i++) {
     if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
-     notice (1, "still need to enable %s!", en[i]);
+//     notice (1, "still need to enable %s!", en[i]);
 
      remainder++;
 
@@ -3002,7 +3002,7 @@ void mod_commit_and_wait (char **en, char **dis) {
       current.enable = setadd (current.enable, en[i], SET_TYPE_STRING);
       emutex_unlock (&ml_tb_current_mutex);
 
-      notice (1, "re-adding %s to current.enable", en[i]);
+//      notice (1, "re-adding %s to current.enable", en[i]);
 
 //      remainder--;
      } else
