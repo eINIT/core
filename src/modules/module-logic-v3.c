@@ -3043,7 +3043,11 @@ void mod_commit_and_wait (char **en, char **dis) {
 #endif
 
  if (!modules_work_count) {
-  mod_spawn_workthreads();
+  if ((modules_last_change + 1) < time(NULL)) {
+/* if we haven't done squat for a second... then we should respawn a couple threads... */
+   notice (1, "WARNING!!! potential stall detected, respawning threads");
+   mod_spawn_workthreads();
+  }
  }
 
 //  notice (1, "waiting for ping...");
