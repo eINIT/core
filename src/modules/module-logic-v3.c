@@ -3042,6 +3042,10 @@ void mod_commit_and_wait (char **en, char **dis) {
   }
 #endif
 
+ if (!modules_work_count) {
+  mod_spawn_workthreads();
+ }
+
 //  notice (1, "waiting for ping...");
   mod_wait_for_ping();
 //  notice (1, "got ping...");
