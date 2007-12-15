@@ -2767,7 +2767,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
      }
     }
 
-//    mod_defer_notice (lm, d);
+    mod_defer_notice (lm, d);
 
     efree (d);
    } else {
