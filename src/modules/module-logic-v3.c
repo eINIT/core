@@ -2767,7 +2767,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
      }
     }
 
-    mod_defer_notice (lm, d);
+//    mod_defer_notice (lm, d);
 
     efree (d);
    } else {
@@ -3009,7 +3009,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; dis[i]; i++) {
     if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
-     notice (1, "still need to disable %s!", en[i]);
+//     notice (1, "still need to disable %s!", dis[i]);
 
      remainder++;
 
