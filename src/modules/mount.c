@@ -1117,6 +1117,10 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   s = streenext(s);
  }
 
+ if (!mount_critical_filesystems || !streefind (mount_critical_filesystems, "fs-root", tree_find_first)) {
+  mount_critical_filesystems = streeadd (mount_critical_filesystems, "fs-root", NULL, SET_NOALLOC, NULL);
+ }
+
  if (mount_critical_filesystems) {
   struct stree *s = streelinear_prepare(mount_critical_filesystems);
   char **filesystems = NULL;
