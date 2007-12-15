@@ -2893,24 +2893,31 @@ void mod_spawn_batch(char **batch, int task) {
  for (i = 0; batch[i]; i++) {
   if (mod_isbroken(batch[i])) {
    broken++;
-//   eprintf (stderr, " !! %s\n", batch[i]);
+   notice (1, " broken: %s\n", batch[i]);
   } else if (mod_isdeferred(batch[i]) || mod_reorder(NULL, task, batch[i], 0)) {
    deferred++;
-//   eprintf (stderr, " !! %s\n", batch[i]);
+   notice (1, " deferred: %s\n", batch[i]);
   } else if ((task == einit_module_enable) && mod_isprovided (batch[i])) {
+   notice (1, "already provided: %s\n", batch[i]);
+
    current.enable = strsetdel (current.enable, batch[i]);
    batch = current.enable;
    goto retry;
   } else if ((task == einit_module_disable) && !mod_isprovided (batch[i])) {
+   notice (1, "not provided: %s\n", batch[i]);
+
    current.disable = strsetdel (current.disable, batch[i]);
    batch = current.disable;
    goto retry;
   } else {
+   notice (1, " spawning: %s\n", batch[i]);
    dospawn = (char **)setadd ((void **)dospawn, batch[i], SET_TYPE_STRING);
   }
  }
 
  if (i == (broken + deferred)) {
+  notice (1, "foo?");
+
 /* foo: circular dependencies? kill the whole chain and hope for something good... */
   emutex_lock(&ml_chain_examine);
   if (module_logics_chain_examine) {
