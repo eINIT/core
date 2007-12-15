@@ -1558,7 +1558,7 @@ char mod_workthreads_inc (char *service) {
  emutex_lock (&ml_workthreads_mutex);
 
  if (inset ((const void **)lm_workthreads_list, (void *)service, SET_TYPE_STRING)) {
-//  eprintf (stderr, " XX someone's already working on %s...\n", service);
+  notice (1, " XX someone's already working on %s...\n", service);
 //  fflush (stderr);
   retval = 1;
  } else {
