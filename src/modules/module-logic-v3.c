@@ -2716,7 +2716,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
     for (y = 0; d[y]; y++) {
     if (mod_isbroken (d[y]) || mod_haschanged (d[y])) continue;
-//     notice (1, "%s is before: %s", service, d[y]);
+     notice (1, "%s is before: %s", service, d[y]);
 
      mod_defer_until (d[y], service);
 //     mod_defer_until (service, d[y]);
@@ -2761,7 +2761,7 @@ char mod_reorder (struct lmodule *lm, int task, char *service, char dolock) {
 
      if (!xbefore || !inset ((const void **)xbefore, (void *)d[y], SET_TYPE_STRING)) {
       if (!mod_defer_until (service, d[y])) {
-//      notice (1, "%s goes after %s", service, d[y]);
+       notice (1, "%s goes after %s", service, d[y]);
        hd = 1;
       }
      }
