@@ -2986,14 +2986,18 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; en[i]; i++) {
     if (!mod_isbroken (en[i]) && !mod_haschanged(en[i]) && !mod_isprovided(en[i])) {
+     notice (1, "still need to enable %s!", en[i]);
 
      remainder++;
 
      emutex_lock (&ml_tb_current_mutex);
      if (!inset ((const void **)current.enable, en[i], SET_TYPE_STRING)) {
+      current.enable = setadd (current.enable, en[i], SET_TYPE_STRING);
       emutex_unlock (&ml_tb_current_mutex);
 
-      remainder--;
+      notice (1, "re-adding %s to current.enable", en[i]);
+
+//      remainder--;
      } else
       emutex_unlock (&ml_tb_current_mutex);
     }
@@ -3005,6 +3009,7 @@ void mod_commit_and_wait (char **en, char **dis) {
 
    for (; dis[i]; i++) {
     if (!mod_isbroken (dis[i]) && !mod_haschanged(dis[i]) && mod_isprovided(dis[i])) {
+     notice (1, "still need to disable %s!", en[i]);
 
      remainder++;
 
@@ -3013,7 +3018,7 @@ void mod_commit_and_wait (char **en, char **dis) {
       current.disable = (char **)setadd ((void **)current.disable, dis[i], SET_TYPE_STRING);
       emutex_unlock (&ml_tb_current_mutex);
 
-      remainder--;
+//      remainder--;
      } else
       emutex_unlock (&ml_tb_current_mutex);
     }
