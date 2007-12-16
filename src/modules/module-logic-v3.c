@@ -260,6 +260,8 @@ struct lmodule *mod_find_by_rid (char *rid) {
  struct stree *rv = NULL;
 
  if (!rid) return 0;
+ 
+// notice (1, "(rid? %s)", rid);
 
  emutex_lock (&ml_rid_list_mutex);
 
@@ -2032,11 +2034,12 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
     rotate = 0;
     broken = 0;
 
-    first = 0;
+//    first = 0;
     if (rcurrent && rcurrent->si && rcurrent->si->requires) {
      uint32_t i = 0;
 
      for (; rcurrent->si->requires[i]; i++) {
+//      notice (1, "provided? %s", rcurrent->si->requires[i]);
       if (mod_isprovided (rcurrent->si->requires[i])) {
        continue;
       }
@@ -2059,6 +2062,7 @@ signed char mod_flatten_current_tb_module(char *serv, char task) {
     }
 
     if (rotate && lm[1]) {
+//     notice (1, "rotating...");
      ssize_t rx = 1;
 
      for (; lm[rx]; rx++) {
@@ -2126,6 +2130,8 @@ void mod_flatten_current_tb () {
     goto repeat_ena;
    }
 
+//   notice (1, "flattening...");
+
    if ((t = mod_flatten_current_tb_module(current.enable[i], einit_module_enable)) == -1) {
     notice (2, "can't resolve service %s\n", current.enable[i]);
 
@@ -2148,6 +2154,8 @@ void mod_flatten_current_tb () {
     current.disable = (char **)setdel ((void **)current.disable, current.disable[i]);
     goto repeat_disa;
    }
+
+//   notice (1, "flattening (disa)...");
 
    if ((t = mod_flatten_current_tb_module(current.disable[i], einit_module_disable)) == -1) {
     notice (2, "can't resolve service %s\n", current.disable[i]);
@@ -2584,7 +2592,7 @@ void mod_apply_disable (struct stree *des) {
    if (shutting_down && mod_isprovided (des->key)) {
     struct lmodule *first = lm[0];
 
-    notice (1, "was forced to ZAPP! %s", des->key);
+//    notice (1, "was forced to ZAPP! %s", des->key);
 
     do {
      struct lmodule *current = lm[0];
