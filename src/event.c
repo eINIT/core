@@ -490,7 +490,6 @@ struct exported_function *function_look_up_one (const char *name, const uint32_t
 char *event_code_to_string (const uint32_t code) {
  switch (code) {
   case einit_core_panic:                       return "core/panic";
-  case einit_core_module_update:               return "core/module-update";
   case einit_core_service_update:              return "core/service-update";
   case einit_core_configuration_update:        return "core/configuration-update";
   case einit_core_plan_update:                 return "core/plan-update";
@@ -601,7 +600,6 @@ uint32_t event_string_to_code (const char *code) {
    switch (ret) {
     case einit_event_subsystem_core:
      if (strmatch (tcode[1], "panic"))                            ret = einit_core_panic;
-     else if (strmatch (tcode[1], "module-update"))               ret = einit_core_module_update;
      else if (strmatch (tcode[1], "service-update"))              ret = einit_core_service_update;
      else if (strmatch (tcode[1], "configuration-update"))        ret = einit_core_configuration_update;
      else if (strmatch (tcode[1], "plan-update"))                 ret = einit_core_plan_update;

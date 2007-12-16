@@ -281,16 +281,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
 /* inform everyone about what's going to happen */
  {
-  struct einit_event eem = evstaticinit (einit_core_module_update);
-
   modules_work_count++;
-
-  eem.task = task;
-  eem.status = status_working;
-  eem.para = (void *)module;
-  eem.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
-  event_emit (&eem, einit_event_flag_broadcast);
-  evstaticdestroy (eem);
 
 /* same for services */
   if (module->si && module->si->provides) {
@@ -355,14 +346,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
 /* module status update */
   {
-   struct einit_event eem = evstaticinit (einit_core_module_update);
-   eem.task = task;
-   eem.status = fb->status;
-   eem.para = (void *)module;
-   eem.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
-   event_emit (&eem, einit_event_flag_broadcast);
-   evstaticdestroy (eem);
-
 /* service status update */
    if (module->si && module->si->provides) {
     struct einit_event ees = evstaticinit (einit_core_service_update);

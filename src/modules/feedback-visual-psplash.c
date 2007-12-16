@@ -159,37 +159,39 @@ void einit_feedback_visual_psplash_einit_event_handler_mode_switch_done (struct 
 }
 
 void einit_feedback_visual_psplash_einit_event_handler_service_update (struct einit_event *ev) {
- if (ev->set) {
-  /* for exquisite, we need to wait until mount-critical is up */
-  char *t = NULL, dorun = 0;
+ if (psplash_type != sp_disabled) {
+  if (ev->set) {
+   /* for exquisite, we need to wait until mount-critical is up */
+   char *t = NULL, dorun = 0;
 
-  if (ev->task & einit_module_enable) {
-   if (!(ev->status & status_failed)) {
-    int i = 0;
+   if (ev->task & einit_module_enable) {
+    if (!(ev->status & status_failed)) {
+     int i = 0;
 
-    for (; ev->set[i]; i++) {
-     if (strmatch (ev->set[i], "mount-critical")) {
-      dorun = 1;
-      break;
+     for (; ev->set[i]; i++) {
+      if (strmatch (ev->set[i], "mount-critical")) {
+       dorun = 1;
+       break;
+      }
      }
     }
    }
-  }
 
-  if (dorun) {
-   notice (2, "mount-critical is up");
+   if (dorun) {
+    notice (2, "mount-critical is up");
 
-   if ((psplash_type == sp_exquisite) && (t = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
-    system (t);
-   } else {
-    psplash_type = sp_disabled;
+    if ((psplash_type == sp_exquisite) && (t = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
+     system (t);
+    } else {
+     psplash_type = sp_disabled;
+    }
    }
   }
- }
- char tmp[BUFFERSIZE];
+  char tmp[BUFFERSIZE];
 
- esprintf (tmp, BUFFERSIZE, "PROGRESS %i", (int)(get_plan_progress (NULL) * 100));
- psplash_queue_comand(tmp);
+  esprintf (tmp, BUFFERSIZE, "PROGRESS %i", (int)(get_plan_progress (NULL) * 100));
+  psplash_queue_comand(tmp);
+ }
 }
 
 void *einit_feedback_visual_psplash_worker_thread (void *irr) {

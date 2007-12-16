@@ -87,8 +87,6 @@ enum einit_event_code {
 /* einit_event_subsystem_core: */
  einit_core_panic                   = einit_event_subsystem_core     | 0x001,
 /*!< put everyone in the cast range into a state of panic/calm everyone down; status contains a reason */
- einit_core_module_update           = einit_event_subsystem_core     | 0x002,
-/*!< Module status changing; use the task and status fields to find out what happened */
  einit_core_service_update          = einit_event_subsystem_core     | 0x003,
 /*!< Service availability changing; use the task and status fields to find out what happened */
  einit_core_configuration_update    = einit_event_subsystem_core     | 0x004,
