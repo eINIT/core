@@ -212,19 +212,26 @@ int einit_tty_texec (struct cfgnode *node) {
 #endif
    {
     nice (-einit_core_niceness_increment);
+    setsid();
 
     disable_core_dumps ();
 
     if (device) {
      int newfd = eopen(device, O_RDWR);
      if (newfd) {
-      eclose(0);
-      eclose(1);
-      eclose(2);
+      close(0);
+      close(1);
+      close(2);
       dup2 (newfd, 0);
       dup2 (newfd, 1);
       dup2 (newfd, 2);
      }
+
+#ifdef LINUX
+     int fdc = open ("/dev/console", O_WRONLY | O_NOCTTY);
+     ioctl(fdc, TIOCSCTTY, 1);
+     close (fdc);
+#endif
     }
     execve (cmds[0], cmds, environment);
     bitch (bitch_stdio, 0, "execve() failed.");
