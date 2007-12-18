@@ -362,8 +362,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   efree (fb->stringset);
   evdestroy (fb);
 
-  service_usage_query(service_update, module, NULL);
   modules_work_count--;
+
+  mod_update_usage_table(module);
  }
 
  if (!(task & einit_module_ignore_mutex))
@@ -373,6 +374,57 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 }
 
 void mod_update_usage_table (struct lmodule *module) {
+ struct stree *ha;
+ char **t;
+ uint32_t i;
+ struct service_usage_item *item;
+
+ emutex_lock (&service_usage_mutex);
+  modules_last_change = time(NULL);
+
+  if (module->status & status_enabled) {
+   if (module->si && (t = module->si->requires)) {
+    for (i = 0; t[i]; i++) {
+     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
+      item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
+     }
+    }
+   }
+   if (module->si && (t = module->si->provides)) {
+    for (i = 0; t[i]; i++) {
+     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
+      item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
+     } else {
+      struct service_usage_item nitem;
+      memset (&nitem, 0, sizeof (struct service_usage_item));
+      nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
+      service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+     }
+    }
+   }
+  }
+
+/* more cleanup code */
+  service_usage = streelinear_prepare(service_usage);
+  ha = service_usage;
+  while (ha) {
+   item = (struct service_usage_item *)ha->value;
+
+   if (!(module->status & status_enabled)) {
+     item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
+     item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
+   }
+
+   if (!item->provider && !item->users) {
+//    service_usage = streedel (service_usage, ha);
+    service_usage = streedel (ha);
+    service_usage = streelinear_prepare(service_usage);
+	ha = service_usage;
+   } else
+    ha = streenext (ha);
+  }
+
+ emutex_unlock (&service_usage_mutex);
 }
 
 uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule *module, const char *service) {
@@ -434,50 +486,6 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
      break;
     }
    }
-  }
- } else if (task & service_update) {
-  modules_last_change = time(NULL);
-
-  if (module->status & status_enabled) {
-   if (module->si && (t = module->si->requires)) {
-    for (i = 0; t[i]; i++) {
-     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
-      item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
-     }
-    }
-   }
-   if (module->si && (t = module->si->provides)) {
-    for (i = 0; t[i]; i++) {
-     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
-      item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
-     } else {
-      struct service_usage_item nitem;
-      memset (&nitem, 0, sizeof (struct service_usage_item));
-      nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
-      service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
-     }
-    }
-   }
-  }
-
-/* more cleanup code */
-  service_usage = streelinear_prepare(service_usage);
-  ha = service_usage;
-  while (ha) {
-   item = (struct service_usage_item *)ha->value;
-
-   if (!(module->status & status_enabled)) {
-     item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
-     item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
-   }
-
-   if (!item->provider && !item->users) {
-//    service_usage = streedel (service_usage, ha);
-    service_usage = streedel (ha);
-    service_usage = streelinear_prepare(service_usage);
-	ha = service_usage;
-   } else
-    ha = streenext (ha);
   }
  } else if (task & service_is_required) {
   if (service_usage && (ha = streefind (service_usage, service, tree_find_first)) && (item = (struct service_usage_item *)ha->value) && (item->users))

@@ -172,8 +172,6 @@ enum einit_usage_query {
 /*!< Service-usage-query: "Is this currently required?" */
  service_is_provided           = 0x0008,
 /*!< Service-usage-query: "Is this currently provided?" */
- service_update                = 0x0100,
-/*!< Service-usage-query: "Update service information." */
  service_get_all_provided      = 0x0010,
 /*!< Service-usage-query: "What services are currently provided?". */
  service_get_services_that_use = 0x0020,
