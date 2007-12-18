@@ -119,8 +119,6 @@ enum einit_module_task {
 /*!< Execute a custom action. */
  einit_module_feedback_show       = 0x0100,
 /*!< Option set by mod(): Show feedback. */
- einit_module_ignore_mutex        = 0x0400,
-/*!< Option: Do not use mutex */
  einit_module_ignore_dependencies = 0x0800,
 /*!< Option: Ignore dependencies on module status change with mod() */
  einit_module_suspend             = 0x1000,

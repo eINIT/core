@@ -194,19 +194,16 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  if (!module) return 0;
 
 /* wait if the module is already being processed in a different thread */
- if (!(task & einit_module_ignore_mutex)) {
-  if ((task & einit_module_suspend) || (task & einit_module_resume)) {
-   if (pthread_mutex_trylock (&module->mutex))
-    return status_failed;
-  } else
-   emutex_lock (&module->mutex);
- }
+ if ((task & einit_module_suspend) || (task & einit_module_resume)) {
+  if (pthread_mutex_trylock (&module->mutex))
+   return status_failed;
+ } else
+  emutex_lock (&module->mutex);
 
  if (task & einit_module_suspend) {
   int retval = mod_suspend (module);
 
-  if (!(task & einit_module_ignore_mutex))
-   emutex_unlock (&module->mutex);
+  emutex_unlock (&module->mutex);
 
   return retval;
  }
@@ -214,16 +211,14 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  if (task & einit_module_resume) {
   int retval = mod_resume (module);
 
-  if (!(task & einit_module_ignore_mutex))
-   emutex_unlock (&module->mutex);
+  emutex_unlock (&module->mutex);
 
   return retval;
  }
 
  if (module->status & status_suspended) {
   if (!(mod_resume (module) == status_ok)) {
-   if (!(task & einit_module_ignore_mutex))
-    emutex_unlock (&module->mutex);
+   emutex_unlock (&module->mutex);
 
    return status_failed;
   }
@@ -231,8 +226,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
  if (task & einit_module_custom) {
   if (!custom_command) {
-   if (!(task & einit_module_ignore_mutex))
-    emutex_unlock (&module->mutex);
+   emutex_unlock (&module->mutex);
 
    return status_failed;
   }
@@ -252,8 +246,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  if ((task & einit_module_enable) && (!module->enable || (module->status & status_enabled))) {
   wontload:
   module->status ^= status_working;
-  if (!(task & einit_module_ignore_mutex))
-   emutex_unlock (&module->mutex);
+  emutex_unlock (&module->mutex);
   return status_idle;
  }
  if ((task & einit_module_disable) && (!module->disable || (module->status & status_disabled) || (module->status == status_idle)))
@@ -363,12 +356,11 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   evdestroy (fb);
 
   modules_work_count--;
-
-  mod_update_usage_table(module);
  }
 
- if (!(task & einit_module_ignore_mutex))
-  emutex_unlock (&module->mutex);
+ emutex_unlock (&module->mutex);
+
+ mod_update_usage_table(module);
 
  return module->status;
 }
@@ -383,62 +375,66 @@ void mod_update_usage_table (struct lmodule *module) {
  char **enabled = NULL;
 
  emutex_lock (&service_usage_mutex);
-  modules_last_change = time(NULL);
+ modules_last_change = time(NULL);
 
-  if (module->status & status_enabled) {
-   if (module->si) {
-    if ((t = module->si->requires)) {
-     for (i = 0; t[i]; i++) {
-      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
-       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
-      }
+ emutex_lock (&module->mutex);
+
+ if (module->status & status_enabled) {
+  if (module->si) {
+   if ((t = module->si->requires)) {
+    for (i = 0; t[i]; i++) {
+     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
+      item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
      }
     }
-    if ((t = module->si->provides)) {
-     for (i = 0; t[i]; i++) {
-      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
-       if (!item->provider) {
-        enabled = (char **)setadd ((void **)enabled, t[i], SET_TYPE_STRING);
-       }
-
-       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
-      } else {
-       struct service_usage_item nitem;
-       memset (&nitem, 0, sizeof (struct service_usage_item));
-       nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
-       service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
-
+   }
+   if ((t = module->si->provides)) {
+    for (i = 0; t[i]; i++) {
+     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
+      if (!item->provider) {
        enabled = (char **)setadd ((void **)enabled, t[i], SET_TYPE_STRING);
       }
+
+      item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
+     } else {
+      struct service_usage_item nitem;
+      memset (&nitem, 0, sizeof (struct service_usage_item));
+      nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
+      service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+
+      enabled = (char **)setadd ((void **)enabled, t[i], SET_TYPE_STRING);
      }
     }
    }
   }
+ }
+
+ emutex_unlock (&module->mutex);
 
 /* more cleanup code */
-  ha = streelinear_prepare(service_usage);
-  while (ha) {
-   item = (struct service_usage_item *)ha->value;
+ ha = streelinear_prepare(service_usage);
+ while (ha) {
+  item = (struct service_usage_item *)ha->value;
 
-   if (!(module->status & status_enabled)) {
-    item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
-    item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
+  if (!(module->status & status_enabled)) {
+   item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
+   item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
 
-    if (!item->provider) {
-     disabled = (char **)setadd ((void **)disabled, ha->key, SET_TYPE_STRING);
-    }
+   if (!item->provider) {
+    disabled = (char **)setadd ((void **)disabled, ha->key, SET_TYPE_STRING);
    }
+  }
 
 #if 0
-   if (!item->provider && !item->users) {
-    service_usage = streedel (ha);
-    if (!service_usage) break;
+  if (!item->provider && !item->users) {
+   service_usage = streedel (ha);
+   if (!service_usage) break;
 
-    ha = streelinear_prepare(service_usage);
-   } else
+   ha = streelinear_prepare(service_usage);
+  } else
 #endif
-   ha = streenext (ha);
-  }
+  ha = streenext (ha);
+ }
 
  emutex_unlock (&service_usage_mutex);
 
