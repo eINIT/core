@@ -86,13 +86,6 @@ enum seq_type {
 
 int module_group_scanmodules (struct lmodule *modules);
 
-char module_group_module_is_provided (char *service) {
- if (service_usage_query (service_is_provided, NULL, service)) return 1;
-
- return 0;
-}
-
-
 int module_group_module_enable (char *nodename, struct einit_event *status) {
  struct cfgnode *cn = cfg_getnode (nodename, NULL);
 
@@ -125,7 +118,7 @@ int module_group_module_enable (char *nodename, struct einit_event *status) {
    if (seq == sq_any) {
 /* see if any of the items are enabled */
     for (i = 0; group[i]; i++) {
-     if (module_group_module_is_provided(group[i])) goto exit_good;
+     if (mod_service_is_provided(group[i])) goto exit_good;
     }
 
     for (i = 0; group[i]; i++) {
@@ -142,7 +135,7 @@ int module_group_module_enable (char *nodename, struct einit_event *status) {
      efree (set);
 
      for (y = 0; group[y]; y++) {
-      if (module_group_module_is_provided(group[y])) goto exit_good;
+      if (mod_service_is_provided(group[y])) goto exit_good;
      }
     }
    }
@@ -151,7 +144,7 @@ int module_group_module_enable (char *nodename, struct einit_event *status) {
 /* see if all of these are enabled... */
     int enabled = 0;
     for (i = 0; group[i]; i++) {
-     if (module_group_module_is_provided(group[i])) enabled++;
+     if (mod_service_is_provided(group[i])) enabled++;
     }
 
     if (enabled == i)
@@ -169,7 +162,7 @@ int module_group_module_enable (char *nodename, struct einit_event *status) {
 
     /* see if we have at least one enabled item */
     for (i = 0; group[i]; i++) {
-     if (module_group_module_is_provided(group[i])) goto exit_good;
+     if (mod_service_is_provided(group[i])) goto exit_good;
     }
    }
 
