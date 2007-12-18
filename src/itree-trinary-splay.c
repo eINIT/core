@@ -317,15 +317,15 @@ struct itree *itreedel (struct itree *tree) {
     tree->parent->right = NULL;
    }
   }
- }
 
- t = itreeroot (tree);
+  t = itreeroot (tree);
+  efree (tree);
+  return t;
+ }
 
  efree (tree);
 
- if (t == tree) return NULL;
-
- return t;
+ return NULL;
 }
 
 struct itree *itreedel_by_key (struct itree *tree, signed long key) {

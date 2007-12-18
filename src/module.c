@@ -379,26 +379,37 @@ void mod_update_usage_table (struct lmodule *module) {
  uint32_t i;
  struct service_usage_item *item;
 
+ char **disabled = NULL;
+ char **enabled = NULL;
+
  emutex_lock (&service_usage_mutex);
   modules_last_change = time(NULL);
 
   if (module->status & status_enabled) {
-   if (module->si && (t = module->si->requires)) {
-    for (i = 0; t[i]; i++) {
-     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
-      item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
+   if (module->si) {
+    if ((t = module->si->requires)) {
+     for (i = 0; t[i]; i++) {
+      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
+       item->users = (struct lmodule **)setadd ((void **)item->users, (void *)module, SET_NOALLOC);
+      }
      }
     }
-   }
-   if (module->si && (t = module->si->provides)) {
-    for (i = 0; t[i]; i++) {
-     if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
-      item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
-     } else {
-      struct service_usage_item nitem;
-      memset (&nitem, 0, sizeof (struct service_usage_item));
-      nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
-      service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+    if ((t = module->si->provides)) {
+     for (i = 0; t[i]; i++) {
+      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
+       if (!item->provider) {
+        enabled = (char **)setadd ((void **)enabled, t[i], SET_TYPE_STRING);
+       }
+
+       item->provider = (struct lmodule **)setadd ((void **)item->provider, (void *)module, SET_NOALLOC);
+      } else {
+       struct service_usage_item nitem;
+       memset (&nitem, 0, sizeof (struct service_usage_item));
+       nitem.provider = (struct lmodule **)setadd ((void **)nitem.provider, (void *)module, SET_NOALLOC);
+       service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
+
+       enabled = (char **)setadd ((void **)enabled, t[i], SET_TYPE_STRING);
+      }
      }
     }
    }
@@ -410,8 +421,12 @@ void mod_update_usage_table (struct lmodule *module) {
    item = (struct service_usage_item *)ha->value;
 
    if (!(module->status & status_enabled)) {
-     item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
-     item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
+    item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
+    item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
+
+    if (!item->provider) {
+     disabled = (char **)setadd ((void **)disabled, ha->key, SET_TYPE_STRING);
+    }
    }
 
 #if 0
@@ -426,6 +441,28 @@ void mod_update_usage_table (struct lmodule *module) {
   }
 
  emutex_unlock (&service_usage_mutex);
+
+ if (enabled) {
+  struct einit_event eei = evstaticinit (einit_core_service_enabled);
+
+  for (i = 0; enabled[i]; i++) {
+   eei.string = enabled[i];
+   event_emit (&eei, einit_event_flag_broadcast);
+  }
+
+  evstaticdestroy (eei);
+ }
+
+ if (disabled) {
+  struct einit_event eei = evstaticinit (einit_core_service_disabled);
+
+  for (i = 0; disabled[i]; i++) {
+   eei.string = disabled[i];
+   event_emit (&eei, einit_event_flag_broadcast);
+  }
+
+  evstaticdestroy (eei);
+ }
 }
 
 char mod_service_is_provided (char *service) {
