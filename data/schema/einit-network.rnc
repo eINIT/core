@@ -13,7 +13,7 @@ NetworkContents =
      ( attribute control { "vconfig" } & attribute id { text } ) |
      ( attribute control { "wvdial" } & attribute profile { text } ) |
      ( attribute control { "ifenslave" } & attribute master { text } & attribute slaves { text } )) ? &
-    (( attribute ip { "iproute2" } & attribute address { text } & attribute network { text } & attribute gateway { text }? ) |
+    (( attribute ip { "iproute2" } & attribute address { text } & attribute network { text }? & attribute gateway { text }? ) |
      ( attribute ip { DHCPclient } )) ? &
     attribute kernel-module { text } ?
    } *
