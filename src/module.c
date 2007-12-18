@@ -91,6 +91,7 @@ int mod_resume (struct lmodule *m) {
  }
 }
 
+#if 0
 void mod_freedesc (struct lmodule *m) {
  emutex_lock (&m->mutex);
 
@@ -105,7 +106,7 @@ void mod_freedesc (struct lmodule *m) {
  if (m->cleanup)
   m->cleanup (m);
 
- m->status |= MOD_LOCKED;
+// m->status |= MOD_LOCKED;
 
  emutex_unlock (&m->mutex);
  emutex_destroy (&m->mutex);
@@ -122,6 +123,7 @@ int mod_freemodules ( void ) {
  mlist = NULL;
  return 1;
 }
+#endif
 
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
@@ -244,18 +246,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   goto skipdependencies;
  }
 
- if (module->status & MOD_LOCKED) { // this means the module is locked. maybe we're shutting down just now.
-  if (!(task & einit_module_ignore_mutex))
-   emutex_unlock (&module->mutex);
-
-  if (task & einit_module_enable)
-   return status_failed;
-  else if (task & einit_module_disable)
-   return status_ok;
-  else
-   return status_ok;
- }
-
  module->status |= status_working;
 
 /* check if the task requested has already been done (or if it can be done at all) */
@@ -285,6 +275,16 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
 /* same for services */
   if (module->si && module->si->provides) {
+   int i = 0;
+
+   if (task & (einit_module_enable | einit_module_disable))
+    for (i = 0; module->si->provides[i]; i++) {
+     struct einit_event eei = evstaticinit ((task & einit_module_enable) ? einit_core_service_enabling : einit_core_service_disabling);
+     eei.string = module->si->provides[i];
+     event_emit (&eei, einit_event_flag_broadcast);
+     evstaticdestroy (eei);
+    }
+
    struct einit_event ees = evstaticinit (einit_core_service_update);
    ees.task = task;
    ees.status = status_working;
@@ -370,6 +370,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   emutex_unlock (&module->mutex);
 
  return module->status;
+}
+
+void mod_update_usage_table (struct lmodule *module) {
 }
 
 uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule *module, const char *service) {

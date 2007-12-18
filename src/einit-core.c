@@ -136,6 +136,7 @@ int print_usage_info () {
  return -1;
 }
 
+#if 0
 /* cleanups are only required to check for memory leaks, OS kernels will usually
    clean up after a program terminates -- especially with an init this shouldn't be much of
    a problem, since it's THE program that doesn't terminate. */
@@ -151,6 +152,7 @@ int cleanup () {
 
  return 0;
 }
+#endif
 
 void core_timer_event_handler_tick (struct einit_event *ev) {
  if (ev->integer == event_snooze_time) {

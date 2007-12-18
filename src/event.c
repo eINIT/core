@@ -509,6 +509,11 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_suspend_all:                 return "core/suspend-all";
   case einit_core_resume_all:                  return "core/resume-all";
 
+  case einit_core_service_enabling:            return "core/service-enabling";
+  case einit_core_service_enabled:             return "core/service-enabled";
+  case einit_core_service_disabling:           return "core/service-disabling";
+  case einit_core_service_disabled:            return "core/service-disabled";
+
   case einit_core_crash_data:                  return "core/crash-data";
   case einit_core_recover:                     return "core/recover";
   case einit_core_main_loop_reached:           return "core/main-loop-reached";
@@ -519,7 +524,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_mount_new_mount_level:            return "mount/new-mount-level";
 
   case einit_feedback_module_status:           return "feedback/module-status";
-  case einit_feedback_plan_status:             return "feedback/plan-status";
   case einit_feedback_notice:                  return "feedback/notice";
   case einit_feedback_register_fd:             return "feedback/register-fd";
   case einit_feedback_unregister_fd:           return "feedback/unregister-fd";
@@ -619,6 +623,11 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "suspend-all"))                 ret = einit_core_suspend_all;
      else if (strmatch (tcode[1], "resume-all"))                  ret = einit_core_resume_all;
 
+     else if (strmatch (tcode[1], "service-enabling"))            ret = einit_core_service_enabling;
+     else if (strmatch (tcode[1], "service-enabled"))             ret = einit_core_service_enabled;
+     else if (strmatch (tcode[1], "service-disabling"))           ret = einit_core_service_disabling;
+     else if (strmatch (tcode[1], "service-disabled"))            ret = einit_core_service_disabled;
+
      else if (strmatch (tcode[1], "crash-data"))                  ret = einit_core_crash_data;
      else if (strmatch (tcode[1], "recover"))                     ret = einit_core_recover;
      else if (strmatch (tcode[1], "main-loop-reached"))           ret = einit_core_main_loop_reached;
@@ -631,7 +640,6 @@ uint32_t event_string_to_code (const char *code) {
      break;
     case einit_event_subsystem_feedback:
      if (strmatch (tcode[1], "module-status"))                    ret = einit_feedback_module_status;
-     else if (strmatch (tcode[1], "plan-status"))                 ret = einit_feedback_plan_status;
      else if (strmatch (tcode[1], "notice"))                      ret = einit_feedback_notice;
      else if (strmatch (tcode[1], "register-fd"))                 ret = einit_feedback_register_fd;
      else if (strmatch (tcode[1], "unregister-fd"))               ret = einit_feedback_unregister_fd;

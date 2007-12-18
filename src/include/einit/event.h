@@ -116,6 +116,11 @@ enum einit_event_code {
  einit_core_suspend_all             = einit_event_subsystem_core     | 0x400,
  einit_core_resume_all              = einit_event_subsystem_core     | 0x401,
 
+ einit_core_service_enabling        = einit_event_subsystem_core     | 0x501,
+ einit_core_service_enabled         = einit_event_subsystem_core     | 0x502,
+ einit_core_service_disabling       = einit_event_subsystem_core     | 0x503,
+ einit_core_service_disabled        = einit_event_subsystem_core     | 0x504,
+
  einit_core_crash_data              = einit_event_subsystem_core     | 0xffd,
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
@@ -131,7 +136,6 @@ enum einit_event_code {
 /* einit_event_subsystem_feedback: */
  einit_feedback_module_status       = einit_event_subsystem_feedback | 0x001,
 /*!< the para field specifies a module that caused the feedback */
- einit_feedback_plan_status         = einit_event_subsystem_feedback | 0x002,
  einit_feedback_notice              = einit_event_subsystem_feedback | 0x003,
  einit_feedback_register_fd         = einit_event_subsystem_feedback | 0x011,
  einit_feedback_unregister_fd       = einit_event_subsystem_feedback | 0x012,

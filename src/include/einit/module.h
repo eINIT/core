@@ -190,14 +190,6 @@ enum einit_usage_query {
 };
 /*!\} */
 
-
-/* these will be removed soon, not gonna mess with 'em now */
-#define MOD_SCHEDULER 0x1000                    /*!< Bitmask for scheduler-feedback-options. */
-#define MOD_SCHEDULER_PLAN_COMMIT_START 0x1001  /*!< Scheduler-feedback-option: "New plan is now being executed.". */
-#define MOD_SCHEDULER_PLAN_COMMIT_FINISH 0x1002 /*!< Scheduler-feedback-option: "New plan is now done executing.". */
-
-#define MOD_LOCKED 0x8000        /*!< Module-option: Module is locked. */
-
 struct service_information {
  char **provides;       /*!< A list of services that this module provides. */
  char **requires;       /*!< A list of services that this module requires. */
@@ -334,6 +326,8 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
  * Use this to change the state of a module, i.e. enable it, disable it, etc...
 */
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command);
+
+void mod_update_usage_table (struct lmodule *module);
 
 /*!\ingroup serviceusagequeries
  * \{ */

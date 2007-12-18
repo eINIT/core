@@ -527,8 +527,6 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
 }
 
 unsigned int mod_plan_commit (struct mloadplan *plan) {
- struct einit_event *fb = evinit (einit_feedback_plan_status);
-
  if (!plan) return 0;
 
  if (plan->options & plan_option_shutdown) {
@@ -564,10 +562,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    }
   }
  }
-
- fb->task = MOD_SCHEDULER_PLAN_COMMIT_START;
- fb->para = (void *)plan;
- status_update (fb);
 
  int currentlistrev = einit_module_logic_list_revision;
 
@@ -614,9 +608,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
 // repeat until the modules haven't changed halfway through:
  } while (einit_module_logic_list_revision != currentlistrev);
 
- fb->task = MOD_SCHEDULER_PLAN_COMMIT_FINISH;
- status_update (fb);
-
 // do some more extra work if the plan was derived from a mode
  if (plan->mode) {
   char *cmdt;
@@ -661,8 +652,6 @@ unsigned int mod_plan_commit (struct mloadplan *plan) {
    evstaticdestroy (ee);
   }
  }
-
- evdestroy (fb);
 
  module_logic_update_init_d();
 
