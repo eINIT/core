@@ -37,7 +37,7 @@ eINITMain =
   Mode * &
   Information ? &
   element options { attribute shutdown { text }? }? &
-  element ttys { TTYAttribute } ? &
+  element ttys { TTYAttribute, attribute sysv-style { Boolean }? } ? &
   element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
   element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
 
