@@ -82,7 +82,6 @@ module_register(linux_bootchart_self);
 
 #endif
 
-int linux_bootchart_in_switch = 0;
 char linux_bootchart_have_thread = 0;
 unsigned long linux_bootchart_sleep_time = 0;
 char linux_bootchart_process_accounting = 0;
@@ -436,28 +435,19 @@ void linux_bootchart_switch () {
     ethread_spawn_detached ((void *(*)(void *))linux_bootchart_thread, (void *)NULL);
    }
   }
-
-  linux_bootchart_in_switch++;
- } else {
-  linux_bootchart_in_switch = 0;
  }
 }
 
 void linux_bootchart_switch_done () {
- linux_bootchart_in_switch--;
-
- if (!linux_bootchart_in_switch && linux_bootchart_have_thread) {
-  linux_bootchart_have_thread = 0;
- }
+ linux_bootchart_have_thread = 0;
 }
 
 void linux_bootchart_boot_event_handler (struct einit_event *ev) {
- linux_bootchart_in_switch--;
  linux_bootchart_switch ();
 }
 
 int linux_bootchart_cleanup (struct lmodule *pa) {
- event_ignore (einit_core_mode_switch_done, linux_bootchart_switch_done);
+ event_ignore (einit_core_done_switching, linux_bootchart_switch_done);
  event_ignore (einit_core_mode_switching, linux_bootchart_switch);
  event_ignore (einit_boot_early, linux_bootchart_boot_event_handler);
 
@@ -469,7 +459,7 @@ int linux_bootchart_configure (struct lmodule *tm) {
 
  event_listen (einit_boot_early, linux_bootchart_boot_event_handler);
  event_listen (einit_core_mode_switching, linux_bootchart_switch);
- event_listen (einit_core_mode_switch_done, linux_bootchart_switch_done);
+ event_listen (einit_core_done_switching, linux_bootchart_switch_done);
 
  return 0;
 }

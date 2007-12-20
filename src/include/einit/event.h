@@ -112,6 +112,8 @@ enum einit_event_code {
 
  einit_core_mode_switching          = einit_event_subsystem_core     | 0x201,
  einit_core_mode_switch_done        = einit_event_subsystem_core     | 0x202,
+ einit_core_switching               = einit_event_subsystem_core     | 0x203,
+ einit_core_done_switching          = einit_event_subsystem_core     | 0x204,
 
  einit_core_suspend_all             = einit_event_subsystem_core     | 0x400,
  einit_core_resume_all              = einit_event_subsystem_core     | 0x401,

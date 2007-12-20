@@ -1578,7 +1578,7 @@ char mod_have_workthread (char *service) {
 }
 
 void mod_commits_dec () {
- char clean_broken = 0, **unresolved = NULL, **broken = NULL, suspend_all = 0;
+ char clean_broken = 0, **unresolved = NULL, **broken = NULL, suspend_all = 0, dse = 0;
  emutex_lock (&ml_unresolved_mutex);
  if (broken_services) {
   broken = (char **)setdup ((const void **)broken_services, SET_TYPE_STRING);
@@ -1613,6 +1613,7 @@ void mod_commits_dec () {
  ml_commits--;
  clean_broken = (ml_commits <= 0);
  suspend_all = (ml_commits <= 0);
+ dse = (ml_commits <= 0);
  emutex_unlock (&ml_commits_mutex);
 
  if (clean_broken) {
@@ -1659,16 +1660,23 @@ void mod_commits_dec () {
 #if 0
  mod_ping_all_threads();
 #endif
+
+ if (dse) {
+  struct einit_event evs = evstaticinit (einit_core_done_switching);
+  event_emit (&evs, einit_event_flag_broadcast);
+  evstaticdestroy (evs);
+ }
 }
 
 void mod_commits_inc () {
- char clean_broken = 0;
+ char clean_broken = 0, dse = 0;
 
  modules_last_change = time (NULL);
 
 // char spawn = 0;
  emutex_lock (&ml_commits_mutex);
  clean_broken = (ml_commits <= 0);
+ dse = (ml_commits <= 0);
  ml_commits++;
  emutex_unlock (&ml_commits_mutex);
 
@@ -1710,6 +1718,12 @@ void mod_commits_inc () {
 
   emutex_unlock (&ml_tb_current_mutex);
   emutex_unlock (&ml_tb_target_state_mutex);
+ }
+
+ if (dse) {
+  struct einit_event evs = evstaticinit (einit_core_switching);
+  event_emit (&evs, einit_event_flag_broadcast);
+  evstaticdestroy (evs);
  }
 
  mod_spawn_workthreads ();

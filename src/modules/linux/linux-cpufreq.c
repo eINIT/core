@@ -75,10 +75,6 @@ module_register(linux_cpufreq_self);
 
 #endif
 
-int linux_cpufreq_in_switch = 0;
-
-
-
 void linux_cpufreq_set_governor_data (char *gd, int cpus) {
  if (gd) {
   char tmp[BUFFERSIZE];
@@ -120,39 +116,33 @@ void linux_cpufreq_switch () {
    linux_cpufreq_set_governor_data (governor_data, cpus);
   }
  }
-
- linux_cpufreq_in_switch++;
 }
 
 void linux_cpufreq_switch_done () {
- linux_cpufreq_in_switch--;
+ struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
 
- if (!linux_cpufreq_in_switch) {
-  struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
+ if (node && node->arbattrs) {
+  char *governor_data = NULL;
+  int cpus = 32;
+  int i = 0;
 
-  if (node && node->arbattrs) {
-   char *governor_data = NULL;
-   int cpus = 32;
-   int i = 0;
-
-   for (; node->arbattrs[i]; i+=2) {
-    if (strmatch (node->arbattrs[i], "cpus")) {
-     cpus = parse_integer (node->arbattrs[i+1]);
-    } else if (strmatch (node->arbattrs[i], "post-switch")) {
-     governor_data = node->arbattrs[i+1];
-    }
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "cpus")) {
+    cpus = parse_integer (node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "post-switch")) {
+    governor_data = node->arbattrs[i+1];
    }
+  }
 
-   if (governor_data) {
-    linux_cpufreq_set_governor_data (governor_data, cpus);
-   }
+  if (governor_data) {
+   linux_cpufreq_set_governor_data (governor_data, cpus);
   }
  }
 }
 
 int linux_cpufreq_cleanup (struct lmodule *pa) {
- event_ignore (einit_core_mode_switching, linux_cpufreq_switch);
- event_ignore (einit_core_mode_switch_done, linux_cpufreq_switch_done);
+ event_ignore (einit_core_switching, linux_cpufreq_switch);
+ event_ignore (einit_core_done_switching, linux_cpufreq_switch_done);
 
  return 0;
 }
@@ -162,8 +152,8 @@ int linux_cpufreq_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_cpufreq_cleanup;
 
- event_listen (einit_core_mode_switching, linux_cpufreq_switch);
- event_listen (einit_core_mode_switch_done, linux_cpufreq_switch_done);
+ event_listen (einit_core_switching, linux_cpufreq_switch);
+ event_listen (einit_core_done_switching, linux_cpufreq_switch_done);
 
  return 0;
 }

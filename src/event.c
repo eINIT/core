@@ -505,6 +505,8 @@ char *event_code_to_string (const uint32_t code) {
 
   case einit_core_mode_switching:              return "core/mode-switching";
   case einit_core_mode_switch_done:            return "core/mode-switch-done";
+  case einit_core_switching:                   return "core/switching";
+  case einit_core_done_switching:              return "core/done-switching";
 
   case einit_core_suspend_all:                 return "core/suspend-all";
   case einit_core_resume_all:                  return "core/resume-all";
@@ -619,6 +621,8 @@ uint32_t event_string_to_code (const char *code) {
 
      else if (strmatch (tcode[1], "mode-switching"))              ret = einit_core_mode_switching;
      else if (strmatch (tcode[1], "mode-switch-done"))            ret = einit_core_mode_switch_done;
+     else if (strmatch (tcode[1], "switching"))                   ret = einit_core_switching;
+     else if (strmatch (tcode[1], "done-switching"))              ret = einit_core_done_switching;
 
      else if (strmatch (tcode[1], "suspend-all"))                 ret = einit_core_suspend_all;
      else if (strmatch (tcode[1], "resume-all"))                  ret = einit_core_resume_all;

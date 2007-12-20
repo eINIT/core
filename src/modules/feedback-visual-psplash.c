@@ -99,8 +99,9 @@ char *psplash_fifo = "/dev/psplash_fifo";
 
 pthread_mutex_t
   psplash_commandQ_mutex = PTHREAD_MUTEX_INITIALIZER,
-  psplash_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-  pthread_cond_t psplash_commandQ_cond = PTHREAD_COND_INITIALIZER;
+  psplash_commandQ_cond_mutex = PTHREAD_MUTEX_INITIALIZER,
+  psplash_mode_switches_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t psplash_commandQ_cond = PTHREAD_COND_INITIALIZER;
 
 int einit_feedback_visual_psplash_disable ();
 int einit_feedback_visual_psplash_enable ();
@@ -135,27 +136,34 @@ void einit_feedback_visual_psplash_einit_event_handler_mode_switching (struct ei
   psplash_queue_comand(tmp);
  }
 
- if (!psplash_mode_switches) {
-  psplash_queue_comand("PROGRESS 0");
- }
-
+ emutex_lock (&psplash_mode_switches_mutex);
  psplash_mode_switches++;
+ if (psplash_mode_switches == 1) {
+  emutex_unlock (&psplash_mode_switches_mutex);
+  psplash_queue_comand("PROGRESS 0");
+ } else
+  emutex_unlock (&psplash_mode_switches_mutex);
 }
 
 void einit_feedback_visual_psplash_einit_event_handler_mode_switch_done (struct einit_event *ev) {
  char tmp[BUFFERSIZE];
 
+ emutex_lock (&psplash_mode_switches_mutex);
  psplash_mode_switches--;
+ emutex_unlock (&psplash_mode_switches_mutex);
 
  if (ev->para && ((struct cfgnode *)ev->para)->id) {
   esprintf (tmp, BUFFERSIZE, "MSG mode %s now in effect.", ((struct cfgnode *)ev->para)->id);
   psplash_queue_comand(tmp);
  }
 
+ emutex_lock (&psplash_mode_switches_mutex);
  if (!psplash_mode_switches) {
+  emutex_unlock (&psplash_mode_switches_mutex);
   psplash_queue_comand("PROGRESS 100");
   psplash_queue_comand("QUIT");
- }
+ } else
+  emutex_unlock (&psplash_mode_switches_mutex);
 }
 
 void einit_feedback_visual_psplash_einit_event_handler_service_update (struct einit_event *ev) {

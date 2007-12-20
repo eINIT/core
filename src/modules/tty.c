@@ -371,13 +371,13 @@ void einit_tty_update() {
 }
 
 void einit_tty_update_switching () {
- einit_tty_in_switch++;
+ einit_tty_in_switch = 1;
 
  einit_tty_update();
 }
 
 void einit_tty_update_switch_done () {
- einit_tty_in_switch--;
+ einit_tty_in_switch = 0;
 
  einit_tty_update();
 }
@@ -388,8 +388,8 @@ int einit_tty_cleanup (struct lmodule *this) {
  sched_configure(this);
 
  event_ignore (einit_process_died, einit_tty_process_event_handler);
- event_ignore (einit_core_mode_switching, einit_tty_update);
- event_ignore (einit_core_mode_switch_done, einit_tty_update);
+ event_ignore (einit_core_switching, einit_tty_update_switching);
+ event_ignore (einit_core_done_switching, einit_tty_update_switch_done);
  event_ignore (einit_boot_devices_available, einit_tty_update);
 
  return 0;
@@ -405,8 +405,8 @@ int einit_tty_configure (struct lmodule *this) {
  exec_configure(this);
 
  event_listen (einit_process_died, einit_tty_process_event_handler);
- event_listen (einit_core_mode_switching, einit_tty_update_switching);
- event_listen (einit_core_mode_switch_done, einit_tty_update_switch_done);
+ event_listen (einit_core_switching, einit_tty_update_switching);
+ event_listen (einit_core_done_switching, einit_tty_update_switch_done);
  event_listen (einit_boot_devices_available, einit_tty_update);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
