@@ -89,8 +89,6 @@ struct stree *service_transformations = NULL;
 #define SVT_STRIP_REQUIRES  0x00000002
 #define SVT_STRIP_AFTER     0x00000004
 #define SVT_STRIP_BEFORE    0x00000008
-#define SVT_STRIP_SD_AFTER  0x00000010
-#define SVT_STRIP_SD_BEFORE 0x00000020
 
 struct service_transformation {
  char *in, *out;
@@ -179,10 +177,6 @@ void einit_module_transformations_einit_event_handler_configuration_update (stru
         new_transformation.options |= SVT_STRIP_AFTER;
        if (inset ((const void **)tmp, (void *)"before", SET_TYPE_STRING))
         new_transformation.options |= SVT_STRIP_BEFORE;
-       if (inset ((const void **)tmp, (void *)"shutdown-before", SET_TYPE_STRING))
-        new_transformation.options |= SVT_STRIP_SD_BEFORE;
-       if (inset ((const void **)tmp, (void *)"shutdown-after", SET_TYPE_STRING))
-        new_transformation.options |= SVT_STRIP_SD_AFTER;
 
        efree (tmp);
       }
@@ -229,8 +223,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
      esi->provides = module->si->provides;
      esi->after = module->si->after;
      esi->before = module->si->before;
-     esi->shutdown_after = module->si->shutdown_after;
-     esi->shutdown_before = module->si->shutdown_before;
     }
 
     for (; lnode->arbattrs[i]; i+=2) {
@@ -238,8 +230,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
      else if (strmatch (lnode->arbattrs[i], "provides")) esi->provides = str2set (':', lnode->arbattrs[i+1]);
      else if (strmatch (lnode->arbattrs[i], "after")) esi->after = str2set (':', lnode->arbattrs[i+1]);
      else if (strmatch (lnode->arbattrs[i], "before")) esi->before = str2set (':', lnode->arbattrs[i+1]);
-     else if (strmatch (lnode->arbattrs[i], "shutdown-before")) esi->shutdown_before = str2set (':', lnode->arbattrs[i+1]);
-     else if (strmatch (lnode->arbattrs[i], "shutdown-after")) esi->shutdown_after = str2set (':', lnode->arbattrs[i+1]);
     }
 
     if (module->si) {
@@ -248,8 +238,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
      einit_module_transformations_garbage_add_chunk (module->si->requires);
      einit_module_transformations_garbage_add_chunk (module->si->after);
      einit_module_transformations_garbage_add_chunk (module->si->before);
-     einit_module_transformations_garbage_add_chunk (module->si->shutdown_before);
-     einit_module_transformations_garbage_add_chunk (module->si->shutdown_after);
     }
 
     module->si = esi;
@@ -408,69 +396,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
      module->si->before = np;
     }
 
-    if (module->si->shutdown_before) {
-     char **np = NULL;
-
-     for (i = 0; module->si->shutdown_before[i]; i++) {
-      char hit = 0;
-      struct stree *x = streefind (service_transformations, module->si->shutdown_before[i], tree_find_first);
-
-      while (x) {
-       struct service_transformation *trans =
-         (struct service_transformation *)x->value;
-
-       if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
-        x = streefind (x, module->si->shutdown_before[i], tree_find_next);
-        continue;
-       }
-
-       hit = 1;
-
-       if (trans->options & SVT_STRIP_SD_BEFORE) break;
-
-       np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
-       break;
-      }
-
-      if (hit == 0)
-       np = (char **)setadd ((void **)np, module->si->shutdown_before[i], SET_TYPE_STRING);
-     }
-
-     einit_module_transformations_garbage_add_chunk (module->si->shutdown_before);
-     module->si->shutdown_before = np;
-    }
-
-    if (module->si->shutdown_after) {
-     char **np = NULL;
-
-     for (i = 0; module->si->shutdown_after[i]; i++) {
-      char hit = 0;
-      struct stree *x = streefind (service_transformations, module->si->shutdown_after[i], tree_find_first);
-
-      while (x) {
-       struct service_transformation *trans =
-         (struct service_transformation *)x->value;
-
-       if (regexec (trans->id_pattern, module->module->rid, 0, NULL, 0)) {
-        x = streefind (x, module->si->shutdown_after[i], tree_find_next);
-        continue;
-       }
-
-       hit = 1;
-
-       if (trans->options & SVT_STRIP_SD_AFTER) break;
-
-       np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
-       break;
-      }
-
-      if (hit == 0)
-       np = (char **)setadd ((void **)np, module->si->shutdown_after[i], SET_TYPE_STRING);
-     }
-
-     einit_module_transformations_garbage_add_chunk (module->si->shutdown_after);
-     module->si->shutdown_after = np;
-    }
    }
 #endif
 

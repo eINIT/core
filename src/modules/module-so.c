@@ -107,8 +107,6 @@ int einit_mod_so_do_suspend (struct lmodule *pa) {
   if (o->si.provides) { n->si.provides = (char **)setdup ((const void **)o->si.provides, SET_TYPE_STRING); }
   if (o->si.before) { n->si.before = (char **)setdup ((const void **)o->si.before, SET_TYPE_STRING); }
   if (o->si.after) { n->si.after = (char **)setdup ((const void **)o->si.after, SET_TYPE_STRING); }
-  if (o->si.shutdown_before) { n->si.shutdown_before = (char **)setdup ((const void **)o->si.shutdown_before, SET_TYPE_STRING); }
-  if (o->si.shutdown_after) { n->si.shutdown_after = (char **)setdup ((const void **)o->si.shutdown_after, SET_TYPE_STRING); }
 
   pa->module = n;
 
@@ -140,8 +138,6 @@ int einit_mod_so_do_resume (struct lmodule *pa) {
     if (sm->si.requires) efree (sm->si.requires);
     if (sm->si.after) efree (sm->si.after);
     if (sm->si.before) efree (sm->si.before);
-    if (sm->si.shutdown_after) efree (sm->si.shutdown_after);
-    if (sm->si.shutdown_before) efree (sm->si.shutdown_before);
 
     efree (sm->rid);
     efree (sm->name);
