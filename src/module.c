@@ -253,10 +253,10 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   goto wontload;
 
  if (task & einit_module_enable) {
-  if (!service_usage_query(service_requirements_met, module, NULL))
+  if (!mod_service_requirements_met(module))
    goto wontload;
  } else if (task & einit_module_disable) {
-  if (!service_usage_query(service_not_in_use, module, NULL))
+  if (!mod_service_not_in_use(module))
    goto wontload;
  }
 
@@ -491,19 +491,38 @@ char mod_service_is_in_use (char *service) {
  return rv;
 }
 
-uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule *module, const char *service) {
- uint16_t ret = 0;
+char mod_service_requirements_met (struct lmodule *module) {
+ char ret = 1;
  struct stree *ha;
- char **t;
  uint32_t i;
+ char **t;
 
- if ((!module || !module->module) && !service) return 0;
+ if (!service_usage) return 0;
 
  emutex_lock (&service_usage_mutex);
 
- if (task & service_not_in_use) {
-  ret |= service_not_in_use;
-  struct stree *ha = streelinear_prepare(service_usage);
+ if (module->si && (t = module->si->requires)) {
+  for (i = 0; t[i]; i++) {
+   if (!(ha = streefind (service_usage, t[i], tree_find_first)) ||
+       !((struct service_usage_item *)(ha->value))->provider) {
+    ret = 0;
+    break;
+   }
+  }
+ }
+
+ emutex_unlock (&service_usage_mutex);
+
+ return ret;
+}
+
+char mod_service_not_in_use(struct lmodule *module) {
+ char ret = 1;
+ struct stree *ha;
+
+ emutex_lock (&service_usage_mutex);
+
+ ha = streelinear_prepare(service_usage);
 
 /* a service is "in use" if
   * it's the provider for something, and
@@ -533,26 +552,16 @@ uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule 
 
 /* yep, really is in use */
     if (i == r) {
-     ret ^= service_not_in_use;
+     ret = 0;
      break;
     }
    }
    ha = streenext (ha);
   }
- } else if (task & service_requirements_met) {
-  ret |= service_requirements_met;
-  if (module->si && (t = module->si->requires)) {
-   for (i = 0; t[i]; i++) {
-    if (!service_usage || !(ha = streefind (service_usage, t[i], tree_find_first)) ||
-        !((struct service_usage_item *)(ha->value))->provider) {
-     ret ^= service_requirements_met;
-     break;
-    }
-   }
-  }
- }
+
 
  emutex_unlock (&service_usage_mutex);
+
  return ret;
 }
 

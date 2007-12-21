@@ -2292,7 +2292,7 @@ void mod_pre_examine (char *service) {
 }
 
 char mod_disable_users (struct lmodule *module, char *sname) {
- if (!service_usage_query(service_not_in_use, module, NULL)) {
+ if (!mod_service_not_in_use(module)) {
   ssize_t i = 0;
   char **need = NULL;
   char **t = service_usage_query_cr (service_get_services_that_use, module, NULL);
@@ -2382,7 +2382,7 @@ char mod_disable_users (struct lmodule *module, char *sname) {
 }
 
 char mod_enable_requirements (struct lmodule *module, char *sname) {
- if (!service_usage_query(service_requirements_met, module, NULL)) {
+ if (!mod_service_requirements_met(module)) {
   char retval = 1;
   if (module->si && module->si->requires) {
    ssize_t i = 0;

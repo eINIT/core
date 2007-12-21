@@ -162,10 +162,6 @@ enum einit_module_status {
 /*!\ingroup serviceusagequeries
  * \{*/
 enum einit_usage_query {
- service_not_in_use            = 0x0001,
-/*!< Service-usage-query: "Is this module not in use?" */
- service_requirements_met      = 0x0002,
-/*!< Service-usage-query: "Are this module's requirements met?" */
  service_get_all_provided      = 0x0010,
 /*!< Service-usage-query: "What services are currently provided?". */
  service_get_services_that_use = 0x0020,
@@ -312,21 +308,13 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
 */
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command);
 
+/*!\ingroup serviceusagequeries
+ * \{ */
 void mod_update_usage_table (struct lmodule *module);
 char mod_service_is_in_use (char *service);
 char mod_service_is_provided (char *service);
-
-/*!\ingroup serviceusagequeries
- * \{ */
-/*!\brief Query service-usage information.
- * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
- * \param[in] module  Depending on the command that you pass to this function, a module may be required.
- * \param[in] service Depending on the command that you pass to this function, a service-name may be required.
- *
- * This function can be used to query/update certain service-usage information where the result can be
- * expressed as an integer.
-*/
-uint16_t service_usage_query (enum einit_usage_query task, const struct lmodule *module, const char *service);
+char mod_service_requirements_met(struct lmodule *module);
+char mod_service_not_in_use(struct lmodule *module);
 
 /*!\brief Query service-usage information.
  * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
