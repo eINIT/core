@@ -1663,7 +1663,7 @@ void mod_commits_dec () {
 
  if (dse) {
   struct einit_event evs = evstaticinit (einit_core_done_switching);
-  event_emit (&evs, einit_event_flag_broadcast);
+  event_emit (&evs, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
   evstaticdestroy (evs);
  }
 }
@@ -1722,7 +1722,7 @@ void mod_commits_inc () {
 
  if (dse) {
   struct einit_event evs = evstaticinit (einit_core_switching);
-  event_emit (&evs, einit_event_flag_broadcast);
+  event_emit (&evs, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
   evstaticdestroy (evs);
  }
 
