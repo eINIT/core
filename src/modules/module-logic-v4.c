@@ -81,8 +81,6 @@ struct lmodule **module_logic_active_modules = NULL;
 
 char **module_logic_list_enable = NULL;
 char **module_logic_list_disable = NULL;
-char **module_logic_list_enable_workers = NULL;
-char **module_logic_list_disable_workers = NULL;
 
 pthread_mutex_t
  module_logic_service_list_mutex = PTHREAD_MUTEX_INITIALIZER,
@@ -108,6 +106,99 @@ struct lmodule **module_logic_find_things_to_enable() {
  if (!module_logic_list_enable) return NULL;
 
  struct lmodule **rv = NULL;
+
+ struct lmodule **candidates_level1 = NULL;
+ struct lmodule **candidates_level2 = NULL;
+ int i = 0;
+ char **unresolved = NULL;
+ char **services_level1 = NULL;
+
+ for (; module_logic_list_enable[i]; i++) {
+  emutex_lock (&module_logic_service_list_mutex);
+  struct stree *st = streefind(module_logic_service_list, module_logic_list_enable[i], tree_find_first);
+  emutex_unlock (&module_logic_service_list_mutex);
+  if (st) {
+   struct lmodule **lm = st->value;
+
+/* here we should rotate lm[] to make the first entry one entry that is high up in the preference list, but also not blocked */
+
+   if (mod_service_requirements_met(lm[0])) {
+    candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[0], SET_NOALLOC);
+
+    if (lm[0]->module) {
+     if (lm[0]->module->rid) {
+      if (!inset ((const void **)services_level1, lm[0]->module->rid, SET_TYPE_STRING))
+       services_level1 = (char **)setadd ((void **)services_level1, lm[0]->module->rid, SET_TYPE_STRING);
+     }
+     if (lm[0]->si && lm[0]->si->provides) {
+      int j = 0;
+      for (; lm[0]->si->provides[j]; j++) {
+       if (!inset ((const void **)services_level1, lm[0]->si->provides[j], SET_TYPE_STRING))
+        services_level1 = (char **)setadd ((void **)services_level1, lm[0]->si->provides[j], SET_TYPE_STRING);
+      }
+     }
+    }
+   }
+  } else {
+   unresolved = (char **)setadd ((void **)unresolved, module_logic_list_enable[i], SET_TYPE_STRING);
+  }
+ }
+
+ if (candidates_level1 && services_level1) {
+  for (i = 0; candidates_level1[i]; i++) {
+   char doskip = 0;
+
+   if (candidates_level1[i]->si && candidates_level1[i]->si->after) {
+    int j = 0;
+
+/* remove our own services so we don't accidentally match ourselves */
+    if (candidates_level1[i]->module->rid) {
+     services_level1 = strsetdel (services_level1, candidates_level1[i]->module->rid);
+    }
+    if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
+     int k = 0;
+     for (; candidates_level1[i]->si->provides[k]; k++) {
+      services_level1 = strsetdel (services_level1, candidates_level1[i]->si->provides[k]);
+     }
+    }
+
+    for (; candidates_level1[i]->si->after[j]; j++) {
+     if (inset_pattern ((const void **)services_level1, candidates_level1[i]->si->after[j], SET_TYPE_STRING)) {
+      /* reaching this branch means that there's something that we /could/ enable, but there's something else to be enabled that requests being enabled before this 'ere */
+      doskip = 1;
+      break;
+     }
+    }
+
+/* re-add our own services */
+    if (candidates_level1[i]->module->rid) {
+     if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
+      services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING);
+    }
+    if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
+     int k = 0;
+     for (; candidates_level1[i]->si->provides[k]; k++) {
+      if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING))
+       services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING);
+     }
+    }
+   }
+
+   if (!doskip) {
+    candidates_level2 = (struct lmodule **)setadd ((void **)candidates_level2, candidates_level1[i], SET_NOALLOC);
+   }
+  }
+
+  efree (candidates_level1);
+
+  if (!candidates_level2) {
+   /* at this point we'd pretty much need to panic... it means we hit some recursive deps due to before/after abuse */
+   notice (2, "WARNING: before/after abuse detected!");
+  }
+ }
+
+ if (services_level1) efree (services_level1);
+ if (candidates_level2) efree (candidates_level2);
 
  return rv;
 }
@@ -225,6 +316,37 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
 }
 
 void module_logic_einit_event_handler_core_manipulate_services (struct einit_event *ev) {
+ if (ev->stringset) {
+  if (ev->task & einit_module_enable) {
+   int i = 0;
+   emutex_lock (&module_logic_list_enable_mutex);
+   for (; ev->stringset[i]; i++) {
+    module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, ev->stringset[i], SET_TYPE_STRING);
+   }
+
+   struct lmodule **spawn = module_logic_find_things_to_enable();
+   emutex_lock (&module_logic_list_enable_mutex);
+
+   if (spawn)
+    module_logic_spawn_set_enable (spawn);
+
+   /* do wait for our stuff to be handled here ... */
+  } else if (ev->task & einit_module_disable) {
+   int i = 0;
+   emutex_lock (&module_logic_list_disable_mutex);
+   for (; ev->stringset[i]; i++) {
+    module_logic_list_disable = (char **)setadd ((void **)module_logic_list_disable, ev->stringset[i], SET_TYPE_STRING);
+   }
+
+   struct lmodule **spawn = module_logic_find_things_to_disable();
+   emutex_lock (&module_logic_list_disable_mutex);
+
+   if (spawn)
+    module_logic_spawn_set_disable (spawn);
+
+   /* ... and here... */
+  }
+ }
 }
 
 void module_logic_einit_event_handler_core_change_service_status (struct einit_event *ev) {
@@ -235,7 +357,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
 void module_logic_einit_event_handler_core_service_enabled (struct einit_event *ev) {
  emutex_lock (&module_logic_list_enable_mutex);
  module_logic_list_enable = strsetdel (module_logic_list_enable, ev->string);
- module_logic_list_enable_workers = strsetdel (module_logic_list_enable_workers, ev->string);
 
  struct lmodule **spawn = module_logic_find_things_to_enable();
  emutex_unlock (&module_logic_list_enable_mutex);
@@ -247,7 +368,6 @@ void module_logic_einit_event_handler_core_service_enabled (struct einit_event *
 void module_logic_einit_event_handler_core_service_disabled (struct einit_event *ev) {
  emutex_lock (&module_logic_list_disable_mutex);
  module_logic_list_disable = strsetdel (module_logic_list_disable, ev->string);
- module_logic_list_disable_workers = strsetdel (module_logic_list_disable_workers, ev->string);
 
  struct lmodule **spawn = module_logic_find_things_to_disable();
  emutex_unlock (&module_logic_list_disable_mutex);
