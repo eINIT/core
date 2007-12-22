@@ -341,16 +341,16 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 /* module status update */
   {
 /* service status update */
-   if (module->si && module->si->provides) {
+   char *nserv[] = { "no-service", NULL };
+
     struct einit_event ees = evstaticinit (einit_core_service_update);
     ees.task = task;
     ees.status = fb->status;
-    ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
-    ees.set = (void **)module->si->provides;
+    ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
+    ees.set = (module->si && module->si->provides) ? (void **)module->si->provides : nserv;
     ees.para = (void *)module;
     event_emit (&ees, einit_event_flag_broadcast);
     evstaticdestroy (ees);
-   }
   }
 
   efree (fb->stringset);

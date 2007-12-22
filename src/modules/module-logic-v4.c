@@ -467,6 +467,22 @@ struct lmodule **module_logic_find_things_to_enable() {
    char do_rotate, isbroken = 0;
    struct lmodule *primus = lm[0];
 
+   if (!lm[1] && lm[0]->module && lm[0]->module->rid && strmatch (lm[0]->module->rid, module_logic_list_enable[i]) && (lm[0]->status & status_enabled)) {
+/* this check prevents us from trying to enable a module specified via its RID twice */
+    emutex_unlock (&module_logic_service_list_mutex);
+
+    module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
+    i = -1;
+
+    if (candidates_level1) {
+     efree (candidates_level1);
+     candidates_level1 = NULL;
+    }
+
+    if (!module_logic_list_enable) break;
+    continue;
+   }
+
 /* here we should rotate lm[] to make the first entry one entry that is high up in the preference list, but also not blocked */
    do {
     emutex_lock (&module_logic_broken_modules_mutex);
@@ -493,21 +509,6 @@ struct lmodule **module_logic_find_things_to_enable() {
     emutex_unlock (&module_logic_service_list_mutex);
 
     broken = (char **)setadd ((void **)broken, module_logic_list_enable[i], SET_TYPE_STRING);
-    module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
-    i = -1;
-
-    if (candidates_level1) {
-     efree (candidates_level1);
-     candidates_level1 = NULL;
-    }
-
-    if (!module_logic_list_enable) break;
-    continue;
-   }
-
-   if (!lm[1] && lm[0]->module && lm[0]->module->rid && strmatch (lm[0]->module->rid, module_logic_list_enable[i]) && (lm[0]->status & status_enabled)) { /* this check prevents us from trying to enable a module specified via its RID twice */
-    emutex_unlock (&module_logic_service_list_mutex);
-
     module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
     i = -1;
 
@@ -881,8 +882,18 @@ struct lmodule **module_logic_find_things_to_disable() {
 
    for (; lm[i]; i++) {
     if (lm[i]->status & status_enabled) {
-     candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[i], SET_NOALLOC);
-     added = 1;
+     char isbroken;
+     emutex_lock (&module_logic_broken_modules_mutex);
+     isbroken = inset ((const void **)module_logic_broken_modules, lm[i], SET_NOALLOC);
+     emutex_unlock (&module_logic_broken_modules_mutex);
+
+     if (!isbroken) {
+      if (!inset ((const void **)candidates_level1, lm[i], SET_NOALLOC)) {
+       candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[i], SET_NOALLOC);
+
+       added = 1;
+      }
+     }
     }
    }
 
@@ -1986,26 +1997,36 @@ void module_logic_einit_event_handler_core_service_disabled (struct einit_event 
 /* this is the event we use to "unblock" modules for use in future switches */
 
 void module_logic_einit_event_handler_core_service_update (struct einit_event *ev) {
-#if 0
- char run_idle_actions = 0;
-#endif
-
  if (!(ev->status & status_working)) {
   emutex_lock (&module_logic_active_modules_mutex);
   module_logic_active_modules = (struct lmodule **)setdel ((void **)module_logic_active_modules, ev->para);
 
-#if 0
-  if (!module_logic_active_modules) {
-   run_idle_actions = 1;
-  }
-#endif
   emutex_unlock (&module_logic_active_modules_mutex);
  }
 
- if (ev->status & status_failed) {
-  emutex_lock (&module_logic_broken_modules_mutex);
-  module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, ev->para, SET_NOALLOC);
-  emutex_unlock (&module_logic_broken_modules_mutex);
+ if (!(ev->status & status_failed) && (ev->status & status_enabled)) {
+  struct lmodule *m = ev->para;
+
+  if (!m->si || !m->si->provides) {
+   struct lmodule **spawn = NULL;
+
+   emutex_lock (&module_logic_list_enable_mutex);
+   if (module_logic_list_enable) {
+    if (m->module && m->module->rid && inset ((const void **)module_logic_list_enable, m->module->rid, SET_TYPE_STRING)) {
+     spawn = module_logic_find_things_to_enable();
+    }
+   }
+   emutex_unlock (&module_logic_list_enable_mutex);
+
+   if (spawn)
+    module_logic_spawn_set_enable_all (spawn);
+  }
+ } else if (ev->status & (status_failed | status_disabled)) {
+  if (ev->status & status_failed) {
+   emutex_lock (&module_logic_broken_modules_mutex);
+   module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, ev->para, SET_NOALLOC);
+   emutex_unlock (&module_logic_broken_modules_mutex);
+  }
 
   struct lmodule **spawn = NULL;
 
@@ -2051,11 +2072,6 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
   if (spawn)
    module_logic_spawn_set_disable_all (spawn);
  }
-
-#if 0
- if (run_idle_actions)
-  module_logic_idle_actions();
-#endif
 
  pthread_cond_broadcast (&module_logic_list_disable_ping_cond);
 }
