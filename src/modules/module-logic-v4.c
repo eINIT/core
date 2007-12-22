@@ -633,7 +633,6 @@ struct lmodule **module_logic_find_things_to_enable() {
 /* example: we have logger and syslog in the specs, logger resolves to v-metalog and syslog to v-syslog... then we want v-syslog to be used,
    because v-syslog provides both syslog and logger, but v-metalog only provides logger. */
 /* here'd also be a good place to remove dupes */
-#if 1
  reeval:
 
  if (candidates_level1 && candidates_level1[1] && module_logic_list_enable) {
@@ -709,7 +708,6 @@ struct lmodule **module_logic_find_things_to_enable() {
    }
   }
  }
-#endif
 
 /* now we apply before/after specs */
  if (candidates_level1 && services_level1) {
