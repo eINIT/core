@@ -1127,6 +1127,9 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
  }
 }
 
+void eregfree_cache (regex_t *preg) {
+}
+
 #else
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
