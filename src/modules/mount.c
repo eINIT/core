@@ -1017,7 +1017,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     }
    }
 
-   tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+//   tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
 
    if (tmpxt) {
     tmpx = set2str ('|', (const char **)tmpxt);
@@ -1117,12 +1117,12 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   s = streenext(s);
  }
 
- if (!mount_critical_filesystems || !streefind (mount_critical_filesystems, "fs-root", tree_find_first)) {
+/* if (!mount_critical_filesystems || !streefind (mount_critical_filesystems, "fs-root", tree_find_first)) {
   mount_critical_filesystems = streeadd (mount_critical_filesystems, "fs-root", NULL, SET_NOALLOC, NULL);
- }
+ }*/
 
- if (mount_critical_filesystems) {
-  struct stree *s = streelinear_prepare(mount_critical_filesystems);
+ /*if (mount_critical_filesystems)*/ {
+  struct stree *s = mount_critical_filesystems ? streelinear_prepare(mount_critical_filesystems) : NULL;
   char **filesystems = NULL;
 
   while (s) {
@@ -1131,8 +1131,8 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    s = streenext (s);
   }
 
-  if (filesystems) {
-   char *fs = set2str (':', (const char **)filesystems);
+  /*if (filesystems)*/ {
+   char *fs = filesystems ? set2str (':', (const char **)filesystems) : estrdup ("none");
    char doadd = 1;
 
    if (fs) {

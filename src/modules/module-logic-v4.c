@@ -433,7 +433,9 @@ void mod_sort_service_list_items_by_preference() {
 /* this is the function that can figure out what to enable */
 
 struct lmodule **module_logic_find_things_to_enable() {
- if (!module_logic_list_enable) return NULL;
+ if (!module_logic_list_enable) {
+  return NULL;
+ }
 
  struct lmodule **rv = NULL;
 
@@ -747,6 +749,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    notice (2, "WARNING: before/after abuse detected! trying to enable /something/ anyway");
 
    efree (candidates_level1);
+//   candidates_level1 = candidates_level2;
   } else {
    efree (candidates_level1);
   }
@@ -1219,6 +1222,14 @@ void module_logic_wait_for_services_to_be_enabled(char **services) {
       break;
     } else {
 #if 0
+ 	 if (!module_logic_active_modules && ((modules_last_change + 1) > time(NULL))) {
+      struct lmodule **spawn = module_logic_find_things_to_enable();
+
+      if (spawn)
+       module_logic_spawn_set_enable_all (spawn);
+	  }
+#endif
+#if 0
      fprintf (stderr, " ** still waiting for: %s\n", services[i]);
      fflush (stderr);
 #endif
@@ -1414,7 +1425,7 @@ void module_logic_idle_actions () {
 
 void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) {
  char sw;
-
+ 
  emutex_lock (&module_logic_commit_count_mutex);
  sw = (module_logic_commit_count == 0);
  module_logic_commit_count++;

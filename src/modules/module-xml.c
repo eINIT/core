@@ -523,7 +523,7 @@ char *module_xml_v2_generate_defer_fs (char **tmpxt) {
  char *tmpx = NULL;
  tmp = emalloc (BUFFERSIZE);
 
- tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+// tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
 
  if (tmpxt) {
   tmpx = set2str ('|', (const char **)tmpxt);
