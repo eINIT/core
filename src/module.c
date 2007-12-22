@@ -500,13 +500,11 @@ char mod_service_requirements_met (struct lmodule *module) {
  uint32_t i;
  char **t;
 
- if (!service_usage) return 0;
-
  emutex_lock (&service_usage_mutex);
 
  if (module->si && (t = module->si->requires)) {
   for (i = 0; t[i]; i++) {
-   if (!(ha = streefind (service_usage, t[i], tree_find_first)) ||
+   if (!service_usage || !(ha = streefind (service_usage, t[i], tree_find_first)) ||
        !((struct service_usage_item *)(ha->value))->provider) {
     ret = 0;
     break;

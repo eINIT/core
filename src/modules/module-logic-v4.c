@@ -431,8 +431,6 @@ void mod_sort_service_list_items_by_preference() {
 
 struct lmodule **module_logic_find_things_to_enable() {
  if (!module_logic_list_enable) {
-  fprintf (stderr, "!\n");
-  fflush (stderr);
   return NULL;
  }
 
