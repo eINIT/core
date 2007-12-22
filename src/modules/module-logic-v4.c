@@ -633,15 +633,79 @@ struct lmodule **module_logic_find_things_to_enable() {
 /* example: we have logger and syslog in the specs, logger resolves to v-metalog and syslog to v-syslog... then we want v-syslog to be used,
    because v-syslog provides both syslog and logger, but v-metalog only provides logger. */
 /* here'd also be a good place to remove dupes */
-#if 0
- if (candidates_level1) {
-  reeval:
+#if 1
+ reeval:
 
+ if (candidates_level1 && candidates_level1[1] && module_logic_list_enable) {
   for (i = 0; candidates_level1[i]; i++) {
-   if (candidates_level1[i]->si->provides)
-   int j = 0;
-   for (j = 0; candidates_level1[j]; j++) {
-    
+   char **mdata = NULL;
+   int i_in_target = 0;
+
+   if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
+    mdata = (char **)setdup ((const void **)candidates_level1[i]->si->provides, SET_TYPE_STRING);
+
+    int k;
+    for (k = 0; candidates_level1[i]->si->provides[k]; k++) {
+     if (inset ((const void **)module_logic_list_enable, candidates_level1[i]->si->provides[k], SET_TYPE_STRING)) {
+      i_in_target++;
+     }
+    }
+   }
+
+   if (candidates_level1[i]->module && candidates_level1[i]->module->rid) {
+    mdata = (char **)setadd ((void **)mdata, candidates_level1[i]->module->rid, SET_TYPE_STRING);
+
+    if (inset ((const void **)module_logic_list_enable, candidates_level1[i]->module->rid, SET_TYPE_STRING)) {
+     i_in_target++;
+    }
+   }
+
+   if (mdata) {
+    int j;
+    for (j = 0; candidates_level1[j]; j++) if (candidates_level1[j] != candidates_level1[i]) {
+     char clash = 0;
+     int j_in_target = 0;
+
+     if (candidates_level1[j]->si && candidates_level1[j]->si->provides) {
+      int k;
+      for (k = 0; candidates_level1[j]->si->provides[k]; k++) {
+       if (inset ((const void **)mdata, candidates_level1[j]->si->provides[k], SET_TYPE_STRING)) {
+        clash = 1;
+       }
+
+       if (inset ((const void **)module_logic_list_enable, candidates_level1[j]->si->provides[k], SET_TYPE_STRING)) {
+        j_in_target++;
+       }
+      }
+     }
+
+     if (!clash && candidates_level1[j]->si && candidates_level1[j]->module->rid) {
+      if (inset ((const void **)mdata, candidates_level1[j]->module->rid, SET_TYPE_STRING)) {
+       clash = 1;
+      }
+
+      if (inset ((const void **)module_logic_list_enable, candidates_level1[j]->module->rid, SET_TYPE_STRING)) {
+       j_in_target++;
+      }
+     }
+
+     if (clash) {
+/* whoops, we got two modules with overlapping things that they provide */
+      if (i_in_target > j_in_target) {
+       /* use candidates_level1[i] */
+       candidates_level1 = (struct lmodule **)setdel ((void **)candidates_level1, candidates_level1[j]);
+       goto reeval;
+      } else if (j_in_target > j_in_target) {
+       /* use candidates_level1[j] */
+       candidates_level1 = (struct lmodule **)setdel ((void **)candidates_level1, candidates_level1[i]);
+       goto reeval;
+      } else {
+       /* hmph... better leave things as they are... */
+      }
+     }
+    }
+
+    efree (mdata);
    }
   }
  }
