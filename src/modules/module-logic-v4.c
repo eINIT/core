@@ -630,6 +630,13 @@ struct lmodule **module_logic_find_things_to_enable() {
   efree (unresolved);
  }
 
+/* this is where we should try to add some code that detects cyclic dependencies... */
+#if 0
+ if (!candidates_level1) {
+
+ }
+#endif
+
 /* here we need to filter the level1 list a bit, in order to remove modules that provide services that other modules already provide */
 /* example: we have logger and syslog in the specs, logger resolves to v-metalog and syslog to v-syslog... then we want v-syslog to be used,
    because v-syslog provides both syslog and logger, but v-metalog only provides logger. */
