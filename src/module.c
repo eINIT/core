@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 
 struct lmodule *mlist = NULL;
+extern char shutting_down;
 
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -358,9 +359,13 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   modules_work_count--;
  }
 
- emutex_unlock (&module->mutex);
-
  mod_update_usage_table(module);
+
+ if (shutting_down) {
+  if ((task & einit_module_disable) && (module->status & (status_enabled | status_failed))) {
+   mod (einit_module_custom, module, "zap");
+  }
+ }
 
  return module->status;
 }
@@ -376,8 +381,6 @@ void mod_update_usage_table (struct lmodule *module) {
 
  emutex_lock (&service_usage_mutex);
  modules_last_change = time(NULL);
-
- emutex_lock (&module->mutex);
 
  if (module->status & status_enabled) {
   if (module->si) {
@@ -565,13 +568,32 @@ char mod_service_not_in_use(struct lmodule *module) {
  return ret;
 }
 
+char **mod_list_all_provided_services () {
+ emutex_lock (&service_usage_mutex);
+
+ struct stree *ha = streelinear_prepare(service_usage);
+ char **ret = NULL;
+ struct service_usage_item *item;
+
+ while (ha) {
+  item = ha->value;
+  if (item->provider)
+   ret = (char **)setadd ((void **)ret, ha->key, SET_TYPE_STRING);
+
+  ha = streenext(ha);
+ }
+
+ emutex_unlock (&service_usage_mutex);
+
+ return ret;
+}
+
 char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule *module, const char *service) {
  emutex_lock (&service_usage_mutex);
 
  struct stree *ha = streelinear_prepare(service_usage);
  char **ret = NULL;
  uint32_t i;
- struct service_usage_item *item;
 
  if (task & service_get_services_that_use) {
   if (module) {
@@ -614,18 +636,28 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
   }
  }
 
- if (task & service_list_services) {
-  struct stree *ha = streelinear_prepare(service_usage);
-
-  while (ha) {
-   item = ha->value;
-   if (item->provider)
-    ret = (char **)setadd ((void **)ret, ha->key, SET_TYPE_STRING);
-
-   ha = streenext(ha);
-  }
- }
-
  emutex_unlock (&service_usage_mutex);
+ return ret;
+}
+
+struct lmodule **mod_get_all_users (struct lmodule *module) {
+ struct lmodule **ret = NULL;
+
+ emutex_lock (&service_usage_mutex);
+ struct stree *ha = streelinear_prepare(service_usage);
+
+ while (ha) {
+  struct service_usage_item *item = ha->value;
+
+  if (item->provider && item->users && inset ((const void **)item->provider, module, SET_NOALLOC)) {
+   int i = 0;
+   for (; item->users[i]; i++) {
+    ret = (struct lmodule **)setadd ((void **)ret, item->users[i], SET_NOALLOC);
+   }
+  }
+  ha = streenext (ha);
+ }
+ emutex_unlock (&service_usage_mutex);
+
  return ret;
 }

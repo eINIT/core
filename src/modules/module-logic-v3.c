@@ -468,7 +468,7 @@ struct mloadplan *mod_plan (struct mloadplan *plan, char **atoms, unsigned int t
  if (disable_all || disable_all_but_feedback) {
   struct stree *cur;
   ssize_t i = 0;
-  char **tmpy = service_usage_query_cr (service_list_services, NULL, NULL);
+  char **tmpy = mod_list_all_provided_services();
 
   emutex_lock (&ml_service_list_mutex);
   emutex_lock (&ml_tb_target_state_mutex);
