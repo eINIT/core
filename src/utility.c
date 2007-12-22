@@ -177,8 +177,8 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  }
 
 #ifdef POSIXREGEX
- if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
- if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
+ if (haveallowpattern) { haveallowpattern = 0; eregfree (&allowpattern); }
+ if (havedisallowpattern) { havedisallowpattern = 0; eregfree (&disallowpattern); }
 #endif
 
  efree (px);
@@ -1100,3 +1100,39 @@ char *strip_empty_variables (char *string) {
 
  return string;
 }
+
+#ifdef POSIXREGEX
+
+#if ! defined (EINIT_UTIL)
+#endif
+
+#if 0
+
+struct stree *regex_cache = NULL;
+
+int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
+ struct stree *cache_hit = regex_cache ? streefind (regex_cache, pattern, tree_find_first) : NULL;
+
+ if (cache_hit) {
+  memcpy (cache_hit->value, preg, sizeof (regex_t));
+  return 0;
+ } else {
+  int r = regcomp (preg, pattern, cflags);
+
+  if (!r) {
+   regex_cache = streeadd (regex_cache, pattern, &preg, sizeof (regex_t), NULL);
+  }
+
+  return r;
+ }
+}
+
+#else
+
+int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
+ return regcomp (preg, pattern, cflags);
+}
+
+#endif
+
+#endif

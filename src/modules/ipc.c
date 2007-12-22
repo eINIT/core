@@ -177,7 +177,7 @@ int ipc_process_f (const char *cmd, FILE *f) {
    if (have_pattern && new_command) {
     if (!regexec (&pattern, cmd, 0, NULL, 0))
      ipc_process_f (new_command, f);
-    regfree (&pattern);
+    eregfree (&pattern);
    }
   }
  }

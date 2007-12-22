@@ -154,7 +154,9 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
 
 #ifdef POSIXREGEX
 #define eregcomp(target, pattern)\
- ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+ ((errno = eregcomp_cache(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+
+#define eregfree(x)
 #endif
 
 #endif /* _BITCH_H */

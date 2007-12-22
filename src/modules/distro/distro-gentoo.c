@@ -816,8 +816,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  }
 
 #ifdef POSIXREGEX
- if (haveallowpattern) { haveallowpattern = 0; regfree (&allowpattern); }
- if (havedisallowpattern) { havedisallowpattern = 0; regfree (&disallowpattern); }
+ if (haveallowpattern) { haveallowpattern = 0; eregfree (&allowpattern); }
+ if (havedisallowpattern) { havedisallowpattern = 0; eregfree (&disallowpattern); }
 #endif
 
  return 0;

@@ -318,7 +318,7 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
      }
     }
 
-    regfree (&pattern);
+    eregfree (&pattern);
    }
   } else if (cfg_getstring (x[0], NULL)) {
    variable_matches++;
@@ -387,7 +387,7 @@ char **create_environment_f (char **environment, const char **variables) {
       }
      }
 
-     regfree (&pattern);
+     eregfree (&pattern);
     }
 
     if (pvalue)  {

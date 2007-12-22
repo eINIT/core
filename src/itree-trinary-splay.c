@@ -175,7 +175,7 @@ struct itree *itree_splay (struct itree *tree) {
  return rt;
 }
 
-#if 1
+#if 0
 #define itree_splay(t) t
 #endif
 

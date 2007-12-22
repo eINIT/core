@@ -236,7 +236,7 @@ char ** inset_pattern (const void **haystack, const void *needle, int32_t esize)
     if (!regexec (&pattern, haystack[c], 0, NULL, 0))
      retval = (char **)setadd ((void **)retval, haystack[c], SET_TYPE_STRING);
 
-   regfree (&pattern);
+   eregfree (&pattern);
   }
 #endif
  } else if (esize == -1) {
