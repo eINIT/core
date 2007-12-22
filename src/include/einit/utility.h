@@ -285,6 +285,8 @@ extern pthread_mutex_t thread_key_detached_mutex;
 #include <regex.h>
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags);
+void eregfree_cache (regex_t *preg);
+
 #endif
 
 #endif /* _UTILITY_H */

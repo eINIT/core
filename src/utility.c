@@ -1133,6 +1133,10 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
  return regcomp (preg, pattern, cflags);
 }
 
+void eregfree_cache (regex_t *preg) {
+ regfree (preg);
+}
+
 #endif
 
 #endif

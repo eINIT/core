@@ -153,10 +153,23 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
  ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
 
 #ifdef POSIXREGEX
+
+#if ! defined (EINIT_UTIL)
+
 #define eregcomp(target, pattern)\
  ((errno = eregcomp_cache(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
 
-#define eregfree(x)
+#define eregfree(x) eregfree_cache(x)
+
+#else
+
+#define eregcomp(target, pattern)\
+ ((errno = eregcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
+
+#define eregfree(x) regfree(x)
+
+#endif
+
 #endif
 
 #endif /* _BITCH_H */
