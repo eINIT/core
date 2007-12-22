@@ -233,7 +233,8 @@ int module_group_scanmodules (struct lmodule *modchain) {
      char t[BUFFERSIZE];
 
      if ((seq == sq_all) || !group[1]) {
-      requires = (char **)setdup ((const void **)group, SET_TYPE_STRING);
+      if (!strmatch (group[0], "none"))
+       requires = (char **)setdup ((const void **)group, SET_TYPE_STRING);
      } else {
       char *member_string = set2str ('|', (const char **)group);
 

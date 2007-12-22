@@ -724,6 +724,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    notice (2, "WARNING: before/after abuse detected! trying to enable /something/ anyway");
 
    efree (candidates_level1);
+//   candidates_level1 = candidates_level2;
   } else {
    efree (candidates_level1);
   }
@@ -1391,7 +1392,7 @@ void module_logic_idle_actions () {
 
 void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) {
  char sw;
-
+ 
  emutex_lock (&module_logic_commit_count_mutex);
  sw = (module_logic_commit_count == 0);
  module_logic_commit_count++;
