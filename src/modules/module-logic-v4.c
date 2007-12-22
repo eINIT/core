@@ -430,7 +430,11 @@ void mod_sort_service_list_items_by_preference() {
 /* this is the function that can figure out what to enable */
 
 struct lmodule **module_logic_find_things_to_enable() {
- if (!module_logic_list_enable) return NULL;
+ if (!module_logic_list_enable) {
+  fprintf (stderr, "!\n");
+  fflush (stderr);
+  return NULL;
+ }
 
  struct lmodule **rv = NULL;
 
@@ -1186,6 +1190,14 @@ void module_logic_wait_for_services_to_be_enabled(char **services) {
      else
       break;
     } else {
+#if 0
+ 	 if (!module_logic_active_modules && ((modules_last_change + 1) > time(NULL))) {
+      struct lmodule **spawn = module_logic_find_things_to_enable();
+
+      if (spawn)
+       module_logic_spawn_set_enable_all (spawn);
+	  }
+#endif
 #if 0
      fprintf (stderr, " ** still waiting for: %s\n", services[i]);
      fflush (stderr);

@@ -1017,7 +1017,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     }
    }
 
-   tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+//   tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
 
    if (tmpxt) {
     tmpx = set2str ('|', (const char **)tmpxt);
