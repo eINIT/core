@@ -451,7 +451,7 @@ void feedback_textual_update_streams () {
        (feedback_textual_modules[y]->module->status & status_working)) {
     if (!started) {
      started = 1;
-     used_width += 11 + strlen (feedback_textual_modules[y]->module->module->rid);
+     used_width += 10 + strlen (feedback_textual_modules[y]->module->module->rid);
 
      eprintf (feedback_streams[i]->stream, "[ %.3d%% || %s", feedback_textual_switch_progress, feedback_textual_modules[y]->module->module->rid);
     } else {
