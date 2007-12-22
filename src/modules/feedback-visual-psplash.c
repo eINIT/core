@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
-#include <einit/module-logic.h>
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
@@ -195,11 +194,14 @@ void einit_feedback_visual_psplash_einit_event_handler_service_update (struct ei
     }
    }
   }
-  char tmp[BUFFERSIZE];
-
-  esprintf (tmp, BUFFERSIZE, "PROGRESS %i", (int)(get_plan_progress (NULL) * 100));
-  psplash_queue_comand(tmp);
  }
+}
+
+void einit_feedback_visual_psplash_feedback_switch_progress_handler (struct einit_event *ev) {
+ char tmp[BUFFERSIZE];
+
+ esprintf (tmp, BUFFERSIZE, "PROGRESS %i", ev->integer);
+ psplash_queue_comand(tmp);
 }
 
 void *einit_feedback_visual_psplash_worker_thread (void *irr) {
@@ -322,13 +324,13 @@ int einit_feedback_visual_psplash_cleanup (struct lmodule *tm) {
  event_ignore (einit_core_mode_switching, einit_feedback_visual_psplash_einit_event_handler_mode_switching);
  event_ignore (einit_core_mode_switch_done, einit_feedback_visual_psplash_einit_event_handler_mode_switch_done);
  event_ignore (einit_core_service_update, einit_feedback_visual_psplash_einit_event_handler_service_update);
+ event_ignore (einit_feedback_switch_progress, einit_feedback_visual_psplash_feedback_switch_progress_handler);
 
  return 0;
 }
 
 int einit_feedback_visual_psplash_configure (struct lmodule *tm) {
  module_init (tm);
- module_logic_configure(tm);
 
  tm->cleanup = einit_feedback_visual_psplash_cleanup;
 
@@ -338,6 +340,7 @@ int einit_feedback_visual_psplash_configure (struct lmodule *tm) {
  event_listen (einit_core_mode_switching, einit_feedback_visual_psplash_einit_event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, einit_feedback_visual_psplash_einit_event_handler_mode_switch_done);
  event_listen (einit_core_service_update, einit_feedback_visual_psplash_einit_event_handler_service_update);
+ event_listen (einit_feedback_switch_progress, einit_feedback_visual_psplash_feedback_switch_progress_handler);
 
  return 0;
 }

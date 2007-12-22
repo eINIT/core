@@ -144,6 +144,7 @@ enum einit_event_code {
 
  einit_feedback_broken_services     = einit_event_subsystem_feedback | 0x021,
  einit_feedback_unresolved_services = einit_event_subsystem_feedback | 0x022,
+ einit_feedback_switch_progress     = einit_event_subsystem_feedback | 0x030,
 
 /* einit_event_subsystem_power: */
  einit_power_down_scheduled         = einit_event_subsystem_power    | 0x001,

@@ -49,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/event.h>
 #include <signal.h>
 #include <errno.h>
-#include <einit/module-logic.h>
 #include <semaphore.h>
 #include <string.h>
 #include <sys/types.h>

@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
-#include <einit/module-logic.h>
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>

@@ -39,7 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <einit/module.h>
-#include <einit/module-logic.h>
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/event.h>
@@ -108,6 +107,8 @@ char enableansicodes = 1, suppress_messages = 0, suppress_status_notices = 0;
 pthread_t feedback_textual_thread;
 char einit_feedback_visual_textual_worker_thread_running = 0;
 //     einit_feedback_visual_textual_worker_thread_keep_running = 1;
+
+int feedback_textual_switch_progress = 0;
 
 pthread_mutex_t feedback_textual_main_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -450,9 +451,9 @@ void feedback_textual_update_streams () {
        (feedback_textual_modules[y]->module->status & status_working)) {
     if (!started) {
      started = 1;
-     used_width += 2 + strlen (feedback_textual_modules[y]->module->module->rid);
+     used_width += 11 + strlen (feedback_textual_modules[y]->module->module->rid);
 
-     eprintf (feedback_streams[i]->stream, "[ %s", feedback_textual_modules[y]->module->module->rid);
+     eprintf (feedback_streams[i]->stream, "[ %.3d%% || %s", feedback_textual_switch_progress, feedback_textual_modules[y]->module->module->rid);
     } else {
 //     eprintf (feedback_streams[i]->stream, " | %s (%i)", feedback_textual_modules[y]->module->module->rid, feedback_textual_modules[y]->warnings);
      used_width += 3 + strlen (feedback_textual_modules[y]->module->module->rid);
@@ -1004,6 +1005,10 @@ void feedback_textual_enable() {
  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
 }
 
+void einit_feedback_textual_feedback_switch_progress_handler (struct einit_event *ev) {
+ feedback_textual_switch_progress = ev->integer;
+}
+
 int einit_feedback_visual_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_devices_available, feedback_textual_enable);
  event_ignore (einit_ipc_request_generic, einit_feedback_visual_ipc_event_handler);
@@ -1017,6 +1022,7 @@ int einit_feedback_visual_cleanup (struct lmodule *this) {
  event_ignore (einit_core_service_update, einit_feedback_visual_einit_event_handler_service_update);
  event_ignore (einit_core_mode_switching, einit_feedback_visual_einit_event_handler_mode_switching);
  event_ignore (einit_core_mode_switch_done, einit_feedback_visual_einit_event_handler_mode_switch_done);
+ event_ignore (einit_feedback_switch_progress, einit_feedback_textual_feedback_switch_progress_handler);
 
  return 0;
 }
@@ -1038,6 +1044,7 @@ int einit_feedback_visual_configure (struct lmodule *irr) {
  event_listen (einit_core_service_update, einit_feedback_visual_einit_event_handler_service_update);
  event_listen (einit_core_mode_switching, einit_feedback_visual_einit_event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, einit_feedback_visual_einit_event_handler_mode_switch_done);
+ event_listen (einit_feedback_switch_progress, einit_feedback_textual_feedback_switch_progress_handler);
 
  return 0;
 }

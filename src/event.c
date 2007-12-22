@@ -533,6 +533,8 @@ char *event_code_to_string (const uint32_t code) {
   case einit_feedback_broken_services:         return "feedback/broken-services";
   case einit_feedback_unresolved_services:     return "feedback/unresolved-services";
 
+  case einit_feedback_switch_progress:         return "feedback/switch-progress";
+
   case einit_power_down_scheduled:             return "power/down-scheduled";
   case einit_power_down_imminent:              return "power/down-imminent";
   case einit_power_reset_scheduled:            return "power/reset-scheduled";
@@ -650,6 +652,8 @@ uint32_t event_string_to_code (const char *code) {
 
      else if (strmatch (tcode[1], "broken-services"))             ret = einit_feedback_broken_services;
      else if (strmatch (tcode[1], "unresolved-services"))         ret = einit_feedback_unresolved_services;
+
+     else if (strmatch (tcode[1], "switch-progress"))             ret = einit_feedback_switch_progress;
      break;
     case einit_event_subsystem_power:
      if (strmatch (tcode[1], "down-scheduled"))                   ret = einit_power_down_scheduled;

@@ -84,6 +84,9 @@ struct lmodule **module_logic_active_modules = NULL;
 char **module_logic_list_enable = NULL;
 char **module_logic_list_disable = NULL;
 
+int module_logic_list_enable_max_count = 0;
+int module_logic_list_disable_max_count = 0;
+
 int module_logic_commit_count = 0;
 
 pthread_mutex_t
@@ -442,6 +445,11 @@ struct lmodule **module_logic_find_things_to_enable() {
  char **services_level1 = NULL;
 
  for (i = 0; module_logic_list_enable[i]; i++) {
+  if (i == 0) {
+   int c = setcount ((const void **)module_logic_list_enable);
+   module_logic_list_enable_max_count = (module_logic_list_enable_max_count > c) ? module_logic_list_enable_max_count : c;
+  }
+
   if (mod_service_is_provided(module_logic_list_enable[i])) {
    module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
    i--;
@@ -619,6 +627,25 @@ struct lmodule **module_logic_find_things_to_enable() {
   efree (unresolved);
  }
 
+/* here we need to filter the level1 list a bit, in order to remove modules that provide services that other modules already provide */
+/* example: we have logger and syslog in the specs, logger resolves to v-metalog and syslog to v-syslog... then we want v-syslog to be used,
+   because v-syslog provides both syslog and logger, but v-metalog only provides logger. */
+/* here'd also be a good place to remove dupes */
+#if 0
+ if (candidates_level1) {
+  reeval:
+
+  for (i = 0; candidates_level1[i]; i++) {
+   if (candidates_level1[i]->si->provides)
+   int j = 0;
+   for (j = 0; candidates_level1[j]; j++) {
+    
+   }
+  }
+ }
+#endif
+
+/* now we apply before/after specs */
  if (candidates_level1 && services_level1) {
   for (i = 0; candidates_level1[i]; i++) {
    char doskip = 0;
@@ -767,6 +794,11 @@ struct lmodule **module_logic_find_things_to_disable() {
  reeval_top:
 
  for (i = 0; module_logic_list_disable[i]; i++) {
+  if (i == 0) {
+   int c = setcount ((const void **)module_logic_list_disable);
+   module_logic_list_disable_max_count = (module_logic_list_disable_max_count > c) ? module_logic_list_disable_max_count : c;
+  }
+
   if (!mod_service_is_provided(module_logic_list_disable[i])) {
    module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
    i--;
@@ -1356,6 +1388,9 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
 }
 
 void module_logic_idle_actions () {
+ module_logic_list_enable_max_count = 0;
+ module_logic_list_disable_max_count = 0;
+
  emutex_lock (&module_logic_broken_modules_mutex);
  if (module_logic_broken_modules)
   efree (module_logic_broken_modules);
@@ -1800,7 +1835,50 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
  }
 }
 
-/* the next two event are feedback from the core, which we use to advance our... plans */
+/* the next two events are feedback from the core, which we use to advance our... plans */
+
+void module_logic_emit_progress_event() {
+ struct einit_event ee = evstaticinit(einit_feedback_switch_progress);
+
+ int fenable = 0;
+ int fdisable = 0;
+
+ int enable_progress = 0;
+ int disable_progress = 0;
+
+ emutex_lock (&module_logic_list_enable_mutex);
+ fenable = setcount ((const void **)module_logic_list_enable);
+ emutex_unlock (&module_logic_list_enable_mutex);
+
+ emutex_lock (&module_logic_list_disable_mutex);
+ fdisable = setcount ((const void **)module_logic_list_disable);
+ emutex_unlock (&module_logic_list_disable_mutex);
+
+ if (module_logic_list_enable_max_count != 0)
+  enable_progress = ((module_logic_list_enable_max_count - fenable) * 100 / module_logic_list_enable_max_count);
+ else
+  enable_progress = -1;
+
+ if (module_logic_list_disable_max_count != 0)
+  disable_progress = ((module_logic_list_disable_max_count - fdisable) * 100 / module_logic_list_disable_max_count);
+ else
+  disable_progress = -1;
+
+ if (enable_progress != -1) {
+  if (disable_progress != -1) {
+   ee.integer = (enable_progress + disable_progress) / 2;
+  } else {
+   ee.integer = enable_progress;
+  }
+ } else if (disable_progress != -1) {
+  ee.integer = disable_progress;
+ } else {
+  ee.integer = 100;
+ }
+
+ event_emit (&ee, einit_event_flag_broadcast);
+ evstaticdestroy (&ee);
+}
 
 void module_logic_einit_event_handler_core_service_enabled (struct einit_event *ev) {
  emutex_lock (&module_logic_list_enable_mutex);
@@ -1810,6 +1888,8 @@ void module_logic_einit_event_handler_core_service_enabled (struct einit_event *
  emutex_unlock (&module_logic_list_enable_mutex);
 
 // pthread_cond_broadcast (&module_logic_list_enable_ping_cond);
+
+ module_logic_emit_progress_event();
 
  if (spawn)
   module_logic_spawn_set_enable (spawn);
@@ -1823,6 +1903,8 @@ void module_logic_einit_event_handler_core_service_disabled (struct einit_event 
  emutex_unlock (&module_logic_list_disable_mutex);
 
 // pthread_cond_broadcast (&module_logic_list_disable_ping_cond);
+
+ module_logic_emit_progress_event();
 
  if (spawn)
   module_logic_spawn_set_disable (spawn);
@@ -1940,7 +2022,6 @@ int einit_module_logic_v4_configure (struct lmodule *this) {
  event_listen (einit_core_change_service_status, module_logic_einit_event_handler_core_change_service_status);
 
  module_logic_einit_event_handler_core_configuration_update(NULL);
-// function_register ("module-logic-get-plan-progress", 1, mod_get_plan_progress_f);
 
  return 0;
 }
