@@ -430,6 +430,36 @@ void mod_sort_service_list_items_by_preference() {
 
 /* callers of the following two functions need to lock the appropriate mutex on their own! */
 
+struct lmodule *module_logic_get_prime_candidate (struct lmodule **lm) {
+ char do_rotate;
+ struct lmodule *primus = lm[0];
+
+/* here we should rotate lm[] to make the first entry one entry that is high up in the preference list, but also not blocked */
+ do {
+  emutex_lock (&module_logic_broken_modules_mutex);
+  do_rotate = inset ((const void **)module_logic_broken_modules, lm[0], SET_NOALLOC);
+  emutex_unlock (&module_logic_broken_modules_mutex);
+
+  if (do_rotate) {
+   int y = 0;
+
+   struct lmodule *secundus = lm[0];
+   for (; lm[y+1]; y++) {
+    lm[y] = lm[y+1];
+   }
+   lm[y] = secundus;
+
+   if (lm[0] == primus) {
+    return NULL;
+   }
+  } else {
+   return lm[0];
+  }
+ } while (do_rotate);
+
+ return NULL;
+}
+
 /* this is the function that can figure out what to enable */
 
 struct lmodule **module_logic_find_things_to_enable() {
@@ -446,6 +476,8 @@ struct lmodule **module_logic_find_things_to_enable() {
  char **broken = NULL;
  char **services_level1 = NULL;
 
+ emutex_lock (&module_logic_service_list_mutex);
+
  for (i = 0; module_logic_list_enable[i]; i++) {
   if (i == 0) {
    int c = setcount ((const void **)module_logic_list_enable);
@@ -459,17 +491,16 @@ struct lmodule **module_logic_find_things_to_enable() {
    continue;
   }
 
-  emutex_lock (&module_logic_service_list_mutex);
+  if (!inset ((const void **)services_level1, module_logic_list_enable[i], SET_TYPE_STRING))
+   services_level1 = (char **)setadd ((void **)services_level1, module_logic_list_enable[i], SET_TYPE_STRING);
+
   struct stree *st = streefind(module_logic_service_list, module_logic_list_enable[i], tree_find_first);
 
   if (st) {
    struct lmodule **lm = st->value;
-   char do_rotate, isbroken = 0;
-   struct lmodule *primus = lm[0];
 
    if (!lm[1] && lm[0]->module && lm[0]->module->rid && strmatch (lm[0]->module->rid, module_logic_list_enable[i]) && (lm[0]->status & status_enabled)) {
 /* this check prevents us from trying to enable a module specified via its RID twice */
-    emutex_unlock (&module_logic_service_list_mutex);
 
     module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
     i = -1;
@@ -478,36 +509,18 @@ struct lmodule **module_logic_find_things_to_enable() {
      efree (candidates_level1);
      candidates_level1 = NULL;
     }
+    if (services_level1) {
+     efree (services_level1);
+     services_level1 = NULL;
+    }
 
     if (!module_logic_list_enable) break;
     continue;
    }
 
-/* here we should rotate lm[] to make the first entry one entry that is high up in the preference list, but also not blocked */
-   do {
-    emutex_lock (&module_logic_broken_modules_mutex);
-    do_rotate = inset ((const void **)module_logic_broken_modules, lm[0], SET_NOALLOC);
-    emutex_unlock (&module_logic_broken_modules_mutex);
+   struct lmodule *candidate = module_logic_get_prime_candidate (lm);
 
-    if (do_rotate) {
-     int y = 0;
-
-     struct lmodule *secundus = lm[0];
-     for (; lm[y+1]; y++) {
-      lm[y] = lm[y+1];
-     }
-     lm[y] = secundus;
-
-     if (lm[0] == primus) {
-      isbroken = 1;
-      break;
-     }
-    }
-   } while (do_rotate);
-
-   if (isbroken) {
-    emutex_unlock (&module_logic_service_list_mutex);
-
+   if (!candidate) {
     broken = (char **)setadd ((void **)broken, module_logic_list_enable[i], SET_TYPE_STRING);
     module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
     i = -1;
@@ -516,69 +529,77 @@ struct lmodule **module_logic_find_things_to_enable() {
      efree (candidates_level1);
      candidates_level1 = NULL;
     }
+    if (services_level1) {
+     efree (services_level1);
+     services_level1 = NULL;
+    }
 
     if (!module_logic_list_enable) break;
     continue;
    }
 
-   if (mod_service_requirements_met(lm[0])) {
-    candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[0], SET_NOALLOC);
+   if (mod_service_requirements_met(candidate)) {
+    candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, candidate, SET_NOALLOC);
 
-    if (lm[0]->module) {
-     if (lm[0]->module->rid) {
-      if (!inset ((const void **)services_level1, lm[0]->module->rid, SET_TYPE_STRING))
-       services_level1 = (char **)setadd ((void **)services_level1, lm[0]->module->rid, SET_TYPE_STRING);
+    if (candidate->module) {
+     if (candidate->module->rid) {
+      if (!inset ((const void **)services_level1, candidate->module->rid, SET_TYPE_STRING))
+       services_level1 = (char **)setadd ((void **)services_level1, candidate->module->rid, SET_TYPE_STRING);
      }
-     if (lm[0]->si && lm[0]->si->provides) {
+     if (candidate->si && candidate->si->provides) {
       int j = 0;
-      for (; lm[0]->si->provides[j]; j++) {
-       if (!inset ((const void **)services_level1, lm[0]->si->provides[j], SET_TYPE_STRING))
-        services_level1 = (char **)setadd ((void **)services_level1, lm[0]->si->provides[j], SET_TYPE_STRING);
+      for (; candidate->si->provides[j]; j++) {
+       if (!inset ((const void **)services_level1, candidate->si->provides[j], SET_TYPE_STRING))
+        services_level1 = (char **)setadd ((void **)services_level1, candidate->si->provides[j], SET_TYPE_STRING);
       }
      }
     }
    } else {
     /* need to add stuff that is still needed somewhere... */
 #if 0
-    fprintf (stderr, "nyu?: %s\n", lm[0]->module->rid);
+    fprintf (stderr, "nyu?: %s\n", candidate->module->rid);
     fflush (stderr);
 #endif
 
-    if (lm[0]->si && lm[0]->si->requires) {
+    if (candidate->si && candidate->si->requires) {
      int y = 0;
      char impossible = 0;
 
-     for (y = 0; lm[0]->si->requires[y]; y++) {
-      if (broken && inset ((const void **)broken, lm[0]->si->requires[y], SET_TYPE_STRING)) {
+     for (y = 0; candidate->si->requires[y]; y++) {
+      if (broken && inset ((const void **)broken, candidate->si->requires[y], SET_TYPE_STRING)) {
        impossible = 1;
       }
      }
 
      if (impossible) {
 #if 0
-      fprintf (stderr, "impossible: %s\n", lm[0]->module->rid);
+      fprintf (stderr, "impossible: %s\n", candidate->module->rid);
       fflush (stderr);
 #endif
 
       emutex_lock (&module_logic_broken_modules_mutex);
-      module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, lm[0], SET_NOALLOC);
+      module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, candidate, SET_NOALLOC);
       emutex_unlock (&module_logic_broken_modules_mutex);
 
       i--;
       goto next;
      } else {
-      for (y = 0; lm[0]->si->requires[y]; y++) {
-       if (!inset ((const void **)module_logic_list_enable, lm[0]->si->requires[y], SET_TYPE_STRING)) {
+      for (y = 0; candidate->si->requires[y]; y++) {
+       if (!inset ((const void **)module_logic_list_enable, candidate->si->requires[y], SET_TYPE_STRING)) {
 #if 0
-        fprintf (stderr, " !! %s needs: %s\n", lm[0]->module->rid, lm[0]->si->requires[y]);
+        fprintf (stderr, " !! %s needs: %s\n", candidate->module->rid, candidate->si->requires[y]);
         fflush (stderr);
 #endif
 
-        module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, lm[0]->si->requires[y], SET_TYPE_STRING);
+        module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, candidate->si->requires[y], SET_TYPE_STRING);
 
         if (candidates_level1) {
          efree (candidates_level1);
          candidates_level1 = NULL;
+        }
+        if (services_level1) {
+         efree (services_level1);
+         services_level1 = NULL;
         }
 
         i = -1;
@@ -591,9 +612,9 @@ struct lmodule **module_logic_find_things_to_enable() {
    unresolved = (char **)setadd ((void **)unresolved, module_logic_list_enable[i], SET_TYPE_STRING);
   }
 
-  next:
-  emutex_unlock (&module_logic_service_list_mutex);
+  next: ;
  }
+ emutex_unlock (&module_logic_service_list_mutex);
 
  if (broken) {
   struct einit_event ee = evstaticinit(einit_feedback_broken_services);
@@ -631,9 +652,28 @@ struct lmodule **module_logic_find_things_to_enable() {
  }
 
 /* this is where we should try to add some code that detects cyclic dependencies... */
+/* ... come to think of it, it'd be better to add that code to the part that creates the service list ... */
 #if 0
  if (!candidates_level1) {
+  if (module_logic_list_enable) {
+   for (; module_logic_list_enable[i]; i++) {
+    emutex_lock (&module_logic_service_list_mutex);
+    struct stree *st = streefind(module_logic_service_list, module_logic_list_enable[i], tree_find_first);
 
+    if (st) {
+     struct lmodule **lm = st->value;
+     struct lmodule *primus = module_logic_get_prime_candidate(lm);
+
+     if (primus) {
+      int y = 0;
+
+      for (; module_logic_list_enable[i]; i++) {
+
+     }
+    }
+    emutex_unlock (&module_logic_service_list_mutex);
+   }
+  }
  }
 #endif
 
@@ -866,6 +906,8 @@ struct lmodule **module_logic_find_things_to_disable() {
 
  reeval_top:
 
+ emutex_lock (&module_logic_service_list_mutex);
+
  for (i = 0; module_logic_list_disable[i]; i++) {
   if (i == 0) {
    int c = setcount ((const void **)module_logic_list_disable);
@@ -879,7 +921,9 @@ struct lmodule **module_logic_find_things_to_disable() {
    continue;
   }
 
-  emutex_lock (&module_logic_service_list_mutex);
+  if (!inset ((const void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING))
+   services_level1 = (char **)setadd ((void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING);
+
   struct stree *st = streefind(module_logic_service_list, module_logic_list_disable[i], tree_find_first);
 
   if (st) {
@@ -898,6 +942,20 @@ struct lmodule **module_logic_find_things_to_disable() {
       if (!inset ((const void **)candidates_level1, lm[i], SET_NOALLOC)) {
        candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[i], SET_NOALLOC);
 
+       if (lm[i]->module) {
+        if (lm[i]->module->rid) {
+         if (!inset ((const void **)services_level1, lm[i]->module->rid, SET_TYPE_STRING))
+          services_level1 = (char **)setadd ((void **)services_level1, lm[i]->module->rid, SET_TYPE_STRING);
+        }
+        if (lm[i]->si && lm[i]->si->provides) {
+         int j = 0;
+         for (; lm[i]->si->provides[j]; j++) {
+          if (!inset ((const void **)services_level1, lm[i]->si->provides[j], SET_TYPE_STRING))
+           services_level1 = (char **)setadd ((void **)services_level1, lm[i]->si->provides[j], SET_TYPE_STRING);
+         }
+        }
+       }
+
        added = 1;
       }
      }
@@ -911,21 +969,24 @@ struct lmodule **module_logic_find_things_to_disable() {
      efree (candidates_level1);
      candidates_level1 = NULL;
     }
+    if (services_level1) {
+     efree (services_level1);
+     services_level1 = NULL;
+    }
 
     i = -1;
 
-    emutex_unlock (&module_logic_service_list_mutex);
-
     if (!module_logic_list_disable) {
+     emutex_unlock (&module_logic_service_list_mutex);
      return NULL;
     }
-    continue;
    }
   } else {
    unresolved = (char **)setadd ((void **)unresolved, module_logic_list_disable[i], SET_TYPE_STRING);
   }
-  emutex_unlock (&module_logic_service_list_mutex);
  }
+
+ emutex_unlock (&module_logic_service_list_mutex);
 
 /* make sure we disable everything used by our candidates first */
 
