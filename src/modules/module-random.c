@@ -77,6 +77,8 @@ module_register(einit_random_self);
 #define RANDOM_GROUPS 10
 #define RANDOM_GROUPELEMENTS 20
 
+#define RANDOM_GROUP_TYPE "all"
+
 char random_haverun = 0;
 
 void random_add_update_group (char *groupname, char **elements, char *seq) {
@@ -234,9 +236,8 @@ int random_scanmodules (struct lmodule *list) {
   randommodules = (char **)setadd ((void **)randommodules, groupname, SET_TYPE_STRING);
 
   if (elements)
-   random_add_update_group (groupname, elements, "most");
+   random_add_update_group (groupname, elements, RANDOM_GROUP_TYPE);
  }
-
 
  random_add_update_group ("random", randommodules, "most");
 

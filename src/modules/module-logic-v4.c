@@ -428,7 +428,7 @@ void mod_sort_service_list_items_by_preference() {
  emutex_unlock (&module_logic_service_list_mutex);
 }
 
-/* callers of the following two functions need to lock the appropriate mutex on their own! */
+/* callers of the following couple o' functions need to lock the appropriate mutex on their own! */
 
 struct lmodule *module_logic_get_prime_candidate (struct lmodule **lm) {
  char do_rotate;
@@ -460,6 +460,46 @@ struct lmodule *module_logic_get_prime_candidate (struct lmodule **lm) {
  return NULL;
 }
 
+char module_logic_check_for_circular_dependencies (char *service, struct lmodule **dependencies) {
+ struct stree *st = streefind(module_logic_service_list, service, tree_find_first);
+
+ if (st) {
+  struct lmodule *primus = module_logic_get_prime_candidate(st->value);
+
+  if (inset ((const void **)dependencies, primus, SET_NOALLOC)) {
+/* this 'ere means that we found a circular dep... */
+   notice (1, "module %s: CIRCULAR DEPENDENCY DETECTED!", (primus->module && primus->module->rid) ? primus->module->rid : "");
+
+   emutex_lock (&module_logic_broken_modules_mutex);
+   if (!inset ((const void **)module_logic_broken_modules, primus, SET_NOALLOC))
+    module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, primus, SET_NOALLOC);
+   emutex_unlock (&module_logic_broken_modules_mutex);
+
+   return 1;
+  }
+
+  if (primus && primus->si && primus->si->requires) {
+   int y = 0;
+   struct lmodule **subdeps = (struct lmodule **)setadd ((void **)setdup ((const void **)dependencies, SET_NOALLOC), primus, SET_NOALLOC);
+
+   for (; primus->si->requires[y]; y++) {
+    if (module_logic_check_for_circular_dependencies (primus->si->requires[y], subdeps)) {
+     if (subdeps)
+      efree (subdeps);
+
+     return 1;
+    }
+   }
+
+   if (subdeps)
+    efree (subdeps);
+  } else
+   return 0;
+ }
+
+ return 0;
+}
+
 /* this is the function that can figure out what to enable */
 
 struct lmodule **module_logic_find_things_to_enable() {
@@ -475,6 +515,8 @@ struct lmodule **module_logic_find_things_to_enable() {
  char **unresolved = NULL;
  char **broken = NULL;
  char **services_level1 = NULL;
+
+ reeval_top:
 
  emutex_lock (&module_logic_service_list_mutex);
 
@@ -625,6 +667,7 @@ struct lmodule **module_logic_find_things_to_enable() {
   evstaticdestroy (ee);
 
   efree (broken);
+  broken = NULL;
  }
 
  if (unresolved) {
@@ -649,32 +692,37 @@ struct lmodule **module_logic_find_things_to_enable() {
   }
 
   efree (unresolved);
+  unresolved = NULL;
  }
 
 /* this is where we should try to add some code that detects cyclic dependencies... */
-/* ... come to think of it, it'd be better to add that code to the part that creates the service list ... */
-#if 0
- if (!candidates_level1) {
+/* ... come to think of it, it'd be better to add that code to the part that creates the service list ...
+   or both */
+#if 1
+// if (!candidates_level1) {
   if (module_logic_list_enable) {
-   for (; module_logic_list_enable[i]; i++) {
+   for (i = 0; module_logic_list_enable[i]; i++) {
+    char iscircular;
+
     emutex_lock (&module_logic_service_list_mutex);
-    struct stree *st = streefind(module_logic_service_list, module_logic_list_enable[i], tree_find_first);
-
-    if (st) {
-     struct lmodule **lm = st->value;
-     struct lmodule *primus = module_logic_get_prime_candidate(lm);
-
-     if (primus) {
-      int y = 0;
-
-      for (; module_logic_list_enable[i]; i++) {
-
-     }
-    }
+	iscircular = module_logic_check_for_circular_dependencies (module_logic_list_enable[i], NULL);
     emutex_unlock (&module_logic_service_list_mutex);
+
+    if (iscircular) {
+     if (candidates_level1) {
+      efree (candidates_level1);
+      candidates_level1 = NULL;
+     }
+     if (services_level1) {
+      efree (services_level1);
+      services_level1 = NULL;
+     }
+
+     goto reeval_top;
+    }
    }
   }
- }
+// }
 #endif
 
 /* here we need to filter the level1 list a bit, in order to remove modules that provide services that other modules already provide */
@@ -858,7 +906,8 @@ struct lmodule **module_logic_find_things_to_enable() {
    /* at this point we'd pretty much need to panic... it means we hit some recursive deps due to before/after abuse */
    notice (2, "WARNING: before/after abuse detected! trying to enable /something/ anyway");
 
-   efree (candidates_level1);
+   candidates_level2 = candidates_level1;
+//   efree (candidates_level1);
 //   candidates_level1 = candidates_level2;
   } else {
    efree (candidates_level1);
@@ -1168,9 +1217,10 @@ struct lmodule **module_logic_find_things_to_disable() {
 
    if (!candidates_level2) {
     /* at this point we'd pretty much need to panic... it means we hit some recursive deps due to before/after abuse */
-    notice (2, "WARNING: before/after abuse detected! trying to enable /something/ anyway");
+    notice (2, "WARNING: before/after abuse detected! trying to disable /something/ anyway");
 
-    efree (candidates_level1);
+    candidates_level2 = candidates_level1;
+//    efree (candidates_level1);
    } else {
     efree (candidates_level1);
    }
