@@ -202,7 +202,7 @@ int einit_tty_texec (struct cfgnode *node) {
     esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else
-#if 0
+#ifdef LINUX
    if ((cpid = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) == 0)
 #else
    retry_fork:

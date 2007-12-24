@@ -454,7 +454,7 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
  }
 }
 
-void exec_run_sh (char *command, enum pexec_options options, char **exec_environment) {
+char **exec_run_sh (char *command, enum pexec_options options, char **exec_environment) {
  struct exec_parser_data pd;
  char *ocmd = estrdup (command);
 
@@ -484,15 +484,18 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
 //    sleep (1);
    }
 
+#if 0
    if (options & pexec_option_safe_environment) {
     execve (pd.command[0], pd.command, safe_environment);
    } else {
     execve (pd.command[0], pd.command, exec_environment);
    }
 
-   perror (pd.command[0]);
-
    if (r) efree (r);
+   perror (pd.command[0]);
+#else
+   return pd.command;
+#endif
   }
 
 /*  if (forkres == -1) {
@@ -516,15 +519,22 @@ void exec_run_sh (char *command, enum pexec_options options, char **exec_environ
   cmdsetdup = str2set ('\0', ocmd);
   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
 
+#if 0
   if (options & pexec_option_safe_environment) {
    execve (cmd[0], cmd, safe_environment);
   } else {
    execve (cmd[0], cmd, exec_environment);
   }
+
   perror (cmd[0]);
   efree (cmd);
   efree (cmdsetdup);
   _exit (EXIT_FAILURE);
+#else
+  efree (cmdsetdup);
+
+  return cmd;
+#endif
  }
 }
 
@@ -606,6 +616,15 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  }*/
 // notice (10, (char *)command);
 
+ char **exec_environment;
+
+ exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
+ exec_environment = create_environment_f (exec_environment, variables);
+
+ command = apply_envfile_f ((char *)command, (const char **)exec_environment);
+
+ char **exvec = exec_run_sh ((char *)command, options, exec_environment);
+
 #ifdef LINUX
 // void *stack = emalloc (4096);
 // if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, stack+4096)) < 0) {
@@ -638,8 +657,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   nice (-einit_core_niceness_increment);
   nice (einit_task_niceness_increment);
 
-  char **exec_environment;
-
   disable_core_dumps ();
 
 /* cause segfault */
@@ -667,15 +684,16 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    dup2 (2, 1);
   }
 
-// we can safely play with the global environment here, since we fork()-ed earlier
-  exec_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)local_environment, SET_TYPE_STRING);
-  exec_environment = create_environment_f (exec_environment, variables);
-
-  command = apply_envfile_f ((char *)command, (const char **)exec_environment);
-
-  exec_run_sh ((char *)command, options, exec_environment);
+  if (options & pexec_option_safe_environment) {
+   execve (exvec[0], exvec, safe_environment);
+  } else {
+   execve (exvec[0], exvec, exec_environment);
+  }
  } else {
   FILE *fx;
+
+  if (exec_environment) efree (exec_environment);
+  if (exvec) efree (exvec);
 
   if (!(options & pexec_option_nopipe) && status) {
 /* tag the fd as close-on-exec, just in case */
@@ -1015,6 +1033,15 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    status_update (status);
   }
 
+  char **daemon_environment;
+
+  daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
+  daemon_environment = create_environment_f (daemon_environment, (const char **)shellcmd->variables);
+
+  char *command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
+
+  char **exvec = exec_run_sh (command, 0, daemon_environment);
+
 #ifdef LINUX
   if ((child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
    if (status) {
@@ -1035,10 +1062,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   }
 #endif
   else if (child == 0) {
-//   char **cmd;
-//   char **cmdsetdup;
-   char **daemon_environment;
-
    nice (-einit_core_niceness_increment);
    nice (einit_task_niceness_increment);
 
@@ -1049,26 +1072,14 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    if (uid && (setuid (uid) == -1))
     perror ("setting uid");
 
-   daemon_environment = (char **)setcombine ((const void **)einit_global_environment, (const void **)shellcmd->environment, SET_TYPE_STRING);
-   daemon_environment = create_environment_f (daemon_environment, (const char **)shellcmd->variables);
-
    eclose (1);
    dup2 (2, 1);
 
-   shellcmd->command = apply_envfile_f (shellcmd->command, (const char **)daemon_environment);
-
-   exec_run_sh (shellcmd->command, 0, daemon_environment);
-
-/*   cmdsetdup = str2set ('\0', shellcmd->command);
-   cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, 0);
-//  close (0);
-//  close (1);
-//  close (2);
-   execve (cmd[0], cmd, daemon_environment);
-   efree (cmd);
-   efree (cmdsetdup);
-   exit (EXIT_FAILURE);*/
+   execve (exvec[0], exvec, daemon_environment);
   } else {
+   if (daemon_environment) efree (daemon_environment);
+   if (exvec) efree (exvec);
+
    new->pid = child;
 //  sched_watch_pid (child, dexec_watcher);
 
