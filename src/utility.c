@@ -1104,9 +1104,6 @@ char *strip_empty_variables (char *string) {
 #ifdef POSIXREGEX
 
 #if ! defined (EINIT_UTIL)
-#endif
-
-#if 0
 
 struct stree *regex_cache = NULL;
 
@@ -1114,13 +1111,18 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
  struct stree *cache_hit = regex_cache ? streefind (regex_cache, pattern, tree_find_first) : NULL;
 
  if (cache_hit) {
-  memcpy (cache_hit->value, preg, sizeof (regex_t));
+  memcpy (preg, cache_hit->value, sizeof (regex_t));
   return 0;
  } else {
-  int r = regcomp (preg, pattern, cflags);
+  regex_t *n = emalloc (sizeof (regex_t));
+
+  int r = regcomp (n, pattern, cflags);
 
   if (!r) {
-   regex_cache = streeadd (regex_cache, pattern, &preg, sizeof (regex_t), NULL);
+   regex_cache = streeadd (regex_cache, pattern, n, SET_NOALLOC, NULL);
+   memcpy (preg, n, sizeof (regex_t));
+  } else {
+   efree (n);
   }
 
   return r;
