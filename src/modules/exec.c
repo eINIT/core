@@ -462,80 +462,49 @@ char **exec_run_sh (char *command, enum pexec_options options, char **exec_envir
 
  command = strip_empty_variables (command);
 
-// fprintf (stderr, "einit/sh: parsing...\n");
  parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
-// fprintf (stderr, "einit/sh: done parsing...\n");
 
- if ((pd.commands == 1) && pd.command) {
+ if ((pd.commands == 1) && pd.command && !pd.forkflag) {
   int forkres = 0;
 
-  if (!pd.forkflag || ((forkres = fork()) == 0)) {
-   char **r = which (pd.command[0]);
+  char **r = which (pd.command[0]);
 
-   if (r && r[0]) {
-    pd.command[0] = r[0];
-   }
+  if (r && r[0]) {
+   pd.command[0] = r[0];
+  }
 
-   char *cmdtx = set2str (',', (const char **)pd.command);
-   if (cmdtx) {
-//    fprintf (stdout, "einit/sh: running command: (%s)\n", cmdtx);
-    efree (cmdtx);
-
-//    sleep (1);
-   }
+  char *cmdtx = set2str (',', (const char **)pd.command);
+  if (cmdtx) {
+   efree (cmdtx);
+  }
 
 #if 0
-   if (options & pexec_option_safe_environment) {
-    execve (pd.command[0], pd.command, safe_environment);
-   } else {
-    execve (pd.command[0], pd.command, exec_environment);
-   }
-
-   if (r) efree (r);
-   perror (pd.command[0]);
-#else
-   return pd.command;
+  char *n = set2str ('|', pd.command);
+  fprintf (stderr, "command to run: %s\n", n);
+  fflush (stderr);
+  efree (n);
 #endif
-  }
 
-/*  if (forkres == -1) {
-   perror ("einit/sh: was supposed to fork but failed");
-  }*/
-
-  if (forkres) {
-//   fprintf (stderr, "einit/sh: forked our call into the background. [%i]\n", forkres);
-   _exit (EXIT_SUCCESS);
-  }
-
-  efree (pd.command);
-
-//  fprintf (stderr, "einit/sh: failed to run the command.\n");
-  _exit (EXIT_FAILURE);
+  return pd.command;
  } else {
-  char **cmdsetdup, **cmd;
+  char **cmd;
 
   if (pd.command) efree (pd.command);
 
-  cmdsetdup = str2set ('\0', ocmd);
-  cmd = (char **)setcombine ((const void **)shell, (const void **)cmdsetdup, -1);
+  cmd = (char **)setdup ((const void **)shell, SET_NOALLOC);
+  cmd = (char **)setadd ((void **)cmd, ocmd, SET_TYPE_STRING);
 
 #if 0
-  if (options & pexec_option_safe_environment) {
-   execve (cmd[0], cmd, safe_environment);
-  } else {
-   execve (cmd[0], cmd, exec_environment);
-  }
-
-  perror (cmd[0]);
-  efree (cmd);
-  efree (cmdsetdup);
-  _exit (EXIT_FAILURE);
-#else
-  efree (cmdsetdup);
+  char *n = set2str ('|', cmd);
+  fprintf (stderr, "command to run: %s\n", n);
+  fflush (stderr);
+  efree (n);
+#endif
 
   return cmd;
-#endif
  }
+
+ return NULL;
 }
 
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status) {
