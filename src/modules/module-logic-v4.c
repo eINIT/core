@@ -1616,7 +1616,7 @@ void module_logic_idle_actions () {
 
 void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) {
  char sw;
- 
+
  emutex_lock (&module_logic_commit_count_mutex);
  sw = (module_logic_commit_count == 0);
  module_logic_commit_count++;
@@ -1683,8 +1683,13 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    struct lmodule **spawn = module_logic_find_things_to_enable();
    emutex_unlock (&module_logic_list_enable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_enable_all (spawn);
+   if (spawn) {
+    if (disable) {
+     module_logic_spawn_set_enable_all (spawn);
+    } else { /* re-use this thread if there's nothing to disable */
+     module_logic_spawn_set_enable (spawn);
+    }
+   }
   }
 
   if (disable) {
@@ -1698,13 +1703,20 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    struct lmodule **spawn = module_logic_find_things_to_disable();
    emutex_unlock (&module_logic_list_disable_mutex);
 
-   if (spawn)
-    module_logic_spawn_set_disable_all (spawn);
+   if (spawn) {
+    if (enable) {
+     module_logic_spawn_set_disable_all (spawn);
+    } else { /* re-use this thread if there's nothing to enable*/
+     module_logic_spawn_set_disable (spawn);
+    }
+   }
   }
 
 /* waiting on things to be enabled and disabled works just fine if we do it serially... */
-  module_logic_wait_for_services_to_be_enabled(enable);
-  module_logic_wait_for_services_to_be_disabled(disable);
+  if (enable)
+   module_logic_wait_for_services_to_be_enabled(enable);
+  if (disable)
+   module_logic_wait_for_services_to_be_disabled(disable);
 
   if (mode) {
    char *cmdt;
