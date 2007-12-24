@@ -12,17 +12,38 @@
 <!--   <kexec-to-reboot b="yes" use-proc="yes" kernel-image="/boot/kernel-2.6.19-gentoo-r5" /> -->
   </system>
 
+<!--  <feedback> -->
+<!-- use this if you would like to use one of the psplash-ish feedback modules.
+     possible values for s= include:
+      s="psplash" (the original psplash daemon; very slick and small)
+      s="usplash" (ubuntu's splash daemon)
+      s="exquisite" (the enlightened psplash replacement...funky graphics ahoi) -->
+   <!--   <psplash s="psplash" /> -->
+
+<!-- the following is neat in that it allows redirecting einit's feedback to
+     to various terminals and the like.
+     possible attributes include:
+      stdio="" - where to read from/write to (used for textual feedback)
+      stderr="" - where to put errors and parts of the default log
+      console="" - where to redirect /dev/console to
+      kernel-vt="" - which terminal to put dmesg messages onto (needs to be a number)
+      activate-vt="" - which terminal to switch to once the textual feedback is up (number) -->
+<!--   <visual>
+    <std-io stdio="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" kernel-vt="12" />
+   </visual> -->
+<!--  </feedback> -->
+
 <!-- you may or may not need something like the following: -->
   <kernel>
    <modules>
-<!-- these are fairly arbitrary, <X s="" /> creates kern-X to load modules and stuffs them into the 'modules' group for you -->
+<!-- these are fairly arbitrary, <X s="" /> will load a colon-delimited list
+     of kernel modules in s="" as soon as udev is up -->
     <mouse s="evdev" />
    </modules>
   </kernel>
 
   <compatibility>
-<!-- utmp/wtmp management: you'll need to enable the utmp service
-     BUG: not implemented, yet -->
+<!-- utmp/wtmp management: you'll probably want this -->
    <sysv utmp="yes" wtmp="yes" />
   </compatibility>
  </configuration>
@@ -34,35 +55,33 @@
      a module's RID instead of a multi-call service name. for example, instead
      of specifying "displaymanager" when all you want is gdm, you may instead
      want to specify "v-gdm" in your modes.xml, whereever you keep your
-     modes. alternatively, you can specify 'inderect' preferences on multi-
-     service module(-sets). an example of this would be the 'logger' service,
-     which is (among others) provided by v-metalog, which also provides
-     'metalog' as a service. by specifying both 'logger' and 'metalog', you're
-     indirectly adding a prefer-line like <logger s="v-metalog" />.
-     same for specifying both "logger" and "v-metalog". the latter form
+     modes. alternatively, you could specify 'inderect' preferences.
+     example: consider the 'logger' service, which is provided by v-metalog
+     (among other modules), which also provides 'metalog' as a service. by
+     specifying both 'logger' and 'metalog', you're  indirectly adding a
+     prefer-line like <logger s="v-metalog" />.
+     same for specifying both "logger" and "v-metalog". this latter form
      may be more reliable (since v-metalog is always unambiguous, whereas
-     "metalog" is not). -->
+     "metalog" might not be). -->
 
 <!--  <prefer>
    <displaymanager s="v-kdm:v-entrance" />
    <logger s="v-metalog:v-syslog-ng:v-syslog" />
-   <kern-alsa s="v-kern-audio-alsa" />
-   <kern-arbitrary s="v-kern-module-autoload.d" />
    <antivirus s="v-clamd" />
   </prefer> -->
 
   <alias>
 <!-- service groups -->
-   <network group="net-eth0" seq="most" />
+   <network group="net-eth0" seq="all" />
 <!-- or kern-ati if you have an ATI card -->
    <video group="kern-nvidia" seq="any-iop" />
-<!-- kern-sound is the list-based module loader.
-     if you want alsa module auto-detection, replace with kern-alsa -->
+<!-- kern-alsa is the automatic alsa module detection... you could also specify
+     the modules you need (if any) up above and remove kern-alsa -->
    <audio group="alsa:kern-alsa" seq="most" />
-   <avahi group="avahi-dnsconfd" seq="any-iop" />
+   <avahi group="avahi-dnsconfd" seq="all" />
 <!-- add winbindd if you need it -->
    <samba group="smbd:nmbd" seq="all" />
-   <printing group="hpiod:hplip:cupsd" seq="any-iop" />
+   <printing group="hpiod:hplip:cupsd" seq="most" />
   </alias>
 
   <!-- example alias: localmount is the same as mount-local -->
@@ -70,9 +89,11 @@
 
   <!-- example override: on regular systems, einit-tty will only need mount-system, but if you'd like
        to use quingy and have the terminals controlled using einit-tty, then you will need mount-critical
-     if /usr is on its own partition (due to libquingy) -->
-<!--  <override>
- <module id="einit-tty" requires="mount-critical" />
+       if /usr is on its own partition (due to libquingy)
+
+       please note that this example is outdated, as einit-tty is now transparent -->
+  <!--  <override>
+   <module id="einit-tty" requires="mount-critical" />
   </override> -->
 
  </services>
