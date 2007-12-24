@@ -168,8 +168,6 @@ enum einit_usage_query {
 /*!< Service-usage-query: "What services use this?" */
  service_get_services_used_by  = 0x0040,
 /*!< Service-usage-query: "What services are used by this?" */
-
- service_get_providers         = 0x0800,
 };
 /*!\} */
 
@@ -316,6 +314,7 @@ char mod_service_requirements_met (struct lmodule *module);
 char mod_service_not_in_use (struct lmodule *module);
 char **mod_list_all_provided_services ();
 struct lmodule **mod_get_all_users (struct lmodule *module);
+struct lmodule **mod_get_all_providers (char *service);
 
 /*!\brief Query service-usage information.
  * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.

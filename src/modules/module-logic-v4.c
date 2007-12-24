@@ -955,64 +955,20 @@ struct lmodule **module_logic_find_things_to_disable() {
 
  reeval_top:
 
- emutex_lock (&module_logic_service_list_mutex);
+ if (module_logic_list_disable) {
+  int c;
+  emutex_lock (&module_logic_service_list_mutex);
 
- for (i = 0; module_logic_list_disable[i]; i++) {
-  if (i == 0) {
-   int c = setcount ((const void **)module_logic_list_disable);
-   module_logic_list_disable_max_count = (module_logic_list_disable_max_count > c) ? module_logic_list_disable_max_count : c;
-  }
+  retry_top_loop:
 
-  if (!mod_service_is_provided(module_logic_list_disable[i])) {
-   module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
-   i--;
-   if (!module_logic_list_disable) break;
-   continue;
-  }
+  c = setcount ((const void **)module_logic_list_disable);
+  module_logic_list_disable_max_count = (module_logic_list_disable_max_count > c) ? module_logic_list_disable_max_count : c;
 
-  if (!inset ((const void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING))
-   services_level1 = (char **)setadd ((void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING);
+  for (i = 0; module_logic_list_disable[i]; i++) {
+   if (!mod_service_is_provided(module_logic_list_disable[i])) {
 
-  struct stree *st = streefind(module_logic_service_list, module_logic_list_disable[i], tree_find_first);
-
-  if (st) {
-   struct lmodule **lm = st->value;
-   int i = 0;
-   char added = 0;
-
-   for (; lm[i]; i++) {
-    if (lm[i]->status & status_enabled) {
-     char isbroken;
-     emutex_lock (&module_logic_broken_modules_mutex);
-     isbroken = inset ((const void **)module_logic_broken_modules, lm[i], SET_NOALLOC);
-     emutex_unlock (&module_logic_broken_modules_mutex);
-
-     if (!isbroken) {
-      if (!inset ((const void **)candidates_level1, lm[i], SET_NOALLOC)) {
-       candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[i], SET_NOALLOC);
-
-       if (lm[i]->module) {
-        if (lm[i]->module->rid) {
-         if (!inset ((const void **)services_level1, lm[i]->module->rid, SET_TYPE_STRING))
-          services_level1 = (char **)setadd ((void **)services_level1, lm[i]->module->rid, SET_TYPE_STRING);
-        }
-        if (lm[i]->si && lm[i]->si->provides) {
-         int j = 0;
-         for (; lm[i]->si->provides[j]; j++) {
-          if (!inset ((const void **)services_level1, lm[i]->si->provides[j], SET_TYPE_STRING))
-           services_level1 = (char **)setadd ((void **)services_level1, lm[i]->si->provides[j], SET_TYPE_STRING);
-         }
-        }
-       }
-
-       added = 1;
-      }
-     }
-    }
-   }
-
-   if (!added) {
     module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
+    i = -1;
 
     if (candidates_level1) {
      efree (candidates_level1);
@@ -1023,21 +979,83 @@ struct lmodule **module_logic_find_things_to_disable() {
      services_level1 = NULL;
     }
 
-    i = -1;
-
-    if (!module_logic_list_disable) {
-     emutex_unlock (&module_logic_service_list_mutex);
-     return NULL;
-    }
+    if (!module_logic_list_disable) break;
+    goto retry_top_loop;
    }
-  } else {
-   unresolved = (char **)setadd ((void **)unresolved, module_logic_list_disable[i], SET_TYPE_STRING);
+
+   if (!inset ((const void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING))
+    services_level1 = (char **)setadd ((void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING);
+
+   struct stree *st = streefind(module_logic_service_list, module_logic_list_disable[i], tree_find_first);
+
+   if (st) {
+    struct lmodule **lm = st->value;
+    int i = 0;
+    char added = 0;
+
+    for (; lm[i]; i++) {
+     if (lm[i]->status & status_enabled) {
+      char isbroken;
+      emutex_lock (&module_logic_broken_modules_mutex);
+      isbroken = inset ((const void **)module_logic_broken_modules, lm[i], SET_NOALLOC);
+      emutex_unlock (&module_logic_broken_modules_mutex);
+
+      if (!isbroken) {
+       if (!inset ((const void **)candidates_level1, lm[i], SET_NOALLOC)) {
+        candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[i], SET_NOALLOC);
+
+        if (lm[i]->module) {
+         if (lm[i]->module->rid) {
+          if (!inset ((const void **)services_level1, lm[i]->module->rid, SET_TYPE_STRING))
+           services_level1 = (char **)setadd ((void **)services_level1, lm[i]->module->rid, SET_TYPE_STRING);
+         }
+         if (lm[i]->si && lm[i]->si->provides) {
+          int j = 0;
+          for (; lm[i]->si->provides[j]; j++) {
+           if (!inset ((const void **)services_level1, lm[i]->si->provides[j], SET_TYPE_STRING))
+            services_level1 = (char **)setadd ((void **)services_level1, lm[i]->si->provides[j], SET_TYPE_STRING);
+          }
+         }
+        }
+       }
+
+       added = 1;
+      }
+     }
+    }
+
+    if (!added) {
+     module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
+
+     if (candidates_level1) {
+      efree (candidates_level1);
+      candidates_level1 = NULL;
+     }
+     if (services_level1) {
+      efree (services_level1);
+      services_level1 = NULL;
+     }
+
+     i = -1;
+
+     if (!module_logic_list_disable) {
+      emutex_unlock (&module_logic_service_list_mutex);
+      return NULL;
+     }
+
+     goto retry_top_loop;
+    }
+   } else {
+    unresolved = (char **)setadd ((void **)unresolved, module_logic_list_disable[i], SET_TYPE_STRING);
+   }
   }
+
+  emutex_unlock (&module_logic_service_list_mutex);
+ } else {
+  return NULL;
  }
 
- emutex_unlock (&module_logic_service_list_mutex);
-
-/* make sure we disable everything used by our candidates first */
+/* make sure we disable everything that is using one of our candidates first */
 
  if (candidates_level1) {
   reeval:
@@ -1100,6 +1118,14 @@ struct lmodule **module_logic_find_things_to_disable() {
   }
 
   efree (unresolved);
+ }
+
+ if (!candidates_level1 && module_logic_list_disable) {
+  char *n = set2str (':', module_logic_list_disable);
+  notice (1, "nothing to do? still need to disable: %s; retrying...\n", n);
+  efree (n);
+
+  goto reeval_top;
  }
 
  if (candidates_level1) {
@@ -1722,6 +1748,9 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    char *cmdt;
    cmode = mode;
    amode = mode;
+
+/*   if (shutting_down)
+    sleep (5);*/
 
    struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
    eex.para = (void *)mode;

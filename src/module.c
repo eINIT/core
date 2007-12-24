@@ -420,10 +420,12 @@ void mod_update_usage_table (struct lmodule *module) {
   item = (struct service_usage_item *)ha->value;
 
   if (!(module->status & status_enabled)) {
+   char wasprovider = inset ((const void **)item->provider, module, SET_NOALLOC);
+
    item->provider = (struct lmodule **)setdel ((void **)item->provider, (void *)module);
    item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
 
-   if (!item->provider) {
+   if (wasprovider && !item->provider) {
     disabled = (char **)setadd ((void **)disabled, ha->key, SET_TYPE_STRING);
    }
   }
@@ -450,6 +452,7 @@ void mod_update_usage_table (struct lmodule *module) {
   }
 
   evstaticdestroy (eei);
+  efree (enabled);
  }
 
  if (disabled) {
@@ -461,6 +464,7 @@ void mod_update_usage_table (struct lmodule *module) {
   }
 
   evstaticdestroy (eei);
+  efree (disabled);
  }
 }
 
@@ -624,16 +628,6 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
   }
  }
 
- if (task & service_get_providers) {
-  if (service_usage && (ha = streefind (service_usage, service, tree_find_first))) {
-   struct service_usage_item *citem = (struct service_usage_item *)ha->value;
-
-   if (citem) {
-    ret = (char **)citem->provider;
-   }
-  }
- }
-
  emutex_unlock (&service_usage_mutex);
  return ret;
 }
@@ -654,6 +648,27 @@ struct lmodule **mod_get_all_users (struct lmodule *module) {
    }
   }
   ha = streenext (ha);
+ }
+ emutex_unlock (&service_usage_mutex);
+
+ return ret;
+}
+
+struct lmodule **mod_get_all_providers (char *service) {
+ struct lmodule **ret = NULL;
+
+ emutex_lock (&service_usage_mutex);
+ struct stree *ha = streefind (service_usage, service, tree_find_first);
+
+ if (ha) {
+  struct service_usage_item *item = ha->value;
+
+  if (item->provider) {
+   int i = 0;
+   for (; item->provider[i]; i++) {
+    ret = (struct lmodule **)setadd ((void **)ret, item->provider[i], SET_NOALLOC);
+   }
+  }
  }
  emutex_unlock (&service_usage_mutex);
 
