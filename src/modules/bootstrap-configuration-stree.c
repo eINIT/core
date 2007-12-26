@@ -201,11 +201,23 @@ int cfg_addnode_f (struct cfgnode *node) {
   if (cur) cur = streefind (cur, node->id, tree_find_first);
   while (cur) {
 // this means we found a node wit the same path
+   char allow_multi = 0;
+   char id_match = 0;
+
+   if (regexec (&cfg_storage_allowed_duplicates, node->id, 0, NULL, 0) != REG_NOMATCH) {
+    allow_multi = 1;
+   }
+
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
        strmatch (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
-// NTS: implement checks to figure out if the node is similar
+    id_match = 1;
+   }
 
+   if ((!allow_multi && (!node->idattr)) || id_match) {
 // this means we found something that looks like it
+    fprintf (stderr, "replacing old config: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
+    fflush (stderr);
+
     cfg_stree_garbage_add_chunk (cur->luggage);
     cfg_stree_garbage_add_chunk (((struct cfgnode *)cur->value)->arbattrs);
 
@@ -224,8 +236,11 @@ int cfg_addnode_f (struct cfgnode *node) {
 
     break;
    }
+
+   if (allow_multi) {
 //   cur = streenext (cur);
-   cur = streefind (cur, node->id, tree_find_next);
+    cur = streefind (cur, node->id, tree_find_next);
+   }
   }
  }
 
