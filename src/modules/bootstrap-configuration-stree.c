@@ -215,8 +215,8 @@ int cfg_addnode_f (struct cfgnode *node) {
 
    if ((!allow_multi && (!node->idattr)) || id_match) {
 // this means we found something that looks like it
-    fprintf (stderr, "replacing old config: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
-    fflush (stderr);
+//    fprintf (stderr, "replacing old config: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
+//    fflush (stderr);
 
     cfg_stree_garbage_add_chunk (cur->luggage);
     cfg_stree_garbage_add_chunk (((struct cfgnode *)cur->value)->arbattrs);
