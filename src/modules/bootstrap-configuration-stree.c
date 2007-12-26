@@ -130,6 +130,12 @@ int cfg_free () {
  return 1;
 }
 
+#ifdef POSIXREGEX
+#include <regex.h>
+
+regex_t cfg_storage_allowed_duplicates;
+#endif
+
 int cfg_addnode_f (struct cfgnode *node) {
  bootstrap_einit_configuration_stree_usage++;
 
@@ -137,6 +143,25 @@ int cfg_addnode_f (struct cfgnode *node) {
   bootstrap_einit_configuration_stree_usage--;
   return -1;
  }
+
+ if (strmatch (node->id, "core-settings-configuration-multi-node-variables")) {
+  if (!node->arbattrs) {
+/* without arbattrs, this node is invalid */
+   bootstrap_einit_configuration_stree_usage--;
+   return -1;
+  } else {
+   int i = 0;
+   for (; node->arbattrs[i]; i+=2) {
+    if (strmatch (node->arbattrs[i], "allow")) {
+     eregfree (&cfg_storage_allowed_duplicates);
+     if (!eregcomp (&cfg_storage_allowed_duplicates, node->arbattrs[i+1])) {
+      eregcomp (&cfg_storage_allowed_duplicates, ".*");
+     }
+    }
+   }
+  }
+ }
+
  struct stree *cur = hconfiguration;
  char doop = 1;
 
@@ -606,6 +631,8 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  function_register ("einit-configuration-node-get-filter", 1, cfg_filter_f);
  function_register ("einit-configuration-node-get-path", 1, cfg_getpath_f);
  function_register ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
+
+ eregcomp (&cfg_storage_allowed_duplicates, ".*");
 
  return 0;
 }
