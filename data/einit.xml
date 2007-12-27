@@ -108,6 +108,8 @@
     <support-legacy-hotplug-scripts b="yes" />
     <handler s="" />
    </hotplug>
+
+   <coldplug b="yes" />
   </system>
 
   <linux>

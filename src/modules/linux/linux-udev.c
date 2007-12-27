@@ -88,11 +88,95 @@ void linux_udev_load_kernel_extensions() {
  evstaticdestroy(eml);
 }
 
+struct dexecinfo linux_udev_dexec = {
+ .id = "daemon-udev",
+ .command = "/sbin/udevd",
+ .prepare = NULL,
+ .cleanup = NULL,
+ .is_up = NULL,
+ .is_down = NULL,
+ .variables = NULL,
+ .uid = 0,
+ .gid = 0,
+ .user = NULL, .group = NULL,
+ .restart = 1,
+ .cb = NULL,
+ .environment = NULL,
+ .pidfile = NULL,
+ .need_files = NULL,
+ .oattrs = NULL,
+
+ .options = 0,
+
+ .pidfiles_last_update = 0,
+
+ .script = NULL,
+ .script_actions = NULL
+};
+
+void linux_udev_ping_for_uevents(char *dir, char depth) {
+ struct stat st;
+
+ if (!dir || lstat (dir, &st)) return;
+
+ if (S_ISLNK (st.st_mode)) {
+  return;
+ }
+
+ if (S_ISDIR (st.st_mode)) {
+  DIR *d;
+  struct dirent *e;
+
+  d = eopendir (dir);
+  if (d != NULL) {
+   while ((e = ereaddir (d))) {
+    if (strmatch (e->d_name, ".") || strmatch (e->d_name, "..")) {
+     continue;
+    }
+
+    char *f = joinpath ((char *)dir, e->d_name);
+
+    if (f) {
+     if (!lstat (f, &st) && !S_ISLNK (st.st_mode) && S_ISDIR (st.st_mode)) {
+      if (depth > 0) {
+       linux_udev_ping_for_uevents (f, depth - 1);
+      }
+     }
+
+     efree (f);
+    }
+   }
+
+   eclosedir(d);
+  }
+ }
+
+ char *x = joinpath (dir, "uevent");
+ FILE *uev = fopen (x, "w");
+
+ if (uev) {
+  fputs ("add", uev);
+  fclose (uev);
+ }
+
+ efree (x);
+}
+
+
+/* TODO: maybe... maybe not, anyway...
+   * using tarballs
+   * seed /dev with some nodes (not sure, but shouldn't those get picked up anyway?
+   * copy devices from /lib/udev/devices...
+   * the /dev/root rule (not sure if that makes terribly much sense, it never did run properly before anyway)
+   * coldplug support
+   * re-implement udevsettle in C */
+
 int linux_udev_run() {
  char *dm;
 
  if (!linux_udev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "udev")) {
   linux_udev_enabled = 1;
+  struct stat st;
 
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
@@ -109,11 +193,49 @@ int linux_udev_run() {
   symlink ("fd/1", "/dev/stdout");
   symlink ("fd/2", "/dev/stderr");
 
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
+  if (!stat ("/proc/kcore", &st)) {
+/* create kernel core symlink */
+   symlink ("/proc/kcore", "/dev/core");
+  }
+
+  if (!stat ("/proc/sys/kernel/hotplug", &st)) {
+/* i should check for an appropriate kernel version here... 2.6.14 methinks */
+/* set netlink handler */
+   FILE *f = fopen ("/proc/sys/kernel/hotplug", "w");
+   if (f) {
+    fputs ("\n", f);
+    fclose (f);
+   }
+  }
+
+  startdaemon(&linux_udev_dexec, NULL);
+
+  struct cfgnode *n = cfg_getnode ("configuration-system-coldplug", NULL);
+/* again, i should check for an appropriate kernel version... */
+/* this should be all nodes that'll be needed... */
+
+  if (n && n->flag) {
+   linux_udev_ping_for_uevents("/sys", 5);
+  } else {
+   linux_udev_ping_for_uevents("/sys/class", 4);
+   linux_udev_ping_for_uevents("/sys/block", 3);
+  }
+
+//  system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
 
   linux_udev_load_kernel_extensions();
 
+  system ("/sbin/udevsettle --timeout=60");
+
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
+
+/* let's not forget about raid setups and the like here... */
+  if (!stat ("/sbin/lvm", &st)) {
+   system ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
+  }
+  if (!stat ("/sbin/evms_activate", &st)) {
+   system ("/sbin/evms_activate -q");
+  }
 
   return status_ok;
  } else
@@ -122,8 +244,9 @@ int linux_udev_run() {
 
 void linux_udev_shutdown() {
  if (linux_udev_enabled) {
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh disable");
+/*  system (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
+  system (EINIT_LIB_BASE "/modules-xml/udev.sh disable");*/
+  stopdaemon (&linux_udev_dexec, NULL);
 
   linux_udev_enabled = 0;
  }

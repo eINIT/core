@@ -118,7 +118,8 @@ Configuration = element configuration {
     element hotplug {
      element support-legacy-hotplug-scripts { BooleanAttribute }? &
      element handler { StringAttribute }?
-    }?
+    }? &
+    element coldplug { BooleanAttribute }?
   }* &
 
   element linux {
