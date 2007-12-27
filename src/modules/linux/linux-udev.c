@@ -114,6 +114,7 @@ struct dexecinfo linux_udev_dexec = {
  .script_actions = NULL
 };
 
+#if 0
 void linux_udev_ping_for_uevents(char *dir, char depth) {
  struct stat st;
 
@@ -161,11 +162,10 @@ void linux_udev_ping_for_uevents(char *dir, char depth) {
 
  efree (x);
 }
-
+#endif
 
 /* TODO: maybe... maybe not, anyway...
    * using tarballs
-   * seed /dev with some nodes (not sure, but shouldn't those get picked up anyway?
    * copy devices from /lib/udev/devices...
    * the /dev/root rule (not sure if that makes terribly much sense, it never did run properly before anyway)
    * coldplug support
@@ -187,6 +187,13 @@ int linux_udev_run() {
 
   mkdir ("/dev/shm", 0777);
   mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
+
+  dev_t ldev = (5 << 8) | 1;
+  mknod ("/dev/console", S_IFCHR, ldev);
+  ldev = (4 << 8) | 1;
+  mknod ("/dev/tty1", S_IFCHR, ldev);
+  ldev = (1 << 8) | 3;
+  mknod ("/dev/null", S_IFCHR, ldev);
 
   symlink ("/proc/self/fd", "/dev/fd");
   symlink ("fd/0", "/dev/stdin");
@@ -214,11 +221,19 @@ int linux_udev_run() {
 /* again, i should check for an appropriate kernel version... */
 /* this should be all nodes that'll be needed... */
 
+/*
   if (n && n->flag) {
    linux_udev_ping_for_uevents("/sys", 5);
   } else {
    linux_udev_ping_for_uevents("/sys/class", 4);
    linux_udev_ping_for_uevents("/sys/block", 3);
+  }
+*/
+
+  if (n && n->flag) {
+   system ("/sbin/udevtrigger");
+  } else {
+   system ("/sbin/udevtrigger --attr-match=dev");
   }
 
 //  system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");

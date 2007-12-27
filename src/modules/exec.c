@@ -855,8 +855,10 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   pidfile = NULL;
 
   if (pidexists (pid)) {
-   fbprintf (status, "Module's PID-file already exists and is valid.");
-   status_update (status);
+   if (status) {
+    fbprintf (status, "Module's PID-file already exists and is valid.");
+    status_update (status);
+   }
 
    struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
    new->starttime = time (NULL);
@@ -1087,11 +1089,15 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   pthread_mutex_trylock (&shellcmd->cb->mutex);
   shellcmd->cb->timer = kill_timeout_primary;
 
-  fbprintf (status, "sending SIGTERM, daemon has %i seconds to exit...", kill_timeout_primary);
-  status_update (status);
-  if (kill (shellcmd->cb->pid, SIGTERM)) {
-   fbprintf (status, "failed to send SIGTERM: %s", strerror (errno));
+  if (status) {
+   fbprintf (status, "sending SIGTERM, daemon has %i seconds to exit...", kill_timeout_primary);
    status_update (status);
+  }
+  if (kill (shellcmd->cb->pid, SIGTERM)) {
+   if (status) {
+    fbprintf (status, "failed to send SIGTERM: %s", strerror (errno));
+    status_update (status);
+   }
    notice (1, "failed to send SIGTERM to a daemon: %s; assuming it's dead.", strerror (errno));
 
    goto assume_dead;
@@ -1102,8 +1108,10 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   if (pidexists(pid)) { // still up?
    if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
-    status->string = "SIGTERM timer ran out, killing...";
-    status_update (status);
+    if (status) {
+     status->string = "SIGTERM timer ran out, killing...";
+     status_update (status);
+    }
 
     ethread_cancel (th);
     pthread_mutex_trylock (&shellcmd->cb->mutex);
@@ -1114,16 +1122,20 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     emutex_lock (&shellcmd->cb->mutex);
    }
   } else {
-   fbprintf (status, "daemon seems to have exited gracefully.");
-   status_update (status);
+   if (status) {
+    fbprintf (status, "daemon seems to have exited gracefully.");
+    status_update (status);
+   }
   }
   ethread_cancel (th);
 
   emutex_unlock (&shellcmd->cb->mutex); // just in case
   emutex_destroy (&shellcmd->cb->mutex);
  } else {
-  fbprintf (status, "No control block or PID invalid, skipping the killing.");
-  status_update (status);
+  if (status) {
+   fbprintf (status, "No control block or PID invalid, skipping the killing.");
+   status_update (status);
+  }
  }
 
  assume_dead:
