@@ -250,14 +250,19 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   int i = 0;
   for (; f[i]; i++) {
    if (flags & einit_event_flag_spawn_thread_multi_wait) {
-    pthread_t *threadid = emalloc (sizeof (pthread_t));
-    struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
+    if (f[i+1]) {
+     pthread_t *threadid = emalloc (sizeof (pthread_t));
+     struct evt_wrapper_data *d = emalloc (sizeof (struct evt_wrapper_data));
 
-    d->event = evdup(event);
-    d->handler = f[i]->handler;
+     d->event = evdup(event);
+     d->handler = f[i]->handler;
 
-    ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
-    threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+     ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
+     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+    } else {
+/* do a shortcut so we don't create a thread for the last thing to spawn */
+     f[i]->handler (event);
+    }
    } else
     f[i]->handler (event);
   }
