@@ -1749,14 +1749,20 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    cmode = mode;
    amode = mode;
 
-/*   if (shutting_down)
-    sleep (5);*/
-
    struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
    eex.para = (void *)mode;
    eex.string = mode->id;
    event_emit (&eex, einit_event_flag_broadcast);
    evstaticdestroy (eex);
+
+   if (shutting_down) {
+#if 0
+    int st = 2;
+    while ((st = sleep (st))) ;
+#else
+    usleep (50000);
+#endif
+   }
 
    if (amode->id) {
 //   notice (1, "emitting feedback notice");
