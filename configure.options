@@ -10,7 +10,7 @@ export MODULES_CORE="module-so"
 export MODULES_EXPERIMENTAL=""
 
 export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-kernel-modules linux-udev linux-mdev linux-hwclock linux-edev linux-hotplug linux-static-dev linux-cpufreq linux-bootchart"
-export MODULES_BSD="bsd-devfs"
+export MODULES_BSD="bsd-devfs bsd-network"
 export MODULES_DARWIN="${MODULES_BSD}"
 
 export ALLMODULES="${MODULES_GENERIC} ${MODULES_LINUX} ${MODULES_COMPATIBILITY} ${MODULES_CORE}"
