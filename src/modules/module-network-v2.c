@@ -76,7 +76,13 @@ module_register(einit_module_network_v2_self);
 
 #endif
 
-pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
+#if defined(BSD)
+char *bsd_network_suffixes[] = { "bsd", "generic", NULL };
+#elif defined(LINUX)
+char *bsd_network_suffixes[] = { "linux", "generic", NULL };
+#else
+char *bsd_network_suffixes[] = { "generic", NULL };
+#endif
 
 int einit_module_network_v2_scanmodules (struct lmodule *);
 
@@ -85,6 +91,17 @@ int einit_module_network_v2_cleanup (struct lmodule *pa) {
 }
 
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
+ char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
+
+ if (interfaces) {
+  int i = 0;
+  for (; interfaces[i]; i++) {
+#if 0
+   fprintf (stderr, "interface: %s\n", interfaces[i]);
+   fflush (stderr);
+#endif
+  }
+ }
 
  return 1;
 }

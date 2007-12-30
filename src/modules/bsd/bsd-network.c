@@ -35,7 +35,12 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdio.h>
 #include <einit/module.h>
+#include <einit/event.h>
+#include <einit/utility.h>
+#include <einit/bitch.h>
+#include <pthread.h>
 
 #define EXPECTED_EIV 1
 
@@ -67,7 +72,50 @@ module_register(bsd_network_self);
 
 #endif
 
+char **bsd_network_interfaces = NULL;
+
+pthread_mutex_t bsd_network_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+char **bsd_network_list_interfaces_ifconfig (int spawn_events) {
+ char **interfaces = NULL;
+ char **new_interfaces = NULL;
+ char buffer[BUFFERSIZE * 4];
+ FILE *f = popen ("ifconfig -l", "r");
+
+ if (f) {
+  if (fgets (buffer, (BUFFERSIZE * 4), f)) {
+   strtrim (buffer);
+   if (buffer[0]) {
+    interfaces = str2set (' ', buffer);
+   }
+  }
+  pclose (f);
+ }
+
+ if (spawn_events) {
+  if (interfaces) {
+   emutex_lock (&bsd_network_interfaces_mutex);
+   int i = 0;
+   for (; interfaces[i]; i++) {
+    if (!bsd_network_interfaces || !inset ((const void **)bsd_network_interfaces, interfaces[i], SET_TYPE_STRING))
+     new_interfaces = (char **)setadd ((void **)new_interfaces, interfaces[i], SET_TYPE_STRING);
+   }
+   emutex_unlock (&bsd_network_interfaces_mutex);
+  }
+
+  if (new_interfaces) {
+// spawn some events here about the new interfaces
+   efree (new_interfaces);
+  }
+ }
+
+ return interfaces;
+}
+
 int bsd_network_cleanup (struct lmodule *pa) {
+ function_unregister ("network-list-interfaces-bsd", 1, (void *)bsd_network_list_interfaces_ifconfig);
+ function_unregister ("network-list-interfaces-generic", 1, (void *)bsd_network_list_interfaces_ifconfig);
+
  return 0;
 }
 
@@ -75,6 +123,9 @@ int bsd_network_configure (struct lmodule *pa) {
  module_init (pa);
 
  pa->cleanup = bsd_network_cleanup;
+
+ function_register ("network-list-interfaces-bsd", 1, (void *)bsd_network_list_interfaces_ifconfig);
+ function_register ("network-list-interfaces-generic", 1, (void *)bsd_network_list_interfaces_ifconfig);
 
  return 0;
 }
