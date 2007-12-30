@@ -247,6 +247,21 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  if ((task & einit_module_enable) && (!module->enable || (module->status & status_enabled))) {
   wontload:
   module->status ^= status_working;
+
+  {
+/* service status update */
+   char *nserv[] = { "no-service", NULL };
+
+   struct einit_event ees = evstaticinit (einit_core_service_update);
+   ees.task = task;
+   ees.status = module->status;
+   ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
+   ees.set = (module->si && module->si->provides) ? (void **)module->si->provides : (void **)nserv;
+   ees.para = (void *)module;
+   event_emit (&ees, einit_event_flag_broadcast);
+   evstaticdestroy (ees);
+  }
+
   emutex_unlock (&module->mutex);
   return status_idle;
  }
@@ -347,7 +362,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
     ees.task = task;
     ees.status = fb->status;
     ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
-    ees.set = (module->si && module->si->provides) ? (void **)module->si->provides : nserv;
+    ees.set = (module->si && module->si->provides) ? (void **)module->si->provides : (void **)nserv;
     ees.para = (void *)module;
     event_emit (&ees, einit_event_flag_broadcast);
     evstaticdestroy (ees);

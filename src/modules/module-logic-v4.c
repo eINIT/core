@@ -967,8 +967,10 @@ struct lmodule **module_logic_find_things_to_disable() {
   for (i = 0; module_logic_list_disable[i]; i++) {
    if (!mod_service_is_provided(module_logic_list_disable[i])) {
 
+#if 0
     fprintf (stderr, "removing: %s (not provided)\n", module_logic_list_disable[i]);
     fflush (stderr);
+#endif
 
     module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
     i = -1;
@@ -1023,16 +1025,20 @@ struct lmodule **module_logic_find_things_to_disable() {
        }
 
        added = 1;
+#if 0
       } else {
        fprintf (stderr, "broken: %s\n", lm[k]->module->rid);
        fflush (stderr);
+#endif
 	  }
      }
     }
 
     if (!added) {
+#if 0
      fprintf (stderr, "removing: %s (nothing to add for it)\n", module_logic_list_disable[i]);
      fflush (stderr);
+#endif
 
      module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
 
@@ -1271,6 +1277,11 @@ struct lmodule **module_logic_find_things_to_disable() {
    emutex_lock (&module_logic_active_modules_mutex);
    if (module_logic_active_modules && inset ((const void **)module_logic_active_modules, candidates_level2[i], SET_NOALLOC)) {
     doskip = 1;
+
+#if 0
+    fprintf (stderr, "skipping: %s\n", candidates_level2[i]->module->rid);
+    fflush (stderr);
+#endif
    }
    emutex_unlock (&module_logic_active_modules_mutex);
 
@@ -1478,9 +1489,15 @@ void module_logic_wait_for_services_to_be_disabled(char **services) {
 
  do {
   /* check here ... */
+#if 1
+  if (!module_logic_active_modules) {
+   fprintf (stderr, "nothing in the active list...\n");
+   fflush (stderr);
+  }
+#endif
 
   if (!module_logic_list_disable) {
-#if 1
+#if 0
    fprintf (stderr, "nothing in the list...\n");
    fflush (stderr);
 #endif
@@ -1491,7 +1508,7 @@ void module_logic_wait_for_services_to_be_disabled(char **services) {
 
    for (; services[i]; i++) {
     if (!inset ((const void **)module_logic_list_disable, services[i], SET_TYPE_STRING)) {
-#if 1
+#if 0
      fprintf (stderr, " ** have: %s\n", services[i]);
      fflush (stderr);
 #endif
@@ -1500,7 +1517,7 @@ void module_logic_wait_for_services_to_be_disabled(char **services) {
       i = -1;
      else
       break;
-#if 1
+#if 0
     } else {
      fprintf (stderr, " ** still waiting for: %s\n", services[i]);
      fflush (stderr);
@@ -1745,7 +1762,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    int i = 0;
    emutex_lock (&module_logic_list_disable_mutex);
    for (; disable[i]; i++) {
-#if 1
+#if 0
     fprintf (stderr, "disable: %s\n", disable[i]);
 	fflush (stderr);
 #endif
