@@ -1489,7 +1489,7 @@ void module_logic_wait_for_services_to_be_disabled(char **services) {
 
  do {
   /* check here ... */
-#if 1
+#if 0
   if (!module_logic_active_modules) {
    fprintf (stderr, "nothing in the active list...\n");
    fflush (stderr);
