@@ -46,6 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <sys/stat.h>
 
+#include <einit-modules/network.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -84,9 +86,30 @@ char *bsd_network_suffixes[] = { "linux", "generic", NULL };
 char *bsd_network_suffixes[] = { "generic", NULL };
 #endif
 
+struct stree *einit_module_network_v2_interfaces = NULL;
+
+struct network_v2_interface_descriptor {
+ enum interface_flags status;
+ struct lmodule *module;
+};
+
+pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int einit_module_network_v2_scanmodules (struct lmodule *);
 
 int einit_module_network_v2_cleanup (struct lmodule *pa) {
+ return 0;
+}
+
+int einit_module_network_v2_module_configure (struct lmodule *m) {
+ struct network_v2_interface_descriptor id;
+
+ memset (&id, 0, sizeof (struct network_v2_interface_descriptor));
+ id.module = m;
+
+ emutex_lock (&einit_module_network_v2_interfaces_mutex);
+ einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, m->module->rid + 13, &id, sizeof (struct network_v2_interface_descriptor), NULL);
+ emutex_unlock (&einit_module_network_v2_interfaces_mutex);
  return 0;
 }
 
@@ -95,12 +118,49 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
  if (interfaces) {
   int i = 0;
+  struct stree *st;
   for (; interfaces[i]; i++) {
 #if 0
    fprintf (stderr, "interface: %s\n", interfaces[i]);
    fflush (stderr);
 #endif
+
+   emutex_lock (&einit_module_network_v2_interfaces_mutex);
+   if (einit_module_network_v2_interfaces && (st = streefind (einit_module_network_v2_interfaces, interfaces[i], tree_find_first))) {
+    struct network_v2_interface_descriptor *id = st->value;
+    emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+	struct lmodule *lm = id->module;
+
+    mod_update (lm);
+   } else {
+    emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+    char buffer[BUFFERSIZE];
+	struct smodule *sm = emalloc (sizeof (struct smodule));
+	memset (sm, 0, sizeof (struct smodule));
+
+    esprintf (buffer, BUFFERSIZE, "interface-v2-%s", interfaces[i]);
+	sm->rid = estrdup (buffer);
+
+    esprintf (buffer, BUFFERSIZE, "Network Interface (%s)", interfaces[i]);
+	sm->name = estrdup (buffer);
+
+	sm->eiversion = EINIT_VERSION;
+	sm->eibuild = BUILDNUMBER;
+	sm->version = 1;
+	sm->mode = einit_module_generic;
+
+    esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+	sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+
+    sm->configure = einit_module_network_v2_module_configure;
+
+    mod_add (NULL, sm);
+   }
   }
+
+  efree (interfaces);
  }
 
  return 1;
