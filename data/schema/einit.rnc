@@ -325,6 +325,7 @@ Subsystems = element subsystem {
    } *
   } ? &
   element interface-defaults {
+   StringAttribute,
    element * {
     IDAttribute?,
     InterfaceDataV2

@@ -9,7 +9,7 @@
     <client id="dhclient" up="dhclient ${interface}" down="killall dhclient" need-binaries="dhclient" />
    </dhcp>
 
-   <interface-defaults>
+   <interface-defaults s="loopback:ethernet:wlan:any">
     <any>
      <dhcp-client s="dhcpcd:pump:dhclient" />
     </any>

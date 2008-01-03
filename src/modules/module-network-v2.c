@@ -103,6 +103,7 @@ int einit_module_network_v2_cleanup (struct lmodule *pa) {
 }
 
 #define INTERFACES_PREFIX "configuration-network-interfaces"
+#define INTERFACE_DEFAULTS_PREFIX "subsystem-network-interface-defaults"
 
 int einit_module_network_v2_have_options (char *interface) {
  char buffer[BUFFERSIZE];
@@ -112,13 +113,59 @@ int einit_module_network_v2_have_options (char *interface) {
  return cfg_getnode (buffer, NULL) ? 1 : 0;
 }
 
+struct cfgnode *einit_module_network_v2_get_option_default_r (char *r, char *option) {
+ char buffer[BUFFERSIZE];
+
+ esprintf (buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s-%s", r, option);
+
+ return cfg_getnode (buffer, NULL);
+}
+
+struct cfgnode *einit_module_network_v2_get_option_default (char *interface, char *option) {
+ char *u = cfg_getstring (INTERFACE_DEFAULTS_PREFIX, NULL);
+
+ if (u) {
+  char **set = str2set (':', u);
+  int i = 0;
+  for (; set[i]; i++) {
+   struct cfgnode *n;
+   char buffer[BUFFERSIZE];
+   regex_t r;
+   esprintf (buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s", set[i]);
+
+   n = cfg_getnode (buffer, NULL);
+
+   if (n && n->idattr && !eregcomp(&r, n->idattr)) {
+    if (regexec (&r, interface, 0, NULL, 0) != REG_NOMATCH) {
+     eregfree (&r);
+
+     struct cfgnode *res = einit_module_network_v2_get_option_default_r(set[i], option);
+     if (res) {
+      efree (set);
+      return res;
+     }
+    } else {
+     eregfree (&r);
+    }
+   }
+  }
+
+  efree (set);
+ }
+
+ return NULL;
+}
+
 struct cfgnode *einit_module_network_v2_get_option (char *interface, char *option) {
  char buffer[BUFFERSIZE];
  struct cfgnode *node;
 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface, option);
 
- return cfg_getnode (buffer, NULL);
+ if ((node = cfg_getnode (buffer, NULL)))
+  return node;
+ else
+  return einit_module_network_v2_get_option_default (interface, option);
 }
 
 enum if_action {
@@ -178,34 +225,47 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     struct network_v2_interface_descriptor *id = st->value;
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
-	struct lmodule *lm = id->module;
+    struct lmodule *lm = id->module;
 
     mod_update (lm);
    } else {
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
     char buffer[BUFFERSIZE];
-	struct smodule *sm = emalloc (sizeof (struct smodule));
-	memset (sm, 0, sizeof (struct smodule));
+    struct smodule *sm = emalloc (sizeof (struct smodule));
+    memset (sm, 0, sizeof (struct smodule));
 
     esprintf (buffer, BUFFERSIZE, "interface-v2-%s", interfaces[i]);
-	sm->rid = estrdup (buffer);
+    sm->rid = estrdup (buffer);
 
     esprintf (buffer, BUFFERSIZE, "Network Interface (%s)", interfaces[i]);
-	sm->name = estrdup (buffer);
+    sm->name = estrdup (buffer);
 
-	sm->eiversion = EINIT_VERSION;
-	sm->eibuild = BUILDNUMBER;
-	sm->version = 1;
-	sm->mode = einit_module_generic;
+    sm->eiversion = EINIT_VERSION;
+    sm->eibuild = BUILDNUMBER;
+    sm->version = 1;
+    sm->mode = einit_module_generic;
 
     esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
-	sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+    sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
 
     sm->configure = einit_module_network_v2_module_configure;
 
     mod_add (NULL, sm);
    }
+
+   struct cfgnode *nn = einit_module_network_v2_get_option(interfaces[i], "address-ipv4");
+   if (nn && nn->arbattrs) {
+    int y = 0;
+    for (; nn->arbattrs[y]; y+=2) {
+     if (strmatch (nn->arbattrs[y], "address")) {
+      fprintf (stderr, "configured ipv4 address for interfaces %s: %s\n", interfaces[i], nn->arbattrs[y+1]);
+     }
+    }
+   } else {
+    fprintf (stderr, "no ipv4 address for interface %s?\n", interfaces[i]);
+   }
+   fflush (stderr);
   }
 
   efree (interfaces);
