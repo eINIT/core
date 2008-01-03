@@ -20,3 +20,18 @@ NetworkContents =
   }
 
 DHCPclient = "dhcpcd" | "dhclient" | "pump"
+
+InterfaceDataV2 =
+ element address {
+  element ipv4 {
+   attribute address { text }?,
+   attribute netmask { text }?
+  }? &
+  element ipv6 {
+   attribute address { text }?
+  }?
+ }? &
+ element dhcp-client { StringAttribute }? &
+ element automatic { BooleanAttribute }? &
+ element immediate { BooleanAttribute }? &
+ element wait { BooleanAttribute }?

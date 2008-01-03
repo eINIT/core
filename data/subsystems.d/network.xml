@@ -7,9 +7,41 @@
     <client id="pump" up="pump -i ${interface}" down="pump -k -i ${interface}" need-binaries="pump" />
 <!-- dhclient is weird somehow... -->
     <client id="dhclient" up="dhclient ${interface}" down="killall dhclient" need-binaries="dhclient" />
-
-    <use s="dhcpcd:pump:dhclient" />
    </dhcp>
+
+   <interface-defaults>
+    <any>
+     <dhcp-client s="dhcpcd:pump:dhclient" />
+    </any>
+
+    <ethernet id="^eth">
+     <address>
+      <ipv4 address="dhcp" />
+     </address>
+
+     <automatic b="yes" />
+     <immediate b="no" />
+    </ethernet>
+
+    <wlan id="^(ra|wlan)">
+     <address>
+      <ipv4 address="dhcp" />
+     </address>
+
+     <automatic b="no" />
+     <immediate b="no" />
+    </wlan>
+
+    <loopback id="^lo">
+     <address>
+      <ipv4 address="127.0.0.1/8" />
+      <ipv6 address="::1" />
+     </address>
+
+     <automatic b="yes" />
+     <immediate b="yes" />
+    </loopback>
+   </interface-defaults>
   </network>
  </subsystem>
 </einit>

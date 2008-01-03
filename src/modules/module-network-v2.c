@@ -112,6 +112,15 @@ int einit_module_network_v2_have_options (char *interface) {
  return cfg_getnode (buffer, NULL) ? 1 : 0;
 }
 
+struct cfgnode *einit_module_network_v2_get_option (char *interface, char *option) {
+ char buffer[BUFFERSIZE];
+ struct cfgnode *node;
+
+ esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface, option);
+
+ return cfg_getnode (buffer, NULL);
+}
+
 enum if_action {
  if_up, if_down, if_refresh_ip
 };

@@ -322,10 +322,13 @@ Subsystems = element subsystem {
     attribute up { text },
     attribute down { text },
     attribute need-binaries { text }
-   } * &
-   element use {
-    StringAttribute
-   } ?
+   } *
+  } ? &
+  element interface-defaults {
+   element * {
+    IDAttribute?,
+    InterfaceDataV2
+   }*
   } ?
  } ? &
 
