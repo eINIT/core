@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/bitch.h>
 #include <pthread.h>
+#include <string.h>
 
 #include <einit-modules/network.h>
 
@@ -204,6 +205,28 @@ void linux_network_interface_construct (struct einit_event *ev) {
    d->static_descriptor->si.requires =
     (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
   }
+
+  struct cfgnode newnode;
+
+  memset (&newnode, 0, sizeof(struct cfgnode));
+
+  esprintf (buffer, BUFFERSIZE, "configuration-kernel-modules-%s", ev->string);
+  newnode.id = estrdup (buffer);
+  newnode.type = einit_node_regular;
+
+  esprintf (buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
+
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)node->svalue, SET_TYPE_STRING);
+
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"provide-service", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"yes", SET_TYPE_STRING);
+
+  newnode.svalue = newnode.arbattrs[3];
+
+  cfg_addnode (&newnode);
  }
 }
 

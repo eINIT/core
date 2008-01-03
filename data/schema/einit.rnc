@@ -322,7 +322,7 @@ Subsystems = element subsystem {
     attribute up { text },
     attribute down { text },
     attribute need-binaries { text },
-    attribute pid { text }
+    attribute pid { text }?
    } *
   } ? &
   element interface-defaults {
