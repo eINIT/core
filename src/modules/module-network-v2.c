@@ -168,6 +168,39 @@ struct cfgnode *einit_module_network_v2_get_option (char *interface, char *optio
   return einit_module_network_v2_get_option_default (interface, option);
 }
 
+struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
+ char buffer[BUFFERSIZE];
+ struct stree *st;
+ struct stree *rv = NULL;
+
+ esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-", interface);
+
+ st = cfg_prefix (buffer);
+ if (st) {
+  struct stree *cur = streelinear_prepare (st);
+  ssize_t prefixlen = strlen (buffer);
+
+  while (cur) {
+   struct cfgnode *n = cur->value;
+   if (n->arbattrs)
+    rv = streeadd (rv, (cur->key + prefixlen), n->arbattrs, tree_value_noalloc, NULL);
+
+   cur = streenext (cur);
+  }
+
+  streefree (st);
+ } else {
+  struct cfgnode *n;
+  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv4")))
+   rv = streeadd (rv, "ipv4", n->arbattrs, tree_value_noalloc, NULL);
+
+  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv6")))
+   rv = streeadd (rv, "ipv6", n->arbattrs, tree_value_noalloc, NULL);
+ }
+
+ return rv;
+}
+
 enum if_action {
  if_up, if_down, if_refresh_ip
 };
@@ -256,18 +289,28 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
    }
 
 #if 0
-   struct cfgnode *nn = einit_module_network_v2_get_option(interfaces[i], "address-ipv4");
-   if (nn && nn->arbattrs) {
-    int y = 0;
-    for (; nn->arbattrs[y]; y+=2) {
-     if (strmatch (nn->arbattrs[y], "address")) {
-      fprintf (stderr, "configured ipv4 address for interfaces %s: %s\n", interfaces[i], nn->arbattrs[y+1]);
+   struct stree *st = einit_module_network_v2_get_all_addresses(interfaces[i]);
+
+   if (st) {
+    struct stree *cur = streelinear_prepare (st);
+
+    while (cur) {
+     char **v = cur->value;
+     int y = 0;
+
+     for (; v[y]; y+=2) {
+      if (strmatch (v[y], "address")) {
+       fprintf (stderr, "configured %s address for interfaces %s: %s\n", cur->key, interfaces[i], v[y+1]);
+      }
      }
+
+     cur = streenext (cur);
     }
+
+    streefree (st);
    } else {
-    fprintf (stderr, "no ipv4 address for interface %s?\n", interfaces[i]);
+    fprintf (stderr, "no addresses for interface %s?\n", interfaces[i]);
    }
-   fflush (stderr);
 #endif
   }
 
