@@ -326,6 +326,8 @@ int einit_module_network_v2_module_configure (struct lmodule *m) {
  return 0;
 }
 
+char *einit_module_network_v2_last_auto = NULL;
+
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
  char **automatic = NULL;
@@ -402,6 +404,48 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  }
 
  if (automatic) {
+  char *au = automatic ? set2str (':', (const char **)automatic) : estrdup ("none");
+  char doadd = 1;
+
+  if (au) {
+   struct cfgnode *n = cfg_getnode ("services-alias-network", NULL);
+   if (n && n->arbattrs) {
+    int i = 0;
+    for (; n->arbattrs[i]; i+=2) {
+     if (strmatch (n->arbattrs[i], "group")) {
+      if (strmatch (au, n->arbattrs[i+1])) {
+       doadd = 0;
+      } else if (einit_module_network_v2_last_auto && strmatch (einit_module_network_v2_last_auto, n->arbattrs[i+1])) {
+       doadd = 1;
+      } else {
+       doadd = 0;
+      }
+      break;
+     }
+    }
+   }
+
+   if (doadd) {
+    fprintf (stderr, "adding group...\n");
+    struct cfgnode newnode;
+    memset (&newnode, 0, sizeof (struct cfgnode));
+
+    newnode.id = estrdup("services-alias-network");
+    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, "group", SET_TYPE_STRING);
+    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, au, SET_TYPE_STRING);
+    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, "seq", SET_TYPE_STRING);
+    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, "all", SET_TYPE_STRING);
+
+    cfg_addnode (&newnode);
+   }
+
+   if (einit_module_network_v2_last_auto)
+    efree (einit_module_network_v2_last_auto);
+
+   einit_module_network_v2_last_auto = au;
+  }
+
+  efree (automatic);
  }
 
  return 1;
