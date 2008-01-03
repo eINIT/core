@@ -219,13 +219,14 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
    fprintf (stderr, "interface: %s\n", interfaces[i]);
    fflush (stderr);
 #endif
+   struct lmodule *lm = NULL;
 
    emutex_lock (&einit_module_network_v2_interfaces_mutex);
    if (einit_module_network_v2_interfaces && (st = streefind (einit_module_network_v2_interfaces, interfaces[i], tree_find_first))) {
     struct network_v2_interface_descriptor *id = st->value;
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
-    struct lmodule *lm = id->module;
+    lm = id->module;
 
     mod_update (lm);
    } else {
@@ -251,9 +252,10 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
     sm->configure = einit_module_network_v2_module_configure;
 
-    mod_add (NULL, sm);
+    lm = mod_add (NULL, sm);
    }
 
+#if 0
    struct cfgnode *nn = einit_module_network_v2_get_option(interfaces[i], "address-ipv4");
    if (nn && nn->arbattrs) {
     int y = 0;
@@ -266,6 +268,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     fprintf (stderr, "no ipv4 address for interface %s?\n", interfaces[i]);
    }
    fflush (stderr);
+#endif
   }
 
   efree (interfaces);
