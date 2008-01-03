@@ -553,7 +553,17 @@ char *event_code_to_string (const uint32_t code) {
   case einit_timer_set:                        return "timer/set";
   case einit_timer_cancel:                     return "timer/cancel";
 
-  case einit_network_do_update:                return "network/do-update";
+  case einit_network_interface_construct:      return "network/interface-construct";
+  case einit_network_interface_configure:      return "network/interface-configure";
+  case einit_network_interface_update:         return "network/interface-update";
+
+  case einit_network_interface_prepare:        return "network/interface-prepare";
+  case einit_network_verify_carrier:           return "network/verify-carrier";
+  case einit_network_address_automatic:        return "network/address-automatic";
+  case einit_network_address_static:           return "network/address-static";
+  case einit_network_interface_done:           return "network/interface-done";
+
+  case einit_network_interface_cancel:         return "network/interface-cancel";
 
   case einit_process_died:                     return "process/died";
 
@@ -676,7 +686,17 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "cancel"))                      ret = einit_timer_cancel;
      break;
     case einit_event_subsystem_network:
-     if (strmatch (tcode[1], "do-update"))                        ret = einit_network_do_update;
+     if (strmatch (tcode[1], "interface-construct"))              ret = einit_network_interface_construct;
+     else if (strmatch (tcode[1], "interface-configure"))         ret = einit_network_interface_configure;
+     else if (strmatch (tcode[1], "interface-update"))            ret = einit_network_interface_update;
+
+     else if (strmatch (tcode[1], "interface-prepare"))           ret = einit_network_interface_prepare;
+     else if (strmatch (tcode[1], "verify-carrier"))              ret = einit_network_verify_carrier;
+     else if (strmatch (tcode[1], "address-automatic"))           ret = einit_network_address_automatic;
+     else if (strmatch (tcode[1], "address-static"))              ret = einit_network_address_static;
+     else if (strmatch (tcode[1], "interface-done"))              ret = einit_network_interface_done;
+
+     else if (strmatch (tcode[1], "interface-cancel"))            ret = einit_network_interface_cancel;
      break;
     case einit_event_subsystem_process:
      if (strmatch (tcode[1], "died"))                             ret = einit_process_died;

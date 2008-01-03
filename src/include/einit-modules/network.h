@@ -52,6 +52,12 @@ struct network_interface {
  enum interface_flags flags;
 };
 
+struct network_functions {
+ int (*have_options) (char *);
+ struct cfgnode * (*get_option) (char *, char *);
+ struct stree * (*get_all_addresses) (char *);
+};
+
 #ifdef __cplusplus
 }
 #endif

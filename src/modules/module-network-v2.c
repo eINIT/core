@@ -201,6 +201,13 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
  return rv;
 }
 
+/* this structure is needed for all submodules */
+struct network_functions einit_module_network_v2_function_list = {
+ .have_options = einit_module_network_v2_have_options,
+ .get_option = einit_module_network_v2_get_option,
+ .get_all_addresses = einit_module_network_v2_get_all_addresses
+};
+
 enum if_action {
  if_up, if_down, if_refresh_ip
 };
