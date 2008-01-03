@@ -175,9 +175,10 @@ enum einit_event_code {
 
  einit_network_interface_prepare    = einit_event_subsystem_network  | 0x011,
  einit_network_verify_carrier       = einit_event_subsystem_network  | 0x012,
- einit_network_address_automatic    = einit_event_subsystem_network  | 0x013,
- einit_network_address_static       = einit_event_subsystem_network  | 0x014,
- einit_network_interface_done       = einit_event_subsystem_network  | 0x015,
+ einit_network_kill_carrier         = einit_event_subsystem_network  | 0x013,
+ einit_network_address_automatic    = einit_event_subsystem_network  | 0x014,
+ einit_network_address_static       = einit_event_subsystem_network  | 0x015,
+ einit_network_interface_done       = einit_event_subsystem_network  | 0x016,
 
  einit_network_interface_cancel     = einit_event_subsystem_network  | 0x020,
 

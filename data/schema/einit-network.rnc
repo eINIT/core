@@ -35,6 +35,8 @@ InterfaceDataV2 =
   }?
  }? &
  element dhcp-client { StringAttribute }? &
+ element kernel-modules { StringAttribute }? &
  element automatic { BooleanAttribute }? &
  element immediate { BooleanAttribute }? &
  element wait { BooleanAttribute }?
+

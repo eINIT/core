@@ -87,7 +87,7 @@ char *bsd_network_suffixes[] = { "generic", NULL };
 #endif
 
 struct stree *einit_module_network_v2_interfaces = NULL;
-char *einit_module_network_v2_module_functions[] = { "zap", "up", "down", "refresh-ip" };
+char *einit_module_network_v2_module_functions[] = { "zap", "up", "down", "refresh" };
 
 struct network_v2_interface_descriptor {
  enum interface_flags status;
@@ -97,6 +97,7 @@ struct network_v2_interface_descriptor {
 pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int einit_module_network_v2_scanmodules (struct lmodule *);
+int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback);
 
 int einit_module_network_v2_cleanup (struct lmodule *pa) {
  return 0;
@@ -208,16 +209,88 @@ struct network_functions einit_module_network_v2_function_list = {
  .get_all_addresses = einit_module_network_v2_get_all_addresses
 };
 
-enum if_action {
- if_up, if_down, if_refresh_ip
-};
+int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback) {
+ struct network_event_data d = {
+  .functions = &einit_module_network_v2_function_list,
+  .module = module,
+  .static_descriptor = sd,
+  .flags = 0,
+  .status = status_idle,
+  .action = action,
+  .feedback = feedback
+ };
+ struct einit_event ev = evstaticinit (type);
+ struct stree *st = NULL;
 
-int einit_module_network_v2_module_custom (void *p, char *task_s, struct einit_event *status) {
- enum if_action task;
+ emutex_lock (&einit_module_network_v2_interfaces_mutex);
+ if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, interface, tree_find_first);
+ if (st) {
+  struct network_v2_interface_descriptor *id = st->value;
+  if (id)
+   d.flags = id->status;
+ }
+ emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
- if (strmatch (task_s, "up")) task = if_up;
- else if (strmatch (task_s, "down")) task = if_down;
- else if (strmatch (task_s, "refresh-ip")) task = if_refresh_ip;
+ ev.string = interface;
+ ev.para = &d;
+
+ event_emit (&ev, einit_event_flag_broadcast);
+
+ evstaticdestroy (&ev);
+
+ emutex_lock (&einit_module_network_v2_interfaces_mutex);
+ if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, interface, tree_find_first);
+ if (st) {
+  struct network_v2_interface_descriptor *id = st->value;
+  if (id)
+   id->status = d.flags;
+ }
+ emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+ return d.status;
+}
+
+int einit_module_network_v2_module_custom (struct lmodule *m, char *task_s, struct einit_event *status) {
+ enum interface_action task = interface_nop;
+
+ if (strmatch (task_s, "up")) task = interface_up;
+ else if (strmatch (task_s, "down")) task = interface_down;
+ else if (strmatch (task_s, "refresh")) task = interface_refresh_ip;
+
+ if (task != interface_nop) {
+  if (einit_module_network_v2_emit_event (einit_network_interface_prepare, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+ } else goto cancel_fail;
+
+ switch (task) {
+  case interface_up:
+   if (einit_module_network_v2_emit_event (einit_network_verify_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+   einit_module_network_v2_emit_event (einit_network_interface_done, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
+   return status_ok;
+   break;
+
+  case interface_down:
+   if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+   if (einit_module_network_v2_emit_event (einit_network_kill_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+   einit_module_network_v2_emit_event (einit_network_interface_done, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
+   return status_ok;
+   break;
+
+  case interface_refresh_ip:
+   if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+  case interface_nop:
+   break;
+ }
+
+ cancel_fail:
+  einit_module_network_v2_emit_event (einit_network_interface_cancel, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
 
  return status_failed;
 }
@@ -240,25 +313,27 @@ int einit_module_network_v2_module_configure (struct lmodule *m) {
 
  m->enable = einit_module_network_v2_module_enable;
  m->disable = einit_module_network_v2_module_disable;
- m->custom = einit_module_network_v2_module_custom;
+ m->custom = (int (*)(void *, char *, struct einit_event *ev))einit_module_network_v2_module_custom;
+
+ m->param = m;
 
  emutex_lock (&einit_module_network_v2_interfaces_mutex);
- einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, m->module->rid + 13, &id, sizeof (struct network_v2_interface_descriptor), NULL);
+ einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, (m->module->rid + 13), &id, sizeof (struct network_v2_interface_descriptor), NULL);
  emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+ einit_module_network_v2_emit_event (einit_network_interface_configure, m, (struct smodule *)m->module, (m->module->rid + 13), interface_nop, NULL);
+
  return 0;
 }
 
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
+ char **automatic = NULL;
 
  if (interfaces) {
   int i = 0;
   struct stree *st;
   for (; interfaces[i]; i++) {
-#if 0
-   fprintf (stderr, "interface: %s\n", interfaces[i]);
-   fflush (stderr);
-#endif
    struct lmodule *lm = NULL;
 
    emutex_lock (&einit_module_network_v2_interfaces_mutex);
@@ -267,6 +342,8 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
     lm = id->module;
+
+    einit_module_network_v2_emit_event (einit_network_interface_update, lm, (struct smodule *)lm->module, interfaces[i], interface_nop, NULL);
 
     mod_update (lm);
    } else {
@@ -292,36 +369,39 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
     sm->configure = einit_module_network_v2_module_configure;
 
+    einit_module_network_v2_emit_event (einit_network_interface_construct, NULL, sm, interfaces[i], interface_nop, NULL);
+
     lm = mod_add (NULL, sm);
    }
 
-#if 0
-   struct stree *st = einit_module_network_v2_get_all_addresses(interfaces[i]);
+   if (lm) {
+    struct cfgnode *cn;
 
-   if (st) {
-    struct stree *cur = streelinear_prepare (st);
+    if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
+     if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag) {
+      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
 
-    while (cur) {
-     char **v = cur->value;
-     int y = 0;
-
-     for (; v[y]; y+=2) {
-      if (strmatch (v[y], "address")) {
-       fprintf (stderr, "configured %s address for interfaces %s: %s\n", cur->key, interfaces[i], v[y+1]);
-      }
+      if (!(lm->status & status_enabled))
+       mod (einit_module_enable, lm, NULL);
      }
-
-     cur = streenext (cur);
     }
 
-    streefree (st);
-   } else {
-    fprintf (stderr, "no addresses for interface %s?\n", interfaces[i]);
+    if ((cn = einit_module_network_v2_get_option (interfaces[i], "automatic")) && cn->flag) {
+     char buffer[BUFFERSIZE];
+
+//     fprintf (stderr, "bring this up automatically: %s\n", interfaces[i]);
+
+     esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+
+     automatic = (char **)setadd ((void **)automatic, buffer, SET_TYPE_STRING);
+    }
    }
-#endif
   }
 
   efree (interfaces);
+ }
+
+ if (automatic) {
  }
 
  return 1;

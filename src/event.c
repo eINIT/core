@@ -559,6 +559,7 @@ char *event_code_to_string (const uint32_t code) {
 
   case einit_network_interface_prepare:        return "network/interface-prepare";
   case einit_network_verify_carrier:           return "network/verify-carrier";
+  case einit_network_kill_carrier:             return "network/kill-carrier";
   case einit_network_address_automatic:        return "network/address-automatic";
   case einit_network_address_static:           return "network/address-static";
   case einit_network_interface_done:           return "network/interface-done";
@@ -692,6 +693,7 @@ uint32_t event_string_to_code (const char *code) {
 
      else if (strmatch (tcode[1], "interface-prepare"))           ret = einit_network_interface_prepare;
      else if (strmatch (tcode[1], "verify-carrier"))              ret = einit_network_verify_carrier;
+     else if (strmatch (tcode[1], "kill-carrier"))                ret = einit_network_kill_carrier;
      else if (strmatch (tcode[1], "address-automatic"))           ret = einit_network_address_automatic;
      else if (strmatch (tcode[1], "address-static"))              ret = einit_network_address_static;
      else if (strmatch (tcode[1], "interface-done"))              ret = einit_network_interface_done;

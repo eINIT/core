@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 enum interface_flags {
- interface_up          = 0x0001,
+ interface_is_up       = 0x0001,
  interface_has_carrier = 0x0002
 };
 
@@ -56,6 +56,23 @@ struct network_functions {
  int (*have_options) (char *);
  struct cfgnode * (*get_option) (char *, char *);
  struct stree * (*get_all_addresses) (char *);
+};
+
+enum interface_action {
+ interface_nop = 0,
+ interface_up,
+ interface_down,
+ interface_refresh_ip
+};
+
+struct network_event_data {
+ struct network_functions *functions;
+ struct lmodule *module;
+ struct smodule *static_descriptor;
+ enum interface_flags flags;
+ int status;
+ enum interface_action action;
+ struct einit_event *feedback;
 };
 
 #ifdef __cplusplus
