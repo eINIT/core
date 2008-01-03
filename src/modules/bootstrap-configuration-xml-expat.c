@@ -472,18 +472,24 @@ void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
 
   if (command) {
    char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
-   struct einit_event feedback_ev = evstaticinit (einit_feedback_module_status);
-   char **myenvironment = straddtoenviron (NULL, "files", xmlfiles);
-   myenvironment = straddtoenviron (myenvironment, "rnc_schema", EINIT_LIB_BASE "/schemata/einit.rnc");
+   char **vars = (char **)setadd (NULL, "files", SET_TYPE_STRING);
+   vars = (char **)setadd ((void **)vars, xmlfiles, SET_TYPE_STRING);
+   vars = (char **)setadd ((void **)vars, "rnc_schema", SET_TYPE_STRING);
+   vars = (char **)setadd ((void **)vars, EINIT_LIB_BASE "/schemata/einit.rnc", SET_TYPE_STRING);
+   char *cm = apply_variables (command, (const char **)vars);
 
-   feedback_ev.para = (void *)thismodule;
+   FILE *f = popen (cm, "r");
+   if (f) {
+    char linebuffer[BUFFERSIZE];
+    while (fgets (linebuffer, BUFFERSIZE, f)) {
+     fputs (linebuffer, ev->output);
+    }
+    pclose (f);
+   }
 
-   pexec (command, NULL, 0, 0, NULL, NULL, myenvironment, &feedback_ev);
-
-   evstaticdestroy (feedback_ev);
-
-   efree (myenvironment);
+   efree (vars);
    efree (xmlfiles);
+   efree (cm);
   }
  }
 

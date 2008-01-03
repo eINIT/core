@@ -87,6 +87,7 @@ char *bsd_network_suffixes[] = { "generic", NULL };
 #endif
 
 struct stree *einit_module_network_v2_interfaces = NULL;
+char *einit_module_network_v2_module_functions[] = { "zap", "up", "down", "refresh-ip" };
 
 struct network_v2_interface_descriptor {
  enum interface_flags status;
@@ -101,11 +102,49 @@ int einit_module_network_v2_cleanup (struct lmodule *pa) {
  return 0;
 }
 
+#define INTERFACES_PREFIX "configuration-network-interfaces"
+
+int einit_module_network_v2_have_options (char *interface) {
+ char buffer[BUFFERSIZE];
+
+ esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s", interface);
+
+ return cfg_getnode (buffer, NULL) ? 1 : 0;
+}
+
+enum if_action {
+ if_up, if_down, if_refresh_ip
+};
+
+int einit_module_network_v2_module_custom (void *p, char *task_s, struct einit_event *status) {
+ enum if_action task;
+
+ if (strmatch (task_s, "up")) task = if_up;
+ else if (strmatch (task_s, "down")) task = if_down;
+ else if (strmatch (task_s, "refresh-ip")) task = if_refresh_ip;
+
+ return status_failed;
+}
+
+int einit_module_network_v2_module_enable (void *p, struct einit_event *status) {
+ return einit_module_network_v2_module_custom(p, "up", status);
+}
+
+int einit_module_network_v2_module_disable (void *p, struct einit_event *status) {
+ return einit_module_network_v2_module_custom(p, "down", status);
+}
+
 int einit_module_network_v2_module_configure (struct lmodule *m) {
  struct network_v2_interface_descriptor id;
 
  memset (&id, 0, sizeof (struct network_v2_interface_descriptor));
  id.module = m;
+
+ m->functions = einit_module_network_v2_module_functions;
+
+ m->enable = einit_module_network_v2_module_enable;
+ m->disable = einit_module_network_v2_module_disable;
+ m->custom = einit_module_network_v2_module_custom;
 
  emutex_lock (&einit_module_network_v2_interfaces_mutex);
  einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, m->module->rid + 13, &id, sizeof (struct network_v2_interface_descriptor), NULL);
