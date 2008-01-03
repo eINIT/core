@@ -3,7 +3,7 @@
  <subsystem>
   <network>
    <dhcp>
-    <client id="dhcpcd" up="dhcpcd ${interface}" down="dhcpcd -k ${interface}" need-binaries="dhcpcd" />
+    <client id="dhcpcd" pid="/var/run/dhcpcd-${interface}.pid" up="dhcpcd ${interface}" down="dhcpcd -k ${interface}" need-binaries="dhcpcd" />
     <client id="pump" up="pump -i ${interface}" down="pump -k -i ${interface}" need-binaries="pump" />
 <!-- dhclient is weird somehow... -->
     <client id="dhclient" up="dhclient ${interface}" down="killall dhclient" need-binaries="dhclient" />

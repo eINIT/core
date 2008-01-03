@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 
 #include <einit-modules/network.h>
+#include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -92,16 +93,13 @@ char *einit_module_network_v2_module_functions[] = { "zap", "up", "down", "refre
 struct network_v2_interface_descriptor {
  enum interface_flags status;
  struct lmodule *module;
+ char *dhcp_client;
 };
 
 pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int einit_module_network_v2_scanmodules (struct lmodule *);
 int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback);
-
-int einit_module_network_v2_cleanup (struct lmodule *pa) {
- return 0;
-}
 
 #define INTERFACES_PREFIX "configuration-network-interfaces"
 #define INTERFACE_DEFAULTS_PREFIX "subsystem-network-interface-defaults"
@@ -136,9 +134,9 @@ struct cfgnode *einit_module_network_v2_get_option_default (char *interface, cha
 
    n = cfg_getnode (buffer, NULL);
 
-   if (n && n->idattr && !eregcomp(&r, n->idattr)) {
-    if (regexec (&r, interface, 0, NULL, 0) != REG_NOMATCH) {
-     eregfree (&r);
+   if (n && (!n->idattr || !eregcomp(&r, n->idattr))) {
+    if (!n->idattr || regexec (&r, interface, 0, NULL, 0) != REG_NOMATCH) {
+     if (n->idattr) eregfree (&r);
 
      struct cfgnode *res = einit_module_network_v2_get_option_default_r(set[i], option);
      if (res) {
@@ -146,7 +144,7 @@ struct cfgnode *einit_module_network_v2_get_option_default (char *interface, cha
       return res;
      }
     } else {
-     eregfree (&r);
+     if (n->idattr) eregfree (&r);
     }
    }
   }
@@ -426,7 +424,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
    }
 
    if (doadd) {
-    fprintf (stderr, "adding group...\n");
+//    fprintf (stderr, "adding group...\n");
     struct cfgnode newnode;
     memset (&newnode, 0, sizeof (struct cfgnode));
 
@@ -451,11 +449,181 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  return 1;
 }
 
+int einit_module_network_v2_do_dhcp (struct network_event_data *d, char *client, char *interface) {
+ struct cfgnode *node = NULL;
+ fbprintf (d->feedback, "trying dhcp client: %s", client);
+ int rv = status_failed;
+
+ while ((node = cfg_findnode ("subsystem-network-dhcp-client", 0, node))) {
+  if (node->idattr && strmatch (node->idattr, client)) {
+   if (node->arbattrs) {
+    char *command = NULL;
+    char **need_binaries = NULL;
+    char **environment = straddtoenviron (NULL, "interface", interface);
+    int i = 0;
+
+    for (; node->arbattrs[i]; i+=2) {
+     if (strmatch (node->arbattrs[i], "need-binaries")) {
+      need_binaries = str2set (':', node->arbattrs[i+1]);
+     } else if ((d->action == interface_up) && strmatch (node->arbattrs[i], "up")) {
+      command = node->arbattrs[i+1];
+     } else if ((d->action == interface_down) && strmatch (node->arbattrs[i], "down")) {
+      command = node->arbattrs[i+1];
+     }
+    }
+
+    if (command) {
+     if (need_binaries) {
+      for (i = 0; need_binaries[i]; i++) {
+       char **w = which (need_binaries[i]);
+
+       if (!w) {
+        efree (need_binaries);
+        efree (environment);
+
+        fbprintf (d->feedback, "dhcp client not available: %s", client);
+        return status_failed;
+       } else {
+        efree (w);
+       }
+      }
+
+      efree (need_binaries);
+     }
+
+     rv = pexec (command, NULL, 0, 0, NULL, NULL, environment, d->feedback);
+     if (rv == status_ok) {
+      fbprintf (d->feedback, "dhcp client OK: %s", client);
+     } else if (rv == status_failed) {
+      fbprintf (d->feedback, "dhcp client failed: %s", client);
+     }
+    }
+
+    efree (environment);
+   }
+
+   break;
+  }
+ }
+
+ return rv;
+}
+
+void einit_module_network_v2_address_automatic (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
+
+ if (d->action == interface_up) {
+  struct stree *st = d->functions->get_all_addresses (ev->string);
+  if (st) {
+   struct stree *cur = streefind (st, "ipv4", tree_find_first);
+   char do_dhcp = 0;
+
+   while (cur) {
+    if (cur->value) {
+     char **v = cur->value;
+     int i = 0;
+
+     for (; v[i]; i+=2) {
+      if (strmatch (v[i], "address")) {
+       if (strmatch (v[i+1], "dhcp")) {
+        do_dhcp = 1;
+       }
+      }
+     }
+    }
+
+    cur = streefind (cur, "ipv4", tree_find_next);
+   }
+
+   if (do_dhcp) {
+    struct cfgnode *node = d->functions->get_option(ev->string, "dhcp-client");
+    if (node && node->svalue) {
+     char **v = str2set (':', node->svalue);
+     int i = 0;
+     char ok = 0;
+
+     for (; v[i]; i++) {
+      if (einit_module_network_v2_do_dhcp(d, v[i], ev->string) == status_ok) {
+       ok = 1;
+
+       emutex_lock (&einit_module_network_v2_interfaces_mutex);
+       if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
+       if (st) {
+        struct network_v2_interface_descriptor *id = st->value;
+        if (id)
+         id->dhcp_client = estrdup (v[i]);
+       }
+       emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+      }
+     }
+
+     if (!ok) {
+      d->status = status_failed;
+     }
+    } else {
+     fbprintf (d->feedback, "dhcp requested, but no clients to try");
+
+     d->status = status_failed;
+    }
+   }
+  }
+ } else if (d->action == interface_down) {
+  char *client = NULL;
+  struct stree *st = NULL;
+
+  emutex_lock (&einit_module_network_v2_interfaces_mutex);
+  if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
+  if (st) {
+   struct network_v2_interface_descriptor *id = st->value;
+   if (id && id->dhcp_client) {
+    client = estrdup(id->dhcp_client);
+   }
+  }
+  emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+  if (client) {
+   if (einit_module_network_v2_do_dhcp(d, client, ev->string) == status_ok) {
+    emutex_lock (&einit_module_network_v2_interfaces_mutex);
+    if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
+    if (st) {
+     struct network_v2_interface_descriptor *id = st->value;
+     if (id && id->dhcp_client) {
+      efree (id->dhcp_client);
+      id->dhcp_client = NULL;
+     }
+    }
+    emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+   }
+
+   efree (client);
+  }
+ }
+}
+
+void einit_module_network_v2_interface_construct (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
+}
+
+int einit_module_network_v2_cleanup (struct lmodule *pa) {
+ exec_cleanup(pa);
+
+ event_ignore (einit_network_address_automatic, einit_module_network_v2_address_automatic);
+ event_ignore (einit_network_interface_construct, einit_module_network_v2_interface_construct);
+ event_ignore (einit_network_interface_update, einit_module_network_v2_interface_construct);
+
+ return 0;
+}
+
 int einit_module_network_v2_configure (struct lmodule *pa) {
  module_init (pa);
+ exec_configure(pa);
 
  pa->scanmodules = einit_module_network_v2_scanmodules;
  pa->cleanup = einit_module_network_v2_cleanup;
+
+ event_listen (einit_network_address_automatic, einit_module_network_v2_address_automatic);
+ event_listen (einit_network_interface_construct, einit_module_network_v2_interface_construct);
+ event_listen (einit_network_interface_update, einit_module_network_v2_interface_construct);
 
  return 0;
 }
