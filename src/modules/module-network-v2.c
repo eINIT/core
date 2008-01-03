@@ -449,6 +449,8 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  return 1;
 }
 
+/* ********************** dhcp code *****************************/
+
 int einit_module_network_v2_do_dhcp (struct network_event_data *d, char *client, char *interface) {
  struct cfgnode *node = NULL;
  fbprintf (d->feedback, "trying dhcp client: %s", client);
@@ -566,6 +568,8 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
      d->status = status_failed;
     }
    }
+
+   streefree (st);
   }
  } else if (d->action == interface_down) {
   char *client = NULL;
@@ -600,9 +604,136 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
  }
 }
 
+char **einit_module_network_v2_add_fs (char **xt, char *s) {
+ if (s) {
+  char **tmp = s[0] == '/' ? str2set ('/', s+1) : str2set ('/', s);
+  uint32_t r = 0;
+
+  for (r = 0; tmp[r]; r++);
+  for (r--; tmp[r] && r > 0; r--) {
+   tmp[r] = 0;
+   char *comb = set2str ('-', (const char **)tmp);
+
+   if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
+    xt = (char **)setadd ((void **)xt, (void *)comb, SET_TYPE_STRING);
+   }
+
+   efree (comb);
+  }
+
+  if (tmp) {
+   efree (tmp);
+  }
+ }
+
+ return xt;
+}
+
+char *einit_module_network_v2_generate_defer_fs (char **tmpxt) {
+ char *tmp = NULL;
+
+ char *tmpx = NULL;
+ tmp = emalloc (BUFFERSIZE);
+
+// tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
+
+ if (tmpxt) {
+  tmpx = set2str ('|', (const char **)tmpxt);
+ }
+
+ if (tmpx) {
+  esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+  efree (tmpx);
+ }
+
+ efree (tmpxt);
+
+ return tmp;
+}
+
+
 void einit_module_network_v2_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
+
+ struct stree *st = d->functions->get_all_addresses (ev->string);
+ if (st) {
+  struct stree *cur = streefind (st, "ipv4", tree_find_first);
+  char do_dhcp = 0;
+
+  while (cur) {
+   if (cur->value) {
+    char **v = cur->value;
+    int i = 0;
+
+    for (; v[i]; i+=2) {
+     if (strmatch (v[i], "address")) {
+      if (strmatch (v[i+1], "dhcp")) {
+       do_dhcp = 1;
+      }
+     }
+    }
+   }
+
+   cur = streefind (cur, "ipv4", tree_find_next);
+  }
+
+  if (do_dhcp) {
+   struct cfgnode *node = d->functions->get_option(ev->string, "dhcp-client");
+   if (node && node->svalue) {
+    char **v = str2set (':', node->svalue);
+    int i = 0;
+
+    for (; v[i]; i++) {
+     struct cfgnode *node = NULL;
+
+     while ((node = cfg_findnode ("subsystem-network-dhcp-client", 0, node))) {
+      if (node->idattr && strmatch (node->idattr, v[i])) {
+       if (node->arbattrs) {
+        char *pidfile = NULL;
+        char **vars = (char **)setadd (NULL, "interface", SET_TYPE_STRING);
+        vars = (char **)setadd ((void **)vars, ev->string, SET_TYPE_STRING);
+
+        int y = 0;
+
+        for (; node->arbattrs[y]; y+=2) {
+         if (strmatch (node->arbattrs[y], "pid")) {
+          pidfile = apply_variables (node->arbattrs[y+1], (const char **)vars);
+         }
+        }
+
+        if (pidfile) {
+         char **fs = einit_module_network_v2_add_fs(NULL, pidfile);
+
+         if (fs) {
+          char *a = einit_module_network_v2_generate_defer_fs(fs);
+
+          if (a) {
+           if (!inset ((const void **)d->static_descriptor->si.after, a, SET_TYPE_STRING)) {
+
+            d->static_descriptor->si.after =
+             (char **)setadd ((void **)d->static_descriptor->si.after, a, SET_TYPE_STRING);
+           }
+
+           efree (a);
+          }
+         }
+
+         efree (pidfile);
+        }
+
+        efree (vars);
+       }
+      }
+     }
+    }
+   }
+  }
+
+  streefree (st);
+ }
 }
+
+/* **************** end * dhcp code *****************************/
 
 int einit_module_network_v2_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
