@@ -295,11 +295,20 @@ void linux_network_address_static (struct einit_event *ev) {
     buffer[0] = 0;
 
     if (ip_binary) {
+     char *aftype;
+
+     if (strmatch (cur->key, "ipv4"))
+      aftype = "inet";
+     else if (strmatch (cur->key, "ipv4"))
+      aftype = "inet6";
+     else
+      aftype = cur->key;
+
 /* looks like we have the ip command handy, so let's use it */
      if (d->action == interface_up) {
-      esprintf (buffer, BUFFERSIZE, "ip addr add local %s dev %s", address, ev->string);
+      esprintf (buffer, BUFFERSIZE, "ip -f %s addr add local %s dev %s", aftype, address, ev->string);
      } else if (d->action == interface_down) {
-      esprintf (buffer, BUFFERSIZE, "ip addr delete local %s dev %s", address, ev->string);
+      esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
      }
 
      efree (ip_binary);
