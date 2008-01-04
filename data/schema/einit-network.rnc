@@ -26,8 +26,7 @@ InterfaceDataV2 =
  element address {
   element ipv4 {
    IDAttribute?,
-   attribute address { text },
-   attribute netmask { text }?
+   attribute address { text }
   }? &
   element ipv6 {
    IDAttribute?,

@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include <einit-modules/network.h>
+#include <einit-modules/exec.h>
 
 #define EXPECTED_EIV 1
 
@@ -230,7 +231,122 @@ void linux_network_interface_construct (struct einit_event *ev) {
  }
 }
 
+void linux_network_interface_prepare (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
+
+ char buffer[BUFFERSIZE];
+ char **ip_binary = which ("ip");
+
+ buffer[0] = 0;
+
+ if (ip_binary) {
+/* looks like we have the ip command handy, so let's use it */
+  efree (ip_binary);
+
+  if (d->action == interface_up) {
+   esprintf (buffer, BUFFERSIZE, "ip link set %s up", ev->string);
+  }
+ } else {
+/* fall back to ifconfig -- this means we get to use only one ip address per interface */
+
+  if (d->action == interface_up) {
+   esprintf (buffer, BUFFERSIZE, "ifconfig %s up", ev->string);
+  }
+ }
+
+ if (buffer[0]) {
+  if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+   fbprintf (d->feedback, "command failed: %s", buffer);
+   d->status = status_failed;
+  }
+ }
+}
+
+void linux_network_address_static (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
+
+ struct stree *st = d->functions->get_all_addresses (ev->string);
+ if (st) {
+  struct stree *cur = streelinear_prepare (st);
+
+  while (cur) {
+   char dhcp = 0;
+   char *address = NULL;
+
+   if (cur->value) {
+    char **v = cur->value;
+    int i = 0;
+
+    for (; v[i]; i+=2) {
+     if (strmatch (v[i], "address")) {
+      if (strmatch (v[i+1], "dhcp")) {
+       dhcp = 1;
+      } else {
+       address = v[i+1];
+      }
+     }
+    }
+   }
+
+   if (!dhcp && address) {
+    char buffer[BUFFERSIZE];
+    char **ip_binary = which ("ip");
+
+    buffer[0] = 0;
+
+    if (ip_binary) {
+/* looks like we have the ip command handy, so let's use it */
+     if (d->action == interface_up) {
+      esprintf (buffer, BUFFERSIZE, "ip addr add local %s dev %s", address, ev->string);
+     } else if (d->action == interface_down) {
+      esprintf (buffer, BUFFERSIZE, "ip addr delete local %s dev %s", address, ev->string);
+     }
+
+     efree (ip_binary);
+    } else {
+/* fall back to ifconfig -- this means we get to use only one ip address per interface */
+
+     if (d->action == interface_up) {
+      char *aftype;
+
+      if (strmatch (cur->key, "ipv4"))
+       aftype = "inet";
+      else if (strmatch (cur->key, "ipv4"))
+       aftype = "inet6";
+      else
+       aftype = cur->key;
+
+      if (strmatch (aftype, "inet"))
+       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s %s", ev->string, aftype, address);
+      else
+       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s add %s", ev->string, aftype, address);
+     } else if (d->action == interface_down) {
+/* ifconfig only seems to be able to handle ipv6 interfaces like this */
+      if (strmatch (cur->key, "ipv6")) {
+       esprintf (buffer, BUFFERSIZE, "ifconfig %s inet6 del %s", ev->string, address);
+      }
+     }
+    }
+
+    if (buffer[0]) {
+     if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+      fbprintf (d->feedback, "command failed: %s", buffer);
+      d->status = status_failed;
+      break;
+     }
+    }
+   }
+
+   cur = streenext(cur);
+  }
+
+  streefree (st);
+ }
+}
+
 int linux_network_cleanup (struct lmodule *pa) {
+ exec_cleanup (pa);
+
  function_unregister ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
  function_unregister ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
 
@@ -238,13 +354,16 @@ int linux_network_cleanup (struct lmodule *pa) {
  event_ignore (einit_network_interface_configure, linux_network_interface_configure);
 #endif
  event_ignore (einit_network_interface_construct, linux_network_interface_construct);
- event_listen (einit_network_interface_update, linux_network_interface_construct);
+ event_ignore (einit_network_interface_update, linux_network_interface_construct);
+ event_ignore (einit_network_address_static, linux_network_address_static);
+ event_ignore (einit_network_interface_prepare, linux_network_interface_prepare);
 
  return 0;
 }
 
 int linux_network_configure (struct lmodule *pa) {
  module_init (pa);
+ exec_configure (pa);
 
  pa->cleanup = linux_network_cleanup;
 
@@ -256,6 +375,8 @@ int linux_network_configure (struct lmodule *pa) {
 #endif
  event_listen (einit_network_interface_construct, linux_network_interface_construct);
  event_listen (einit_network_interface_update, linux_network_interface_construct);
+ event_listen (einit_network_address_static, linux_network_address_static);
+ event_listen (einit_network_interface_prepare, linux_network_interface_prepare);
 
  return 0;
 }
