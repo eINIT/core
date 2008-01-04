@@ -29,13 +29,14 @@
   <eth0>
    <address>
     <ipv4 address="dhcp" />
-    <ipv4 address="10.2.0.2" netmask="255.255.0.0" />
-    <ipv4 address="192.168.0.1" netmask="255.255.255.0" />
+    <ipv4 address="10.2.0.2" location="^work$" />
+    <ipv4 address="192.168.0.1"  location="^school$" />
     <ipv6 address="fe::01:03" />
    </address>
    <dhcp-client s="pump" />
    <wpa_supplicant>
-    <config s="/etc/wpa_supplicant/wpa_supplicant.conf" />
+    <config s="/etc/wpa_supplicant/wpa_supplicant.conf" location="^school$" />
+    <config s="/etc/wpa_supplicant/wpa_supplicant_any.conf" location="^(work|girlfriend)$" />
     <driver s="wext" />
    </wpa_supplicant>
 
