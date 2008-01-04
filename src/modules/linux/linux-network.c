@@ -262,6 +262,37 @@ void linux_network_interface_prepare (struct einit_event *ev) {
  }
 }
 
+void linux_network_interface_done (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
+
+ char buffer[BUFFERSIZE];
+ char **ip_binary = which ("ip");
+
+ buffer[0] = 0;
+
+ if (ip_binary) {
+  /* looks like we have the ip command handy, so let's use it */
+  efree (ip_binary);
+
+  if (d->action == interface_down) {
+   esprintf (buffer, BUFFERSIZE, "ip link set %s down", ev->string);
+  }
+ } else {
+  /* fall back to ifconfig -- this means we get to use only one ip address per interface */
+
+  if (d->action == interface_down) {
+   esprintf (buffer, BUFFERSIZE, "ifconfig %s down", ev->string);
+  }
+ }
+
+ if (buffer[0]) {
+  if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+   fbprintf (d->feedback, "command failed: %s", buffer);
+   d->status = status_failed;
+  }
+ }
+}
+
 void linux_network_address_static (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
@@ -366,6 +397,7 @@ int linux_network_cleanup (struct lmodule *pa) {
  event_ignore (einit_network_interface_update, linux_network_interface_construct);
  event_ignore (einit_network_address_static, linux_network_address_static);
  event_ignore (einit_network_interface_prepare, linux_network_interface_prepare);
+ event_ignore (einit_network_interface_done, linux_network_interface_done);
 
  return 0;
 }
@@ -386,6 +418,7 @@ int linux_network_configure (struct lmodule *pa) {
  event_listen (einit_network_interface_update, linux_network_interface_construct);
  event_listen (einit_network_address_static, linux_network_address_static);
  event_listen (einit_network_interface_prepare, linux_network_interface_prepare);
+ event_listen (einit_network_interface_done, linux_network_interface_done);
 
  return 0;
 }
