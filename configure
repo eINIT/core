@@ -49,7 +49,7 @@ COMPILER=gnu
 
 GCCFLAGS="-Wall"
 
-MAKEFILETASKS="all install test"
+MAKEFILETASKS="all install test test-libraries"
 
 ELIBDIR="lib"
 

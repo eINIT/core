@@ -8,6 +8,9 @@ all:
 test:
 	cd build && ${MAKE} test
 
+test-libraries:
+	cd build && ${MAKE} test-libraries
+
 documentation-html:
 	cd documentation && ${MAKE} documentation-html
 

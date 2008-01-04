@@ -13,3 +13,5 @@ einit-monitor: einit-monitor.o
 	$(CLD) einit-monitor.o -o einit-monitor
 
 test:
+
+test-libraries:

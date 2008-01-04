@@ -212,14 +212,14 @@ class EinitService : public EinitOffspring {
 /*!\brief Is this service provided? */
   bool provided;
 
-/*!\brief A map with all the modules that make up this service. */
-  map<string, EinitModule *> modules;
+/*!\brief A vector with all the modules that make up this service. */
+  vector<string> modules;
 /*!\brief A map with all the services that make up this service, if this service is a group or may be seen as one. */
-  map<string, EinitService *> group;
+  vector<string> group;
 /*!\brief The type of this group, if it is one. */
   string groupType;
 /*!\brief A map with all the modes that this service is known to be used in. */
-  map<string, EinitMode *> modes;
+  vector<string> modes;
 
  private:
   EinitService (Einit *, struct einit_service *);
@@ -273,15 +273,15 @@ class EinitModule : public EinitOffspring {
 /*!\brief Has there been an error? */
   bool error;
 
-/*!\brief A map with the services provided by this module. */
-  map<string, EinitService *> provides;
-/*!\brief A map with the services required by this module. */
-  map<string, EinitService *> requires;
+/*!\brief A vector with the services provided by this module. */
+  vector<string> provides;
+/*!\brief A vector with the services required by this module. */
+  vector<string> requires;
 
-/*!\brief Regular expresions that indicate before what other services or modules this module will be loaded. Kinda ugly since it's a (char **). */
-  char **before;
-/*!\brief Regular expresions that indicate after what other services or modules this module will be loaded. Kinda ugly since it's a (char **). */
-  char **after;
+/*!\brief Regular expresions that indicate before what other services or modules this module will be loaded. */
+  vector<string> before;
+/*!\brief Regular expresions that indicate after what other services or modules this module will be loaded. */
+  vector<string> after;
 
  private:
   EinitModule (Einit *, struct einit_module *);
@@ -289,7 +289,7 @@ class EinitModule : public EinitOffspring {
 
   bool update(struct einit_module *);
 
-  char **functions;
+  vector<string> functions;
 };
 
 /*!\brief An eINIT Mode

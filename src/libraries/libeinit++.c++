@@ -293,21 +293,20 @@ vector<string> EinitService::getCommonFunctions() {
 
 vector<string> EinitService::getAllFunctions() {
  vector<string> rv;
- map<string,EinitModule *>::iterator it;
 
- for ( it=this->modules.begin() ; it != this->modules.end(); it++ ) {
-  if (it->second->functions) {
-   uint32_t i = 0;
-   for ( ; it->second->functions[i]; i++ ) {
-    bool have = false;
-    string toadd = it->second->functions[i];
+ for (unsigned int i = 0; i < this->modules.size(); i++) {
+  EinitModule *m = this->main->getModule(this->modules[i]);
 
-    for (i=0; i<rv.size(); i++) if (rv.at(i) == toadd) have = true;
+  for (unsigned int y = 0; y < m->functions.size(); y++) {
+   bool have = false;
 
-    if (!have) {
-     rv.push_back (toadd);
-    }
+   for (unsigned int z = 0; z < rv.size(); z++) {
+    if (rv[z] == m->functions[y])
+     have = true;
    }
+
+   if (!have)
+    rv.push_back (m->functions[y]);
   }
  }
 
@@ -325,35 +324,19 @@ bool EinitService::update(struct einit_service *s) {
 
   this->groupType = s->group->seq;
 
+  this->group.clear();
   for (; s->group->services[i]; i++) {
-   EinitService *sp = this->main->getService (s->group->services[i]);
-
-   if (sp) {
-    map<string, EinitService *>::iterator it = this->group.find (s->group->services[i]);
-    if (it != this->group.end()) {
-     this->group.erase (it);
-    }
-
-    this->group.insert(pair<string, EinitService *>(s->group->services[i], sp));
-   }
+   this->group.push_back(s->group->services[i]);
   }
  }
 
  if (s->modules) {
   struct stree *cur = streelinear_prepare(s->modules);
 
+  this->modules.clear();
+
   while (cur) {
-   EinitModule *sp = this->main->getModule (cur->key);
-
-   if (sp) {
-    map<string, EinitModule *>::iterator it = this->modules.find (cur->key);
-    if (it != this->modules.end()) {
-     this->modules.erase (it);
-    }
-
-    this->modules.insert(pair<string, EinitModule *>(cur->key, sp));
-   }
-
+   this->modules.push_back(cur->key);
    cur = streenext (cur);
   }
  }
@@ -361,17 +344,9 @@ bool EinitService::update(struct einit_service *s) {
  if (s->used_in_mode) {
   uint32_t i = 0;
 
+  this->modes.clear();
   for (; s->used_in_mode[i]; i++) {
-   EinitMode *sp = this->main->getMode (s->used_in_mode[i]);
-
-   if (sp) {
-    map<string, EinitMode *>::iterator it = this->modes.find (s->used_in_mode[i]);
-    if (it != this->modes.end()) {
-     this->modes.erase (it);
-    }
-
-    this->modes.insert(pair<string, EinitMode *>(s->used_in_mode[i], sp));
-   }
+   this->modules.push_back(s->used_in_mode[i]);
   }
  }
 
@@ -409,11 +384,8 @@ bool EinitModule::call(string s) {
 vector<string> EinitModule::getAllFunctions() {
  vector<string> rv;
 
- if (this->functions) {
-  uint32_t i = 0;
-  for ( ; this->functions[i]; i++ ) {
-   rv.push_back (this->functions[i]);
-  }
+ for (unsigned int i = 0; i < this->functions.size(); i++) {
+  rv.push_back (this->functions[i]);
  }
 
  return rv;
@@ -427,43 +399,55 @@ bool EinitModule::update(struct einit_module *s) {
  this->idle = (s->status == status_idle) ? true : false;
  this->error = (s->status & status_failed) ? true : false;
 
+ this->requires.clear();
+
  if (s->requires) {
   uint32_t i = 0;
 
   for (; s->requires[i]; i++) {
-   EinitService *sp = this->main->getService (s->requires[i]);
-
-   if (sp) {
-    map<string, EinitService *>::iterator it = this->requires.find (s->requires[i]);
-    if (it != this->requires.end()) {
-     this->requires.erase (it);
-    }
-
-    this->requires.insert(pair<string, EinitService *>(s->requires[i], sp));
-   }
+   this->requires.push_back(s->requires[i]);
   }
  }
+
+ this->provides.clear();
 
  if (s->provides) {
   uint32_t i = 0;
 
   for (; s->provides[i]; i++) {
-   EinitService *sp = this->main->getService (s->provides[i]);
-
-   if (sp) {
-    map<string, EinitService *>::iterator it = this->provides.find (s->provides[i]);
-    if (it != this->provides.end()) {
-     this->provides.erase (it);
-    }
-
-    this->provides.insert(pair<string, EinitService *>(s->provides[i], sp));
-   }
+   this->requires.push_back(s->provides[i]);
   }
  }
 
- this->after = s->after ? (char **)setdup ((const void **)s->after, SET_TYPE_STRING) : NULL;
- this->before = s->before ? (char **)setdup ((const void **)s->before, SET_TYPE_STRING) : NULL;
- this->functions = s->functions ? (char **)setdup ((const void **)s->functions, SET_TYPE_STRING) : NULL;
+ this->after.clear();
+
+ if (s->after) {
+  uint32_t i = 0;
+
+  for (; s->after[i]; i++) {
+   this->after.push_back(s->after[i]);
+  }
+ }
+
+ this->before.clear();
+
+ if (s->before) {
+  uint32_t i = 0;
+
+  for (; s->before[i]; i++) {
+   this->before.push_back(s->before[i]);
+  }
+ }
+
+ this->functions.clear();
+
+ if (s->functions) {
+  uint32_t i = 0;
+
+  for (; s->functions[i]; i++) {
+   this->functions.push_back(s->functions[i]);
+  }
+ }
 
  return true;
 }

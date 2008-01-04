@@ -37,3 +37,5 @@ module-scheme-guile.so: module-scheme-guile.o
 	${LLD} module-scheme-guile.o ${GUILE_LIBS} ${LIBRT} -o module-scheme-guile.so
 
 test:
+
+test-libraries:

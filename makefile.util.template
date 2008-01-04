@@ -74,3 +74,7 @@ test: utility.o bitch.o $(asmobjects) set.o set-common.o test-core-apply-variabl
 	./test-core-itree
 	$(CLD) test-core-stree.o tree.o itree.o utility.o bitch.o $(asmobjects) -o test-core-stree $(STATIC)
 	./test-core-stree
+
+test-libraries: test-libraries-libeinit++.o libeinit++.${SO}
+	${CXXLD} test-libraries-libeinit++.o libeinit++.${SO} -o ./test-libraries-libeinit++
+	LD_LIBRARY_PATH="." valgrind ./test-libraries-libeinit++
