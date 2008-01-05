@@ -376,9 +376,10 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
  char **automatic = NULL, **immediate = NULL;
 
- interfaces = einit_module_network_v2_add_configured_interfaces(interfaces);
-
  if (interfaces) {
+/* doing this check now ensures that we have the support module around */
+  interfaces = einit_module_network_v2_add_configured_interfaces(interfaces);
+
   int i = 0;
   struct stree *st;
   for (; interfaces[i]; i++) {
@@ -427,7 +428,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
      if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
-	     (!lm || !lm->status && status_enabled)) {
+         (!lm || !(lm->status & status_enabled))) {
       char buffer[BUFFERSIZE];
 
 //      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);

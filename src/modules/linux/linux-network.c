@@ -200,7 +200,7 @@ void linux_network_interface_construct (struct einit_event *ev) {
 
   esprintf (buffer, BUFFERSIZE, "kern-%s", ev->string);
 
-  if (!inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
+  if (!d->static_descriptor->si.requires || !inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
 //   fprintf (stderr, "%s\n", buffer);
 
    d->static_descriptor->si.requires =
