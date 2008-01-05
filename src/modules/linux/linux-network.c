@@ -296,13 +296,12 @@ void linux_network_interface_done (struct einit_event *ev) {
 void linux_network_address_static (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- char ip_binary;
+ char ip_binary = 0;
  char **ipwhich = which ("ip");
  if (ipwhich) {
   ip_binary = 1;
   efree (ipwhich);
- } else {
-  ip_binary = 0;
+  ipwhich = NULL;
  }
 
  struct stree *st = d->functions->get_all_addresses (ev->string);
@@ -333,14 +332,12 @@ void linux_network_address_static (struct einit_event *ev) {
     buffer[0] = 0;
 
     if (ip_binary) {
-     char *aftype;
+     char *aftype = cur->key;
 
      if (strmatch (cur->key, "ipv4"))
       aftype = "inet";
      else if (strmatch (cur->key, "ipv6"))
       aftype = "inet6";
-     else
-      aftype = cur->key;
 
 /* looks like we have the ip command handy, so let's use it */
      if (d->action == interface_up) {
@@ -357,14 +354,12 @@ void linux_network_address_static (struct einit_event *ev) {
 /* fall back to ifconfig -- this means we get to use only one ip address per interface */
 
      if (d->action == interface_up) {
-      char *aftype;
+      char *aftype = cur->key;
 
       if (strmatch (cur->key, "ipv4"))
        aftype = "inet";
       else if (strmatch (cur->key, "ipv6"))
        aftype = "inet6";
-      else
-       aftype = cur->key;
 
       if (strmatch (aftype, "inet"))
        esprintf (buffer, BUFFERSIZE, "ifconfig %s %s %s", ev->string, aftype, address);
