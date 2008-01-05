@@ -349,9 +349,34 @@ int einit_module_network_v2_module_configure (struct lmodule *m) {
 
 char *einit_module_network_v2_last_auto = NULL;
 
+char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
+ struct stree *interface_nodes = cfg_prefix(INTERFACES_PREFIX "-");
+
+ if (interface_nodes) {
+  struct stree *cur = streelinear_prepare(interface_nodes);
+
+  while (cur) {
+   struct cfgnode *n = cur->value;
+   if (!n->arbattrs) {
+    if (!inset ((const void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING)) {
+     interfaces = (char **)setadd ((void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING);
+    }
+   }
+
+   cur = streenext (cur);
+  }
+
+  streefree (interface_nodes);
+ }
+
+ return interfaces;
+}
+
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
  char **automatic = NULL;
+
+ interfaces = einit_module_network_v2_add_configured_interfaces(interfaces);
 
  if (interfaces) {
   int i = 0;
