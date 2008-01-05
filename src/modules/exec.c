@@ -814,7 +814,8 @@ void *dexec_watcher (struct spidcb *spid) {
 
     esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
     fb.string = stmp;
-    fb.integer = module->fbseq+1;
+    if (module)
+     fb.integer = module->fbseq+1;
     status_update ((&fb));
 
     dx->cb = NULL;
