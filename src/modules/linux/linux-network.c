@@ -337,7 +337,7 @@ void linux_network_address_static (struct einit_event *ev) {
 
      if (strmatch (cur->key, "ipv4"))
       aftype = "inet";
-     else if (strmatch (cur->key, "ipv4"))
+     else if (strmatch (cur->key, "ipv6"))
       aftype = "inet6";
      else
       aftype = cur->key;
@@ -361,7 +361,7 @@ void linux_network_address_static (struct einit_event *ev) {
 
       if (strmatch (cur->key, "ipv4"))
        aftype = "inet";
-      else if (strmatch (cur->key, "ipv4"))
+      else if (strmatch (cur->key, "ipv6"))
        aftype = "inet6";
       else
        aftype = cur->key;
