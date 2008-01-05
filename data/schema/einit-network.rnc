@@ -33,9 +33,14 @@ InterfaceDataV2 =
    attribute address { text }
   }?
  }? &
+ element route {
+  IDAttribute?,
+  attribute network { text }?,
+  attribute gateway { text }?
+ }? &
  element dhcp-client { StringAttribute }? &
  element kernel-modules { StringAttribute }? &
  element automatic { BooleanAttribute }? &
  element immediate { BooleanAttribute }? &
- element wait { BooleanAttribute }?
+ element dont-wait { BooleanAttribute }?
 

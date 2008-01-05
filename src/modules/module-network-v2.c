@@ -167,6 +167,28 @@ struct cfgnode *einit_module_network_v2_get_option (char *interface, char *optio
   return einit_module_network_v2_get_option_default (interface, option);
 }
 
+struct cfgnode **einit_module_network_v2_get_multiple_options (char *interface, char *option) {
+ char buffer[BUFFERSIZE];
+ struct cfgnode *node = NULL;
+ struct cfgnode **rv = NULL;
+
+ esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface, option);
+
+ while ((node = cfg_findnode (buffer, 0, node))) {
+  rv = (struct cfgnode **)setadd ((void **)rv, node, SET_TYPE_STRING);
+ }
+
+ if (rv)
+  return rv;
+ else {
+  if ((node = einit_module_network_v2_get_option_default (interface, option))) {
+   rv = (struct cfgnode **)setadd ((void **)rv, node, SET_TYPE_STRING);
+  }
+
+  return rv;
+ }
+}
+
 struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
  char buffer[BUFFERSIZE];
  struct stree *st;
@@ -204,6 +226,7 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
 struct network_functions einit_module_network_v2_function_list = {
  .have_options = einit_module_network_v2_have_options,
  .get_option = einit_module_network_v2_get_option,
+ .get_multiple_options = einit_module_network_v2_get_multiple_options,
  .get_all_addresses = einit_module_network_v2_get_all_addresses
 };
 

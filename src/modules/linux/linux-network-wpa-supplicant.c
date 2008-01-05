@@ -1,8 +1,8 @@
 /*
- *  linux-network.c
+ *  linux-network-wpa-supplicant.c
  *  einit
  *
- *  Created on 03/01/2008.
+ *  Created on 04/01/2008.
  *  Copyright 2008 Magnus Deininger. All rights reserved.
  *
  */
@@ -54,16 +54,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #warning "This module was developed for a different version of eINIT, you might experience problems"
 #endif
 
-int linux_network_configure (struct lmodule *);
+int linux_network_wpa_supplicant_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-const struct smodule linux_network_self = {
+const struct smodule linux_network_wpa_supplicant_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = einit_module_generic,
- .name      = "Network Helpers (Linux)",
+ .name      = "Network Helpers (Linux, WPA Supplicant)",
  .rid       = "linux-network",
  .si        = {
   .provides = NULL,
@@ -71,57 +71,12 @@ const struct smodule linux_network_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = linux_network_configure
+ .configure = linux_network_wpa_supplicant_configure
 };
 
-module_register(linux_network_self);
+module_register(linux_network_wpa_supplicant_self);
 
 #endif
-
-char **linux_network_interfaces = NULL;
-
-pthread_mutex_t linux_network_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-char **linux_network_list_interfaces_proc (int spawn_events) {
- char **interfaces = NULL;
- char **new_interfaces = NULL;
- char *buffer = readfile ("/proc/net/dev");
-
- if (buffer) {
-  char **buffer_lines = str2set ('\n', buffer);
-  efree (buffer);
-
-  int i = 0;
-  for (; buffer_lines[i]; i++) {
-   strtrim (buffer_lines[i]);
-   char **line_split = str2set(':', buffer_lines[i]);
-   if (line_split[1]) { /* have at least two elements: it's one of the interface stat lines */
-    interfaces = (char **)setadd((void **)interfaces, line_split[0], SET_TYPE_STRING);
-   }
-   efree (line_split);
-  }
-  efree (buffer_lines);
- }
-
- if (spawn_events) {
-  if (interfaces) {
-   emutex_lock (&linux_network_interfaces_mutex);
-   int i = 0;
-   for (; interfaces[i]; i++) {
-    if (!linux_network_interfaces || !inset ((const void **)linux_network_interfaces, interfaces[i], SET_TYPE_STRING))
-     new_interfaces = (char **)setadd ((void **)new_interfaces, interfaces[i], SET_TYPE_STRING);
-   }
-   emutex_unlock (&linux_network_interfaces_mutex);
-  }
-
-  if (new_interfaces) {
-// spawn some events here about the new interfaces
-   efree (new_interfaces);
-  }
- }
-
- return interfaces;
-}
 
 /* reminder:
 
@@ -162,36 +117,7 @@ struct network_event_data {
 };
 */
 
-/*
-void linux_network_interface_configure (struct einit_event *ev) {
- struct network_event_data *d = ev->para;
-
- struct stree *st = d->functions->get_all_addresses(ev->string);
-
- if (st) {
-  struct stree *cur = streelinear_prepare (st);
-
-  while (cur) {
-   char **v = cur->value;
-   int y = 0;
-
-   for (; v[y]; y+=2) {
-    if (strmatch (v[y], "address")) {
-     fprintf (stderr, "configured %s address for interfaces %s: %s\n", cur->key, ev->string, v[y+1]);
-    }
-   }
-
-   cur = streenext (cur);
-  }
-
-  streefree (st);
- } else {
-  fprintf (stderr, "no addresses for interface %s?\n", ev->string);
- }
-}
-*/
-
-void linux_network_interface_construct (struct einit_event *ev) {
+void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
  struct cfgnode *node = d->functions->get_option(ev->string, "kernel-modules");
@@ -231,7 +157,7 @@ void linux_network_interface_construct (struct einit_event *ev) {
  }
 }
 
-void linux_network_interface_prepare (struct einit_event *ev) {
+void linux_network_wpa_supplicant_interface_prepare (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
  char buffer[BUFFERSIZE];
@@ -262,48 +188,8 @@ void linux_network_interface_prepare (struct einit_event *ev) {
  }
 }
 
-void linux_network_interface_done (struct einit_event *ev) {
+void linux_network_wpa_supplicant_address_static (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
-
- char buffer[BUFFERSIZE];
- char **ip_binary = which ("ip");
-
- buffer[0] = 0;
-
- if (ip_binary) {
-  /* looks like we have the ip command handy, so let's use it */
-  efree (ip_binary);
-
-  if (d->action == interface_down) {
-   esprintf (buffer, BUFFERSIZE, "ip link set %s down", ev->string);
-  }
- } else {
-  /* fall back to ifconfig -- this means we get to use only one ip address per interface */
-
-  if (d->action == interface_down) {
-   esprintf (buffer, BUFFERSIZE, "ifconfig %s down", ev->string);
-  }
- }
-
- if (buffer[0]) {
-  if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-   fbprintf (d->feedback, "command failed: %s", buffer);
-   d->status = status_failed;
-  }
- }
-}
-
-void linux_network_address_static (struct einit_event *ev) {
- struct network_event_data *d = ev->para;
-
- char ip_binary;
- char **ipwhich = which ("ip");
- if (ipwhich) {
-  ip_binary = 1;
-  efree (ipwhich);
- } else {
-  ip_binary = 0;
- }
 
  struct stree *st = d->functions->get_all_addresses (ev->string);
  if (st) {
@@ -330,6 +216,8 @@ void linux_network_address_static (struct einit_event *ev) {
 
    if (!dhcp && address) {
     char buffer[BUFFERSIZE];
+    char **ip_binary = which ("ip");
+
     buffer[0] = 0;
 
     if (ip_binary) {
@@ -349,6 +237,7 @@ void linux_network_address_static (struct einit_event *ev) {
       esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
      }
 
+     efree (ip_binary);
     } else {
 /* fall back to ifconfig -- this means we get to use only one ip address per interface */
 
@@ -388,100 +277,34 @@ void linux_network_address_static (struct einit_event *ev) {
 
   streefree (st);
  }
-
- if (d->status != status_failed) {
-  struct cfgnode **rt = d->functions->get_multiple_options (ev->string, "route");
-
-  if (rt) {
-   int i = 0;
-   for (; rt[i]; i++) {
-    if (rt[i]->arbattrs) {
-     int j = 0;
-     char *network = NULL;
-     char *gateway = NULL;
-     char buffer[BUFFERSIZE];
-     buffer[0] = 0;
-
-     for (; rt[i]->arbattrs[j]; j+=2) {
-      if (strmatch (rt[i]->arbattrs[j], "network")) {
-       network = rt[i]->arbattrs[j+1];
-      } else if (strmatch (rt[i]->arbattrs[j], "gateway")) {
-       gateway = rt[i]->arbattrs[j+1];
-      }
-     }
-
-     if (gateway) {
-      if (network) {
-       if (ip_binary) {
-        esprintf (buffer, BUFFERSIZE, "ip route add %s via %s dev %s", network, gateway, ev->string);
-       } else {
-        esprintf (buffer, BUFFERSIZE, "route add -net %s gw %s dev %s", network, gateway, ev->string);
-       }
-      } else {
-       if (ip_binary) {
-        esprintf (buffer, BUFFERSIZE, "ip route add via %s dev %s", gateway, ev->string);
-       } else {
-        esprintf (buffer, BUFFERSIZE, "route add -net default gw %s dev %s", gateway, ev->string);
-       }
-      }
-     } else if (network) {
-      if (ip_binary) {
-       esprintf (buffer, BUFFERSIZE, "ip route add %s dev %s", network, ev->string);
-      } else {
-       esprintf (buffer, BUFFERSIZE, "route add -net %s dev %s", network, ev->string);
-      }
-     }
-
-     if (buffer[0]) {
-      if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-       fbprintf (d->feedback, "command failed: %s", buffer);
-       d->status = status_failed;
-       break;
-      }
-     }
-    }
-   }
-
-   efree (rt);
-  }
- }
 }
 
-int linux_network_cleanup (struct lmodule *pa) {
+int linux_network_wpa_supplicant_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
 
- function_unregister ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
- function_unregister ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
-
 #if 0
- event_ignore (einit_network_interface_configure, linux_network_interface_configure);
+ event_ignore (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
+ event_ignore (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
+ event_ignore (einit_network_address_static, linux_network_wpa_supplicant_address_static);
+ event_ignore (einit_network_interface_prepare, linux_network_wpa_supplicant_interface_prepare);
 #endif
- event_ignore (einit_network_interface_construct, linux_network_interface_construct);
- event_ignore (einit_network_interface_update, linux_network_interface_construct);
- event_ignore (einit_network_address_static, linux_network_address_static);
- event_ignore (einit_network_interface_prepare, linux_network_interface_prepare);
- event_ignore (einit_network_interface_done, linux_network_interface_done);
 
  return 0;
 }
 
-int linux_network_configure (struct lmodule *pa) {
+int linux_network_wpa_supplicant_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
 
- pa->cleanup = linux_network_cleanup;
+ pa->cleanup = linux_network_wpa_supplicant_cleanup;
 
- function_register ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
- function_register ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
 
 #if 0
- event_listen (einit_network_interface_configure, linux_network_interface_configure);
+ event_listen (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
+ event_listen (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
+ event_listen (einit_network_address_static, linux_network_wpa_supplicant_address_static);
+ event_listen (einit_network_interface_prepare, linux_network_wpa_supplicant_interface_prepare);
 #endif
- event_listen (einit_network_interface_construct, linux_network_interface_construct);
- event_listen (einit_network_interface_update, linux_network_interface_construct);
- event_listen (einit_network_address_static, linux_network_address_static);
- event_listen (einit_network_interface_prepare, linux_network_interface_prepare);
- event_listen (einit_network_interface_done, linux_network_interface_done);
 
  return 0;
 }

@@ -2,14 +2,14 @@ export INCLUDEPATH="/usr/local/include"
 
 # modules that need to be enabled manually: ipc-dbus, linux-netlink, cron, distro-gentoo, module-random
 # modules that need to be reworked and are thus disabled by default: feedback-aural, feedback-aural-festival
-# modules that are incomplete and currently useless: ipc-hub linux-network module-network-v2
+# modules that are incomplete and currently useless: ipc-hub
 
-export MODULES_GENERIC="feedback-visual-textual fqdn exec ipc mount tty process ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler module-network module-c functions-xml module-xml log parse-sh bootstrap-configuration-stree bootstrap-configuration-xml-expat preload module-checkpoint module-group feedback-visual-psplash module-logic-v4"
+export MODULES_GENERIC="feedback-visual-textual fqdn exec ipc mount tty process ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler module-c functions-xml module-xml log parse-sh bootstrap-configuration-stree bootstrap-configuration-xml-expat preload module-checkpoint module-group feedback-visual-psplash module-logic-v4 module-network-v2"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 export MODULES_CORE="module-so"
 export MODULES_EXPERIMENTAL=""
 
-export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-kernel-modules linux-udev linux-mdev linux-hwclock linux-edev linux-hotplug linux-static-dev linux-cpufreq linux-bootchart"
+export MODULES_LINUX="linux-sysconf linux-mount linux-process linux-kernel-modules linux-udev linux-mdev linux-hwclock linux-edev linux-hotplug linux-static-dev linux-cpufreq linux-bootchart linux-network linux-network-wpa-supplicant"
 export MODULES_BSD="bsd-devfs bsd-network"
 export MODULES_DARWIN="${MODULES_BSD}"
 

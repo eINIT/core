@@ -1,53 +1,40 @@
-<!-- <einit prefix="configuration-network">
- <hostname s="Redman"/>
- <domainname s="brcg.net"/>
- <interfaces>
-  <eth0>
-   <kernel-module s="e1000" />
-   <ip s="pump">
-    <opts s=""/>
-   </ip>
-  </eth0>
-  <wlan0>
-   <kernel-module s="ipw3945"/>
-   <control="wpa_supplicant">
-    <driver s="wext"/>
-    <config="/etc/wpa_supplicant/wpa_supplicant.conf"/>
-   </control>
-   <ip="dhcpcd">
-    <opts s=""/>
-   </ip>
-  </wlan0>
- </interfaces>
-</einit> -->
-
 <einit prefix="configuration-network">
  <hostname s="Redman"/>
  <domainname s="brcg.net"/>
+
  <interfaces>
 
   <eth0>
    <address>
     <ipv4 address="dhcp" />
-    <ipv4 address="10.2.0.2" location="^work$" />
-    <ipv4 address="192.168.0.1"  location="^school$" />
+    <ipv4 address="10.2.0.2" />
+    <ipv4 address="192.168.0.1" />
     <ipv6 address="fe::01:03" />
    </address>
    <dhcp-client s="pump" />
    <wpa_supplicant>
-    <config s="/etc/wpa_supplicant/wpa_supplicant.conf" location="^school$" />
-    <config s="/etc/wpa_supplicant/wpa_supplicant_any.conf" location="^(work|girlfriend)$" />
+    <config s="/etc/wpa_supplicant/wpa_supplicant.conf" />
     <driver s="wext" />
    </wpa_supplicant>
 
+   <route id="primus" network="10.2.0.2/24" />
+<!-- network="default" should probably be optional -->
+   <route id="secundus" network="default" gateway="10.2.0.1" />
+
+<!-- the id="" would be optional if you only have one nameserver, obviously -->
+   <nameserver id="primus" s="10.160.0.2" />
+   <nameserver id="secundus" s="192.168.0.2" />
+
+   <automatic b="yes" />
    <dont-wait b="yes" />
-   <ignore b="yes" />
+   <immediate b="no" />
   </eth0>
 
  </interfaces>
+
+<!-- a section with device-independent routes would probably come in handy too -->
  <routes>
-  <default_gw s="192.168.0.1" />
-  <eth1 s="10.160.0.0" />
+  <route network="192.168.4.0/24" gateway="192.168.0.1" />
+  <route gateway="192.168.4.1" />
  </routes>
- <nameservers s="192.168.0.2:10.160.0.2" />
 </einit>

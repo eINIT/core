@@ -55,6 +55,7 @@ struct network_interface {
 struct network_functions {
  int (*have_options) (char *);
  struct cfgnode * (*get_option) (char *, char *);
+ struct cfgnode ** (*get_multiple_options) (char *, char *);
  struct stree * (*get_all_addresses) (char *);
 };
 

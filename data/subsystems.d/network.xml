@@ -34,9 +34,11 @@
 
     <loopback id="^lo">
      <address>
-      <ipv4 address="127.0.0.1/8" />
+      <ipv4 address="127.0.0.1" />
       <ipv6 address="::1" />
      </address>
+
+     <route network="127.0.0.1/8">
 
      <automatic b="yes" />
      <immediate b="yes" />
