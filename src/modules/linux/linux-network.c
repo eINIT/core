@@ -344,6 +344,10 @@ void linux_network_address_static (struct einit_event *ev) {
 
 /* looks like we have the ip command handy, so let's use it */
      if (d->action == interface_up) {
+/* silently try to erase the address first, then re-add it */
+      esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
+      pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+
       esprintf (buffer, BUFFERSIZE, "ip -f %s addr add local %s dev %s", aftype, address, ev->string);
      } else if (d->action == interface_down) {
       esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
