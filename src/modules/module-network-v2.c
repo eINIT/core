@@ -572,7 +572,7 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
        ok = 1;
 
        emutex_lock (&einit_module_network_v2_interfaces_mutex);
-       struct stree *tmpst;
+       struct stree *tmpst = NULL;
        if (einit_module_network_v2_interfaces) tmpst = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
        if (tmpst) {
         struct network_v2_interface_descriptor *id = tmpst->value;
@@ -580,8 +580,12 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
          id->dhcp_client = estrdup (v[i]);
        }
        emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+       break;
       }
      }
+
+     efree(v);
 
      if (!ok) {
       d->status = status_failed;
