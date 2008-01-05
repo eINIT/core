@@ -374,7 +374,7 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
 
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
- char **automatic = NULL;
+ char **automatic = NULL, **immediate = NULL;
 
  interfaces = einit_module_network_v2_add_configured_interfaces(interfaces);
 
@@ -426,11 +426,15 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     struct cfgnode *cn;
 
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
-     if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag) {
-      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
+     if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
+	     (!lm || !lm->status && status_enabled)) {
+      char buffer[BUFFERSIZE];
 
-      if (!(lm->status & status_enabled))
-       mod (einit_module_enable, lm, NULL);
+//      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
+
+      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+
+      immediate = (char **)setadd ((void **)immediate, buffer, SET_TYPE_STRING);
      }
     }
 
@@ -492,6 +496,15 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
   }
 
   efree (automatic);
+ }
+
+ if (immediate) {
+  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+  eml.stringset = immediate;
+  eml.task = einit_module_enable;
+
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+  evstaticdestroy(eml);
  }
 
  return 1;
