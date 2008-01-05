@@ -572,9 +572,10 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
        ok = 1;
 
        emutex_lock (&einit_module_network_v2_interfaces_mutex);
-       if (einit_module_network_v2_interfaces) st = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
-       if (st) {
-        struct network_v2_interface_descriptor *id = st->value;
+       struct stree *tmpst;
+       if (einit_module_network_v2_interfaces) tmpst = streefind (einit_module_network_v2_interfaces, ev->string, tree_find_first);
+       if (tmpst) {
+        struct network_v2_interface_descriptor *id = tmpst->value;
         if (id)
          id->dhcp_client = estrdup (v[i]);
        }
