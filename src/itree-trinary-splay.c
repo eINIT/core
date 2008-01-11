@@ -182,7 +182,7 @@ struct itree *itree_splay (struct itree *tree) {
 struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_t size) {
  size_t lsize = sizeof (struct itree);
  struct itree *newnode;
- size_t ssize;
+ size_t ssize = 0;
 
  switch (size) {
   case tree_value_noalloc:
@@ -329,7 +329,7 @@ struct itree *itreedel (struct itree *tree) {
 }
 
 struct itree *itreedel_by_key (struct itree *tree, signed long key) {
- struct itree *it = itreefind (it, tree->key, tree_find_first);
+// struct itree *it = itreefind (tree, tree->key, tree_find_first);
 
 #if 0
  while (it) {
@@ -410,7 +410,7 @@ void itreedump (struct itree *tree) {
     fprintf (stderr, "(?) ");
    }
   }
-  fprintf (stderr, "node: key=%i, value=%i\n", tree->key, (int)tree->value);
+  fprintf (stderr, "node: key=%li, value=%li\n", tree->key, (long int)tree->value);
 
   fflush (stderr);
 

@@ -116,8 +116,7 @@ int einit_tty_texec (struct cfgnode *);
 
 void einit_tty_process_event_handler (struct einit_event *);
 
-void *einit_tty_watcher (struct spidcb *spid) {
- pid_t pid = spid->pid;
+void *einit_tty_watcher (pid_t pid) {
  emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
  struct ttyst *prev = NULL;
@@ -125,7 +124,7 @@ void *einit_tty_watcher (struct spidcb *spid) {
  while (cur) {
   if (cur->pid == pid) {
    if (einit_tty_do_utmp) {
-    create_utmp_record(utmprecord, DEAD_PROCESS, spid->pid, NULL, NULL, NULL, NULL, 0, 0, spid->pid);
+    create_utmp_record(utmprecord, DEAD_PROCESS, pid, NULL, NULL, NULL, NULL, 0, 0, pid);
 
     update_utmp (utmp_modify,&utmprecord);
    }
@@ -160,13 +159,7 @@ void *einit_tty_watcher (struct spidcb *spid) {
 }
 
 void einit_tty_process_event_handler (struct einit_event *ev) {
- struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
- spid->pid = ev->integer;
- spid->status = ev->status;
-
- einit_tty_watcher(spid);
-
- efree (spid);
+ einit_tty_watcher(ev->integer);
 }
 
 int einit_tty_texec (struct cfgnode *node) {

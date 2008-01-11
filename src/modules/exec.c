@@ -117,7 +117,7 @@ void einit_exec_ipc_event_handler (struct einit_event *);
 void einit_exec_einit_event_handler_core_configuration_update (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
-void *dexec_watcher (struct spidcb *spid);
+void *dexec_watcher (pid_t pid);
 
 int einit_exec_cleanup (struct lmodule *irr) {
  if (shell && (shell != dshell)) efree (shell);
@@ -182,14 +182,7 @@ void einit_exec_update_daemons_from_pidfiles() {
 void einit_exec_process_event_handler (struct einit_event *ev) {
  einit_exec_update_daemons_from_pidfiles();
 
-/* something needs to be done right here */
- struct spidcb *spid = ecalloc (1, sizeof (struct spidcb));
- spid->pid = ev->integer;
- spid->status = ev->status;
-
- dexec_watcher(spid);
-
- efree (spid);
+ dexec_watcher(ev->integer);
 }
 
 void einit_exec_ipc_event_handler (struct einit_event *ev) {
@@ -764,8 +757,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  return status_failed;
 }
 
-void *dexec_watcher (struct spidcb *spid) {
- pid_t pid = spid->pid;
+void *dexec_watcher (pid_t pid) {
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
  struct lmodule *module = NULL;
