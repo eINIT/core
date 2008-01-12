@@ -332,6 +332,12 @@ int einit_feedback_visual_psplash_cleanup (struct lmodule *tm) {
 int einit_feedback_visual_psplash_configure (struct lmodule *tm) {
  module_init (tm);
 
+ char *tmp;
+
+ if (!(tmp = cfg_getstring ("configuration-feedback-psplash", NULL)) || (strcmp (tmp, "psplash") && strcmp (tmp, "usplash") && strcmp (tmp, "exquisite"))) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  tm->cleanup = einit_feedback_visual_psplash_cleanup;
 
  event_listen (einit_boot_devices_available, einit_feedback_visual_psplash_boot_event_handler_boot_devices_available);
