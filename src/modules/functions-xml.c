@@ -238,6 +238,13 @@ int einit_functions_xml_cleanup (struct lmodule *pa) {
 
 int einit_functions_xml_configure (struct lmodule *pa) {
  module_init (pa);
+
+ struct cfgnode *node = NULL;
+
+ if (!(node = cfg_getnode("special-function", NULL))) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  exec_configure (pa);
 
  pa->cleanup = einit_functions_xml_cleanup;
