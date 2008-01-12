@@ -69,8 +69,7 @@ const struct smodule einit_linux_kernel_modules_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = linux_kernel_modules_configure,
- .configuration = NULL
+ .configure = linux_kernel_modules_configure
 };
 
 module_register(einit_linux_kernel_modules_self);

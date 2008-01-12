@@ -156,11 +156,6 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
 
  nmod = ecalloc (1, sizeof (struct lmodule));
 
- emutex_lock (&mlist_mutex);
- nmod->next = mlist;
- mlist = nmod;
- emutex_unlock (&mlist_mutex);
-
  nmod->sohandle = sohandle;
  nmod->module = module;
  emutex_init (&nmod->mutex, NULL);
@@ -179,9 +174,41 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  } else
   nmod->si = NULL;
 
+ if (module->configure) {
+  int rv = module->configure (nmod);
+  if (rv & (status_configure_done | status_configure_failed)) {
+   /* module doesn't want to be loaded for real */
 
- if (module->configure) module->configure (nmod);
- if (nmod->scanmodules) nmod->scanmodules(mlist);
+   if (nmod->si) {
+    if (nmod->si->provides) {
+     efree (nmod->si->provides);
+    }
+    if (nmod->si->requires) {
+     efree (nmod->si->requires);
+    }
+    if (nmod->si->after) {
+     efree (nmod->si->after);
+    }
+    if (nmod->si->before) {
+     efree (nmod->si->before);
+    }
+
+    efree (nmod->si);
+   }
+
+   efree (nmod);
+
+   return NULL;
+  }
+ }
+ if (nmod->scanmodules) {
+  nmod->scanmodules(mlist);
+ }
+
+ emutex_lock (&mlist_mutex);
+ nmod->next = mlist;
+ mlist = nmod;
+ emutex_unlock (&mlist_mutex);
 
  nmod = mod_update (nmod);
 

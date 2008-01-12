@@ -260,9 +260,7 @@ void *linux_mdev_hotplug(void *ignored) {
 }
 
 int linux_mdev_run() {
- char *dm;
-
- if (!linux_mdev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "mdev")) {
+ if (!linux_mdev_enabled) {
   linux_mdev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
@@ -332,6 +330,13 @@ int linux_mdev_cleanup (struct lmodule *pa) {
 
 int linux_mdev_configure (struct lmodule *pa) {
  module_init (pa);
+
+ char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+
+ if (strcmp (dm, "mdev")) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  exec_configure(pa);
 
  pa->cleanup = linux_mdev_cleanup;

@@ -172,9 +172,7 @@ void linux_udev_ping_for_uevents(char *dir, char depth) {
    * re-implement udevsettle in C */
 
 int linux_udev_run() {
- char *dm;
-
- if (!linux_udev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "udev")) {
+ if (!linux_udev_enabled) {
   linux_udev_enabled = 1;
   struct stat st;
 
@@ -287,6 +285,13 @@ int linux_udev_cleanup (struct lmodule *pa) {
 
 int linux_udev_configure (struct lmodule *pa) {
  module_init (pa);
+
+ char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+
+ if (strcmp (dm, "udev")) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  exec_configure(pa);
 
  pa->cleanup = linux_udev_cleanup;

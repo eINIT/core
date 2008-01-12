@@ -79,13 +79,6 @@ struct init_command {
 
 int compatibility_sysv_initctl_configure (struct lmodule *);
 
-struct einit_cfgvar_info
-  compatibility_sysv_initctl_cfgvar_initctl = {
-   .options = eco_optional,
-   .variable = "configuration-compatibility-sysv-initctl",
-   .description = "Location for the initctl interface, and whether or not to use it." },
-  *compatibility_sysv_initctl_configuration[] = { &compatibility_sysv_initctl_cfgvar_initctl, NULL };
-
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 const struct smodule module_compatibility_sysv_initctl_self = {
  .eiversion = EINIT_VERSION,
@@ -100,8 +93,7 @@ const struct smodule module_compatibility_sysv_initctl_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = compatibility_sysv_initctl_configure,
- .configuration = compatibility_sysv_initctl_configuration
+ .configure = compatibility_sysv_initctl_configure
 };
 
 module_register(module_compatibility_sysv_initctl_self);

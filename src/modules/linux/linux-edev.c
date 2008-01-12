@@ -119,7 +119,7 @@ struct stree *linux_edev_compiled_regexes = NULL;
 char ***linux_edev_device_rules = NULL;
 pthread_mutex_t linux_edev_device_rules_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int **linux_edev_socket_relay(char **args, const char *sockn, const char *dp, const char *a);
+//int **linux_edev_socket_relay(char **args, const char *sockn, const char *dp, const char *a);
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile);
 char **linux_edev_get_ata_identity (char **args, char *devicefile);
 char *linux_edev_mangle_filename (char *filename, char do_free);
@@ -286,7 +286,7 @@ void linux_edev_hotplug_handle (char **v) {
     if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
      char *devicefile = NULL;
      char **symlinks = NULL;
-     char **sockets = NULL;
+//     char **sockets = NULL;
      char *group = NULL;
      char *user = NULL;
      mode_t chmode = 0;
@@ -447,13 +447,16 @@ void linux_edev_hotplug_handle (char **v) {
           group = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
          } else if (strmatch (linux_edev_device_rules[i][j], "blockdevice")) {
           blockdevice = parse_boolean (linux_edev_device_rules[i][j+1]);
-         } else if (strmatch (linux_edev_device_rules[i][j], "socket")) {
+         }
+#if 0
+         else if (strmatch (linux_edev_device_rules[i][j], "socket")) {
           char *socket = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
           if (socket) {
            sockets = (char **)setadd ((void **)sockets, socket, SET_TYPE_STRING);
            efree (socket);
           }
          }
+#endif
         }
        }
       }
@@ -512,6 +515,7 @@ void linux_edev_hotplug_handle (char **v) {
         }
        }
       }
+#if 0
       if (sockets) {
        for (i = 0; sockets[i]; i++) {
         if (symlink (devicefile, symlinks[i]) != 0) {
@@ -519,6 +523,7 @@ void linux_edev_hotplug_handle (char **v) {
         }
        }
       }
+#endif
      }
     }
    }
@@ -666,11 +671,9 @@ void *linux_edev_hotplug(void *ignored) {
 void linux_edev_retrieve_rules();
 
 int linux_edev_run() {
- char *dm = cfg_getstring("configuration-system-device-manager", NULL);
-
  linux_edev_retrieve_rules();
 
- if (!linux_edev_enabled && strmatch (dm, "edev")) {
+ if (!linux_edev_enabled) {
   linux_edev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
@@ -763,31 +766,6 @@ void linux_edev_retrieve_rules () {
  }
  linux_edev_device_rules = new_rules;
  emutex_unlock (&linux_edev_device_rules_mutex);
-}
-
-int linux_edev_cleanup (struct lmodule *pa) {
- exec_cleanup(pa);
-
- event_ignore (einit_boot_early, linux_edev_boot_event_handler);
- event_ignore (einit_core_configuration_update, linux_edev_retrieve_rules);
- event_ignore (einit_power_down_scheduled, linux_edev_shutdown);
- event_ignore (einit_power_reset_scheduled, linux_edev_shutdown);
-
- return 0;
-}
-
-int linux_edev_configure (struct lmodule *pa) {
- module_init (pa);
- exec_configure(pa);
-
- pa->cleanup = linux_edev_cleanup;
-
- event_listen (einit_core_configuration_update, linux_edev_retrieve_rules);
- event_listen (einit_boot_early, linux_edev_boot_event_handler);
- event_listen (einit_power_down_scheduled, linux_edev_shutdown);
- event_listen (einit_power_reset_scheduled, linux_edev_shutdown);
-
- return 0;
 }
 
 char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
@@ -971,6 +949,7 @@ char *linux_edev_mangle_filename (char *filename, char do_free) {
   return filename;
 }
 
+#if 0
 int **linux_edev_socket_relay(char **args, const char *sockn, const char *dp, const char *a)
 {
  char buffer[2048];
@@ -1000,4 +979,37 @@ int **linux_edev_socket_relay(char **args, const char *sockn, const char *dp, co
  }
  close(s);
  return status_ok; 
+}
+#endif
+
+int linux_edev_cleanup (struct lmodule *pa) {
+ exec_cleanup(pa);
+
+ event_ignore (einit_boot_early, linux_edev_boot_event_handler);
+ event_ignore (einit_core_configuration_update, linux_edev_retrieve_rules);
+ event_ignore (einit_power_down_scheduled, linux_edev_shutdown);
+ event_ignore (einit_power_reset_scheduled, linux_edev_shutdown);
+
+ return 0;
+}
+
+int linux_edev_configure (struct lmodule *pa) {
+ module_init (pa);
+
+ char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+
+ if (strcmp (dm, "edev")) {
+  return status_configure_failed | status_not_in_use;
+ }
+
+ exec_configure(pa);
+
+ pa->cleanup = linux_edev_cleanup;
+
+ event_listen (einit_core_configuration_update, linux_edev_retrieve_rules);
+ event_listen (einit_boot_early, linux_edev_boot_event_handler);
+ event_listen (einit_power_down_scheduled, linux_edev_shutdown);
+ event_listen (einit_power_reset_scheduled, linux_edev_shutdown);
+
+ return 0;
 }

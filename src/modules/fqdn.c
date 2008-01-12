@@ -54,19 +54,6 @@ int einit_fqdn_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-struct einit_cfgvar_info
-  einit_fqdn_cfgvar_hostname = {
-   .options = eco_optional | eco_warn_if_default,
-   .variable = "configuration-network-hostname",
-   .description = "Your Machine's Hostname.",
-   .default_value = "localhost" },
-  einit_fqdn_cfgvar_domainname = {
-   .options = eco_optional | eco_warn_if_default,
-   .variable = "configuration-network-domainname",
-   .description = "Your Machine's Domainname.",
-   .default_value = "local" },
-  *einit_fqdn_cfgvar_configuration[] = { &einit_fqdn_cfgvar_hostname, &einit_fqdn_cfgvar_domainname, NULL };
-
 const struct smodule einit_fqdn_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -80,8 +67,7 @@ const struct smodule einit_fqdn_self = {
   .after    = NULL,
   .before   = NULL
  },
- .configure = einit_fqdn_configure,
- .configuration = einit_fqdn_cfgvar_configuration
+ .configure = einit_fqdn_configure
 };
 
 module_register(einit_fqdn_self);
@@ -103,6 +89,7 @@ void einit_fqdn_set () {
  einit_fqdn_usage--;
 }
 
+#if 0
 int einit_fqdn_suspend (struct lmodule *irr) {
  if (!einit_fqdn_usage) {
   event_wakeup (einit_boot_early, irr);
@@ -118,21 +105,29 @@ int einit_fqdn_resume (struct lmodule *irr) {
 
  return status_ok;
 }
+#endif
 
+#if 0
 int einit_fqdn_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_early, einit_fqdn_set);
 
  return 0;
 }
+#endif
 
 int einit_fqdn_configure (struct lmodule *irr) {
  module_init (irr);
 
+#if 0
  thismodule->cleanup = einit_fqdn_cleanup;
  thismodule->suspend = einit_fqdn_suspend;
  thismodule->resume  = einit_fqdn_resume;
+#endif
 
- event_listen (einit_boot_early, einit_fqdn_set);
+// event_listen (einit_boot_early, einit_fqdn_set);
+ if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
+  einit_fqdn_set();
+ }
 
- return 0;
+ return status_configure_done;
 }

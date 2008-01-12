@@ -457,6 +457,13 @@ int linux_bootchart_cleanup (struct lmodule *pa) {
 int linux_bootchart_configure (struct lmodule *tm) {
  module_init (tm);
 
+ struct cfgnode *node = cfg_getnode ("configuration-bootchart-active", NULL);
+
+ if (!node || !node->flag) {
+  return status_configure_failed | status_not_in_use;
+ }
+
+
  event_listen (einit_boot_early, linux_bootchart_boot_event_handler);
  event_listen (einit_core_mode_switching, linux_bootchart_switch);
  event_listen (einit_core_done_switching, linux_bootchart_switch_done);

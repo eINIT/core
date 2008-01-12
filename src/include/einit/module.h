@@ -154,8 +154,17 @@ enum einit_module_status {
  status_disabled  = 0x0200,
 /*!< Status Information: Object is disabled. */
 
- status_deferred  = 0x1000
- /*!< Status Information: Hint: Object is scheduled, but deferred. */
+ status_deferred  = 0x1000,
+/*!< Status Information: Hint: Object is scheduled, but deferred. */
+
+ status_configure_failed = 0x100000,
+/*!< Status Information: Configure: Module configuration has failed */
+ status_not_ready        = 0x010000,
+/*!< Status Information: Configure: Module would be used but can't work yet */
+ status_not_in_use       = 0x020000,
+/*!< Status Information: Configure: Module won't be used */
+ status_configure_done   = 0x200000
+/*!< Status Information: Configure: Module has already done all it needs to do */
 };
 /*!\} */
 
@@ -182,19 +191,6 @@ struct service_information {
 #endif
 };
 
-enum einit_config_options {
- eco_optional        = 0x0001,
- eco_critical        = 0x0002,
- eco_warn_if_default = 0x0100
-};
-
-struct einit_cfgvar_info {
- enum einit_config_options options;
- char *variable;
- char *description;
- char *default_value;
-};
-
 struct lmodule;
 
 /*!\brief Static (on-file) module definition
@@ -214,9 +210,6 @@ struct smodule {
 
  int (*configure)(struct lmodule *);
                         /*!< function used to initialise the module. */
-
- struct einit_cfgvar_info **configuration;
-                        /*!< what configuration variables this module is gonna use */
 };
 
 /*!\brief In-memory module definition

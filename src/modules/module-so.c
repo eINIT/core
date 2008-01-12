@@ -269,6 +269,10 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
        new->do_resume = einit_mod_so_do_resume;
       }
 #endif
+     } else {
+      notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
+
+      dlclose (sohandle);
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);

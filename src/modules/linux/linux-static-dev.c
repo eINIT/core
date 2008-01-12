@@ -260,9 +260,7 @@ void *linux_static_dev_hotplug(void *ignored) {
 }
 
 int linux_static_dev_run() {
- char *dm;
-
- if (!linux_static_dev_enabled && (dm = cfg_getstring("configuration-system-device-manager", NULL)) && strmatch (dm, "static")) {
+ if (!linux_static_dev_enabled) {
   linux_static_dev_enabled = 1;
 
   mount ("proc", "/proc", "proc", 0, NULL);
@@ -315,6 +313,13 @@ int linux_static_dev_cleanup (struct lmodule *pa) {
 
 int linux_static_dev_configure (struct lmodule *pa) {
  module_init (pa);
+
+ char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+
+ if (strcmp (dm, "static")) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  exec_configure(pa);
 
  pa->cleanup = linux_static_dev_cleanup;

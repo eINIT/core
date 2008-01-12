@@ -123,44 +123,6 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  if (!ev || !ev->argv) goto done;
 
  if ((ev->argc >= 2) && ev->argv[0] && ev->argv[1]) {
-  if (strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
-   struct lmodule *cur = mlist;
-   ev->implemented = 1;
-
-   while (cur) {
-    if (cur->module) {
-     struct einit_cfgvar_info **variables = cur->module->configuration;
-
-     if (variables) {
-      uint32_t i = 0;
-
-      for (i = 0; variables[i]; i++) {
-       char *s = cfg_getstring (variables[i]->variable, NULL);
-
-       if (!s) {
-        eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! %s: variable was not set\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, variables[i]->options & eco_critical ? "error" : "warning", variables[i]->description);
-       } else if (variables[i]->default_value && (variables[i]->options & eco_warn_if_default) && strmatch (variables[i]->default_value, s)) {
-        char **r = str2set('/', variables[i]->variable);
-        if (r) {
-         struct cfgnode *node = cfg_getnode (r[0], NULL);
-
-         if (node)
-          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
-         else
-          eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
-
-         efree (r);
-        } else
-         eprintf (ev->output, " >> module \"%s\" (%s): variable %s\n  ! warning: still set to the default value (%s)\n  * description: %s\n", cur->module->name, cur->module->rid, variables[i]->variable, s, variables[i]->description);
-       }
-      }
-     }
-    }
-
-    cur = cur->next;
-   }
-  }
-
   if (strmatch (ev->argv[0], "list")) {
    if (strmatch (ev->argv[1], "modules")) {
     struct lmodule *cur = mlist;
