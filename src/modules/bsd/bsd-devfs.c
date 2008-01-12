@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit-modules/exec.h>
 
+#include <sys/param.h>
 #include <sys/mount.h>
 
 #define EXPECTED_EIV 1
