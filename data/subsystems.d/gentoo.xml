@@ -54,7 +54,10 @@
  </configuration>
 
 <!-- the rest of this file deals with aliases that are needed to translate
-     between einit names and gentoo's baselayout's names -->
+     between einit names and gentoo's baselayout's names.
+     all of this is commented out by default, so you need to enable this if you
+     do use baselayout-2 compat -->
+<!--
  <services>
   <alias id="localmount" s="mount-local" />
   <alias id="checkroot" s="mount-system" />
@@ -73,4 +76,5 @@
   <transform id="gentoo-xdm" module-id="gentoo-xdm" in="xdm" out="displaymanager" strip-from="after" />
   <transform id="gentoo-mount" module-id="gentoo-.*" in="localmount" out="mount-local" />
  </services>
+-->
 </einit>

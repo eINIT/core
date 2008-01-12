@@ -434,6 +434,41 @@ int einit_module_transformations_resume (struct lmodule *r) {
 int einit_module_transformations_configure (struct lmodule *r) {
  module_init (r);
 
+ struct cfgnode *node = NULL;
+ char doload = 0;
+
+ while ((node = cfg_findnode ("services-alias", 0, node))) {
+  if (node->idattr && node->svalue) {
+   doload = 1;
+   break;
+  }
+ }
+
+ if (!doload) {
+  node = NULL;
+  while ((node = cfg_findnode ("services-transform", 0, node))) {
+   if (node->arbattrs) {
+    doload = 1;
+    break;
+   }
+  }
+ }
+
+ if (!doload) {
+  node = NULL;
+  while ((node = cfg_findnode ("services-override-module", 0, node))) {
+   if (node->arbattrs) {
+    doload = 1;
+    break;
+   }
+  }
+ }
+
+ if (!doload) {
+  return status_configure_failed | status_not_in_use;
+ }
+
+
  thismodule->cleanup = einit_module_transformations_cleanup;
  thismodule->suspend = einit_module_transformations_suspend;
  thismodule->resume = einit_module_transformations_resume;
