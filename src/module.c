@@ -137,8 +137,18 @@ struct lmodule *mod_update (struct lmodule *module) {
  return module;
 }
 
+char **mod_blocked_rids = NULL;
+pthread_mutex_t mod_blocked_rids_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
+
+ emutex_lock (&mod_blocked_rids_mutex);
+ if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {
+  emutex_unlock (&mod_blocked_rids_mutex);
+  return NULL;
+ }
+ emutex_unlock (&mod_blocked_rids_mutex);
 
  emutex_lock (&mlist_mutex);
  struct lmodule *m = mlist;
@@ -197,6 +207,12 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
    }
 
    efree (nmod);
+
+   if (rv & status_block) {
+    emutex_lock (&mod_blocked_rids_mutex);
+    mod_blocked_rids = (char **)setadd ((void **)mod_blocked_rids, module->rid, SET_TYPE_STRING);
+    emutex_unlock (&mod_blocked_rids_mutex);
+   }
 
    return NULL;
   }

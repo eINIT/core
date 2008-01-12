@@ -85,6 +85,7 @@ module_register(einit_preload_self);
 void einit_preload_boot_event_handler_early (struct einit_event *);
 int einit_preload_usage = 0;
 
+#if 0
 int einit_preload_cleanup (struct lmodule *this) {
  sched_cleanup(irr);
 
@@ -94,6 +95,7 @@ int einit_preload_cleanup (struct lmodule *this) {
 
  return 0;
 }
+#endif
 
 void einit_preload_run () {
  char *binaries = NULL;
@@ -163,6 +165,7 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
  einit_preload_usage--;
 }
 
+#if 0
 int einit_preload_suspend (struct lmodule *irr) {
  if (!einit_preload_usage) {
   if (!(coremode & einit_mode_sandbox)) {
@@ -180,11 +183,13 @@ int einit_preload_resume (struct lmodule *irr) {
 
  return status_ok;
 }
+#endif
 
 int einit_preload_configure (struct lmodule *irr) {
  module_init (irr);
  sched_configure(irr);
 
+#if 0
  thismodule->cleanup = einit_preload_cleanup;
  thismodule->suspend = einit_preload_suspend;
  thismodule->resume  = einit_preload_resume;
@@ -192,6 +197,12 @@ int einit_preload_configure (struct lmodule *irr) {
  if ((coremode & einit_mode_sandbox)) return 0;
 
  event_listen (einit_boot_early, einit_preload_boot_event_handler_early);
+#endif
+
+ if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
+  einit_preload_boot_event_handler_early(NULL);
+ }
+ return status_configure_done | status_block;
 
  return 0;
 }

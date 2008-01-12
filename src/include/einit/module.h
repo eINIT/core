@@ -163,6 +163,8 @@ enum einit_module_status {
 /*!< Status Information: Configure: Module would be used but can't work yet */
  status_not_in_use       = 0x020000,
 /*!< Status Information: Configure: Module won't be used */
+ status_block            = 0x040000,
+/*!< Status Information: Configure: Module doesn't want to be loaded ever again */
  status_configure_done   = 0x200000
 /*!< Status Information: Configure: Module has already done all it needs to do */
 };
