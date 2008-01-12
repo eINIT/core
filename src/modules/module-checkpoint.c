@@ -274,6 +274,26 @@ int checkpoint_cleanup (struct lmodule *me) {
 }
 
 int checkpoint_configure (struct lmodule *me) {
+ struct cfgnode *node = NULL;
+
+ /* scan all modes... */
+ while ((node = cfg_findnode ("mode-enable", 0, node))) {
+  if (node->mode && node->mode->arbattrs) {
+   size_t i = 0;
+   char do_add = 0;
+
+   for (; node->mode->arbattrs[i]; i+=2) {
+    if (strmatch (node->mode->arbattrs[i], "wait-for-base") && parse_boolean (node->mode->arbattrs[i+1])) {
+     do_add = 1;
+    }
+   }
+
+   if (!do_add) {
+    return status_configure_failed | status_not_in_use;
+   }
+  }
+ }
+
  me->scanmodules = checkpoint_scanmodules;
  me->cleanup = checkpoint_cleanup;
 
