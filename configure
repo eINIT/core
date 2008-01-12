@@ -29,8 +29,10 @@
 
 alias source=.
 
-if [ "$(readlink /bin/sh)" != "dash" ]; then
-alias echo="echo -e"
+if test -n "`uname -a|grep -i 'Linux'`"; then
+ if [ "$(readlink /bin/sh)" != "dash" ]; then
+  alias echo="echo -e"
+ fi
 fi
 
 BUILDNUMBER=`cat buildnumber`
@@ -402,6 +404,17 @@ fi
 echo -n "checking system type... "
 CCL="\${CC} \${INCLUDE} \${CFLAGS} -fPIC"
 XXL="\${CXX} \${INCLUDE} \${CXXFLAGS} -fPIC"
+if test -n "`uname -a|grep 'FreeBSD'`"; then
+	echo "FreeBSD";
+	OS="freebsd";
+	XCFLAGS="$XCFLAGS -DPOSIX -DBSD";
+	LLD="-shared";
+	XDYNAMIC="-Wl,-export-dynamic";
+	XDYNAMIC_SIMPLE="-shared"
+	LPA="-lpthread";
+	STATIC="";
+	LIBRT=""
+	SO="so"
 if test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	OS="darwin";
