@@ -61,7 +61,7 @@ nomodule=""
 XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 
 DBUS=""
-PREFIX="/einit"
+PREFIX="/einit/"
 
 . ./configure.options
 
