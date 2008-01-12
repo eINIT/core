@@ -199,6 +199,12 @@ int einit_shadow_exec_cleanup (struct lmodule *this) {
 int einit_shadow_exec_configure (struct lmodule *this) {
  module_init (this);
 
+ struct cfgnode *cur = NULL;
+
+ if (!(cur = cfg_getnode ("services-shadow", NULL))) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  thismodule->cleanup = einit_shadow_exec_cleanup;
 
  exec_configure(this);
