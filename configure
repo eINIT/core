@@ -851,9 +851,13 @@ collect_objects () {
 
 
 				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
-					echo "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o\n"
+					echo "${i}.o: ${subobjects}
+	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o
+"
 				else
-					echo "${i}.o: ${subobjects}\n	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o\n"
+					echo "${i}.o: ${subobjects}
+	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o
+"
 				fi
 			fi
 		done
@@ -876,16 +880,24 @@ collect_modules() {
 				else LOCALDEF=""; fi
 
 				if test "${suffix}" = "c++"; then
-					echo "${i}.o: ${subobjects}\n	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
+					echo "${i}.o: ${subobjects}
+	\${XXL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o
+";
 				else
-					echo "${i}.o: ${subobjects}\n	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o\n";
+					echo "${i}.o: ${subobjects}
+	\${CCL} ${DEFINES} ${LOCALDEF} -I$(dirname ${subobjects}) -c ${subobjects} -o ${i}.o
+";
 				fi
 
 				if test -z "$(grep ${i}.so\:\  ${template})"; then
 					if test "${suffix}" = "c++"; then
-						echo "${i}.so: ${i}.o\n	\${LXXLD} ${i}.o -o ${i}.so\n";
+						echo "${i}.so: ${i}.o
+	\${LXXLD} ${i}.o -o ${i}.so
+";
 					else
-						echo "${i}.so: ${i}.o\n	\${LLD} ${i}.o -o ${i}.so\n";
+						echo "${i}.so: ${i}.o
+	\${LLD} ${i}.o -o ${i}.so
+";
 					fi
 				fi
 			fi
@@ -917,7 +929,9 @@ collect_and_install_headers() {
 		fi
 
 		mkdir -p build/$z/$(basename ${i});
-		install="${install}\n	\${INSTALL} \${IPARAM} -d \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})\n	\${INSTALL} \${IPARAM} -m 0644 $(basename ${i})/*.h \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})"
+		install="${install}
+	\${INSTALL} \${IPARAM} -d \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})
+	\${INSTALL} \${IPARAM} -m 0644 $(basename ${i})/*.h \${DESTDIR}/\${INCLUDEDIR}/$(basename ${i})"
 		
 		for suffix in ${SUFFIXES}; do
 			headers=$(find ${i} -name "*.${suffix}")
@@ -1006,7 +1020,9 @@ for z in ${BUILDCOMPONENTS}; do
 	echo -n "${z} ";
 	mkdir -p build/${z};
 	cat config.mk > build/${z}/Makefile
-	echo "\nall: ${z}\n" >> build/${z}/Makefile
+	echo "
+all: ${z}
+" >> build/${z}/Makefile
 
 	inobjects=""
 	inmodules=""
@@ -1058,18 +1074,26 @@ for z in ${BUILDCOMPONENTS}; do
 			echo  "" >> build/core/module-configuration.c
 		fi;
 
-		echo "\nmodule-configuration.o: module-configuration.c\n	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o\n" >> build/${z}/Makefile
+		echo "
+module-configuration.o: module-configuration.c
+	\$(CCC) -DEINIT_CORE -c  module-configuration.c -o module-configuration.o
+" >> build/${z}/Makefile
 	fi
 
-	echo "\nobjects = ${objects}\n" >> build/${z}/Makefile
-	echo "\nasmobjects = ${asmobjects}\n" >> build/${z}/Makefile
+	echo "
+objects = ${objects}
+" >> build/${z}/Makefile
+	echo "
+asmobjects = ${asmobjects}
+" >> build/${z}/Makefile
 	cat makefile.${z}.template >> build/${z}/Makefile
 done
 
 echo "# makefiles below here are auto-created, it's not gonna help much if you modify any of them." > build/Makefile;
 
 for y in ${MAKEFILETASKS}; do
-	echo "\n${y}:" >> build/Makefile
+	echo "
+${y}:" >> build/Makefile
 	for i in ${components}; do
 		echo "	cd ${i} && \${MAKE} ${y}" >> build/Makefile
 	done
