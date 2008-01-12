@@ -415,7 +415,7 @@ if test -n "`uname -a|grep 'FreeBSD'`"; then
 	STATIC="";
 	LIBRT=""
 	SO="so"
-if test -n "`uname -a|grep -i 'darwin kernel'`"; then
+elif test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	OS="darwin";
 	XCFLAGS="$XCFLAGS -DDARWIN -DPOSIX -DBSD";
