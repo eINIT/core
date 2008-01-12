@@ -316,7 +316,7 @@ int linux_static_dev_configure (struct lmodule *pa) {
 
  char *dm = cfg_getstring("configuration-system-device-manager", NULL);
 
- if (strcmp (dm, "static")) {
+ if (!dm || strcmp (dm, "static")) {
   return status_configure_failed | status_not_in_use;
  }
 

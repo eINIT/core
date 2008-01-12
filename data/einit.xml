@@ -112,10 +112,6 @@
    <coldplug b="yes" />
   </system>
 
-  <linux>
-   <cpufreq cpus="2" in-switch="performance" post-switch="ondemand" />
-  </linux>
-
   <bootchart>
    <active b="no" />
    <save-to s="/var/log/bootchart.tgz" />

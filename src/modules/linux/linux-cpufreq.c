@@ -150,6 +150,11 @@ int linux_cpufreq_cleanup (struct lmodule *pa) {
 int linux_cpufreq_configure (struct lmodule *pa) {
  module_init (pa);
 
+ struct cfgnode *node = cfg_getnode ("configuration-linux-cpufreq", NULL);
+ if (!node) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  pa->cleanup = linux_cpufreq_cleanup;
 
  event_listen (einit_core_switching, linux_cpufreq_switch);

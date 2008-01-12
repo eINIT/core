@@ -205,13 +205,13 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
      if ((f = fopen (targetbuffer, "w"))) {
       int rembytes = ll;
       while (rembytes > 0) {
-	   size_t bw = fwrite (firmware_data +ll -rembytes, rembytes, 1, f);
+       size_t bw = fwrite (firmware_data +ll -rembytes, rembytes, 1, f);
 
-	   if (bw == 1) break;
+       if (bw == 1) break;
 
        if (bw < 0) {
         notice (3, "error writing firmware: %s", buffer);
-	   }
+       }
       }
       fclose (f);
      }

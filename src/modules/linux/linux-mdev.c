@@ -333,7 +333,7 @@ int linux_mdev_configure (struct lmodule *pa) {
 
  char *dm = cfg_getstring("configuration-system-device-manager", NULL);
 
- if (strcmp (dm, "mdev")) {
+ if (!dm || strcmp (dm, "mdev")) {
   return status_configure_failed | status_not_in_use;
  }
 

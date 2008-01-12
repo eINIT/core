@@ -1030,6 +1030,11 @@ int einit_feedback_visual_cleanup (struct lmodule *this) {
 int einit_feedback_visual_configure (struct lmodule *irr) {
  module_init (irr);
 
+ struct cfgnode *node = cfg_getnode ("configuration-feedback-textual", NULL);
+ if (node && !node->flag) { /* node needs to exist and explicitly say 'no' to disable this module */
+  return status_configure_failed | status_not_in_use;
+ }
+
  irr->cleanup = einit_feedback_visual_cleanup;
 
  event_listen (einit_boot_devices_available, feedback_textual_enable);

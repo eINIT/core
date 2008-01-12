@@ -998,7 +998,7 @@ int linux_edev_configure (struct lmodule *pa) {
 
  char *dm = cfg_getstring("configuration-system-device-manager", NULL);
 
- if (strcmp (dm, "edev")) {
+ if (!dm || strcmp (dm, "edev")) {
   return status_configure_failed | status_not_in_use;
  }
 
