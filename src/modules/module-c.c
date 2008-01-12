@@ -255,11 +255,16 @@ int module_c_resume (struct lmodule *this) {
 int module_c_configure (struct lmodule *irr) {
  module_init (irr);
 
+ struct cfgnode *node = cfg_getnode ("subsystem-c-active", NULL);
+ if (!node || !node->flag) { /* node needs to exist and explicitly say 'no' to disable this module */
+  return status_configure_failed | status_not_in_use;
+ }
+
  thismodule->cleanup = module_c_cleanup;
 
  thismodule->suspend = module_c_suspend;
  thismodule->resume = module_c_resume;
- 
+
  event_listen (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 
  return 0;

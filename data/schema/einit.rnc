@@ -310,6 +310,8 @@ Special = element special {
 
 Subsystems = element subsystem {
  element c {
+  element active { BooleanAttribute }? &
+
   element compile-to { StringAttribute }? &
   element compile { attribute c { text } }? &
   element sources { IDAttribute & PathAttributes } *

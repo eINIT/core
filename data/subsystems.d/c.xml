@@ -8,6 +8,8 @@
 
  <subsystem>
   <c>
+   <active b="no" />
+
    <sources id="primus" path="/lib/einit/modules-c/" pattern-allow=".*\.(c|i|ii)$" />
    <sources id="secundus" path="/etc/einit/modules-c/" pattern-allow=".*\.(c|i|ii)$" /> 
 
