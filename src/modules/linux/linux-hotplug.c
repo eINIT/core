@@ -253,6 +253,14 @@ int linux_hotplug_configure (struct lmodule *tm) {
  module_init (tm);
  exec_configure (tm);
 
+ char *dm = cfg_getstring("configuration-system-device-manager", NULL);
+
+/* this module won't work unless we're using either mdev, edev or a static dev, due to
+   the hotplug event reader not being implemented in udev */
+ if (!dm || (strcmp (dm, "mdev") && strcmp (dm, "edev") && strcmp (dm, "static"))) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  event_listen (einit_event_subsystem_hotplug, linux_hotplug_hotplug_event_handler);
 
  return 1;
