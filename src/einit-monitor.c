@@ -235,8 +235,8 @@ int main(int argc, char **argv, char **env) {
  char need_recovery = 0;
  char is_ipc = 0;
 
- fputs ("eINIT Monitor, " EINIT_VERSION_LITERAL "\n", stderr);
- fflush (stderr);
+ fputs ("eINIT Monitor, " EINIT_VERSION_LITERAL "\n", stdout);
+ fflush (stdout);
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
