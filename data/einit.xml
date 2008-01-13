@@ -135,6 +135,7 @@
 
   <kernel>
    <modules>
+    <load-in-parallel b="no" />
     <autoload.d file="/etc/modules.autoload.d/kernel-2.6" />
    </modules>
   </kernel>

@@ -151,6 +151,7 @@ Configuration = element configuration {
   element kernel {
     element modules {
       element autoload.d { attribute file { text } }? &
+      element load-in-parallel { BooleanAttribute }? &
       element * { StringAttribute, BooleanAttribute?, attribute provide-service { Boolean }? }*
     }*
   }* &
