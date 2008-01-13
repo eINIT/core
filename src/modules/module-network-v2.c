@@ -96,7 +96,8 @@ struct network_v2_interface_descriptor {
  char *dhcp_client;
 };
 
-pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_module_network_v2_get_all_addresses_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int einit_module_network_v2_scanmodules (struct lmodule *);
 int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback);
@@ -196,6 +197,8 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-", interface);
 
+ emutex_lock (&einit_module_network_v2_get_all_addresses_mutex);
+
  st = cfg_prefix (buffer);
  if (st) {
   struct stree *cur = streelinear_prepare (st);
@@ -203,8 +206,11 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
 
   while (cur) {
    struct cfgnode *n = cur->value;
-   if (n->arbattrs)
-    rv = streeadd (rv, (cur->key + prefixlen), n->arbattrs, tree_value_noalloc, NULL);
+   if (n->arbattrs) {
+    char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+
+    rv = streeadd (rv, (cur->key + prefixlen), narb, tree_value_noalloc, narb);
+   }
 
    cur = streenext (cur);
   }
@@ -212,12 +218,18 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
   streefree (st);
  } else {
   struct cfgnode *n;
-  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv4")))
-   rv = streeadd (rv, "ipv4", n->arbattrs, tree_value_noalloc, NULL);
+  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv4")) && n->arbattrs) {
+   char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+   rv = streeadd (rv, "ipv4", narb, tree_value_noalloc, narb);
+  }
 
-  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv6")))
-   rv = streeadd (rv, "ipv6", n->arbattrs, tree_value_noalloc, NULL);
+  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv6")) && n->arbattrs) {
+   char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+   rv = streeadd (rv, "ipv6", narb, tree_value_noalloc, narb);
+  }
  }
+
+ emutex_unlock (&einit_module_network_v2_get_all_addresses_mutex);
 
  return rv;
 }
