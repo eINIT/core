@@ -410,33 +410,77 @@ void linux_network_address_static (struct einit_event *ev) {
       }
      }
 
-     if (gateway) {
-      if (network) {
-       if (ip_binary) {
-        esprintf (buffer, BUFFERSIZE, "ip route add %s via %s dev %s", network, gateway, ev->string);
+     if (d->action == interface_up) {
+      if (gateway) {
+       if (network) {
+        if (ip_binary) {
+         esprintf (buffer, BUFFERSIZE, "ip route del %s via %s dev %s", network, gateway, ev->string);
+         pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+         esprintf (buffer, BUFFERSIZE, "ip route add %s via %s dev %s", network, gateway, ev->string);
+        } else {
+         esprintf (buffer, BUFFERSIZE, "route del -net %s gw %s dev %s", network, gateway, ev->string);
+         pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+         esprintf (buffer, BUFFERSIZE, "route add -net %s gw %s dev %s", network, gateway, ev->string);
+        }
        } else {
-        esprintf (buffer, BUFFERSIZE, "route add -net %s gw %s dev %s", network, gateway, ev->string);
+        if (ip_binary) {
+         esprintf (buffer, BUFFERSIZE, "ip route del via %s dev %s", gateway, ev->string);
+         pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+         esprintf (buffer, BUFFERSIZE, "ip route add via %s dev %s", gateway, ev->string);
+        } else {
+         esprintf (buffer, BUFFERSIZE, "route del -net default gw %s dev %s", gateway, ev->string);
+         pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+         esprintf (buffer, BUFFERSIZE, "route add -net default gw %s dev %s", gateway, ev->string);
+        }
        }
-      } else {
+      } else if (network) {
        if (ip_binary) {
-        esprintf (buffer, BUFFERSIZE, "ip route add via %s dev %s", gateway, ev->string);
+        esprintf (buffer, BUFFERSIZE, "ip route del %s dev %s", network, ev->string);
+        pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+        esprintf (buffer, BUFFERSIZE, "ip route add %s dev %s", network, ev->string);
        } else {
-        esprintf (buffer, BUFFERSIZE, "route add -net default gw %s dev %s", gateway, ev->string);
+        esprintf (buffer, BUFFERSIZE, "route del -net %s dev %s", network, ev->string);
+        pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+        esprintf (buffer, BUFFERSIZE, "route add -net %s dev %s", network, ev->string);
        }
       }
-     } else if (network) {
-      if (ip_binary) {
-       esprintf (buffer, BUFFERSIZE, "ip route add %s dev %s", network, ev->string);
-      } else {
-       esprintf (buffer, BUFFERSIZE, "route add -net %s dev %s", network, ev->string);
-      }
-     }
 
-     if (buffer[0]) {
-      if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-       fbprintf (d->feedback, "command failed: %s", buffer);
-       d->status = status_failed;
-       break;
+      if (buffer[0]) {
+       if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+        fbprintf (d->feedback, "command failed: %s", buffer);
+        d->status = status_failed;
+        break;
+       }
+      }
+     } else if (d->action == interface_down) {
+      if (gateway) {
+       if (network) {
+        if (ip_binary) {
+         esprintf (buffer, BUFFERSIZE, "ip route del %s via %s dev %s", network, gateway, ev->string);
+        } else {
+         esprintf (buffer, BUFFERSIZE, "route del -net %s gw %s dev %s", network, gateway, ev->string);
+        }
+       } else {
+        if (ip_binary) {
+         esprintf (buffer, BUFFERSIZE, "ip route del via %s dev %s", gateway, ev->string);
+        } else {
+         esprintf (buffer, BUFFERSIZE, "route del -net default gw %s dev %s", gateway, ev->string);
+        }
+       }
+      } else if (network) {
+       if (ip_binary) {
+        esprintf (buffer, BUFFERSIZE, "ip route del %s dev %s", network, ev->string);
+       } else {
+        esprintf (buffer, BUFFERSIZE, "route del -net %s dev %s", network, ev->string);
+       }
+      }
+
+      if (buffer[0]) {
+       if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+        fbprintf (d->feedback, "command failed: %s", buffer);
+        d->status = status_failed;
+        break;
+       }
       }
      }
     }
