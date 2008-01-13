@@ -319,7 +319,8 @@ Subsystems = element subsystem {
  } ? &
 
  element xml-sh-compiler {
-  element active { BooleanAttribute }?
+  element active { BooleanAttribute }? &
+  element compile-to { StringAttribute }?
  } ? &
 
  element network {
