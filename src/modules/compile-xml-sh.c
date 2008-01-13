@@ -41,6 +41,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/module.h>
 #include <einit/config.h>
 #include <einit/bitch.h>
+#include <errno.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 #define EXPECTED_EIV 1
 
@@ -57,7 +63,7 @@ const struct smodule compile_xml_sh_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .name      = "eINIT XML/sh-to-C compiler",
+ .name      = "eINIT XML/sh-to-.so compiler",
  .rid       = "einit-compile-xml-sh",
  .si        = {
   .provides = NULL,
@@ -72,8 +78,94 @@ module_register(compile_xml_sh_self);
 
 #endif
 
+#define MODULES_PREFIX "services-virtual-module-"
+#define MODULES_PREFIX_LENGTH (sizeof(MODULES_PREFIX) -1)
+
+#define MODULES_EXECUTE_NODE_TEMPLATE MODULES_PREFIX "%s-execute"
+#define MODULES_ARBITRARY_NODE_TEMPLATE MODULES_PREFIX "%s-%s"
+
+char compile_xml_sh_firstrun = 1;
+
+char compile_xml_sh_compile_file (char *oname, char *base, char *nname) {
+ char ret = 0;
+ char *compiler_template = cfg_getstring ("subsystem-c-compile/c", NULL);
+ if (compiler_template) {
+  char **data = NULL;
+  char *compiler_command;
+
+  data = (char **)setadd ((void **)data, "configuration-file", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, EINIT_LIB_BASE "/scripts/configuration", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "compile-options", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "link-options", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "module-source", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, oname, SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "module-target", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, nname, SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, "module-basename", SET_TYPE_STRING);
+  data = (char **)setadd ((void **)data, base, SET_TYPE_STRING);
+
+  if ((compiler_command = apply_variables (compiler_template, (const char **)data))) {
+   int srv;
+
+   notice (1, "compiling: %s", oname);
+
+   srv = system(compiler_command);
+
+   if ((srv != -1) && (srv != 127)) {
+    if (WIFEXITED(srv) && !(WEXITSTATUS(srv))) {
+     ret = 1;
+    }
+   }
+
+   efree (compiler_command);
+  }
+
+  efree (data);
+ }
+
+ return ret;
+}
+
+char compile_xml_sh_update_modules () {
+ char ret = 0;
+ char *outputpath = cfg_getstring ("subsystem-xml-sh-compiler-compile-to", NULL);
+
+ if (outputpath) {
+  char do_compile = 0;
+
+  if (compile_xml_sh_firstrun) {
+   if (einit_argv) {
+    uint32_t y = 0;
+
+    for (; einit_argv[y]; y++) {
+     if (strmatch (einit_argv[y], "--compile-xml-sh")) {
+      unlink (outputpath);
+      do_compile = 1;
+     }
+    }
+   }
+
+   compile_xml_sh_firstrun = 0;
+  }
+
+  if (do_compile) {
+   struct stree *modules = cfg_prefix (MODULES_PREFIX);
+
+   if (modules) {
+    streefree (modules);
+   }
+  }
+ }
+
+ return ret;
+}
+
 void compile_xml_sh_einit_event_handler_update_configuration (struct einit_event *ev) {
- 
+ if (compile_xml_sh_update_modules()) {
+  ev->chain_type = einit_core_configuration_update;
+ }
 }
 
 int compile_xml_sh_cleanup (struct lmodule *this) {

@@ -4,8 +4,9 @@ export INCLUDEPATH="/usr/local/include"
 # modules that need to be reworked and are thus disabled by default: feedback-aural, feedback-aural-festival
 # modules that are incomplete and currently useless: ipc-hub
 # modules that currently only seem to work on Gentoo/Linux and are thus disabled by default: linux-mdev, linux-edev, linux-static-dev
+# gotta do this too: compile-xml-sh
 
-export MODULES_GENERIC="feedback-visual-textual fqdn exec ipc mount tty process ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler functions-xml module-xml log parse-sh bootstrap-configuration-stree bootstrap-configuration-xml-expat preload module-checkpoint module-group feedback-visual-psplash module-logic-v4 module-network compile-c compile-xml-sh"
+export MODULES_GENERIC="feedback-visual-textual fqdn exec ipc mount tty process ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler functions-xml module-xml log parse-sh bootstrap-configuration-stree bootstrap-configuration-xml-expat preload module-checkpoint module-group feedback-visual-psplash module-logic-v4 module-network compile-c"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 export MODULES_CORE="module-so"
 export MODULES_EXPERIMENTAL=""

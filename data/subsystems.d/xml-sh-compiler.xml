@@ -3,6 +3,8 @@
  <subsystem>
   <xml-sh-compiler>
    <active b="no" />
+
+   <compile-to s="/lib/einit/modules/compiled-xml-sh-modules.so" />
   </xml-sh-compiler>
  </subsystem>
 </einit>
