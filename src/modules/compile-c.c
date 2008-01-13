@@ -1,5 +1,5 @@
 /*
- *  module-c.c
+ *  compile-c.c
  *  einit
  *
  *  Created on 29/08/2007.
@@ -64,7 +64,7 @@ const struct smodule module_c_self = {
  .version   = 1,
  .mode      = 0,
  .name      = "eINIT Automatic C-Module Compiler",
- .rid       = "einit-module-c",
+ .rid       = "einit-compile-c",
  .si        = {
   .provides = NULL,
   .requires = NULL,

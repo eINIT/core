@@ -317,6 +317,10 @@ Subsystems = element subsystem {
   element sources { IDAttribute & PathAttributes } *
  } ? &
 
+ element xml-sh-compiler {
+  element active { BooleanAttribute }?
+ } ? &
+
  element network {
   element dhcp {
    element client {
