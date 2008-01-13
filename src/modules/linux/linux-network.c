@@ -332,39 +332,40 @@ void linux_network_address_static (struct einit_event *ev) {
     buffer[0] = 0;
 
     if (ip_binary) {
-     char *aftype = cur->key;
-
-     if (strmatch (cur->key, "ipv4"))
-      aftype = "inet";
-     else if (strmatch (cur->key, "ipv6"))
-      aftype = "inet6";
-
 /* looks like we have the ip command handy, so let's use it */
      if (d->action == interface_up) {
 /* silently try to erase the address first, then re-add it */
-      esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
-      pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
-
-      esprintf (buffer, BUFFERSIZE, "ip -f %s addr add local %s dev %s", aftype, address, ev->string);
+      if (strmatch (cur->key, "ipv4")) {
+       esprintf (buffer, BUFFERSIZE, "ip -f inet addr delete local %s dev %s", address, ev->string);
+       pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+       esprintf (buffer, BUFFERSIZE, "ip -f inet addr add local %s dev %s", address, ev->string);
+      } else if (strmatch (cur->key, "ipv6")) {
+       esprintf (buffer, BUFFERSIZE, "ip -f inet6 addr delete local %s dev %s", address, ev->string);
+       pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+       esprintf (buffer, BUFFERSIZE, "ip -f inet6 addr add local %s dev %s", address, ev->string);
+      } else {
+       esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", cur->key, address, ev->string);
+       pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
+       esprintf (buffer, BUFFERSIZE, "ip -f %s addr add local %s dev %s", cur->key, address, ev->string);
+      }
      } else if (d->action == interface_down) {
-      esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
+      if (strmatch (cur->key, "ipv4")) {
+       esprintf (buffer, BUFFERSIZE, "ip -f inet addr delete local %s dev %s", address, ev->string);
+      } else if (strmatch (cur->key, "ipv6")) {
+       esprintf (buffer, BUFFERSIZE, "ip -f inet6 addr delete local %s dev %s", address, ev->string);
+      } else {
+       esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", cur->key, address, ev->string);
+      }
      }
-
     } else {
 /* fall back to ifconfig -- this means we get to use only one ip address per interface */
-
      if (d->action == interface_up) {
-      char *aftype = cur->key;
-
       if (strmatch (cur->key, "ipv4"))
-       aftype = "inet";
+       esprintf (buffer, BUFFERSIZE, "ifconfig %s inet %s", ev->string, address);
       else if (strmatch (cur->key, "ipv6"))
-       aftype = "inet6";
-
-      if (strmatch (aftype, "inet"))
-       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s %s", ev->string, aftype, address);
+       esprintf (buffer, BUFFERSIZE, "ifconfig %s inet6 add %s", ev->string, address);
       else
-       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s add %s", ev->string, aftype, address);
+       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s add %s", ev->string, cur->key, address);
      } else if (d->action == interface_down) {
 /* ifconfig only seems to be able to handle ipv6 interfaces like this */
       if (strmatch (cur->key, "ipv6")) {

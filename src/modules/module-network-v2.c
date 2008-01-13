@@ -176,14 +176,14 @@ struct cfgnode **einit_module_network_v2_get_multiple_options (char *interface, 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface, option);
 
  while ((node = cfg_findnode (buffer, 0, node))) {
-  rv = (struct cfgnode **)setadd ((void **)rv, node, SET_TYPE_STRING);
+  rv = (struct cfgnode **)setadd ((void **)rv, node, SET_NOALLOC);
  }
 
  if (rv)
   return rv;
  else {
   if ((node = einit_module_network_v2_get_option_default (interface, option))) {
-   rv = (struct cfgnode **)setadd ((void **)rv, node, SET_TYPE_STRING);
+   rv = (struct cfgnode **)setadd ((void **)rv, node, SET_NOALLOC);
   }
 
   return rv;
