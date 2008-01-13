@@ -444,6 +444,14 @@ int linux_kernel_modules_cleanup (struct lmodule *this) {
 
 int linux_kernel_modules_configure (struct lmodule *this) {
  module_init(this);
+
+ struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+ streefree (linux_kernel_modules_nodes);
+
+ if (!linux_kernel_modules_nodes) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  exec_configure (this);
 
  thismodule->cleanup = linux_kernel_modules_cleanup;
