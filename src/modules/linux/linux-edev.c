@@ -483,7 +483,7 @@ void linux_edev_hotplug_handle (char **v) {
 
       if (user) {
        if ((ts = streefind (linux_edev_uids, user, tree_find_first))) {
-        uintptr_t xn = ts->value;
+        uintptr_t xn = (uintptr_t)ts->value;
         uid = (uid_t)xn;
        } else {
         lookupuidgid (&uid, NULL, user, NULL);
@@ -494,7 +494,7 @@ void linux_edev_hotplug_handle (char **v) {
 
       if (group) {
        if ((ts = streefind (linux_edev_gids, group, tree_find_first))) {
-        uintptr_t xn = ts->value;
+        uintptr_t xn = (uintptr_t)ts->value;
         gid = (uid_t)xn;
        } else {
         lookupuidgid (NULL, &gid, NULL, group);
@@ -730,10 +730,9 @@ int linux_edev_run() {
 void linux_edev_shutdown() {
  if (linux_edev_enabled) {
   linux_edev_enabled = 0;
+ }
 
-  return status_ok;
- } else
-  return status_failed;
+ return;
 }
 
 void linux_edev_boot_event_handler (struct einit_event *ev) {
