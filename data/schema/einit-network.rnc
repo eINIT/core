@@ -40,6 +40,10 @@ InterfaceDataV2 =
  }? &
  element dhcp-client { StringAttribute }? &
  element kernel-modules { StringAttribute }? &
+ element wpa-supplicant {
+  attribute configuration-file { text }? &
+  attribute driver { text }?
+ }? &
  element automatic { BooleanAttribute }? &
  element immediate { BooleanAttribute }? &
  element dont-wait { BooleanAttribute }?

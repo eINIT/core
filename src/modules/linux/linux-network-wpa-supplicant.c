@@ -62,9 +62,9 @@ const struct smodule linux_network_wpa_supplicant_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_generic,
+ .mode      = einit_module_loader,
  .name      = "Network Helpers (Linux, WPA Supplicant)",
- .rid       = "linux-network",
+ .rid       = "linux-network-wpa-supplicant",
  .si        = {
   .provides = NULL,
   .requires = NULL,
@@ -120,15 +120,28 @@ struct network_event_data {
 void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- struct cfgnode *node = d->functions->get_option(ev->string, "kernel-modules");
- if (node && node->svalue) {
+ struct cfgnode *node = d->functions->get_option(ev->string, "wpa-supplicant");
+ if (node) {
+  char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
+  char *driver = "wext";
+
   char buffer[BUFFERSIZE];
 
-  esprintf (buffer, BUFFERSIZE, "kern-%s", ev->string);
+  int i = 0;
+
+  if (node->arbattrs) {
+   for (; node->arbattrs[i]; i += 2) {
+    if (strmatch (node->arbattrs[i], "configuration-file")) {
+     configuration_file = node->arbattrs[i+1];
+    } else if (strmatch (node->arbattrs[i], "driver")) {
+     driver = node->arbattrs[i+1];
+    }
+   }
+  }
+
+  esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
 
   if (!inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
-//   fprintf (stderr, "%s\n", buffer);
-
    d->static_descriptor->si.requires =
     (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
   }
@@ -137,19 +150,19 @@ void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
 
   memset (&newnode, 0, sizeof(struct cfgnode));
 
-  esprintf (buffer, BUFFERSIZE, "configuration-kernel-modules-%s", ev->string);
+  esprintf (buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s", ev->string);
   newnode.id = estrdup (buffer);
   newnode.type = einit_node_regular;
 
-  esprintf (buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
+  esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
 
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)node->svalue, SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"driver", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)driver, SET_TYPE_STRING);
 
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"provide-service", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"yes", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"configuration-file", SET_TYPE_STRING);
+  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)configuration_file, SET_TYPE_STRING);
 
   newnode.svalue = newnode.arbattrs[3];
 
@@ -157,137 +170,230 @@ void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
  }
 }
 
-void linux_network_wpa_supplicant_interface_prepare (struct einit_event *ev) {
- struct network_event_data *d = ev->para;
+char **linux_network_wpa_supplicant_get_as_option_set (char *interface, char *wpa_command) {
+ char command[BUFFERSIZE];
 
- char buffer[BUFFERSIZE];
- char **ip_binary = which ("ip");
+ esprintf (command, BUFFERSIZE, "wpa_cli -i%s %s", interface, wpa_command);
 
- buffer[0] = 0;
+ FILE *f = popen (command, "r");
+ char **rv = NULL;
 
- if (ip_binary) {
-/* looks like we have the ip command handy, so let's use it */
-  efree (ip_binary);
+ if (f) {
+  char linebuffer[BUFFERSIZE];
 
-  if (d->action == interface_up) {
-   esprintf (buffer, BUFFERSIZE, "ip link set %s up", ev->string);
-  }
- } else {
-/* fall back to ifconfig -- this means we get to use only one ip address per interface */
+  while (fgets (linebuffer, BUFFERSIZE, f)) {
+   if (linebuffer[0]) {
+    strtrim (linebuffer);
+    if (linebuffer[0]) {
+     char *s = strchr (linebuffer, '=');
+     if (s) {
+      *s = 0;
+      s++;
 
-  if (d->action == interface_up) {
-   esprintf (buffer, BUFFERSIZE, "ifconfig %s up", ev->string);
-  }
- }
-
- if (buffer[0]) {
-  if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-   fbprintf (d->feedback, "command failed: %s", buffer);
-   d->status = status_failed;
-  }
- }
-}
-
-void linux_network_wpa_supplicant_address_static (struct einit_event *ev) {
- struct network_event_data *d = ev->para;
-
- struct stree *st = d->functions->get_all_addresses (ev->string);
- if (st) {
-  struct stree *cur = streelinear_prepare (st);
-
-  while (cur) {
-   char dhcp = 0;
-   char *address = NULL;
-
-   if (cur->value) {
-    char **v = cur->value;
-    int i = 0;
-
-    for (; v[i]; i+=2) {
-     if (strmatch (v[i], "address")) {
-      if (strmatch (v[i+1], "dhcp")) {
-       dhcp = 1;
-      } else {
-       address = v[i+1];
-      }
+      rv = (char **)setadd ((void **)rv, linebuffer, SET_TYPE_STRING);
+      rv = (char **)setadd ((void **)rv, s, SET_TYPE_STRING);
      }
     }
    }
+  }
 
-   if (!dhcp && address) {
-    char buffer[BUFFERSIZE];
-    char **ip_binary = which ("ip");
+  pclose (f);
+ }
 
-    buffer[0] = 0;
+ return rv;
+}
 
-    if (ip_binary) {
-     char *aftype;
+void linux_network_wpa_supplicant_verify_carrier (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
 
-     if (strmatch (cur->key, "ipv4"))
-      aftype = "inet";
-     else if (strmatch (cur->key, "ipv4"))
-      aftype = "inet6";
-     else
-      aftype = cur->key;
+ if (d->functions->get_option(ev->string, "wpa-supplicant")) {
+  char **wpa_options = NULL;
+  int not_ok = 1;
+  int retries = 30; /* 30 sec timeout... should be enough */
 
-/* looks like we have the ip command handy, so let's use it */
-     if (d->action == interface_up) {
-      esprintf (buffer, BUFFERSIZE, "ip -f %s addr add local %s dev %s", aftype, address, ev->string);
-     } else if (d->action == interface_down) {
-      esprintf (buffer, BUFFERSIZE, "ip -f %s addr delete local %s dev %s", aftype, address, ev->string);
-     }
+  fbprintf (d->feedback, "making sure wpa_supplicant associated properly");
 
-     efree (ip_binary);
-    } else {
-/* fall back to ifconfig -- this means we get to use only one ip address per interface */
-
-     if (d->action == interface_up) {
-      char *aftype;
-
-      if (strmatch (cur->key, "ipv4"))
-       aftype = "inet";
-      else if (strmatch (cur->key, "ipv4"))
-       aftype = "inet6";
-      else
-       aftype = cur->key;
-
-      if (strmatch (aftype, "inet"))
-       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s %s", ev->string, aftype, address);
-      else
-       esprintf (buffer, BUFFERSIZE, "ifconfig %s %s add %s", ev->string, aftype, address);
-     } else if (d->action == interface_down) {
-/* ifconfig only seems to be able to handle ipv6 interfaces like this */
-      if (strmatch (cur->key, "ipv6")) {
-       esprintf (buffer, BUFFERSIZE, "ifconfig %s inet6 del %s", ev->string, address);
+  while (not_ok && (retries > 0)) {
+   if ((wpa_options = linux_network_wpa_supplicant_get_as_option_set (ev->string, "status"))) {
+    int i = 0;
+    for (; wpa_options[i]; i+= 2) {
+     if (strmatch (wpa_options[i], "wpa_state")) {
+      if (strmatch (wpa_options[i+1], "COMPLETED")) {
+       not_ok = 0;
       }
-     }
-    }
 
-    if (buffer[0]) {
-     if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-      fbprintf (d->feedback, "command failed: %s", buffer);
-      d->status = status_failed;
       break;
      }
     }
    }
 
-   cur = streenext(cur);
+   if (not_ok) {
+    if (!(retries % 5))
+     fbprintf (d->feedback, "uh-oh!");
+
+    retries--;
+    sleep (1);
+   }
   }
 
-  streefree (st);
+  if (not_ok) { /* things didn't go smoothly... */
+   fbprintf (d->feedback, "can't seem to associate, giving up");
+
+   d->status = status_failed;
+  }
  }
+}
+
+#define MPREFIX "configuration-wpa-supplicant-"
+
+int linux_network_wpa_supplicant_module_enable (struct dexecinfo *interface_daemon, struct einit_event *status) {
+ if (interface_daemon) {
+  return startdaemon (interface_daemon, status);
+ }
+
+ return status_failed;
+}
+
+int linux_network_wpa_supplicant_module_disable (struct dexecinfo *interface_daemon, struct einit_event *status) {
+ if (interface_daemon) {
+  return stopdaemon (interface_daemon, status);
+ }
+
+ return status_failed;
+}
+
+int linux_network_wpa_supplicant_module_configure (struct lmodule *this) {
+ this->enable = (int (*)(void *, struct einit_event *))linux_network_wpa_supplicant_module_enable;
+ this->disable = (int (*)(void *, struct einit_event *))linux_network_wpa_supplicant_module_disable;
+
+ char buffer [BUFFERSIZE];
+
+ esprintf (buffer, BUFFERSIZE, MPREFIX "%s", this->module->rid + 21);
+
+ struct cfgnode *node = cfg_getnode (buffer, NULL);
+
+ if (node) {
+  struct dexecinfo *interface_daemon = emalloc (sizeof (struct dexecinfo));
+  memset (interface_daemon, 0, sizeof (struct dexecinfo));
+  char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
+  char *driver = "wext";
+
+  int i = 0;
+
+  if (node->arbattrs) {
+   for (; node->arbattrs[i]; i += 2) {
+    if (strmatch (node->arbattrs[i], "configuration-file")) {
+     configuration_file = node->arbattrs[i+1];
+    } else if (strmatch (node->arbattrs[i], "driver")) {
+     driver = node->arbattrs[i+1];
+    }
+   }
+  }
+
+  interface_daemon->id = this->module->rid;
+
+  esprintf (buffer, BUFFERSIZE, "wpa_supplicant -i%s -D%s -C/var/run/wpa_supplicant -c%s", (this->module->rid + 21), driver, configuration_file);
+
+  interface_daemon->command = estrdup (buffer);
+  interface_daemon->restart = 1;
+
+  interface_daemon->prepare = NULL;
+  interface_daemon->cleanup = NULL;
+  interface_daemon->is_up = NULL;
+  interface_daemon->is_down = NULL;
+  interface_daemon->variables = NULL;
+  interface_daemon->user = NULL;
+  interface_daemon->group = NULL;
+  interface_daemon->cb = NULL;
+  interface_daemon->environment = NULL;
+  interface_daemon->pidfile = NULL;
+  interface_daemon->need_files = NULL;
+  interface_daemon->oattrs = NULL;
+  interface_daemon->script = NULL;
+  interface_daemon->script_actions = NULL;
+
+  this->param = interface_daemon;
+ }
+
+ return 0;
+}
+
+int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
+ struct stree *linux_network_wpa_supplicant_nodes = cfg_prefix(MPREFIX);
+
+ if (linux_network_wpa_supplicant_nodes) {
+  struct stree *cur = streelinear_prepare(linux_network_wpa_supplicant_nodes);
+
+  while (cur) {
+   char *interface = cur->key + sizeof (MPREFIX) -1;
+   struct cfgnode *node = cur->value;
+
+   char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
+   char *driver = "wext";
+
+   int i = 0;
+
+   if (node->arbattrs) {
+    for (; node->arbattrs[i]; i += 2) {
+     if (strmatch (node->arbattrs[i], "configuration-file")) {
+      configuration_file = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "driver")) {
+      driver = node->arbattrs[i+1];
+     }
+    }
+   }
+
+   char tmp[BUFFERSIZE];
+   struct lmodule *m = lm;
+   struct smodule *sm;
+
+   esprintf (tmp, BUFFERSIZE, "linux-wpa-supplicant-%s", interface);
+
+   while (m) {
+    if (m->module && strmatch (m->module->rid, tmp)) {
+     mod_update(m);
+     goto next;
+    }
+
+    m = m->next;
+   }
+
+   sm = emalloc (sizeof(struct smodule));
+   memset (sm, 0, sizeof (struct smodule));
+
+   sm->rid = estrdup (tmp);
+
+   esprintf (tmp, BUFFERSIZE, "WPA Supplicant Supervisor (%s)", interface);
+   sm->name = estrdup (tmp);
+
+   sm->eiversion = EINIT_VERSION;
+   sm->eibuild = BUILDNUMBER;
+   sm->mode = einit_module_generic | einit_feedback_job;
+
+   esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
+   sm->si.provides = (char **)setadd ((void **)sm->si.provides, tmp, SET_TYPE_STRING);
+
+   sm->si.after = (char **)setadd ((void **)sm->si.after, "^fs-(var-run|var)$", SET_TYPE_STRING);
+
+   sm->configure = linux_network_wpa_supplicant_module_configure;
+
+   mod_add (NULL, sm);
+
+   next:
+
+   cur = streenext(cur);
+  }
+ }
+
+ return 0;
 }
 
 int linux_network_wpa_supplicant_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
 
-#if 0
+ event_ignore (einit_network_verify_carrier, linux_network_wpa_supplicant_verify_carrier);
  event_ignore (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
  event_ignore (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
- event_ignore (einit_network_address_static, linux_network_wpa_supplicant_address_static);
- event_ignore (einit_network_interface_prepare, linux_network_wpa_supplicant_interface_prepare);
-#endif
 
  return 0;
 }
@@ -297,14 +403,11 @@ int linux_network_wpa_supplicant_configure (struct lmodule *pa) {
  exec_configure (pa);
 
  pa->cleanup = linux_network_wpa_supplicant_cleanup;
+ pa->scanmodules = linux_network_wpa_supplicant_scanmodules;
 
-
-#if 0
+ event_listen (einit_network_verify_carrier, linux_network_wpa_supplicant_verify_carrier);
  event_listen (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
  event_listen (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
- event_listen (einit_network_address_static, linux_network_wpa_supplicant_address_static);
- event_listen (einit_network_interface_prepare, linux_network_wpa_supplicant_interface_prepare);
-#endif
 
  return 0;
 }
