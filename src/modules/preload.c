@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/scheduler.h>
 
 #include <dlfcn.h>
+#include <sys/wait.h>
 
 #if defined(LINUX)
 #include <sys/prctl.h>
@@ -141,15 +142,22 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
 
  if (node && node->flag) {
   pid_t p = fork();
+  pid_t q = 0;
 
   switch (p) {
    case 0:
+    q = fork();
+    if (q == 0) {
 #if defined(LINUX) && defined(PR_SET_NAME)
-    prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
+     prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
 #endif
-    disable_core_dumps();
+     disable_core_dumps();
 
-    einit_preload_run();
+     einit_preload_run();
+     _exit (EXIT_SUCCESS);
+    }
+
+    disable_core_dumps();
     _exit (EXIT_SUCCESS);
 
    case -1:
@@ -157,7 +165,8 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
     break;
 
    default:
-    sched_watch_pid(p);
+    waitpid (p, NULL, 0);
+//    sched_watch_pid(p);
     break;
   }
  }

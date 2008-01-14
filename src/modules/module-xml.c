@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/scheduler.h>
 
 #include <dlfcn.h>
+#include <sys/wait.h>
 
 #if defined(LINUX)
 #include <sys/prctl.h>
@@ -719,15 +720,22 @@ void module_xml_v2_preload_fork() {
  if (module_xml_v2_allow_preloads && node && node->flag) {
   notice (3, "pre-loading binaries from XML modules");
   pid_t p = fork();
+  pid_t q = 0;
 
   switch (p) {
    case 0:
+    q = fork();
+    if (q == 0) {
 #if defined(LINUX) && defined(PR_SET_NAME)
-    prctl (PR_SET_NAME, "einit [preload-xml-sh]", 0, 0, 0);
+     prctl (PR_SET_NAME, "einit [preload-xml-sh]", 0, 0, 0);
 #endif
-    disable_core_dumps();
+     disable_core_dumps();
 
-    module_xml_v2_preload();
+     module_xml_v2_preload();
+     _exit (EXIT_SUCCESS);
+    }
+
+    disable_core_dumps();
     _exit (EXIT_SUCCESS);
 
    case -1:
@@ -735,7 +743,8 @@ void module_xml_v2_preload_fork() {
     break;
 
    default:
-    sched_watch_pid(p);
+    waitpid (p, NULL, 0);
+//    sched_watch_pid(p);
     break;
   }
  }
