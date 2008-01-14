@@ -373,7 +373,8 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
    esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
    sm->si.provides = (char **)setadd ((void **)sm->si.provides, tmp, SET_TYPE_STRING);
 
-   sm->si.after = (char **)setadd ((void **)sm->si.after, "^fs-(var-run|var)$", SET_TYPE_STRING);
+/* let's just assume that we'll need /var, /var/run, /usr, /usr/bin, /usr/sbin, /usr/local, /usr/local/bin and /usr/local/sbin */
+   sm->si.after = (char **)setadd ((void **)sm->si.after, "^fs-(var-run|var|usr(-local)?(-s?bin)?)$", SET_TYPE_STRING);
 
    sm->configure = linux_network_wpa_supplicant_module_configure;
 
