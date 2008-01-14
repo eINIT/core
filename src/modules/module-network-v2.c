@@ -369,7 +369,8 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
 
   while (cur) {
    struct cfgnode *n = cur->value;
-   if (!n->arbattrs) {
+   if (!n->arbattrs && !strchr (cur->key + sizeof (INTERFACES_PREFIX), '-')) {
+/* only accept interfaces without dashes in them here... */
     if (!inset ((const void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING)) {
      interfaces = (char **)setadd ((void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING);
     }
