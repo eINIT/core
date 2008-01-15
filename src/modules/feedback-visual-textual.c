@@ -787,12 +787,14 @@ void einit_feedback_visual_einit_event_handler_mode_switch_done (struct einit_ev
   einit_feedback_visual_boot_done_switch = 1;
   char *new_vt = cfg_getstring ("configuration-feedback-textual/boot-done-chvt", NULL);
 
-  int arg = (strtol (new_vt, (char **)NULL, 10) << 8) | 11;
-  errno = 0;
+  if (new_vt) {
+   int arg = (strtol (new_vt, (char **)NULL, 10) << 8) | 11;
+   errno = 0;
 
-  ioctl(0, TIOCLINUX, &arg);
-  if (errno)
-   perror ("einit-feedback-visual-textual: redirecting kernel messages");
+   ioctl(0, TIOCLINUX, &arg);
+   if (errno)
+    perror ("einit-feedback-visual-textual: redirecting kernel messages");
+  }
  }
 #endif
 }
