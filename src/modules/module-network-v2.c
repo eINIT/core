@@ -447,7 +447,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
      if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
-         lm && !(lm->status & status_enabled)) {
+         lm && !(lm->status & (status_working | status_enabled))) {
 //      char buffer[BUFFERSIZE];
 
 //      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
