@@ -785,7 +785,7 @@ void einit_feedback_visual_einit_event_handler_mode_switch_done (struct einit_ev
 #ifdef LINUX
  if (!einit_feedback_visual_boot_done_switch && !mod_service_is_provided ("displaymanager") && !mod_service_is_provided ("x11")  && !mod_service_is_provided ("xorg") && !mod_service_is_provided ("xdm") && !mod_service_is_provided ("slim") && !mod_service_is_provided ("gdm") && !mod_service_is_provided ("kdm") && !mod_service_is_provided ("entrance") && !mod_service_is_provided ("entranced")) {
   einit_feedback_visual_boot_done_switch = 1;
-  char *new_vt = cfg_getstring ("configuration-feedback-textual/boot-done-chvt", NULL);
+  char *new_vt = cfg_getstring ("configuration-feedback-visual-std-io/boot-done-chvt", NULL);
 
   if (new_vt) {
    int arg = (strtol (new_vt, (char **)NULL, 10) << 8) | 11;
