@@ -288,7 +288,8 @@ void linux_network_interface_done (struct einit_event *ev) {
  if (buffer[0]) {
   if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
    fbprintf (d->feedback, "command failed: %s", buffer);
-   d->status = status_failed;
+//   d->status = status_failed;
+// don't fail just because we can't set the interface down
   }
  }
 }
@@ -375,7 +376,7 @@ void linux_network_address_static (struct einit_event *ev) {
     }
 
     if (buffer[0]) {
-     if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+     if ((pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) && (d->action == interface_up)) {
       fbprintf (d->feedback, "command failed: %s", buffer);
       d->status = status_failed;
       break;
@@ -476,7 +477,7 @@ void linux_network_address_static (struct einit_event *ev) {
       }
 
       if (buffer[0]) {
-       if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+       if ((pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) && (d->action == interface_up)) {
         fbprintf (d->feedback, "command failed: %s", buffer);
         d->status = status_failed;
         break;
