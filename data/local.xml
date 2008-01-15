@@ -72,16 +72,13 @@
 
   <alias>
 <!-- service groups -->
-   <network group="net-eth0" seq="all" />
-<!-- or kern-ati if you have an ATI card -->
-   <video group="kern-nvidia" seq="any-iop" />
+<!--   <network group="net-eth0" seq="all" /> -->
 <!-- kern-alsa is the automatic alsa module detection... you could also specify
      the modules you need (if any) up above and remove kern-alsa -->
-   <audio group="alsa:kern-alsa" seq="most" />
+   <audio group="alsa:kern-alsa" seq="all" />
    <avahi group="avahi-dnsconfd" seq="all" />
 <!-- add winbindd if you need it -->
    <samba group="smbd:nmbd" seq="all" />
-   <printing group="hpiod:hplip:cupsd" seq="most" />
   </alias>
 
   <!-- example alias: localmount is the same as mount-local -->

@@ -177,7 +177,8 @@ Configuration = element configuration {
         attribute console { text } ?,
         attribute activate-vt { text }?,
         attribute verbose-output { text }?,
-        attribute kernel-vt { text }?
+        attribute kernel-vt { text }?,
+        attribute boot-done-chvt { text }?
       }? &
 
       element use-ansi-codes { BooleanAttribute }? &
