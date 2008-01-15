@@ -385,9 +385,15 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
  return interfaces;
 }
 
+void *einit_module_network_v2_scanmodules_enable_immediate (struct lmodule *lm) {
+ mod(einit_module_enable, lm, NULL);
+ return NULL;
+}
+
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
- char **automatic = NULL, **immediate = NULL;
+ char **automatic = NULL;
+ struct lmodule **immediate = NULL;
 
  if (interfaces) {
 /* doing this check now ensures that we have the support module around */
@@ -441,14 +447,15 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
      if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
-         (!lm || !(lm->status & status_enabled))) {
-      char buffer[BUFFERSIZE];
+         lm && !(lm->status & status_enabled)) {
+//      char buffer[BUFFERSIZE];
 
 //      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
 
-      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+//      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
 
-      immediate = (char **)setadd ((void **)immediate, buffer, SET_TYPE_STRING);
+//      immediate = (char **)setadd ((void **)immediate, buffer, SET_TYPE_STRING);
+      immediate = (struct lmodule **)setadd ((void **)immediate, lm, SET_NOALLOC);
      }
     }
 
@@ -512,6 +519,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
   efree (automatic);
  }
 
+#if 0
  if (immediate) {
   struct einit_event eml = evstaticinit(einit_core_manipulate_services);
   eml.stringset = immediate;
@@ -520,6 +528,15 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
   evstaticdestroy(eml);
  }
+#else
+ if (immediate) {
+  int im = 0;
+  for (; immediate[im]; im++) {
+   ethread_spawn_detached ((void *(*)(void *))einit_module_network_v2_scanmodules_enable_immediate, immediate[im]);
+  }
+  efree (immediate);
+ }
+#endif
 
  return 1;
 }
