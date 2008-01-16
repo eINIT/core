@@ -749,10 +749,10 @@ void mount_update_fstab_nodes_from_fstab () {
 #ifdef LINUX
 /* on LINUX there's a couple of special filesystems that we ignore,
    since the *dev module handles all of those */
-     if (strmatch (val->fs_spec, "/dev/shm") || strmatch (val->fs_spec, "/dev")
-         || strmatch (val->fs_spec, "/sys") || strmatch (val->fs_spec, "/proc")
-         || strmatch (val->fs_spec, "/proc/bus/usb")
-         || strmatch (val->fs_spec, "/dev/pts")) {
+     if (strmatch (val->fs_file, "/dev/shm") || strmatch (val->fs_file, "/dev")
+         || strmatch (val->fs_file, "/sys") || strmatch (val->fs_file, "/proc")
+         || strmatch (val->fs_file, "/proc/bus/usb")
+         || strmatch (val->fs_file, "/dev/pts")) {
 
       cur = streenext (cur);
       continue;
