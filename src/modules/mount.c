@@ -763,6 +763,8 @@ void mount_update_fstab_nodes_from_fstab () {
       fs_spec = estrdup(val->fs_spec);
      }
 
+     options = strsetdel (options, "defaults");
+
      mount_add_update_fstab (estrdup(val->fs_file), fs_spec, estrdup(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     }
 
