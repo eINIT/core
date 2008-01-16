@@ -37,8 +37,9 @@
   <kernel>
    <modules>
 <!-- these are fairly arbitrary, <X s="" /> will load a colon-delimited list
-     of kernel modules in s="" as soon as udev is up -->
-    <mouse s="evdev" />
+     of kernel modules in s="" as soon as udev is up. the following example
+     would load the "evdev" module, for example -->
+<!--    <mouse s="evdev" /> -->
    </modules>
   </kernel>
 
