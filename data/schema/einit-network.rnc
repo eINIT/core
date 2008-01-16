@@ -7,15 +7,6 @@ NetworkContents =
   element domainname { StringAttribute } ? &
   element interfaces {
    element * {
-    ((( attribute control { "none" }? ) |
-     ( attribute control { "wpa_supplicant" } & attribute driver { text } & attribute config { text } ) |
-     ( attribute control { "brctl" } & attribute bridge { text } & attribute options { text } ) |
-     ( attribute control { "vconfig" } & attribute id { text } ) |
-     ( attribute control { "wvdial" } & attribute profile { text } ) |
-     ( attribute control { "ifenslave" } & attribute master { text } & attribute slaves { text } )) ? &
-    (( attribute ip { "iproute2" } & attribute address { text } & attribute network { text }? & attribute gateway { text }? ) |
-     ( attribute ip { DHCPclient } )) ? &
-    attribute kernel-module { text } ?) |
     InterfaceDataV2
    } *
   }
@@ -27,17 +18,17 @@ InterfaceDataV2 =
   element ipv4 {
    IDAttribute?,
    attribute address { text }
-  }? &
+  }* &
   element ipv6 {
    IDAttribute?,
    attribute address { text }
-  }?
+  }*
  }? &
  element route {
   IDAttribute?,
   attribute network { text }?,
   attribute gateway { text }?
- }? &
+ }* &
  element dhcp-client { StringAttribute }? &
  element kernel-modules { StringAttribute }? &
  element wpa-supplicant {
