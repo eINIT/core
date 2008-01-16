@@ -35,7 +35,14 @@ InterfaceDataV2 =
   attribute configuration-file { text }? &
   attribute driver { text }?
  }? &
+ element nameserver {
+  IDAttribute?,
+  attribute address { text }?,
+  attribute domain { text }?,
+  attribute search { text }?,
+  attribute options { text }?,
+  attribute sortlist { text }?
+ }* &
  element automatic { BooleanAttribute }? &
  element immediate { BooleanAttribute }? &
  element dont-wait { BooleanAttribute }?
-

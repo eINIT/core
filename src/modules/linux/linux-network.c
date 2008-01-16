@@ -266,30 +266,118 @@ void linux_network_interface_done (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
  char buffer[BUFFERSIZE];
- char **ip_binary = which ("ip");
 
  buffer[0] = 0;
 
- if (ip_binary) {
-  /* looks like we have the ip command handy, so let's use it */
-  efree (ip_binary);
+ if (d->action == interface_down) {
+  char **ip_binary = which ("ip");
 
-  if (d->action == interface_down) {
-   esprintf (buffer, BUFFERSIZE, "ip link set %s down", ev->string);
-  }
- } else {
+  if (ip_binary) {
+  /* looks like we have the ip command handy, so let's use it */
+   efree (ip_binary);
+
+   if (d->action == interface_down) {
+    esprintf (buffer, BUFFERSIZE, "ip link set %s down", ev->string);
+   }
+  } else {
   /* fall back to ifconfig -- this means we get to use only one ip address per interface */
 
-  if (d->action == interface_down) {
-   esprintf (buffer, BUFFERSIZE, "ifconfig %s down", ev->string);
+   if (d->action == interface_down) {
+    esprintf (buffer, BUFFERSIZE, "ifconfig %s down", ev->string);
+   }
   }
- }
 
- if (buffer[0]) {
-  if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-   fbprintf (d->feedback, "command failed: %s", buffer);
+  struct cfgnode **dns = d->functions->get_multiple_options (ev->string, "nameserver");
+
+  if (dns) {
+   char **resolvconf_binary = which ("resolvconf");
+
+   if (resolvconf_binary) {
+    efree (resolvconf_binary);
+
+    if (buffer[0]) {
+     if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+      fbprintf (d->feedback, "command failed: %s", buffer);
+     }
+    }
+
+    esprintf (buffer, BUFFERSIZE, "resolvconf -d %s", ev->string);
+   }
+  }
+
+  if (buffer[0]) {
+   if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+    fbprintf (d->feedback, "command failed: %s", buffer);
 //   d->status = status_failed;
 // don't fail just because we can't set the interface down
+   }
+  }
+ } else if (d->action == interface_up) {
+  struct cfgnode **dns = d->functions->get_multiple_options (ev->string, "nameserver");
+
+  if (dns) {
+   char **resolv_conf_data = NULL;
+   char *resolv_conf = NULL;
+   int i = 0;
+
+   for (; dns[i]; i++) {
+    if (dns[i]->arbattrs) {
+     char buffer[BUFFERSIZE];
+     int j = 0;
+     for (; dns[i]->arbattrs[j]; j+=2) {
+      if (strmatch (dns[i]->arbattrs[j], "address")) {
+       esprintf (buffer, BUFFERSIZE, "nameserver %s", dns[i]->arbattrs[j+1]);
+       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+      } else if (strmatch (dns[i]->arbattrs[j], "options")) {
+       esprintf (buffer, BUFFERSIZE, "options %s", dns[i]->arbattrs[j+1]);
+       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+      } else if (strmatch (dns[i]->arbattrs[j], "sortlist")) {
+       esprintf (buffer, BUFFERSIZE, "sortlist %s", dns[i]->arbattrs[j+1]);
+       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+      } else if (strmatch (dns[i]->arbattrs[j], "search")) {
+       esprintf (buffer, BUFFERSIZE, "search %s", dns[i]->arbattrs[j+1]);
+       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+      } else if (strmatch (dns[i]->arbattrs[j], "domain")) {
+       esprintf (buffer, BUFFERSIZE, "domain %s", dns[i]->arbattrs[j+1]);
+       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+      }
+     }
+    }
+   }
+
+   if (resolv_conf_data) {
+    resolv_conf = set2str ('\n', (const char **)resolv_conf_data);
+    efree (resolv_conf_data);
+   }
+
+   if (resolv_conf) {
+    char **resolvconf_binary = which ("resolvconf");
+
+    if (resolvconf_binary) {
+     efree (resolvconf_binary);
+
+     fbprintf (d->feedback, "updating resolv.conf using resolvconf");
+
+     esprintf (buffer, BUFFERSIZE, "resolvconf -a %s", ev->string);
+
+     FILE *f = popen (buffer, "w");
+     if (f) {
+      fputs (resolv_conf, f);
+      fputs ("\n", f);
+      pclose (f);
+     }
+    } else {
+     fbprintf (d->feedback, "overwriting old resolv.conf");
+     FILE *f = fopen ("/etc/resolv.conf", "w");
+     if (f) {
+      fputs (resolv_conf, f);
+      fputs ("\n", f);
+      fclose (f);
+     }
+    }
+
+    efree (resolv_conf);
+   }
   }
  }
 }
