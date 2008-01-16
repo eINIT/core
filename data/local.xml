@@ -73,6 +73,9 @@
 
   <alias>
 <!-- service groups -->
+<!-- NOTE! you only need to define the network-group manually if you do NOT
+     wish it created by network-v2 with the devices that it actually found
+     on your system -->
 <!--   <network group="net-eth0" seq="all" /> -->
 <!-- kern-alsa is the automatic alsa module detection... you could also specify
      the modules you need (if any) up above and remove kern-alsa -->
