@@ -1059,13 +1059,13 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   memset (newmodule, 0, sizeof (struct smodule));
 
   struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
+  struct mountpoint_data *mp = NULL;
   if (t) {
-   struct mountpoint_data *mp = t->value; 
+   mp = t->value; 
 
    enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
    if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
     requires = (char **)setadd ((void **)requires, (void *)"network", SET_TYPE_STRING);
-    requires = (char **)setadd ((void **)requires, (void *)"portmap", SET_TYPE_STRING);
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
@@ -1096,6 +1096,23 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     sm->si.after = after;
     sm->si.requires = requires;
 
+/* special update */
+    void **functions;
+    char **fnames = mount_generate_mount_function_suffixes(mp->fs);
+
+    functions = function_find ("fs-update", 1, (const char **)fnames);
+    if (functions) {
+     uint32_t r = 0;
+     for (; functions[r]; r++) {
+      einit_fs_update_function f = functions[r];
+
+      f (lm, sm, ((struct device_data *)(s->value)), mp);
+     }
+     efree (functions);
+    }
+    efree (fnames);
+/* special update done */
+
     lm = mod_update (lm);
 
     efree (newmodule);
@@ -1123,6 +1140,23 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   newmodule->si.after = after;
 
   newmodule->si.requires = requires;
+
+/* special initialisation */
+  void **functions;
+  char **fnames = mount_generate_mount_function_suffixes(mp->fs);
+
+  functions = function_find ("fs-update", 1, (const char **)fnames);
+  if (functions) {
+   uint32_t r = 0;
+   for (; functions[r]; r++) {
+    einit_fs_update_function f = functions[r];
+
+    f (NULL, newmodule, ((struct device_data *)(s->value)), mp);
+   }
+   efree (functions);
+  }
+  efree (fnames);
+/* special initialisation done */
 
   lm = mod_add (NULL, newmodule);
 

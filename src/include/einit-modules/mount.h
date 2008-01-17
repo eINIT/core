@@ -186,6 +186,8 @@ typedef int (*einit_mount_function) (char *, char *, struct device_data *, struc
 
 typedef int (*einit_umount_function) (char *, char *, char, struct device_data *, struct mountpoint_data *, struct einit_event *);
 
+typedef int (*einit_fs_update_function) (struct lmodule *, struct smodule *, struct device_data *, struct mountpoint_data *);
+
 #endif
 
 #ifdef __cplusplus

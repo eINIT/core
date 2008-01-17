@@ -129,6 +129,20 @@ int mod_freemodules ( void ) {
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
 
+ if (module->module->si.provides || module->module->si.requires || module->module->si.after || module->module->si.before) {
+  module->si = ecalloc (1, sizeof (struct service_information));
+
+  if (module->module->si.provides)
+   module->si->provides = (char **)setdup((const void **)module->module->si.provides, SET_TYPE_STRING);
+  if (module->module->si.requires)
+   module->si->requires = (char **)setdup((const void **)module->module->si.requires, SET_TYPE_STRING);
+  if (module->module->si.after)
+   module->si->after = (char **)setdup((const void **)module->module->si.after, SET_TYPE_STRING);
+  if (module->module->si.before)
+   module->si->before = (char **)setdup((const void **)module->module->si.before, SET_TYPE_STRING);
+ } else
+  module->si = NULL;
+
  struct einit_event ee = evstaticinit (einit_core_update_module);
  ee.para = (void *)module;
  event_emit (&ee, einit_event_flag_broadcast);

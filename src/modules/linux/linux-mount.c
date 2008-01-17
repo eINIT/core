@@ -247,6 +247,24 @@ int linux_mount_do_umount_swap (char *mountpoint, char *fs, char step, struct de
  return status_ok;
 }
 
+int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
+ if (!inset ((const void **)sm->si.requires, "network", SET_TYPE_STRING)) {
+  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "network", SET_TYPE_STRING);
+ }
+
+ if (mp->options) {
+  if (!inset ((const void **)mp->options, "nolock", SET_TYPE_STRING)) {
+   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+  } else {
+   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "portmap", SET_TYPE_STRING);
+  }
+ } else {
+  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+ }
+
+ return 0;
+}
+
 int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
 
@@ -269,6 +287,8 @@ int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("fs-mount-linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
  function_unregister ("fs-mount-Linux-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
  function_unregister ("fs-mount-generic-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
+
+ function_unregister ("fs-update-generic-nfs", 1, (void *)linux_mount_update_nfs);
 
  exec_cleanup(this);
 
@@ -309,6 +329,8 @@ int linux_mount_configure (struct lmodule *this) {
  function_register ("fs-mount-linux-any-backup", 1, (void *)linux_mount_do_mount_real);
  function_register ("fs-mount-Linux-any-backup", 1, (void *)linux_mount_do_mount_real);
  function_register ("fs-mount-generic-any-backup", 1, (void *)linux_mount_do_mount_real);
+
+ function_register ("fs-update-generic-nfs", 1, (void *)linux_mount_update_nfs);
 
  return 0;
 }
