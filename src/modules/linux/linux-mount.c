@@ -254,8 +254,11 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
 
  if (mp->options) {
   if (!inset ((const void **)mp->options, "nolock", SET_TYPE_STRING)) {
-   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+//   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
+//    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+//   }
+   if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
+    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING);
    }
   } else {
    if (!inset ((const void **)sm->si.requires, "portmap", SET_TYPE_STRING)) {
@@ -263,8 +266,11 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
    }
   }
  } else {
-  if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+//  if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
+//   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+//  }
+  if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
+   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING);
   }
  }
 
