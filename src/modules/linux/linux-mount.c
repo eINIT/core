@@ -254,12 +254,37 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
 
  if (mp->options) {
   if (!inset ((const void **)mp->options, "nolock", SET_TYPE_STRING)) {
-   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
+    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+   }
   } else {
-   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "portmap", SET_TYPE_STRING);
+   if (!inset ((const void **)sm->si.requires, "portmap", SET_TYPE_STRING)) {
+    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "portmap", SET_TYPE_STRING);
+   }
   }
  } else {
-  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+  if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
+   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+  }
+ }
+
+ return 0;
+}
+
+int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
+ if (!inset ((const void **)sm->si.requires, "network", SET_TYPE_STRING)) {
+  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "network", SET_TYPE_STRING);
+ }
+
+ if (mp->options) {
+  if (inset ((const void **)mp->options, "sec=krb", SET_TYPE_STRING)) {
+   if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
+    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING);
+   }
+  }
+ }
+ if (!inset ((const void **)sm->si.requires, "rpc.idmapd", SET_TYPE_STRING)) {
+  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.idmapd", SET_TYPE_STRING);
  }
 
  return 0;
@@ -289,6 +314,7 @@ int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("fs-mount-generic-ntfs-3g", 1, (void *)linux_mount_do_mount_ntfs_3g);
 
  function_unregister ("fs-update-generic-nfs", 1, (void *)linux_mount_update_nfs);
+ function_unregister ("fs-update-generic-nfs4", 1, (void *)linux_mount_update_nfs4);
 
  exec_cleanup(this);
 
@@ -331,6 +357,7 @@ int linux_mount_configure (struct lmodule *this) {
  function_register ("fs-mount-generic-any-backup", 1, (void *)linux_mount_do_mount_real);
 
  function_register ("fs-update-generic-nfs", 1, (void *)linux_mount_update_nfs);
+ function_register ("fs-update-generic-nfs4", 1, (void *)linux_mount_update_nfs4);
 
  return 0;
 }
