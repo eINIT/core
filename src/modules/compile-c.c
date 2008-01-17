@@ -1,5 +1,5 @@
 /*
- *  module-c.c
+ *  compile-c.c
  *  einit
  *
  *  Created on 29/08/2007.
@@ -64,7 +64,7 @@ const struct smodule module_c_self = {
  .version   = 1,
  .mode      = 0,
  .name      = "eINIT Automatic C-Module Compiler",
- .rid       = "einit-module-c",
+ .rid       = "einit-compile-c",
  .si        = {
   .provides = NULL,
   .requires = NULL,
@@ -111,7 +111,7 @@ char module_c_compile_file (char *oname, char *base, char *nname) {
    if ((srv != -1) && (srv != 127)) {
     if (WIFEXITED(srv) && !(WEXITSTATUS(srv))) {
      ret = 1;
-	}
+    }
    }
 
    efree (compiler_command);
@@ -147,7 +147,7 @@ char module_c_update_modules () {
        for (; to_unlink[x]; x++)
         unlink (to_unlink[x]);
       }
-	 }
+     }
     }
    }
 
@@ -168,10 +168,10 @@ char module_c_update_modules () {
    for (; modules[i]; i++) {
     char *oname = estrdup(modules[i]);
     char *base = strrchr (modules[i], '/');
-	char *nbase = strrchr (base ? base : modules[i], '.');
-	char *nname = NULL;
-	ssize_t nname_len;
-	char shift = 0;
+    char *nbase = strrchr (base ? base : modules[i], '.');
+    char *nname = NULL;
+    ssize_t nname_len;
+    char shift = 0;
 
     struct stat st1, st2;
 
@@ -180,14 +180,14 @@ char module_c_update_modules () {
     }
 
     if (!base) base = modules[i];
-	else {
-	 base++;
-	}
+    else {
+     base++;
+    }
     if (!nbase) nbase = modules[i];
-	else {
-	 *nbase = 0;
-	 nbase = base;
-	}
+    else {
+     *nbase = 0;
+     nbase = base;
+    }
 
     nname_len = outputpath_len + strlen (nbase) + 5;
     nname = emalloc (nname_len);
@@ -196,21 +196,21 @@ char module_c_update_modules () {
 
     if ((nname[0] == '/') && (coremode & einit_mode_sandbox)) {
      nname++;
-	 shift = 1;
-	}
+     shift = 1;
+    }
 
 /* recompile if the the target file doesn't exist, or the source file is newer */
     if (stat (nname, &st2) ||
         (st1.st_mtime > st2.st_mtime)) {
      if (module_c_compile_file (oname, base, nname)) {
       ret = 1;
-	 }
+     }
     }
 
     if (shift) nname--;
 
     efree (oname);
-	efree (nname);
+    efree (nname);
    }
 
    efree (modules);

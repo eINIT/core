@@ -96,7 +96,8 @@ struct network_v2_interface_descriptor {
  char *dhcp_client;
 };
 
-pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_module_network_v2_get_all_addresses_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int einit_module_network_v2_scanmodules (struct lmodule *);
 int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback);
@@ -175,14 +176,14 @@ struct cfgnode **einit_module_network_v2_get_multiple_options (char *interface, 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface, option);
 
  while ((node = cfg_findnode (buffer, 0, node))) {
-  rv = (struct cfgnode **)setadd ((void **)rv, node, SET_TYPE_STRING);
+  rv = (struct cfgnode **)setadd ((void **)rv, node, SET_NOALLOC);
  }
 
  if (rv)
   return rv;
  else {
   if ((node = einit_module_network_v2_get_option_default (interface, option))) {
-   rv = (struct cfgnode **)setadd ((void **)rv, node, SET_TYPE_STRING);
+   rv = (struct cfgnode **)setadd ((void **)rv, node, SET_NOALLOC);
   }
 
   return rv;
@@ -196,6 +197,8 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-address-", interface);
 
+ emutex_lock (&einit_module_network_v2_get_all_addresses_mutex);
+
  st = cfg_prefix (buffer);
  if (st) {
   struct stree *cur = streelinear_prepare (st);
@@ -203,8 +206,11 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
 
   while (cur) {
    struct cfgnode *n = cur->value;
-   if (n->arbattrs)
-    rv = streeadd (rv, (cur->key + prefixlen), n->arbattrs, tree_value_noalloc, NULL);
+   if (n->arbattrs) {
+    char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+
+    rv = streeadd (rv, (cur->key + prefixlen), narb, tree_value_noalloc, narb);
+   }
 
    cur = streenext (cur);
   }
@@ -212,12 +218,18 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
   streefree (st);
  } else {
   struct cfgnode *n;
-  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv4")))
-   rv = streeadd (rv, "ipv4", n->arbattrs, tree_value_noalloc, NULL);
+  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv4")) && n->arbattrs) {
+   char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+   rv = streeadd (rv, "ipv4", narb, tree_value_noalloc, narb);
+  }
 
-  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv6")))
-   rv = streeadd (rv, "ipv6", n->arbattrs, tree_value_noalloc, NULL);
+  if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv6")) && n->arbattrs) {
+   char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+   rv = streeadd (rv, "ipv6", narb, tree_value_noalloc, narb);
+  }
  }
+
+ emutex_unlock (&einit_module_network_v2_get_all_addresses_mutex);
 
  return rv;
 }
@@ -357,7 +369,8 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
 
   while (cur) {
    struct cfgnode *n = cur->value;
-   if (!n->arbattrs) {
+   if (!n->arbattrs && !strchr (cur->key + sizeof (INTERFACES_PREFIX), '-')) {
+/* only accept interfaces without dashes in them here... */
     if (!inset ((const void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING)) {
      interfaces = (char **)setadd ((void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING);
     }
@@ -372,9 +385,15 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
  return interfaces;
 }
 
+void *einit_module_network_v2_scanmodules_enable_immediate (struct lmodule *lm) {
+ mod(einit_module_enable, lm, NULL);
+ return NULL;
+}
+
 int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
- char **automatic = NULL, **immediate = NULL;
+ char **automatic = NULL;
+ struct lmodule **immediate = NULL;
 
  if (interfaces) {
 /* doing this check now ensures that we have the support module around */
@@ -428,14 +447,15 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
      if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
-         (!lm || !(lm->status & status_enabled))) {
-      char buffer[BUFFERSIZE];
+         lm && !(lm->status & (status_working | status_enabled))) {
+//      char buffer[BUFFERSIZE];
 
 //      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
 
-      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+//      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
 
-      immediate = (char **)setadd ((void **)immediate, buffer, SET_TYPE_STRING);
+//      immediate = (char **)setadd ((void **)immediate, buffer, SET_TYPE_STRING);
+      immediate = (struct lmodule **)setadd ((void **)immediate, lm, SET_NOALLOC);
      }
     }
 
@@ -499,6 +519,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
   efree (automatic);
  }
 
+#if 0
  if (immediate) {
   struct einit_event eml = evstaticinit(einit_core_manipulate_services);
   eml.stringset = immediate;
@@ -507,6 +528,15 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
   evstaticdestroy(eml);
  }
+#else
+ if (immediate) {
+  int im = 0;
+  for (; immediate[im]; im++) {
+   ethread_spawn_detached ((void *(*)(void *))einit_module_network_v2_scanmodules_enable_immediate, immediate[im]);
+  }
+  efree (immediate);
+ }
+#endif
 
  return 1;
 }

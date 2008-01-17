@@ -178,6 +178,7 @@ pthread_mutex_t
 
 extern int einit_have_feedback;
 char feedback_textual_allowed = 1;
+char einit_feedback_visual_boot_done_switch = 0;
 
 void feedback_textual_enable();
 void *einit_feedback_visual_textual_worker_thread (void *);
@@ -780,6 +781,22 @@ void einit_feedback_visual_einit_event_handler_mode_switch_done (struct einit_ev
  esprintf (tmp, BUFFERSIZE, " \e[32m**\e[0m \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
+
+#ifdef LINUX
+ if ((!einit_feedback_visual_boot_done_switch || strmatch (((struct cfgnode *)ev->para)->id, "default")) && !mod_service_is_provided ("displaymanager") && !mod_service_is_provided ("x11")  && !mod_service_is_provided ("xorg") && !mod_service_is_provided ("xdm") && !mod_service_is_provided ("slim") && !mod_service_is_provided ("gdm") && !mod_service_is_provided ("kdm") && !mod_service_is_provided ("entrance") && !mod_service_is_provided ("entranced")) {
+  einit_feedback_visual_boot_done_switch = 1;
+  char *new_vt = cfg_getstring ("configuration-feedback-visual-std-io/boot-done-chvt", NULL);
+
+  if (new_vt) {
+   int arg = (strtol (new_vt, (char **)NULL, 10) << 8) | 11;
+   errno = 0;
+
+   ioctl(0, TIOCLINUX, &arg);
+   if (errno)
+    perror ("einit-feedback-visual-textual: redirecting kernel messages");
+  }
+ }
+#endif
 }
 
 /*

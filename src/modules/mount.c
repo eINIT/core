@@ -745,7 +745,20 @@ void mount_update_fstab_nodes_from_fstab () {
    while (cur) {
     struct legacy_fstab_entry * val = (struct legacy_fstab_entry *)cur->value;
 
-    if (val->fs_file) {
+    if (val->fs_file && val->fs_spec) {
+#ifdef LINUX
+/* on LINUX there's a couple of special filesystems that we ignore,
+   since the *dev module handles all of those */
+     if (strmatch (val->fs_file, "/dev/shm") || strmatch (val->fs_file, "/dev")
+         || strmatch (val->fs_file, "/sys") || strmatch (val->fs_file, "/proc")
+         || strmatch (val->fs_file, "/proc/bus/usb")
+         || strmatch (val->fs_file, "/dev/pts")) {
+
+      cur = streenext (cur);
+      continue;
+     }
+#endif
+
      char **options = val->fs_mntops ? str2set (',', val->fs_mntops): NULL;
      char *fs_spec = NULL;
 
@@ -762,6 +775,8 @@ void mount_update_fstab_nodes_from_fstab () {
      } else {
       fs_spec = estrdup(val->fs_spec);
      }
+
+     options = strsetdel (options, "defaults");
 
      mount_add_update_fstab (estrdup(val->fs_file), fs_spec, estrdup(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     }

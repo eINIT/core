@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <subsystem>
+  <xml-sh-compiler>
+   <active b="no" />
+
+   <compile-to s="/lib/einit/modules/compiled-xml-sh-modules.so" />
+  </xml-sh-compiler>
+ </subsystem>
+</einit>

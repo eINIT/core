@@ -151,6 +151,7 @@ Configuration = element configuration {
   element kernel {
     element modules {
       element autoload.d { attribute file { text } }? &
+      element load-in-parallel { BooleanAttribute }? &
       element * { StringAttribute, BooleanAttribute?, attribute provide-service { Boolean }? }*
     }*
   }* &
@@ -176,7 +177,8 @@ Configuration = element configuration {
         attribute console { text } ?,
         attribute activate-vt { text }?,
         attribute verbose-output { text }?,
-        attribute kernel-vt { text }?
+        attribute kernel-vt { text }?,
+        attribute boot-done-chvt { text }?
       }? &
 
       element use-ansi-codes { BooleanAttribute }? &
@@ -315,6 +317,11 @@ Subsystems = element subsystem {
   element compile-to { StringAttribute }? &
   element compile { attribute c { text } }? &
   element sources { IDAttribute & PathAttributes } *
+ } ? &
+
+ element xml-sh-compiler {
+  element active { BooleanAttribute }? &
+  element compile-to { StringAttribute }?
  } ? &
 
  element network {

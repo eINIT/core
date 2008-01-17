@@ -37,8 +37,9 @@
   <kernel>
    <modules>
 <!-- these are fairly arbitrary, <X s="" /> will load a colon-delimited list
-     of kernel modules in s="" as soon as udev is up -->
-    <mouse s="evdev" />
+     of kernel modules in s="" as soon as udev is up. the following example
+     would load the "evdev" module, for example -->
+<!--    <mouse s="evdev" /> -->
    </modules>
   </kernel>
 
@@ -72,16 +73,16 @@
 
   <alias>
 <!-- service groups -->
-   <network group="net-eth0" seq="all" />
-<!-- or kern-ati if you have an ATI card -->
-   <video group="kern-nvidia" seq="any-iop" />
+<!-- NOTE! you only need to define the network-group manually if you do NOT
+     wish it created by network-v2 with the devices that it actually found
+     on your system -->
+<!--   <network group="net-eth0" seq="all" /> -->
 <!-- kern-alsa is the automatic alsa module detection... you could also specify
      the modules you need (if any) up above and remove kern-alsa -->
-   <audio group="alsa:kern-alsa" seq="most" />
+   <audio group="alsa:kern-alsa" seq="all" />
    <avahi group="avahi-dnsconfd" seq="all" />
 <!-- add winbindd if you need it -->
    <samba group="smbd:nmbd" seq="all" />
-   <printing group="hpiod:hplip:cupsd" seq="most" />
   </alias>
 
   <!-- example alias: localmount is the same as mount-local -->

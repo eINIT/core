@@ -92,22 +92,36 @@ int linux_kernel_modules_load (char **modules) {
  char *modprobe_command = cfg_getstring ("configuration-command-modprobe/with-env", 0);
  uint32_t i = 0;
 
- for (; modules[i]; i++) if (strcmp ("", modules[i])) {
-  const char *tpldata[] = { "module", modules[i], NULL };
-  char *applied = apply_variables (modprobe_command, tpldata);
+ struct cfgnode *pn = cfg_getnode ("configuration-kernel-modules-load-in-parallel", NULL);
 
-  if (applied) {
-   notice (4, "loading kernel module: %s", modules[i]);
+ if (pn && pn->flag) { /* load in parallel */
+  for (; modules[i]; i++) if (strcmp ("", modules[i])) {
+   const char *tpldata[] = { "module", modules[i], NULL };
+   char *applied = apply_variables (modprobe_command, tpldata);
 
-   if (modules[i+1]) {
-    pthread_t *threadid = emalloc (sizeof (pthread_t));
+   if (applied) {
+    notice (4, "loading kernel module: %s", modules[i]);
 
-    if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load_exec, applied)) {
-     linux_kernel_modules_load_exec (applied);
+    if (modules[i+1]) {
+     pthread_t *threadid = emalloc (sizeof (pthread_t));
+
+     if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load_exec, applied)) {
+      linux_kernel_modules_load_exec (applied);
+     } else {
+      threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+     }
     } else {
-     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+     linux_kernel_modules_load_exec (applied);
     }
-   } else {
+   }
+  }
+ } else { /* load in sequence */
+  for (; modules[i]; i++) if (strcmp ("", modules[i])) {
+   const char *tpldata[] = { "module", modules[i], NULL };
+   char *applied = apply_variables (modprobe_command, tpldata);
+
+   if (applied) {
+    notice (4, "loading kernel module: %s", modules[i]);
     linux_kernel_modules_load_exec (applied);
    }
   }
@@ -444,6 +458,14 @@ int linux_kernel_modules_cleanup (struct lmodule *this) {
 
 int linux_kernel_modules_configure (struct lmodule *this) {
  module_init(this);
+
+ struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+ streefree (linux_kernel_modules_nodes);
+
+ if (!linux_kernel_modules_nodes) {
+  return status_configure_failed | status_not_in_use;
+ }
+
  exec_configure (this);
 
  thismodule->cleanup = linux_kernel_modules_cleanup;

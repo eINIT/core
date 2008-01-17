@@ -2,10 +2,31 @@
  <hostname s="localhost"/>
  <domainname s="local"/>
  <interfaces>
-  <lo ip="iproute2" address="127.0.0.1/8" network="127.0.0.0/8" />
+<!-- please see http://einit.org/wiki/Network_Settings_(V2) for details on how
+     this file should look like... if all you use is dhcp on eth* links, you'll
+     be fine without any adjustments here. -->
 
-<!--  <eth0 kernel-module="e1000" ip="pump"/> -->
-<!--  <wlan0 kernel-module="ipw3945" control="wpa_supplicant" driver="wext" config="/etc/wpa_supplicant/wpa_supplicant.conf" ip="dhcpcd"/> -->
-<!--  <ppp0 control="wvdial" profile="m610"/> -->
+<!-- examples: -->
+<!--  <eth0>
+   <kernel-modules s="forcedeth" />
+   <address>
+    <ipv4 address="dhcp" />
+   </address>
+  </eth0> -->
+
+<!--  <wlan0>
+   <address>
+    <ipv4 address="dhcp" />
+   </address>
+   <wpa-supplicant driver="wext" />
+  </wlan0> -->
+
+<!--   </eth1>
+    <address>
+     <ipv4 id="primus" address="dhcp" />
+     <ipv4 id="secundus" address="10.4.1.0/24" />
+     <ipv4 id="tertius" address="192.168.0.1/24" />
+    </address>
+  </eth1> -->
  </interfaces>
 </network>

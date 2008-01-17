@@ -1,16 +1,35 @@
 <einit>
 
+ <!-- some services that you will undoubtedly interest you:
+  audio : the default group for alsa, etc
+  cron : cron daemon
+  logger : syslog, metalog, etc...
+  keyboard : sets the keyboard layout
+  portmap : needed for nfs (!)
+  dbus : useful for just about anyone
+  hal : automounting for KDE and GNOME
+  displaymanager : a graphical login shell
+  ipc-dbus : allows libeinit to communicate with the core via dbus
+  sshd : ssh daemon
+ -->
+
  <mode id="boot">
-  <enable services="keyboard:logger:urandom:cron" />
+  <enable services="urandom" />
+<!-- to enable more than one thing, you'd use colons (':'); example: -->
+<!--  <enable services="urandom:audio:keyboard" /> -->
   <overrides>
    <ttys s="tty1-regular" />
   </overrides>
  </mode>
 
  <mode id="default" base="boot">
-  <enable services="network:audio:portmap:dbus:hal:displaymanager:ipc-dbus" />
+<!-- remember: any enable/disable values from the base mode(s) of a mode are
+     inherited, and they do stack -->
+  <enable services="network" />
   <overrides>
    <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+<!-- for qingy: -->
+<!-- <ttys s="tty1-qingy:tty2-qingy:tty3-qingy:tty4-qingy:tty5-qingy:tty6-qingy" /> -->
   </overrides>
  </mode>
 
