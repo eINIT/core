@@ -123,6 +123,27 @@ char **linux_network_list_interfaces_proc (int spawn_events) {
  return interfaces;
 }
 
+char linux_network_has_carrier(char *interface) {
+ char buffer[BUFFERSIZE], rv = 0;
+
+ esprintf (buffer, BUFFERSIZE, "/sys/class/net/%s/carrier", interface);
+
+ FILE *f = fopen(buffer, "r");
+ if (f) {
+  char t[BUFFERSIZE];
+
+  if (fgets (t, BUFFERSIZE, f)) {
+   strtrim(t);
+   if (strmatch (t, "1")) {
+    rv = 1;
+   }
+  }
+  fclose (f);
+ }
+
+ return rv;
+}
+
 /* reminder:
 
  einit_network_interface_construct  = einit_event_subsystem_network  | 0x001,
@@ -587,31 +608,16 @@ void linux_network_verify_carrier (struct einit_event *ev) {
  if (!node) {
 /* only do link carrier detection if we're NOT relying on wpa-supplicant, if
   we do, then wpa-sup will do that detection already */
-  char buffer[BUFFERSIZE];
-
-  esprintf (buffer, BUFFERSIZE, "/sys/class/net/%s/carrier", ev->string);
-
   int repe = 5;
 
   while (repe) {
-   FILE *f = fopen(buffer, "r");
-   if (f) {
-    char t[BUFFERSIZE];
-
-    if (fgets (t, BUFFERSIZE, f)) {
-     strtrim(t);
-     if (strmatch (t, "0")) {
-      if (repe != 1) {
-       fbprintf (d->feedback, "no carrier, waiting for %i seconds", (repe -1));
-      } else {
-       fbprintf (d->feedback, "no carrier, giving up");
-      }
-     }
+   if (!linux_network_has_carrier (ev->string)) {
+    if (repe != 1) {
+     fbprintf (d->feedback, "no carrier, waiting for %i seconds", (repe -1));
+    } else {
+     fbprintf (d->feedback, "no carrier, giving up");
     }
-    fclose (f);
-   } else {
-    break;
-   }
+   } else break;
 
    if (repe != 1) sleep (1);
    repe--;
@@ -628,6 +634,8 @@ int linux_network_cleanup (struct lmodule *pa) {
 
  function_unregister ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
  function_unregister ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
+ function_unregister ("network-has-carrier-linux", 1, (void *)linux_network_has_carrier);
+ function_unregister ("network-has-carrier-generic", 1, (void *)linux_network_has_carrier);
 
 #if 0
  event_ignore (einit_network_interface_configure, linux_network_interface_configure);
@@ -650,6 +658,8 @@ int linux_network_configure (struct lmodule *pa) {
 
  function_register ("network-list-interfaces-linux", 1, (void *)linux_network_list_interfaces_proc);
  function_register ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
+ function_register ("network-has-carrier-linux", 1, (void *)linux_network_has_carrier);
+ function_register ("network-has-carrier-generic", 1, (void *)linux_network_has_carrier);
 
 #if 0
  event_listen (einit_network_interface_configure, linux_network_interface_configure);
