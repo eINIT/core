@@ -44,7 +44,7 @@ else
 	echo "configuring eINIT-${BUILDNUMBER}..."
 fi
 
-SOURCESUFFIXES="c s c++ S"
+SOURCESUFFIXES="S s c c++"
 HEADERSUFFIXES="h"
 
 COMPILER=gnu
@@ -830,34 +830,41 @@ collect_objects () {
 	objects=""
 	asmobjects=""
 	for i in $@; do
+		have_object=""
 		for suffix in ${SUFFIXES}; do
-			res=$(find src ${ASMDIR} -name "${i}.${suffix}");
-			if test -n "${res}"; then
-				subobjects="";
-				for y in ${res}; do
-					subobjects="${subobjects} ${pwd}/${y}"
-				done
-				objects="${objects} ${i}.o";
-				
-				if [ -e "object.${i}.defines" ]; then LOCALDEF=$(cat "object.${i}.defines");
-				else LOCALDEF=""; fi
+			if test -z "${have_object}"; then
+				res=$(find src ${ASMDIR} -name "${i}.${suffix}");
+				if test -n "${res}"; then
+					have_object="yes"
+					subobjects="";
+					for y in ${res}; do
+						subobjects="${subobjects} ${pwd}/${y}"
+					done
+					objects="${objects} ${i}.o";
 
-				if test "${suffix}" = "s"; then
-					asmobjects="${asmobjects} ${i}.o";
-				fi
-				if test "${suffix}" = "S"; then
-					asmobjects="${asmobjects} ${i}.o";
-				fi
+					if [ -e "object.${i}.defines" ]; then LOCALDEF=$(cat "object.${i}.defines");
+					else LOCALDEF=""; fi
 
+					for y in ${ASMFUNCTIONS}; do
+						if test "${y}" = "${i}"; then
+							if test "${suffix}" = "s"; then
+								asmobjects="${asmobjects} ${i}.o";
+							fi
+							if test "${suffix}" = "S"; then
+								asmobjects="${asmobjects} ${i}.o";
+							fi
+						fi
+					done
 
-				if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
-					echo "${i}.o: ${subobjects}
+					if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
+						echo "${i}.o: ${subobjects}
 	\$(CCC) ${DEFINES} ${LOCALDEF} -Dthismodule=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_thismodule -Dself=$(echo ${i}|sed -e "s/[^A-Za-z0-9_]/_/g")_self -c ${subobjects} -o ${i}.o
 "
-				else
-					echo "${i}.o: ${subobjects}
+					else
+						echo "${i}.o: ${subobjects}
 	\$(CCC) ${DEFINES} ${LOCALDEF} -c ${subobjects} -o ${i}.o
 "
+					fi
 				fi
 			fi
 		done
