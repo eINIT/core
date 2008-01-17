@@ -580,6 +580,49 @@ void linux_network_address_static (struct einit_event *ev) {
  }
 }
 
+void linux_network_verify_carrier (struct einit_event *ev) {
+ struct network_event_data *d = ev->para;
+
+ struct cfgnode *node = d->functions->get_option(ev->string, "wpa-supplicant");
+ if (!node) {
+/* only do link carrier detection if we're NOT relying on wpa-supplicant, if
+  we do, then wpa-sup will do that detection already */
+  char buffer[BUFFERSIZE];
+
+  esprintf (buffer, BUFFERSIZE, "/sys/class/net/%s/carrier", ev->string);
+
+  int repe = 5;
+
+  while (repe) {
+   FILE *f = fopen(buffer, "r");
+   if (f) {
+    char t[BUFFERSIZE];
+
+    if (fgets (t, BUFFERSIZE, f)) {
+     strtrim(t);
+     if (strmatch (t, "0")) {
+      if (repe != 1) {
+       fbprintf (d->feedback, "no carrier, waiting for %i seconds", (repe -1));
+      } else {
+       fbprintf (d->feedback, "no carrier, giving up");
+      }
+     }
+    }
+    fclose (f);
+   } else {
+    break;
+   }
+
+   if (repe != 1) sleep (1);
+   repe--;
+  }
+
+  if (!repe) {
+   d->status = status_failed;
+  }
+ }
+}
+
 int linux_network_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
 
@@ -594,6 +637,7 @@ int linux_network_cleanup (struct lmodule *pa) {
  event_ignore (einit_network_address_static, linux_network_address_static);
  event_ignore (einit_network_interface_prepare, linux_network_interface_prepare);
  event_ignore (einit_network_interface_done, linux_network_interface_done);
+ event_ignore (einit_network_verify_carrier, linux_network_verify_carrier);
 
  return 0;
 }
@@ -615,6 +659,7 @@ int linux_network_configure (struct lmodule *pa) {
  event_listen (einit_network_address_static, linux_network_address_static);
  event_listen (einit_network_interface_prepare, linux_network_interface_prepare);
  event_listen (einit_network_interface_done, linux_network_interface_done);
+ event_listen (einit_network_verify_carrier, linux_network_verify_carrier);
 
  return 0;
 }
