@@ -144,6 +144,26 @@ char linux_network_has_carrier(char *interface) {
  return rv;
 }
 
+int linux_network_get_link_speed(char *interface) {
+ char buffer[BUFFERSIZE];
+ int rv = 0;
+
+ esprintf (buffer, BUFFERSIZE, "/sys/class/net/%s/device/rate", interface);
+
+ FILE *f = fopen(buffer, "r");
+ if (f) {
+  char t[BUFFERSIZE];
+
+  if (fgets (t, BUFFERSIZE, f)) {
+   strtrim(t);
+   rv = parse_integer(t);
+  }
+  fclose (f);
+ }
+
+ return rv;
+}
+
 /* reminder:
 
  einit_network_interface_construct  = einit_event_subsystem_network  | 0x001,
@@ -636,6 +656,8 @@ int linux_network_cleanup (struct lmodule *pa) {
  function_unregister ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
  function_unregister ("network-has-carrier-linux", 1, (void *)linux_network_has_carrier);
  function_unregister ("network-has-carrier-generic", 1, (void *)linux_network_has_carrier);
+ function_unregister ("network-get-link-speed-linux", 1, (void *)linux_network_get_link_speed);
+ function_unregister ("network-get-link-speed-generic", 1, (void *)linux_network_get_link_speed);
 
 #if 0
  event_ignore (einit_network_interface_configure, linux_network_interface_configure);
@@ -660,6 +682,8 @@ int linux_network_configure (struct lmodule *pa) {
  function_register ("network-list-interfaces-generic", 1, (void *)linux_network_list_interfaces_proc);
  function_register ("network-has-carrier-linux", 1, (void *)linux_network_has_carrier);
  function_register ("network-has-carrier-generic", 1, (void *)linux_network_has_carrier);
+ function_register ("network-get-link-speed-linux", 1, (void *)linux_network_get_link_speed);
+ function_register ("network-get-link-speed-generic", 1, (void *)linux_network_get_link_speed);
 
 #if 0
  event_listen (einit_network_interface_configure, linux_network_interface_configure);
