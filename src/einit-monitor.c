@@ -242,7 +242,7 @@ int main(int argc, char **argv, char **env) {
 #endif
 
 #if defined(BSD)
- write (STDERR_FILENO, HELLO, sizeof()-1);
+ write (STDERR_FILENO, HELLO, sizeof(HELLO)-1);
 #endif
 
  for (; i < argc; i++) {
