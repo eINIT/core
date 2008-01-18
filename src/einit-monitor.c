@@ -138,7 +138,7 @@ void do_devfs () {
   char _fstype[]  = "fstype";
   char _devfs[]   = "devfs";
   char _fspath[]  = "fspath";
-  char _path_dev[]= _PATH_DEV;
+  char _path_dev[]= "/dev";
 
   iov[0].iov_base = _fstype;
   iov[0].iov_len = sizeof(_fstype);
@@ -146,21 +146,10 @@ void do_devfs () {
   iov[1].iov_len = sizeof(_devfs);
   iov[2].iov_base = _fspath;
   iov[2].iov_len = sizeof(_fspath);
-                /*
-  * Try to avoid the trailing slash in _PATH_DEV.
-  * Be *very* defensive.
-                */
-  s = strdup(_PATH_DEV);
-  if (s != NULL) {
-   i = strlen(s);
-   if (i > 0 && s[i - 1] == '/')
-    s[i - 1] = '\0';
-   iov[3].iov_base = s;
-   iov[3].iov_len = strlen(s) + 1;
-  } else {
-   iov[3].iov_base = _path_dev;
-   iov[3].iov_len = sizeof(_path_dev);
-  }
+
+  iov[3].iov_base = _path_dev;
+  iov[3].iov_len = sizeof(_path_dev);
+
   nmount(iov, 4, 0);
   if (s != NULL)
    free(s);
