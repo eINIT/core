@@ -48,7 +48,6 @@
     <directory path="/etc/einit/rules.edev" />
 
     <directory path="/lib/einit/modules-xml" />
-    <directory path="/lib/einit/modules-xml/network" />
    </include>
   </commands>
 
