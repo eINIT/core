@@ -199,7 +199,7 @@ fi
 echo " ]";
 
 LIBRARIES="-L/${ELIBDIR} -L/usr/${ELIBDIR} -L/usr/local/${ELIBDIR}"
-BOOTSTRAP_MODULE_PATH="/${ELIBDIR}/einit/bootstrap/"
+BOOTSTRAP_MODULE_PATH="${ELIBDIR}/einit/bootstrap"
 
 echo "skipping modules: ${nomodule}"
 
@@ -580,18 +580,18 @@ XCFLAGS="${XCFLAGS}"
 
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
-ETCDIR = ${PREFIX}/etc/einit
-ETCXDIR = ${PREFIX}/etc
-LIBDIR = ${PREFIX}/${ELIBDIR}/einit
-MODDIR = ${PREFIX}/${ELIBDIR}/einit/modules
-ULIBDIR = ${UPREFIX}/${ELIBDIR}
+ETCDIR = ${PREFIX}etc/einit
+ETCXDIR = ${PREFIX}etc
+LIBDIR = ${PREFIX}${ELIBDIR}/einit
+MODDIR = ${PREFIX}${ELIBDIR}/einit/modules
+ULIBDIR = ${UPREFIX}${ELIBDIR}
 ELIBDIR = ${ELIBDIR}
-BINDIR = ${PREFIX}/bin
-UBINDIR = ${UPREFIX}/bin
-USHAREDIR = ${UPREFIX}/share/einit
-SBINDIR = ${PREFIX}/sbin
-INCLUDEDIR = ${UPREFIX}/include
-BOOTSTRAPDIR = ${PREFIX}/${BOOTSTRAP_MODULE_PATH}
+BINDIR = ${PREFIX}bin
+UBINDIR = ${UPREFIX}bin
+USHAREDIR = ${UPREFIX}share/einit
+SBINDIR = ${PREFIX}sbin
+INCLUDEDIR = ${UPREFIX}include
+BOOTSTRAPDIR = ${PREFIX}${BOOTSTRAP_MODULE_PATH}
 
 SO = "${SO}"
 LDL = "${LDL}"
@@ -673,16 +673,16 @@ EINIT_MONITOR_FLAGS = ${EINIT_MONITOR_FLAGS}
 
 echo "creating config.sh..."
 echo "PREFIX=\"$PREFIX\"
-ETCDIR=\"${PREFIX}/etc/einit\"
-ETCXDIR=\"${PREFIX}/etc\"
-LIBDIR=\"${PREFIX}/${ELIBDIR}/einit\"
-ULIBDIR=\"${UPREFIX}/${ELIBDIR}\"
+ETCDIR=\"${PREFIX}etc/einit\"
+ETCXDIR=\"${PREFIX}etc\"
+LIBDIR=\"${PREFIX}${ELIBDIR}/einit\"
+ULIBDIR=\"${UPREFIX}${ELIBDIR}\"
 ELIBDIR=\"${ELIBDIR}\"
-MODDIR=\"${PREFIX}/${ELIBDIR}/einit/modules\"
-BINDIR=\"${PREFIX}/bin\"
-SBINDIR=\"${PREFIX}/sbin\"
-INCLUDEDIR=\"${UPREFIX}/include\"
-BOOTSTRAPDIR=\"${PREFIX}/${BOOTSTRAP_MODULE_PATH}\"
+MODDIR=\"${PREFIX}${ELIBDIR}/einit/modules\"
+BINDIR=\"${PREFIX}bin\"
+SBINDIR=\"${PREFIX}sbin\"
+INCLUDEDIR=\"${UPREFIX}include\"
+BOOTSTRAPDIR=\"${PREFIX}${BOOTSTRAP_MODULE_PATH}\"
 
 LDL=\"${LDL}\"
 
@@ -767,16 +767,16 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
   <compiler>
    <build-configuration id=\"primus\"
     PREFIX=\"$PREFIX\"
-    ETCDIR=\"${PREFIX}/etc/einit\"
-    ETCXDIR=\"${PREFIX}/etc\"
-    LIBDIR=\"${PREFIX}/${ELIBDIR}/einit\"
-    ULIBDIR=\"${UPREFIX}/${ELIBDIR}\"
+    ETCDIR=\"${PREFIX}etc/einit\"
+    ETCXDIR=\"${PREFIX}etc\"
+    LIBDIR=\"${PREFIX}${ELIBDIR}/einit\"
+    ULIBDIR=\"${UPREFIX}${ELIBDIR}\"
     ELIBDIR=\"${ELIBDIR}\"
-    MODDIR=\"${PREFIX}/${ELIBDIR}/einit/modules\"
-    BINDIR=\"${PREFIX}/bin\"
-    SBINDIR=\"${PREFIX}/sbin\"
-    INCLUDEDIR=\"${UPREFIX}/include\"
-    BOOTSTRAPDIR=\"${PREFIX}/${BOOTSTRAP_MODULE_PATH}\"
+    MODDIR=\"${PREFIX}${ELIBDIR}/einit/modules\"
+    BINDIR=\"${PREFIX}bin\"
+    SBINDIR=\"${PREFIX}sbin\"
+    INCLUDEDIR=\"${UPREFIX}include\"
+    BOOTSTRAPDIR=\"${PREFIX}${BOOTSTRAP_MODULE_PATH}\"
 
     LDL=\"${LDL}\"
 
@@ -1015,7 +1015,7 @@ collect_and_install_headers() {
 #ifndef EINIT_MODULES_CONFIGURATION_H
 #define EINIT_MODULES_CONFIGURATION_H
 
-#define BOOTSTRAP_MODULE_PATH \"${BOOTSTRAP_MODULE_PATH}\"
+#define BOOTSTRAP_MODULE_PATH \"/${BOOTSTRAP_MODULE_PATH}/\"
 
 " > build/headers/einit-modules/configuration.h
 
