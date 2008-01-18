@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(BSD)
 #include <sys/stat.h>
 #include <paths.h>
-#include <util.h>
+#include <libutil.h>
 #endif
 
 pid_t send_sigint_pid = 0;
