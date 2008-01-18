@@ -311,14 +311,14 @@ void linux_network_interface_prepare (struct einit_event *ev) {
 
    if (user) {
     if (clone_device) {
-     esprintf (buffer, BUFFERSIZE, "tunctl -u %s -t %s -f %s", user, ev->string, clone_device);
+     esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -u %s -t %s -f %s", user, ev->string, clone_device);
     } else {
-     esprintf (buffer, BUFFERSIZE, "tunctl -u %s -t %s", user, ev->string);
+     esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -u %s -t %s", user, ev->string);
     }
    } else if (clone_device) {
-    esprintf (buffer, BUFFERSIZE, "tunctl -t %s -f %s", ev->string, clone_device);
+    esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -t %s -f %s", ev->string, clone_device);
    } else {
-    esprintf (buffer, BUFFERSIZE, "tunctl -t %s", ev->string);
+    esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -t %s", ev->string);
    }
   } else {
    fbprintf (d->feedback, "tunctl is not installed! no tunctl -- no tuns!");
