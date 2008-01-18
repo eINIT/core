@@ -52,41 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/prctl.h>
 #endif
 
-#if defined(BSD)
-#include <sys/param.h>
-#include <sys/ioctl.h>
-#include <sys/mount.h>
-#include <sys/sysctl.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <sys/uio.h>
-
-#include <db.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <kenv.h>
-#include <libutil.h>
-#include <paths.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <syslog.h>
-#include <time.h>
-#include <ttyent.h>
-#include <unistd.h>
-#include <sys/reboot.h>
-#include <err.h>
-
-#include <stdarg.h>
-#endif
-
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
-
-#if defined(BSD)
-char devfs = 0;
-#endif
 
 char *readfd (int fd) {
  int rn = 0;
@@ -130,94 +97,7 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
   kill (send_sigint_pid, SIGINT);
 }
 
-#if defined(BSD)
-/* this code is from freebsd's init.c, this is probably why things failed earlier */
-/*
- * Start a session and allocate a controlling terminal.
- * Only called by children of init after forking.
- */
-void
-  setctty(const char *name)
-{
- int fd;
-
- revoke(name);
- if ((fd = open(name, O_RDWR)) == -1) {
-  _exit(1);
- }
- if (login_tty(fd) == -1) {
-  _exit(1);
- }
-}
-
-void do_devfs () {
-/*
- * Additional check if devfs needs to be mounted:
- * If "/" and "/dev" have the same device number,
- * then it hasn't been mounted yet.
-*/
-
- if (!devfs) {
-  struct stat stst;
-  dev_t root_devno;
-
-  stat("/", &stst);
-  root_devno = stst.st_dev;
-  if (stat("/dev", &stst) != 0) ;
-  else if (stst.st_dev == root_devno)
-   devfs = 1;
- }
-
- if (devfs == 1) {
-  struct iovec iov[4];
-  char *s;
-  int i;
-
-  close(0);
-  close(1);
-  close(2);
-
-  char _fstype[]  = "fstype";
-  char _devfs[]   = "devfs";
-  char _fspath[]  = "fspath";
-  char _path_dev[]= _PATH_DEV;
-
-  iov[0].iov_base = _fstype;
-  iov[0].iov_len = sizeof(_fstype);
-  iov[1].iov_base = _devfs;
-  iov[1].iov_len = sizeof(_devfs);
-  iov[2].iov_base = _fspath;
-  iov[2].iov_len = sizeof(_fspath);
-                /*
-  * Try to avoid the trailing slash in _PATH_DEV.
-  * Be *very* defensive.
-                */
-  s = strdup(_PATH_DEV);
-  if (s != NULL) {
-   i = strlen(s);
-   if (i > 0 && s[i - 1] == '/')
-    s[i - 1] = '\0';
-   iov[3].iov_base = s;
-   iov[3].iov_len = strlen(s) + 1;
-  } else {
-   iov[3].iov_base = _path_dev;
-   iov[3].iov_len = sizeof(_path_dev);
-  }
-
-  nmount(iov, 4, 0);
-  if (s != NULL)
-   free(s);
-
-  devfs = 2;
- }
-}
-#endif
-
 int run_core (int argc, char **argv, char **env, char *einit_crash_data, int command_pipe, int crash_pipe, char need_recovery) {
-#if defined(BSD)
- setctty(_PATH_CONSOLE);
-#endif
-
  char *narg[argc + 8];
  int i = 0;
  char tmp1[BUFFERSIZE], tmp2[BUFFERSIZE];
