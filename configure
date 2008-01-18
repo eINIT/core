@@ -358,6 +358,23 @@ else
 	fi;
 fi
 
+echo -n "checking for a linker... "
+if test -n "$LD"; then
+	echo "got one! ($LD)";
+else
+	if test -x "$(which ${CTARGET}-ld-${RCVERSION} 2>/dev/null)"; then LD="${CTARGET}-ld-${RCVERSION}";
+	elif test -x "$(which ${CTARGET}-ld 2>/dev/null)"; then LD="${CTARGET}-ld";
+	elif test -x "$(which ${CHOST}-ld-${RCVERSION} 2>/dev/null)"; then LD="${CHOST}-ld-${RCVERSION}";
+	elif test -x "$(which ${CHOST}-ld 2>/dev/null)"; then LD="${CHOST}-ld";
+	elif test -x "$(which ld 2>/dev/null)"; then LD=ld; fi;
+	if test -n "$LD"; then
+		echo "$LD";
+	else
+		echo "no linker found, using $CC";
+		LD=${CC}
+	fi;
+fi
+
 echo -n "checking for an assembler... "
 if test "${COMPILER}" = "gnu"; then
 	ASM=${CC};
@@ -614,6 +631,7 @@ CCC = \${CC} \${INCLUDE} \${CFLAGS}
 CCL = $CCL
 CLD = \${CC} \${LDFLAGS} ${LIBRARIES}
 LLD = \${CC} \${LDFLAGS} $LLD ${LIBRARIES}
+LD = ${LD}
 XLLD = $LLD
 STATIC = $STATIC
 LPA = $LPA
@@ -700,6 +718,7 @@ CCC=\"\${CC} \${INCLUDE} \${CFLAGS}\"
 CCL=\"$CCL\"
 CLD=\"\${CC} \${LDFLAGS} ${LIBRARIES}\"
 LLD=\"\${CC} \${LDFLAGS} $LLD ${LIBRARIES}\"
+LD=\"${LD}\"
 XLLD=\"$LLD\"
 STATIC=\"$STATIC\"
 LPA=\"$LPA\"
@@ -791,6 +810,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     CCL=\"$CCL\"
     CLD=\"${CC} \${LDFLAGS} ${LIBRARIES}\"
     LLD=\"${CC} \${LDFLAGS} $LLD ${LIBRARIES}\"
+    LD=\"${LD}\"
     XLLD=\"$LLD\"
     STATIC=\"$STATIC\"
     LPA=\"$LPA\"
@@ -829,6 +849,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 collect_objects () {
 	objects=""
 	asmobjects=""
+	extraasm=""
 	for i in $@; do
 		have_object=""
 		for suffix in ${SUFFIXES}; do
@@ -845,8 +866,10 @@ collect_objects () {
 					if [ -e "object.${i}.defines" ]; then LOCALDEF=$(cat "object.${i}.defines");
 					else LOCALDEF=""; fi
 
+					wasasmfunction=""
 					for y in ${ASMFUNCTIONS}; do
 						if test "${y}" = "${i}"; then
+							wasasmfunction="yes"
 							if test "${suffix}" = "s"; then
 								asmobjects="${asmobjects} ${i}.o";
 							fi
@@ -855,6 +878,15 @@ collect_objects () {
 							fi
 						fi
 					done
+
+					if test -z "${wasasmfunction}"; then
+						if test "${suffix}" = "s"; then
+							extraasm="${extraasm} ${i}.o";
+						fi
+						if test "${suffix}" = "S"; then
+							extraasm="${extraasm} ${i}.o";
+						fi
+					fi
 
 					if test -n "$(echo ${INTERNALMODULES}|grep -w ${i})"; then
 						echo "${i}.o: ${subobjects}
@@ -1092,6 +1124,7 @@ objects = ${objects}
 " >> build/${z}/Makefile
 	echo "
 asmobjects = ${asmobjects}
+extraasm = ${extraasm}
 " >> build/${z}/Makefile
 	cat makefile.${z}.template >> build/${z}/Makefile
 done
