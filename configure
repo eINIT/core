@@ -854,7 +854,11 @@ collect_objects () {
 		have_object=""
 		for suffix in ${SUFFIXES}; do
 			if test -z "${have_object}"; then
-				res=$(find src src/${OS} ${ASMDIR} -name "${i}.${suffix}");
+				if test -e src-${OS}; then
+					res=$(find src src-${OS} ${ASMDIR} -name "${i}.${suffix}");
+				else
+					res=$(find src ${ASMDIR} -name "${i}.${suffix}");
+				fi
 				if test -n "${res}"; then
 					have_object="yes"
 					subobjects="";
@@ -907,7 +911,11 @@ collect_modules() {
 	objects=""
 	for i in $@; do
 		for suffix in ${SUFFIXES}; do
-			res=$(find src src/${OS} ${ASMDIR} -name "${i}.${suffix}");
+			if test -e src-${OS}; then
+				res=$(find src src-${OS} ${ASMDIR} -name "${i}.${suffix}");
+			else
+				res=$(find src ${ASMDIR} -name "${i}.${suffix}");
+			fi
 			if test -n "${res}"; then
 				subobjects="";
 				for y in ${res}; do
