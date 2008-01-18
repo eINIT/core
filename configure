@@ -432,6 +432,7 @@ if test -n "`uname -a|grep 'FreeBSD'`"; then
 	STATIC="";
 	LIBRT=""
 	SO="so"
+	EINIT_MONITOR_FLAGS="-util"
 elif test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	echo "Darwin";
 	OS="darwin";
@@ -447,6 +448,7 @@ elif test -n "`uname -a|grep -i 'darwin kernel'`"; then
 	STATIC="";
 	LIBRT=""
 	SO="dylib"
+	EINIT_MONITOR_FLAGS=""
 elif test -n "`uname -a|grep -i 'Linux'`"; then
 	echo "Linux";
 	OS="linux";
@@ -469,6 +471,7 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	LIBRT="-lrt"
 	SO="so"
 	NETLINK="netlink"
+	EINIT_MONITOR_FLAGS=""
 else
 	echo "(guess) generic posix-ish unix";
 	OS="unknown";
@@ -480,6 +483,7 @@ else
 	STATIC="";
 	LIBRT="-lrt"
 	SO="so"
+	EINIT_MONITOR_FLAGS=""
 fi
 
 if [ "${NETLINK}" = "netlink" ]; then
@@ -663,6 +667,8 @@ LIBNOTIFY_LIBS = ${LIBNOTIFY_LIBS}
 EXPAT_LIBS= ${EXPAT_LIBS}
 
 GUI = ${GUI}
+
+EINIT_MONITOR_FLAGS = ${EINIT_MONITOR_FLAGS}
 " > config.mk
 
 echo "creating config.sh..."
@@ -750,6 +756,8 @@ LIBNOTIFY_LIBS=\"${LIBNOTIFY_LIBS}\"
 EXPAT_LIBS=\"${EXPAT_LIBS}\"
 
 GUI=\"${GUI}\"
+
+EINIT_MONITOR_FLAGS=\"${EINIT_MONITOR_FLAGS}\"
 " > config.sh
 
 echo "creating config.xml..."
@@ -841,7 +849,9 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
     EXPAT_LIBS=\"${EXPAT_LIBS}\"
 
-    GUI=\"${GUI}\" />
+    GUI=\"${GUI}\"
+
+    EINIT_MONITOR_FLAGS=\"${EINIT_MONITOR_FLAGS}\" />
   </compiler>
  </configuration>
 </einit>" > config.xml
