@@ -240,10 +240,6 @@ int linux_udev_run() {
 
   system ("/sbin/udevsettle --timeout=60");
 
-  struct einit_event ev = evstaticinit(einit_core_update_modules);
-  event_emit (&ev, einit_event_flag_broadcast);
-  evstaticdestroy(ev);
-
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
 /* let's not forget about raid setups and the like here... */
