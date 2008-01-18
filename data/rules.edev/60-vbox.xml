@@ -3,7 +3,7 @@
  <configuration>
   <edev>
    <devicefile-rule DEVPATH_BASE="^vboxdrv$"
-                    chmod="0664"
+                    chmod="0660"
                     group="vboxusers"
                     devicefile="/dev/vboxdrv" />
   </edev>
