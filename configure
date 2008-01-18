@@ -561,8 +561,8 @@ ASMDIR="asm/${ARCH}-${OS}-${COMPILER}"
 if ! test -d ${ASMDIR}; then ASMDIR=""; fi
 echo "done.";
 
-if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}/usr"; else UPREFIX="${PREFIX}"; fi
-if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}/usr"; fi
+if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}usr/"; else UPREFIX="${PREFIX}"; fi
+if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}usr/"; fi
 
 if [ "${DBUS}" = "dbus" ]; then
 	echo "getting dbus flags off pkg-config..."
