@@ -1441,8 +1441,6 @@ int mount_try_mount (char *mountpoint, char *fs, struct device_data *dd, struct 
 //    if (mount_critical && inset ((const void **)mount_critical, (const void *)mountpoint, SET_TYPE_STRING)) {
      struct einit_event ev = evstaticinit(einit_core_update_modules);
 
-     fbprintf (status, "updating list of modules");
-
      event_emit (&ev, einit_event_flag_broadcast);
 
      evstaticdestroy(ev);

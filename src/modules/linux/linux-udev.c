@@ -178,7 +178,7 @@ int linux_udev_run() {
 
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
-  mount ("mdev", "/dev", "tmpfs", 0, NULL);
+  mount ("udev", "/dev", "tmpfs", 0, NULL);
 
   mkdir ("/dev/pts", 0777);
   mount ("devpts", "/dev/pts", "devpts", 0, NULL);
@@ -239,6 +239,10 @@ int linux_udev_run() {
   linux_udev_load_kernel_extensions();
 
   system ("/sbin/udevsettle --timeout=60");
+
+  struct einit_event ev = evstaticinit(einit_core_update_modules);
+  event_emit (&ev, einit_event_flag_broadcast);
+  evstaticdestroy(ev);
 
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
