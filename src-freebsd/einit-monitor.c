@@ -80,7 +80,7 @@ static const char rcsid[] =
 #endif
 
 #define _PATH_SLOGGER   "/sbin/session_logger"
-#define _PATH_RUNCOM    "/lib/einit/bin/einit-core"
+#define _PATH_RUNCOM    "/lib/einit/bin/einit-core --force-init"
 #define _PATH_RUNDOWN   "/bin/power off"
 
 /*
@@ -800,7 +800,7 @@ run_script(const char *script)
 {
 	pid_t pid, wpid;
 	int status;
-	char *argv[4];
+	char *argv[5];
 	const char *shell;
 	struct sigaction sa;
 
@@ -816,12 +816,14 @@ run_script(const char *script)
 		setctty(_PATH_CONSOLE);
 
 		char _sh[]	 	= "sh";
+		char _arg_c[]	 	= "-c";
 		char _autoboot[]	= "autoboot";
 
 		argv[0] = _sh;
-		argv[1] = __DECONST(char *, script);
-		argv[2] = runcom_mode == AUTOBOOT ? _autoboot : 0;
-		argv[3] = 0;
+		argv[1] = _arg_c;
+		argv[2] = __DECONST(char *, script);
+		argv[3] = runcom_mode == AUTOBOOT ? _autoboot : 0;
+		argv[4] = 0;
 
 		sigprocmask(SIG_SETMASK, &sa.sa_mask, (sigset_t *) 0);
 
