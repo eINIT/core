@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if defined(BSD)
 #include <sys/stat.h>
+#include <paths.h>
 #endif
 
 pid_t send_sigint_pid = 0;
@@ -105,18 +106,34 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
   kill (send_sigint_pid, SIGINT);
 }
 
-#ifdef BSD
-void do_devfs () {
+#if defined(BSD)
 /* this code is from freebsd's init.c, this is probably why things failed earlier */
+/*
+ * Start a session and allocate a controlling terminal.
+ * Only called by children of init after forking.
+ */
+void
+  setctty(const char *name)
+{
+ int fd;
+
+ revoke(name);
+ if ((fd = open(name, O_RDWR)) == -1) {
+  stall("can't open %s: %m", name);
+  _exit(1);
+ }
+ if (login_tty(fd) == -1) {
+  stall("can't get %s for controlling terminal: %m", name);
+  _exit(1);
+ }
+}
+
+void do_devfs () {
 /*
  * Additional check if devfs needs to be mounted:
  * If "/" and "/dev" have the same device number,
  * then it hasn't been mounted yet.
 */
-
- close(0);
- close(1);
- close(2);
 
  if (!devfs) {
   struct stat stst;
@@ -126,18 +143,22 @@ void do_devfs () {
   root_devno = stst.st_dev;
   if (stat("/dev", &stst) != 0) ;
   else if (stst.st_dev == root_devno)
-   devfs++;
+   devfs = 1;
  }
 
- if (devfs) {
+ if (devfs == 1) {
   struct iovec iov[4];
   char *s;
   int i;
 
+  close(0);
+  close(1);
+  close(2);
+
   char _fstype[]  = "fstype";
   char _devfs[]   = "devfs";
   char _fspath[]  = "fspath";
-  char _path_dev[]= "/dev";
+  char _path_dev[]= _PATH_DEV;
 
   iov[0].iov_base = _fstype;
   iov[0].iov_len = sizeof(_fstype);
@@ -145,20 +166,34 @@ void do_devfs () {
   iov[1].iov_len = sizeof(_devfs);
   iov[2].iov_base = _fspath;
   iov[2].iov_len = sizeof(_fspath);
-
-  iov[3].iov_base = _path_dev;
-  iov[3].iov_len = sizeof(_path_dev);
+                /*
+  * Try to avoid the trailing slash in _PATH_DEV.
+  * Be *very* defensive.
+                */
+  s = strdup(_PATH_DEV);
+  if (s != NULL) {
+   i = strlen(s);
+   if (i > 0 && s[i - 1] == '/')
+    s[i - 1] = '\0';
+   iov[3].iov_base = s;
+   iov[3].iov_len = strlen(s) + 1;
+  } else {
+   iov[3].iov_base = _path_dev;
+   iov[3].iov_len = sizeof(_path_dev);
+  }
 
   nmount(iov, 4, 0);
   if (s != NULL)
    free(s);
+
+  devfs = 2;
  }
 }
 #endif
 
 int run_core (int argc, char **argv, char **env, char *einit_crash_data, int command_pipe, int crash_pipe, char need_recovery) {
 #if defined(BSD)
- do_devfs();
+ setctty(_PATH_CONSOLE);
 #endif
 
  char *narg[argc + 8];
@@ -331,6 +366,8 @@ int main(int argc, char **argv, char **env) {
   action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
 
   if ( sigaction (SIGPIPE, &action, NULL) ) perror ("calling sigaction() failed");
+
+  do_devfs();
 
   return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
  }
