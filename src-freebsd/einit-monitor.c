@@ -71,10 +71,6 @@ static const char rcsid[] =
 
 #include <stdarg.h>
 
-#define _PATH_SLOGGER   "/sbin/session_logger"
-#define _PATH_RUNCOM    "/etc/rc"
-#define _PATH_RUNDOWN   "/etc/rc.shutdown"
-
 #ifdef SECURE
 #include <pwd.h>
 #endif
@@ -83,7 +79,9 @@ static const char rcsid[] =
 #include <login_cap.h>
 #endif
 
-#include "pathnames.h"
+#define _PATH_SLOGGER   "/sbin/session_logger"
+#define _PATH_RUNCOM    "/etc/rc"
+#define _PATH_RUNDOWN   "/etc/rc.shutdown"
 
 /*
  * Sleep times; used to prevent thrashing.
