@@ -129,5 +129,5 @@ int einit_fqdn_configure (struct lmodule *irr) {
   einit_fqdn_set();
  }
 
- return status_configure_done;
+ return status_configure_done | status_block;
 }
