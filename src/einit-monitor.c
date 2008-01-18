@@ -124,8 +124,7 @@ void do_devfs () {
 
   stat("/", &stst);
   root_devno = stst.st_dev;
-  if (stat("/dev", &stst) != 0)
-   warning("Can't stat /dev: %m");
+  if (stat("/dev", &stst) != 0) ;
   else if (stst.st_dev == root_devno)
    devfs++;
  }
