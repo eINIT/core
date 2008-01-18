@@ -367,6 +367,7 @@ int main(int argc, char **argv, char **env) {
 
   if ( sigaction (SIGPIPE, &action, NULL) ) perror ("calling sigaction() failed");
 
+  devfs = 1;
   do_devfs();
 
   return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
