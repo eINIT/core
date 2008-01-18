@@ -119,13 +119,11 @@ void
 
  revoke(name);
  if ((fd = open(name, O_RDWR)) == -1) {
-  stall("can't open %s: %m", name);
   _exit(1);
  }
- if (login_tty(fd) == -1) {
-  stall("can't get %s for controlling terminal: %m", name);
+/* if (login_tty(fd) == -1) {
   _exit(1);
- }
+ }*/
 }
 
 void do_devfs () {
