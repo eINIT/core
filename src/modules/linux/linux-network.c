@@ -270,15 +270,72 @@ void linux_network_interface_construct (struct einit_event *ev) {
 
   cfg_addnode (&newnode);
  }
+
+ if ((node = d->functions->get_option(ev->string, "tun"))) {
+  if (!d->static_descriptor->si.after || !inset ((const void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING)) {
+//   fprintf (stderr, "%s\n", buffer);
+
+   d->static_descriptor->si.after =
+     (char **)setadd ((void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING);
+  }
+ }
 }
 
 void linux_network_interface_prepare (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
  char buffer[BUFFERSIZE];
- char **ip_binary = which ("ip");
 
  buffer[0] = 0;
+
+ struct cfgnode *node = NULL;
+
+ if ((node = d->functions->get_option(ev->string, "tun"))) {
+  char **tunctl_binary = which ("tunctl");
+  if (tunctl_binary) {
+   efree (tunctl_binary);
+   char *user = NULL;
+   char *clone_device = NULL;
+
+   if (node->arbattrs) {
+    int i = 0;
+
+    for (; node->arbattrs[i]; i+=2) {
+     if (strmatch (node->arbattrs[i], "user")) {
+      user = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "clone-device")) {
+      clone_device = node->arbattrs[i+1];
+     }
+    }
+   }
+
+   if (user) {
+    if (clone_device) {
+     esprintf (buffer, BUFFERSIZE, "tunctl -u %s -t %s -f %s", user, ev->string, clone_device);
+    } else {
+     esprintf (buffer, BUFFERSIZE, "tunctl -u %s -t %s", user, ev->string);
+    }
+   } else if (clone_device) {
+    esprintf (buffer, BUFFERSIZE, "tunctl -t %s -f %s", ev->string, clone_device);
+   } else {
+    esprintf (buffer, BUFFERSIZE, "tunctl -t %s", ev->string);
+   }
+  } else {
+   fbprintf (d->feedback, "tunctl is not installed! no tunctl -- no tuns!");
+
+   d->status = status_failed;
+   return;
+  }
+
+  if (buffer[0]) {
+   if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+    fbprintf (d->feedback, "command failed: %s", buffer);
+    d->status = status_failed;
+   }
+  }
+ }
+
+ char **ip_binary = which ("ip");
 
  if (ip_binary) {
 /* looks like we have the ip command handy, so let's use it */
@@ -418,6 +475,43 @@ void linux_network_interface_done (struct einit_event *ev) {
     }
 
     efree (resolv_conf);
+   }
+  }
+ }
+
+ struct cfgnode *node = NULL;
+ if ((node = d->functions->get_option(ev->string, "tun"))) {
+  char **tunctl_binary = which ("tunctl");
+  if (tunctl_binary) {
+   efree (tunctl_binary);
+   char *clone_device = NULL;
+
+   if (node->arbattrs) {
+    int i = 0;
+
+    for (; node->arbattrs[i]; i+=2) {
+     if (strmatch (node->arbattrs[i], "clone-device")) {
+      clone_device = node->arbattrs[i+1];
+     }
+    }
+   }
+
+   if (clone_device) {
+    esprintf (buffer, BUFFERSIZE, "tunctl -d %s -f %s", ev->string, clone_device);
+   } else {
+    esprintf (buffer, BUFFERSIZE, "tunctl -d %s", ev->string);
+   }
+  } else {
+   fbprintf (d->feedback, "tunctl is not installed! no tunctl -- no tuns!");
+
+   d->status = status_failed;
+   return;
+  }
+
+  if (buffer[0]) {
+   if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+    fbprintf (d->feedback, "command failed: %s", buffer);
+    d->status = status_failed;
    }
   }
  }
