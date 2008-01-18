@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(BSD)
 #include <sys/stat.h>
 #include <paths.h>
+#include <util.h>
 #endif
 
 pid_t send_sigint_pid = 0;
@@ -121,9 +122,9 @@ void
  if ((fd = open(name, O_RDWR)) == -1) {
   _exit(1);
  }
-/* if (login_tty(fd) == -1) {
+ if (login_tty(fd) == -1) {
   _exit(1);
- }*/
+ }
 }
 
 void do_devfs () {
