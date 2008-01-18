@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <edev>
+   <devicefile-rule DEVPATH_BASE="^vboxdrv$"
+                    chmod="0664"
+                    group="vboxusers"
+                    devicefile="/dev/vboxdrv" />
+  </edev>
+ </configuration>
+</einit>
