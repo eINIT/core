@@ -52,8 +52,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/prctl.h>
 #endif
 
+#if defined(BSD)
+#include <sys/stat.h>
+#endif
+
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
+
+#if defined(BSD)
+char devfs = 0;
+#endif
 
 char *readfd (int fd) {
  int rn = 0;
@@ -97,7 +105,74 @@ void einit_sigint (int signal, siginfo_t *siginfo, void *context) {
   kill (send_sigint_pid, SIGINT);
 }
 
+#ifdef BSD
+void do_devfs () {
+/* this code is from freebsd's init.c, this is probably why things failed earlier */
+/*
+ * Additional check if devfs needs to be mounted:
+ * If "/" and "/dev" have the same device number,
+ * then it hasn't been mounted yet.
+*/
+
+ close(0);
+ close(1);
+ close(2);
+
+ if (!devfs) {
+  struct stat stst;
+  dev_t root_devno;
+
+  stat("/", &stst);
+  root_devno = stst.st_dev;
+  if (stat("/dev", &stst) != 0)
+   warning("Can't stat /dev: %m");
+  else if (stst.st_dev == root_devno)
+   devfs++;
+ }
+
+ if (devfs) {
+  struct iovec iov[4];
+  char *s;
+  int i;
+
+  char _fstype[]  = "fstype";
+  char _devfs[]   = "devfs";
+  char _fspath[]  = "fspath";
+  char _path_dev[]= _PATH_DEV;
+
+  iov[0].iov_base = _fstype;
+  iov[0].iov_len = sizeof(_fstype);
+  iov[1].iov_base = _devfs;
+  iov[1].iov_len = sizeof(_devfs);
+  iov[2].iov_base = _fspath;
+  iov[2].iov_len = sizeof(_fspath);
+                /*
+  * Try to avoid the trailing slash in _PATH_DEV.
+  * Be *very* defensive.
+                */
+  s = strdup(_PATH_DEV);
+  if (s != NULL) {
+   i = strlen(s);
+   if (i > 0 && s[i - 1] == '/')
+    s[i - 1] = '\0';
+   iov[3].iov_base = s;
+   iov[3].iov_len = strlen(s) + 1;
+  } else {
+   iov[3].iov_base = _path_dev;
+   iov[3].iov_len = sizeof(_path_dev);
+  }
+  nmount(iov, 4, 0);
+  if (s != NULL)
+   free(s);
+ }
+}
+#endif
+
 int run_core (int argc, char **argv, char **env, char *einit_crash_data, int command_pipe, int crash_pipe, char need_recovery) {
+#if defined(BSD)
+ do_devfs();
+#endif
+
  char *narg[argc + 8];
  int i = 0;
  char tmp1[BUFFERSIZE], tmp2[BUFFERSIZE];
@@ -228,8 +303,6 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
  }
 }
 
-#define HELLO "eINIT\n"
-
 int main(int argc, char **argv, char **env) {
  char *argv_mutable[argc+1];
  int i = 0, it = 0;
@@ -239,10 +312,6 @@ int main(int argc, char **argv, char **env) {
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
-#endif
-
-#if defined(BSD)
- write (STDERR_FILENO, HELLO, sizeof(HELLO)-1);
 #endif
 
  for (; i < argc; i++) {
