@@ -311,14 +311,14 @@ void linux_network_interface_prepare (struct einit_event *ev) {
 
    if (user) {
     if (clone_device) {
-     esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -u %s -t %s -f %s", user, ev->string, clone_device);
+     esprintf (buffer, BUFFERSIZE, "tunctl -u %s -t %s -f %s", user, ev->string, clone_device);
     } else {
-     esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -u %s -t %s", user, ev->string);
+     esprintf (buffer, BUFFERSIZE, "tunctl -u %s -t %s", user, ev->string);
     }
    } else if (clone_device) {
-    esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -t %s -f %s", ev->string, clone_device);
+    esprintf (buffer, BUFFERSIZE, "tunctl -t %s -f %s", ev->string, clone_device);
    } else {
-    esprintf (buffer, BUFFERSIZE, "pexec-options dont-close-stdin; tunctl -t %s", ev->string);
+    esprintf (buffer, BUFFERSIZE, "tunctl -t %s", ev->string);
    }
   } else {
    fbprintf (d->feedback, "tunctl is not installed! no tunctl -- no tuns!");
@@ -479,39 +479,41 @@ void linux_network_interface_done (struct einit_event *ev) {
   }
  }
 
- struct cfgnode *node = NULL;
- if ((node = d->functions->get_option(ev->string, "tun"))) {
-  char **tunctl_binary = which ("tunctl");
-  if (tunctl_binary) {
-   efree (tunctl_binary);
-   char *clone_device = NULL;
+ if (d->action == interface_down) {
+  struct cfgnode *node = NULL;
+  if ((node = d->functions->get_option(ev->string, "tun"))) {
+   char **tunctl_binary = which ("tunctl");
+   if (tunctl_binary) {
+    efree (tunctl_binary);
+    char *clone_device = NULL;
 
-   if (node->arbattrs) {
-    int i = 0;
+    if (node->arbattrs) {
+     int i = 0;
 
-    for (; node->arbattrs[i]; i+=2) {
-     if (strmatch (node->arbattrs[i], "clone-device")) {
-      clone_device = node->arbattrs[i+1];
+     for (; node->arbattrs[i]; i+=2) {
+      if (strmatch (node->arbattrs[i], "clone-device")) {
+       clone_device = node->arbattrs[i+1];
+      }
      }
     }
-   }
 
-   if (clone_device) {
-    esprintf (buffer, BUFFERSIZE, "tunctl -d %s -f %s", ev->string, clone_device);
+    if (clone_device) {
+     esprintf (buffer, BUFFERSIZE, "tunctl -d %s -f %s", ev->string, clone_device);
+    } else {
+     esprintf (buffer, BUFFERSIZE, "tunctl -d %s", ev->string);
+    }
    } else {
-    esprintf (buffer, BUFFERSIZE, "tunctl -d %s", ev->string);
-   }
-  } else {
-   fbprintf (d->feedback, "tunctl is not installed! no tunctl -- no tuns!");
+    fbprintf (d->feedback, "tunctl is not installed! no tunctl -- no tuns!");
 
-   d->status = status_failed;
-   return;
-  }
-
-  if (buffer[0]) {
-   if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-    fbprintf (d->feedback, "command failed: %s", buffer);
     d->status = status_failed;
+    return;
+   }
+
+   if (buffer[0]) {
+    if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+     fbprintf (d->feedback, "command failed: %s", buffer);
+     d->status = status_failed;
+    }
    }
   }
  }
