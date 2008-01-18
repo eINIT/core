@@ -80,8 +80,8 @@ static const char rcsid[] =
 #endif
 
 #define _PATH_SLOGGER   "/sbin/session_logger"
-#define _PATH_RUNCOM    "/etc/rc"
-#define _PATH_RUNDOWN   "/etc/rc.shutdown"
+#define _PATH_RUNCOM    "/lib/einit/bin/einit-core"
+#define _PATH_RUNDOWN   "/bin/power off"
 
 /*
  * Sleep times; used to prevent thrashing.
