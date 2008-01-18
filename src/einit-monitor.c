@@ -53,9 +53,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #if defined(BSD)
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/mount.h>
+#include <sys/sysctl.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
-#include <paths.h>
+#include <sys/uio.h>
+
+#include <db.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <kenv.h>
 #include <libutil.h>
+#include <paths.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <ttyent.h>
+#include <unistd.h>
+#include <sys/reboot.h>
+#include <err.h>
+
+#include <stdarg.h>
 #endif
 
 pid_t send_sigint_pid = 0;
