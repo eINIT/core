@@ -228,6 +228,8 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
  }
 }
 
+#define HELLO "eINIT\n"
+
 int main(int argc, char **argv, char **env) {
  char *argv_mutable[argc+1];
  int i = 0, it = 0;
@@ -237,6 +239,10 @@ int main(int argc, char **argv, char **env) {
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
+#endif
+
+#if defined(BSD)
+ write (STDERR_FILENO, HELLO, sizeof()-1);
 #endif
 
  for (; i < argc; i++) {
