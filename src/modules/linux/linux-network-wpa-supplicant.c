@@ -120,53 +120,55 @@ struct network_event_data {
 void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- struct cfgnode *node = d->functions->get_option(ev->string, "wpa-supplicant");
- if (node) {
-  char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
-  char *driver = "wext";
+ if (strstr (d->static_descriptor->rid, "interface-carrier-") == d->static_descriptor->rid) {
+  struct cfgnode *node = d->functions->get_option(ev->string, "wpa-supplicant");
+  if (node) {
+   char *configuration_file = "/etc/wpa_supplicant/wpa_supplicant.conf";
+   char *driver = "wext";
 
-  char buffer[BUFFERSIZE];
+   char buffer[BUFFERSIZE];
 
-  int i = 0;
+   int i = 0;
 
-  if (node->arbattrs) {
-   for (; node->arbattrs[i]; i += 2) {
-    if (strmatch (node->arbattrs[i], "configuration-file")) {
-     configuration_file = node->arbattrs[i+1];
-    } else if (strmatch (node->arbattrs[i], "driver")) {
-     driver = node->arbattrs[i+1];
+   if (node->arbattrs) {
+    for (; node->arbattrs[i]; i += 2) {
+     if (strmatch (node->arbattrs[i], "configuration-file")) {
+      configuration_file = node->arbattrs[i+1];
+     } else if (strmatch (node->arbattrs[i], "driver")) {
+      driver = node->arbattrs[i+1];
+     }
     }
    }
+
+   esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
+
+   if (!inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
+    d->static_descriptor->si.requires =
+      (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
+   }
+
+   struct cfgnode newnode;
+
+   memset (&newnode, 0, sizeof(struct cfgnode));
+
+   esprintf (buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s", ev->string);
+   newnode.id = estrdup (buffer);
+   newnode.type = einit_node_regular;
+
+   esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
+
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"driver", SET_TYPE_STRING);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)driver, SET_TYPE_STRING);
+
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"configuration-file", SET_TYPE_STRING);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)configuration_file, SET_TYPE_STRING);
+
+   newnode.svalue = newnode.arbattrs[3];
+
+   cfg_addnode (&newnode);
   }
-
-  esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
-
-  if (!inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
-   d->static_descriptor->si.requires =
-    (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
-  }
-
-  struct cfgnode newnode;
-
-  memset (&newnode, 0, sizeof(struct cfgnode));
-
-  esprintf (buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s", ev->string);
-  newnode.id = estrdup (buffer);
-  newnode.type = einit_node_regular;
-
-  esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
-
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"driver", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)driver, SET_TYPE_STRING);
-
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"configuration-file", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)configuration_file, SET_TYPE_STRING);
-
-  newnode.svalue = newnode.arbattrs[3];
-
-  cfg_addnode (&newnode);
  }
 }
 

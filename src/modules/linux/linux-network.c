@@ -235,48 +235,50 @@ void linux_network_interface_configure (struct einit_event *ev) {
 void linux_network_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- struct cfgnode *node = d->functions->get_option(ev->string, "kernel-modules");
- if (node && node->svalue) {
-  char buffer[BUFFERSIZE];
+ if (strstr (d->static_descriptor->rid, "interface-carrier-") == d->static_descriptor->rid) {
+  struct cfgnode *node = d->functions->get_option(ev->string, "kernel-modules");
+  if (node && node->svalue) {
+   char buffer[BUFFERSIZE];
 
-  esprintf (buffer, BUFFERSIZE, "kern-%s", ev->string);
+   esprintf (buffer, BUFFERSIZE, "kern-%s", ev->string);
 
-  if (!d->static_descriptor->si.requires || !inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
+   if (!d->static_descriptor->si.requires || !inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
 //   fprintf (stderr, "%s\n", buffer);
 
-   d->static_descriptor->si.requires =
-    (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
+    d->static_descriptor->si.requires =
+      (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
+   }
+
+   struct cfgnode newnode;
+
+   memset (&newnode, 0, sizeof(struct cfgnode));
+
+   esprintf (buffer, BUFFERSIZE, "configuration-kernel-modules-%s", ev->string);
+   newnode.id = estrdup (buffer);
+   newnode.type = einit_node_regular;
+
+   esprintf (buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
+
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)node->svalue, SET_TYPE_STRING);
+
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"provide-service", SET_TYPE_STRING);
+   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"yes", SET_TYPE_STRING);
+
+   newnode.svalue = newnode.arbattrs[3];
+
+   cfg_addnode (&newnode);
   }
 
-  struct cfgnode newnode;
-
-  memset (&newnode, 0, sizeof(struct cfgnode));
-
-  esprintf (buffer, BUFFERSIZE, "configuration-kernel-modules-%s", ev->string);
-  newnode.id = estrdup (buffer);
-  newnode.type = einit_node_regular;
-
-  esprintf (buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
-
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)node->svalue, SET_TYPE_STRING);
-
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"provide-service", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"yes", SET_TYPE_STRING);
-
-  newnode.svalue = newnode.arbattrs[3];
-
-  cfg_addnode (&newnode);
- }
-
- if ((node = d->functions->get_option(ev->string, "tun"))) {
-  if (!d->static_descriptor->si.after || !inset ((const void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING)) {
+  if ((node = d->functions->get_option(ev->string, "tun"))) {
+   if (!d->static_descriptor->si.after || !inset ((const void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING)) {
 //   fprintf (stderr, "%s\n", buffer);
 
-   d->static_descriptor->si.after =
-     (char **)setadd ((void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING);
+    d->static_descriptor->si.after =
+      (char **)setadd ((void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING);
+   }
   }
  }
 }

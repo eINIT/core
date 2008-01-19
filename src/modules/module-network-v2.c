@@ -93,6 +93,7 @@ char *einit_module_network_v2_module_functions[] = { "zap", "up", "down", "refre
 struct network_v2_interface_descriptor {
  enum interface_flags status;
  struct lmodule *module;
+ struct lmodule *carrier_module;
  char *dhcp_client;
 };
 
@@ -290,13 +291,8 @@ int einit_module_network_v2_module_custom (struct lmodule *m, char *task_s, stru
  else if (strmatch (task_s, "down")) task = interface_down;
  else if (strmatch (task_s, "refresh")) task = interface_refresh_ip;
 
- if (task != interface_nop) {
-  if (einit_module_network_v2_emit_event (einit_network_interface_prepare, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
- } else goto cancel_fail;
-
  switch (task) {
   case interface_up:
-   if (einit_module_network_v2_emit_event (einit_network_verify_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
    if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
    if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
 
@@ -308,9 +304,6 @@ int einit_module_network_v2_module_custom (struct lmodule *m, char *task_s, stru
    if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
    if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
 
-   if (einit_module_network_v2_emit_event (einit_network_kill_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
-
-   einit_module_network_v2_emit_event (einit_network_interface_done, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
    return status_ok;
    break;
 
@@ -337,11 +330,6 @@ int einit_module_network_v2_module_disable (void *p, struct einit_event *status)
 }
 
 int einit_module_network_v2_module_configure (struct lmodule *m) {
- struct network_v2_interface_descriptor id;
-
- memset (&id, 0, sizeof (struct network_v2_interface_descriptor));
- id.module = m;
-
  m->functions = einit_module_network_v2_module_functions;
 
  m->enable = einit_module_network_v2_module_enable;
@@ -351,10 +339,105 @@ int einit_module_network_v2_module_configure (struct lmodule *m) {
  m->param = m;
 
  emutex_lock (&einit_module_network_v2_interfaces_mutex);
- einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, (m->module->rid + 13), &id, sizeof (struct network_v2_interface_descriptor), NULL);
+ struct stree *st = NULL;
+ if (einit_module_network_v2_interfaces) {
+  st = streefind (einit_module_network_v2_interfaces, (m->module->rid + 13), tree_find_first);
+ }
+
+ if (st) {
+  struct network_v2_interface_descriptor *id = st->value;
+  id->module = m;
+ } else {
+  struct network_v2_interface_descriptor id;
+
+  memset (&id, 0, sizeof (struct network_v2_interface_descriptor));
+  id.module = m;
+
+  einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, (m->module->rid + 13), &id, sizeof (struct network_v2_interface_descriptor), NULL);
+ }
  emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
  einit_module_network_v2_emit_event (einit_network_interface_configure, m, (struct smodule *)m->module, (m->module->rid + 13), interface_nop, NULL);
+
+ return 0;
+}
+
+int einit_module_network_v2_carrier_module_custom (struct lmodule *m, char *task_s, struct einit_event *status) {
+ enum interface_action task = interface_nop;
+
+ if (strmatch (task_s, "up")) task = interface_up;
+ else if (strmatch (task_s, "down")) task = interface_down;
+ else if (strmatch (task_s, "refresh")) task = interface_refresh_ip;
+
+ if (task != interface_nop) {
+  if (einit_module_network_v2_emit_event (einit_network_interface_prepare, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+ } else goto cancel_fail;
+
+ switch (task) {
+  case interface_up:
+   if (einit_module_network_v2_emit_event (einit_network_verify_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+   return status_ok;
+   break;
+
+  case interface_down:
+   if (einit_module_network_v2_emit_event (einit_network_kill_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+   einit_module_network_v2_emit_event (einit_network_interface_done, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
+   return status_ok;
+   break;
+
+  case interface_refresh_ip:
+   if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+
+  case interface_nop:
+   break;
+ }
+
+ cancel_fail:
+   einit_module_network_v2_emit_event (einit_network_interface_cancel, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
+
+ return status_failed;
+}
+
+int einit_module_network_v2_carrier_module_enable (void *p, struct einit_event *status) {
+ return einit_module_network_v2_module_custom(p, "up", status);
+}
+
+int einit_module_network_v2_carrier_module_disable (void *p, struct einit_event *status) {
+ return einit_module_network_v2_module_custom(p, "down", status);
+}
+
+int einit_module_network_v2_carrier_module_configure (struct lmodule *m) {
+ m->functions = einit_module_network_v2_module_functions;
+
+ m->enable = einit_module_network_v2_carrier_module_enable;
+ m->disable = einit_module_network_v2_carrier_module_disable;
+ m->custom = (int (*)(void *, char *, struct einit_event *ev))einit_module_network_v2_carrier_module_custom;
+
+ m->param = m;
+
+ emutex_lock (&einit_module_network_v2_interfaces_mutex);
+ struct stree *st = NULL;
+ if (einit_module_network_v2_interfaces) {
+  st = streefind (einit_module_network_v2_interfaces, (m->module->rid + 18), tree_find_first);
+ }
+
+ if (st) {
+  struct network_v2_interface_descriptor *id = st->value;
+  id->carrier_module = m;
+ } else {
+  struct network_v2_interface_descriptor id;
+
+  memset (&id, 0, sizeof (struct network_v2_interface_descriptor));
+  id.carrier_module = m;
+
+  einit_module_network_v2_interfaces = streeadd (einit_module_network_v2_interfaces, (m->module->rid + 18), &id, sizeof (struct network_v2_interface_descriptor), NULL);
+ }
+ emutex_unlock (&einit_module_network_v2_interfaces_mutex);
+
+ einit_module_network_v2_emit_event (einit_network_interface_configure, m, (struct smodule *)m->module, (m->module->rid + 18), interface_nop, NULL);
 
  return 0;
 }
@@ -385,8 +468,12 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
  return interfaces;
 }
 
-void *einit_module_network_v2_scanmodules_enable_immediate (struct lmodule *lm) {
- mod(einit_module_enable, lm, NULL);
+void *einit_module_network_v2_scanmodules_enable_immediate (struct lmodule **lm) {
+ int i = 0;
+ for (; lm[i]; i++) {
+  mod(einit_module_enable, lm[i], NULL);
+ }
+ efree (lm);
  return NULL;
 }
 
@@ -403,6 +490,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
   struct stree *st;
   for (; interfaces[i]; i++) {
    struct lmodule *lm = NULL;
+   struct lmodule *cm = NULL;
 
    emutex_lock (&einit_module_network_v2_interfaces_mutex);
    if (einit_module_network_v2_interfaces && (st = streefind (einit_module_network_v2_interfaces, interfaces[i], tree_find_first))) {
@@ -410,36 +498,74 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
     lm = id->module;
+    cm = id->carrier_module;
 
-    einit_module_network_v2_emit_event (einit_network_interface_update, lm, (struct smodule *)lm->module, interfaces[i], interface_nop, NULL);
+    if (lm) {
+     einit_module_network_v2_emit_event (einit_network_interface_update, lm, (struct smodule *)lm->module, interfaces[i], interface_nop, NULL);
+     mod_update (lm);
+    }
+    if (cm) {
+     einit_module_network_v2_emit_event (einit_network_interface_update, cm, (struct smodule *)cm->module, interfaces[i], interface_nop, NULL);
+     mod_update (cm);
+    }
 
-    mod_update (lm);
+    fflush (stderr);
    } else {
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
-
     char buffer[BUFFERSIZE];
-    struct smodule *sm = emalloc (sizeof (struct smodule));
-    memset (sm, 0, sizeof (struct smodule));
+    struct smodule *sm = NULL;
 
-    esprintf (buffer, BUFFERSIZE, "interface-v2-%s", interfaces[i]);
-    sm->rid = estrdup (buffer);
+/* add carrier module */
+    if ((sm = emalloc (sizeof (struct smodule)))) {
+     memset (sm, 0, sizeof (struct smodule));
 
-    esprintf (buffer, BUFFERSIZE, "Network Interface (%s)", interfaces[i]);
-    sm->name = estrdup (buffer);
+     esprintf (buffer, BUFFERSIZE, "interface-carrier-%s", interfaces[i]);
+     sm->rid = estrdup (buffer);
 
-    sm->eiversion = EINIT_VERSION;
-    sm->eibuild = BUILDNUMBER;
-    sm->version = 1;
-    sm->mode = einit_module_generic;
+     esprintf (buffer, BUFFERSIZE, "Network Interface Carrier (%s)", interfaces[i]);
+     sm->name = estrdup (buffer);
 
-    esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
-    sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+     sm->eiversion = EINIT_VERSION;
+     sm->eibuild = BUILDNUMBER;
+     sm->version = 1;
+     sm->mode = einit_module_generic;
 
-    sm->configure = einit_module_network_v2_module_configure;
+     esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
+     sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
 
-    einit_module_network_v2_emit_event (einit_network_interface_construct, NULL, sm, interfaces[i], interface_nop, NULL);
+     sm->configure = einit_module_network_v2_carrier_module_configure;
 
-    lm = mod_add (NULL, sm);
+     einit_module_network_v2_emit_event (einit_network_interface_construct, NULL, sm, interfaces[i], interface_nop, NULL);
+
+     lm = mod_add (NULL, sm);
+    }
+/* add network module */
+    if ((sm = emalloc (sizeof (struct smodule)))) {
+     memset (sm, 0, sizeof (struct smodule));
+
+     esprintf (buffer, BUFFERSIZE, "interface-v2-%s", interfaces[i]);
+     sm->rid = estrdup (buffer);
+
+     esprintf (buffer, BUFFERSIZE, "Network Interface (%s)", interfaces[i]);
+     sm->name = estrdup (buffer);
+
+     sm->eiversion = EINIT_VERSION;
+     sm->eibuild = BUILDNUMBER;
+     sm->version = 1;
+     sm->mode = einit_module_generic;
+
+     esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
+     sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+     esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
+     sm->si.requires = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+
+     sm->configure = einit_module_network_v2_module_configure;
+
+     einit_module_network_v2_emit_event (einit_network_interface_construct, NULL, sm, interfaces[i], interface_nop, NULL);
+
+     lm = mod_add (NULL, sm);
+    }
+/* done adding modules */
    }
 
    if (lm) {
@@ -448,21 +574,13 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
      if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
          lm && !(lm->status & (status_working | status_enabled))) {
-//      char buffer[BUFFERSIZE];
-
-//      fprintf (stderr, "bring this up immediately: %s\n", interfaces[i]);
-
-//      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
-
-//      immediate = (char **)setadd ((void **)immediate, buffer, SET_TYPE_STRING);
+      immediate = (struct lmodule **)setadd ((void **)immediate, cm, SET_NOALLOC);
       immediate = (struct lmodule **)setadd ((void **)immediate, lm, SET_NOALLOC);
      }
     }
 
     if ((cn = einit_module_network_v2_get_option (interfaces[i], "automatic")) && cn->flag) {
      char buffer[BUFFERSIZE];
-
-//     fprintf (stderr, "bring this up automatically: %s\n", interfaces[i]);
 
      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
 
@@ -530,11 +648,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  }
 #else
  if (immediate) {
-  int im = 0;
-  for (; immediate[im]; im++) {
-   ethread_spawn_detached ((void *(*)(void *))einit_module_network_v2_scanmodules_enable_immediate, immediate[im]);
-  }
-  efree (immediate);
+  ethread_spawn_detached ((void *(*)(void *))einit_module_network_v2_scanmodules_enable_immediate, immediate);
  }
 #endif
 
@@ -752,81 +866,83 @@ char *einit_module_network_v2_generate_defer_fs (char **tmpxt) {
 void einit_module_network_v2_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- struct stree *st = d->functions->get_all_addresses (ev->string);
- if (st) {
-  struct stree *cur = streefind (st, "ipv4", tree_find_first);
-  char do_dhcp = 0;
+ if (strstr (d->static_descriptor->rid, "interface-v2-") == d->static_descriptor->rid) {
+  struct stree *st = d->functions->get_all_addresses (ev->string);
+  if (st) {
+   struct stree *cur = streefind (st, "ipv4", tree_find_first);
+   char do_dhcp = 0;
 
-  while (cur) {
-   if (cur->value) {
-    char **v = cur->value;
-    int i = 0;
+   while (cur) {
+    if (cur->value) {
+     char **v = cur->value;
+     int i = 0;
 
-    for (; v[i]; i+=2) {
-     if (strmatch (v[i], "address")) {
-      if (strmatch (v[i+1], "dhcp")) {
-       do_dhcp = 1;
+     for (; v[i]; i+=2) {
+      if (strmatch (v[i], "address")) {
+       if (strmatch (v[i+1], "dhcp")) {
+        do_dhcp = 1;
+       }
       }
      }
     }
+
+    cur = streefind (cur, "ipv4", tree_find_next);
    }
 
-   cur = streefind (cur, "ipv4", tree_find_next);
-  }
+   if (do_dhcp) {
+    struct cfgnode *node = d->functions->get_option(ev->string, "dhcp-client");
+    if (node && node->svalue) {
+     char **v = str2set (':', node->svalue);
+     int i = 0;
 
-  if (do_dhcp) {
-   struct cfgnode *node = d->functions->get_option(ev->string, "dhcp-client");
-   if (node && node->svalue) {
-    char **v = str2set (':', node->svalue);
-    int i = 0;
+     for (; v[i]; i++) {
+      struct cfgnode *node = NULL;
 
-    for (; v[i]; i++) {
-     struct cfgnode *node = NULL;
+      while ((node = cfg_findnode ("subsystem-network-dhcp-client", 0, node))) {
+       if (node->idattr && strmatch (node->idattr, v[i])) {
+        if (node->arbattrs) {
+         char *pidfile = NULL;
+         char **vars = (char **)setadd (NULL, "interface", SET_TYPE_STRING);
+         vars = (char **)setadd ((void **)vars, ev->string, SET_TYPE_STRING);
 
-     while ((node = cfg_findnode ("subsystem-network-dhcp-client", 0, node))) {
-      if (node->idattr && strmatch (node->idattr, v[i])) {
-       if (node->arbattrs) {
-        char *pidfile = NULL;
-        char **vars = (char **)setadd (NULL, "interface", SET_TYPE_STRING);
-        vars = (char **)setadd ((void **)vars, ev->string, SET_TYPE_STRING);
+         int y = 0;
 
-        int y = 0;
-
-        for (; node->arbattrs[y]; y+=2) {
-         if (strmatch (node->arbattrs[y], "pid")) {
-          pidfile = apply_variables (node->arbattrs[y+1], (const char **)vars);
-         }
-        }
-
-        if (pidfile) {
-         char **fs = einit_module_network_v2_add_fs(NULL, pidfile);
-
-         if (fs) {
-          char *a = einit_module_network_v2_generate_defer_fs(fs);
-
-          if (a) {
-           if (!inset ((const void **)d->static_descriptor->si.after, a, SET_TYPE_STRING)) {
-
-            d->static_descriptor->si.after =
-             (char **)setadd ((void **)d->static_descriptor->si.after, a, SET_TYPE_STRING);
-           }
-
-           efree (a);
+         for (; node->arbattrs[y]; y+=2) {
+          if (strmatch (node->arbattrs[y], "pid")) {
+           pidfile = apply_variables (node->arbattrs[y+1], (const char **)vars);
           }
          }
 
-         efree (pidfile);
-        }
+         if (pidfile) {
+          char **fs = einit_module_network_v2_add_fs(NULL, pidfile);
 
-        efree (vars);
+          if (fs) {
+           char *a = einit_module_network_v2_generate_defer_fs(fs);
+
+           if (a) {
+            if (!inset ((const void **)d->static_descriptor->si.after, a, SET_TYPE_STRING)) {
+
+             d->static_descriptor->si.after =
+               (char **)setadd ((void **)d->static_descriptor->si.after, a, SET_TYPE_STRING);
+            }
+
+            efree (a);
+           }
+          }
+
+          efree (pidfile);
+         }
+
+         efree (vars);
+        }
        }
       }
      }
     }
    }
-  }
 
-  streefree (st);
+   streefree (st);
+  }
  }
 }
 
