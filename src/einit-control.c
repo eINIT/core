@@ -114,14 +114,16 @@ int main(int argc, char **argv) {
   }
  }
 
- if (ansi) {
-  c = erealloc (c, (strlen(c)+8)*sizeof (char));
-  c = strcat (c, " --ansi");
- }
- 
- if ((res = einit_ipc_request(c))) {
-  puts (res);
-  efree (res);
+ if (c[0]) {
+  if (ansi) {
+   c = erealloc (c, (strlen(c)+8)*sizeof (char));
+   c = strcat (c, " --ansi");
+  }
+
+  if ((res = einit_ipc_request(c))) {
+   puts (res);
+   efree (res);
+  }
  }
 
  return ret;
