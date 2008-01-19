@@ -254,7 +254,7 @@ void linux_edev_hotplug_handle (char **v) {
    if (n) {
     *n = 0;
     n++;
-	args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
+    args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
     args = (char **)setadd ((void **)args, n, SET_TYPE_STRING);
    }
   }
@@ -267,7 +267,7 @@ void linux_edev_hotplug_handle (char **v) {
    char *subsys = NULL;
 
    for (i = 0; args[i]; i+=2) {
-   	if (strmatch (args[i], "MAJOR")) {
+     if (strmatch (args[i], "MAJOR")) {
      have_id = 1;
      major = parse_integer (args[i+1]);
     } else if (strmatch (args[i], "MINOR")) {
