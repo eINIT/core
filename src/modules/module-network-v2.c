@@ -370,33 +370,33 @@ int einit_module_network_v2_carrier_module_custom (struct lmodule *m, char *task
  else if (strmatch (task_s, "refresh")) task = interface_refresh_ip;
 
  if (task != interface_nop) {
-  if (einit_module_network_v2_emit_event (einit_network_interface_prepare, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+  if (einit_module_network_v2_emit_event (einit_network_interface_prepare, m, (struct smodule *)m->module, (m->module->rid + 18), task, status) == status_failed) goto cancel_fail;
  } else goto cancel_fail;
 
  switch (task) {
   case interface_up:
-   if (einit_module_network_v2_emit_event (einit_network_verify_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_verify_carrier, m, (struct smodule *)m->module, (m->module->rid + 18), task, status) == status_failed) goto cancel_fail;
 
    return status_ok;
    break;
 
   case interface_down:
-   if (einit_module_network_v2_emit_event (einit_network_kill_carrier, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_kill_carrier, m, (struct smodule *)m->module, (m->module->rid + 18), task, status) == status_failed) goto cancel_fail;
 
-   einit_module_network_v2_emit_event (einit_network_interface_done, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
+   einit_module_network_v2_emit_event (einit_network_interface_done, m, (struct smodule *)m->module, (m->module->rid + 18), task, status);
    return status_ok;
    break;
 
   case interface_refresh_ip:
-   if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
-   if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 13), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_automatic, m, (struct smodule *)m->module, (m->module->rid + 18), task, status) == status_failed) goto cancel_fail;
+   if (einit_module_network_v2_emit_event (einit_network_address_static, m, (struct smodule *)m->module, (m->module->rid + 18), task, status) == status_failed) goto cancel_fail;
 
   case interface_nop:
    break;
  }
 
  cancel_fail:
-   einit_module_network_v2_emit_event (einit_network_interface_cancel, m, (struct smodule *)m->module, (m->module->rid + 13), task, status);
+   einit_module_network_v2_emit_event (einit_network_interface_cancel, m, (struct smodule *)m->module, (m->module->rid + 18), task, status);
 
  return status_failed;
 }
