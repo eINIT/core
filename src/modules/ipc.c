@@ -97,7 +97,9 @@ void einit_ipc_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_power_event_handler (struct einit_event *);
 
 int ipc_process_f (const char *cmd, FILE *f) {
- if (!cmd) return 0;
+ if (!cmd || !cmd[0]) {
+  return 0;
+ }
 
 // setvbuf (f, NULL, _IONBF, 0);
 
@@ -112,7 +114,7 @@ int ipc_process_f (const char *cmd, FILE *f) {
 
  event->argc = setcount ((const void **)event->argv);
 
- for (ic = 0; ic < event->argc; ic++) {
+ for (ic = 0; event->argv[ic]; ic++) {
   if (strmatch (event->argv[ic], "--xml")) event->ipc_options |= einit_ipc_output_xml;
   else if (strmatch (event->argv[ic], "--ansi")) event->ipc_options |= einit_ipc_output_ansi;
   else if (strmatch (event->argv[ic], "--only-relevant")) event->ipc_options |= einit_ipc_only_relevant;
