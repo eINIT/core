@@ -402,11 +402,11 @@ int einit_module_network_v2_carrier_module_custom (struct lmodule *m, char *task
 }
 
 int einit_module_network_v2_carrier_module_enable (void *p, struct einit_event *status) {
- return einit_module_network_v2_module_custom(p, "up", status);
+ return einit_module_network_v2_carrier_module_custom(p, "up", status);
 }
 
 int einit_module_network_v2_carrier_module_disable (void *p, struct einit_event *status) {
- return einit_module_network_v2_module_custom(p, "down", status);
+ return einit_module_network_v2_carrier_module_custom(p, "down", status);
 }
 
 int einit_module_network_v2_carrier_module_configure (struct lmodule *m) {
