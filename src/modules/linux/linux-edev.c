@@ -474,6 +474,8 @@ void linux_edev_hotplug_handle (char **v) {
       if (stat (devicefile, &st) && (mknod (devicefile, blockdevice ? S_IFBLK : S_IFCHR, ldev) != 0)) {
        linux_edev_mkdir_p (devicefile);
 
+       unlink (devicefile);
+
        if (mknod (devicefile, blockdevice ? S_IFBLK : S_IFCHR, ldev) != 0) {
         goto no_devicefile;
        }
