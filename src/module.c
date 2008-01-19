@@ -313,7 +313,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
    ees.task = task;
    ees.status = module->status;
    ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
-   ees.set = (module->si && module->si->provides) ? (void **)module->si->provides : (void **)nserv;
+   ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
    ees.para = (void *)module;
    event_emit (&ees, einit_event_flag_broadcast);
    evstaticdestroy (ees);
@@ -419,7 +419,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
     ees.task = task;
     ees.status = fb->status;
     ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
-    ees.set = (module->si && module->si->provides) ? (void **)module->si->provides : (void **)nserv;
+    ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
     ees.para = (void *)module;
     event_emit (&ees, einit_event_flag_broadcast);
     evstaticdestroy (ees);

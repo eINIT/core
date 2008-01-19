@@ -175,10 +175,6 @@ struct itree *itree_splay (struct itree *tree) {
  return rt;
 }
 
-#if 1
-#define itree_splay(t) t
-#endif
-
 struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_t size) {
  size_t lsize = sizeof (struct itree);
  struct itree *newnode;
@@ -273,10 +269,10 @@ struct itree *itreefind (struct itree *tree, signed long key, enum tree_search_b
  do {
   if (key == tree->key) {
    if (base == tree_find_first) {
-    itree_splay (tree);
+//    itree_splay (tree);
     return tree;
    } else if (tree->equal) {
-    itree_splay (tree->equal);
+//    itree_splay (tree->equal);
     return tree->equal;
    } else
     return NULL;
