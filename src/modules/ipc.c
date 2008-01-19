@@ -247,7 +247,7 @@ void * ipc_wait (void *unused_parameter) {
  int sock = socket (AF_UNIX, SOCK_STREAM, 0);
  mode_t socketmode = (node && node->value ? node->value : 0660);
  struct group *grp;
- gid_t gid;
+ gid_t gid = 0;
  if (NULL == (grp = getgrnam("einit")))
   perror("getgrnam() error.");
  else {

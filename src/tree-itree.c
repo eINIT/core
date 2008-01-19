@@ -70,7 +70,7 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
 
  switch (vlen) {
   case tree_value_noalloc:
-   newnode->value = value;
+   newnode->value = (void *)value;
    break;
   default:
    newnode->value = ((char *)newnode) + sizeof (struct stree) + keylen;
@@ -78,7 +78,7 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
    break;
  }
 
- newnode->luggage = luggage;
+ newnode->luggage = (void *)luggage;
 
  newnode->treenode = itreeadd (stree ? stree->treenode : NULL, keyhash, newnode, tree_value_noalloc);
 
@@ -145,7 +145,7 @@ void streefree_node (struct stree *st) {
 
 void streefree (struct stree *stree) {
  if (stree) {
-  itreefree_all (stree->treenode, streefree_node);
+  itreefree_all (stree->treenode, (void (*)(void *))streefree_node);
  }
 }
 

@@ -459,8 +459,6 @@ char **exec_run_sh (char *command, enum pexec_options options, char **exec_envir
  parse_sh_ud (command, (void (*)(const char **, enum einit_sh_parser_pa, void *))exec_callback, &pd);
 
  if ((pd.commands == 1) && pd.command && !pd.forkflag) {
-  int forkres = 0;
-
   char **r = which (pd.command[0]);
 
   if (r && r[0]) {
@@ -472,13 +470,6 @@ char **exec_run_sh (char *command, enum pexec_options options, char **exec_envir
    efree (cmdtx);
   }
 
-#if 0
-  char *n = set2str ('|', pd.command);
-  fprintf (stderr, "command to run: %s\n", n);
-  fflush (stderr);
-  efree (n);
-#endif
-
   return pd.command;
  } else {
   char **cmd;
@@ -487,13 +478,6 @@ char **exec_run_sh (char *command, enum pexec_options options, char **exec_envir
 
   cmd = (char **)setdup ((const void **)shell, SET_NOALLOC);
   cmd = (char **)setadd ((void **)cmd, ocmd, SET_TYPE_STRING);
-
-#if 0
-  char *n = set2str ('|', cmd);
-  fprintf (stderr, "command to run: %s\n", n);
-  fflush (stderr);
-  efree (n);
-#endif
 
   return cmd;
  }
