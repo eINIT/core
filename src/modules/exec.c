@@ -64,6 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef LINUX
 #include <sys/syscall.h>
+#include <linux/sched.h>
 #endif
 
 int einit_exec_configure (struct lmodule *);
