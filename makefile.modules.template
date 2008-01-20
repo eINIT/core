@@ -30,6 +30,9 @@ feedback-visual-textual.so: feedback-visual-textual.o
 linux-netlink.so: linux-netlink.o
 	${LLD} linux-netlink.o ${NETLINK_LIBS} -o linux-netlink.so
 
+ipc-9p.so: ipc-9p.o
+	${LLD} ipc-9p.o ${LIBIXP_LIBS} -o ipc-9p.so
+
 distro-gentoo.so: distro-gentoo.o
 	${LLD} -Wl,--no-as-needed distro-gentoo.o -leinfo -lrc -o distro-gentoo.so
 

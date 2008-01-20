@@ -319,6 +319,12 @@ Subsystems = element subsystem {
   element sources { IDAttribute & PathAttributes } *
  } ? &
 
+ element ipc-9p {
+  attribute socket { text },
+  attribute group { text },
+  attribute chmod { text }
+ } ? &
+
  element xml-sh-compiler {
   element active { BooleanAttribute }? &
   element compile-to { StringAttribute }?

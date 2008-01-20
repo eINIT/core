@@ -346,10 +346,12 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     char **tx = str2set ('\n', data);
 
     notice (2, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, (int)XML_GetCurrentColumnNumber (par));
+    fprintf (stderr, "einit_config_xml_expat_parse_configuration_file(): XML_Parse():\n * in %s, line %i, character %i\n", configfile, line, (int)XML_GetCurrentColumnNumber (par));
 
     if (tx) {
      if (setcount ((const void **)tx) >= line) {
       notice (2, " * offending line:\n%s\n", tx[line-1]);
+      fprintf (stderr, " * offending line:\n%s\n", tx[line-1]);
      }
      efree (tx);
     }

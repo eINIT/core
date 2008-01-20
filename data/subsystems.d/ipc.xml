@@ -1,0 +1,6 @@
+<?xml version="1.1" encoding="UTF-8" ?>
+<einit>
+ <subsystem>
+  <ipc-9p socket="unix!/dev/einit-9p" group="einit" chmod="0660" />
+ </subsystem>
+</einit>
