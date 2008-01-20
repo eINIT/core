@@ -1,6 +1,7 @@
 include config.mk
 
 all:
+	cd bundle/libixp-${LIBIXPVERSION} && ${MAKE} CC="${CC} -c"
 	cd scripts && ${MAKE} all
 	cd build && ${MAKE} all
 	cd data && ${MAKE} all

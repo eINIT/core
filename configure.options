@@ -44,3 +44,5 @@ export BUILDCOMPONENTS="core util modules headers"
 
 export HEADERSOURCES="src/include/einit src/include/einit-modules"
 export HEADERPREPARE="sed -e s/einit-// -e s/${USE_TREE_CODE}/tree/ -e s/${USE_ITREE_CODE}/itree/"
+
+export LIBIXPVERSION="0.4"

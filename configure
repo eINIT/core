@@ -578,6 +578,11 @@ fi
 
 XCFLAGS="${XCFLAGS}"
 
+echo -n "setting up bundled libixp..."
+LIBIXP_LIBS="$(pwd)/bundle/libixp-${LIBIXPVERSION}/lib/libixp_pthread.a $(pwd)/bundle/libixp-${LIBIXPVERSION}/lib/libixp.a"
+LIBIXP_CFLAGS="-I$(pwd)/bundle/libixp-${LIBIXPVERSION}/include"
+echo "done"
+
 echo "creating config.mk..."
 echo "PREFIX = $PREFIX
 ETCDIR = ${PREFIX}etc/einit
@@ -665,6 +670,10 @@ LIBNOTIFY_CFLAGS = ${LIBNOTIFY_CFLAGS}
 LIBNOTIFY_LIBS = ${LIBNOTIFY_LIBS}
 
 EXPAT_LIBS= ${EXPAT_LIBS}
+
+LIBIXP_CFLAGS = ${LIBIXP_CFLAGS}
+LIBIXP_LIBS = ${LIBIXP_LIBS}
+LIBIXPVERSION = ${LIBIXPVERSION}
 
 GUI = ${GUI}
 
