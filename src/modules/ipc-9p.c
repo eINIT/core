@@ -45,6 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/bitch.h>
 #include <pthread.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include <einit-modules/ipc.h>
 
@@ -79,8 +82,8 @@ const struct smodule einit_ipc_9p_self = {
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .name      = "eINIT IPC module",
- .rid       = "einit-ipc",
+ .name      = "eINIT IPC module (9p)",
+ .rid       = "einit-ipc-9p",
  .si        = {
   .provides = NULL,
   .requires = NULL,
@@ -99,10 +102,17 @@ char einit_ipc_9p_running = 0;
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
+char *einit_ipc_9p_request (char *);
+
+enum ipc_9p_filetype {
+ i9_dir,
+ i9_file
+};
 
 struct ipc_9p_filedata {
  char *data;
  int c;
+ enum ipc_9p_filetype type;
 };
 
 struct ipc_9p_fidaux {
@@ -117,6 +127,7 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
 
  fd->data = d->data ? estrdup (d->data) : NULL;
  fd->c = d->c;
+ fd->type = d->type;
 
  return fd;
 }
@@ -130,17 +141,30 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
  return fa;
 }
 
-/* stubs */
 void einit_ipc_9p_fs_open(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
- struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+ if (fa->path) {
+  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+  char *req = set2str (' ', (const char **)fa->path);
+  
+  fd->data = einit_ipc_9p_request (req);
+  fd->c = 0;
+  fd->type = i9_file;
 
- fd->data = estrdup ("unknown");
- fd->c = 0;
+  fa->fd = fd;
 
- fa->fd = fd;
+  efree (req);
+ } else {
+  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+
+  fd->data = estrdup ("unknown");
+  fd->c = 0;
+  fd->type = i9_dir;
+
+  fa->fd = fd;
+ }
 
  respond(r, nil);
 }
@@ -154,7 +178,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  fa = r->newfid->aux;
 
  for(; i < r->ifcall.nwname; i++) {
-  notice (1, "new path element: %s", r->ifcall.wname[i]);
+//  notice (1, "new path element: %s", r->ifcall.wname[i]);
   fa->path = (char **)setadd ((void **)fa->path, r->ifcall.wname[i], SET_TYPE_STRING);
 
   r->ofcall.wqid[i].type = 0;
@@ -165,37 +189,130 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  respond(r, nil);
 }
 
+struct einit_ipc_9p_request_data {
+ char *command;
+ FILE *output;
+};
+
+void einit_ipc_9p_request_thread (struct einit_ipc_9p_request_data *d) {
+ ipc_process(d->command, d->output);
+ fclose (d->output);
+ efree (d);
+}
+
+char *einit_ipc_9p_request (char *command) {
+ if (!command) return NULL;
+
+ int internalpipe[2];
+ char *returnvalue = NULL;
+
+ if (!socketpair (AF_UNIX, SOCK_STREAM, 0, internalpipe)) {
+// c'mon, don't tell me you're going to send data fragments > 400kb using the IPC interface!
+  int socket_buffer_size = 40960;
+
+  fcntl (internalpipe[0], F_SETFL, O_NONBLOCK);
+  fcntl (internalpipe[1], F_SETFL, O_NONBLOCK);
+/* tag the fds as close-on-exec, just in case */
+  fcntl (internalpipe[0], F_SETFD, FD_CLOEXEC);
+  fcntl (internalpipe[1], F_SETFD, FD_CLOEXEC);
+
+  setsockopt (internalpipe[0], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
+  setsockopt (internalpipe[1], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
+  setsockopt (internalpipe[0], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
+  setsockopt (internalpipe[1], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
+
+  FILE *w = fdopen (internalpipe[1], "w");
+//  FILE *r = fdopen (internalpipe[0], "r");
+
+//  ipc_process(command, w);
+//  fclose (w);
+  struct einit_ipc_9p_request_data *d = emalloc (sizeof (struct einit_ipc_9p_request_data));
+  d->command = command;
+  d->output = w;
+
+  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_request_thread, d);
+
+  errno = 0;
+  if (internalpipe[0] != -1) {
+   returnvalue = readfd_l (internalpipe[0], NULL);
+
+   if (!returnvalue) {
+    notice (1, "lolwut?");
+   }
+
+   eclose (internalpipe[0]);
+  }
+ }
+
+ if (!returnvalue) returnvalue = estrdup("<einit-ipc><warning type=\"no-return-value\" /></einit-ipc>\n");
+
+ return returnvalue;
+}
+
 void einit_ipc_9p_fs_read(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_read()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
 
- if ((fd->c) == 0) {
-  Stat s;
-  memset (&s, 0, sizeof (Stat));
+ if (fd->type == i9_file) {
+  if (fd->data) {
+   fflush (stderr);
 
-  s.mode |= P9_DMDIR;
-  s.qid.type |= QTDIR; 
-  s.name = "mhhh";
+   size_t size = r->ifcall.count;
+   r->ofcall.data = ecalloc(1, size+1);
 
-  s.uid = "unknown";
-  s.gid = "unknown";
-  s.muid = "unknown";
+   int y = 0;
+   ssize_t tsize = strlen (fd->data);
+   ssize_t offs = r->ifcall.offset;
 
-  size_t size = r->ifcall.count;
-  void *buf = ixp_emallocz(size);
-  IxpMsg m = ixp_message((uchar*)buf, size, MsgPack); 
-  ixp_pstat(&m, &s);
+   if (tsize >= offs) {
+    for (y = 0; ((offs+y) < tsize) && (y <= size); y++) {
+     r->ofcall.data[y] = fd->data[offs+y];
+    }
 
-  r->ofcall.count = ixp_sizeof_stat(&s);
-  r->ofcall.data = (char*)m.data;
+    if (y == (size+1)) y = size;
 
-  fd->c++;
+    fflush (stderr);
 
-  respond(r, nil);
- } else {
-  r->ofcall.count = 0;
-  respond(r, nil);
+    r->ofcall.count = y;
+
+    respond(r, nil);
+   } else {
+    r->ofcall.count = 0;
+    respond(r, nil);
+   }
+  } else {
+   r->ofcall.count = 0;
+   respond(r, nil);
+  }
+ } else if (fd->type == i9_dir) {
+  if ((fd->c) < 10) {
+   Stat s;
+   memset (&s, 0, sizeof (Stat));
+
+   s.mode |= P9_DMDIR;
+   s.qid.type |= QTDIR; 
+   s.name = "mhhh";
+
+   s.uid = "unknown";
+   s.gid = "unknown";
+   s.muid = "unknown";
+
+   size_t size = r->ifcall.count;
+   void *buf = ecalloc(1, size);
+   IxpMsg m = ixp_message((uchar*)buf, size, MsgPack); 
+   ixp_pstat(&m, &s);
+
+   r->ofcall.count = ixp_sizeof_stat(&s);
+   r->ofcall.data = (char*)m.data;
+
+   fd->c++;
+
+   respond(r, nil);
+  } else {
+   r->ofcall.count = 0;
+   respond(r, nil);
+  }
  }
 }
 
@@ -281,8 +398,6 @@ void einit_ipc_9p_fs_freefid(Fid *f) {
   efree (f->aux);
  }
 }
-
-/* end stubs */
 
 Ixp9Srv einit_ipc_9p_srv = {
  .open    = einit_ipc_9p_fs_open,

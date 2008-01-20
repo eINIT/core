@@ -330,7 +330,7 @@ int einit_module_network_v2_module_disable (void *p, struct einit_event *status)
 }
 
 int einit_module_network_v2_module_configure (struct lmodule *m) {
- m->functions = einit_module_network_v2_module_functions;
+// m->functions = einit_module_network_v2_module_functions;
 
  m->enable = einit_module_network_v2_module_enable;
  m->disable = einit_module_network_v2_module_disable;
@@ -410,7 +410,7 @@ int einit_module_network_v2_carrier_module_disable (void *p, struct einit_event 
 }
 
 int einit_module_network_v2_carrier_module_configure (struct lmodule *m) {
- m->functions = einit_module_network_v2_module_functions;
+// m->functions = einit_module_network_v2_module_functions;
 
  m->enable = einit_module_network_v2_carrier_module_enable;
  m->disable = einit_module_network_v2_carrier_module_disable;

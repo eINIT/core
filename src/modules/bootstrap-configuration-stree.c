@@ -490,7 +490,7 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
 }
 
 void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *ev) {
- if ((ev->argc >= 2) && (ev->ipc_options & einit_ipc_output_xml)) {
+ if (ev->argv[0] && ev->argv[1] && (ev->ipc_options & einit_ipc_output_xml)) {
   if (strmatch (ev->argv[0], "list") && strmatch (ev->argv[1], "modes")) {
    struct stree *cur = streelinear_prepare(hconfiguration);
    struct cfgnode **modes = NULL;
