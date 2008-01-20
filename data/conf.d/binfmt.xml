@@ -1,0 +1,13 @@
+<einit prefix="configuration-services">
+ <!-- Configuration for the MISC binary registering module -->
+ <!-- Usage: simply add the binfmt_misc 'Magic' line as the value 
+      of a key to the <binfmt /> node, for example:
+	  <binfmt foo=":FOO:F:FO::/usr/bin/foo:" bar="BAR:B:BA::/usr/bin/bar:" /> -->
+ <!-- The key name is arbitrary, and used during status feedback upon registering -->
+ <!-- More usefule examples:
+	  pe=":PE:M::MZ::/usr/bin/mono:" or
+	  pe=":PE:M::MZ::/usr/bin/ilrun:"
+	  exe=":DOSWin:M::MZ::/usr/bin/wine:" -->
+ <!-- For more information, see /sr/src/linux/Documentation/binfmt_misc.txt -->
+ <binfmt />
+</einit>
