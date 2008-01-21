@@ -48,6 +48,8 @@
 
    <!-- network filesystems -->
    <type id="nfs" flags="network:nofsck" />
+   <type id="smb" flags="network:nofsck" />
+   <type id="cifs" flags="network:nofsck" />
 
    <!-- dos-ish filesystems -->
    <type id="vfat" flags="rw" />
