@@ -26,9 +26,9 @@ TAGS
 #
 build
 build/*
-config.mk
-config.sh
-config.xml
+/config.mk
+/config.sh
+/config.xml
 
 data/einit.xml.n
 
