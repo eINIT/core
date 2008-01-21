@@ -308,6 +308,14 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
  return 0;
 }
 
+int linux_mount_update_vboxsf (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
+ if (!inset ((const void **)sm->si.requires, "vboxvfs", SET_TYPE_STRING)) {
+  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "vboxvfs", SET_TYPE_STRING);
+ }
+
+ return 0;
+}
+
 int linux_mount_cleanup (struct lmodule *this) {
  function_unregister ("find-block-devices-proc", 1, (void *)find_block_devices_proc);
 
@@ -376,6 +384,7 @@ int linux_mount_configure (struct lmodule *this) {
 
  function_register ("fs-update-generic-nfs", 1, (void *)linux_mount_update_nfs);
  function_register ("fs-update-generic-nfs4", 1, (void *)linux_mount_update_nfs4);
+ function_register ("fs-update-generic-vboxsf", 1, (void *)linux_mount_update_vboxsf);
 
  return 0;
 }
