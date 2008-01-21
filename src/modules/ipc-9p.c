@@ -274,8 +274,102 @@ struct einit_ipc_9p_request_data {
  FILE *output;
 };
 
+int einit_ipc_9p_process (const char *cmd, FILE *f) {
+ if (!cmd || !cmd[0]) {
+  return 0;
+ }
+
+ struct einit_event *event = evinit (einit_ipc_request_generic);
+ uint32_t ic;
+ int ret = 0;
+ int len = strlen (cmd);
+
+ if ((len > 4) && (cmd[len-4] == '.') && (cmd[len-3] == 'x') && (cmd[len-2] == 'm') && (cmd[len-1] == 'l')) {
+  cmd[len-4] = 0;
+  event->ipc_options |= einit_ipc_output_xml;
+ }
+
+ event->command = (char *)cmd;
+ event->argv = str2set (' ', cmd);
+ event->output = f;
+ event->implemented = 0;
+
+ event->argc = setcount ((const void **)event->argv);
+
+ for (ic = 0; event->argv[ic]; ic++) {
+  if (strmatch (event->argv[ic], "--ansi")) event->ipc_options |= einit_ipc_output_ansi;
+  else if (strmatch (event->argv[ic], "--only-relevant")) event->ipc_options |= einit_ipc_only_relevant;
+  else if (strmatch (event->argv[ic], "--help")) event->ipc_options |= einit_ipc_help;
+  else if (strmatch (event->argv[ic], "--detach")) event->ipc_options |= einit_ipc_detach;
+ }
+
+ if (event->ipc_options & einit_ipc_output_xml) {
+  eputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
+ }
+ if (event->ipc_options & einit_ipc_only_relevant) event->argv = strsetdel (event->argv, "--only-relevant");
+ if (event->ipc_options & einit_ipc_output_ansi) event->argv = strsetdel (event->argv, "--ansi");
+ if (event->ipc_options & einit_ipc_help) {
+  if (event->ipc_options & einit_ipc_output_xml) {
+   eputs (" <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n", f);
+  } else {
+   eputs ("eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n", f);
+  }
+
+  event->argv = strsetdel ((char**)event->argv, "--help");
+ }
+
+ event_emit (event, einit_event_flag_broadcast);
+
+ if (!event->implemented) {
+  if (event->ipc_options & einit_ipc_output_xml) {
+   eprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
+  } else {
+   eprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
+  }
+
+  ret = 1;
+ } else
+  ret = event->ipc_return;
+
+ if (event->argv) efree (event->argv);
+
+ if (event->ipc_options & einit_ipc_output_xml) {
+  eputs ("</einit-ipc>\n", f);
+ }
+
+ evdestroy (event);
+
+#ifdef POSIXREGEX
+ struct cfgnode *n = NULL;
+
+ while ((n = cfg_findnode ("configuration-ipc-chain-command", 0, n))) {
+  if (n->arbattrs) {
+   uint32_t u = 0;
+   regex_t pattern;
+   char have_pattern = 0, *new_command = NULL;
+
+   for (u = 0; n->arbattrs[u]; u+=2) {
+    if (strmatch(n->arbattrs[u], "for")) {
+     have_pattern = !eregcomp (&pattern, n->arbattrs[u+1]);
+    } else if (strmatch(n->arbattrs[u], "do")) {
+     new_command = n->arbattrs[u+1];
+    }
+   }
+
+   if (have_pattern && new_command) {
+    if (!regexec (&pattern, cmd, 0, NULL, 0))
+     einit_ipc_9p_process (new_command, f);
+    eregfree (&pattern);
+   }
+  }
+ }
+#endif
+
+ return ret;
+}
+
 void einit_ipc_9p_request_thread (struct einit_ipc_9p_request_data *d) {
- ipc_process(d->command, d->output);
+ einit_ipc_9p_process(d->command, d->output);
  fclose (d->output);
  efree (d);
 }
@@ -346,9 +440,9 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
      r->ofcall.data[y] = fd->data[offs+y];
     }
 
-    if (y == (size+1)) y = size;
-
-    fflush (stderr);
+	if (y > size) {
+     y = size;
+    }
 
     r->ofcall.count = y;
 
@@ -572,6 +666,8 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
 
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules");
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services");
+ einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules.xml");
+ einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services.xml");
 
  return 0;
 }
