@@ -274,7 +274,7 @@ struct einit_ipc_9p_request_data {
  FILE *output;
 };
 
-int einit_ipc_9p_process (const char *cmd, FILE *f) {
+int einit_ipc_9p_process (char *cmd, FILE *f) {
  if (!cmd || !cmd[0]) {
   return 0;
  }
