@@ -253,10 +253,19 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
  }
 
  if (mp->options) {
+  int i = 0;
+  for (; mp->options[i]; i++) {
+   if (strstr (mp->options[i], "sec=krb") == mp->options[i]) {
+    if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
+     sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING);
+    }
+   }
+  }
+
   if (!inset ((const void **)mp->options, "nolock", SET_TYPE_STRING)) {
-//   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-//    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
-//   }
+   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
+    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+   }
    if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
     sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING);
    }
@@ -266,9 +275,9 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
    }
   }
  } else {
-//  if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-//   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
-//  }
+  if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
+   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+  }
   if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING);
   }
@@ -283,9 +292,12 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
  }
 
  if (mp->options) {
-  if (inset ((const void **)mp->options, "sec=krb", SET_TYPE_STRING)) {
-   if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
-    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING);
+  int i = 0;
+  for (; mp->options[i]; i++) {
+   if (strstr (mp->options[i], "sec=krb") == mp->options[i]) {
+    if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
+     sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING);
+    }
    }
   }
  }
