@@ -227,11 +227,11 @@ char *readfd_l (int fd, ssize_t *rl) {
   if (buf == NULL) return NULL;
   rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
   blen = blen + rn;
- } while (rn > 0);
+ } while ((rn > 0) && (!errno || (errno == EAGAIN) || (errno == EINTR)));
 
 #ifdef BITCHY
 /* about the only way we get here is files in /proc that suddently 'vanished'... so no need to bitch */
- if (errno && (errno != EAGAIN))
+ if (errno && (errno != EAGAIN) && (errno != EINTR))
   bitch(bitch_stdio, errno, "reading file failed.");
 #endif
 

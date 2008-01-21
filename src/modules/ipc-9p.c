@@ -208,15 +208,13 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
  if (fa->fs_pointer && (fa->fs_pointer->is_file == 1)) {
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
   char *req = set2str (' ', (const char **)fa->path);
-  
+
   fd->data = einit_ipc_9p_request (req);
   fd->type = i9_file;
   fd->fs_pointer = fa->fs_pointer;
   fd->cur = NULL;
 
   fa->fd = fd;
-
-  efree (req);
  } else {
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
@@ -404,7 +402,7 @@ char *einit_ipc_9p_request (char *command) {
   d->command = command;
   d->output = w;
 
-  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_request_thread, d);
+  einit_ipc_9p_request_thread (d);
 
   errno = 0;
   if (internalpipe[0] != -1) {
@@ -415,6 +413,8 @@ char *einit_ipc_9p_request (char *command) {
  }
 
  if (!returnvalue) returnvalue = estrdup("<einit-ipc><warning type=\"no-return-value\" /></einit-ipc>\n");
+
+ efree (command);
 
  return returnvalue;
 }
