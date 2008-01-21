@@ -36,6 +36,9 @@ InterfaceDataV2 =
   attribute configuration-file { text }? &
   attribute driver { text }?
  }? &
+ element bridge {
+  attribute elements { text }?
+ }? &
  element nameserver {
   IDAttribute?,
   attribute address { text }?,
