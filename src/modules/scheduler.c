@@ -573,8 +573,6 @@ void *sched_run_sigchild (void *p) {
     void **n = NULL;
     pthread_join (thread, n);
 
-//    fprintf (stderr, "reaped thread...\n");
-
     check = 1;
     efree (t);
    }

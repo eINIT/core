@@ -1136,7 +1136,7 @@ struct lmodule **module_logic_find_things_to_disable() {
  }
 
  if (!candidates_level1 && module_logic_list_disable) {
-  char *n = set2str (':', module_logic_list_disable);
+  char *n = set2str (':', (const char **)module_logic_list_disable);
   notice (1, "nothing to do? still need to disable: %s; retrying...\n", n);
   efree (n);
 
