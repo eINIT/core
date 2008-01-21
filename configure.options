@@ -16,9 +16,7 @@ if test -e /etc/gentoo-release; then
 	MODULES_LINUX="linux-edev linux-mdev linux-static-dev"
 fi 
 
-#network-v2: linux-network linux-network-wpa-supplicant
-
-export MODULES_LINUX="${MODULES_LINUX} linux-sysconf linux-mount linux-process linux-kernel-modules linux-udev linux-hwclock linux-hotplug linux-cpufreq linux-bootchart linux-network linux-network-wpa-supplicant"
+export MODULES_LINUX="${MODULES_LINUX} linux-sysconf linux-mount linux-process linux-kernel-modules linux-udev linux-hwclock linux-hotplug linux-cpufreq linux-bootchart linux-network linux-network-wpa-supplicant linux-network-bridge"
 export MODULES_BSD="bsd-devfs bsd-network"
 export MODULES_DARWIN="${MODULES_BSD}"
 
