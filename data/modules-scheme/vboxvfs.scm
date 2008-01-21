@@ -4,7 +4,7 @@
 ;;
 
 (make-module 's-vboxvfs "VirtualBox Additions shared folder support (vboxvfs)"
-             (list 'provides "s-vboxbfs" "vboxvfs")
+             (list 'provides "s-vboxvfs" "vboxvfs")
 	     (list 'requires "vboxadd"))
 
 (define (running) (shell "lsmod | grep -q vboxvfs[^_-]"))
@@ -29,7 +29,7 @@
     (call/cc
      (lambda (return)
        (if (running)
-	   (if (not (shell "rmmod vboxadd")
+	   (if (not (shell "rmmod vboxvfs"))
 		    (begin (feedback status "Failed to unload vboxadd module")
-			   (return #f)))))
+			   (return #f))))
        (return #t)))))
