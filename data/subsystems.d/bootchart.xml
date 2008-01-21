@@ -1,0 +1,19 @@
+<?xml version="1.1" encoding="UTF-8" ?>
+<einit>
+ <configuration>
+  <bootchart>
+<!-- change b="no" to b="yes" to activate einit's bootchart -->
+   <active b="no" />
+   <save-to s="/var/log/bootchart.tgz" />
+   <polling-interval i="200000" /> <!-- ... in microseconds -->
+   <process-accounting b="yes" />
+
+   <extra-waiting-time i="5000000" /> <!-- ... also in microseconds -->
+
+   <max-log-size i="2000000" /> <!-- 2MB should be a reasonable default -->
+
+   <chart-directory s="/var/log" />
+   <chart-format s="png" />
+  </bootchart>
+ </configuration>
+</einit>
