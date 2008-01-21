@@ -10,4 +10,8 @@
 
  <!--    <node mountpoint="/boot" device="/dev/BOOT" options="noatime:noauto" />
  <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
+
+<!-- use this for great success: -->
+<!-- <node mountpoint="/einit" device="/dev/einit-9p" fs="9p" options="proto=unix:noextend" /> -->
+
 </einit>
