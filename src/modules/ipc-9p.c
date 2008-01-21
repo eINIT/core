@@ -623,6 +623,29 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  notice (1, "9p server initialised");
 
+/* add environment var for synchronisation */
+
+ struct cfgnode newnode;
+
+ memset (&newnode, 0, sizeof(struct cfgnode));
+
+ newnode.id = estrdup ("configuration-environment-global");
+ newnode.type = einit_node_regular;
+
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"EINIT_9P_ADDRESS", SET_TYPE_STRING);
+
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
+ newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)address, SET_TYPE_STRING);
+
+ newnode.svalue = newnode.arbattrs[3];
+
+ cfg_addnode (&newnode);
+
+ einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
+
+/* server loop nao */
+
  ixp_serverloop(&einit_ipc_9p_server);
 
  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
@@ -666,8 +689,12 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
 
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules");
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services");
+ einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "configuration");
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules.xml");
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services.xml");
+ einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "configuration.xml");
+ einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("update"), "configuration");
+ einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("examine"), "configuration");
 
  return 0;
 }
