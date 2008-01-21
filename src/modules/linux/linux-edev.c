@@ -280,7 +280,7 @@ void linux_edev_hotplug_handle (char **v) {
     }
    }
 
-   if (have_id && device) {
+   if (have_id && device && (!subsys || !strmatch (subsys, "module"))) {
     dev_t ldev = (((major) << 8) | (minor));
     char *base = strrchr (device, '/');
     if (base && (base[1] || ((base = strrchr (base, '/')) && base[1]))) {
