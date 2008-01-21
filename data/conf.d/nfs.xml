@@ -1,0 +1,25 @@
+<einit prefix="configuration-services">
+
+ <!-- NFS-Utils options -->
+
+ <!-- Number of servers to be started by default -->
+ <nfsd options="8" />
+ <!-- set this to 'yes' to enable NFSv4 sharing-->
+ <nfs4 s="no" />
+ <!-- Options for rpc.mountd
+      for example '-p 32767' -->
+ <mountd options="" />
+ <!-- Options for rpc.statd
+      for example '-p 32765 -o 32766' -->
+ <statd options="" />
+ <!-- Options for rpc.idmapd -->
+ <idmapd options="" />
+ <!-- Options for rpc.gssd -->
+ <gssd options="" />
+ <!-- Options for rpc.svcgssd -->
+ <svcgssd options="" />
+ <!-- Options for rpc.rquotad (quotas) -->
+ <rquotad options="" />
+ <!-- Timeout (in seconds) for exportfs -->
+ <exportfs timeout="30" />
+</einit>
