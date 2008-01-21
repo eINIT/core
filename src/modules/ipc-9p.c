@@ -464,14 +464,16 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
 
    s.name = fd->cur->key;
 
-   s.uid = "unknown";
-   s.gid = "unknown";
+   s.uid = "root";
+   s.gid = "einit";
    s.muid = "unknown";
 
    struct ipc_9p_fs_entry *v = fd->cur->value;
 
+   s.mode = 0660;
+
    if (!v->is_file) {
-    s.mode |= P9_DMDIR;
+    s.mode |= 0770 | P9_DMDIR;
     s.qid.type |= QTDIR; 
    }
 
@@ -509,9 +511,11 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
 
  struct ipc_9p_fs_entry *v = einit_ipc_9p_confirm_fs (fa->path);
 
+ s.mode = 0660;
+
  if (!v->is_file) {
   notice (1, "directory: %s", path);
-  s.mode |= P9_DMDIR;
+  s.mode |= 0770 | P9_DMDIR;
   s.qid.type |= QTDIR; 
  } else {
   notice (1, "file: %s", path);
@@ -519,10 +523,10 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
 
  s.name = path;
 
- s.uid = "unknown";
- s.gid = "unknown";
+ s.uid = "root";
+ s.gid = "einit";
  s.muid = "unknown";
- 
+
  r->fid->qid = s.qid;
  size_t size = ixp_sizeof_stat(&s);
  r->ofcall.nstat = size;
