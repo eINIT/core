@@ -337,7 +337,7 @@ void linux_network_interface_prepare (struct einit_event *ev) {
   }
  }
 
- if (!d->functions->get_option(ev->string, "bridge"))) {
+ if (!d->functions->get_option(ev->string, "bridge")) {
 
   char **ip_binary = which ("ip");
 
