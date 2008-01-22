@@ -176,6 +176,7 @@ void linux_network_bridge_verify_carrier (struct einit_event *ev) {
    esprintf (buffer, BUFFERSIZE, "brctl addbr %s", ev->string);
 
    if (buffer[0]) {
+    fbprintf (d->feedback, "executing: %s", buffer);
     if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
      fbprintf (d->feedback, "command failed: %s", buffer);
      d->status = status_failed;
