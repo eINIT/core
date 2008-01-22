@@ -337,27 +337,30 @@ void linux_network_interface_prepare (struct einit_event *ev) {
   }
  }
 
- char **ip_binary = which ("ip");
+ if (!d->functions->get_option(ev->string, "bridge"))) {
 
- if (ip_binary) {
+  char **ip_binary = which ("ip");
+
+  if (ip_binary) {
 /* looks like we have the ip command handy, so let's use it */
-  efree (ip_binary);
+   efree (ip_binary);
 
-  if (d->action == interface_up) {
-   esprintf (buffer, BUFFERSIZE, "ip link set %s up", ev->string);
-  }
- } else {
+   if (d->action == interface_up) {
+    esprintf (buffer, BUFFERSIZE, "ip link set %s up", ev->string);
+   }
+  } else {
 /* fall back to ifconfig -- this means we get to use only one ip address per interface */
 
-  if (d->action == interface_up) {
-   esprintf (buffer, BUFFERSIZE, "ifconfig %s up", ev->string);
+   if (d->action == interface_up) {
+    esprintf (buffer, BUFFERSIZE, "ifconfig %s up", ev->string);
+   }
   }
- }
 
- if (buffer[0]) {
-  if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
-   fbprintf (d->feedback, "command failed: %s", buffer);
-   d->status = status_failed;
+  if (buffer[0]) {
+   if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+    fbprintf (d->feedback, "command failed: %s", buffer);
+    d->status = status_failed;
+   }
   }
  }
 }
