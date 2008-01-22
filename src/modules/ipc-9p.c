@@ -675,8 +675,8 @@ int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);
 
  event_ignore (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
- event_ignore (einit_power_down_scheduled, einit_ipc_9p_power_event_handler);
- event_ignore (einit_power_reset_scheduled, einit_ipc_9p_power_event_handler);
+ event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
+ event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
 
  return 0;
 }
@@ -688,8 +688,8 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  irr->cleanup = einit_ipc_9p_cleanup;
 
  event_listen (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
- event_listen (einit_power_down_scheduled, einit_ipc_9p_power_event_handler);
- event_listen (einit_power_reset_scheduled, einit_ipc_9p_power_event_handler);
+ event_listen (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
+ event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
 
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules");
  einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services");
