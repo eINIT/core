@@ -726,7 +726,7 @@ void linux_network_verify_carrier (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
  struct cfgnode *node = d->functions->get_option(ev->string, "wpa-supplicant");
- if (!node || !(node = d->functions->get_option(ev->string, "bridge"))) {
+ if (!node && !(node = d->functions->get_option(ev->string, "bridge"))) {
 /* only do link carrier detection if we're NOT relying on wpa-supplicant, if
   we do, then wpa-sup will do that detection already */
   int repe = 5;
