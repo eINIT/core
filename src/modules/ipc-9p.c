@@ -109,74 +109,18 @@ enum ipc_9p_filetype {
  i9_file
 };
 
-struct ipc_9p_fs_entry {
- struct stree *nodes;
- char is_file;
- struct ipc_9p_fs_entry *parent;
-};
-
 struct ipc_9p_filedata {
  char *data;
  enum ipc_9p_filetype type;
- struct ipc_9p_fs_entry	*fs_pointer;
  struct stree *cur;
+ struct ipc_fs_node **files;
+ int c;
 };
 
 struct ipc_9p_fidaux {
  char **path;
  struct ipc_9p_filedata *fd;
- struct ipc_9p_fs_entry	*fs_pointer;
 };
-
-struct ipc_9p_fs_entry ipc_9p_filedata_filesystem = {
- .nodes = NULL,
- .is_file = 0,
- .parent = &ipc_9p_filedata_filesystem
-};
-
-struct ipc_9p_fs_entry *einit_ipc_9p_confirm_fs_rec (struct ipc_9p_fs_entry *d, char **path) {
- if (!path || !path[0]) return d;
-
- struct stree *st = NULL;
- 
- if (!d->nodes || !(st = streefind (d->nodes, path[0], tree_find_first))) {
-  struct ipc_9p_fs_entry *r = emalloc (sizeof (struct ipc_9p_fs_entry));
-  r->nodes = NULL;
-  r->is_file = 0;
-  r->parent = d;
-
-  d->nodes = streeadd (d->nodes, path[0], r, SET_NOALLOC, NULL);
-
-  path++;
-  return einit_ipc_9p_confirm_fs_rec (r, path);
- } else {
-  struct ipc_9p_fs_entry *r = st->value;
-
-  path++;
-  return einit_ipc_9p_confirm_fs_rec (r, path);
- }
-}
-
-struct ipc_9p_fs_entry *einit_ipc_9p_confirm_fs (char **path) {
- return einit_ipc_9p_confirm_fs_rec (&ipc_9p_filedata_filesystem, path);
-}
-
-struct ipc_9p_fs_entry *einit_ipc_9p_confirm_fs_p (char *path) {
- char **p = str2set (':', path);
-
- struct ipc_9p_fs_entry *rv = einit_ipc_9p_confirm_fs(p);
-
- efree (p);
- return rv;
-}
-
-void einit_ipc_9p_add_file (struct ipc_9p_fs_entry *dir, char *filename) {
- char *path[2] = { filename, NULL };
-
- struct ipc_9p_fs_entry *d = einit_ipc_9p_confirm_fs_rec (dir, path);
-
- d->is_file = 1;
-}
 
 struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  if (!d) return NULL;
@@ -185,8 +129,9 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
 
  fd->data = d->data ? estrdup (d->data) : NULL;
  fd->type = d->type;
- fd->fs_pointer = d->fs_pointer;
  fd->cur = d->cur;
+ fd->files = (struct ipc_fs_node **)(d->files ? setdup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
+ fd->c = d->c;
 
  return fd;
 }
@@ -196,7 +141,6 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
 
  fa->path = (char **)(d->path ? setdup ((const void **)d->path, SET_TYPE_STRING) : NULL);
  fa->fd = ipc_9p_filedata_dup(d->fd);
- fa->fs_pointer = d->fs_pointer;
 
  return fa;
 }
@@ -204,7 +148,35 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
 void einit_ipc_9p_fs_open(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
+ struct einit_event ev = evstaticinit(einit_ipc_read);
 
+ ev.para = fa->path;
+ event_emit(&ev, einit_event_flag_broadcast);
+
+ if (ev.stringset) {
+  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+
+  fd->data = set2str ('\n', (const char **)ev.stringset);
+  fd->type = i9_file;
+  fd->cur = NULL;
+
+  fa->fd = fd;
+ } else if (ev.set) {
+  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+
+  fd->data = estrdup ("unknown");
+  fd->type = i9_dir;
+  fd->files = (struct ipc_fs_node **)ev.set;
+  fd->c = 0;
+
+  fa->fd = fd;
+ } else {
+  respond (r, "file not found");
+ }
+
+ evstaticdestroy (ev);
+
+#if 0
  if (fa->fs_pointer && (fa->fs_pointer->is_file == 1)) {
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
   char *req = set2str (' ', (const char **)fa->path);
@@ -225,6 +197,7 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
 
   fa->fd = fd;
  }
+#endif
 
  respond(r, nil);
 }
@@ -244,14 +217,14 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
     int y = 0;
 
     for (; fa->path[y]; y++);
-	y--;
-	if (fa->path[y])
-	 fa->path[y] = 0;
+    y--;
+    if (fa->path[y])
+     fa->path[y] = 0;
 
     if (!fa->path[0]) {
      efree (fa->path);
      fa->path = NULL;
-	}
+    }
    }
   } else {
    fa->path = (char **)setadd ((void **)fa->path, r->ifcall.wname[i], SET_TYPE_STRING);
@@ -260,8 +233,6 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
   r->ofcall.wqid[i].type = 0;
   r->ofcall.wqid[i].path = 0;
  }
-
- fa->fs_pointer = einit_ipc_9p_confirm_fs (fa->path);
 
  r->ofcall.nwqid = i;
  respond(r, nil);
@@ -440,7 +411,7 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
      r->ofcall.data[y] = fd->data[offs+y];
     }
 
-	if (y > size) {
+    if (y > size) {
      y = size;
     }
 
@@ -456,6 +427,7 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    respond(r, nil);
   }
  } else if (fd->type == i9_dir) {
+#if 0
   if (fd->cur) {
    Stat s;
    memset (&s, 0, sizeof (Stat));
@@ -492,12 +464,55 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    r->ofcall.count = 0;
    respond(r, nil);
   }
+#endif
+  if (fd->files && (fd->files[fd->c])) {
+   Stat s;
+   memset (&s, 0, sizeof (Stat));
+
+   notice (1, "submitting: %s", fd->files[fd->c]->name);
+
+   s.name = fd->files[fd->c]->name;
+
+   s.uid = "root";
+   s.gid = "einit";
+   s.muid = "unknown";
+
+   s.mode = 0660;
+
+   if (!(fd->files[fd->c]->is_file)) {
+    s.mode |= 0770 | P9_DMDIR;
+    s.qid.type |= QTDIR; 
+   }
+
+   size_t size = r->ifcall.count;
+   void *buf = ecalloc(1, size);
+   IxpMsg m = ixp_message((uchar*)buf, size, MsgPack); 
+   ixp_pstat(&m, &s);
+
+   r->ofcall.count = ixp_sizeof_stat(&s);
+   r->ofcall.data = (char*)m.data;
+
+   fd->c++;
+   respond(r, nil);
+  } else {
+   r->ofcall.count = 0;
+   respond(r, nil);
+  }
  }
 }
 
 void einit_ipc_9p_fs_stat(Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
  char *path = set2str ('/', (const char **)fa->path);
+
+ struct einit_event ev = evstaticinit(einit_ipc_stat);
+
+ ev.para = fa->path;
+ event_emit(&ev, einit_event_flag_broadcast);
+
+ char is_file = ev.flag;
+
+ evstaticdestroy (ev);
 
  if (path) {
   notice (1, "einit_ipc_9p_fs_stat(%s)", path);
@@ -509,16 +524,12 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
  Stat s;
  memset (&s, 0, sizeof (Stat));
 
- struct ipc_9p_fs_entry *v = einit_ipc_9p_confirm_fs (fa->path);
-
  s.mode = 0660;
 
- if (!v->is_file) {
+ if (!is_file) {
   notice (1, "directory: %s", path);
   s.mode |= 0770 | P9_DMDIR;
   s.qid.type |= QTDIR; 
- } else {
-  notice (1, "file: %s", path);
  }
 
  s.name = path;
@@ -671,12 +682,59 @@ void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
  }
 }
 
+void einit_ipc_9p_ipc_read (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (!path) {
+  struct ipc_fs_node n = { .name = estrdup ("ipc"), .is_file = 0 };
+  ev->set = setadd (ev->set, &n, sizeof (n));
+ } if (path && path[0] && strmatch (path[0], "ipc")) {
+  if (!path[1]) {
+   struct ipc_fs_node n;
+   n.is_file = 1;
+
+   n.name = estrdup ("list modules.xml");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("list services.xml");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("list configuration.xml");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("list modules");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("list services");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("list configuration");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("update configuration");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+   n.name = estrdup ("examine configuration");
+   ev->set = setadd (ev->set, &n, sizeof (n));
+  } else {
+   char *res = einit_ipc_9p_request (estrdup(path[1]));
+
+   ev->stringset = (char **)setadd ((void **)ev->stringset, res, SET_TYPE_STRING);
+
+   efree (res);
+  }
+ }
+}
+
+void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && path[0] && strmatch (path[0], "ipc")) {
+  ev->flag = (path[1] ? 1 : 0);
+ }
+}
+
 int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);
 
  event_ignore (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
+ event_ignore (einit_ipc_read, einit_ipc_9p_ipc_read);
+ event_ignore (einit_ipc_stat, einit_ipc_9p_ipc_stat);
 
  return 0;
 }
@@ -690,15 +748,8 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  event_listen (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_listen (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
-
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "configuration");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "modules.xml");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "services.xml");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("list"), "configuration.xml");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("update"), "configuration");
- einit_ipc_9p_add_file (einit_ipc_9p_confirm_fs_p ("examine"), "configuration");
+ event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);
+ event_listen (einit_ipc_stat, einit_ipc_9p_ipc_stat);
 
  return 0;
 }

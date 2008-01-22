@@ -76,6 +76,7 @@ enum einit_event_subsystems {
  einit_event_subsystem_process  = 0x00008000,
  einit_event_subsystem_boot     = 0x00009000,
  einit_event_subsystem_hotplug  = 0x0000a000,
+ einit_event_subsystem_ipc_v2   = 0x0000b000,
 
  einit_event_subsystem_any      = 0xffffe000,
 /*!< match any subsystem... mostly intended to be used for rebroadcasting, e.g. via D-Bus */
@@ -199,7 +200,13 @@ enum einit_event_code {
  einit_hotplug_online               = einit_event_subsystem_hotplug  | 0x004,
  einit_hotplug_offline              = einit_event_subsystem_hotplug  | 0x005,
  einit_hotplug_move                 = einit_event_subsystem_hotplug  | 0x006,
- einit_hotplug_generic              = einit_event_subsystem_hotplug  | 0xfff
+ einit_hotplug_generic              = einit_event_subsystem_hotplug  | 0xfff,
+
+/* einit_event_subsystem_ipc_v2: */
+ einit_ipc_read                     = einit_event_subsystem_ipc_v2   | 0x001,
+ einit_ipc_write                    = einit_event_subsystem_ipc_v2   | 0x002,
+ einit_ipc_stat                     = einit_event_subsystem_ipc_v2   | 0x003,
+ einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004
 };
 
 enum einit_ipc_options {

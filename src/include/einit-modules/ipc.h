@@ -46,6 +46,11 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/types.h>
 
+struct ipc_fs_node {
+ char *name;
+ char is_file;
+};
+
 #if (! defined(einit_modules_ipc)) || (einit_modules_ipc == 'm') || (einit_modules_ipc == 'n')
 
 typedef int (*ipc_processor) (const char *, FILE *);
