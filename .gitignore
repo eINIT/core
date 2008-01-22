@@ -13,6 +13,7 @@
 *.so
 *.so.dbg
 *.la
+*.O
 
 #
 # Top-level generic files
