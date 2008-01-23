@@ -246,6 +246,9 @@ int linux_udev_run() {
   if (!stat ("/sbin/lvm", &st)) {
    system ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
   }
+  if (!stat ("/sbin/vgchange", &st)) {
+   system ("/sbin/vgchange a -y");
+  }
   if (!stat ("/sbin/evms_activate", &st)) {
    system ("/sbin/evms_activate -q");
   }
