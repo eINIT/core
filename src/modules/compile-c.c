@@ -48,6 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/wait.h>
 #include <sys/stat.h>
 
+#include <einit-modules/exec.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -106,7 +108,7 @@ char module_c_compile_file (char *oname, char *base, char *nname) {
 
    notice (1, "compiling: %s", oname);
 
-   srv = system(compiler_command);
+   srv = qexec(compiler_command);
 
    if ((srv != -1) && (srv != 127)) {
     if (WIFEXITED(srv) && !(WEXITSTATUS(srv))) {
@@ -231,6 +233,8 @@ void module_c_einit_event_handler_update_configuration (struct einit_event *ev) 
 }
 
 int module_c_cleanup (struct lmodule *this) {
+ exec_cleanup(irr);
+
  event_ignore (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 
  return 0;
@@ -254,6 +258,7 @@ int module_c_resume (struct lmodule *this) {
 
 int module_c_configure (struct lmodule *irr) {
  module_init (irr);
+ exec_configure(irr);
 
  struct cfgnode *node = cfg_getnode ("subsystem-c-active", NULL);
  if (!node || !node->flag) { /* node needs to exist and explicitly say 'no' to disable this module */

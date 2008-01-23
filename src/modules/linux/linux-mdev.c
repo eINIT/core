@@ -294,7 +294,7 @@ int linux_mdev_run() {
    fclose (he);
   }
 
-  system ("mdev -s");
+  qexec ("mdev -s");
 
   chmod ("/dev/null", 0777);
   chmod ("/dev/zero", 0666);

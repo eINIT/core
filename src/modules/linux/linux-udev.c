@@ -229,28 +229,28 @@ int linux_udev_run() {
 */
 
   if (n && n->flag) {
-   system ("/sbin/udevtrigger");
+   qexec ("/sbin/udevtrigger");
   } else {
-   system ("/sbin/udevtrigger --attr-match=dev");
+   qexec ("/sbin/udevtrigger --attr-match=dev");
   }
 
-//  system (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
+//  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
 
   linux_udev_load_kernel_extensions();
 
-  system ("/sbin/udevsettle --timeout=60");
+  qexec ("/sbin/udevsettle --timeout=60");
 
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
 /* let's not forget about raid setups and the like here... */
   if (!stat ("/sbin/lvm", &st)) {
-   system ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
+   qexec ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
   }
   if (!stat ("/sbin/vgchange", &st)) {
-   system ("/sbin/vgchange -a y");
+   qexec ("/sbin/vgchange -a y");
   }
   if (!stat ("/sbin/evms_activate", &st)) {
-   system ("/sbin/evms_activate -q");
+   qexec ("/sbin/evms_activate -q");
   }
 
   return status_ok;
@@ -260,8 +260,8 @@ int linux_udev_run() {
 
 void linux_udev_shutdown() {
  if (linux_udev_enabled) {
-/*  system (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
-  system (EINIT_LIB_BASE "/modules-xml/udev.sh disable");*/
+/*  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
+  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh disable");*/
   stopdaemon (&linux_udev_dexec, NULL);
  }
 }
@@ -271,7 +271,7 @@ void linux_udev_shutdown_imminent() {
 
  if (linux_udev_enabled) {
   if (!stat ("/sbin/vgchange", &st)) {
-   system ("/sbin/vgchange -a n");
+   qexec ("/sbin/vgchange -a n");
   }
 
   linux_udev_enabled = 0;

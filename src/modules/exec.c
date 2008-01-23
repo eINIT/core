@@ -111,6 +111,7 @@ char kill_timeout_primary = 20, kill_timeout_secondary = 20;
 char **check_variables_f (const char *, const char **, FILE *);
 char *apply_envfile_f (char *command, const char **environment);
 int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, const char *user, const char *group, char **local_environment, struct einit_event *status);
+int qexec_f (char *command);
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
@@ -130,6 +131,8 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-create-environment", 1, create_environment_f);
  function_unregister ("einit-check-variables", 1, check_variables_f);
  function_unregister ("einit-apply-envfile", 1, apply_envfile_f);
+
+ function_unregister ("einit-execute-command-q", 1, qexec_f);
 
  event_ignore (einit_process_died, einit_exec_process_event_handler);
  event_ignore (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
@@ -742,6 +745,12 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  return status_failed;
 }
 
+int qexec_f (char *command) {
+ system (command);
+
+ return status_ok;
+}
+
 void *dexec_watcher (pid_t pid) {
  struct daemonst *prev = NULL;
  struct dexecinfo *dx = NULL;
@@ -1178,6 +1187,8 @@ int einit_exec_configure (struct lmodule *irr) {
  function_register ("einit-create-environment", 1, create_environment_f);
  function_register ("einit-check-variables", 1, check_variables_f);
  function_register ("einit-apply-envfile", 1, apply_envfile_f);
+
+ function_register ("einit-execute-command-q", 1, qexec_f);
 
  return 0;
 }

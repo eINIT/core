@@ -50,6 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <einit-modules/exec.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -462,6 +464,8 @@ int einit_feedback_visual_fbsplash_disable () {
 }
 
 int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
+ exec_cleanup(irr);
+
  event_ignore (einit_boot_devices_available, einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available);
  event_ignore (einit_power_down_scheduled, einit_feedback_visual_fbsplash_power_event_handler);
  event_ignore (einit_power_reset_scheduled, einit_feedback_visual_fbsplash_power_event_handler);
@@ -475,6 +479,7 @@ int einit_feedback_visual_fbsplash_cleanup (struct lmodule *tm) {
 
 int einit_feedback_visual_fbsplash_configure (struct lmodule *tm) {
  module_init (tm);
+ exec_configure(irr);
 
  tm->cleanup = einit_feedback_visual_fbsplash_cleanup;
 

@@ -50,6 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #include <sys/acct.h>
 
+#include <einit-modules/exec.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -403,7 +405,7 @@ void *linux_bootchart_thread (void *ignored) {
  } else {
   esprintf (buffer, BUFFERSIZE, "cd /tmp/bootchart.einit; tar czf %s *", save_to);
  }
- system (buffer);
+ qexec (buffer);
 
  unlink_recursive ("/tmp/bootchart.einit/", 1);
 
@@ -447,6 +449,8 @@ void linux_bootchart_boot_event_handler (struct einit_event *ev) {
 }
 
 int linux_bootchart_cleanup (struct lmodule *pa) {
+ exec_cleanup(irr);
+
  event_ignore (einit_core_done_switching, linux_bootchart_switch_done);
  event_ignore (einit_core_mode_switching, linux_bootchart_switch);
  event_ignore (einit_boot_early, linux_bootchart_boot_event_handler);
@@ -456,6 +460,7 @@ int linux_bootchart_cleanup (struct lmodule *pa) {
 
 int linux_bootchart_configure (struct lmodule *tm) {
  module_init (tm);
+ exec_configure(irr);
 
  struct cfgnode *node = cfg_getnode ("configuration-bootchart-active", NULL);
 

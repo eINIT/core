@@ -51,6 +51,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <einit-modules/exec.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -188,7 +190,7 @@ void einit_feedback_visual_psplash_einit_event_handler_service_update (struct ei
     notice (2, "mount-critical is up");
 
     if ((psplash_type == sp_exquisite) && (t = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
-     system (t);
+     qexec (t);
     } else {
      psplash_type = sp_disabled;
     }
@@ -227,7 +229,7 @@ void *einit_feedback_visual_psplash_worker_thread (void *irr) {
      char tmp[BUFFERSIZE];
 
      esprintf (tmp, BUFFERSIZE, "exquisite-write \"%s\" &>/dev/null", command);
-     system (tmp);
+     qexec (tmp);
     } else {
      int fd = open (psplash_fifo, O_WRONLY | O_NONBLOCK);
      if (fd != -1) {
@@ -272,7 +274,7 @@ int einit_feedback_visual_psplash_enable () {
    }
 
    if ((tmp = cfg_getstring ("configuration-feedback-visual-psplash-run", NULL))) {
-    system (tmp);
+    qexec (tmp);
    } else {
     psplash_type = sp_disabled;
    }
@@ -284,7 +286,7 @@ int einit_feedback_visual_psplash_enable () {
    }
 
    if ((tmp = cfg_getstring ("configuration-feedback-visual-usplash-run", NULL))) {
-    system (tmp);
+    qexec (tmp);
    } else {
     psplash_type = sp_disabled;
    }
@@ -292,9 +294,9 @@ int einit_feedback_visual_psplash_enable () {
 
   case sp_exquisite:
    if (coremode & einit_mode_sandbox) {
-    system ("exquisite -x11 -t /usr/share/exquisite/data/themes/default.edj &");
+    qexec ("exquisite -x11 -t /usr/share/exquisite/data/themes/default.edj &");
    }/* else if ((tmp = cfg_getstring ("configuration-feedback-visual-exquisite-run", NULL))) {
-    system (tmp);
+    qexec (tmp);
    } else {
     psplash_type = sp_disabled;
    }*/ /* need to wait for mount-critical for this 'ere... */
@@ -318,6 +320,8 @@ int einit_feedback_visual_psplash_disable () {
 }
 
 int einit_feedback_visual_psplash_cleanup (struct lmodule *tm) {
+ exec_cleanup(irr);
+
  event_ignore (einit_boot_devices_available, einit_feedback_visual_psplash_boot_event_handler_boot_devices_available);
  event_ignore (einit_power_down_scheduled, einit_feedback_visual_psplash_power_event_handler);
  event_ignore (einit_power_reset_scheduled, einit_feedback_visual_psplash_power_event_handler);
@@ -331,6 +335,7 @@ int einit_feedback_visual_psplash_cleanup (struct lmodule *tm) {
 
 int einit_feedback_visual_psplash_configure (struct lmodule *tm) {
  module_init (tm);
+ exec_configure(irr);
 
  char *tmp;
 

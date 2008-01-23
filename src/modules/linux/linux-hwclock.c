@@ -90,7 +90,7 @@ void linux_hwclock_run() {
 
   esprintf (tmp, BUFFERSIZE, "/sbin/hwclock --hctosys %s", options);
 
-  system (tmp);
+  qexec (tmp);
  }
 }
 
@@ -102,7 +102,7 @@ void linux_hwclock_shutdown() {
 
   esprintf (tmp, BUFFERSIZE, "/sbin/hwclock --systohc %s", options);
 
-  system (tmp);
+  qexec (tmp);
 
   linux_hwclock_enabled = 0;
  }
