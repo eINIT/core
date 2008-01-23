@@ -162,6 +162,9 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
   fd->cur = NULL;
 
   fa->fd = fd;
+
+  efree (ev.stringset);
+  ev.stringset = NULL;
  } else if (ev.set) {
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
