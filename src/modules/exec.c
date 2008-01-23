@@ -746,9 +746,61 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 }
 
 int qexec_f (char *command) {
- system (command);
+ size_t len;
+ strtrim (command);
+ char do_fork = 0;
+ int pidstatus = 0;
 
- return status_ok;
+ if (!command[0]) return status_failed;
+
+ len = strlen (command);
+ if (command[len-1] == '&') {
+  command[len-1] = 0;
+  do_fork = 1;
+  if (!command[0]) return status_failed;
+ }
+
+ char **exvec = str2set (' ', command);
+ pid_t child;
+
+#ifdef LINUX
+ if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
+  return status_failed;
+ }
+#else
+ retry_fork:
+
+ if ((child = fork()) < 0) {
+  goto retry_fork;
+
+  return status_failed;
+ }
+#endif
+ else if (child == 0) {
+/* make sure einit's thread is in a proper state */
+#ifndef LINUX
+  sched_yield();
+#endif
+
+  nice (-einit_core_niceness_increment);
+  nice (einit_task_niceness_increment);
+
+  disable_core_dumps ();
+
+  close (1);
+  dup2 (2, 1);
+
+  execve (exvec[0], exvec, einit_global_environment);
+ } else {
+#ifdef LINUX
+  kill (child, SIGCONT);
+#endif
+
+  while (waitpid (child, &pidstatus, WNOHANG) != child) ;
+ }
+
+ if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
+ return status_failed;
 }
 
 void *dexec_watcher (pid_t pid) {
