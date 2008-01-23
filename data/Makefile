@@ -10,8 +10,6 @@ install:
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/subsystems.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/rules.edev
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/hotplug.d
-	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1
-	${INSTALL} ${IPARAM} -d ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -d ${DESTDIR}/${LIBDIR}/schemata
@@ -24,7 +22,6 @@ install:
 	${INSTALL} ${IPARAM} -m 0644 einit.xml.n ${DESTDIR}/${LIBDIR}/einit.xml
 	${INSTALL} ${IPARAM} -m 0755 scripts/* ${DESTDIR}/${LIBDIR}/scripts
 	${INSTALL} ${IPARAM} -m 0644 schema/*.rn? ${DESTDIR}/${LIBDIR}/schemata
-	${INSTALL} ${IPARAM} -m 0644 einit.conf ${DESTDIR}/${ETCDIR}/../dbus-1/system.d
 	
 	for i in subsystems.d/*.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" subsystems.d "${CONFIGINSTALLMETHOD}"; done
 	for i in rules.edev/*.xml; do ${DESTDIR}/${LIBDIR}/scripts/install-config "$$i" rules.edev "${CONFIGINSTALLMETHOD}"; done

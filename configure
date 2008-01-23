@@ -60,7 +60,6 @@ nomodule=""
 
 XCFLAGS="$XCFLAGS -DPOSIXREGEX";
 
-DBUS=""
 PREFIX="/einit/"
 
 . ./configure.options
@@ -174,11 +173,6 @@ for param in $@; do
                 echo -n " EBUILD";
                 EBUILD="1";
                 CONFIGINSTALLMETHOD="ebuild";
-        elif test "$param" = "--enable-ipc-dbus"; then
-		echo -n " DBUS";
-		EXTERNALMODULES="${EXTERNALMODULES} ipc-dbus";
-		DBUS="dbus";
-		UTILOBJECTS="${UTILOBJECTS} libeinit-ipc-dbus";
 	elif test "$shorte" = ""; then
 		EXTERNALMODULES="${EXTERNALMODULES} ${param#*--enable-}";
 	fi;
@@ -288,7 +282,6 @@ Options:
  --enable-linux         enable compilation of linux-specific modules
  --enable-bsd           enable compilation of bsd-specific modules
  --enable-efl           enable compilation of modules that utilise the efl
- --enable-ipc-dbus	enable compilation of dbus-ipc
  --with-expat		build with expat libs linked in statically
  --bitch-a-lot          tell all programs used to compile and link to be more
                         verbose
@@ -564,12 +557,6 @@ echo "done.";
 if test "${PREFIX}" = "/"; then UPREFIX="${PREFIX}usr/"; else UPREFIX="${PREFIX}"; fi
 if test "${EBUILD}" = "1"; then UPREFIX="${PREFIX}usr/"; fi
 
-if [ "${DBUS}" = "dbus" ]; then
-	echo "getting dbus flags off pkg-config..."
-	DBUS_CFLAGS=$(pkg-config --cflags dbus-1)
-	DBUS_LIBS=$(pkg-config --libs dbus-1)
-fi
-
 if [ "${GTK}" = "gtk" ]; then
 	echo "getting gtkmm flags off pkg-config..."
 	GTK_CFLAGS=$(pkg-config --cflags gtkmm-2.4)
@@ -651,10 +638,6 @@ XXL = $XXL -DISGIT=\${ISGIT}
 CXXLD = \${CXX} \${LDFLAGS}
 CXXLD = \${CXXC} \${LDFLAGS}
 LXXLD = \${CXXC} \${LDFLAGS} $LLD
-
-DBUS_CFLAGS = ${DBUS_CFLAGS}
-DBUS_LIBS = ${DBUS_LIBS}
-DBUS = ${DBUS}
 
 GTK_CFLAGS = ${GTK_CFLAGS}
 GTK_LIBS = ${GTK_LIBS}
@@ -745,10 +728,6 @@ CXXLD=\"\${CXX} \${LDFLAGS}\"
 CXXLD=\"\${CXXC} \${LDFLAGS}\"
 LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
 
-DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
-DBUS_LIBS=\"${DBUS_LIBS}\"
-DBUS=\"${DBUS}\"
-
 GTK_CFLAGS=\"${GTK_CFLAGS}\"
 GTK_LIBS=\"${GTK_LIBS}\"
 GTK=\"${GTK}\"
@@ -838,10 +817,6 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     CXXLD=\"${CXX} \${LDFLAGS}\"
     CXXLD=\"${CXXC} \${LDFLAGS}\"
     LXXLD=\"${CXXC} \${LDFLAGS} $LLD\"
-
-    DBUS_CFLAGS=\"${DBUS_CFLAGS}\"
-    DBUS_LIBS=\"${DBUS_LIBS}\"
-    DBUS=\"${DBUS}\"
 
     GTK_CFLAGS=\"${GTK_CFLAGS}\"
     GTK_LIBS=\"${GTK_LIBS}\"
