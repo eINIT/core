@@ -93,6 +93,10 @@ int main(int argc, char **argv) {
     case 'v':
      eputs("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n", stdout);
      return 0;
+    case 'a':
+    case 's':
+     i++;
+     break;
     case '-':
      i++;
      if (i < argc) goto copy_remainder_verbatim;

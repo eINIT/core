@@ -1,4 +1,4 @@
-util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0 libeinit-ipc-socket.so einit-helper
+util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0 libeinit-ipc-socket.so libeinit-ipc-9p.so einit-helper
 
 install: util $(DBUS)
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${BINDIR}
@@ -16,6 +16,7 @@ install: util $(DBUS)
 	ln -fs libeinit++.${SO}.1 ${DESTDIR}/${LIBDIR}/../libeinit++.${SO}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/ipc
 	${INSTALL} ${BINIPARAM} libeinit-ipc-socket.so ${DESTDIR}/${LIBDIR}/ipc
+	${INSTALL} ${BINIPARAM} libeinit-ipc-9p.so ${DESTDIR}/${LIBDIR}/ipc
 
 set.o: set-lowmem.o
 	cp set-lowmem.o set.o
@@ -59,6 +60,9 @@ libeinit-ipc-dbus.so: libeinit-ipc-dbus.o utility.o bitch.o tree.o itree.o set.o
 
 libeinit-ipc-socket.so: libeinit-ipc-socket.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
 	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-socket.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit-ipc-socket.so ${LPA}
+
+libeinit-ipc-9p.so: libeinit-ipc-9p.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
+	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-9p.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) ${LIBIXP_LIBS} -o libeinit-ipc-9p.so ${LPA}
 
 libeinit++.${SO}: libeinit++.${SO}.1.0.0
 

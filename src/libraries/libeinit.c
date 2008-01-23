@@ -107,12 +107,13 @@ char einit_connect(int *argc, char **argv) {
 /* TODO: fix this up again */
  char t = 0;
 
- for (; t < 2; t++) {
+ for (; t < 3; t++) {
   char *clib;
 
   switch (t) {
    case 0: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-dbus.so"; break;
-   case 1: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-socket.so"; break;
+   case 1: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-9p.so"; break;
+   case 2: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-socket.so"; break;
    default: clib = NULL; break;
   }
 
