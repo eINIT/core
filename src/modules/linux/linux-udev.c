@@ -247,7 +247,7 @@ int linux_udev_run() {
    system ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
   }
   if (!stat ("/sbin/vgchange", &st)) {
-   system ("/sbin/vgchange a -y");
+   system ("/sbin/vgchange -a y");
   }
   if (!stat ("/sbin/evms_activate", &st)) {
    system ("/sbin/evms_activate -q");
@@ -263,6 +263,16 @@ void linux_udev_shutdown() {
 /*  system (EINIT_LIB_BASE "/modules-xml/udev.sh on-shutdown");
   system (EINIT_LIB_BASE "/modules-xml/udev.sh disable");*/
   stopdaemon (&linux_udev_dexec, NULL);
+ }
+}
+
+void linux_udev_shutdown_imminent() {
+ struct stat st;
+
+ if (linux_udev_enabled) {
+  if (!stat ("/sbin/vgchange", &st)) {
+   system ("/sbin/vgchange -a n");
+  }
 
   linux_udev_enabled = 0;
  }
@@ -282,6 +292,8 @@ int linux_udev_cleanup (struct lmodule *pa) {
  event_ignore (einit_boot_early, linux_udev_boot_event_handler);
  event_ignore (einit_power_down_scheduled, linux_udev_shutdown);
  event_ignore (einit_power_reset_scheduled, linux_udev_shutdown);
+ event_ignore (einit_power_down_imminent, linux_udev_shutdown_imminent);
+ event_ignore (einit_power_reset_imminent, linux_udev_shutdown_imminent);
 
  return 0;
 }
@@ -302,6 +314,8 @@ int linux_udev_configure (struct lmodule *pa) {
  event_listen (einit_boot_early, linux_udev_boot_event_handler);
  event_listen (einit_power_down_scheduled, linux_udev_shutdown);
  event_listen (einit_power_reset_scheduled, linux_udev_shutdown);
+ event_listen (einit_power_down_imminent, linux_udev_shutdown_imminent);
+ event_listen (einit_power_reset_imminent, linux_udev_shutdown_imminent);
 
  return 0;
 }
