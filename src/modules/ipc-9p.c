@@ -685,12 +685,16 @@ void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
 void einit_ipc_9p_ipc_read (struct einit_event *ev) {
  char **path = ev->para;
 
+ struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
+ ev->set = setadd (ev->set, &n, sizeof (n));
+ n.name = estrdup (".");
+ ev->set = setadd (ev->set, &n, sizeof (n));
+
  if (!path) {
-  struct ipc_fs_node n = { .name = estrdup ("ipc"), .is_file = 0 };
+  n.name = estrdup ("ipc");
   ev->set = setadd (ev->set, &n, sizeof (n));
  } if (path && path[0] && strmatch (path[0], "ipc")) {
   if (!path[1]) {
-   struct ipc_fs_node n;
    n.is_file = 1;
 
    n.name = estrdup ("list modules.xml");
