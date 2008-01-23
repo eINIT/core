@@ -149,15 +149,14 @@ char *einit_ipc_i (const char *cmd, const char *interface) {
    return NULL;
   }
 
-#if 1
   do {
-   fprintf (stderr, "reading.\n");
+//   fprintf (stderr, "reading.\n");
    buf = realloc (buf, blen + f->iounit);
    if (buf == NULL) {
     ixp_close (f);
     return NULL;
    }
-   fprintf (stderr, ".\n");
+//   fprintf (stderr, ".\n");
 
    rn = ixp_read (f, (char *)(buf + blen), f->iounit);
    if (rn > 0) {
@@ -166,7 +165,7 @@ char *einit_ipc_i (const char *cmd, const char *interface) {
    }
   } while (rn > 0);
 
-  fprintf (stderr, "done.\n");
+//  fprintf (stderr, "done.\n");
 
   if (rn > -1) {
    data = realloc (buf, blen+1);
@@ -181,11 +180,7 @@ char *einit_ipc_i (const char *cmd, const char *interface) {
    }
 
   }
-#else
-  while((rn = ixp_read(f, buf, f->iounit)) > 0) 
-   write(1, buf, rn);
-#endif
- 
+
   ixp_close (f);
  }
 
