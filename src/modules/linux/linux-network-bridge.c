@@ -120,7 +120,7 @@ struct network_event_data {
 void linux_network_bridge_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- if (strstr (d->static_descriptor->rid, "interface-carrier-") == d->static_descriptor->rid) {
+ if (strprefix (d->static_descriptor->rid, "interface-carrier-")) {
   struct cfgnode *node = d->functions->get_option(ev->string, "bridge");
   if (node) {
    char **elements = NULL;

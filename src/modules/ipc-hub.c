@@ -275,21 +275,21 @@ void einit_ipc_hub_handle_block (char *cbuf, ssize_t tlen) {
 
    if (fields) {
     for (j = 0; fields[j]; j++) {
-     if (strstr (fields[j], "event:") == fields[j]) {
+     if (strprefix (fields[j], "event:")) {
       ev.type = parse_integer (fields[j] + 6); // add "event:"
-     } else if (strstr (fields[j], "int:") == fields[j]) {
+     } else if (strprefix (fields[j], "int:")) {
       ev.integer = parse_integer (fields[j] + 4); // add "int:"
-     } else if (strstr (fields[j], "task:") == fields[j]) {
+     } else if (strprefix (fields[j], "task:")) {
       ev.task = parse_integer (fields[j] + 5); // add "task:"
-     } else if (strstr (fields[j], "status:") == fields[j]) {
+     } else if (strprefix (fields[j], "status:")) {
       ev.status = parse_integer (fields[j] + 7); // add "status:"
-     } else if (strstr (fields[j], "command:") == fields[j]) {
+     } else if (strprefix (fields[j], "command:")) {
       ev.command = estrdup (fields[j] + 8); // add "command:"
-     } else if (strstr (fields[j], "string:") == fields[j]) {
+     } else if (strprefix (fields[j], "string:")) {
       ev.string = estrdup (fields[j] + 7); // add "string:"
-     } else if (strstr (fields[j], "argv:") == fields[j]) {
+     } else if (strprefix (fields[j], "argv:")) {
       ev.argv = str2set ('\x1d', (const char *)(fields[j] + 5)); // add "argv:"
-     } else if (strstr (fields[j], "stringset:") == fields[j]) {
+     } else if (strprefix (fields[j], "stringset:")) {
       ev.stringset = str2set ('\x1d', (const char *)(fields[j] + 10)); // add "stringset:"
      }
     }

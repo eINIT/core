@@ -260,7 +260,7 @@ char *readfile_l (const char *filename, ssize_t *rl) {
  if (!filename) return NULL;
 
 /* make an exception to the no-0-length-files rule for stuff in /proc */
- if (stat (filename, &st) || S_ISDIR(st.st_mode) || ((st.st_size <= 0) && (strstr (filename, "/proc/") != filename))) return NULL;
+ if (stat (filename, &st) || S_ISDIR(st.st_mode) || ((st.st_size <= 0) && (!strprefix (filename, "/proc/")))) return NULL;
 
  fd = eopen (filename, O_RDONLY);
 
@@ -912,6 +912,21 @@ char strmatch (const char *str1, const char *str2) {
 }
 #endif
 
+#ifndef _have_asm_strprefix
+char strprefix (const char *str1, const char *str2) {
+ if (!str1) return 0;
+ if (!str2) return 1;
+
+ while (*str1 && *str2 && (*str1 == *str2)) {
+  str1++, str2++;
+ }
+
+ return *str2 == 0;
+
+// return (strstr (str1, str2) == str1);
+}
+#endif
+
 #ifndef _have_asm_hashp
 uintptr_t hashp (const char *str) {
  uintptr_t rv = 0;
@@ -992,7 +1007,7 @@ char **which (char *binary) {
    int i = 0;
 
    for (; env[i]; i++) {
-    if (strstr (env[i], "PATH=") == env[i]) {
+    if (strprefix (env[i], "PATH=")) {
      char **paths = str2set (':', env[i]+5);
 
      if (paths) {

@@ -251,6 +251,7 @@ int exopen(const char *pathname, int mode, const char *file, const int line, con
 /* NOTE: matching "" against "" will result in undefined behaviour... so just never try to
    match a string against "" :D */
 char strmatch (const char *, const char *);
+char strprefix (const char *, const char *);
 
 uintptr_t hashp (const char *str);
 

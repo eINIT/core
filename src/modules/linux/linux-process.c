@@ -188,7 +188,7 @@ pid_t *filter_processes_files_below (struct pc_conditional * cond, pid_t * ret, 
        if (r == -1) continue;
        ttarget[r] = 0;
 
-       if (strstr (ttarget, cond->para) == ttarget) {
+       if (strprefix (ttarget, cond->para)) {
         ret = (pid_t *)set_noa_add ((void **)ret, (void *)tmppx);
         goto kk;
        }

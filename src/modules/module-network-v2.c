@@ -864,7 +864,7 @@ char *einit_module_network_v2_generate_defer_fs (char **tmpxt) {
 void einit_module_network_v2_interface_construct (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
- if (strstr (d->static_descriptor->rid, "interface-v2-") == d->static_descriptor->rid) {
+ if (strprefix (d->static_descriptor->rid, "interface-v2-")) {
   struct stree *st = d->functions->get_all_addresses (ev->string);
   if (st) {
    struct stree *cur = streefind (st, "ipv4", tree_find_first);

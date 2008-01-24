@@ -208,12 +208,12 @@ char *apply_envfile_f (char *command, const char **environment) {
 
  if (environment) {
   for (; environment[i]; i++) {
-   if (strstr(environment[i], "envfile=") == environment[i]) {
+   if (strprefix(environment[i], "envfile=")) {
     if (envfiles) efree (envfiles);
 
     if (envfiles) efree (envfiles);
     envfiles = str2set (':', environment[i]+8);
-   } else if (strstr(environment[i], "services=") == environment[i]) {
+   } else if (strprefix(environment[i], "services=")) {
     if (!envfiles) envfiles = str2set (':', environment[i]+9);
    } else {
     char *r = estrdup (environment[i]);
@@ -501,7 +501,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
  if (!command) return status_failed;
 // if the first command is pexec-options, then set some special options
- if (strstr (command, "pexec-options") == command) {
+ if (strprefix (command, "pexec-options")) {
   char *ocmds = estrdup(command),
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
@@ -651,7 +651,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   if (!(options & pexec_option_nopipe) && status) {
 /* tag the fd as close-on-exec, just in case */
    fcntl (pipefderr[1], F_SETFD, FD_CLOEXEC);
-   eclose (pipefderr[1]);
+   close (pipefderr[1]);
    errno = 0;
 
    if ((fx = fdopen(pipefderr[0], "r"))) {
@@ -1088,7 +1088,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    if (uid && (setuid (uid) == -1))
     perror ("setting uid");
 
-   eclose (1);
+   close (1);
    dup2 (2, 1);
 
    execve (exvec[0], exvec, daemon_environment);

@@ -115,7 +115,7 @@ pid_t *filter_processes_cwd_below (struct pc_conditional * cond, pid_t * ret, st
  uint32_t i = 0;
  if (stat && cond && cond->para)
   for (; stat[i]; i++) {
-   if (stat[i]->cwd && (strstr (stat[i]->cwd, (char *)cond->para) == stat[i]->cwd)) {
+   if (stat[i]->cwd && (strprefix (stat[i]->cwd, (char *)cond->para))) {
     uintptr_t tmp = (stat[i]->pid);
     ret = (pid_t *)set_noa_add((void **)ret, (void *)tmp);
    }

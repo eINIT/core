@@ -762,12 +762,12 @@ void mount_update_fstab_nodes_from_fstab () {
      char **options = val->fs_mntops ? str2set (',', val->fs_mntops): NULL;
      char *fs_spec = NULL;
 
-     if (strstr (val->fs_spec, "UUID=") == val->fs_spec) {
+     if (strprefix (val->fs_spec, "UUID=")) {
       char tmp[BUFFERSIZE];
 
       esprintf (tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s", val->fs_spec + 5);
       fs_spec = estrdup(tmp);
-     } else if (strstr (val->fs_spec, "LABEL=") == val->fs_spec) {
+     } else if (strprefix (val->fs_spec, "LABEL=")) {
       char tmp[BUFFERSIZE];
 
       esprintf (tmp, BUFFERSIZE, "/dev/disk/by-label/%s", val->fs_spec + 6);
@@ -1850,7 +1850,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
   uint32_t i = 0;
 
   for (; cm[i]; i++) {
-   if (strstr (cm[i], mountpoint) == cm[i]) { // find mountpoints below this one that are still mounted
+   if (strprefix (cm[i], mountpoint)) { // find mountpoints below this one that are still mounted
     uint32_t n = strlen (mountpoint);
 
     if (cm[i][n] == '/') {

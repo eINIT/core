@@ -121,15 +121,15 @@ void einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available (s
    char start_splash = 0, *ttypatch = NULL, *splashargs = NULL;
 
    for (; einit_initial_environment[i]; i++) {
-    if (strstr (einit_initial_environment[i], "splash=") == einit_initial_environment[i]) {
+    if (strprefix (einit_initial_environment[i], "splash=")) {
      start_splash = 1;
 
      splashargs = einit_initial_environment[i]+7;
 
      if (!ttypatch)
       ttypatch = "tty1";
-    } else if ((strstr (einit_initial_environment[i], "console=") == einit_initial_environment[i]) ||
-               (strstr (einit_initial_environment[i], "einitty=") == einit_initial_environment[i])) {
+    } else if ((strprefix (einit_initial_environment[i], "console=")) ||
+               (strprefix (einit_initial_environment[i], "einitty="))) {
 
      ttypatch = einit_initial_environment[i]+8;
     }

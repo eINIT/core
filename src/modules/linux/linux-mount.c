@@ -255,7 +255,7 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
  if (mp->options) {
   int i = 0;
   for (; mp->options[i]; i++) {
-   if (strstr (mp->options[i], "sec=krb") == mp->options[i]) {
+   if (strprefix (mp->options[i], "sec=krb")) {
     if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
      sm->si.requires = set_str_add (sm->si.requires, "rpc.svcgssd");
     }
@@ -294,7 +294,7 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
  if (mp->options) {
   int i = 0;
   for (; mp->options[i]; i++) {
-   if (strstr (mp->options[i], "sec=krb") == mp->options[i]) {
+   if (strprefix (mp->options[i], "sec=krb")) {
     if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
      sm->si.requires = set_str_add (sm->si.requires, "rpc.svcgssd");
     }

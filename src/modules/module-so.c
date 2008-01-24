@@ -197,7 +197,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
 /* make sure all bootstrap modules get updated */
  while (lm) {
-  if (lm->source && (strstr(lm->source, bootstrapmodulepath) == lm->source)) {
+  if (lm->source && (strprefix(lm->source, bootstrapmodulepath))) {
 #if 0
    if (einit_allow_code_unloading) {
     lm->do_suspend = einit_mod_so_do_suspend;

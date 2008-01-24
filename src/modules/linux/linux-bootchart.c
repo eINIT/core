@@ -374,7 +374,7 @@ void *linux_bootchart_thread (void *ignored) {
 
    if (r) {
     for (i = 0; r[i]; i++) {
-     if (strstr (r[i], "model name") == r[i]) {
+     if (strprefix (r[i], "model name")) {
       n = r[i];
       break;
      }

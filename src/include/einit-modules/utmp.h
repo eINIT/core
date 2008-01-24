@@ -107,7 +107,7 @@ utmp_function utmp_update_fp;
  if (uline) {\
   char *tmpstr = estrdup (uline);\
   if (tmpstr) {\
-   strncpy (record.ut_line, (strstr(tmpstr, "/dev/") == tmpstr ? tmpstr + 5 : tmpstr), UT_LINESIZE); \
+   strncpy (record.ut_line, ((strprefix(tmpstr, "/dev/")) ? tmpstr + 5 : tmpstr), UT_LINESIZE); \
    efree (tmpstr);\
   }\
  } \

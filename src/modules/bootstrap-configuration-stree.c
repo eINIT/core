@@ -430,7 +430,7 @@ struct stree *cfg_prefix_f (const char *prefix) {
  if (prefix) {
   struct stree *cur = streelinear_prepare(hconfiguration);
   while (cur) {
-   if (strstr(cur->key, prefix) == cur->key) {
+   if (strprefix(cur->key, prefix)) {
     retval = streeadd (retval, cur->key, cur->value, SET_NOALLOC, NULL);
    }
    cur = streenext (cur);

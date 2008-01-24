@@ -105,17 +105,17 @@ void linux_mdev_hotplug_handle (char **v) {
   char **args = NULL;
   struct einit_event ev = evstaticinit(einit_hotplug_generic);
 
-  if (strstr (v[0], "add@") == v[0]) {
+  if (strprefix (v[0], "add@")) {
    ev.type = einit_hotplug_add;
-  } else if (strstr (v[0], "remove@") == v[0]) {
+  } else if (strprefix (v[0], "remove@")) {
    ev.type = einit_hotplug_remove;
-  } else if (strstr (v[0], "change@") == v[0]) {
+  } else if (strprefix (v[0], "change@")) {
    ev.type = einit_hotplug_change;
-  } else if (strstr (v[0], "online@") == v[0]) {
+  } else if (strprefix (v[0], "online@")) {
    ev.type = einit_hotplug_online;
-  } else if (strstr (v[0], "offline@") == v[0]) {
+  } else if (strprefix (v[0], "offline@")) {
    ev.type = einit_hotplug_offline;
-  } else if (strstr (v[0], "move@") == v[0]) {
+  } else if (strprefix (v[0], "move@")) {
    ev.type = einit_hotplug_move;
   }
 
@@ -196,12 +196,12 @@ void *linux_mdev_hotplug(void *ignored) {
     }
 
     memcpy (lbuffer, buffer + offset, i - offset +1);
-    if ((strstr (lbuffer, "add@") == lbuffer) ||
-        (strstr (lbuffer, "remove@") == lbuffer) ||
-        (strstr (lbuffer, "change@") == lbuffer) ||
-        (strstr (lbuffer, "online@") == lbuffer) ||
-        (strstr (lbuffer, "offline@") == lbuffer) ||
-        (strstr (lbuffer, "move@") == lbuffer)) {
+    if ((strprefix (lbuffer, "add@")) ||
+        (strprefix (lbuffer, "remove@")) ||
+        (strprefix (lbuffer, "change@")) ||
+        (strprefix (lbuffer, "online@")) ||
+        (strprefix (lbuffer, "offline@")) ||
+        (strprefix (lbuffer, "move@"))) {
 
      if (v) {
       linux_mdev_hotplug_handle(v);
