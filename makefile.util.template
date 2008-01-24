@@ -20,9 +20,6 @@ install: util
 set.o: set-lowmem.o
 	cp set-lowmem.o set.o
 
-#set.o: set-prebuffer.o
-#	cp set-prebuffer.o set.o
-
 itree.o: itree-trinary-splay.o
 	cp itree-trinary-splay.o itree.o
 

@@ -30,7 +30,7 @@ export EXTERNALMODULES="${MODULES_GENERIC} ${MODULES_COMPATIBILITY}"
 
 export ASMFUNCTIONS="strmatch strlen memcpy memset hashp"
 
-export USE_SET_CODE="set-lowmem" # there's also set-prebuffer...
+export USE_SET_CODE="set-lowmem"
 export USE_ITREE_CODE="itree-trinary-splay"
 export USE_TREE_CODE="tree-itree" # there's also tree-linear
 
