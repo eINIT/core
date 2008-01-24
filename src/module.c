@@ -467,7 +467,7 @@ void mod_update_usage_table (struct lmodule *module) {
     for (i = 0; t[i]; i++) {
      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
       if (!item->provider) {
-       enabled = set_str_add ((void **)enabled, t[i]);
+       enabled = set_str_add (enabled, t[i]);
       }
 
       item->provider = (struct lmodule **)set_noa_add ((void **)item->provider, (void *)module);
@@ -477,7 +477,7 @@ void mod_update_usage_table (struct lmodule *module) {
       nitem.provider = (struct lmodule **)set_noa_add ((void **)nitem.provider, (void *)module);
       service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
 
-      enabled = set_str_add ((void **)enabled, t[i]);
+      enabled = set_str_add (enabled, t[i]);
      }
     }
    }
@@ -498,7 +498,7 @@ void mod_update_usage_table (struct lmodule *module) {
    item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
 
    if (wasprovider && !item->provider) {
-    disabled = set_str_add ((void **)disabled, ha->key);
+    disabled = set_str_add (disabled, ha->key);
    }
   }
 

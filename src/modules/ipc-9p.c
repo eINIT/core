@@ -231,7 +231,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
     }
    }
   } else {
-   fa->path = set_str_add((void **)fa->path, r->ifcall.wname[i]);
+   fa->path = set_str_add(fa->path, r->ifcall.wname[i]);
   }
 
   r->ofcall.wqid[i].type = 0;

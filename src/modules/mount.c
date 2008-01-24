@@ -1633,7 +1633,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
   status->string = "filesystem might be dirty; running fsck";
   status_update (status);
 
-  char **d = set_str_add (set_str_add ((fs ? set_str_add (set_str_add ((void **)NULL, "fs"), fs) : NULL), "device"), device);
+  char **d = set_str_add (set_str_add ((fs ? set_str_add (set_str_add ((char **)NULL, "fs"), fs) : NULL), "device"), device);
 
   command = apply_variables(mount_fsck_template, (const char **)d);
   if (command) {

@@ -150,7 +150,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
    while (cfgn) {
     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !inset ((const void **)modes, (const void *)cfgn->mode->id, SET_TYPE_STRING))) {
      uint32_t i = 0;
-     modes = set_str_add ((void **)modes, (void *)cfgn->mode->id);
+     modes = set_str_add (modes, (void *)cfgn->mode->id);
 
      for (i = 0; cfgn->arbattrs[i]; i+=2) {
       if (strmatch(cfgn->arbattrs[i], "services")) {
@@ -308,9 +308,9 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
          }
 
          char **functions = (char **)setdup ((const void **)xs[u]->functions, SET_TYPE_STRING);
-         if (xs[u]->enable) functions = set_str_add ((void **)functions, "enable");
-         if (xs[u]->disable) functions = set_str_add ((void **)functions, "disable");
-         functions = set_str_add ((void **)functions, "zap");
+         if (xs[u]->enable) functions = set_str_add (functions, "enable");
+         if (xs[u]->disable) functions = set_str_add (functions, "disable");
+         functions = set_str_add (functions, "zap");
 
          if (functions) {
           char *x = set2str(':', (const char **)functions);

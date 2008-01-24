@@ -253,7 +253,7 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
      while (x) {
       if (x->value) {
        if (!inset ((const void **)np, x->value, SET_TYPE_STRING)) {
-        np = set_str_add ((void **)np, x->value);
+        np = set_str_add (np, x->value);
        }
       }
       x = streefind (x, module->si->provides[i], tree_find_next);
@@ -288,12 +288,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_PROVIDES) break;
 
-       np = set_str_add ((void **)np, trans->out);
+       np = set_str_add (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = set_str_add ((void **)np, module->si->provides[i]);
+       np = set_str_add (np, module->si->provides[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->provides);
@@ -320,12 +320,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_REQUIRES) break;
 
-       np = set_str_add ((void **)np, trans->out);
+       np = set_str_add (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = set_str_add ((void **)np, module->si->requires[i]);
+       np = set_str_add (np, module->si->requires[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->requires);

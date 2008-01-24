@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* some common functions to work with null-terminated arrays */
 
+#if 0
 void **setadd (void **set, const void *item, int32_t esize) {
  void **newset = NULL;
  int x = 0;
@@ -57,7 +58,6 @@ void **setadd (void **set, const void *item, int32_t esize) {
  uintptr_t size = 0;
 
  if (!item) return NULL;
-// if (!set) set = ecalloc (1, sizeof (void *));
 
  if (esize == SET_NOALLOC) {
   if (set) for (; set[count]; count++);
@@ -86,23 +86,10 @@ void **setadd (void **set, const void *item, int32_t esize) {
   if (set) for (; set[count]; count++);
 
   if (count) {
-   uint32_t strlencache[count]/*, cpp = 0*/;
-/*   ssize_t copyblock_size[count+1];
-   void *copyblock_ptr[count+1];
-
-   copyblock_size[0] = 0;
-   copyblock_ptr[0] = NULL;*/
+   uint32_t strlencache[count];
 
    for (count = 0; set[count]; count++) {
     size += sizeof(void*) + (strlencache[count] = (1+strlen(set[count])));
-
-/*    if (copyblock_size[cpp]) {
-    } else {*/
-/*    {
-     copyblock_ptr[cpp] = set[count];
-     copyblock_size[cpp] = strlencache[count];
-     cpp++;
-    }*/
    }
    size += sizeof(void*)*2 + strlen_item;
 
@@ -110,10 +97,6 @@ void **setadd (void **set, const void *item, int32_t esize) {
    cpnt = ((char *)newset) + (count+2)*sizeof(void*);
 
    while (set[x]) {
-/*    if (set[x] == item) {
-     efree (newset);
-     return set;
-    }*/
     memcpy (cpnt, set[x], strlencache[x]);
     newset [x] = cpnt;
     cpnt += strlencache[x];
@@ -154,11 +137,122 @@ void **setadd (void **set, const void *item, int32_t esize) {
 
   memcpy (cpnt, item, esize);
   newset [x] = cpnt;
-//  cpnt += esize;
  }
 
  return newset;
 }
+#else
+char **set_str_add (char **set, char *item) {
+ char **newset = NULL;
+ int x = 0;
+ uint32_t count = 0;
+ uintptr_t size = 0;
+
+ if (!item) return NULL;
+
+ char *cpnt;
+ uint32_t strlen_item = 1+strlen(item);
+
+ if (set) for (; set[count]; count++);
+
+ if (count) {
+  uint32_t strlencache[count];
+
+  for (count = 0; set[count]; count++) {
+   size += sizeof(void*) + (strlencache[count] = (1+strlen(set[count])));
+  }
+  size += sizeof(void*)*2 + strlen_item;
+
+  newset = (char **)ecalloc (1, size);
+  cpnt = ((char *)newset) + (count+2)*sizeof(void*);
+
+  while (set[x]) {
+   memcpy (cpnt, set[x], strlencache[x]);
+   newset [x] = cpnt;
+   cpnt += strlencache[x];
+   x++;
+  }
+  efree (set);
+ } else {
+  newset = (char **)ecalloc (1, sizeof(void*)*2 + strlen_item);
+  cpnt = ((char *)newset) + (count+2)*sizeof(void*);
+ }
+
+ memcpy (cpnt, item, strlen_item);
+ newset [x] = cpnt;
+
+ return newset;
+}
+
+void **set_noa_add (void **set, void *item) {
+ void **newset = NULL;
+ int x = 0;
+ uint32_t count = 0;
+ uintptr_t size = 0;
+
+ if (!item) return NULL;
+
+ if (set) for (; set[count]; count++);
+ else count = 1;
+ size = (count+2)*sizeof(void*);
+
+ newset = (void **)ecalloc (1, size);
+
+ if (set) {
+  while (set[x]) {
+   if (set[x] == item) {
+    efree (newset);
+    return set;
+   }
+   newset [x] = set[x];
+   x++;
+  }
+  efree (set);
+ }
+
+ newset[x] = (void *)item;
+
+ return newset;
+}
+
+void **set_fix_add (void **set, void *item, int32_t esize) {
+ void **newset = NULL;
+ int x = 0;
+ uint32_t count = 0;
+ uintptr_t size = 0;
+
+ if (!item) return NULL;
+
+ char *cpnt;
+
+ if (set) for (; set[count]; count++) {
+  size += sizeof(void*) + esize;
+ }
+ size += sizeof(void*)*3 + esize;
+
+ newset = (void **)ecalloc (1, size);
+ cpnt = ((char *)newset) + (count+2)*sizeof(void*);
+
+ if (set) {
+  while (set[x]) {
+   if (set[x] == item) {
+    efree (newset);
+    return set;
+   }
+   memcpy (cpnt, set[x], esize);
+   newset [x] = cpnt;
+   cpnt += esize;
+   x++;
+  }
+  efree (set);
+ }
+
+ memcpy (cpnt, item, esize);
+ newset [x] = cpnt;
+
+ return newset;
+}
+#endif
 
 void **setdup (const void **set, int32_t esize) {
  void **newset;

@@ -575,8 +575,8 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
  char **exvec = exec_run_sh ((char *)command, options, exec_environment);
 
- efree ((void *)command);
- command = NULL;
+/* efree ((void *)command);
+ command = NULL;*/
 
 #ifdef LINUX
 // void *stack = emalloc (4096);
@@ -1055,8 +1055,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   char **exvec = exec_run_sh (command, 0, daemon_environment);
 
-  efree (command);
-  command = NULL;
+/*  efree (command);
+  command = NULL;*/
 
 #ifdef LINUX
   if ((child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) < 0) {

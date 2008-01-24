@@ -555,9 +555,9 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      sm->mode = einit_module_generic;
 
      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
-     sm->si.provides = set_str_add ((void **)NULL, buffer);
+     sm->si.provides = set_str_add (NULL, buffer);
      esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
-     sm->si.requires = set_str_add ((void **)NULL, buffer);
+     sm->si.requires = set_str_add (NULL, buffer);
 
      sm->configure = einit_module_network_v2_module_configure;
 

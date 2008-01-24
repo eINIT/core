@@ -59,12 +59,12 @@ void **setcombine (const void **set1, const void **set2, const int32_t esize) {
 
  for (x = 0; set1[x]; x++) {
   if (!inset ((const void **)newset, set1[x], esize)) {
-   newset = set_fix_add(newset, set1[x], esize);
+   newset = set_fix_add(newset, (void *)set1[x], esize);
   }
  }
  for (x = 0; set2[x]; x++) {
   if (!inset ((const void **)newset, set2[x], esize)) {
-   newset = set_fix_add(newset, set2[x], esize);
+   newset = set_fix_add(newset, (void *)set2[x], esize);
   }
  }
 
@@ -79,7 +79,7 @@ void **setcombine_nc (void **set1, const void **set2, const int32_t esize) {
 
  for (x = 0; set2[x]; x++) {
   if (!inset ((const void **)set1, set2[x], esize)) {
-   set1 = set_fix_add(set1, set2[x], esize);
+   set1 = set_fix_add(set1, (void *)set2[x], esize);
   }
  }
 
@@ -95,7 +95,7 @@ void **setslice (const void **set1, const void **set2, const int32_t esize) {
 
  for (; set1[x]; x++) {
   if (!inset (set2, set1[x], esize)) {
-   newset = set_fix_add(newset, set1[x], esize);
+   newset = set_fix_add(newset, (void *)set1[x], esize);
   }
  }
 
@@ -111,7 +111,7 @@ void **setslice_nc (void **set1, const void **set2, const int32_t esize) {
 
  for (; set1[x]; x++) {
   if (!inset (set2, set1[x], esize)) {
-   newset = set_fix_add(newset, set1[x], esize);
+   newset = set_fix_add(newset, (void *)set1[x], esize);
   }
  }
 

@@ -160,7 +160,7 @@ char **linux_kernel_modules_autoload_d() {
     char *module = t[i];
     strtrim (module);
     if ((module[0] != '#') && (module[0] != '\n') && (module[0] != '\r') && (module[0] != 0)) {
-     rv = set_str_add ((void **)rv, module);
+     rv = set_str_add (rv, module);
     }
    }
 

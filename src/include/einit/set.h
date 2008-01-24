@@ -88,6 +88,7 @@ void **setslice (const void **set1, const void **set2, const int32_t esize);
 
 void **setslice_nc (void **set1, const void **set2, const int32_t esize);
 
+#if 0
 /*!\brief Add \b item to \b set.
  * \param[in,out] set   the set
  * \param[in]     item  the item to be added
@@ -105,6 +106,14 @@ void **setadd (void **set, const void *item, int32_t esize);
 #define set_str_add(set,item) (char **)setadd((void **)set, item, SET_TYPE_STRING)
 #define set_noa_add(set,item) setadd((void **)set, item, SET_NOALLOC)
 #define set_fix_add(set,item,esize) setadd((void **)set, item, esize)
+#else
+#include <einit/utility.h>
+
+char **set_str_add (char **set, char *item);
+void **set_noa_add (void **set, void *item);
+void **set_fix_add (void **set, void *item, int32_t esize);
+
+#endif
 
 /*!\brief Duplicate \b set.
  * \param[in] set   the set

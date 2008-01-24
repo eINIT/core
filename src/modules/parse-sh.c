@@ -172,7 +172,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
 
  if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
   *cdp = 0;
-  command = set_str_add ((void**)command, (void*)sdp);
+  command = set_str_add (command, (void*)sdp);
   cdp++;
   sdp = cdp;
  }

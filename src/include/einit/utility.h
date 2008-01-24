@@ -56,7 +56,6 @@ extern "C" {
 #include <inttypes.h>
 #include <einit/event.h>
 #include <sys/types.h>
-#include <einit/set.h>
 #include <dirent.h>
 #include <stdio.h>
 
@@ -288,6 +287,8 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags);
 void eregfree_cache (regex_t *preg);
 
 #endif
+
+#include <einit/set.h>
 
 #endif /* _UTILITY_H */
 
