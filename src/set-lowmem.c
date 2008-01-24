@@ -185,34 +185,26 @@ char **set_str_add (char **set, char *item) {
 }
 
 void **set_noa_add (void **set, void *item) {
- void **newset = NULL;
- int x = 0;
- uint32_t count = 0;
- uintptr_t size = 0;
-
  if (!item) return NULL;
 
- if (set) for (; set[count]; count++);
- else count = 1;
- size = (count+2)*sizeof(void*);
-
- newset = (void **)ecalloc (1, size);
-
  if (set) {
-  while (set[x]) {
-   if (set[x] == item) {
-    efree (newset);
-    return set;
-   }
-   newset [x] = set[x];
-   x++;
-  }
-  efree (set);
+  uint32_t count = 0;
+  uintptr_t size = 0;
+
+  for (; set[count]; count++);
+  size = (count+2)*sizeof(void*);
+
+  set = (void **)erealloc (set, size);
+  set[count] = item;
+  set[count+1] = NULL;
+
+  return set;
+ } else {
+  set = (void **)emalloc (sizeof(void *)*2);
+  set[0] = item;
+  set[1] = NULL;
+  return set;
  }
-
- newset[x] = (void *)item;
-
- return newset;
 }
 
 void **set_fix_add (void **set, void *item, int32_t esize) {
