@@ -185,16 +185,14 @@ char **set_str_add (char **set, char *item) {
 }
 
 void **set_noa_add (void **set, void *item) {
- if (!item) return NULL;
+ if (!item) return set;
 
  if (set) {
   uint32_t count = 0;
-  uintptr_t size = 0;
 
   for (; set[count]; count++);
-  size = (count+2)*sizeof(void*);
 
-  set = (void **)erealloc (set, size);
+  set = (void **)erealloc (set, ((count+3)*sizeof(void*)));
   set[count] = item;
   set[count+1] = NULL;
 
