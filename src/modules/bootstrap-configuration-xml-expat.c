@@ -559,12 +559,14 @@ char *einit_config_xml_cfg_to_xml (struct stree *configuration) {
   cur = streenext(cur);
  }
 
- if (!retval)
-  retval = "";
+ if (!retval) {
+  return estrdup ("");
+ }
 
  sxlen = strlen (retval) + strlen (xtemplate) +1;
  ret = emalloc (sxlen);
  esprintf (ret, sxlen, xtemplate, retval);
+ efree (retval);
 
  return ret;
 }

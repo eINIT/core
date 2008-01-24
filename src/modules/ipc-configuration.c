@@ -130,6 +130,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 
    if (buffer) {
     eputs (buffer, ev->output);
+    efree (buffer);
    }
    ev->implemented = 1;
   }

@@ -1098,12 +1098,16 @@ struct lmodule **module_logic_find_things_to_disable() {
 
      efree (candidates_level1);
      candidates_level1 = NULL;
+
+     efree (users);
      goto reeval_top;
     } else {
      candidates_level1 = (struct lmodule **)setdel ((void **)candidates_level1, candidates_level1[i]);
      for (j = 0; users[j]; j++) {
       candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, users[j], SET_NOALLOC);
      }
+
+     efree (users);
     }
 
     goto reeval;

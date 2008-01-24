@@ -159,7 +159,7 @@ void setsort (void **set, enum set_sort_order task, signed int(*sortfunction)(co
 */
 int inset (const void **haystack, const void *needle, int32_t esize);
 
-char ** inset_pattern (const void **haystack, const void *needle, int32_t esize);
+char inset_pattern (const void **haystack, const void *needle, int32_t esize);
 
 /*!\brief Convert \b input into a set of strings, using the separator \b sep.
  * \param[in] sep   the separator
