@@ -246,9 +246,6 @@ int linux_udev_run() {
   if (!stat ("/sbin/lvm", &st)) {
    qexec ("/sbin/lvm vgscan -P --mknodes --ignorelockingfailure");
   }
-  if (!stat ("/sbin/vgchange", &st)) {
-   qexec ("/sbin/vgchange -a y");
-  }
   if (!stat ("/sbin/evms_activate", &st)) {
    qexec ("/sbin/evms_activate -q");
   }
@@ -280,9 +277,15 @@ void linux_udev_shutdown_imminent() {
 
 void linux_udev_boot_event_handler (struct einit_event *ev) {
  if (linux_udev_run() == status_ok) {
+  struct stat st;
+
   struct einit_event eml = evstaticinit(einit_boot_devices_available);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
+
+  if (!stat ("/sbin/vgchange", &st)) {
+   qexec ("/sbin/vgchange -a y");
+  }
  }
 }
 
