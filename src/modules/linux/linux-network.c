@@ -96,7 +96,7 @@ char **linux_network_list_interfaces_proc (int spawn_events) {
    strtrim (buffer_lines[i]);
    char **line_split = str2set(':', buffer_lines[i]);
    if (line_split[1]) { /* have at least two elements: it's one of the interface stat lines */
-    interfaces = (char **)setadd((void **)interfaces, line_split[0], SET_TYPE_STRING);
+    interfaces = set_str_add(interfaces, line_split[0]);
    }
    efree (line_split);
   }
@@ -109,7 +109,7 @@ char **linux_network_list_interfaces_proc (int spawn_events) {
    int i = 0;
    for (; interfaces[i]; i++) {
     if (!linux_network_interfaces || !inset ((const void **)linux_network_interfaces, interfaces[i], SET_TYPE_STRING))
-     new_interfaces = (char **)setadd ((void **)new_interfaces, interfaces[i], SET_TYPE_STRING);
+     new_interfaces = set_str_add (new_interfaces, interfaces[i]);
    }
    emutex_unlock (&linux_network_interfaces_mutex);
   }
@@ -246,7 +246,7 @@ void linux_network_interface_construct (struct einit_event *ev) {
 //   fprintf (stderr, "%s\n", buffer);
 
     d->static_descriptor->si.requires =
-      (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
+      set_str_add (d->static_descriptor->si.requires, buffer);
    }
 
    struct cfgnode newnode;
@@ -258,14 +258,14 @@ void linux_network_interface_construct (struct einit_event *ev) {
    newnode.type = einit_node_regular;
 
    esprintf (buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"id");
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)buffer);
 
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)node->svalue, SET_TYPE_STRING);
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"s");
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)node->svalue);
 
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"provide-service", SET_TYPE_STRING);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"yes", SET_TYPE_STRING);
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"provide-service");
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"yes");
 
    newnode.svalue = newnode.arbattrs[3];
 
@@ -277,7 +277,7 @@ void linux_network_interface_construct (struct einit_event *ev) {
 //   fprintf (stderr, "%s\n", buffer);
 
     d->static_descriptor->si.after =
-      (char **)setadd ((void **)d->static_descriptor->si.after, "^fs-(usr|usr-bin)$", SET_TYPE_STRING);
+      set_str_add (d->static_descriptor->si.after, "^fs-(usr|usr-bin)$");
    }
   }
  }
@@ -430,19 +430,19 @@ void linux_network_interface_done (struct einit_event *ev) {
      for (; dns[i]->arbattrs[j]; j+=2) {
       if (strmatch (dns[i]->arbattrs[j], "address")) {
        esprintf (buffer, BUFFERSIZE, "nameserver %s", dns[i]->arbattrs[j+1]);
-       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+       resolv_conf_data = set_str_add (resolv_conf_data, buffer);
       } else if (strmatch (dns[i]->arbattrs[j], "options")) {
        esprintf (buffer, BUFFERSIZE, "options %s", dns[i]->arbattrs[j+1]);
-       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+       resolv_conf_data = set_str_add (resolv_conf_data, buffer);
       } else if (strmatch (dns[i]->arbattrs[j], "sortlist")) {
        esprintf (buffer, BUFFERSIZE, "sortlist %s", dns[i]->arbattrs[j+1]);
-       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+       resolv_conf_data = set_str_add (resolv_conf_data, buffer);
       } else if (strmatch (dns[i]->arbattrs[j], "search")) {
        esprintf (buffer, BUFFERSIZE, "search %s", dns[i]->arbattrs[j+1]);
-       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+       resolv_conf_data = set_str_add (resolv_conf_data, buffer);
       } else if (strmatch (dns[i]->arbattrs[j], "domain")) {
        esprintf (buffer, BUFFERSIZE, "domain %s", dns[i]->arbattrs[j+1]);
-       resolv_conf_data = (char **)setadd ((void **)resolv_conf_data, buffer, SET_TYPE_STRING);
+       resolv_conf_data = set_str_add (resolv_conf_data, buffer);
       }
      }
     }

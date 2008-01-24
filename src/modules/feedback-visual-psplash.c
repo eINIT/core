@@ -113,7 +113,7 @@ enum splash_type psplash_type = sp_disabled;
 void psplash_queue_comand (const char *command) {
  if (psplash_type != sp_disabled) {
   emutex_lock (&psplash_commandQ_mutex);
-  psplash_commandQ = (char **)setadd ((void **)psplash_commandQ, command, SET_TYPE_STRING);
+  psplash_commandQ = set_str_add ((void **)psplash_commandQ, command);
   emutex_unlock (&psplash_commandQ_mutex);
 
   pthread_cond_broadcast (&psplash_commandQ_cond);

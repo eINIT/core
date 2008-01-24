@@ -150,7 +150,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
    while (cfgn) {
     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !inset ((const void **)modes, (const void *)cfgn->mode->id, SET_TYPE_STRING))) {
      uint32_t i = 0;
-     modes = (char **)setadd ((void **)modes, (void *)cfgn->mode->id, SET_TYPE_STRING);
+     modes = set_str_add ((void **)modes, (void *)cfgn->mode->id);
 
      for (i = 0; cfgn->arbattrs[i]; i+=2) {
       if (strmatch(cfgn->arbattrs[i], "services")) {
@@ -223,7 +223,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
      while (mcur) {
       if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
-       inmodes = (char **)setadd((void **)inmodes, (void *)mcur->key, SET_TYPE_STRING);
+       inmodes = set_str_add(inmodes, (void *)mcur->key);
       }
 
       mcur = streenext(mcur);
@@ -308,9 +308,9 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
          }
 
          char **functions = (char **)setdup ((const void **)xs[u]->functions, SET_TYPE_STRING);
-         if (xs[u]->enable) functions = (char **)setadd ((void **)functions, "enable", SET_TYPE_STRING);
-         if (xs[u]->disable) functions = (char **)setadd ((void **)functions, "disable", SET_TYPE_STRING);
-         functions = (char **)setadd ((void **)functions, "zap", SET_TYPE_STRING);
+         if (xs[u]->enable) functions = set_str_add ((void **)functions, "enable");
+         if (xs[u]->disable) functions = set_str_add ((void **)functions, "disable");
+         functions = set_str_add ((void **)functions, "zap");
 
          if (functions) {
           char *x = set2str(':', (const char **)functions);
@@ -472,7 +472,7 @@ char module_logic_check_for_circular_dependencies (char *service, struct lmodule
 
    emutex_lock (&module_logic_broken_modules_mutex);
    if (!inset ((const void **)module_logic_broken_modules, primus, SET_NOALLOC))
-    module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, primus, SET_NOALLOC);
+    module_logic_broken_modules = (struct lmodule **)set_noa_add ((void **)module_logic_broken_modules, primus);
    emutex_unlock (&module_logic_broken_modules_mutex);
 
    return 1;
@@ -480,7 +480,7 @@ char module_logic_check_for_circular_dependencies (char *service, struct lmodule
 
   if (primus && primus->si && primus->si->requires) {
    int y = 0;
-   struct lmodule **subdeps = (struct lmodule **)setadd ((void **)setdup ((const void **)dependencies, SET_NOALLOC), primus, SET_NOALLOC);
+   struct lmodule **subdeps = (struct lmodule **)set_noa_add ((void **)setdup ((const void **)dependencies, SET_NOALLOC), primus);
 
    for (; primus->si->requires[y]; y++) {
     if (module_logic_check_for_circular_dependencies (primus->si->requires[y], subdeps)) {
@@ -534,7 +534,7 @@ struct lmodule **module_logic_find_things_to_enable() {
   }
 
   if (!inset ((const void **)services_level1, module_logic_list_enable[i], SET_TYPE_STRING))
-   services_level1 = (char **)setadd ((void **)services_level1, module_logic_list_enable[i], SET_TYPE_STRING);
+   services_level1 = set_str_add (services_level1, module_logic_list_enable[i]);
 
   struct stree *st = streefind(module_logic_service_list, module_logic_list_enable[i], tree_find_first);
 
@@ -563,7 +563,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    struct lmodule *candidate = module_logic_get_prime_candidate (lm);
 
    if (!candidate) {
-    broken = (char **)setadd ((void **)broken, module_logic_list_enable[i], SET_TYPE_STRING);
+    broken = set_str_add (broken, module_logic_list_enable[i]);
     module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
     i = -1;
 
@@ -581,18 +581,18 @@ struct lmodule **module_logic_find_things_to_enable() {
    }
 
    if (mod_service_requirements_met(candidate)) {
-    candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, candidate, SET_NOALLOC);
+    candidates_level1 = (struct lmodule **)set_noa_add ((void **)candidates_level1, candidate);
 
     if (candidate->module) {
      if (candidate->module->rid) {
       if (!inset ((const void **)services_level1, candidate->module->rid, SET_TYPE_STRING))
-       services_level1 = (char **)setadd ((void **)services_level1, candidate->module->rid, SET_TYPE_STRING);
+       services_level1 = set_str_add (services_level1, candidate->module->rid);
      }
      if (candidate->si && candidate->si->provides) {
       int j = 0;
       for (; candidate->si->provides[j]; j++) {
        if (!inset ((const void **)services_level1, candidate->si->provides[j], SET_TYPE_STRING))
-        services_level1 = (char **)setadd ((void **)services_level1, candidate->si->provides[j], SET_TYPE_STRING);
+        services_level1 = set_str_add (services_level1, candidate->si->provides[j]);
       }
      }
     }
@@ -620,7 +620,7 @@ struct lmodule **module_logic_find_things_to_enable() {
 #endif
 
       emutex_lock (&module_logic_broken_modules_mutex);
-      module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, candidate, SET_NOALLOC);
+      module_logic_broken_modules = (struct lmodule **)set_noa_add ((void **)module_logic_broken_modules, candidate);
       emutex_unlock (&module_logic_broken_modules_mutex);
 
       i--;
@@ -633,7 +633,7 @@ struct lmodule **module_logic_find_things_to_enable() {
         fflush (stderr);
 #endif
 
-        module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, candidate->si->requires[y], SET_TYPE_STRING);
+        module_logic_list_enable = set_str_add (module_logic_list_enable, candidate->si->requires[y]);
 
         if (candidates_level1) {
          efree (candidates_level1);
@@ -651,7 +651,7 @@ struct lmodule **module_logic_find_things_to_enable() {
     }
    }
   } else {
-   unresolved = (char **)setadd ((void **)unresolved, module_logic_list_enable[i], SET_TYPE_STRING);
+   unresolved = set_str_add (unresolved, module_logic_list_enable[i]);
   }
 
   next: ;
@@ -748,7 +748,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    }
 
    if (candidates_level1[i]->module && candidates_level1[i]->module->rid) {
-    mdata = (char **)setadd ((void **)mdata, candidates_level1[i]->module->rid, SET_TYPE_STRING);
+    mdata = set_str_add (mdata, candidates_level1[i]->module->rid);
 
     if (inset ((const void **)module_logic_list_enable, candidates_level1[i]->module->rid, SET_TYPE_STRING)) {
      i_in_target++;
@@ -837,20 +837,20 @@ struct lmodule **module_logic_find_things_to_enable() {
 /* re-add our own services */
      if (candidates_level1[i]->module->rid) {
       if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
-       services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING);
+       services_level1 = set_str_add (services_level1, candidates_level1[i]->module->rid);
      }
      if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
       int k = 0;
       for (; candidates_level1[i]->si->provides[k]; k++) {
        if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING))
-        services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING);
+        services_level1 = set_str_add (services_level1, candidates_level1[i]->si->provides[k]);
       }
      }
     }
    }
 
    if (!doskip) {
-    candidates_level2 = (struct lmodule **)setadd ((void **)candidates_level2, candidates_level1[i], SET_NOALLOC);
+    candidates_level2 = (struct lmodule **)set_noa_add ((void **)candidates_level2, candidates_level1[i]);
    } else {
 #if 0
     fprintf (stderr, " !! skipping: %s\n", candidates_level1[i]->module->rid);
@@ -868,7 +868,7 @@ struct lmodule **module_logic_find_things_to_enable() {
       if (candidates_level2[y] != candidates_level2[i]) {
        char **matchthis = (candidates_level2[y]->si && candidates_level2[y]->si->provides) ? (char **)setdup ((const void **)candidates_level2[y]->si->provides, SET_TYPE_STRING) : NULL;
        if (candidates_level2[y]->module && candidates_level2[y]->module->rid) {
-        matchthis = (char **)setadd ((void **)matchthis, candidates_level2[y]->module->rid, SET_TYPE_STRING);
+        matchthis = set_str_add (matchthis, candidates_level2[y]->module->rid);
        }
 
        if (matchthis) {
@@ -925,9 +925,9 @@ struct lmodule **module_logic_find_things_to_enable() {
    emutex_unlock (&module_logic_active_modules_mutex);
 
    if (!doskip) {
-    rv = (struct lmodule **)setadd ((void **)rv, candidates_level2[i], SET_NOALLOC);
+    rv = (struct lmodule **)set_noa_add ((void **)rv, candidates_level2[i]);
     emutex_lock (&module_logic_active_modules_mutex);
-    module_logic_active_modules = (struct lmodule **)setadd ((void **)module_logic_active_modules, candidates_level2[i], SET_NOALLOC);
+    module_logic_active_modules = (struct lmodule **)set_noa_add ((void **)module_logic_active_modules, candidates_level2[i]);
     emutex_unlock (&module_logic_active_modules_mutex);
    }
   }
@@ -989,7 +989,7 @@ struct lmodule **module_logic_find_things_to_disable() {
    }
 
    if (!inset ((const void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING))
-    services_level1 = (char **)setadd ((void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING);
+    services_level1 = set_str_add (services_level1, module_logic_list_disable[i]);
 
    struct stree *st = streefind(module_logic_service_list, module_logic_list_disable[i], tree_find_first);
 
@@ -1007,18 +1007,18 @@ struct lmodule **module_logic_find_things_to_disable() {
 
       if (!isbroken) {
        if (!inset ((const void **)candidates_level1, lm[k], SET_NOALLOC)) {
-        candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, lm[k], SET_NOALLOC);
+        candidates_level1 = (struct lmodule **)set_noa_add ((void **)candidates_level1, lm[k]);
 
         if (lm[k]->module) {
          if (lm[k]->module->rid) {
           if (!inset ((const void **)services_level1, lm[k]->module->rid, SET_TYPE_STRING))
-           services_level1 = (char **)setadd ((void **)services_level1, lm[k]->module->rid, SET_TYPE_STRING);
+           services_level1 = set_str_add (services_level1, lm[k]->module->rid);
          }
          if (lm[k]->si && lm[k]->si->provides) {
           int j = 0;
           for (; lm[k]->si->provides[j]; j++) {
            if (!inset ((const void **)services_level1, lm[k]->si->provides[j], SET_TYPE_STRING))
-            services_level1 = (char **)setadd ((void **)services_level1, lm[k]->si->provides[j], SET_TYPE_STRING);
+            services_level1 = set_str_add (services_level1, lm[k]->si->provides[j]);
           }
          }
         }
@@ -1061,7 +1061,7 @@ struct lmodule **module_logic_find_things_to_disable() {
      goto retry_top_loop;
     }
    } else {
-    unresolved = (char **)setadd ((void **)unresolved, module_logic_list_disable[i], SET_TYPE_STRING);
+    unresolved = set_str_add (unresolved, module_logic_list_disable[i]);
    }
   }
 
@@ -1093,7 +1093,7 @@ struct lmodule **module_logic_find_things_to_disable() {
 
     if (impossible) {
      emutex_lock (&module_logic_broken_modules_mutex);
-     module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, candidates_level1[i], SET_NOALLOC);
+     module_logic_broken_modules = (struct lmodule **)set_noa_add ((void **)module_logic_broken_modules, candidates_level1[i]);
      emutex_unlock (&module_logic_broken_modules_mutex);
 
      efree (candidates_level1);
@@ -1104,7 +1104,7 @@ struct lmodule **module_logic_find_things_to_disable() {
     } else {
      candidates_level1 = (struct lmodule **)setdel ((void **)candidates_level1, candidates_level1[i]);
      for (j = 0; users[j]; j++) {
-      candidates_level1 = (struct lmodule **)setadd ((void **)candidates_level1, users[j], SET_NOALLOC);
+      candidates_level1 = (struct lmodule **)set_noa_add ((void **)candidates_level1, users[j]);
      }
 
      efree (users);
@@ -1152,13 +1152,13 @@ struct lmodule **module_logic_find_things_to_disable() {
    if (candidates_level1[i]->module) {
     if (candidates_level1[i]->module->rid) {
      if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
-      services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING);
+      services_level1 = set_str_add (services_level1, candidates_level1[i]->module->rid);
     }
     if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
      int j = 0;
      for (; candidates_level1[i]->si->provides[j]; j++) {
       if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[j], SET_TYPE_STRING))
-       services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->si->provides[j], SET_TYPE_STRING);
+       services_level1 = set_str_add (services_level1, candidates_level1[i]->si->provides[j]);
      }
     }
    }
@@ -1194,20 +1194,20 @@ struct lmodule **module_logic_find_things_to_disable() {
 /* re-add our own services */
       if (candidates_level1[i]->module->rid) {
        if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
-        services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING);
+        services_level1 = set_str_add (services_level1, candidates_level1[i]->module->rid);
       }
       if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
        int k = 0;
        for (; candidates_level1[i]->si->provides[k]; k++) {
         if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING))
-         services_level1 = (char **)setadd ((void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING);
+         services_level1 = set_str_add (services_level1, candidates_level1[i]->si->provides[k]);
        }
       }
      }
     }
 
     if (!doskip) {
-     candidates_level2 = (struct lmodule **)setadd ((void **)candidates_level2, candidates_level1[i], SET_NOALLOC);
+     candidates_level2 = (struct lmodule **)set_noa_add ((void **)candidates_level2, candidates_level1[i]);
     } else {
 #if 0
      fprintf (stderr, " !! skipping: %s\n", candidates_level1[i]->module->rid);
@@ -1225,7 +1225,7 @@ struct lmodule **module_logic_find_things_to_disable() {
        if (candidates_level2[y] != candidates_level2[i]) {
         char **matchthis = (candidates_level2[y]->si && candidates_level2[y]->si->provides) ? (char **)setdup ((const void **)candidates_level2[y]->si->provides, SET_TYPE_STRING) : NULL;
         if (candidates_level2[y]->module && candidates_level2[y]->module->rid) {
-         matchthis = (char **)setadd ((void **)matchthis, candidates_level2[y]->module->rid, SET_TYPE_STRING);
+         matchthis = set_str_add (matchthis, candidates_level2[y]->module->rid);
         }
 
         if (matchthis) {
@@ -1290,9 +1290,9 @@ struct lmodule **module_logic_find_things_to_disable() {
    emutex_unlock (&module_logic_active_modules_mutex);
 
    if (!doskip) {
-    rv = (struct lmodule **)setadd ((void **)rv, candidates_level2[i], SET_NOALLOC);
+    rv = (struct lmodule **)set_noa_add ((void **)rv, candidates_level2[i]);
     emutex_lock (&module_logic_active_modules_mutex);
-    module_logic_active_modules = (struct lmodule **)setadd ((void **)module_logic_active_modules, candidates_level2[i], SET_NOALLOC);
+    module_logic_active_modules = (struct lmodule **)set_noa_add ((void **)module_logic_active_modules, candidates_level2[i]);
     emutex_unlock (&module_logic_active_modules_mutex);
    }
   }
@@ -1357,7 +1357,7 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
 
  while (cur) {
   if (cur->module && cur->module->rid) {
-   struct lmodule **t = (struct lmodule **)setadd ((void **)NULL, cur, SET_NOALLOC);
+   struct lmodule **t = (struct lmodule **)set_noa_add ((void **)NULL, cur);
 
 /* no need to check here, 'cause rids are required to be unique */
    new_service_list = streeadd (new_service_list, cur->module->rid, (void *)t, SET_NOALLOC, (void *)t);
@@ -1372,7 +1372,7 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
      NULL;
     struct lnode **curval = (struct lnode **) (slnode ? slnode->value : NULL);
 
-    curval = (struct lnode **)setadd ((void **)curval, cur, SET_NOALLOC);
+    curval = (struct lnode **)set_noa_add ((void **)curval, cur);
 
     if (slnode) {
      slnode->value = curval;
@@ -1393,7 +1393,7 @@ void module_logic_einit_event_handler_core_module_list_update (struct einit_even
 
  /* I'll need to free this later... */
  emutex_lock (&module_logic_free_on_idle_stree_mutex);
- module_logic_free_on_idle_stree = (struct stree **)setadd ((void **)module_logic_free_on_idle_stree, old_service_list, SET_NOALLOC);
+ module_logic_free_on_idle_stree = (struct stree **)set_noa_add ((void **)module_logic_free_on_idle_stree, old_service_list);
  emutex_unlock (&module_logic_free_on_idle_stree_mutex);
 
  /* updating the list of modules does mean we also need re-apply preferences... */
@@ -1556,7 +1556,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   int i = 0;
   for (; tmplist[i]; i++) {
    if (!enable || !inset ((const void **)enable, tmplist[i], SET_TYPE_STRING)) {
-    enable = (char **)setadd ((void **)enable, tmplist[i], SET_TYPE_STRING);
+    enable = set_str_add (enable, tmplist[i]);
    }
   }
 
@@ -1567,7 +1567,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   int i = 0;
   for (; tmplist[i]; i++) {
    if (!disable || !inset ((const void **)disable, tmplist[i], SET_TYPE_STRING)) {
-    disable = (char **)setadd ((void **)disable, tmplist[i], SET_TYPE_STRING);
+    disable = set_str_add (disable, tmplist[i]);
    }
   }
 
@@ -1591,7 +1591,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
     esprintf (tmp, BUFFERSIZE, "checkpoint-mode-%s", mode->id);
 
     if (!enable || !inset ((const void **)enable, tmp, SET_TYPE_STRING))
-     enable = (char **)setadd ((void **)enable, tmp, SET_TYPE_STRING);
+     enable = set_str_add (enable, tmp);
    }
   }
 
@@ -1644,7 +1644,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
      }
 
      if (add) {
-      disable = (char **)setadd((void **)disable, (void *)tmp[i], SET_TYPE_STRING);
+      disable = set_str_add(disable, (void *)tmp[i]);
      }
     }
 
@@ -1747,7 +1747,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    emutex_lock (&module_logic_list_enable_mutex);
    for (; enable[i]; i++) {
     if (!inset ((const void **)module_logic_list_enable, enable[i], SET_TYPE_STRING))
-     module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, enable[i], SET_TYPE_STRING);
+     module_logic_list_enable = set_str_add (module_logic_list_enable, enable[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_enable();
@@ -1771,7 +1771,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
 	fflush (stderr);
 #endif
     if (!inset ((const void **)module_logic_list_disable, disable[i], SET_TYPE_STRING))
-     module_logic_list_disable = (char **)setadd ((void **)module_logic_list_disable, disable[i], SET_TYPE_STRING);
+     module_logic_list_disable = set_str_add (module_logic_list_disable, disable[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_disable();
@@ -1896,7 +1896,7 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    emutex_lock (&module_logic_list_enable_mutex);
    for (; ev->stringset[i]; i++) {
     if (!inset ((const void **)module_logic_list_enable, ev->stringset[i], SET_TYPE_STRING))
-     module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, ev->stringset[i], SET_TYPE_STRING);
+     module_logic_list_enable = set_str_add (module_logic_list_enable, ev->stringset[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_enable();
@@ -1911,7 +1911,7 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    emutex_lock (&module_logic_list_disable_mutex);
    for (; ev->stringset[i]; i++) {
     if (!inset ((const void **)module_logic_list_disable, ev->stringset[i], SET_TYPE_STRING))
-     module_logic_list_disable = (char **)setadd ((void **)module_logic_list_disable, ev->stringset[i], SET_TYPE_STRING);
+     module_logic_list_disable = set_str_add (module_logic_list_disable, ev->stringset[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_disable();
@@ -1976,7 +1976,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
   if (strmatch (ev->set[1], "enable") || strmatch (ev->set[1], "start")) {
    emutex_lock (&module_logic_list_enable_mutex);
    if (!inset ((const void **)module_logic_list_enable, ev->set[0], SET_TYPE_STRING))
-    module_logic_list_enable = (char **)setadd ((void **)module_logic_list_enable, ev->set[0], SET_TYPE_STRING);
+    module_logic_list_enable = set_str_add (module_logic_list_enable, ev->set[0]);
 
    struct lmodule **spawn = module_logic_find_things_to_enable();
    emutex_unlock (&module_logic_list_enable_mutex);
@@ -1989,7 +1989,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
   } else if (strmatch (ev->set[1], "disable") || strmatch (ev->set[1], "stop")) {
    emutex_lock (&module_logic_list_disable_mutex);
    if (!inset ((const void **)module_logic_list_disable, ev->set[0], SET_TYPE_STRING))
-    module_logic_list_disable = (char **)setadd ((void **)module_logic_list_disable, ev->set[0], SET_TYPE_STRING);
+    module_logic_list_disable = set_str_add (module_logic_list_disable, ev->set[0]);
 
    struct lmodule **spawn = module_logic_find_things_to_disable();
    emutex_unlock (&module_logic_list_disable_mutex);
@@ -2237,7 +2237,7 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
  } else if (ev->status & (status_failed | status_disabled)) {
   if (ev->status & status_failed) {
    emutex_lock (&module_logic_broken_modules_mutex);
-   module_logic_broken_modules = (struct lmodule **)setadd ((void **)module_logic_broken_modules, ev->para, SET_NOALLOC);
+   module_logic_broken_modules = (struct lmodule **)set_noa_add ((void **)module_logic_broken_modules, ev->para);
    emutex_unlock (&module_logic_broken_modules_mutex);
   }
 

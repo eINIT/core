@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/set.h>
 
 int example_setfont () {
- const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "configuration_services_setfont_font", SET_TYPE_STRING), "lat2-12", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add (set_str_add((void **)NULL, "configuration_services_setfont_font"), "lat2-12");
  char *res = apply_variables ("tty_max=$(cat /etc/einit/subsystems.d/tty.xml | egrep -c 'tty[0-9]-regular'); tty_list=$(seq 1 ${tty_max}); if [ -d /dev/vc ]; then tty_dev=/dev/vc/; else tty_dev=/dev/tty; fi; for tty_num in ${tty_list}; do setfont ${configuration_services_setfont_font} -C ${tty_dev}${tty_num}; done", vars);
 
  const char *expected_result = "tty_max=$(cat /etc/einit/subsystems.d/tty.xml | egrep -c 'tty[0-9]-regular'); tty_list=$(seq 1 ${tty_max}); if [ -d /dev/vc ]; then tty_dev=/dev/vc/; else tty_dev=/dev/tty; fi; for tty_num in ${tty_list}; do setfont lat2-12 -C ${tty_dev}${tty_num}; done";
@@ -60,7 +60,7 @@ int example_setfont () {
 }
 
 int example_simple_start () {
- const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add(set_str_add((void **)NULL, "simple"), "start");
  char *res = apply_variables ("${simple}", vars);
 
  const char *expected_result = "start";
@@ -79,7 +79,7 @@ int example_simple_start () {
 }
 
 int example_simple_start_half () {
- const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add(set_str_add((void **)NULL, "simple"), "start");
  char *res = apply_variables ("${simple}${half}", vars);
 
  const char *expected_result = "start${half}";
@@ -98,7 +98,7 @@ int example_simple_start_half () {
 }
 
 int example_half_simple_start () {
- const char **vars = (const char **)setadd ((void **)setadd((void **)NULL, "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add(set_str_add((void **)NULL, "simple"), "start");
  char *res = apply_variables ("${simple}${half}", vars);
 
  const char *expected_result = "start${half}";
@@ -118,7 +118,7 @@ int example_half_simple_start () {
 
 
 int example_double () {
- const char **vars = (const char **)setadd((void **)setadd ((void **)setadd((void **)setadd((void **)NULL, "double", SET_TYPE_STRING), "DD", SET_TYPE_STRING), "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add(set_str_add(set_str_add(set_str_add((void **)NULL, "double"), "DD"), "simple"), "start");
  char *res = apply_variables ("${simple${double}${half}}", vars);
 
  const char *expected_result = "${simpleDD${half}}";
@@ -137,7 +137,7 @@ int example_double () {
 }
 
 int example_broken () {
- const char **vars = (const char **)setadd((void **)setadd ((void **)setadd((void **)setadd((void **)NULL, "double", SET_TYPE_STRING), "DD", SET_TYPE_STRING), "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add(set_str_add(set_str_add(set_str_add((void **)NULL, "double"), "DD"), "simple"), "start");
  char *res = apply_variables ("${simple${double}${half}", vars);
 
  const char *expected_result = "${simpleDD${half}";
@@ -156,7 +156,7 @@ int example_broken () {
 }
 
 int example_middle () {
- const char **vars = (const char **)setadd((void **)setadd ((void **)setadd((void **)setadd((void **)NULL, "double", SET_TYPE_STRING), "DD", SET_TYPE_STRING), "simple", SET_TYPE_STRING), "start", SET_TYPE_STRING);
+ const char **vars = (const char **)set_str_add(set_str_add(set_str_add(set_str_add((void **)NULL, "double"), "DD"), "simple"), "start");
  char *res = apply_variables ("${simple}${double}${half}", vars);
 
  const char *expected_result = "startDD${half}";

@@ -359,8 +359,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     bitch (bitch_expat, 0, XML_ErrorString (XML_GetErrorCode (par)));
    }
    if (!inset ((const void **)xml_configuration_files, (void *)configfile, SET_TYPE_STRING))
-    xml_configuration_files = (char **)setadd ((void **)xml_configuration_files,
-                                               (void *)configfile, SET_TYPE_STRING);
+    xml_configuration_files = set_str_add (xml_configuration_files, (void *)configfile);
    XML_ParserFree (par);
   } else {
    bitch (bitch_expat, 0, "XML Parser could not be created");
@@ -474,10 +473,10 @@ void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
 
   if (command) {
    char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
-   char **vars = (char **)setadd (NULL, "files", SET_TYPE_STRING);
-   vars = (char **)setadd ((void **)vars, xmlfiles, SET_TYPE_STRING);
-   vars = (char **)setadd ((void **)vars, "rnc_schema", SET_TYPE_STRING);
-   vars = (char **)setadd ((void **)vars, EINIT_LIB_BASE "/schemata/einit.rnc", SET_TYPE_STRING);
+   char **vars = set_str_add (NULL, "files");
+   vars = set_str_add (vars, xmlfiles);
+   vars = set_str_add (vars, "rnc_schema");
+   vars = set_str_add (vars, EINIT_LIB_BASE "/schemata/einit.rnc");
    char *cm = apply_variables (command, (const char **)vars);
 
    FILE *f = popen (cm, "r");

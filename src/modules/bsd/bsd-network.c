@@ -98,7 +98,7 @@ char **bsd_network_list_interfaces_ifconfig (int spawn_events) {
    int i = 0;
    for (; interfaces[i]; i++) {
     if (!bsd_network_interfaces || !inset ((const void **)bsd_network_interfaces, interfaces[i], SET_TYPE_STRING))
-     new_interfaces = (char **)setadd ((void **)new_interfaces, interfaces[i], SET_TYPE_STRING);
+     new_interfaces = set_str_add ((void **)new_interfaces, interfaces[i]);
    }
    emutex_unlock (&bsd_network_interfaces_mutex);
   }

@@ -160,7 +160,7 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
      }
 
      /* add the dir itself afterwards */
-     retval = (char **)setadd((void **)retval, (void *)tmp, SET_TYPE_STRING);
+     retval = set_str_add(retval, (void *)tmp);
 
      goto cleanup_continue;
     }
@@ -168,7 +168,7 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
     goto cleanup_continue;
    }
 
-   retval = (char **)setadd((void **)retval, (void *)tmp, SET_TYPE_STRING);
+   retval = set_str_add(retval, (void *)tmp);
 
    cleanup_continue:
    efree (tmp);
@@ -207,7 +207,7 @@ char **straddtoenviron (char **environment, const char *key, const char *value) 
  if (value) newitem = strcat (newitem, "=");
  if (value) newitem = strcat (newitem, value);
 
- ret = (char**) setadd ((void**)environment, (void*)newitem, SET_TYPE_STRING);
+ ret = set_str_add(environment, (void*)newitem);
  efree (newitem);
 
  return ret;
@@ -1002,7 +1002,7 @@ char **which (char *binary) {
 
        if (!stat (t, &st)) {
         if (!inset ((const void **)rv, t, SET_TYPE_STRING))
-         rv = (char **)setadd ((void **)rv, t, SET_TYPE_STRING);
+         rv = set_str_add(rv, t);
        }
 
        efree (t);

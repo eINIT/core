@@ -138,7 +138,7 @@ char **checkpoint_scanmodules_find_services_from_mode (char **base_services, cha
 
       for (y = 0; serv[y]; y++) {
        if (!inset ((const void **)base_services, serv[y], SET_TYPE_STRING))
-        base_services = (char **)setadd ((void **)base_services, serv[y], SET_TYPE_STRING);
+        base_services = set_str_add (base_services, serv[y]);
       }
      }
     }
@@ -167,7 +167,7 @@ char **checkpoint_scanmodules_find_services_from_modes (char **base_services, ch
 
        for (y = 0; serv[y]; y++) {
         if (!inset ((const void **)base_services, serv[y], SET_TYPE_STRING))
-         base_services = (char **)setadd ((void **)base_services, serv[y], SET_TYPE_STRING);
+         base_services = set_str_add (base_services, serv[y]);
        }
       }
      }

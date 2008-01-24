@@ -504,7 +504,7 @@ char **module_xml_v2_add_fs (char **xt, char *s) {
    char *comb = set2str ('-', (const char **)tmp);
 
    if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
-    xt = (char **)setadd ((void **)xt, (void *)comb, SET_TYPE_STRING);
+    xt = set_str_add (xt, (void *)comb);
    }
 
    efree (comb);
@@ -523,8 +523,6 @@ char *module_xml_v2_generate_defer_fs (char **tmpxt) {
 
  char *tmpx = NULL;
  tmp = emalloc (BUFFERSIZE);
-
-// tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
 
  if (tmpxt) {
   tmpx = set2str ('|', (const char **)tmpxt);
@@ -601,7 +599,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
       char *a = module_xml_v2_generate_defer_fs(fs);
 
       if (a) {
-       after = (char **)setadd ((void **)after, a, SET_TYPE_STRING);
+       after = set_str_add (after, a);
 
        efree (a);
       }
@@ -764,7 +762,7 @@ void module_xml_v2_auto_enable (char *mode) {
 
    if (sp) {
     if (inset ((const void **)sp, mode, SET_TYPE_STRING)) {
-     automod = (char **)setadd ((void **)automod, modules->key, SET_TYPE_STRING);
+     automod = set_str_add (automod, modules->key);
     }
 
     efree (sp);

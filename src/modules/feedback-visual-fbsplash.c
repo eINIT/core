@@ -101,7 +101,7 @@ int einit_feedback_visual_fbsplash_enable ();
 
 void fbsplash_queue_comand (const char *command) {
  emutex_lock (&fbsplash_commandQ_mutex);
- fbsplash_commandQ = (char **)setadd ((void **)fbsplash_commandQ, command, SET_TYPE_STRING);
+ fbsplash_commandQ = set_str_add (fbsplash_commandQ, command);
  emutex_unlock (&fbsplash_commandQ_mutex);
 
  pthread_cond_broadcast (&fbsplash_commandQ_cond);
@@ -208,8 +208,8 @@ void einit_feedback_visual_fbsplash_boot_event_handler_boot_devices_available (s
    if (start_splash) {
     struct einit_event ee = evstaticinit(einit_core_change_service_status);
 
-    ee.argv = (char **)setadd ((void **)ee.set, "splashd", SET_TYPE_STRING);
-    ee.argv = (char **)setadd ((void **)ee.set, "enable", SET_TYPE_STRING);
+    ee.argv = set_str_add (ee.set, "splashd");
+    ee.argv = set_str_add (ee.set, "enable");
 
     event_emit (&ee, einit_event_flag_broadcast);
 

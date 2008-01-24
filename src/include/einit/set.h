@@ -102,6 +102,10 @@ void **setslice_nc (void **set1, const void **set2, const int32_t esize);
 */
 void **setadd (void **set, const void *item, int32_t esize);
 
+#define set_str_add(set,item) (char **)setadd((void **)set, item, SET_TYPE_STRING)
+#define set_noa_add(set,item) setadd((void **)set, item, SET_NOALLOC)
+#define set_fix_add(set,item,esize) setadd((void **)set, item, esize)
+
 /*!\brief Duplicate \b set.
  * \param[in] set   the set
  * \param[in] esize Element size; depending on the element-type this should be SET_TYPE_STRING or the
@@ -113,6 +117,10 @@ void **setadd (void **set, const void *item, int32_t esize);
  * Duplicate \b set and return the resulting new set. 
 */
 void **setdup (const void **set, int32_t esize);
+
+#define set_str_dup(set) (char **)setdup((const void **)set, SET_TYPE_STRING)
+#define set_noa_dup(set) setdup((const void **)set, SET_NOALLOC)
+#define set_fix_dup(set,esize) setdup((const void **)set, esize)
 
 /*!\brief Remove \b item from \b set.
  * \param[in,out] set   the set

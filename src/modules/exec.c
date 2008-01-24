@@ -224,8 +224,8 @@ char *apply_envfile_f (char *command, const char **environment) {
      n++;
 
      if (*n && !inset ((const void **)variables, r, SET_TYPE_STRING)) {
-      variables = (char **)setadd ((void **)variables, r, SET_TYPE_STRING);
-      variables = (char **)setadd ((void **)variables, n, SET_TYPE_STRING);
+      variables = set_str_add (variables, r);
+      variables = set_str_add (variables, n);
      }
     }
 
@@ -480,7 +480,7 @@ char **exec_run_sh (char *command, enum pexec_options options, char **exec_envir
   if (pd.command) efree (pd.command);
 
   cmd = (char **)setdup ((const void **)shell, SET_NOALLOC);
-  cmd = (char **)setadd ((void **)cmd, ocmd, SET_TYPE_STRING);
+  cmd = set_str_add (cmd, ocmd);
 
   return cmd;
  }

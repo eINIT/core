@@ -135,7 +135,7 @@ void event_subthread_a (struct einit_event *event) {
    it = itreefind (event_handlers, event->type, tree_find_first);
 
    while (it) {
-    f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+    f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
 
     it = itreefind (it, event->type, tree_find_next);
    }
@@ -144,7 +144,7 @@ void event_subthread_a (struct einit_event *event) {
   it = itreefind (event_handlers, subsystem, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
 
    it = itreefind (it, subsystem, tree_find_next);
   }
@@ -152,7 +152,7 @@ void event_subthread_a (struct einit_event *event) {
   it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
@@ -222,7 +222,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
    it = itreefind (event_handlers, event->type, tree_find_first);
 
    while (it) {
-    f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+    f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
 
     it = itreefind (it, event->type, tree_find_next);
    }
@@ -231,7 +231,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   it = itreefind (event_handlers, subsystem, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
 
    it = itreefind (it, subsystem, tree_find_next);
   }
@@ -239,7 +239,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)setadd ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
@@ -258,7 +258,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
      d->handler = f[i]->handler;
 
      ethread_create (threadid, NULL, (void *(*)(void *))event_thread_wrapper, d);
-     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
     } else {
 /* do a shortcut so we don't create a thread for the last thing to spawn */
      f[i]->handler (event);
@@ -393,7 +393,7 @@ void **function_find (const char *name, const uint32_t version, const char ** su
   ha = streefind (exported_functions, name, tree_find_first);
   while (ha) {
    struct exported_function *ef = ha->value;
-   if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
+   if (ef && (ef->version == version)) set = set_noa_add (set, (void*)ef->function);
    ha = streefind (ha, name, tree_find_next);
   }
  } else {
@@ -413,7 +413,7 @@ void **function_find (const char *name, const uint32_t version, const char ** su
    while (ha) {
 
     struct exported_function *ef = ha->value;
-    if (ef && (ef->version == version)) set = setadd (set, (void*)ef->function, -1);
+    if (ef && (ef->version == version)) set = set_noa_add (set, (void*)ef->function);
 
     ha = streefind (ha, n, tree_find_next);
    }
@@ -448,7 +448,7 @@ struct exported_function **function_look_up (const char *name, const uint32_t ve
 
    if (!(ef->name)) ef->name = ha->key;
 
-   if (ef && (ef->version == version)) set = (struct exported_function **)setadd ((void **)set, (struct exported_function *)ef, -1);
+   if (ef && (ef->version == version)) set = (struct exported_function **)set_noa_add ((void **)set, (struct exported_function *)ef);
    ha = streefind (ha, name, tree_find_next);
   }
  } else {
@@ -470,7 +470,7 @@ struct exported_function **function_look_up (const char *name, const uint32_t ve
 
     if (!(ef->name)) ef->name = ha->key;
 
-    if (ef && (ef->version == version)) set = (struct exported_function **)setadd ((void **)set, (struct exported_function *)ef, -1);
+    if (ef && (ef->version == version)) set = (struct exported_function **)set_noa_add ((void **)set, (struct exported_function *)ef);
 
     ha = streefind (ha, n, tree_find_next);
    }

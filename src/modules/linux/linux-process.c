@@ -97,7 +97,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
   for (; pstat[i]; i++) {
    esprintf (buffer, BUFFERSIZE, "%s%i", path, pstat[i]->pid);
    if (!stat (buffer, &st)) {
-    npstat = (struct process_status **)setadd ((void **)npstat, (void *)pstat[i], sizeof (struct process_status));
+    npstat = (struct process_status **)set_fix_add ((void **)npstat, (void *)pstat[i], sizeof (struct process_status));
    }
   }
  }
@@ -146,7 +146,7 @@ struct process_status ** update_processes_proc_linux (struct process_status **ps
      }
 
      if (!recycled) {
-      npstat = (struct process_status **)setadd ((void **)npstat, (void *)&tmppse, sizeof (struct process_status));
+      npstat = (struct process_status **)set_fix_add ((void **)npstat, (void *)&tmppse, sizeof (struct process_status));
      }
     }
 
@@ -189,7 +189,7 @@ pid_t *filter_processes_files_below (struct pc_conditional * cond, pid_t * ret, 
        ttarget[r] = 0;
 
        if (strstr (ttarget, cond->para) == ttarget) {
-        ret = (pid_t *)setadd ((void **)ret, (void *)tmppx, SET_NOALLOC);
+        ret = (pid_t *)set_noa_add ((void **)ret, (void *)tmppx);
         goto kk;
        }
       }

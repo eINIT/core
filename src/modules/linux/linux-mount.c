@@ -249,7 +249,7 @@ int linux_mount_do_umount_swap (char *mountpoint, char *fs, char step, struct de
 
 int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
  if (!inset ((const void **)sm->si.requires, "network", SET_TYPE_STRING)) {
-  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "network", SET_TYPE_STRING);
+  sm->si.requires = set_str_add (sm->si.requires, "network");
  }
 
  if (mp->options) {
@@ -257,29 +257,29 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
   for (; mp->options[i]; i++) {
    if (strstr (mp->options[i], "sec=krb") == mp->options[i]) {
     if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
-     sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING);
+     sm->si.requires = set_str_add (sm->si.requires, "rpc.svcgssd");
     }
    }
   }
 
   if (!inset ((const void **)mp->options, "nolock", SET_TYPE_STRING)) {
    if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+    sm->si.requires = set_str_add (sm->si.requires, "sm-notify");
    }
    if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
-    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING);
+    sm->si.requires = set_str_add (sm->si.requires, "rpc.statd");
    }
   } else {
    if (!inset ((const void **)sm->si.requires, "portmap", SET_TYPE_STRING)) {
-    sm->si.requires = (char **)setadd ((void **)sm->si.requires, "portmap", SET_TYPE_STRING);
+    sm->si.requires = set_str_add (sm->si.requires, "portmap");
    }
   }
  } else {
   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "sm-notify", SET_TYPE_STRING);
+   sm->si.requires = set_str_add (sm->si.requires, "sm-notify");
   }
   if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
-   sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING);
+   sm->si.requires = set_str_add (sm->si.requires, "rpc.statd");
   }
  }
 
@@ -288,7 +288,7 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
 
 int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
  if (!inset ((const void **)sm->si.requires, "network", SET_TYPE_STRING)) {
-  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "network", SET_TYPE_STRING);
+  sm->si.requires = set_str_add (sm->si.requires, "network");
  }
 
  if (mp->options) {
@@ -296,13 +296,13 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
   for (; mp->options[i]; i++) {
    if (strstr (mp->options[i], "sec=krb") == mp->options[i]) {
     if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
-     sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING);
+     sm->si.requires = set_str_add (sm->si.requires, "rpc.svcgssd");
     }
    }
   }
  }
  if (!inset ((const void **)sm->si.requires, "rpc.idmapd", SET_TYPE_STRING)) {
-  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "rpc.idmapd", SET_TYPE_STRING);
+  sm->si.requires = set_str_add (sm->si.requires, "rpc.idmapd");
  }
 
  return 0;
@@ -310,7 +310,7 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
 
 int linux_mount_update_vboxsf (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
  if (!inset ((const void **)sm->si.requires, "vboxvfs", SET_TYPE_STRING)) {
-  sm->si.requires = (char **)setadd ((void **)sm->si.requires, "vboxvfs", SET_TYPE_STRING);
+  sm->si.requires = set_str_add (sm->si.requires, "vboxvfs");
  }
 
  return 0;

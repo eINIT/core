@@ -112,10 +112,10 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
   char **oarb = onode->arbattrs;
   char **narb = NULL;
 
-  narb = (char **)setadd ((void **)narb, (void *)"group", SET_TYPE_STRING);
-  narb = (char **)setadd ((void **)narb, (void *)jele, SET_TYPE_STRING);
-  narb = (char **)setadd ((void **)narb, (void *)"seq", SET_TYPE_STRING);
-  narb = (char **)setadd ((void **)narb, (void *)seq, SET_TYPE_STRING);
+  narb = set_str_add (narb, (void *)"group");
+  narb = set_str_add (narb, (void *)jele);
+  narb = set_str_add (narb, (void *)"seq");
+  narb = set_str_add (narb, (void *)seq);
 
   onode->arbattrs = narb;
 
@@ -131,10 +131,10 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
   newnode.id = estrdup (tmp);
   newnode.type = einit_node_regular;
 
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"group", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)jele, SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"seq", SET_TYPE_STRING);
-  newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)seq, SET_TYPE_STRING);
+  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"group");
+  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)jele);
+  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"seq");
+  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)seq);
 
   cfg_addnode (&newnode);
   efree (jele);
@@ -200,8 +200,8 @@ int random_scanmodules (struct lmodule *list) {
   nsm->rid = estrdup(module_rid);
 
   esprintf (tmp, BUFFERSIZE, "random%i", r);
-  nsm->si.provides = (char **)setadd ((void **)nsm->si.provides, tmp, SET_TYPE_STRING);
-  randommodules = (char **)setadd ((void **)randommodules, tmp, SET_TYPE_STRING);
+  nsm->si.provides = set_str_add (nsm->si.provides, tmp);
+  randommodules = set_str_add (randommodules, tmp);
 
   nsm->configure = random_module_configure;
 
@@ -212,7 +212,7 @@ int random_scanmodules (struct lmodule *list) {
 
    for (; n < n_limit; n++) {
     esprintf (tmp, BUFFERSIZE, "random%i", random_int (RANDOM_MODULES -1));
-    nsm->si.requires = (char **)setadd ((void **)nsm->si.requires, tmp, SET_TYPE_STRING);
+    nsm->si.requires = set_str_add (nsm->si.requires, tmp);
    }
   }
 
@@ -230,10 +230,10 @@ int random_scanmodules (struct lmodule *list) {
    char tmp[BUFFERSIZE];
 
    esprintf (tmp, BUFFERSIZE, "random%i", random_int (RANDOM_MODULES - RANDOM_GROUPS -1));
-   elements = (char **)setadd ((void **)elements, tmp, SET_TYPE_STRING);
+   elements = set_str_add (elements, tmp);
   }
 
-  randommodules = (char **)setadd ((void **)randommodules, groupname, SET_TYPE_STRING);
+  randommodules = set_str_add (randommodules, groupname);
 
   if (elements)
    random_add_update_group (groupname, elements, RANDOM_GROUP_TYPE);

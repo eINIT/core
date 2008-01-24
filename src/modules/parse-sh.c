@@ -128,7 +128,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
    case '&':
     if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
      *cdp = 0;
-     command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
+     command = set_str_add (command, (void*)sdp);
      cdp++;
      sdp = cdp;
     }
@@ -153,7 +153,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
     } else if (isspace(*cur)) {
      if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
       *cdp = 0;
-      command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
+      command = set_str_add (command, (void*)sdp);
       cdp++;
       sdp = cdp;
      }
@@ -172,7 +172,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
 
  if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
   *cdp = 0;
-  command = (char**)setadd ((void**)command, (void*)sdp, SET_NOALLOC);
+  command = set_str_add ((void**)command, (void*)sdp);
   cdp++;
   sdp = cdp;
  }

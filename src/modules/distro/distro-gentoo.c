@@ -229,7 +229,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     char **base = NULL;
 
     if (strcmp (de->d_name, "boot"))
-     base = (char **)setadd ((void **)base, (void *)"boot", SET_TYPE_STRING);
+     base = set_str_add (base, (void *)"boot");
 
 // if not exclusive, merge current mode base with the new base
     if (!exclusive) {
@@ -249,7 +249,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        else {
          for (i = 0; curmodebase[i]; i++) {
          if (!inset ((const void **)base, (void *)curmodebase[i], SET_TYPE_STRING)) {
-          base = (char **)setadd ((void **)base, (void *)curmodebase[i], SET_TYPE_STRING);
+          base = set_str_add (base, (void *)curmodebase[i]);
          }
         }
         efree (curmodebase);
@@ -264,13 +264,13 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     memset (&newnode, 0, sizeof(struct cfgnode));
 
-    arbattrs = (char **)setadd ((void **)arbattrs, (void *)"id", SET_TYPE_STRING);
-    arbattrs = (char **)setadd ((void **)arbattrs, (void *)de->d_name, SET_TYPE_STRING);
+    arbattrs = set_str_add (arbattrs, (void *)"id");
+    arbattrs = set_str_add (arbattrs, (void *)de->d_name);
     if (base) {
      char *nbase = set2str(':', (const char **)base);
      if (nbase) {
-      arbattrs = (char **)setadd ((void **)arbattrs, (void *)"base", SET_TYPE_STRING);
-      arbattrs = (char **)setadd ((void **)arbattrs, (void *)nbase, SET_TYPE_STRING);
+      arbattrs = set_str_add (arbattrs, (void *)"base");
+      arbattrs = set_str_add (arbattrs, (void *)nbase);
       efree (nbase);
      }
     }
@@ -290,7 +290,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      currentmode = NULL;
     }
    } else {
-    nservices = (char **) setadd ((void **)nservices, (void *)de->d_name, SET_TYPE_STRING);
+    nservices = set_str_add (nservices, (void *)de->d_name);
    }
   }
 
@@ -317,7 +317,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
           if (workingset[ci][ip] == '.') workingset[ci][ip] = '-';
          }
 
-         new_services_for_group = (char **)setadd((void **)new_services_for_group, (void *)workingset[ci], SET_TYPE_STRING);
+         new_services_for_group = set_str_add(new_services_for_group, (void *)workingset[ci]);
         }
        }
        efree (workingset);
@@ -345,7 +345,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
           if (groupmembers) {
            for (; groupmembers[z]; z++) {
             if (!inset ((const void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING)) {
-             new_services_for_group = (char **)setadd ((void **)new_services_for_group, (void *)groupmembers[z], SET_TYPE_STRING);
+             new_services_for_group = set_str_add (new_services_for_group, (void *)groupmembers[z]);
             }
            }
            efree (groupmembers);
@@ -353,21 +353,21 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
          } else if (!strcmp (curgroup->arbattrs[y], "seq")) {
           curgroup_has_seq_attribute = 1;
-          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y], SET_TYPE_STRING);
-          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y+1], SET_TYPE_STRING);
+          arbattrs = set_str_add (arbattrs, (void *)curgroup->arbattrs[y]);
+          arbattrs = set_str_add (arbattrs, (void *)curgroup->arbattrs[y+1]);
          } else {
-          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y], SET_TYPE_STRING);
-          arbattrs = (char **)setadd ((void **)arbattrs, (void *)curgroup->arbattrs[y+1], SET_TYPE_STRING);
+          arbattrs = set_str_add (arbattrs, (void *)curgroup->arbattrs[y]);
+          arbattrs = set_str_add (arbattrs, (void *)curgroup->arbattrs[y+1]);
          }
         }
        }
 
-       arbattrs = (char **)setadd ((void **)arbattrs, (void *)"group", SET_TYPE_STRING);
-       arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', (const char **)new_services_for_group), SET_TYPE_STRING);
+       arbattrs = set_str_add (arbattrs, (void *)"group");
+       arbattrs = set_str_add (arbattrs, (void *)set2str (':', (const char **)new_services_for_group));
 
        if (!curgroup_has_seq_attribute) {
-        arbattrs = (char **)setadd ((void **)arbattrs, (void *)"seq", SET_TYPE_STRING);
-        arbattrs = (char **)setadd ((void **)arbattrs, (void *)"most", SET_TYPE_STRING);
+        arbattrs = set_str_add (arbattrs, (void *)"seq");
+        arbattrs = set_str_add (arbattrs, (void *)"most");
        }
 
        memset (&newnode, 0, sizeof(struct cfgnode));
@@ -381,7 +381,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        cfg_addnode (&newnode);
 
        if (!inset ((const void **)nservices, (void *)cur->key, SET_TYPE_STRING))
-        nservices = (char **)setadd((void **)nservices, (void *)cur->key, SET_TYPE_STRING);
+        nservices = set_str_add(nservices, (void *)cur->key);
       }
      }
 
@@ -410,7 +410,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      if (curmodeena) {
       for (; curmodeena[i]; i++) {
        if (!inset ((const void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING)) {
-        nservices = (char **)setadd ((void **)nservices, (void *)curmodeena[i], SET_TYPE_STRING);
+        nservices = set_str_add (nservices, (void *)curmodeena[i]);
        }
       }
 
@@ -422,12 +422,12 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     memset (&newnode, 0, sizeof(struct cfgnode));
 
-    arbattrs = (char **)setadd ((void **)arbattrs, (void *)"services", SET_TYPE_STRING);
-    arbattrs = (char **)setadd ((void **)arbattrs, (void *)set2str (':', (const char **)nservices), SET_TYPE_STRING);
+    arbattrs = set_str_add (arbattrs, (void *)"services");
+    arbattrs = set_str_add (arbattrs, (void *)set2str (':', (const char **)nservices));
 
     if ((critical = str2set (':', cfg_getstring ("enable/critical", currentmode)))) {
-     arbattrs = (char **)setadd ((void **)arbattrs, (void *)"critical", SET_TYPE_STRING);
-     arbattrs = (char **)setadd ((void **)arbattrs, (void *)critical, SET_TYPE_STRING);
+     arbattrs = set_str_add (arbattrs, (void *)"critical");
+     arbattrs = set_str_add (arbattrs, (void *)critical);
     }
 
     newnode.type = einit_node_regular;
@@ -624,8 +624,8 @@ int compatibility_sysv_gentoo_cleanup_after_module (struct lmodule *this) {
 char **gentoo_resolve_dependency_type (rc_depinfo_t *deptree, char *type, char **current, char *runlevel, char *name) {
  char **serv = NULL;
  char **tmp_dependencies = NULL;
- char **tmp_type = (char **)setadd (NULL, type, SET_TYPE_STRING);
- char **tmp_service = (char **)setadd (NULL, name, SET_TYPE_STRING);
+ char **tmp_type = set_str_add (NULL, type);
+ char **tmp_service = set_str_add (NULL, name);
 
  if ((tmp_dependencies = rc_get_depends(deptree, tmp_type, tmp_service, runlevel, RC_DEP_START))) {
   serv = (char **)setdup ((const void **)tmp_dependencies, SET_TYPE_STRING);
@@ -653,7 +653,7 @@ void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptr
  char **runlevels = str2set (':', cfg_getstring ("compatibility-sysv-distribution-gentoo-runlevels-for-dependencies", NULL));
  int i = 0;
 
- if (!runlevels) runlevels = (char **)setadd (setadd (NULL, "boot", SET_TYPE_STRING), "default", SET_TYPE_STRING);
+ if (!runlevels) runlevels = set_str_add (set_str_add (NULL, "boot"), "default");
 
  memset (&module->si, 0, sizeof(module->si));
 
@@ -670,7 +670,7 @@ void gentoo_add_dependencies (struct smodule *module, rc_depinfo_t *gentoo_deptr
 // modinfo->si.after = str2set (' ', serv);
 
 /* seems to be included already */
-// module->si.provides = (char **)setadd ((void **)module->si.provides, (void *)name, SET_TYPE_STRING);
+// module->si.provides = set_str_add (module->si.provides, (void *)name);
 
  if (module->si.requires) gentoo_fixname_set (module->si.requires);
  if (module->si.provides) gentoo_fixname_set (module->si.provides);

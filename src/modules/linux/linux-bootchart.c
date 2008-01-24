@@ -180,7 +180,7 @@ char *linux_bootchart_update_ps (char *ps, char *uptime) {
    }
 
    if (da) {
-    data = (char **)setadd ((void **)data, da, SET_TYPE_STRING);
+    data = set_str_add (data, da);
     efree (da);
     da = NULL;
    }

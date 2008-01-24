@@ -125,8 +125,8 @@ void linux_mdev_hotplug_handle (char **v) {
     *n = 0;
     n++;
 
-    args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
-    args = (char **)setadd ((void **)args, n, SET_TYPE_STRING);
+    args = set_str_add (args, v[i]);
+    args = set_str_add (args, n);
    }
   }
 
@@ -211,7 +211,7 @@ void *linux_mdev_hotplug(void *ignored) {
      }
     }
 
-    v = (char **)setadd ((void **)v, lbuffer, SET_TYPE_STRING);
+    v = set_str_add (v, lbuffer);
 
     i++;
 

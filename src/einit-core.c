@@ -358,7 +358,7 @@ int main(int argc, char **argv, char **environ) {
      if (strmatch(argv[i], "--help"))
       return print_usage_info ();
      else if (strmatch(argv[i], "--ipc") && argv[i+1])
-      ipccommands = (char **)setadd ((void **)ipccommands, (void *)argv[i+1], SET_TYPE_STRING);
+      ipccommands = set_str_add (ipccommands, (void *)argv[i+1]);
      else if (strmatch(argv[i], "--force-init"))
       initoverride = 1;
      else if (strmatch(argv[i], "--sandbox")) {
@@ -453,53 +453,6 @@ int main(int argc, char **argv, char **environ) {
  enable_core_dumps ();
 
  sched_trace_target = crash_pipe;
-
-#if 0
- if (debug) {
-  char **xargv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
-  char tbuffer[BUFFERSIZE];
-  struct stat st;
-  char have_valgrind = 0;
-  char have_gdb = 0;
-
-  fputs ("eINIT needs to be debugged, starting in debugger mode\n.", stderr);
-
-  xargv = (char **)setadd ((void **)xargv, (void *)"--debugme", SET_TYPE_STRING);
-  snprintf (tbuffer, BUFFERSIZE, "%i", commandpipe[0]);
-  xargv = (char **)setadd ((void **)xargv, (void *)tbuffer, SET_TYPE_STRING);
-
-  xargv = strsetdel (xargv, "--debug"); // don't keep the --debug flag
-
-  if (!stat ("/usr/bin/valgrind", &st)) have_valgrind = 1;
-  if (!stat ("/usr/bin/gdb", &st)) have_gdb = 1;
-
-  if (have_valgrind) {
-   char **nargv = NULL;
-   uint32_t i = 1;
-
-#ifdef LINUX
-   if (!(coremode & einit_mode_sandbox)) {
-    mount ("proc", "/proc", "proc", 0, NULL);
-    mount ("sys", "/sys", "sysfs", 0, NULL);
-
-    system ("mount / -o remount,rw");
-   }
-#endif
-
-   nargv = (char **)setadd ((void **)nargv, "/usr/bin/valgrind", SET_TYPE_STRING);
-   nargv = (char **)setadd ((void **)nargv, "--log-file=/einit.valgrind", SET_TYPE_STRING);
-   nargv = (char **)setadd ((void **)nargv, (coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", SET_TYPE_STRING);
-
-   for (; xargv[i]; i++) {
-    nargv = (char **)setadd ((void **)nargv, xargv[i], SET_TYPE_STRING);
-   }
-
-   execv ("/usr/bin/valgrind", nargv);
-  } else {
-   execv ((coremode & einit_mode_sandbox) ? "sbin/einit" : "/sbin/einit", xargv);
-  }
- }
-#endif
 
   if (command_pipe) { // commandpipe[0]
    commandpipe_in = fdopen (command_pipe, "r");

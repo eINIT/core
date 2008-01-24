@@ -214,7 +214,7 @@ void log_syslog_notice (unsigned char level, char *message) {
 
  if (!have_syslog) {
   pthread_mutex_lock(&logmutex);
-  logbuffer = (struct log_syslog_entry **)setadd((void **)logbuffer, ne, SET_NOALLOC);
+  logbuffer = (struct log_syslog_entry **)set_noa_add((void **)logbuffer, ne);
   pthread_mutex_unlock(&logmutex);
  } else {
   ethread_spawn_detached_run ((void *(*)(void *))log_syslog_notice_thread, ne);

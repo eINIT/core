@@ -143,7 +143,7 @@ void linux_network_bridge_interface_construct (struct einit_event *ev) {
 
      if (!inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
       d->static_descriptor->si.requires =
-        (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
+        set_str_add (d->static_descriptor->si.requires, buffer);
      }
     }
 

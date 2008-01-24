@@ -154,7 +154,7 @@ char einit_ipc_hub_connect_socket (char *name) {
  struct hub_connection hc;
  hc.connection = sock;
  hc.type = hct_socket;
- einit_ipc_hub_connections_client = (struct hub_connection **)setadd ((void **)einit_ipc_hub_connections_client, &hc, sizeof (hc));
+ einit_ipc_hub_connections_client = (struct hub_connection **)set_fix_add ((void **)einit_ipc_hub_connections_client, &hc, sizeof (hc));
  emutex_unlock (&einit_ipc_hub_connections_client_mutex);
 
  fprintf (stderr, "\nconnection to running server OK\n");
@@ -216,7 +216,7 @@ void einit_ipc_hub_create_socket (char *name) {
  struct hub_connection hc;
  hc.connection = sock;
  hc.type = hct_socket;
- einit_ipc_hub_connections_server = (struct hub_connection **)setadd ((void **)einit_ipc_hub_connections_server, &hc, sizeof (hc));
+ einit_ipc_hub_connections_server = (struct hub_connection **)set_fix_add ((void **)einit_ipc_hub_connections_server, &hc, sizeof (hc));
  emutex_unlock (&einit_ipc_hub_connections_server_mutex);
 
  fprintf (stderr, "new server socket created\n");
@@ -335,7 +335,7 @@ void *einit_ipc_hub_thread (void *irr) {
      p.fd = einit_ipc_hub_connections_server[i]->connection;
      p.events = POLLIN;
 
-     pfdx = (struct pollfd **)setadd ((void **)pfdx, &p, sizeof (p));
+     pfdx = (struct pollfd **)set_fix_add ((void **)pfdx, &p, sizeof (p));
     }
    }
    emutex_unlock (&einit_ipc_hub_connections_server_mutex);
@@ -350,7 +350,7 @@ void *einit_ipc_hub_thread (void *irr) {
      p.fd = einit_ipc_hub_connections_client[i]->connection;
      p.events = POLLIN;
 
-     pfdx = (struct pollfd **)setadd ((void **)pfdx, &p, sizeof (p));
+     pfdx = (struct pollfd **)set_fix_add ((void **)pfdx, &p, sizeof (p));
     }
    }
    emutex_unlock (&einit_ipc_hub_connections_client_mutex);
@@ -391,7 +391,7 @@ void *einit_ipc_hub_thread (void *irr) {
           struct hub_connection hc;
           hc.connection = nf;
           hc.type = hct_client;
-          einit_ipc_hub_connections_client = (struct hub_connection **)setadd ((void **)einit_ipc_hub_connections_client, &hc, sizeof (hc));
+          einit_ipc_hub_connections_client = (struct hub_connection **)set_fix_add ((void **)einit_ipc_hub_connections_client, &hc, sizeof (hc));
           emutex_unlock (&einit_ipc_hub_connections_client_mutex);
 
           fprintf (stderr, "new client connected.\n");

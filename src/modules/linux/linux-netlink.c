@@ -156,7 +156,7 @@ struct network_interface *linux_netlink_get_interface_data (char *interface) {
 void linux_netlink_interface_data_collector (struct nl_object *object, void *ignored) {
  char *name = rtnl_link_get_name((struct rtnl_link *)object);
  if (name) {
-  linux_netlink_interfaces = (char **)setadd ((void **)linux_netlink_interfaces, name, SET_TYPE_STRING);
+  linux_netlink_interfaces = set_str_add (linux_netlink_interfaces, name);
  }
 }
 

@@ -177,14 +177,14 @@ struct cfgnode **einit_module_network_v2_get_multiple_options (char *interface, 
  esprintf (buffer, BUFFERSIZE, INTERFACES_PREFIX "-%s-%s", interface, option);
 
  while ((node = cfg_findnode (buffer, 0, node))) {
-  rv = (struct cfgnode **)setadd ((void **)rv, node, SET_NOALLOC);
+  rv = (struct cfgnode **)set_noa_add ((void **)rv, node);
  }
 
  if (rv)
   return rv;
  else {
   if ((node = einit_module_network_v2_get_option_default (interface, option))) {
-   rv = (struct cfgnode **)setadd ((void **)rv, node, SET_NOALLOC);
+   rv = (struct cfgnode **)set_noa_add ((void **)rv, node);
   }
 
   return rv;
@@ -455,7 +455,7 @@ char **einit_module_network_v2_add_configured_interfaces (char **interfaces) {
    if (!n->arbattrs && !strchr (cur->key + sizeof (INTERFACES_PREFIX), '-')) {
 /* only accept interfaces without dashes in them here... */
     if (!inset ((const void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING)) {
-     interfaces = (char **)setadd ((void **)interfaces, cur->key + sizeof (INTERFACES_PREFIX), SET_TYPE_STRING);
+     interfaces = set_str_add (interfaces, cur->key + sizeof (INTERFACES_PREFIX));
     }
    }
 
@@ -531,7 +531,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      sm->mode = einit_module_generic;
 
      esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
-     sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+     sm->si.provides = set_str_add (NULL, buffer);
 
      sm->configure = einit_module_network_v2_carrier_module_configure;
 
@@ -555,9 +555,9 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      sm->mode = einit_module_generic;
 
      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
-     sm->si.provides = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+     sm->si.provides = set_str_add ((void **)NULL, buffer);
      esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
-     sm->si.requires = (char **)setadd ((void **)NULL, buffer, SET_TYPE_STRING);
+     sm->si.requires = set_str_add ((void **)NULL, buffer);
 
      sm->configure = einit_module_network_v2_module_configure;
 
@@ -574,8 +574,8 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
      if ((cn = einit_module_network_v2_get_option (interfaces[i], "immediate")) && cn->flag &&
          lm && !(lm->status & (status_working | status_enabled))) {
-      immediate = (struct lmodule **)setadd ((void **)immediate, cm, SET_NOALLOC);
-      immediate = (struct lmodule **)setadd ((void **)immediate, lm, SET_NOALLOC);
+      immediate = (struct lmodule **)set_noa_add ((void **)immediate, cm);
+      immediate = (struct lmodule **)set_noa_add ((void **)immediate, lm);
      }
     }
 
@@ -584,7 +584,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
 
      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
 
-     automatic = (char **)setadd ((void **)automatic, buffer, SET_TYPE_STRING);
+     automatic = set_str_add (automatic, buffer);
     }
    }
   }
@@ -620,10 +620,10 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     memset (&newnode, 0, sizeof (struct cfgnode));
 
     newnode.id = estrdup("services-alias-network");
-    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, "group", SET_TYPE_STRING);
-    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, au, SET_TYPE_STRING);
-    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, "seq", SET_TYPE_STRING);
-    newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, "all", SET_TYPE_STRING);
+    newnode.arbattrs = set_str_add (newnode.arbattrs, "group");
+    newnode.arbattrs = set_str_add (newnode.arbattrs, au);
+    newnode.arbattrs = set_str_add (newnode.arbattrs, "seq");
+    newnode.arbattrs = set_str_add (newnode.arbattrs, "all");
 
     cfg_addnode (&newnode);
    }
@@ -826,7 +826,7 @@ char **einit_module_network_v2_add_fs (char **xt, char *s) {
    char *comb = set2str ('-', (const char **)tmp);
 
    if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
-    xt = (char **)setadd ((void **)xt, (void *)comb, SET_TYPE_STRING);
+    xt = set_str_add (xt, (void *)comb);
    }
 
    efree (comb);
@@ -845,8 +845,6 @@ char *einit_module_network_v2_generate_defer_fs (char **tmpxt) {
 
  char *tmpx = NULL;
  tmp = emalloc (BUFFERSIZE);
-
-// tmpxt = (char **)setadd ((void **)tmpxt, (void *)"root", SET_TYPE_STRING);
 
  if (tmpxt) {
   tmpx = set2str ('|', (const char **)tmpxt);
@@ -902,8 +900,8 @@ void einit_module_network_v2_interface_construct (struct einit_event *ev) {
        if (node->idattr && strmatch (node->idattr, v[i])) {
         if (node->arbattrs) {
          char *pidfile = NULL;
-         char **vars = (char **)setadd (NULL, "interface", SET_TYPE_STRING);
-         vars = (char **)setadd ((void **)vars, ev->string, SET_TYPE_STRING);
+         char **vars = set_str_add (NULL, "interface");
+         vars = set_str_add (vars, ev->string);
 
          int y = 0;
 
@@ -923,7 +921,7 @@ void einit_module_network_v2_interface_construct (struct einit_event *ev) {
             if (!inset ((const void **)d->static_descriptor->si.after, a, SET_TYPE_STRING)) {
 
              d->static_descriptor->si.after =
-               (char **)setadd ((void **)d->static_descriptor->si.after, a, SET_TYPE_STRING);
+               set_str_add (d->static_descriptor->si.after, a);
             }
 
             efree (a);

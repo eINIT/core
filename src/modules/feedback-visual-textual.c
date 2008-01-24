@@ -195,7 +195,7 @@ void feedback_textual_queue_fd_command (enum feedback_textual_commands command, 
 
  emutex_lock (&feedback_textual_commandQ_mutex);
 
- feedback_textual_commandQ = (struct feedback_textual_command **)setadd ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
+ feedback_textual_commandQ = (struct feedback_textual_command **)set_fix_add ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
 
  emutex_unlock (&feedback_textual_commandQ_mutex);
 
@@ -245,7 +245,7 @@ void feedback_textual_queue_update (struct lmodule *module, enum einit_module_st
 
  emutex_lock (&feedback_textual_commandQ_mutex);
 
- feedback_textual_commandQ = (struct feedback_textual_command **)setadd ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
+ feedback_textual_commandQ = (struct feedback_textual_command **)set_fix_add ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
 
  emutex_unlock (&feedback_textual_commandQ_mutex);
 
@@ -533,7 +533,7 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
       .message = message
      };
 
-     feedback_textual_modules[i]->log = (struct message_log **)setadd ((void **)(feedback_textual_modules[i]->log), &ne, sizeof (struct message_log));
+     feedback_textual_modules[i]->log = (struct message_log **)set_fix_add ((void **)(feedback_textual_modules[i]->log), &ne, sizeof (struct message_log));
 
      if (feedback_textual_modules[i]->log) {
       setsort ((void **)feedback_textual_modules[i]->log, 0, (signed int(*)(const void *, const void*))feedback_log_sort);
@@ -565,10 +565,10 @@ void feedback_textual_update_module (struct lmodule *module, time_t ctime, uint3
     .message = message
    };
 
-   nm.log = (struct message_log **)setadd (NULL, &ne, sizeof (struct message_log));
+   nm.log = (struct message_log **)set_fix_add (NULL, &ne, sizeof (struct message_log));
   }
 
-  feedback_textual_modules = (struct feedback_textual_module_status **)setadd ((void **)feedback_textual_modules, &nm, sizeof (struct feedback_textual_module_status));
+  feedback_textual_modules = (struct feedback_textual_module_status **)set_fix_add ((void **)feedback_textual_modules, &nm, sizeof (struct feedback_textual_module_status));
 
   setsort ((void **)feedback_textual_modules, 0, (signed int(*)(const void *, const void*))feedback_name_sort);
  }
@@ -653,7 +653,7 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
         eputs ("working on your request...\n", st.stream);
 
        emutex_lock (&feedback_textual_streams_mutex);
-       feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
+       feedback_streams = (struct feedback_stream **)set_fix_add ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
        emutex_unlock (&feedback_textual_streams_mutex);
 
        feedback_textual_update_screen ();
@@ -1012,7 +1012,7 @@ void feedback_textual_enable() {
 
  if (einit_quietness < 3) {
   emutex_lock (&feedback_textual_streams_mutex);
-  feedback_streams = (struct feedback_stream **)setadd ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
+  feedback_streams = (struct feedback_stream **)set_fix_add ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
   emutex_unlock (&feedback_textual_streams_mutex);
  }
 

@@ -90,18 +90,18 @@ char module_c_compile_file (char *oname, char *base, char *nname) {
   char **data = NULL;
   char *compiler_command;
 
-  data = (char **)setadd ((void **)data, "configuration-file", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, EINIT_LIB_BASE "/scripts/configuration", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "compile-options", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "link-options", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "module-source", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, oname, SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "module-target", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, nname, SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, "module-basename", SET_TYPE_STRING);
-  data = (char **)setadd ((void **)data, base, SET_TYPE_STRING);
+  data = set_str_add (data, "configuration-file");
+  data = set_str_add (data, EINIT_LIB_BASE "/scripts/configuration");
+  data = set_str_add (data, "compile-options");
+  data = set_str_add (data, "");
+  data = set_str_add (data, "link-options");
+  data = set_str_add (data, "");
+  data = set_str_add (data, "module-source");
+  data = set_str_add (data, oname);
+  data = set_str_add (data, "module-target");
+  data = set_str_add (data, nname);
+  data = set_str_add (data, "module-basename");
+  data = set_str_add (data, base);
 
   if ((compiler_command = apply_variables (compiler_template, (const char **)data))) {
    int srv;

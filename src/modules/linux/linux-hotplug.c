@@ -153,7 +153,7 @@ void linux_hotplug_hotplug_event_handler (struct einit_event *ev) {
      char *t = emalloc (len);
 
      esprintf (t, len, "%s %s", commands[i], subsystem);
-     cd = (char **)setadd ((void **)cd, t, SET_TYPE_STRING);
+     cd = set_str_add (cd, t);
      efree (t);
     }
 

@@ -208,8 +208,8 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
     }
 
     if (!match) {
-     attrs = (char **)setadd ((void **)attrs, (void *)subattr, SET_TYPE_STRING);
-     attrs = (char **)setadd ((void **)attrs, (void *)ev->argv[3], SET_TYPE_STRING);
+     attrs = set_str_add (attrs, (void *)subattr);
+     attrs = set_str_add (attrs, (void *)ev->argv[3]);
 
      if (strmatch ("s", subattr)) {
       newnode.svalue = attrs[setcount((const void **)attrs)-1];

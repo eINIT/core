@@ -165,7 +165,7 @@ void sched_timer_event_handler_set (struct einit_event *ev) {
  emutex_lock (&sched_timer_data_mutex);
 
  uintptr_t tmpinteger = ev->integer;
- sched_timer_data = (time_t *)setadd ((void **)sched_timer_data, (void *)tmpinteger, SET_NOALLOC);
+ sched_timer_data = (time_t *)set_noa_add ((void **)sched_timer_data, (void *)tmpinteger);
  setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
 
 /*  if (sched_timer_data) {
@@ -498,7 +498,7 @@ void *sched_pidthread_processor(FILE *pipe) {
    } else { // continue constructing
     strtrim(buffer);
 
-    message = (char **)setadd ((void **)message, buffer, SET_TYPE_STRING);
+    message = set_str_add(message, buffer);
    }
   }
  } while (1);

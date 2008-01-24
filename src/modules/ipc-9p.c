@@ -231,7 +231,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
     }
    }
   } else {
-   fa->path = (char **)setadd ((void **)fa->path, r->ifcall.wname[i], SET_TYPE_STRING);
+   fa->path = set_str_add((void **)fa->path, r->ifcall.wname[i]);
   }
 
   r->ofcall.wqid[i].type = 0;
@@ -667,11 +667,11 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
  newnode.id = estrdup ("configuration-environment-global");
  newnode.type = einit_node_regular;
 
- newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
- newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"EINIT_9P_ADDRESS", SET_TYPE_STRING);
+ newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"id");
+ newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"EINIT_9P_ADDRESS");
 
- newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"s", SET_TYPE_STRING);
- newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)address, SET_TYPE_STRING);
+ newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"s");
+ newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)address);
 
  newnode.svalue = newnode.arbattrs[3];
 
@@ -706,37 +706,37 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
  char **path = ev->para;
 
  struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
- ev->set = setadd (ev->set, &n, sizeof (n));
+ ev->set = set_fix_add (ev->set, &n, sizeof (n));
  n.name = estrdup (".");
- ev->set = setadd (ev->set, &n, sizeof (n));
+ ev->set = set_fix_add (ev->set, &n, sizeof (n));
 
  if (!path) {
   n.name = estrdup ("ipc");
-  ev->set = setadd (ev->set, &n, sizeof (n));
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0] && strmatch (path[0], "ipc")) {
   if (!path[1]) {
    n.is_file = 1;
 
    n.name = estrdup ("list modules.xml");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("list services.xml");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("list configuration.xml");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("list modules");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("list services");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("list configuration");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("update configuration");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
    n.name = estrdup ("examine configuration");
-   ev->set = setadd (ev->set, &n, sizeof (n));
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
   } else {
    char *res = einit_ipc_9p_request (estrdup(path[1]));
 
-   ev->stringset = (char **)setadd ((void **)ev->stringset, res, SET_TYPE_STRING);
+   ev->stringset = set_str_add(ev->stringset, res);
 
    efree (res);
   }

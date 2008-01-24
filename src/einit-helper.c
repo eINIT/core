@@ -79,7 +79,7 @@ int main(int argc, char **argv, char **env) {
   } else if (strmatch (argv[i], "--sandbox")) {
    o_sandbox = 1;
   } else if (strmatch (argv[i], "--wtf")) {
-   c_ipc_commands = (char **)setadd ((void **)c_ipc_commands, "examine configuration", SET_TYPE_STRING);
+   c_ipc_commands = set_str_add (c_ipc_commands, "examine configuration");
   }
  }
 
@@ -89,20 +89,20 @@ int main(int argc, char **argv, char **env) {
  if (c_version || c_licence || c_help || c_ipc_commands) {
   char **c = NULL;
 
-  c = (char **)setadd ((void **)c, argv[0], SET_TYPE_STRING);
+  c = set_str_add (c, argv[0]);
   if (c_version)
-   c = (char **)setadd ((void **)c, "-v", SET_TYPE_STRING);
+   c = set_str_add (c, "-v");
   if (c_licence)
-   c = (char **)setadd ((void **)c, "-L", SET_TYPE_STRING);
+   c = set_str_add (c, "-L");
   if (c_help)
-   c = (char **)setadd ((void **)c, "--help", SET_TYPE_STRING);
+   c = set_str_add (c, "--help");
   if (o_sandbox)
-   c = (char **)setadd ((void **)c, "--sandbox", SET_TYPE_STRING);
+   c = set_str_add (c, "--sandbox");
 
   if (c_ipc_commands) {
    for (i = 0; c_ipc_commands[i]; i++) {
-    c = (char **)setadd ((void **)c, "--ipc", SET_TYPE_STRING);
-    c = (char **)setadd ((void **)c, c_ipc_commands[i], SET_TYPE_STRING);
+    c = set_str_add (c, "--ipc");
+    c = set_str_add (c, c_ipc_commands[i]);
    }
   }
 

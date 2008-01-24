@@ -113,7 +113,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
     uintptr_t num = parse_integer (x[j]);
 
     if (num) {
-     cj->years = (uintptr_t *)setadd ((void **)cj->years, (void *)num, SET_NOALLOC);
+     cj->years = (uintptr_t *)set_noa_add ((void **)cj->years, (void *)num);
 	}
    }
 
@@ -126,7 +126,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
     uintptr_t num = parse_integer (x[j]);
 
     if (num) {
-     cj->months = (uintptr_t *)setadd ((void **)cj->months, (void *)num, SET_NOALLOC);
+     cj->months = (uintptr_t *)set_noa_add ((void **)cj->months, (void *)num);
 	}
    }
 
@@ -139,7 +139,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
     uintptr_t num = parse_integer (x[j]);
 
     if (num) {
-     cj->days = (uintptr_t *)setadd ((void **)cj->days, (void *)num, SET_NOALLOC);
+     cj->days = (uintptr_t *)set_noa_add ((void **)cj->days, (void *)num);
 	}
    }
 
@@ -152,7 +152,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
     uintptr_t num = parse_integer (x[j]);
 
     if (num) {
-     cj->hours = (uintptr_t *)setadd ((void **)cj->hours, (void *)num, SET_NOALLOC);
+     cj->hours = (uintptr_t *)set_noa_add ((void **)cj->hours, (void *)num);
 	}
    }
 
@@ -165,7 +165,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
     uintptr_t num = parse_integer (x[j]);
 
     if (num) {
-     cj->minutes = (uintptr_t *)setadd ((void **)cj->minutes, (void *)num, SET_NOALLOC);
+     cj->minutes = (uintptr_t *)set_noa_add ((void **)cj->minutes, (void *)num);
 	}
    }
 
@@ -178,7 +178,7 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
     uintptr_t num = parse_integer (x[j]);
 
     if (num) {
-     cj->seconds = (uintptr_t *)setadd ((void **)cj->seconds, (void *)num, SET_NOALLOC);
+     cj->seconds = (uintptr_t *)set_noa_add ((void **)cj->seconds, (void *)num);
 	}
    }
 
@@ -189,20 +189,20 @@ struct einit_cron_job *einit_cron_parse_attrs_to_cron_job (char **attributes) {
 
    for (; x[j]; j++) {
     if (strmatch (x[j], "sunday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)0, SET_NOALLOC);
-	} else if (strmatch (x[j], "monday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)1, SET_NOALLOC);
-	} else if (strmatch (x[j], "tuesday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)2, SET_NOALLOC);
-	} else if (strmatch (x[j], "wednesday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)3, SET_NOALLOC);
-	} else if (strmatch (x[j], "thursday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)4, SET_NOALLOC);
-	} else if (strmatch (x[j], "friday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)5, SET_NOALLOC);
-	} else if (strmatch (x[j], "saturday")) {
-     cj->weekdays = (uintptr_t *)setadd ((void **)cj->weekdays, (void *)6, SET_NOALLOC);
-	}
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)0);
+    } else if (strmatch (x[j], "monday")) {
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)1);
+    } else if (strmatch (x[j], "tuesday")) {
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)2);
+    } else if (strmatch (x[j], "wednesday")) {
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)3);
+    } else if (strmatch (x[j], "thursday")) {
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)4);
+    } else if (strmatch (x[j], "friday")) {
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)5);
+    } else if (strmatch (x[j], "saturday")) {
+     cj->weekdays = (uintptr_t *)set_noa_add ((void **)cj->weekdays, (void *)6);
+    }
    }
 
    efree (x);

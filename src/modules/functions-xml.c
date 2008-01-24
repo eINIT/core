@@ -204,7 +204,7 @@ void einit_functions_xml_update_functions () {
    if (!inset ((const void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING)) {
     struct einit_function_xml_data d = einit_functions_xml_data_from_attrs (node->arbattrs);
 //    notice (1, "registering function: %s", node->idattr);
-    einit_functions_xml_registered = (char **)setadd ((void **)einit_functions_xml_registered, node->idattr, SET_TYPE_STRING);
+    einit_functions_xml_registered = set_str_add (einit_functions_xml_registered, node->idattr);
 
     function_register_type (node->idattr, d.version, einit_functions_xml_generic_wrapper, function_type_generic, thismodule);
    }

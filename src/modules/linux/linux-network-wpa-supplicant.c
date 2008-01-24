@@ -144,7 +144,7 @@ void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
 
    if (!inset ((const void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING)) {
     d->static_descriptor->si.requires =
-      (char **)setadd ((void **)d->static_descriptor->si.requires, buffer, SET_TYPE_STRING);
+      set_str_add (d->static_descriptor->si.requires, buffer);
    }
 
    struct cfgnode newnode;
@@ -156,14 +156,14 @@ void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
    newnode.type = einit_node_regular;
 
    esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"id", SET_TYPE_STRING);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)buffer, SET_TYPE_STRING);
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"id");
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)buffer);
 
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"driver", SET_TYPE_STRING);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)driver, SET_TYPE_STRING);
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"driver");
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)driver);
 
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)"configuration-file", SET_TYPE_STRING);
-   newnode.arbattrs = (char **)setadd ((void **)newnode.arbattrs, (void *)configuration_file, SET_TYPE_STRING);
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"configuration-file");
+   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)configuration_file);
 
    newnode.svalue = newnode.arbattrs[3];
 
@@ -192,8 +192,8 @@ char **linux_network_wpa_supplicant_get_as_option_set (char *interface, char *wp
       *s = 0;
       s++;
 
-      rv = (char **)setadd ((void **)rv, linebuffer, SET_TYPE_STRING);
-      rv = (char **)setadd ((void **)rv, s, SET_TYPE_STRING);
+      rv = set_str_add (rv, linebuffer);
+      rv = set_str_add (rv, s);
      }
     }
    }
@@ -373,10 +373,10 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
    sm->mode = einit_module_generic | einit_feedback_job;
 
    esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
-   sm->si.provides = (char **)setadd ((void **)sm->si.provides, tmp, SET_TYPE_STRING);
+   sm->si.provides = set_str_add (sm->si.provides, tmp);
 
 /* let's just assume that we'll need /var, /var/run, /usr, /usr/bin, /usr/sbin, /usr/local, /usr/local/bin and /usr/local/sbin */
-   sm->si.after = (char **)setadd ((void **)sm->si.after, "^fs-(var-run|var|usr(-local)?(-s?bin)?)$", SET_TYPE_STRING);
+   sm->si.after = set_str_add (sm->si.after, "^fs-(var-run|var|usr(-local)?(-s?bin)?)$");
 
    sm->configure = linux_network_wpa_supplicant_module_configure;
 

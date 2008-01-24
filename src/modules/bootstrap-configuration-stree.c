@@ -90,7 +90,7 @@ void cfg_stree_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
  emutex_lock (&cfg_stree_garbage_mutex);
  if (!cfg_stree_garbage.chunks || (!inset ((const void **)cfg_stree_garbage.chunks, chunk, SET_NOALLOC)))
-  cfg_stree_garbage.chunks = setadd (cfg_stree_garbage.chunks, chunk, SET_NOALLOC);
+  cfg_stree_garbage.chunks = set_noa_add (cfg_stree_garbage.chunks, chunk);
  emutex_unlock (&cfg_stree_garbage_mutex);
 }
 
@@ -503,7 +503,7 @@ void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *
 
     if (node && node->mode) {
      if (!inset ((const void **)modes, (const void *)node->mode, SET_NOALLOC)) {
-      modes = (struct cfgnode **)setadd ((void **)modes, (void *)node->mode, SET_NOALLOC);
+      modes = (struct cfgnode **)set_noa_add ((void **)modes, (void *)node->mode);
      }
     }
 

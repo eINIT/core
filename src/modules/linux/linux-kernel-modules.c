@@ -108,7 +108,7 @@ int linux_kernel_modules_load (char **modules) {
      if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load_exec, applied)) {
       linux_kernel_modules_load_exec (applied);
      } else {
-      threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
      }
     } else {
      linux_kernel_modules_load_exec (applied);
@@ -160,7 +160,7 @@ char **linux_kernel_modules_autoload_d() {
     char *module = t[i];
     strtrim (module);
     if ((module[0] != '#') && (module[0] != '\n') && (module[0] != '\r') && (module[0] != 0)) {
-     rv = (char **)setadd ((void **)rv, module, SET_TYPE_STRING);
+     rv = set_str_add ((void **)rv, module);
     }
    }
 
@@ -239,7 +239,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
     linux_kernel_modules_load (modules);
    } else {
     if (dwait)
-     threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
    }
   }
  } else if (code == lkm_post_dev) {
@@ -283,7 +283,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
         linux_kernel_modules_load (modules);
        } else {
         if (!node->flag)
-         threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+         threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
        }
       }
      }
@@ -308,7 +308,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
      linux_kernel_modules_load (modules);
     } else {
      if (dwait)
-      threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
     }
    }
   }
@@ -324,7 +324,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
      linux_kernel_modules_load (modules);
     } else {
      if (dwait)
-      threads = (pthread_t **)setadd ((void **)threads, threadid, SET_NOALLOC);
+      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
     }
    }
   }
@@ -423,7 +423,7 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
     sm->mode = einit_module_generic | einit_feedback_job;
 
     esprintf (tmp, BUFFERSIZE, "kern-%s", subsystem);
-    sm->si.provides = (char **)setadd ((void **)sm->si.provides, tmp, SET_TYPE_STRING);
+    sm->si.provides = set_str_add (sm->si.provides, tmp);
 
     sm->configure = linux_kernel_modules_module_configure;
 

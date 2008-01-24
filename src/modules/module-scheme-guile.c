@@ -327,7 +327,7 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
 
        scm_dynwind_unwind_handler (efree, da, SCM_F_WIND_EXPLICITLY);
 
-       vs = (char **)setadd ((void **)vs, da, SET_TYPE_STRING);
+       vs = set_str_add (vs, da);
       }
      }
     }
@@ -512,8 +512,8 @@ SCM module_scheme_guile_set_configuration (SCM id, SCM attributes) {
   char *b = scm_to_locale_string (scm_cdr(v));
   scm_dynwind_unwind_handler (efree, b, SCM_F_WIND_EXPLICITLY);
 
-  node.arbattrs = (char **)setadd ((void **)node.arbattrs, a, SET_TYPE_STRING);
-  node.arbattrs = (char **)setadd ((void **)node.arbattrs, b, SET_TYPE_STRING);
+  node.arbattrs = set_str_add (node.arbattrs, a);
+  node.arbattrs = set_str_add (node.arbattrs, b);
 
   if (strmatch (a, "i")) {
    node.value = parse_integer (b);
@@ -855,7 +855,7 @@ SCM module_scheme_guile_make_einit_event (SCM type, SCM rest) {
      char *t = scm_to_locale_string(lval);
      scm_dynwind_unwind_handler (efree, t, SCM_F_WIND_EXPLICITLY);
 
-     ev->stringset = (char **)setadd ((void **)ev->stringset, t, SET_TYPE_STRING);
+     ev->stringset = set_str_add (ev->stringset, t);
     }
 
     list = scm_cdr (list);
@@ -1177,7 +1177,7 @@ void module_scheme_guile_event_dispatcher_thread (void *na) {
      struct scheme_event_handler *h = st->value;
      if (strmatch (st->key, "any") || strmatch (st->key, typename)) {
       scm_with_guile ((void *(*)(void *))module_scheme_guile_protect_event_handler, h);
-      evh = (struct scheme_event_handler **)setadd ((void **)evh, h, SET_NOALLOC);
+      evh = (struct scheme_event_handler **)set_noa_add ((void **)evh, h);
      }
 
      st = streenext (st);

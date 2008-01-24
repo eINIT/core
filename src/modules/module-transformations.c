@@ -109,7 +109,7 @@ int einit_module_transformations_usage = 0;
 void einit_module_transformations_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
  emutex_lock (&einit_module_transformations_garbage_mutex);
- einit_module_transformations_garbage.chunks = setadd (einit_module_transformations_garbage.chunks, chunk, SET_NOALLOC);
+ einit_module_transformations_garbage.chunks = set_noa_add (einit_module_transformations_garbage.chunks, chunk);
  emutex_unlock (&einit_module_transformations_garbage_mutex);
 }
 
@@ -253,7 +253,7 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
      while (x) {
       if (x->value) {
        if (!inset ((const void **)np, x->value, SET_TYPE_STRING)) {
-        np = (char **)setadd ((void **)np, x->value, SET_TYPE_STRING);
+        np = set_str_add ((void **)np, x->value);
        }
       }
       x = streefind (x, module->si->provides[i], tree_find_next);
@@ -288,12 +288,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_PROVIDES) break;
 
-       np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+       np = set_str_add ((void **)np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = (char **)setadd ((void **)np, module->si->provides[i], SET_TYPE_STRING);
+       np = set_str_add ((void **)np, module->si->provides[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->provides);
@@ -320,12 +320,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_REQUIRES) break;
 
-       np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+       np = set_str_add ((void **)np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = (char **)setadd ((void **)np, module->si->requires[i], SET_TYPE_STRING);
+       np = set_str_add ((void **)np, module->si->requires[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->requires);
@@ -352,12 +352,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_AFTER) break;
 
-       np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+       np = set_str_add (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = (char **)setadd ((void **)np, module->si->after[i], SET_TYPE_STRING);
+       np = set_str_add (np, module->si->after[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->after);
@@ -384,12 +384,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_BEFORE) break;
 
-       np = (char **)setadd ((void **)np, trans->out, SET_TYPE_STRING);
+       np = set_str_add (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = (char **)setadd ((void **)np, module->si->before[i], SET_TYPE_STRING);
+       np = set_str_add (np, module->si->before[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->before);

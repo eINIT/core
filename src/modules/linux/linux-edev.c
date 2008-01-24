@@ -189,7 +189,7 @@ void linux_edev_mkdir_p (char *path) {
   for (; path_components[i] && path_components[i+1]; i++) {
    char *p = NULL;
 
-   cur = (char **)setadd ((void **)cur, path_components[i], SET_TYPE_STRING);
+   cur = set_str_add (cur, path_components[i]);
 
    if (cur) {
     p = set2str ('/', (const char **)cur);
@@ -254,8 +254,8 @@ void linux_edev_hotplug_handle (char **v) {
    if (n) {
     *n = 0;
     n++;
-    args = (char **)setadd ((void **)args, v[i], SET_TYPE_STRING);
-    args = (char **)setadd ((void **)args, n, SET_TYPE_STRING);
+    args = set_str_add (args, v[i]);
+    args = set_str_add (args, n);
    }
   }
 
@@ -293,8 +293,8 @@ void linux_edev_hotplug_handle (char **v) {
 
      base++;
 
-     args = (char **)setadd ((void **)args, "DEVPATH_BASE", SET_TYPE_STRING);
-     args = (char **)setadd ((void **)args, base, SET_TYPE_STRING);
+     args = set_str_add (args, "DEVPATH_BASE");
+     args = set_str_add (args, base);
 
      char *tmpsysdev = joinpath("/sys", device);
 
@@ -305,8 +305,8 @@ void linux_edev_hotplug_handle (char **v) {
       tn = joinpath(tmpsysdev, "vendor");
       if (tn) {
        if ((data = readfile (tn))) {
-        args = (char **)setadd ((void **)args, "VENDOR", SET_TYPE_STRING);
-        args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
+        args = set_str_add (args, "VENDOR");
+        args = set_str_add (args, data);
 
         efree (data);
        }
@@ -317,8 +317,8 @@ void linux_edev_hotplug_handle (char **v) {
       tn = joinpath(tmpsysdev, "device");
       if (tn) {
        if ((data = readfile (tn))) {
-        args = (char **)setadd ((void **)args, "DEVICE", SET_TYPE_STRING);
-        args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
+        args = set_str_add (args, "DEVICE");
+        args = set_str_add (args, data);
 
         efree (data);
        }
@@ -329,8 +329,8 @@ void linux_edev_hotplug_handle (char **v) {
       tn = joinpath(tmpsysdev, "class");
       if (tn) {
        if ((data = readfile (tn))) {
-        args = (char **)setadd ((void **)args, "CLASS", SET_TYPE_STRING);
-        args = (char **)setadd ((void **)args, data, SET_TYPE_STRING);
+        args = set_str_add (args, "CLASS");
+        args = set_str_add (args, data);
 
         efree (data);
        }
@@ -436,7 +436,7 @@ void linux_edev_hotplug_handle (char **v) {
           char *symlink = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
           if (symlink) {
            symlink = linux_edev_mangle_filename (symlink, 1);
-           symlinks = (char **)setadd ((void **)symlinks, symlink, SET_TYPE_STRING);
+           symlinks = set_str_add (symlinks, symlink);
            efree (symlink);
           }
          } else if (!chmode && strmatch (linux_edev_device_rules[i][j], "chmod")) {
@@ -452,7 +452,7 @@ void linux_edev_hotplug_handle (char **v) {
          else if (strmatch (linux_edev_device_rules[i][j], "socket")) {
           char *socket = apply_variables (linux_edev_device_rules[i][j+1], (const char **)args);
           if (socket) {
-           sockets = (char **)setadd ((void **)sockets, socket, SET_TYPE_STRING);
+           sockets = set_str_add (sockets, socket);
            efree (socket);
           }
          }
@@ -619,7 +619,7 @@ void *linux_edev_hotplug(void *ignored) {
      }
     }
 
-    v = (char **)setadd ((void **)v, lbuffer, SET_TYPE_STRING);
+    v = set_str_add (v, lbuffer);
 
     i++;
 
@@ -753,7 +753,7 @@ void linux_edev_retrieve_rules () {
   if (node->arbattrs) {
    char **e = (char **)setdup ((const void **)node->arbattrs, SET_TYPE_STRING);
 
-   new_rules = (char ***)setadd ((void **)new_rules, (void *)e, SET_NOALLOC);
+   new_rules = (char ***)set_noa_add ((void **)new_rules, (void *)e);
   }
  }
 
@@ -789,29 +789,29 @@ char **linux_edev_get_cdrom_capabilities (char **args, char *devicefile) {
 
  close(fd);
 
- cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CDROM", SET_TYPE_STRING);
+ cdrom_attrs = set_str_add (cdrom_attrs, "CDROM");
  if (out & CDC_CD_R)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_R", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_R");
  if (out & CDC_CD_RW)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_RW", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_RW");
  if (out & CDC_DVD)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_DVD", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_DVD");
  if (out & CDC_DVD_R)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_DVD_R", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_DVD_R");
  if (out & CDC_DVD_RAM)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_DVD_RAM", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_DVD_RAM");
  if (out & CDC_MRW)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_MRW", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_MRW");
  if (out & CDC_MRW_W)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_MRW_W", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_MRW_W");
  if (out & CDC_RAM)
-  cdrom_attrs = (char **)setadd ((void **)cdrom_attrs, "CD_RAM", SET_TYPE_STRING);
+  cdrom_attrs = set_str_add (cdrom_attrs, "CD_RAM");
 
  cdattrs = set2str (':', (const char **)cdrom_attrs);
  efree (cdrom_attrs);
 
- args = (char **)setadd ((void **)args, "CDROM_ATTRIBUTES", SET_TYPE_STRING);
- args = (char **)setadd ((void **)args, cdattrs, SET_TYPE_STRING);
+ args = set_str_add (args, "CDROM_ATTRIBUTES");
+ args = set_str_add (args, cdattrs);
 
 // notice (5, "CDROM ATTRIBUTES: %s", cdattrs);
  efree (cdattrs);
@@ -872,44 +872,44 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
  if ((ata_ident.config >> 8) & 0x80) {
   switch ((ata_ident.config >> 8) & 0x1f) {
    case 0:
-    ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
+    ata_type = set_str_add (ata_type, "CDROM");
     break;
    case 1:
-    ata_type = (char **)setadd ((void **)ata_type, "TAPE", SET_TYPE_STRING);
+    ata_type = set_str_add (ata_type, "TAPE");
     break;
    case 5:
-    ata_type = (char **)setadd ((void **)ata_type, "CDROM", SET_TYPE_STRING);
+    ata_type = set_str_add (ata_type, "CDROM");
     break;
    case 7:
-    ata_type = (char **)setadd ((void **)ata_type, "OPTICAL", SET_TYPE_STRING);
+    ata_type = set_str_add (ata_type, "OPTICAL");
     break;
    default:
-    ata_type = (char **)setadd ((void **)ata_type, "GENERIC", SET_TYPE_STRING);
+    ata_type = set_str_add (ata_type, "GENERIC");
     break;
   }
  } else {
-  ata_type = (char **)setadd ((void **)ata_type, "DISK", SET_TYPE_STRING);
+  ata_type = set_str_add (ata_type, "DISK");
  }
 
  close(fd);
 
 // ATA_MODEL=mod
- args = (char **)setadd ((void **)args, "ATA_MODEL", SET_TYPE_STRING);
- args = (char **)setadd ((void **)args, mod, SET_TYPE_STRING);
+ args = set_str_add (args, "ATA_MODEL");
+ args = set_str_add (args, mod);
 
 // ATA_SERIAL=sn
- args = (char **)setadd ((void **)args, "ATA_SERIAL", SET_TYPE_STRING);
- args = (char **)setadd ((void **)args, sn, SET_TYPE_STRING);
+ args = set_str_add (args, "ATA_SERIAL");
+ args = set_str_add (args, sn);
 
 // ATA_REVISION=rev
- args = (char **)setadd ((void **)args, "ATA_REVISION", SET_TYPE_STRING);
- args = (char **)setadd ((void **)args, rev, SET_TYPE_STRING);
+ args = set_str_add (args, "ATA_REVISION");
+ args = set_str_add (args, rev);
 
  atatype = set2str (':', (const char **)ata_type);
  efree (ata_type);
 
- args = (char **)setadd ((void **)args, "ATA_TYPE", SET_TYPE_STRING);
- args = (char **)setadd ((void **)args, atatype, SET_TYPE_STRING);
+ args = set_str_add (args, "ATA_TYPE");
+ args = set_str_add (args, atatype);
 // notice (5, "ATA_TYPE: %s", atatype);
  efree (atatype);
 
@@ -926,12 +926,12 @@ char **linux_edev_get_ata_identity (char **args, char *devicefile) {
 char *linux_edev_mangle_filename (char *filename, char do_free) {
  if (strstr (filename, "${NUM+}")) {
   char *new_filename = NULL;
-  char **temp_environment = (char **)setadd (NULL, "NUM+", SET_NOALLOC);
+  char **temp_environment = (char **)set_noa_add (NULL, "NUM+");
   char buffer[32]; // no file will get more than a 32-digit suffix num... no, really
   int num = 0;
   struct stat st;
 
-  temp_environment = (char **)setadd ((void **)temp_environment, buffer, SET_NOALLOC);
+  temp_environment = (char **)set_noa_add ((void **)temp_environment, buffer);
 
   do {
    esprintf (buffer, 32, "%i", num);

@@ -240,12 +240,12 @@ int module_group_scanmodules (struct lmodule *modchain) {
 
       esprintf (t, BUFFERSIZE, "^(%s)$", member_string);
 
-      after = (char **)setadd ((void **)after, t, SET_TYPE_STRING);
+      after = set_str_add (after, t);
 
       efree (member_string);
      }
 
-     provides = (char **)setadd ((void **)provides, (cur->key + MODULES_PREFIX_SIZE), SET_TYPE_STRING);
+     provides = set_str_add (provides, (cur->key + MODULES_PREFIX_SIZE));
 
      struct smodule *sm = emalloc (sizeof (struct smodule));
      memset (sm, 0, sizeof (struct smodule));

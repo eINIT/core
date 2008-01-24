@@ -117,7 +117,7 @@ pid_t *filter_processes_cwd_below (struct pc_conditional * cond, pid_t * ret, st
   for (; stat[i]; i++) {
    if (stat[i]->cwd && (strstr (stat[i]->cwd, (char *)cond->para) == stat[i]->cwd)) {
     uintptr_t tmp = (stat[i]->pid);
-    ret = (pid_t *)setadd ((void **)ret, (void *)tmp, SET_NOALLOC);
+    ret = (pid_t *)set_noa_add((void **)ret, (void *)tmp);
    }
   }
 
@@ -130,7 +130,7 @@ pid_t *filter_processes_cwd (struct pc_conditional * cond, pid_t * ret, struct p
   for (; stat[i]; i++) {
    if (stat[i]->cwd && strmatch ((char *)cond->para, stat[i]->cwd)) {
     uintptr_t tmp = (stat[i]->pid);
-    ret = (pid_t *)setadd ((void **)ret, (void *)tmp, SET_NOALLOC);
+    ret = (pid_t *)set_noa_add((void **)ret, (void *)tmp);
    }
   }
 

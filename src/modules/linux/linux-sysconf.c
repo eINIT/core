@@ -224,8 +224,8 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
 
    if (kernel_initrd) {
     if ((kexec_template = cfg_getstring ("configuration-system-kexec-calls/load-initrd", NULL))) {
-     template_data = (char **)setadd ((void **)template_data, "kernel-initrd", SET_TYPE_STRING);
-     template_data = (char **)setadd ((void **)template_data, kernel_initrd, SET_TYPE_STRING);
+     template_data = set_str_add (template_data, "kernel-initrd");
+     template_data = set_str_add (template_data, kernel_initrd);
     }
    } else {
     kexec_template = cfg_getstring ("configuration-system-kexec-calls/load", NULL);
@@ -233,11 +233,11 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
 
    if (kexec_template) {
     char *execdata;
-    template_data = (char **)setadd ((void **)template_data, "kernel-image", SET_TYPE_STRING);
-    template_data = (char **)setadd ((void **)template_data, kernel_image, SET_TYPE_STRING);
+    template_data = set_str_add (template_data, "kernel-image");
+    template_data = set_str_add (template_data, kernel_image);
 
-    template_data = (char **)setadd ((void **)template_data, "kernel-options", SET_TYPE_STRING);
-    template_data = (char **)setadd ((void **)template_data, kernel_options, SET_TYPE_STRING);
+    template_data = set_str_add (template_data, "kernel-options");
+    template_data = set_str_add (template_data, kernel_options);
 
     if ((execdata = apply_variables (kexec_template, (const char **)template_data))) {
      if (pexec(execdata, NULL, 0, 0, NULL, NULL, NULL, status) == status_ok) {
