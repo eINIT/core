@@ -746,3 +746,21 @@ struct lmodule **mod_get_all_providers (char *service) {
 
  return ret;
 }
+
+struct lmodule **mod_list_all_enabled_modules () {
+ struct lmodule **ret = NULL;
+ struct lmodule *m;
+
+ emutex_lock (&mlist_mutex);
+ m = mlist;
+ while (m) {
+  if (m->status & status_enabled) {
+   ret = (struct lmodule **)set_noa_add ((void **)ret, m);
+  }
+
+  m = m->next;
+ }
+ emutex_unlock (&mlist_mutex);
+
+ return ret;
+}

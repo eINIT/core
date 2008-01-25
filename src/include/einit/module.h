@@ -308,6 +308,7 @@ char mod_service_is_provided (char *service);
 char mod_service_requirements_met (struct lmodule *module);
 char mod_service_not_in_use (struct lmodule *module);
 char **mod_list_all_provided_services ();
+struct lmodule **mod_list_all_enabled_modules ();
 struct lmodule **mod_get_all_users (struct lmodule *module);
 struct lmodule **mod_get_all_providers (char *service);
 

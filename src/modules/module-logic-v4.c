@@ -956,116 +956,55 @@ struct lmodule **module_logic_find_things_to_disable() {
  reeval_top:
 
  if (module_logic_list_disable) {
-  int c;
-  emutex_lock (&module_logic_service_list_mutex);
+  struct lmodule **pot = mod_list_all_enabled_modules();
+  unresolved = (char **)setdup ((const void **)module_logic_list_disable, SET_TYPE_STRING);
 
-  retry_top_loop:
+  if (!pot) {
+/* nothing enabled... nothing to do */
+   efree (module_logic_list_disable);
+   module_logic_list_disable = NULL;
+   return NULL;
+  }
 
-  c = setcount ((const void **)module_logic_list_disable);
-  module_logic_list_disable_max_count = (module_logic_list_disable_max_count > c) ? module_logic_list_disable_max_count : c;
+  for (i = 0; pot[i]; i++) {
+//   mod_service_not_in_use (pot[i]);
+   char doadd = 0;
 
-  for (i = 0; module_logic_list_disable[i]; i++) {
-   if (!mod_service_is_provided(module_logic_list_disable[i])) {
-
-#if 0
-    fprintf (stderr, "removing: %s (not provided)\n", module_logic_list_disable[i]);
-    fflush (stderr);
-#endif
-
-    module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
-    i = -1;
-
-    if (candidates_level1) {
-     efree (candidates_level1);
-     candidates_level1 = NULL;
+   if (pot[i]->module->rid) {
+    if (inset ((const void **)module_logic_list_disable, pot[i]->module->rid, SET_TYPE_STRING)) {
+     doadd = 1;
     }
-    if (services_level1) {
-     efree (services_level1);
-     services_level1 = NULL;
+   }
+   if (!doadd) {
+    if (pot[i]->si && pot[i]->si->provides) {
+     int y = 0;
+     for (; pot[i]->si->provides[y]; y++) {
+      if (inset ((const void **)module_logic_list_disable, pot[i]->si->provides[y], SET_TYPE_STRING)) {
+       doadd = 1;
+       break;
+      }
+     }
     }
-
-    if (!module_logic_list_disable) break;
-    goto retry_top_loop;
    }
 
-   if (!inset ((const void **)services_level1, module_logic_list_disable[i], SET_TYPE_STRING))
-    services_level1 = set_str_add (services_level1, module_logic_list_disable[i]);
+   if (doadd) {
+    candidates_level1 = (struct lmodule **)set_noa_add ((void **)candidates_level1, pot[i]);
 
-   struct stree *st = streefind(module_logic_service_list, module_logic_list_disable[i], tree_find_first);
-
-   if (st) {
-    struct lmodule **lm = st->value;
-    int k = 0;
-    char added = 0;
-
-    for (; lm[k]; k++) {
-     if (lm[k]->status & status_enabled) {
-      char isbroken;
-      emutex_lock (&module_logic_broken_modules_mutex);
-      isbroken = inset ((const void **)module_logic_broken_modules, lm[k], SET_NOALLOC);
-      emutex_unlock (&module_logic_broken_modules_mutex);
-
-      if (!isbroken) {
-       if (!inset ((const void **)candidates_level1, lm[k], SET_NOALLOC)) {
-        candidates_level1 = (struct lmodule **)set_noa_add ((void **)candidates_level1, lm[k]);
-
-        if (lm[k]->module) {
-         if (lm[k]->module->rid) {
-          if (!inset ((const void **)services_level1, lm[k]->module->rid, SET_TYPE_STRING))
-           services_level1 = set_str_add (services_level1, lm[k]->module->rid);
-         }
-         if (lm[k]->si && lm[k]->si->provides) {
-          int j = 0;
-          for (; lm[k]->si->provides[j]; j++) {
-           if (!inset ((const void **)services_level1, lm[k]->si->provides[j], SET_TYPE_STRING))
-            services_level1 = set_str_add (services_level1, lm[k]->si->provides[j]);
-          }
-         }
-        }
-       }
-
-       added = 1;
-#if 0
-      } else {
-       fprintf (stderr, "broken: %s\n", lm[k]->module->rid);
-       fflush (stderr);
-#endif
-	  }
+    if (pot[i]->module->rid) {
+     unresolved = strsetdel (unresolved, pot[i]->module->rid);
+     services_level1 = set_str_add (services_level1, pot[i]->module->rid);
+    }
+    if (pot[i]->si && pot[i]->si->provides) {
+     int y = 0;
+     for (; pot[i]->si->provides[y]; y++) {
+      unresolved = strsetdel (unresolved, pot[i]->si->provides[y]);
+      services_level1 = set_str_add (services_level1, pot[i]->si->provides[y]);
      }
     }
-
-    if (!added) {
-#if 0
-     fprintf (stderr, "removing: %s (nothing to add for it)\n", module_logic_list_disable[i]);
-     fflush (stderr);
-#endif
-
-     module_logic_list_disable = strsetdel (module_logic_list_disable, module_logic_list_disable[i]);
-
-     if (candidates_level1) {
-      efree (candidates_level1);
-      candidates_level1 = NULL;
-     }
-     if (services_level1) {
-      efree (services_level1);
-      services_level1 = NULL;
-     }
-
-     i = -1;
-
-     if (!module_logic_list_disable) {
-      emutex_unlock (&module_logic_service_list_mutex);
-      return NULL;
-     }
-
-     goto retry_top_loop;
-    }
-   } else {
-    unresolved = set_str_add (unresolved, module_logic_list_disable[i]);
    }
   }
 
-  emutex_unlock (&module_logic_service_list_mutex);
+  efree (pot);
  } else {
   return NULL;
  }
@@ -1125,12 +1064,12 @@ struct lmodule **module_logic_find_things_to_disable() {
   }
 
   if (all) { /* everything is unresolved, which means we can't do any progress... */
-   struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
+/*   struct einit_event ee = evstaticinit(einit_feedback_unresolved_services);
    ee.set = (void **)unresolved;
    ee.stringset = unresolved;
 
    event_emit (&ee, einit_event_flag_broadcast);
-   evstaticdestroy (ee);
+   evstaticdestroy (ee);*/
 
    efree (module_logic_list_disable);
    module_logic_list_disable = NULL;
@@ -2269,6 +2208,8 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
    struct lmodule *m = ev->para;
 
    if (m->module && m->module->rid && inset ((const void **)module_logic_list_disable, m->module->rid, SET_TYPE_STRING)) {
+    module_logic_list_disable = strsetdel (module_logic_list_disable, ev->string);
+
     spawn = module_logic_find_things_to_disable();
    } else if (m->si && m->si->provides) {
     int i = 0;
