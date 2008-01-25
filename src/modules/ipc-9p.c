@@ -156,6 +156,7 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
 
  if (ev.stringset) {
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+  ev.stringset = set_str_add (ev.stringset, "");
 
   fd->data = set2str ('\n', (const char **)ev.stringset);
   fd->type = i9_file;
