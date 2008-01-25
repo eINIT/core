@@ -243,6 +243,13 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0] && strmatch (path[0], "modules")) {
   if (!path[1]) {
+   n.name = estrdup ("enabled");
+   n.is_file = 0;
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   n.name = estrdup ("all");
+   n.is_file = 0;
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  } else if (strmatch (path[1], "all") && !path[2]) {
    n.is_file = 0;
 
    struct lmodule *cur = mlist;
@@ -255,14 +262,27 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     cur = cur->next;
    }
-  } else if (!path[2]) {
+  } else if (strmatch (path[1], "enabled") && !path[2]) {
+   n.is_file = 0;
+
+   struct lmodule *cur = mlist;
+
+   while (cur) {
+    if (cur->module && cur->module->rid && (cur->status & status_enabled)) {
+     n.name = estrdup (cur->module->rid);
+     ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    }
+
+    cur = cur->next;
+   }
+  } else if (path[2] && !path[3]) {
    n.is_file = 1;
 
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       n.name = estrdup ("name");
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
       n.name = estrdup ("status");
@@ -281,12 +301,12 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     cur = cur->next;
    }
-  } else if (strmatch (path[2], "status")) {
+  } else if (path[2] && path[3] && strmatch (path[3], "status")) {
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       if (cur->status == status_idle)
        ev->stringset = set_str_add (ev->stringset, "idle");
       else {
@@ -306,24 +326,24 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     cur = cur->next;
    }
-  } else if (strmatch (path[2], "name")) {
+  } else if (path[2] && path[3] && strmatch (path[3], "name")) {
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       ev->stringset = set_str_add (ev->stringset, cur->module->name);
      }
     }
 
     cur = cur->next;
    }
-  } else if (strmatch (path[2], "provides")) {
+  } else if (path[2] && path[3] && strmatch (path[3], "provides")) {
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       if (cur->si && cur->si->provides) {
        int i = 0;
 
@@ -338,12 +358,12 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     cur = cur->next;
    }
-  } else if (strmatch (path[2], "requires")) {
+  } else if (path[2] && path[3] && strmatch (path[3], "requires")) {
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       if (cur->si && cur->si->requires) {
        int i = 0;
 
@@ -358,12 +378,12 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     cur = cur->next;
    }
-  } else if (strmatch (path[2], "before")) {
+  } else if (path[2] && path[3] && strmatch (path[3], "before")) {
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       if (cur->si && cur->si->before) {
        int i = 0;
 
@@ -378,12 +398,12 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     cur = cur->next;
    }
-  } else if (strmatch (path[2], "after")) {
+  } else if (path[2] && path[3] && strmatch (path[3], "after")) {
    struct lmodule *cur = mlist;
 
    while (cur) {
     if (cur->module && cur->module->rid) {
-     if (strmatch (path[1], cur->module->rid)) {
+     if (strmatch (path[2], cur->module->rid)) {
       if (cur->si && cur->si->requires) {
        int i = 0;
 
@@ -406,7 +426,7 @@ void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
  if (path && path[0] && strmatch (path[0], "modules")) {
-  ev->flag = (path[1] && path[2] ? 1 : 0);
+  ev->flag = (path[1] && path[2] && path[3] ? 1 : 0);
  }
 }
 

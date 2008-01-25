@@ -937,7 +937,7 @@ int einit_mountpoint_configure (struct lmodule *tm) {
 
  tm->recover = einit_mount_recover_module;
 
- tm->param = tm->module->rid + 6;
+// tm->param = tm->module->rid + 6;
 
  tm->source = estrdup(tm->module->rid);
 
@@ -1084,6 +1084,12 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   }
 
   esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+  int tx = 0;
+  for (; tmp[tx]; tx++) {
+   if (tmp[tx] == '/') {
+    tmp[tx] = '-';
+   }
+  }
 
   while (lm) {
    if (lm->source && strmatch(lm->source, tmp)) {
@@ -1156,7 +1162,8 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   efree (fnames);
 /* special initialisation done */
 
-  lm = mod_add (NULL, newmodule);
+  if ((lm = mod_add (NULL, newmodule)))
+   lm->param = estrdup (s->key);
 
   do_next:
 

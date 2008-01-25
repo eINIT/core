@@ -152,6 +152,7 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
  struct einit_event ev = evstaticinit(einit_ipc_read);
 
  ev.para = fa->path;
+
  event_emit(&ev, einit_event_flag_broadcast);
 
  if (ev.stringset) {
@@ -181,7 +182,9 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
 
   fa->fd = fd;
  } else {
+  evstaticdestroy (ev);
   respond (r, "file not found");
+  return;
  }
 
  evstaticdestroy (ev);
