@@ -169,6 +169,11 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
  } else if (ev.set) {
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
+  struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
+  ev.set = set_fix_add (ev.set, &n, sizeof (n));
+  n.name = estrdup (".");
+  ev.set = set_fix_add (ev.set, &n, sizeof (n));
+
   fd->data = estrdup ("unknown");
   fd->type = i9_dir;
   fd->files = (struct ipc_fs_node **)ev.set;
@@ -655,38 +660,43 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
 
+ if (connection) {
 // ixp_pthread_init();
 
- notice (1, "9p server initialised");
+  notice (1, "9p server initialised");
 
 /* add environment var for synchronisation */
 
- struct cfgnode newnode;
+  struct cfgnode newnode;
 
- memset (&newnode, 0, sizeof(struct cfgnode));
+  memset (&newnode, 0, sizeof(struct cfgnode));
 
- newnode.id = estrdup ("configuration-environment-global");
- newnode.type = einit_node_regular;
+  newnode.id = estrdup ("configuration-environment-global");
+  newnode.type = einit_node_regular;
 
- newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"id");
- newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"EINIT_9P_ADDRESS");
+  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"id");
+  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"EINIT_9P_ADDRESS");
 
- newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"s");
- newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)address);
+  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"s");
+  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)address);
 
- newnode.svalue = newnode.arbattrs[3];
+  newnode.svalue = newnode.arbattrs[3];
 
- cfg_addnode (&newnode);
+  cfg_addnode (&newnode);
 
- einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
+  einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
 
 /* server loop nao */
 
- ixp_serverloop(&einit_ipc_9p_server);
+  ixp_serverloop(&einit_ipc_9p_server);
 
- notice (1, "9p server loop has terminated: %s", ixp_errbuf());
+  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
 
- einit_ipc_9p_running = 0;
+  einit_ipc_9p_running = 0;
+ } else {
+  notice (1, "could not initialise 9p server");
+ }
+ return NULL;
 }
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *ev) {
@@ -706,12 +716,10 @@ void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
 void einit_ipc_9p_ipc_read (struct einit_event *ev) {
  char **path = ev->para;
 
- struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
- ev->set = set_fix_add (ev->set, &n, sizeof (n));
- n.name = estrdup (".");
- ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ struct ipc_fs_node n;
 
  if (!path) {
+  n.is_file = 0;
   n.name = estrdup ("ipc");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0] && strmatch (path[0], "ipc")) {
