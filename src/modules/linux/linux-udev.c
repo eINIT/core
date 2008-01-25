@@ -229,9 +229,9 @@ int linux_udev_run() {
 */
 
   if (n && n->flag) {
-   qexec ("/sbin/udevtrigger");
+   qexec ("/sbin/udevadm trigger");
   } else {
-   qexec ("/sbin/udevtrigger --attr-match=dev");
+   qexec ("/sbin/udevadm trigger --attr-match=dev");
   }
 
 //  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
@@ -240,7 +240,7 @@ int linux_udev_run() {
 
   sleep (1);
 
-  qexec ("/sbin/udevsettle --timeout=60");
+  qexec ("/sbin/udevadm settle --timeout=60");
 
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
