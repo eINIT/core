@@ -238,6 +238,8 @@ int linux_udev_run() {
 
   linux_udev_load_kernel_extensions();
 
+  sleep (1);
+
   qexec ("/sbin/udevsettle --timeout=60");
 
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
@@ -249,6 +251,8 @@ int linux_udev_run() {
   if (!stat ("/sbin/evms_activate", &st)) {
    qexec ("/sbin/evms_activate -q");
   }
+
+  qexec ("/sbin/udevsettle --timeout=60");
 
   return status_ok;
  } else
