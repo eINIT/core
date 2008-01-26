@@ -2247,6 +2247,8 @@ void module_logic_ipc_read (struct einit_event *ev) {
     n.name = estrdup ("all");
     n.is_file = 0;
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    n.name = estrdup ("provided");
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
    } else if (strmatch (path[1], "all") && !path[2]) {
     n.is_file = 0;
 
@@ -2259,6 +2261,21 @@ void module_logic_ipc_read (struct einit_event *ev) {
      ev->set = set_fix_add (ev->set, &n, sizeof (n));
 
      cur = streenext (cur);
+    }
+
+    emutex_unlock(&module_logic_service_list_mutex);
+   } else if (strmatch (path[1], "provided") && !path[2]) {
+    n.is_file = 0;
+    char **s = mod_list_all_provided_services();
+
+    if (s) {
+     int i = 0;
+     for (; s[i]; i++) {
+      n.name = estrdup (s[i]);
+      ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    }
+
+     efree (s);
     }
 
     emutex_unlock(&module_logic_service_list_mutex);
