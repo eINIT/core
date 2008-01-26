@@ -114,8 +114,6 @@ int cfg_free () {
   if ((node = (struct cfgnode *)cur->value)) {
    if (node->id)
     efree (node->id);
-   if (node->path)
-    efree (node->path);
   }
   cur = streenext (cur);
  }
@@ -221,7 +219,6 @@ int cfg_addnode_f (struct cfgnode *node) {
     ((struct cfgnode *)cur->value)->value       = node->value;
     ((struct cfgnode *)cur->value)->svalue      = node->svalue;
     ((struct cfgnode *)cur->value)->idattr      = node->idattr;
-    ((struct cfgnode *)cur->value)->path        = node->path;
 
     doop = 0;
 

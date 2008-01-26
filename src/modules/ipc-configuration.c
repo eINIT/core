@@ -161,8 +161,6 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
      onode && onode->svalue ? onode->svalue : NULL;
    newnode.arbattrs =
      onode && onode->arbattrs ? onode->arbattrs : NULL;
-   newnode.path =
-     onode && onode->path ? onode->path : NULL;
 
    char tflag = parse_boolean (ev->argv[3]);
    long int tvalue = parse_integer (ev->argv[3]);

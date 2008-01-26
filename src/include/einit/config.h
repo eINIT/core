@@ -79,7 +79,6 @@ struct cfgnode {
 /* arbitrary attributes + shortcuts */
  char **arbattrs;
  char *idattr;
- char *path;
 };
 
 struct stree *hconfiguration;
