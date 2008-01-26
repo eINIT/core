@@ -240,8 +240,8 @@ void compatibility_sysv_utmp_clean() {
    to bitch about it... */
 }
 
-void compatibility_sysv_utmp_core_event_handler_core_service_update (struct einit_event *ev) {
- if ((ev->status & status_enabled) && ev->set && (inset ((const void **)ev->set, "fs-var", SET_TYPE_STRING) || inset ((const void **)ev->set, "fs-var-run", SET_TYPE_STRING))) {
+void compatibility_sysv_utmp_core_event_handler_core_service_enabled (struct einit_event *ev) {
+ if (ev->string && (strmatch (ev->string, "fs-var") || strmatch (ev->string, "fs-var-run") || strmatch (ev->string, "fs-var-log"))) {
   compatibility_sysv_utmp_clean();
  }
 }
@@ -249,7 +249,7 @@ void compatibility_sysv_utmp_core_event_handler_core_service_update (struct eini
 int compatibility_sysv_utmp_cleanup (struct lmodule *irr) {
 // event_ignore (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
  event_ignore (einit_boot_root_device_ok, compatibility_sysv_utmp_clean);
- event_ignore (einit_core_service_update, compatibility_sysv_utmp_core_event_handler_core_service_update);
+ event_ignore (einit_core_service_enabled, compatibility_sysv_utmp_core_event_handler_core_service_enabled);
 
  function_unregister ("einit-utmp-update", 1, updateutmp_f);
  utmp_cleanup (irr);
@@ -266,7 +266,7 @@ int compatibility_sysv_utmp_configure (struct lmodule *irr) {
  function_register ("einit-utmp-update", 1, updateutmp_f);
 // event_listen (einit_event_subsystem_ipc, compatibility_sysv_utmp_ipc_event_handler);
 
- event_listen (einit_core_service_update, compatibility_sysv_utmp_core_event_handler_core_service_update);
+ event_listen (einit_core_service_enabled, compatibility_sysv_utmp_core_event_handler_core_service_enabled);
  event_listen (einit_boot_root_device_ok, compatibility_sysv_utmp_clean);
 
  return 0;
