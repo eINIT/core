@@ -2257,8 +2257,11 @@ void module_logic_ipc_read (struct einit_event *ev) {
     struct stree *cur = streelinear_prepare(module_logic_service_list);
 
     while (cur) {
-     n.name = estrdup (cur->key);
-     ev->set = set_fix_add (ev->set, &n, sizeof (n));
+     struct lmodule **lm = cur->value;
+     if (!(lm && lm[0] && !lm[1] && lm[0]->module && lm[0]->module->rid && strmatch (lm[0]->module->rid, cur->key))) {
+      n.name = estrdup (cur->key);
+      ev->set = set_fix_add (ev->set, &n, sizeof (n));
+     }
 
      cur = streenext (cur);
     }
