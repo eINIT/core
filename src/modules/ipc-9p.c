@@ -116,6 +116,7 @@ struct ipc_9p_filedata {
  struct stree *cur;
  struct ipc_fs_node **files;
  int c;
+ char is_writable;
 };
 
 struct ipc_9p_fidaux {
@@ -133,6 +134,7 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  fd->cur = d->cur;
  fd->files = (struct ipc_fs_node **)(d->files ? setdup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
  fd->c = d->c;
+ fd->is_writable = d->is_writable;
 
  return fd;
 }
@@ -149,70 +151,60 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
 void einit_ipc_9p_fs_open(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
- struct einit_event ev = evstaticinit(einit_ipc_read);
 
- ev.para = fa->path;
+ if (r->ifcall.mode == P9_OREAD) {
+  struct einit_event ev = evstaticinit(einit_ipc_read);
 
- event_emit(&ev, einit_event_flag_broadcast);
+  ev.para = fa->path;
 
- if (ev.stringset) {
-  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
-  ev.stringset = set_str_add (ev.stringset, "");
+  event_emit(&ev, einit_event_flag_broadcast);
 
-  fd->data = set2str ('\n', (const char **)ev.stringset);
-  fd->type = i9_file;
-  fd->cur = NULL;
+  if (ev.stringset) {
+   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+   ev.stringset = set_str_add (ev.stringset, "");
 
-  fa->fd = fd;
+   fd->data = set2str ('\n', (const char **)ev.stringset);
+   fd->type = i9_file;
+   fd->cur = NULL;
 
-  efree (ev.stringset);
-  ev.stringset = NULL;
- } else if (ev.set) {
-  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+   fa->fd = fd;
 
-  struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
-  ev.set = set_fix_add (ev.set, &n, sizeof (n));
-  n.name = estrdup (".");
-  ev.set = set_fix_add (ev.set, &n, sizeof (n));
+   efree (ev.stringset);
+   ev.stringset = NULL;
+  } else if (ev.set) {
+   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
-  fd->data = estrdup ("unknown");
-  fd->type = i9_dir;
-  fd->files = (struct ipc_fs_node **)ev.set;
-  fd->c = 0;
+   struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
+   ev.set = set_fix_add (ev.set, &n, sizeof (n));
+   n.name = estrdup (".");
+   ev.set = set_fix_add (ev.set, &n, sizeof (n));
 
-  fa->fd = fd;
- } else {
+   fd->data = estrdup ("unknown");
+   fd->type = i9_dir;
+   fd->files = (struct ipc_fs_node **)ev.set;
+   fd->c = 0;
+
+   fa->fd = fd;
+  } else {
+   evstaticdestroy (ev);
+   respond (r, "File not found.");
+   return;
+  }
+
   evstaticdestroy (ev);
-  respond (r, "file not found");
-  return;
- }
 
- evstaticdestroy (ev);
-
-#if 0
- if (fa->fs_pointer && (fa->fs_pointer->is_file == 1)) {
+  respond(r, nil);
+ } else /*if ((r->ifcall.mode == P9_OWRITE) || (r->ifcall.mode == (P9_OWRITE | P9_OTRUNC))) */{
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
-  char *req = set2str (' ', (const char **)fa->path);
-
-  fd->data = einit_ipc_9p_request (req);
-  fd->type = i9_file;
-  fd->fs_pointer = fa->fs_pointer;
-  fd->cur = NULL;
-
   fa->fd = fd;
- } else {
-  struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
-  fd->data = estrdup ("unknown");
-  fd->type = i9_dir;
-  fd->fs_pointer = fa->fs_pointer;
-  fd->cur = streelinear_prepare (fd->fs_pointer->nodes);
+  fd->is_writable = 1;
+  notice (1, "opened file for writing");
 
-  fa->fd = fd;
- }
-#endif
-
- respond(r, nil);
+  respond(r, nil);
+ }/* else {
+  respond (r, "Access Mode not supported.");
+ }*/
 }
 
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
@@ -440,44 +432,6 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    respond(r, nil);
   }
  } else if (fd->type == i9_dir) {
-#if 0
-  if (fd->cur) {
-   Stat s;
-   memset (&s, 0, sizeof (Stat));
-
-   notice (1, "submitting: %s", fd->cur->key);
-
-   s.name = fd->cur->key;
-
-   s.uid = "root";
-   s.gid = "einit";
-   s.muid = "unknown";
-
-   struct ipc_9p_fs_entry *v = fd->cur->value;
-
-   s.mode = 0660;
-
-   if (!v->is_file) {
-    s.mode |= 0770 | P9_DMDIR;
-    s.qid.type |= QTDIR; 
-   }
-
-   size_t size = r->ifcall.count;
-   void *buf = ecalloc(1, size);
-   IxpMsg m = ixp_message((uchar*)buf, size, MsgPack); 
-   ixp_pstat(&m, &s);
-
-   r->ofcall.count = ixp_sizeof_stat(&s);
-   r->ofcall.data = (char*)m.data;
-
-   fd->cur = streenext (fd->cur);
-
-   respond(r, nil);
-  } else {
-   r->ofcall.count = 0;
-   respond(r, nil);
-  }
-#endif
   if (fd->files && (fd->files[fd->c])) {
    Stat s;
    memset (&s, 0, sizeof (Stat));
@@ -568,11 +522,52 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_write(Ixp9Req *r) {
- notice (1, "einit_ipc_9p_fs_write()");
+ struct ipc_9p_fidaux *fa = r->fid->aux;
+
+// notice (1, "einit_ipc_9p_fs_write(%i, %i)", r->ifcall.count, r->ofcall.count);
+
+ if (r->ifcall.count == 0) {
+  notice (1, "einit_ipc_9p_fs_write()");
+
+  respond(r, nil);
+  return;
+ } else {
+  struct ipc_9p_filedata *fd = fa->fd;
+  int len = 1 + (fd->data ? strlen (fd->data) : 0);
+
+  r->ofcall.count = r->ifcall.count;
+  fd->data = fd->data ? erealloc (fd->data, r->ifcall.count + len) : emalloc (r->ifcall.count + len);
+
+  memcpy (fd->data + (len-1), r->ifcall.data, r->ifcall.count);
+  fd->data[r->ifcall.count + len -1] = 0;
+
+//  notice (1, "einit_ipc_9p_fs_write(%s)", fd->data);
+
+  respond(r, nil);
+ }
 }
 
 void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_clunk()");
+ struct ipc_9p_fidaux *fa = r->fid->aux;
+
+ if (fa && fa->fd) {
+  struct ipc_9p_filedata *fd = fa->fd;
+
+  if (fd->is_writable && fd->data) {
+   strtrim (fd->data);
+
+   if (fd->data[0]) {
+    struct einit_event ev = evstaticinit(einit_ipc_write);
+
+    ev.para = fa->path;
+    ev.set = set_noa_add (ev.set, fd->data);
+    event_emit(&ev, einit_event_flag_broadcast);
+
+    evstaticdestroy (ev);
+   }
+  }
+ }
 
  respond(r, nil);
 }

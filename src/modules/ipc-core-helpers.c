@@ -333,6 +333,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
     if (cur->module && cur->module->rid) {
      if (strmatch (path[2], cur->module->rid)) {
       ev->stringset = set_str_add (ev->stringset, cur->module->name);
+      break;
      }
     }
 
@@ -353,6 +354,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
       } else {
        ev->stringset = set_str_add (ev->stringset, "none");
       }
+      break;
      }
     }
 
@@ -373,6 +375,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
       } else {
        ev->stringset = set_str_add (ev->stringset, "none");
       }
+      break;
      }
     }
 
@@ -393,6 +396,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
       } else {
        ev->stringset = set_str_add (ev->stringset, "none");
       }
+      break;
      }
     }
 
@@ -413,11 +417,62 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
       } else {
        ev->stringset = set_str_add (ev->stringset, "none");
       }
+      break;
      }
     }
 
     cur = cur->next;
    }
+  }
+ }
+}
+
+struct ch_thread_data {
+ int a;
+ struct lmodule *b;
+ char *c;
+};
+
+void *einit_ipc_core_helpers_ipc_write_detach_action (struct ch_thread_data *da) {
+ mod (da->a, da->b, da->c);
+
+ if (da->c) {
+  efree (da->c);
+ }
+ efree (da);
+
+ return NULL;
+}
+
+void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && ev->set && ev->set[0] && path[0] && path[1] && path[2] && path[3] && strmatch (path[0], "modules") && strmatch (path[3], "status")) {
+  struct lmodule *cur = mlist;
+
+  while (cur) {
+   if (cur->module && cur->module->rid) {
+    if (strmatch (path[2], cur->module->rid)) {
+     struct ch_thread_data *da = emalloc (sizeof (struct ch_thread_data));
+     da->b = cur;
+     da->c = NULL;
+
+     if (strmatch (ev->set[0], "enable")) {
+      da->a = einit_module_enable;
+     } else if (strmatch (ev->set[0], "disable")) {
+      da->a = einit_module_disable;
+     } else {
+      da->a = einit_module_custom;
+      da->c = estrdup (ev->set[0]);
+     }
+
+     ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
+
+     break;
+    }
+   }
+
+   cur = cur->next;
   }
  }
 }
@@ -436,6 +491,7 @@ int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
  event_ignore (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
  event_ignore (einit_ipc_read, einit_ipc_core_helpers_ipc_read);
  event_ignore (einit_ipc_stat, einit_ipc_core_helpers_ipc_stat);
+ event_ignore (einit_ipc_write, einit_ipc_core_helpers_ipc_write);
 
  return 0;
 }
@@ -467,6 +523,7 @@ int einit_ipc_core_helpers_configure (struct lmodule *r) {
  event_listen (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
  event_listen (einit_ipc_read, einit_ipc_core_helpers_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_core_helpers_ipc_stat);
+ event_listen (einit_ipc_write, einit_ipc_core_helpers_ipc_write);
 
  return 0;
 }
