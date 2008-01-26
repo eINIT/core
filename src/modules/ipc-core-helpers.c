@@ -241,187 +241,202 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
   n.name = estrdup ("modules");
   n.is_file = 0;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
- } if (path && path[0] && strmatch (path[0], "modules")) {
-  if (!path[1]) {
-   n.name = estrdup ("enabled");
-   n.is_file = 0;
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("all");
-   n.is_file = 0;
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-  } else if (strmatch (path[1], "all") && !path[2]) {
-   n.is_file = 0;
+  n.name = estrdup ("mode");
+  n.is_file = 1;
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ } if (path && path[0]) {
+  if (strmatch (path[0], "modules")) {
+   if (!path[1]) {
+    n.name = estrdup ("enabled");
+    n.is_file = 0;
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    n.name = estrdup ("all");
+    n.is_file = 0;
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   } else if (strmatch (path[1], "all") && !path[2]) {
+    n.is_file = 0;
 
-   struct lmodule *cur = mlist;
+    struct lmodule *cur = mlist;
 
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     n.name = estrdup (cur->module->rid);
-     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    }
-
-    cur = cur->next;
-   }
-  } else if (strmatch (path[1], "enabled") && !path[2]) {
-   n.is_file = 0;
-
-   struct lmodule *cur = mlist;
-
-   while (cur) {
-    if (cur->module && cur->module->rid && (cur->status & status_enabled)) {
-     n.name = estrdup (cur->module->rid);
-     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    }
-
-    cur = cur->next;
-   }
-  } else if (path[2] && !path[3]) {
-   n.is_file = 1;
-
-   struct lmodule *cur = mlist;
-
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      n.name = estrdup ("name");
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      n.name = estrdup (cur->module->rid);
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
-      n.name = estrdup ("status");
-      ev->set = set_fix_add (ev->set, &n, sizeof (n));
-      n.name = estrdup ("provides");
-      ev->set = set_fix_add (ev->set, &n, sizeof (n));
-      n.name = estrdup ("requires");
-      ev->set = set_fix_add (ev->set, &n, sizeof (n));
-      n.name = estrdup ("after");
-      ev->set = set_fix_add (ev->set, &n, sizeof (n));
-      n.name = estrdup ("before");
-      ev->set = set_fix_add (ev->set, &n, sizeof (n));
-      break;
      }
+
+     cur = cur->next;
     }
+   } else if (strmatch (path[1], "enabled") && !path[2]) {
+    n.is_file = 0;
 
-    cur = cur->next;
-   }
-  } else if (path[2] && path[3] && strmatch (path[3], "status")) {
-   struct lmodule *cur = mlist;
+    struct lmodule *cur = mlist;
 
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      if (cur->status == status_idle)
-       ev->stringset = set_str_add (ev->stringset, "idle");
-      else {
-       if (cur->status & status_enabled)
-        ev->stringset = set_str_add (ev->stringset, "enabled");
-       if (cur->status & status_working)
-        ev->stringset = set_str_add (ev->stringset, "working");
-       if (cur->status & status_disabled)
-        ev->stringset = set_str_add (ev->stringset, "disabled");
-       if (cur->status & status_suspended)
-        ev->stringset = set_str_add (ev->stringset, "suspended");
+    while (cur) {
+     if (cur->module && cur->module->rid && (cur->status & status_enabled)) {
+      n.name = estrdup (cur->module->rid);
+      ev->set = set_fix_add (ev->set, &n, sizeof (n));
+     }
+
+     cur = cur->next;
+    }
+   } else if (path[2] && !path[3]) {
+    n.is_file = 1;
+
+    struct lmodule *cur = mlist;
+
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       n.name = estrdup ("name");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = estrdup ("status");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = estrdup ("provides");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = estrdup ("requires");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = estrdup ("after");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = estrdup ("before");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       break;
       }
-
-      break;
      }
+
+     cur = cur->next;
     }
+   } else if (path[2] && path[3] && strmatch (path[3], "status")) {
+    struct lmodule *cur = mlist;
 
-    cur = cur->next;
-   }
-  } else if (path[2] && path[3] && strmatch (path[3], "name")) {
-   struct lmodule *cur = mlist;
-
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      ev->stringset = set_str_add (ev->stringset, cur->module->name);
-      break;
-     }
-    }
-
-    cur = cur->next;
-   }
-  } else if (path[2] && path[3] && strmatch (path[3], "provides")) {
-   struct lmodule *cur = mlist;
-
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      if (cur->si && cur->si->provides) {
-       int i = 0;
-
-       for (; cur->si->provides[i]; i++) {
-        ev->stringset = set_str_add (ev->stringset, cur->si->provides[i]);
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->status == status_idle)
+        ev->stringset = set_str_add (ev->stringset, "idle");
+       else {
+        if (cur->status & status_enabled)
+         ev->stringset = set_str_add (ev->stringset, "enabled");
+        if (cur->status & status_working)
+         ev->stringset = set_str_add (ev->stringset, "working");
+        if (cur->status & status_disabled)
+         ev->stringset = set_str_add (ev->stringset, "disabled");
+        if (cur->status & status_suspended)
+         ev->stringset = set_str_add (ev->stringset, "suspended");
        }
-      } else {
-       ev->stringset = set_str_add (ev->stringset, "none");
+
+       break;
       }
-      break;
      }
+
+     cur = cur->next;
     }
+   } else if (path[2] && path[3] && strmatch (path[3], "name")) {
+    struct lmodule *cur = mlist;
 
-    cur = cur->next;
-   }
-  } else if (path[2] && path[3] && strmatch (path[3], "requires")) {
-   struct lmodule *cur = mlist;
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       ev->stringset = set_str_add (ev->stringset, cur->module->name);
+       break;
+      }
+     }
 
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      if (cur->si && cur->si->requires) {
-       int i = 0;
+     cur = cur->next;
+    }
+   } else if (path[2] && path[3] && strmatch (path[3], "provides")) {
+    struct lmodule *cur = mlist;
 
-       for (; cur->si->requires[i]; i++) {
-        ev->stringset = set_str_add (ev->stringset, cur->si->requires[i]);
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->si && cur->si->provides) {
+        int i = 0;
+
+        for (; cur->si->provides[i]; i++) {
+         ev->stringset = set_str_add (ev->stringset, cur->si->provides[i]);
+        }
+       } else {
+        ev->stringset = set_str_add (ev->stringset, "none");
        }
-      } else {
-       ev->stringset = set_str_add (ev->stringset, "none");
+       break;
       }
-      break;
      }
+
+     cur = cur->next;
     }
+   } else if (path[2] && path[3] && strmatch (path[3], "requires")) {
+    struct lmodule *cur = mlist;
 
-    cur = cur->next;
-   }
-  } else if (path[2] && path[3] && strmatch (path[3], "before")) {
-   struct lmodule *cur = mlist;
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->si && cur->si->requires) {
+        int i = 0;
 
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      if (cur->si && cur->si->before) {
-       int i = 0;
-
-       for (; cur->si->before[i]; i++) {
-        ev->stringset = set_str_add (ev->stringset, cur->si->before[i]);
+        for (; cur->si->requires[i]; i++) {
+         ev->stringset = set_str_add (ev->stringset, cur->si->requires[i]);
+        }
+       } else {
+        ev->stringset = set_str_add (ev->stringset, "none");
        }
-      } else {
-       ev->stringset = set_str_add (ev->stringset, "none");
+       break;
       }
-      break;
      }
+
+     cur = cur->next;
     }
+   } else if (path[2] && path[3] && strmatch (path[3], "before")) {
+    struct lmodule *cur = mlist;
 
-    cur = cur->next;
-   }
-  } else if (path[2] && path[3] && strmatch (path[3], "after")) {
-   struct lmodule *cur = mlist;
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->si && cur->si->before) {
+        int i = 0;
 
-   while (cur) {
-    if (cur->module && cur->module->rid) {
-     if (strmatch (path[2], cur->module->rid)) {
-      if (cur->si && cur->si->requires) {
-       int i = 0;
-
-       for (; cur->si->after[i]; i++) {
-        ev->stringset = set_str_add (ev->stringset, cur->si->after[i]);
+        for (; cur->si->before[i]; i++) {
+         ev->stringset = set_str_add (ev->stringset, cur->si->before[i]);
+        }
+       } else {
+        ev->stringset = set_str_add (ev->stringset, "none");
        }
-      } else {
-       ev->stringset = set_str_add (ev->stringset, "none");
+       break;
       }
-      break;
      }
-    }
 
-    cur = cur->next;
+     cur = cur->next;
+    }
+   } else if (path[2] && path[3] && strmatch (path[3], "after")) {
+    struct lmodule *cur = mlist;
+
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->si && cur->si->requires) {
+        int i = 0;
+
+        for (; cur->si->after[i]; i++) {
+         ev->stringset = set_str_add (ev->stringset, cur->si->after[i]);
+        }
+       } else {
+        ev->stringset = set_str_add (ev->stringset, "none");
+       }
+       break;
+      }
+     }
+
+     cur = cur->next;
+    }
+   }
+  } else if (!path[1] && strmatch (path[0], "mode")) {
+   if (cmode) {
+    if (cmode->idattr) {
+     ev->stringset = set_str_add (ev->stringset, cmode->idattr);
+    } else {
+     ev->stringset = set_str_add (ev->stringset, "unknown");
+    }
+   } else {
+    ev->stringset = set_str_add (ev->stringset, "none");
    }
   }
  }
@@ -447,32 +462,39 @@ void *einit_ipc_core_helpers_ipc_write_detach_action (struct ch_thread_data *da)
 void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && ev->set && ev->set[0] && path[0] && path[1] && path[2] && path[3] && strmatch (path[0], "modules") && strmatch (path[3], "status")) {
-  struct lmodule *cur = mlist;
+ if (path && ev->set && ev->set[0] && path[0]) {
+  if (strmatch (path[0], "mode")) {
+   struct einit_event ee = evstaticinit(einit_core_switch_mode);
+   ee.string = estrdup (ev->set[0]);
+   event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+   evstaticdestroy(ee);
+  } else if (path[1] && path[2] && path[3] && strmatch (path[0], "modules") && strmatch (path[3], "status")) {
+   struct lmodule *cur = mlist;
 
-  while (cur) {
-   if (cur->module && cur->module->rid) {
-    if (strmatch (path[2], cur->module->rid)) {
-     struct ch_thread_data *da = emalloc (sizeof (struct ch_thread_data));
-     da->b = cur;
-     da->c = NULL;
+   while (cur) {
+    if (cur->module && cur->module->rid) {
+     if (strmatch (path[2], cur->module->rid)) {
+      struct ch_thread_data *da = emalloc (sizeof (struct ch_thread_data));
+      da->b = cur;
+      da->c = NULL;
 
-     if (strmatch (ev->set[0], "enable")) {
-      da->a = einit_module_enable;
-     } else if (strmatch (ev->set[0], "disable")) {
-      da->a = einit_module_disable;
-     } else {
-      da->a = einit_module_custom;
-      da->c = estrdup (ev->set[0]);
+      if (strmatch (ev->set[0], "enable")) {
+       da->a = einit_module_enable;
+      } else if (strmatch (ev->set[0], "disable")) {
+       da->a = einit_module_disable;
+      } else {
+       da->a = einit_module_custom;
+       da->c = estrdup (ev->set[0]);
+      }
+
+      ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
+
+      break;
      }
-
-     ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
-
-     break;
     }
-   }
 
-   cur = cur->next;
+    cur = cur->next;
+   }
   }
  }
 }
@@ -480,8 +502,12 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
 void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && strmatch (path[0], "modules")) {
-  ev->flag = (path[1] && path[2] && path[3] ? 1 : 0);
+ if (path && path[0]) {
+  if (strmatch (path[0], "modules")) {
+   ev->flag = (path[1] && path[2] && path[3] ? 1 : 0);
+  } else if (!path[1] && strmatch (path[0], "mode")) {
+   ev->flag = 1;
+  }
  }
 }
 
