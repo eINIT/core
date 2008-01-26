@@ -85,8 +85,6 @@ module_register(einit_mod_so_self);
 
 pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-extern char einit_allow_code_unloading;
-
 int einit_mod_so_scanmodules (struct lmodule *);
 
 int einit_mod_so_cleanup (struct lmodule *pa) {

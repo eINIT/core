@@ -304,6 +304,8 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
        n.name = estrdup ("before");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = estrdup ("actions");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
        break;
       }
      }
@@ -422,6 +424,41 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
          ev->stringset = set_str_add (ev->stringset, cur->si->after[i]);
         }
        } else {
+        ev->stringset = set_str_add (ev->stringset, "none");
+       }
+       break;
+      }
+     }
+
+     cur = cur->next;
+    }
+   } else if (path[2] && path[3] && strmatch (path[3], "actions")) {
+    struct lmodule *cur = mlist;
+
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->enable) {
+        ev->stringset = set_str_add (ev->stringset, "enable");
+       }
+       if (cur->disable) {
+        ev->stringset = set_str_add (ev->stringset, "disable");
+       }
+       if (cur->enable && cur->disable) {
+        ev->stringset = set_str_add (ev->stringset, "zap");
+       }
+
+       if (cur->functions) {
+        int i = 0;
+
+        for (; cur->functions[i]; i++) {
+         ev->stringset = set_str_add (ev->stringset, cur->functions[i]);
+        }
+       } else if (cur->custom) {
+        ev->stringset = set_str_add (ev->stringset, "*");
+       }
+
+       if (!ev->stringset) {
         ev->stringset = set_str_add (ev->stringset, "none");
        }
        break;

@@ -85,8 +85,6 @@ enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
 char einit_quietness = 0;
 
-char einit_allow_code_unloading = 0;
-
 pthread_key_t einit_function_macro_key;
 
 /* some more variables that are only of relevance to main() */
@@ -178,9 +176,6 @@ void core_einit_event_handler_configuration_update (struct einit_event *ev) {
 
  if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
   mortality[bitch_epthreads] = node->value;
-
- if ((node = cfg_getnode ("core-settings-allow-code-unloading", NULL)))
-  einit_allow_code_unloading = node->flag;
 
  if ((str = cfg_getstring ("core-scheduler-niceness/core", NULL)))
   einit_core_niceness_increment = parse_integer (str);
