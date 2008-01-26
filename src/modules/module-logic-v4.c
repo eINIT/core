@@ -2230,7 +2230,100 @@ void module_logic_einit_event_handler_core_service_update (struct einit_event *e
  pthread_cond_broadcast (&module_logic_list_disable_ping_cond);
 }
 
+/* helpers for the new ipc */
 
+void module_logic_ipc_read (struct einit_event *ev) {
+ char **path = ev->para;
+
+ struct ipc_fs_node n;
+
+ if (!path) {
+  n.name = estrdup ("services");
+  n.is_file = 0;
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ } if (path && path[0]) {
+  if (strmatch (path[0], "services")) {
+   if (!path[1]) {
+    n.name = estrdup ("all");
+    n.is_file = 0;
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   } else if (strmatch (path[1], "all") && !path[2]) {
+    n.is_file = 0;
+
+    emutex_lock(&module_logic_service_list_mutex);
+
+    struct stree *cur = streelinear_prepare(module_logic_service_list);
+
+    while (cur) {
+     n.name = estrdup (cur->key);
+     ev->set = set_fix_add (ev->set, &n, sizeof (n));
+
+     cur = streenext (cur);
+    }
+
+    emutex_unlock(&module_logic_service_list_mutex);
+   } else if (path[2] && !path[3]) {
+    n.is_file = 1;
+
+    n.name = estrdup ("status");
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   } else if (path[2] && path[3] && strmatch (path[3], "status")) {
+    if (mod_service_is_provided (path[2])) {
+     ev->stringset = set_str_add (ev->stringset, "provided");
+    } else {
+     ev->stringset = set_str_add (ev->stringset, "not provided ");
+    }
+   }
+  }
+ }
+}
+
+struct ch_thread_data {
+ int a;
+ struct lmodule *b;
+ char *c;
+};
+
+void *module_logic_ipc_write_detach_action (struct ch_thread_data *da) {
+ mod (da->a, da->b, da->c);
+
+ if (da->c) {
+  efree (da->c);
+ }
+ efree (da);
+
+ return NULL;
+}
+
+void module_logic_ipc_write (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && ev->set && ev->set[0] && path[0]) {
+  if (path[1] && path[2] && path[3] && strmatch (path[0], "services") && strmatch (path[3], "status")) {
+   struct einit_event ee = evstaticinit(einit_core_change_service_status);
+
+   ee.set = (void **)set_str_add (NULL, path[2]);
+   ee.set = (void **)set_str_add ((char **)ee.set, ev->set[0]);
+
+   ee.stringset = (char **)ee.set;
+
+   fflush (stderr);
+
+   event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+   evstaticdestroy(ee);
+  }
+ }
+}
+
+void module_logic_ipc_stat (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && path[0]) {
+  if (strmatch (path[0], "services")) {
+   ev->flag = (path[1] && path[2] && path[3] ? 1 : 0);
+  }
+ }
+}
 
 int einit_module_logic_v4_cleanup (struct lmodule *this) {
  ipc_cleanup (this);
@@ -2244,6 +2337,10 @@ int einit_module_logic_v4_cleanup (struct lmodule *this) {
  event_ignore (einit_core_switch_mode, module_logic_einit_event_handler_core_switch_mode);
  event_ignore (einit_core_manipulate_services, module_logic_einit_event_handler_core_manipulate_services);
  event_ignore (einit_core_change_service_status, module_logic_einit_event_handler_core_change_service_status);
+
+ event_ignore (einit_ipc_read, module_logic_ipc_read);
+ event_ignore (einit_ipc_stat, module_logic_ipc_stat);
+ event_ignore (einit_ipc_write, module_logic_ipc_write);
 
  return 0;
 }
@@ -2263,6 +2360,10 @@ int einit_module_logic_v4_configure (struct lmodule *this) {
  event_listen (einit_core_switch_mode, module_logic_einit_event_handler_core_switch_mode);
  event_listen (einit_core_manipulate_services, module_logic_einit_event_handler_core_manipulate_services);
  event_listen (einit_core_change_service_status, module_logic_einit_event_handler_core_change_service_status);
+
+ event_listen (einit_ipc_read, module_logic_ipc_read);
+ event_listen (einit_ipc_stat, module_logic_ipc_stat);
+ event_listen (einit_ipc_write, module_logic_ipc_write);
 
  module_logic_einit_event_handler_core_configuration_update(NULL);
 
