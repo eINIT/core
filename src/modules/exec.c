@@ -98,7 +98,6 @@ struct daemonst * running = NULL;
 
 char **shell = NULL;
 char *dshell[] = {"/bin/sh", "-c", NULL};
-char *envfilebase = "/etc/econf.d/";
 
 char *safe_environment[] = { "PATH=/bin:/sbin:/usr/bin:/usr/sbin", "TERM=dumb", NULL };
 
@@ -116,7 +115,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
 void einit_exec_ipc_event_handler (struct einit_event *);
-void einit_exec_einit_event_handler_core_configuration_update (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
 void *dexec_watcher (pid_t pid);
@@ -135,17 +133,11 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-execute-command-q", 1, qexec_f);
 
  event_ignore (einit_process_died, einit_exec_process_event_handler);
- event_ignore (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
  event_ignore (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  sched_cleanup(irr);
 
  return 0;
-}
-
-void einit_exec_einit_event_handler_core_configuration_update (struct einit_event *ev) {
- if (!(envfilebase = cfg_getpath("configuration-system-exec-envfile-base")))
-  envfilebase = estrdup("/etc/econf.d/");
 }
 
 void einit_exec_update_daemons_from_pidfiles() {
@@ -203,60 +195,24 @@ void einit_exec_ipc_event_handler (struct einit_event *ev) {
 
 char *apply_envfile_f (char *command, const char **environment) {
  uint32_t i = 0;
- char **envfiles = NULL;
  char **variables = NULL;
 
  if (environment) {
   for (; environment[i]; i++) {
-   if (strprefix(environment[i], "envfile=")) {
-    if (envfiles) efree (envfiles);
-    envfiles = str2set (':', environment[i]+8);
-   } else if (strprefix(environment[i], "services=")) {
-    if (!envfiles) envfiles = str2set (':', environment[i]+9);
-   } else {
-    char *r = estrdup (environment[i]);
-    char *n = strchr (r, '=');
+   char *r = estrdup (environment[i]);
+   char *n = strchr (r, '=');
 
-    if (n) {
-     *n = 0;
-     n++;
+   if (n) {
+    *n = 0;
+    n++;
 
-     if (*n && !inset ((const void **)variables, r, SET_TYPE_STRING)) {
-      variables = set_str_add (variables, r);
-      variables = set_str_add (variables, n);
-     }
+    if (*n && !inset ((const void **)variables, r, SET_TYPE_STRING)) {
+     variables = set_str_add (variables, r);
+     variables = set_str_add (variables, n);
     }
-
-    efree (r);
-   }
-  }
- }
-
- if (envfiles) {
-  for (i = 0; envfiles[i]; i++) {
-   char buffer[BUFFERSIZE];
-   char *file = NULL;
-   struct stat st;
-
-   if (envfiles[i][0] == '/')
-    file = envfiles[i];
-   else {
-    file = emalloc (strlen (envfilebase)+strlen(envfiles[i]) + 1);
-    *file = 0;
-    strcat (file, envfilebase);
-    strcat (file, envfiles[i]);
    }
 
-   if (file && !stat (file, &st)) {
-    char *oc = command;
-
-    esprintf (buffer, BUFFERSIZE, " . %s;\n", file);
-
-    command = emalloc (strlen(buffer) + strlen (oc) + 1);
-    *command = 0;
-    strcat (command, buffer);
-    strcat (command, oc);
-   }
+   efree (r);
   }
  }
 
@@ -1233,7 +1189,6 @@ int einit_exec_configure (struct lmodule *irr) {
  if ((node = cfg_findnode ("configuration-system-daemon-term-timeout-secondary", 0, NULL)))
   kill_timeout_secondary = node->value;
 
- event_listen (einit_core_configuration_update, einit_exec_einit_event_handler_core_configuration_update);
  event_listen (einit_process_died, einit_exec_process_event_handler);
  event_listen (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
