@@ -957,7 +957,6 @@ struct lmodule **module_logic_find_things_to_disable() {
 
  if (module_logic_list_disable) {
   struct lmodule **pot = mod_list_all_enabled_modules();
-  unresolved = (char **)setdup ((const void **)module_logic_list_disable, SET_TYPE_STRING);
 
   if (!pot) {
 /* nothing enabled... nothing to do */
@@ -965,6 +964,8 @@ struct lmodule **module_logic_find_things_to_disable() {
    module_logic_list_disable = NULL;
    return NULL;
   }
+
+  unresolved = (char **)setdup ((const void **)module_logic_list_disable, SET_TYPE_STRING);
 
   for (i = 0; pot[i]; i++) {
 //   mod_service_not_in_use (pot[i]);

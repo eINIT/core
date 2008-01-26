@@ -1083,11 +1083,15 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    }
   }
 
-  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
-  int tx = 0;
-  for (; tmp[tx]; tx++) {
-   if (tmp[tx] == '/') {
-    tmp[tx] = '-';
+  if (strmatch (s->key, "/")) {
+   snprintf (tmp, BUFFERSIZE, "mount-root");
+  } else {
+   esprintf (tmp, BUFFERSIZE, "mount%s", s->key);
+   int tx = 0;
+   for (; tmp[tx]; tx++) {
+    if (tmp[tx] == '/') {
+     tmp[tx] = '-';
+    }
    }
   }
 
