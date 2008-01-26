@@ -1804,12 +1804,6 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
   evstaticdestroy (evs);
 
   module_logic_idle_actions();
-
-  notice (3, "suspending and unloading unused modules...");
-
-  struct einit_event eml = evstaticinit(einit_core_suspend_all);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy(eml);
  }
 }
 
@@ -1874,12 +1868,6 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
   evstaticdestroy (evs);
 
   module_logic_idle_actions();
-
-  notice (3, "suspending and unloading unused modules...");
-
-  struct einit_event eml = evstaticinit(einit_core_suspend_all);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy(eml);
  }
 }
 
@@ -1966,8 +1954,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
       eprintf (ev->output, " \e[34m>>\e[0m rid: %s.\n", tm[r]->module->rid);
      if (tm[r]->source)
       eprintf (ev->output, " \e[34m>>\e[0m source: %s.\n", tm[r]->source);
-
-     if (tm[r]->suspend) { eputs (" \e[34m>>\e[0m this module supports suspension.\n", ev->output); }
 
      eputs (" \e[34m>>\e[0m supported functions:", ev->output);
 
@@ -2062,12 +2048,6 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
   evstaticdestroy (evs);
 
   module_logic_idle_actions();
-
-  notice (3, "suspending and unloading unused modules...");
-
-  struct einit_event eml = evstaticinit(einit_core_suspend_all);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy(eml);
  }
 }
 

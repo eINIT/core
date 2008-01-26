@@ -104,7 +104,6 @@ struct {
 };
 
 pthread_mutex_t einit_module_transformations_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
-int einit_module_transformations_usage = 0;
 
 void einit_module_transformations_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
@@ -129,8 +128,6 @@ void einit_module_transformations_garbage_free () {
 }
 
 void einit_module_transformations_einit_event_handler_configuration_update (struct einit_event *ev) {
- einit_module_transformations_usage++;
-
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
 #ifdef POSIXREGEX
@@ -201,13 +198,9 @@ void einit_module_transformations_einit_event_handler_configuration_update (stru
   if (ca)
    streefree (ca);
 #endif
-
- einit_module_transformations_usage--;
 }
 
 void einit_module_transformations_einit_event_handler_update_module (struct einit_event *ev) {
- einit_module_transformations_usage++;
-
   struct lmodule *module = ev->para;
   struct cfgnode *lnode = NULL;
 
@@ -398,8 +391,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
    }
 #endif
-
- einit_module_transformations_usage--;
 }
 
 int einit_module_transformations_cleanup (struct lmodule *r) {
@@ -407,28 +398,6 @@ int einit_module_transformations_cleanup (struct lmodule *r) {
  event_ignore (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);
 
  return 0;
-}
-
-int einit_module_transformations_suspend (struct lmodule *r) {
- if (!einit_module_transformations_usage) {
-  event_wakeup (einit_core_configuration_update, r);
-  event_wakeup (einit_core_update_module, r);
-  event_ignore (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
-  event_ignore (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);
-
-  einit_module_transformations_garbage_free();
-
-  return status_ok;
- } else {
-  return status_failed;
- }
-}
-
-int einit_module_transformations_resume (struct lmodule *r) {
- event_wakeup_cancel (einit_core_configuration_update, r);
- event_wakeup_cancel (einit_core_update_module, r);
-
- return status_ok;
 }
 
 int einit_module_transformations_configure (struct lmodule *r) {
@@ -470,8 +439,6 @@ int einit_module_transformations_configure (struct lmodule *r) {
 
 
  thismodule->cleanup = einit_module_transformations_cleanup;
- thismodule->suspend = einit_module_transformations_suspend;
- thismodule->resume = einit_module_transformations_resume;
 
  event_listen (einit_core_update_module, einit_module_transformations_einit_event_handler_update_module);
  event_listen (einit_core_configuration_update, einit_module_transformations_einit_event_handler_configuration_update);

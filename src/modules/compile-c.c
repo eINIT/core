@@ -81,7 +81,6 @@ module_register(module_c_self);
 #endif
 
 char module_c_firstrun = 1;
-int module_c_usage = 0;
 
 char module_c_compile_file (char *oname, char *base, char *nname) {
  char ret = 0;
@@ -223,13 +222,9 @@ char module_c_update_modules () {
 }
 
 void module_c_einit_event_handler_update_configuration (struct einit_event *ev) {
- module_c_usage++;
-
  if (module_c_update_modules()) {
   ev->chain_type = einit_core_configuration_update;
  }
-
- module_c_usage--;
 }
 
 int module_c_cleanup (struct lmodule *this) {
@@ -238,22 +233,6 @@ int module_c_cleanup (struct lmodule *this) {
  event_ignore (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 
  return 0;
-}
-
-int module_c_suspend (struct lmodule *this) {
- if (!module_c_usage) {
-  event_wakeup (einit_core_update_configuration, this);
-  event_ignore (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
-
-  return status_ok;
- } else
-  return status_failed;
-}
-
-int module_c_resume (struct lmodule *this) {
- event_wakeup_cancel (einit_core_update_configuration, this);
-
- return status_ok;
 }
 
 int module_c_configure (struct lmodule *irr) {
@@ -266,9 +245,6 @@ int module_c_configure (struct lmodule *irr) {
  }
 
  thismodule->cleanup = module_c_cleanup;
-
- thismodule->suspend = module_c_suspend;
- thismodule->resume = module_c_resume;
 
  event_listen (einit_core_update_configuration, module_c_einit_event_handler_update_configuration);
 

@@ -16,8 +16,6 @@
    <modules id="primus" path="/lib/einit/modules" pattern-allow=".*\.so" />
 
    <configuration-path s="/etc/einit/" />
-
-   <allow-code-unloading b="false" />
   </settings>
 
   <scheduler>

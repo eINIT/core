@@ -87,8 +87,6 @@ char einit_quietness = 0;
 
 char einit_allow_code_unloading = 0;
 
-time_t event_snooze_time = 0;
-
 pthread_key_t einit_function_macro_key;
 
 /* some more variables that are only of relevance to main() */
@@ -153,29 +151,6 @@ int cleanup () {
  return 0;
 }
 #endif
-
-void core_timer_event_handler_tick (struct einit_event *ev) {
- if (ev->integer == event_snooze_time) {
-  struct lmodule *lm = mlist;
-  int ok = 0;
-
-  while (lm) {
-   ok += (mod (einit_module_suspend, lm, NULL) == status_ok) ? 1 : 0;
-
-   lm = lm->next;
-  }
-
-  if (ok)
-   notice (4, "%i modules suspended", ok);
-
-  event_snooze_time = 0;
-
-  fprintf (stderr, "pruning thread pool...\n");
-  fflush (stderr);
-
-  ethread_prune_thread_pool ();
- }
-}
 
 void core_einit_event_handler_configuration_update (struct einit_event *ev) {
  struct cfgnode *node;
@@ -260,36 +235,6 @@ void core_einit_event_handler_recover (struct einit_event *ev) {
  }
 }
 
-void core_einit_event_handler_suspend_all (struct einit_event *ev) {
- struct lmodule *lm = mlist;
- int ok = 0;
-
- while (lm) {
-  ok += (mod (einit_module_suspend, lm, NULL) == status_ok) ? 1 : 0;
-
-  lm = lm->next;
- }
-
- if (ok)
-  notice (4, "%i modules suspended", ok);
-
- event_snooze_time = event_timer_register_timeout(60);
-}
-
-void core_einit_event_handler_resume_all (struct einit_event *ev) {
- struct lmodule *lm = mlist;
- int ok = 0;
-
- while (lm) {
-  ok += (mod (einit_module_resume, lm, NULL) == status_ok) ? 1 : 0;
-
-  lm = lm->next;
- }
-
- if (ok)
-  notice (4, "%i available", ok);
-}
-
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i, ret = EXIT_SUCCESS;
@@ -319,12 +264,9 @@ int main(int argc, char **argv, char **environ) {
 // is this the system's init-process?
  isinit = getpid() == 1;
 
- event_listen (einit_timer_tick, core_timer_event_handler_tick);
  event_listen (einit_core_configuration_update, core_einit_event_handler_configuration_update);
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_core_recover, core_einit_event_handler_recover);
- event_listen (einit_core_suspend_all, core_einit_event_handler_suspend_all);
- event_listen (einit_core_resume_all, core_einit_event_handler_resume_all);
 
  if (argv) einit_argv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
 

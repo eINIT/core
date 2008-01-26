@@ -121,10 +121,6 @@ enum einit_module_task {
 /*!< Option set by mod(): Show feedback. */
  einit_module_ignore_dependencies = 0x0800,
 /*!< Option: Ignore dependencies on module status change with mod() */
- einit_module_suspend             = 0x1000,
-/*!< Addon Command: Suspend this module */
- einit_module_resume              = 0x2000
-/*!< Addon Command: Resume this module (suspended modules that are acted on are always resume()'d automatically) */
 };
 /*!\} */
 
@@ -145,8 +141,6 @@ enum einit_module_status {
 /*!< Status Information: Last command is not executing anymore. */
  status_working   = 0x4000,
 /*!< Status Information: Someone is working on this object just now. */
- status_suspended = 0x2000,
-/*!< Status Information: Module is currently not loaded or otherwise suspended. */
  status_command_not_implemented = 0x0020,
 /*!< Status Information: command not implemented*/
  status_enabled   = 0x0100,
@@ -237,14 +231,7 @@ struct lmodule {
 
  char **functions;                              /*!< field for custom functions */
 
- void *resumedata;
-
- int (*suspend) (struct lmodule *);             /*!< Pointer to the module's suspend()-function */
- int (*resume) (struct lmodule *);              /*!< Pointer to the module's resume()-function */
  int (*recover) (struct lmodule *);             /*!< Pointer to the module's recover()-function */
-
- int (*do_suspend) (struct lmodule *);          /*!< Pointer to the module loader's do_suspend()-function */
- int (*do_resume) (struct lmodule *);           /*!< Pointer to the module loaders's do_resume()-function */
 };
 
 /*!\brief Service-usage information.

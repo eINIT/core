@@ -93,80 +93,6 @@ int einit_mod_so_cleanup (struct lmodule *pa) {
  return 0;
 }
 
-#if 0
-int einit_mod_so_do_suspend (struct lmodule *pa) {
- if (pa->sohandle) {
-  const struct smodule *o = pa->module;
-  struct smodule *n = emalloc (sizeof (struct smodule));
-  memset (n, 0, sizeof (struct smodule));
-
-  n->rid = estrdup (o->rid);
-  n->name = estrdup (o->name);
-
-  if (o->si.requires) { n->si.requires = (char **)setdup ((const void **)o->si.requires, SET_TYPE_STRING); }
-  if (o->si.provides) { n->si.provides = (char **)setdup ((const void **)o->si.provides, SET_TYPE_STRING); }
-  if (o->si.before) { n->si.before = (char **)setdup ((const void **)o->si.before, SET_TYPE_STRING); }
-  if (o->si.after) { n->si.after = (char **)setdup ((const void **)o->si.after, SET_TYPE_STRING); }
-
-  pa->module = n;
-
-  if (!dlclose (pa->sohandle)) {   
-   pa->sohandle = NULL;
-
-   return status_ok;
-  } else {
-   return status_failed;
-  }
- } else return status_ok;
-}
-
-int einit_mod_so_do_resume (struct lmodule *pa) {
- void *sohandle = dlopen (pa->source, RTLD_NOW);
- if (sohandle == NULL) {
-  eputs (dlerror (), stdout);
-  return status_failed;
- }
-
- struct smodule **modinfo = (struct smodule **)dlsym (sohandle, "self");
- if ((modinfo != NULL) && ((*modinfo) != NULL)) {
-  if ((*modinfo)->eibuild == BUILDNUMBER) {
-   struct smodule *sm = (struct smodule *)pa->module;
-   pa->module = *modinfo;
-
-   if (sm) {
-    if (sm->si.provides) efree (sm->si.provides);
-    if (sm->si.requires) efree (sm->si.requires);
-    if (sm->si.after) efree (sm->si.after);
-    if (sm->si.before) efree (sm->si.before);
-
-    efree (sm->rid);
-    efree (sm->name);
-    efree (sm);
-   }
-
-   pa->do_suspend = einit_mod_so_do_suspend;
-   pa->do_resume = einit_mod_so_do_resume;
-
-   pa->sohandle = sohandle;
-
-   pa->module->configure (pa);
-  } else {
-   notice (1, "module %s: not loading: different build number: %i.\n", pa->source, (*modinfo)->eibuild);
-
-   dlclose (sohandle);
-   return status_failed;
-  }
- } else {
-  notice (1, "module %s: not loading: missing header.\n", pa->source);
-
-  dlclose (sohandle);
-  return status_failed;
- }
-
- return status_ok;
-}
-#endif
-
 int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  void *sohandle;
  char **modules = NULL;
@@ -198,16 +124,6 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 /* make sure all bootstrap modules get updated */
  while (lm) {
   if (lm->source && (strprefix(lm->source, bootstrapmodulepath))) {
-#if 0
-   if (einit_allow_code_unloading) {
-    lm->do_suspend = einit_mod_so_do_suspend;
-    lm->do_resume = einit_mod_so_do_resume;
-   } else {
-    lm->do_suspend = NULL;
-    lm->do_resume = NULL;
-   }
-#endif
-
    lm = mod_update (lm);
 
    if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
@@ -227,16 +143,6 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
    while (lm) {
     if (lm->source && strmatch(lm->source, modules[z])) {
-#if 0
-     if (einit_allow_code_unloading) {
-      lm->do_suspend = einit_mod_so_do_suspend;
-      lm->do_resume = einit_mod_so_do_resume;
-     } else {
-      lm->do_suspend = NULL;
-      lm->do_resume = NULL;
-     }
-#endif
-
      lm = mod_update (lm);
 
      if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
@@ -262,13 +168,6 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
       new->source = estrdup(modules[z]);
-
-#if 0
-      if (einit_allow_code_unloading) {
-       new->do_suspend = einit_mod_so_do_suspend;
-       new->do_resume = einit_mod_so_do_resume;
-      }
-#endif
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 

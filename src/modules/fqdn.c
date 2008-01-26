@@ -74,57 +74,18 @@ module_register(einit_fqdn_self);
 
 #endif
 
-int einit_fqdn_usage = 0;
-
 void einit_fqdn_set () {
- einit_fqdn_usage++;
-
  char *hname, *dname;
  if ((hname = cfg_getstring ("configuration-network-hostname", NULL)))
   sethostname (hname, strlen (hname));
  if ((dname = cfg_getstring ("configuration-network-domainname", NULL)))
   setdomainname (dname, strlen (dname));
  notice (4, "hostname set to: %s.%s", hname, dname);
-
- einit_fqdn_usage--;
 }
-
-#if 0
-int einit_fqdn_suspend (struct lmodule *irr) {
- if (!einit_fqdn_usage) {
-  event_wakeup (einit_boot_early, irr);
-  event_ignore (einit_boot_early, einit_fqdn_set);
-
-  return status_ok;
- } else
-  return status_failed;
-}
-
-int einit_fqdn_resume (struct lmodule *irr) {
- event_wakeup_cancel (einit_boot_early, irr);
-
- return status_ok;
-}
-#endif
-
-#if 0
-int einit_fqdn_cleanup (struct lmodule *this) {
- event_ignore (einit_boot_early, einit_fqdn_set);
-
- return 0;
-}
-#endif
 
 int einit_fqdn_configure (struct lmodule *irr) {
  module_init (irr);
 
-#if 0
- thismodule->cleanup = einit_fqdn_cleanup;
- thismodule->suspend = einit_fqdn_suspend;
- thismodule->resume  = einit_fqdn_resume;
-#endif
-
-// event_listen (einit_boot_early, einit_fqdn_set);
  if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
   einit_fqdn_set();
  }

@@ -76,8 +76,6 @@ module_register(bootstrap_einit_configuration_stree_self);
 
 #endif
 
-int bootstrap_einit_configuration_stree_usage = 0;
-
 struct {
  void **chunks;
 } cfg_stree_garbage = {
@@ -110,8 +108,6 @@ void cfg_stree_garbage_free () {
 }
 
 int cfg_free () {
- bootstrap_einit_configuration_stree_usage++;
-
  struct stree *cur = streelinear_prepare(hconfiguration);
  struct cfgnode *node = NULL;
  while (cur) {
@@ -126,7 +122,6 @@ int cfg_free () {
  streefree (hconfiguration);
  hconfiguration = NULL;
 
- bootstrap_einit_configuration_stree_usage--;
  return 1;
 }
 
@@ -137,17 +132,13 @@ regex_t cfg_storage_allowed_duplicates;
 #endif
 
 int cfg_addnode_f (struct cfgnode *node) {
- bootstrap_einit_configuration_stree_usage++;
-
  if (!node || !node->id) {
-  bootstrap_einit_configuration_stree_usage--;
   return -1;
  }
 
  if (strmatch (node->id, "core-settings-configuration-multi-node-variables")) {
   if (!node->arbattrs) {
 /* without arbattrs, this node is invalid */
-   bootstrap_einit_configuration_stree_usage--;
    return -1;
   } else {
    int i = 0;
@@ -253,17 +244,12 @@ int cfg_addnode_f (struct cfgnode *node) {
 /* hmmm.... */
 /* cfg_stree_garbage_add_chunk (node->arbattrs);*/
  cfg_stree_garbage_add_chunk (node->id);
-
- bootstrap_einit_configuration_stree_usage--;
  return 0;
 }
 
 struct cfgnode *cfg_findnode_f (const char *id, enum einit_cfg_node_options type, const struct cfgnode *base) {
- bootstrap_einit_configuration_stree_usage++;
-
  struct stree *cur = hconfiguration;
  if (!id) {
-  bootstrap_einit_configuration_stree_usage--;
   return NULL;
  }
 
@@ -283,25 +269,20 @@ struct cfgnode *cfg_findnode_f (const char *id, enum einit_cfg_node_options type
 
  while (cur) {
   if (cur->value && (!type || !(((struct cfgnode *)cur->value)->type ^ type))) {
-   bootstrap_einit_configuration_stree_usage--;
    return cur->value;
   }
   cur = streefind (cur, id, tree_find_next);
  }
-
- bootstrap_einit_configuration_stree_usage--;
  return NULL;
 }
 
 // get string (by id)
 char *cfg_getstring_f (const char *id, const struct cfgnode *mode) {
- bootstrap_einit_configuration_stree_usage++;
  struct cfgnode *node = NULL;
  char *ret = NULL, **sub;
  uint32_t i;
 
  if (!id) {
-  bootstrap_einit_configuration_stree_usage--;
   return NULL;
  }
  mode = mode ? mode : cmode;
@@ -315,7 +296,6 @@ char *cfg_getstring_f (const char *id, const struct cfgnode *mode) {
     ret = node->svalue;
 
    efree (sub);
-   bootstrap_einit_configuration_stree_usage--;
    return ret;
   }
 
@@ -338,18 +318,15 @@ char *cfg_getstring_f (const char *id, const struct cfgnode *mode) {
    ret = node->svalue;
  }
 
- bootstrap_einit_configuration_stree_usage--;
  return ret;
 }
 
 // get node (by id)
 struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
- bootstrap_einit_configuration_stree_usage++;
  struct cfgnode *node = NULL;
  struct cfgnode *ret = NULL;
 
  if (!id) {
-  bootstrap_einit_configuration_stree_usage--;
   return NULL;
  }
  mode = mode ? mode : cmode;
@@ -390,13 +367,11 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
  if (!ret && (node = cfg_findnode (id, 0, NULL)))
   ret = node;
 
- bootstrap_einit_configuration_stree_usage--;
  return ret;
 }
 
 // return a new stree with the filter applied
 struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type) {
- bootstrap_einit_configuration_stree_usage++;
  struct stree *retval = NULL;
 
 #ifdef POSIXREGEX
@@ -417,13 +392,11 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
  }
 #endif
 
- bootstrap_einit_configuration_stree_usage--;
  return retval;
 }
 
 // return a new stree with a certain prefix applied
 struct stree *cfg_prefix_f (const char *prefix) {
- bootstrap_einit_configuration_stree_usage++;
  struct stree *retval = NULL;
 
 #ifdef POSIXREGEX
@@ -438,17 +411,14 @@ struct stree *cfg_prefix_f (const char *prefix) {
  }
 #endif
 
- bootstrap_einit_configuration_stree_usage--;
  return retval;
 }
 
 /* those i-could've-sworn-there-were-library-functions-for-that functions */
 char *cfg_getpath_f (const char *id) {
- bootstrap_einit_configuration_stree_usage++;
  int mplen;
  char *svpath = cfg_getstring (id, NULL);
  if (!svpath) {
-  bootstrap_einit_configuration_stree_usage--;
   return NULL;
  }
  mplen = strlen (svpath) +1;
@@ -462,16 +432,12 @@ char *cfg_getpath_f (const char *id) {
   tmpsvpath[mplen] = 0;
 //  svpath->svalue = tmpsvpath;
 //  svpath->path = tmpsvpath;
-  bootstrap_einit_configuration_stree_usage--;
   return tmpsvpath;
  }
- bootstrap_einit_configuration_stree_usage--;
  return svpath;
 }
 
 void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update (struct einit_event *ev) {
- bootstrap_einit_configuration_stree_usage++;
-
 // update global environment here
  char **env = einit_global_environment;
  einit_global_environment = NULL;
@@ -485,8 +451,6 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
   }
  }
  einit_global_environment = env;
-
- bootstrap_einit_configuration_stree_usage--;
 }
 
 void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *ev) {
@@ -574,41 +538,6 @@ void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *
  }
 }
 
-int bootstrap_einit_configuration_stree_suspend (struct lmodule *this) {
- if (!bootstrap_einit_configuration_stree_usage) {
-//  cfg_stree_garbage_free();
-  sleep (1);
-
-  if (!bootstrap_einit_configuration_stree_usage) {
-   event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
-   event_ignore (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
-
-   event_wakeup (einit_core_configuration_update, this);
-   event_wakeup (einit_ipc_request_generic, this);
-
-/*   function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
-   function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
-   function_unregister ("einit-configuration-node-get-string", 1, cfg_getstring_f);
-   function_unregister ("einit-configuration-node-get-find", 1, cfg_findnode_f);
-   function_unregister ("einit-configuration-node-get-filter", 1, cfg_filter_f);
-   function_unregister ("einit-configuration-node-get-path", 1, cfg_getpath_f);
-   function_unregister ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);*/
-
-   sleep (1);
-  } else {
-   return status_failed;
-  }
-
-  return status_ok;
- } else {
-  return status_failed;
- }
-}
-
-int bootstrap_einit_configuration_stree_resume (struct lmodule *this) {
- return status_ok;
-}
-
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
@@ -630,11 +559,6 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  module_init (tm);
 
  thismodule->cleanup = bootstrap_einit_configuration_stree_cleanup;
-// disable suspend/resume for this module for the time being...
-/*
- thismodule->suspend = bootstrap_einit_configuration_stree_suspend;
- thismodule->resume = bootstrap_einit_configuration_stree_resume;
-*/
 
  event_listen (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);

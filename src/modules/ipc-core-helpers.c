@@ -80,7 +80,6 @@ module_register(einit_ipc_core_helpers_self);
 struct lmodule *mlist;
 
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
-int einit_ipc_core_helpers_event_usage = 0;
 
 #define STATUS2STRING(status)\
  (status == status_idle ? "idle" : \
@@ -92,7 +91,6 @@ int einit_ipc_core_helpers_event_usage = 0;
  (status & status_enabled ? "E" : "D")))
 
 void *einit_ipc_core_helpers_detached_module_action (char **argv) {
- einit_ipc_core_helpers_event_usage++;
  struct lmodule *cur = mlist;
  enum einit_module_task task = 0;
 
@@ -115,13 +113,10 @@ void *einit_ipc_core_helpers_detached_module_action (char **argv) {
 
  efree (argv);
 
- einit_ipc_core_helpers_event_usage--;
-
  return NULL;
 }
 
 void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
- einit_ipc_core_helpers_event_usage++;
  if (!ev || !ev->argv) goto done;
 
  if ((ev->argc >= 2) && ev->argv[0] && ev->argv[1]) {
@@ -228,7 +223,6 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
  }
 
  done:
- einit_ipc_core_helpers_event_usage--;
  return;
 }
 
@@ -331,8 +325,6 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
          ev->stringset = set_str_add (ev->stringset, "working");
         if (cur->status & status_disabled)
          ev->stringset = set_str_add (ev->stringset, "disabled");
-        if (cur->status & status_suspended)
-         ev->stringset = set_str_add (ev->stringset, "suspended");
        }
 
        break;
@@ -561,29 +553,11 @@ int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
  return 0;
 }
 
-int einit_ipc_core_helpers_suspend (struct lmodule *irr) {
- if (!einit_ipc_core_helpers_event_usage) {
-  event_wakeup (einit_ipc_request_generic, irr);
-  event_ignore (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
-
-  return status_ok;
- } else
-  return status_failed;
-}
-
-int einit_ipc_core_helpers_resume (struct lmodule *irr) {
- event_wakeup_cancel (einit_ipc_request_generic, irr);
-
- return status_ok;
-}
-
 int einit_ipc_core_helpers_configure (struct lmodule *r) {
  module_init (r);
  ipc_configure(r);
 
  thismodule->cleanup = einit_ipc_core_helpers_cleanup;
- thismodule->resume = einit_ipc_core_helpers_resume;
- thismodule->suspend = einit_ipc_core_helpers_suspend;
 
  event_listen (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
  event_listen (einit_ipc_read, einit_ipc_core_helpers_ipc_read);

@@ -60,72 +60,6 @@ pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 int modules_work_count = 0;
 time_t modules_last_change = 0;
 
-int mod_suspend (struct lmodule *m) {
- if (m && !(m->status & status_suspended)) {
-  if (m->suspend && m->do_suspend && m->resume && m->do_resume) {
-   if ((m->suspend (m) == status_ok) && (m->do_suspend (m) == status_ok)) {
-//    notice (3, "module suspended");
-    m->status |= status_suspended;
-    return status_ok;
-   } else return status_failed;
-  } else {
-   return status_failed;
-  }
- } else {
-  return status_ok;
- }
-}
-
-int mod_resume (struct lmodule *m) {
- if (m && (m->status & status_suspended)) {
-  if (m->resume && m->do_resume) {
-   if ((m->do_resume (m) == status_ok) && (m->resume (m) == status_ok)) {
-//    notice (3, "module resumed");
-    m->status ^= status_suspended;
-    return status_ok;
-   } else return status_failed;
-  } else {
-   return status_failed;
-  }
- } else {
-  return status_ok;
- }
-}
-
-#if 0
-void mod_freedesc (struct lmodule *m) {
- emutex_lock (&m->mutex);
-
- if (m->next != NULL)
-  mod_freedesc (m->next);
-
- m->next = NULL;
- if (m->status & status_enabled) {
-  mod (einit_module_disable | einit_module_ignore_dependencies | einit_module_ignore_mutex, m, NULL);
- }
-
- if (m->cleanup)
-  m->cleanup (m);
-
-// m->status |= MOD_LOCKED;
-
- emutex_unlock (&m->mutex);
- emutex_destroy (&m->mutex);
-
-// if (m->sohandle)
-//  dlclose (m->sohandle);
-
-// efree (m);
-}
-
-int mod_freemodules ( void ) {
- if (mlist != NULL)
-  mod_freedesc (mlist);
- mlist = NULL;
- return 1;
-}
-#endif
-
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
 
@@ -251,36 +185,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
  if (!module) return 0;
 
-/* wait if the module is already being processed in a different thread */
- if ((task & einit_module_suspend) || (task & einit_module_resume)) {
-  if (pthread_mutex_trylock (&module->mutex))
-   return status_failed;
- } else
-  emutex_lock (&module->mutex);
-
- if (task & einit_module_suspend) {
-  int retval = mod_suspend (module);
-
-  emutex_unlock (&module->mutex);
-
-  return retval;
- }
-
- if (task & einit_module_resume) {
-  int retval = mod_resume (module);
-
-  emutex_unlock (&module->mutex);
-
-  return retval;
- }
-
- if (module->status & status_suspended) {
-  if (!(mod_resume (module) == status_ok)) {
-   emutex_unlock (&module->mutex);
-
-   return status_failed;
-  }
- }
+ emutex_lock (&module->mutex);
 
  if (task & einit_module_custom) {
   if (!custom_command) {

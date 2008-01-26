@@ -84,7 +84,6 @@ module_register(einit_preload_self);
 #endif
 
 void einit_preload_boot_event_handler_early (struct einit_event *);
-int einit_preload_usage = 0;
 
 #if 0
 int einit_preload_cleanup (struct lmodule *this) {
@@ -136,8 +135,6 @@ void einit_preload_run () {
 }
 
 void einit_preload_boot_event_handler_early (struct einit_event *ev) {
- einit_preload_usage++;
-
  struct cfgnode *node = cfg_getnode ("configuration-system-preload", NULL);
 
  if (node && node->flag) {
@@ -170,43 +167,11 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
     break;
   }
  }
-
- einit_preload_usage--;
 }
-
-#if 0
-int einit_preload_suspend (struct lmodule *irr) {
- if (!einit_preload_usage) {
-  if (!(coremode & einit_mode_sandbox)) {
-   event_wakeup (einit_boot_early, irr);
-   event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
-  }
-
-  return status_ok;
- } else
-  return status_failed;
-}
-
-int einit_preload_resume (struct lmodule *irr) {
- event_wakeup_cancel (einit_boot_early, irr);
-
- return status_ok;
-}
-#endif
 
 int einit_preload_configure (struct lmodule *irr) {
  module_init (irr);
  sched_configure(irr);
-
-#if 0
- thismodule->cleanup = einit_preload_cleanup;
- thismodule->suspend = einit_preload_suspend;
- thismodule->resume  = einit_preload_resume;
-
- if ((coremode & einit_mode_sandbox)) return 0;
-
- event_listen (einit_boot_early, einit_preload_boot_event_handler_early);
-#endif
 
  if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
   einit_preload_boot_event_handler_early(NULL);

@@ -116,9 +116,6 @@ enum einit_event_code {
  einit_core_switching               = einit_event_subsystem_core     | 0x203,
  einit_core_done_switching          = einit_event_subsystem_core     | 0x204,
 
- einit_core_suspend_all             = einit_event_subsystem_core     | 0x400,
- einit_core_resume_all              = einit_event_subsystem_core     | 0x401,
-
  einit_core_service_enabling        = einit_event_subsystem_core     | 0x501,
  einit_core_service_enabled         = einit_event_subsystem_core     | 0x502,
  einit_core_service_disabling       = einit_event_subsystem_core     | 0x503,
@@ -291,9 +288,6 @@ void *event_emit (struct einit_event *, enum einit_event_emit_flags);
 void event_listen (enum einit_event_subsystems, void (*)(struct einit_event *));
 void event_ignore (enum einit_event_subsystems, void (*)(struct einit_event *));
 
-void event_wakeup (enum einit_event_code, struct lmodule *);
-void event_wakeup_cancel (enum einit_event_code, struct lmodule *);
-
 void function_register_type (const char *, uint32_t, void const *, enum function_type, struct lmodule *);
 void function_unregister_type (const char *, uint32_t, void const *, enum function_type, struct lmodule *);
 
@@ -307,14 +301,14 @@ struct exported_function **function_look_up (const char *, const uint32_t, const
 struct exported_function *function_look_up_one (const char *, const uint32_t, const char **);
 
 #define function_call(rv,data,...)\
- ((rv)(((data) != NULL) && (!(data)->module || !((data)->module->status & status_suspended) || (mod(einit_module_resume, (data)->module, NULL) == status_ok)) && ((data)->function != NULL) ?\
+ ((rv)(((data) != NULL) && ((data)->function != NULL) ?\
   (((data)->type == function_type_generic) ? \
   (((rv (*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
   (((rv (*)())(data)->function) (__VA_ARGS__))) :\
   0))
 
 #define function_call_wfailrv(rv,data,failrv,...)\
- ((rv)(((data) != NULL) && (!(data)->module || !((data)->module->status & status_suspended) || (mod(einit_module_resume, (data)->module, NULL) == status_ok)) && ((data)->function != NULL) ?\
+ ((rv)(((data) != NULL) && ((data)->function != NULL) ?\
   (((data)->type == function_type_generic) ? \
   (((rv (*)(char *, ...))(data)->function) ((data)->name, __VA_ARGS__)) :\
   (((rv (*)())(data)->function) (__VA_ARGS__))) :\

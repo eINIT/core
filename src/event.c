@@ -56,53 +56,6 @@ struct itree *event_handlers = NULL;
 
 uint32_t cseqid = 0;
 
-struct wakeup_data {
- enum einit_event_code code;
- struct lmodule *module;
- struct wakeup_data *next;
-};
-
-pthread_mutex_t event_wakeup_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-struct wakeup_data *event_wd = NULL;
-
-extern time_t event_snooze_time;
-
-void event_do_wakeup_calls (enum einit_event_code c) {
- struct wakeup_data *d = event_wd;
-
- while (d) {
-  if (d->code == c) {
-   struct lmodule *m = NULL;
-   emutex_lock (&event_wakeup_mutex);
-   if (d->module && (d->module->status & status_suspended))
-    m = d->module;
-   emutex_unlock (&event_wakeup_mutex);
-
-   if (m) {
-    mod(einit_module_resume, m, NULL);
-    time_t nt = time(NULL) + 60;
-    emutex_lock (&event_wakeup_mutex);
-    if (!event_snooze_time || ((event_snooze_time+30) < nt)) {
-     event_snooze_time = nt;
-     emutex_unlock (&event_wakeup_mutex);
-
-     {
-      struct einit_event ev = evstaticinit (einit_timer_set);
-      ev.integer = event_snooze_time;
-
-      event_emit (&ev, einit_event_flag_broadcast);
-
-      evstaticdestroy (ev);
-     }
-    } else
-     emutex_unlock (&event_wakeup_mutex);
-   }
-  }
-  d = d->next;
- }
-}
-
 struct evt_wrapper_data {
   void (*handler) (struct einit_event *);
   struct einit_event *event;
@@ -195,8 +148,6 @@ void *event_subthread (struct einit_event *event) {
 void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) {
  pthread_t **threads = NULL;
  if (!event || !event->type) return NULL;
-
- event_do_wakeup_calls (event->type);
 
  if (flags & einit_event_flag_spawn_thread) {
   struct einit_event *ev = evdup(event);
@@ -513,9 +464,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_switching:                   return "core/switching";
   case einit_core_done_switching:              return "core/done-switching";
 
-  case einit_core_suspend_all:                 return "core/suspend-all";
-  case einit_core_resume_all:                  return "core/resume-all";
-
   case einit_core_service_enabling:            return "core/service-enabling";
   case einit_core_service_enabled:             return "core/service-enabled";
   case einit_core_service_disabling:           return "core/service-disabling";
@@ -642,9 +590,6 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "switching"))                   ret = einit_core_switching;
      else if (strmatch (tcode[1], "done-switching"))              ret = einit_core_done_switching;
 
-     else if (strmatch (tcode[1], "suspend-all"))                 ret = einit_core_suspend_all;
-     else if (strmatch (tcode[1], "resume-all"))                  ret = einit_core_resume_all;
-
      else if (strmatch (tcode[1], "service-enabling"))            ret = einit_core_service_enabling;
      else if (strmatch (tcode[1], "service-enabled"))             ret = einit_core_service_enabled;
      else if (strmatch (tcode[1], "service-disabling"))           ret = einit_core_service_disabling;
@@ -760,50 +705,4 @@ void event_timer_cancel (time_t t) {
  event_emit (&ev, einit_event_flag_broadcast);
 
  evstaticdestroy (ev);
-}
-
-void event_wakeup (enum einit_event_code c, struct lmodule *m) {
- struct wakeup_data *d = event_wd;
-
- while (d) {
-  if (d->code == c) {
-   if (d->module == m) {
-    return;
-   } else {
-    emutex_lock (&event_wakeup_mutex);
-    if (d->module == NULL) {
-     d->module = m;
-    }
-    emutex_unlock (&event_wakeup_mutex);
-
-    if (d->module == m)
-     return;
-   }
-  }
-  d = d->next;
- }
-
- struct wakeup_data *nd = ecalloc (1, sizeof (struct wakeup_data));
-
- nd->code = c;
- nd->module = m;
-
- emutex_lock (&event_wakeup_mutex);
- nd->next = event_wd;
- event_wd = nd;
- emutex_unlock (&event_wakeup_mutex);
-}
-
-void event_wakeup_cancel (enum einit_event_code c, struct lmodule *m) {
- struct wakeup_data *d = event_wd;
-
- while (d) {
-  if (d->code == c) {
-   emutex_lock (&event_wakeup_mutex);
-   if (d->module == m)
-    d->module = NULL;
-   emutex_unlock (&event_wakeup_mutex);
-  }
-  d = d->next;
- }
 }
