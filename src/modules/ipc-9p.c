@@ -149,7 +149,7 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
 }
 
 void einit_ipc_9p_fs_open(Ixp9Req *r) {
- notice (1, "einit_ipc_9p_fs_open()");
+// notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
  if (r->ifcall.mode == P9_OREAD) {
@@ -199,7 +199,7 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
   fa->fd = fd;
 
   fd->is_writable = 1;
-  notice (1, "opened file for writing");
+//  notice (1, "opened file for writing");
 
   respond(r, nil);
  }/* else {
@@ -208,7 +208,7 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
- notice (1, "einit_ipc_9p_fs_walk()");
+// notice (1, "einit_ipc_9p_fs_walk()");
  int i = 0;
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
@@ -235,9 +235,12 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
    fa->path = set_str_add(fa->path, r->ifcall.wname[i]);
   }
 
-  r->ofcall.wqid[i].type = 0;
+  r->ofcall.wqid[i].type = P9_QTDIR;
   r->ofcall.wqid[i].path = 0;
+//  r->ofcall.wqid[i].mode = 0660;
  }
+
+ r->ofcall.wqid[i-1].type = P9_QTAPPEND;
 
  r->ofcall.nwqid = i;
  respond(r, nil);
@@ -396,7 +399,7 @@ char *einit_ipc_9p_request (char *command) {
 }
 
 void einit_ipc_9p_fs_read(Ixp9Req *r) {
- notice (1, "einit_ipc_9p_fs_read()");
+// notice (1, "einit_ipc_9p_fs_read()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
 
@@ -436,7 +439,7 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    Stat s;
    memset (&s, 0, sizeof (Stat));
 
-   notice (1, "submitting: %s", fd->files[fd->c]->name);
+//   notice (1, "submitting: %s", fd->files[fd->c]->name);
 
    s.name = fd->files[fd->c]->name;
 
@@ -444,7 +447,7 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    s.gid = "einit";
    s.muid = "unknown";
 
-   s.mode = 0660;
+   s.mode = 0666;
 
    if (!(fd->files[fd->c]->is_file)) {
     s.mode |= 0770 | P9_DMDIR;
@@ -481,21 +484,18 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
 
  evstaticdestroy (ev);
 
- if (path) {
-  notice (1, "einit_ipc_9p_fs_stat(%s)", path);
- } else {
-  notice (1, "einit_ipc_9p_fs_stat()");
+ if (!path) {
   path = estrdup ("/");
  }
 
  Stat s;
  memset (&s, 0, sizeof (Stat));
 
- s.mode = 0660;
+ s.mode = P9_OAPPEND | 0660;
 
  if (!is_file) {
-  notice (1, "directory: %s", path);
-  s.mode |= 0770 | P9_DMDIR;
+//  notice (1, "directory: %s", path);
+  s.mode = 0770 | P9_DMDIR;
   s.qid.type |= QTDIR; 
  }
 
@@ -527,7 +527,7 @@ void einit_ipc_9p_fs_write(Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_write(%i, %i)", r->ifcall.count, r->ofcall.count);
 
  if (r->ifcall.count == 0) {
-  notice (1, "einit_ipc_9p_fs_write()");
+//  notice (1, "einit_ipc_9p_fs_write()");
 
   respond(r, nil);
   return;
@@ -548,7 +548,7 @@ void einit_ipc_9p_fs_write(Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
- notice (1, "einit_ipc_9p_fs_clunk()");
+// notice (1, "einit_ipc_9p_fs_clunk()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
  if (fa && fa->fd) {
@@ -574,6 +574,7 @@ void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_flush()");
+ respond (r, "not implemented.");
 }
 
 void einit_ipc_9p_fs_attach(Ixp9Req *r) {
@@ -587,10 +588,12 @@ void einit_ipc_9p_fs_attach(Ixp9Req *r) {
 
 void einit_ipc_9p_fs_create(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_create()");
+ respond (r, "not implemented.");
 }
 
 void einit_ipc_9p_fs_remove(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_remove()");
+ respond (r, "not implemented.");
 }
 
 void einit_ipc_9p_fs_freefid(Fid *f) {
