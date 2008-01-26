@@ -210,8 +210,6 @@ char *apply_envfile_f (char *command, const char **environment) {
   for (; environment[i]; i++) {
    if (strprefix(environment[i], "envfile=")) {
     if (envfiles) efree (envfiles);
-
-    if (envfiles) efree (envfiles);
     envfiles = str2set (':', environment[i]+8);
    } else if (strprefix(environment[i], "services=")) {
     if (!envfiles) envfiles = str2set (':', environment[i]+9);
