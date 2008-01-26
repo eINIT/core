@@ -2273,7 +2273,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
      for (; s[i]; i++) {
       n.name = estrdup (s[i]);
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    }
+     }
 
      efree (s);
     }
@@ -2284,11 +2284,65 @@ void module_logic_ipc_read (struct einit_event *ev) {
 
     n.name = estrdup ("status");
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   } else if (path[2] && path[3] && strmatch (path[3], "status")) {
-    if (mod_service_is_provided (path[2])) {
-     ev->stringset = set_str_add (ev->stringset, "provided");
-    } else {
-     ev->stringset = set_str_add (ev->stringset, "not provided ");
+
+    n.is_file = 0;
+
+    n.name = estrdup ("providers");
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    n.name = estrdup ("users");
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    n.name = estrdup ("modules");
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   } else if (path[2] && path[3]) {
+    if (strmatch (path[3], "status")) {
+     if (mod_service_is_provided (path[2])) {
+      ev->stringset = set_str_add (ev->stringset, "provided");
+     } else {
+      ev->stringset = set_str_add (ev->stringset, "not provided ");
+     }
+    } else if (strmatch (path[3], "modules") && !path[4]) {
+     n.is_file = 0;
+
+     emutex_lock(&module_logic_service_list_mutex);
+
+     if (module_logic_service_list) {
+      struct stree *cur = streefind(module_logic_service_list, path[2], tree_find_first);
+
+      if (cur) {
+       struct lmodule **lm = cur->value;
+       if (lm) {
+        int i = 0;
+        for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
+         n.name = estrdup (lm[i]->module->rid);
+         ev->set = set_fix_add (ev->set, &n, sizeof (n));
+        }
+       }
+      }
+     }
+
+     emutex_unlock(&module_logic_service_list_mutex);
+    } else if (strmatch (path[3], "users") && !path[4]) {
+     n.is_file = 0;
+
+     struct lmodule **lm = mod_get_all_users_of_service (path[2]);
+     if (lm) {
+      int i = 0;
+      for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
+       n.name = estrdup (lm[i]->module->rid);
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+      }
+     }
+    } else if (strmatch (path[3], "providers") && !path[4]) {
+     n.is_file = 0;
+
+     struct lmodule **lm = mod_get_all_providers (path[2]);
+     if (lm) {
+      int i = 0;
+      for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
+       n.name = estrdup (lm[i]->module->rid);
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
+      }
+     }
     }
    }
   }
@@ -2337,7 +2391,7 @@ void module_logic_ipc_stat (struct einit_event *ev) {
 
  if (path && path[0]) {
   if (strmatch (path[0], "services")) {
-   ev->flag = (path[1] && path[2] && path[3] ? 1 : 0);
+   ev->flag = (path[1] && path[2] && path[3] && strmatch (path[3], "status") ? 1 : 0);
   }
  }
 }

@@ -234,6 +234,17 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
 
 void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
  char **path = ev->para;
+ if (path && path[0] && path[1] && path[2] && path[3] && path[4] && strmatch (path[0], "services") && (strmatch (path[3], "users") || strmatch (path[3], "modules") || strmatch (path[3], "providers"))) {
+  char **pn = set_str_add (NULL, "modules");
+
+  pn = set_str_add (pn, "all");
+  int i = 4;
+  for (; path[i]; i++) {
+   pn = set_str_add (pn, path[i]);
+  }
+
+  path = pn;
+ }
 
  struct ipc_fs_node n;
 
@@ -440,6 +451,8 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
    }
   }
  }
+
+ if (path != ev->para) efree (path);
 }
 
 struct ch_thread_data {
@@ -461,6 +474,17 @@ void *einit_ipc_core_helpers_ipc_write_detach_action (struct ch_thread_data *da)
 
 void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
  char **path = ev->para;
+ if (path && path[0] && path[1] && path[2] && path[3] && path[4] && strmatch (path[0], "services") && (strmatch (path[3], "users") || strmatch (path[3], "modules") || strmatch (path[3], "providers"))) {
+  char **pn = set_str_add (NULL, "modules");
+
+  pn = set_str_add (pn, "all");
+  int i = 4;
+  for (; path[i]; i++) {
+   pn = set_str_add (pn, path[i]);
+  }
+
+  path = pn;
+ }
 
  if (path && ev->set && ev->set[0] && path[0]) {
   if (strmatch (path[0], "mode")) {
@@ -497,10 +521,23 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
    }
   }
  }
+
+ if (path != ev->para) efree (path);
 }
 
 void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
+ if (path && path[0] && path[1] && path[2] && path[3] && path[4] && strmatch (path[0], "services") && (strmatch (path[3], "users") || strmatch (path[3], "modules") || strmatch (path[3], "providers"))) {
+  char **pn = set_str_add (NULL, "modules");
+
+  pn = set_str_add (pn, "all");
+  int i = 4;
+  for (; path[i]; i++) {
+   pn = set_str_add (pn, path[i]);
+  }
+
+  path = pn;
+ }
 
  if (path && path[0]) {
   if (strmatch (path[0], "modules")) {
@@ -509,6 +546,8 @@ void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
    ev->flag = 1;
   }
  }
+
+ if (path != ev->para) efree (path);
 }
 
 int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {

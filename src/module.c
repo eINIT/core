@@ -726,6 +726,27 @@ struct lmodule **mod_get_all_users (struct lmodule *module) {
  return ret;
 }
 
+struct lmodule **mod_get_all_users_of_service (char *service) {
+ struct lmodule **ret = NULL;
+
+ emutex_lock (&service_usage_mutex);
+ struct stree *ha = streefind (service_usage, service, tree_find_first);
+
+ if (ha) {
+  struct service_usage_item *item = ha->value;
+
+  if (item->users) {
+   int i = 0;
+   for (; item->users[i]; i++) {
+    ret = (struct lmodule **)set_noa_add ((void **)ret, item->users[i]);
+   }
+  }
+ }
+ emutex_unlock (&service_usage_mutex);
+
+ return ret;
+}
+
 struct lmodule **mod_get_all_providers (char *service) {
  struct lmodule **ret = NULL;
 
