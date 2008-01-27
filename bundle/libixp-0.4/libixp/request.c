@@ -122,6 +122,7 @@ handlefcall(IxpConn *c) {
 	req->srv = pc->srv;
 	req->ifcall = fcall;
 	pc->conn = c;
+	req->dotu = (pc->conn && pc->conn->dotu) ? 1 : 0;
 
 	if(caninsertkey(&pc->tagmap, fcall.tag, req) == 0) {
 		respond(req, Eduptag);
@@ -154,7 +155,11 @@ handlereq(Ixp9Req *r) {
 			r->ofcall.version = "9P";
 		else if(!strcmp(r->ifcall.version, "9P2000"))
 			r->ofcall.version = "9P2000";
-		else
+		else if(!strcmp(r->ifcall.version, "9P2000.u")) {
+			r->ofcall.version = "9P2000.u";
+			if (pc->conn)
+				pc->conn->dotu = 1;
+		} else
 			r->ofcall.version = "unknown";
 		r->ofcall.msize = r->ifcall.msize;
 		respond(r, nil);
@@ -395,11 +400,19 @@ respond(Ixp9Req *r, char *error) {
 	deletekey(&pc->tagmap, r->ifcall.tag);;
 
 	if(pc->conn) {
-		thread->lock(&pc->wlock);
-		msize = ixp_fcall2msg(&pc->wmsg, &r->ofcall);
-		if(ixp_sendmsg(pc->conn->fd, &pc->wmsg) != msize)
-			ixp_hangup(pc->conn);
-		thread->unlock(&pc->wlock);
+		if (pc->conn->dotu) {
+			thread->lock(&pc->wlock);
+			msize = ixp_fcall2msg_dotu(&pc->wmsg, &r->ofcall);
+			if(ixp_sendmsg(pc->conn->fd, &pc->wmsg) != msize)
+				ixp_hangup(pc->conn);
+			thread->unlock(&pc->wlock);
+		} else {
+			thread->lock(&pc->wlock);
+			msize = ixp_fcall2msg(&pc->wmsg, &r->ofcall);
+			if(ixp_sendmsg(pc->conn->fd, &pc->wmsg) != msize)
+				ixp_hangup(pc->conn);
+			thread->unlock(&pc->wlock);
+		}
 	}
 
 	switch(r->ofcall.type) {

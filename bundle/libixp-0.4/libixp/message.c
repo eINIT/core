@@ -200,3 +200,61 @@ ixp_msg2fcall(IxpMsg *msg, Fcall *fcall) {
 
 	return msg->pos - msg->data;
 }
+
+/* 9P2000.u extensions */
+
+ushort
+ixp_sizeof_stat_dotu(Stat * stat) {
+	return SWord /* size */
+		+ SWord /* type */
+		+ SDWord /* dev */
+		+ SQid /* qid */
+		+ 3 * SDWord /* mode, atime, mtime */
+		+ SQWord /* length */
+		+ SString(stat->name)
+		+ SString(stat->uid)
+		+ SString(stat->gid)
+		+ SString(stat->muid)
+		+ SString(stat->extension)
+		+ SDWord /* n_uid */
+		+ SDWord /* n_gid */
+		+ SDWord /* n_muid */;
+}
+
+void
+ixp_pfcall_dotu(IxpMsg *msg, Fcall *fcall) {
+	switch (fcall->type) {
+		case RError:
+			ixp_pu8(msg, &fcall->type);
+			ixp_pu16(msg, &fcall->tag);
+
+			ixp_pstring(msg, &fcall->ename);
+			ixp_pu16(msg, &fcall->eerrno);
+			break;
+
+		default:
+			ixp_pfcall(msg, fcall);
+	}
+}
+
+uint
+ixp_fcall2msg_dotu(IxpMsg *msg, Fcall *fcall) {
+	uint size;
+
+	msg->end = msg->data + msg->size;
+	msg->pos = msg->data + SDWord;
+	msg->mode = MsgPack;
+	ixp_pfcall_dotu(msg, fcall);
+
+	if(msg->pos > msg->end)
+		return 0;
+
+	msg->end = msg->pos;
+	size = msg->end - msg->data;
+
+	msg->pos = msg->data;
+	ixp_pu32(msg, &size);
+
+	msg->pos = msg->data;
+	return size;
+}

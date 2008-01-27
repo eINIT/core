@@ -181,6 +181,8 @@ enum {
 #  define DMSETGID P9_DMSETGID
 #endif
 
+#define ERRUNDEF	0x0	/* 9P2000.u extension */
+
 #ifdef IXP_P9_STRUCTS
 #  define IxpFcall Fcall
 #  define IxpFid Fid
@@ -258,6 +260,12 @@ struct IxpStat {
 	char *uid;
 	char *gid;
 	char *muid;
+
+	/* 9P2000.u extensions */
+	char *extension;
+	uint n_uid;
+	uint n_gid;
+	uint n_muid;
 };
 
 struct IxpConn {
@@ -270,6 +278,9 @@ struct IxpConn {
 
 	/* Implementation details, do not use */
 	IxpConn		*next;
+
+	/* 9P2000.u extensions */
+	char dotu;
 };
 
 struct IxpServer {
@@ -348,6 +359,9 @@ struct Ixp9Req {
 	IxpFcall	ifcall;
 	IxpFcall	ofcall;
 	void	*aux;
+
+	/* 9P2000.u */
+	char dotu;
 
 	/* Implementation details */
 	Ixp9Conn *conn;
@@ -439,6 +453,7 @@ void ixp_pstrings(IxpMsg *msg, ushort *num, char *strings[]);
 void ixp_pqid(IxpMsg *msg, IxpQid *qid);
 void ixp_pqids(IxpMsg *msg, ushort *num, IxpQid qid[]);
 void ixp_pstat(IxpMsg *msg, IxpStat *stat);
+void ixp_pstat_dotu(IxpMsg *msg, IxpStat *stat);
 
 /* error.h */
 char *ixp_errbuf(void);
@@ -452,11 +467,13 @@ void serve_9pcon(IxpConn *c);
 
 /* message.c */
 ushort ixp_sizeof_stat(IxpStat *stat);
+ushort ixp_sizeof_stat_dotu(IxpStat *stat);
 IxpMsg ixp_message(uchar *data, uint length, uint mode);
 void ixp_freestat(IxpStat *s);
 void ixp_freefcall(IxpFcall *fcall);
 uint ixp_msg2fcall(IxpMsg *msg, IxpFcall *fcall);
 uint ixp_fcall2msg(IxpMsg *msg, IxpFcall *fcall);
+uint ixp_fcall2msg_dotu(IxpMsg *msg, IxpFcall *fcall);
 
 /* server.c */
 IxpConn *ixp_listen(IxpServer *s, int fd, void *aux,

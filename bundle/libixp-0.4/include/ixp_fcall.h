@@ -13,6 +13,7 @@ struct IxpFcall {
 
 	/* Rerror */
 	char *ename;
+	ushort eerrno; /* 9P2000.u */
 
 	/* Ropen, Rcreate */
 	IxpQid qid; /* +Rattach */

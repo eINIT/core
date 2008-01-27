@@ -195,3 +195,31 @@ ixp_pstat(IxpMsg *msg, Stat *stat) {
 	ixp_pstring(msg, &stat->gid);
 	ixp_pstring(msg, &stat->muid);
 }
+
+/* 9P2000.u extensions */
+
+void
+ixp_pstat_dotu(IxpMsg *msg, Stat *stat) {
+	ushort size;
+
+	if(msg->mode == MsgPack)
+		size = ixp_sizeof_stat_dotu(stat) - 2;
+
+	ixp_pu16(msg, &size);
+	ixp_pu16(msg, &stat->type);
+	ixp_pu32(msg, &stat->dev);
+	ixp_pqid(msg, &stat->qid);
+	ixp_pu32(msg, &stat->mode);
+	ixp_pu32(msg, &stat->atime);
+	ixp_pu32(msg, &stat->mtime);
+	ixp_pu64(msg, &stat->length);
+	ixp_pstring(msg, &stat->name);
+	ixp_pstring(msg, &stat->uid);
+	ixp_pstring(msg, &stat->gid);
+	ixp_pstring(msg, &stat->muid);
+
+	ixp_pstring(msg, &stat->extension);
+	ixp_pu32(msg, &stat->n_uid);
+	ixp_pu32(msg, &stat->n_gid);
+	ixp_pu32(msg, &stat->n_muid);
+}
