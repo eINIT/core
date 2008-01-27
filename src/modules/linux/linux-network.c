@@ -337,7 +337,7 @@ void linux_network_interface_prepare (struct einit_event *ev) {
   }
  }
 
- if (!d->functions->get_option(ev->string, "bridge")) {
+ if (!d->functions->get_option(ev->string, "bridge") && !d->functions->get_option(ev->string, "bond")) {
 
   char **ip_binary = which ("ip");
 
@@ -726,7 +726,7 @@ void linux_network_verify_carrier (struct einit_event *ev) {
  struct network_event_data *d = ev->para;
 
  struct cfgnode *node = d->functions->get_option(ev->string, "wpa-supplicant");
- if (!node && !(node = d->functions->get_option(ev->string, "bridge"))) {
+ if (!node && !(node = d->functions->get_option(ev->string, "bridge")) && !(node = d->functions->get_option(ev->string, "bond"))) {
 /* only do link carrier detection if we're NOT relying on wpa-supplicant, if
   we do, then wpa-sup will do that detection already */
   int repe = 5;
