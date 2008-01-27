@@ -255,6 +255,24 @@ void linux_network_bonding_verify_carrier (struct einit_event *ev) {
 
      if (f) {
       if (d->action == interface_up) {
+       char **ip_binary = which ("ip");
+
+       if (d->action == interface_up) {
+        if (ip_binary) {
+         efree (ip_binary);
+
+         esprintf (buffer, BUFFERSIZE, "ip link set %s down", elements[i]);
+        } else {
+         esprintf (buffer, BUFFERSIZE, "ifconfig %s down", elements[i]);
+        }
+
+        if (buffer[0]) {
+         if (pexec (buffer, NULL, 0, 0, NULL, NULL, NULL, d->feedback) == status_failed) {
+          fbprintf (d->feedback, "command failed: %s", buffer);
+         }
+        }
+       }
+
        esprintf (buffer, BUFFERSIZE, "+%s\n", elements[i]);
       } else if (d->action == interface_down) {
        esprintf (buffer, BUFFERSIZE, "-%s\n", elements[i]);
