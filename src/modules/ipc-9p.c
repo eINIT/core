@@ -101,6 +101,8 @@ module_register(einit_ipc_9p_self);
 pthread_t einit_ipc_9p_thread;
 char einit_ipc_9p_running = 0;
 
+gid_t einit_ipc_9p_einitgid = 0;
+
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
 char *einit_ipc_9p_request (char *);
@@ -447,6 +449,10 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    s.gid = "einit";
    s.muid = "unknown";
 
+   if (!einit_ipc_9p_einitgid) {
+    lookupuidgid (NULL, &einit_ipc_9p_einitgid, NULL, "einit");
+   }
+
    s.mode = 0666;
 
    if (!(fd->files[fd->c]->is_file)) {
@@ -457,9 +463,12 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    size_t size = r->ifcall.count;
    void *buf = ecalloc(1, size);
    IxpMsg m = ixp_message((uchar*)buf, size, MsgPack); 
-   ixp_pstat(&m, &s);
+   if (r->dotu)
+    ixp_pstat_dotu(&m, &s);
+   else
+    ixp_pstat(&m, &s);
 
-   r->ofcall.count = ixp_sizeof_stat(&s);
+   r->ofcall.count = r->dotu ? ixp_sizeof_stat_dotu(&s) : ixp_sizeof_stat(&s);
    r->ofcall.data = (char*)m.data;
 
    fd->c++;
@@ -505,14 +514,22 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
  s.gid = "einit";
  s.muid = "unknown";
 
+ if (!einit_ipc_9p_einitgid) {
+  lookupuidgid (NULL, &einit_ipc_9p_einitgid, NULL, "einit");
+ }
+ s.n_gid = einit_ipc_9p_einitgid;
+
  r->fid->qid = s.qid;
- size_t size = ixp_sizeof_stat(&s);
+ size_t size = r->dotu ? ixp_sizeof_stat_dotu(&s) : ixp_sizeof_stat(&s);
  r->ofcall.nstat = size;
 
  void *buf = ecalloc (1, size);
 
  IxpMsg m = ixp_message(buf, size, MsgPack);
- ixp_pstat(&m, &s);
+ if (r->dotu)
+  ixp_pstat_dotu(&m, &s);
+ else
+  ixp_pstat(&m, &s);
 
  r->ofcall.stat = m.data; 
 
