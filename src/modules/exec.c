@@ -1082,6 +1082,8 @@ void dexec_resume_timer (struct dexecinfo *dx) {
 }
 
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
+ einit_exec_update_daemons_from_pidfiles();
+
  pid_t pid = shellcmd->cb ? shellcmd->cb->pid : 0;
  if (shellcmd->cb && pidexists(pid)) {
   pthread_t th;
