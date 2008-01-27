@@ -366,8 +366,10 @@ void strtrim (char *s) {
 
 #if ! defined (EINIT_UTIL)
 
-pthread_mutex_t thread_key_detached_mutex = PTHREAD_MUTEX_INITIALIZER,
- thread_rendezvous_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t
+ thread_key_detached_mutex = PTHREAD_MUTEX_INITIALIZER,
+ thread_rendezvous_mutex = PTHREAD_MUTEX_INITIALIZER,
+ thread_stats_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_cond_t
  thread_rendezvous_cond = PTHREAD_COND_INITIALIZER;
@@ -456,38 +458,39 @@ char run_thread_function_in_pool (struct thread_wrapper_data *d) {
 }
 
 void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
+ emutex_lock (&thread_stats_mutex);
  thread_pool_count++;
-#if 1
- int n = thread_pool_count;
- if (n > thread_pool_max_count) {
-  thread_pool_max_count = n;
 
-//  fprintf (stderr, " ** max thread count: %i\n", thread_pool_max_count);
-  fflush (stderr);
+ if (thread_pool_count > thread_pool_max_count) {
+  thread_pool_max_count = thread_pool_count;
  }
-#endif
+ emutex_unlock (&thread_stats_mutex);
 
  moar:
 
  d->thread (d->param);
  efree (d);
 
+ emutex_lock (&thread_stats_mutex);
  thread_pool_free_count++;
 
  if (thread_pool_free_count < thread_pool_max_pool_size) {
+  emutex_unlock (&thread_stats_mutex);
+
   if ((d = thread_wrapper_rendezvous ())) {
+   emutex_lock (&thread_stats_mutex);
    thread_pool_free_count--;
+   emutex_unlock (&thread_stats_mutex);
    goto moar;
   }
+ } else {
+  emutex_unlock (&thread_stats_mutex);
  }
-#if 0
- else {
-  fprintf (stderr, " ** pool getting too big: %i\n", thread_pool_free_count);
- }
-#endif
 
+ emutex_lock (&thread_stats_mutex);
  thread_pool_free_count--;
  thread_pool_count--;
+ emutex_unlock (&thread_stats_mutex);
 
  if (!thread_pool_free_count) {
   thread_pool_prune = 0;
@@ -538,9 +541,6 @@ void ethread_prune_thread_pool () {
  thread_pool_prune = 1;
 
  pthread_cond_broadcast (&thread_rendezvous_cond);
-
-// while (thread_pool_prune)
-//  pthread_cond_signal (&thread_rendezvous_cond);
 
  fprintf (stderr, "pool's closed!\n");
 }
@@ -753,8 +753,8 @@ char *apply_variables (const char *ostring, const char **env) {
       ret[rpos] = env[xi][i];
       rpos++;
      }
-	 
-	 rspos = spos;
+
+     rspos = spos;
     } else {
      for (rspos -= (rspos > 1) ? 2 : rspos; string[rspos] && (rspos < spos); rspos++) {
       ret[rpos] = string[rspos];
