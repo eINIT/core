@@ -1,4 +1,4 @@
-util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0 libeinit-ipc-9p.so einit-helper
+util: einit-control last-rites libeinit.${SO}.1.0.0 libeinit++.${SO}.1.0.0 einit-helper
 
 install: util
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${BINDIR}
@@ -14,8 +14,6 @@ install: util
 	ln -fs libeinit.${SO}.1 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}
 	ln -fs libeinit++.${SO}.1.0.0 ${DESTDIR}/${LIBDIR}/../libeinit++.${SO}.1
 	ln -fs libeinit++.${SO}.1 ${DESTDIR}/${LIBDIR}/../libeinit++.${SO}
-	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/ipc
-	${INSTALL} ${BINIPARAM} libeinit-ipc-9p.so ${DESTDIR}/${LIBDIR}/ipc
 
 set.o: set-lowmem.o
 	cp set-lowmem.o set.o
@@ -44,9 +42,6 @@ libeinit.${SO}.1.0.0: libeinit.o utility.o bitch.o tree.o itree.o set.o set-comm
 	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit.so.1 libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit.${SO}.1.0.0 ${EXPAT_LIBS} ${LPA} ${LDL}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) -o libeinit.${SO}.1.0.0 ${EXPAT_LIBS} ${LPA} ${LDL}; fi
 	ln -fs libeinit.${SO}.1.0.0 libeinit.${SO}.1
 	ln -fs libeinit.${SO}.1 libeinit.${SO}
-
-libeinit-ipc-9p.so: libeinit-ipc-9p.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
-	${CLD} ${XDYNAMIC_SIMPLE} libeinit-ipc-9p.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) ${LIBIXP_LIBS} -o libeinit-ipc-9p.so ${LPA}
 
 libeinit++.${SO}: libeinit++.${SO}.1.0.0
 

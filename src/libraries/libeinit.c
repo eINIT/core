@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <expat.h>
 
-#include <dlfcn.h>
+#include <ixp_local.h>
 
 #ifdef DARWIN
 /* dammit, what's wrong with macos!? */
@@ -93,90 +93,6 @@ uint32_t remote_event_cseqid = 1;
 char einit_connected = 0;
 
 void *einit_ipc_lib_handle = NULL;
-
-char (*einit_disconnect_fp)() = NULL;
-void (*einit_receive_events_fp)() = NULL;
-char *(*einit_ipc_fp)(const char *) = NULL;
-char *(*einit_ipc_safe_fp)(const char *) = NULL;
-char *(*einit_ipc_request_fp)(const char *) = NULL;
-
-void (*einit_remote_event_emit_dispatch_fp)(struct einit_remote_event *) = NULL;
-void (*einit_remote_event_emit_fp)(struct einit_remote_event *, enum einit_event_emit_flags) = NULL;
-
-char einit_connect(int *argc, char **argv) {
-/* TODO: fix this up again */
- char t = 0;
-
- for (; t < 3; t++) {
-  char *clib;
-
-  switch (t) {
-   case 0: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-dbus.so"; break;
-   case 1: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-9p.so"; break;
-   case 2: clib = EINIT_LIB_BASE "/ipc/libeinit-ipc-socket.so"; break;
-   default: clib = NULL; break;
-  }
-
-  if ((einit_ipc_lib_handle = dlopen (clib, RTLD_NOW))) {
-   char (*cfunc)(int*, char**) = dlsym (einit_ipc_lib_handle, "einit_connect");
-   if (cfunc) {
-    if (cfunc(argc, argv)) {
-     einit_disconnect_fp = dlsym (einit_ipc_lib_handle, "einit_disconnect");
-     einit_receive_events_fp = dlsym (einit_ipc_lib_handle, "einit_receive_events");
-     einit_ipc_fp = dlsym (einit_ipc_lib_handle, "einit_ipc");
-     einit_ipc_safe_fp = dlsym (einit_ipc_lib_handle, "einit_ipc_safe");
-     einit_ipc_request_fp = dlsym (einit_ipc_lib_handle, "einit_ipc_request");
-
-     einit_remote_event_emit_dispatch_fp = dlsym (einit_ipc_lib_handle, "einit_remote_event_emit_dispatch");
-     einit_remote_event_emit_fp = dlsym (einit_ipc_lib_handle, "einit_remote_event_emit");
-
-     return (einit_connected = 1);
-    }
-   } else {
-    eputs (dlerror (), stderr);
-
-    dlclose (einit_ipc_lib_handle);
-    einit_ipc_lib_handle = NULL;
-   }
-  } else {
-/* don't nag if the lib can't be loaded... */
-//   eputs (dlerror (), stderr);
-   continue;
-  }
- }
-
- return (einit_connected = 0);
-}
-
-char einit_disconnect() {
- if (einit_disconnect_fp) return einit_disconnect_fp();
-
- return 0;
-}
-
-void einit_receive_events() {
- if (einit_receive_events_fp) einit_receive_events_fp();
-
- return;
-}
-
-char *einit_ipc(const char *command) {
- if (einit_ipc_fp) return einit_ipc_fp(command);
-
- return NULL;
-}
-
-char *einit_ipc_safe(const char *command) {
- if (einit_ipc_safe_fp) return einit_ipc_safe_fp(command);
-
- return NULL;
-}
-
-char *einit_ipc_request(const char *command) {
- if (einit_ipc_request_fp) return einit_ipc_request_fp(command);
-
- return NULL;
-}
 
 char *einit_ipc_request_xml(const char *command) {
  char *tmp;
@@ -833,18 +749,6 @@ void einit_remote_event_ignore (enum einit_event_subsystems type, void (* handle
  return;
 }
 
-void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
- if (einit_remote_event_emit_dispatch_fp) einit_remote_event_emit_dispatch_fp(ev);
-
- return;
-}
-
-void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
- if (einit_remote_event_emit_fp) einit_remote_event_emit_fp(ev, flags);
-
- return;
-}
-
 struct einit_remote_event *einit_remote_event_create (uint32_t type) {
  struct einit_remote_event *nev = ecalloc (1, sizeof (struct einit_remote_event));
 
@@ -855,4 +759,125 @@ struct einit_remote_event *einit_remote_event_create (uint32_t type) {
 
 void einit_remote_event_destroy (struct einit_remote_event *ev) {
  efree (ev);
+}
+
+/* client */
+
+char *einit_ipc_address = "unix!/dev/einit-9p";
+IxpClient *einit_ipc_9p_client = NULL;
+
+void *einit_event_emit_remote_dispatch (struct einit_remote_event *ev) {
+ return NULL;
+}
+
+void einit_event_emit_remote (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+}
+
+char einit_connect(int *argc, char **argv) {
+ char *envvar = getenv ("EINIT_9P_ADDRESS");
+ if (envvar)
+  einit_ipc_address = envvar;
+
+ if (argc && argv) {
+  int i = 0;
+  for (i = 1; i < *argc; i++) {
+   if (argv[i][0] == '-')
+    switch (argv[i][1]) {
+     case 'a':
+      if ((++i) < (*argc))
+       einit_ipc_address = argv[i];
+      break;
+    }
+  }
+ }
+
+// einit_ipc_9p_fd = ixp_dial (einit_ipc_address);
+ einit_ipc_9p_client = ixp_mount (einit_ipc_address);
+
+ return (einit_ipc_9p_client ? 1 : 0);
+}
+
+char einit_disconnect() {
+ ixp_unmount (einit_ipc_9p_client);
+ return 1;
+}
+
+void einit_receive_events() {
+}
+
+char *einit_ipc_i (const char *cmd, const char *interface) {
+ char buffer[BUFFERSIZE];
+ char *data = NULL;
+
+ esprintf (buffer, BUFFERSIZE, "/ipc/%s", cmd);
+ IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
+
+ if (f) {
+  intptr_t rn = 0;
+  void *buf = NULL;
+  intptr_t blen = 0;
+
+  buf = malloc (f->iounit);
+  if (!buf) {
+   ixp_close (f);
+   return NULL;
+  }
+
+  do {
+//   fprintf (stderr, "reading.\n");
+   buf = realloc (buf, blen + f->iounit);
+   if (buf == NULL) {
+    ixp_close (f);
+    return NULL;
+   }
+//   fprintf (stderr, ".\n");
+
+   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
+   if (rn > 0) {
+//    write (1, buf + blen, rn);
+    blen = blen + rn;
+   }
+  } while (rn > 0);
+
+//  fprintf (stderr, "done.\n");
+
+  if (rn > -1) {
+   data = realloc (buf, blen+1);
+   if (buf == NULL) return NULL;
+
+   data[blen] = 0;
+   if (blen > 0) {
+    *(data+blen) = 0;
+   } else {
+    free (data);
+    data = NULL;
+   }
+
+  }
+
+  ixp_close (f);
+ }
+
+ return data;
+}
+
+char *einit_ipc(const char *command) {
+ return einit_ipc_i (command, NULL);
+}
+
+char *einit_ipc_safe(const char *command) {
+ return einit_ipc_i (command, NULL);
+}
+
+/* the socket version doesn't precisely need to connect... */
+char *einit_ipc_request(const char *command) {
+ return einit_ipc(command);
+}
+
+void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
+ return;
+}
+
+void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+ return;
 }
