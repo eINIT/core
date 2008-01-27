@@ -28,7 +28,7 @@ tree.o: tree-itree.o
 	cp tree-itree.o tree.o
 
 einit-control: einit-control.o bitch.o utility.o $(asmobjects) libeinit.${SO}.2.0.0
-	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) -o einit-control $(STATIC) -L. -l:libeinit.${SO}.2.0.0
+	$(CLD) einit-control.o bitch.o utility.o $(asmobjects) ./libeinit.${SO}.2.0.0 -o einit-control $(STATIC)
 
 einit-helper: einit-helper.o bitch.o utility.o $(asmobjects) set.o set-common.o
 	$(CLD) einit-helper.o bitch.o utility.o $(asmobjects) set.o set-common.o -o einit-helper
@@ -46,7 +46,7 @@ libeinit.${SO}.2.0.0: libeinit.o utility.o bitch.o tree.o itree.o set.o set-comm
 libeinit++.${SO}: libeinit++.${SO}.2.0.0
 
 libeinit++.${SO}.2.0.0: libeinit.${SO}.2.0.0 libeinit++.o
-	if test "${SO}" = "so"; then ${CXXLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit++.so.2 libeinit++.o -o libeinit++.${SO}.2.0.0 -L. -l:libeinit.${SO}.2.0.0; else ${CXXLD} ${XDYNAMIC_SIMPLE} libeinit++.o -o libeinit++.${SO}.2.0.0 -L. -l:libeinit.${SO}.2.0.0; fi
+	if test "${SO}" = "so"; then ${CXXLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit++.so.2 libeinit++.o ./libeinit.${SO}.2.0.0 -o libeinit++.${SO}.2.0.0; else ${CXXLD} ${XDYNAMIC_SIMPLE} libeinit++.o ./libeinit.${SO}.2.0.0 -o libeinit++.${SO}.2.0.0; fi
 	ln -fs libeinit++.${SO}.2.0.0 libeinit++.${SO}.2
 	ln -fs libeinit++.${SO}.2 libeinit++.${SO}
 
