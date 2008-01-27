@@ -107,6 +107,22 @@ void cfg_stree_garbage_free () {
  emutex_unlock (&cfg_stree_garbage_mutex);
 }
 
+time_t bootstrap_einit_configuration_stree_garbage_free_timer = 0;
+
+void bootstrap_einit_configuration_stree_einit_event_handler_timer_tick(struct einit_event *ev) {
+ if (ev->integer == bootstrap_einit_configuration_stree_garbage_free_timer) {
+//  cfg_stree_garbage_free();
+  ethread_prune_thread_pool();
+ }
+}
+
+void bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching(struct einit_event *ev) {
+ if (bootstrap_einit_configuration_stree_garbage_free_timer) {
+  event_timer_cancel (bootstrap_einit_configuration_stree_garbage_free_timer);
+ }
+ bootstrap_einit_configuration_stree_garbage_free_timer = event_timer_register_timeout (20);
+}
+
 int cfg_free () {
  struct stree *cur = streelinear_prepare(hconfiguration);
  struct cfgnode *node = NULL;
@@ -540,6 +556,8 @@ int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
 
  event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
  event_ignore (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
+ event_ignore (einit_core_done_switching, bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching);
+ event_ignore (einit_timer_tick, bootstrap_einit_configuration_stree_einit_event_handler_timer_tick);
 
  function_unregister ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_unregister ("einit-configuration-node-get", 1, cfg_getnode_f);
@@ -559,6 +577,8 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 
  event_listen (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
+ event_listen (einit_core_done_switching, bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching);
+ event_listen (einit_timer_tick, bootstrap_einit_configuration_stree_einit_event_handler_timer_tick);
 
  function_register ("einit-configuration-node-add", 1, cfg_addnode_f);
  function_register ("einit-configuration-node-get", 1, cfg_getnode_f);

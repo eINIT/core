@@ -369,7 +369,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
      einit_config_xml_expat_parse_configuration_file (includefile);
      recursion--;
      efree (includefile);
-     if (node->id) efree (node->id);
+//     if (node->id) efree (node->id);
 //     streedel (hconfiguration, hnode);
      streedel (hnode);
      goto rescan_node;

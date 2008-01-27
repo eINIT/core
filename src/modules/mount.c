@@ -2074,6 +2074,21 @@ void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
  }
 }
 
+time_t einit_mount_garbage_free_timer = 0;
+
+void einit_mount_einit_event_handler_timer_tick(struct einit_event *ev) {
+ if (ev->integer == einit_mount_garbage_free_timer) {
+  mount_garbage_free();
+ }
+}
+
+void einit_mount_einit_event_handler_core_done_switching(struct einit_event *ev) {
+ if (einit_mount_garbage_free_timer) {
+  event_timer_cancel (einit_mount_garbage_free_timer);
+ }
+ einit_mount_garbage_free_timer = event_timer_register_timeout (20);
+}
+
 int einit_mount_cleanup (struct lmodule *tm) {
  event_ignore (einit_core_crash_data, einit_mount_einit_event_handler_crash_data);
  event_ignore (einit_core_configuration_update, einit_mount_update_configuration);
@@ -2085,6 +2100,8 @@ int einit_mount_cleanup (struct lmodule *tm) {
 #if 0
  event_ignore (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
+ event_ignore (einit_core_done_switching, einit_mount_einit_event_handler_core_done_switching);
+ event_ignore (einit_timer_tick, einit_mount_einit_event_handler_timer_tick);
 
  function_unregister ("fs-mount", 1, (void *)emount);
  function_unregister ("fs-umount", 1, (void *)eumount);
@@ -2113,6 +2130,8 @@ int einit_mount_configure (struct lmodule *r) {
 #if 0
  event_listen (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
+ event_listen (einit_core_done_switching, einit_mount_einit_event_handler_core_done_switching);
+ event_listen (einit_timer_tick, einit_mount_einit_event_handler_timer_tick);
 
  function_register ("fs-mount", 1, (void *)emount);
  function_register ("fs-umount", 1, (void *)eumount);
