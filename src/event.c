@@ -118,7 +118,7 @@ void event_subthread_a (struct einit_event *event) {
    f[i]->handler(event);
   }
 
-  free (f);
+  efree (f);
  }
 
  if (event->chain_type) {
@@ -218,7 +218,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
     f[i]->handler (event);
   }
 
-  free (f);
+  efree (f);
  }
 
  if (event->chain_type) {
