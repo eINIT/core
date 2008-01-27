@@ -405,7 +405,7 @@ void *linux_bootchart_thread (void *ignored) {
  } else {
   esprintf (buffer, BUFFERSIZE, "cd /tmp/bootchart.einit; tar czf %s *", save_to);
  }
- qexec (buffer);
+ system (buffer);
 
  unlink_recursive ("/tmp/bootchart.einit/", 1);
 
