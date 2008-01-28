@@ -12,6 +12,8 @@
  <node mountpoint="/" device="/dev/ROOT" fs="ext3" options="noatime" /> -->
 
 <!-- use this for great success: -->
-<!-- <node mountpoint="/einit" device="/dev/einit-9p" fs="9p" options="proto=unix:noextend:gid=einit" /> -->
+<!-- <node mountpoint="/einit" device="/dev/einit-9p" fs="9p" options="proto=unix" /> -->
+<!-- for 2.6.24+ kernels -->
+<!-- <node mountpoint="/einit" device="/dev/einit-9p" fs="9p" options="trans=unix" /> -->
 
 </einit>
