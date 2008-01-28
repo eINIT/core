@@ -1,6 +1,6 @@
 #define IXP_NO_P9_
 #define IXP_P9_STRUCTS
-#include <ixp.h>
+#include "ixp.h"
 
 #define thread ixp_thread
 

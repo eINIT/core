@@ -449,6 +449,8 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
    s.gid = "einit";
    s.muid = "unknown";
 
+   s.extension = "";
+
    if (!einit_ipc_9p_einitgid) {
     lookupuidgid (NULL, &einit_ipc_9p_einitgid, NULL, "einit");
    }
@@ -513,6 +515,8 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
  s.uid = "root";
  s.gid = "einit";
  s.muid = "unknown";
+
+ s.extension = "";
 
  if (!einit_ipc_9p_einitgid) {
   lookupuidgid (NULL, &einit_ipc_9p_einitgid, NULL, "einit");

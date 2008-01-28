@@ -15,7 +15,7 @@ ixp_listen(IxpServer *s, int fd, void *aux,
 		) {
 	IxpConn *c;
 
-	c = emallocz(sizeof(IxpConn));
+	c = emallocz(sizeof(IxpConn)+1);
 	c->fd = fd;
 	c->aux = aux;
 	c->srv = s;
