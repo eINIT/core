@@ -48,7 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 
 #include <einit-modules/ipc.h>
 
@@ -642,17 +641,11 @@ Ixp9Srv einit_ipc_9p_srv = {
 };
 
 static IxpServer einit_ipc_9p_server; 
-
+ 
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
  einit_ipc_9p_running = 1;
 
  char *address = cfg_getstring ("subsystem-ipc-9p/socket", NULL);
- char *group = cfg_getstring ("subsystem-ipc-9p/group", NULL);
- char *chmod_i = cfg_getstring ("subsystem-ipc-9p/chmod", NULL);
-
- if (!group) group = "einit";
- if (!chmod_i) chmod_i = "0660";
- mode_t smode = parse_integer (chmod_i);
 
  if (!address) address = "unix!/dev/einit-9p";
 
@@ -664,16 +657,6 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  if (!fd) {
   notice (1, "cannot initialise 9p server");
-  return NULL;
- }
-
- char **sp = str2set ('!', address);
- if (sp && sp[0] && sp[1]) {
-  gid_t g;
-  lookupuidgid(NULL, &g, NULL, group);
-
-  chown (sp[1], 0, g);
-  chmod (sp[1], smode);
  }
 
  IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
