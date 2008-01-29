@@ -228,10 +228,18 @@ int linux_udev_run() {
   }
 */
 
-  if (n && n->flag) {
-   qexec ("/sbin/udevadm trigger");
+  if (stat ("/sbin/udevadm", &st)) {
+   if (n && n->flag) {
+    qexec ("/sbin/udevtrigger");
+   } else {
+    qexec ("/sbin/udevtrigger --attr-match=dev");
+   }
   } else {
-   qexec ("/sbin/udevadm trigger --attr-match=dev");
+   if (n && n->flag) {
+    qexec ("/sbin/udevadm trigger");
+   } else {
+    qexec ("/sbin/udevadm trigger --attr-match=dev");
+   }
   }
 
 //  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
@@ -240,7 +248,11 @@ int linux_udev_run() {
 
   sleep (1);
 
-  qexec ("/sbin/udevadm settle --timeout=60");
+  if (stat ("/sbin/udevadm", &st)) {
+   qexec ("/sbin/udevsettle --timeout=60");
+  } else {
+   qexec ("/sbin/udevadm settle --timeout=60");
+  }
 
   mount ("usbfs", "/proc/bus/usb", "usbfs", 0, NULL);
 
