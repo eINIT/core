@@ -48,7 +48,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <dirent.h>
 #include <time.h>
+
+#if 0
 #include <sys/acct.h>
+#endif
 
 #include <einit-modules/exec.h>
 
@@ -86,7 +89,9 @@ module_register(linux_bootchart_self);
 
 char linux_bootchart_have_thread = 0;
 unsigned long linux_bootchart_sleep_time = 0;
+#if 0
 char linux_bootchart_process_accounting = 0;
+#endif
 
 char *linux_bootchart_get_uptime () {
  char *tmp = readfile ("/proc/uptime");
@@ -259,10 +264,12 @@ void *linux_bootchart_thread (void *ignored) {
   size_t log_size = 0;
   char *uptime = linux_bootchart_get_uptime();
 
+#if 0
   if (linux_bootchart_process_accounting && try_acct) {
    if (acct ("/dev/kernel_pacct") == -1)
     try_acct = 1;
   }
+#endif
 
   if (uptime) {
    buffer_ds = linux_bootchart_update_ds (buffer_ds, uptime);
@@ -330,6 +337,7 @@ void *linux_bootchart_thread (void *ignored) {
   buffer_st = NULL;
  }
 
+#if 0
  if (linux_bootchart_process_accounting) {
   char *r = readfile ("/dev/kernel_pacct");
   if (r) {
@@ -344,6 +352,7 @@ void *linux_bootchart_thread (void *ignored) {
 
   acct(NULL);
  }
+#endif
 
  if ((f = fopen ("/tmp/bootchart.einit/header", "w"))) {
   char *t, buffer[BUFFERSIZE];
@@ -427,9 +436,11 @@ void linux_bootchart_switch () {
     linux_bootchart_sleep_time = 200;
    }
 
+#if 0
    if ((node = cfg_getnode ("configuration-bootchart-process-accounting", NULL)) && node->flag) {
     linux_bootchart_process_accounting = 1;
    }
+#endif
 
    if (!linux_bootchart_have_thread) {
     linux_bootchart_have_thread = 1;
