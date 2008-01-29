@@ -2,7 +2,6 @@ export INCLUDEPATH="/usr/local/include"
 
 # modules that need to be enabled manually: cron, distro-gentoo, module-random
 # modules that need to be reworked and are thus disabled by default: feedback-aural, feedback-aural-festival
-# modules that are incomplete and currently useless: ipc-hub
 # modules that currently only seem to work on Gentoo/Linux and are thus disabled by default: linux-mdev, linux-edev, linux-static-dev
 # gotta do this too: compile-xml-sh
 # disabled: preload
