@@ -955,7 +955,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     tmp_split[r] = 0;
     char *comb = set2str ('-', (const char **)tmp_split);
 
-    tmpxt = set_str_add (tmpxt, (void *)comb);
+    tmpxt = set_str_add_stable (tmpxt, (void *)comb);
 
     efree (comb);
    }
@@ -980,7 +980,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
        char *comb = set2str ('-', (const char **)tmp_split);
 
        if (!inset ((const void **)tmpxt, comb, SET_TYPE_STRING)) {
-        tmpxt = set_str_add (tmpxt, (void *)comb);
+        tmpxt = set_str_add_stable (tmpxt, (void *)comb);
        }
 
        efree (comb);
@@ -996,7 +996,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
    if (tmpx) {
     esprintf (tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$", tmpx);
-    after = set_str_add (after, (void *)tmp);
+    after = set_str_add_stable (after, (void *)tmp);
     efree (tmpx);
    }
 
@@ -1020,13 +1020,13 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
    enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
    if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
-    requires = set_str_add (requires, (void *)"network");
+    requires = set_str_add_stable (requires, (void *)"network");
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
     emutex_lock (&mount_autostart_mutex);
     if (!strmatch (servicename, "fs-root") && (!mount_autostart || !inset ((const void **)mount_autostart, servicename, SET_TYPE_STRING))) {
-     mount_autostart = set_str_add (mount_autostart, (void *)servicename);
+     mount_autostart = set_str_add_stable (mount_autostart, (void *)servicename);
     }
     emutex_unlock (&mount_autostart_mutex);
 
@@ -1095,7 +1095,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 //  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
   newmodule->rid = (char *)str_stabilise (tmp);
 
-  newmodule->si.provides = set_str_add (newmodule->si.provides, (void *)servicename);
+  newmodule->si.provides = set_str_add_stable (newmodule->si.provides, (void *)servicename);
 
   esprintf (tmp, BUFFERSIZE, "Filesystem ( %s )", s->key);
   newmodule->name = (char *)str_stabilise (tmp);
@@ -1139,7 +1139,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   char **filesystems = NULL;
 
   while (s) {
-   filesystems = set_str_add (filesystems, s->key);
+   filesystems = set_str_add_stable (filesystems, s->key);
 
    s = streenext (s);
   }
@@ -1167,10 +1167,10 @@ int einit_mount_scanmodules (struct lmodule *ml) {
      memset (&newnode, 0, sizeof (struct cfgnode));
 
      newnode.id = (char *)str_stabilise("services-alias-mount-critical");
-     newnode.arbattrs = set_str_add (newnode.arbattrs, "group");
-     newnode.arbattrs = set_str_add (newnode.arbattrs, fs);
-     newnode.arbattrs = set_str_add (newnode.arbattrs, "seq");
-     newnode.arbattrs = set_str_add (newnode.arbattrs, "all");
+     newnode.arbattrs = set_str_add_stable (newnode.arbattrs, "group");
+     newnode.arbattrs = set_str_add_stable (newnode.arbattrs, fs);
+     newnode.arbattrs = set_str_add_stable (newnode.arbattrs, "seq");
+     newnode.arbattrs = set_str_add_stable (newnode.arbattrs, "all");
 
      cfg_addnode (&newnode);
     }
@@ -1336,38 +1336,38 @@ char **mount_generate_mount_function_suffixes (char *fs) {
 
 #ifdef LINUX
  esprintf (tmp, BUFFERSIZE, "linux-%s", fs);
- ret = set_str_add (ret, tmp);
+ ret = set_str_add_stable (ret, tmp);
 #endif
  esprintf (tmp, BUFFERSIZE, "%s-%s", osinfo.sysname, fs);
- ret = set_str_add (ret, tmp);
+ ret = set_str_add_stable (ret, tmp);
  esprintf (tmp, BUFFERSIZE, "generic-%s", fs);
- ret = set_str_add (ret, tmp);
+ ret = set_str_add_stable (ret, tmp);
 
 #ifdef LINUX
- ret = set_str_add (ret, "linux-any");
+ ret = set_str_add_stable (ret, "linux-any");
 #endif
  esprintf (tmp, BUFFERSIZE, "%s-any", osinfo.sysname);
- ret = set_str_add (ret, tmp);
- ret = set_str_add (ret, "generic-any");
+ ret = set_str_add_stable (ret, tmp);
+ ret = set_str_add_stable (ret, "generic-any");
 
 /* and we also need backups, of course */
 /* NOTE: the *-backup functions are used when shit goes weird. right now that
          'give the system's native mount-command a chance to mess with this */
 #ifdef LINUX
  esprintf (tmp, BUFFERSIZE, "linux-%s-backup", fs);
- ret = set_str_add (ret, tmp);
+ ret = set_str_add_stable (ret, tmp);
 #endif
  esprintf (tmp, BUFFERSIZE, "%s-%s-backup", osinfo.sysname, fs);
- ret = set_str_add (ret, tmp);
+ ret = set_str_add_stable (ret, tmp);
  esprintf (tmp, BUFFERSIZE, "generic-%s-backup", fs);
- ret = set_str_add (ret, tmp);
+ ret = set_str_add_stable (ret, tmp);
 
 #ifdef LINUX
- ret = set_str_add (ret, "linux-any-backup");
+ ret = set_str_add_stable (ret, "linux-any-backup");
 #endif
  esprintf (tmp, BUFFERSIZE, "%s-any-backup", osinfo.sysname);
- ret = set_str_add (ret, tmp);
- ret = set_str_add (ret, "generic-any-backup");
+ ret = set_str_add_stable (ret, tmp);
+ ret = set_str_add_stable (ret, "generic-any-backup");
 
  return ret;
 }
@@ -1579,7 +1579,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
  }
 
  emutex_lock (&mount_active_fscks_mutex);
- mount_active_fscks = set_str_add (mount_active_fscks, device);
+ mount_active_fscks = set_str_add_stable (mount_active_fscks, device);
  emutex_unlock (&mount_active_fscks_mutex);
 
  struct cfgnode *node = NULL;
@@ -1599,7 +1599,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
   status->string = "filesystem might be dirty; running fsck";
   status_update (status);
 
-  char **d = set_str_add (set_str_add ((fs ? set_str_add (set_str_add ((char **)NULL, "fs"), fs) : NULL), "device"), device);
+  char **d = set_str_add_stable (set_str_add_stable ((fs ? set_str_add_stable (set_str_add_stable ((char **)NULL, "fs"), fs) : NULL), "device"), device);
 
   command = apply_variables(mount_fsck_template, (const char **)d);
   if (command) {
@@ -1621,7 +1621,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
  }
 
  emutex_lock (&mount_finished_fscks_mutex);
- mount_finished_fscks = set_str_add (mount_finished_fscks, device);
+ mount_finished_fscks = set_str_add_stable (mount_finished_fscks, device);
  emutex_unlock (&mount_finished_fscks_mutex);
 
  emutex_lock (&mount_active_fscks_mutex);
