@@ -1187,11 +1187,11 @@ const char *str_stabilise (const char *s) {
  }
 
  /* getting 'ere means we didn't have the right string in the set */
- emutex_lock (&einit_stable_strings_mutex);
+// emutex_lock (&einit_stable_strings_mutex);
  /* we don't really care if we accidentally duplicate the string */
  i = itreeadd (einit_stable_strings, hash, (char *)s, tree_value_string);
  einit_stable_strings = i;
- emutex_unlock (&einit_stable_strings_mutex);
+// emutex_unlock (&einit_stable_strings_mutex);
 
  return i->value;
 }
