@@ -213,6 +213,8 @@ int linux_udev_run() {
    }
   }
 
+  fputs ("starting udev...\n", stderr);
+
   startdaemon(&linux_udev_dexec, NULL);
 
   struct cfgnode *n = cfg_getnode ("configuration-system-coldplug", NULL);
@@ -227,6 +229,10 @@ int linux_udev_run() {
    linux_udev_ping_for_uevents("/sys/block", 3);
   }
 */
+
+  sleep (1);
+
+  fputs ("populating /dev with udevtrigger...\n", stderr);
 
   if (stat ("/sbin/udevadm", &st)) {
    if (n && !n->flag) {
@@ -244,7 +250,11 @@ int linux_udev_run() {
 
 //  qexec (EINIT_LIB_BASE "/modules-xml/udev.sh enable");
 
+  fputs ("loading kernel extensions...\n", stderr);
+
   linux_udev_load_kernel_extensions();
+
+  fputs ("waiting for udev to process all events...\n", stderr);
 
   sleep (1);
 
