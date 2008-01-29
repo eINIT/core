@@ -136,7 +136,7 @@ void gentoo_fixname_set (char **set) {
  for (; set[i]; i++) {
   gentoo_fixname(set[i]);
   if (strmatch (set[i], "*")) {
-   set[i] = estrdup (".*");
+   set[i] = (char *)str_stabilise (".*");
   }
  }
 }
@@ -180,7 +180,7 @@ void sh_add_environ_callback (char **data, uint8_t status, void *ignored) {
      narb[3] = yt;
     }
 
-    nnode.id = estrdup ("configuration-environment-global");
+    nnode.id = (char *)str_stabilise ("configuration-environment-global");
     nnode.arbattrs = set_str_dup_stable (&narb);
     nnode.svalue = nnode.arbattrs[3];
 //    nnode.source = self->rid;
@@ -276,7 +276,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     }
 
     newnode.type = einit_node_mode;
-    newnode.id = estrdup(arbattrs[1]);
+    newnode.id = (char *)str_stabilise(arbattrs[1]);
 //    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
@@ -432,7 +432,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     newnode.type = einit_node_regular;
     newnode.mode     = currentmode;
-    newnode.id       = estrdup("mode-enable");
+    newnode.id       = (char *)str_stabilise("mode-enable");
 //    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
@@ -765,15 +765,15 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     strcat (nrid, de->d_name);
 
     snprintf (tmpx, BUFFERSIZE, "Gentoo-Style init.d Script (%s)", de->d_name);
-    modinfo->name = estrdup (tmpx);
-    modinfo->rid = estrdup(nrid);
+    modinfo->name = (char *)str_stabilise (tmpx);
+    modinfo->rid = (char *)str_stabilise(nrid);
 
     gentoo_add_dependencies (modinfo, gentoo_deptree, de->d_name);
 
     struct lmodule *lm = modchain;
     while (lm) {
      if (lm->source && !strcmp(lm->source, tmp)) {
-      lm->param = (void *)estrdup (tmp);
+      lm->param = (void *)str_stabilise (tmp);
       lm->enable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_enable;
       lm->disable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_disable;
       lm->custom = (int (*)(void *, char *, struct einit_event *))compatibility_sysv_gentoo_init_d_custom;
@@ -790,8 +790,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     if (doop) {
      struct lmodule *new = mod_add (NULL, modinfo);
      if (new) {
-      new->source = estrdup (tmp);
-      new->param = (void *)estrdup (tmp);
+      new->source = (char *)str_stabilise (tmp);
+      new->param = (char *)str_stabilise (tmp);
       new->enable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_enable;
       new->disable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_disable;
       new->custom = (int (*)(void *, char *, struct einit_event *))compatibility_sysv_gentoo_init_d_custom;

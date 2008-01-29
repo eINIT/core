@@ -241,7 +241,7 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
 
   if (ep) {
    *ep = 0;
-   x[0] = estrdup (e);
+   x[0] = (char *)str_stabilise (e);
    *ep = '/';
 
    ep++;
@@ -299,7 +299,7 @@ char **create_environment_f (char **environment, const char **variables) {
    char *name = NULL, *filter = variablevalue+1;
    struct cfgnode *node;
    *variablevalue = 0;
-   name = estrdup(variables[i]);
+   name = (char *)str_stabilise(variables[i]);
    *variablevalue = '/';
 
    if ((node = cfg_getnode (name, NULL)) && node->arbattrs) {
@@ -352,7 +352,6 @@ char **create_environment_f (char **environment, const char **variables) {
      efree (pvalue);
     }
     efree (key);
-    efree (name);
    }
   } else {
 /* else: just add it */
@@ -407,7 +406,7 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
 
 char **exec_run_sh (char *command, enum pexec_options options, char **exec_environment) {
  struct exec_parser_data pd;
- char *ocmd = estrdup (command);
+ char *ocmd = (char*)str_stabilise (command);
 
  memset (&pd, 0, sizeof (pd));
 
@@ -449,22 +448,18 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  enum pexec_options options = (status ? 0 : pexec_option_nopipe);
  uint32_t cs = status_ok;
  char have_waited = 0;
- char *freeocmds = NULL;
 
  lookupuidgid (&uid, &gid, user, group);
 
  if (!command) return status_failed;
 // if the first command is pexec-options, then set some special options
  if (strprefix (command, "pexec-options")) {
-  char *ocmds = estrdup(command),
+  char *ocmds = (char*)str_stabilise(command),
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
   if (!rcmds) {
-   efree (ocmds);
    return status_failed;
   }
-
-  freeocmds = ocmds;
 
   *rcmds = 0;
   optx = str2set (' ', ocmds);
@@ -488,8 +483,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   }
  }
  if (!command || !command[0]) {
-  if (freeocmds) efree (freeocmds);
   return status_failed;
+ }
+
+ if (strmatch (command, "true")) {
+  return status_ok;
  }
 
  if (!(options & pexec_option_nopipe)) {
@@ -499,7 +497,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     status_update (status);
     status->string = strerror (errno);
    }
-   if (freeocmds) efree (freeocmds);
    return status_failed;
   }
 /* make sure the read end won't survive an exec*() */
@@ -539,7 +536,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
   if (status)
    status->string = strerror (errno);
-  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 #else
@@ -551,7 +547,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   goto retry_fork;
 
-  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 #endif
@@ -694,8 +689,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
   }
  }
-
- if (freeocmds) efree (freeocmds);
 
  if (cs == status_failed) return status_failed;
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
@@ -929,7 +922,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 // if (status->task & einit_module_enable)
 // else return status_ok;
 
-// cmddup = estrdup (shellcmd->command);
 
  uid = shellcmd->uid;
  gid = shellcmd->gid;

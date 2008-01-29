@@ -150,7 +150,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
    newnode.type =
      (onode && onode->type ? onode->type : einit_node_regular) | einit_node_modified;
    newnode.id =
-     estrdup (onode && onode->id ? onode->id : t);
+     (char *)str_stabilise (onode && onode->id ? onode->id : t);
    newnode.mode =
      onode && onode->mode ? onode->mode : NULL;
    newnode.flag =

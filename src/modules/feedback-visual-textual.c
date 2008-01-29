@@ -237,7 +237,7 @@ void feedback_textual_queue_update (struct lmodule *module, enum einit_module_st
  tnc.status = status;
  tnc.seqid = seqid;
  if (message) {
-  tnc.message = estrdup (message);
+  tnc.message = (char *)str_stabilise (message);
   strtrim (tnc.message);
  }
  tnc.ctime = ctime;
@@ -583,7 +583,6 @@ void feedback_textual_process_command (struct feedback_textual_command *command)
   feedback_textual_update_screen ();
 
   feedback_textual_statusline = NULL;
-  efree (command->statusline);
  }
 
  if (command->module) {
@@ -710,7 +709,7 @@ void einit_feedback_visual_feedback_event_handler_broken_services (struct einit_
   eprintf (stderr, ev->set[1] ? " >> broken services: %s\n" : " >> broken service: %s\n", tmp);
 
   esprintf (tmp2, BUFFERSIZE, "\e[31m ** BROKEN SERVICES:\e[0m %s\n", tmp);
-  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp2), 0);
+  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, (char *)str_stabilise (tmp2), 0);
 
   efree (tmp);
  }
@@ -724,7 +723,7 @@ void einit_feedback_visual_feedback_event_handler_unresolved_services (struct ei
   eprintf (stderr, ev->set[1] ? " >> unresolved services: %s\n" : " >> unresolved service: %s\n", tmp);
 
   esprintf (tmp2, BUFFERSIZE, "\e[31m ** UNRESOLVED SERVICES:\e[0m %s\n", tmp);
-  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp2), 0);
+  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, (char *)str_stabilise (tmp2), 0);
  
   efree (tmp);
  }
@@ -772,7 +771,7 @@ void einit_feedback_visual_einit_event_handler_mode_switching (struct einit_even
 
  esprintf (tmp, BUFFERSIZE, " \e[34m**\e[0m \e[34mswitching to mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
- feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
+ feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, (char *)str_stabilise (tmp), 0);
 }
 
 void einit_feedback_visual_einit_event_handler_mode_switch_done (struct einit_event *ev) {
@@ -780,7 +779,7 @@ void einit_feedback_visual_einit_event_handler_mode_switch_done (struct einit_ev
 
  esprintf (tmp, BUFFERSIZE, " \e[32m**\e[0m \e[34mswitch complete: mode %s. (boot+%is)\e[0m\e[0K\n", ((struct cfgnode *)ev->para)->id, (int)(time(NULL) - boottime));
 
- feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, estrdup (tmp), 0);
+ feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, (char *)str_stabilise (tmp), 0);
 
 #ifdef LINUX
  if ((!einit_feedback_visual_boot_done_switch || strmatch (((struct cfgnode *)ev->para)->id, "default")) && !mod_service_is_provided ("displaymanager") && !mod_service_is_provided ("x11")  && !mod_service_is_provided ("xorg") && !mod_service_is_provided ("xdm") && !mod_service_is_provided ("slim") && !mod_service_is_provided ("gdm") && !mod_service_is_provided ("kdm") && !mod_service_is_provided ("entrance") && !mod_service_is_provided ("entranced")) {
