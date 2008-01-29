@@ -131,10 +131,10 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
 
  struct ipc_9p_filedata *fd = emalloc (sizeof (struct ipc_9p_filedata));
 
- fd->data = d->data ? estrdup (d->data) : NULL;
+ fd->data = d->data ? (char *)str_stabilise (d->data) : NULL;
  fd->type = d->type;
  fd->cur = d->cur;
- fd->files = (struct ipc_fs_node **)(d->files ? setdup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
+ fd->files = (struct ipc_fs_node **)(d->files ? set_fix_dup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
  fd->c = d->c;
  fd->is_writable = d->is_writable;
 
@@ -144,7 +144,7 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
 struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
  struct ipc_9p_fidaux *fa = emalloc (sizeof (struct ipc_9p_fidaux));
 
- fa->path = (char **)(d->path ? setdup ((const void **)d->path, SET_TYPE_STRING) : NULL);
+ fa->path = (char **)(d->path ? set_str_dup_stable (d->path) : NULL);
  fa->fd = ipc_9p_filedata_dup(d->fd);
 
  return fa;
@@ -164,8 +164,11 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
   if (ev.stringset) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
    ev.stringset = set_str_add (ev.stringset, "");
+   char *r = set2str ('\n', (const char **)ev.stringset);
 
-   fd->data = set2str ('\n', (const char **)ev.stringset);
+   fd->data = (char *)str_stabilise(r);
+   if (r) efree (r);
+
    fd->type = i9_file;
    fd->cur = NULL;
 
@@ -176,12 +179,12 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
   } else if (ev.set) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
-   struct ipc_fs_node n = { .name = estrdup (".."), .is_file = 0 };
+   struct ipc_fs_node n = { .name = (char *)str_stabilise (".."), .is_file = 0 };
    ev.set = set_fix_add (ev.set, &n, sizeof (n));
-   n.name = estrdup (".");
+   n.name = (char *)str_stabilise (".");
    ev.set = set_fix_add (ev.set, &n, sizeof (n));
 
-   fd->data = estrdup ("unknown");
+   fd->data = (char *)str_stabilise ("unknown");
    fd->type = i9_dir;
    fd->files = (struct ipc_fs_node **)ev.set;
    fd->c = 0;
@@ -234,7 +237,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
     }
    }
   } else {
-   fa->path = set_str_add(fa->path, r->ifcall.wname[i]);
+   fa->path = set_str_add_stable (fa->path, r->ifcall.wname[i]);
   }
 
   r->ofcall.wqid[i].type = P9_QTDIR;
@@ -350,7 +353,6 @@ int einit_ipc_9p_process (char *cmd, FILE *f) {
 void einit_ipc_9p_request_thread (struct einit_ipc_9p_request_data *d) {
  einit_ipc_9p_process(d->command, d->output);
  fclose (d->output);
- efree (d);
 }
 
 char *einit_ipc_9p_request (char *command) {
@@ -394,8 +396,6 @@ char *einit_ipc_9p_request (char *command) {
  }
 
  if (!returnvalue) returnvalue = estrdup("<einit-ipc><warning type=\"no-return-value\" /></einit-ipc>\n");
-
- efree (command);
 
  return returnvalue;
 }
@@ -620,10 +620,8 @@ void einit_ipc_9p_fs_remove(Ixp9Req *r) {
 void einit_ipc_9p_fs_freefid(Fid *f) {
  if (f->aux) {
   struct ipc_9p_fidaux *fa = f->aux;
-  if (fa->path) efree (fa->path);
 
   if (fa->fd) {
-   if (fa->fd->data) efree (fa->fd->data);
    efree (fa->fd);
   }
 
@@ -693,14 +691,14 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
   memset (&newnode, 0, sizeof(struct cfgnode));
 
-  newnode.id = estrdup ("configuration-environment-global");
+  newnode.id = (char *)str_stabilise ("configuration-environment-global");
   newnode.type = einit_node_regular;
 
-  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"id");
-  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"EINIT_9P_ADDRESS");
+  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "id");
+  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "EINIT_9P_ADDRESS");
 
-  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)"s");
-  newnode.arbattrs = set_str_add(newnode.arbattrs, (void *)address);
+  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "s");
+  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, address);
 
   newnode.svalue = newnode.arbattrs[3];
 
@@ -742,32 +740,32 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
 
  if (!path) {
   n.is_file = 0;
-  n.name = estrdup ("ipc");
+  n.name = (char *)str_stabilise ("ipc");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0] && strmatch (path[0], "ipc")) {
   if (!path[1]) {
    n.is_file = 1;
 
-   n.name = estrdup ("list modules.xml");
+   n.name = (char *)str_stabilise ("list modules.xml");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("list services.xml");
+   n.name = (char *)str_stabilise ("list services.xml");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("list configuration.xml");
+   n.name = (char *)str_stabilise ("list configuration.xml");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("list modules");
+   n.name = (char *)str_stabilise ("list modules");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("list services");
+   n.name = (char *)str_stabilise ("list services");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("list configuration");
+   n.name = (char *)str_stabilise ("list configuration");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("update configuration");
+   n.name = (char *)str_stabilise ("update configuration");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = estrdup ("examine configuration");
+   n.name = (char *)str_stabilise ("examine configuration");
    ev->set = set_fix_add (ev->set, &n, sizeof (n));
   } else {
-   char *res = einit_ipc_9p_request (estrdup(path[1]));
+   char *res = einit_ipc_9p_request ((char *)str_stabilise(path[1]));
 
-   ev->stringset = set_str_add(ev->stringset, res);
+   ev->stringset = set_str_add_stable(ev->stringset, res);
 
    efree (res);
   }

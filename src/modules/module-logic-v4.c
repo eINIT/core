@@ -150,7 +150,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
    while (cfgn) {
     if (cfgn->arbattrs && cfgn->mode && cfgn->mode->id && (!modes || !inset ((const void **)modes, (const void *)cfgn->mode->id, SET_TYPE_STRING))) {
      uint32_t i = 0;
-     modes = set_str_add (modes, (void *)cfgn->mode->id);
+     modes = set_str_add_stable (modes, (void *)cfgn->mode->id);
 
      for (i = 0; cfgn->arbattrs[i]; i+=2) {
       if (strmatch(cfgn->arbattrs[i], "services")) {
@@ -223,7 +223,7 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
 
      while (mcur) {
       if (inset ((const void **)mcur->value, (void *)cur->key, SET_TYPE_STRING)) {
-       inmodes = set_str_add(inmodes, (void *)mcur->key);
+       inmodes = set_str_add_stable (inmodes, (void *)mcur->key);
       }
 
       mcur = streenext(mcur);
@@ -307,10 +307,10 @@ void module_logic_ipc_event_handler (struct einit_event *ev) {
           }
          }
 
-         char **functions = (char **)setdup ((const void **)xs[u]->functions, SET_TYPE_STRING);
-         if (xs[u]->enable) functions = set_str_add (functions, "enable");
-         if (xs[u]->disable) functions = set_str_add (functions, "disable");
-         functions = set_str_add (functions, "zap");
+         char **functions = set_str_dup_stable (xs[u]->functions);
+         if (xs[u]->enable) functions = set_str_add_stable (functions, "enable");
+         if (xs[u]->disable) functions = set_str_add_stable (functions, "disable");
+         functions = set_str_add_stable (functions, "zap");
 
          if (functions) {
           char *x = set2str(':', (const char **)functions);
@@ -480,7 +480,7 @@ char module_logic_check_for_circular_dependencies (char *service, struct lmodule
 
   if (primus && primus->si && primus->si->requires) {
    int y = 0;
-   struct lmodule **subdeps = (struct lmodule **)set_noa_add ((void **)setdup ((const void **)dependencies, SET_NOALLOC), primus);
+   struct lmodule **subdeps = (struct lmodule **)set_noa_add (set_noa_dup (dependencies), primus);
 
    for (; primus->si->requires[y]; y++) {
     if (module_logic_check_for_circular_dependencies (primus->si->requires[y], subdeps)) {
@@ -534,7 +534,7 @@ struct lmodule **module_logic_find_things_to_enable() {
   }
 
   if (!inset ((const void **)services_level1, module_logic_list_enable[i], SET_TYPE_STRING))
-   services_level1 = set_str_add (services_level1, module_logic_list_enable[i]);
+   services_level1 = set_str_add_stable (services_level1, module_logic_list_enable[i]);
 
   struct stree *st = streefind(module_logic_service_list, module_logic_list_enable[i], tree_find_first);
 
@@ -563,7 +563,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    struct lmodule *candidate = module_logic_get_prime_candidate (lm);
 
    if (!candidate) {
-    broken = set_str_add (broken, module_logic_list_enable[i]);
+    broken = set_str_add_stable (broken, module_logic_list_enable[i]);
     module_logic_list_enable = strsetdel (module_logic_list_enable, module_logic_list_enable[i]);
     i = -1;
 
@@ -586,13 +586,13 @@ struct lmodule **module_logic_find_things_to_enable() {
     if (candidate->module) {
      if (candidate->module->rid) {
       if (!inset ((const void **)services_level1, candidate->module->rid, SET_TYPE_STRING))
-       services_level1 = set_str_add (services_level1, candidate->module->rid);
+       services_level1 = set_str_add_stable (services_level1, candidate->module->rid);
      }
      if (candidate->si && candidate->si->provides) {
       int j = 0;
       for (; candidate->si->provides[j]; j++) {
        if (!inset ((const void **)services_level1, candidate->si->provides[j], SET_TYPE_STRING))
-        services_level1 = set_str_add (services_level1, candidate->si->provides[j]);
+        services_level1 = set_str_add_stable (services_level1, candidate->si->provides[j]);
       }
      }
     }
@@ -633,7 +633,7 @@ struct lmodule **module_logic_find_things_to_enable() {
         fflush (stderr);
 #endif
 
-        module_logic_list_enable = set_str_add (module_logic_list_enable, candidate->si->requires[y]);
+        module_logic_list_enable = set_str_add_stable (module_logic_list_enable, candidate->si->requires[y]);
 
         if (candidates_level1) {
          efree (candidates_level1);
@@ -651,7 +651,7 @@ struct lmodule **module_logic_find_things_to_enable() {
     }
    }
   } else {
-   unresolved = set_str_add (unresolved, module_logic_list_enable[i]);
+   unresolved = set_str_add_stable (unresolved, module_logic_list_enable[i]);
   }
 
   next: ;
@@ -737,7 +737,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    int i_in_target = 0;
 
    if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
-    mdata = (char **)setdup ((const void **)candidates_level1[i]->si->provides, SET_TYPE_STRING);
+    mdata = set_str_dup_stable (candidates_level1[i]->si->provides);
 
     int k;
     for (k = 0; candidates_level1[i]->si->provides[k]; k++) {
@@ -748,7 +748,7 @@ struct lmodule **module_logic_find_things_to_enable() {
    }
 
    if (candidates_level1[i]->module && candidates_level1[i]->module->rid) {
-    mdata = set_str_add (mdata, candidates_level1[i]->module->rid);
+    mdata = set_str_add_stable (mdata, candidates_level1[i]->module->rid);
 
     if (inset ((const void **)module_logic_list_enable, candidates_level1[i]->module->rid, SET_TYPE_STRING)) {
      i_in_target++;
@@ -837,13 +837,13 @@ struct lmodule **module_logic_find_things_to_enable() {
 /* re-add our own services */
      if (candidates_level1[i]->module->rid) {
       if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
-       services_level1 = set_str_add (services_level1, candidates_level1[i]->module->rid);
+       services_level1 = set_str_add_stable (services_level1, candidates_level1[i]->module->rid);
      }
      if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
       int k = 0;
       for (; candidates_level1[i]->si->provides[k]; k++) {
        if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING))
-        services_level1 = set_str_add (services_level1, candidates_level1[i]->si->provides[k]);
+        services_level1 = set_str_add_stable (services_level1, candidates_level1[i]->si->provides[k]);
       }
      }
     }
@@ -866,9 +866,9 @@ struct lmodule **module_logic_find_things_to_enable() {
      int y = 0;
      for (; candidates_level2[y]; y++) {
       if (candidates_level2[y] != candidates_level2[i]) {
-       char **matchthis = (candidates_level2[y]->si && candidates_level2[y]->si->provides) ? (char **)setdup ((const void **)candidates_level2[y]->si->provides, SET_TYPE_STRING) : NULL;
+       char **matchthis = (candidates_level2[y]->si && candidates_level2[y]->si->provides) ? set_str_dup_stable (candidates_level2[y]->si->provides) : NULL;
        if (candidates_level2[y]->module && candidates_level2[y]->module->rid) {
-        matchthis = set_str_add (matchthis, candidates_level2[y]->module->rid);
+        matchthis = set_str_add_stable (matchthis, candidates_level2[y]->module->rid);
        }
 
        if (matchthis) {
@@ -965,7 +965,7 @@ struct lmodule **module_logic_find_things_to_disable() {
    return NULL;
   }
 
-  unresolved = (char **)setdup ((const void **)module_logic_list_disable, SET_TYPE_STRING);
+  unresolved = set_str_dup_stable (module_logic_list_disable);
 
   for (i = 0; pot[i]; i++) {
 //   mod_service_not_in_use (pot[i]);
@@ -993,13 +993,13 @@ struct lmodule **module_logic_find_things_to_disable() {
 
     if (pot[i]->module->rid) {
      unresolved = strsetdel (unresolved, pot[i]->module->rid);
-     services_level1 = set_str_add (services_level1, pot[i]->module->rid);
+     services_level1 = set_str_add_stable (services_level1, pot[i]->module->rid);
     }
     if (pot[i]->si && pot[i]->si->provides) {
      int y = 0;
      for (; pot[i]->si->provides[y]; y++) {
       unresolved = strsetdel (unresolved, pot[i]->si->provides[y]);
-      services_level1 = set_str_add (services_level1, pot[i]->si->provides[y]);
+      services_level1 = set_str_add_stable (services_level1, pot[i]->si->provides[y]);
      }
     }
    }
@@ -1092,13 +1092,13 @@ struct lmodule **module_logic_find_things_to_disable() {
    if (candidates_level1[i]->module) {
     if (candidates_level1[i]->module->rid) {
      if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
-      services_level1 = set_str_add (services_level1, candidates_level1[i]->module->rid);
+      services_level1 = set_str_add_stable (services_level1, candidates_level1[i]->module->rid);
     }
     if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
      int j = 0;
      for (; candidates_level1[i]->si->provides[j]; j++) {
       if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[j], SET_TYPE_STRING))
-       services_level1 = set_str_add (services_level1, candidates_level1[i]->si->provides[j]);
+       services_level1 = set_str_add_stable (services_level1, candidates_level1[i]->si->provides[j]);
      }
     }
    }
@@ -1134,13 +1134,13 @@ struct lmodule **module_logic_find_things_to_disable() {
 /* re-add our own services */
       if (candidates_level1[i]->module->rid) {
        if (!inset ((const void **)services_level1, candidates_level1[i]->module->rid, SET_TYPE_STRING))
-        services_level1 = set_str_add (services_level1, candidates_level1[i]->module->rid);
+        services_level1 = set_str_add_stable (services_level1, candidates_level1[i]->module->rid);
       }
       if (candidates_level1[i]->si && candidates_level1[i]->si->provides) {
        int k = 0;
        for (; candidates_level1[i]->si->provides[k]; k++) {
         if (!inset ((const void **)services_level1, candidates_level1[i]->si->provides[k], SET_TYPE_STRING))
-         services_level1 = set_str_add (services_level1, candidates_level1[i]->si->provides[k]);
+         services_level1 = set_str_add_stable (services_level1, candidates_level1[i]->si->provides[k]);
        }
       }
      }
@@ -1163,9 +1163,9 @@ struct lmodule **module_logic_find_things_to_disable() {
       int y = 0;
       for (; candidates_level2[y]; y++) {
        if (candidates_level2[y] != candidates_level2[i]) {
-        char **matchthis = (candidates_level2[y]->si && candidates_level2[y]->si->provides) ? (char **)setdup ((const void **)candidates_level2[y]->si->provides, SET_TYPE_STRING) : NULL;
+        char **matchthis = (candidates_level2[y]->si && candidates_level2[y]->si->provides) ? set_str_dup_stable (candidates_level2[y]->si->provides) : NULL;
         if (candidates_level2[y]->module && candidates_level2[y]->module->rid) {
-         matchthis = set_str_add (matchthis, candidates_level2[y]->module->rid);
+         matchthis = set_str_add_stable (matchthis, candidates_level2[y]->module->rid);
         }
 
         if (matchthis) {
@@ -1496,7 +1496,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   int i = 0;
   for (; tmplist[i]; i++) {
    if (!enable || !inset ((const void **)enable, tmplist[i], SET_TYPE_STRING)) {
-    enable = set_str_add (enable, tmplist[i]);
+    enable = set_str_add_stable (enable, tmplist[i]);
    }
   }
 
@@ -1507,7 +1507,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   int i = 0;
   for (; tmplist[i]; i++) {
    if (!disable || !inset ((const void **)disable, tmplist[i], SET_TYPE_STRING)) {
-    disable = set_str_add (disable, tmplist[i]);
+    disable = set_str_add_stable (disable, tmplist[i]);
    }
   }
 
@@ -1531,7 +1531,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
     esprintf (tmp, BUFFERSIZE, "checkpoint-mode-%s", mode->id);
 
     if (!enable || !inset ((const void **)enable, tmp, SET_TYPE_STRING))
-     enable = set_str_add (enable, tmp);
+     enable = set_str_add_stable (enable, tmp);
    }
   }
 
@@ -1584,7 +1584,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
      }
 
      if (add) {
-      disable = set_str_add(disable, (void *)tmp[i]);
+      disable = set_str_add_stable(disable, (void *)tmp[i]);
      }
     }
 
@@ -1687,7 +1687,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    emutex_lock (&module_logic_list_enable_mutex);
    for (; enable[i]; i++) {
     if (!inset ((const void **)module_logic_list_enable, enable[i], SET_TYPE_STRING))
-     module_logic_list_enable = set_str_add (module_logic_list_enable, enable[i]);
+     module_logic_list_enable = set_str_add_stable (module_logic_list_enable, enable[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_enable();
@@ -1711,7 +1711,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
 	fflush (stderr);
 #endif
     if (!inset ((const void **)module_logic_list_disable, disable[i], SET_TYPE_STRING))
-     module_logic_list_disable = set_str_add (module_logic_list_disable, disable[i]);
+     module_logic_list_disable = set_str_add_stable (module_logic_list_disable, disable[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_disable();
@@ -1830,7 +1830,7 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    emutex_lock (&module_logic_list_enable_mutex);
    for (; ev->stringset[i]; i++) {
     if (!inset ((const void **)module_logic_list_enable, ev->stringset[i], SET_TYPE_STRING))
-     module_logic_list_enable = set_str_add (module_logic_list_enable, ev->stringset[i]);
+     module_logic_list_enable = set_str_add_stable (module_logic_list_enable, ev->stringset[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_enable();
@@ -1839,13 +1839,13 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    if (spawn)
     module_logic_spawn_set_enable (spawn);
 
-   module_logic_wait_for_services_to_be_enabled((char **)setdup((const void **)ev->stringset, SET_TYPE_STRING));
+   module_logic_wait_for_services_to_be_enabled(set_str_dup_stable(ev->stringset));
   } else if (ev->task & einit_module_disable) {
    int i = 0;
    emutex_lock (&module_logic_list_disable_mutex);
    for (; ev->stringset[i]; i++) {
     if (!inset ((const void **)module_logic_list_disable, ev->stringset[i], SET_TYPE_STRING))
-     module_logic_list_disable = set_str_add (module_logic_list_disable, ev->stringset[i]);
+     module_logic_list_disable = set_str_add_stable (module_logic_list_disable, ev->stringset[i]);
    }
 
    struct lmodule **spawn = module_logic_find_things_to_disable();
@@ -1854,7 +1854,7 @@ void module_logic_einit_event_handler_core_manipulate_services (struct einit_eve
    if (spawn)
     module_logic_spawn_set_disable (spawn);
 
-   module_logic_wait_for_services_to_be_disabled((char **)setdup((const void **)ev->stringset, SET_TYPE_STRING));
+   module_logic_wait_for_services_to_be_disabled(set_str_dup_stable(ev->stringset));
   }
  }
 
@@ -1904,7 +1904,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
   if (strmatch (ev->set[1], "enable") || strmatch (ev->set[1], "start")) {
    emutex_lock (&module_logic_list_enable_mutex);
    if (!inset ((const void **)module_logic_list_enable, ev->set[0], SET_TYPE_STRING))
-    module_logic_list_enable = set_str_add (module_logic_list_enable, ev->set[0]);
+    module_logic_list_enable = set_str_add_stable (module_logic_list_enable, ev->set[0]);
 
    struct lmodule **spawn = module_logic_find_things_to_enable();
    emutex_unlock (&module_logic_list_enable_mutex);
@@ -1917,7 +1917,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
   } else if (strmatch (ev->set[1], "disable") || strmatch (ev->set[1], "stop")) {
    emutex_lock (&module_logic_list_disable_mutex);
    if (!inset ((const void **)module_logic_list_disable, ev->set[0], SET_TYPE_STRING))
-    module_logic_list_disable = set_str_add (module_logic_list_disable, ev->set[0]);
+    module_logic_list_disable = set_str_add_stable (module_logic_list_disable, ev->set[0]);
 
    struct lmodule **spawn = module_logic_find_things_to_disable();
    emutex_unlock (&module_logic_list_disable_mutex);
@@ -1935,7 +1935,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
     struct stree *st = streefind(module_logic_service_list, ev->set[0], tree_find_first);
 
     if (st) {
-     tm = (struct lmodule **)setdup ((const void **)st->value, SET_NOALLOC);
+     tm = (struct lmodule **)set_noa_dup (st->value);
     }
     emutex_unlock (&module_logic_service_list_mutex);
    }
@@ -1993,7 +1993,7 @@ void module_logic_einit_event_handler_core_change_service_status (struct einit_e
    struct stree *st = streefind(module_logic_service_list, ev->set[0], tree_find_first);
 
    if (st) {
-    m = (struct lmodule **)setdup ((const void **)st->value, SET_NOALLOC);
+    m = (struct lmodule **)set_noa_dup (st->value);
    }
    emutex_unlock (&module_logic_service_list_mutex);
 
@@ -2280,9 +2280,9 @@ void module_logic_ipc_read (struct einit_event *ev) {
    } else if (path[2] && path[3]) {
     if (strmatch (path[3], "status")) {
      if (mod_service_is_provided (path[2])) {
-      ev->stringset = set_str_add (ev->stringset, "provided");
+      ev->stringset = set_str_add_stable (ev->stringset, "provided");
      } else {
-      ev->stringset = set_str_add (ev->stringset, "not provided ");
+      ev->stringset = set_str_add_stable (ev->stringset, "not provided ");
      }
     } else if (strmatch (path[3], "modules") && !path[4]) {
      n.is_file = 0;
@@ -2357,8 +2357,8 @@ void module_logic_ipc_write (struct einit_event *ev) {
   if (path[1] && path[2] && path[3] && strmatch (path[0], "services") && strmatch (path[3], "status")) {
    struct einit_event ee = evstaticinit(einit_core_change_service_status);
 
-   ee.set = (void **)set_str_add (NULL, path[2]);
-   ee.set = (void **)set_str_add ((char **)ee.set, ev->set[0]);
+   ee.set = (void **)set_str_add_stable (NULL, path[2]);
+   ee.set = (void **)set_str_add_stable ((char **)ee.set, ev->set[0]);
 
    ee.stringset = (char **)ee.set;
 

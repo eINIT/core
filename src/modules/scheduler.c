@@ -437,7 +437,7 @@ void sched_ipc_event_handler (struct einit_event *ev) {
     evstaticdestroy(ee);
    } else {
     struct einit_event ee = evstaticinit(einit_core_change_service_status);
-    ee.set = (void **)setdup ((const void **)ev->argv+1, SET_TYPE_STRING);
+    ee.set = (void **)set_str_dup_stable (ev->argv+1);
     ee.stringset = (char **)ee.set;
     if (ev->ipc_options & einit_ipc_detach) {
      event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);

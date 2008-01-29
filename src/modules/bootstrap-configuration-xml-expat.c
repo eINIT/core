@@ -181,10 +181,10 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
    newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
 
    newnode->type |= einit_node_mode;
-   newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
+   newnode->arbattrs = set_str_dup_stable ((char **)atts);
    for (; newnode->arbattrs[i] != NULL; i+=2) {
     if (strmatch (newnode->arbattrs[i], "id")) {
-     newnode->id = estrdup((char *)newnode->arbattrs[i+1]);
+     newnode->id = (char *)str_stabilise((char *)newnode->arbattrs[i+1]);
     }
 /*    else if (strmatch (newnode->arbattrs[i], "base")) {
      newnode->base = str2set (':', (char *)newnode->arbattrs[i+1]);
@@ -205,9 +205,9 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
 
    newnode->type |= einit_node_regular;
 
-   newnode->id = estrdup (((struct einit_xml_expat_user_data *)userData)->prefix);
+   newnode->id = (char *)str_stabilise (((struct einit_xml_expat_user_data *)userData)->prefix);
    newnode->mode = curmode;
-   newnode->arbattrs = (char **)setdup ((const void **)atts, SET_TYPE_STRING);
+   newnode->arbattrs = set_str_dup_stable ((char **)atts);
    if (newnode->arbattrs)
     for (; newnode->arbattrs[i] != NULL; i+=2) {
      if (strmatch (newnode->arbattrs[i], "s"))

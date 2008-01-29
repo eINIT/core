@@ -208,7 +208,7 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
   while (cur) {
    struct cfgnode *n = cur->value;
    if (n->arbattrs) {
-    char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+    char **narb = set_str_dup_stable (n->arbattrs);
 
     rv = streeadd (rv, (cur->key + prefixlen), narb, tree_value_noalloc, narb);
    }
@@ -220,12 +220,12 @@ struct stree *einit_module_network_v2_get_all_addresses (char *interface) {
  } else {
   struct cfgnode *n;
   if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv4")) && n->arbattrs) {
-   char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+   char **narb = set_str_dup_stable (n->arbattrs);
    rv = streeadd (rv, "ipv4", narb, tree_value_noalloc, narb);
   }
 
   if ((n = einit_module_network_v2_get_option_default(interface, "address-ipv6")) && n->arbattrs) {
-   char **narb = (char **)setdup ((const void **)n->arbattrs, SET_TYPE_STRING);
+   char **narb = set_str_dup_stable (n->arbattrs);
    rv = streeadd (rv, "ipv6", narb, tree_value_noalloc, narb);
   }
  }

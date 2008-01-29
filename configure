@@ -463,7 +463,6 @@ elif test -n "`uname -a|grep -i 'Linux'`"; then
 	fi
 	LIBRT="-lrt"
 	SO="so"
-	NETLINK="netlink"
 	EINIT_MONITOR_FLAGS=""
 else
 	echo "(guess) generic posix-ish unix";
@@ -477,12 +476,6 @@ else
 	LIBRT="-lrt"
 	SO="so"
 	EINIT_MONITOR_FLAGS=""
-fi
-
-if [ "${NETLINK}" = "netlink" ]; then
-	echo "getting libnl-1 flags off pkg-config..."
-	NETLINK_CFLAGS=$(pkg-config --cflags libnl-1)
-	NETLINK_LIBS=$(pkg-config --libs libnl-1)
 fi
 
 echo "getting libguile flags using guile-config..."
@@ -514,10 +507,6 @@ fi;
 echo "will use this expat library: ${EXPAT_LIBS}"
 
 echo -n "figuring out what libs need to be linked into the core..."
-if test -n "`echo ${INTERNALMODULES}|grep linux-netlink`"; then
- echo -n " -lnl"
- CORELIBS="${CORELIBS} ${NETLINK_LIBS}"
-fi;
 if test -n "`echo ${INTERNALMODULES}|grep module-logic-v3`"; then
  echo -n " -lrt"
  CORELIBS="${CORELIBS} ${LIBRT}"
@@ -643,9 +632,6 @@ GTK_CFLAGS = ${GTK_CFLAGS}
 GTK_LIBS = ${GTK_LIBS}
 GTK = ${GTK}
 
-NETLINK_CFLAGS = ${NETLINK_CFLAGS}
-NETLINK_LIBS = ${NETLINK_LIBS}
-
 GUILE_CFLAGS = ${GUILE_CFLAGS}
 GUILE_LIBS = ${GUILE_LIBS}
 
@@ -731,9 +717,6 @@ LXXLD=\"\${CXXC} \${LDFLAGS} $LLD\"
 GTK_CFLAGS=\"${GTK_CFLAGS}\"
 GTK_LIBS=\"${GTK_LIBS}\"
 GTK=\"${GTK}\"
-
-NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
-NETLINK_LIBS=\"${NETLINK_LIBS}\"
 
 GUILE_CFLAGS=\"${GUILE_CFLAGS}\"
 GUILE_LIBS=\"${GUILE_LIBS}\"
@@ -821,9 +804,6 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     GTK_CFLAGS=\"${GTK_CFLAGS}\"
     GTK_LIBS=\"${GTK_LIBS}\"
     GTK=\"${GTK}\"
-
-    NETLINK_CFLAGS=\"${NETLINK_CFLAGS}\"
-    NETLINK_LIBS=\"${NETLINK_LIBS}\"
 
     GUILE_CFLAGS=\"${GUILE_CFLAGS}\"
     GUILE_LIBS=\"${GUILE_LIBS}\"

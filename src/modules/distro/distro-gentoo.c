@@ -181,7 +181,7 @@ void sh_add_environ_callback (char **data, uint8_t status, void *ignored) {
     }
 
     nnode.id = estrdup ("configuration-environment-global");
-    nnode.arbattrs = (char **)setdup ((const void **)&narb, SET_TYPE_STRING);
+    nnode.arbattrs = set_str_dup_stable (&narb);
     nnode.svalue = nnode.arbattrs[3];
 //    nnode.source = self->rid;
 //    nnode.source_file = "/etc/profile.env";
@@ -304,7 +304,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
        (struct service_group_transformation *)cur->value;
 
      if (trans) {
-      char **workingset = (char **)setdup ((const void **)nservices, SET_TYPE_STRING);
+      char **workingset = set_str_dup (nservices);
       char **new_services_for_group = NULL;
 
       if (workingset) {
@@ -628,7 +628,7 @@ char **gentoo_resolve_dependency_type (rc_depinfo_t *deptree, char *type, char *
  char **tmp_service = set_str_add (NULL, name);
 
  if ((tmp_dependencies = rc_get_depends(deptree, tmp_type, tmp_service, runlevel, RC_DEP_START))) {
-  serv = (char **)setdup ((const void **)tmp_dependencies, SET_TYPE_STRING);
+  serv = set_str_dup_stable (tmp_dependencies);
 //  eprintf (stderr, "deps: %s %s\n", set2str (' ', dependencies->services), set2str (' ', serv));
 
   efree (tmp_dependencies);

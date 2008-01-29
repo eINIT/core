@@ -890,10 +890,10 @@ SCM module_scheme_guile_make_einit_event_from_struct (struct einit_event *evo) {
 
  if (evo->type != einit_event_subsystem_ipc) {
   if (evo->string) ev->string = estrdup (evo->string);
-  if (evo->stringset) ev->stringset = (char **)setdup ((const void **)evo->stringset, SET_TYPE_STRING);
+  if (evo->stringset) ev->stringset = set_str_dup_stable (evo->stringset);
  } else {
   if (evo->command) ev->command = estrdup (evo->command);
-  if (evo->argv) ev->argv = (char **)setdup ((const void **)evo->argv, SET_TYPE_STRING);
+  if (evo->argv) ev->argv = set_str_dup_stable (evo->argv);
  }
 
  return smob;

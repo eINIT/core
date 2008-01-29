@@ -577,7 +577,7 @@ struct einit_event *evdup (const struct einit_event *ev) {
    nev->command = np;
   }
 
-  if (ev->argv) nev->argv = (char **)setdup ((const void **)ev->argv, SET_TYPE_STRING);
+  if (ev->argv) nev->argv = set_str_dup_stable (ev->argv);
  } else {
   if (nev->string) {
    int32_t l;
@@ -589,7 +589,7 @@ struct einit_event *evdup (const struct einit_event *ev) {
    nev->string = np;
   }
 
-  if (ev->stringset) nev->stringset = (char **)setdup ((const void **)ev->stringset, SET_TYPE_STRING);
+  if (ev->stringset) nev->stringset = set_str_dup_stable (ev->stringset);
  }
 
  return nev;
@@ -1160,3 +1160,57 @@ void eregfree_cache (regex_t *preg) {
 #endif
 
 #endif
+
+struct itree *einit_stable_strings = NULL;
+pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+const char *str_stabilise (const char *s) {
+ if (!s) return NULL;
+
+ long hash = hashp(s);
+
+ struct itree *i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
+ while (i) {
+  if (!s[0]) {
+   if (!((char *)i->value)[0])
+    return i->value;
+  } else {
+   if (i->value == s) {
+    return s;
+   }
+   if (strmatch (s, i->value)) {
+    return i->value;
+   }
+  }
+
+  i = itreefind (i, hash, tree_find_next);
+ }
+
+ /* getting 'ere means we didn't have the right string in the set */
+// emutex_lock (&einit_stable_strings_mutex);
+ /* we don't really care if we accidentally duplicate the string */
+ i = itreeadd (einit_stable_strings, hash, (char *)s, tree_value_string);
+ einit_stable_strings = i;
+// emutex_unlock (&einit_stable_strings_mutex);
+
+ return i->value;
+}
+
+char **set_str_dup_stable (char **s) {
+ void **d = NULL;
+ int i = 0;
+
+ if (!s) return NULL;
+
+ for (; s[i]; i++) {
+  d = set_noa_add (d, (void *)str_stabilise (s[i]));
+ }
+
+ return (char **)d;
+}
+
+char **set_str_add_stable (char **s, char *e) {
+ s = (char **)set_noa_add ((void **)s, (void *)str_stabilise (e));
+
+ return s;
+}

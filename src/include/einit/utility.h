@@ -291,6 +291,10 @@ void eregfree_cache (regex_t *preg);
 
 #include <einit/set.h>
 
+const char *str_stabilise (const char *s);
+char **set_str_dup_stable (char **s);
+char **set_str_add_stable (char **s, char *e);
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus

@@ -67,13 +67,13 @@ struct lmodule *mod_update (struct lmodule *module) {
   module->si = ecalloc (1, sizeof (struct service_information));
 
   if (module->module->si.provides)
-   module->si->provides = (char **)setdup((const void **)module->module->si.provides, SET_TYPE_STRING);
+   module->si->provides = set_str_dup_stable(module->module->si.provides);
   if (module->module->si.requires)
-   module->si->requires = (char **)setdup((const void **)module->module->si.requires, SET_TYPE_STRING);
+   module->si->requires = set_str_dup_stable(module->module->si.requires);
   if (module->module->si.after)
-   module->si->after = (char **)setdup((const void **)module->module->si.after, SET_TYPE_STRING);
+   module->si->after = set_str_dup_stable(module->module->si.after);
   if (module->module->si.before)
-   module->si->before = (char **)setdup((const void **)module->module->si.before, SET_TYPE_STRING);
+   module->si->before = set_str_dup_stable(module->module->si.before);
  } else
   module->si = NULL;
 
@@ -122,13 +122,13 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
   nmod->si = ecalloc (1, sizeof (struct service_information));
 
   if (module->si.provides)
-   nmod->si->provides = (char **)setdup((const void **)module->si.provides, SET_TYPE_STRING);
+   nmod->si->provides = set_str_dup_stable(module->si.provides);
   if (module->si.requires)
-   nmod->si->requires = (char **)setdup((const void **)module->si.requires, SET_TYPE_STRING);
+   nmod->si->requires = set_str_dup_stable(module->si.requires);
   if (module->si.after)
-   nmod->si->after = (char **)setdup((const void **)module->si.after, SET_TYPE_STRING);
+   nmod->si->after = set_str_dup_stable(module->si.after);
   if (module->si.before)
-   nmod->si->before = (char **)setdup((const void **)module->si.before, SET_TYPE_STRING);
+   nmod->si->before = set_str_dup_stable(module->si.before);
  } else
   nmod->si = NULL;
 
@@ -158,7 +158,7 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
 
    if (rv & status_block) {
     emutex_lock (&mod_blocked_rids_mutex);
-    mod_blocked_rids = set_str_add (mod_blocked_rids, module->rid);
+    mod_blocked_rids = set_str_add_stable (mod_blocked_rids, module->rid);
     emutex_unlock (&mod_blocked_rids_mutex);
    }
 
@@ -275,7 +275,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   fb->status = status_working;
   fb->flag = 0;
   fb->string = NULL;
-  fb->stringset = set_str_add (NULL, (module->module && module->module->rid) ? module->module->rid : module->si->provides[0]);
+  fb->stringset = set_str_add_stable (NULL, (module->module && module->module->rid) ? module->module->rid : module->si->provides[0]);
   fb->integer = module->fbseq+1;
   status_update (fb);
 
@@ -372,7 +372,7 @@ void mod_update_usage_table (struct lmodule *module) {
     for (i = 0; t[i]; i++) {
      if (service_usage && (ha = streefind (service_usage, t[i], tree_find_first)) && (item = (struct service_usage_item *)ha->value)) {
       if (!item->provider) {
-       enabled = set_str_add (enabled, t[i]);
+       enabled = set_str_add_stable (enabled, t[i]);
       }
 
       item->provider = (struct lmodule **)set_noa_add ((void **)item->provider, (void *)module);
@@ -382,7 +382,7 @@ void mod_update_usage_table (struct lmodule *module) {
       nitem.provider = (struct lmodule **)set_noa_add ((void **)nitem.provider, (void *)module);
       service_usage = streeadd (service_usage, t[i], &nitem, sizeof (struct service_usage_item), NULL);
 
-      enabled = set_str_add (enabled, t[i]);
+      enabled = set_str_add_stable (enabled, t[i]);
      }
     }
    }
@@ -403,7 +403,7 @@ void mod_update_usage_table (struct lmodule *module) {
    item->users = (struct lmodule **)setdel ((void **)item->users, (void *)module);
 
    if (wasprovider && !item->provider) {
-    disabled = set_str_add (disabled, ha->key);
+    disabled = set_str_add_stable (disabled, ha->key);
    }
   }
 
@@ -557,7 +557,7 @@ char **mod_list_all_provided_services () {
  while (ha) {
   item = ha->value;
   if (item->provider)
-   ret = set_str_add (ret, ha->key);
+   ret = set_str_add_stable (ret, ha->key);
 
   ha = streenext(ha);
  }
@@ -598,7 +598,7 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
   if (module) {
    while (ha) {
     if (inset ((const void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {
-     ret = set_str_add (ret, (void *)ha->key);
+     ret = set_str_add_stable (ret, (void *)ha->key);
     }
     ha = streenext (ha);
    }

@@ -192,10 +192,10 @@ void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
       }
 
       if (ev->ipc_options & einit_ipc_output_xml) {
-       char **functions = (char **)setdup ((const void **)cur->functions, SET_TYPE_STRING);
-       if (cur->enable) functions = set_str_add (functions, "enable");
-       if (cur->disable) functions = set_str_add (functions, "disable");
-       functions = set_str_add (functions, "zap");
+       char **functions = set_str_dup_stable (cur->functions);
+       if (cur->enable) functions = set_str_add_stable (functions, "enable");
+       if (cur->disable) functions = set_str_add_stable (functions, "disable");
+       functions = set_str_add_stable (functions, "zap");
 
        if (functions) {
         char *x = set2str(':', (const char **)functions);

@@ -239,14 +239,14 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
    if (service_aliases && module->si &&module->si->provides) {
     uint32_t i = 0;
-    char **np = (char **)setdup ((const void **)module->si->provides, SET_TYPE_STRING);
+    char **np = set_str_dup_stable (module->si->provides);
     for (; module->si->provides[i]; i++) {
      struct stree *x = streefind (service_aliases, module->si->provides[i], tree_find_first);
 
      while (x) {
       if (x->value) {
        if (!inset ((const void **)np, x->value, SET_TYPE_STRING)) {
-        np = set_str_add (np, x->value);
+        np = set_str_add_stable (np, x->value);
        }
       }
       x = streefind (x, module->si->provides[i], tree_find_next);
@@ -281,12 +281,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_PROVIDES) break;
 
-       np = set_str_add (np, trans->out);
+       np = set_str_add_stable (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = set_str_add (np, module->si->provides[i]);
+       np = set_str_add_stable (np, module->si->provides[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->provides);
@@ -313,12 +313,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_REQUIRES) break;
 
-       np = set_str_add (np, trans->out);
+       np = set_str_add_stable (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = set_str_add (np, module->si->requires[i]);
+       np = set_str_add_stable (np, module->si->requires[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->requires);
@@ -345,12 +345,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_AFTER) break;
 
-       np = set_str_add (np, trans->out);
+       np = set_str_add_stable (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = set_str_add (np, module->si->after[i]);
+       np = set_str_add_stable (np, module->si->after[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->after);
@@ -377,12 +377,12 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
 
        if (trans->options & SVT_STRIP_BEFORE) break;
 
-       np = set_str_add (np, trans->out);
+       np = set_str_add_stable (np, trans->out);
        break;
       }
 
       if (hit == 0)
-       np = set_str_add (np, module->si->before[i]);
+       np = set_str_add_stable (np, module->si->before[i]);
      }
 
      einit_module_transformations_garbage_add_chunk (module->si->before);

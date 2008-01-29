@@ -178,7 +178,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
 
    if (subattr) {
     char match = 0;
-    char **attrs = (char **)setdup ((const void **)newnode.arbattrs, SET_TYPE_STRING);
+    char **attrs = set_str_dup_stable (newnode.arbattrs);
 
     if (attrs) {
      uint32_t ind = 0;
@@ -187,7 +187,7 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
        char **tmpadup = attrs;
 
        attrs[ind+1] = ev->argv[3];
-       attrs = (char **)setdup ((const void **)attrs, SET_TYPE_STRING);
+       attrs = set_str_dup_stable (attrs);
        newnode.arbattrs = attrs;
        match = 1;
 
@@ -203,8 +203,8 @@ void einit_ipc_configuration_ipc_event_handler (struct einit_event *ev) {
     }
 
     if (!match) {
-     attrs = set_str_add (attrs, (void *)subattr);
-     attrs = set_str_add (attrs, (void *)ev->argv[3]);
+     attrs = set_str_add_stable (attrs, (void *)subattr);
+     attrs = set_str_add_stable (attrs, (void *)ev->argv[3]);
 
      if (strmatch ("s", subattr)) {
       newnode.svalue = attrs[setcount((const void **)attrs)-1];

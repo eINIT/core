@@ -165,7 +165,7 @@ void einit_tty_process_event_handler (struct einit_event *ev) {
 int einit_tty_texec (struct cfgnode *node) {
  int i = 0, restart = 0;
  char *device = NULL, *command = NULL;
- char **environment = (char **)setdup((const void **)einit_global_environment, SET_TYPE_STRING);
+ char **environment = set_str_dup_stable (einit_global_environment);
  char **variables = NULL;
 
  for (; node->arbattrs[i]; i+=2) {

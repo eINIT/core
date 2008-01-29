@@ -396,7 +396,7 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
     efree (pd->command);
    }
 
-   pd->command = (char **)setdup((const void **)data, SET_TYPE_STRING);
+   pd->command = set_str_dup_stable (data);
    pd->commands++;
    pd->forkflag = (status == pa_new_context_fork);
    break;
@@ -433,8 +433,8 @@ char **exec_run_sh (char *command, enum pexec_options options, char **exec_envir
 
   if (pd.command) efree (pd.command);
 
-  cmd = (char **)setdup ((const void **)shell, SET_NOALLOC);
-  cmd = set_str_add (cmd, ocmd);
+  cmd = set_str_dup_stable (shell);
+  cmd = set_str_add_stable (cmd, ocmd);
 
   return cmd;
  }

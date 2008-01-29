@@ -263,7 +263,7 @@ int main(int argc, char **argv, char **environ) {
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_core_recover, core_einit_event_handler_recover);
 
- if (argv) einit_argv = (char **)setdup ((const void **)argv, SET_TYPE_STRING);
+ if (argv) einit_argv = set_str_dup_stable (argv);
 
 /* check command line arguments */
  for (i = 1; i < argc; i++) {
@@ -358,11 +358,11 @@ int main(int argc, char **argv, char **environ) {
 
      if (strmatch (atom[0], "file")) {
 /* specify configuration files */
-      einit_startup_configuration_files = (char **)setdup ((const void **)atom, SET_TYPE_STRING);
+      einit_startup_configuration_files = set_str_dup_stable (atom);
       einit_startup_configuration_files = (char **)strsetdel (einit_startup_configuration_files, (void *)"file");
      } else if (strmatch (atom[0], "mode")) {
 /* specify mode-switches */
-      einit_startup_mode_switches = (char **)setdup ((const void **)atom, SET_TYPE_STRING);
+      einit_startup_mode_switches = set_str_dup_stable (atom);
       einit_startup_mode_switches = (char **)strsetdel (einit_startup_mode_switches, (void *)"mode");
      } else if (strmatch (atom[0], "stfu")) {
       einit_quietness = 3;
@@ -381,7 +381,7 @@ int main(int argc, char **argv, char **environ) {
    efree (ed);
   }
 
-  einit_initial_environment = (char **)setdup ((const void **)environ, SET_TYPE_STRING);
+  einit_initial_environment = set_str_dup_stable (environ);
  }
 
  if (!einit_startup_mode_switches) einit_startup_mode_switches = einit_default_startup_mode_switches;

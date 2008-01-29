@@ -48,32 +48,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  if (!key) return NULL;
  signed long keyhash = hashp (key);
- size_t nodesize, keylen = strlen (key) + 1;
+ size_t nodesize;
  struct stree *newnode;
 
  switch (vlen) {
   case tree_value_noalloc:
-   nodesize = sizeof (struct stree) + keylen;
+   nodesize = sizeof (struct stree);
    break;
   case tree_value_string:
    vlen = strlen (value) + 1;
   default:
-   nodesize = sizeof (struct stree) + keylen + vlen;
+   nodesize = sizeof (struct stree) + vlen;
    break;
  }
 
  newnode = emalloc (nodesize);
  memset (newnode, 0, sizeof (struct stree));
 
- newnode->key = ((char *)newnode) + sizeof (struct stree);
- memcpy (newnode->key, key, keylen);
+ newnode->key = (char *)str_stabilise (key);
 
  switch (vlen) {
   case tree_value_noalloc:
    newnode->value = (void *)value;
    break;
   default:
-   newnode->value = ((char *)newnode) + sizeof (struct stree) + keylen;
+   newnode->value = ((char *)newnode) + sizeof (struct stree);
    memcpy (newnode->value, value, vlen);
    break;
  }

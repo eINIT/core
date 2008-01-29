@@ -234,7 +234,7 @@ int module_group_scanmodules (struct lmodule *modchain) {
 
      if ((seq == sq_all) || !group[1]) {
       if (!strmatch (group[0], "none"))
-       requires = (char **)setdup ((const void **)group, SET_TYPE_STRING);
+       requires = set_str_dup_stable (group);
      } else {
       char *member_string = set2str ('|', (const char **)group);
 

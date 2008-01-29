@@ -751,7 +751,7 @@ void linux_edev_retrieve_rules () {
 
  while ((node = cfg_findnode ("configuration-edev-devicefile-rule", 0, node))) {
   if (node->arbattrs) {
-   char **e = (char **)setdup ((const void **)node->arbattrs, SET_TYPE_STRING);
+   char **e = set_str_dup_stable (node->arbattrs);
 
    new_rules = (char ***)set_noa_add ((void **)new_rules, (void *)e);
   }

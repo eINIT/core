@@ -351,13 +351,13 @@ struct einit_module *einit_get_module_status (char *module) {
 
    rv->status = ((struct einit_module *)(rc->value))->status;
 
-   rv->requires = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->requires), SET_TYPE_STRING);
-   rv->provides = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->provides), SET_TYPE_STRING);
-   rv->after = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->after), SET_TYPE_STRING);
+   rv->requires = set_str_dup ((((struct einit_module *)(rc->value))->requires));
+   rv->provides = set_str_dup ((((struct einit_module *)(rc->value))->provides));
+   rv->after = set_str_dup ((((struct einit_module *)(rc->value))->after));
 
-   rv->functions = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->functions), SET_TYPE_STRING);
+   rv->functions = set_str_dup ((((struct einit_module *)(rc->value))->functions));
 
-   rv->before = (char **)setdup ((const void **)(((struct einit_module *)(rc->value))->before), SET_TYPE_STRING);
+   rv->before = set_str_dup ((((struct einit_module *)(rc->value))->before));
   }
 
   modulestree_free (md);
