@@ -1756,10 +1756,9 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
 //   notice (1, "emitting feedback notice");
 
     struct einit_event eema = evstaticinit (einit_core_plan_update);
-    eema.string = estrdup(amode->id);
+    eema.string = (char *)str_stabilise(amode->id);
     eema.para   = (void *)amode;
     event_emit (&eema, einit_event_flag_broadcast);
-    efree (eema.string);
     evstaticdestroy (eema);
    }
 
@@ -2219,16 +2218,16 @@ void module_logic_ipc_read (struct einit_event *ev) {
  struct ipc_fs_node n;
 
  if (!path) {
-  n.name = estrdup ("services");
+  n.name = (char *)str_stabilise ("services");
   n.is_file = 0;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0]) {
   if (strmatch (path[0], "services")) {
    if (!path[1]) {
-    n.name = estrdup ("all");
+    n.name = (char *)str_stabilise ("all");
     n.is_file = 0;
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    n.name = estrdup ("provided");
+    n.name = (char *)str_stabilise ("provided");
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
    } else if (strmatch (path[1], "all") && !path[2]) {
     n.is_file = 0;
@@ -2240,7 +2239,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
     while (cur) {
      struct lmodule **lm = cur->value;
      if (!(lm && lm[0] && !lm[1] && lm[0]->module && lm[0]->module->rid && strmatch (lm[0]->module->rid, cur->key))) {
-      n.name = estrdup (cur->key);
+      n.name = (char *)str_stabilise (cur->key);
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
      }
 
@@ -2255,7 +2254,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
     if (s) {
      int i = 0;
      for (; s[i]; i++) {
-      n.name = estrdup (s[i]);
+      n.name = (char *)str_stabilise (s[i]);
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
      }
 
@@ -2266,16 +2265,16 @@ void module_logic_ipc_read (struct einit_event *ev) {
    } else if (path[2] && !path[3]) {
     n.is_file = 1;
 
-    n.name = estrdup ("status");
+    n.name = (char *)str_stabilise ("status");
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
 
     n.is_file = 0;
 
-    n.name = estrdup ("providers");
+    n.name = (char *)str_stabilise ("providers");
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    n.name = estrdup ("users");
+    n.name = (char *)str_stabilise ("users");
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    n.name = estrdup ("modules");
+    n.name = (char *)str_stabilise ("modules");
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
    } else if (path[2] && path[3]) {
     if (strmatch (path[3], "status")) {
@@ -2297,7 +2296,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
        if (lm) {
         int i = 0;
         for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
-         n.name = estrdup (lm[i]->module->rid);
+         n.name = (char *)str_stabilise (lm[i]->module->rid);
          ev->set = set_fix_add (ev->set, &n, sizeof (n));
         }
        }
@@ -2312,7 +2311,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
      if (lm) {
       int i = 0;
       for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
-       n.name = estrdup (lm[i]->module->rid);
+       n.name = (char *)str_stabilise (lm[i]->module->rid);
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
       }
      }
@@ -2323,7 +2322,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
      if (lm) {
       int i = 0;
       for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
-       n.name = estrdup (lm[i]->module->rid);
+       n.name = (char *)str_stabilise (lm[i]->module->rid);
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
       }
      }
