@@ -243,19 +243,19 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
  struct ipc_fs_node n;
 
  if (!path) {
-  n.name = estrdup ("modules");
+  n.name = (char *)str_stabilise ("modules");
   n.is_file = 0;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-  n.name = estrdup ("mode");
+  n.name = (char *)str_stabilise ("mode");
   n.is_file = 1;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0]) {
   if (strmatch (path[0], "modules")) {
    if (!path[1]) {
-    n.name = estrdup ("enabled");
+    n.name = (char *)str_stabilise ("enabled");
     n.is_file = 0;
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
-    n.name = estrdup ("all");
+    n.name = (char *)str_stabilise ("all");
     n.is_file = 0;
     ev->set = set_fix_add (ev->set, &n, sizeof (n));
    } else if (strmatch (path[1], "all") && !path[2]) {
@@ -265,7 +265,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     while (cur) {
      if (cur->module && cur->module->rid) {
-      n.name = estrdup (cur->module->rid);
+      n.name = (char *)str_stabilise (cur->module->rid);
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
      }
 
@@ -278,7 +278,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
 
     while (cur) {
      if (cur->module && cur->module->rid && (cur->status & status_enabled)) {
-      n.name = estrdup (cur->module->rid);
+      n.name = (char *)str_stabilise (cur->module->rid);
       ev->set = set_fix_add (ev->set, &n, sizeof (n));
      }
 
@@ -292,19 +292,19 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
     while (cur) {
      if (cur->module && cur->module->rid) {
       if (strmatch (path[2], cur->module->rid)) {
-       n.name = estrdup ("name");
+       n.name = (char *)str_stabilise ("name");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
-       n.name = estrdup ("status");
+       n.name = (char *)str_stabilise ("status");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
-       n.name = estrdup ("provides");
+       n.name = (char *)str_stabilise ("provides");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
-       n.name = estrdup ("requires");
+       n.name = (char *)str_stabilise ("requires");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
-       n.name = estrdup ("after");
+       n.name = (char *)str_stabilise ("after");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
-       n.name = estrdup ("before");
+       n.name = (char *)str_stabilise ("before");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
-       n.name = estrdup ("actions");
+       n.name = (char *)str_stabilise ("actions");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
        break;
       }
@@ -493,9 +493,6 @@ struct ch_thread_data {
 void *einit_ipc_core_helpers_ipc_write_detach_action (struct ch_thread_data *da) {
  mod (da->a, da->b, da->c);
 
- if (da->c) {
-  efree (da->c);
- }
  efree (da);
 
  return NULL;
@@ -518,7 +515,7 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
  if (path && ev->set && ev->set[0] && path[0]) {
   if (strmatch (path[0], "mode")) {
    struct einit_event ee = evstaticinit(einit_core_switch_mode);
-   ee.string = estrdup (ev->set[0]);
+   ee.string = (char *)str_stabilise (ev->set[0]);
    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
    evstaticdestroy(ee);
   } else if (path[1] && path[2] && path[3] && strmatch (path[0], "modules") && strmatch (path[3], "status")) {
@@ -537,7 +534,7 @@ void einit_ipc_core_helpers_ipc_write (struct einit_event *ev) {
        da->a = einit_module_disable;
       } else {
        da->a = einit_module_custom;
-       da->c = estrdup (ev->set[0]);
+       da->c = (char *)str_stabilise (ev->set[0]);
       }
 
       ethread_spawn_detached ((void *(*)(void *))einit_ipc_core_helpers_ipc_write_detach_action, da);
