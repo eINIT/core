@@ -90,7 +90,7 @@ void linux_udev_load_kernel_extensions() {
 
 struct dexecinfo linux_udev_dexec = {
  .id = "daemon-udev",
- .command = "/sbin/udevd",
+ .command = "/sbin/udevd --daemon; pidof udevd>/dev/udev.pid",
  .prepare = NULL,
  .cleanup = NULL,
  .is_up = NULL,
@@ -102,11 +102,11 @@ struct dexecinfo linux_udev_dexec = {
  .restart = 1,
  .cb = NULL,
  .environment = NULL,
- .pidfile = NULL,
+ .pidfile = "/dev/udev.pid",
  .need_files = NULL,
  .oattrs = NULL,
 
- .options = 0,
+ .options = daemon_model_forking,
 
  .pidfiles_last_update = 0,
 
