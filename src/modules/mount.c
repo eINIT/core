@@ -416,7 +416,7 @@ char **mount_get_mounted_mountpoints () {
     struct mountpoint_data *mp = st->value;
 
     if (mp && (mp->status & device_status_mounted)) {
-     rv = set_str_add(rv, (char *)t->key);
+     rv = set_str_add_stable (rv, (char *)t->key);
     }
    }
   }
@@ -1680,7 +1680,6 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 // mount_success:
 
  if (strmatch (mp->fs, "auto")) {
-  efree (mp->fs);
   mp->fs = (char *)str_stabilise (fs);
  }
 
