@@ -235,13 +235,13 @@ int linux_udev_run() {
   fputs ("populating /dev with udevtrigger...\n", stderr);
 
   if (stat ("/sbin/udevadm", &st)) {
-   if (n && !n->flag) {
+   if (n && n->flag) {
     qexec ("/sbin/udevtrigger");
    } else {
     qexec ("/sbin/udevtrigger --attr-match=dev");
    }
   } else {
-   if (n && !n->flag) {
+   if (n && n->flag) {
     qexec ("/sbin/udevadm trigger");
    } else {
     qexec ("/sbin/udevadm trigger --attr-match=dev");
