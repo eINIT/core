@@ -183,7 +183,8 @@ void sched_timer_event_handler_set (struct einit_event *ev) {
  sched_handle_timers();
 }
 
-#ifdef __GLIBC__
+#if defined(__GLIBC__)
+#if ! defined(__UCLIBC__)
 #include <execinfo.h>
 
 extern int sched_trace_target;
@@ -220,6 +221,8 @@ void sched_signal_trace (int signal, siginfo_t *siginfo, void *context) {
 // raise(SIGKILL);
  _exit(einit_exit_status_die_respawn);
 }
+
+#endif
 #endif
 
 void sched_reset_event_handlers () {
@@ -281,7 +284,8 @@ void sched_reset_event_handlers () {
 
 
 /* catch a couple of signals and print traces for them */
-#ifdef __GLIBC__
+#if defined(__GLIBC__)
+#if ! defined(__UCLIBC__)
  action.sa_sigaction = sched_signal_trace;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER;
 
@@ -298,6 +302,7 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGPROF, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGXCPU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#endif
 #endif
 }
 
