@@ -257,13 +257,13 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
 
       esprintf (spbuffer, BUFFERSIZE, "%s/%s", spbuffer2, t->arbattrs[i+1]);
 
-      scriptpath = estrdup (spbuffer);
+      scriptpath = (char *)str_stabilise (spbuffer);
      } else 
-      scriptpath = estrdup (t->arbattrs[i+1]);
+      scriptpath = (char *)str_stabilise (t->arbattrs[i+1]);
     } else if (strmatch (t->arbattrs[i], "user")) {
-     user = estrdup (t->arbattrs[i+1]);
+     user = (char *)str_stabilise (t->arbattrs[i+1]);
     } else if (strmatch (t->arbattrs[i], "group")) {
-     group = estrdup (t->arbattrs[i+1]);
+     group = (char *)str_stabilise (t->arbattrs[i+1]);
     }
    }
 
@@ -280,13 +280,9 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
     returnvalue = pexec (ncommand, (const char **)variables, 0, 0, user, group, myenvironment, status);
 
     efree (ncommand);
-
-    efree (scriptpath);
    }
 
    if (variables) efree (variables);
-   if (group) efree (group);
-   if (user) efree (user);
   }
  }
 
@@ -311,14 +307,11 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->command) efree (dx->command);
-    dx->command = estrdup(node->arbattrs[i+1]);
+    dx->command = (char *)str_stabilise(node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "user")) {
-    if (dx->user) efree (dx->user);
-    dx->user = estrdup(node->arbattrs[i+1]);
+    dx->user = (char *)str_stabilise(node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "group")) {
-    if (dx->group) efree (dx->group);
-    dx->group = estrdup (node->arbattrs[i+1]);
+    dx->group = (char *)str_stabilise (node->arbattrs[i+1]);
    }
   }
  }
@@ -328,8 +321,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->prepare) efree (dx->prepare);
-    dx->prepare = estrdup(node->arbattrs[i+1]);
+    dx->prepare = (char *)str_stabilise(node->arbattrs[i+1]);
    }
   }
  }
@@ -339,8 +331,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->cleanup) efree (dx->cleanup);
-    dx->cleanup = estrdup(node->arbattrs[i+1]);
+    dx->cleanup = (char *)str_stabilise(node->arbattrs[i+1]);
    }
   }
  }
@@ -350,8 +341,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->is_up) efree (dx->is_up);
-    dx->is_up = estrdup(node->arbattrs[i+1]);
+    dx->is_up = (char *)str_stabilise(node->arbattrs[i+1]);
    }
   }
  }
@@ -361,8 +351,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "code")) {
-    if (dx->is_down) efree (dx->is_down);
-    dx->is_down = estrdup(node->arbattrs[i+1]);
+    dx->is_down = (char *)str_stabilise(node->arbattrs[i+1]);
    }
   }
  }
@@ -372,8 +361,7 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
  }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "pidfile")) && node->svalue) {
-  if (dx->pidfile) efree (dx->pidfile);
-  dx->pidfile = estrdup (node->svalue);
+  dx->pidfile = (char *)str_stabilise (node->svalue);
  }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "variables")) && node->svalue) {
@@ -404,10 +392,8 @@ struct dexecinfo *module_xml_v2_module_get_daemon_action (char *name) {
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "file")) {
-    if (dx->script) efree (dx->script);
-    dx->script = estrdup (node->arbattrs[i+1]);
+    dx->script = (char *)str_stabilise (node->arbattrs[i+1]);
    } else if (strmatch (node->arbattrs[i], "actions")) {
-    if (dx->script_actions) efree (dx->script_actions);
     dx->script_actions = str2set (':', node->arbattrs[i+1]);
    }
   }
@@ -611,8 +597,8 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
 
       new_modules++;
 
-      new_sm->rid = estrdup (cur->key + MODULES_PREFIX_LENGTH);
-      new_sm->name = estrdup (name);
+      new_sm->rid = (char *)str_stabilise (cur->key + MODULES_PREFIX_LENGTH);
+      new_sm->name = (char *)str_stabilise (name);
 
       new_sm->eiversion = EINIT_VERSION;
       new_sm->eibuild = BUILDNUMBER;
