@@ -242,7 +242,7 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
     if ((execdata = apply_variables (kexec_template, (const char **)template_data))) {
      if (pexec(execdata, NULL, 0, 0, NULL, NULL, NULL, status) == status_ok) {
       linux_reboot_use_kexec = 1;
-      linux_reboot_use_kexec_command = estrdup(cfg_getstring ("configuration-system-kexec-calls/execute", NULL));
+      linux_reboot_use_kexec_command = cfg_getstring ("configuration-system-kexec-calls/execute", NULL);
 
       fbprintf (status, "kexec configured. reboot command will be: %s", linux_reboot_use_kexec_command);
      } else {

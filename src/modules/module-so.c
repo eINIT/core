@@ -165,7 +165,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     if ((*modinfo)->eibuild == BUILDNUMBER) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
-      new->source = estrdup(modules[z]);
+      new->source = (char *)str_stabilise(modules[z]);
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 

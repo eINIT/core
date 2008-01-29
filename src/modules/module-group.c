@@ -251,7 +251,7 @@ int module_group_scanmodules (struct lmodule *modchain) {
      memset (sm, 0, sizeof (struct smodule));
 
      esprintf (t, BUFFERSIZE, "group-%s", cur->key + MODULES_PREFIX_SIZE);
-     sm->rid = estrdup (t);
+     sm->rid = (char *)str_stabilise (t);
      sm->configure = module_group_module_configure;
 
      struct lmodule *lm = modchain;
@@ -278,8 +278,6 @@ int module_group_scanmodules (struct lmodule *modchain) {
 
        mod_update (lm);
 
-       efree (sm->rid);
-
        goto next;
       }
 
@@ -287,14 +285,14 @@ int module_group_scanmodules (struct lmodule *modchain) {
      }
 
      esprintf (t, BUFFERSIZE, "Group (%s)", cur->key + MODULES_PREFIX_SIZE);
-     sm->name = estrdup (t);
+     sm->name = (char *)str_stabilise (t);
      sm->si.requires = requires;
      sm->si.provides = provides;
      sm->si.before = before;
      sm->si.after = after;
 
      lm = mod_add (NULL, sm);
-     lm->param = estrdup (cur->key);
+     lm->param = (char *)str_stabilise (cur->key);
 
      next: ;
     }

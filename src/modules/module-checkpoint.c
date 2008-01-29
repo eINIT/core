@@ -215,7 +215,7 @@ int checkpoint_scanmodules (struct lmodule *list) {
 
      memset (sm, 0, sizeof (struct smodule));
 
-     sm->rid = estrdup (buffer);
+     sm->rid = (char *)str_stabilise (buffer);
      if (checkpoint_count < CHECKPOINT_NAME_COUNT) {
       esprintf (buffer, BUFFERSIZE, "Checkpoint %s", checkpoint_names[checkpoint_count]);
       checkpoint_count++;
@@ -223,7 +223,7 @@ int checkpoint_scanmodules (struct lmodule *list) {
       esprintf (buffer, BUFFERSIZE, "Checkpoint %i", checkpoint_count);
       checkpoint_count++;
      }
-     sm->name = estrdup (buffer);
+     sm->name = (char *)str_stabilise (buffer);
 
      if (base_services) {
       char *comb = set2str ('|', (const char **)base_services);
