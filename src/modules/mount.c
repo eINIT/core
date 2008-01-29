@@ -651,7 +651,6 @@ void mount_update_fstab_nodes () {
     if (strmatch(node->arbattrs[i], "mountpoint"))
      mountpoint = (char *)str_stabilise (node->arbattrs[i+1]);
     else if (strmatch(node->arbattrs[i], "device")) {
-     if (device) efree (device);
      device = (char *)str_stabilise (node->arbattrs[i+1]);
     } else if (strmatch(node->arbattrs[i], "fs"))
      fs = (char *)str_stabilise (node->arbattrs[i+1]);
@@ -674,13 +673,11 @@ void mount_update_fstab_nodes () {
      char tmp[BUFFERSIZE];
 
      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-label/%s", node->arbattrs[i+1]);
-     if (device) efree (device);
      device = (char *)str_stabilise(tmp);
     } else if (strmatch(node->arbattrs[i], "uuid")) {
      char tmp[BUFFERSIZE];
 
      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s", node->arbattrs[i+1]);
-     if (device) efree (device);
      device = (char *)str_stabilise(tmp);
     }
    }
@@ -2027,7 +2024,7 @@ void einit_mount_hotplug_event_handler_add (struct einit_event *ev) {
 void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
  if (ev->type == einit_core_crash_data) {
   notice (4, "storing crash data to save it afer / is back to r/w status");
-  mount_crash_data = (char *)str_stabilise (ev->string);
+  mount_crash_data = estrdup (ev->string);
  }
 }
 
