@@ -337,7 +337,7 @@ int main(int argc, char **argv, char **environ) {
  if (environ) {
   uint32_t e = 0;
   for (e = 0; environ[e]; e++) {
-   char *ed = estrdup (environ[e]);
+   char *ed = (char *)str_stabilise (environ[e]);
    char *lp = strchr (ed, '=');
 
    *lp = 0;
@@ -377,8 +377,6 @@ int main(int argc, char **argv, char **environ) {
 
     efree (tmpstrset);
    }
-
-   efree (ed);
   }
 
   einit_initial_environment = set_str_dup_stable (environ);
@@ -437,7 +435,7 @@ int main(int argc, char **argv, char **environ) {
       eprintf (stderr, " [%s]", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
-     lmm->source = estrdup("core");
+     lmm->source = (char *)str_stabilise("core");
     }
 
     if (!suppress_version)

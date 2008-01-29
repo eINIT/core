@@ -167,7 +167,7 @@ char module_c_update_modules () {
    uint32_t i = 0;
 
    for (; modules[i]; i++) {
-    char *oname = estrdup(modules[i]);
+    char *oname = (char*)str_stabilise(modules[i]);
     char *base = strrchr (modules[i], '/');
     char *nbase = strrchr (base ? base : modules[i], '.');
     char *nname = NULL;
@@ -177,7 +177,7 @@ char module_c_update_modules () {
     struct stat st1, st2;
 
     if (stat (oname, &st1)) {
-     efree (oname); continue;
+     continue;
     }
 
     if (!base) base = modules[i];
@@ -210,7 +210,6 @@ char module_c_update_modules () {
 
     if (shift) nname--;
 
-    efree (oname);
     efree (nname);
    }
 
