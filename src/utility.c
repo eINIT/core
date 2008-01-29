@@ -1017,7 +1017,7 @@ char **which (char *binary) {
 
        if (!stat (t, &st)) {
         if (!inset ((const void **)rv, t, SET_TYPE_STRING))
-         rv = set_str_add(rv, t);
+         rv = set_str_add_stable(rv, t);
        }
 
        efree (t);
