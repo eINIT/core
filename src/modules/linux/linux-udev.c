@@ -230,7 +230,7 @@ int linux_udev_run() {
   }
 */
 
-  sleep (1);
+//  sleep (1);
 
   fputs ("populating /dev with udevtrigger...\n", stderr);
 
@@ -256,7 +256,7 @@ int linux_udev_run() {
 
   fputs ("waiting for udev to process all events...\n", stderr);
 
-  sleep (1);
+//  sleep (1);
 
   if (stat ("/sbin/udevadm", &st)) {
    qexec ("/sbin/udevsettle --timeout=60");
