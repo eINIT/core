@@ -128,13 +128,13 @@ void random_add_update_group (char *groupname, char **elements, char *seq) {
   char *jele = set2str (':', (const char **)elements);
   memset (&newnode, 0, sizeof(struct cfgnode));
 
-  newnode.id = estrdup (tmp);
+  newnode.id = str_stabilise (tmp);
   newnode.type = einit_node_regular;
 
-  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"group");
-  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)jele);
-  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"seq");
-  newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)seq);
+  newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"group");
+  newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)jele);
+  newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"seq");
+  newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)seq);
 
   cfg_addnode (&newnode);
   efree (jele);
@@ -196,8 +196,8 @@ int random_scanmodules (struct lmodule *list) {
 
   memset (nsm, 0, sizeof (struct smodule));
 
-  nsm->name = estrdup(module_name);
-  nsm->rid = estrdup(module_rid);
+  nsm->name = str_stabilise(module_name);
+  nsm->rid = str_stabilise(module_rid);
 
   esprintf (tmp, BUFFERSIZE, "random%i", r);
   nsm->si.provides = set_str_add (nsm->si.provides, tmp);
