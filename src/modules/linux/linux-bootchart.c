@@ -108,7 +108,7 @@ char *linux_bootchart_get_uptime () {
       char buffer[30];
       esprintf (buffer, 30, "%s%s", r[0], r[1]);
 
-      uptime = estrdup (buffer);
+      uptime = (char *)str_stabilise (buffer);
      }
 
      efree (r);
@@ -245,7 +245,10 @@ void *linux_bootchart_thread (void *ignored) {
  char *save_to = "/var/log/bootchart.tgz";
  size_t max_log_size = 1024*1024;
  FILE *f;
+
+#if 0
  char try_acct = 1;
+#endif
  signed int extra_wait = 0;
 
  if ((node = cfg_getnode ("configuration-bootchart-extra-waiting-time", NULL)) && node->value) {
@@ -276,7 +279,6 @@ void *linux_bootchart_thread (void *ignored) {
    buffer_ps = linux_bootchart_update_ps (buffer_ps, uptime);
    buffer_st = linux_bootchart_update_st (buffer_st, uptime);
 
-   efree (uptime);
    uptime = NULL;
   }
 

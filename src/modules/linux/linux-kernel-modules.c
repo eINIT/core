@@ -413,10 +413,10 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
     sm = emalloc (sizeof(struct smodule));
     memset (sm, 0, sizeof (struct smodule));
 
-    sm->rid = estrdup (tmp);
+    sm->rid = (char *)str_stabilise (tmp);
 
     esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
-    sm->name = estrdup (tmp);
+    sm->name = (char *)str_stabilise (tmp);
 
     sm->eiversion = EINIT_VERSION;
     sm->eibuild = BUILDNUMBER;

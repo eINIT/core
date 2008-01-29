@@ -123,6 +123,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
    if (tmp[0]) {
     char *cur = estrdup (tmp);
     char *scur = cur;
+    char *acur = cur;
     field = 0;
     strtrim (cur);
     for (; *cur; cur++) {
@@ -151,6 +152,8 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
     strcpy (tmp, "/dev/");
     strncat (tmp, device_name, sizeof(tmp) - strlen (tmp) + 1);
     mcb->add_block_device (tmp, device_major, device_minor);
+
+    efree (acur);
    }
   }
  }
