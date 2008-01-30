@@ -88,7 +88,7 @@ void event_subthread_a (struct einit_event *event) {
    it = itreefind (event_handlers, event->type, tree_find_first);
 
    while (it) {
-    f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+    f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
     it = itreefind (it, event->type, tree_find_next);
    }
@@ -97,7 +97,7 @@ void event_subthread_a (struct einit_event *event) {
   it = itreefind (event_handlers, subsystem, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, subsystem, tree_find_next);
   }
@@ -105,7 +105,7 @@ void event_subthread_a (struct einit_event *event) {
   it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
@@ -173,7 +173,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
    it = itreefind (event_handlers, event->type, tree_find_first);
 
    while (it) {
-    f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+    f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
     it = itreefind (it, event->type, tree_find_next);
    }
@@ -182,7 +182,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   it = itreefind (event_handlers, subsystem, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, subsystem, tree_find_next);
   }
@@ -190,7 +190,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
@@ -257,7 +257,7 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
   it = itreefind (event_handlers, type, tree_find_first);
 
   while (it) {
-   struct event_function *f = it->value;
+   struct event_function *f = it->data;
    if (f->handler == handler) break;
 
    it = itreefind (it, type, tree_find_next);

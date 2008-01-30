@@ -1172,14 +1172,14 @@ const char *str_stabilise (const char *s) {
  struct itree *i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
  while (i) {
   if (!s[0]) {
-   if (!((char *)i->value)[0])
-    return i->value;
+   if (!(i->data)[0])
+    return i->data;
   } else {
-   if (i->value == s) {
+   if (i->data == s) {
     return s;
    }
-   if (strmatch (s, i->value)) {
-    return i->value;
+   if (strmatch (s, i->data)) {
+    return i->data;
    }
   }
 
@@ -1193,7 +1193,7 @@ const char *str_stabilise (const char *s) {
  einit_stable_strings = i;
  emutex_unlock (&einit_stable_strings_mutex);
 
- return i->value;
+ return i->data;
 }
 
 char **set_str_dup_stable (char **s) {

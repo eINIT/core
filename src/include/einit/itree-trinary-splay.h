@@ -49,7 +49,10 @@ enum tree_search_base {
 struct itree {
  struct itree *left, *right, *equal, *parent;
  signed long key;
- void *value;
+ union {
+  void *value;
+  char data[0]; /* yeah, this hack is old and dirty... */
+ };
 };
 
 struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_t size);
