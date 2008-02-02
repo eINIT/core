@@ -138,6 +138,7 @@ char *options_string_to_mountflags (char **, unsigned long *, char *);
 uintptr_t mount_get_filesystem_options (char *);
 char **mount_generate_mount_function_suffixes (char *);
 int mount_fsck (char *, char *, struct einit_event *);
+struct device_data *mount_get_device_data (char *, char *);
 
 struct device_data **mounter_device_data = NULL;
 struct stree *mounter_dd_by_mountpoint = NULL;
@@ -156,14 +157,10 @@ pthread_mutex_t
  mount_device_data_mutex = PTHREAD_MUTEX_INITIALIZER,
  mounter_dd_by_devicefile_mutex = PTHREAD_MUTEX_INITIALIZER,
  mounter_dd_by_mountpoint_mutex = PTHREAD_MUTEX_INITIALIZER,
- mount_autostart_mutex = PTHREAD_MUTEX_INITIALIZER,
- mount_active_fscks_mutex = PTHREAD_MUTEX_INITIALIZER,
- mount_finished_fscks_mutex = PTHREAD_MUTEX_INITIALIZER;
+ mount_autostart_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *mount_filesystems = NULL;
 
-char **mount_active_fscks = NULL;
-char **mount_finished_fscks = NULL;
 char *generate_legacy_mtab ();
 char mount_fastboot = 0;
 char *mount_crash_data = NULL;
@@ -888,6 +885,41 @@ char *mount_mp_to_service_name (char *mp) {
  return NULL;
 }
 
+char *mount_mp_to_fsck_service_name (char *mp) {
+ if (strmatch (mp, "/"))
+  return estrdup ("fsck-root");
+ else {
+  char *tmp = emalloc (6+strlen (mp));
+  uint32_t i = 0, j = 5;
+
+  tmp[0] = 'f';
+  tmp[1] = 's';
+  tmp[2] = 'c';
+  tmp[3] = 'k';
+  tmp[4] = '-';
+
+  for (; mp[i]; i++) {
+   if ((mp[i] == '/') && (i == 0)) continue;
+   if (mp[i] == '/') {
+    tmp[j] = '-';
+   } else {
+    tmp[j] = mp[i];
+   }
+   j++;
+  }
+
+  tmp[j] = 0;
+  j--;
+  for (; tmp[j] == '-'; j--) {
+   tmp[j] = 0;
+  }
+
+  return tmp;
+ }
+
+ return NULL;
+}
+
 int einit_mountpoint_configure (struct lmodule *tm) {
  tm->enable = (int (*)(void *, struct einit_event *))emount;
  tm->disable = (int (*)(void *, struct einit_event *))eumount;
@@ -909,10 +941,39 @@ int einit_mountpoint_configure (struct lmodule *tm) {
  return 0;
 }
 
-int einit_mount_scanmodules (struct lmodule *ml) {
- struct stree *s = NULL;
+int einit_fsck_enable (char *device, struct einit_event *ev) {
+ struct device_data *dd = mount_get_device_data (NULL, device);
 
- if (!mount_filesystems) return 0;
+ struct stree *t = streelinear_prepare (dd->mountpoints);
+ while (t) {
+  struct mountpoint_data *mp = t->value;
+
+  if (mp->fs && (!mp->options || !inset ((const void **)mp->options, "skip-fsck", SET_TYPE_STRING))) {
+   mount_fsck (mp->fs, device, ev);
+   return status_ok;
+  }
+
+  t = streenext (t);
+ }
+
+ return status_ok;
+}
+
+int einit_fsck_disable (char *device, struct einit_event *ev) {
+ return status_ok;
+}
+
+int einit_fsck_configure (struct lmodule *tm) {
+ tm->enable = (int (*)(void *, struct einit_event *))einit_fsck_enable;
+ tm->disable = (int (*)(void *, struct einit_event *))einit_fsck_disable;
+
+ tm->source = (char *)str_stabilise(tm->module->rid);
+
+ return 0;
+}
+
+int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
+ struct stree *s = NULL;
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
@@ -965,7 +1026,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     tmp_split = NULL;
    }
 
-/* same game, but with the device and not the mountpoint */
+   /* same game, but with the device and not the mountpoint */
    struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
    if (t) {
     struct mountpoint_data *mp = t->value; 
@@ -1008,10 +1069,14 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 //   efree (tmpxt);
   }
 
-/*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
+  /*  eprintf (stderr, "need to create module for mountpoint %s, aka service %s, with regex %s.\n", s->key, servicename, after ? after[0] : "(none)");*/
 
   struct smodule *newmodule = emalloc (sizeof (struct smodule));
   memset (newmodule, 0, sizeof (struct smodule));
+
+  if (((struct device_data *)(s->value))->havefsck) {
+   requires = set_str_add (requires, ((struct device_data *)(s->value))->havefsck);
+  }
 
   struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
   struct mountpoint_data *mp = NULL;
@@ -1059,7 +1124,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
     sm->si.after = after;
     sm->si.requires = requires;
 
-/* special update */
+    /* special update */
     void **functions;
     char **fnames = mount_generate_mount_function_suffixes(mp->fs);
 
@@ -1074,7 +1139,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
      efree (functions);
     }
     efree (fnames);
-/* special update done */
+    /* special update done */
 
     lm = mod_update (lm);
 
@@ -1104,7 +1169,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
   newmodule->si.requires = requires;
 
-/* special initialisation */
+  /* special initialisation */
   void **functions;
   char **fnames = mount_generate_mount_function_suffixes(mp->fs);
 
@@ -1119,7 +1184,144 @@ int einit_mount_scanmodules (struct lmodule *ml) {
    efree (functions);
   }
   efree (fnames);
-/* special initialisation done */
+  /* special initialisation done */
+
+  if ((lm = mod_add (NULL, newmodule)))
+   lm->param = (char *)str_stabilise (s->key);
+
+  do_next:
+
+     efree (servicename);
+  s = streenext(s);
+ }
+
+ emutex_unlock (&mounter_dd_by_mountpoint_mutex);
+
+ return 0;
+}
+
+int einit_mount_scanmodules_fscks (struct lmodule *ml) {
+ struct stree *s = NULL;
+
+ emutex_lock (&mounter_dd_by_devicefile_mutex);
+
+ s = streelinear_prepare(mounter_dd_by_devicefile);
+ while (s) {
+  char *servicename = mount_mp_to_fsck_service_name(s->key);
+  char tmp[BUFFERSIZE];
+  char **after = NULL;
+  char **requires = NULL;
+  struct lmodule *lm = ml;
+  char doadd = 0;
+
+  struct device_data *dd = s->value;
+
+  struct stree *t = streelinear_prepare (dd->mountpoints);
+  while (t && !doadd) {
+   struct mountpoint_data *mp = t->value;
+
+   if (mp->fs) {
+    enum filesystem_capability capa = mount_get_filesystem_options (mp->fs);
+    if (!(capa & filesystem_capability_no_fsck)) {
+     doadd = 1;
+    }
+   }
+
+   t = streenext (t);
+  }
+
+  if (!doadd) {
+   goto do_next;
+  }
+
+  dd->havefsck = (char *)str_stabilise (servicename);
+
+  {
+   char *tmpx = NULL;
+   uint32_t r = 0;
+   char **tmp_split = s->key[0] == '/' ? str2set ('/', s->key+1) : str2set ('/', s->key), **tmpxt = NULL;
+
+   for (r = 0; tmp_split[r]; r++);
+   for (r--; tmp_split[r] && r > 0; r--) {
+    tmp_split[r] = 0;
+    char *comb = set2str ('-', (const char **)tmp_split);
+
+    tmpxt = set_str_add_stable (tmpxt, (void *)comb);
+
+    efree (comb);
+   }
+
+   if (tmp_split) {
+    efree (tmp_split);
+    tmp_split = NULL;
+   }
+
+   if (tmpxt) {
+    tmpx = set2str ('|', (const char **)tmpxt);
+    efree (tmpxt);
+   }
+
+   if (tmpx) {
+    esprintf (tmp, BUFFERSIZE, "^(device-mapper|fs-(%s))$", tmpx);
+    after = set_str_add_stable (after, (void *)tmp);
+    efree (tmpx);
+   }
+
+   if (tmp_split) {
+    efree (tmp_split);
+    tmp_split = NULL;
+   }
+  }
+
+  struct smodule *newmodule = emalloc (sizeof (struct smodule));
+  memset (newmodule, 0, sizeof (struct smodule));
+
+  if (strmatch (s->key, "/")) {
+   snprintf (tmp, BUFFERSIZE, "mount-fsck-root");
+  } else {
+   esprintf (tmp, BUFFERSIZE, "mount-fsck%s", s->key);
+   int tx = 0;
+   for (; tmp[tx]; tx++) {
+    if (tmp[tx] == '/') {
+     tmp[tx] = '-';
+    }
+   }
+  }
+
+  while (lm) {
+   if (lm->source && strmatch(lm->source, tmp)) {
+    struct smodule *sm = (struct smodule *)lm->module;
+
+    sm->si.after = after;
+    sm->si.requires = requires;
+
+    lm = mod_update (lm);
+
+    efree (newmodule);
+
+    goto do_next;
+   }
+
+   lm = lm->next;
+  }
+
+  newmodule->configure = einit_mountpoint_configure;
+  newmodule->eiversion = EINIT_VERSION;
+  newmodule->eibuild = BUILDNUMBER;
+  newmodule->version = 1;
+  newmodule->mode = einit_module_generic | einit_feedback_job;
+
+//  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
+  newmodule->rid = (char *)str_stabilise (tmp);
+
+  newmodule->si.provides = set_str_add_stable (newmodule->si.provides, (void *)servicename);
+
+  esprintf (tmp, BUFFERSIZE, "fsck ( %s )", s->key);
+  newmodule->name = (char *)str_stabilise (tmp);
+
+  newmodule->si.after = after;
+
+  newmodule->si.requires = requires;
 
   if ((lm = mod_add (NULL, newmodule)))
    lm->param = (char *)str_stabilise (s->key);
@@ -1129,6 +1331,19 @@ int einit_mount_scanmodules (struct lmodule *ml) {
   efree (servicename);
   s = streenext(s);
  }
+
+ emutex_unlock (&mounter_dd_by_devicefile_mutex);
+
+ return 0;
+}
+
+int einit_mount_scanmodules (struct lmodule *ml) {
+ if (!mount_filesystems) return 0;
+
+ einit_mount_scanmodules_fscks (ml);
+ einit_mount_scanmodules_mountpoints (ml);
+
+ emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
 /* if (!mount_critical_filesystems || !streefind (mount_critical_filesystems, "fs-root", tree_find_first)) {
   mount_critical_filesystems = streeadd (mount_critical_filesystems, "fs-root", NULL, SET_NOALLOC, NULL);
@@ -1452,12 +1667,6 @@ int mount_try_umount (char *mountpoint, char *fs, char step, struct device_data 
 
 int mount_mount (char *mountpoint, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
  if (!(coremode & einit_mode_sandbox)) {
-  if ((dd->device_status & (device_status_dirty | device_status_error_notint)) && (!inset ((const void **)mp->options, "skip-fsck", SET_TYPE_STRING))) {
-   mount_fsck (mp->fs, dd->device, status);
-  } else {
-   fbprintf (status, "not fscking %s", dd->device);
-  }
-
   if (mp->before_mount)
    pexec_v1 (mp->before_mount, (const char **)mp->variables, NULL, status);
  }
@@ -1543,44 +1752,10 @@ int mount_umount (char *mountpoint, struct device_data *dd, struct mountpoint_da
 }
 
 int mount_fsck (char *fs, char *device, struct einit_event *status) {
- char ping_loop = 0, finished = 0, waited = 0;
  if (mount_fastboot || (fs && (mount_get_filesystem_options(fs) & filesystem_capability_no_fsck))) {
   fbprintf (status, "fastboot // no fsck for this fs");
   return status_ok;
  }
-
- emutex_lock (&mount_finished_fscks_mutex);
- if (mount_finished_fscks && inset ((const void **)mount_finished_fscks, device, SET_TYPE_STRING)) {
-  fbprintf (status, "fsck ran already");
-  finished = 1;
- }
- emutex_unlock (&mount_finished_fscks_mutex);
-
- if (finished) return status_ok;
-
- do {
-  emutex_lock (&mount_active_fscks_mutex);
-  if (mount_active_fscks && inset ((const void **)mount_active_fscks, device, SET_TYPE_STRING)) {
-   ping_loop = 1;
-   finished = 1;
-  }
-  emutex_unlock (&mount_active_fscks_mutex);
-
-  if (ping_loop) {
-   if (!waited)
-    fbprintf (status, "waiting for fsck");
-   mount_wait_for_ping();
-  }
- } while (ping_loop);
-
- if (finished) {
-  fbprintf (status, "fsck ran already");
-  return status_ok;
- }
-
- emutex_lock (&mount_active_fscks_mutex);
- mount_active_fscks = set_str_add_stable (mount_active_fscks, device);
- emutex_unlock (&mount_active_fscks_mutex);
 
  struct cfgnode *node = NULL;
  char *mount_fsck_template = NULL;
@@ -1619,16 +1794,6 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
   status->string = "WARNING: filesystem dirty, but no fsck command known";
   status_update (status);
  }
-
- emutex_lock (&mount_finished_fscks_mutex);
- mount_finished_fscks = set_str_add_stable (mount_finished_fscks, device);
- emutex_unlock (&mount_finished_fscks_mutex);
-
- emutex_lock (&mount_active_fscks_mutex);
- mount_active_fscks = strsetdel ((char **)mount_active_fscks, device);
- emutex_unlock (&mount_active_fscks_mutex);
-
- mount_ping();
 
  return status_ok;
 }
@@ -1984,43 +2149,6 @@ void einit_mount_event_boot_devices_available (struct einit_event *ev) {
  }
 }
 
-void *einit_mount_fsck_thread (struct device_data *dd) {
- if (dd->fs) {
-  mount_fsck (dd->fs, dd->device, NULL);
- } else if (dd->mountpoints) {
-  struct mountpoint_data *mp = dd->mountpoints->value;
-
-  if (mp && mp->fs) {
-   mount_fsck (mp->fs, dd->device, NULL);
-  }
- }
-
- return NULL;
-}
-
-void einit_mount_analyse_fs (char *device) {
-#if 0
- struct device_data *dd = NULL;
- struct stree *t = NULL;
-
- emutex_lock (&mounter_dd_by_devicefile_mutex);
- if (mounter_dd_by_devicefile && (t = streefind (mounter_dd_by_devicefile, device, tree_find_first))) {
-  dd = t->value;
- }
- emutex_unlock (&mounter_dd_by_devicefile_mutex);
-
- if (dd) {
-  ethread_spawn_detached ((void *(*)(void *))einit_mount_fsck_thread, (void *)dd);
- }
-#endif
-}
-
-void einit_mount_hotplug_event_handler_add (struct einit_event *ev) {
- if (ev->string) {
-  einit_mount_analyse_fs (ev->string);
- }
-}
-
 void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
  if (ev->type == einit_core_crash_data) {
   notice (4, "storing crash data to save it afer / is back to r/w status");
@@ -2035,7 +2163,6 @@ int einit_mount_cleanup (struct lmodule *tm) {
  event_ignore (einit_power_down_imminent, eumount_root);
  event_ignore (einit_power_reset_imminent, eumount_root);
  event_ignore (einit_boot_devices_available, einit_mount_event_boot_devices_available);
- event_ignore (einit_hotplug_add, einit_mount_hotplug_event_handler_add);
 #if 0
  event_ignore (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
@@ -2063,7 +2190,6 @@ int einit_mount_configure (struct lmodule *r) {
  event_listen (einit_power_down_imminent, eumount_root);
  event_listen (einit_power_reset_imminent, eumount_root);
  event_listen (einit_boot_devices_available, einit_mount_event_boot_devices_available);
- event_listen (einit_hotplug_add, einit_mount_hotplug_event_handler_add);
 #if 0
  event_listen (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif

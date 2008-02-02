@@ -180,6 +180,8 @@ struct device_data {
  char *uuid;
  char *encryption;
  char *encryption_key;
+
+ char *havefsck;
 };
 
 typedef int (*einit_mount_function) (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);
