@@ -2060,15 +2060,15 @@ void emount_root () {
 }
 
 void eumount_root () {
- struct einit_event ev = evstaticinit (einit_feedback_module_status);
- ev.module = thismodule;
- eumount ("/", &ev);
- evstaticdestroy (ev);
+ struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+ eml.stringset = set_str_add (NULL, "fs-root");
+ eml.task = einit_module_enable;
+
+ event_emit (&eml, einit_event_flag_broadcast);
+ evstaticdestroy(eml);
 }
 
 void einit_mount_event_boot_devices_available (struct einit_event *ev) {
- emount_root ();
-
  emutex_lock (&mount_autostart_mutex);
  if (mount_autostart) {
   struct einit_event eml = evstaticinit(einit_core_manipulate_services);
@@ -2079,6 +2079,8 @@ void einit_mount_event_boot_devices_available (struct einit_event *ev) {
   evstaticdestroy(eml);
  }
  emutex_unlock (&mount_autostart_mutex);
+
+ emount_root ();
 
  {
   struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
