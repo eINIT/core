@@ -293,7 +293,7 @@ void einit_tty_disable_unused (char **enab_ttys) {
 char einit_tty_is_present (char *ttyname) {
  char present = 0;
 
- emutex_lock (&ttys_mutex);
+// emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
 
  while (cur) {
@@ -303,7 +303,7 @@ char einit_tty_is_present (char *ttyname) {
   }
   cur = cur->next;
  }
- emutex_unlock (&ttys_mutex);
+// emutex_unlock (&ttys_mutex);
 
  return present;
 }
