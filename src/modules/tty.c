@@ -152,7 +152,9 @@ void *einit_tty_watcher (pid_t pid) {
    esprintf (tmp, BUFFERSIZE, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
+  emutex_lock (&ttys_mutex);
   einit_tty_texec (node);
+  emutex_unlock (&ttys_mutex);
  }
 
  return 0;
@@ -251,10 +253,11 @@ int einit_tty_texec (struct cfgnode *node) {
     new->pid = cpid;
     new->node = node;
     new->restart = restart;
-    emutex_lock (&ttys_mutex);
+
+//    emutex_lock (&ttys_mutex);
     new->next = ttys;
     ttys = new;
-    emutex_unlock (&ttys_mutex);
+//    emutex_unlock (&ttys_mutex);
    }
   }
  }
@@ -321,6 +324,8 @@ void einit_tty_update() {
 
  einit_tty_disable_unused (enab_ttys);
 
+ emutex_lock (&ttys_mutex);
+
  if (!enab_ttys || strmatch (enab_ttys[0], "none")) {
   notice (4, "no ttys to bring up");
  } else for (i = 0; enab_ttys[i]; i++) if (einit_tty_is_present (enab_ttys[i])) {
@@ -359,6 +364,8 @@ void einit_tty_update() {
 
   efree (tmpnodeid);
  }
+
+ emutex_unlock (&ttys_mutex);
 
  efree (enab_ttys);
 }
