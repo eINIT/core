@@ -2036,10 +2036,12 @@ int einit_mount_recover_module (struct lmodule *module) {
 }
 
 void emount_root () {
- struct einit_event ev = evstaticinit (einit_feedback_module_status);
- ev.module = thismodule;
- emount ("/", &ev);
- evstaticdestroy (ev);
+ struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+ eml.stringset = set_str_add (NULL, "fs-root");
+ eml.task = einit_module_enable;
+
+ event_emit (&eml, einit_event_flag_broadcast);
+ evstaticdestroy(eml);
 
  if (mount_crash_data) {
   FILE *f = fopen ("/einit.crash.data", "a");
@@ -2062,7 +2064,7 @@ void emount_root () {
 void eumount_root () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "fs-root");
- eml.task = einit_module_enable;
+ eml.task = einit_module_disable;
 
  event_emit (&eml, einit_event_flag_broadcast);
  evstaticdestroy(eml);
