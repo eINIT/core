@@ -188,57 +188,6 @@ struct stree *mount_critical_filesystems = NULL;
 }\
 }
 
-pthread_mutex_t mount_ping_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t mount_ping_cond = PTHREAD_COND_INITIALIZER;
-
-void mount_wait_for_ping() {
- int e;
-
- emutex_lock (&mount_ping_mutex);
-#if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
- struct timespec ts;
-
- if (clock_gettime(CLOCK_REALTIME, &ts))
-  bitch (bitch_stdio, errno, "gettime failed!");
-
- ts.tv_sec += 1; /* max wait before re-evaluate */
-
- e = pthread_cond_timedwait (&mount_ping_cond, &mount_ping_mutex, &ts);
-#elif defined(DARWIN)
-#if 1
- struct timespec ts;
- struct timeval tv;
-
- gettimeofday (&tv, NULL);
-
- ts.tv_sec = tv.tv_sec + 1; /* max wait before re-evaluate */
-
- e = pthread_cond_timedwait (&mount_ping_cond, &mount_ping_mutex, &ts);
-#else
-// notice (2, "warning: un-timed lock.");
- e = pthread_cond_wait (&mount_ping_cond, &mount_ping_mutex);
-#endif
-#else
- notice (2, "warning: un-timed lock.");
- e = pthread_cond_wait (&mount_ping_cond, &mount_ping_mutex);
-#endif
- emutex_unlock (&mount_ping_mutex);
-
- if (e
-#ifdef ETIMEDOUT
-     && (e != ETIMEDOUT)
-#endif
-    ) {
-  bitch (bitch_epthreads, e, "waiting on conditional variable for plan");
- }/* else {
-  notice (1, "woke up, checking plan.\n");
- }*/
-}
-
-void mount_ping () {
- pthread_cond_broadcast (&mount_ping_cond);
-}
-
 char *generate_legacy_mtab () {
  char *ret = NULL;
  ssize_t retlen = 0;
@@ -1305,7 +1254,7 @@ int einit_mount_scanmodules_fscks (struct lmodule *ml) {
    lm = lm->next;
   }
 
-  newmodule->configure = einit_mountpoint_configure;
+  newmodule->configure = einit_fsck_configure;
   newmodule->eiversion = EINIT_VERSION;
   newmodule->eibuild = BUILDNUMBER;
   newmodule->version = 1;
@@ -1923,7 +1872,6 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
 int emount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) {
-  mount_ping();
   return status_ok;
  }
 
@@ -1937,31 +1885,26 @@ int emount (char *mountpoint, struct einit_event *status) {
    if (mp->status & device_status_mounted) {
     update_real_mtab();
 
-    mount_ping();
     return status_ok;
    }
 
    int ret = mount_mount (mountpoint, dd, mp, status);
 
-   mount_ping();
    return ret;
   } else {
    fbprintf (status, "can't find details for mountpoint \"%s\".", mountpoint);
 
-   mount_ping();
    return status_failed;
   }
  }
 
  fbprintf (status, "can't find data for mountpoint \"%s\".", mountpoint);
 
- mount_ping();
  return status_failed;
 }
 
 int eumount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) {
-  mount_ping();
   return status_ok;
  }
 
@@ -1972,7 +1915,6 @@ int eumount (char *mountpoint, struct einit_event *status) {
  char **cm = mount_get_mounted_mountpoints();
 
  if (mount_dont_umount && inset ((const void **)mount_dont_umount, (const void *)mountpoint, SET_TYPE_STRING)) {
-  mount_ping();
   return status_ok;
  }
 
@@ -2010,25 +1952,21 @@ int eumount (char *mountpoint, struct einit_event *status) {
     if (shutting_down) {
      if (r == status_failed) {
       fbprintf (status, "we're shutting down, so there's not much to worry about if umounting failed: last-rites will fix it later");
-      mount_ping();
       return status_ok;
      }
     }
 
-    mount_ping();
     return r;
    }
   } else {
    fbprintf (status, "can't find details for mountpoint \"%s\".", mountpoint);
 
-   mount_ping();
    return status_failed;
   }
  }
 
  fbprintf (status, "can't find data for mountpoint \"%s\".", mountpoint);
 
- mount_ping();
  return status_failed;
 }
 
