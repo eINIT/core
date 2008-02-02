@@ -246,7 +246,7 @@ void event_listen (enum einit_event_subsystems type, void (* handler)(struct ein
  char doadd = 1;
 
  emutex_lock (&evf_mutex);
- struct itree *it = itreefind (event_handlers, type, tree_find_first);
+ struct itree *it = event_handlers ? itreefind (event_handlers, type, tree_find_first) : NULL;
  while (it) {
   struct event_function *f = (struct event_function *)it->data;
 
