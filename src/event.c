@@ -243,10 +243,24 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 }
 
 void event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
- struct event_function f = { .handler = handler };
+ char doadd = 1;
 
  emutex_lock (&evf_mutex);
- event_handlers = itreeadd (event_handlers, type, &f, sizeof(struct event_function));
+ struct itree *it = itreefind (event_handlers, type, tree_find_first);
+ while (it) {
+  struct event_function *f = (struct event_function *)it->data;
+
+  if (f->handler == handler) {
+   doadd = 0;
+   break;
+  }
+  it = itreefind (it, type, tree_find_next);
+ }
+
+ if (doadd) {
+  struct event_function f = { .handler = handler };
+  event_handlers = itreeadd (event_handlers, type, &f, sizeof(struct event_function));
+ }
  emutex_unlock (&evf_mutex);
 }
 
@@ -257,7 +271,7 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
   it = itreefind (event_handlers, type, tree_find_first);
 
   while (it) {
-   struct event_function *f = it->data;
+   struct event_function *f = (struct event_function *)it->data;
    if (f->handler == handler) break;
 
    it = itreefind (it, type, tree_find_next);
