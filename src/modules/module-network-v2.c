@@ -852,7 +852,7 @@ char *einit_module_network_v2_generate_defer_fs (char **tmpxt) {
  }
 
  if (tmpx) {
-  esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+  esprintf (tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
   efree (tmpx);
  }
 
