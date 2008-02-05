@@ -133,7 +133,7 @@ int einit_mount_scanmodules (struct lmodule *);
 int einit_mount_cleanup (struct lmodule *);
 void einit_mount_update_configuration ();
 unsigned char read_filesystem_flags_from_configuration (void *);
-void mount_add_filesystem (char *, char *);
+void mount_add_filesystem (char *, char *, char **, char *, char *);
 char *options_string_to_mountflags (char **, unsigned long *, char *);
 uintptr_t mount_get_filesystem_options (char *);
 char **mount_generate_mount_function_suffixes (char *);
@@ -259,24 +259,36 @@ char *generate_legacy_mtab () {
 unsigned char read_filesystem_flags_from_configuration (void *na) {
  struct cfgnode *node = NULL;
  uint32_t i;
- char *id, *flags;
+ char *id, *flags, *before, *after, **requires;
  while ((node = cfg_findnode ("information-filesystem-type", 0, node))) {
   if (node->arbattrs) {
    id = NULL;
    flags = NULL;
+   before = NULL;
+   after = NULL;
+   requires = NULL;
    for (i = 0; node->arbattrs[i]; i+=2) {
     if (strmatch (node->arbattrs[i], "id"))
      id = node->arbattrs[i+1];
     else if (strmatch (node->arbattrs[i], "flags"))
      flags = node->arbattrs[i+1];
+    else if (strmatch (node->arbattrs[i], "before"))
+     before = node->arbattrs[i+1];
+    else if (strmatch (node->arbattrs[i], "after"))
+     after = node->arbattrs[i+1];
+    else if (strmatch (node->arbattrs[i], "requires")) {
+     char **t = str2set (':', node->arbattrs[i+1]);
+     requires = set_str_dup_stable (t);
+     efree (t);
+    }
    }
-   if (id && flags) mount_add_filesystem (id, flags);
+   if (id && (flags || requires|| after || before)) mount_add_filesystem (id, flags, requires, after, before);
   }
  }
  return 0;
 }
 
-void mount_add_filesystem (char *name, char *options) {
+void mount_add_filesystem (char *name, char *options, char **requires, char *after, char *before) {
  char **t = str2set (':', options);
  uintptr_t flags = 0, i = 0;
  if (t) {
@@ -293,17 +305,31 @@ void mount_add_filesystem (char *name, char *options) {
   efree (t);
  }
 
-// notice (1, "adding/updating filesystem: %s (0x%x)", name, (unsigned int)flags);
+// fprintf (stderr, "adding/updating filesystem: %s (0x%x), 0x%x, %s, %s\n", name, (unsigned int)flags, requires, after, before);
 
  emutex_lock (&mount_fs_mutex);
  struct stree *st = NULL;
  if (mount_filesystems && (st = streefind (mount_filesystems, name, tree_find_first))) {
-  st->value = (void *)flags;
+  struct filesystem_data *d = st->value;
+
+  d->capabilities = flags;
+  d->requires = requires;
+  d->after = after ? (char*)str_stabilise (after) : NULL;
+  d->before = before ? (char*)str_stabilise (before) : NULL;
+
+//  st->value = (void *)flags;
   emutex_unlock (&mount_fs_mutex);
   return;
  }
 
- mount_filesystems = streeadd (mount_filesystems, name, (void *)flags, -1, NULL);
+ struct filesystem_data d = {
+  .capabilities = flags,
+  .requires = requires,
+  .after = after ? (char*)str_stabilise (after) : NULL,
+  .before = before ? (char*)str_stabilise (before) : NULL
+ };
+
+ mount_filesystems = streeadd (mount_filesystems, name, &d, sizeof (struct filesystem_data), NULL);
  emutex_unlock (&mount_fs_mutex);
 }
 
@@ -313,7 +339,56 @@ uintptr_t mount_get_filesystem_options (char *name) {
 
  emutex_lock (&mount_fs_mutex);
  if ((t = streefind (mount_filesystems, name, tree_find_first))) {
-  ret = (enum filesystem_capability)t->value;
+  struct filesystem_data *d = t->value;
+  if (d)
+   ret = d->capabilities;
+ }
+ emutex_unlock (&mount_fs_mutex);
+
+ return ret;
+}
+
+char **mount_get_filesystem_requires (char *name) {
+ char ** ret = NULL;
+ struct stree *t;
+
+ emutex_lock (&mount_fs_mutex);
+ if ((t = streefind (mount_filesystems, name, tree_find_first))) {
+  struct filesystem_data *d = t->value;
+  if (d)
+   ret = d->requires;
+ }
+ emutex_unlock (&mount_fs_mutex);
+
+// fprintf (stderr, "ret: filesystem: %s requires=0x%x\n", name, ret);
+
+ return ret;
+}
+
+char *mount_get_filesystem_after (char *name) {
+ char *ret = NULL;
+ struct stree *t;
+
+ emutex_lock (&mount_fs_mutex);
+ if ((t = streefind (mount_filesystems, name, tree_find_first))) {
+  struct filesystem_data *d = t->value;
+  if (d)
+   ret = d->after;
+ }
+ emutex_unlock (&mount_fs_mutex);
+
+ return ret;
+}
+
+char *mount_get_filesystem_before (char *name) {
+ char *ret = NULL;
+ struct stree *t;
+
+ emutex_lock (&mount_fs_mutex);
+ if ((t = streefind (mount_filesystems, name, tree_find_first))) {
+  struct filesystem_data *d = t->value;
+  if (d)
+   ret = d->before;
  }
  emutex_unlock (&mount_fs_mutex);
 
@@ -931,6 +1006,7 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
   char *servicename = mount_mp_to_service_name(s->key);
   char tmp[BUFFERSIZE];
   char **after = NULL;
+  char **before = NULL;
   char **requires = NULL;
   struct lmodule *lm = ml;
   struct cfgnode *tcnode = cfg_findnode ("configuration-storage-fstab-node-order", 0, NULL);
@@ -978,7 +1054,7 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
    /* same game, but with the device and not the mountpoint */
    struct stree *t = streefind (((struct device_data *)(s->value))->mountpoints, s->key, tree_find_first);
    if (t) {
-    struct mountpoint_data *mp = t->value; 
+    struct mountpoint_data *mp = t->value;
     enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
     if (!((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING))) {
      if (tmpdd->device) {
@@ -1032,9 +1108,32 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
   if (t) {
    mp = t->value; 
 
-   enum filesystem_capability capa = mount_get_filesystem_options (((struct device_data *)(s->value))->fs);
+   enum filesystem_capability capa = mount_get_filesystem_options (mp->fs);
+   char **fs_requires = mount_get_filesystem_requires (mp->fs);
+   char *fs_after = mount_get_filesystem_after (mp->fs);
+   char *fs_before = mount_get_filesystem_before (mp->fs);
+
+   if (fs_requires) {
+    int ny = 0;
+    for (; fs_requires[ny]; ny++) {
+     if (!inset ((const void **)requires, fs_requires[ny], SET_TYPE_STRING))
+      requires = set_str_add_stable (requires, (void *)fs_requires[ny]);
+    }
+   }
+
+   if (fs_after) {
+    if (!inset ((const void **)after, fs_after, SET_TYPE_STRING))
+     after = set_str_add_stable (after, fs_after);
+   }
+
+   if (fs_before) {
+    if (!inset ((const void **)before, fs_before, SET_TYPE_STRING))
+     before = set_str_add_stable (before, fs_before);
+   }
+
    if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {
-    requires = set_str_add_stable (requires, (void *)"network");
+    if (!inset ((const void **)requires, "network", SET_TYPE_STRING))
+     requires = set_str_add_stable (requires, (void *)"network");
    }
 
    if (mp && !inset ((const void **)mp->options, "noauto", SET_TYPE_STRING)) {
@@ -1071,6 +1170,7 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
     struct smodule *sm = (struct smodule *)lm->module;
 
     sm->si.after = after;
+    sm->si.before = before;
     sm->si.requires = requires;
 
     /* special update */
@@ -1115,6 +1215,7 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
   newmodule->name = (char *)str_stabilise (tmp);
 
   newmodule->si.after = after;
+  newmodule->si.before = before;
 
   newmodule->si.requires = requires;
 

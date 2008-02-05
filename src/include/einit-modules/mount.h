@@ -80,6 +80,13 @@ enum filesystem_capability {
 };
 /*!\}*/
 
+struct filesystem_data {
+ enum filesystem_capability capabilities;
+ char **requires;
+ char *after;
+ char *before;
+};
+
 /*!\name Status Bitfield
  * \bug only partially used and set appropriately
  \{
