@@ -173,6 +173,10 @@ struct mountpoint_data {
  struct dexecinfo *manager;
  char **variables;
 
+ char **requires;
+ char *after;
+ char *before;
+
  uint32_t status;
 };
 

@@ -481,7 +481,7 @@ void mount_clear_all_mounted_flags () {
 void mount_update_device (struct device_data *d) {
 }
 
-void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags) {
+void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags, char **requires, char *after, char *before) {
  struct stree *st = (dd->mountpoints ? streefind (dd->mountpoints, mountpoint, tree_find_first) : NULL);
  struct mountpoint_data *mp = st ? st->value : ecalloc (1, sizeof (struct mountpoint_data));
 // char *device = dd->device;
@@ -505,6 +505,10 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
  mp->variables = variables;
  mp->mountflags = mountflags;
 
+ mp->requires = requires;
+ mp->after = after;
+ mp->before = before;
+
  if (mp->flatoptions) efree (mp->flatoptions);
  mp->flatoptions = options_string_to_mountflags (mp->options, &(mp->mountflags), mountpoint);
 
@@ -524,7 +528,7 @@ void mount_add_update_fstab_data (struct device_data *dd, char *mountpoint, char
  }
 }
 
-void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags) {
+void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **options, char *before_mount, char *after_mount, char *before_umount, char *after_umount, char *manager, char **variables, uint32_t mountflags, char **requires, char *after, char *before) {
  struct device_data *dd = NULL;
  struct stree *t;
 
@@ -548,7 +552,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
  }
 
  if (dd) {
-  mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
+  mount_add_update_fstab_data (dd, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags, requires, after, before);
  } else {
   struct device_data *d = emalloc(sizeof(struct device_data));
   uint32_t y = 0;
@@ -576,7 +580,7 @@ void mount_add_update_fstab (char *mountpoint, char *device, char *fs, char **op
 
 //  if (device) efree (device);
 
-  mount_add_update_fstab_data (d, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
+  mount_add_update_fstab_data (d, mountpoint, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags, requires, after, before);
  }
 }
 
@@ -664,7 +668,10 @@ void mount_update_fstab_nodes () {
   *before_umount = NULL,
   *after_umount = NULL,
   *manager = NULL,
-  **variables = NULL;
+  **variables = NULL,
+  **requires = NULL,
+  *after = NULL,
+  *before = NULL;
   uint32_t mountflags = 0;
 
   if (node->arbattrs) {
@@ -685,9 +692,9 @@ void mount_update_fstab_nodes () {
      before_umount = (char *)str_stabilise (node->arbattrs[i+1]);
     else if (strmatch(node->arbattrs[i], "after-umount"))
      after_umount = (char *)str_stabilise (node->arbattrs[i+1]);
-    else if (strmatch(node->arbattrs[i], "manager")) {
+    else if (strmatch(node->arbattrs[i], "manager"))
      manager = (char *)str_stabilise (node->arbattrs[i+1]);
-    } else if (strmatch(node->arbattrs[i], "variables"))
+    else if (strmatch(node->arbattrs[i], "variables"))
      variables = str2set (':', node->arbattrs[i+1]);
 
     else if (strmatch(node->arbattrs[i], "label")) {
@@ -700,10 +707,18 @@ void mount_update_fstab_nodes () {
 
      esprintf (tmp, BUFFERSIZE, "/dev/disk/by-uuid/%s", node->arbattrs[i+1]);
      device = (char *)str_stabilise(tmp);
+    } else if (strmatch(node->arbattrs[i], "before"))
+     before = (char *)str_stabilise (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "after"))
+     after = (char *)str_stabilise (node->arbattrs[i+1]);
+    else if (strmatch(node->arbattrs[i], "requires")) {
+     char **t = str2set (':', node->arbattrs[i+1]);
+     requires = set_str_dup_stable (t);
+     efree (t);
     }
    }
 
-   if (mountpoint) mount_add_update_fstab (mountpoint, device, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags);
+   if (mountpoint) mount_add_update_fstab (mountpoint, device, fs, options, before_mount, after_mount, before_umount, after_umount, manager, variables, mountflags, requires, after, before);
 
 //   add_fstab_entry (mountpoint, device, fs, options, mountflags, before_mount, after_mount, before_umount, after_umount, manager, 1, variables);
   }
@@ -756,7 +771,7 @@ void mount_update_fstab_nodes_from_fstab () {
 
      options = strsetdel (options, "defaults");
 
-     mount_add_update_fstab ((char *)str_stabilise(val->fs_file), fs_spec, (char *)str_stabilise(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+     mount_add_update_fstab ((char *)str_stabilise(val->fs_file), fs_spec, (char *)str_stabilise(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL);
     }
 
     cur = streenext (cur);
@@ -791,7 +806,7 @@ void mount_update_nodes_from_mtab () {
     struct stree *t;
     char **options = val->fs_mntops ? str2set (',', val->fs_mntops): NULL;
 
-    mount_add_update_fstab ((char *)str_stabilise(val->fs_file), (char *)str_stabilise(val->fs_spec), (char *)str_stabilise(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+    mount_add_update_fstab ((char *)str_stabilise(val->fs_file), (char *)str_stabilise(val->fs_spec), (char *)str_stabilise(val->fs_vfstype), options, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL);
 
     emutex_lock (&mounter_dd_by_mountpoint_mutex);
     if (mounter_dd_by_mountpoint && (t = streefind (mounter_dd_by_mountpoint, val->fs_file, tree_find_first))) {
@@ -1129,6 +1144,24 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
    if (fs_before) {
     if (!inset ((const void **)before, fs_before, SET_TYPE_STRING))
      before = set_str_add_stable (before, fs_before);
+   }
+
+   if (mp->requires) {
+    int ny = 0;
+    for (; mp->requires[ny]; ny++) {
+     if (!inset ((const void **)requires, mp->requires[ny], SET_TYPE_STRING))
+      requires = set_str_add_stable (requires, (void *)mp->requires[ny]);
+    }
+   }
+
+   if (mp->after) {
+    if (!inset ((const void **)after, mp->after, SET_TYPE_STRING))
+     after = set_str_add_stable (after, mp->after);
+   }
+
+   if (mp->before) {
+    if (!inset ((const void **)before, mp->before, SET_TYPE_STRING))
+     before = set_str_add_stable (before, mp->before);
    }
 
    if ((capa & filesystem_capability_network) || inset ((const void **)mp->options, "network", SET_TYPE_STRING)) {

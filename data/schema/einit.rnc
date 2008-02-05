@@ -429,7 +429,10 @@ FSTab =
     attribute after-mount { text }?,
     attribute before-umount { text }?,
     attribute after-umount { text }?,
-    attribute manager { text }?
+    attribute manager { text }?,
+    attribute requires { text }?,
+    attribute before { text }?,
+    attribute after { text }?
   }* &
   element use-legacy-fstab { BooleanAttribute }? &
   element node-order {
@@ -443,7 +446,10 @@ Information =
     element filesystem {
       element type {
         IDAttribute,
-        attribute flags { text }?
+        attribute flags { text }?,
+        attribute requires { text }?,
+        attribute before { text }?,
+        attribute after { text }?
       }*
     }?
   }
