@@ -610,8 +610,12 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
 
  scm_dynwind_begin (0);
 
- p.command = scm_to_locale_string (command);
- scm_dynwind_unwind_handler (efree, p.command, SCM_F_WIND_EXPLICITLY);
+ char *tp = scm_to_locale_string (command);
+ if (tp) {
+  p.command = str_stabilise(tp);
+  free (tp);
+ }
+// scm_dynwind_unwind_handler (free, p.command, SCM_F_WIND_EXPLICITLY);
 
  while (!scm_is_null (rest)) {
   SCM r = scm_car (rest);
