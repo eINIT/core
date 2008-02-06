@@ -481,7 +481,66 @@ SCM module_scheme_guile_get_configuration (SCM id) {
                   rv);
   }
 
+  scm_dynwind_end ();
   return rv;
+ }
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_F;
+}
+
+SCM module_scheme_guile_get_configuration_multi (SCM id) {
+ SCM ids;
+ char *id_c;
+
+ if (scm_is_false(scm_symbol_p (id))) return SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ ids = scm_symbol_to_string(id);
+ id_c = scm_to_locale_string (ids);
+ scm_dynwind_unwind_handler (efree, id_c, SCM_F_WIND_EXPLICITLY);
+
+ struct stree *st = cfg_prefix (id_c);
+ if (st) {
+  struct stree *cur = streelinear_prepare (st);
+  SCM rvalx = SCM_BOOL_F;
+
+  while (cur) {
+   struct cfgnode *node = cur->value;
+
+   if (node && node->arbattrs) {
+    SCM rv = scm_list_1 (scm_cons (scm_from_locale_string (node->arbattrs[0]),
+                          scm_from_locale_string (node->arbattrs[1])));
+    int i;
+
+    for (i = 2; node->arbattrs[i]; i+=2) {
+     rv = scm_cons (scm_cons (scm_from_locale_string (node->arbattrs[i]),
+                    scm_from_locale_string (node->arbattrs[i+1])),
+                                            rv);
+    }
+
+    if (rvalx == SCM_BOOL_F) {
+     rvalx = scm_list_1 (scm_cons (scm_from_locale_string (cur->key), rv));
+    } else {
+     rvalx = scm_cons (scm_cons (scm_from_locale_string (cur->key), rv), rvalx);
+    }
+   } else {
+    if (rvalx == SCM_BOOL_F) {
+     rvalx = scm_list_1 (scm_cons (scm_from_locale_string (cur->key), SCM_BOOL_F));
+    } else {
+     rvalx = scm_cons (scm_cons (scm_from_locale_string (cur->key), SCM_BOOL_F), rvalx);
+    }
+   }
+
+   cur = streenext (cur);
+  }
+
+  scm_dynwind_end ();
+  return rvalx;
+
+  streefree (st);
  }
 
  scm_dynwind_end ();
@@ -612,7 +671,7 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
 
  char *tp = scm_to_locale_string (command);
  if (tp) {
-  p.command = str_stabilise(tp);
+  p.command = (char *)str_stabilise(tp);
   free (tp);
  }
 // scm_dynwind_unwind_handler (free, p.command, SCM_F_WIND_EXPLICITLY);
@@ -1044,6 +1103,8 @@ void module_scheme_guile_configure_scheme (void *n) {
 
  scm_c_define_gsubr ("get-configuration", 1, 0, 0, module_scheme_guile_get_configuration);
  scm_c_define_gsubr ("set-configuration!", 2, 0, 0, module_scheme_guile_set_configuration);
+
+ scm_c_define_gsubr ("get-configuration*", 1, 0, 0, module_scheme_guile_get_configuration_multi);
 
  init_einit_event_type();
 
