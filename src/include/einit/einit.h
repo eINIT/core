@@ -404,7 +404,7 @@ char *einit_read (char **path);
  *
  * This will read a file at some location and call the provided callback on each fragment that is read.
  */
-int einit_read_callback (char **path, int (*callback)(char *, size_t, void *));
+int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), void *);
 
 /*!\brief Write to a file
  * \param[in] path The path to write to

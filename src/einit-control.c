@@ -58,6 +58,12 @@ int print_usage_info () {
  return -1;
 }
 
+int einit_read_callback_push (char *buf, size_t len, void *u) {
+ write (STDOUT_FILENO, buf, len);
+
+ return 0;
+}
+
 int main(int argc, char **argv) {
  int i, l, ret = 0;
  char *c = emalloc (1*sizeof (char));
@@ -99,6 +105,7 @@ int main(int argc, char **argv) {
     case 'l':
     case 'r':
     case 'i':
+    case 'f':
      code = argv[i][1];
      break;
    }
@@ -164,15 +171,24 @@ int main(int argc, char **argv) {
    break;
   case 'r':
    while (c[0] == '/') c++;
-   char *res = NULL;
 
    if (c[0]) {
     char **path = str2set ('/', c);
+    char *res = NULL;
 
     if ((res = einit_read(path))) {
      puts (res);
      efree (res);
     }
+   }
+   break;
+  case 'f':
+   while (c[0] == '/') c++;
+
+   if (c[0]) {
+    char **path = str2set ('/', c);
+
+    einit_read_callback (path, einit_read_callback_push, NULL);
    }
    break;
  }

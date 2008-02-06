@@ -1046,7 +1046,46 @@ char *einit_read (char **path) {
  return data;
 }
 
-int einit_read_callback (char **path, int (*callback)(char *, size_t, void *)) {
+int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), void *cdata) {
+ char *buffer = einit_render_path (path);
+
+ IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
+
+ if (f) {
+  intptr_t rn = 0;
+  void *buf = NULL;
+  intptr_t blen = 0;
+
+  buf = malloc (f->iounit);
+  if (!buf) {
+   ixp_close (f);
+   return 0;
+  }
+
+  do {
+   buf = realloc (buf, blen + f->iounit);
+   if (buf == NULL) {
+    ixp_close (f);
+    return 0;
+   }
+
+   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
+   if (rn > 0) {
+    blen = blen + rn;
+   }
+
+   if ((rn < f->iounit) && blen) {
+    callback (buf, blen, cdata);
+    blen = 0;
+   }
+  } while (rn > 0);
+
+  ixp_close (f);
+ }
+
+ efree (buffer);
+
+ return 0;
 }
 
 int einit_write (char **path, char *data) {
