@@ -954,6 +954,8 @@ char **einit_ls (char **path) {
 
  fid = ixp_open(einit_ipc_9p_client, file, P9_OREAD);
 
+ if (!fid) return NULL;
+
  nstat = 0;
  mstat = 16;
  stat = emalloc(sizeof(*stat) * mstat);

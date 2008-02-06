@@ -45,10 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <string.h>
 
-#include <einit/configuration.h>
 #include <einit/configuration-static.h>
-#include <einit/utility.h>
-#include <einit/set.h>
+
+#include <einit/einit.h>
 
 char o_use_running_einit = 0;
 char o_sandbox = 0;
@@ -63,7 +62,7 @@ int main(int argc, char **argv, char **env) {
  char c_version = 0;
  char c_licence = 0;
  char c_help = 0;
- char **c_ipc_commands = NULL;
+ char c_wtf = 0;
 
  int i = 0;
 
@@ -79,14 +78,14 @@ int main(int argc, char **argv, char **env) {
   } else if (strmatch (argv[i], "--sandbox")) {
    o_sandbox = 1;
   } else if (strmatch (argv[i], "--wtf")) {
-   c_ipc_commands = set_str_add (c_ipc_commands, "examine configuration");
+   c_wtf = 1;
   }
  }
 
- if (!c_version && !c_licence && !c_ipc_commands)
+ if (!c_version && !c_licence && !c_wtf)
   c_help = 1;
 
- if (c_version || c_licence || c_help || c_ipc_commands) {
+ if (c_version || c_licence || c_help || c_wtf) {
   char **c = NULL;
 
   c = set_str_add (c, argv[0]);
@@ -99,19 +98,42 @@ int main(int argc, char **argv, char **env) {
   if (o_sandbox)
    c = set_str_add (c, "--sandbox");
 
-  if (c_ipc_commands) {
-   for (i = 0; c_ipc_commands[i]; i++) {
-    c = set_str_add (c, "--ipc");
-    c = set_str_add (c, c_ipc_commands[i]);
+  if (c_wtf) {
+   int argcx = o_sandbox ? 2 : 1;
+   char *argvx[3];
+
+   argvx[0] = "einit";
+   argvx[1] = o_sandbox ? "-ps" : NULL;
+   argvx[2] = NULL;
+
+   if (einit_connect_spawn (&argcx, argvx)) {
+    argvx[0] = "issues";
+    argvx[1] = NULL;
+
+    char **issues = einit_ls (argvx);
+
+    if (issues) {
+     fprintf (stderr, "Found %i issues:\n", setcount ((const void **)issues));
+    } else {
+     fprintf (stderr, "No issues found.\n");
+    }
+
+    fflush (stderr);
+
+    einit_disconnect ();
+   } else {
+    fprintf (stderr, "Can't connect to eINIT.\n");
    }
+
+   return 0;
+  } else {
+   if (c_help)
+    help_preface();
+
+   execve (EINIT_LIB_BASE "/bin/einit-core", c, env);
+   perror ("couldn't execute eINIT!");
+   return -1;
   }
-
-  if (c_help)
-   help_preface();
-
-  execve (EINIT_LIB_BASE "/bin/einit-core", c, env);
-  perror ("couldn't execute eINIT!");
-  return -1;
  }
 
  perror ("what nao?");

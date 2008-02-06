@@ -766,6 +766,8 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
   n.is_file = 0;
   n.name = (char *)str_stabilise ("ipc");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  n.name = (char *)str_stabilise ("issues");
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } if (path && path[0] && strmatch (path[0], "ipc")) {
   if (!path[1]) {
    n.is_file = 1;
@@ -799,7 +801,7 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
 void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && strmatch (path[0], "ipc")) {
+ if (path && path[0] && (strmatch (path[0], "ipc") || strmatch (path[0], "issues"))) {
   ev->flag = (path[1] ? 1 : 0);
  }
 }
@@ -838,7 +840,7 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
   }
 
   if (address) {
-   ethread_spawn_detached (einit_ipc_9p_thread_function_address, (void *)address);
+   ethread_spawn_detached ((void *(*)(void *))einit_ipc_9p_thread_function_address, (void *)address);
   }
  }
 
