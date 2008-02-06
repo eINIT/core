@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
    c = strcat (c, " --ansi");
   }
 
-  if ((res = einit_ipc_request(c))) {
+  if ((res = einit_ipc(c))) {
    puts (res);
    efree (res);
   }

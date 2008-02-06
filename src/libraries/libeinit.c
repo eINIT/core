@@ -104,7 +104,7 @@ char *einit_ipc_request_xml(const char *command) {
 
  esprintf (tmp, len, "%s --xml", command);
 
- rv = einit_ipc_request(tmp);
+ rv = einit_ipc(tmp);
 
  efree (tmp);
 
@@ -308,7 +308,7 @@ struct stree *einit_get_all_modules () {
 
  if (!einit_connected && !einit_connect(NULL, NULL)) return NULL;
 
- module_data = einit_ipc_safe ("list modules --xml");
+ module_data = einit_ipc ("list modules --xml");
 
  if (module_data) {
   struct stree *tree = xml2stree (module_data);
@@ -409,7 +409,7 @@ struct stree *einit_get_all_services () {
 
  if (!einit_connected && !einit_connect(NULL, NULL)) return NULL;
 
- module_data = einit_ipc_safe ("list services --xml");
+ module_data = einit_ipc ("list services --xml");
 
  if (module_data) {
   struct stree *tree = xml2stree (module_data);
@@ -657,7 +657,7 @@ struct stree *einit_get_all_modes() {
 
  if (!einit_connected && !einit_connect(NULL, NULL)) return NULL;
 
- mode_data = einit_ipc_safe ("list modes --xml");
+ mode_data = einit_ipc ("list modes --xml");
 
  if (mode_data) {
   struct stree *tree = xml2stree (mode_data);
@@ -805,11 +805,45 @@ char einit_disconnect() {
 void einit_receive_events() {
 }
 
-char *einit_ipc_i (const char *cmd, const char *interface) {
- char buffer[BUFFERSIZE];
+char *einit_ipc(const char *command) {
+ char **tmp = set_str_add (NULL, "ipc");
+ tmp = set_str_add (tmp, (char*)command);
+
+ char *rv = einit_read (tmp);
+ efree (tmp);
+ return rv;
+}
+
+void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
+ return;
+}
+
+void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
+ return;
+}
+
+char *einit_render_path (char **path) {
+ char *rv = NULL;
+ char *r = set2str ('/', (const char **)path);
+ 
+ rv = emalloc (strlen (r) + 2);
+ rv[0] = '/';
+ rv[1] = 0;
+ 
+ strcat (rv, r);
+
+ efree (r);
+
+ return rv;
+}
+
+char **einit_ls (char **path) {
+}
+
+char *einit_read (char **path) {
+ char *buffer = einit_render_path (path);
  char *data = NULL;
 
- esprintf (buffer, BUFFERSIZE, "/ipc/%s", cmd);
  IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
 
  if (f) {
@@ -858,26 +892,13 @@ char *einit_ipc_i (const char *cmd, const char *interface) {
   ixp_close (f);
  }
 
+ efree (buffer);
+
  return data;
 }
 
-char *einit_ipc(const char *command) {
- return einit_ipc_i (command, NULL);
+int einit_read_callback (char **path, int (*callback)(char *, size_t)) {
 }
 
-char *einit_ipc_safe(const char *command) {
- return einit_ipc_i (command, NULL);
-}
-
-/* the socket version doesn't precisely need to connect... */
-char *einit_ipc_request(const char *command) {
- return einit_ipc(command);
-}
-
-void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
- return;
-}
-
-void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
- return;
+int einit_write (char **path, char *data) {
 }

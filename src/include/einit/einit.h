@@ -157,13 +157,6 @@ struct einit_remote_event {
 
 /* functions */
 
-/*!\brief Do an IPC request and check Connectivity
- * \param[in] request the request
- *
- * Use this function to ask the core for some info. The return value is the same as what would be put on stdout if you did an 'einit-control <request>' on the command-line. This function actually calls einit_ipc() after making sure we're connected to eINIT.
- */
-char *einit_ipc_request(const char *request);
-
 /*!\brief Do an IPC request, get XML
  * \param[in] request the request
  *
@@ -177,13 +170,6 @@ char *einit_ipc_request_xml(const char *request);
  * Use this function to ask the core for some info. The return value is the same as what would be put on stdout if you did an 'einit-control <request>' on the command-line. This function does NOT make sure we're connected to eINIT.
  */
 char *einit_ipc(const char *request);
-
-/*!\brief Do an IPC request in "Safe Mode"
- * \param[in] request the request
- *
- * Use this function to ask the core for some info. The return value is the same as what would be put on stdout if you did an 'einit-control <request>' on the command-line. This function does NOT make sure we're connected to eINIT, but it can only call a very limited subset of commands that is deemed OK for ordinary users and that may not have side-effects.
- */
-char *einit_ipc_safe(const char *request);
 
 /*!\brief Connect to eINIT
  *
@@ -391,6 +377,36 @@ struct einit_remote_event *einit_remote_event_create (uint32_t type);
  * Scrap <event>. This is ideally something returned from einit_remote_event_create(). Scrapping is not automatically done by calling einit_remote_event_emit(), and that's on purpose, so call this after you'red one with it.
  */
 void einit_remote_event_destroy (struct einit_remote_event *event);
+
+/*!\brief Get all nodes on some path
+ * \param[in] path The path to ls
+ *
+ * This will return a list of all files and directories at some path. You need to free() the return value once you're done.
+ */
+char **einit_ls (char **path);
+
+/*!\brief Read a file
+ * \param[in] path The path to read
+ *
+ * This will read a file at some location and return a string with the file's contents.
+ */
+char *einit_read (char **path);
+
+/*!\brief Read a file (with a callback)
+ * \param[in] path The path to read
+ * \param[in] callback A pointer to a callback function
+ *
+ * This will read a file at some location and call the provided callback on each fragment that is read.
+ */
+int einit_read_callback (char **path, int (*callback)(char *, size_t));
+
+/*!\brief Write to a file
+ * \param[in] path The path to write to
+ * \param[in] data The data to write
+ *
+ * This will write the provided data to the provided path.
+ */
+int einit_write (char **path, char *data);
 
 #ifdef __cplusplus
 }
