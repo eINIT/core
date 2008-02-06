@@ -463,6 +463,9 @@ void linux_network_interface_done (struct einit_event *ev) {
 
      esprintf (buffer, BUFFERSIZE, "resolvconf -a %s", ev->string);
 
+     unlink ("/etc/resolv.conf");
+     symlink("resolvconf/run/resolv.conf", "/etc/resolv.conf");
+
      FILE *f = popen (buffer, "w");
      if (f) {
       fputs (resolv_conf, f);
