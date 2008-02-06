@@ -243,6 +243,7 @@ int main(int argc, char **argv, char **environ) {
 // char crash_threshold = 5;
  char *einit_crash_data = NULL;
  char suppress_version = 0;
+ char do_wait = 0;
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
@@ -327,6 +328,8 @@ int main(int argc, char **argv, char **environ) {
       initoverride = 1;
      } else if (strmatch(argv[i], "--debug")) {
       debug = 1;
+     } else if (strmatch(argv[i], "--do-wait")) {
+      do_wait = 1;
      }
 
      break;
@@ -479,6 +482,11 @@ int main(int argc, char **argv, char **environ) {
    efree (ipccommands);
    if (einit_initial_environment) efree (einit_initial_environment);
    return ret;
+  } else if (do_wait) {
+   struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
+   eml.file = commandpipe_in;
+   event_emit (&eml, einit_event_flag_broadcast);
+   evstaticdestroy(eml);
   } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {
    eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
    exit (EXIT_FAILURE);

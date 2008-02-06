@@ -177,6 +177,12 @@ char *einit_ipc(const char *request);
  */
 char einit_connect(int *argc, char **argv);
 
+/*!\brief Spawn a private instance of eINIT
+ *
+ * Connect to eINIT by spawning a new eINIT core. Use this (or einit_connect()) before using any of the einit*_ipc*() functions. The return value is either zero for "that didn't work" or non-zero for "go ahead, you're good to go".
+ */
+char einit_connect_spawn(int *argc, char **argv);
+
 /*!\brief Disonnect from eINIT
  *
  * Disconnect from eINIT. Use this right before terminating your program. You shouldn't call anything after this.
@@ -398,7 +404,7 @@ char *einit_read (char **path);
  *
  * This will read a file at some location and call the provided callback on each fragment that is read.
  */
-int einit_read_callback (char **path, int (*callback)(char *, size_t));
+int einit_read_callback (char **path, int (*callback)(char *, size_t, void *));
 
 /*!\brief Write to a file
  * \param[in] path The path to write to

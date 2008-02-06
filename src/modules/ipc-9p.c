@@ -645,6 +645,31 @@ Ixp9Srv einit_ipc_9p_srv = {
 
 static IxpServer einit_ipc_9p_server; 
 
+void *einit_ipc_9p_listen (void *param) {
+ intptr_t fdp = (intptr_t)param;
+ int fd = fdp;
+
+ IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
+
+ if (connection) {
+// ixp_pthread_init();
+
+  notice (1, "9p server initialised");
+
+  /* server loop nao */
+
+  ixp_serverloop(&einit_ipc_9p_server);
+
+  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
+
+  einit_ipc_9p_running = 0;
+ } else {
+  notice (1, "could not initialise 9p server");
+ }
+
+ return NULL;
+}
+
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
  einit_ipc_9p_running = 1;
 
@@ -662,7 +687,7 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
   address = "unix!dev/einit-9p";
  }
 
- int fd = ixp_announce (address);
+ intptr_t fd = ixp_announce (address);
 
  if (!fd) {
   notice (1, "cannot initialise 9p server");
@@ -678,47 +703,46 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
   chmod (sp[1], smode);
  }
 
- IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
-
- if (connection) {
-// ixp_pthread_init();
-
-  notice (1, "9p server initialised");
-
 /* add environment var for synchronisation */
 
-  struct cfgnode newnode;
+ struct cfgnode newnode;
 
-  memset (&newnode, 0, sizeof(struct cfgnode));
+ memset (&newnode, 0, sizeof(struct cfgnode));
 
-  newnode.id = (char *)str_stabilise ("configuration-environment-global");
-  newnode.type = einit_node_regular;
+ newnode.id = (char *)str_stabilise ("configuration-environment-global");
+ newnode.type = einit_node_regular;
 
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "id");
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "EINIT_9P_ADDRESS");
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "id");
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "EINIT_9P_ADDRESS");
 
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "s");
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, address);
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "s");
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, address);
 
-  newnode.svalue = newnode.arbattrs[3];
+ newnode.svalue = newnode.arbattrs[3];
 
-  cfg_addnode (&newnode);
+ cfg_addnode (&newnode);
 
-  einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
+ einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
 
-/* server loop nao */
+ einit_ipc_9p_listen((void *)fd);
 
-  ixp_serverloop(&einit_ipc_9p_server);
-
-  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
-
-  einit_ipc_9p_running = 0;
- } else {
-  notice (1, "could not initialise 9p server");
- }
  return NULL;
 }
 
+void *einit_ipc_9p_thread_function_address (char *address) {
+ einit_ipc_9p_running = 1;
+
+ intptr_t fd = ixp_announce (address);
+
+ if (!fd) {
+  notice (1, "cannot initialise 9p server");
+  return NULL;
+ }
+
+ einit_ipc_9p_listen((void *)fd);
+
+ return NULL;
+}
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *ev) {
  notice (6, "enabling IPC (9p)");
  ethread_create (&einit_ipc_9p_thread, NULL, einit_ipc_9p_thread_function, NULL);
@@ -803,6 +827,20 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_9p_ipc_stat);
+
+ if (einit_argv) {
+  char *address = NULL;
+  int y = 0;
+  for (; einit_argv[y] && einit_argv[y+1]; y++) {
+   if (strmatch (einit_argv[y], "--ipc-socket")) {
+    address = einit_argv[y+1];
+   }
+  }
+
+  if (address) {
+   ethread_spawn_detached (einit_ipc_9p_thread_function_address, (void *)address);
+  }
+ }
 
  return 0;
 }

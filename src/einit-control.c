@@ -62,20 +62,14 @@ int main(int argc, char **argv) {
  int i, l, ret = 0;
  char *c = emalloc (1*sizeof (char));
  char *name = estrdup ((char *)basename(argv[0]));
- char ansi = 0;
+ char code = 'i';
  c[0] = 0;
- char *res = NULL;
  if (strmatch (name, "erc")) {
   c = (char *)erealloc (c, 3*sizeof (char));
   c = strcat (c, "rc");
  } else if (strcmp (name, "einit-control")) {
   c = (char *)erealloc (c, (1+strlen(name))*sizeof (char));
   c = strcat (c, name);
- }
-
- struct winsize ws;
- if (!ioctl (1, TIOCGWINSZ, &ws) || !(errno == ENOTTY)) {
-  ansi = 1;
  }
 
  if (!einit_connect(&argc, argv)) {
@@ -94,13 +88,19 @@ int main(int argc, char **argv) {
      eputs("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n", stdout);
      return 0;
     case 'a':
-    case 's':
      i++;
      break;
     case '-':
      i++;
      if (i < argc) goto copy_remainder_verbatim;
      return 0;
+    case 'p':
+     break;
+    case 'l':
+    case 'r':
+    case 'i':
+     code = argv[i][1];
+     break;
    }
   else while (i < argc) {
    copy_remainder_verbatim:
@@ -118,17 +118,66 @@ int main(int argc, char **argv) {
   }
  }
 
- if (c[0]) {
-  if (ansi) {
-   c = erealloc (c, (strlen(c)+8)*sizeof (char));
-   c = strcat (c, " --ansi");
-  }
+ switch (code) {
+  case 'i':
+   if (c[0]) {
+    char ansi = 0;
+    struct winsize ws;
+    char *res = NULL;
 
-  if ((res = einit_ipc(c))) {
-   puts (res);
-   efree (res);
-  }
+    if (!ioctl (1, TIOCGWINSZ, &ws) || !(errno == ENOTTY)) {
+     ansi = 1;
+    }
+
+    if (ansi) {
+     c = erealloc (c, (strlen(c)+8)*sizeof (char));
+     c = strcat (c, " --ansi");
+    }
+
+    if ((res = einit_ipc(c))) {
+     puts (res);
+     efree (res);
+    }
+   }
+   break;
+  case 'l':
+   while (c[0] == '/') c++;
+
+   if (c[0]) {
+    char **path = str2set ('/', c);
+    char **files = einit_ls (path);
+
+    if (files) {
+     for (i = 0; files[i]; i++) {
+      puts (files[i]);
+     }
+    }
+   } else {
+    char **files = einit_ls (NULL);
+
+    if (files) {
+     for (i = 0; files[i]; i++) {
+      puts (files[i]);
+     }
+    }
+   }
+   break;
+  case 'r':
+   while (c[0] == '/') c++;
+   char *res = NULL;
+
+   if (c[0]) {
+    char **path = str2set ('/', c);
+
+    if ((res = einit_read(path))) {
+     puts (res);
+     efree (res);
+    }
+   }
+   break;
  }
+
+ einit_disconnect();
 
  return ret;
 }

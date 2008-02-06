@@ -46,6 +46,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ixp_local.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
+#include <fcntl.h>
+
+#ifdef estrdup
+#undef estrdup
+#endif
+#ifdef emalloc
+#undef emalloc
+#endif
+#ifdef ecalloc
+#undef ecalloc
+#endif
+
 #ifdef DARWIN
 /* dammit, what's wrong with macos!? */
 
@@ -765,6 +782,7 @@ void einit_remote_event_destroy (struct einit_remote_event *ev) {
 
 char *einit_ipc_address = "unix!/dev/einit-9p";
 IxpClient *einit_ipc_9p_client = NULL;
+pid_t einit_ipc_9p_client_pid = 0;
 
 void *einit_event_emit_remote_dispatch (struct einit_remote_event *ev) {
  return NULL;
@@ -775,6 +793,7 @@ void einit_event_emit_remote (struct einit_remote_event *ev, enum einit_event_em
 
 char einit_connect(int *argc, char **argv) {
  char *envvar = getenv ("EINIT_9P_ADDRESS");
+ char priv = 0;
  if (envvar)
   einit_ipc_address = envvar;
 
@@ -783,6 +802,9 @@ char einit_connect(int *argc, char **argv) {
   for (i = 1; i < *argc; i++) {
    if (argv[i][0] == '-')
     switch (argv[i][1]) {
+     case 'p':
+      priv = 1;
+      break;
      case 'a':
       if ((++i) < (*argc))
        einit_ipc_address = argv[i];
@@ -792,12 +814,83 @@ char einit_connect(int *argc, char **argv) {
  }
 
 // einit_ipc_9p_fd = ixp_dial (einit_ipc_address);
- einit_ipc_9p_client = ixp_mount (einit_ipc_address);
+ if (priv) {
+  return einit_connect_spawn(argc, argv);
+ } else {
+  einit_ipc_9p_client = ixp_mount (einit_ipc_address);
+ }
 
  return (einit_ipc_9p_client ? 1 : 0);
 }
 
+char einit_connect_spawn(int *argc, char **argv) {
+ char sandbox = 0;
+
+ if (argc && argv) {
+  int i = 0;
+  for (i = 1; i < *argc; i++) {
+   if (argv[i][0] == '-')
+    switch (argv[i][1]) {
+     case 'p':
+      if (argv[i][2] == 's') sandbox = 1;
+      break;
+    }
+  }
+ }
+
+ char address[BUFFERSIZE];
+ char filename[BUFFERSIZE];
+ struct stat st;
+
+ snprintf (address, BUFFERSIZE, "unix!/tmp/einit.9p.%i", getpid());
+ snprintf (filename, BUFFERSIZE, "/tmp/einit.9p.%i", getpid());
+
+ int fd = 0;
+
+ einit_ipc_9p_client_pid = fork();
+
+ switch (einit_ipc_9p_client_pid) {
+  case -1:
+   return 0;
+   break;
+  case 0:
+   fd = open ("/dev/null", O_RDWR);
+   if (fd) {
+    close (0);
+    close (1);
+    close (2);
+
+    dup2 (fd, 0);
+    dup2 (fd, 1);
+    dup2 (fd, 2);
+
+    close (fd);
+   }
+
+   execl (EINIT_LIB_BASE "/bin/einit-core", "einit-core", "--ipc-socket", address, "--do-wait", (sandbox ? "--sandbox" : NULL), NULL);
+
+   exit (EXIT_FAILURE);
+   break;
+  default:
+   while (stat (filename, &st)) sched_yield();
+
+   einit_ipc_9p_client = ixp_mount (address);
+
+   unlink (filename);
+
+   return (einit_ipc_9p_client ? 1 : 0);
+   break;
+ }
+}
+
 char einit_disconnect() {
+ if (einit_ipc_9p_client_pid > 0) {
+/* we really gotta do this in a cleaner way... */
+  kill (einit_ipc_9p_client_pid, SIGKILL);
+
+  waitpid (einit_ipc_9p_client_pid, NULL, 0);
+ }
+
  ixp_unmount (einit_ipc_9p_client);
  return 1;
 }
@@ -823,21 +916,77 @@ void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_em
 }
 
 char *einit_render_path (char **path) {
- char *rv = NULL;
- char *r = set2str ('/', (const char **)path);
- 
- rv = emalloc (strlen (r) + 2);
- rv[0] = '/';
- rv[1] = 0;
- 
- strcat (rv, r);
+ if (path) {
+  char *rv = NULL;
+  char *r = set2str ('/', (const char **)path);
 
- efree (r);
+  rv = emalloc (strlen (r) + 2);
+  rv[0] = '/';
+  rv[1] = 0;
 
- return rv;
+  strcat (rv, r);
+
+  efree (r);
+
+  return rv;
+ } else {
+  return estrdup ("/");
+ }
 }
 
 char **einit_ls (char **path) {
+ char **rv = NULL;
+
+ IxpMsg m;
+ Stat *stat;
+ IxpCFid *fid;
+ char *file, *buf;
+ int count, nstat, mstat, i;
+
+ file = einit_render_path(path);
+
+ stat = ixp_stat(einit_ipc_9p_client, file);
+
+ if ((stat->mode&P9_DMDIR) == 0) {
+  return NULL;
+ }
+ ixp_freestat(stat);
+
+ fid = ixp_open(einit_ipc_9p_client, file, P9_OREAD);
+
+ nstat = 0;
+ mstat = 16;
+ stat = emalloc(sizeof(*stat) * mstat);
+ buf = emalloc(fid->iounit);
+ while((count = ixp_read(fid, buf, fid->iounit)) > 0) {
+  m = ixp_message((void *)buf, count, MsgUnpack);
+  while(m.pos < m.end) {
+   if(nstat == mstat) {
+    mstat <<= 1;
+    stat = erealloc(stat, sizeof(*stat) * mstat);
+   }
+   ixp_pstat(&m, &stat[nstat++]);
+  }
+ }
+
+ for(i = 0; i < nstat; i++) {
+  if ((stat[i].mode&P9_DMDIR) == 0) {
+   rv = set_str_add (rv, stat[i].name);
+  } else {
+   size_t len = strlen (stat[i].name) + 2;
+   char *x = emalloc (len);
+   snprintf (x, len, "%s/", stat[i].name);
+
+   rv = set_str_add (rv, x);
+   efree (x);
+  }
+  ixp_freestat(&stat[i]);
+ }
+
+ efree(stat);
+ efree (file);
+
+ return rv;
 }
 
 char *einit_read (char **path) {
@@ -897,7 +1046,7 @@ char *einit_read (char **path) {
  return data;
 }
 
-int einit_read_callback (char **path, int (*callback)(char *, size_t)) {
+int einit_read_callback (char **path, int (*callback)(char *, size_t, void *)) {
 }
 
 int einit_write (char **path, char *data) {
