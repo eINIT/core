@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
  char *name = estrdup ((char *)basename(argv[0]));
  char code = 'i';
  c[0] = 0;
+ char *f = NULL;
  if (strmatch (name, "erc")) {
   c = (char *)erealloc (c, 3*sizeof (char));
   c = strcat (c, "rc");
@@ -107,6 +108,13 @@ int main(int argc, char **argv) {
     case 'i':
     case 'f':
      code = argv[i][1];
+     break;
+    case 'w':
+     if (argv[i+1]) {
+      i++;
+      f = argv[i];
+      code = 'w';
+     }
      break;
    }
   else while (i < argc) {
@@ -159,6 +167,8 @@ int main(int argc, char **argv) {
       puts (files[i]);
      }
     }
+
+    efree (path);
    } else {
     char **files = einit_ls (NULL);
 
@@ -180,6 +190,8 @@ int main(int argc, char **argv) {
      puts (res);
      efree (res);
     }
+
+    efree (path);
    }
    break;
   case 'f':
@@ -189,6 +201,19 @@ int main(int argc, char **argv) {
     char **path = str2set ('/', c);
 
     einit_read_callback (path, einit_read_callback_push, NULL);
+
+    efree (path);
+   }
+   break;
+  case 'w':
+   while (f && (f[0] == '/')) f++;
+
+   if (f && c) {
+    char **path = str2set ('/', f);
+
+    einit_write (path, c);
+
+    efree (path);
    }
    break;
  }

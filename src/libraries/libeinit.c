@@ -1089,4 +1089,18 @@ int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), v
 }
 
 int einit_write (char **path, char *data) {
+ if (!data) return 0;
+
+ char *buffer = einit_render_path (path);
+
+ IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
+
+ if (f) {
+  ixp_write(f, data, strlen(data));
+
+  ixp_close (f);
+ }
+
+ efree (buffer);
+ return 0;
 }
