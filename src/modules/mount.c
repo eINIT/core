@@ -2006,6 +2006,12 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
 
 int emount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) {
+  if (strmatch (mountpoint, "/")) {
+   struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
+   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+   evstaticdestroy(eml);
+  }
+
   return status_ok;
  }
 
@@ -2019,10 +2025,22 @@ int emount (char *mountpoint, struct einit_event *status) {
    if (mp->status & device_status_mounted) {
     update_real_mtab();
 
+    if (strmatch (mountpoint, "/")) {
+     struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
+     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+     evstaticdestroy(eml);
+    }
+
     return status_ok;
    }
 
    int ret = mount_mount (mountpoint, dd, mp, status);
+
+   if ((ret == status_ok) && strmatch (mountpoint, "/")) {
+    struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
+    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+    evstaticdestroy(eml);
+   }
 
    return ret;
   } else {
@@ -2169,32 +2187,6 @@ int einit_mount_recover_module (struct lmodule *module) {
  return status_ok;
 }
 
-void emount_root () {
- struct einit_event eml = evstaticinit(einit_core_manipulate_services);
- eml.stringset = set_str_add (NULL, "fs-root");
- eml.task = einit_module_enable;
-
- event_emit (&eml, einit_event_flag_broadcast);
- evstaticdestroy(eml);
-
- if (mount_crash_data) {
-  FILE *f = fopen ("/einit.crash.data", "a");
-  if (!f) f = fopen ("/tmp/einit.crash.data", "a");
-  if (!f) f = fopen ("einit.crash.data", "a");
-  if (f) {
-   time_t t = time(NULL);
-   fprintf (f, "\n >> eINIT CRASH DATA <<\n * Time of Crash: %s\n"
-               " --- VERSION INFORMATION ---\n eINIT, version: " EINIT_VERSION_LITERAL
-               "\n --- END OF VERSION INFORMATION ---\n --- BACKTRACE ---\n %s"
-               "\n --- END OF BACKTRACE ---\n"
-               " >> END OF eINIT CRASH DATA <<\n", ctime(&t), mount_crash_data);
-   fclose (f);
-  }
-  efree (mount_crash_data);
-  mount_crash_data = NULL;
- }
-}
-
 void eumount_root () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = set_str_add (NULL, "fs-root");
@@ -2204,25 +2196,39 @@ void eumount_root () {
  evstaticdestroy(eml);
 }
 
+void einit_mount_event_root_device_ok (struct einit_event *ev) {
+ if (mount_crash_data) {
+  FILE *f = fopen ("/einit.crash.data", "a");
+  if (!f) f = fopen ("/tmp/einit.crash.data", "a");
+  if (!f) f = fopen ("einit.crash.data", "a");
+  if (f) {
+   time_t t = time(NULL);
+   fprintf (f, "\n >> eINIT CRASH DATA <<\n * Time of Crash: %s\n"
+     " --- VERSION INFORMATION ---\n eINIT, version: " EINIT_VERSION_LITERAL
+       "\n --- END OF VERSION INFORMATION ---\n --- BACKTRACE ---\n %s"
+       "\n --- END OF BACKTRACE ---\n"
+       " >> END OF eINIT CRASH DATA <<\n", ctime(&t), mount_crash_data);
+   fclose (f);
+  }
+  efree (mount_crash_data);
+  mount_crash_data = NULL;
+ }
+}
+
 void einit_mount_event_boot_devices_available (struct einit_event *ev) {
  emutex_lock (&mount_autostart_mutex);
- if (mount_autostart) {
-  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
-  eml.stringset = mount_autostart;
-  eml.task = einit_module_enable;
-
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
-  evstaticdestroy(eml);
+ if (!mount_autostart || !inset ((const void **)mount_autostart, "fs-root", SET_TYPE_STRING)) {
+  mount_autostart = set_str_add (mount_autostart, "fs-root");
  }
+
+ struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+ eml.stringset = mount_autostart;
+ eml.task = einit_module_enable;
+
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+ evstaticdestroy(eml);
+
  emutex_unlock (&mount_autostart_mutex);
-
- emount_root ();
-
- {
-  struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-  evstaticdestroy(eml);
- }
 }
 
 void einit_mount_einit_event_handler_crash_data (struct einit_event *ev) {
@@ -2242,6 +2248,8 @@ int einit_mount_cleanup (struct lmodule *tm) {
 #if 0
  event_ignore (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
+
+ event_ignore (einit_boot_root_device_ok, einit_mount_event_root_device_ok);
 
  function_unregister ("fs-mount", 1, (void *)emount);
  function_unregister ("fs-umount", 1, (void *)eumount);
@@ -2269,6 +2277,9 @@ int einit_mount_configure (struct lmodule *r) {
 #if 0
  event_listen (einit_ipc_request_generic, einit_mount_mount_ipc_handler);
 #endif
+
+ event_listen (einit_boot_root_device_ok, einit_mount_event_root_device_ok);
+
 
  function_register ("fs-mount", 1, (void *)emount);
  function_register ("fs-umount", 1, (void *)eumount);
