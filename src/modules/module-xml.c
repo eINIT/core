@@ -202,7 +202,21 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
  char **myenvironment = NULL;
  int returnvalue = status_failed;
 
- if (!module_xml_v2_check_files (name)) return status_failed;
+ if (!module_xml_v2_check_files (name)) {
+  if ((node = module_xml_v2_module_get_node (name, action))) {
+   int x = 0;
+
+   for (; node->arbattrs[x]; x+=2) {
+    if (strmatch (node->arbattrs[x], "code")) {
+     if (strmatch (node->arbattrs[x+1], "true")) {
+      return status_ok;
+     }
+    }
+   }
+
+   return status_failed;
+  }
+ }
 
  if ((node = module_xml_v2_module_get_attributive_node (name, "environment")) && node->arbattrs) {
   int i = 0;
@@ -223,6 +237,10 @@ int module_xml_v2_module_custom_action (char *name, char *action, struct einit_e
   }
 
   if (code) {
+   if (strmatch (code, "true")) {
+    return status_ok;
+   }
+
    struct cfgnode *vnode = module_xml_v2_module_get_attributive_node (name, "variables");
    char *variables = vnode ? vnode->svalue : NULL; 
 

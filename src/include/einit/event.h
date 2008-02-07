@@ -90,8 +90,6 @@ enum einit_event_code {
 /*!< Service availability changing; use the task and status fields to find out what happened */
  einit_core_configuration_update    = einit_event_subsystem_core     | 0x004,
 /*!< notification of configuration update */
- einit_core_plan_update             = einit_event_subsystem_core     | 0x005,
-/*!< Plan status update */
  einit_core_module_list_update      = einit_event_subsystem_core     | 0x006,
 /*!< notification of module-list updates */
  einit_core_module_list_update_complete

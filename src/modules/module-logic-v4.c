@@ -1479,6 +1479,13 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    cmode = mode;
    amode = mode;
 
+   if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
+//   notice (1, "emitting event");
+    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+    event_emit (&ee, einit_event_flag_broadcast);
+    evstaticdestroy (ee);
+   }
+
    struct einit_event eex = evstaticinit (einit_core_mode_switch_done);
    eex.para = (void *)mode;
    eex.string = mode->id;
@@ -1492,23 +1499,6 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
 #else
     usleep (50000);
 #endif
-   }
-
-   if (amode->id) {
-//   notice (1, "emitting feedback notice");
-
-    struct einit_event eema = evstaticinit (einit_core_plan_update);
-    eema.string = (char *)str_stabilise(amode->id);
-    eema.para   = (void *)amode;
-    event_emit (&eema, einit_event_flag_broadcast);
-    evstaticdestroy (eema);
-   }
-
-   if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
-//   notice (1, "emitting event");
-    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
-    event_emit (&ee, einit_event_flag_broadcast);
-    evstaticdestroy (ee);
    }
   }
  }

@@ -458,7 +458,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_panic:                       return "core/panic";
   case einit_core_service_update:              return "core/service-update";
   case einit_core_configuration_update:        return "core/configuration-update";
-  case einit_core_plan_update:                 return "core/plan-update";
   case einit_core_module_list_update:          return "core/module-list-update";
   case einit_core_module_list_update_complete: return "core/module-list-update-complete";
 
@@ -580,7 +579,6 @@ uint32_t event_string_to_code (const char *code) {
      if (strmatch (tcode[1], "panic"))                            ret = einit_core_panic;
      else if (strmatch (tcode[1], "service-update"))              ret = einit_core_service_update;
      else if (strmatch (tcode[1], "configuration-update"))        ret = einit_core_configuration_update;
-     else if (strmatch (tcode[1], "plan-update"))                 ret = einit_core_plan_update;
      else if (strmatch (tcode[1], "module-list-update"))          ret = einit_core_module_list_update;
      else if (strmatch (tcode[1], "module-list-update-complete")) ret = einit_core_module_list_update_complete;
 
