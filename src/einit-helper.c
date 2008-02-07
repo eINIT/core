@@ -113,7 +113,26 @@ int main(int argc, char **argv, char **env) {
     char **issues = einit_ls (argvx);
 
     if (issues) {
-     fprintf (stderr, "Found %i issues:\n", setcount ((const void **)issues));
+     int count = setcount ((const void **)issues);
+     int i = 0;
+
+     if (count > 1)
+      fprintf (stderr, "Found %i issues:\n", count);
+     else
+      fputs ("Found one issue:\n", stderr);
+
+     while (issues[i]) {
+      fprintf (stderr, " * %s:\n", issues[i]);
+
+      argvx[1] = issues[i];
+
+      char *r = einit_read(argvx);
+      if (r) {
+       fprintf (stderr, " >> %s\n", r);
+      }
+
+      i++;
+     }
     } else {
      fprintf (stderr, "No issues found.\n");
     }

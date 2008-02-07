@@ -51,9 +51,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dirent.h>
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
+#include <sys/wait.h>
 
 #include <einit-modules/exec.h>
-
+#include <einit-modules/ipc.h>
 
 #define ECXE_MASTERTAG_EINIT   0x00000001
 #define ECXE_MASTERTAG_MODULE  0x00000002
@@ -67,7 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *);
 
 void einit_config_xml_expat_event_handler_core_update_configuration (struct einit_event *);
-void einit_config_xml_expat_ipc_event_handler (struct einit_event *);
+void einit_config_xml_expat_ipc_read (struct einit_event *);
 char *einit_config_xml_cfg_to_xml (struct stree *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
@@ -99,7 +100,7 @@ time_t xml_configuration_files_highest_mtime = 0;
 int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
- event_ignore (einit_ipc_request_generic, einit_config_xml_expat_ipc_event_handler);
+ event_ignore (einit_ipc_read, einit_config_xml_expat_ipc_read);
  event_ignore (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
 
  exec_cleanup (this);
@@ -113,8 +114,8 @@ int bootstrap_einit_configuration_xml_expat_configure (struct lmodule *this) {
 
  thismodule->cleanup = bootstrap_einit_configuration_xml_expat_cleanup;
 
+ event_listen (einit_ipc_read, einit_config_xml_expat_ipc_read);
  event_listen (einit_core_update_configuration, einit_config_xml_expat_event_handler_core_update_configuration);
- event_listen (einit_ipc_request_generic, einit_config_xml_expat_ipc_event_handler);
 
  function_register ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
@@ -417,6 +418,7 @@ void einit_config_xml_expat_event_handler_core_update_configuration (struct eini
  }
 }
 
+/*
 void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
  if ((ev->argc >= 2) && strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
   char *command = cfg_getstring ("core-xml-validator/command", NULL);
@@ -441,6 +443,79 @@ void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
    efree (vars);
    efree (xmlfiles);
    efree (cm);
+  }
+ }
+}
+*/
+
+#define RNV_INVOCATION "rnv -q -n 255"
+
+void einit_config_xml_expat_ipc_read (struct einit_event *ev) {
+ char **path = ev->para;
+
+ struct ipc_fs_node n;
+
+ if (path && path[0] && strmatch (path[0], "issues")) {
+  if (!path[1]) {
+   n.is_file = 1;
+
+   char **w = which ("rnv");
+   if (!w) {
+    n.name = (char *)str_stabilise ("configuration-xml");
+    ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   } else {
+    char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
+    char *rc = NULL;
+
+    if (xmlfiles) {
+     char **cmd = (char **)set_noa_add (NULL, RNV_INVOCATION);
+     cmd = (char **)set_noa_add ((void **)cmd, EINIT_LIB_BASE "/schemata/einit.rnc");
+     cmd = (char **)set_noa_add ((void **)cmd, xmlfiles);
+     rc = set2str (' ', (const char **)cmd);
+     efree (xmlfiles);
+    }
+
+    if (rc) {
+     int status = system (rc);
+     if (WEXITSTATUS(status) != EXIT_SUCCESS) {
+      n.name = (char *)str_stabilise ("configuration-xml");
+      ev->set = set_fix_add (ev->set, &n, sizeof (n));
+     }
+     efree (w);
+    }
+   }
+  } else if (strmatch (path[1], "configuration-xml")) {
+   char **w = which ("rnv");
+   if (!w) {
+    ev->stringset = set_str_add_stable(ev->stringset, "[MINOR] You do not have 'rnv' installed.\n    Without this programme, eINIT can't verify your .xml files' syntactical correctness.");
+   } else {
+    char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
+    char *rc = NULL;
+
+    if (xmlfiles) {
+     char **cmd = (char **)set_noa_add (NULL, RNV_INVOCATION);
+     cmd = (char **)set_noa_add ((void **)cmd, EINIT_LIB_BASE "/schemata/einit.rnc");
+     cmd = (char **)set_noa_add ((void **)cmd, xmlfiles);
+     cmd = (char **)set_noa_add ((void **)cmd, "2>&1");
+     rc = set2str (' ', (const char **)cmd);
+     efree (xmlfiles);
+    }
+
+    if (rc) {
+     FILE *f = popen (rc, "r");
+     if (f) {
+      char buffer[BUFFERSIZE];
+
+      while (fgets (buffer, BUFFERSIZE, f) == buffer) {
+       strtrim (buffer);
+       ev->stringset = set_str_add (ev->stringset, buffer);
+      }
+
+      pclose (f);
+     }
+     efree (w);
+    }
+   }
   }
  }
 }

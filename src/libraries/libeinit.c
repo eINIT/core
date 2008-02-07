@@ -988,6 +988,11 @@ char **einit_ls (char **path) {
  efree(stat);
  efree (file);
 
+ if (rv) {
+  rv = strsetdel (rv, "./");
+  rv = strsetdel (rv, "../");
+ }
+
  return rv;
 }
 
