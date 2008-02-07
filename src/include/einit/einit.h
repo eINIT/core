@@ -100,16 +100,6 @@ struct einit_service {
  struct stree *modules;     /*!< If there's one or more modules that provide this service, this points to it/them. */
 };
 
-/*!\brief Intermediate data to represent an XML structure
- *
- * This is part of an intermediate stree-representation for XML files. It's the value of strees retrieved with xml2stree().
- */
-struct einit_xml_tree_node {
- struct stree *parent;     /*!< A pointer to the same kind of warped stree, this one points to the parent element's stree. */
- struct stree *elements;   /*!< A pointer to the same kind of warped stree, this one points to child element(s). */
- struct stree *attributes; /*!< A pointer to an stree with all attributes of this element. The stree's values are (char *) */
-};
-
 /*!\brief Descriptor for a Mode
  *
  * This is a descriptor that is retrieved from einit_get_all_modes() (in the latter case, it's the stree's value's type).
@@ -130,46 +120,19 @@ struct einit_mode_summary {
 struct einit_remote_event {
  enum einit_event_code type;       /*!< the event or subsystem to watch */
 
- union {
-/*! these struct elements are for use with non-IPC events */
-  struct {
-   char *string;                 /*!< a string */
-   int32_t integer,              /*!< generic integer */
-           status,               /*!< generic integer */
-           task;                 /*!< generic integer */
-   unsigned char flag;           /*!< flags */
+ char *string;                 /*!< a string */
+ int32_t integer,              /*!< generic integer */
+         status,               /*!< generic integer */
+         task;                 /*!< generic integer */
+ unsigned char flag;           /*!< flags */
 
-   char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
-  };
-
-/*! these struct elements are for use with IPC events */
-  struct {
-   char **argv;                        /*!< the argv for an IPC event */
-   char *command;                      /*!< the whole command of an IPC event */
-   enum einit_ipc_options ipc_options; /*!< IPC options (it's a bitfield) */
-   int argc;                           /*!< the number of arguments in argv */
-  };
- };
+ char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
 
  uint32_t seqid;   /*!< This is the event's unique sequence-ID. */
  time_t timestamp; /*!< Timestamp of the event as a unix-timestamp (seconds since the Epoch). Do note that this is the timestamp of when the event was received, not necessarily of when it was transmitted/emitted. */
 };
 
 /* functions */
-
-/*!\brief Do an IPC request, get XML
- * \param[in] request the request
- *
- * Use this function to ask the core for some info, but specifically requests the return-value to be in XML. The return value is the same as what would be put on stdout if you did an 'einit-control <request> --xml' on the command-line.
- */
-char *einit_ipc_request_xml(const char *request);
-
-/*!\brief Do an IPC request
- * \param[in] request the request
- *
- * Use this function to ask the core for some info. The return value is the same as what would be put on stdout if you did an 'einit-control <request>' on the command-line. This function does NOT make sure we're connected to eINIT.
- */
-char *einit_ipc(const char *request);
 
 /*!\brief Connect to eINIT
  *
@@ -220,20 +183,6 @@ struct stree *einit_get_all_services ();
  * Retrieve Data for a specific service.
  */
 struct einit_service *einit_get_service_status (char *service);
-
-/*!\brief Parse XML data
- * \param[in] data The Data you wish parsed
- *
- * This function parses XML data into a struct stree *, which the ->keys being the elements' names and the ->values pointing to a struct einit_xml_tree_node *.
- */
-struct stree *xml2stree (char *data);
-
-/*!\brief Free return value from xml2stree()
- * \param[in] xmlstree A return value from xml2stree() to free()
- *
- * Use this to trash data you received from xml2stree(). streefree() alone won't do the job. You don't need to call streefree() afterwards, and you better not try to, either.
- */
-void xmlstree_free(struct stree *xmlstree);
 
 /*!\brief Free an einit_module*'s data
  * \param[in] data A return value from einit_get_module_status() to free()

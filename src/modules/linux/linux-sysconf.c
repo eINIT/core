@@ -162,31 +162,6 @@ void linux_sysconf_sysctl () {
  }
 }
 
-void linux_sysconf_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
-  if (!cfg_getnode("configuration-system-ctrl-alt-del", NULL)) {
-   eputs (" * configuration variable \"configuration-system-ctrl-alt-del\" not found.\n", ev->output);
-   ev->task++;
-  }
-  if (!cfg_getstring ("configuration-services-sysctl/config", NULL)) {
-   eputs (" * configuration variable \"configuration-services-sysctl/config\" not found.\n", ev->output);
-   ev->ipc_return++;
-  }
-
-  ev->implemented = 1;
- }
-}
-
-int linux_sysconf_cleanup (struct lmodule *this) {
- function_unregister ("core-power-reset-linux", 1, linux_reboot);
- function_unregister ("core-power-off-linux", 1, linux_power_off);
- event_ignore (einit_ipc_request_generic, linux_sysconf_ipc_event_handler);
- event_ignore (einit_boot_early, linux_sysconf_ctrl_alt_del);
- event_ignore (einit_boot_devices_available, linux_sysconf_sysctl);
-
- return 0;
-}
-
 int linux_sysconf_enable (void *pa, struct einit_event *status) {
  struct cfgnode *cfg;
 
@@ -272,6 +247,23 @@ int linux_sysconf_disable (void *pa, struct einit_event *status) {
  return status_ok;
 }
 
+void linux_sysconf_einit_core_mode_switch_done (struct einit_event *ev) {
+ if (strmatch (ev->string, "power-down")) {
+  linux_power_off ();
+ } else if (strmatch (ev->string, "power-reset")) {
+  linux_reboot ();
+ }
+}
+
+int linux_sysconf_cleanup (struct lmodule *this) {
+ event_ignore (einit_boot_early, linux_sysconf_ctrl_alt_del);
+ event_ignore (einit_boot_devices_available, linux_sysconf_sysctl);
+
+ event_ignore (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
+
+ return 0;
+}
+
 int linux_sysconf_configure (struct lmodule *irr) {
  module_init (irr);
 
@@ -279,11 +271,10 @@ int linux_sysconf_configure (struct lmodule *irr) {
  thismodule->enable = linux_sysconf_enable;
  thismodule->disable = linux_sysconf_disable;
 
- event_listen (einit_ipc_request_generic, linux_sysconf_ipc_event_handler);
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_sysctl);
- function_register ("core-power-off-linux", 1, linux_power_off);
- function_register ("core-power-reset-linux", 1, linux_reboot);
+
+ event_listen (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
 
  return 0;
 }

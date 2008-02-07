@@ -560,37 +560,21 @@ void notice_macro (unsigned char severity, const char *message) {
 struct einit_event *evdup (const struct einit_event *ev) {
  if (!ev) return NULL;
 
- uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
-
  struct einit_event *nev = emalloc (sizeof (struct einit_event));
 
  memcpy (nev, ev, sizeof (struct einit_event));
 
- if (subsystem == einit_event_subsystem_ipc) {
-  if (nev->command) {
-   int32_t l;
-   char *np;
-   nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->command) +1));
+ if (nev->string) {
+  int32_t l;
+  char *np;
+  nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->string) +1));
 
-   memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->command, l);
+  memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->string, l);
 
-   nev->command = np;
-  }
-
-  if (ev->argv) nev->argv = set_str_dup_stable (ev->argv);
- } else {
-  if (nev->string) {
-   int32_t l;
-   char *np;
-   nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->string) +1));
-
-   memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->string, l);
-
-   nev->string = np;
-  }
-
-  if (ev->stringset) nev->stringset = set_str_dup_stable (ev->stringset);
+  nev->string = np;
  }
+
+ if (ev->stringset) nev->stringset = set_str_dup_stable (ev->stringset);
 
  return nev;
 }
@@ -604,15 +588,8 @@ struct einit_event *evinit (uint32_t type) {
 }
 
 void evpurge (struct einit_event *ev) {
- uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
-
- if (subsystem == einit_event_subsystem_ipc) {
-  if (ev->argv) efree (ev->argv);
-  if (ev->command) efree (ev->command);
- } else {
-  if (ev->string) efree (ev->string);
-  if (ev->stringset) efree (ev->stringset);
- }
+ if (ev->string) efree (ev->string);
+ if (ev->stringset) efree (ev->stringset);
 
  evdestroy (ev);
 }

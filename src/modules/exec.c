@@ -114,7 +114,6 @@ int qexec_f (char *command);
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
-void einit_exec_ipc_event_handler (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
 void *dexec_watcher (pid_t pid);
@@ -133,7 +132,6 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-execute-command-q", 1, qexec_f);
 
  event_ignore (einit_process_died, einit_exec_process_event_handler);
- event_ignore (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  sched_cleanup(irr);
 
@@ -179,18 +177,6 @@ void einit_exec_process_event_handler (struct einit_event *ev) {
  einit_exec_update_daemons_from_pidfiles();
 
  dexec_watcher(ev->integer);
-}
-
-void einit_exec_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "exec")) {
-  struct einit_event ee = evstaticinit (einit_feedback_module_status);
-  ee.para = (void *)thismodule;
-
-  pexec_f (ev->command, NULL, 0, 0, NULL, NULL, NULL, &ee);
-  evstaticdestroy(ee);
-
-  ev->implemented = 1;
- }
 }
 
 char *apply_envfile_f (char *command, const char **environment) {
@@ -1184,7 +1170,6 @@ int einit_exec_configure (struct lmodule *irr) {
   kill_timeout_secondary = node->value;
 
  event_listen (einit_process_died, einit_exec_process_event_handler);
- event_listen (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);

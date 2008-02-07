@@ -52,7 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
-#include <einit-modules/ipc.h>
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
 
@@ -120,8 +119,6 @@ int print_usage_info () {
   "-v                    print version, then exit\n"
   "-L                    print copyright notice, then exit\n"
   "--bootstrap-modules   use this path to load bootstrap-modules\n"
-  "--ipc                 don't boot, only run specified ipc-command\n"
-  "                      (may be used more than once)\n"
   "--force-init          ignore PID and start as init\n"
   "\n"
   "--sandbox             run einit in \"sandbox mode\"\n"
@@ -233,7 +230,6 @@ void core_einit_event_handler_recover (struct einit_event *ev) {
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i, ret = EXIT_SUCCESS;
- char **ipccommands = NULL;
  int pthread_errno;
  FILE *commandpipe_in = NULL;
  char need_recovery = 0;
@@ -253,9 +249,6 @@ int main(int argc, char **argv, char **environ) {
 
  uname (&osinfo);
  config_configure();
-
-// initialise subsystems
- ipc_configure(NULL);
 
 // is this the system's init-process?
  isinit = getpid() == 1;
@@ -295,8 +288,6 @@ int main(int argc, char **argv, char **environ) {
     case '-':
      if (strmatch(argv[i], "--help"))
       return print_usage_info ();
-     else if (strmatch(argv[i], "--ipc") && argv[i+1])
-      ipccommands = set_str_add (ipccommands, (void *)argv[i+1]);
      else if (strmatch(argv[i], "--force-init"))
       initoverride = 1;
      else if (strmatch(argv[i], "--sandbox")) {
@@ -399,10 +390,6 @@ int main(int argc, char **argv, char **environ) {
 /* actual system initialisation */
   struct einit_event cev = evstaticinit(einit_core_update_configuration);
 
-  if (ipccommands && (coremode != einit_mode_sandbox)) {
-   coremode = einit_mode_ipconly;
-  }
-
   if (!suppress_version) {
    eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
   }
@@ -470,19 +457,7 @@ int main(int argc, char **argv, char **environ) {
   }
   evstaticdestroy(cev);
 
-  if (ipccommands) {
-   uint32_t rx = 0;
-   for (; ipccommands[rx]; rx++) {
-    ret = ipc_process (ipccommands[rx], stdout);
-   }
-
-//   if (gmode == EINIT_GMODE_SANDBOX)
-//    cleanup ();
-
-   efree (ipccommands);
-   if (einit_initial_environment) efree (einit_initial_environment);
-   return ret;
-  } else if (do_wait) {
+  if (do_wait) {
    struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
    eml.file = commandpipe_in;
    event_emit (&eml, einit_event_flag_broadcast);

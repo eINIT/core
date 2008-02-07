@@ -105,7 +105,6 @@ gid_t einit_ipc_9p_einitgid = 0;
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
-char *einit_ipc_9p_request (char *);
 
 enum ipc_9p_filetype {
  i9_dir,
@@ -249,155 +248,6 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
 
  r->ofcall.nwqid = i;
  respond(r, nil);
-}
-
-struct einit_ipc_9p_request_data {
- char *command;
- FILE *output;
-};
-
-int einit_ipc_9p_process (char *cmd, FILE *f) {
- if (!cmd || !cmd[0]) {
-  return 0;
- }
-
- struct einit_event *event = evinit (einit_ipc_request_generic);
- uint32_t ic;
- int ret = 0;
- int len = strlen (cmd);
-
- if ((len > 4) && (cmd[len-4] == '.') && (cmd[len-3] == 'x') && (cmd[len-2] == 'm') && (cmd[len-1] == 'l')) {
-  cmd[len-4] = 0;
-  event->ipc_options |= einit_ipc_output_xml;
- }
-
- event->command = (char *)cmd;
- event->argv = str2set (' ', cmd);
- event->output = f;
- event->implemented = 0;
-
- event->argc = setcount ((const void **)event->argv);
-
- for (ic = 0; event->argv[ic]; ic++) {
-  if (strmatch (event->argv[ic], "--ansi")) event->ipc_options |= einit_ipc_output_ansi;
-  else if (strmatch (event->argv[ic], "--only-relevant")) event->ipc_options |= einit_ipc_only_relevant;
-  else if (strmatch (event->argv[ic], "--help")) event->ipc_options |= einit_ipc_help;
-  else if (strmatch (event->argv[ic], "--detach")) event->ipc_options |= einit_ipc_detach;
- }
-
- if (event->ipc_options & einit_ipc_output_xml) {
-  eputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
- }
- if (event->ipc_options & einit_ipc_only_relevant) event->argv = strsetdel (event->argv, "--only-relevant");
- if (event->ipc_options & einit_ipc_output_ansi) event->argv = strsetdel (event->argv, "--ansi");
- if (event->ipc_options & einit_ipc_help) {
-  if (event->ipc_options & einit_ipc_output_xml) {
-   eputs (" <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n", f);
-  } else {
-   eputs ("eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n", f);
-  }
-
-  event->argv = strsetdel ((char**)event->argv, "--help");
- }
-
- event_emit (event, einit_event_flag_broadcast);
-
- if (!event->implemented) {
-  if (event->ipc_options & einit_ipc_output_xml) {
-   eprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
-  } else {
-   eprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
-  }
-
-  ret = 1;
- } else
-  ret = event->ipc_return;
-
- if (event->argv) efree (event->argv);
-
- if (event->ipc_options & einit_ipc_output_xml) {
-  eputs ("</einit-ipc>\n", f);
- }
-
- evdestroy (event);
-
-#ifdef POSIXREGEX
- struct cfgnode *n = NULL;
-
- while ((n = cfg_findnode ("configuration-ipc-chain-command", 0, n))) {
-  if (n->arbattrs) {
-   uint32_t u = 0;
-   regex_t pattern;
-   char have_pattern = 0, *new_command = NULL;
-
-   for (u = 0; n->arbattrs[u]; u+=2) {
-    if (strmatch(n->arbattrs[u], "for")) {
-     have_pattern = !eregcomp (&pattern, n->arbattrs[u+1]);
-    } else if (strmatch(n->arbattrs[u], "do")) {
-     new_command = n->arbattrs[u+1];
-    }
-   }
-
-   if (have_pattern && new_command) {
-    if (!regexec (&pattern, cmd, 0, NULL, 0))
-     einit_ipc_9p_process (new_command, f);
-    eregfree (&pattern);
-   }
-  }
- }
-#endif
-
- return ret;
-}
-
-void einit_ipc_9p_request_thread (struct einit_ipc_9p_request_data *d) {
- einit_ipc_9p_process(d->command, d->output);
- fclose (d->output);
-}
-
-char *einit_ipc_9p_request (char *command) {
- if (!command) return NULL;
-
- int internalpipe[2];
- char *returnvalue = NULL;
-
- if (!socketpair (AF_UNIX, SOCK_STREAM, 0, internalpipe)) {
-// c'mon, don't tell me you're going to send data fragments > 400kb using the IPC interface!
-  int socket_buffer_size = 40960;
-
-  fcntl (internalpipe[0], F_SETFL, O_NONBLOCK);
-  fcntl (internalpipe[1], F_SETFL, O_NONBLOCK);
-/* tag the fds as close-on-exec, just in case */
-  fcntl (internalpipe[0], F_SETFD, FD_CLOEXEC);
-  fcntl (internalpipe[1], F_SETFD, FD_CLOEXEC);
-
-  setsockopt (internalpipe[0], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
-  setsockopt (internalpipe[1], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
-  setsockopt (internalpipe[0], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
-  setsockopt (internalpipe[1], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
-
-  FILE *w = fdopen (internalpipe[1], "w");
-//  FILE *r = fdopen (internalpipe[0], "r");
-
-//  ipc_process(command, w);
-//  fclose (w);
-  struct einit_ipc_9p_request_data *d = emalloc (sizeof (struct einit_ipc_9p_request_data));
-  d->command = command;
-  d->output = w;
-
-  einit_ipc_9p_request_thread (d);
-
-  errno = 0;
-  if (internalpipe[0] != -1) {
-   returnvalue = readfd_l (internalpipe[0], NULL);
-
-   eclose (internalpipe[0]);
-  }
- }
-
- if (!returnvalue) returnvalue = estrdup("<einit-ipc><warning type=\"no-return-value\" /></einit-ipc>\n");
-
- return returnvalue;
 }
 
 void einit_ipc_9p_fs_read(Ixp9Req *r) {
@@ -764,51 +614,20 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
 
  if (!path) {
   n.is_file = 0;
-  n.name = (char *)str_stabilise ("ipc");
-  ev->set = set_fix_add (ev->set, &n, sizeof (n));
   n.name = (char *)str_stabilise ("issues");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
- } if (path && path[0] && strmatch (path[0], "ipc")) {
-  if (!path[1]) {
-   n.is_file = 1;
-
-   n.name = (char *)str_stabilise ("list modules.xml");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list services.xml");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list configuration.xml");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list modules");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list services");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list configuration");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("update configuration");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("examine configuration");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-  } else {
-   char *res = einit_ipc_9p_request ((char *)str_stabilise(path[1]));
-
-   ev->stringset = set_str_add_stable(ev->stringset, res);
-
-   efree (res);
-  }
  }
 }
 
 void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && (strmatch (path[0], "ipc") || strmatch (path[0], "issues"))) {
+ if (path && path[0] && strmatch (path[0], "issues")) {
   ev->flag = (path[1] ? 1 : 0);
  }
 }
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
- ipc_cleanup(irr);
-
  event_ignore (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
@@ -820,7 +639,6 @@ int einit_ipc_9p_cleanup (struct lmodule *this) {
 
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
- ipc_configure(irr);
 
  irr->cleanup = einit_ipc_9p_cleanup;
 

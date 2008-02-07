@@ -466,96 +466,10 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
  einit_global_environment = env;
 }
 
-void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *ev) {
- if (ev->argv[0] && ev->argv[1] && (ev->ipc_options & einit_ipc_output_xml)) {
-  if (strmatch (ev->argv[0], "list") && strmatch (ev->argv[1], "modes")) {
-   struct stree *cur = streelinear_prepare(hconfiguration);
-   struct cfgnode **modes = NULL;
-
-   ev->implemented = 1;
-
-/* first, we need to find all the modes we have */
-   while (cur) {
-    struct cfgnode *node = cur->value;
-
-    if (node && node->mode) {
-     if (!inset ((const void **)modes, (const void *)node->mode, SET_NOALLOC)) {
-      modes = (struct cfgnode **)set_noa_add ((void **)modes, (void *)node->mode);
-     }
-    }
-
-    cur = streenext(cur);
-   }
-
-   if (modes) {
-    uint32_t i = 0;
-
-    for (; modes[i]; i++) {
-     if (!(modes[i]->arbattrs)) {
-      fprintf (ev->output, " <mode id=\"%s\">", modes[i]->id);
-     } else {
-      uint32_t y = 0;
-//      fprintf (ev->output, " <mode", modes[i]->id);
-      eputs (" <mode", ev->output);
-
-      for (; modes[i]->arbattrs[y]; y+=2) {
-//       char *escapedn = escape_xml (modes[i]->arbattrs[y]);
-       char *escapeda = escape_xml (modes[i]->arbattrs[y+1]);
-
-       fprintf (ev->output, " %s=\"%s\"", modes[i]->arbattrs[y], escapeda);
-
-       efree (escapeda);
-      }
-
-      eputs (">\n", ev->output);
-     }
-
-     char *tmp;
-
-     if ((tmp = cfg_getstring ("enable/services", modes[i]))) {
-      char *escaped_s = escape_xml (tmp);
-      char *tmpx = cfg_getstring ("enable/critical", modes[i]);
-
-      if (tmpx) {
-       char *escaped_x = escape_xml (tmpx);
-       fprintf (ev->output, "  <enable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
-
-       efree (tmpx);
-      } else {
-       fprintf (ev->output, "  <enable services=\"%s\" />\n", escaped_s);
-      }
-
-      efree (escaped_s);
-     }
-
-     if ((tmp = cfg_getstring ("disable/services", modes[i]))) {
-      char *escaped_s = escape_xml (tmp);
-      char *tmpx = cfg_getstring ("disable/critical", modes[i]);
-
-      if (tmpx) {
-       char *escaped_x = escape_xml (tmpx);
-       fprintf (ev->output, "  <disable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
-
-       efree (tmpx);
-      } else {
-       fprintf (ev->output, "  <disable services=\"%s\" />\n", escaped_s);
-      }
-
-      efree (escaped_s);
-     }
-
-     eputs (" </mode>\n", ev->output);
-    }
-   }
-  }
- }
-}
-
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
  event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
- event_ignore (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_ignore (einit_core_done_switching, bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching);
  event_ignore (einit_timer_tick, bootstrap_einit_configuration_stree_einit_event_handler_timer_tick);
 
@@ -575,7 +489,6 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 
  thismodule->cleanup = bootstrap_einit_configuration_stree_cleanup;
 
- event_listen (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
  event_listen (einit_core_done_switching, bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching);
  event_listen (einit_timer_tick, bootstrap_einit_configuration_stree_einit_event_handler_timer_tick);

@@ -38,8 +38,8 @@ eINITMain =
   Information ? &
   element options { attribute shutdown { text }? }? &
   element ttys { TTYAttribute, attribute sysv-style { Boolean }? } ? &
-  element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
-  element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
+  element before-switch { attribute emit-event { text }? } ? &
+  element after-switch { attribute emit-event { text }? } ?
 
 Core = element core {
   element settings {
@@ -217,18 +217,6 @@ Configuration = element configuration {
       element festival {
         element active { BooleanAttribute }?
       }*
-    }*
-  }* &
-
-  element ipc {
-    element control-socket { StringAttribute, IntegerAttribute }? &
-    element chain-command { attribute for { text }, attribute do { text } }? &
-
-    element dbus {
-      element connection {
-        attribute name { text },
-        attribute address { text }
-      }?
     }*
   }* &
 

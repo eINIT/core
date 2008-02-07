@@ -163,15 +163,6 @@
    </aural>
   </feedback>
 
-  <ipc>
-   <control-socket s="/dev/einit-control" i="0660" />
-   <chain-command for="^update configuration.*" do="examine configuration" />
-
-   <dbus>
-    <connection address="unix:path=/var/run/dbus/system_bus_socket" name="org.einit.Einit" />
-   </dbus>
-  </ipc>
-
   <command>
 <!-- the command to run to remove a module from the kernel -->
    <rmmod s="/sbin/modprobe -r" with-env="/sbin/modprobe -r ${module}" />

@@ -113,9 +113,7 @@ int feedback_textual_switch_progress = 0;
 pthread_mutex_t feedback_textual_main_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum feedback_textual_commands {
- ftc_module_update,
- ftc_register_fd,
- ftc_unregister_fd
+ ftc_module_update
 };
 
 struct feedback_textual_command {
@@ -132,7 +130,6 @@ struct feedback_textual_command {
 
   struct {
    FILE *fd;
-   enum einit_ipc_options fd_options;
   };
  };
  uint32_t seqid;
@@ -156,7 +153,6 @@ struct feedback_stream {
  FILE *stream;
  uint32_t seqid;
  uint32_t last_seqid;
- enum einit_ipc_options options;
 
  uint32_t width;
  uint32_t erase_lines;
@@ -182,29 +178,6 @@ char einit_feedback_visual_boot_done_switch = 0;
 
 void feedback_textual_enable();
 void *einit_feedback_visual_textual_worker_thread (void *);
-
-void feedback_textual_queue_fd_command (enum feedback_textual_commands command, FILE *fd, enum einit_ipc_options fd_options, uint32_t seqid) {
- struct feedback_textual_command tnc;
- memset (&tnc, 0, sizeof (struct feedback_textual_command));
-
- tnc.command = command;
-
- tnc.fd = fd;
- tnc.fd_options = fd_options;
- tnc.seqid = seqid;
-
- emutex_lock (&feedback_textual_commandQ_mutex);
-
- feedback_textual_commandQ = (struct feedback_textual_command **)set_fix_add ((void **)feedback_textual_commandQ, (void *)(&tnc), sizeof (struct feedback_textual_command));
-
- emutex_unlock (&feedback_textual_commandQ_mutex);
-
-// pthread_cond_broadcast (&feedback_textual_commandQ_cond);
- if (!einit_feedback_visual_textual_worker_thread_running) {
-  einit_feedback_visual_textual_worker_thread_running = 1;
-  ethread_create (&feedback_textual_thread, NULL, einit_feedback_visual_textual_worker_thread, NULL);
- }
-}
 
 void feedback_textual_queue_update (struct lmodule *module, enum einit_module_status status, char *message, uint32_t seqid, time_t ctime, char *statusline, uint32_t warnings) {
  struct feedback_textual_command tnc;
@@ -337,15 +310,12 @@ void feedback_textual_update_streams () {
   uint32_t y = 0;
   uint32_t hseq = feedback_streams[i]->last_seqid;
 
-  if (feedback_streams[i]->options & einit_ipc_output_ansi) {
-   while (feedback_streams[i]->erase_lines) {
-    feedback_streams[i]->erase_lines--;
+  while (feedback_streams[i]->erase_lines) {
+   feedback_streams[i]->erase_lines--;
 
-    eputs ("\e[F", feedback_streams[i]->stream);
-   }
-   eputs ("\e[2K", feedback_streams[i]->stream);
-  } else
-   eputs ("\r", feedback_streams[i]->stream);
+   eputs ("\e[F", feedback_streams[i]->stream);
+  }
+  eputs ("\e[2K", feedback_streams[i]->stream);
 
 
   for (y = 0; feedback_textual_modules[y]; y++) {
@@ -359,17 +329,6 @@ void feedback_textual_update_streams () {
      if (!(feedback_textual_modules[y]->module->status & (status_enabled | status_disabled | status_failed | status_working))) {
       continue;
      }
-
-/*     if (feedback_textual_modules[y]->module->status & status_failed) {
-      emarker = " \e[31m(failed)\e[0m";
-     }
-
-     if (feedback_textual_modules[y]->warnings > 1) {
-      wmarker = wmbuffer;
-      esprintf (wmbuffer, BUFFERSIZE, " \e[36m(%i warnings)\e[0m", feedback_textual_modules[y]->warnings);
-     } else if (feedback_textual_modules[y]->warnings == 1) {
-      wmarker = " \e[36m(1 warning)\e[0m";
-     }*/
 
      if (feedback_textual_modules[y]->log) {
       uint32_t x = 0;
@@ -482,10 +441,8 @@ void feedback_textual_update_streams () {
 
   feedback_streams[i]->last_seqid = hseq;
 
-  if (feedback_streams[i]->options & einit_ipc_output_ansi) {
-   eputs ("\n", feedback_streams[i]->stream);
-   feedback_streams[i]->erase_lines++;
-  }
+  eputs ("\n", feedback_streams[i]->stream);
+  feedback_streams[i]->erase_lines++;
 
   fflush (feedback_streams[i]->stream);
  }
@@ -636,50 +593,6 @@ void *einit_feedback_visual_textual_worker_thread (void *irr) {
        cs = 0;
       }
       break;
-     case ftc_register_fd:
-      if (command->fd) {
-       struct feedback_stream st;
-       memset (&st, 0, sizeof (struct feedback_stream));
-
-       st.stream = command->fd;
-       st.options = command->fd_options;
-       st.seqid = command->seqid;
-       st.last_seqid = st.seqid;
-       st.width = 80;
-       st.erase_lines = 1;
-
-       if (st.options & einit_ipc_output_ansi)
-        eputs ("working on your request...\n", st.stream);
-
-       emutex_lock (&feedback_textual_streams_mutex);
-       feedback_streams = (struct feedback_stream **)set_fix_add ((void **)feedback_streams, (void *)&st, sizeof (struct feedback_stream));
-       emutex_unlock (&feedback_textual_streams_mutex);
-
-       feedback_textual_update_screen ();
-       cs = 0;
-      }
-
-      break;
-     case ftc_unregister_fd:
-      feedback_textual_update_screen ();
-      cs = 0;
-
-      emutex_lock (&feedback_textual_streams_mutex);
-      repeat_unregister_fd:
-      if (feedback_streams)  {
-       uint32_t si = 0;
-
-       for (; feedback_streams[si]; si++) {
-        if (feedback_streams[si]->stream == command->fd) {
-         feedback_streams = (struct feedback_stream **)setdel ((void **)feedback_streams, (void *)feedback_streams[si]);
-
-         goto repeat_unregister_fd;
-        }
-       }
-      }
-      emutex_unlock (&feedback_textual_streams_mutex);
-
-      break;
     }
    }
   }
@@ -731,35 +644,6 @@ void einit_feedback_visual_feedback_event_handler_unresolved_services (struct ei
 
 void einit_feedback_visual_feedback_event_handler_module_status (struct einit_event *ev) {
  feedback_textual_queue_update (ev->module, ev->status, ev->string, ev->seqid, ev->timestamp, NULL, ev->flag);
-}
-
-void einit_feedback_visual_feedback_event_handler_register_fd (struct einit_event *ev) {
- feedback_textual_queue_fd_command (ftc_register_fd, ev->output, ev->ipc_options, ev->seqid);
-}
-
-void einit_feedback_visual_feedback_event_handler_unregister_fd(struct einit_event *ev) {
- char have_fd = 0;
- do {
-  have_fd = 0;
-  fflush (ev->output);
-
-  feedback_textual_queue_fd_command (ftc_unregister_fd, ev->output, ev->ipc_options, ev->seqid);
-
-  feedback_textual_wait_for_commandQ_to_finish();
-
-  emutex_lock (&feedback_textual_streams_mutex);
-  if (feedback_streams) {
-   uint32_t si = 0;
-
-   for (; feedback_streams[si]; si++) {
-    if (feedback_streams[si]->stream == ev->output) {
-     have_fd = 1;
-     break;
-    }
-   }
-  }
-  emutex_unlock (&feedback_textual_streams_mutex);
- } while (have_fd);
 }
 
 void einit_feedback_visual_einit_event_handler_service_update (struct einit_event *ev) {
@@ -834,25 +718,6 @@ void einit_feedback_visual_power_event_handler(struct einit_event *ev) {
    }
 
  return;
-}
-
-void einit_feedback_visual_ipc_event_handler(struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "examine") && strmatch(ev->argv[1], "configuration")) {
-  if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-use-ansi-codes\" not found.\n", ev->output);
-   ev->ipc_return++;
-  }
-  if (!cfg_getnode("configuration-feedback-visual-std-io", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-std-io\" not found.\n", ev->output);
-   ev->ipc_return++;
-  }
-  if (!cfg_getnode("configuration-feedback-visual-use-ansi-codes", NULL)) {
-   eputs (" * configuration variable \"configuration-feedback-visual-shutdown-failure-timeout\" not found.\n", ev->output);
-   ev->ipc_return++;
-  }
-
-  ev->implemented = 1;
- }
 }
 
 /*
@@ -982,7 +847,6 @@ void feedback_textual_enable() {
  memset (&st, 0, sizeof (struct feedback_stream));
 
  st.stream = stdout;
- st.options = enableansicodes ? einit_ipc_output_ansi : 0;
  st.seqid = 0;
  st.last_seqid = 0;
  st.erase_lines = 1;
@@ -1027,14 +891,11 @@ void einit_feedback_textual_feedback_switch_progress_handler (struct einit_event
 
 int einit_feedback_visual_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_devices_available, feedback_textual_enable);
- event_ignore (einit_ipc_request_generic, einit_feedback_visual_ipc_event_handler);
  event_ignore (einit_power_down_imminent, einit_feedback_visual_power_event_handler);
  event_ignore (einit_power_reset_imminent, einit_feedback_visual_power_event_handler);
  event_ignore (einit_feedback_broken_services, einit_feedback_visual_feedback_event_handler_broken_services);
  event_ignore (einit_feedback_unresolved_services, einit_feedback_visual_feedback_event_handler_unresolved_services);
  event_ignore (einit_feedback_module_status, einit_feedback_visual_feedback_event_handler_module_status);
- event_ignore (einit_feedback_register_fd, einit_feedback_visual_feedback_event_handler_register_fd);
- event_ignore (einit_feedback_unregister_fd, einit_feedback_visual_feedback_event_handler_unregister_fd);
  event_ignore (einit_core_service_update, einit_feedback_visual_einit_event_handler_service_update);
  event_ignore (einit_core_mode_switching, einit_feedback_visual_einit_event_handler_mode_switching);
  event_ignore (einit_core_mode_switch_done, einit_feedback_visual_einit_event_handler_mode_switch_done);
@@ -1054,14 +915,11 @@ int einit_feedback_visual_configure (struct lmodule *irr) {
  irr->cleanup = einit_feedback_visual_cleanup;
 
  event_listen (einit_boot_devices_available, feedback_textual_enable);
- event_listen (einit_ipc_request_generic, einit_feedback_visual_ipc_event_handler);
  event_listen (einit_power_down_imminent, einit_feedback_visual_power_event_handler);
  event_listen (einit_power_reset_imminent, einit_feedback_visual_power_event_handler);
  event_listen (einit_feedback_broken_services, einit_feedback_visual_feedback_event_handler_broken_services);
  event_listen (einit_feedback_unresolved_services, einit_feedback_visual_feedback_event_handler_unresolved_services);
  event_listen (einit_feedback_module_status, einit_feedback_visual_feedback_event_handler_module_status);
- event_listen (einit_feedback_register_fd, einit_feedback_visual_feedback_event_handler_register_fd);
- event_listen (einit_feedback_unregister_fd, einit_feedback_visual_feedback_event_handler_unregister_fd);
  event_listen (einit_core_service_update, einit_feedback_visual_einit_event_handler_service_update);
  event_listen (einit_core_mode_switching, einit_feedback_visual_einit_event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, einit_feedback_visual_einit_event_handler_mode_switch_done);

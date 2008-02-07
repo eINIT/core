@@ -6,7 +6,7 @@ export INCLUDEPATH="/usr/local/include"
 # gotta do this too: compile-xml-sh
 # disabled: preload
 
-export MODULES_GENERIC="feedback-visual-textual fqdn exec ipc mount tty process ipc-configuration shadow-exec module-transformations ipc-core-helpers scheduler functions-xml module-xml log parse-sh bootstrap-configuration-stree bootstrap-configuration-xml-expat module-checkpoint module-group feedback-visual-psplash module-logic-v4 module-network-v2 compile-c ipc-9p"
+export MODULES_GENERIC="feedback-visual-textual fqdn exec mount tty process shadow-exec module-transformations ipc-core-helpers scheduler functions-xml module-xml log parse-sh bootstrap-configuration-stree bootstrap-configuration-xml-expat module-checkpoint module-group feedback-visual-psplash module-logic-v4 module-network-v2 compile-c ipc-9p"
 export MODULES_COMPATIBILITY="compatibility-sysv-utmp compatibility-sysv-initctl"
 export MODULES_CORE="module-so"
 export MODULES_EXPERIMENTAL=""

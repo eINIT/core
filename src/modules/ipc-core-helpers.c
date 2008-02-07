@@ -79,153 +79,6 @@ module_register(einit_ipc_core_helpers_self);
 
 struct lmodule *mlist;
 
-void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *);
-
-#define STATUS2STRING(status)\
- (status == status_idle ? "idle" : \
- (status & status_working ? "working" : \
- (status & status_enabled ? "enabled" : "disabled")))
-#define STATUS2STRING_SHORT(status)\
- (status == status_idle ? "I" : \
- (status & status_working ? "W" : \
- (status & status_enabled ? "E" : "D")))
-
-void *einit_ipc_core_helpers_detached_module_action (char **argv) {
- struct lmodule *cur = mlist;
- enum einit_module_task task = 0;
-
- char *custom = NULL;
-
- if (strmatch (argv[2], "enable")) task = einit_module_enable;
- else if (strmatch (argv[2], "disable")) task = einit_module_disable;
- else {
-  task = einit_module_custom;
-  custom = argv[2];
- }
-
- while (cur) {
-  if (strmatch (cur->module->rid, argv[1])) {
-   mod (task, cur, custom);
-  }
-
-  cur = cur->next;
- }
-
- efree (argv);
-
- return NULL;
-}
-
-void einit_ipc_core_helpers_ipc_event_handler (struct einit_event *ev) {
- if (!ev || !ev->argv) goto done;
-
- if ((ev->argc >= 2) && ev->argv[0] && ev->argv[1]) {
-  if (strmatch (ev->argv[0], "list")) {
-   if (strmatch (ev->argv[1], "modules")) {
-    struct lmodule *cur = mlist;
-
-    ev->implemented = 1;
-
-    while (cur) {
-     if ((cur->module && !(ev->ipc_options & einit_ipc_only_relevant)) || (cur->status != status_idle)) {
-      if (ev->ipc_options & einit_ipc_output_xml) {
-       char *name = escape_xml(cur->module->name ? cur->module->name : "unknown");
-       char *id = escape_xml(cur->module->rid);
-       char *status = escape_xml (STATUS2STRING(cur->status));
-
-       eprintf (ev->output, " <module id=\"%s\" name=\"%s\"\n  status=\"%s\"",
-                 id, name, status);
-
-       efree (name);
-       efree (id);
-       efree (status);
-      } else {
-       eprintf (ev->output, "[%s] %s (%s)",
-                 STATUS2STRING_SHORT(cur->status), (cur->module->rid ? cur->module->rid : "unknown"), (cur->module->name ? cur->module->name : "unknown"));
-      }
-
-      if (cur->si) {
-       if (cur->si->provides) {
-        char *x = set2str(':', (const char **)cur->si->provides);
-        if (ev->ipc_options & einit_ipc_output_xml) {
-         char *y = escape_xml (x);
-         eprintf (ev->output, "\n  provides=\"%s\"", y);
-         efree (y);
-        } else {
-         eprintf (ev->output, "\n > provides: %s", x);
-        }
-        efree (x);
-       }
-       if (cur->si->requires) {
-        char *x = set2str(':', (const char **)cur->si->requires);
-        if (ev->ipc_options & einit_ipc_output_xml) {
-         char *y = escape_xml (x);
-         eprintf (ev->output, "\n  requires=\"%s\"", y);
-         efree (y);
-        } else {
-         eprintf (ev->output, "\n > requires: %s", x);
-        }
-        efree (x);
-       }
-       if (cur->si->after) {
-        char *x = set2str(':', (const char **)cur->si->after);
-        if (ev->ipc_options & einit_ipc_output_xml) {
-         char *y = escape_xml (x);
-         eprintf (ev->output, "\n  after=\"%s\"", y);
-         efree (y);
-        } else {
-         eprintf (ev->output, "\n > after: %s", x);
-        }
-        efree (x);
-       }
-       if (cur->si->before) {
-        char *x = set2str(':', (const char **)cur->si->before);
-        if (ev->ipc_options & einit_ipc_output_xml) {
-         char *y = escape_xml (x);
-         eprintf (ev->output, "\n  before=\"%s\"", y);
-         efree (y);
-        } else {
-         eprintf (ev->output, "\n > before: %s", x);
-        }
-        efree (x);
-       }
-      }
-
-      if (ev->ipc_options & einit_ipc_output_xml) {
-       char **functions = set_str_dup_stable (cur->functions);
-       if (cur->enable) functions = set_str_add_stable (functions, "enable");
-       if (cur->disable) functions = set_str_add_stable (functions, "disable");
-       functions = set_str_add_stable (functions, "zap");
-
-       if (functions) {
-        char *x = set2str(':', (const char **)functions);
-        char *y = escape_xml (x);
-        eprintf (ev->output, "\n  functions=\"%s\"", y);
-        efree (y);
-        efree (x);
-
-        efree (functions);
-       }
-      }
-
-
-      if (ev->ipc_options & einit_ipc_output_xml) {
-       eputs (" />\n", ev->output);
-      } else {
-       eputs ("\n", ev->output);
-      }
-     }
-     cur = cur->next;
-    }
-   }
-  }
-
- }
-
- done:
- return;
-}
-
 void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
  char **path = ev->para;
  if (path && path[0] && path[1] && path[2] && path[3] && path[4] && strmatch (path[0], "services") && (strmatch (path[3], "users") || strmatch (path[3], "modules") || strmatch (path[3], "providers"))) {
@@ -577,9 +430,6 @@ void einit_ipc_core_helpers_ipc_stat (struct einit_event *ev) {
 }
 
 int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
- ipc_cleanup(r);
-
- event_ignore (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
  event_ignore (einit_ipc_read, einit_ipc_core_helpers_ipc_read);
  event_ignore (einit_ipc_stat, einit_ipc_core_helpers_ipc_stat);
  event_ignore (einit_ipc_write, einit_ipc_core_helpers_ipc_write);
@@ -589,11 +439,9 @@ int einit_ipc_core_helpers_cleanup (struct lmodule *irr) {
 
 int einit_ipc_core_helpers_configure (struct lmodule *r) {
  module_init (r);
- ipc_configure(r);
 
  thismodule->cleanup = einit_ipc_core_helpers_cleanup;
 
- event_listen (einit_ipc_request_generic, einit_ipc_core_helpers_ipc_event_handler);
  event_listen (einit_ipc_read, einit_ipc_core_helpers_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_core_helpers_ipc_stat);
  event_listen (einit_ipc_write, einit_ipc_core_helpers_ipc_write);

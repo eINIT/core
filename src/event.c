@@ -134,11 +134,7 @@ void *event_subthread (struct einit_event *event) {
 
  event_subthread_a (event);
 
- if ((event->type & EVENT_SUBSYSTEM_MASK) == einit_event_subsystem_ipc) {
-  if (event->argv) efree (event->argv);
- } else {
-  if (event->stringset) efree (event->stringset);
- }
+ if (event->stringset) efree (event->stringset);
 
  evdestroy (event);
 
@@ -494,8 +490,6 @@ char *event_code_to_string (const uint32_t code) {
 
   case einit_feedback_module_status:           return "feedback/module-status";
   case einit_feedback_notice:                  return "feedback/notice";
-  case einit_feedback_register_fd:             return "feedback/register-fd";
-  case einit_feedback_unregister_fd:           return "feedback/unregister-fd";
 
   case einit_feedback_broken_services:         return "feedback/broken-services";
   case einit_feedback_unresolved_services:     return "feedback/unresolved-services";
@@ -546,7 +540,6 @@ char *event_code_to_string (const uint32_t code) {
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
   case einit_event_subsystem_core:     return "core/{unknown}";
-  case einit_event_subsystem_ipc:      return "ipc";
   case einit_event_subsystem_mount:    return "mount/{unknown}";
   case einit_event_subsystem_feedback: return "feedback/{unknown}";
   case einit_event_subsystem_power:    return "power/{unknown}";
@@ -570,7 +563,6 @@ uint32_t event_string_to_code (const char *code) {
 
  if (tcode) {
   if (strmatch (tcode[0], "core"))          ret = einit_event_subsystem_core;
-  else if (strmatch (tcode[0], "ipc"))      ret = einit_event_subsystem_ipc;
   else if (strmatch (tcode[0], "mount"))    ret = einit_event_subsystem_mount;
   else if (strmatch (tcode[0], "feedback")) ret = einit_event_subsystem_feedback;
   else if (strmatch (tcode[0], "power"))    ret = einit_event_subsystem_power;
@@ -622,8 +614,6 @@ uint32_t event_string_to_code (const char *code) {
     case einit_event_subsystem_feedback:
      if (strmatch (tcode[1], "module-status"))                    ret = einit_feedback_module_status;
      else if (strmatch (tcode[1], "notice"))                      ret = einit_feedback_notice;
-     else if (strmatch (tcode[1], "register-fd"))                 ret = einit_feedback_register_fd;
-     else if (strmatch (tcode[1], "unregister-fd"))               ret = einit_feedback_unregister_fd;
 
      else if (strmatch (tcode[1], "broken-services"))             ret = einit_feedback_broken_services;
      else if (strmatch (tcode[1], "unresolved-services"))         ret = einit_feedback_unresolved_services;

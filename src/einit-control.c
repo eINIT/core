@@ -68,12 +68,14 @@ int main(int argc, char **argv) {
  int i, l, ret = 0;
  char *c = emalloc (1*sizeof (char));
  char *name = estrdup ((char *)basename(argv[0]));
- char code = 'i';
+ char code = 'r';
  c[0] = 0;
  char *f = NULL;
- if (strmatch (name, "erc")) {
+ char rc_mode = 0;
+ if (strmatch (name, "erc") || strmatch (name, "rc")) {
   c = (char *)erealloc (c, 3*sizeof (char));
   c = strcat (c, "rc");
+  rc_mode = 1;
  } else if (strcmp (name, "einit-control")) {
   c = (char *)erealloc (c, (1+strlen(name))*sizeof (char));
   c = strcat (c, name);
@@ -133,89 +135,104 @@ int main(int argc, char **argv) {
   }
  }
 
- switch (code) {
-  case 'i':
-   if (c[0]) {
-    char ansi = 0;
-    struct winsize ws;
-    char *res = NULL;
+ if (c[0] && rc_mode) {
+  char **x = str2set (' ', c);
 
-    if (!ioctl (1, TIOCGWINSZ, &ws) || !(errno == ENOTTY)) {
-     ansi = 1;
-    }
+  if (x[1] && x[2]) {
+   if (strmatch (x[1], "switch-mode")) {
+    char *path[2];
+    path[0] = "mode";
 
-    if (ansi) {
-     c = erealloc (c, (strlen(c)+8)*sizeof (char));
-     c = strcat (c, " --ansi");
-    }
-
-    if ((res = einit_ipc(c))) {
-     puts (res);
-     efree (res);
-    }
-   }
-   break;
-  case 'l':
-   while (c[0] == '/') c++;
-
-   if (c[0]) {
-    char **path = str2set ('/', c);
-    char **files = einit_ls (path);
-
-    if (files) {
-     for (i = 0; files[i]; i++) {
-      puts (files[i]);
-     }
-    }
-
-    efree (path);
+    einit_write (path, x[2]);
    } else {
-    char **files = einit_ls (NULL);
+    char *path[4];
+    path[0] = "services";
+    path[1] = "all";
+    path[2] = x[1];
+    path[3] = "status";
 
-    if (files) {
-     for (i = 0; files[i]; i++) {
-      puts (files[i]);
+    einit_write (path, x[2]);
+   }
+  }
+
+ } else {
+  if (c[0] && strmatch (c, "power down")) {
+   char *path[2];
+   path[0] = "mode";
+
+   einit_write (path, "power-down");
+  }
+
+  if (c[0] && strmatch (c, "power reset")) {
+   char *path[2];
+   path[0] = "mode";
+
+   einit_write (path, "power-reset");
+  }
+
+  switch (code) {
+   case 'l':
+    while (c[0] == '/') c++;
+
+    if (c[0]) {
+     char **path = str2set ('/', c);
+     char **files = einit_ls (path);
+
+     if (files) {
+      for (i = 0; files[i]; i++) {
+       puts (files[i]);
+      }
+     }
+
+     efree (path);
+    } else {
+     char **files = einit_ls (NULL);
+
+     if (files) {
+      for (i = 0; files[i]; i++) {
+       puts (files[i]);
+      }
      }
     }
-   }
-   break;
-  case 'r':
-   while (c[0] == '/') c++;
+    break;
+   case 'r':
+    while (c[0] == '/') c++;
 
-   if (c[0]) {
-    char **path = str2set ('/', c);
-    char *res = NULL;
+    if (c[0]) {
+     char **path = str2set ('/', c);
+     char *res = NULL;
 
-    if ((res = einit_read(path))) {
-     puts (res);
-     efree (res);
+     if ((res = einit_read(path))) {
+      puts (res);
+      efree (res);
+     }
+
+     efree (path);
     }
+    break;
+   case 'f':
+    while (c[0] == '/') c++;
 
-    efree (path);
-   }
-   break;
-  case 'f':
-   while (c[0] == '/') c++;
+    if (c[0]) {
+     char **path = str2set ('/', c);
 
-   if (c[0]) {
-    char **path = str2set ('/', c);
+     einit_read_callback (path, einit_read_callback_push, NULL);
 
-    einit_read_callback (path, einit_read_callback_push, NULL);
+     efree (path);
+    }
+    break;
+   case 'w':
+    while (f && (f[0] == '/')) f++;
 
-    efree (path);
-   }
-   break;
-  case 'w':
-   while (f && (f[0] == '/')) f++;
+    if (f && c) {
+     char **path = str2set ('/', f);
 
-   if (f && c) {
-    char **path = str2set ('/', f);
+     einit_write (path, c);
 
-    einit_write (path, c);
-
-    efree (path);
-   }
-   break;
+     efree (path);
+    }
+    break;
+  }
  }
 
  einit_disconnect();

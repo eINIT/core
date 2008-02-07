@@ -348,124 +348,6 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
-void sched_ipc_event_handler (struct einit_event *ev) {
- errno = 0;
- if (!ev) return;
- else {
-  if (strmatch (ev->argv[0], "power") && (ev->argc > 1)) {
-   if (strmatch (ev->argv[1], "down") || strmatch (ev->argv[1], "off")) {
-    shutting_down = 1;
-    ev->implemented = 1;
-
-    struct einit_event ee = evstaticinit(einit_core_switch_mode);
-    ee.string = "power-down";
-    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
-    eputs (" >> shutdown queued\n", ev->output);
-    evstaticdestroy(ee);
-   }
-   if (strmatch (ev->argv[1], "reset")) {
-    shutting_down = 1;
-    ev->implemented = 1;
-
-    struct einit_event ee = evstaticinit(einit_core_switch_mode);
-    ee.string = "power-reset";
-    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
-    eputs (" >> reset queued\n", ev->output);
-    evstaticdestroy(ee);
-   }
-  }
-
-/* actual power-down/power-reset IPC commands */
-  if (strmatch (ev->argv[0], "scheduler") && (ev->argc > 1)) {
-   char reset = 0;
-   if (strmatch (ev->argv[1], "power-down") || (reset = strmatch (ev->argv[1], "power-reset"))) {
-    ev->implemented = 1;
-
-     notice (1, "scheduler: sync()-ing");
-
-     sync ();
-
-     if (coremode == einit_mode_sandbox) {
-      notice (1, "scheduler: cleaning up");
-     }
-
-     coremode |= einit_core_exiting;
-     if (signal_semaphore) {
-      if (sem_post (signal_semaphore)) {
-       bitch(bitch_stdio, 0, "sem_post() failed.");
-      }
-     }
-
-     const char **shutdownfunctionsubnames = (const char **)str2set (':', cfg_getstring ("core-scheduler-shutdown-function-suffixes", NULL));
-
-     void  ((**reset_functions)()) = (void (**)())
-      (shutdownfunctionsubnames ? function_find((reset ? "core-power-reset" : "core-power-off"), 1, shutdownfunctionsubnames) : NULL);
-
-     eputs ((reset ? "scheduler: reset\n" : "scheduler: power down\n"), stderr);
-
-     if (reset_functions) {
-      uint32_t xn = 0;
-
-      for (; reset_functions[xn]; xn++) {
-       (reset_functions[xn]) ();
-      }
-     } else {
-      eputs ("scheduler: no (accepted) functions found, exiting\n", stderr);
-//      exit (EXIT_SUCCESS);
-      _exit (einit_exit_status_last_rites_halt);
-     }
-
-     if (shutdownfunctionsubnames) efree (shutdownfunctionsubnames);
-
-// if we still live here, something's twocked
-     eputs ("scheduler: failed, exiting\n", stderr);
-     _exit (einit_exit_status_last_rites_halt);
-//     exit (EXIT_FAILURE);
-   }
-  }
-
-  if (strmatch (ev->argv[0], "rc") && (ev->argc > 2)) {
-   ev->implemented = 1;
-
-   if (strmatch (ev->argv[1], "switch-mode")) {
-    struct einit_event ee = evstaticinit(einit_core_switch_mode);
-    ee.string = ev->argv[2];
-    if (ev->ipc_options & einit_ipc_detach) {
-     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
-     eputs (" >> modeswitch queued\n", ev->output);
-    } else {
-     ee.output = ev->output;
-     ee.ipc_options = ev->ipc_options;
-     event_emit (&ee, einit_event_flag_broadcast);
-     ev->ipc_return = ee.integer;
-    }
-    evstaticdestroy(ee);
-   } else {
-    struct einit_event ee = evstaticinit(einit_core_change_service_status);
-    ee.set = (void **)set_str_dup_stable (ev->argv+1);
-    ee.stringset = (char **)ee.set;
-    if (ev->ipc_options & einit_ipc_detach) {
-     event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
-     eputs (" >> status change queued\n", ev->output);
-    } else {
-     ee.output = ev->output;
-     ee.ipc_options = ev->ipc_options;
-     event_emit (&ee, einit_event_flag_broadcast);
-     ev->ipc_return = ee.integer;
-    }
-    evstaticdestroy(ee);
-   }
-  }
-
-  if (errno) {
-#ifdef DEBUG
-   perror ("sched_ipc_event_handler: cleanup sanity check");
-#endif
-   errno = 0;
-  }
- }
-}
-
 void *sched_pidthread_processor(FILE *pipe) {
  char buffer [BUFFERSIZE];
  char **message = NULL;
@@ -695,7 +577,6 @@ int einit_scheduler_configure (struct lmodule *tm) {
 
  event_listen (einit_timer_set, sched_timer_event_handler_set);
  event_listen (einit_core_main_loop_reached, sched_einit_event_handler_main_loop_reached);
- event_listen (einit_ipc_request_generic, sched_ipc_event_handler);
 
  function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
 

@@ -38,8 +38,8 @@
   <options shutdown="yes" />
   <overrides>
    <ttys s="none" />
-   <before-switch emit-event="power/mps-down-scheduled" ipc="save configuration" />
-   <after-switch emit-event="power/mps-down-imminent" ipc="scheduler power-down" />
+   <before-switch emit-event="power/mps-down-scheduled" />
+   <after-switch emit-event="power/mps-down-imminent" />
   </overrides>
  </mode>
 
@@ -48,8 +48,8 @@
   <options shutdown="yes" />
   <overrides>
    <ttys s="none" />
-   <before-switch emit-event="power/reset-scheduled" ipc="save configuration" />
-   <after-switch emit-event="power/reset-imminent" ipc="scheduler power-reset" />
+   <before-switch emit-event="power/reset-scheduled" />
+   <after-switch emit-event="power/reset-imminent" />
   </overrides>
  </mode>
 
