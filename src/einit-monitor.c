@@ -65,16 +65,12 @@ char *readfd (int fd) {
  if (!buf) return NULL;
 
  do {
-  fprintf (stderr, "reading.\n");
   buf = realloc (buf, blen + BUFFERSIZE * 10);
   if (buf == NULL) return NULL;
-  fprintf (stderr, ".\n");
 
   rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
   blen = blen + rn;
  } while (rn > 0);
-
- fprintf (stderr, "done.\n");
 
  if (blen > -1) {
   data = realloc (buf, blen+1);
@@ -233,7 +229,6 @@ int main(int argc, char **argv, char **env) {
  int i = 0, it = 0;
  char force_init = (getpid() == 1);
  char need_recovery = 0;
- char is_ipc = 0;
 
 #if defined(LINUX) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
@@ -246,8 +241,6 @@ int main(int argc, char **argv, char **env) {
   } else if (!strcmp(argv[i], "--sandbox")) {
    need_recovery = 1;
    is_sandbox = 1;
-  } else if (!strcmp(argv[i], "--ipc")) {
-   is_ipc = 1;
   }
 
   argv_mutable[it] = argv[i];
@@ -270,12 +263,6 @@ int main(int argc, char **argv, char **env) {
   if ( sigaction (SIGPIPE, &action, NULL) ) perror ("calling sigaction() failed");
 
   return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
- }
-
- if (is_ipc) {
-  execve (EINIT_LIB_BASE "/bin/einit-core", argv, env);
-  perror ("couldn't execute eINIT");
-  return -1;
  }
 
 /* non-ipc, non-core */
