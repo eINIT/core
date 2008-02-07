@@ -81,7 +81,6 @@ struct cfgnode {
  char *idattr;
 };
 
-struct stree *hconfiguration;
 struct utsname osinfo;
 pthread_attr_t thread_attribute_detached;
 

@@ -2,9 +2,6 @@
 <einit>
  <core>
   <settings>
-   <xml-parser>
-    <auto-create-missing-directories b="true" />
-   </xml-parser>
    <configuration>
     <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
 

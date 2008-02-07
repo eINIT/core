@@ -87,7 +87,6 @@ struct stree *service_usage = NULL;
 char einit_new_node = 0;
 struct stree *exported_functions = NULL;
 unsigned char *gdebug = 0;
-struct stree *hconfiguration = NULL;
 struct utsname osinfo = {};
 pthread_attr_t thread_attribute_detached = {};
 struct spidcb *sched_deadorphans = NULL;

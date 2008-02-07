@@ -97,6 +97,10 @@ struct cfgnode *curmode = NULL;
 char **xml_configuration_files = NULL;
 time_t xml_configuration_files_highest_mtime = 0;
 
+char **xml_configuration_new_files = NULL;
+
+pthread_mutex_t xml_configuration_new_files_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int bootstrap_einit_configuration_xml_expat_cleanup (struct lmodule *this) {
  function_unregister ("einit-configuration-converter-xml", 1, einit_config_xml_cfg_to_xml);
 
@@ -128,8 +132,6 @@ struct einit_xml_expat_user_data {
  enum einit_cfg_node_options type;
  uint32_t adds;
 };
-
-char xml_parser_auto_create_missing_directories = 0;
 
 void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_Char **atts) {
  int nlen = strlen (name);
@@ -200,17 +202,66 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
     efree (newnode);
    }
   } else {
+   if (strmatch (((struct einit_xml_expat_user_data *)userData)->prefix, "core-commands-include-directory")) {
+/* we gotta include some extra dir */
+    const char *dir = NULL;
+    const char *allow = "\\.xml$";
+    const char *disallow = NULL;
+
+    if (atts) {
+     for (i = 0; atts[i]; i+=2) {
+      if (strmatch (atts[i], "path")) {
+       dir = atts[i+1];
+      } else if (strmatch (atts[i], "pattern-allow")) {
+       allow = atts[i+1];
+      } else if (strmatch (atts[i], "pattern-disallow")) {
+       disallow = atts[i+1];
+      }
+     }
+    }
+
+    if (dir) {
+     char **files = readdirfilter (NULL, dir, allow, disallow, 0);
+
+     if (files) {
+      setsort ((void **)files, set_sort_order_string_lexical, NULL);
+
+      for (i = 0; files[i]; i++) {
+       emutex_lock (&xml_configuration_new_files_mutex);
+
+       xml_configuration_new_files = set_str_add_stable (xml_configuration_new_files, files[i]);
+
+       emutex_unlock (&xml_configuration_new_files_mutex);
+      }
+
+      efree (files);
+     }
+    }
+   } else if (strmatch (((struct einit_xml_expat_user_data *)userData)->prefix, "core-commands-include-file")) {
+/* we gotta include some extra file */
+    if (atts) {
+     for (i = 0; atts[i]; i+=2) {
+      if (strmatch (atts[i], "s")) {
+       emutex_lock (&xml_configuration_new_files_mutex);
+
+       xml_configuration_new_files = set_str_add_stable (xml_configuration_new_files, (char *)atts[i+1]);
+
+       emutex_unlock (&xml_configuration_new_files_mutex);
+      }
+     }
+    }
+   } else {
 /* parse the information presented in the element as a variable */
-   struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
-   newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
+    struct cfgnode *newnode = ecalloc (1, sizeof (struct cfgnode));
+    newnode->type = ((struct einit_xml_expat_user_data *)userData)->type;
 
-   newnode->type |= einit_node_regular;
+    newnode->type |= einit_node_regular;
 
-   newnode->id = (char *)str_stabilise (((struct einit_xml_expat_user_data *)userData)->prefix);
-   newnode->mode = curmode;
-   newnode->arbattrs = set_str_dup_stable ((char **)atts);
-   if (newnode->arbattrs)
-    for (; newnode->arbattrs[i] != NULL; i+=2) {
+    newnode->id = (char *)str_stabilise (((struct einit_xml_expat_user_data *)userData)->prefix);
+    newnode->mode = curmode;
+    newnode->arbattrs = set_str_dup_stable ((char **)atts);
+    if (newnode->arbattrs)
+     for (; newnode->arbattrs[i] != NULL; i+=2) {
      if (strmatch (newnode->arbattrs[i], "s"))
       newnode->svalue = (char *)newnode->arbattrs[i+1];
      else if (strmatch (newnode->arbattrs[i], "i"))
@@ -218,10 +269,11 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
      else if (strmatch (newnode->arbattrs[i], "b")) {
       newnode->flag = parse_boolean (newnode->arbattrs[i+1]);
      }
-    }
-   if (cfg_addnode (newnode) != -1)
-    ((struct einit_xml_expat_user_data *)userData)->adds++;
-   efree (newnode);
+     }
+     if (cfg_addnode (newnode) != -1)
+      ((struct einit_xml_expat_user_data *)userData)->adds++;
+     efree (newnode);
+   }
   }
 }
 
@@ -256,10 +308,8 @@ void cfg_xml_handler_tag_end (void *userData, const XML_Char *name) {
 
 int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  static char recursion = 0;
- int blen, cfgplen;
+ int blen;
  char *data;
- struct stree *hnode;
- struct cfgnode *node = NULL;
  char *confpath = NULL;
  XML_Parser par;
  struct stat st;
@@ -323,9 +373,6 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
   }
   efree (data);
 
-  xml_parser_auto_create_missing_directories =
-    (node = cfg_getnode("core-settings-xml-parser-auto-create-missing-directories", NULL)) && node->flag;
-
   if (!recursion) {
    confpath = cfg_getpath ("core-settings-configuration-path");
    if (!confpath) confpath = "/etc/einit/";
@@ -333,54 +380,40 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
     if (confpath[0] == '/') confpath++;
    }
 
-   cfgplen = strlen(confpath) +1;
-   rescan_node:
-   hnode = hconfiguration;
+   char *file = NULL;
 
-   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-directory", tree_find_first))) {
-    node = (struct cfgnode *)hnode->value;
-    char **files = readdirfilter (node, NULL, "\\.xml$", NULL, 0);
+   emutex_lock (&xml_configuration_new_files_mutex);
+   while (xml_configuration_new_files) {
+    if ((file = (char*)str_stabilise (xml_configuration_new_files[0]))) {
+     xml_configuration_new_files = strsetdel (xml_configuration_new_files, file);
 
-    if (files) {
-     int ixx = 0;
-     setsort ((void **)files, set_sort_order_string_lexical, NULL);
+     emutex_unlock (&xml_configuration_new_files_mutex);
 
-     for (; files[ixx]; ixx++) {
-//      fprintf (stderr, " * %s\n", files[ixx]);
+     struct stat st;
+
+     if ((file[0] == '/') || !stat (file, &st)) {
       recursion++;
-      einit_config_xml_expat_parse_configuration_file (files[ixx]);
+      einit_config_xml_expat_parse_configuration_file (file);
       recursion--;
+     } else {
+      char *includefile = joinpath(confpath, file);
+
+      recursion++;
+      einit_config_xml_expat_parse_configuration_file (includefile);
+      recursion--;
+
+      efree (includefile);
      }
 
-     efree (files);
-    }
-
-    streedel (hnode);
-    goto rescan_node;
-   }
-
-   while (hconfiguration && (hnode = streefind (hconfiguration, "core-commands-include-file", tree_find_first))) {
-    node = (struct cfgnode *)hnode->value;
-    if (node->svalue) {
-     char *includefile = ecalloc (1, sizeof(char)*(cfgplen+strlen(node->svalue)));
-     includefile = strcat (includefile, confpath);
-     includefile = strcat (includefile, node->svalue);
-     recursion++;
-
-     einit_config_xml_expat_parse_configuration_file (includefile);
-     recursion--;
-     efree (includefile);
-//     if (node->id) efree (node->id);
-//     streedel (hconfiguration, hnode);
-     streedel (hnode);
-     goto rescan_node;
+     emutex_lock (&xml_configuration_new_files_mutex);
     }
    }
+   emutex_unlock (&xml_configuration_new_files_mutex);
   }
 
   if (expatuserdata.prefix) efree (expatuserdata.prefix);
 
-  return hconfiguration != NULL;
+  return 1;
  } else if (errno) {
   notice (3, "could not read file \"%s\": %s\n", configfile, strerror (errno));
 
@@ -391,7 +424,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
  if (expatuserdata.prefix) efree (expatuserdata.prefix);
 
- return hconfiguration != NULL;
+ return 1;
 }
 
 void einit_config_xml_expat_event_handler_core_update_configuration (struct einit_event *ev) {

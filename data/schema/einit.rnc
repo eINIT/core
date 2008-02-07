@@ -43,9 +43,6 @@ eINITMain =
 
 Core = element core {
   element settings {
-    element xml-parser {
-      element auto-create-missing-directories { BooleanAttribute }?
-    }? &
     element configuration {
       element on-line-modifications { attribute save-to { text } }? &
       element multi-node-variables { attribute allow { text } }?

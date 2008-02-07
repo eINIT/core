@@ -77,7 +77,6 @@ pid_t einit_sub = 0;
 char isinit = 1, initoverride = 0;
 
 char **einit_global_environment = NULL, **einit_initial_environment = NULL, **einit_argv = NULL;
-struct stree *hconfiguration = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;

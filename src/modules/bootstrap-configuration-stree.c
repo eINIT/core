@@ -82,6 +82,8 @@ struct {
  .chunks = NULL
 };
 
+struct stree *hconfiguration = NULL;
+
 pthread_mutex_t cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void cfg_stree_garbage_add_chunk (void *chunk) {
