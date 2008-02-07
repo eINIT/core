@@ -229,7 +229,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
       for (i = 0; files[i]; i++) {
        emutex_lock (&xml_configuration_new_files_mutex);
 
-       xml_configuration_new_files = set_str_add_stable (xml_configuration_new_files, files[i]);
+       xml_configuration_new_files = set_str_add (xml_configuration_new_files, files[i]);
 
        emutex_unlock (&xml_configuration_new_files_mutex);
       }
@@ -244,7 +244,7 @@ void cfg_xml_handler_tag_start (void *userData, const XML_Char *name, const XML_
       if (strmatch (atts[i], "s")) {
        emutex_lock (&xml_configuration_new_files_mutex);
 
-       xml_configuration_new_files = set_str_add_stable (xml_configuration_new_files, (char *)atts[i+1]);
+       xml_configuration_new_files = set_str_add (xml_configuration_new_files, (char *)atts[i+1]);
 
        emutex_unlock (&xml_configuration_new_files_mutex);
       }
@@ -384,7 +384,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
 
    emutex_lock (&xml_configuration_new_files_mutex);
    while (xml_configuration_new_files) {
-    if ((file = (char*)str_stabilise (xml_configuration_new_files[0]))) {
+    if ((file = estrdup (xml_configuration_new_files[0]))) {
      xml_configuration_new_files = strsetdel (xml_configuration_new_files, file);
 
      emutex_unlock (&xml_configuration_new_files_mutex);
@@ -405,6 +405,7 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
       efree (includefile);
      }
 
+     efree (file);
      emutex_lock (&xml_configuration_new_files_mutex);
     }
    }

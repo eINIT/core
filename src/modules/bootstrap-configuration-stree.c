@@ -160,10 +160,23 @@ int cfg_addnode_f (struct cfgnode *node) {
    int i = 0;
    for (; node->arbattrs[i]; i+=2) {
     if (strmatch (node->arbattrs[i], "allow")) {
+//     fprintf (stderr, " ** new: %s\n", node->arbattrs[i+1]);
+//     fflush (stderr);
+
+//     sleep (1);
+
      eregfree (&cfg_storage_allowed_duplicates);
-     if (!eregcomp (&cfg_storage_allowed_duplicates, node->arbattrs[i+1])) {
+     if (eregcomp (&cfg_storage_allowed_duplicates, node->arbattrs[i+1])) {
+//      fprintf (stderr, " ** backup: .*\n");
+//      fflush (stderr);
+
+//      sleep (1);
+
       eregcomp (&cfg_storage_allowed_duplicates, ".*");
      }
+
+//     fprintf (stderr, " ** done\n");
+//     fflush (stderr);
     }
    }
   }
@@ -211,9 +224,14 @@ int cfg_addnode_f (struct cfgnode *node) {
    char allow_multi = 0;
    char id_match = 0;
 
+//   fprintf (stderr, " ** multicheck: %s*\n", node->id);
    if (regexec (&cfg_storage_allowed_duplicates, node->id, 0, NULL, 0) != REG_NOMATCH) {
+//    fprintf (stderr, "allow multi: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
     allow_multi = 1;
+   }/* else {
+    fprintf (stderr, " ** not multi*\n");
    }
+   fflush (stderr);*/
 
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
        strmatch (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
@@ -241,12 +259,12 @@ int cfg_addnode_f (struct cfgnode *node) {
     doop = 0;
 
     break;
-   }
+   } else
 
-   if (allow_multi) {
+//   if (allow_multi || node->idattr) {
 //   cur = streenext (cur);
     cur = streefind (cur, node->id, tree_find_next);
-   }
+//   }
   }
  }
 
