@@ -42,7 +42,6 @@ eINITMain =
   element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
 
 Core = element core {
-  element xml-validator { attribute command { text } }? &
   element settings {
     element xml-parser {
       element auto-create-missing-directories { BooleanAttribute }?

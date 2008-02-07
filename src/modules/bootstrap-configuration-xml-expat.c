@@ -418,36 +418,6 @@ void einit_config_xml_expat_event_handler_core_update_configuration (struct eini
  }
 }
 
-/*
-void einit_config_xml_expat_ipc_event_handler (struct einit_event *ev) {
- if ((ev->argc >= 2) && strmatch (ev->argv[0], "examine") && strmatch (ev->argv[1], "configuration")) {
-  char *command = cfg_getstring ("core-xml-validator/command", NULL);
-
-  if (command) {
-   char *xmlfiles = set2str (' ', (const char **)xml_configuration_files);
-   char **vars = set_str_add (NULL, "files");
-   vars = set_str_add (vars, xmlfiles);
-   vars = set_str_add (vars, "rnc_schema");
-   vars = set_str_add (vars, EINIT_LIB_BASE "/schemata/einit.rnc");
-   char *cm = apply_variables (command, (const char **)vars);
-
-   FILE *f = popen (cm, "r");
-   if (f) {
-    char linebuffer[BUFFERSIZE];
-    while (fgets (linebuffer, BUFFERSIZE, f)) {
-     fputs (linebuffer, ev->output);
-    }
-    pclose (f);
-   }
-
-   efree (vars);
-   efree (xmlfiles);
-   efree (cm);
-  }
- }
-}
-*/
-
 #define RNV_INVOCATION "rnv -q -n 255"
 
 void einit_config_xml_expat_ipc_read (struct einit_event *ev) {

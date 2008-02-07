@@ -69,12 +69,6 @@
   </mortality>
 <!--  <mode s="init" /> -->
 
-  <xml-validator
-    command="if [ ! -e &quot;$(which rnv)&quot; ]; then
-              echo 'RNV is not installed, not validating XML files!';
-             elif ! rnv -q -n 255 ${rnc_schema} ${files}; then
-              echo 'some configuration files failed validation!';
-             fi" />
  </core>
  <configuration>
 <!-- A note on the configuration variables in this file: If it appears in this file, and it also
