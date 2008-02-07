@@ -702,7 +702,7 @@ int einit_write (char **path, char *data) {
 
  char *buffer = einit_render_path (path);
 
- IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
+ IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OWRITE);
 
  if (f) {
   ixp_write(f, data, strlen(data));
