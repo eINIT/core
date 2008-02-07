@@ -224,6 +224,11 @@ int cfg_addnode_f (struct cfgnode *node) {
    char allow_multi = 0;
    char id_match = 0;
 
+   if ((((struct cfgnode *)cur->value)->mode != node->mode)) {
+    cur = streefind (cur, node->id, tree_find_next);
+    continue;
+   }
+
 //   fprintf (stderr, " ** multicheck: %s*\n", node->id);
    if (regexec (&cfg_storage_allowed_duplicates, node->id, 0, NULL, 0) != REG_NOMATCH) {
 //    fprintf (stderr, "allow multi: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
@@ -238,7 +243,7 @@ int cfg_addnode_f (struct cfgnode *node) {
     id_match = 1;
    }
 
-   if ((!allow_multi && (!node->idattr)) || id_match) {
+   if (((!allow_multi && (!node->idattr)) || id_match)) {
 // this means we found something that looks like it
 //    fprintf (stderr, "replacing old config: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
 //    fflush (stderr);
