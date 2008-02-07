@@ -95,297 +95,20 @@ char einit_quietness = 0;
 
 #endif
 
-struct remote_event_function {
- uint32_t type;                                 /*!< type of function */
- void (*handler)(struct einit_remote_event *);  /*!< handler function */
- struct remote_event_function *next;            /*!< next function */
-};
-
-pthread_mutex_t einit_evf_mutex = PTHREAD_MUTEX_INITIALIZER;
-struct remote_event_function *event_remote_event_functions = NULL;
-uint32_t remote_event_cseqid = 1;
-
-char einit_connected = 0;
-
-struct einit_xml2stree_parser_data {
- struct stree *node;
- struct stree *rootnode;
-};
-
-struct stree *einit_get_all_modules () {
+void einit_power_down () {
+ einit_switch_mode ("power-down");
 }
 
-struct einit_module *einit_get_module_status (char *module) {
-}
-
-void einit_module_free (struct einit_module *module) {
- if (module) {
-  if (module->id) efree (module->id);
-  if (module->name) efree (module->name);
-  if (module->requires) efree (module->requires);
-  if (module->provides) efree (module->provides);
-  if (module->after) efree (module->after);
-  if (module->functions) efree (module->functions);
-  if (module->before) efree (module->before);
-
-  efree (module);
- }
-}
-
-void modulestree_free(struct stree *tree) {
- if (!tree) return;
-
- struct stree *cur = streelinear_prepare(tree);
- do {
-  struct einit_module *module = cur->value;
-
-  if (module) {
-   if (module->id) efree (module->id);
-   if (module->name) efree (module->name);
-   if (module->requires) efree (module->requires);
-   if (module->provides) efree (module->provides);
-   if (module->after) efree (module->after);
-   if (module->functions) efree (module->functions);
-   if (module->before) efree (module->before);
-  }
-
-  cur = streenext (cur);
- } while (cur);
-
- streefree (tree);
-}
-
-struct stree *einit_get_all_services () {
-}
-
-void servicestree_free_protect(struct stree *tree, char *pserv) {
- if (!tree) return;
-
- struct stree *cur = streelinear_prepare(tree);
- do {
-  if (!strmatch (pserv, cur->key)) {
-   struct einit_service *service = cur->value;
-
-   if (service) {
-    if (service->name) efree (service->name);
-    if (service->used_in_mode) efree (service->used_in_mode);
-    if (service->group) {
-     if (service->group->services)
-      efree (service->group->services);
-     if (service->group->seq)
-      efree (service->group->seq);
-
-     efree (service->group);
-    }
-    if (service->modules) modulestree_free (service->modules);
-   }
-  }
-
-  cur = streenext (cur);
- } while (cur);
-
- streefree (tree);
-}
-
-
-struct einit_service *einit_get_service_status (char *service) {
-}
-
-void einit_service_free (struct einit_service *service) {
- if (service) {
-  if (service->name) efree (service->name);
-  if (service->used_in_mode) efree (service->used_in_mode);
-  if (service->group) {
-   if (service->group->services)
-    efree (service->group->services);
-   if (service->group->seq)
-    efree (service->group->seq);
-
-   efree (service->group);
-  }
-  if (service->modules) modulestree_free (service->modules);
- }
-}
-
-void servicestree_free(struct stree *tree) {
- if (!tree) return;
-
- struct stree *cur = streelinear_prepare(tree);
- do {
-  struct einit_service *service = cur->value;
-
-  if (service) {
-   if (service->name) efree (service->name);
-   if (service->used_in_mode) efree (service->used_in_mode);
-   if (service->group) {
-    if (service->group->services)
-     efree (service->group->services);
-    if (service->group->seq)
-     efree (service->group->seq);
-
-    efree (service->group);
-   }
-   if (service->modules) modulestree_free (service->modules);
-  }
-
-  cur = streenext (cur);
- } while (cur);
-
- streefree (tree);
-}
-
-
-void einit_power_down () { // shut down
-/* char *r = einit_ipc_request_xml ("power down");
- efree (r);*/
-}
-
-void einit_power_reset () { // reboot
-/* char *r = einit_ipc_request_xml ("power reset");
- efree (r); */
-}
-
-void einit_service_call (const char *service, const char *command) {
- char *tmp;
- uint32_t len;
-
- if (!command || !service) return;
- tmp = emalloc ((len = (strlen(service) + strlen (command) + 14)));
-
- esprintf (tmp, len, "rc %s %s --detach", service, command);
-
-/* einit_ipc_request_xml(tmp); */
-
- efree (tmp);
-}
-
-void einit_service_enable (const char *service) {
- einit_service_call (service, "enable");
-}
-
-void einit_service_disable (const char *service) {
- einit_service_call (service, "disable");
-}
-
-void einit_module_id_call (const char *module, const char *command) {
- char *tmp;
- uint32_t len;
-
- if (!command || !module) return;
- tmp = emalloc ((len = (strlen(module) + strlen (command) + 21)));
-
-// esprintf (tmp, len, "module-rc %s %s --detach", module, command);
- esprintf (tmp, len, "rc %s %s --detach", module, command);
-
-/* einit_ipc_request_xml(tmp); */
-
- efree (tmp);
-}
-
-void einit_module_id_enable (const char *module) {
- einit_module_id_call (module, "enable");
-}
-
-void einit_module_id_disable (const char *module) {
- einit_module_id_call (module, "disable");
+void einit_power_reset () {
+ einit_switch_mode ("power-reset");
 }
 
 void einit_switch_mode (const char *mode) { // think "runlevel"
- char *tmp;
- uint32_t len;
+ char *path[2];
+ path[0] = "mode";
+ path[1] = NULL;
 
- if (!mode) return;
- tmp = emalloc ((len = (strlen(mode) + 25)));
-
- esprintf (tmp, len, "rc switch-mode %s --detach", mode);
-
-/* einit_ipc_request_xml(tmp); */
-
- efree (tmp);
-}
-
-void einit_reload_configuration () { // "update configuration"
-/* char *r = einit_ipc_request_xml ("update configuration");
- efree (r); */
-}
-
-struct stree *einit_get_all_modes() {
-}
-
-void modestree_free(struct stree *tree) {
- if (!tree) return;
-
- struct stree *cur = streelinear_prepare(tree);
- do {
-  struct einit_mode_summary *mode = cur->value;
-
-  if (mode) {
-   if (mode->id) efree (mode->id);
-   if (mode->base) efree (mode->base);
-   if (mode->services) efree (mode->services);
-   if (mode->critical) efree (mode->critical);
-   if (mode->disable) efree (mode->disable);
-  }
-
-  cur = streenext (cur);
- } while (cur);
-
- streefree (tree);
-}
-
-void einit_remote_event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_remote_event *)) {
- struct remote_event_function *fstruct = ecalloc (1, sizeof (struct remote_event_function));
-
- fstruct->type = type & EVENT_SUBSYSTEM_MASK;
- fstruct->handler = handler;
-
- emutex_lock (&einit_evf_mutex);
-  if (event_remote_event_functions)
-   fstruct->next = event_remote_event_functions;
-
-  event_remote_event_functions = fstruct;
- emutex_unlock (&einit_evf_mutex);
-}
-
-void einit_remote_event_ignore (enum einit_event_subsystems type, void (* handler)(struct einit_remote_event *)) {
- if (!event_remote_event_functions) return;
-
- uint32_t ltype = type & EVENT_SUBSYSTEM_MASK;
-
- emutex_lock (&einit_evf_mutex);
-  struct remote_event_function *cur = event_remote_event_functions;
-  struct remote_event_function *prev = NULL;
-  while (cur) {
-   if ((cur->type==ltype) && (cur->handler==handler)) {
-    if (prev == NULL) {
-     event_remote_event_functions = cur->next;
-     efree (cur);
-     cur = event_remote_event_functions;
-    } else {
-     prev->next = cur->next;
-     efree (cur);
-     cur = prev->next;
-    }
-   } else {
-    prev = cur;
-    cur = cur->next;
-   }
-  }
- emutex_unlock (&einit_evf_mutex);
-
- return;
-}
-
-struct einit_remote_event *einit_remote_event_create (uint32_t type) {
- struct einit_remote_event *nev = ecalloc (1, sizeof (struct einit_remote_event));
-
- nev->type = type;
-
- return nev;
-}
-
-void einit_remote_event_destroy (struct einit_remote_event *ev) {
- efree (ev);
+ einit_write (path, mode);
 }
 
 /* client */
@@ -393,13 +116,6 @@ void einit_remote_event_destroy (struct einit_remote_event *ev) {
 char *einit_ipc_address = "unix!/dev/einit-9p";
 IxpClient *einit_ipc_9p_client = NULL;
 pid_t einit_ipc_9p_client_pid = 0;
-
-void *einit_event_emit_remote_dispatch (struct einit_remote_event *ev) {
- return NULL;
-}
-
-void einit_event_emit_remote (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
-}
 
 char einit_connect(int *argc, char **argv) {
  char *envvar = getenv ("EINIT_9P_ADDRESS");
@@ -503,17 +219,6 @@ char einit_disconnect() {
 
  ixp_unmount (einit_ipc_9p_client);
  return 1;
-}
-
-void einit_receive_events() {
-}
-
-void einit_remote_event_emit_dispatch (struct einit_remote_event *ev) {
- return;
-}
-
-void einit_remote_event_emit (struct einit_remote_event *ev, enum einit_event_emit_flags flags) {
- return;
 }
 
 char *einit_render_path (char **path) {
@@ -696,7 +401,7 @@ int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), v
  return 0;
 }
 
-int einit_write (char **path, char *data) {
+int einit_write (char **path, const char *data) {
  if (!data) return 0;
 
  char *buffer = einit_render_path (path);
@@ -704,7 +409,7 @@ int einit_write (char **path, char *data) {
  IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OWRITE);
 
  if (f) {
-  ixp_write(f, data, strlen(data));
+  ixp_write(f, (char *)data, strlen(data));
 
   ixp_close (f);
  }
