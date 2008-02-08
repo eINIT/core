@@ -266,7 +266,7 @@ int main(int argc, char **argv, char **env) {
  }
 
 /* non-ipc, non-core */
- argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
+// argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
  execve (EINIT_LIB_BASE "/bin/einit-helper", argv_mutable, env);
  perror ("couldn't execute " EINIT_LIB_BASE "/bin/einit-helper");
  return -1;

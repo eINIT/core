@@ -142,14 +142,16 @@ int main(int argc, char **argv) {
    if (strmatch (x[1], "switch-mode")) {
     char *path[2];
     path[0] = "mode";
+    path[1] = NULL;
 
     einit_write (path, x[2]);
    } else {
-    char *path[4];
+    char *path[5];
     path[0] = "services";
     path[1] = "all";
     path[2] = x[1];
     path[3] = "status";
+    path[4] = NULL;
 
     einit_write (path, x[2]);
    }
@@ -159,6 +161,7 @@ int main(int argc, char **argv) {
   if (c[0] && strmatch (c, "power down")) {
    char *path[2];
    path[0] = "mode";
+   path[1] = NULL;
 
    einit_write (path, "power-down");
   }
@@ -166,6 +169,7 @@ int main(int argc, char **argv) {
   if (c[0] && strmatch (c, "power reset")) {
    char *path[2];
    path[0] = "mode";
+   path[1] = NULL;
 
    einit_write (path, "power-reset");
   }

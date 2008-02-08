@@ -52,10 +52,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char o_use_running_einit = 0;
 char o_sandbox = 0;
 
-void help_preface () {
- fprintf (stdout, " :: Advanced Options ::\n"
-                  " --wtf                Examine Configuration Files\n\n"
-                  " :: Core Help ::\n");
+void help_preface (char *argv0) {
+ fprintf (stdout, "Usage: %s [options]\n\n"
+
+                  " :: Manipulating a running instance of eINIT (Live) ::\n"
+                  " -e <service>         Enable <service>\n"
+                  " -d <service>         Disable <service>\n"
+                  " -c <service> <f>     Call Custom Hook <f> on <service>\n\n"
+
+                  " -em <module>         Enable <module>\n"
+                  " -dm <module>         Disable <module>\n"
+                  " -cm <module> <f>     Call Custom Hook <f> on <module>\n\n"
+
+                  " -H, -D               Shut Down\n"
+                  " -R                   Reboot\n\n"
+
+                  " -m <mode>            Switch to <mode>\n\n"
+
+                  " :: Advanced Options ::\n"
+                  " --wtf                Examine Configuration Files\n"
+                  " -q                   Force doing all calls on a running instance of eINIT\n"
+                  " -p                   Force doing all calls on a private instance of eINIT\n"
+                  " -L, --licence        Display Licence\n"
+                  " -v, --version        Display Version\n\n"
+                  " -a <address>         Specify a custom 9p Address to use for IPC\n\n"
+
+                  " :: Core Help ::\n", argv0);
 }
 
 int main(int argc, char **argv, char **env) {
@@ -65,6 +87,12 @@ int main(int argc, char **argv, char **env) {
  char c_wtf = 0;
 
  int i = 0;
+
+ char *c_service[2] = { NULL, NULL };
+ char *c_module[2] = { NULL, NULL };
+ char *c_mode = NULL;
+ char c_down = 0;
+ char c_reset = 0;
 
  for (i = 0; i < argc; i++) {
   if (strmatch (argv[i], "-v") || strmatch (argv[i], "--version")) {
@@ -79,11 +107,71 @@ int main(int argc, char **argv, char **env) {
    o_sandbox = 1;
   } else if (strmatch (argv[i], "--wtf")) {
    c_wtf = 1;
+  } else if (strmatch (argv[i], "-e") && ((i+1) < argc)) {
+   c_service [0] = argv[i+1];
+   c_service [1] = "enable";
+   i++;
+  } else if (strmatch (argv[i], "-d") && ((i+1) < argc)) {
+   c_service [0] = argv[i+1];
+   c_service [1] = "disable";
+   i++;
+  } else if (strmatch (argv[i], "-c") && ((i+2) < argc)) {
+   c_service [0] = argv[i+1];
+   c_service [1] = argv[i+2];
+   i+=2;
+  } else if (strmatch (argv[i], "-em") && ((i+1) < argc)) {
+   c_module [0] = argv[i+1];
+   c_module [1] = "enable";
+   i++;
+  } else if (strmatch (argv[i], "-dm") && ((i+1) < argc)) {
+   c_module [0] = argv[i+1];
+   c_module [1] = "disable";
+   i++;
+  } else if (strmatch (argv[i], "-cm") && ((i+2) < argc)) {
+   c_module [0] = argv[i+1];
+   c_module [1] = argv[i+2];
+   i+=2;
+  } else if (strmatch (argv[i], "-H") || strmatch (argv[i], "-D")) {
+   c_down = 1;
+  } else if (strmatch (argv[i], "-R")) {
+   c_reset = 1;
+  } else if (strmatch (argv[i], "-m") && ((i+1) < argc)) {
+   c_mode = argv[i+1];
+   i++;
   }
  }
 
- if (!c_version && !c_licence && !c_wtf)
+ if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset)
   c_help = 1;
+
+ if (c_mode || c_service[0] || c_module[0] || c_down || c_reset) {
+  if (!einit_connect(&argc, argv)) {
+   perror ("Could not connect to eINIT");
+   exit (EXIT_FAILURE);
+  }
+
+  if (c_mode) {
+   einit_switch_mode (c_mode);
+  }
+
+  if (c_down) {
+   einit_power_down ();
+  }
+
+  if (c_reset) {
+   einit_power_reset ();
+  }
+
+  if (c_service[0]) {
+   einit_service_call (c_service[0], c_service[1]);
+  }
+
+  if (c_module[0]) {
+   einit_module_call (c_module[0], c_module[1]);
+  }
+
+  einit_disconnect();
+ }
 
  if (c_version || c_licence || c_help || c_wtf) {
   char **c = NULL;
@@ -141,13 +229,13 @@ int main(int argc, char **argv, char **env) {
 
     einit_disconnect ();
    } else {
-    fprintf (stderr, "Can't connect to eINIT.\n");
+    perror ("Could not connect to eINIT");
    }
 
    return 0;
   } else {
    if (c_help)
-    help_preface();
+    help_preface(argv[0]);
 
    execve (EINIT_LIB_BASE "/bin/einit-core", c, env);
    perror ("couldn't execute eINIT!");

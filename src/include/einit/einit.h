@@ -150,6 +150,24 @@ int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), v
  */
 int einit_write (char **path, const char *data);
 
+/*!\brief Manipulate a Service
+ *
+ * This will call the specified 'action' on the specified 'service'
+ *
+ * \param[in] service the service to manipulate
+ * \param[in] action the action to call
+ */
+void einit_service_call (const char *service, const char *action);
+
+/*!\brief Manipulate a Module
+ *
+ * This will call the specified 'action' on the specified 'module'
+ *
+ * \param[in] rid the module to manipulate (in 'rid' form)
+ * \param[in] action the action to call
+ */
+void einit_module_call (const char *rid, const char *action);
+
 #ifdef __cplusplus
 }
 #endif

@@ -417,3 +417,25 @@ int einit_write (char **path, const char *data) {
  efree (buffer);
  return 0;
 }
+
+void einit_service_call (const char *service, const char *action) {
+ const char *path[5];
+ path[0] = "services";
+ path[1] = "all";
+ path[2] = service;
+ path[3] = "status";
+ path[4] = NULL;
+
+ einit_write ((char **)path, action);
+}
+
+void einit_module_call (const char *rid, const char *action) {
+ const char *path[5];
+ path[0] = "modules";
+ path[1] = "all";
+ path[2] = rid;
+ path[3] = "status";
+ path[4] = NULL;
+
+ einit_write ((char **)path, action);
+}
