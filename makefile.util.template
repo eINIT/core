@@ -27,7 +27,7 @@ tree.o: tree-itree.o
 einit-helper: einit-helper.o libeinit.${SO}.2.0.0
 	$(CLD) einit-helper.o ./libeinit.${SO}.2.0.0 -o einit-helper $(STATIC)
 
-last-rites: last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o
+last-rites: last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o set-common.o
 	$(CLD) last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o set-common.o -o last-rites $(STATIC)
 
 libeinit.${SO}: libeinit.${SO}.2.0.0
