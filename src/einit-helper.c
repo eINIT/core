@@ -94,6 +94,8 @@ int main(int argc, char **argv, char **env) {
  char c_down = 0;
  char c_reset = 0;
 
+ char o_cake = 0;
+
  for (i = 0; i < argc; i++) {
   if (strmatch (argv[i], "-v") || strmatch (argv[i], "--version")) {
    c_version = 1;
@@ -138,11 +140,17 @@ int main(int argc, char **argv, char **env) {
   } else if (strmatch (argv[i], "-m") && ((i+1) < argc)) {
    c_mode = argv[i+1];
    i++;
+  } else if (strmatch (argv[i], "-cake") && ((i+1) < argc)) {
+   o_cake = 1;
   }
  }
 
- if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset)
+ if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset && !o_cake)
   c_help = 1;
+
+ if (o_cake) {
+  printf ("THE CAKE IS A LIE\n");
+ }
 
  if (c_mode || c_service[0] || c_module[0] || c_down || c_reset) {
   if (!einit_connect(&argc, argv)) {
