@@ -140,7 +140,7 @@ int main(int argc, char **argv, char **env) {
   } else if (strmatch (argv[i], "-m") && ((i+1) < argc)) {
    c_mode = argv[i+1];
    i++;
-  } else if (strmatch (argv[i], "-cake") && ((i+1) < argc)) {
+  } else if (strmatch (argv[i], "-cake")) {
    o_cake = 1;
   }
  }
@@ -253,6 +253,5 @@ int main(int argc, char **argv, char **env) {
   }
  }
 
- perror ("what nao?");
  return 0;
 }
