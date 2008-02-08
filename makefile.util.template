@@ -1,13 +1,10 @@
-util: einit-control last-rites libeinit.${SO}.2.0.0 libeinit++.${SO}.2.0.0 einit-helper
+util: last-rites libeinit.${SO}.2.0.0 libeinit++.${SO}.2.0.0 einit-helper
 
 install: util
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
-	${INSTALL} -g einit -m 0750 einit-control ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} last-rites ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-helper ${DESTDIR}/${LIBDIR}/bin
-	ln -fs einit-control ${DESTDIR}/${BINDIR}/power
-	ln -fs einit-control ${DESTDIR}/${BINDIR}/erc
 	${INSTALL} ${BINIPARAM} libeinit.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../
 	${INSTALL} ${BINIPARAM} libeinit++.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../
 	ln -fs libeinit.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}.2
@@ -26,9 +23,6 @@ itree.o: itree-trinary-splay.o
 
 tree.o: tree-itree.o
 	cp tree-itree.o tree.o
-
-einit-control: einit-control.o libeinit.${SO}.2.0.0
-	$(CLD) einit-control.o ./libeinit.${SO}.2.0.0 -o einit-control $(STATIC)
 
 einit-helper: einit-helper.o libeinit.${SO}.2.0.0
 	$(CLD) einit-helper.o ./libeinit.${SO}.2.0.0 -o einit-helper $(STATIC)

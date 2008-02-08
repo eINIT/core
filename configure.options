@@ -34,7 +34,7 @@ export USE_ITREE_CODE="itree-trinary-splay"
 export USE_TREE_CODE="tree-itree" # there's also tree-linear
 
 export COREOBJECTS="einit-core module bitch utility event ${USE_SET_CODE} ${ASMFUNCTIONS} einit-monitor set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
-export UTILOBJECTS="einit-control bitch utility ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ einit-helper set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
+export UTILOBJECTS="bitch utility ${USE_SET_CODE} ${ASMFUNCTIONS} last-rites libeinit libeinit++ einit-helper set-common ${USE_ITREE_CODE} ${USE_TREE_CODE}"
 
 export UTILOBJECTS_TESTS="test-core-apply-variables test-core-itree test-core-stree test-libraries-libeinit++"
 
