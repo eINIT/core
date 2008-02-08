@@ -171,6 +171,8 @@ int main(int argc, char **argv, char **env) {
   }
 
   einit_disconnect();
+
+  exit (EXIT_SUCCESS);
  }
 
  if (c_version || c_licence || c_help || c_wtf) {
