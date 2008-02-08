@@ -281,13 +281,10 @@ struct einit_join_thread {
 extern struct einit_join_thread *einit_join_threads;
 extern pthread_mutex_t thread_key_detached_mutex;
 
-#ifdef POSIXREGEX
 #include <regex.h>
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags);
 void eregfree_cache (regex_t *preg);
-
-#endif
 
 #include <einit/set.h>
 

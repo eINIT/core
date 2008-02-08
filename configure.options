@@ -41,6 +41,6 @@ export UTILOBJECTS_TESTS="test-core-apply-variables test-core-itree test-core-st
 export BUILDCOMPONENTS="core util modules headers"
 
 export HEADERSOURCES="src/include/einit src/include/einit-modules"
-export HEADERPREPARE="sed -e s/einit-// -e s/${USE_TREE_CODE}/tree/ -e s/${USE_ITREE_CODE}/itree/"
+export HEADERPREPARE="sed -e s/einit-//"
 
 export LIBIXPVERSION="0.4"

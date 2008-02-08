@@ -1,0 +1,20 @@
+env = Environment()
+
+Scripts = ['libixp/sconscript',
+           'src/sconscript',
+           'src/modules/sconscript']
+
+prefix = ARGUMENTS.get('prefix', '/')
+libdir = ARGUMENTS.get('libdir', 'lib')
+
+InstallDirSbin = prefix + 'sbin'
+InstallDirLib = prefix + 'lib'
+InstallDirLibBin = prefix + libdir + '/einit/bin'
+InstallDirModules = prefix + libdir + '/einit/modules'
+InstallDirBootstrap = prefix + libdir + '/einit/modules'
+
+Export(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap'])
+
+env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, 'InstallDirBootstrap'])
+
+SConscript(Scripts)

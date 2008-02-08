@@ -61,9 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
 #if ! defined (EINIT_UTIL)
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #include <dirent.h>
 
@@ -75,21 +73,17 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  ssize_t mplen = 0;
  char *px = NULL;
 
-#ifdef POSIXREGEX
  regex_t allowpattern, disallowpattern;
  unsigned char haveallowpattern = 0, havedisallowpattern = 0;
  char *path = (char *)default_dir, *allow = (char *)default_allow, *disallow = (char *)default_disallow;
-#endif
 
  if (node && node->arbattrs) {
   uint32_t i = 0;
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch ("path", node->arbattrs[i])) path = node->arbattrs[i+1];
-#ifdef POSIXREGEX
    else if (strmatch ("pattern-allow", node->arbattrs[i])) allow = node->arbattrs[i+1];
    else if (strmatch ("pattern-disallow", node->arbattrs[i])) disallow = node->arbattrs[i+1];
-#endif
   }
  }
 
@@ -113,7 +107,6 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  }
 
 
-#ifdef POSIXREGEX
  if (allow) {
   haveallowpattern = !eregcomp (&allowpattern, allow);
  }
@@ -121,19 +114,14 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  if (disallow) {
   havedisallowpattern = !eregcomp (&disallowpattern, disallow);
  }
-#endif
 
  mplen += 4;
  dir = eopendir (path);
  if (dir != NULL) {
   while ((entry = ereaddir (dir))) {
 
-#ifdef POSIXREGEX
    if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
    if (havedisallowpattern && !regexec (&disallowpattern, entry->d_name, 0, NULL, 0)) continue;
-#else
-   if (entry->d_name[0] == '.') continue;
-#endif
 
    tmp = (char *)emalloc (mplen + strlen (entry->d_name));
    struct stat sbuf;
@@ -176,10 +164,8 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
   eclosedir (dir);
  }
 
-#ifdef POSIXREGEX
  if (haveallowpattern) { haveallowpattern = 0; eregfree (&allowpattern); }
  if (havedisallowpattern) { havedisallowpattern = 0; eregfree (&disallowpattern); }
-#endif
 
  efree (px);
 
@@ -1093,10 +1079,6 @@ char *strip_empty_variables (char *string) {
  return string;
 }
 
-#ifdef POSIXREGEX
-
-#if ! defined (EINIT_UTIL)
-
 struct stree *regex_cache = NULL;
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
@@ -1123,20 +1105,6 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
 
 void eregfree_cache (regex_t *preg) {
 }
-
-#else
-
-int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
- return regcomp (preg, pattern, cflags);
-}
-
-void eregfree_cache (regex_t *preg) {
- regfree (preg);
-}
-
-#endif
-
-#endif
 
 struct itree *einit_stable_strings = NULL;
 pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;

@@ -49,9 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <einit/event.h>
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 int bootstrap_einit_configuration_stree_configure (struct lmodule *);
 
@@ -141,11 +139,9 @@ int cfg_free () {
  return 1;
 }
 
-#ifdef POSIXREGEX
 #include <regex.h>
 
 regex_t cfg_storage_allowed_duplicates;
-#endif
 
 int cfg_addnode_f (struct cfgnode *node) {
  if (!node || !node->id) {
@@ -412,7 +408,6 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
 struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type) {
  struct stree *retval = NULL;
 
-#ifdef POSIXREGEX
  if (filter) {
   struct stree *cur = streelinear_prepare(hconfiguration);
   regex_t pattern;
@@ -428,7 +423,6 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
    eregfree (&pattern);
   }
  }
-#endif
 
  return retval;
 }
@@ -437,7 +431,6 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
 struct stree *cfg_prefix_f (const char *prefix) {
  struct stree *retval = NULL;
 
-#ifdef POSIXREGEX
  if (prefix) {
   struct stree *cur = streelinear_prepare(hconfiguration);
   while (cur) {
@@ -447,7 +440,6 @@ struct stree *cfg_prefix_f (const char *prefix) {
    cur = streenext (cur);
   }
  }
-#endif
 
  return retval;
 }

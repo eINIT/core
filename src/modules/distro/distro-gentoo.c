@@ -57,9 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einfo.h>
 #endif
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #define EXPECTED_EIV 1
 
@@ -90,15 +88,12 @@ module_register(compatibility_sysv_gentoo_self);
 
 #endif
 
-#ifdef POSIXREGEX
 struct stree *service_group_transformations = NULL;
 
 struct service_group_transformation {
  char *out;
  regex_t *pattern;
 };
-#endif
-
 
 char  do_service_tracking = 0,
      *service_tracking_path = NULL,
@@ -295,7 +290,6 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
   }
 
   if (nservices) {
-#ifdef POSIXREGEX
    if (service_group_transformations) {
     struct stree *cur = streelinear_prepare(service_group_transformations);
 
@@ -388,7 +382,6 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      cur = streenext(cur);
     }
    }
-#endif
 
    if (nservices && currentmode) {
     char **arbattrs = NULL;
@@ -494,7 +487,6 @@ void einit_event_handler (struct einit_event *ev) {
     if (!service_tracking_path) do_service_tracking = 0;
    }
   }
-#ifdef POSIXREGEX
  } else if (ev->type == einit_core_configuration_update) {
   struct cfgnode *node = NULL;
   struct stree *new_transformations = NULL, *ca;
@@ -530,7 +522,6 @@ void einit_event_handler (struct einit_event *ev) {
   service_group_transformations = new_transformations;
   if (ca)
    streefree (ca);
-#endif
  } else if (ev->type == einit_core_service_update) { // update service status
   uint32_t i = 0;
 //  eputs ("marking service status!\n", stderr);
@@ -686,11 +677,9 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
       *tmp = NULL;
  uint32_t plen;
  struct smodule *modinfo;
-#ifdef POSIXREGEX
  char *spattern;
  regex_t allowpattern, disallowpattern;
  unsigned char haveallowpattern = 0, havedisallowpattern = 0;
-#endif
 
  if (!init_d_path || !is_gentoo_system) {
 //  fprintf (stderr, " >> not parsing gentoo scripts: 0x%x, 0x%x, 0x%x\n", init_d_path, init_d_dependency_scriptlet, is_gentoo_system);
@@ -706,7 +695,6 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
   svcdir_init_done = 1;
  }
 
-#ifdef POSIXREGEX
  if ((spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL))) {
   haveallowpattern = !eregcomp (&allowpattern, spattern);
  }
@@ -714,7 +702,6 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  if ((spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-disallow", NULL))) {
   havedisallowpattern = !eregcomp (&disallowpattern, spattern);
  }
-#endif
 
  plen = strlen (init_d_path) +1;
 
@@ -734,16 +721,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 //   puts (de->d_name);
 
 // filter .- and *.sh-files (or apply regex patterns)
-#ifdef POSIXREGEX
    if (haveallowpattern && regexec (&allowpattern, de->d_name, 0, NULL, 0)) continue;
    if (havedisallowpattern && !regexec (&disallowpattern, de->d_name, 0, NULL, 0)) continue;
-#else
-   if (de->d_name[0] == '.') continue;
-
-   uint32_t xl = strlen(de->d_name);
-   if ((xl > 3) && (de->d_name[xl-3] == '.') &&
-        (de->d_name[xl-2] == 's') && (de->d_name[xl-1] == 'h')) continue;
-#endif
 
    tmp = (char *)emalloc (plen + strlen (de->d_name));
    struct stat sbuf;
@@ -815,10 +794,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
   eclosedir (dir);
  }
 
-#ifdef POSIXREGEX
  if (haveallowpattern) { haveallowpattern = 0; eregfree (&allowpattern); }
  if (havedisallowpattern) { havedisallowpattern = 0; eregfree (&disallowpattern); }
-#endif
 
  return 0;
 }

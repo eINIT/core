@@ -64,9 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef ecalloc
 #endif
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #define EXPECTED_EIV 1
 

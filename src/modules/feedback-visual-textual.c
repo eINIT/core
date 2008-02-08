@@ -63,10 +63,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <linux/vt.h>
 #endif
 
-#ifdef POSIXREGEX
 #include <regex.h>
 #include <dirent.h>
-#endif
 
 #define EXPECTED_EIV 1
 

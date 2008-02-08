@@ -82,7 +82,6 @@ module_register(einit_module_transformations_self);
 
 struct stree *service_aliases = NULL;
 
-#ifdef POSIXREGEX
 struct stree *service_transformations = NULL;
 
 #define SVT_STRIP_PROVIDES  0x00000001
@@ -95,7 +94,6 @@ struct service_transformation {
  regex_t *id_pattern;
  uint32_t options;
 };
-#endif
 
 struct {
  void **chunks;
@@ -130,9 +128,7 @@ void einit_module_transformations_garbage_free () {
 void einit_module_transformations_einit_event_handler_configuration_update (struct einit_event *ev) {
   struct stree *new_aliases = NULL, *ca = NULL;
   struct cfgnode *node = NULL;
-#ifdef POSIXREGEX
   struct stree *new_transformations = NULL;
-#endif
 
   while ((node = cfg_findnode ("services-alias", 0, node))) {
    if (node->idattr && node->svalue) {
@@ -148,7 +144,6 @@ void einit_module_transformations_einit_event_handler_configuration_update (stru
 
   node = NULL;
 
-#ifdef POSIXREGEX
   while ((node = cfg_findnode ("services-transform", 0, node))) {
    if (node->arbattrs) {
     struct service_transformation new_transformation;
@@ -197,7 +192,6 @@ void einit_module_transformations_einit_event_handler_configuration_update (stru
   service_transformations = new_transformations;
   if (ca)
    streefree (ca);
-#endif
 }
 
 void einit_module_transformations_einit_event_handler_update_module (struct einit_event *ev) {
@@ -257,7 +251,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
     module->si->provides = np;
    }
 
-#ifdef POSIXREGEX
    if (service_transformations && module->si) {
     uint32_t i;
 
@@ -390,7 +383,6 @@ void einit_module_transformations_einit_event_handler_update_module (struct eini
     }
 
    }
-#endif
 }
 
 int einit_module_transformations_cleanup (struct lmodule *r) {

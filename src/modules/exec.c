@@ -58,9 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit-modules/parse-sh.h>
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #ifdef LINUX
 #include <sys/syscall.h>
@@ -234,13 +232,6 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
    x[1] = ep;
   }
 
-#ifndef POSIXREGEX
-  if (!cfg_getnode (x[0], NULL)) {
-   node_found = 0;
-  } else if (cfg_getstring (e, NULL)) {
-   variable_matches++;
-  }
-#else
   struct cfgnode *n;
 
   if (!(n = cfg_getnode (x[0], NULL))) {
@@ -260,7 +251,6 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
   } else if (cfg_getstring (x[0], NULL)) {
    variable_matches++;
   }
-#endif
 
   if (!node_found) {
    eprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
@@ -279,7 +269,6 @@ char **create_environment_f (char **environment, const char **variables) {
  int i = 0;
  char *variablevalue = NULL;
  if (variables) for (i = 0; variables[i]; i++) {
-#ifdef POSIXREGEX
   if ((variablevalue = strchr (variables[i], '/'))) {
 /* special treatment if we have an attribue specifier in the variable name */
    char *name = NULL, *filter = variablevalue+1;
@@ -345,11 +334,6 @@ char **create_environment_f (char **environment, const char **variables) {
    if (variablevalue)
     environment = straddtoenviron (environment, variables[i], variablevalue);
   }
-#else
-  char *variablevalue = cfg_getstring (variables[i], NULL);
-  if (variablevalue)
-   environment = straddtoenviron (environment, variables[i], variablevalue);
-#endif
  }
 
 /*  if (variables) {
