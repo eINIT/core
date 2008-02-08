@@ -3,12 +3,12 @@
  *  einit
  *
  *  split from module.c on 19/03/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

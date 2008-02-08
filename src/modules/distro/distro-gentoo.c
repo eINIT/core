@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 10/11/2006.
  *  Renamed from compatibility-sysv-gentoo.c on 19/08/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

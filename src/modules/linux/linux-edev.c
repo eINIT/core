@@ -3,13 +3,13 @@
  *  einit
  *
  *  Created on 12/10/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *  Copyright 2007 Ryan Hope. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger, Ryan Hope
+Copyright (c) 2007-2008, Magnus Deininger, Ryan Hope
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 01/08/2007.
  *  Modifications by nikolavp
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
  
 /*
- Copyright (c) 2007, Magnus Deininger
+ Copyright (c) 2007-2008, Magnus Deininger
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without modification,

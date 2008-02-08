@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 11/05/2006.
  *  renamed and moved from einit-utmp-forger.c on 2006/12/28
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

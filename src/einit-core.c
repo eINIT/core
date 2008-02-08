@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -108,7 +108,7 @@ struct einit_join_thread *einit_join_threads = NULL;
 void thread_autojoin_function (void *);
 
 int print_usage_info () {
- eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
+ eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
   "Usage:\n"
   " einit [-c <filename>] [options]\n"
   "\n"
@@ -281,7 +281,7 @@ int main(int argc, char **argv, char **environ) {
      eputs("eINIT " EINIT_VERSION_LITERAL
           "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
           "--------------------------------------------------------------------------------\n"
-          "Copyright (c) 2006, 2007, Magnus Deininger\n"
+          "Copyright (c) 2006-2008, Magnus Deininger\n"
           BSDLICENSE "\n", stdout);
      return 0;
     case '-':

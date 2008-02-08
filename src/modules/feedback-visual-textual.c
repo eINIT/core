@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 11/03/2006.
  *  Renamed from vis-text.c on 11/10/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

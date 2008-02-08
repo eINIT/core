@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 02/05/2006.
  *  Renamed from scheduler.c on 03/19/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
