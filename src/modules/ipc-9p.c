@@ -149,7 +149,7 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
  return fa;
 }
 
-void einit_ipc_9p_fs_open(Ixp9Req *r) {
+void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
@@ -211,6 +211,10 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
  }*/
 }
 
+void einit_ipc_9p_fs_open (Ixp9Req *r) {
+ ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+}
+
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_walk()");
  int i = 0;
@@ -250,7 +254,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  respond(r, nil);
 }
 
-void einit_ipc_9p_fs_read(Ixp9Req *r) {
+void einit_ipc_9p_fs_read (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_read()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
@@ -332,7 +336,7 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
  }
 }
 
-void einit_ipc_9p_fs_stat(Ixp9Req *r) {
+void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
  char *path = set2str ('/', (const char **)fa->path);
 
@@ -392,7 +396,11 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
  respond(r, nil);
 }
 
-void einit_ipc_9p_fs_write(Ixp9Req *r) {
+void einit_ipc_9p_fs_stat (Ixp9Req *r) {
+ ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
+}
+
+void einit_ipc_9p_fs_write (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
 // notice (1, "einit_ipc_9p_fs_write(%i, %i)", r->ifcall.count, r->ofcall.count);
@@ -418,7 +426,7 @@ void einit_ipc_9p_fs_write(Ixp9Req *r) {
  }
 }
 
-void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
+void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_clunk()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
@@ -441,6 +449,10 @@ void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
  }
 
  respond(r, nil);
+}
+
+void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
+ ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
 }
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
