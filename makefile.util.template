@@ -5,6 +5,7 @@ install: util
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} last-rites ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-helper ${DESTDIR}/${LIBDIR}/bin
+	ln -fs ../sbin/einit ${DESTDIR}/${BINDIR}/einit
 	${INSTALL} ${BINIPARAM} libeinit.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../
 	${INSTALL} ${BINIPARAM} libeinit++.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../
 	ln -fs libeinit.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}.2
