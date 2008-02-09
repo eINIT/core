@@ -1,12 +1,13 @@
 Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules'])
 
 env.Append (CPPPATH = ['../include']);
+env.Append (SHLIBPREFIX = '');
 
 def buildModule(name, location, e):
- e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE', SHLIBPREFIX = ''))
+ e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE'))
 
 def buildModuleBootStrap(name, e):
- e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c', CCFLAGS = '-DEINIT_MODULE', SHLIBPREFIX = ''))
+ e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c', CCFLAGS = '-DEINIT_MODULE'))
 
 buildModuleBootStrap('bootstrap-configuration-stree', env)
 buildModuleBootStrap('bootstrap-configuration-xml-expat', env.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
