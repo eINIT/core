@@ -19,6 +19,7 @@ Help(opts.GenerateHelpText(env))
 RuntimeDirSbin = prefix + 'sbin'
 RuntimeDirEtc = prefix + 'etc'
 RuntimeDirLib = prefix + 'lib'
+RuntimeDirLibEinit = prefix + libdir + '/einit'
 RuntimeDirLibBin = prefix + libdir + '/einit/bin'
 RuntimeDirModules = prefix + libdir + '/einit/modules'
 RuntimeDirBootstrap = prefix + libdir + '/einit/bootstrap'
@@ -26,6 +27,7 @@ RuntimeDirBootstrap = prefix + libdir + '/einit/bootstrap'
 InstallDirSbin = destdir + RuntimeDirSbin
 InstallDirEtc = destdir + RuntimeDirEtc
 InstallDirLib = destdir + RuntimeDirLib
+InstallDirLibEinit = prefix + RuntimeDirLibEinit
 InstallDirLibBin = destdir + RuntimeDirLibBin
 InstallDirModules = destdir + RuntimeDirModules
 InstallDirBootstrap = destdir + RuntimeDirBootstrap
@@ -45,7 +47,7 @@ ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility
 Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap',
-        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules'])
+        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules'])
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -58,8 +60,8 @@ if f:
  f.close ()
 
 def build_configuration(target, source, env):
- for i in target:
-  if (str(i) == 'main'):
+ for i in source:
+  if (str(i) == 'core'):
    f = open ('build/headers/einit/configuration.h', 'w');
    if f:
     f.write ("""/* automatically created on each build, you shouldn\'t modify this */
@@ -71,7 +73,7 @@ def build_configuration(target, source, env):
 
 #define BUFFERSIZE 1024
 
-#define EINIT_LIB_BASE \"""" + RuntimeDirLib + """\"
+#define EINIT_LIB_BASE \"""" + RuntimeDirLibEinit + """\"
 
 #define EINIT_VERSION_LITERAL_SUFFIX "-git-""" + str(buildnumber) + """"
 #endif
@@ -109,8 +111,9 @@ env.Append (CPPPATH = '#build/headers')
 build_config = Builder(action = build_configuration)
 
 env.Append (BUILDERS = { 'EConfiguration' : build_config})
-env.EConfiguration('main', 'build/headers/einit/configuration.h')
-env.EConfiguration('modules', 'build/headers/einit-modules/configuration.h')
+
+env.EConfiguration('build/headers/einit/configuration.h', 'core')
+env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
 
 env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap])
 

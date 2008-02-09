@@ -1,13 +1,11 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules'])
 
 env.Append (CPPPATH = ['../include']);
 
 def buildModule(name, location, e):
- tm = name.replace('-', '_')
  e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE', SHLIBPREFIX = ''))
 
 def buildModuleBootStrap(name, e):
- tm = name.replace('-', '_')
  e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c', CCFLAGS = '-DEINIT_MODULE', SHLIBPREFIX = ''))
 
 buildModuleBootStrap('bootstrap-configuration-stree', env)
@@ -22,4 +20,5 @@ for x in ModulesLinux:
 for x in ModulesCompatibility:
  buildModule(x, 'compatibility', env)
 
-buildModule ('ipc-9p', '.', env.Clone (CPPPATH=['#libixp'], LIBS=['ixp-local'], LIBPATH=['#libixp']))
+if 'ipc-9p' in ExternalModules:
+ buildModule ('ipc-9p', '.', env.Clone (CPPPATH=['#libixp'], LIBS=['ixp-local'], LIBPATH=['#libixp']))

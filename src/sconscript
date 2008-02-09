@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules'])
 
 CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
@@ -9,12 +9,10 @@ CodeCoreMonitorObjects = ['einit-monitor.c']
 
 def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')
- return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE')
+ return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=' + tm + '_thismodule -Dself=' + tm + '_self')
 
-#InternalModules = ['module-so']
-
-#for x in InternalModules:
-# CodeCoreObjects += buildInternalModule(x, 'modules', env)
+for x in InternalModules:
+ CodeCoreObjects += buildInternalModule(x, 'modules', env)
 
 einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=['pthread', 'dl'], CPPPATH=['include'], CCFLAGS = '-DEINIT_CORE')
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, CPPPATH=['include'])
