@@ -19,7 +19,7 @@ ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf',
 ModulesCompatibility = ['compatibility-sysv-utmp', 'compatibility-sysv-initctl']
 
 buildModuleBootStrap('bootstrap-configuration-stree', env)
-buildModuleBootStrap('bootstrap-configuration-xml-expat', env.Clone (LIBS = 'expat-local', LIBPATH=['../../expat']))
+buildModuleBootStrap('bootstrap-configuration-xml-expat', env.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
 
 for x in Modules:
  buildModule(x, '.', env)
@@ -30,4 +30,4 @@ for x in ModulesLinux:
 for x in ModulesCompatibility:
  buildModule(x, 'compatibility', env)
 
-buildModule ('ipc-9p', '.', env.Clone (CPPPATH=['../../libixp'], LIBS=['ixp-local'], LIBPATH=['../../libixp']))
+buildModule ('ipc-9p', '.', env.Clone (CPPPATH=['#libixp'], LIBS=['ixp-local'], LIBPATH=['#libixp']))
