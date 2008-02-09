@@ -1,6 +1,7 @@
 env = Environment()
 
 Scripts = ['libixp/sconscript',
+           'expat/sconscript',
            'src/sconscript',
            'src/modules/sconscript']
 
@@ -11,10 +12,10 @@ InstallDirSbin = prefix + 'sbin'
 InstallDirLib = prefix + 'lib'
 InstallDirLibBin = prefix + libdir + '/einit/bin'
 InstallDirModules = prefix + libdir + '/einit/modules'
-InstallDirBootstrap = prefix + libdir + '/einit/modules'
+InstallDirBootstrap = prefix + libdir + '/einit/bootstrap'
 
 Export(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap'])
 
-env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, 'InstallDirBootstrap'])
+env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap])
 
 SConscript(Scripts)
