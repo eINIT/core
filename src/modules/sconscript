@@ -1,22 +1,14 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility'])
 
 env.Append (CPPPATH = ['../include']);
 
 def buildModule(name, location, e):
  tm = name.replace('-', '_')
- e.Install(InstallDirModules, e.SharedLibrary(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE'))
+ e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE', SHLIBPREFIX = ''))
 
 def buildModuleBootStrap(name, e):
  tm = name.replace('-', '_')
- e.Install(InstallDirBootstrap, e.SharedLibrary(name, name + '.c', CCFLAGS = '-DEINIT_MODULE'))
-
-BootStrapModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat']
-
-Modules = ['feedback-visual-textual', 'fqdn', 'exec', 'mount', 'tty', 'process', 'shadow-exec', 'module-transformations', 'ipc-core-helpers', 'scheduler', 'functions-xml', 'module-xml', 'log', 'parse-sh', 'module-checkpoint', 'module-group', 'feedback-visual-psplash', 'module-logic-v4', 'module-network-v2', 'compile-c']
-
-ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding']
-
-ModulesCompatibility = ['compatibility-sysv-utmp', 'compatibility-sysv-initctl']
+ e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c', CCFLAGS = '-DEINIT_MODULE', SHLIBPREFIX = ''))
 
 buildModuleBootStrap('bootstrap-configuration-stree', env)
 buildModuleBootStrap('bootstrap-configuration-xml-expat', env.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
