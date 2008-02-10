@@ -1,6 +1,6 @@
 Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname'])
 
-menv = env.Clone (SHLIBPREFIX = '')
+menv = env.Clone (SHLIBPREFIX = '', LDMODULESUFFIX='.so')
 
 def buildModule(name, location, e):
  e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE'))
