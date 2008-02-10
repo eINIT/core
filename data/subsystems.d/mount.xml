@@ -60,9 +60,6 @@
    <type id="iso9660" />
    <type id="udf" flags="rw" />
 
-   <!-- VirtualBox shared folders -->
-   <type id="vboxsf" flags="nofsck" requires="vboxvfs" />
-
    <!-- internal-use filesystems -->
    <type id="unionfs" />
    <type id="proc" flags="rw:volatile:nofsck" />
