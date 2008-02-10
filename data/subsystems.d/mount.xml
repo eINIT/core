@@ -59,6 +59,9 @@
    <!-- popular on cd/dvd media -->
    <type id="iso9660" />
    <type id="udf" flags="rw" />
+   
+   <!-- virtualbox shared folders -->
+   <type id="vboxsf" flags="nofsck" requires="vboxvfs" />
 
    <!-- internal-use filesystems -->
    <type id="unionfs" />
