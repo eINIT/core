@@ -5,12 +5,12 @@
  *  Created by Magnus Deininger on 06/02/2006.
  *  Split from config-xml-expat.c on 22/10/2006
  *  Renamed/moved from config.c on 20/03/2007
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -49,9 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 #include <einit/event.h>
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 int bootstrap_einit_configuration_stree_configure (struct lmodule *);
 
@@ -81,6 +79,8 @@ struct {
 } cfg_stree_garbage = {
  .chunks = NULL
 };
+
+struct stree *hconfiguration = NULL;
 
 pthread_mutex_t cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -139,11 +139,9 @@ int cfg_free () {
  return 1;
 }
 
-#ifdef POSIXREGEX
 #include <regex.h>
 
 regex_t cfg_storage_allowed_duplicates;
-#endif
 
 int cfg_addnode_f (struct cfgnode *node) {
  if (!node || !node->id) {
@@ -158,10 +156,23 @@ int cfg_addnode_f (struct cfgnode *node) {
    int i = 0;
    for (; node->arbattrs[i]; i+=2) {
     if (strmatch (node->arbattrs[i], "allow")) {
+//     fprintf (stderr, " ** new: %s\n", node->arbattrs[i+1]);
+//     fflush (stderr);
+
+//     sleep (1);
+
      eregfree (&cfg_storage_allowed_duplicates);
-     if (!eregcomp (&cfg_storage_allowed_duplicates, node->arbattrs[i+1])) {
+     if (eregcomp (&cfg_storage_allowed_duplicates, node->arbattrs[i+1])) {
+//      fprintf (stderr, " ** backup: .*\n");
+//      fflush (stderr);
+
+//      sleep (1);
+
       eregcomp (&cfg_storage_allowed_duplicates, ".*");
      }
+
+//     fprintf (stderr, " ** done\n");
+//     fflush (stderr);
     }
    }
   }
@@ -209,16 +220,26 @@ int cfg_addnode_f (struct cfgnode *node) {
    char allow_multi = 0;
    char id_match = 0;
 
-   if (regexec (&cfg_storage_allowed_duplicates, node->id, 0, NULL, 0) != REG_NOMATCH) {
-    allow_multi = 1;
+   if ((((struct cfgnode *)cur->value)->mode != node->mode)) {
+    cur = streefind (cur, node->id, tree_find_next);
+    continue;
    }
+
+//   fprintf (stderr, " ** multicheck: %s*\n", node->id);
+   if (regexec (&cfg_storage_allowed_duplicates, node->id, 0, NULL, 0) != REG_NOMATCH) {
+//    fprintf (stderr, "allow multi: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
+    allow_multi = 1;
+   }/* else {
+    fprintf (stderr, " ** not multi*\n");
+   }
+   fflush (stderr);*/
 
    if (cur->value && ((struct cfgnode *)cur->value)->idattr && node->idattr &&
        strmatch (((struct cfgnode *)cur->value)->idattr, node->idattr)) {
     id_match = 1;
    }
 
-   if ((!allow_multi && (!node->idattr)) || id_match) {
+   if (((!allow_multi && (!node->idattr)) || id_match)) {
 // this means we found something that looks like it
 //    fprintf (stderr, "replacing old config: %s; %i %i %i\n", node->id, allow_multi, node->idattr ? 1 : 0, id_match);
 //    fflush (stderr);
@@ -239,12 +260,12 @@ int cfg_addnode_f (struct cfgnode *node) {
     doop = 0;
 
     break;
-   }
+   } else
 
-   if (allow_multi) {
+//   if (allow_multi || node->idattr) {
 //   cur = streenext (cur);
     cur = streefind (cur, node->id, tree_find_next);
-   }
+//   }
   }
  }
 
@@ -387,7 +408,6 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
 struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type) {
  struct stree *retval = NULL;
 
-#ifdef POSIXREGEX
  if (filter) {
   struct stree *cur = streelinear_prepare(hconfiguration);
   regex_t pattern;
@@ -403,7 +423,6 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
    eregfree (&pattern);
   }
  }
-#endif
 
  return retval;
 }
@@ -412,7 +431,6 @@ struct stree *cfg_filter_f (const char *filter, enum einit_cfg_node_options type
 struct stree *cfg_prefix_f (const char *prefix) {
  struct stree *retval = NULL;
 
-#ifdef POSIXREGEX
  if (prefix) {
   struct stree *cur = streelinear_prepare(hconfiguration);
   while (cur) {
@@ -422,7 +440,6 @@ struct stree *cfg_prefix_f (const char *prefix) {
    cur = streenext (cur);
   }
  }
-#endif
 
  return retval;
 }
@@ -466,96 +483,10 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
  einit_global_environment = env;
 }
 
-void bootstrap_einit_configuration_stree_ipc_event_handler (struct einit_event *ev) {
- if (ev->argv[0] && ev->argv[1] && (ev->ipc_options & einit_ipc_output_xml)) {
-  if (strmatch (ev->argv[0], "list") && strmatch (ev->argv[1], "modes")) {
-   struct stree *cur = streelinear_prepare(hconfiguration);
-   struct cfgnode **modes = NULL;
-
-   ev->implemented = 1;
-
-/* first, we need to find all the modes we have */
-   while (cur) {
-    struct cfgnode *node = cur->value;
-
-    if (node && node->mode) {
-     if (!inset ((const void **)modes, (const void *)node->mode, SET_NOALLOC)) {
-      modes = (struct cfgnode **)set_noa_add ((void **)modes, (void *)node->mode);
-     }
-    }
-
-    cur = streenext(cur);
-   }
-
-   if (modes) {
-    uint32_t i = 0;
-
-    for (; modes[i]; i++) {
-     if (!(modes[i]->arbattrs)) {
-      fprintf (ev->output, " <mode id=\"%s\">", modes[i]->id);
-     } else {
-      uint32_t y = 0;
-//      fprintf (ev->output, " <mode", modes[i]->id);
-      eputs (" <mode", ev->output);
-
-      for (; modes[i]->arbattrs[y]; y+=2) {
-//       char *escapedn = escape_xml (modes[i]->arbattrs[y]);
-       char *escapeda = escape_xml (modes[i]->arbattrs[y+1]);
-
-       fprintf (ev->output, " %s=\"%s\"", modes[i]->arbattrs[y], escapeda);
-
-       efree (escapeda);
-      }
-
-      eputs (">\n", ev->output);
-     }
-
-     char *tmp;
-
-     if ((tmp = cfg_getstring ("enable/services", modes[i]))) {
-      char *escaped_s = escape_xml (tmp);
-      char *tmpx = cfg_getstring ("enable/critical", modes[i]);
-
-      if (tmpx) {
-       char *escaped_x = escape_xml (tmpx);
-       fprintf (ev->output, "  <enable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
-
-       efree (tmpx);
-      } else {
-       fprintf (ev->output, "  <enable services=\"%s\" />\n", escaped_s);
-      }
-
-      efree (escaped_s);
-     }
-
-     if ((tmp = cfg_getstring ("disable/services", modes[i]))) {
-      char *escaped_s = escape_xml (tmp);
-      char *tmpx = cfg_getstring ("disable/critical", modes[i]);
-
-      if (tmpx) {
-       char *escaped_x = escape_xml (tmpx);
-       fprintf (ev->output, "  <disable services=\"%s\" critical=\"%s\" />\n", escaped_s, escaped_x);
-
-       efree (tmpx);
-      } else {
-       fprintf (ev->output, "  <disable services=\"%s\" />\n", escaped_s);
-      }
-
-      efree (escaped_s);
-     }
-
-     eputs (" </mode>\n", ev->output);
-    }
-   }
-  }
- }
-}
-
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
  event_ignore (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
- event_ignore (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_ignore (einit_core_done_switching, bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching);
  event_ignore (einit_timer_tick, bootstrap_einit_configuration_stree_einit_event_handler_timer_tick);
 
@@ -575,7 +506,6 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
 
  thismodule->cleanup = bootstrap_einit_configuration_stree_cleanup;
 
- event_listen (einit_ipc_request_generic, bootstrap_einit_configuration_stree_ipc_event_handler);
  event_listen (einit_core_configuration_update, bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_update);
  event_listen (einit_core_done_switching, bootstrap_einit_configuration_stree_einit_event_handler_core_done_switching);
  event_listen (einit_timer_tick, bootstrap_einit_configuration_stree_einit_event_handler_timer_tick);

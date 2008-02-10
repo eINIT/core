@@ -1,13 +1,11 @@
-util: einit-control last-rites libeinit.${SO}.2.0.0 libeinit++.${SO}.2.0.0 einit-helper
+util: last-rites libeinit.${SO}.2.0.0 libeinit++.${SO}.2.0.0 einit-helper
 
 install: util
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} -d ${DESTDIR}/${LIBDIR}/bin
-	${INSTALL} -g einit -m 0750 einit-control ${DESTDIR}/${BINDIR}
 	${INSTALL} ${BINIPARAM} last-rites ${DESTDIR}/${LIBDIR}/bin
 	${INSTALL} ${BINIPARAM} einit-helper ${DESTDIR}/${LIBDIR}/bin
-	ln -fs einit-control ${DESTDIR}/${BINDIR}/power
-	ln -fs einit-control ${DESTDIR}/${BINDIR}/erc
+	ln -fs ../sbin/einit ${DESTDIR}/${BINDIR}/einit
 	${INSTALL} ${BINIPARAM} libeinit.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../
 	${INSTALL} ${BINIPARAM} libeinit++.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../
 	ln -fs libeinit.${SO}.2.0.0 ${DESTDIR}/${LIBDIR}/../libeinit.${SO}.2
@@ -21,25 +19,19 @@ set.o: set-lowmem.o
 itree.o: itree-trinary-splay.o
 	cp itree-trinary-splay.o itree.o
 
-#tree.o: tree-linear.o
-#	cp tree-linear.o tree.o
-
 tree.o: tree-itree.o
 	cp tree-itree.o tree.o
 
-einit-control: einit-control.o libeinit.${SO}.2.0.0
-	$(CLD) einit-control.o ./libeinit.${SO}.2.0.0 -o einit-control $(STATIC)
+einit-helper: einit-helper.o libeinit.${SO}.2.0.0
+	$(CLD) einit-helper.o ./libeinit.${SO}.2.0.0 -o einit-helper $(STATIC)
 
-einit-helper: einit-helper.o bitch.o utility.o $(asmobjects) set.o set-common.o itree.o
-	$(CLD) einit-helper.o bitch.o utility.o $(asmobjects) set.o set-common.o itree.o -o einit-helper
-
-last-rites: last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o
-	$(CLD) last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o set-common.o -o last-rites $(STATIC)
+last-rites: last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o set-common.o tree.o
+	$(CLD) last-rites.o bitch.o utility.o $(asmobjects) itree.o set.o set-common.o tree.o -o last-rites $(STATIC)
 
 libeinit.${SO}: libeinit.${SO}.2.0.0
 
 libeinit.${SO}.2.0.0: libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects)
-	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit.so.2 libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) ${LIBIXP_LIBS} -o libeinit.${SO}.2.0.0 ${EXPAT_LIBS} ${LPA}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) ${LIBIXP_LIBS} -o libeinit.${SO}.2.0.0 ${EXPAT_LIBS} ${LPA}; fi
+	if test "${SO}" = "so"; then ${CLD} ${XDYNAMIC_SIMPLE} -Wl,-soname,libeinit.so.2 libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) ${LIBIXP_LIBS} -o libeinit.${SO}.2.0.0 ${LPA}; else ${CLD} ${XDYNAMIC_SIMPLE} libeinit.o utility.o bitch.o tree.o itree.o set.o set-common.o $(asmobjects) ${LIBIXP_LIBS} -o libeinit.${SO}.2.0.0 ${LPA}; fi
 	ln -fs libeinit.${SO}.2.0.0 libeinit.${SO}.2
 	ln -fs libeinit.${SO}.2 libeinit.${SO}
 

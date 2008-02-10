@@ -3,12 +3,12 @@
  *  einit
  *
  *  split from module.c on 19/03/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -165,7 +165,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     if ((*modinfo)->eibuild == BUILDNUMBER) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
-      new->source = estrdup(modules[z]);
+      new->source = (char *)str_stabilise(modules[z]);
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 

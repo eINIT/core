@@ -6,17 +6,11 @@ install: install-auto
 bootstrap-configuration-xml-expat.so: bootstrap-configuration-xml-expat.o
 	${LLD} bootstrap-configuration-xml-expat.o -o bootstrap-configuration-xml-expat.so ${EXPAT_LIBS}
 
-ipc-dbus.so: ipc-dbus.o
-	${LLD} ipc-dbus.o -o ipc-dbus.so ${DBUS_LIBS}
-
 module-logic-v3.so: module-logic-v3.o
 	${LLD} module-logic-v3.o ${LIBRT} -o module-logic-v3.so
 
 module-logic-v4.so: module-logic-v4.o
 	${LLD} module-logic-v4.o ${LIBRT} -o module-logic-v4.so
-
-mount.so: mount.o
-	${LLD} mount.o ${LIBRT} -o mount.so
 
 module-xml.so: module-xml.o
 	${LLD} module-xml.o ${LDL} -o module-xml.so
@@ -26,9 +20,6 @@ preload.so: preload.o
 
 feedback-visual-textual.so: feedback-visual-textual.o
 	${LLD} feedback-visual-textual.o ${LIBRT} -o feedback-visual-textual.so
-
-linux-netlink.so: linux-netlink.o
-	${LLD} linux-netlink.o ${NETLINK_LIBS} -o linux-netlink.so
 
 ipc-9p.so: ipc-9p.o
 	${LLD} ipc-9p.o ${LIBIXP_LIBS} -o ipc-9p.so

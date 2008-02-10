@@ -3,13 +3,13 @@
  *  einit
  *
  *  Created on 12/10/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *  Copyright 2007 Ryan Hope. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger, Ryan Hope
+Copyright (c) 2007-2008, Magnus Deininger, Ryan Hope
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -274,9 +274,9 @@ void linux_edev_hotplug_handle (char **v) {
      have_id = 1;
      minor = parse_integer (args[i+1]);
     } else if (strmatch (args[i], "DEVPATH")) {
-     device = estrdup(args[i+1]);
+     device = (char *)str_stabilise(args[i+1]);
     } else if (strmatch (args[i], "SUBSYSTEM")) {
-     subsys = estrdup(args[i+1]);
+     subsys = (char *)str_stabilise(args[i+1]);
     }
    }
 
@@ -529,8 +529,6 @@ void linux_edev_hotplug_handle (char **v) {
      }
     }
    }
-
-   if (device) efree (device);
   }
 
   no_devicefile:

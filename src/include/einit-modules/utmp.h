@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 03/01/2007.
- *  Copyright 2006 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -95,7 +95,7 @@ utmp_function utmp_update_fp;
 #define utmp_configure(mod) utmp_update_fp = NULL;
 #define utmp_cleanup(mod) utmp_update_fp = NULL;
 
-#ifdef LINUX
+#ifdef __linux__
 #define create_utmp_record(record, utype, upid, uline, uid, uuser, uhost, ueterm, ueexit, usession) struct utmp record = { .ut_type = utype, \
   .ut_pid = upid,\
   .ut_exit = { \

@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 07/06/2006.
  *  Moved and renamed from common-mount.h on 20/10/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -79,6 +79,13 @@ enum filesystem_capability {
 /*!< Filesystem Capability: skip fscks (fsck useless/pointless) */
 };
 /*!\}*/
+
+struct filesystem_data {
+ enum filesystem_capability capabilities;
+ char **requires;
+ char *after;
+ char *before;
+};
 
 /*!\name Status Bitfield
  * \bug only partially used and set appropriately
@@ -166,6 +173,10 @@ struct mountpoint_data {
  struct dexecinfo *manager;
  char **variables;
 
+ char **requires;
+ char *after;
+ char *before;
+
  uint32_t status;
 };
 
@@ -180,6 +191,8 @@ struct device_data {
  char *uuid;
  char *encryption;
  char *encryption_key;
+
+ char *havefsck;
 };
 
 typedef int (*einit_mount_function) (char *, char *, struct device_data *, struct mountpoint_data *, struct einit_event *);

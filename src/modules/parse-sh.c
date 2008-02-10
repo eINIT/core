@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 08/01/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -128,7 +128,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
    case '&':
     if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
      *cdp = 0;
-     command = set_str_add (command, (void*)sdp);
+     command = set_str_add_stable (command, (void*)sdp);
      cdp++;
      sdp = cdp;
     }
@@ -153,7 +153,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
     } else if (isspace(*cur)) {
      if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
       *cdp = 0;
-      command = set_str_add (command, (void*)sdp);
+      command = set_str_add_stable (command, (void*)sdp);
       cdp++;
       sdp = cdp;
      }
@@ -172,7 +172,7 @@ int parse_sh_f (const char *data, void (*callback)(const char **, uint8_t, void 
 
  if ((stat != sh_parser_status_lw) && (cdp != sdp)) {
   *cdp = 0;
-  command = set_str_add (command, (void*)sdp);
+  command = set_str_add_stable (command, (void*)sdp);
   cdp++;
   sdp = cdp;
  }

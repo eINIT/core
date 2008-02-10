@@ -8,7 +8,7 @@
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -164,17 +164,17 @@ void linux_network_bonding_interface_construct (struct einit_event *ev) {
 
     memset (&newnode, 0, sizeof(struct cfgnode));
 
-    newnode.id = estrdup ("configuration-kernel-modules-bonding");
+    newnode.id = (char *)str_stabilise ("configuration-kernel-modules-bonding");
     newnode.type = einit_node_regular;
 
-    newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"id");
-    newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"kernel-module-bonding");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"id");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"kernel-module-bonding");
 
-    newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"s");
-    newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"bonding");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"s");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"bonding");
 
-    newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"provide-service");
-    newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"yes");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"provide-service");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"yes");
 
     newnode.svalue = newnode.arbattrs[3];
 

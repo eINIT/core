@@ -8,7 +8,7 @@
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -152,18 +152,18 @@ void linux_network_wpa_supplicant_interface_construct (struct einit_event *ev) {
    memset (&newnode, 0, sizeof(struct cfgnode));
 
    esprintf (buffer, BUFFERSIZE, "configuration-wpa-supplicant-%s", ev->string);
-   newnode.id = estrdup (buffer);
+   newnode.id = (char *)str_stabilise (buffer);
    newnode.type = einit_node_regular;
 
    esprintf (buffer, BUFFERSIZE, "wpa-supplicant-%s", ev->string);
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"id");
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)buffer);
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"id");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)buffer);
 
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"driver");
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)driver);
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"driver");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)driver);
 
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"configuration-file");
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)configuration_file);
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"configuration-file");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)configuration_file);
 
    newnode.svalue = newnode.arbattrs[3];
 
@@ -296,7 +296,7 @@ int linux_network_wpa_supplicant_module_configure (struct lmodule *this) {
 
   esprintf (buffer, BUFFERSIZE, "wpa_supplicant -i%s -D%s -C/var/run/wpa_supplicant -c%s", (this->module->rid + 21), driver, configuration_file);
 
-  interface_daemon->command = estrdup (buffer);
+  interface_daemon->command = (char *)str_stabilise (buffer);
   interface_daemon->restart = 1;
 
   interface_daemon->prepare = NULL;
@@ -363,10 +363,10 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
    sm = emalloc (sizeof(struct smodule));
    memset (sm, 0, sizeof (struct smodule));
 
-   sm->rid = estrdup (tmp);
+   sm->rid = (char *)str_stabilise (tmp);
 
    esprintf (tmp, BUFFERSIZE, "WPA Supplicant Supervisor (%s)", interface);
-   sm->name = estrdup (tmp);
+   sm->name = (char *)str_stabilise (tmp);
 
    sm->eiversion = EINIT_VERSION;
    sm->eibuild = BUILDNUMBER;
@@ -376,7 +376,7 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
    sm->si.provides = set_str_add (sm->si.provides, tmp);
 
 /* let's just assume that we'll need /var, /var/run, /usr, /usr/bin, /usr/sbin, /usr/local, /usr/local/bin and /usr/local/sbin */
-   sm->si.after = set_str_add (sm->si.after, "^fs-(var-run|var|usr(-local)?(-s?bin)?)$");
+   sm->si.after = set_str_add (sm->si.after, "^fs-(root|var-run|var|usr(-local)?(-s?bin)?)$");
 
    sm->configure = linux_network_wpa_supplicant_module_configure;
 

@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created on 12/09/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -79,9 +79,9 @@ module_register(einit_module_network_v2_self);
 
 #endif
 
-#if defined(BSD)
+#if defined(__FreeBSD) || defined(__APPLE__)
 char *bsd_network_suffixes[] = { "bsd", "generic", NULL };
-#elif defined(LINUX)
+#elif defined(__linux__)
 char *bsd_network_suffixes[] = { "linux", "generic", NULL };
 #else
 char *bsd_network_suffixes[] = { "generic", NULL };
@@ -520,10 +520,10 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      memset (sm, 0, sizeof (struct smodule));
 
      esprintf (buffer, BUFFERSIZE, "interface-carrier-%s", interfaces[i]);
-     sm->rid = estrdup (buffer);
+     sm->rid = (char *)str_stabilise (buffer);
 
      esprintf (buffer, BUFFERSIZE, "Network Interface Carrier (%s)", interfaces[i]);
-     sm->name = estrdup (buffer);
+     sm->name = (char *)str_stabilise (buffer);
 
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
@@ -544,10 +544,10 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      memset (sm, 0, sizeof (struct smodule));
 
      esprintf (buffer, BUFFERSIZE, "interface-v2-%s", interfaces[i]);
-     sm->rid = estrdup (buffer);
+     sm->rid = (char *)str_stabilise (buffer);
 
      esprintf (buffer, BUFFERSIZE, "Network Interface (%s)", interfaces[i]);
-     sm->name = estrdup (buffer);
+     sm->name = (char *)str_stabilise (buffer);
 
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
@@ -619,11 +619,11 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
     struct cfgnode newnode;
     memset (&newnode, 0, sizeof (struct cfgnode));
 
-    newnode.id = estrdup("services-alias-network");
-    newnode.arbattrs = set_str_add (newnode.arbattrs, "group");
-    newnode.arbattrs = set_str_add (newnode.arbattrs, au);
-    newnode.arbattrs = set_str_add (newnode.arbattrs, "seq");
-    newnode.arbattrs = set_str_add (newnode.arbattrs, "all");
+    newnode.id = (char *)str_stabilise("services-alias-network");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, "group");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, au);
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, "seq");
+    newnode.arbattrs = set_str_add_stable (newnode.arbattrs, "all");
 
     cfg_addnode (&newnode);
    }
@@ -764,7 +764,7 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
        if (tmpst) {
         struct network_v2_interface_descriptor *id = tmpst->value;
         if (id)
-         id->dhcp_client = estrdup (v[i]);
+         id->dhcp_client = (char *)str_stabilise (v[i]);
        }
        emutex_unlock (&einit_module_network_v2_interfaces_mutex);
 
@@ -795,7 +795,7 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
   if (st) {
    struct network_v2_interface_descriptor *id = st->value;
    if (id && id->dhcp_client) {
-    client = estrdup(id->dhcp_client);
+    client = (char *)str_stabilise(id->dhcp_client);
    }
   }
   emutex_unlock (&einit_module_network_v2_interfaces_mutex);
@@ -807,14 +807,11 @@ void einit_module_network_v2_address_automatic (struct einit_event *ev) {
     if (st) {
      struct network_v2_interface_descriptor *id = st->value;
      if (id && id->dhcp_client) {
-      efree (id->dhcp_client);
       id->dhcp_client = NULL;
      }
     }
     emutex_unlock (&einit_module_network_v2_interfaces_mutex);
    }
-
-   efree (client);
   }
  }
 }
@@ -855,7 +852,7 @@ char *einit_module_network_v2_generate_defer_fs (char **tmpxt) {
  }
 
  if (tmpx) {
-  esprintf (tmp, BUFFERSIZE, "^fs-(%s)$", tmpx);
+  esprintf (tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
   efree (tmpx);
  }
 

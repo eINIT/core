@@ -1,0 +1,141 @@
+opts = Options()
+opts.Add('libdir', 'Define the basename for library dirs', 'lib')
+opts.Add('destdir', 'Define the (installation) prefix; The Directory to install to', '')
+opts.Add('prefix', 'Define the (runtime) prefix', '/')
+
+env = Environment(options = opts,
+ CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'])
+
+ScriptsBundle = ['libixp/sconscript',
+                 'expat/sconscript']
+
+Export('env')
+
+SConscript(ScriptsBundle)
+
+ScriptsEinit = ['src/sconscript',
+                'src/modules/sconscript']
+
+destdir = ARGUMENTS.get('destdir', '')
+prefix = ARGUMENTS.get('prefix', '/')
+libdir = ARGUMENTS.get('libdir', 'lib')
+
+Help(opts.GenerateHelpText(env))
+
+RuntimeDirSbin = prefix + 'sbin'
+RuntimeDirEtc = prefix + 'etc'
+RuntimeDirLib = prefix + 'lib'
+RuntimeDirLibEinit = prefix + libdir + '/einit'
+RuntimeDirLibBin = prefix + libdir + '/einit/bin'
+RuntimeDirModules = prefix + libdir + '/einit/modules'
+RuntimeDirBootstrap = prefix + libdir + '/einit/bootstrap'
+
+InstallDirSbin = destdir + RuntimeDirSbin
+InstallDirEtc = destdir + RuntimeDirEtc
+InstallDirLib = destdir + RuntimeDirLib
+InstallDirLibEinit = prefix + RuntimeDirLibEinit
+InstallDirLibBin = destdir + RuntimeDirLibBin
+InstallDirModules = destdir + RuntimeDirModules
+InstallDirBootstrap = destdir + RuntimeDirBootstrap
+
+SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p']
+
+Modules = ['feedback-visual-textual', 'fqdn', 'exec', 'mount', 'tty', 'process', 'shadow-exec', 'module-transformations', 'ipc-core-helpers', 'scheduler', 'functions-xml', 'module-xml', 'log', 'parse-sh', 'module-checkpoint', 'module-group', 'feedback-visual-psplash', 'module-logic-v4', 'module-network-v2', 'compile-c']
+
+ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding']
+
+ModulesBSD = ['bsd-devfs', 'bsd-network']
+
+ModulesCompatibility = ['compatibility-sysv-utmp', 'compatibility-sysv-initctl']
+
+import os
+
+f = os.popen ('uname', 'r')
+if f:
+ uname = f.readline()
+ f.close()
+
+if uname == "Darwin\n":
+ uname = 'Darwin'
+
+if uname == 'Darwin':
+ ModulesLinux = []
+else:
+ ModulesBSD = []
+
+InternalModules = ['module-so']
+ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
+
+Mkdir ('build/headers/einit')
+Mkdir ('build/headers/einit-modules')
+
+buildnumber = 0
+
+f = open ('buildnumber', 'r')
+if f:
+ buildnumber = int(f.readline())
+ f.close ()
+
+def build_configuration(target, source, env):
+ for i in source:
+  if (str(i) == 'core'):
+   f = open ('build/headers/einit/configuration.h', 'w');
+   if f:
+    f.write ("""/* automatically created on each build, you shouldn\'t modify this */
+
+#ifndef EINIT_CONFIGURATION_H
+#define EINIT_CONFIGURATION_H
+
+#define BUILDNUMBER """ + str(buildnumber) + """
+
+#define BUFFERSIZE 1024
+
+#define EINIT_LIB_BASE \"""" + RuntimeDirLibEinit + """\"
+
+#define EINIT_VERSION_LITERAL_SUFFIX "-git-""" + str(buildnumber) + """"
+#endif
+""")
+    f.close()
+   return None
+  else:
+   if (str(i) == 'modules'):
+    f = open ('build/headers/einit-modules/configuration.h', 'w');
+    if f:
+     f.write ("""/* automatically created on each build, you shouldn't modify this */
+
+#ifndef EINIT_MODULES_CONFIGURATION_H
+#define EINIT_MODULES_CONFIGURATION_H
+
+#define BOOTSTRAP_MODULE_PATH \"""" + RuntimeDirBootstrap + """\"
+
+#define DO_BOOTSTRAP
+
+""")
+
+     for m in InternalModules:
+      f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'y\'' + "\n")
+     for m in ExternalModules:
+      f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'m\'' + "\n")
+
+     f.write ("#endif\n")
+     f.close()
+    return None
+
+ return None
+
+build_config = Builder(action = build_configuration)
+
+env.Append (BUILDERS = { 'EConfiguration' : build_config})
+
+env.EConfiguration('build/headers/einit/configuration.h', 'core')
+env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
+
+env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap])
+
+Export(['env',
+        'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap',
+        'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap',
+        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
+        'uname'])
+
+SConscript(ScriptsEinit)

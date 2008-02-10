@@ -1,0 +1,29 @@
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname'])
+
+menv = env.Clone (SHLIBPREFIX = '', LDMODULESUFFIX='.so')
+
+def buildModule(name, location, e):
+ e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE'))
+
+def buildModuleBootStrap(name, e):
+ e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c', CCFLAGS = '-DEINIT_MODULE'))
+
+if uname == 'Darwin':
+ menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
+ for x in ModulesBSD:
+  buildModule(x, 'bsd', menv)
+else:
+ for x in ModulesLinux:
+  buildModule(x, 'linux', menv)
+
+buildModuleBootStrap('bootstrap-configuration-stree', menv)
+buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
+
+for x in Modules:
+ buildModule(x, '.', menv)
+
+for x in ModulesCompatibility:
+ buildModule(x, 'compatibility', menv)
+
+if 'ipc-9p' in ExternalModules:
+ buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))

@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 25/06/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -88,7 +88,7 @@ void event_subthread_a (struct einit_event *event) {
    it = itreefind (event_handlers, event->type, tree_find_first);
 
    while (it) {
-    f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+    f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
     it = itreefind (it, event->type, tree_find_next);
    }
@@ -97,7 +97,7 @@ void event_subthread_a (struct einit_event *event) {
   it = itreefind (event_handlers, subsystem, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, subsystem, tree_find_next);
   }
@@ -105,7 +105,7 @@ void event_subthread_a (struct einit_event *event) {
   it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
@@ -134,11 +134,7 @@ void *event_subthread (struct einit_event *event) {
 
  event_subthread_a (event);
 
- if ((event->type & EVENT_SUBSYSTEM_MASK) == einit_event_subsystem_ipc) {
-  if (event->argv) efree (event->argv);
- } else {
-  if (event->stringset) efree (event->stringset);
- }
+ if (event->stringset) efree (event->stringset);
 
  evdestroy (event);
 
@@ -173,7 +169,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
    it = itreefind (event_handlers, event->type, tree_find_first);
 
    while (it) {
-    f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+    f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
     it = itreefind (it, event->type, tree_find_next);
    }
@@ -182,7 +178,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   it = itreefind (event_handlers, subsystem, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, subsystem, tree_find_next);
   }
@@ -190,7 +186,7 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
   it = itreefind (event_handlers, einit_event_subsystem_any, tree_find_first);
 
   while (it) {
-   f = (struct event_function **)set_fix_add ((void **)f, it->value, sizeof (struct event_function));
+   f = (struct event_function **)set_fix_add ((void **)f, it->data, sizeof (struct event_function));
 
    it = itreefind (it, einit_event_subsystem_any, tree_find_next);
   }
@@ -243,10 +239,24 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 }
 
 void event_listen (enum einit_event_subsystems type, void (* handler)(struct einit_event *)) {
- struct event_function f = { .handler = handler };
+ char doadd = 1;
 
  emutex_lock (&evf_mutex);
- event_handlers = itreeadd (event_handlers, type, &f, sizeof(struct event_function));
+ struct itree *it = event_handlers ? itreefind (event_handlers, type, tree_find_first) : NULL;
+ while (it) {
+  struct event_function *f = (struct event_function *)it->data;
+
+  if (f->handler == handler) {
+   doadd = 0;
+   break;
+  }
+  it = itreefind (it, type, tree_find_next);
+ }
+
+ if (doadd) {
+  struct event_function f = { .handler = handler };
+  event_handlers = itreeadd (event_handlers, type, &f, sizeof(struct event_function));
+ }
  emutex_unlock (&evf_mutex);
 }
 
@@ -257,7 +267,7 @@ void event_ignore (enum einit_event_subsystems type, void (* handler)(struct ein
   it = itreefind (event_handlers, type, tree_find_first);
 
   while (it) {
-   struct event_function *f = it->value;
+   struct event_function *f = (struct event_function *)it->data;
    if (f->handler == handler) break;
 
    it = itreefind (it, type, tree_find_next);
@@ -448,7 +458,6 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_panic:                       return "core/panic";
   case einit_core_service_update:              return "core/service-update";
   case einit_core_configuration_update:        return "core/configuration-update";
-  case einit_core_plan_update:                 return "core/plan-update";
   case einit_core_module_list_update:          return "core/module-list-update";
   case einit_core_module_list_update_complete: return "core/module-list-update-complete";
 
@@ -480,8 +489,6 @@ char *event_code_to_string (const uint32_t code) {
 
   case einit_feedback_module_status:           return "feedback/module-status";
   case einit_feedback_notice:                  return "feedback/notice";
-  case einit_feedback_register_fd:             return "feedback/register-fd";
-  case einit_feedback_unregister_fd:           return "feedback/unregister-fd";
 
   case einit_feedback_broken_services:         return "feedback/broken-services";
   case einit_feedback_unresolved_services:     return "feedback/unresolved-services";
@@ -532,7 +539,6 @@ char *event_code_to_string (const uint32_t code) {
 
  switch (code & EVENT_SUBSYSTEM_MASK) {
   case einit_event_subsystem_core:     return "core/{unknown}";
-  case einit_event_subsystem_ipc:      return "ipc";
   case einit_event_subsystem_mount:    return "mount/{unknown}";
   case einit_event_subsystem_feedback: return "feedback/{unknown}";
   case einit_event_subsystem_power:    return "power/{unknown}";
@@ -556,7 +562,6 @@ uint32_t event_string_to_code (const char *code) {
 
  if (tcode) {
   if (strmatch (tcode[0], "core"))          ret = einit_event_subsystem_core;
-  else if (strmatch (tcode[0], "ipc"))      ret = einit_event_subsystem_ipc;
   else if (strmatch (tcode[0], "mount"))    ret = einit_event_subsystem_mount;
   else if (strmatch (tcode[0], "feedback")) ret = einit_event_subsystem_feedback;
   else if (strmatch (tcode[0], "power"))    ret = einit_event_subsystem_power;
@@ -574,7 +579,6 @@ uint32_t event_string_to_code (const char *code) {
      if (strmatch (tcode[1], "panic"))                            ret = einit_core_panic;
      else if (strmatch (tcode[1], "service-update"))              ret = einit_core_service_update;
      else if (strmatch (tcode[1], "configuration-update"))        ret = einit_core_configuration_update;
-     else if (strmatch (tcode[1], "plan-update"))                 ret = einit_core_plan_update;
      else if (strmatch (tcode[1], "module-list-update"))          ret = einit_core_module_list_update;
      else if (strmatch (tcode[1], "module-list-update-complete")) ret = einit_core_module_list_update_complete;
 
@@ -608,8 +612,6 @@ uint32_t event_string_to_code (const char *code) {
     case einit_event_subsystem_feedback:
      if (strmatch (tcode[1], "module-status"))                    ret = einit_feedback_module_status;
      else if (strmatch (tcode[1], "notice"))                      ret = einit_feedback_notice;
-     else if (strmatch (tcode[1], "register-fd"))                 ret = einit_feedback_register_fd;
-     else if (strmatch (tcode[1], "unregister-fd"))               ret = einit_feedback_unregister_fd;
 
      else if (strmatch (tcode[1], "broken-services"))             ret = einit_feedback_broken_services;
      else if (strmatch (tcode[1], "unresolved-services"))         ret = einit_feedback_unresolved_services;

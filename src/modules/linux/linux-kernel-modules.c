@@ -3,12 +3,12 @@
  *  einit
  *
  *  Moved from linux-module-kernel.c on 22/09/2007
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -413,10 +413,10 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
     sm = emalloc (sizeof(struct smodule));
     memset (sm, 0, sizeof (struct smodule));
 
-    sm->rid = estrdup (tmp);
+    sm->rid = (char *)str_stabilise (tmp);
 
     esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
-    sm->name = estrdup (tmp);
+    sm->name = (char *)str_stabilise (tmp);
 
     sm->eiversion = EINIT_VERSION;
     sm->eibuild = BUILDNUMBER;

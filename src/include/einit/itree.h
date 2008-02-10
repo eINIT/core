@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 04/12/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -49,7 +49,10 @@ enum tree_search_base {
 struct itree {
  struct itree *left, *right, *equal, *parent;
  signed long key;
- void *value;
+ union {
+  void *value;
+  char data[0]; /* yeah, this hack is old and dirty... */
+ };
 };
 
 struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_t size);

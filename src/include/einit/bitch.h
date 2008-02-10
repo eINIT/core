@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 14/02/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -152,25 +152,12 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
 #define ethread_create(th, tattr, function, fattr)\
  ((errno = pthread_create(th, tattr, function, fattr)) ? (bitch_macro (bitch_epthreads, __FILE__, __LINE__, __func__ , errno, "pthread_create() failed."), errno) : errno)
 
-#ifdef POSIXREGEX
-
-#if ! defined (EINIT_UTIL)
-
 #define eregcomp(target, pattern)\
  ((errno = eregcomp_cache(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
 
 #define eregfree(x) eregfree_cache(x)
 
 #else
-
-#define eregcomp(target, pattern)\
- ((errno = regcomp(target, (pattern), REG_EXTENDED)) ? (bitch_macro (bitch_regex, __FILE__, __LINE__, __func__ , errno, "could not compile regular expression."), errno) : 0)
-
-#define eregfree(x) regfree(x)
-
-#endif
-
-#endif
 
 #endif /* _BITCH_H */
 

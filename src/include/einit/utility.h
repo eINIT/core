@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 25/03/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -281,13 +281,10 @@ struct einit_join_thread {
 extern struct einit_join_thread *einit_join_threads;
 extern pthread_mutex_t thread_key_detached_mutex;
 
-#ifdef POSIXREGEX
 #include <regex.h>
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags);
 void eregfree_cache (regex_t *preg);
-
-#endif
 
 #include <einit/set.h>
 

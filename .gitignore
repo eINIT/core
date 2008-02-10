@@ -14,6 +14,11 @@
 *.so.dbg
 *.la
 *.O
+*.os
+*.dylib
+
+src/einit-core
+src/einit-monitor
 
 #
 # Top-level generic files

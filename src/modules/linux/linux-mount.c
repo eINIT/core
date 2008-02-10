@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 27/05/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -123,6 +123,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
    if (tmp[0]) {
     char *cur = estrdup (tmp);
     char *scur = cur;
+    char *acur = cur;
     field = 0;
     strtrim (cur);
     for (; *cur; cur++) {
@@ -151,6 +152,8 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
     strcpy (tmp, "/dev/");
     strncat (tmp, device_name, sizeof(tmp) - strlen (tmp) + 1);
     mcb->add_block_device (tmp, device_major, device_minor);
+
+    efree (acur);
    }
   }
  }
@@ -249,7 +252,7 @@ int linux_mount_do_umount_swap (char *mountpoint, char *fs, char step, struct de
 
 int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
  if (!inset ((const void **)sm->si.requires, "network", SET_TYPE_STRING)) {
-  sm->si.requires = set_str_add (sm->si.requires, "network");
+  sm->si.requires = set_str_add_stable (sm->si.requires, "network");
  }
 
  if (mp->options) {
@@ -257,29 +260,29 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
   for (; mp->options[i]; i++) {
    if (strprefix (mp->options[i], "sec=krb")) {
     if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
-     sm->si.requires = set_str_add (sm->si.requires, "rpc.svcgssd");
+     sm->si.requires = set_str_add_stable (sm->si.requires, "rpc.svcgssd");
     }
    }
   }
 
   if (!inset ((const void **)mp->options, "nolock", SET_TYPE_STRING)) {
    if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-    sm->si.requires = set_str_add (sm->si.requires, "sm-notify");
+    sm->si.requires = set_str_add_stable (sm->si.requires, "sm-notify");
    }
    if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
-    sm->si.requires = set_str_add (sm->si.requires, "rpc.statd");
+    sm->si.requires = set_str_add_stable (sm->si.requires, "rpc.statd");
    }
   } else {
    if (!inset ((const void **)sm->si.requires, "portmap", SET_TYPE_STRING)) {
-    sm->si.requires = set_str_add (sm->si.requires, "portmap");
+    sm->si.requires = set_str_add_stable (sm->si.requires, "portmap");
    }
   }
  } else {
   if (!inset ((const void **)sm->si.requires, "sm-notify", SET_TYPE_STRING)) {
-   sm->si.requires = set_str_add (sm->si.requires, "sm-notify");
+   sm->si.requires = set_str_add_stable (sm->si.requires, "sm-notify");
   }
   if (!inset ((const void **)sm->si.requires, "rpc.statd", SET_TYPE_STRING)) {
-   sm->si.requires = set_str_add (sm->si.requires, "rpc.statd");
+   sm->si.requires = set_str_add_stable (sm->si.requires, "rpc.statd");
   }
  }
 
@@ -288,7 +291,7 @@ int linux_mount_update_nfs (struct lmodule *lm, struct smodule *sm, struct devic
 
 int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
  if (!inset ((const void **)sm->si.requires, "network", SET_TYPE_STRING)) {
-  sm->si.requires = set_str_add (sm->si.requires, "network");
+  sm->si.requires = set_str_add_stable (sm->si.requires, "network");
  }
 
  if (mp->options) {
@@ -296,13 +299,13 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
   for (; mp->options[i]; i++) {
    if (strprefix (mp->options[i], "sec=krb")) {
     if (!inset ((const void **)sm->si.requires, "rpc.svcgssd", SET_TYPE_STRING)) {
-     sm->si.requires = set_str_add (sm->si.requires, "rpc.svcgssd");
+     sm->si.requires = set_str_add_stable (sm->si.requires, "rpc.svcgssd");
     }
    }
   }
  }
  if (!inset ((const void **)sm->si.requires, "rpc.idmapd", SET_TYPE_STRING)) {
-  sm->si.requires = set_str_add (sm->si.requires, "rpc.idmapd");
+  sm->si.requires = set_str_add_stable (sm->si.requires, "rpc.idmapd");
  }
 
  return 0;
@@ -310,7 +313,7 @@ int linux_mount_update_nfs4 (struct lmodule *lm, struct smodule *sm, struct devi
 
 int linux_mount_update_vboxsf (struct lmodule *lm, struct smodule *sm, struct device_data *dd, struct mountpoint_data *mp) {
  if (!inset ((const void **)sm->si.requires, "vboxvfs", SET_TYPE_STRING)) {
-  sm->si.requires = set_str_add (sm->si.requires, "vboxvfs");
+  sm->si.requires = set_str_add_stable (sm->si.requires, "vboxvfs");
  }
 
  return 0;

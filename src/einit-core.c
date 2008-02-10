@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -52,18 +52,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
-#include <einit-modules/ipc.h>
 #include <einit-modules/configuration.h>
 #include <einit/configuration.h>
 
 #include <fcntl.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <sys/syscall.h>
 #include <sys/mount.h>
 #endif
 
-#if defined(LINUX)
+#if defined(__linux__)
 #include <sys/prctl.h>
 #endif
 
@@ -78,7 +77,6 @@ pid_t einit_sub = 0;
 char isinit = 1, initoverride = 0;
 
 char **einit_global_environment = NULL, **einit_initial_environment = NULL, **einit_argv = NULL;
-struct stree *hconfiguration = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;
@@ -110,7 +108,7 @@ struct einit_join_thread *einit_join_threads = NULL;
 void thread_autojoin_function (void *);
 
 int print_usage_info () {
- eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006, 2007, Magnus Deininger\n"
+ eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
   "Usage:\n"
   " einit [-c <filename>] [options]\n"
   "\n"
@@ -120,8 +118,6 @@ int print_usage_info () {
   "-v                    print version, then exit\n"
   "-L                    print copyright notice, then exit\n"
   "--bootstrap-modules   use this path to load bootstrap-modules\n"
-  "--ipc                 don't boot, only run specified ipc-command\n"
-  "                      (may be used more than once)\n"
   "--force-init          ignore PID and start as init\n"
   "\n"
   "--sandbox             run einit in \"sandbox mode\"\n"
@@ -233,7 +229,6 @@ void core_einit_event_handler_recover (struct einit_event *ev) {
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i, ret = EXIT_SUCCESS;
- char **ipccommands = NULL;
  int pthread_errno;
  FILE *commandpipe_in = NULL;
  char need_recovery = 0;
@@ -243,8 +238,9 @@ int main(int argc, char **argv, char **environ) {
 // char crash_threshold = 5;
  char *einit_crash_data = NULL;
  char suppress_version = 0;
+ char do_wait = 0;
 
-#if defined(LINUX) && defined(PR_SET_NAME)
+#if defined(__linux__) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
 #endif
 
@@ -252,9 +248,6 @@ int main(int argc, char **argv, char **environ) {
 
  uname (&osinfo);
  config_configure();
-
-// initialise subsystems
- ipc_configure(NULL);
 
 // is this the system's init-process?
  isinit = getpid() == 1;
@@ -288,14 +281,12 @@ int main(int argc, char **argv, char **environ) {
      eputs("eINIT " EINIT_VERSION_LITERAL
           "\nThis Program is Free Software, released under the terms of this (BSD) License:\n"
           "--------------------------------------------------------------------------------\n"
-          "Copyright (c) 2006, 2007, Magnus Deininger\n"
+          "Copyright (c) 2006-2008, Magnus Deininger\n"
           BSDLICENSE "\n", stdout);
      return 0;
     case '-':
      if (strmatch(argv[i], "--help"))
       return print_usage_info ();
-     else if (strmatch(argv[i], "--ipc") && argv[i+1])
-      ipccommands = set_str_add (ipccommands, (void *)argv[i+1]);
      else if (strmatch(argv[i], "--force-init"))
       initoverride = 1;
      else if (strmatch(argv[i], "--sandbox")) {
@@ -327,6 +318,8 @@ int main(int argc, char **argv, char **environ) {
       initoverride = 1;
      } else if (strmatch(argv[i], "--debug")) {
       debug = 1;
+     } else if (strmatch(argv[i], "--do-wait")) {
+      do_wait = 1;
      }
 
      break;
@@ -337,7 +330,7 @@ int main(int argc, char **argv, char **environ) {
  if (environ) {
   uint32_t e = 0;
   for (e = 0; environ[e]; e++) {
-   char *ed = estrdup (environ[e]);
+   char *ed = (char *)str_stabilise (environ[e]);
    char *lp = strchr (ed, '=');
 
    *lp = 0;
@@ -377,8 +370,6 @@ int main(int argc, char **argv, char **environ) {
 
     efree (tmpstrset);
    }
-
-   efree (ed);
   }
 
   einit_initial_environment = set_str_dup_stable (environ);
@@ -397,10 +388,6 @@ int main(int argc, char **argv, char **environ) {
 
 /* actual system initialisation */
   struct einit_event cev = evstaticinit(einit_core_update_configuration);
-
-  if (ipccommands && (coremode != einit_mode_sandbox)) {
-   coremode = einit_mode_ipconly;
-  }
 
   if (!suppress_version) {
    eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
@@ -437,7 +424,7 @@ int main(int argc, char **argv, char **environ) {
       eprintf (stderr, " [%s]", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
-     lmm->source = estrdup("core");
+     lmm->source = (char *)str_stabilise("core");
     }
 
     if (!suppress_version)
@@ -469,18 +456,11 @@ int main(int argc, char **argv, char **environ) {
   }
   evstaticdestroy(cev);
 
-  if (ipccommands) {
-   uint32_t rx = 0;
-   for (; ipccommands[rx]; rx++) {
-    ret = ipc_process (ipccommands[rx], stdout);
-   }
-
-//   if (gmode == EINIT_GMODE_SANDBOX)
-//    cleanup ();
-
-   efree (ipccommands);
-   if (einit_initial_environment) efree (einit_initial_environment);
-   return ret;
+  if (do_wait) {
+   struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
+   eml.file = commandpipe_in;
+   event_emit (&eml, einit_event_flag_broadcast);
+   evstaticdestroy(eml);
   } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {
    eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
    exit (EXIT_FAILURE);

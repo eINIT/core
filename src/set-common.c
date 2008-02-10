@@ -3,12 +3,12 @@
  *  einit
  *
  *  Split from set-lowmem.c on 04/12/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -208,14 +208,10 @@ int inset (const void **haystack, const void *needle, int32_t esize) {
  return 0;
 }
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 char inset_pattern (const void **haystack, const void *needle, int32_t esize) {
-#ifdef POSIXREGEX
  regex_t pattern;
-#endif
  int c = 0;
 
  if (!haystack) return 0;
@@ -223,14 +219,11 @@ char inset_pattern (const void **haystack, const void *needle, int32_t esize) {
  if (!needle) return 0;
 
  if (esize == SET_TYPE_STRING) {
-#ifdef POSIXREGEX
   if (eregcomp (&pattern, needle)) {
-#endif
    for (; haystack[c] != NULL; c++)
     if (strmatch (haystack[c], needle)) {
      return 1;
     }
-#ifdef POSIXREGEX
   } else {
    for (; haystack[c] != NULL; c++)
     if (!regexec (&pattern, haystack[c], 0, NULL, 0)) {
@@ -240,7 +233,6 @@ char inset_pattern (const void **haystack, const void *needle, int32_t esize) {
 
    eregfree (&pattern);
   }
-#endif
  } else if (esize == -1) {
   for (; haystack[c] != NULL; c++)
    if (haystack[c] == needle) {

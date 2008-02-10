@@ -1,0 +1,28 @@
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules'])
+
+CodeSet = ['set-lowmem.c', 'set-common.c']
+CodeITree = ['itree-trinary-splay.c']
+CodeSTree = ['tree-itree.c']
+
+CodeCoreObjects = ['einit-core.c', 'module.c', 'bitch.c', 'utility.c', 'event.c'] + CodeSet + CodeSTree + CodeITree
+CodeCoreMonitorObjects = ['einit-monitor.c']
+
+CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree
+
+def buildInternalModule(name, location, e):
+ tm = name.replace('-', '_')
+ return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=' + tm + '_thismodule -Dself=' + tm + '_self')
+
+for x in InternalModules:
+ CodeCoreObjects += buildInternalModule(x, 'modules', env)
+
+einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=['pthread', 'dl'], CCFLAGS = '-DEINIT_CORE')
+einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
+
+libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local'], LIBPATH=['#libixp'])
+libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
+
+env.Install (InstallDirLibBin, einitCore)
+env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
+env.Install (InstallDirLib, libEinit)
+env.Install (InstallDirLib, libEinitPP)

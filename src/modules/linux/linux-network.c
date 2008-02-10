@@ -8,7 +8,7 @@
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -254,18 +254,18 @@ void linux_network_interface_construct (struct einit_event *ev) {
    memset (&newnode, 0, sizeof(struct cfgnode));
 
    esprintf (buffer, BUFFERSIZE, "configuration-kernel-modules-%s", ev->string);
-   newnode.id = estrdup (buffer);
+   newnode.id = (char *)str_stabilise (buffer);
    newnode.type = einit_node_regular;
 
    esprintf (buffer, BUFFERSIZE, "kernel-module-%s", ev->string);
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"id");
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)buffer);
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"id");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)buffer);
 
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"s");
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)node->svalue);
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"s");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)node->svalue);
 
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"provide-service");
-   newnode.arbattrs = set_str_add (newnode.arbattrs, (void *)"yes");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"provide-service");
+   newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"yes");
 
    newnode.svalue = newnode.arbattrs[3];
 
@@ -462,6 +462,9 @@ void linux_network_interface_done (struct einit_event *ev) {
      fbprintf (d->feedback, "updating resolv.conf using resolvconf");
 
      esprintf (buffer, BUFFERSIZE, "resolvconf -a %s", ev->string);
+
+     unlink ("/etc/resolv.conf");
+     symlink("resolvconf/run/resolv.conf", "/etc/resolv.conf");
 
      FILE *f = popen (buffer, "w");
      if (f) {

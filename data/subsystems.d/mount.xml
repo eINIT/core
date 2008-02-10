@@ -65,6 +65,11 @@
    <type id="proc" flags="rw:volatile:nofsck" />
    <type id="sysfs" flags="rw:volatile:nofsck" />
 
+   <type id="usbfs" flags="rw:volatile:nofsck" />
+   <type id="devpts" flags="rw:volatile:nofsck" />
+
+   <type id="9p" flags="rw:volatile:nofsck" />
+
    <!-- really special filesystems -->
    <type id="swap" flags="nofsck" />
   </filesystem>
