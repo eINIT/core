@@ -3,12 +3,18 @@ opts.Add('libdir', 'Define the basename for library dirs', 'lib')
 opts.Add('destdir', 'Define the (installation) prefix; The Directory to install to', '')
 opts.Add('prefix', 'Define the (runtime) prefix', '/')
 
-env = Environment(options = opts)
+env = Environment(options = opts,
+ CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'])
 
-Scripts = ['libixp/sconscript',
-           'expat/sconscript',
-           'src/sconscript',
-           'src/modules/sconscript']
+ScriptsBundle = ['libixp/sconscript',
+                 'expat/sconscript']
+
+Export('env')
+
+SConscript(ScriptsBundle)
+
+ScriptsEinit = ['src/sconscript',
+                'src/modules/sconscript']
 
 destdir = ARGUMENTS.get('destdir', '')
 prefix = ARGUMENTS.get('prefix', '/')
@@ -38,16 +44,27 @@ Modules = ['feedback-visual-textual', 'fqdn', 'exec', 'mount', 'tty', 'process',
 
 ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding']
 
+ModulesBSD = ['bsd-devfs', 'bsd-network']
+
 ModulesCompatibility = ['compatibility-sysv-utmp', 'compatibility-sysv-initctl']
 
+import os
+
+f = os.popen ('uname', 'r')
+if f:
+ uname = f.readline()
+ f.close()
+
+if uname == "Darwin\n":
+ uname = 'Darwin'
+
+if uname == 'Darwin':
+ ModulesLinux = []
+else:
+ ModulesBSD = []
+
 InternalModules = ['module-so']
-
-ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility
-
-Export(['env',
-        'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap',
-        'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap',
-        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules'])
+ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -89,7 +106,7 @@ def build_configuration(target, source, env):
 #ifndef EINIT_MODULES_CONFIGURATION_H
 #define EINIT_MODULES_CONFIGURATION_H
 
-#define BOOTSTRAP_MODULE_PATH """" + RuntimeDirBootstrap + """"
+#define BOOTSTRAP_MODULE_PATH \"""" + RuntimeDirBootstrap + """\"
 
 #define DO_BOOTSTRAP
 
@@ -106,8 +123,6 @@ def build_configuration(target, source, env):
 
  return None
 
-env.Append (CPPPATH = '#build/headers')
-
 build_config = Builder(action = build_configuration)
 
 env.Append (BUILDERS = { 'EConfiguration' : build_config})
@@ -117,4 +132,10 @@ env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
 
 env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap])
 
-SConscript(Scripts)
+Export(['env',
+        'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap',
+        'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap',
+        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
+        'uname'])
+
+SConscript(ScriptsEinit)

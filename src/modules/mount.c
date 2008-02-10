@@ -1886,7 +1886,7 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 
  if (!(coremode & einit_mode_sandbox)) {
   if (strmatch ("/", mountpoint)) goto attempt_remount;
-#if defined(DARWIN) || defined(__FreeBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__)
   if (mount (dd->device, mountpoint, mp->mountflags, mp->flatoptions) == -1)
 #else
   if (mount (dd->device, mountpoint, fs, mp->mountflags, mp->flatoptions) == -1)
@@ -1938,7 +1938,7 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
  fbprintf (status, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 
-#if defined(DARWIN) || defined(__FreeBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__)
  if (unmount (mountpoint, 0) != -1)
 #else
   if (umount (mountpoint) != -1)

@@ -533,7 +533,7 @@ int scheduler_cleanup () {
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
  sem_destroy (sembck);
 // efree (sembck);
-#elif defined(DARWIN)
+#elif defined(__APPLE__)
  sem_close (sembck);
 #else
  if (sem_destroy (sembck))
@@ -549,7 +549,7 @@ int einit_scheduler_configure (struct lmodule *tm) {
 #if ((_POSIX_SEMAPHORES - 200112L) >= 0)
  signal_semaphore = &signal_semaphore_static;
  sem_init (signal_semaphore, 0, 0);
-#elif defined(DARWIN)
+#elif defined(__APPLE__)
  char tmp[BUFFERSIZE];
 
  esprintf (tmp, BUFFERSIZE, "/einit-sgchld-sem-%i", getpid());

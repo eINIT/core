@@ -1122,7 +1122,7 @@ void module_logic_ping_wait (pthread_cond_t *cond, pthread_mutex_t *mutex) {
  ts.tv_sec += 1; /* max wait before re-evaluate */
 
  e = pthread_cond_timedwait (cond, mutex, &ts);
-#elif defined(DARWIN)
+#elif defined(__APPLE__)
  struct timespec ts;
  struct timeval tv;
 

@@ -250,7 +250,7 @@ void feedback_textual_wait_for_commandQ_to_finish() {
   ts.tv_sec += 1; /* max wait before re-evaluate */
 
   e = pthread_cond_timedwait (&feedback_textual_all_done_cond, &feedback_textual_all_done_cond_mutex, &ts);
-#elif defined(DARWIN)
+#elif defined(__APPLE__)
   struct timespec ts;
   struct timeval tv;
 

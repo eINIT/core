@@ -62,7 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef ecalloc
 #endif
 
-#ifdef DARWIN
+#ifdef __APPLE__
 /* dammit, what's wrong with macos!? */
 
 struct exported_function *cfg_addnode_fs = NULL;
@@ -93,6 +93,7 @@ struct spidcb *sched_deadorphans = NULL;
 sched_watch_pid_t sched_watch_pid_fp = NULL;
 char einit_quietness = 0;
 
+struct einit_join_thread *einit_join_threads = NULL;
 #endif
 
 void einit_power_down () {

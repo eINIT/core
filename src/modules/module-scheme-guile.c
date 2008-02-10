@@ -1119,7 +1119,7 @@ void module_scheme_guile_wait_for_ping() {
  ts.tv_sec += 1; /* max wait before re-evaluate */
 
  e = pthread_cond_timedwait (&module_scheme_guile_ping_cond, &module_scheme_guile_ping_mutex, &ts);
-#elif defined(DARWIN)
+#elif defined(__APPLE__)
 #if 1
  struct timespec ts;
  struct timeval tv;
