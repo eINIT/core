@@ -79,9 +79,9 @@ module_register(einit_module_network_v2_self);
 
 #endif
 
-#if defined(BSD)
+#if defined(__FreeBSD) || defined(__APPLE__)
 char *bsd_network_suffixes[] = { "bsd", "generic", NULL };
-#elif defined(LINUX)
+#elif defined(__linux__)
 char *bsd_network_suffixes[] = { "linux", "generic", NULL };
 #else
 char *bsd_network_suffixes[] = { "generic", NULL };

@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <errno.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <errno.h>
 #include <fcntl.h>
 #include <termios.h>
@@ -663,7 +663,7 @@ void einit_feedback_visual_einit_event_handler_mode_switch_done (struct einit_ev
 
  feedback_textual_queue_update (NULL, status_working, NULL, ev->seqid, ev->timestamp, (char *)str_stabilise (tmp), 0);
 
-#ifdef LINUX
+#ifdef __linux__
  if ((!einit_feedback_visual_boot_done_switch || strmatch (((struct cfgnode *)ev->para)->id, "default")) && !mod_service_is_provided ("displaymanager") && !mod_service_is_provided ("x11")  && !mod_service_is_provided ("xorg") && !mod_service_is_provided ("xdm") && !mod_service_is_provided ("slim") && !mod_service_is_provided ("gdm") && !mod_service_is_provided ("kdm") && !mod_service_is_provided ("entrance") && !mod_service_is_provided ("entranced")) {
   einit_feedback_visual_boot_done_switch = 1;
   char *new_vt = cfg_getstring ("configuration-feedback-visual-std-io/boot-done-chvt", NULL);
@@ -789,7 +789,7 @@ void feedback_textual_enable() {
       enableansicodes = 0;
      }
     } else if (strmatch (filenode->arbattrs[i], "console")) {
-#ifdef LINUX
+#ifdef __linux__
      int tfd = 0;
      errno = 0;
      if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0))) {
@@ -803,7 +803,7 @@ void feedback_textual_enable() {
      eputs ("einit-tty: console redirection support currently only available on LINUX\n", stderr);
 #endif
     } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
-#ifdef LINUX
+#ifdef __linux__
      int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
      errno = 0;
 
@@ -814,7 +814,7 @@ void feedback_textual_enable() {
      eputs ("einit-feedback-visual-textual: kernel message redirection support currently only available on LINUX\n", stderr);
 #endif
     } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
-#ifdef LINUX
+#ifdef __linux__
      uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
      int tfd = 0;
      errno = 0;

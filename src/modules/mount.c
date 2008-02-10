@@ -64,7 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/process.h>
 #include <einit-modules/exec.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <linux/fs.h>
 
 #ifndef MNT_DETACH
@@ -737,7 +737,7 @@ void mount_update_fstab_nodes_from_fstab () {
     struct legacy_fstab_entry * val = (struct legacy_fstab_entry *)cur->value;
 
     if (val->fs_file && val->fs_spec) {
-#ifdef LINUX
+#ifdef __linux__
 /* on LINUX there's a couple of special filesystems that we ignore,
    since the *dev module handles all of those */
      if (strmatch (val->fs_file, "/dev/shm") || strmatch (val->fs_file, "/dev")
@@ -782,7 +782,7 @@ void mount_update_fstab_nodes_from_fstab () {
 }
 
 void mount_update_nodes_from_mtab () {
-#ifdef LINUX
+#ifdef __linux__
  struct stree *workstree = read_fsspec_file ("/proc/mounts");
 #else
  struct stree *workstree = read_fsspec_file ("/etc/mtab");
@@ -1516,7 +1516,7 @@ char *options_string_to_mountflags (char **options, unsigned long *mntflags, cha
  if (!options) return NULL;
 
  for (; options[fi]; fi++) {
-#ifdef LINUX
+#ifdef __linux__
   if (strmatch (options[fi], "user") || strmatch (options[fi], "users")) {
 //   notice (6, "node \"%s\": mount-flag \"%s\": this has no real meaning for eINIT except for implying noexec, nosuid and nodev; you should remove it.\n", mountpoint, options[fi]);
 
@@ -1630,7 +1630,7 @@ char **mount_generate_mount_function_suffixes (char *fs) {
  char **ret = NULL;
  char tmp[BUFFERSIZE];
 
-#ifdef LINUX
+#ifdef __linux__
  esprintf (tmp, BUFFERSIZE, "linux-%s", fs);
  ret = set_str_add_stable (ret, tmp);
 #endif
@@ -1639,7 +1639,7 @@ char **mount_generate_mount_function_suffixes (char *fs) {
  esprintf (tmp, BUFFERSIZE, "generic-%s", fs);
  ret = set_str_add_stable (ret, tmp);
 
-#ifdef LINUX
+#ifdef __linux__
  ret = set_str_add_stable (ret, "linux-any");
 #endif
  esprintf (tmp, BUFFERSIZE, "%s-any", osinfo.sysname);
@@ -1649,7 +1649,7 @@ char **mount_generate_mount_function_suffixes (char *fs) {
 /* and we also need backups, of course */
 /* NOTE: the *-backup functions are used when shit goes weird. right now that
          'give the system's native mount-command a chance to mess with this */
-#ifdef LINUX
+#ifdef __linux__
  esprintf (tmp, BUFFERSIZE, "linux-%s-backup", fs);
  ret = set_str_add_stable (ret, tmp);
 #endif
@@ -1658,7 +1658,7 @@ char **mount_generate_mount_function_suffixes (char *fs) {
  esprintf (tmp, BUFFERSIZE, "generic-%s-backup", fs);
  ret = set_str_add_stable (ret, tmp);
 
-#ifdef LINUX
+#ifdef __linux__
  ret = set_str_add_stable (ret, "linux-any-backup");
 #endif
  esprintf (tmp, BUFFERSIZE, "%s-any-backup", osinfo.sysname);
@@ -1947,7 +1947,7 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
   goto umount_ok;
  } else {
   fbprintf (status, "%s#%i: umount() failed: %s", mountpoint, step, strerror(errno));
-#ifdef LINUX
+#ifdef __linux__
   if (step >= 2) {
    if (umount2 (mountpoint, MNT_FORCE) != -1) {
     goto umount_ok;

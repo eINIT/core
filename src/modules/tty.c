@@ -60,7 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utmp.h>
 #include <fcntl.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -197,7 +197,7 @@ int einit_tty_texec (struct cfgnode *node) {
     esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else
-#ifdef LINUX
+#ifdef __linux__
    if ((cpid = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) == 0)
 #else
    retry_fork:
@@ -222,7 +222,7 @@ int einit_tty_texec (struct cfgnode *node) {
       dup2 (newfd, 2);
      }
 
-#ifdef LINUX
+#ifdef __linux__
      int fdc = open ("/dev/console", O_WRONLY | O_NOCTTY);
      ioctl(fdc, TIOCSCTTY, 1);
      close (fdc);

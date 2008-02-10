@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/configuration.h>
 #include <einit/configuration-static.h>
 
-#if defined(LINUX)
+#if defined(__linux__)
 #include <sys/prctl.h>
 #endif
 
@@ -230,7 +230,7 @@ int main(int argc, char **argv, char **env) {
  char force_init = (getpid() == 1);
  char need_recovery = 0;
 
-#if defined(LINUX) && defined(PR_SET_NAME)
+#if defined(__linux__) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
 #endif
 

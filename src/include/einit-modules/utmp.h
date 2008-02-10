@@ -95,7 +95,7 @@ utmp_function utmp_update_fp;
 #define utmp_configure(mod) utmp_update_fp = NULL;
 #define utmp_cleanup(mod) utmp_update_fp = NULL;
 
-#ifdef LINUX
+#ifdef __linux__
 #define create_utmp_record(record, utype, upid, uline, uid, uuser, uhost, ueterm, ueexit, usession) struct utmp record = { .ut_type = utype, \
   .ut_pid = upid,\
   .ut_exit = { \

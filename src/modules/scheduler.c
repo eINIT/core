@@ -330,7 +330,7 @@ int __sched_watch_pid (pid_t pid) {
 
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
 void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
-#ifdef LINUX
+#ifdef __linux__
 /* only shut down if the SIGINT was sent by the kernel, (e)INIT (process 1) or by the parent process */
  if ((siginfo->si_code == SI_KERNEL) ||
      (((siginfo->si_code == SI_USER) && (siginfo->si_pid == 1)) || (siginfo->si_pid == getppid())))

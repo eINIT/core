@@ -57,12 +57,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <fcntl.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <sys/syscall.h>
 #include <sys/mount.h>
 #endif
 
-#if defined(LINUX)
+#if defined(__linux__)
 #include <sys/prctl.h>
 #endif
 
@@ -240,7 +240,7 @@ int main(int argc, char **argv, char **environ) {
  char suppress_version = 0;
  char do_wait = 0;
 
-#if defined(LINUX) && defined(PR_SET_NAME)
+#if defined(__linux__) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
 #endif
 

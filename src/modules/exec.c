@@ -60,7 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <regex.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <sys/syscall.h>
 #include <linux/sched.h>
 #endif
@@ -499,7 +499,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 /* efree ((void *)command);
  command = NULL;*/
 
-#ifdef LINUX
+#ifdef __linux__
 // void *stack = emalloc (4096);
 // if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, stack+4096)) < 0) {
 
@@ -522,7 +522,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 #endif
  else if (child == 0) {
 /* make sure einit's thread is in a proper state */
-#ifndef LINUX
+#ifndef __linux__
   sched_yield();
 #endif
 
@@ -577,7 +577,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     char rxbuffer[BUFFERSIZE];
     setvbuf (fx, NULL, _IONBF, 0);
 
-#ifdef LINUX
+#ifdef __linux__
     kill (child, SIGCONT);
 #endif
 
@@ -649,7 +649,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     perror ("pexec(): open pipe");
    }
   }
-#ifdef LINUX
+#ifdef __linux__
   else kill (child, SIGCONT);
 #endif
 
@@ -683,7 +683,7 @@ int qexec_f (char *command) {
  char **exvec = str2set (' ', command);
  pid_t child;
 
-#ifdef LINUX
+#ifdef __linux__
  if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
   return status_failed;
  }
@@ -698,7 +698,7 @@ int qexec_f (char *command) {
 #endif
  else if (child == 0) {
 /* make sure einit's thread is in a proper state */
-#ifndef LINUX
+#ifndef __linux__
   sched_yield();
 #endif
 
@@ -712,7 +712,7 @@ int qexec_f (char *command) {
 
   execve (exvec[0], exvec, einit_global_environment);
  } else {
-#ifdef LINUX
+#ifdef __linux__
   kill (child, SIGCONT);
 #endif
 
@@ -974,7 +974,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 /*  efree (command);
   command = NULL;*/
 
-#ifdef LINUX
+#ifdef __linux__
   if ((child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
    if (status) {
     status->string = strerror (errno);

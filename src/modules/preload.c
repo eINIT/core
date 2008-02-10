@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dlfcn.h>
 #include <sys/wait.h>
 
-#if defined(LINUX)
+#if defined(__linux__)
 #include <sys/prctl.h>
 #endif
 
@@ -145,7 +145,7 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
    case 0:
     q = fork();
     if (q == 0) {
-#if defined(LINUX) && defined(PR_SET_NAME)
+#if defined(__linux__) && defined(PR_SET_NAME)
      prctl (PR_SET_NAME, "einit [preload-static]", 0, 0, 0);
 #endif
      disable_core_dumps();
