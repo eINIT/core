@@ -112,7 +112,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  if (!modules) {
   modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
 #ifdef DO_BOOTSTRAP
-                                 bootstrapmodulepath
+                                 BOOTSTRAP_MODULE_PATH
 #else
                                  "/lib/einit/modules/"
 #endif
@@ -121,7 +121,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
 /* make sure all bootstrap modules get updated */
  while (lm) {
-  if (lm->source && (strprefix(lm->source, bootstrapmodulepath))) {
+  if (lm->source && (strprefix(lm->source, BOOTSTRAP_MODULE_PATH))) {
    lm = mod_update (lm);
 
    if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
@@ -136,6 +136,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   uint32_t z = 0;
 
   for (; modules[z]; z++) {
+   fprintf (stderr, "* loading: %s\n", modules[z]);
+
    struct smodule **modinfo;
    lm = modchain;
 

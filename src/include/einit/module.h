@@ -338,7 +338,6 @@ extern time_t modules_last_change;
 
 #define fbprintf(statusvar, ...) if (statusvar) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); statusvar->string = _notice_buffer; status_update (statusvar); }
 
-char *bootstrapmodulepath;
 const struct smodule **coremodules[MAXMODULES];
 
 #if defined(EINIT_MODULE)

@@ -106,7 +106,7 @@ def build_configuration(target, source, env):
 #ifndef EINIT_MODULES_CONFIGURATION_H
 #define EINIT_MODULES_CONFIGURATION_H
 
-#define BOOTSTRAP_MODULE_PATH \"""" + RuntimeDirBootstrap + """\"
+#define BOOTSTRAP_MODULE_PATH \"""" + RuntimeDirBootstrap + """/\"
 
 #define DO_BOOTSTRAP
 

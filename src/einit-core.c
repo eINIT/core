@@ -96,8 +96,6 @@ char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NU
 
 int einit_have_feedback = 0;
 
-char *bootstrapmodulepath = BOOTSTRAP_MODULE_PATH;
-
 struct lmodule *mlist;
 
 int einit_task_niceness_increment = 0;
@@ -117,7 +115,6 @@ int print_usage_info () {
   "-h, --help            display this text\n"
   "-v                    print version, then exit\n"
   "-L                    print copyright notice, then exit\n"
-  "--bootstrap-modules   use this path to load bootstrap-modules\n"
   "--force-init          ignore PID and start as init\n"
   "\n"
   "--sandbox             run einit in \"sandbox mode\"\n"
@@ -298,8 +295,6 @@ int main(int argc, char **argv, char **environ) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--metadaemon")) {
       coremode = einit_mode_metadaemon;
-     } else if (strmatch(argv[i], "--bootstrap-modules")) {
-      bootstrapmodulepath = argv[i+1];
      } else if (strmatch(argv[i], "--command-pipe")) {
       command_pipe = parse_integer (argv[i+1]);
       fcntl (command_pipe, F_SETFD, FD_CLOEXEC);

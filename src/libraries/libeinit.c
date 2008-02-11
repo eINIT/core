@@ -74,7 +74,6 @@ struct exported_function *cfg_getpath_fs = NULL;
 struct exported_function *cfg_prefix_fs = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
-char *bootstrapmodulepath = NULL;
 time_t boottime = 0;
 enum einit_mode coremode = 0;
 const struct smodule **coremodules[MAXMODULES] = { NULL };
