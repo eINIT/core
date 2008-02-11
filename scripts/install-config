@@ -38,15 +38,15 @@ alias echo="echo -e"
 fi
 
 if [ -z "${ETCDIR}" ]; then
- ETCDIR = "/etc/einit"
+ ETCDIR="/etc/einit"
 fi
 
 if [ -z "${ELIBDIR}" ]; then
- ELIBDIR = "lib"
+ ELIBDIR="lib"
 fi
 
 if [ -z "${LIBDIR}" ]; then
- LIBDIR = "/${ELIBDIR}/einit"
+ LIBDIR="/${ELIBDIR}/einit"
 fi
 
 file=$1
