@@ -2,6 +2,7 @@ opts = Options()
 opts.Add('libdir', 'Define the basename for library dirs', 'lib')
 opts.Add('destdir', 'Define the (installation) prefix; The Directory to install to', '')
 opts.Add('prefix', 'Define the (runtime) prefix', '/')
+opts.Add('scheme', 'Define which scheme implementation to use (if any)', 'guile')
 
 env = Environment(options = opts,
  CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'],
@@ -21,6 +22,7 @@ ScriptsEinit = ['src/sconscript',
 destdir = ARGUMENTS.get('destdir', '')
 prefix = ARGUMENTS.get('prefix', '/')
 libdir = ARGUMENTS.get('libdir', 'lib')
+scheme = ARGUMENTS.get('scheme', 'guile')
 
 Help(opts.GenerateHelpText(env))
 
@@ -41,6 +43,9 @@ InstallDirModules = destdir + RuntimeDirModules
 InstallDirBootstrap = destdir + RuntimeDirBootstrap
 
 SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4', 'feedback-visual-textual']
+
+if scheme == 'guile':
+ SpecialModules += ['module-scheme-guile']
 
 Modules = ['fqdn', 'exec', 'mount', 'tty', 'process', 'shadow-exec', 'module-transformations', 'ipc-core-helpers', 'scheduler', 'functions-xml', 'module-xml', 'log', 'parse-sh', 'module-checkpoint', 'module-group', 'feedback-visual-psplash', 'module-network-v2']
 
