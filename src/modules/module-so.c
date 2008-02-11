@@ -136,7 +136,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   uint32_t z = 0;
 
   for (; modules[z]; z++) {
-   fprintf (stderr, "* loading: %s\n", modules[z]);
+//   fprintf (stderr, "* loading: %s\n", modules[z]);
 
    struct smodule **modinfo;
    lm = modchain;
@@ -188,8 +188,9 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   }
 
   efree (modules);
+ } else {
+  perror ("opening module path");
  }
-
 
  emutex_unlock (&modules_update_mutex);
 
