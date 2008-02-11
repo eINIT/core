@@ -158,7 +158,7 @@ def build_configuration(target, source, env):
 import xml.parsers.expat
 
 def xmlencode(s):
- return s.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
+ return s.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
 
 data = ""
 indent = 0
