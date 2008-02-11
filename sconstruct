@@ -230,6 +230,6 @@ Export(['env',
 
 SConscript(ScriptsEinit)
 
-InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', InstallDirLibEinit + '/defaults/subsystems.d', InstallDirLibEinit + '/defaults/rules.edev' ])
+InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', InstallDirLibEinit + '/defaults/subsystems.d', InstallDirLibEinit + '/defaults/rules.edev', InstallDirEtc, InstallDirEtc + '/subsystems.d', InstallDirEtc + '/rules.edev' ])
 
 env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit])
