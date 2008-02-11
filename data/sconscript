@@ -22,9 +22,10 @@ for i in files:
  else:
   env.FixConfiguration ('#build/data/' + i, i)
   env.InstallAs (InstallDirLibEinit + '/defaults/' + i, '#build/data/' + i)
-  if os.stat(RuntimeDirEtc + '/' + i):
+  try:
+   os.stat(RuntimeDirEtc + '/' + i)
    env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
-  else:
+  except:
    env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
 
 env.Install (InstallDirLibEinit + '/schemata', glob.glob ('schema/*.rnc'))
