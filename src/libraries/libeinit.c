@@ -91,9 +91,9 @@ pthread_attr_t thread_attribute_detached = {};
 struct spidcb *sched_deadorphans = NULL;
 sched_watch_pid_t sched_watch_pid_fp = NULL;
 char einit_quietness = 0;
+#endif
 
 struct einit_join_thread *einit_join_threads = NULL;
-#endif
 
 void einit_power_down () {
  einit_switch_mode ("power-down");

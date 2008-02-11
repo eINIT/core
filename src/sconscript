@@ -25,7 +25,7 @@ einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
 einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
 
-libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local'], LIBPATH=['#libixp'])
+libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'])
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
 
 env.Install (InstallDirLibBin, einitCore)
