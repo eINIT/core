@@ -17,7 +17,7 @@ SConscript(ScriptsBundle)
 
 ScriptsEinit = ['src/sconscript',
                 'src/modules/sconscript',
-                'data/sconscript'
+                'data/sconscript',
                 'scripts/sconscript']
 
 destdir = ARGUMENTS.get('destdir', '')
