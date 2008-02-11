@@ -8,6 +8,7 @@ CodeCoreObjects = ['#build/core/module-configuration.c', 'einit-core.c', 'module
 CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']
+CodeEinitHelper = ['einit-helper.c']
 
 CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree
 
@@ -22,11 +23,13 @@ einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=['pthread', 'dl'])
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
+einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
 
 libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local'], LIBPATH=['#libixp'])
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
 
 env.Install (InstallDirLibBin, einitCore)
+env.Install (InstallDirLibBin, einitHelper)
 env.Install (InstallDirLibBin, lastRites)
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)

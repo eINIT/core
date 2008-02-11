@@ -19,6 +19,7 @@
 
 src/einit-core
 src/einit-monitor
+src/einit-helper
 src/last-rites
 
 #
