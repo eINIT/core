@@ -25,7 +25,7 @@ libdir = ARGUMENTS.get('libdir', 'lib')
 Help(opts.GenerateHelpText(env))
 
 RuntimeDirSbin = prefix + 'sbin'
-RuntimeDirEtc = prefix + 'etc'
+RuntimeDirEtc = prefix + 'etc/einit'
 RuntimeDirLib = prefix + 'lib'
 RuntimeDirLibEinit = prefix + libdir + '/einit'
 RuntimeDirLibBin = prefix + libdir + '/einit/bin'
