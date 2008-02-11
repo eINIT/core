@@ -68,6 +68,7 @@ ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
+Mkdir ('build/core')
 
 buildnumber = 0
 
@@ -97,11 +98,10 @@ def build_configuration(target, source, env):
 """)
     f.close()
    return None
-  else:
-   if (str(i) == 'modules'):
-    f = open ('build/headers/einit-modules/configuration.h', 'w');
-    if f:
-     f.write ("""/* automatically created on each build, you shouldn't modify this */
+  if (str(i) == 'modules'):
+   f = open ('build/headers/einit-modules/configuration.h', 'w');
+   if f:
+    f.write ("""/* automatically created on each build, you shouldn't modify this */
 
 #ifndef EINIT_MODULES_CONFIGURATION_H
 #define EINIT_MODULES_CONFIGURATION_H
@@ -112,14 +112,38 @@ def build_configuration(target, source, env):
 
 """)
 
-     for m in InternalModules:
-      f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'y\'' + "\n")
-     for m in ExternalModules:
-      f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'m\'' + "\n")
+    for m in InternalModules:
+     f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'y\'' + "\n")
+    for m in ExternalModules:
+     f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'m\'' + "\n")
 
-     f.write ("#endif\n")
-     f.close()
-    return None
+    f.write ("#endif\n")
+    f.close()
+   return None
+
+  if (str(i) == 'module-configuration'):
+   f = open ('build/core/module-configuration.c', 'w');
+   if f:
+    f.write ("""/* automatically created on each build, you shouldn't modify this */
+
+#include <einit/module.h>
+
+""")
+
+    if InternalModules:
+     for m in InternalModules:
+      f.write ('extern const struct smodule * ' + m.replace ('-', '_') + "_self;\n")
+
+     f.write ("const struct smodule **coremodules[] = {\n")
+     for m in InternalModules:
+      f.write (' &' + m.replace ('-', '_') + "_self,\n")
+     f.write (" NULL };\n")
+    else:
+     f.write ("const struct smodule **coremodules[] = { NULL };")
+
+    f.write ("\n")
+    f.close()
+   return None
 
  return None
 
@@ -129,6 +153,7 @@ env.Append (BUILDERS = { 'EConfiguration' : build_config})
 
 env.EConfiguration('build/headers/einit/configuration.h', 'core')
 env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
+env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 
 env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap])
 

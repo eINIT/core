@@ -19,6 +19,7 @@
 
 src/einit-core
 src/einit-monitor
+src/last-rites
 
 #
 # Top-level generic files
