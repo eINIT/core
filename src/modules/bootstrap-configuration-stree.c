@@ -507,11 +507,11 @@ void bootstrap_einit_configuration_stree_ipc_write (struct einit_event *ev) {
   struct einit_event nev = evstaticinit(einit_core_update_configuration);
 
   if (strmatch (ev->set[0], "update")) {
-   notice (4, "updating configuration with file %s", ev->set[0]);
-   nev.string = ev->set[0];
-  } else {
    notice (4, "event-subsystem: updating configuration");
    nev.string = NULL;
+  } else {
+   notice (4, "updating configuration with file %s", ev->set[0]);
+   nev.string = ev->set[0];
   }
 
   event_emit (&nev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
