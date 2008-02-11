@@ -29,7 +29,7 @@ Help(opts.GenerateHelpText(env))
 
 RuntimeDirSbin = prefix + 'sbin'
 RuntimeDirEtc = prefix + 'etc/einit'
-RuntimeDirLib = prefix + 'lib'
+RuntimeDirLib = prefix + libdir
 RuntimeDirLibEinit = prefix + libdir + '/einit'
 RuntimeDirLibBin = prefix + libdir + '/einit/bin'
 RuntimeDirModules = prefix + libdir + '/einit/modules'
