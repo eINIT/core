@@ -26,6 +26,7 @@ for i in files:
    os.stat(RuntimeDirEtc + '/' + i)
    env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
   except:
-   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
+#   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
+   env.InstallAs (InstallDirEtc + '/' + i, i)
 
 env.Install (InstallDirLibEinit + '/schemata', glob.glob ('schema/*.rnc'))
