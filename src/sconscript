@@ -1,4 +1,6 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude'])
+
+import glob
 
 CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
@@ -34,3 +36,6 @@ env.Install (InstallDirLibBin, lastRites)
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)
 env.Install (InstallDirLib, libEinitPP)
+
+env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
+env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))

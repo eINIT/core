@@ -43,6 +43,10 @@ InstallDirLibBin = destdir + RuntimeDirLibBin
 InstallDirModules = destdir + RuntimeDirModules
 InstallDirBootstrap = destdir + RuntimeDirBootstrap
 
+InstallDirInclude = destdir + '/usr/include'
+if prefix != '/':
+ InstallDirInclude = destdir + '/include'
+
 SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4', 'feedback-visual-textual']
 
 if scheme == 'guile':
@@ -235,10 +239,13 @@ Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
         'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
-        'uname', 'libdir', 'prefix', 'destdir'])
+        'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude'])
 
 SConscript(ScriptsEinit)
 
 InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', InstallDirLibEinit + '/defaults/subsystems.d', InstallDirLibEinit + '/defaults/rules.edev', InstallDirEtc, InstallDirEtc + '/subsystems.d', InstallDirEtc + '/rules.edev', InstallDirLibEinit + '/schemata', InstallDirLibEinit + '/scripts' ])
 
-env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit])
+env.Install (InstallDirInclude + '/einit', '#build/headers/einit/configuration.h')
+env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules/configuration.h')
+
+env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules'])
