@@ -157,6 +157,9 @@ def build_configuration(target, source, env):
 
 import xml.parsers.expat
 
+def xmlencode(s):
+ return s.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
+
 data = ""
 indent = 0
 open_element = False
@@ -175,7 +178,7 @@ def fix_configuration(target, source, env):
 
   data += '<' + name
   for z in attrs.iteritems():
-   data += ' ' + z[0].replace('/lib/', '/' + libdir + '/') + '="' + z[1].replace('/lib/', '/' + libdir + '/') + '"'
+   data += ' ' + xmlencode(z[0].replace('/lib/', '/' + libdir + '/')) + '="' + xmlencode(z[1].replace('/lib/', '/' + libdir + '/')) + '"'
 
   indent += 1
   open_element = True
