@@ -37,15 +37,15 @@ if [ "$(readlink /bin/sh)" != "dash" ]; then
 alias echo="echo -e"
 fi
 
-if [ -z "${ETCDIR}" ]
+if [ -z "${ETCDIR}" ]; then
  ETCDIR = "/etc/einit"
 fi
 
-if [ -z "${ELIBDIR}" ]
+if [ -z "${ELIBDIR}" ]; then
  ELIBDIR = "lib"
 fi
 
-if [ -z "${LIBDIR}" ]
+if [ -z "${LIBDIR}" ]; then
  LIBDIR = "/${ELIBDIR}/einit"
 fi
 
