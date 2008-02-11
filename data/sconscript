@@ -1,6 +1,6 @@
-Import ('env', 'InstallDirEtc', 'InstallDirLibEinit')
+Import ('env', 'RuntimeDirEtc', 'InstallDirEtc', 'InstallDirLibEinit')
 
-import glob
+import glob, os
 
 files = []
 
@@ -22,4 +22,7 @@ for i in files:
  else:
   env.FixConfiguration ('#build/data/' + i, i)
   env.InstallAs (InstallDirLibEinit + '/defaults/' + i, '#build/data/' + i)
-  env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
+  if os.stat(RuntimeDirEtc + '/' + i):
+   env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
+  else:
+   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
