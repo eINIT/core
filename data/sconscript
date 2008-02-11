@@ -1,0 +1,24 @@
+Import ('env', 'InstallDirEtc', 'InstallDirLibEinit')
+
+import glob
+
+files = []
+
+def edoconfig (path):
+ global files
+ for i in glob.glob (path + '/*.xml'):
+  files += [i]
+
+edoconfig ('.')
+edoconfig ('subsystems.d')
+edoconfig ('rules.edev')
+
+cfg = []
+
+for i in files:
+ env.FixConfiguration ('#build/data/' + i, i)
+ if i == './einit.xml':
+  env.Install (InstallDirLibEinit, '#build/data/einit.xml')
+ else:
+  env.FixConfiguration ('#build/data/' + i, i)
+  env.InstallAs (InstallDirLibEinit + '/defaults/' + i, '#build/data/' + i)
