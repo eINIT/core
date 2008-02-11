@@ -56,6 +56,8 @@ method=$3
 
 echo "installing $file to $DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
 
+mkdir -p $DESTDIR/$ETCDIR/${subsystem}
+
 sed -e "s/\/lib/\/${ELIBDIR}/" < $file >"tmp.${fileshort}";
 
 file="tmp.${fileshort}"
