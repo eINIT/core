@@ -1,12 +1,12 @@
 Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname'])
 
-menv = env.Clone (SHLIBPREFIX = '', LDMODULESUFFIX='.so')
+menv = env.Clone (SHLIBPREFIX = '', CCFLAGS = '-DEINIT_MODULE')
 
 def buildModule(name, location, e):
- e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c', CCFLAGS = '-DEINIT_MODULE'))
+ e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c'))
 
 def buildModuleBootStrap(name, e):
- e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c', CCFLAGS = '-DEINIT_MODULE'))
+ e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c'))
 
 if uname == 'Darwin':
  menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')

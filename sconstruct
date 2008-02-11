@@ -4,7 +4,8 @@ opts.Add('destdir', 'Define the (installation) prefix; The Directory to install 
 opts.Add('prefix', 'Define the (runtime) prefix', '/')
 
 env = Environment(options = opts,
- CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'])
+ CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'],
+ LDMODULEPREFIX='', LDMODULESUFFIX='.so')
 
 ScriptsBundle = ['libixp/sconscript',
                  'expat/sconscript']
