@@ -19,7 +19,7 @@ def buildInternalModule(name, location, e):
 for x in InternalModules:
  CodeCoreObjects += buildInternalModule(x, 'modules', env)
 
-einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=['pthread', 'dl'], CCFLAGS='-DEINIT_CORE')
+einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=['pthread', 'dl'], CCFLAGS='-DEINIT_CORE', LINKFLAGS='-Wl,-export-dynamic')
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])

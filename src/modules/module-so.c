@@ -158,7 +158,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
    sohandle = dlopen (modules[z], RTLD_NOW);
    if (sohandle == NULL) {
-    eputs (dlerror (), stdout);
+    puts (dlerror ());
     goto cleanup_continue;
    }
 
