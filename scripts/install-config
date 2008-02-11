@@ -37,6 +37,18 @@ if [ "$(readlink /bin/sh)" != "dash" ]; then
 alias echo="echo -e"
 fi
 
+if [ -z "${ETCDIR}" ]
+ ETCDIR = "/etc/einit"
+fi
+
+if [ -z "${ELIBDIR}" ]
+ ELIBDIR = "lib"
+fi
+
+if [ -z "${LIBDIR}" ]
+ LIBDIR = "/${ELIBDIR}/einit"
+fi
+
 file=$1
 fileshort=$(basename $1)
 subsystem=$2
