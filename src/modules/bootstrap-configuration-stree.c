@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/tree.h>
 #include <einit/event.h>
+#include <einit-modules/ipc.h>
 
 #include <regex.h>
 
@@ -483,6 +484,53 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
  einit_global_environment = env;
 }
 
+void bootstrap_einit_configuration_stree_ipc_read (struct einit_event *ev) {
+ char **path = ev->para;
+
+ struct ipc_fs_node n;
+
+ if (!path) {
+  n.name = (char *)str_stabilise ("configuration");
+  n.is_file = 0;
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ } else if (path && path[0] && strmatch(path[0], "configuration")) {
+  n.name = (char *)str_stabilise ("update");
+  n.is_file = 1;
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ }
+}
+
+void bootstrap_einit_configuration_stree_ipc_write (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && ev->set && ev->set[0] && path[0] && path[1] && strmatch (path[0], "configuration") && strmatch (path[0], "update")) {
+  struct einit_event nev = evstaticinit(einit_core_update_configuration);
+
+  if (strmatch (ev->set[0], "update")) {
+   notice (4, "updating configuration with file %s", ev->set[0]);
+   nev.string = ev->set[0];
+  } else {
+   notice (4, "event-subsystem: updating configuration");
+   nev.string = NULL;
+  }
+
+  event_emit (&nev, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+
+  evstaticdestroy(nev);
+ }
+}
+
+void bootstrap_einit_configuration_stree_ipc_stat (struct einit_event *ev) {
+ char **path = ev->para;
+
+ if (path && path[0]) {
+  if (strmatch (path[0], "configuration")) {
+   ev->flag = (path[1] && strmatch (path[1], "configuration") ? 1 : 0);
+  }
+ }
+}
+
+
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
 
@@ -497,6 +545,10 @@ int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  function_unregister ("einit-configuration-node-get-filter", 1, cfg_filter_f);
  function_unregister ("einit-configuration-node-get-path", 1, cfg_getpath_f);
  function_unregister ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
+
+ event_ignore (einit_ipc_read, bootstrap_einit_configuration_stree_ipc_read);
+ event_ignore (einit_ipc_stat, bootstrap_einit_configuration_stree_ipc_stat);
+ event_ignore (einit_ipc_write, bootstrap_einit_configuration_stree_ipc_write);
 
  return 0;
 }
@@ -517,6 +569,10 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  function_register ("einit-configuration-node-get-filter", 1, cfg_filter_f);
  function_register ("einit-configuration-node-get-path", 1, cfg_getpath_f);
  function_register ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
+
+ event_listen (einit_ipc_read, bootstrap_einit_configuration_stree_ipc_read);
+ event_listen (einit_ipc_stat, bootstrap_einit_configuration_stree_ipc_stat);
+ event_listen (einit_ipc_write, bootstrap_einit_configuration_stree_ipc_write);
 
  eregcomp (&cfg_storage_allowed_duplicates, ".*");
 

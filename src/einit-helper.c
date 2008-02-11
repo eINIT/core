@@ -69,6 +69,8 @@ void help_preface (char *argv0) {
 
                   " -m <mode>            Switch to <mode>\n\n"
 
+                  " -u [file]            Update Configuration/Add [file]\n\n"
+
                   " :: Raw 9p I/O ::\n"
                   " [-]ls <path>         ls <path>\n"
                   " [-]read <path>       read <path>\n"
@@ -104,6 +106,8 @@ int main(int argc, char **argv, char **env) {
  char *c_ls = NULL;
  char *c_read = NULL;
  char *c_write[2] = { NULL, NULL };
+
+ char *c_update = NULL;
 
  for (i = 0; i < argc; i++) {
   if (strmatch (argv[i], "-v") || strmatch (argv[i], "--version")) {
@@ -161,17 +165,24 @@ int main(int argc, char **argv, char **env) {
    c_write[0] = argv[i+1];
    c_write[1] = argv[i+2];
    i+=2;
+  } else if (strmatch (argv[i], "-u")) {
+   if ((i+1) < argc) {
+    c_update = argv[i+1];
+    i++;
+   } else {
+    c_update = "update";
+   }
   }
  }
 
- if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset && !o_cake && !c_ls && !c_read && !c_write[0])
+ if (!c_version && !c_licence && !c_wtf && !c_service[0] && !c_module[0] && !c_mode && !c_down && !c_reset && !o_cake && !c_ls && !c_read && !c_write[0] && !c_update)
   c_help = 1;
 
  if (o_cake) {
   printf ("THE CAKE IS A LIE\n");
  }
 
- if (c_mode || c_service[0] || c_module[0] || c_down || c_reset || c_ls || c_read || c_write[0]) {
+ if (c_mode || c_service[0] || c_module[0] || c_down || c_reset || c_ls || c_read || c_write[0] || c_update) {
   if (!einit_connect(&argc, argv)) {
    perror ("Could not connect to eINIT");
    exit (EXIT_FAILURE);
@@ -195,6 +206,15 @@ int main(int argc, char **argv, char **env) {
 
   if (c_module[0]) {
    einit_module_call (c_module[0], c_module[1]);
+  }
+
+  if (c_update) {
+   char *path[3];
+   path[0] = "configuration";
+   path[1] = "update";
+   path[2] = NULL;
+
+   einit_write (path, c_update);
   }
 
   char *t = NULL;
