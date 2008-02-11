@@ -37,8 +37,6 @@ if [ "$(readlink /bin/sh)" != "dash" ]; then
 alias echo="echo -e"
 fi
 
-. $(dirname $0)/configuration
-
 file=$1
 fileshort=$(basename $1)
 subsystem=$2
