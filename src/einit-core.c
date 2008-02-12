@@ -74,7 +74,6 @@ int print_usage_info ();
 int cleanup ();
 
 pid_t einit_sub = 0;
-char isinit = 1, initoverride = 0;
 
 char **einit_global_environment = NULL, **einit_initial_environment = NULL, **einit_argv = NULL;
 
@@ -246,9 +245,6 @@ int main(int argc, char **argv, char **environ) {
  uname (&osinfo);
  config_configure();
 
-// is this the system's init-process?
- isinit = getpid() == 1;
-
  event_listen (einit_core_configuration_update, core_einit_event_handler_configuration_update);
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_core_recover, core_einit_event_handler_recover);
@@ -284,13 +280,10 @@ int main(int argc, char **argv, char **environ) {
     case '-':
      if (strmatch(argv[i], "--help"))
       return print_usage_info ();
-     else if (strmatch(argv[i], "--force-init"))
-      initoverride = 1;
      else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
       coremode = einit_mode_sandbox;
       need_recovery = 1;
-      initoverride = 1;
      } else if (strmatch(argv[i], "--recover")) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--metadaemon")) {
@@ -300,17 +293,14 @@ int main(int argc, char **argv, char **environ) {
       fcntl (command_pipe, F_SETFD, FD_CLOEXEC);
 
       i++;
-      initoverride = 1;
      } else if (strmatch(argv[i], "--crash-pipe")) {
       crash_pipe = parse_integer (argv[i+1]);
       fcntl (crash_pipe, F_SETFD, FD_CLOEXEC);
 
       i++;
-      initoverride = 1;
      } else if (strmatch(argv[i], "--crash-data")) {
       einit_crash_data = estrdup (argv[i+1]);
       i++;
-      initoverride = 1;
      } else if (strmatch(argv[i], "--debug")) {
       debug = 1;
      } else if (strmatch(argv[i], "--do-wait")) {
@@ -456,9 +446,6 @@ int main(int argc, char **argv, char **environ) {
    eml.file = commandpipe_in;
    event_emit (&eml, einit_event_flag_broadcast);
    evstaticdestroy(eml);
-  } else if ((coremode == einit_mode_init) && !isinit && !initoverride) {
-   eputs ("WARNING: eINIT is configured to run as init, but is not the init-process (pid=1) and the --override-init-check flag was not specified.\nexiting...\n\n", stderr);
-   exit (EXIT_FAILURE);
   } else {
 /* actual init code */
    uint32_t e = 0;
@@ -509,10 +496,10 @@ int main(int argc, char **argv, char **environ) {
    evstaticdestroy(eml);
   }
 
-  if (einit_initial_environment) efree (einit_initial_environment);
-  return ret;
-
 /* this should never be reached... */
  if (einit_initial_environment) efree (einit_initial_environment);
- return 0;
+
+ fprintf (stderr, "okay, you're in trouble: I couldn't reach my main loop, or it quit\n");
+
+ return STATUS_FAILED;
 }
