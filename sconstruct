@@ -11,7 +11,10 @@ opts.Add('libc', 'Tell us what libc you\'re compiling for', 'gnu')
 env = Environment(options = opts,
  CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'],
  LDMODULEPREFIX='', LDMODULESUFFIX='.so',
- CCFLAGS = "${CFLAGS} -Wall")
+ CFLAGS = '-Wall ')
+
+if os.environ.has_key('CFLAGS'):
+ env.Append (CFLAGS = os.environ['CFLAGS'])
 
 ScriptsBundle = ['libixp/sconscript',
                  'expat/sconscript']
