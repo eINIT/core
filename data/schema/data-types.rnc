@@ -1,6 +1,8 @@
 TTYAttribute = attribute s { xsd:string { pattern="(tty[0-9]*-.+:?)*" } | xsd:string "none" }
-List_of_services = xsd:string { pattern="(\w+-?:?)*" } | xsd:string "none" #Don't leave it blank but type none, the -? 
-																																								 #was added because of wired names with "-":)
+#List_of_services = xsd:string { pattern="(\w+-?:?)*" } | xsd:string "none" #Don't leave it blank but type none, the -? 
+				 #was added because of wired names with "-":)
+
+List_of_services = text
 
 #ColonList = xsd:string { pattern = "^((-|\.|\w|\d)+)(:(-|\.|\w|\d)+)*$" }
 ColonList = text
