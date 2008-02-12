@@ -453,7 +453,7 @@ int main(int argc, char **argv, char **environ) {
    nice (einit_core_niceness_increment);
 
    if (need_recovery) {
-    notice (1, "need to recover from something...");
+    fprintf (stderr, "need to recover from something...\n");
 
     struct einit_event eml = evstaticinit(einit_core_recover);
     event_emit (&eml, einit_event_flag_broadcast);
@@ -461,7 +461,7 @@ int main(int argc, char **argv, char **environ) {
    }
 
    if (einit_crash_data) {
-    notice (1, "submitting crash data...");
+    fprintf (stderr, "submitting crash data...\n");
 
     struct einit_event eml = evstaticinit(einit_core_crash_data);
     eml.string = einit_crash_data;
@@ -473,14 +473,14 @@ int main(int argc, char **argv, char **environ) {
    }
 
    {
-    notice (3, "running early bootup code...");
+    fprintf (stderr, "running early bootup code...\n");
 
     struct einit_event eml = evstaticinit(einit_boot_early);
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
    }
 
-   notice (2, "scheduling startup switches.\n");
+   fprintf (stderr, "scheduling startup switches.\n");
 
    for (e = 0; einit_startup_mode_switches[e]; e++) {
     struct einit_event ee = evstaticinit(einit_core_switch_mode);
@@ -489,6 +489,8 @@ int main(int argc, char **argv, char **environ) {
     event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
     evstaticdestroy(ee);
    }
+
+   fprintf (stderr, "main loop.\n");
 
    struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
    eml.file = commandpipe_in;
