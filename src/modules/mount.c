@@ -2023,12 +2023,6 @@ int emount (char *mountpoint, struct einit_event *status) {
    if (mp->status & device_status_mounted) {
     update_real_mtab();
 
-    if (strmatch (mountpoint, "/")) {
-     struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-     evstaticdestroy(eml);
-    }
-
     return status_ok;
    }
 
