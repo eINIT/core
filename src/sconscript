@@ -31,6 +31,9 @@ linkCore = '-Wl,-export-dynamic'
 if uname == 'Darwin':
  linkCore = ''
 
+if uname == 'FreeBSD':
+ CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
+
 einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyFunctions, LIBS=['pthread', 'dl'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
