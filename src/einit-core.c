@@ -501,5 +501,5 @@ int main(int argc, char **argv, char **environ) {
 
  fprintf (stderr, "okay, you're in trouble: I couldn't reach my main loop, or it quit\n");
 
- return STATUS_FAILED;
+ return EXIT_FAILURE;
 }
