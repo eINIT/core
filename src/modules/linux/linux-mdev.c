@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sys/mount.h>
 
+#include <asm/types.h>
 #include <linux/types.h>
 #include <linux/netlink.h>
 
