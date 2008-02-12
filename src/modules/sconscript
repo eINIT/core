@@ -8,13 +8,17 @@ def buildModule(name, location, e):
 def buildModuleBootStrap(name, e):
  e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c'))
 
+librt = [ 'rt' ]
+
 if uname == 'Darwin':
  menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
- for x in ModulesBSD:
-  buildModule(x, 'bsd', menv)
-else:
- for x in ModulesLinux:
-  buildModule(x, 'linux', menv)
+ librt = []
+
+for x in ModulesBSD:
+ buildModule(x, 'bsd', menv)
+
+for x in ModulesLinux:
+ buildModule(x, 'linux', menv)
 
 buildModuleBootStrap('bootstrap-configuration-stree', menv)
 buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
@@ -29,21 +33,21 @@ if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
 
 if 'feedback-visual-textual' in ExternalModules:
- buildModule ('feedback-visual-textual', '.', menv.Clone (LIBS=['rt']))
+ buildModule ('feedback-visual-textual', '.', menv.Clone (LIBS=librt))
 
 if 'module-logic-v4' in ExternalModules:
- buildModule ('module-logic-v4', '.', menv.Clone (LIBS=['rt']))
+ buildModule ('module-logic-v4', '.', menv.Clone (LIBS=librt))
 
 import os
 
 if 'module-scheme-guile' in ExternalModules:
  e = menv.Clone()
-# f = os.popen ('guile-config compile', 'r')
-# if f:
-#  a = f.read()
-#  a.strip()
-#  e.Append (CCFLAGS = '${CCFLAGS} ' + a)
-#  f.close()
+ f = os.popen ('guile-config compile', 'r')
+ if f:
+  a = f.read()
+  a.strip()
+  e.Append (CFLAGS = '${CCFLAGS} ' + a)
+  f.close()
 
  f = os.popen ('guile-config link', 'r')
  if f:
@@ -52,5 +56,5 @@ if 'module-scheme-guile' in ExternalModules:
   e.Append (LINKFLAGS = '${LINKFLAGS} ' + a)
   f.close()
 
- e.Append (LIBS=['rt'])
+ e.Append (LIBS=librt)
  buildModule ('module-scheme-guile', '.', e)
