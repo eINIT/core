@@ -1,18 +1,23 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
 import glob
+
+CodeAssembly = []
+
+for i in ASMFunctionsAvailable:
+ CodeAssembly += [ AssemblyDir + '/' + i + '.S' ]
 
 CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
 CodeSTree = ['tree-itree.c']
 
-CodeCoreObjects = ['#build/core/module-configuration.c', 'einit-core.c', 'module.c', 'bitch.c', 'utility.c', 'event.c'] + CodeSet + CodeSTree + CodeITree
+CodeCoreObjects = ['#build/core/module-configuration.c', 'einit-core.c', 'module.c', 'bitch.c', 'utility.c', 'event.c'] + CodeSet + CodeSTree + CodeITree + CodeAssembly
 CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
-CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree
+CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + CodeAssembly
 
 def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')
