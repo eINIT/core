@@ -1,7 +1,0 @@
-headers:
-
-install: install-auto
-
-test:
-
-test-libraries:
