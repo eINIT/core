@@ -117,6 +117,8 @@ enum einit_event_code {
  einit_core_service_disabling       = einit_event_subsystem_core     | 0x503,
  einit_core_service_disabled        = einit_event_subsystem_core     | 0x504,
 
+ einit_core_secondary_main_loop     = einit_event_subsystem_core     | 0xfef,
+
  einit_core_crash_data              = einit_event_subsystem_core     | 0xffd,
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,

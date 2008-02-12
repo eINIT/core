@@ -442,7 +442,7 @@ int main(int argc, char **argv, char **environ) {
   evstaticdestroy(cev);
 
   if (do_wait) {
-   struct einit_event eml = evstaticinit(einit_core_main_loop_reached);
+   struct einit_event eml = evstaticinit(einit_core_secondary_main_loop);
    eml.file = commandpipe_in;
    event_emit (&eml, einit_event_flag_broadcast);
    evstaticdestroy(eml);
