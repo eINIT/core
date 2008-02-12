@@ -101,16 +101,13 @@ int einit_feedback_visual_libnotify_disable ();
 int einit_feedback_visual_libnotify_enable ();
 
 int libnotify_mode_switches = 0;
-enum splash_type libnotify_type = sp_disabled;
 
-void libnotify_queue_comand (const char *command) {
- if (libnotify_type != sp_disabled) {
-  emutex_lock (&libnotify_commandQ_mutex);
-  libnotify_commandQ = set_str_add (libnotify_commandQ, (char *)command);
-  emutex_unlock (&libnotify_commandQ_mutex);
+void libnotify_queue_command (const char *command) {
+ emutex_lock (&libnotify_commandQ_mutex);
+ libnotify_commandQ = set_str_add (libnotify_commandQ, (char *)command);
+ emutex_unlock (&libnotify_commandQ_mutex);
 
-  pthread_cond_broadcast (&libnotify_commandQ_cond);
- }
+ pthread_cond_broadcast (&libnotify_commandQ_cond);
 }
 
 void einit_feedback_visual_libnotify_power_event_handler(struct einit_event *ev) {
@@ -161,26 +158,6 @@ void einit_feedback_visual_libnotify_einit_event_handler_mode_switch_done (struc
 }
 
 void einit_feedback_visual_libnotify_einit_event_handler_service_update (struct einit_event *ev) {
- if (libnotify_type != sp_disabled) {
-  if (ev->set) {
-   /* I dont know what we need to wait for yet */
-   char *t = NULL, dorun = 0;
-
-   if (ev->task & einit_module_enable) {
-    if (!(ev->status & status_failed)) {
-     int i = 0;
-
-     for (; ev->set[i]; i++) {
-      if (strmatch (ev->set[i], "mount-critical")) {
-       dorun = 1;
-       break;
-      }
-     }
-    }
-   }
-	  
-  }
- }
 }
 
 void einit_feedback_visual_libnotify_feedback_switch_progress_handler (struct einit_event *ev) {
