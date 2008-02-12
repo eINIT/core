@@ -52,11 +52,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sys/mount.h>
 
-#include <linux/socket.h>
+#include <asm/types.h>
+#include <sys/socket.h>
+
 #include <linux/types.h>
 #include <linux/netlink.h>
-
-#include <sys/socket.h>
 
 #include <fcntl.h>
 
