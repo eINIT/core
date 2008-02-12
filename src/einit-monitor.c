@@ -178,9 +178,9 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
 
    if (WIFEXITED(rstatus) && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
     if (WEXITSTATUS(rstatus) == EXIT_SUCCESS)
-     fprintf (stderr, "eINIT has quit properly.\n");
+     fprintf (stderr, "eINIT has quit properly (%i).\n", WEXITSTATUS(rstatus));
     else
-     fprintf (stderr, "eINIT has quit, let's see if it left a message for us...\n");
+     fprintf (stderr, "eINIT has quit, let's see if it left a message for us (%i)...\n", WEXITSTATUS(rstatus));
 
     if (!is_sandbox) {
      if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_halt) {
