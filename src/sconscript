@@ -2,12 +2,10 @@ Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalM
 
 import glob
 
-AssemblyStatic = []
-AssemblyShared = []
+AssemblyFunctions = []
 
 for i in ASMFunctionsAvailable:
- AssemblyStatic += [ env.StaticObject (AssemblyDir + '/' + i + '.S') ]
- AssemblyShared += [ env.SharedObject (AssemblyDir + '/' + i + '.S', ASFLAGS='-fpic') ]
+ AssemblyFunctions += [ AssemblyDir + '/' + i + '.S' ]
 
 CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
@@ -19,7 +17,7 @@ CodeCoreMonitorObjects = ['einit-monitor.c']
 CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
-CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + AssemblyShared
+CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + AssemblyFunctions
 
 def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')
@@ -28,7 +26,7 @@ def buildInternalModule(name, location, e):
 for x in InternalModules:
  CodeCoreObjects += buildInternalModule(x, 'modules', env)
 
-einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyStatic, LIBS=['pthread', 'dl'], CCFLAGS='-DEINIT_CORE', LINKFLAGS='-Wl,-export-dynamic')
+einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyFunctions, LIBS=['pthread', 'dl'], CCFLAGS='-DEINIT_CORE', LINKFLAGS='-Wl,-export-dynamic')
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])

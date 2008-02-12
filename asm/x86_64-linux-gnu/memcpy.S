@@ -32,6 +32,7 @@
 //
 
 .globl memcpy
+	.type   memcpy, @function
 memcpy:
 	mov %edx,%ecx;
 	mov %rdi,%rax;  /* copy arg1 to return value, see man:memcpy */

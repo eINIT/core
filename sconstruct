@@ -98,9 +98,9 @@ def checkasm(name):
  except:
   return False
 
-#for i in ASMFunctions:
-# if checkasm(i):
-#  ASMFunctionsAvailable += [ i ]
+for i in ASMFunctions:
+ if checkasm(i):
+  ASMFunctionsAvailable += [ i ]
 
 if uname == 'Darwin':
  ModulesLinux = []

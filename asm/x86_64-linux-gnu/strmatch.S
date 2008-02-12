@@ -32,6 +32,7 @@
 //
 
 .globl strmatch
+	.type   strmatch, @function
 strmatch:
 	mov (%rsi),%r8b;
 	cmpb (%rdi),%r8b;   // initial check

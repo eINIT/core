@@ -32,6 +32,7 @@
 //
 
 .globl hashp
+	.type   hashp, @function
 hashp:
 	xor %rax,%rax;
 	xor %r8,%r8;
