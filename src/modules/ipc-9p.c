@@ -675,6 +675,7 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
   for (; einit_argv[y] && einit_argv[y+1]; y++) {
    if (strmatch (einit_argv[y], "--ipc-socket")) {
     address = einit_argv[y+1];
+    coremode = einit_mode_ipconly;
    }
   }
 
