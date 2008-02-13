@@ -30,3 +30,5 @@ for i in files:
    env.InstallAs (InstallDirEtc + '/' + i, i)
 
 env.Install (InstallDirLibEinit + '/schemata', glob.glob ('schema/*.rnc'))
+
+env.Install (InstallDirLibEinit, 'einit.scm')
