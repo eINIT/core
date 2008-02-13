@@ -176,8 +176,12 @@ void core_einit_event_handler_configuration_update (struct einit_event *ev) {
   einit_task_niceness_increment = parse_integer (str);
 }
 
+pthread_mutex_t core_modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void core_einit_event_handler_update_modules (struct einit_event *ev) {
  struct lmodule *lm;
+
+ emutex_lock (&core_modules_update_mutex);
 
  repeat:
 
@@ -203,6 +207,8 @@ void core_einit_event_handler_update_modules (struct einit_event *ev) {
   lm = lm->next;
  }
 
+ emutex_unlock (&core_modules_update_mutex);
+
 /* give the module-logic code and others a chance at processing the current list */
  struct einit_event update_event = evstaticinit(einit_core_module_list_update);
  update_event.para = mlist;
@@ -219,6 +225,19 @@ void core_einit_event_handler_recover (struct einit_event *ev) {
   }
 
   lm = lm->next;
+ }
+}
+
+void core_event_einit_boot_root_device_ok (struct einit_event *ev) {
+ int e;
+ fprintf (stderr, "scheduling startup switches.\n");
+
+ for (e = 0; einit_startup_mode_switches[e]; e++) {
+  struct einit_event ee = evstaticinit(einit_core_switch_mode);
+
+  ee.string = einit_startup_mode_switches[e];
+  event_emit (&ee, einit_event_flag_broadcast);
+  evstaticdestroy(ee);
  }
 }
 
@@ -449,6 +468,7 @@ int main(int argc, char **argv, char **environ) {
   } else {
 /* actual init code */
    uint32_t e = 0;
+   event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
 
    nice (einit_core_niceness_increment);
 
@@ -478,16 +498,6 @@ int main(int argc, char **argv, char **environ) {
     struct einit_event eml = evstaticinit(einit_boot_early);
     event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
     evstaticdestroy(eml);
-   }
-
-   fprintf (stderr, "scheduling startup switches.\n");
-
-   for (e = 0; einit_startup_mode_switches[e]; e++) {
-    struct einit_event ee = evstaticinit(einit_core_switch_mode);
-
-    ee.string = einit_startup_mode_switches[e];
-    event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
-    evstaticdestroy(ee);
    }
 
    fprintf (stderr, "main loop.\n");
