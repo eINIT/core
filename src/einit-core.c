@@ -181,7 +181,7 @@ pthread_mutex_t core_modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 void core_einit_event_handler_update_modules (struct einit_event *ev) {
  struct lmodule *lm;
 
-// emutex_lock (&core_modules_update_mutex);
+ emutex_lock (&core_modules_update_mutex);
 
  repeat:
 
@@ -207,7 +207,7 @@ void core_einit_event_handler_update_modules (struct einit_event *ev) {
   lm = lm->next;
  }
 
-// emutex_unlock (&core_modules_update_mutex);
+ emutex_unlock (&core_modules_update_mutex);
 
 /* give the module-logic code and others a chance at processing the current list */
  struct einit_event update_event = evstaticinit(einit_core_module_list_update);
