@@ -1935,7 +1935,7 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 
 int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
 
- fbprintf (status, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
+ fbprintf (status, "unmounting %s from %s (fs=%s, attempt#%i)", dd->device, mountpoint, fs, step);
 // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
@@ -2006,7 +2006,7 @@ int emount (char *mountpoint, struct einit_event *status) {
  if (coremode & einit_mode_sandbox) {
   if (strmatch (mountpoint, "/")) {
    struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
    evstaticdestroy(eml);
   }
 
@@ -2030,7 +2030,7 @@ int emount (char *mountpoint, struct einit_event *status) {
 
    if ((ret == status_ok) && strmatch (mountpoint, "/")) {
     struct einit_event eml = evstaticinit(einit_boot_root_device_ok);
-    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
     evstaticdestroy(eml);
    }
 
