@@ -47,7 +47,7 @@ module_register(linux_timezone_self);
 
 #endif
 
-void linux_timezone_core_event_handler (struct einit_event *ev) {
+void linux_timezone_root_ok_handler (struct einit_event *ev) {
  switch (ev->type) {
   case einit_core_configuration_update:
    /* some code */
@@ -60,25 +60,20 @@ void linux_timezone_core_event_handler (struct einit_event *ev) {
  }
 }
 
-void linux_timezone_ipc_event_handler (struct einit_event *ev) {
- /* mess with ev->argv here */
-}
-
-void *linux_timezone_some_function (void *arg1, int arg2, char **arg3) {
- /* do whatever your function is supposed to do */
-
- /* do note that it's YOUR JOB to make sure the arguments in your function
-    match up with the arguments that the callees think your function will have.
-    neither eINIT nor GCC will complain if there's a mismatch! */
+void *linux_timezone_make_symlink (void) {
+ char *zoneinfo = cfg_getstring ("configuration-system-timezone", NULL);
+ if (*zoneinfo) {
+  char tmp [BUFFERSIZE];
+  esprintf (tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
+  symlink (tmp, "/etc/localtime");
+ }
 }
 
 int linux_timezone_cleanup (struct lmodule *pa) {
- /* cleanup code here */
 
- function_unregister ("my-fancy-new-function", 1, linux_timezone_some_function);
+ function_unregister ("make-timezone-symlink", 1, linux_timezone_make_symlink);
 
- event_ignore (einit_event_subsystem_ipc, linux_timezone_ipc_event_handler);
- event_ignore (einit_event_subsystem_core, linux_timezone_core_event_handler);
+ event_ignore (einit_boot_root_device_ok, linux_timezone_root_ok_handler);
 
  return 0;
 }
@@ -88,12 +83,10 @@ int linux_timezone_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_timezone_cleanup;
 
- event_listen (einit_event_subsystem_core, linux_timezone_core_event_handler);
- event_listen (einit_event_subsystem_ipc, linux_timezone_ipc_event_handler);
+ event_listen (einit_boot_root_device_ok, linux_timezone_root_ok_handler);
 
- function_register ("my-fancy-new-function", 1, linux_timezone_some_function);
-
- /* more configure code here */
+ function_register ("make-timezone-symlink", 1, linux_timezone_make_symlink);
 
  return 0;
 }
+
