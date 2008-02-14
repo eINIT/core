@@ -115,7 +115,8 @@ Configuration = element configuration {
      element support-legacy-hotplug-scripts { BooleanAttribute }? &
      element handler { StringAttribute }?
     }? &
-    element coldplug { BooleanAttribute }?
+    element coldplug { BooleanAttribute }? &
+    element timezone { StringAttribute }?
   }* &
 
   element linux {
