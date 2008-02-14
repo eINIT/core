@@ -29,10 +29,6 @@ if os.environ.has_key('CXXFLAGS'):
  env.Append (CXXFLAGS = os.environ['CXXFLAGS'])
 
 conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
-if not conf.CheckNPTL():
- print 'GlibC is not built with nptl!'
- Exit(1)
- env = conf.Finnish()
 
 ScriptsBundle = ['libixp/sconscript',
                  'expat/sconscript']
@@ -120,8 +116,15 @@ for i in ASMFunctions:
 
 if uname == 'Darwin':
  ModulesLinux = []
-else:
+if uname == 'FreeBSD':
+ ModulesLinux = []
+if uname == 'Linux':
  ModulesBSD = []
+ if not conf.CheckNPTL():
+  print 'GlibC is not built with nptl!'
+  Exit(1)
+  env = conf.Finnish()
+
 
 InternalModules = ['module-so']
 ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
