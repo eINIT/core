@@ -47,19 +47,6 @@ module_register(linux_timezone_self);
 
 #endif
 
-void linux_timezone_root_ok_handler (struct einit_event *ev) {
- switch (ev->type) {
-  case einit_core_configuration_update:
-   /* some code */
-   break;
-
-  default:
-   /* default: is necessary to make sure the compiler won't warn us of
-      unhandled events. */
-   break;
- }
-}
-
 void *linux_timezone_make_symlink (void) {
  char *zoneinfo = cfg_getstring ("configuration-system-timezone", NULL);
  if (*zoneinfo) {
@@ -69,10 +56,11 @@ void *linux_timezone_make_symlink (void) {
  }
 }
 
+void linux_timezone_root_ok_handler (struct einit_event *ev) {
+ linux_timezone_make_symlink();
+}
+
 int linux_timezone_cleanup (struct lmodule *pa) {
-
- function_unregister ("make-timezone-symlink", 1, linux_timezone_make_symlink);
-
  event_ignore (einit_boot_root_device_ok, linux_timezone_root_ok_handler);
 
  return 0;
@@ -84,8 +72,6 @@ int linux_timezone_configure (struct lmodule *pa) {
  pa->cleanup = linux_timezone_cleanup;
 
  event_listen (einit_boot_root_device_ok, linux_timezone_root_ok_handler);
-
- function_register ("make-timezone-symlink", 1, linux_timezone_make_symlink);
 
  return 0;
 }
