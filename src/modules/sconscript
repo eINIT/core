@@ -1,12 +1,18 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules'])
 
 menv = env.Clone (SHLIBPREFIX = '', CCFLAGS = '-DEINIT_MODULE')
+
+CodeInternalModules = ['#build/core/module-configuration.c']
 
 def buildModule(name, location, e):
  e.Install(InstallDirModules, e.LoadableModule(name, location + '/' + name + '.c'))
 
 def buildModuleBootStrap(name, e):
  e.Install(InstallDirBootstrap, e.LoadableModule(name, name + '.c'))
+
+def buildInternalModule(name, location, e):
+ tm = name.replace('-', '_')
+ return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=' + tm + '_thismodule -Dself=' + tm + '_self')
 
 librt = [ 'rt' ]
 
@@ -58,3 +64,8 @@ if 'module-scheme-guile' in ExternalModules:
 
  e.Append (LIBS=librt)
  buildModule ('module-scheme-guile', '.', e)
+
+for x in InternalModules:
+ CodeInternalModules += buildInternalModule(x, '.', env)
+
+env.StaticLibrary ('core-modules', CodeInternalModules, CCFLAGS = '-DEINIT_CORE')

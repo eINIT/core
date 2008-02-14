@@ -11,20 +11,13 @@ CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
 CodeSTree = ['tree-itree.c']
 
-CodeCoreObjects = ['#build/core/module-configuration.c', 'einit-core.c', 'module.c', 'bitch.c', 'utility.c', 'event.c'] + CodeSet + CodeSTree + CodeITree
+CodeCoreObjects = ['einit-core.c', 'module.c', 'bitch.c', 'utility.c', 'event.c'] + CodeSet + CodeSTree + CodeITree
 CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
 CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + AssemblyFunctions
-
-def buildInternalModule(name, location, e):
- tm = name.replace('-', '_')
- return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=' + tm + '_thismodule -Dself=' + tm + '_self')
-
-for x in InternalModules:
- CodeCoreObjects += buildInternalModule(x, 'modules', env)
 
 linkCore = '-Wl,-export-dynamic'
 
@@ -34,7 +27,12 @@ if uname == 'Darwin':
 if uname == 'FreeBSD':
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
 
-einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyFunctions, LIBS=['pthread', 'dl'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
+coreLibs = ['pthread', 'core-modules']
+
+if 'module-so' in InternalModules:
+ coreLibs += [ 'dl' ]
+
+einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyFunctions, LIBS=coreLibs, LIBPATH=['modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
