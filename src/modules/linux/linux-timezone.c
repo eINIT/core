@@ -52,6 +52,7 @@ void *linux_timezone_make_symlink (void) {
  if (*zoneinfo) {
   char tmp [BUFFERSIZE];
   esprintf (tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
+  remove ("/etc/localtime");
   symlink (tmp, "/etc/localtime");
  }
 }
