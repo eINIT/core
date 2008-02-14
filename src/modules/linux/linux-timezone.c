@@ -49,7 +49,7 @@ module_register(linux_timezone_self);
 
 void *linux_timezone_make_symlink (void) {
  char *zoneinfo = cfg_getstring ("configuration-system-timezone", NULL);
- if (*zoneinfo) {
+ if (zoneinfo) {
   char tmp [BUFFERSIZE];
   esprintf (tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
   remove ("/etc/localtime");
