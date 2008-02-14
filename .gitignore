@@ -48,3 +48,5 @@ modules/xml/config.sh
 *.orig
 *.rej
 *.swp
+
+config.log

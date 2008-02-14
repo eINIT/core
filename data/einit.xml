@@ -97,6 +97,9 @@
    </hotplug>
 
    <coldplug b="yes" />
+
+   <timezone s="America/New_York"/>
+
   </system>
 
   <environment>
