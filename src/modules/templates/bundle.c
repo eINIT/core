@@ -52,8 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 int module_bundle_configure (struct lmodule *);
-char *module_bundle_name;
-char *module_bundle_rid;
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
@@ -80,13 +78,14 @@ module_register(module_bundle_self);
 int module_bundle_scanmodules (struct lmodule *);
 char module_bundle_firstrun = 1;
 
-struct smodule **module_bundle_contents;
+const struct smodule **module_bundle_contents[MAXMODULES];
 
 int module_bundle_cleanup (struct lmodule *pa) {
  return 0;
 }
 
-int module_bundle_scanmodules (struct lmodule *lm) {
+int module_bundle_scanmodules (struct lmodule *mlist) {
+ struct lmodule *lm = mlist;
  while (lm) {
   if (lm->source && strmatch(lm->source, module_bundle_rid)) {
    lm = mod_update (lm);
