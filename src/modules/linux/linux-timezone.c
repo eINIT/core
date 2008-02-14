@@ -248,8 +248,5 @@ int timezone_configure (struct lmodule *me) {
  me->scanmodules = timezone_scanmodules;
  me->cleanup = timezone_cleanup;
 
- stimezone(timezone_SEED);
-// stimezonedev();
-
  return status_ok;
 }
