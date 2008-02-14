@@ -1,5 +1,3 @@
-include ../config.mk
-
 all: documentation
 
 clean:
