@@ -509,6 +509,8 @@ void *einit_ipc_9p_listen (void *param) {
  intptr_t fdp = (intptr_t)param;
  int fd = fdp;
 
+ fcntl (fd, F_SETFD, FD_CLOEXEC);
+
  IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
 
  if (connection) {
