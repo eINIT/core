@@ -49,7 +49,7 @@ module_register(linux_initramfs_self);
 
 int linux_initramfs_is_initramfs (void) {
  int ret;
- notify(1,einit_argv[0]);
+ notice(1,einit_argv[0]);
  if (strmatch(einit_argv[0], "linuxrc") || strmatch(einit_argv[0], "/linuxrc")) {
   ret = 0; 
  } else {
