@@ -115,7 +115,7 @@ enum ipc_9p_filetype {
 };
 
 struct msg_event_queue {
- struct einit_event *ev;
+ char *event;
  struct msg_event_queue *next;
  struct msg_event_queue *previous;
 };
@@ -243,7 +243,8 @@ void einit_ipc_9p_fs_open (Ixp9Req *r) {
    respond(r, nil);
   }
  } else
-  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+//  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+  einit_ipc_9p_fs_open_spawn(r);
 }
 
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
@@ -285,28 +286,37 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  respond(r, nil);
 }
 
+void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
+ struct ipc_9p_fidaux *fa = r->fid->aux;
+ struct ipc_9p_filedata *fd = fa->fd;
+
+ if (fd->event->next != einit_ipc_9p_event_queue) {
+  fprintf (stdout, "printing event\n");
+  fflush (stderr);
+
+  r->ofcall.data = estrdup (fd->event->event);
+  r->ofcall.count = strlen (r->ofcall.data);
+
+  fd->event = fd->event->next;
+
+  respond(r, nil);
+ } else {
+  fprintf (stdout, "no more events right now\n");
+  fflush (stdout);
+
+  emutex_lock(&einit_ipc_9p_event_update_listeners_mutex);
+  einit_ipc_9p_event_update_listeners = (Ixp9Req **)set_noa_add ((void **)einit_ipc_9p_event_update_listeners, r);
+  emutex_unlock(&einit_ipc_9p_event_update_listeners_mutex);
+ }
+}
+
 void einit_ipc_9p_fs_read (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_read()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
 
  if (fd->type == i9_events) {
-  char p = 1;
-
-  if (fd->event->next != einit_ipc_9p_event_queue) {
-   r->ofcall.data = estrdup ("event!\n");
-   r->ofcall.count = 7;
-
-   respond(r, nil);
-
-   p = 0;
-  }
-
-  if (p) {
-   emutex_lock(&einit_ipc_9p_event_update_listeners);
-   einit_ipc_9p_event_update_listeners = (Ixp9Req **)set_noa_add ((void **)einit_ipc_9p_event_update_listeners, r);
-   emutex_unlock(&einit_ipc_9p_event_update_listeners);
-  }
+  einit_ipc_9p_fs_reply_event (r);
  } else if (fd->type == i9_file) {
   if (fd->data) {
    fflush (stderr);
@@ -445,7 +455,8 @@ void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_stat (Ixp9Req *r) {
- ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
+ einit_ipc_9p_fs_stat_spawn(r);
+// ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
 }
 
 void einit_ipc_9p_fs_write (Ixp9Req *r) {
@@ -479,6 +490,20 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
  if (fa && fa->fd) {
+  emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+  repeat:
+  if (einit_ipc_9p_event_update_listeners) {
+   int i = 0;
+   for (; einit_ipc_9p_event_update_listeners[i]; i++) {
+    struct ipc_9p_fidaux *sfa = einit_ipc_9p_event_update_listeners[i]->fid->aux;
+    if (sfa->fd == fa->fd) {
+     einit_ipc_9p_event_update_listeners = (Ixp9Req **)setdel ((void **)einit_ipc_9p_event_update_listeners, einit_ipc_9p_event_update_listeners[i]);
+     goto repeat;
+    }
+   }
+  }
+  emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
+
   struct ipc_9p_filedata *fd = fa->fd;
 
   if (fd->is_writable && fd->data) {
@@ -500,12 +525,27 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
- ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
+ einit_ipc_9p_fs_clunk_spawn(r);
+// ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
 }
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_flush()");
- respond (r, "not implemented.");
+// respond (r, nil);
+ emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+ repeat:
+  if (einit_ipc_9p_event_update_listeners) {
+  int i = 0;
+  for (; einit_ipc_9p_event_update_listeners[i]; i++) {
+   if (r->ifcall.oldtag == einit_ipc_9p_event_update_listeners[i]->ifcall.tag) {
+    einit_ipc_9p_event_update_listeners = (Ixp9Req **)setdel ((void **)einit_ipc_9p_event_update_listeners, einit_ipc_9p_event_update_listeners[i]);
+    goto repeat;
+   }
+  }
+ }
+ emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
+
+ respond (r, nil);
 }
 
 void einit_ipc_9p_fs_attach(Ixp9Req *r) {
@@ -584,13 +624,18 @@ void *einit_ipc_9p_listen (void *param) {
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
- e->ev = evdup(ev);
+ char buffer[BUFFERSIZE];
+
+ esprintf (buffer, BUFFERSIZE, "event=%i\ntype=%s\n", ev->seqid, event_code_to_string(ev->type));
+
+ e->event = estrdup (buffer);
 
  emutex_lock (&einit_ipc_9p_event_queue_mutex);
 
  if (einit_ipc_9p_event_queue) {
   e->previous = einit_ipc_9p_event_queue->previous;
-  e->previous->next = e;
+  einit_ipc_9p_event_queue->previous->next = e;
+  einit_ipc_9p_event_queue->previous = e;
 
   e->next = einit_ipc_9p_event_queue;
  } else {
@@ -602,6 +647,14 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  emutex_unlock (&einit_ipc_9p_event_queue_mutex);
 
  emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+ if (einit_ipc_9p_event_update_listeners) {
+  int i = 0;
+  for (; einit_ipc_9p_event_update_listeners[i]; i++) {
+   ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_reply_event, einit_ipc_9p_event_update_listeners[i]);
+  }
+  efree (einit_ipc_9p_event_update_listeners);
+  einit_ipc_9p_event_update_listeners = NULL;
+ }
  emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 }
 
@@ -723,11 +776,11 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
 
 /*int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);}*/
- 
+
 const char *einit_ipc_9p_cl_address = NULL;
 
 void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
- einit_ipc_9p_thread_function_address (einit_ipc_9p_cl_address);
+ einit_ipc_9p_thread_function_address ((char *)einit_ipc_9p_cl_address);
 }
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
