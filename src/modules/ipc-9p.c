@@ -108,12 +108,19 @@ pthread_mutex_t
  einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
  einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-
 enum ipc_9p_filetype {
  i9_dir,
  i9_file,
  i9_events
 };
+
+struct msg_event_queue {
+ struct einit_event *ev;
+ struct msg_event_queue *next;
+ struct msg_event_queue *previous;
+};
+
+struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
 
 struct ipc_9p_filedata {
  char *data;
@@ -122,7 +129,7 @@ struct ipc_9p_filedata {
  struct ipc_fs_node **files;
  int c;
  char is_writable;
- int event_seq;
+ struct msg_event_queue *event;
 };
 
 struct ipc_9p_fidaux {
@@ -142,7 +149,7 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  fd->files = (struct ipc_fs_node **)(d->files ? set_fix_dup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
  fd->c = d->c;
  fd->is_writable = d->is_writable;
- fd->event_seq = d->event_seq;
+ fd->event = d->event;
 
  return fd;
 }
@@ -227,7 +234,7 @@ void einit_ipc_9p_fs_open (Ixp9Req *r) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
    fd->type = i9_events;
-   fd->event_seq = 0;
+   fd->event = einit_ipc_9p_event_queue;
 
    fa->fd = fd;
 
@@ -557,14 +564,6 @@ void *einit_ipc_9p_listen (void *param) {
  return NULL;
 }
 
-
-struct msg_event_queue {
- struct einit_event *ev;
- struct msg_event_queue *next;
-};
-
-struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
-
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
@@ -572,10 +571,21 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
 
  emutex_lock (&einit_ipc_9p_event_queue_mutex);
 
- e->next = einit_ipc_9p_event_queue;
- einit_ipc_9p_event_queue = e;
+ if (einit_ipc_9p_event_queue) {
+  e->previous = einit_ipc_9p_event_queue->previous;
+  e->previous->next = e;
+
+  e->next = einit_ipc_9p_event_queue;
+ } else {
+  e->previous = e;
+  e->next = e;
+  einit_ipc_9p_event_queue = e;
+ }
 
  emutex_unlock (&einit_ipc_9p_event_queue_mutex);
+
+ emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+ emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 }
 
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
