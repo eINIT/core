@@ -120,7 +120,7 @@ int print_usage_info () {
   "--metadaemon          run einit in \"metadaemon mode\"\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
-  "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stderr);
+  "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stdout);
  return -1;
 }
 
@@ -394,7 +394,7 @@ int main(int argc, char **argv, char **environ) {
   struct einit_event cev = evstaticinit(einit_core_update_configuration);
 
   if (!suppress_version) {
-   eprintf (stderr, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
+   eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
   }
 
   if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
@@ -420,19 +420,19 @@ int main(int argc, char **argv, char **environ) {
     uint32_t cp = 0;
 
     if (!suppress_version)
-     eputs (" >> initialising in-core modules:", stderr);
+     eputs (" >> initialising in-core modules:", stdout);
 
     for (; coremodules[cp]; cp++) {
      struct lmodule *lmm;
      if (!suppress_version)
-      eprintf (stderr, " [%s]", (*coremodules[cp])->rid);
+      eprintf (stdout, " [%s]", (*coremodules[cp])->rid);
      lmm = mod_add(NULL, (*coremodules[cp]));
 
      lmm->source = (char *)str_stabilise("core");
     }
 
     if (!suppress_version)
-     eputs (" OK\n", stderr);
+     eputs (" OK\n", stdout);
    }
 
 /* emit events to read configuration files */
