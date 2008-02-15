@@ -60,10 +60,11 @@ int linux_initramfs_is_initramfs (void) {
 
 void linux_initramfs_kernel_extensions_handler (struct einit_event *ev) {
  if (linux_initramfs_is_initramfs()==0) {
-  notice(2, "INITRAMFS=True/n");
+  notice(1, "INITRAMFS=True/n");
  } else {
-  notice(2, "INITRAMFS=False/n");
+  notice(1, "INITRAMFS=False/n");
  }
+ sleep(5);
 }
 
 int linux_initramfs_cleanup (struct lmodule *pa) {
