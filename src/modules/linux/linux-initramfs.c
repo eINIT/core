@@ -214,7 +214,7 @@ void linux_initramfs_boot_postdev_handler (struct einit_event *ev) {
   notice(1,"eINIT is running from within an initramfs!");
   char realroot [BUFFERSIZE];
   int i = 1;
-  for (i; i<length(einit_argv); i++) {
+  for (i; i<sizeof(einit_argv); i++) {
    if ( strmatch(strtok(einit_argv[i],"="),"root") ) {
 	esprintf(realroot, BUFFERSIZE, "%s", strtok(NULL,"="));
    }
