@@ -94,7 +94,9 @@ Modules = ['shadow-exec', 'feedback-visual-psplash']
 
 ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-group', 'module-network-v2', 'parse-sh', 'log', 'module-xml', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
 
-ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone', 'linux-initramfs']
+ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone']
+
+ModulesLinuxNoBundle = ['linux-initramfs']
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
@@ -117,8 +119,10 @@ for i in ASMFunctions:
 
 if uname == 'Darwin':
  ModulesLinux = []
+ ModulesLinuxNoBundle = []
 if uname == 'FreeBSD':
  ModulesLinux = []
+ ModulesLinuxNoBundle = []
 if uname == 'Linux':
  ModulesBSD = []
  if not conf.CheckNPTL():
@@ -128,7 +132,7 @@ if uname == 'Linux':
 
 
 InternalModules = ['module-so']
-ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
+ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -297,8 +301,8 @@ env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
-        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
-        'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
+        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'ModulesCompatibility', 'InternalModules',
+        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
 SConscript(ScriptsEinit)
 
