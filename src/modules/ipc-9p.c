@@ -64,9 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef ecalloc
 #endif
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #define EXPECTED_EIV 1
 
@@ -105,7 +103,6 @@ gid_t einit_ipc_9p_einitgid = 0;
 
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
-char *einit_ipc_9p_request (char *);
 
 /*<eyecancer>*/
 pthread_mutex_t
@@ -162,8 +159,10 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
  return fa;
 }
 
+<<<<<<< HEAD:src/modules/ipc-9p.c
 
-void einit_ipc_9p_fs_open(Ixp9Req *r) {
+void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
+>>>>>>> 17bd9402ddf82719ca64a0562327a3ad3c1bd222:src/modules/ipc-9p.c
 // notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
@@ -225,6 +224,10 @@ void einit_ipc_9p_fs_open(Ixp9Req *r) {
  }*/
 }
 
+void einit_ipc_9p_fs_open (Ixp9Req *r) {
+ ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+}
+
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_walk()");
  int i = 0;
@@ -264,156 +267,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  respond(r, nil);
 }
 
-struct einit_ipc_9p_request_data {
- char *command;
- FILE *output;
-};
-
-int einit_ipc_9p_process (char *cmd, FILE *f) {
- if (!cmd || !cmd[0]) {
-  return 0;
- }
-
- struct einit_event *event = evinit (einit_ipc_request_generic);
- uint32_t ic;
- int ret = 0;
- int len = strlen (cmd);
-
- if ((len > 4) && (cmd[len-4] == '.') && (cmd[len-3] == 'x') && (cmd[len-2] == 'm') && (cmd[len-1] == 'l')) {
-  cmd[len-4] = 0;
-  event->ipc_options |= einit_ipc_output_xml;
- }
-
- event->command = (char *)cmd;
- event->argv = str2set (' ', cmd);
- event->output = f;
- event->implemented = 0;
-
- event->argc = setcount ((const void **)event->argv);
-
- for (ic = 0; event->argv[ic]; ic++) {
-  if (strmatch (event->argv[ic], "--ansi")) event->ipc_options |= einit_ipc_output_ansi;
-  else if (strmatch (event->argv[ic], "--only-relevant")) event->ipc_options |= einit_ipc_only_relevant;
-  else if (strmatch (event->argv[ic], "--help")) event->ipc_options |= einit_ipc_help;
-  else if (strmatch (event->argv[ic], "--detach")) event->ipc_options |= einit_ipc_detach;
- }
-
- if (event->ipc_options & einit_ipc_output_xml) {
-  eputs ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<einit-ipc>\n", f);
- }
- if (event->ipc_options & einit_ipc_only_relevant) event->argv = strsetdel (event->argv, "--only-relevant");
- if (event->ipc_options & einit_ipc_output_ansi) event->argv = strsetdel (event->argv, "--ansi");
- if (event->ipc_options & einit_ipc_help) {
-  if (event->ipc_options & einit_ipc_output_xml) {
-   eputs (" <einit version=\"" EINIT_VERSION_LITERAL "\" />\n <subsystem id=\"einit-ipc\">\n  <supports option=\"--help\" description-en=\"display help\" />\n  <supports option=\"--xml\" description-en=\"request XML output\" />\n  <supports option=\"--only-relevant\" description-en=\"limit manipulation to relevant items\" />\n </subsystem>\n", f);
-  } else {
-   eputs ("eINIT " EINIT_VERSION_LITERAL ": IPC Help\nGeneric Syntax:\n [function] ([subcommands]|[options])\nGeneric Options (where applicable):\n --help          display help only\n --only-relevant limit the items to be manipulated to relevant ones\n --xml           caller wishes to receive XML-formatted output\nSubsystem-Specific Help:\n", f);
-  }
-
-  event->argv = strsetdel ((char**)event->argv, "--help");
- }
-
- event_emit (event, einit_event_flag_broadcast);
-
- if (!event->implemented) {
-  if (event->ipc_options & einit_ipc_output_xml) {
-   eprintf (f, " <einit-ipc-error code=\"err-not-implemented\" command=\"%s\" verbose-en=\"command not implemented\" />\n", cmd);
-  } else {
-   eprintf (f, "einit-ipc: %s: command not implemented.\n", cmd);
-  }
-
-  ret = 1;
- } else
-  ret = event->ipc_return;
-
- if (event->argv) efree (event->argv);
-
- if (event->ipc_options & einit_ipc_output_xml) {
-  eputs ("</einit-ipc>\n", f);
- }
-
- evdestroy (event);
-
-#ifdef POSIXREGEX
- struct cfgnode *n = NULL;
-
- while ((n = cfg_findnode ("configuration-ipc-chain-command", 0, n))) {
-  if (n->arbattrs) {
-   uint32_t u = 0;
-   regex_t pattern;
-   char have_pattern = 0, *new_command = NULL;
-
-   for (u = 0; n->arbattrs[u]; u+=2) {
-    if (strmatch(n->arbattrs[u], "for")) {
-     have_pattern = !eregcomp (&pattern, n->arbattrs[u+1]);
-    } else if (strmatch(n->arbattrs[u], "do")) {
-     new_command = n->arbattrs[u+1];
-    }
-   }
-
-   if (have_pattern && new_command) {
-    if (!regexec (&pattern, cmd, 0, NULL, 0))
-     einit_ipc_9p_process (new_command, f);
-    eregfree (&pattern);
-   }
-  }
- }
-#endif
-
- return ret;
-}
-
-void einit_ipc_9p_request_thread (struct einit_ipc_9p_request_data *d) {
- einit_ipc_9p_process(d->command, d->output);
- fclose (d->output);
-}
-
-char *einit_ipc_9p_request (char *command) {
- if (!command) return NULL;
-
- int internalpipe[2];
- char *returnvalue = NULL;
-
- if (!socketpair (AF_UNIX, SOCK_STREAM, 0, internalpipe)) {
-// c'mon, don't tell me you're going to send data fragments > 400kb using the IPC interface!
-  int socket_buffer_size = 40960;
-
-  fcntl (internalpipe[0], F_SETFL, O_NONBLOCK);
-  fcntl (internalpipe[1], F_SETFL, O_NONBLOCK);
-/* tag the fds as close-on-exec, just in case */
-  fcntl (internalpipe[0], F_SETFD, FD_CLOEXEC);
-  fcntl (internalpipe[1], F_SETFD, FD_CLOEXEC);
-
-  setsockopt (internalpipe[0], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
-  setsockopt (internalpipe[1], SOL_SOCKET, SO_SNDBUF, &socket_buffer_size, sizeof (int));
-  setsockopt (internalpipe[0], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
-  setsockopt (internalpipe[1], SOL_SOCKET, SO_RCVBUF, &socket_buffer_size, sizeof (int));
-
-  FILE *w = fdopen (internalpipe[1], "w");
-//  FILE *r = fdopen (internalpipe[0], "r");
-
-//  ipc_process(command, w);
-//  fclose (w);
-  struct einit_ipc_9p_request_data *d = emalloc (sizeof (struct einit_ipc_9p_request_data));
-  d->command = command;
-  d->output = w;
-
-  einit_ipc_9p_request_thread (d);
-
-  errno = 0;
-  if (internalpipe[0] != -1) {
-   returnvalue = readfd_l (internalpipe[0], NULL);
-
-   eclose (internalpipe[0]);
-  }
- }
-
- if (!returnvalue) returnvalue = estrdup("<einit-ipc><warning type=\"no-return-value\" /></einit-ipc>\n");
-
- return returnvalue;
-}
-
-void einit_ipc_9p_fs_read(Ixp9Req *r) {
+void einit_ipc_9p_fs_read (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_read()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
@@ -495,7 +349,7 @@ void einit_ipc_9p_fs_read(Ixp9Req *r) {
  }
 }
 
-void einit_ipc_9p_fs_stat(Ixp9Req *r) {
+void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
  char *path = set2str ('/', (const char **)fa->path);
 
@@ -555,7 +409,11 @@ void einit_ipc_9p_fs_stat(Ixp9Req *r) {
  respond(r, nil);
 }
 
-void einit_ipc_9p_fs_write(Ixp9Req *r) {
+void einit_ipc_9p_fs_stat (Ixp9Req *r) {
+ ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
+}
+
+void einit_ipc_9p_fs_write (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
 // notice (1, "einit_ipc_9p_fs_write(%i, %i)", r->ifcall.count, r->ofcall.count);
@@ -581,7 +439,7 @@ void einit_ipc_9p_fs_write(Ixp9Req *r) {
  }
 }
 
-void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
+void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_clunk()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
@@ -604,6 +462,10 @@ void einit_ipc_9p_fs_clunk(Ixp9Req *r) {
  }
 
  respond(r, nil);
+}
+
+void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
+ ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
 }
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
@@ -658,6 +520,33 @@ Ixp9Srv einit_ipc_9p_srv = {
 
 static IxpServer einit_ipc_9p_server; 
 
+void *einit_ipc_9p_listen (void *param) {
+ intptr_t fdp = (intptr_t)param;
+ int fd = fdp;
+
+ fcntl (fd, F_SETFD, FD_CLOEXEC);
+
+ IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
+
+ if (connection) {
+// ixp_pthread_init();
+
+  notice (1, "9p server initialised");
+
+  /* server loop nao */
+
+  ixp_serverloop(&einit_ipc_9p_server);
+
+  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
+
+  einit_ipc_9p_running = 0;
+ } else {
+  notice (1, "could not initialise 9p server");
+ }
+
+ return NULL;
+}
+
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
  einit_ipc_9p_running = 1;
 
@@ -675,7 +564,7 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
   address = "unix!dev/einit-9p";
  }
 
- int fd = ixp_announce (address);
+ intptr_t fd = ixp_announce (address);
 
  if (!fd) {
   notice (1, "cannot initialise 9p server");
@@ -691,44 +580,44 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
   chmod (sp[1], smode);
  }
 
- IxpConn* connection = ixp_listen(&einit_ipc_9p_server, fd, &einit_ipc_9p_srv, serve_9pcon, NULL); 
-
- if (connection) {
-// ixp_pthread_init();
-
-  notice (1, "9p server initialised");
-
 /* add environment var for synchronisation */
 
-  struct cfgnode newnode;
+ struct cfgnode newnode;
 
-  memset (&newnode, 0, sizeof(struct cfgnode));
+ memset (&newnode, 0, sizeof(struct cfgnode));
 
-  newnode.id = (char *)str_stabilise ("configuration-environment-global");
-  newnode.type = einit_node_regular;
+ newnode.id = (char *)str_stabilise ("configuration-environment-global");
+ newnode.type = einit_node_regular;
 
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "id");
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "EINIT_9P_ADDRESS");
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "id");
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "EINIT_9P_ADDRESS");
 
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "s");
-  newnode.arbattrs = set_str_add_stable(newnode.arbattrs, address);
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, "s");
+ newnode.arbattrs = set_str_add_stable(newnode.arbattrs, address);
 
-  newnode.svalue = newnode.arbattrs[3];
+ newnode.svalue = newnode.arbattrs[3];
 
-  cfg_addnode (&newnode);
+ cfg_addnode (&newnode);
 
-  einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
+ einit_global_environment = straddtoenviron (einit_global_environment, "EINIT_9P_ADDRESS", address);
 
-/* server loop nao */
+ einit_ipc_9p_listen((void *)fd);
 
-  ixp_serverloop(&einit_ipc_9p_server);
+ return NULL;
+}
 
-  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
+void *einit_ipc_9p_thread_function_address (char *address) {
+ einit_ipc_9p_running = 1;
 
-  einit_ipc_9p_running = 0;
- } else {
-  notice (1, "could not initialise 9p server");
+ intptr_t fd = ixp_announce (address);
+
+ if (!fd) {
+  notice (1, "cannot initialise 9p server");
+  return NULL;
  }
+
+ einit_ipc_9p_listen((void *)fd);
+
  return NULL;
 }
 
@@ -753,105 +642,46 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
 
  if (!path) {
   n.is_file = 0;
-  n.name = (char *)str_stabilise ("ipc");
+  n.name = (char *)str_stabilise ("issues");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
- } if (path && path[0] && strmatch (path[0], "ipc")) {
-  if (!path[1]) {
-   n.is_file = 1;
-
-   n.name = (char *)str_stabilise ("list modules.xml");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list services.xml");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list configuration.xml");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list modules");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list services");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("list configuration");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("update configuration");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-   n.name = (char *)str_stabilise ("examine configuration");
-   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-  } else {
-   char *res = einit_ipc_9p_request ((char *)str_stabilise(path[1]));
-
-   ev->stringset = set_str_add_stable(ev->stringset, res);
-
-   efree (res);
-  }
  }
 }
 
 void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && strmatch (path[0], "ipc")) {
+ if (path && path[0] && strmatch (path[0], "issues")) {
   ev->flag = (path[1] ? 1 : 0);
  }
 }
 
-/* event handling stuff goes here - not working yet - (c) by nklein */
-
-struct msg_event_queue {
- struct einit_event *ev;
- struct msg_event_queue *next;
-};
-
-struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
-
-void einit_ipc_9p_ping_all_threads() {
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
-
- pthread_cond_broadcast (&einit_ipc_9p_ping_cond);
-}
-
-
-void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
- struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
- 
- einit_ipc_9p_save_events(evdup(ev));
- e->ev = evdup(ev);
- e->next = NULL;
-
- emutex_lock (&einit_ipc_9p_event_queue_mutex);
-
- e->next = einit_ipc_9p_event_queue;
- einit_ipc_9p_event_queue = e;
- 
-
- emutex_unlock (&einit_ipc_9p_event_queue_mutex);
-
- einit_ipc_9p_ping_all_threads();
-
-
-}
-
-void einit_ipc_9p_save_events(struct einit_event *ev) {
-	
-}
-
-/* end of eye cancer code */
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);
+=======
+const char *einit_ipc_9p_cl_address = NULL;
+>>>>>>> 17bd9402ddf82719ca64a0562327a3ad3c1bd222:src/modules/ipc-9p.c
 
+void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
+ einit_ipc_9p_thread_function_address (einit_ipc_9p_cl_address);
+}
+
+int einit_ipc_9p_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_root_device_ok, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_ipc_read, einit_ipc_9p_ipc_read);
  event_ignore (einit_ipc_stat, einit_ipc_9p_ipc_stat);
 
+ if (einit_ipc_9p_cl_address) {
+  event_listen (einit_core_secondary_main_loop, einit_ipc_9p_secondary_main_loop);
+ }
+
  return 0;
 }
 
 int einit_ipc_9p_configure (struct lmodule *irr) {
  module_init(irr);
- ipc_configure(irr);
 
  irr->cleanup = einit_ipc_9p_cleanup;
 
@@ -860,6 +690,22 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_9p_ipc_stat);
+
+ if (einit_argv) {
+  char *address = NULL;
+  int y = 0;
+  for (; einit_argv[y] && einit_argv[y+1]; y++) {
+   if (strmatch (einit_argv[y], "--ipc-socket")) {
+    address = einit_argv[y+1];
+    coremode = einit_mode_ipconly;
+   }
+  }
+
+  if (address) {
+   einit_ipc_9p_cl_address = str_stabilise (address);
+   event_listen (einit_core_secondary_main_loop, einit_ipc_9p_secondary_main_loop);
+  }
+ }
 
  return 0;
 }

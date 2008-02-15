@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created on 10/11/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -481,7 +481,66 @@ SCM module_scheme_guile_get_configuration (SCM id) {
                   rv);
   }
 
+  scm_dynwind_end ();
   return rv;
+ }
+
+ scm_dynwind_end ();
+
+ return SCM_BOOL_F;
+}
+
+SCM module_scheme_guile_get_configuration_multi (SCM id) {
+ SCM ids;
+ char *id_c;
+
+ if (scm_is_false(scm_symbol_p (id))) return SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ ids = scm_symbol_to_string(id);
+ id_c = scm_to_locale_string (ids);
+ scm_dynwind_unwind_handler (efree, id_c, SCM_F_WIND_EXPLICITLY);
+
+ struct stree *st = cfg_prefix (id_c);
+ if (st) {
+  struct stree *cur = streelinear_prepare (st);
+  SCM rvalx = SCM_BOOL_F;
+
+  while (cur) {
+   struct cfgnode *node = cur->value;
+
+   if (node && node->arbattrs) {
+    SCM rv = scm_list_1 (scm_cons (scm_from_locale_string (node->arbattrs[0]),
+                          scm_from_locale_string (node->arbattrs[1])));
+    int i;
+
+    for (i = 2; node->arbattrs[i]; i+=2) {
+     rv = scm_cons (scm_cons (scm_from_locale_string (node->arbattrs[i]),
+                    scm_from_locale_string (node->arbattrs[i+1])),
+                                            rv);
+    }
+
+    if (rvalx == SCM_BOOL_F) {
+     rvalx = scm_list_1 (scm_cons (scm_from_locale_string (cur->key), rv));
+    } else {
+     rvalx = scm_cons (scm_cons (scm_from_locale_string (cur->key), rv), rvalx);
+    }
+   } else {
+    if (rvalx == SCM_BOOL_F) {
+     rvalx = scm_list_1 (scm_cons (scm_from_locale_string (cur->key), SCM_BOOL_F));
+    } else {
+     rvalx = scm_cons (scm_cons (scm_from_locale_string (cur->key), SCM_BOOL_F), rvalx);
+    }
+   }
+
+   cur = streenext (cur);
+  }
+
+  scm_dynwind_end ();
+  return rvalx;
+
+  streefree (st);
  }
 
  scm_dynwind_end ();
@@ -610,8 +669,12 @@ SCM module_scheme_guile_pexec (SCM command, SCM rest) {
 
  scm_dynwind_begin (0);
 
- p.command = scm_to_locale_string (command);
- scm_dynwind_unwind_handler (efree, p.command, SCM_F_WIND_EXPLICITLY);
+ char *tp = scm_to_locale_string (command);
+ if (tp) {
+  p.command = (char *)str_stabilise(tp);
+  free (tp);
+ }
+// scm_dynwind_unwind_handler (free, p.command, SCM_F_WIND_EXPLICITLY);
 
  while (!scm_is_null (rest)) {
   SCM r = scm_car (rest);
@@ -722,26 +785,6 @@ SCM module_scheme_guile_event_string_set (SCM event) {
  return rv;
 }
 
-SCM module_scheme_guile_event_argv (SCM event) {
- SCM rv = SCM_BOOL_F;
- struct einit_event *ev;
-
- scm_assert_smob_type (einit_event_smob, event);
-
- ev = (struct einit_event *) SCM_SMOB_DATA (event);
-
- if ((ev->type == einit_event_subsystem_ipc) && ev->argv) {
-  rv = scm_c_make_vector (ev->argc, SCM_BOOL_F);
-  int i = 0;
-
-  for (; ev->stringset[i]; i++)
-   SCM_SIMPLE_VECTOR_SET (rv, i, scm_from_locale_string(ev->argv[i]));
- }
-
- scm_remember_upto_here_1 (event);
- return rv;
-}
-
 SCM module_scheme_guile_event_type (SCM event) {
  struct einit_event *ev;
  SCM rv = SCM_BOOL_F;
@@ -751,22 +794,6 @@ SCM module_scheme_guile_event_type (SCM event) {
  ev = (struct einit_event *) SCM_SMOB_DATA (event);
 
  rv = scm_from_locale_symbol (event_code_to_string (ev->type));
-
- scm_remember_upto_here_1 (event);
- return rv;
-}
-
-SCM module_scheme_guile_event_command (SCM event) {
- struct einit_event *ev;
- SCM rv = SCM_BOOL_F;
-
- scm_assert_smob_type (einit_event_smob, event);
-
- ev = (struct einit_event *) SCM_SMOB_DATA (event);
-
- if (ev->command) {
-  rv = scm_from_locale_string (ev->command);
- }
 
  scm_remember_upto_here_1 (event);
  return rv;
@@ -888,13 +915,8 @@ SCM module_scheme_guile_make_einit_event_from_struct (struct einit_event *evo) {
 
  SCM_NEWSMOB (smob, einit_event_smob, ev);
 
- if (evo->type != einit_event_subsystem_ipc) {
-  if (evo->string) ev->string = estrdup (evo->string);
-  if (evo->stringset) ev->stringset = set_str_dup_stable (evo->stringset);
- } else {
-  if (evo->command) ev->command = estrdup (evo->command);
-  if (evo->argv) ev->argv = set_str_dup_stable (evo->argv);
- }
+ if (evo->string) ev->string = estrdup (evo->string);
+ if (evo->stringset) ev->stringset = set_str_dup (evo->stringset);
 
  return smob;
 }
@@ -933,37 +955,35 @@ static int module_scheme_guile_einit_event_print (SCM event, SCM port, scm_print
  scm_puts ("#<einit-event type=", port);
  scm_puts (event_code_to_string (ev->type), port);
 
- if (ev->type != einit_event_subsystem_ipc) {
-  if (ev->task) {
-   esprintf (buffer, BUFFERSIZE, ", task=%i", ev->task);
-   scm_puts (buffer, port);
-  }
+ if (ev->task) {
+  esprintf (buffer, BUFFERSIZE, ", task=%i", ev->task);
+  scm_puts (buffer, port);
+ }
 
-  if (ev->status) {
-   esprintf (buffer, BUFFERSIZE, ", status=%i", ev->status);
-   scm_puts (buffer, port);
-  }
+ if (ev->status) {
+  esprintf (buffer, BUFFERSIZE, ", status=%i", ev->status);
+  scm_puts (buffer, port);
+ }
 
-  if (ev->integer) {
-   esprintf (buffer, BUFFERSIZE, ", integer=%i", ev->integer);
-   scm_puts (buffer, port);
-  }
+ if (ev->integer) {
+  esprintf (buffer, BUFFERSIZE, ", integer=%i", ev->integer);
+  scm_puts (buffer, port);
+ }
 
-  if (ev->string) {
-   scm_puts (", string=", port);
-   scm_puts (ev->string, port);
-  }
+ if (ev->string) {
+  scm_puts (", string=", port);
+  scm_puts (ev->string, port);
+ }
 
-  if (ev->stringset) {
-   int i = 0;
-   scm_puts (", stringset=#<", port);
+ if (ev->stringset) {
+  int i = 0;
+  scm_puts (", stringset=#<", port);
 
-   for (; ev->stringset[i]; i++) {
-    if (i) scm_puts (", ", port);
-    scm_puts (ev->stringset[i], port);
-   }
-   scm_puts (">", port);
+  for (; ev->stringset[i]; i++) {
+   if (i) scm_puts (", ", port);
+   scm_puts (ev->stringset[i], port);
   }
+  scm_puts (">", port);
  }
 
  scm_puts (">", port);
@@ -981,10 +1001,8 @@ SCM module_scheme_guile_einit_event_mark (SCM event) {
 size_t module_scheme_guile_einit_event_free (SCM event) {
  struct einit_event *ev = (struct einit_event *) SCM_SMOB_DATA (event);
 
- if (ev->type != einit_event_subsystem_ipc) {
-  if (ev->string) efree (ev->string);
-  if (ev->stringset) efree (ev->stringset);
- }
+ if (ev->string) efree (ev->string);
+ if (ev->stringset) efree (ev->stringset);
 
  scm_gc_free (ev, sizeof (struct einit_event), "einit-event");
 
@@ -1013,9 +1031,6 @@ void init_einit_event_type (void) {
  scm_c_define_gsubr ("event-string", 1, 0, 0, module_scheme_guile_event_string);
  scm_c_define_gsubr ("event-string-set", 1, 0, 0, module_scheme_guile_event_string_set);
 
- scm_c_define_gsubr ("event-argv", 1, 0, 0, module_scheme_guile_event_argv);
- scm_c_define_gsubr ("event-command", 1, 0, 0, module_scheme_guile_event_command);
-
 /* operations with the event type */
  scm_c_define_gsubr ("event-emit", 1, 0, 0, module_scheme_guile_event_emit);
  scm_c_define_gsubr ("event-listen", 2, 0, 0, module_scheme_guile_event_listen);
@@ -1040,6 +1055,8 @@ void module_scheme_guile_configure_scheme (void *n) {
 
  scm_c_define_gsubr ("get-configuration", 1, 0, 0, module_scheme_guile_get_configuration);
  scm_c_define_gsubr ("set-configuration!", 2, 0, 0, module_scheme_guile_set_configuration);
+
+ scm_c_define_gsubr ("get-configuration*", 1, 0, 0, module_scheme_guile_get_configuration_multi);
 
  init_einit_event_type();
 
@@ -1101,7 +1118,7 @@ void module_scheme_guile_wait_for_ping() {
  ts.tv_sec += 1; /* max wait before re-evaluate */
 
  e = pthread_cond_timedwait (&module_scheme_guile_ping_cond, &module_scheme_guile_ping_mutex, &ts);
-#elif defined(DARWIN)
+#elif defined(__APPLE__)
 #if 1
  struct timespec ts;
  struct timeval tv;
@@ -1205,7 +1222,6 @@ void module_scheme_guile_event_dispatcher_thread (void *na) {
 
 int module_scheme_guile_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
- ipc_cleanup (pa);
 
  event_ignore (einit_event_subsystem_any, module_scheme_guile_generic_event_handler);
 
@@ -1215,7 +1231,6 @@ int module_scheme_guile_cleanup (struct lmodule *pa) {
 int module_scheme_guile_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure (pa);
- ipc_configure (pa);
 
  pa->scanmodules = module_scheme_guile_scanmodules;
  pa->cleanup = module_scheme_guile_cleanup;

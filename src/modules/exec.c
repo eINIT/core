@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 23/11/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -58,11 +58,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit-modules/parse-sh.h>
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
-#ifdef LINUX
+#ifdef __linux__
 #include <sys/syscall.h>
 #include <linux/sched.h>
 #endif
@@ -114,7 +112,6 @@ int qexec_f (char *command);
 int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status);
 char **create_environment_f (char **environment, const char **variables);
-void einit_exec_ipc_event_handler (struct einit_event *);
 void einit_exec_process_event_handler (struct einit_event *);
 
 void *dexec_watcher (pid_t pid);
@@ -133,7 +130,6 @@ int einit_exec_cleanup (struct lmodule *irr) {
  function_unregister ("einit-execute-command-q", 1, qexec_f);
 
  event_ignore (einit_process_died, einit_exec_process_event_handler);
- event_ignore (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  sched_cleanup(irr);
 
@@ -179,18 +175,6 @@ void einit_exec_process_event_handler (struct einit_event *ev) {
  einit_exec_update_daemons_from_pidfiles();
 
  dexec_watcher(ev->integer);
-}
-
-void einit_exec_ipc_event_handler (struct einit_event *ev) {
- if (ev && ev->argv && ev->argv[0] && ev->argv[1] && strmatch(ev->argv[0], "exec")) {
-  struct einit_event ee = evstaticinit (einit_feedback_module_status);
-  ee.para = (void *)thismodule;
-
-  pexec_f (ev->command, NULL, 0, 0, NULL, NULL, NULL, &ee);
-  evstaticdestroy(ee);
-
-  ev->implemented = 1;
- }
 }
 
 char *apply_envfile_f (char *command, const char **environment) {
@@ -241,20 +225,13 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
 
   if (ep) {
    *ep = 0;
-   x[0] = estrdup (e);
+   x[0] = (char *)str_stabilise (e);
    *ep = '/';
 
    ep++;
    x[1] = ep;
   }
 
-#ifndef POSIXREGEX
-  if (!cfg_getnode (x[0], NULL)) {
-   node_found = 0;
-  } else if (cfg_getstring (e, NULL)) {
-   variable_matches++;
-  }
-#else
   struct cfgnode *n;
 
   if (!(n = cfg_getnode (x[0], NULL))) {
@@ -274,7 +251,6 @@ char **check_variables_f (const char *id, const char **variables, FILE *output) 
   } else if (cfg_getstring (x[0], NULL)) {
    variable_matches++;
   }
-#endif
 
   if (!node_found) {
    eprintf (output, " * module: %s: undefined node: %s\n", id, x[0]);
@@ -293,13 +269,12 @@ char **create_environment_f (char **environment, const char **variables) {
  int i = 0;
  char *variablevalue = NULL;
  if (variables) for (i = 0; variables[i]; i++) {
-#ifdef POSIXREGEX
   if ((variablevalue = strchr (variables[i], '/'))) {
 /* special treatment if we have an attribue specifier in the variable name */
    char *name = NULL, *filter = variablevalue+1;
    struct cfgnode *node;
    *variablevalue = 0;
-   name = estrdup(variables[i]);
+   name = (char *)str_stabilise(variables[i]);
    *variablevalue = '/';
 
    if ((node = cfg_getnode (name, NULL)) && node->arbattrs) {
@@ -352,7 +327,6 @@ char **create_environment_f (char **environment, const char **variables) {
      efree (pvalue);
     }
     efree (key);
-    efree (name);
    }
   } else {
 /* else: just add it */
@@ -360,11 +334,6 @@ char **create_environment_f (char **environment, const char **variables) {
    if (variablevalue)
     environment = straddtoenviron (environment, variables[i], variablevalue);
   }
-#else
-  char *variablevalue = cfg_getstring (variables[i], NULL);
-  if (variablevalue)
-   environment = straddtoenviron (environment, variables[i], variablevalue);
-#endif
  }
 
 /*  if (variables) {
@@ -407,7 +376,7 @@ void exec_callback (char **data, enum einit_sh_parser_pa status, struct exec_par
 
 char **exec_run_sh (char *command, enum pexec_options options, char **exec_environment) {
  struct exec_parser_data pd;
- char *ocmd = estrdup (command);
+ char *ocmd = (char*)str_stabilise (command);
 
  memset (&pd, 0, sizeof (pd));
 
@@ -449,22 +418,18 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
  enum pexec_options options = (status ? 0 : pexec_option_nopipe);
  uint32_t cs = status_ok;
  char have_waited = 0;
- char *freeocmds = NULL;
 
  lookupuidgid (&uid, &gid, user, group);
 
  if (!command) return status_failed;
 // if the first command is pexec-options, then set some special options
  if (strprefix (command, "pexec-options")) {
-  char *ocmds = estrdup(command),
+  char *ocmds = (char*)str_stabilise(command),
   *rcmds = strchr (ocmds, ';'),
   **optx = NULL;
   if (!rcmds) {
-   efree (ocmds);
    return status_failed;
   }
-
-  freeocmds = ocmds;
 
   *rcmds = 0;
   optx = str2set (' ', ocmds);
@@ -488,8 +453,11 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   }
  }
  if (!command || !command[0]) {
-  if (freeocmds) efree (freeocmds);
   return status_failed;
+ }
+
+ if (strmatch (command, "true")) {
+  return status_ok;
  }
 
  if (!(options & pexec_option_nopipe)) {
@@ -499,7 +467,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     status_update (status);
     status->string = strerror (errno);
    }
-   if (freeocmds) efree (freeocmds);
    return status_failed;
   }
 /* make sure the read end won't survive an exec*() */
@@ -532,14 +499,13 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 /* efree ((void *)command);
  command = NULL;*/
 
-#ifdef LINUX
+#ifdef __linux__
 // void *stack = emalloc (4096);
 // if ((child = syscall(__NR_clone, CLONE_PTRACE | CLONE_STOPPED, stack+4096)) < 0) {
 
  if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
   if (status)
    status->string = strerror (errno);
-  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 #else
@@ -551,13 +517,12 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
   goto retry_fork;
 
-  if (freeocmds) efree (freeocmds);
   return status_failed;
  }
 #endif
  else if (child == 0) {
 /* make sure einit's thread is in a proper state */
-#ifndef LINUX
+#ifndef __linux__
   sched_yield();
 #endif
 
@@ -612,7 +577,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     char rxbuffer[BUFFERSIZE];
     setvbuf (fx, NULL, _IONBF, 0);
 
-#ifdef LINUX
+#ifdef __linux__
     kill (child, SIGCONT);
 #endif
 
@@ -684,7 +649,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
     perror ("pexec(): open pipe");
    }
   }
-#ifdef LINUX
+#ifdef __linux__
   else kill (child, SIGCONT);
 #endif
 
@@ -694,8 +659,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    } while (!WIFEXITED(pidstatus) && !WIFSIGNALED(pidstatus));
   }
  }
-
- if (freeocmds) efree (freeocmds);
 
  if (cs == status_failed) return status_failed;
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
@@ -720,7 +683,7 @@ int qexec_f (char *command) {
  char **exvec = str2set (' ', command);
  pid_t child;
 
-#ifdef LINUX
+#ifdef __linux__
  if ((child = syscall(__NR_clone, CLONE_STOPPED | SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
   return status_failed;
  }
@@ -735,7 +698,7 @@ int qexec_f (char *command) {
 #endif
  else if (child == 0) {
 /* make sure einit's thread is in a proper state */
-#ifndef LINUX
+#ifndef __linux__
   sched_yield();
 #endif
 
@@ -749,7 +712,7 @@ int qexec_f (char *command) {
 
   execve (exvec[0], exvec, einit_global_environment);
  } else {
-#ifdef LINUX
+#ifdef __linux__
   kill (child, SIGCONT);
 #endif
 
@@ -929,7 +892,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 // if (status->task & einit_module_enable)
 // else return status_ok;
 
-// cmddup = estrdup (shellcmd->command);
 
  uid = shellcmd->uid;
  gid = shellcmd->gid;
@@ -1012,7 +974,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 /*  efree (command);
   command = NULL;*/
 
-#ifdef LINUX
+#ifdef __linux__
   if ((child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
    if (status) {
     status->string = strerror (errno);
@@ -1192,7 +1154,6 @@ int einit_exec_configure (struct lmodule *irr) {
   kill_timeout_secondary = node->value;
 
  event_listen (einit_process_died, einit_exec_process_event_handler);
- event_listen (einit_ipc_request_generic, einit_exec_ipc_event_handler);
 
  function_register ("einit-execute-command", 1, pexec_f);
  function_register ("einit-execute-daemon", 1, start_daemon_f);

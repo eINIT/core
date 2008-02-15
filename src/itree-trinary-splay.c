@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 04/12/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/utility.h>
 #include <einit/itree.h>
 #include <string.h>
+#include <stddef.h>
 
 struct itree *itree_rotate_left (struct itree *tree) {
 // fprintf (stderr, "left rotation:");
@@ -186,10 +187,10 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
    break;
   case tree_value_string:
    ssize = strlen (value) + 1;
-   lsize = sizeof (struct itree) + ssize;
+   lsize = /*sizeof (struct itree)*/ offsetof (struct itree, data) + ssize;
    break;
   default:
-   lsize = sizeof (struct itree) + size;
+   lsize = /*sizeof (struct itree)*/ offsetof (struct itree, data) + size;
    break;
  }
 
@@ -198,15 +199,16 @@ struct itree *itreeadd (struct itree *tree, signed long key, void *value, ssize_
 
  switch (size) {
   case tree_value_noalloc:
+//   memcpy (newnode->value, value, sizeof (void *));
    newnode->value = value;
    break;
   case tree_value_string:
-   newnode->value = ((char *)newnode) + sizeof (struct itree);
-   memcpy (newnode->value, value, ssize);
+//   newnode->value = ((char *)newnode) + sizeof (struct itree);
+   memcpy (newnode->data, value, ssize);
    break;
   default:
-   newnode->value = ((char *)newnode) + sizeof (struct itree);
-   memcpy (newnode->value, value, size);
+//   newnode->value = ((char *)newnode) + sizeof (struct itree);
+   memcpy (newnode->data, value, size);
    break;
  }
 

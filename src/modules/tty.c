@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 20/04/2006.
  *  Renamed from tty.c on 11/10/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -60,7 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utmp.h>
 #include <fcntl.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -152,7 +152,9 @@ void *einit_tty_watcher (pid_t pid) {
    esprintf (tmp, BUFFERSIZE, "einit-tty: restarting: %s\n", node->id);
    notice (6, tmp);
   }
+  emutex_lock (&ttys_mutex);
   einit_tty_texec (node);
+  emutex_unlock (&ttys_mutex);
  }
 
  return 0;
@@ -195,7 +197,7 @@ int einit_tty_texec (struct cfgnode *node) {
     esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
    } else
-#ifdef LINUX
+#ifdef __linux__
    if ((cpid = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) == 0)
 #else
    retry_fork:
@@ -220,7 +222,7 @@ int einit_tty_texec (struct cfgnode *node) {
       dup2 (newfd, 2);
      }
 
-#ifdef LINUX
+#ifdef __linux__
      int fdc = open ("/dev/console", O_WRONLY | O_NOCTTY);
      ioctl(fdc, TIOCSCTTY, 1);
      close (fdc);
@@ -251,10 +253,11 @@ int einit_tty_texec (struct cfgnode *node) {
     new->pid = cpid;
     new->node = node;
     new->restart = restart;
-    emutex_lock (&ttys_mutex);
+
+//    emutex_lock (&ttys_mutex);
     new->next = ttys;
     ttys = new;
-    emutex_unlock (&ttys_mutex);
+//    emutex_unlock (&ttys_mutex);
    }
   }
  }
@@ -290,7 +293,7 @@ void einit_tty_disable_unused (char **enab_ttys) {
 char einit_tty_is_present (char *ttyname) {
  char present = 0;
 
- emutex_lock (&ttys_mutex);
+// emutex_lock (&ttys_mutex);
  struct ttyst *cur = ttys;
 
  while (cur) {
@@ -300,7 +303,7 @@ char einit_tty_is_present (char *ttyname) {
   }
   cur = cur->next;
  }
- emutex_unlock (&ttys_mutex);
+// emutex_unlock (&ttys_mutex);
 
  return present;
 }
@@ -320,6 +323,8 @@ void einit_tty_update() {
  notice (4, "reconfiguring ttys");
 
  einit_tty_disable_unused (enab_ttys);
+
+ emutex_lock (&ttys_mutex);
 
  if (!enab_ttys || strmatch (enab_ttys[0], "none")) {
   notice (4, "no ttys to bring up");
@@ -359,6 +364,8 @@ void einit_tty_update() {
 
   efree (tmpnodeid);
  }
+
+ emutex_unlock (&ttys_mutex);
 
  efree (enab_ttys);
 }

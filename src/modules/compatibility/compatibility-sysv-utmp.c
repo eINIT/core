@@ -106,7 +106,7 @@ char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
     ufile = 0;
 
     for (i = 0; i < entries; i++) {
-#ifdef LINUX
+#ifdef __linux__
      switch (utmpentries[i].ut_type) {
       case DEAD_PROCESS:
        if (options & utmp_add) {
@@ -139,7 +139,7 @@ char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
       case USER_PROCESS:
       case ACCOUNTING:
        if (options & utmp_clean) {
-#ifdef LINUX
+#ifdef __linux__
         struct stat xst;
         char path[BUFFERSIZE];
         esprintf (path, BUFFERSIZE, "/proc/%i/", utmpentries[i].ut_pid);
@@ -156,7 +156,7 @@ char updateutmp_f (enum utmp_action options, struct utmp *new_entry) {
           memset (&(utmpentries[i].ut_host), 0, sizeof (utmpentries[i].ut_host));
           memset (&(utmpentries[i].ut_time), 0, sizeof (utmpentries[i].ut_time));
          }
-#ifdef LINUX
+#ifdef __linux__
         }
 #endif
        }

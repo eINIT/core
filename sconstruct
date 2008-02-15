@@ -1,0 +1,309 @@
+import os, xml.parsers.expat, commands
+
+def CheckNPTL(context):
+ context.Message('Checking for nptl... ')
+ pthread = commands.getoutput('getconf GNU_LIBPTHREAD_VERSION').split()
+ if pthread[0] == 'NPTL':
+  result = True
+ else:
+  result = False
+ context.Result(result)
+ return result
+
+opts = Options()
+opts.Add('libdir', 'Define the basename for library dirs', 'lib')
+opts.Add('destdir', 'Define the (installation) prefix; The Directory to install to', '')
+opts.Add('prefix', 'Define the (runtime) prefix', '/')
+opts.Add('scheme', 'Define which scheme implementation to use (if any)', 'guile')
+opts.Add('arch', 'Tell us what arch you\'re compiling for', 'host')
+opts.Add('libc', 'Tell us what libc you\'re compiling for', 'gnu')
+
+env = Environment(options = opts,
+ CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'],
+ LDMODULEPREFIX='', LDMODULESUFFIX='.so')
+
+if os.environ.has_key('CFLAGS'):
+ env.Append (CFLAGS = os.environ['CFLAGS'])
+
+if os.environ.has_key('CXXFLAGS'):
+ env.Append (CXXFLAGS = os.environ['CXXFLAGS'])
+
+conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
+
+ScriptsBundle = ['libixp/sconscript',
+                 'expat/sconscript']
+
+Export('env')
+
+SConscript(ScriptsBundle)
+
+ScriptsEinit = ['src/sconscript',
+                'src/modules/sconscript',
+                'data/sconscript',
+                'scripts/sconscript']
+
+destdir = ARGUMENTS.get('destdir', '')
+prefix = ARGUMENTS.get('prefix', '/')
+libdir = ARGUMENTS.get('libdir', 'lib')
+scheme = ARGUMENTS.get('scheme', 'guile')
+arch = ARGUMENTS.get('arch', 'host')
+libc = ARGUMENTS.get('libc', 'gnu')
+
+if arch == 'host':
+ f = os.popen ('arch', 'r')
+ if f:
+  arch = f.read().strip()
+  f.close()
+
+Help(opts.GenerateHelpText(env))
+
+RuntimeDirSbin = prefix + 'sbin'
+RuntimeDirEtc = prefix + 'etc/einit'
+RuntimeDirLib = prefix + libdir
+RuntimeDirLibEinit = prefix + libdir + '/einit'
+RuntimeDirLibBin = prefix + libdir + '/einit/bin'
+RuntimeDirModules = prefix + libdir + '/einit/modules'
+RuntimeDirBootstrap = prefix + libdir + '/einit/bootstrap'
+
+InstallDirSbin = destdir + RuntimeDirSbin
+InstallDirEtc = destdir + RuntimeDirEtc
+InstallDirLib = destdir + RuntimeDirLib
+InstallDirLibEinit = destdir + RuntimeDirLibEinit
+InstallDirLibBin = destdir + RuntimeDirLibBin
+InstallDirModules = destdir + RuntimeDirModules
+InstallDirBootstrap = destdir + RuntimeDirBootstrap
+
+InstallDirInclude = destdir + '/usr/include'
+if prefix != '/':
+ InstallDirInclude = destdir + '/include'
+
+uname = "unknown"
+
+f = os.popen ('uname', 'r')
+if f:
+ uname = f.readline().strip()
+ f.close()
+
+AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
+
+SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4', 'feedback-visual-textual']
+
+if scheme == 'guile':
+ SpecialModules += ['module-scheme-guile']
+
+Modules = ['fqdn', 'exec', 'mount', 'tty', 'process', 'shadow-exec', 'module-transformations', 'ipc-core-helpers', 'scheduler', 'functions-xml', 'module-xml', 'log', 'parse-sh', 'module-checkpoint', 'module-group', 'feedback-visual-psplash', 'module-network-v2']
+
+ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone']
+
+ModulesBSD = ['bsd-devfs', 'bsd-network']
+
+ModulesCompatibility = ['compatibility-sysv-utmp', 'compatibility-sysv-initctl']
+
+ASMFunctions = ['strmatch', 'strlen', 'memcpy', 'memset', 'hashp']
+ASMFunctionsAvailable = []
+
+def checkasm(name):
+ global uname, libc, arch
+ try:
+  os.stat('asm/' + arch + '-' + uname.lower() + '-' + libc + '/' + name + '.S')
+  return True
+ except:
+  return False
+
+for i in ASMFunctions:
+ if checkasm(i):
+  ASMFunctionsAvailable += [ i ]
+
+if uname == 'Darwin':
+ ModulesLinux = []
+if uname == 'FreeBSD':
+ ModulesLinux = []
+if uname == 'Linux':
+ ModulesBSD = []
+ if not conf.CheckNPTL():
+  print 'GlibC is not built with nptl!'
+  Exit(1)
+  env = conf.Finnish()
+
+
+InternalModules = ['module-so']
+ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
+
+Mkdir ('build/headers/einit')
+Mkdir ('build/headers/einit-modules')
+Mkdir ('build/core')
+
+buildnumber = 0
+
+f = open ('buildnumber', 'r')
+if f:
+ buildnumber = int(f.readline())
+ f.close ()
+
+def build_configuration(target, source, env):
+ global ASMFunctions, ASMFunctionsAvailable
+
+ for i in source:
+  if (str(i) == 'core'):
+   f = open ('build/headers/einit/configuration.h', 'w');
+   if f:
+    f.write ("""/* automatically created on each build, you shouldn\'t modify this */
+
+#ifndef EINIT_CONFIGURATION_H
+#define EINIT_CONFIGURATION_H
+
+#define BUILDNUMBER """ + str(buildnumber) + """
+
+#define BUFFERSIZE 1024
+
+#define EINIT_LIB_BASE \"""" + RuntimeDirLibEinit + """\"
+
+#define EINIT_VERSION_LITERAL_SUFFIX "-git-""" + str(buildnumber) + "\"\n")
+
+    for i in ASMFunctions:
+     if i in ASMFunctionsAvailable:
+      f.write ("#define _have_asm_" + i + "\n")
+
+    f.write ("""
+#endif
+""")
+    f.close()
+   return None
+  if (str(i) == 'modules'):
+   f = open ('build/headers/einit-modules/configuration.h', 'w');
+   if f:
+    f.write ("""/* automatically created on each build, you shouldn't modify this */
+
+#ifndef EINIT_MODULES_CONFIGURATION_H
+#define EINIT_MODULES_CONFIGURATION_H
+
+#define BOOTSTRAP_MODULE_PATH \"""" + RuntimeDirBootstrap + """/\"
+
+#define DO_BOOTSTRAP
+
+""")
+
+    for m in InternalModules:
+     f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'y\'' + "\n")
+    for m in ExternalModules:
+     f.write ('#define einit_modules_' + m.replace ('-', '_') + ' \'m\'' + "\n")
+
+    f.write ("#endif\n")
+    f.close()
+   return None
+
+  if (str(i) == 'module-configuration'):
+   f = open ('build/core/module-configuration.c', 'w');
+   if f:
+    f.write ("""/* automatically created on each build, you shouldn't modify this */
+
+#include <einit/module.h>
+
+""")
+
+    if InternalModules:
+     for m in InternalModules:
+      f.write ('extern const struct smodule * ' + m.replace ('-', '_') + "_self;\n")
+
+     f.write ("const struct smodule **coremodules[] = {\n")
+     for m in InternalModules:
+      f.write (' &' + m.replace ('-', '_') + "_self,\n")
+     f.write (" NULL };\n")
+    else:
+     f.write ("const struct smodule **coremodules[] = { NULL };")
+
+    f.write ("\n")
+    f.close()
+   return None
+
+ return None
+
+def xmlencode(s):
+ return s.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
+
+data = ""
+indent = 0
+open_element = False
+
+def fix_configuration(target, source, env):
+ global data, indent, open_element, libdir
+
+ def einit_start_element(name, attrs):
+  global data, indent, open_element
+
+  if open_element:
+   data += '>' + "\n"
+
+  for i in range(indent):
+   data += ' '
+
+  data += '<' + name
+  for z in attrs.iteritems():
+   data += ' ' + xmlencode(z[0].replace('/lib/', '/' + libdir + '/')) + '="' + xmlencode(z[1].replace('/lib/', '/' + libdir + '/')) + '"'
+
+  indent += 1
+  open_element = True
+
+ def einit_end_element(name):
+  global data, indent, open_element
+
+  indent -= 1
+
+  if open_element:
+   data += '/>' + "\n"
+   open_element = False
+  else:
+   for i in range(indent):
+    data += ' '
+
+   data += '</' + name + '>' + "\n"
+
+ data = ""
+
+ for i in source:
+  f = open (str(i), "r")
+  if f:
+   indent = 0
+   open_element = False
+
+   p = xml.parsers.expat.ParserCreate()
+
+   p.StartElementHandler = einit_start_element
+   p.EndElementHandler = einit_end_element
+
+   p.ParseFile(f)
+   f.close()
+
+#   print data
+
+   for t in target:
+    f = open (str(t), "w")
+    if f:
+     f.write (data)
+     f.close()
+
+build_config = Builder(action = build_configuration)
+fix_config = Builder(action = fix_configuration)
+
+env.Append (BUILDERS = { 'EConfiguration' : build_config,
+                         'FixConfiguration' : fix_config})
+
+env.EConfiguration('build/headers/einit/configuration.h', 'core')
+env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
+env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
+
+
+Export(['env',
+        'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
+        'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
+        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
+        'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
+
+SConscript(ScriptsEinit)
+
+InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', InstallDirLibEinit + '/defaults/subsystems.d', InstallDirLibEinit + '/defaults/rules.edev', InstallDirEtc, InstallDirEtc + '/subsystems.d', InstallDirEtc + '/rules.edev', InstallDirLibEinit + '/schemata', InstallDirLibEinit + '/scripts' ])
+
+env.Install (InstallDirInclude + '/einit', '#build/headers/einit/configuration.h')
+env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules/configuration.h')
+
+env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules'])

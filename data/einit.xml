@@ -2,9 +2,6 @@
 <einit>
  <core>
   <settings>
-   <xml-parser>
-    <auto-create-missing-directories b="true" />
-   </xml-parser>
    <configuration>
     <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
 
@@ -69,12 +66,6 @@
   </mortality>
 <!--  <mode s="init" /> -->
 
-  <xml-validator
-    command="if [ ! -e &quot;$(which rnv)&quot; ]; then
-              echo 'RNV is not installed, not validating XML files!';
-             elif ! rnv -q -n 255 ${rnc_schema} ${files}; then
-              echo 'some configuration files failed validation!';
-             fi" />
  </core>
  <configuration>
 <!-- A note on the configuration variables in this file: If it appears in this file, and it also
@@ -106,6 +97,9 @@
    </hotplug>
 
    <coldplug b="yes" />
+
+   <timezone s="America/New_York"/>
+
   </system>
 
   <environment>
@@ -168,15 +162,6 @@
     </festival>
    </aural>
   </feedback>
-
-  <ipc>
-   <control-socket s="/dev/einit-control" i="0660" />
-   <chain-command for="^update configuration.*" do="examine configuration" />
-
-   <dbus>
-    <connection address="unix:path=/var/run/dbus/system_bus_socket" name="org.einit.Einit" />
-   </dbus>
-  </ipc>
 
   <command>
 <!-- the command to run to remove a module from the kernel -->

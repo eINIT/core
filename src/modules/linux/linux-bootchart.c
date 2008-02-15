@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 26/10/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -48,7 +48,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <dirent.h>
 #include <time.h>
+
+#if 0
 #include <sys/acct.h>
+#endif
 
 #include <einit-modules/exec.h>
 
@@ -86,7 +89,9 @@ module_register(linux_bootchart_self);
 
 char linux_bootchart_have_thread = 0;
 unsigned long linux_bootchart_sleep_time = 0;
+#if 0
 char linux_bootchart_process_accounting = 0;
+#endif
 
 char *linux_bootchart_get_uptime () {
  char *tmp = readfile ("/proc/uptime");
@@ -103,7 +108,7 @@ char *linux_bootchart_get_uptime () {
       char buffer[30];
       esprintf (buffer, 30, "%s%s", r[0], r[1]);
 
-      uptime = estrdup (buffer);
+      uptime = (char *)str_stabilise (buffer);
      }
 
      efree (r);
@@ -240,7 +245,10 @@ void *linux_bootchart_thread (void *ignored) {
  char *save_to = "/var/log/bootchart.tgz";
  size_t max_log_size = 1024*1024;
  FILE *f;
+
+#if 0
  char try_acct = 1;
+#endif
  signed int extra_wait = 0;
 
  if ((node = cfg_getnode ("configuration-bootchart-extra-waiting-time", NULL)) && node->value) {
@@ -259,17 +267,18 @@ void *linux_bootchart_thread (void *ignored) {
   size_t log_size = 0;
   char *uptime = linux_bootchart_get_uptime();
 
+#if 0
   if (linux_bootchart_process_accounting && try_acct) {
    if (acct ("/dev/kernel_pacct") == -1)
     try_acct = 1;
   }
+#endif
 
   if (uptime) {
    buffer_ds = linux_bootchart_update_ds (buffer_ds, uptime);
    buffer_ps = linux_bootchart_update_ps (buffer_ps, uptime);
    buffer_st = linux_bootchart_update_st (buffer_st, uptime);
 
-   efree (uptime);
    uptime = NULL;
   }
 
@@ -330,6 +339,7 @@ void *linux_bootchart_thread (void *ignored) {
   buffer_st = NULL;
  }
 
+#if 0
  if (linux_bootchart_process_accounting) {
   char *r = readfile ("/dev/kernel_pacct");
   if (r) {
@@ -344,6 +354,7 @@ void *linux_bootchart_thread (void *ignored) {
 
   acct(NULL);
  }
+#endif
 
  if ((f = fopen ("/tmp/bootchart.einit/header", "w"))) {
   char *t, buffer[BUFFERSIZE];
@@ -427,9 +438,11 @@ void linux_bootchart_switch () {
     linux_bootchart_sleep_time = 200;
    }
 
+#if 0
    if ((node = cfg_getnode ("configuration-bootchart-process-accounting", NULL)) && node->flag) {
     linux_bootchart_process_accounting = 1;
    }
+#endif
 
    if (!linux_bootchart_have_thread) {
     linux_bootchart_have_thread = 1;

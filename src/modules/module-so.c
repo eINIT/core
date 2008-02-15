@@ -3,12 +3,12 @@
  *  einit
  *
  *  split from module.c on 19/03/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -112,7 +112,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
  if (!modules) {
   modules = readdirfilter(cfg_getnode ("core-settings-modules", NULL),
 #ifdef DO_BOOTSTRAP
-                                 bootstrapmodulepath
+                                 BOOTSTRAP_MODULE_PATH
 #else
                                  "/lib/einit/modules/"
 #endif
@@ -121,7 +121,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
 /* make sure all bootstrap modules get updated */
  while (lm) {
-  if (lm->source && (strprefix(lm->source, bootstrapmodulepath))) {
+  if (lm->source && (strprefix(lm->source, BOOTSTRAP_MODULE_PATH))) {
    lm = mod_update (lm);
 
    if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
@@ -136,6 +136,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   uint32_t z = 0;
 
   for (; modules[z]; z++) {
+//   fprintf (stderr, "* loading: %s\n", modules[z]);
+
    struct smodule **modinfo;
    lm = modchain;
 
@@ -156,7 +158,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
    sohandle = dlopen (modules[z], RTLD_NOW);
    if (sohandle == NULL) {
-    eputs (dlerror (), stdout);
+    puts (dlerror ());
     goto cleanup_continue;
    }
 
@@ -165,7 +167,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
     if ((*modinfo)->eibuild == BUILDNUMBER) {
      struct lmodule *new = mod_add (sohandle, (*modinfo));
      if (new) {
-      new->source = estrdup(modules[z]);
+      new->source = (char *)str_stabilise(modules[z]);
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 
@@ -186,8 +188,9 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
   }
 
   efree (modules);
+ } else {
+  perror ("opening module path");
  }
-
 
  emutex_unlock (&modules_update_mutex);
 

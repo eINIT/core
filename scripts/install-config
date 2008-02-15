@@ -37,7 +37,17 @@ if [ "$(readlink /bin/sh)" != "dash" ]; then
 alias echo="echo -e"
 fi
 
-. $(dirname $0)/configuration
+if [ -z "${ETCDIR}" ]; then
+ ETCDIR="/etc/einit"
+fi
+
+if [ -z "${ELIBDIR}" ]; then
+ ELIBDIR="lib"
+fi
+
+if [ -z "${LIBDIR}" ]; then
+ LIBDIR="/${ELIBDIR}/einit"
+fi
 
 file=$1
 fileshort=$(basename $1)
@@ -45,6 +55,8 @@ subsystem=$2
 method=$3
 
 echo "installing $file to $DESTDIR/$ETCDIR/${subsystem}/${fileshort}";
+
+mkdir -p $DESTDIR/$ETCDIR/${subsystem}
 
 sed -e "s/\/lib/\/${ELIBDIR}/" < $file >"tmp.${fileshort}";
 

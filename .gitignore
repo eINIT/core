@@ -14,6 +14,13 @@
 *.so.dbg
 *.la
 *.O
+*.os
+*.dylib
+
+src/einit-core
+src/einit-monitor
+src/einit-helper
+src/last-rites
 
 #
 # Top-level generic files
@@ -41,3 +48,5 @@ modules/xml/config.sh
 *.orig
 *.rej
 *.swp
+
+config.log

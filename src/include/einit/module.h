@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -338,7 +338,6 @@ extern time_t modules_last_change;
 
 #define fbprintf(statusvar, ...) if (statusvar) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); statusvar->string = _notice_buffer; status_update (statusvar); }
 
-char *bootstrapmodulepath;
 const struct smodule **coremodules[MAXMODULES];
 
 #if defined(EINIT_MODULE)

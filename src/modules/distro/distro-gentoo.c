@@ -4,12 +4,12 @@
  *
  *  Created by Magnus Deininger on 10/11/2006.
  *  Renamed from compatibility-sysv-gentoo.c on 19/08/2007.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -57,9 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einfo.h>
 #endif
 
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #define EXPECTED_EIV 1
 
@@ -90,15 +88,12 @@ module_register(compatibility_sysv_gentoo_self);
 
 #endif
 
-#ifdef POSIXREGEX
 struct stree *service_group_transformations = NULL;
 
 struct service_group_transformation {
  char *out;
  regex_t *pattern;
 };
-#endif
-
 
 char  do_service_tracking = 0,
      *service_tracking_path = NULL,
@@ -136,7 +131,7 @@ void gentoo_fixname_set (char **set) {
  for (; set[i]; i++) {
   gentoo_fixname(set[i]);
   if (strmatch (set[i], "*")) {
-   set[i] = estrdup (".*");
+   set[i] = (char *)str_stabilise (".*");
   }
  }
 }
@@ -180,7 +175,7 @@ void sh_add_environ_callback (char **data, uint8_t status, void *ignored) {
      narb[3] = yt;
     }
 
-    nnode.id = estrdup ("configuration-environment-global");
+    nnode.id = (char *)str_stabilise ("configuration-environment-global");
     nnode.arbattrs = set_str_dup_stable (&narb);
     nnode.svalue = nnode.arbattrs[3];
 //    nnode.source = self->rid;
@@ -276,7 +271,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
     }
 
     newnode.type = einit_node_mode;
-    newnode.id = estrdup(arbattrs[1]);
+    newnode.id = (char *)str_stabilise(arbattrs[1]);
 //    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
@@ -295,7 +290,6 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
   }
 
   if (nservices) {
-#ifdef POSIXREGEX
    if (service_group_transformations) {
     struct stree *cur = streelinear_prepare(service_group_transformations);
 
@@ -388,7 +382,6 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
      cur = streenext(cur);
     }
    }
-#endif
 
    if (nservices && currentmode) {
     char **arbattrs = NULL;
@@ -432,7 +425,7 @@ void parse_gentoo_runlevels (char *path, struct cfgnode *currentmode, char exclu
 
     newnode.type = einit_node_regular;
     newnode.mode     = currentmode;
-    newnode.id       = estrdup("mode-enable");
+    newnode.id       = (char *)str_stabilise("mode-enable");
 //    newnode.source   = self->rid;
     newnode.arbattrs = arbattrs;
 
@@ -494,7 +487,6 @@ void einit_event_handler (struct einit_event *ev) {
     if (!service_tracking_path) do_service_tracking = 0;
    }
   }
-#ifdef POSIXREGEX
  } else if (ev->type == einit_core_configuration_update) {
   struct cfgnode *node = NULL;
   struct stree *new_transformations = NULL, *ca;
@@ -530,7 +522,6 @@ void einit_event_handler (struct einit_event *ev) {
   service_group_transformations = new_transformations;
   if (ca)
    streefree (ca);
-#endif
  } else if (ev->type == einit_core_service_update) { // update service status
   uint32_t i = 0;
 //  eputs ("marking service status!\n", stderr);
@@ -686,11 +677,9 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
       *tmp = NULL;
  uint32_t plen;
  struct smodule *modinfo;
-#ifdef POSIXREGEX
  char *spattern;
  regex_t allowpattern, disallowpattern;
  unsigned char haveallowpattern = 0, havedisallowpattern = 0;
-#endif
 
  if (!init_d_path || !is_gentoo_system) {
 //  fprintf (stderr, " >> not parsing gentoo scripts: 0x%x, 0x%x, 0x%x\n", init_d_path, init_d_dependency_scriptlet, is_gentoo_system);
@@ -706,7 +695,6 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
   svcdir_init_done = 1;
  }
 
-#ifdef POSIXREGEX
  if ((spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-allow", NULL))) {
   haveallowpattern = !eregcomp (&allowpattern, spattern);
  }
@@ -714,7 +702,6 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
  if ((spattern = cfg_getstring ("configuration-compatibility-sysv-distribution-gentoo-init.d/pattern-disallow", NULL))) {
   havedisallowpattern = !eregcomp (&disallowpattern, spattern);
  }
-#endif
 
  plen = strlen (init_d_path) +1;
 
@@ -734,16 +721,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
 //   puts (de->d_name);
 
 // filter .- and *.sh-files (or apply regex patterns)
-#ifdef POSIXREGEX
    if (haveallowpattern && regexec (&allowpattern, de->d_name, 0, NULL, 0)) continue;
    if (havedisallowpattern && !regexec (&disallowpattern, de->d_name, 0, NULL, 0)) continue;
-#else
-   if (de->d_name[0] == '.') continue;
-
-   uint32_t xl = strlen(de->d_name);
-   if ((xl > 3) && (de->d_name[xl-3] == '.') &&
-        (de->d_name[xl-2] == 's') && (de->d_name[xl-1] == 'h')) continue;
-#endif
 
    tmp = (char *)emalloc (plen + strlen (de->d_name));
    struct stat sbuf;
@@ -765,15 +744,15 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     strcat (nrid, de->d_name);
 
     snprintf (tmpx, BUFFERSIZE, "Gentoo-Style init.d Script (%s)", de->d_name);
-    modinfo->name = estrdup (tmpx);
-    modinfo->rid = estrdup(nrid);
+    modinfo->name = (char *)str_stabilise (tmpx);
+    modinfo->rid = (char *)str_stabilise(nrid);
 
     gentoo_add_dependencies (modinfo, gentoo_deptree, de->d_name);
 
     struct lmodule *lm = modchain;
     while (lm) {
      if (lm->source && !strcmp(lm->source, tmp)) {
-      lm->param = (void *)estrdup (tmp);
+      lm->param = (void *)str_stabilise (tmp);
       lm->enable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_enable;
       lm->disable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_disable;
       lm->custom = (int (*)(void *, char *, struct einit_event *))compatibility_sysv_gentoo_init_d_custom;
@@ -790,8 +769,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
     if (doop) {
      struct lmodule *new = mod_add (NULL, modinfo);
      if (new) {
-      new->source = estrdup (tmp);
-      new->param = (void *)estrdup (tmp);
+      new->source = (char *)str_stabilise (tmp);
+      new->param = (char *)str_stabilise (tmp);
       new->enable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_enable;
       new->disable = (int (*)(void *, struct einit_event *))compatibility_sysv_gentoo_init_d_disable;
       new->custom = (int (*)(void *, char *, struct einit_event *))compatibility_sysv_gentoo_init_d_custom;
@@ -815,10 +794,8 @@ int compatibility_sysv_gentoo_scanmodules (struct lmodule *modchain) {
   eclosedir (dir);
  }
 
-#ifdef POSIXREGEX
  if (haveallowpattern) { haveallowpattern = 0; eregfree (&allowpattern); }
  if (havedisallowpattern) { havedisallowpattern = 0; eregfree (&disallowpattern); }
-#endif
 
  return 0;
 }

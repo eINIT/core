@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 14/02/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -44,9 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <string.h>
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #define BITCHM_ERROR_TEMPLATE " >> %s:%i(%s): %s"
 
@@ -68,8 +66,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
    case 1: // 1: print error or stderr
    case 255: // 255: just die
     switch (sauce) {
-#if ! defined (EINIT_UTIL)
-#ifdef POSIXREGEX
      case bitch_regex:
      {
       char *sregerr = NULL;
@@ -112,8 +108,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
        perror ("bitch_macro: writing error message");
      }
       break;
-#endif
-#endif
      default:
       if ((fprintf(stderr, BITCHM_ERROR_TEMPLATE " (System Error #%i [%s])\n", lfile, lline, lfunction, lreason, lerror, strerror(lerror)) < 0))
        perror ("bitch_macro: writing error message");

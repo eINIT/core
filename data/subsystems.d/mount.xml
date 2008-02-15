@@ -59,11 +59,19 @@
    <!-- popular on cd/dvd media -->
    <type id="iso9660" />
    <type id="udf" flags="rw" />
+   
+   <!-- virtualbox shared folders -->
+   <type id="vboxsf" flags="nofsck" requires="vboxvfs" />
 
    <!-- internal-use filesystems -->
    <type id="unionfs" />
    <type id="proc" flags="rw:volatile:nofsck" />
    <type id="sysfs" flags="rw:volatile:nofsck" />
+
+   <type id="usbfs" flags="rw:volatile:nofsck" />
+   <type id="devpts" flags="rw:volatile:nofsck" />
+
+   <type id="9p" flags="rw:volatile:nofsck" />
 
    <!-- really special filesystems -->
    <type id="swap" flags="nofsck" />

@@ -32,6 +32,7 @@
 //
 
 .globl strlen
+	.type   strlen, @function
 strlen:
 	mov %rdi,%r8;         /* save original pointer */
 	mov $0xffffffff,%rcx; /* the equivalent of "do indefinitely" */

@@ -1,0 +1,9 @@
+Import('env')
+
+files = [ 'xmlparse.c', 'xmlrole.c', 'xmltok.c', 'xmltok_impl.c', 'xmltok_ns.c' ]
+objects = []
+
+for i in files:
+ objects += env.SharedObject (i, CPPPATH=['.'])
+
+env.StaticLibrary ('expat-local', objects)

@@ -38,15 +38,11 @@ eINITMain =
   Information ? &
   element options { attribute shutdown { text }? }? &
   element ttys { TTYAttribute, attribute sysv-style { Boolean }? } ? &
-  element before-switch { attribute emit-event { text }? & attribute ipc { text }? } ? &
-  element after-switch { attribute emit-event { text }? & attribute ipc { text }? } ?
+  element before-switch { attribute emit-event { text }? } ? &
+  element after-switch { attribute emit-event { text }? } ?
 
 Core = element core {
-  element xml-validator { attribute command { text } }? &
   element settings {
-    element xml-parser {
-      element auto-create-missing-directories { BooleanAttribute }?
-    }? &
     element configuration {
       element on-line-modifications { attribute save-to { text } }? &
       element multi-node-variables { attribute allow { text } }?
@@ -119,7 +115,8 @@ Configuration = element configuration {
      element support-legacy-hotplug-scripts { BooleanAttribute }? &
      element handler { StringAttribute }?
     }? &
-    element coldplug { BooleanAttribute }?
+    element coldplug { BooleanAttribute }? &
+    element timezone { StringAttribute }?
   }* &
 
   element linux {
@@ -218,18 +215,6 @@ Configuration = element configuration {
       element festival {
         element active { BooleanAttribute }?
       }*
-    }*
-  }* &
-
-  element ipc {
-    element control-socket { StringAttribute, IntegerAttribute }? &
-    element chain-command { attribute for { text }, attribute do { text } }? &
-
-    element dbus {
-      element connection {
-        attribute name { text },
-        attribute address { text }
-      }?
     }*
   }* &
 
@@ -429,7 +414,10 @@ FSTab =
     attribute after-mount { text }?,
     attribute before-umount { text }?,
     attribute after-umount { text }?,
-    attribute manager { text }?
+    attribute manager { text }?,
+    attribute requires { text }?,
+    attribute before { text }?,
+    attribute after { text }?
   }* &
   element use-legacy-fstab { BooleanAttribute }? &
   element node-order {
@@ -443,7 +431,10 @@ Information =
     element filesystem {
       element type {
         IDAttribute,
-        attribute flags { text }?
+        attribute flags { text }?,
+        attribute requires { text }?,
+        attribute before { text }?,
+        attribute after { text }?
       }*
     }?
   }

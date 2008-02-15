@@ -32,6 +32,7 @@
 //
 
 .globl memset
+	.type   memset, @function
 memset:
 	mov %edx,%ecx;
 	mov %rdi,%r8;   /* copy arg1 for return value, see man:memset */

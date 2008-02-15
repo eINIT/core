@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created on 18/09/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -276,6 +276,10 @@ int linux_udev_run() {
 
   qexec ("/sbin/udevsettle --timeout=60");
 
+  if (!stat ("/sbin/vgchange", &st)) {
+   qexec ("/sbin/vgchange -a y");
+  }
+
   return status_ok;
  } else
   return status_failed;
@@ -303,15 +307,9 @@ void linux_udev_shutdown_imminent() {
 
 void linux_udev_boot_event_handler (struct einit_event *ev) {
  if (linux_udev_run() == status_ok) {
-  struct stat st;
-
   struct einit_event eml = evstaticinit(einit_boot_devices_available);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
-
-  if (!stat ("/sbin/vgchange", &st)) {
-   qexec ("/sbin/vgchange -a y");
-  }
  }
 }
 

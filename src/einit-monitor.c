@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 21/11/2007.
- *  Copyright 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2007-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2007, Magnus Deininger
+Copyright (c) 2007-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/configuration.h>
 #include <einit/configuration-static.h>
 
-#if defined(LINUX)
+#if defined(__linux__)
 #include <sys/prctl.h>
 #endif
 
@@ -65,16 +65,12 @@ char *readfd (int fd) {
  if (!buf) return NULL;
 
  do {
-  fprintf (stderr, "reading.\n");
   buf = realloc (buf, blen + BUFFERSIZE * 10);
   if (buf == NULL) return NULL;
-  fprintf (stderr, ".\n");
 
   rn = read (fd, (char *)(buf + blen), BUFFERSIZE * 10);
   blen = blen + rn;
  } while (rn > 0);
-
- fprintf (stderr, "done.\n");
 
  if (blen > -1) {
   data = realloc (buf, blen+1);
@@ -181,7 +177,10 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
    if (commandpipe_out) fclose (commandpipe_out);
 
    if (WIFEXITED(rstatus) && (WEXITSTATUS(rstatus) != einit_exit_status_die_respawn)) {
-    fprintf (stderr, "eINIT has quit properly.\n");
+    if (WEXITSTATUS(rstatus) == EXIT_SUCCESS)
+     fprintf (stderr, "eINIT has quit properly (%i).\n", WEXITSTATUS(rstatus));
+    else
+     fprintf (stderr, "eINIT has quit, let's see if it left a message for us (%i)...\n", WEXITSTATUS(rstatus));
 
     if (!is_sandbox) {
      if (WEXITSTATUS(rstatus) == einit_exit_status_last_rites_halt) {
@@ -233,9 +232,8 @@ int main(int argc, char **argv, char **env) {
  int i = 0, it = 0;
  char force_init = (getpid() == 1);
  char need_recovery = 0;
- char is_ipc = 0;
 
-#if defined(LINUX) && defined(PR_SET_NAME)
+#if defined(__linux__) && defined(PR_SET_NAME)
  prctl (PR_SET_NAME, "einit [monitor]", 0, 0, 0);
 #endif
 
@@ -246,8 +244,6 @@ int main(int argc, char **argv, char **env) {
   } else if (!strcmp(argv[i], "--sandbox")) {
    need_recovery = 1;
    is_sandbox = 1;
-  } else if (!strcmp(argv[i], "--ipc")) {
-   is_ipc = 1;
   }
 
   argv_mutable[it] = argv[i];
@@ -272,14 +268,8 @@ int main(int argc, char **argv, char **env) {
   return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
  }
 
- if (is_ipc) {
-  execve (EINIT_LIB_BASE "/bin/einit-core", argv, env);
-  perror ("couldn't execute eINIT");
-  return -1;
- }
-
 /* non-ipc, non-core */
- argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
+// argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
  execve (EINIT_LIB_BASE "/bin/einit-helper", argv_mutable, env);
  perror ("couldn't execute " EINIT_LIB_BASE "/bin/einit-helper");
  return -1;

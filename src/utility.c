@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 25/03/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008 Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -61,9 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 long _getgr_r_size_max = 0, _getpw_r_size_max = 0;
 
 #if ! defined (EINIT_UTIL)
-#ifdef POSIXREGEX
 #include <regex.h>
-#endif
 
 #include <dirent.h>
 
@@ -75,21 +73,17 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  ssize_t mplen = 0;
  char *px = NULL;
 
-#ifdef POSIXREGEX
  regex_t allowpattern, disallowpattern;
  unsigned char haveallowpattern = 0, havedisallowpattern = 0;
  char *path = (char *)default_dir, *allow = (char *)default_allow, *disallow = (char *)default_disallow;
-#endif
 
  if (node && node->arbattrs) {
   uint32_t i = 0;
 
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch ("path", node->arbattrs[i])) path = node->arbattrs[i+1];
-#ifdef POSIXREGEX
    else if (strmatch ("pattern-allow", node->arbattrs[i])) allow = node->arbattrs[i+1];
    else if (strmatch ("pattern-disallow", node->arbattrs[i])) disallow = node->arbattrs[i+1];
-#endif
   }
  }
 
@@ -113,7 +107,6 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  }
 
 
-#ifdef POSIXREGEX
  if (allow) {
   haveallowpattern = !eregcomp (&allowpattern, allow);
  }
@@ -121,19 +114,14 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
  if (disallow) {
   havedisallowpattern = !eregcomp (&disallowpattern, disallow);
  }
-#endif
 
  mplen += 4;
  dir = eopendir (path);
  if (dir != NULL) {
   while ((entry = ereaddir (dir))) {
 
-#ifdef POSIXREGEX
    if (haveallowpattern && regexec (&allowpattern, entry->d_name, 0, NULL, 0)) continue;
    if (havedisallowpattern && !regexec (&disallowpattern, entry->d_name, 0, NULL, 0)) continue;
-#else
-   if (entry->d_name[0] == '.') continue;
-#endif
 
    tmp = (char *)emalloc (mplen + strlen (entry->d_name));
    struct stat sbuf;
@@ -176,10 +164,8 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
   eclosedir (dir);
  }
 
-#ifdef POSIXREGEX
  if (haveallowpattern) { haveallowpattern = 0; eregfree (&allowpattern); }
  if (havedisallowpattern) { havedisallowpattern = 0; eregfree (&disallowpattern); }
-#endif
 
  efree (px);
 
@@ -560,37 +546,21 @@ void notice_macro (unsigned char severity, const char *message) {
 struct einit_event *evdup (const struct einit_event *ev) {
  if (!ev) return NULL;
 
- uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
-
  struct einit_event *nev = emalloc (sizeof (struct einit_event));
 
  memcpy (nev, ev, sizeof (struct einit_event));
 
- if (subsystem == einit_event_subsystem_ipc) {
-  if (nev->command) {
-   int32_t l;
-   char *np;
-   nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->command) +1));
+ if (nev->string) {
+  int32_t l;
+  char *np;
+  nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->string) +1));
 
-   memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->command, l);
+  memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->string, l);
 
-   nev->command = np;
-  }
-
-  if (ev->argv) nev->argv = set_str_dup_stable (ev->argv);
- } else {
-  if (nev->string) {
-   int32_t l;
-   char *np;
-   nev = erealloc (nev, sizeof (struct einit_event) + (l = strlen (nev->string) +1));
-
-   memcpy (np = ((char*)nev)+sizeof (struct einit_event), nev->string, l);
-
-   nev->string = np;
-  }
-
-  if (ev->stringset) nev->stringset = set_str_dup_stable (ev->stringset);
+  nev->string = np;
  }
+
+ if (ev->stringset) nev->stringset = set_str_dup_stable (ev->stringset);
 
  return nev;
 }
@@ -604,15 +574,8 @@ struct einit_event *evinit (uint32_t type) {
 }
 
 void evpurge (struct einit_event *ev) {
- uint32_t subsystem = ev->type & EVENT_SUBSYSTEM_MASK;
-
- if (subsystem == einit_event_subsystem_ipc) {
-  if (ev->argv) efree (ev->argv);
-  if (ev->command) efree (ev->command);
- } else {
-  if (ev->string) efree (ev->string);
-  if (ev->stringset) efree (ev->stringset);
- }
+ if (ev->string) efree (ev->string);
+ if (ev->stringset) efree (ev->stringset);
 
  evdestroy (ev);
 }
@@ -1017,7 +980,7 @@ char **which (char *binary) {
 
        if (!stat (t, &st)) {
         if (!inset ((const void **)rv, t, SET_TYPE_STRING))
-         rv = set_str_add(rv, t);
+         rv = set_str_add_stable(rv, t);
        }
 
        efree (t);
@@ -1116,10 +1079,6 @@ char *strip_empty_variables (char *string) {
  return string;
 }
 
-#ifdef POSIXREGEX
-
-#if ! defined (EINIT_UTIL)
-
 struct stree *regex_cache = NULL;
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
@@ -1147,20 +1106,6 @@ int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
 void eregfree_cache (regex_t *preg) {
 }
 
-#else
-
-int eregcomp_cache (regex_t * preg, const char * pattern, int cflags) {
- return regcomp (preg, pattern, cflags);
-}
-
-void eregfree_cache (regex_t *preg) {
- regfree (preg);
-}
-
-#endif
-
-#endif
-
 struct itree *einit_stable_strings = NULL;
 pthread_mutex_t einit_stable_strings_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -1172,14 +1117,14 @@ const char *str_stabilise (const char *s) {
  struct itree *i = einit_stable_strings ? itreefind (einit_stable_strings, hash, tree_find_first) : NULL;
  while (i) {
   if (!s[0]) {
-   if (!((char *)i->value)[0])
-    return i->value;
+   if (!(i->data)[0])
+    return i->data;
   } else {
-   if (i->value == s) {
+   if (i->data == s) {
     return s;
    }
-   if (strmatch (s, i->value)) {
-    return i->value;
+   if (strmatch (s, i->data)) {
+    return i->data;
    }
   }
 
@@ -1193,7 +1138,7 @@ const char *str_stabilise (const char *s) {
  einit_stable_strings = i;
  emutex_unlock (&einit_stable_strings_mutex);
 
- return i->value;
+ return i->data;
 }
 
 char **set_str_dup_stable (char **s) {

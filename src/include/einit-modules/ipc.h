@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 26/11/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -50,28 +50,6 @@ struct ipc_fs_node {
  char *name;
  char is_file;
 };
-
-#if (! defined(einit_modules_ipc)) || (einit_modules_ipc == 'm') || (einit_modules_ipc == 'n')
-
-typedef int (*ipc_processor) (const char *, FILE *);
-
-ipc_processor ipc_string_process_fp;
-
-#define ipc_process(string, output) ((ipc_string_process_fp || (ipc_string_process_fp = (ipc_processor)function_find_one("einit-ipc-process-string", 1, NULL))) ? ipc_string_process_fp(string, output) : -1)
-
-#define ipc_configure(mod) ipc_string_process_fp = NULL;
-#define ipc_cleanup(mod) ipc_string_process_fp = NULL;
-
-#else
-
-#define ipc_configure(mod) ;
-#define ipc_cleanup(mod) ;
-
-int ipc_process_f (const char *cmd, FILE *f);
-
-#define ipc_process(string, output) ipc_process_f(string, output)
-
-#endif
 
 #endif
 

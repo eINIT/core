@@ -3,12 +3,12 @@
  *  eINIT
  *
  *  Created by Magnus Deininger on 25/06/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -63,8 +63,6 @@ enum einit_event_emit_flags {
 
 enum einit_event_subsystems {
  einit_event_subsystem_core     = 0x00001000,
- einit_event_subsystem_ipc      = 0x00002000,
-/*!< incoming IPC request */
  einit_event_subsystem_mount    = 0x00003000,
 /*!< update mount status */
  einit_event_subsystem_feedback = 0x00004000,
@@ -92,8 +90,6 @@ enum einit_event_code {
 /*!< Service availability changing; use the task and status fields to find out what happened */
  einit_core_configuration_update    = einit_event_subsystem_core     | 0x004,
 /*!< notification of configuration update */
- einit_core_plan_update             = einit_event_subsystem_core     | 0x005,
-/*!< Plan status update */
  einit_core_module_list_update      = einit_event_subsystem_core     | 0x006,
 /*!< notification of module-list updates */
  einit_core_module_list_update_complete
@@ -121,11 +117,11 @@ enum einit_event_code {
  einit_core_service_disabling       = einit_event_subsystem_core     | 0x503,
  einit_core_service_disabled        = einit_event_subsystem_core     | 0x504,
 
+ einit_core_secondary_main_loop     = einit_event_subsystem_core     | 0xfef,
+
  einit_core_crash_data              = einit_event_subsystem_core     | 0xffd,
  einit_core_recover                 = einit_event_subsystem_core     | 0xffe,
  einit_core_main_loop_reached       = einit_event_subsystem_core     | 0xfff,
-
- einit_ipc_request_generic          =  einit_event_subsystem_ipc,
 
 /* einit_event_subsystem_mount: */
  einit_mount_do_update              = einit_event_subsystem_mount    | 0x001,
@@ -137,8 +133,6 @@ enum einit_event_code {
  einit_feedback_module_status       = einit_event_subsystem_feedback | 0x001,
 /*!< the para field specifies a module that caused the feedback */
  einit_feedback_notice              = einit_event_subsystem_feedback | 0x003,
- einit_feedback_register_fd         = einit_event_subsystem_feedback | 0x011,
- einit_feedback_unregister_fd       = einit_event_subsystem_feedback | 0x012,
 
  einit_feedback_broken_services     = einit_event_subsystem_feedback | 0x021,
  einit_feedback_unresolved_services = einit_event_subsystem_feedback | 0x022,
@@ -206,45 +200,21 @@ enum einit_event_code {
  einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004
 };
 
-enum einit_ipc_options {
- einit_ipc_output_xml    = 0x0001,
- einit_ipc_output_ansi   = 0x0004,
- einit_ipc_only_relevant = 0x0100,
- einit_ipc_help          = 0x0002,
- einit_ipc_detach        = 0x0010,
- einit_ipc_implemented   = 0x1000
-};
-
-#define evstaticinit(ttype) { ttype, 0, { { NULL, NULL, 0, 0, 0, 0, NULL } }, 0, 0, { NULL }, NULL }
+#define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, { NULL } }
 #define evstaticdestroy(ev) { }
 
 struct einit_event {
  enum einit_event_code type;       /*!< the event or subsystem to watch */
  enum einit_event_code chain_type; /*!< the event to be called right after this one */
 
- union {
-/*! these struct elements are for use with non-IPC events */
-  struct {
-   void **set;                   /*!< a set that should make sense in combination with the event type */
-   char *string;                 /*!< a string */
-   int32_t integer,              /*!< generic integer */
-           status,               /*!< generic integer */
-           task;                 /*!< generic integer */
-   unsigned char flag;           /*!< flags */
+ void **set;                   /*!< a set that should make sense in combination with the event type */
+ char *string;                 /*!< a string */
+ int32_t integer,              /*!< generic integer */
+         status,               /*!< generic integer */
+         task;                 /*!< generic integer */
+ unsigned char flag;           /*!< flags */
 
-   char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
-  };
-
-/*! these struct elements are for use with IPC events */
-  struct {
-   char **argv;
-   char *command;
-   enum einit_ipc_options ipc_options;
-   int argc,
-       ipc_return;
-   char implemented;
-  };
- };
+ char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
 
  uint32_t seqid;
  time_t timestamp;
@@ -254,10 +224,8 @@ struct einit_event {
   struct cfgnode *node;
   struct lmodule *module;
   void *para;
-  void *file;
+  FILE *file;
  };
-
- FILE *output;
 };
 
 enum function_type {

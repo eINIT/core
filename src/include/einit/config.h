@@ -3,12 +3,12 @@
  *  einit
  *
  *  Created by Magnus Deininger on 06/02/2006.
- *  Copyright 2006, 2007 Magnus Deininger. All rights reserved.
+ *  Copyright 2006-2008 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
-Copyright (c) 2006, 2007, Magnus Deininger
+Copyright (c) 2006-2008, Magnus Deininger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -81,7 +81,6 @@ struct cfgnode {
  char *idattr;
 };
 
-struct stree *hconfiguration;
 struct utsname osinfo;
 pthread_attr_t thread_attribute_detached;
 
