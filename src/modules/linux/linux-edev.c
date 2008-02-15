@@ -129,7 +129,7 @@ char *linux_edev_mangle_filename (char *filename, char do_free);
 static void set_str(char *to, const char *from, size_t count);
 
 void linux_edev_load_kernel_extensions() {
- struct einit_event eml = evstaticinit(einit_boot_pre_load_kernel_extensions);
+ struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
  evstaticdestroy(eml);
 }
@@ -739,10 +739,13 @@ void linux_edev_shutdown() {
 
 void linux_edev_boot_event_handler (struct einit_event *ev) {
  if (linux_edev_run() == status_ok) {
-  struct einit_event eml = evstaticinit(einit_boot_devices_available);
+  struct einit_event eml = evstaticinit(einit_boot_postdev);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
  }
+}
+
+void linux_edev_boot_initramfs_handler (struct einit_event *ev) {
 }
 
 void linux_edev_retrieve_rules () {
@@ -987,6 +990,7 @@ int linux_edev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
  event_ignore (einit_boot_early, linux_edev_boot_event_handler);
+ event_ignore (einit_boot_initramfs, linux_edev_boot_initramfs_handler);
  event_ignore (einit_core_configuration_update, linux_edev_retrieve_rules);
  event_ignore (einit_power_down_scheduled, linux_edev_shutdown);
  event_ignore (einit_power_reset_scheduled, linux_edev_shutdown);
@@ -1009,6 +1013,7 @@ int linux_edev_configure (struct lmodule *pa) {
 
  event_listen (einit_core_configuration_update, linux_edev_retrieve_rules);
  event_listen (einit_boot_early, linux_edev_boot_event_handler);
+ event_listen (einit_boot_initramfs, linux_edev_boot_initramfs_handler);
  event_listen (einit_power_down_scheduled, linux_edev_shutdown);
  event_listen (einit_power_reset_scheduled, linux_edev_shutdown);
 

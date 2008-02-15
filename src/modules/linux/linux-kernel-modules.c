@@ -450,6 +450,7 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct eini
 int linux_kernel_modules_cleanup (struct lmodule *this) {
  exec_cleanup (this);
 
+ event_ignore (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
  event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_ignore (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
@@ -472,6 +473,7 @@ int linux_kernel_modules_configure (struct lmodule *this) {
  thismodule->scanmodules = linux_kernel_modules_scanmodules;
 
  event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
+ event_listen (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
  event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
  return 0;
