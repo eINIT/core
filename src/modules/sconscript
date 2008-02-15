@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase'])
 
 import os.path
 
@@ -58,18 +58,16 @@ if uname == 'Darwin':
  menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
  librt = []
 
-if ModulesBSD:
- for x in ModulesBSD:
-  buildModule(x, 'bsd', menv)
+def buildBundleE(name, items, dir, e):
+ if items:
+  mnames = []
+  for x in items:
+   mnames += [  dir + '/' + x ]
 
-if ModulesLinux:
- mnames = []
- for x in ModulesLinux:
-  mnames += [ 'linux/' + x ]
+  buildBundle('bundle-' + name, mnames, e)
 
- buildBundle('bundle-linux', mnames, menv)
-
-# buildModule(x, 'linux', menv)
+def buildBundleD(name, items):
+ buildBundleE(name, items, name, menv)
 
 buildModuleBootStrap('bootstrap-configuration-stree', menv)
 buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
@@ -77,8 +75,11 @@ buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'ex
 for x in Modules:
  buildModule(x, '.', menv)
 
-for x in ModulesCompatibility:
- buildModule(x, 'compatibility', menv)
+buildBundleD('bsd', ModulesBSD)
+buildBundleD('linux', ModulesLinux)
+buildBundleD('compatibility', ModulesCompatibility)
+
+buildBundleE('base', ModulesBase, '.', menv)
 
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))

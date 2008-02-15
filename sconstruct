@@ -91,7 +91,9 @@ SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-
 if scheme == 'guile':
  SpecialModules += ['module-scheme-guile']
 
-Modules = ['fqdn', 'exec', 'mount', 'tty', 'process', 'shadow-exec', 'module-transformations', 'ipc-core-helpers', 'scheduler', 'functions-xml', 'module-xml', 'log', 'parse-sh', 'module-checkpoint', 'module-group', 'feedback-visual-psplash', 'module-network-v2']
+Modules = ['shadow-exec', 'feedback-visual-psplash']
+
+ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-group', 'module-network-v2', 'parse-sh', 'log', 'module-xml', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
 
 ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone']
 
@@ -127,7 +129,7 @@ if uname == 'Linux':
 
 
 InternalModules = ['module-so']
-ExternalModules = Modules + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
+ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesCompatibility + ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -296,7 +298,7 @@ env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
-        'SpecialModules', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
+        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesCompatibility', 'InternalModules', 'ExternalModules', 'ModulesBSD',
         'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
 SConscript(ScriptsEinit)
