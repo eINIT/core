@@ -107,6 +107,18 @@ void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
 char *einit_ipc_9p_request (char *);
 
+/*<eyecancer>*/
+pthread_mutex_t
+ einit_ipc_9p_ping_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+ 
+pthread_cond_t
+ einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
+
+char *einit_ipc_9p_event_file = "/events";
+/*</eyecancer>*/
+
+
 enum ipc_9p_filetype {
  i9_dir,
  i9_file
@@ -149,6 +161,7 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
 
  return fa;
 }
+
 
 void einit_ipc_9p_fs_open(Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_open()");
@@ -779,6 +792,50 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
   ev->flag = (path[1] ? 1 : 0);
  }
 }
+
+/* event handling stuff goes here - not working yet - (c) by nklein */
+
+struct msg_event_queue {
+ struct einit_event *ev;
+ struct msg_event_queue *next;
+};
+
+struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
+
+void einit_ipc_9p_ping_all_threads() {
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&einit_ipc_9p_ping_cond);
+}
+
+
+void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
+ struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
+ 
+ einit_ipc_9p_save_events(evdup(ev));
+ e->ev = evdup(ev);
+ e->next = NULL;
+
+ emutex_lock (&einit_ipc_9p_event_queue_mutex);
+
+ e->next = einit_ipc_9p_event_queue;
+ einit_ipc_9p_event_queue = e;
+ 
+
+ emutex_unlock (&einit_ipc_9p_event_queue_mutex);
+
+ einit_ipc_9p_ping_all_threads();
+
+
+}
+
+void einit_ipc_9p_save_events(struct einit_event *ev) {
+	
+}
+
+/* end of eye cancer code */
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);

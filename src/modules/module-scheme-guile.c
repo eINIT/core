@@ -1077,10 +1077,9 @@ struct msg_event_queue *module_scheme_guile_event_queue = NULL;
 pthread_mutex_t
  module_scheme_guile_ping_mutex = PTHREAD_MUTEX_INITIALIZER,
  module_scheme_guile_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 pthread_cond_t
  module_scheme_guile_ping_cond = PTHREAD_COND_INITIALIZER;
-
+ 
 void module_scheme_guile_ping_all_threads() {
 #ifdef _POSIX_PRIORITY_SCHEDULING
  sched_yield();
