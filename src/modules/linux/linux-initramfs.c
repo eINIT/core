@@ -47,27 +47,26 @@ module_register(linux_initramfs_self);
 
 #endif
 
-int *linux_initramfs_is_initramfs (void) {
- int *ret;
+int linux_initramfs_is_initramfs (void) {
+ int ret;
  if (strmatch(einit_argv[0], "linuxrc") || strmatch(einit_argv[0], "/linuxrc")) {
-  *ret = 0; 
+  ret = 0; 
  } else {
-  *ret = -1;
+  ret = -1;
  }
  return ret;
 }
 
 void linux_initramfs_kernel_extensions_handler (struct einit_event *ev) {
  if (linux_initramfs_is_initramfs()==0) {
-	 printf("INITRAMFS=True/n");
+  notice(2, "INITRAMFS=True/n");
  } else {
-	 printf("INITRAMFS=False/n");
+  notice(2, "INITRAMFS=False/n");
  }
 }
 
 int linux_initramfs_cleanup (struct lmodule *pa) {
- event_ignore (einit_boot_load_kernel_extensions,
-		 	   linux_initramfs_kernel_extensions_handler);
+ event_ignore (einit_boot_load_kernel_extensions, linux_initramfs_kernel_extensions_handler);
 
  return 0;
 }
@@ -77,8 +76,7 @@ int linux_initramfs_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_initramfs_cleanup;
 
- event_listen (einit_boot_load_kernel_extensions,
-		 	   linux_initramfs_kernel_extensions_handler);
+ event_listen (einit_boot_load_kernel_extensions, linux_initramfs_kernel_extensions_handler);
 
  return 0;
 }
