@@ -569,7 +569,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  emutex_lock(&einit_ipc_9p_event_save_mutex);
  void **evset;
  
- setadd(evset, ((const void *) evdup(ev)), sizeof(evdup(ev)));
+ set_noa_add(evset, ((const void *) evdup(ev)), sizeof(evdup(ev)));
  
  emutex_unlock(&einit_ipc_9p_event_save_mutex);
  
