@@ -546,6 +546,45 @@ void *einit_ipc_9p_listen (void *param) {
 
  return NULL;
 }
+/*event handling stuff being added - not working yet - nklein */
+struct msg_event_queue {
+ struct einit_event *ev;
+ struct msg_event_queue *next;
+};
+
+struct msg_event_queue einit_ipc_9p_event_queue = NULL;
+
+void einit_ipc_9p_ping_all_threads() {
+#ifdef _POSIX_PRIORITY_SCHEDULING
+ sched_yield();
+#endif
+
+ pthread_cond_broadcast (&einit_ipc_9p_ping_cond);
+}
+
+void einit_ipc_9p_save_all_events(struct einit_event *) {
+	//doing nothing yet
+	
+}
+
+void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
+ struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
+ 
+ einit_ipc_9p_save_all_events(evdup(ev));
+ e->ev = evdup(ev);
+ e->next = NULL;
+
+ emutex_lock (&einit_ipc_9p_event_queue_mutex);
+
+ e->next = einit_ipc_9p_event_queue;
+ einit_ipc_9p_event_queue = e;
+
+ emutex_unlock (&einit_ipc_9p_event_queue_mutex);
+
+ einit_ipc_9p_ping_all_threads();
+}
+
+/*end of eye cancer code */
 
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
  einit_ipc_9p_running = 1;
@@ -658,9 +697,8 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);
-=======
+ 
 const char *einit_ipc_9p_cl_address = NULL;
->>>>>>> 17bd9402ddf82719ca64a0562327a3ad3c1bd222:src/modules/ipc-9p.c
 
 void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
  einit_ipc_9p_thread_function_address (einit_ipc_9p_cl_address);
