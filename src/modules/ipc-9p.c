@@ -105,12 +105,14 @@ void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
 
 pthread_mutex_t
- einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+ einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 enum ipc_9p_filetype {
  i9_dir,
- i9_file
+ i9_file,
+ i9_events
 };
 
 struct ipc_9p_filedata {
@@ -120,6 +122,7 @@ struct ipc_9p_filedata {
  struct ipc_fs_node **files;
  int c;
  char is_writable;
+ int event_seq;
 };
 
 struct ipc_9p_fidaux {
@@ -139,6 +142,7 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  fd->files = (struct ipc_fs_node **)(d->files ? set_fix_dup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
  fd->c = d->c;
  fd->is_writable = d->is_writable;
+ fd->event_seq = d->event_seq;
 
  return fd;
 }
@@ -216,7 +220,21 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_open (Ixp9Req *r) {
- ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+ struct ipc_9p_fidaux *fa = r->fid->aux;
+
+ if (fa && fa->path && fa->path[0] && strmatch (fa->path[0], "events")) {
+  if (r->ifcall.mode == P9_OREAD) {
+   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+
+   fd->type = i9_events;
+   fd->event_seq = 0;
+
+   fa->fd = fd;
+
+   respond(r, nil);
+  }
+ } else
+  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
 }
 
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
@@ -263,7 +281,9 @@ void einit_ipc_9p_fs_read (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
 
- if (fd->type == i9_file) {
+ if (fd->type == i9_events) {
+  respond(r, "not implemented");
+ } else if (fd->type == i9_file) {
   if (fd->data) {
    fflush (stderr);
 
