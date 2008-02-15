@@ -655,14 +655,21 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
   n.is_file = 0;
   n.name = (char *)str_stabilise ("issues");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  n.is_file = 1;
+  n.name = (char *)str_stabilise ("events");
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
  }
 }
 
 void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && strmatch (path[0], "issues")) {
-  ev->flag = (path[1] ? 1 : 0);
+ if (path && path[0]) {
+  if (strmatch (path[0], "issues")) {
+   ev->flag = (path[1] ? 1 : 0);
+  } else if (strmatch (path[0], "events")) {
+   ev->flag = 1;
+  }
  }
 }
 
