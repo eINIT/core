@@ -34,13 +34,13 @@ def buildBundle(name, modules_original, e):
 
   for i in modules_original:
    tm = os.path.basename(i).replace('-', '_')
-   f.write ('extern const struct smodule * ' + tm.replace ('-', '_') + "_self;\n")
+   f.write ('extern const struct smodule * private_' + tm.replace ('-', '_') + "_self;\n")
 
   f.write ("\n" + 'const struct smodule **module_bundle_contents[] = {' + "\n")
 
   for i in modules_original:
    tm = os.path.basename(i).replace('-', '_')
-   f.write ('  &' + tm + '_self,'"\n")
+   f.write ('  &private_' + tm + '_self,'"\n")
 
   f.write ('  NULL};'"\n")
   f.close()

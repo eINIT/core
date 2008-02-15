@@ -104,10 +104,14 @@ int module_bundle_scanmodules (struct lmodule *mlist) {
  if (module_bundle_firstrun) {
   module_bundle_firstrun = 0;
 
+  fprintf (stderr, "updating bundle modules\n");
+
   if (module_bundle_contents) {
    uint32_t cp = 0;
 
    for (; module_bundle_contents[cp]; cp++) {
+    fprintf (stderr, "updating bundle module #%i\n", cp);
+
     struct lmodule *lmm;
 
     lmm = mod_add(NULL, (*module_bundle_contents[cp]));
