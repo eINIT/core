@@ -122,6 +122,8 @@ struct msg_event_queue {
 
 struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
 
+Ixp9Req **einit_ipc_9p_event_update_listeners = NULL;
+
 struct ipc_9p_filedata {
  char *data;
  enum ipc_9p_filetype type;
@@ -289,7 +291,22 @@ void einit_ipc_9p_fs_read (Ixp9Req *r) {
  struct ipc_9p_filedata *fd = fa->fd;
 
  if (fd->type == i9_events) {
-  respond(r, "not implemented");
+  char p = 1;
+
+  if (fd->event->next != einit_ipc_9p_event_queue) {
+   r->ofcall.data = estrdup ("event!\n");
+   r->ofcall.count = 7;
+
+   respond(r, nil);
+
+   p = 0;
+  }
+
+  if (p) {
+   emutex_lock(&einit_ipc_9p_event_update_listeners);
+   einit_ipc_9p_event_update_listeners = (Ixp9Req **)set_noa_add ((void **)einit_ipc_9p_event_update_listeners, r);
+   emutex_unlock(&einit_ipc_9p_event_update_listeners);
+  }
  } else if (fd->type == i9_file) {
   if (fd->data) {
    fflush (stderr);
