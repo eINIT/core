@@ -1,5 +1,7 @@
 Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules'])
 
+import os.path
+
 menv = env.Clone (SHLIBPREFIX = '', CCFLAGS = '-DEINIT_MODULE')
 
 CodeInternalModules = ['#build/core/module-configuration.c']
@@ -14,17 +16,60 @@ def buildInternalModule(name, location, e):
  tm = name.replace('-', '_')
  return e.Object(location + '/' + name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=' + tm + '_thismodule -Dself=' + tm + '_self')
 
+def buildBundleModule(name, e):
+ tm = os.path.basename(name).replace('-', '_')
+ return e.SharedObject(name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=private_' + tm + '_thismodule -Dself=private_' + tm + '_self')
+
+def buildBundle(name, modules_original, e):
+ f = open (name + '.c', 'w')
+ if f:
+  f.write ('/* this file has partially been written by the build system */' + "\n" +
+           '#define module_bundle_name "Bundle (' + name + ')"' + "\n" +
+           '#define module_bundle_rid "' + name + '"' + "\n\n")
+
+  o = open ('templates/bundle.c')
+  if o:
+   f.write(o.read() + "\n")
+   o.close()
+
+  for i in modules_original:
+   tm = os.path.basename(i).replace('-', '_')
+   f.write ('extern const struct smodule * ' + tm.replace ('-', '_') + "_self;\n")
+
+  f.write ("\n" + 'const struct smodule **module_bundle_contents[] = {' + "\n")
+
+  for i in modules_original:
+   tm = os.path.basename(i).replace('-', '_')
+   f.write ('  &' + tm + '_self,'"\n")
+
+  f.write ('  NULL};'"\n")
+  f.close()
+
+ modules = [ e.SharedObject (name + '.c') ]
+
+ for i in modules_original:
+  modules += buildBundleModule (i, e)
+
+ e.Install(InstallDirModules, e.LoadableModule(name, modules))
+
 librt = [ 'rt' ]
 
 if uname == 'Darwin':
  menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
  librt = []
 
-for x in ModulesBSD:
- buildModule(x, 'bsd', menv)
+if ModulesBSD:
+ for x in ModulesBSD:
+  buildModule(x, 'bsd', menv)
 
-for x in ModulesLinux:
- buildModule(x, 'linux', menv)
+if ModulesLinux:
+ mnames = []
+ for x in ModulesLinux:
+  mnames += [ 'linux/' + x ]
+
+ buildBundle('bundle-linux', mnames, menv)
+
+# buildModule(x, 'linux', menv)
 
 buildModuleBootStrap('bootstrap-configuration-stree', menv)
 buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))

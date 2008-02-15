@@ -22,6 +22,8 @@ src/einit-monitor
 src/einit-helper
 src/last-rites
 
+src/modules/bundle-*
+
 #
 # Top-level generic files
 #
