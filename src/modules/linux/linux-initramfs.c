@@ -59,9 +59,9 @@ int *linux_initramfs_is_initramfs (void) {
 
 void linux_initramfs_kernel_extensions_handler (struct einit_event *ev) {
  if (linux_initramfs_is_initramfs()==0) {
-	 print("INITRAMFS=True/n");
+	 printf("INITRAMFS=True/n");
  } else {
-	 print("INITRAMFS=False/n");
+	 printf("INITRAMFS=False/n");
  }
 }
 
