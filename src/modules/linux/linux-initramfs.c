@@ -50,11 +50,15 @@ module_register(linux_initramfs_self);
 void linux_initramfs_kernel_extensions_handler (struct einit_event *ev) {
  if (strmatch(einit_argv[0], "/linuxrc")) {
   notice(1,"eINIT is running from within an initramfs!");
+ } else {
+  struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  evstaticdestroy(eml);
  }
 }
 
 int linux_initramfs_cleanup (struct lmodule *pa) {
- event_ignore (einit_boot_load_kernel_extensions, linux_initramfs_kernel_extensions_handler);
+ event_ignore (einit_boot_pre_load_kernel_extensions, linux_initramfs_kernel_extensions_handler);
 
  return 0;
 }
@@ -64,7 +68,7 @@ int linux_initramfs_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_initramfs_cleanup;
 
- event_listen (einit_boot_load_kernel_extensions, linux_initramfs_kernel_extensions_handler);
+ event_listen (einit_boot_pre_load_kernel_extensions, linux_initramfs_kernel_extensions_handler);
 
  return 0;
 }

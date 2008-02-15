@@ -129,7 +129,7 @@ char *linux_edev_mangle_filename (char *filename, char do_free);
 static void set_str(char *to, const char *from, size_t count);
 
 void linux_edev_load_kernel_extensions() {
- struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+ struct einit_event eml = evstaticinit(einit_boot_pre_load_kernel_extensions);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
  evstaticdestroy(eml);
 }

@@ -96,7 +96,7 @@ char linux_static_dev_enabled = 0;
 #define NETLINK_BUFFER 1024*1024*64
 
 void linux_static_dev_load_kernel_extensions() {
- struct einit_event eml = evstaticinit(einit_boot_load_kernel_extensions);
+ struct einit_event eml = evstaticinit(einit_boot_pre_load_kernel_extensions);
  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
  evstaticdestroy(eml);
 }
