@@ -624,11 +624,60 @@ void *einit_ipc_9p_listen (void *param) {
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
+ char **data = NULL;
  char buffer[BUFFERSIZE];
 
- esprintf (buffer, BUFFERSIZE, "event=%i\ntype=%s\n", ev->seqid, event_code_to_string(ev->type));
+ esprintf (buffer, BUFFERSIZE, "event=%i", ev->seqid);
+ data = set_str_add (data, buffer);
 
- e->event = estrdup (buffer);
+ esprintf (buffer, BUFFERSIZE, "type=%s", event_code_to_string(ev->type));
+ data = set_str_add (data, buffer);
+
+ if (ev->integer) {
+  esprintf (buffer, BUFFERSIZE, "integer=%i", ev->integer);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->task) {
+  esprintf (buffer, BUFFERSIZE, "task=%i", ev->task);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->status) {
+  esprintf (buffer, BUFFERSIZE, "status=%i", ev->status);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->flag) {
+  esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->string) {
+  char *msg_string;
+  size_t i = strlen (ev->string) + 1 + 9; /* "string=\n"*/
+  msg_string = emalloc (i);
+  esprintf (msg_string, i, "string=%s", ev->string);
+
+  data = set_str_add (data, msg_string);
+ }
+
+ if (ev->stringset) {
+  int y = 0;
+  for (; ev->stringset[y]; y++) {
+   char *msg_string;
+   size_t i = strlen (ev->stringset[y]) + 1 + 12; /* "stringset=\n"*/
+   msg_string = emalloc (i);
+   esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
+
+   data = set_str_add (data, msg_string);
+  }
+ }
+
+ data = set_str_add (data, "\n");
+
+ e->event = set2str ('\n', (const char **)data);
+ efree (data);
 
  emutex_lock (&einit_ipc_9p_event_queue_mutex);
 
