@@ -291,8 +291,8 @@ void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
  struct ipc_9p_filedata *fd = fa->fd;
 
  if (fd->event->next != einit_ipc_9p_event_queue) {
-  fprintf (stdout, "printing event\n");
-  fflush (stderr);
+//  fprintf (stdout, "printing event\n");
+//  fflush (stderr);
 
   r->ofcall.data = estrdup (fd->event->event);
   r->ofcall.count = strlen (r->ofcall.data);
@@ -301,8 +301,8 @@ void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
 
   respond(r, nil);
  } else {
-  fprintf (stdout, "no more events right now\n");
-  fflush (stdout);
+//  fprintf (stdout, "no more events right now\n");
+//  fflush (stdout);
 
   emutex_lock(&einit_ipc_9p_event_update_listeners_mutex);
   einit_ipc_9p_event_update_listeners = (Ixp9Req **)set_noa_add ((void **)einit_ipc_9p_event_update_listeners, r);
