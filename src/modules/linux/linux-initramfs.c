@@ -47,24 +47,10 @@ module_register(linux_initramfs_self);
 
 #endif
 
-int linux_initramfs_is_initramfs (void) {
- int ret;
- notice(1,einit_argv[0]);
- if (strmatch(einit_argv[0], "linuxrc") || strmatch(einit_argv[0], "/linuxrc")) {
-  ret = 0; 
- } else {
-  ret = -1;
- }
- return ret;
-}
-
 void linux_initramfs_kernel_extensions_handler (struct einit_event *ev) {
- if (linux_initramfs_is_initramfs()==0) {
-  notice(1, "INITRAMFS=True/n");
- } else {
-  notice(1, "INITRAMFS=False/n");
+ if (strmatch(einit_argv[0], "/linuxrc")) {
+  notice(1,"eINIT is running from within an initramfs!");
  }
- sleep(5);
 }
 
 int linux_initramfs_cleanup (struct lmodule *pa) {
