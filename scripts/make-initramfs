@@ -16,3 +16,7 @@ cp /${libdir}/einit/einit.xml ${libdir}/einit
 cp /sbin/einit ./init
 
 find . | cpio -o | gzip - > /tmp/einit-initramfs
+
+cd
+
+rm -Rf /tmp/initramfs
