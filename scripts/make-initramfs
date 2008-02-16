@@ -22,7 +22,7 @@ cp /${libdir}/libdl* ${libdir}/
 cp /${libdir}/ld-* ${libdir}/
 cp /${libdir}/libc[-.]* ${libdir}/
 
-if [ "$libdir" != "lib" ]; then ln -sf "$libdir" lib
+if [ "$libdir" != "lib" ]; then ln -sf "$libdir" lib; fi
 
 cp /sbin/einit ./init
 
