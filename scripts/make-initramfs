@@ -11,7 +11,7 @@ mkdir -p ${libdir}/einit/bootstrap
 mkdir -p ${libdir}/einit/modules
 
 cp /${libdir}/einit/bootstrap/* ${libdir}/einit/bootstrap
-cp /${libdir}/einit/module/*initramfs* ${libdir}/einit/modules
+cp /${libdir}/einit/modules/*initramfs* ${libdir}/einit/modules
 cp /${libdir}/einit/einit.xml ${libdir}/einit
 cp /sbin/einit ./init
 

@@ -1,3 +1,5 @@
 Import ('env', 'InstallDirLibEinit')
 
 env.Install (InstallDirLibEinit + '/scripts', 'make-initramfs')
+env.Install (InstallDirLibEinit + '/scripts', 'import-fstab')
+
