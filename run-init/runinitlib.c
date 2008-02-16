@@ -157,7 +157,7 @@ static int nuke(const char *what)
 	}
 }
 
-const char *run_init(const char *realroot, const char *console)
+const char *run_init(const char *realroot)
 {
 	struct stat rst, cst, ist;
 	struct statfs sfs;
@@ -203,7 +203,7 @@ const char *run_init(const char *realroot, const char *console)
 		return "chroot";
 
 	/* Open /dev/console */
-	if ((confd = open(console, O_RDWR)) < 0)
+	if ((confd = open("/dev/console", O_RDWR)) < 0)
 		return "opening console";
 	dup2(confd, 0);
 	dup2(confd, 1);
