@@ -1,3 +1,0 @@
-Import ('env', 'InstallDirLibEinit')
-
-env.Install (InstallDirLibEinit + '/scripts', 'install-config')

@@ -285,27 +285,27 @@ int main(int argc, char **argv, char **env) {
      int i = 0;
 
      if (count > 1)
-      fprintf (stderr, "Found %i issues:\n", count);
+      fprintf (stdout, "Found %i issues:\n", count);
      else
-      fputs ("Found one issue:\n", stderr);
+      fputs ("Found one issue:\n", stdout);
 
      while (issues[i]) {
-      fprintf (stderr, " * %s:\n", issues[i]);
+      fprintf (stdout, " * %s:\n", issues[i]);
 
       argvx[1] = issues[i];
 
       char *r = einit_read(argvx);
       if (r) {
-       fprintf (stderr, " >> %s\n", r);
+       fprintf (stdout, " >> %s\n", r);
       }
 
       i++;
      }
     } else {
-     fprintf (stderr, "No issues found.\n");
+     fprintf (stdout, "No issues found.\n");
     }
 
-    fflush (stderr);
+    fflush (stdout);
 
     einit_disconnect ();
    } else {
