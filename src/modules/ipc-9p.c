@@ -536,7 +536,7 @@ void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
- notice (1, "einit_ipc_9p_fs_flush()");
+// notice (1, "einit_ipc_9p_fs_flush()");
 // ipc_9p_respond_serialise (r, nil);
  emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
  repeat:
