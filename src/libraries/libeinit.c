@@ -444,7 +444,37 @@ void einit_module_call (const char *rid, const char *action) {
 }
 
 int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
+ char **buffer = str2set ('\n', fragment);
+ int i = 0;
+ struct einit_event *ev = evinit(0);
+
+ for (; buffer[i]; i++) {
+  if (strprefix (buffer[i], "event=")) {
+  } else if (strprefix (buffer[i], "type=") && strcmp ((buffer[i])+5, "unknown/custom")) {
+   ev->type = event_string_to_code((buffer[i])+5);
+  } else if (strprefix (buffer[i], "integer=")) {
+   ev->integer = parse_integer ((buffer[i])+8);
+  } else if (strprefix (buffer[i], "task=")) {
+   ev->task = parse_integer ((buffer[i])+5);
+  } else if (strprefix (buffer[i], "status=")) {
+   ev->status = parse_integer ((buffer[i])+7);
+  } else if (strprefix (buffer[i], "flag=")) {
+   ev->flag = parse_integer ((buffer[i])+5);
+  } else if (strprefix (buffer[i], "module=")) {
+  } else if (strprefix (buffer[i], "string=")) {
+   ev->string = estrdup ((buffer[i])+7);
+  } else if (strprefix (buffer[i], "stringset=")) {
+   ev->stringset = set_str_add (ev->stringset, (buffer[i])+10);
+  }
+ }
+
  fprintf (stderr, "new fragment: %s\n", fragment);
+
+ if (ev->type) {
+  event_emit (ev, einit_event_flag_broadcast);
+ }
+
+ evdestroy (ev);
 }
 
 void einit_event_loop () {

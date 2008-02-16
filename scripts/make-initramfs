@@ -7,15 +7,26 @@ if [ -z "$libdir" ]; then libdir="lib"; fi
 mkdir /tmp/initramfs
 cd /tmp/initramfs
 
-mkdir -p ${libdir}/einit/bootstrap
-mkdir -p ${libdir}/einit/modules
+mkdir -pf ${libdir}/einit/bootstrap
+mkdir -pf ${libdir}/einit/modules
+mkdir -pf ${libdir}/einit/bin
+mkdir -pf ${libdir}
 
+cp /${libdir}/einit/bin/einit-core ${libdir}/einit/bin
 cp /${libdir}/einit/bootstrap/* ${libdir}/einit/bootstrap
 cp /${libdir}/einit/modules/*initramfs* ${libdir}/einit/modules
 cp /${libdir}/einit/einit.xml ${libdir}/einit
+
+cp /${libdir}/*pthread* ${libdir}/
+cp /${libdir}/libdl* ${libdir}/
+cp /${libdir}/ld-* ${libdir}/
+cp /${libdir}/libc[-.]* ${libdir}/
+
+if [ "$libdir" != "lib" ]; then ln -sf "$libdir" lib
+
 cp /sbin/einit ./init
 
-find . | cpio -o | gzip - > /tmp/einit-initramfs
+find . | cpio -oc | gzip - > /tmp/einit-initramfs
 
 cd
 
