@@ -443,7 +443,7 @@ void einit_module_call (const char *rid, const char *action) {
 }
 
 int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
- fprintf (stderr, fragment);
+ fprintf (stderr, "new fragment: %s\n", fragment);
 }
 
 void einit_event_loop () {
