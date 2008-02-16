@@ -1,7 +1,10 @@
 /* ----------------------------------------------------------------------- *
  *
  *   Copyright 2004-2006 H. Peter Anvin - All Rights Reserved
- *
+ *	 
+ * 	 Modified by Ryan Hope for use in eINIT - 2008.
+ * 	 Copyright 2008 Ryan Hope - All Rights Reserved
+ * 
  *   Permission is hereby granted, free of charge, to any person
  *   obtaining a copy of this software and associated documentation
  *   files (the "Software"), to deal in the Software without
@@ -26,7 +29,7 @@
  * ----------------------------------------------------------------------- */
 
 /*
- * run_init(consoledev, realroot, init, initargs)
+ * run_init(consoledev, realroot)
  *
  * This function should be called as the last thing in kinit,
  * from initramfs, it does the following:
@@ -154,8 +157,7 @@ static int nuke(const char *what)
 	}
 }
 
-const char *run_init(const char *realroot, const char *console,
-		     const char *init, char **initargs)
+const char *run_init(const char *realroot, const char *console)
 {
 	struct stat rst, cst, ist;
 	struct statfs sfs;
@@ -209,6 +211,6 @@ const char *run_init(const char *realroot, const char *console,
 	close(confd);
 
 	/* Spawn init */
-	execv(init, initargs);
-	return init;		/* Failed to spawn init */
+	//execv(init, initargs);
+	return "ok";		/* Failed to spawn init */
 }
