@@ -49,7 +49,7 @@ module_register(linux_initramfs_self);
 
 void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
  if (strmatch(einit_argv[0], "/init")) {
-  notice(1,"eINIT is running from within an initramfs!");
+  fprintf (stderr, "entering initramfs mode...\n");
   char realroot [BUFFERSIZE];
   int i = 1;
   // make sure not to crash when nothing is found
@@ -65,6 +65,11 @@ void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
 	   // restart einit
    }
   }
+ } else {
+  fprintf (stderr, "running early bootup code...\n");
+  struct einit_event eml = evstaticinit(einit_boot_early);
+  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  evstaticdestroy(eml);
  }
 }
 
