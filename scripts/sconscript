@@ -1,0 +1,3 @@
+Import ('env', 'InstallDirLibEinit')
+
+env.Install (InstallDirLibEinit + '/scripts', 'make-initramfs')

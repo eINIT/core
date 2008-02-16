@@ -1,0 +1,18 @@
+#!/bin/sh
+
+libdir=$1
+
+if [ -z "$libdir" ]; then libdir="lib"; fi
+
+mkdir /tmp/initramfs
+cd /tmp/initramfs
+
+mkdir -p ${libdir}/einit/bootstrap
+mkdir -p ${libdir}/einit/modules
+
+cp /${libdir}/einit/bootstrap/* ${libdir}/einit/bootstrap
+cp /${libdir}/einit/module/*initramfs* ${libdir}/einit/modules
+cp /${libdir}/einit/einit.xml ${libdir}/einit
+cp /sbin/einit ./init
+
+find . | cpio -o | gzip - > /tmp/einit-initramfs
