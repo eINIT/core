@@ -168,6 +168,12 @@ void einit_service_call (const char *service, const char *action);
  */
 void einit_module_call (const char *rid, const char *action);
 
+/*!\brief Grab and Handle Events
+ *
+ * This will run an event loop that will grab events from eINIT and emit them locally.
+ */
+void einit_event_loop ();
+
 #ifdef __cplusplus
 }
 #endif

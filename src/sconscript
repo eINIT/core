@@ -17,6 +17,8 @@ CodeCoreMonitorObjects = ['einit-monitor.c']
 CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
+CodeEinitLibTest = ['einit-testlib.c']
+
 CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + AssemblyFunctions
 
 linkCore = '-Wl,-export-dynamic'
@@ -38,6 +40,8 @@ einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
 einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
 
+einitLibTest = env.Program ('einit-testlib', CodeEinitLibTest, LIBS=['einit'], LIBPATH=['.'])
+
 libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'])
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
 
@@ -47,6 +51,8 @@ env.Install (InstallDirLibBin, lastRites)
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)
 env.Install (InstallDirLib, libEinitPP)
+
+env.Install (InstallDirSbin, einitLibTest)
 
 env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
 env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))
