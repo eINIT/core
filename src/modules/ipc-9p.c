@@ -106,7 +106,8 @@ void einit_ipc_9p_power_event_handler (struct einit_event *);
 
 pthread_mutex_t
  einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER;
+ einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_ipc_9p_event_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum ipc_9p_filetype {
  i9_dir,
@@ -139,6 +140,11 @@ struct ipc_9p_fidaux {
  struct ipc_9p_filedata *fd;
 };
 
+Ixp9Req *ipc_9p_respond_serialise (Ixp9Req *r, const char *m) {
+ emutex_lock (&einit_ipc_9p_event_respond_mutex);
+ respond (r, (char *)m);
+ emutex_unlock (&einit_ipc_9p_event_respond_mutex);
+}
 
 struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  if (!d) return NULL;
@@ -208,13 +214,13 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
    fa->fd = fd;
   } else {
    evstaticdestroy (ev);
-   respond (r, "File not found.");
+   ipc_9p_respond_serialise (r, "File not found.");
    return;
   }
 
   evstaticdestroy (ev);
 
-  respond(r, nil);
+  ipc_9p_respond_serialise(r, nil);
  } else /*if ((r->ifcall.mode == P9_OWRITE) || (r->ifcall.mode == (P9_OWRITE | P9_OTRUNC))) */{
   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
   fa->fd = fd;
@@ -222,9 +228,9 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
   fd->is_writable = 1;
 //  notice (1, "opened file for writing");
 
-  respond(r, nil);
+  ipc_9p_respond_serialise(r, nil);
  }/* else {
-  respond (r, "Access Mode not supported.");
+  ipc_9p_respond_serialise (r, "Access Mode not supported.");
  }*/
 }
 
@@ -240,7 +246,7 @@ void einit_ipc_9p_fs_open (Ixp9Req *r) {
 
    fa->fd = fd;
 
-   respond(r, nil);
+   ipc_9p_respond_serialise(r, nil);
   }
  } else
 //  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
@@ -283,7 +289,7 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  r->ofcall.wqid[i-1].type = P9_QTAPPEND;
 
  r->ofcall.nwqid = i;
- respond(r, nil);
+ ipc_9p_respond_serialise(r, nil);
 }
 
 void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
@@ -299,7 +305,7 @@ void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
 
   fd->event = fd->event->next;
 
-  respond(r, nil);
+  ipc_9p_respond_serialise(r, nil);
  } else {
 //  fprintf (stdout, "no more events right now\n");
 //  fflush (stdout);
@@ -339,14 +345,14 @@ void einit_ipc_9p_fs_read (Ixp9Req *r) {
 
     r->ofcall.count = y;
 
-    respond(r, nil);
+    ipc_9p_respond_serialise(r, nil);
    } else {
     r->ofcall.count = 0;
-    respond(r, nil);
+    ipc_9p_respond_serialise(r, nil);
    }
   } else {
    r->ofcall.count = 0;
-   respond(r, nil);
+   ipc_9p_respond_serialise(r, nil);
   }
  } else if (fd->type == i9_dir) {
   if (fd->files && (fd->files[fd->c])) {
@@ -386,10 +392,10 @@ void einit_ipc_9p_fs_read (Ixp9Req *r) {
    r->ofcall.data = (char*)m.data;
 
    fd->c++;
-   respond(r, nil);
+   ipc_9p_respond_serialise(r, nil);
   } else {
    r->ofcall.count = 0;
-   respond(r, nil);
+   ipc_9p_respond_serialise(r, nil);
   }
  }
 }
@@ -451,7 +457,7 @@ void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
 
  efree (path);
 
- respond(r, nil);
+ ipc_9p_respond_serialise(r, nil);
 }
 
 void einit_ipc_9p_fs_stat (Ixp9Req *r) {
@@ -467,7 +473,7 @@ void einit_ipc_9p_fs_write (Ixp9Req *r) {
  if (r->ifcall.count == 0) {
 //  notice (1, "einit_ipc_9p_fs_write()");
 
-  respond(r, nil);
+  ipc_9p_respond_serialise(r, nil);
   return;
  } else {
   struct ipc_9p_filedata *fd = fa->fd;
@@ -481,7 +487,7 @@ void einit_ipc_9p_fs_write (Ixp9Req *r) {
 
 //  notice (1, "einit_ipc_9p_fs_write(%s)", fd->data);
 
-  respond(r, nil);
+  ipc_9p_respond_serialise(r, nil);
  }
 }
 
@@ -521,7 +527,7 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
   }
  }
 
- respond(r, nil);
+ ipc_9p_respond_serialise(r, nil);
 }
 
 void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
@@ -531,7 +537,7 @@ void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_flush()");
-// respond (r, nil);
+// ipc_9p_respond_serialise (r, nil);
  emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
  repeat:
   if (einit_ipc_9p_event_update_listeners) {
@@ -545,7 +551,7 @@ void einit_ipc_9p_fs_flush(Ixp9Req *r) {
  }
  emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 
- respond (r, nil);
+ ipc_9p_respond_serialise (r, nil);
 }
 
 void einit_ipc_9p_fs_attach(Ixp9Req *r) {
@@ -554,17 +560,17 @@ void einit_ipc_9p_fs_attach(Ixp9Req *r) {
  r->fid->aux = ecalloc (1, sizeof (struct ipc_9p_fidaux));
 
  r->ofcall.qid = r->fid->qid;
- respond(r, nil);
+ ipc_9p_respond_serialise(r, nil);
 }
 
 void einit_ipc_9p_fs_create(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_create()");
- respond (r, "not implemented.");
+ ipc_9p_respond_serialise (r, "not implemented.");
 }
 
 void einit_ipc_9p_fs_remove(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_remove()");
- respond (r, "not implemented.");
+ ipc_9p_respond_serialise (r, "not implemented.");
 }
 
 void einit_ipc_9p_fs_freefid(Fid *f) {
