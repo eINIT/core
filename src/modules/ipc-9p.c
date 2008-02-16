@@ -108,7 +108,7 @@ void einit_ipc_9p_power_event_handler (struct einit_event *);
 pthread_mutex_t
  einit_ipc_9p_ping_mutex = PTHREAD_MUTEX_INITIALIZER,
  einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_ipc_9p_event_save_mutex = PTHREAD_MUTEX_INITIALIZER;
+
  
 pthread_cond_t
  einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
@@ -566,12 +566,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
  
  /*this isn't working yet - adding code to store events in "/events" file */
- emutex_lock(&einit_ipc_9p_event_save_mutex);
- void **evset;
- 
- setadd(evset, ((const void *) evdup(ev)), sizeof(evdup(ev)));
- 
- emutex_unlock(&einit_ipc_9p_event_save_mutex);
+
  
  e->ev = evdup(ev);
  e->next = NULL;
