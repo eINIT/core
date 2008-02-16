@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle', 'ModulesLinuxSpecial'])
 
 import os.path
 
@@ -85,7 +85,7 @@ buildBundleD('compatibility', ModulesCompatibility)
 buildBundleE('base', ModulesBase, '.', menv)
 
 if 'linux-initramfs' in ExternalModules:
- buildModule ('linux-initramfs', '.', menv.Clone (LIBS=['libruninit'], LIBPATH=['#run-init']))
+ buildModule ('linux-initramfs', 'linux', menv.Clone (LIBS=['runinit'], LIBPATH=['#run-init']))
 
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
