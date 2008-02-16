@@ -56,11 +56,6 @@ void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
   struct einit_event eml = evstaticinit(einit_boot_initramfs);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
- } else {
-  fprintf (stderr, "running early bootup code...\n");
-  struct einit_event eml = evstaticinit(einit_boot_early);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-  evstaticdestroy(eml);
  }
 }
 
@@ -87,6 +82,7 @@ void linux_kernel_modules_boot_event_handler_initramfs_done (struct einit_event 
 
 int linux_initramfs_cleanup (struct lmodule *pa) {
  event_ignore (einit_boot_initramfs_check, linux_kernel_modules_boot_event_handler_early);
+ event_ignore (einit_boot_initramfs_done, linux_kernel_modules_boot_event_handler_initramfs_done);
 
  return 0;
 }
@@ -97,6 +93,7 @@ int linux_initramfs_configure (struct lmodule *pa) {
  pa->cleanup = linux_initramfs_cleanup;
 
  event_listen (einit_boot_initramfs_check, linux_kernel_modules_boot_event_handler_early);
+ event_listen (einit_boot_initramfs_done, linux_kernel_modules_boot_event_handler_initramfs_done);
 
  return 0;
 }
