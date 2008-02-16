@@ -85,6 +85,8 @@ extern "C" {
 
 #define einit_exit_status_die_respawn 50
 
+#define einit_exit_status_exit_respawn 60
+
 #endif
 
 #ifdef __cplusplus

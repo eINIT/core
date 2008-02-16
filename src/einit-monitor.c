@@ -192,6 +192,14 @@ int einit_monitor_loop (int argc, char **argv, char **env, char *einit_crash_dat
      }
     }
 
+    if (WEXITSTATUS(rstatus) == einit_exit_status_exit_respawn) {
+     fprintf (stderr, "Respawning secondary eINIT process.\n");
+
+     close (debugsocket[0]);
+
+     return einit_monitor_loop(argc, argv, env, einit_crash_data, 1);
+    }
+
     exit (EXIT_SUCCESS);
    }
 
