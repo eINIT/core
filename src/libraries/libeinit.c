@@ -390,6 +390,7 @@ int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), v
    }
 
    if ((rn < f->iounit) && blen) {
+    *(((char *)buf) + blen) = 0;
     callback (buf, blen, cdata);
     blen = 0;
    }
