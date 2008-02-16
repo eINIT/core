@@ -45,9 +45,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <string.h>
 
+#include <einit/event.h>
+
 #include <einit/configuration-static.h>
 
 #include <einit/einit.h>
+
+void generic_event_handler (struct einit_event *ev) {
+ fprintf (stderr, "event!\n");
+}
 
 int main(int argc, char **argv, char **env) {
 
@@ -55,6 +61,8 @@ int main(int argc, char **argv, char **env) {
   perror ("Could not connect to eINIT");
   exit (EXIT_FAILURE);
  }
+
+ event_listen (einit_event_subsystem_any, generic_event_handler);
 
  einit_event_loop();
 

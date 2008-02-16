@@ -450,8 +450,13 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
 
  for (; buffer[i]; i++) {
   if (strprefix (buffer[i], "event=")) {
-  } else if (strprefix (buffer[i], "type=") && strcmp ((buffer[i])+5, "unknown/custom")) {
-   ev->type = event_string_to_code((buffer[i])+5);
+  } else if (strprefix (buffer[i], "type=")) {
+   if (strcmp ((buffer[i])+5, "unknown/custom")) {
+    ev->type = event_string_to_code((buffer[i])+5);
+   } else {
+    evdestroy (ev);
+    return;
+   }
   } else if (strprefix (buffer[i], "integer=")) {
    ev->integer = parse_integer ((buffer[i])+8);
   } else if (strprefix (buffer[i], "task=")) {
@@ -469,7 +474,7 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
   }
  }
 
- fprintf (stderr, "new fragment: %s\n", fragment);
+// fprintf (stderr, "new fragment: %s\n", fragment);
 
  if (ev->type) {
   event_emit (ev, einit_event_flag_broadcast);
