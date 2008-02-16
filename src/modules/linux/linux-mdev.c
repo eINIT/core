@@ -315,20 +315,16 @@ int linux_mdev_run() {
 
 void linux_mdev_boot_event_handler (struct einit_event *ev) {
  if (linux_mdev_run() == status_ok) {
-  struct einit_event eml = evstaticinit(einit_boot_postdev);
+  struct einit_event eml = evstaticinit(einit_boot_devices_available);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
  }
-}
-
-void linux_mdev_boot_initramfs_handler (struct einit_event *ev) {
 }
 
 int linux_mdev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
  event_ignore (einit_boot_early, linux_mdev_boot_event_handler);
- event_ignore (einit_boot_initramfs, linux_mdev_boot_initramfs_handler);
 
  return 0;
 }
@@ -347,7 +343,6 @@ int linux_mdev_configure (struct lmodule *pa) {
  pa->cleanup = linux_mdev_cleanup;
 
  event_listen (einit_boot_early, linux_mdev_boot_event_handler);
- event_listen (einit_boot_initramfs, linux_mdev_boot_initramfs_handler);
 
  return 0;
 }

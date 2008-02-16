@@ -307,39 +307,16 @@ void linux_udev_shutdown_imminent() {
 
 void linux_udev_boot_event_handler (struct einit_event *ev) {
  if (linux_udev_run() == status_ok) {
-  struct einit_event eml = evstaticinit(einit_boot_postdev);
+  struct einit_event eml = evstaticinit(einit_boot_devices_available);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
  }
-}
-
-void linux_udev_boot_initramfs_handler (struct einit_event *ev) {
- struct stat st;
- struct cfgnode *n = cfg_getnode ("configuration-system-coldplug", NULL);
- fputs ("populating /dev with udevtrigger...\n", stderr);
- if (stat ("/sbin/udevadm", &st)) {
-  if (n && n->flag) {
-   qexec ("/sbin/udevtrigger");
-  } else {
-   qexec ("/sbin/udevtrigger --attr-match=dev");
-  }
- } else {
-  if (n && n->flag) {
-   qexec ("/sbin/udevadm trigger");
-  } else {
-   qexec ("/sbin/udevadm trigger --attr-match=dev");
-  }
- }
- struct einit_event eml = evstaticinit(einit_boot_devices_available);
- event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
- evstaticdestroy(eml);
 }
 
 int linux_udev_cleanup (struct lmodule *pa) {
  exec_cleanup(pa);
 
  event_ignore (einit_boot_early, linux_udev_boot_event_handler);
- event_ignore (einit_boot_initramfs, linux_udev_boot_initramfs_handler);
  event_ignore (einit_power_down_scheduled, linux_udev_shutdown);
  event_ignore (einit_power_reset_scheduled, linux_udev_shutdown);
  event_ignore (einit_power_down_imminent, linux_udev_shutdown_imminent);
@@ -362,7 +339,6 @@ int linux_udev_configure (struct lmodule *pa) {
  pa->cleanup = linux_udev_cleanup;
 
  event_listen (einit_boot_early, linux_udev_boot_event_handler);
- event_listen (einit_boot_initramfs, linux_udev_boot_initramfs_handler);
  event_listen (einit_power_down_scheduled, linux_udev_shutdown);
  event_listen (einit_power_reset_scheduled, linux_udev_shutdown);
  event_listen (einit_power_down_imminent, linux_udev_shutdown_imminent);

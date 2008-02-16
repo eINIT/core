@@ -214,17 +214,25 @@ void linux_initramfs_boot_postdev_handler (struct einit_event *ev) {
   notice(1,"eINIT is running from within an initramfs!");
   char realroot [BUFFERSIZE];
   int i = 1;
-  for (i; i<sizeof(einit_argv); i++) {
+
+/* make sure not to crash when nothing is found */
+  realroot[0] = 0;
+
+/* sizeof() is useless on dynamically sized vectors... */
+  for (; einit_argv[i]; i++) {
    if ( strmatch(strtok(einit_argv[i],"="),"root") ) {
 	esprintf(realroot, BUFFERSIZE, "%s", strtok(NULL,"="));
    }
   }
+  
+  if (realroot[0]) {
   run_init(realroot, "/dev/console");
   mount ("proc", "/proc", "proc", 0, NULL);
   mount ("sys", "/sys", "sysfs", 0, NULL);
   struct einit_event eml = evstaticinit(einit_boot_initramfs);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
+  }
  } else {
   struct einit_event eml = evstaticinit(einit_boot_devices_available);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
