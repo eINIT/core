@@ -544,7 +544,8 @@ void *einit_ipc_9p_listen (void *param) {
 
  return NULL;
 }
-/*event handling stuff being added - not working yet - nklein */
+
+
 struct msg_event_queue {
  struct einit_event *ev;
  struct msg_event_queue *next;
@@ -584,8 +585,6 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
 
  einit_ipc_9p_ping_all_threads();
 }
-
-/*end of eye cancer code */
 
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
  einit_ipc_9p_running = 1;
