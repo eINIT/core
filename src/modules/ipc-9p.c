@@ -107,12 +107,12 @@ void einit_ipc_9p_power_event_handler (struct einit_event *);
 /*<eyecancer>*/
 pthread_mutex_t
  einit_ipc_9p_ping_mutex = PTHREAD_MUTEX_INITIALIZER,
- einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+ einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_ipc_9p_event_save_mutex = PTHREAD_MUTEX_INITIALIZER;
  
 pthread_cond_t
  einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
 
-char *einit_ipc_9p_event_file = "/events";
 /*</eyecancer>*/
 
 
@@ -134,6 +134,7 @@ struct ipc_9p_fidaux {
  char **path;
  struct ipc_9p_filedata *fd;
 };
+
 
 struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  if (!d) return NULL;
@@ -159,10 +160,8 @@ struct ipc_9p_fidaux *einit_ipc_9p_fidaux_dup (struct ipc_9p_fidaux *d) {
  return fa;
 }
 
-<<<<<<< HEAD:src/modules/ipc-9p.c
 
 void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
->>>>>>> 17bd9402ddf82719ca64a0562327a3ad3c1bd222:src/modules/ipc-9p.c
 // notice (1, "einit_ipc_9p_fs_open()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
@@ -532,7 +531,6 @@ void *einit_ipc_9p_listen (void *param) {
 // ixp_pthread_init();
 
   notice (1, "9p server initialised");
-
   /* server loop nao */
 
   ixp_serverloop(&einit_ipc_9p_server);
@@ -552,7 +550,7 @@ struct msg_event_queue {
  struct msg_event_queue *next;
 };
 
-struct msg_event_queue einit_ipc_9p_event_queue = NULL;
+struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
 
 void einit_ipc_9p_ping_all_threads() {
 #ifdef _POSIX_PRIORITY_SCHEDULING
@@ -562,15 +560,18 @@ void einit_ipc_9p_ping_all_threads() {
  pthread_cond_broadcast (&einit_ipc_9p_ping_cond);
 }
 
-void einit_ipc_9p_save_all_events(struct einit_event *) {
-	//doing nothing yet
-	
-}
 
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
  
- einit_ipc_9p_save_all_events(evdup(ev));
+ /*this isn't working yet - adding code to store events in "/events" file */
+ emutex_lock(&einit_ipc_9p_event_save_mutex);
+ void **evset;
+ 
+ setadd(evset, evdup(ev), sizeof(evdup(ev)));
+ 
+ emutex_unlock(&einit_ipc_9p_event_save_mutex);
+ 
  e->ev = evdup(ev);
  e->next = NULL;
 
@@ -695,8 +696,8 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
 }
 
 
-int einit_ipc_9p_cleanup (struct lmodule *this) {
- ipc_cleanup(irr);
+/*int einit_ipc_9p_cleanup (struct lmodule *this) {
+ ipc_cleanup(irr);}*/
  
 const char *einit_ipc_9p_cl_address = NULL;
 
