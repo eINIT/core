@@ -500,6 +500,14 @@ int main(int argc, char **argv, char **environ) {
     evstaticdestroy(eml);
    }
 
+   {
+    fprintf (stderr, "running early bootup code...\n");
+
+    struct einit_event eml = evstaticinit(einit_boot_early);
+    event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+    evstaticdestroy(eml);
+   }
+
    fprintf (stderr, "main loop.\n");
 
    struct einit_event eml = evstaticinit(einit_core_main_loop_reached);

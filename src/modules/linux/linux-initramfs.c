@@ -59,26 +59,21 @@ void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
   // sizeof() is useless on dynamically sized vectors
   for (; einit_argv[i]; i++) {
    if ( strmatch(strtok(einit_argv[i],"="),"root") ) {
-	esprintf(realroot, BUFFERSIZE, "%s", strtok(NULL,"="));
+    esprintf(realroot, BUFFERSIZE, "%s", strtok(NULL,"="));
    }
   }
   if (realroot[0]) {
    if (strmatch(run_init(realroot), "ok")) {
-	exit(einit_exit_status_exit_respawn);
+    exit(einit_exit_status_exit_respawn);
    } else {
-	notice(1,"bitch took my fish");
+    notice(1,"bitch took my fish");
    }
   }
- } else {
-  fprintf (stderr, "running early bootup code...\n");
-  struct einit_event eml = evstaticinit(einit_boot_early);
-  event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
-  evstaticdestroy(eml);
  }
 }
 
 int linux_initramfs_cleanup (struct lmodule *pa) {
- event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
+ event_ignore (einit_boot_initramfs_check, linux_kernel_modules_boot_event_handler_early);
 
  return 0;
 }
@@ -88,7 +83,7 @@ int linux_initramfs_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_initramfs_cleanup;
 
- event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
+ event_listen (einit_boot_initramfs_check, linux_kernel_modules_boot_event_handler_early);
 
  return 0;
 }
