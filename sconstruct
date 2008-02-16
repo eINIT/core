@@ -31,7 +31,8 @@ if os.environ.has_key('CXXFLAGS'):
 conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 
 ScriptsBundle = ['libixp/sconscript',
-                 'expat/sconscript']
+                 'expat/sconscript',
+				 'run-init/sconscript']
 
 Export('env')
 
