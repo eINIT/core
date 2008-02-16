@@ -653,6 +653,18 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   data = set_str_add (data, buffer);
  }
 
+ if ((ev->type == einit_feedback_module_status) && ev->para) {
+  struct lmodule *m = (struct lmodule *)ev->para;
+  if (m->module->rid) {
+   char *msg_string;
+   size_t i = strlen (m->module->rid) + 1 + 9; /* "module=\n"*/
+   msg_string = emalloc (i);
+   esprintf (msg_string, i, "module=%s", m->module->rid);
+
+   data = set_str_add (data, msg_string);
+  }
+ }
+
  if (ev->string) {
   char *msg_string;
   size_t i = strlen (ev->string) + 1 + 9; /* "string=\n"*/
