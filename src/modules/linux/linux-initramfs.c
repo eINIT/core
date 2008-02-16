@@ -17,6 +17,8 @@
 #include <einit/utility.h>
 #include <errno.h>
 
+#include <run-init.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION

@@ -84,6 +84,9 @@ buildBundleD('compatibility', ModulesCompatibility)
 
 buildBundleE('base', ModulesBase, '.', menv)
 
+if 'linux-initramfs' in ExternalModules:
+ buildModule ('linux-initramfs', '.', menv.Clone (LIBS=['libruninit'], LIBPATH=['#run-init']))
+
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
 
