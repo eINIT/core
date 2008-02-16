@@ -7,10 +7,10 @@ if [ -z "$libdir" ]; then libdir="lib"; fi
 mkdir /tmp/initramfs
 cd /tmp/initramfs
 
-mkdir -pf ${libdir}/einit/bootstrap
-mkdir -pf ${libdir}/einit/modules
-mkdir -pf ${libdir}/einit/bin
-mkdir -pf ${libdir}
+mkdir -p ${libdir}/einit/bootstrap
+mkdir -p ${libdir}/einit/modules
+mkdir -p ${libdir}/einit/bin
+mkdir -p ${libdir}
 
 cp /${libdir}/einit/bin/einit-core ${libdir}/einit/bin
 cp /${libdir}/einit/bootstrap/* ${libdir}/einit/bootstrap
