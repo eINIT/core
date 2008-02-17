@@ -105,14 +105,12 @@ void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
 
 pthread_mutex_t
- einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
- 
-pthread_cond_t
- einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER,
  einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
  einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER,
  einit_ipc_9p_event_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_cond_t
+ einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
 
 enum ipc_9p_filetype {
  i9_dir,
