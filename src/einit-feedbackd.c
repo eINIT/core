@@ -300,10 +300,10 @@ int main(int argc, char **argv, char **env) {
  keypad(stdscr, TRUE);
 
  if (!einit_connect(&argc, argv)) {
-  perror ("Could not connect to eINIT");
+//  perror ("Could not connect to eINIT");
   sleep (1);
   if (!einit_connect(&argc, argv)) {
-   perror ("Could not connect to eINIT, giving up");
+//   perror ("Could not connect to eINIT, giving up");
    exit (EXIT_FAILURE);
   }
  }
