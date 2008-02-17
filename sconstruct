@@ -31,7 +31,8 @@ if os.environ.has_key('CXXFLAGS'):
 conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 
 ScriptsBundle = ['libixp/sconscript',
-                 'expat/sconscript']
+                 'expat/sconscript',
+				 'run-init/sconscript']
 
 Export('env')
 
@@ -96,8 +97,7 @@ ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-g
 
 ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone']
 
-#ModulesLinuxNoBundle = ['linux-initramfs']
-ModulesLinuxNoBundle = []
+ModulesLinuxNoBundle = ['linux-initramfs']
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
