@@ -341,18 +341,22 @@ void einit_tty_enable_vector (char **enab_ttys) {
 }
 
 void einit_tty_update() {
- char **enab_ttys = NULL, **feedback_ttys = NULL;
+ char **enab_ttys = NULL;
  int i = 0;
  char sysv_semantics = parse_boolean(cfg_getstring("ttys/sysv-style", NULL));
 
- feedback_ttys = str2set (':', cfg_getstring("feedback-ttys", NULL));
- einit_tty_disable_unused (feedback_ttys);
- einit_tty_enable_vector (feedback_ttys);
- efree (feedback_ttys);
+ enab_ttys = str2set (':', cfg_getstring("feedback-ttys", NULL));
+ if (!(sysv_semantics && einit_tty_in_switch)) {
+  char **tmp_ttys = NULL;
+  tmp_ttys = str2set (':', cfg_getstring("ttys", NULL));
 
- if (sysv_semantics && einit_tty_in_switch) return;
-
- enab_ttys = str2set (':', cfg_getstring("ttys", NULL));
+  if (tmp_ttys && !strmatch (tmp_ttys[0], "none")) {
+   int i = 0;
+   for (; tmp_ttys[i]; i++) {
+    enab_ttys = set_str_add (enab_ttys, tmp_ttys[i]);
+   }
+  }
+ }
 
  notice (4, "reconfiguring ttys");
 
