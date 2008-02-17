@@ -36,4 +36,6 @@
    <logd dev="/dev/tty11" command="/lib/einit/bin/einit-logd" restart="yes" />
   </tty>
  </configuration>
+
+ <feedback-ttys s="feedbackd:logd" />
 </einit>

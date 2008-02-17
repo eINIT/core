@@ -310,19 +310,9 @@ char einit_tty_is_present (char *ttyname) {
 
 int einit_tty_in_switch = 0;
 
-void einit_tty_update() {
- struct cfgnode *node = NULL;
- char **enab_ttys = NULL, *blocked_tty = cfg_getstring ("configuration-feedback-visual-std-io/stdio", NULL);
+void einit_tty_enable_vector (char **enab_ttys) {
  int i = 0;
- char sysv_semantics = parse_boolean(cfg_getstring("ttys/sysv-style", NULL));
-
- if (sysv_semantics && einit_tty_in_switch) return;
-
- enab_ttys = str2set (':', cfg_getstring("ttys", NULL));
-
- notice (4, "reconfiguring ttys");
-
- einit_tty_disable_unused (enab_ttys);
+ struct cfgnode *node = NULL;
 
  emutex_lock (&ttys_mutex);
 
@@ -339,25 +329,7 @@ void einit_tty_update() {
 
   node = cfg_getnode (tmpnodeid, NULL);
   if (node && node->arbattrs) {
-   if (blocked_tty) {
-    char ttyblocked = 0;
-    uint32_t i = 0;
-    for (; node->arbattrs[i]; i+=2) {
-     if (strmatch (node->arbattrs[i], "dev")) {
-      if (strmatch (node->arbattrs[i+1], blocked_tty))
-       ttyblocked = 1;
-      break;
-     }
-    }
-
-    if (ttyblocked) {
-     notice (2, "refusing to put a getty on the feedback tty (%s)", blocked_tty);
-    } else {
-     einit_tty_texec (node);
-    }
-   } else {
-    einit_tty_texec (node);
-   }
+   einit_tty_texec (node);
   } else {
    notice (4, "einit-tty: node %s not found", tmpnodeid);
   }
@@ -366,7 +338,26 @@ void einit_tty_update() {
  }
 
  emutex_unlock (&ttys_mutex);
+}
 
+void einit_tty_update() {
+ char **enab_ttys = NULL, **feedback_ttys = NULL;
+ int i = 0;
+ char sysv_semantics = parse_boolean(cfg_getstring("ttys/sysv-style", NULL));
+
+ feedback_ttys = str2set (':', cfg_getstring("feedback-ttys", NULL));
+ einit_tty_disable_unused (feedback_ttys);
+ einit_tty_enable_vector (feedback_ttys);
+ efree (feedback_ttys);
+
+ if (sysv_semantics && einit_tty_in_switch) return;
+
+ enab_ttys = str2set (':', cfg_getstring("ttys", NULL));
+
+ notice (4, "reconfiguring ttys");
+
+ einit_tty_disable_unused (enab_ttys);
+ einit_tty_enable_vector (enab_ttys);
  efree (enab_ttys);
 }
 
