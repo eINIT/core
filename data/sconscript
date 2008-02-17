@@ -24,7 +24,25 @@ for i in files:
   env.InstallAs (InstallDirLibEinit + '/defaults/' + i, '#build/data/' + i)
   try:
    os.stat(RuntimeDirEtc + '/' + i)
-   env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
+   try:
+    odata = ""
+    ndata = ""
+    f = open(RuntimeDirLibEinit + '/defaults/' + i, "r")
+    if f:
+     odata = f.read ()
+     f.close()
+
+    f = open(RuntimeDirLibEinit + '../data/' + i, "r")
+    if f:
+     ndata = f.read ()
+     f.close()
+
+    if ndata != odata:
+     env.InstallAs (InstallDirEtc + '/' + i, i)
+    else:
+     env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
+   except:
+    env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
   except:
 #   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
    env.InstallAs (InstallDirEtc + '/' + i, i)
