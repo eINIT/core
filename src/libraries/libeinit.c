@@ -141,7 +141,7 @@ char einit_connect(int *argc, char **argv) {
   }
  }
 
- if (!einit_ipc_address)
+ if (!einit_ipc_address || !einit_ipc_address[0])
   einit_ipc_address = "unix!/dev/einit-9p";
 
 // einit_ipc_9p_fd = ixp_dial (einit_ipc_address);
