@@ -56,6 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct module_status {
  enum einit_module_status status;
+ char *name;
 };
 
 #define attr_red 1
@@ -71,6 +72,8 @@ void set_module_status (char *name, enum einit_module_status status) {
   struct module_status s;
 
   s.status = status;
+  s.name = einit_module_get_name(name);
+
   status_tree = streeadd (status_tree, name, &s, sizeof (s), NULL);
  } else {
   struct module_status *s = e->value;
@@ -101,9 +104,12 @@ void update() {
    /* "[  enabled ]" */
    /* "[ diasbled ]" */
 
+   char *name = st->key;
+   if (s->name) name = s->name;
+   
    char buffer[BUFFERSIZE];
    if (s->status & status_working) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", st->key);
+    snprintf (buffer, BUFFERSIZE, " :: %s", name);
     addstr (buffer);
 
     move_to_right_border();
@@ -115,7 +121,7 @@ void update() {
 
     addstr (" ]\n");
    } else if (s->status & status_failed) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", st->key);
+    snprintf (buffer, BUFFERSIZE, " :: %s", name);
     addstr (buffer);
 
     move_to_right_border();
@@ -127,7 +133,7 @@ void update() {
 
     addstr ("  ]\n");
    } else if (s->status & status_enabled) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", st->key);
+    snprintf (buffer, BUFFERSIZE, " :: %s", name);
     addstr (buffer);
 
     move_to_right_border();
@@ -138,8 +144,8 @@ void update() {
     attroff(COLOR_PAIR(attr_green));
 
     addstr (" ]\n");
-   } else if (s->status & status_enabled) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", st->key);
+   } else if (s->status & status_disabled) {
+    snprintf (buffer, BUFFERSIZE, " :: %s", name);
     addstr (buffer);
 
     move_to_right_border();
@@ -147,6 +153,18 @@ void update() {
 
     attron(COLOR_PAIR(attr_yellow));
     addstr ("disabled");
+    attroff(COLOR_PAIR(attr_yellow));
+
+    addstr (" ]\n");
+   } else {
+    snprintf (buffer, BUFFERSIZE, " :: %s", name);
+    addstr (buffer);
+
+    move_to_right_border();
+    addstr ("[ ");
+
+    attron(COLOR_PAIR(attr_yellow));
+    addstr ("idle");
     attroff(COLOR_PAIR(attr_yellow));
 
     addstr (" ]\n");

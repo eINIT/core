@@ -443,6 +443,45 @@ void einit_module_call (const char *rid, const char *action) {
  einit_write ((char **)path, action);
 }
 
+char * einit_module_get_attribute (const char *rid, const char *attribute) {
+ const char *path[5];
+ path[0] = "modules";
+ path[1] = "all";
+ path[2] = rid;
+ path[3] = attribute;
+ path[4] = NULL;
+
+ char *rv = einit_read ((char **)path);
+ if (rv)
+  strtrim (rv);
+
+ return rv;
+}
+
+char * einit_module_get_name (const char *rid) {
+ return einit_module_get_attribute (rid, "name");
+}
+
+char ** einit_module_get_provides (const char *rid) {
+ return str2set ('\n', einit_module_get_attribute (rid, "provides"));
+}
+
+char ** einit_module_get_requires (const char *rid) {
+ return str2set ('\n', einit_module_get_attribute (rid, "requires"));
+}
+
+char ** einit_module_get_after (const char *rid) {
+ return str2set ('\n', einit_module_get_attribute (rid, "after"));
+}
+
+char ** einit_module_get_before (const char *rid) {
+ return str2set ('\n', einit_module_get_attribute (rid, "before"));
+}
+
+char ** einit_module_get_status (const char *rid) {
+ return str2set ('\n', einit_module_get_attribute (rid, "status"));
+}
+
 int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
  char **buffer = str2set ('\n', fragment);
  int i = 0;
