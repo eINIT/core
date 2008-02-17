@@ -587,6 +587,7 @@ void evdestroy (struct einit_event *ev) {
 
 /* user/group functions */
 int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
+#if ! defined (__APPLE__)
  if (!_getgr_r_size_max) _getgr_r_size_max = sysconf (_SC_GETGR_R_SIZE_MAX);
  if (!_getpw_r_size_max) _getpw_r_size_max = sysconf (_SC_GETPW_R_SIZE_MAX);
 
@@ -652,6 +653,7 @@ int lookupuidgid (uid_t *uid, gid_t *gid, const char *user, const char *group) {
  }
 
  abortgroupsearch:
+#endif
 
  return 0;
 }
