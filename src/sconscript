@@ -57,7 +57,5 @@ env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)
 env.Install (InstallDirLib, libEinitPP)
 
-env.Install (InstallDirSbin, einitLibTest)
-
 env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
 env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))
