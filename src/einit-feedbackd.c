@@ -82,7 +82,10 @@ void set_module_status (char *name, enum einit_module_status status) {
  } else {
   struct module_status *s = e->value;
 
-  s->status = status;
+  if (s->status & status_failed) {
+    s->status = status | ((status & status_enabled) ? status_failed : 0);
+  } else
+   s->status = status;
  }
 }
 
