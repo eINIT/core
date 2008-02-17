@@ -1,5 +1,5 @@
 /*
- *  einit-feedbackd.c
+ *  einit-logd.c
  *  einit
  *
  *  Created by Magnus Deininger on 16/02/2008.
@@ -51,35 +51,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit/einit.h>
 
-void event_handler_mode_switching (struct einit_event *ev) {
- fprintf (stderr, "switching to mode: %s\n", ev->string);
-}
-
-void event_handler_mode_switch_done (struct einit_event *ev) {
- fprintf (stderr, "switch complete: %s\n", ev->string);
+void event_handler_feedback_notice (struct einit_event *ev) {
+ if (ev->string)
+  fprintf (stderr, "[notice] %i: %s\n", ev->flag, ev->string);
 }
 
 void event_handler_update_module_status (struct einit_event *ev) {
- if (ev->status & status_working) {
-  fprintf (stderr, "now working on: %s\n", ev->rid);
- } else if (ev->status & status_failed) {
-  fprintf (stderr, "manipulation failed: %s\n", ev->rid);
- } else if (ev->status & status_enabled) {
-  fprintf (stderr, "now enabled: %s\n", ev->rid);
- } else if (ev->status & status_enabled) {
-  fprintf (stderr, "now disabled: %s\n", ev->rid);
- }
-
  if (ev->string)
-  fprintf (stderr, " > %s: %s\n", ev->rid, ev->string);
+  fprintf (stderr, "[%s] %s\n", ev->rid, ev->string);
 }
 
 void event_handler_update_service_enabled (struct einit_event *ev) {
- fprintf (stderr, "enabled: %s\n", ev->string);
+ fprintf (stderr, "[%s] enabled\n", ev->string);
 }
 
 void event_handler_update_service_disabled (struct einit_event *ev) {
- fprintf (stderr, "disabled: %s\n", ev->string);
+ fprintf (stderr, "[%s] disabled\n", ev->string);
 }
 
 int main(int argc, char **argv, char **env) {
@@ -89,8 +76,7 @@ int main(int argc, char **argv, char **env) {
   exit (EXIT_FAILURE);
  }
 
- event_listen (einit_core_mode_switching, event_handler_mode_switching);
- event_listen (einit_core_mode_switch_done, event_handler_mode_switch_done);
+ event_listen (einit_feedback_notice, event_handler_feedback_notice);
  event_listen (einit_feedback_module_status, event_handler_update_module_status);
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
