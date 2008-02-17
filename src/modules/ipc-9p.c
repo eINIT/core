@@ -567,11 +567,10 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  
  /*this isn't working yet - adding code to store events in "/events" file */
 
- 
  e->ev = evdup(ev);
  e->next = NULL;
 
- emutex_lock (&einit_ipc_9p_event_queue_mutex);
+ emutex_lock (&einit_ipc_9p_event_queue_mutex)cb;
 
  e->next = einit_ipc_9p_event_queue;
  einit_ipc_9p_event_queue = e;
