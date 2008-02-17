@@ -156,7 +156,7 @@ ixp_mountfd(int fd) {
 	fcall.aname = "";
 
         if (!fcall.uname)
-         fcall.uname = "anonymous"
+         fcall.uname = "anonymous";
 	if(dofcall(c, &fcall) == 0) {
 		ixp_unmount(c);
 		return nil;
