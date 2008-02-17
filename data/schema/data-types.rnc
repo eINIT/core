@@ -1,5 +1,5 @@
 #TTYAttribute = attribute s { xsd:string { pattern="(tty[0-9]*-.+:?)*" } | xsd:string "none" }
-TTYAttribute = string
+TTYAttribute = attribute s { string }
 #List_of_services = xsd:string { pattern="(\w+-?:?)*" } | xsd:string "none" #Don't leave it blank but type none, the -? 
 				 #was added because of wired names with "-":)
 
