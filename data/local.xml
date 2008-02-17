@@ -13,6 +13,7 @@
   </system>
 
 <!--  <feedback> -->
+<!-- TODO:update -->
 <!-- use this if you would like to use one of the psplash-ish feedback modules.
      possible values for s= include:
       s="psplash" (the original psplash daemon; very slick and small)
