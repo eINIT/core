@@ -87,12 +87,12 @@ if f:
 
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
-SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4', 'feedback-visual-textual']
+SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
 
 if scheme == 'guile':
  SpecialModules += ['module-scheme-guile']
 
-Modules = ['shadow-exec', 'feedback-visual-psplash']
+Modules = ['shadow-exec']
 
 ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-group', 'module-network-v2', 'parse-sh', 'log', 'module-xml', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
 
