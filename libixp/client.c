@@ -154,6 +154,9 @@ ixp_mountfd(int fd) {
 	fcall.afid = IXP_NOFID;
 	fcall.uname = getenv("USER");
 	fcall.aname = "";
+
+        if (!fcall.uname)
+         fcall.uname = "anonymous"
 	if(dofcall(c, &fcall) == 0) {
 		ixp_unmount(c);
 		return nil;
