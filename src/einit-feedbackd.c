@@ -51,38 +51,77 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <einit/einit.h>
 
+#include <curses.h>
+
+void update() {
+ refresh();
+}
+
 void event_handler_mode_switching (struct einit_event *ev) {
- fprintf (stderr, "switching to mode: %s\n", ev->string);
+ char buffer[BUFFERSIZE];
+
+ snprintf (buffer, BUFFERSIZE, "switching to mode: %s\n", ev->string);
+ addstr (buffer);
+
+ update();
 }
 
 void event_handler_mode_switch_done (struct einit_event *ev) {
- fprintf (stderr, "switch complete: %s\n", ev->string);
+ char buffer[BUFFERSIZE];
+ snprintf (buffer, BUFFERSIZE, "switch complete: %s\n", ev->string);
+ addstr (buffer);
+
+ update();
 }
 
 void event_handler_update_module_status (struct einit_event *ev) {
+ char buffer[BUFFERSIZE];
  if (ev->status & status_working) {
-  fprintf (stderr, "now working on: %s\n", ev->rid);
+  snprintf (buffer, BUFFERSIZE, "now working on: %s\n", ev->rid);
+  addstr (buffer);
  } else if (ev->status & status_failed) {
-  fprintf (stderr, "manipulation failed: %s\n", ev->rid);
+  snprintf (buffer, BUFFERSIZE, "manipulation failed: %s\n", ev->rid);
+  addstr (buffer);
  } else if (ev->status & status_enabled) {
-  fprintf (stderr, "now enabled: %s\n", ev->rid);
+  snprintf (buffer, BUFFERSIZE, "now enabled: %s\n", ev->rid);
+  addstr (buffer);
  } else if (ev->status & status_enabled) {
-  fprintf (stderr, "now disabled: %s\n", ev->rid);
+  snprintf (buffer, BUFFERSIZE, "now disabled: %s\n", ev->rid);
+  addstr (buffer);
  }
 
- if (ev->string)
-  fprintf (stderr, " > %s: %s\n", ev->rid, ev->string);
+ if (ev->string) {
+  snprintf (buffer, BUFFERSIZE, " > %s: %s\n", ev->rid, ev->string);
+  addstr (buffer);
+ }
+
+ update();
 }
 
 void event_handler_update_service_enabled (struct einit_event *ev) {
- fprintf (stderr, "enabled: %s\n", ev->string);
+ char buffer[BUFFERSIZE];
+ snprintf (buffer, BUFFERSIZE, "enabled: %s\n", ev->string);
+ addstr (buffer);
+
+ update();
 }
 
 void event_handler_update_service_disabled (struct einit_event *ev) {
- fprintf (stderr, "disabled: %s\n", ev->string);
+ char buffer[BUFFERSIZE];
+ snprintf (buffer, BUFFERSIZE, "disabled: %s\n", ev->string);
+ addstr (buffer);
+
+ update();
 }
 
 int main(int argc, char **argv, char **env) {
+ initscr();
+ cbreak();
+ noecho();
+
+ nonl();
+ intrflush(stdscr, FALSE);
+ keypad(stdscr, TRUE);
 
  if (!einit_connect(&argc, argv)) {
   perror ("Could not connect to eINIT");
@@ -96,6 +135,8 @@ int main(int argc, char **argv, char **env) {
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
 
  einit_event_loop();
+
+ endwin ();
 
  einit_disconnect();
 
