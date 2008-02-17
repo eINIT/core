@@ -66,6 +66,10 @@ struct module_status {
 
 struct stree *status_tree = NULL;
 
+int progress = 0;
+char *mode = "(none)";
+char *mode_to = "(none)";
+
 void set_module_status (char *name, enum einit_module_status status) {
  struct stree *e;
  if (!status_tree || !(e = streefind (status_tree, name, tree_find_first))) {
@@ -91,8 +95,65 @@ void move_to_right_border () {
  move (y, maxx - 13);
 }
 
+void move_to_left_border () {
+ int x, y;
+
+ getyx (stdscr, y, x);
+
+ move (y, 0);
+}
+
+void progressbar (char *label, int p) {
+ int maxx, maxy;
+
+ getmaxyx(stdscr, maxy, maxx);
+
+ move_to_left_border();
+
+ addch (' ');
+
+ if (progress != 100) {
+  attron(COLOR_PAIR(attr_yellow));
+  addstr (label);
+  attroff(COLOR_PAIR(attr_yellow));
+ } else {
+  attron(COLOR_PAIR(attr_green));
+  addstr (label);
+  attroff(COLOR_PAIR(attr_green));
+ }
+
+ int offset = strlen (label) + 7;
+ int numhashes = (progress * (maxx - offset) / 100);
+ int totalspace = (maxx - offset);
+ int i = 0;
+
+ addstr (" [ ");
+
+ for (; i < numhashes; i++) {
+  addch ('#');
+ }
+
+ for (; i < totalspace; i++) {
+  addch (' ');
+ }
+
+ addstr (" ]\n");
+
+// usleep(100);
+}
+
 void update() {
  erase();
+
+ char buffer[BUFFERSIZE];
+
+ if (strmatch (mode, mode_to)) {
+  progressbar (mode, progress);
+ } else {
+  snprintf (buffer, BUFFERSIZE, "%s -> %s", mode, mode_to);
+  progressbar (buffer, progress);
+ }
+
  if (status_tree) {
   struct stree *st = streelinear_prepare (status_tree);
 
@@ -106,8 +167,7 @@ void update() {
 
    char *name = st->key;
    if (s->name) name = s->name;
-   
-   char buffer[BUFFERSIZE];
+
    if (s->status & status_working) {
     snprintf (buffer, BUFFERSIZE, " :: %s", name);
     addstr (buffer);
@@ -177,18 +237,13 @@ void update() {
 }
 
 void event_handler_mode_switching (struct einit_event *ev) {
- char buffer[BUFFERSIZE];
-
- snprintf (buffer, BUFFERSIZE, "switching to mode: %s\n", ev->string);
- addstr (buffer);
+ mode_to = estrdup(ev->string);
 
  update();
 }
 
 void event_handler_mode_switch_done (struct einit_event *ev) {
- char buffer[BUFFERSIZE];
- snprintf (buffer, BUFFERSIZE, "switch complete: %s\n", ev->string);
- addstr (buffer);
+ mode = estrdup(ev->string);
 
  update();
 }
@@ -222,6 +277,10 @@ void event_handler_update_service_disabled (struct einit_event *ev) {
  update();
 }
 
+void event_handler_switch_progress (struct einit_event *ev) {
+ progress = ev->integer;
+}
+
 int main(int argc, char **argv, char **env) {
  initscr();
  start_color();
@@ -247,6 +306,7 @@ int main(int argc, char **argv, char **env) {
  event_listen (einit_feedback_module_status, event_handler_update_module_status);
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
+ event_listen (einit_feedback_switch_progress, event_handler_switch_progress);
 
  einit_event_loop();
 
