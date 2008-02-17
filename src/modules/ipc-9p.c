@@ -652,8 +652,6 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   data = set_str_add (data, buffer);
  }
 
- e->event = evdup(ev);
- e->next = NULL;
 
  if (ev->flag) {
   esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
