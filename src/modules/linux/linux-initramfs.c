@@ -62,7 +62,9 @@ void linux_kernel_modules_boot_event_handler_early (struct einit_event *ev) {
   }
   if (realroot[0]) {
    if (strmatch(run_init(realroot), "ok")) {
-	   // restart einit
+	exit(einit_exit_status_exit_respawn);
+   } else {
+	notice(1,"bitch took my fish");
    }
   }
  } else {
