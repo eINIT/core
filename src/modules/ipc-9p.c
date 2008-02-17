@@ -105,11 +105,10 @@ void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
 
 pthread_mutex_t
- einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
+ einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
  
 pthread_cond_t
- einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
-/*</eyecancer>*/
+ einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER,
  einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -648,22 +647,14 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   data = set_str_add (data, buffer);
  }
 
-<<<<<<< HEAD:src/modules/ipc-9p.c
-void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
- struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
- 
- /*this isn't working yet - adding code to store events in "/events" file */
-=======
  if (ev->status) {
   esprintf (buffer, BUFFERSIZE, "status=%i", ev->status);
   data = set_str_add (data, buffer);
  }
->>>>>>> 2cc8d8ada455f91fc7a1596f29d950bf7b471f2e:src/modules/ipc-9p.c
 
-<<<<<<< HEAD:src/modules/ipc-9p.c
- e->ev = evdup(ev);
+ e->event = evdup(ev);
  e->next = NULL;
-=======
+
  if (ev->flag) {
   esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
   data = set_str_add (data, buffer);
@@ -694,9 +685,8 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
 
  e->event = set2str ('\n', (const char **)data);
  efree (data);
->>>>>>> 2cc8d8ada455f91fc7a1596f29d950bf7b471f2e:src/modules/ipc-9p.c
 
- emutex_lock (&einit_ipc_9p_event_queue_mutex)cb;
+ emutex_lock (&einit_ipc_9p_event_queue_mutex);
 
  if (einit_ipc_9p_event_queue) {
   e->previous = einit_ipc_9p_event_queue->previous;
