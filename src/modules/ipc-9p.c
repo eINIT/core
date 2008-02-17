@@ -104,22 +104,30 @@ gid_t einit_ipc_9p_einitgid = 0;
 void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *);
 void einit_ipc_9p_power_event_handler (struct einit_event *);
 
-/*<eyecancer>*/
 pthread_mutex_t
- einit_ipc_9p_ping_mutex = PTHREAD_MUTEX_INITIALIZER,
  einit_ipc_9p_event_queue_mutex = PTHREAD_MUTEX_INITIALIZER,
-
  
 pthread_cond_t
  einit_ipc_9p_ping_cond = PTHREAD_COND_INITIALIZER;
-
 /*</eyecancer>*/
+ einit_ipc_9p_event_update_listeners_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 enum ipc_9p_filetype {
  i9_dir,
- i9_file
+ i9_file,
+ i9_events
 };
+
+struct msg_event_queue {
+ char *event;
+ struct msg_event_queue *next;
+ struct msg_event_queue *previous;
+};
+
+struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
+
+Ixp9Req **einit_ipc_9p_event_update_listeners = NULL;
 
 struct ipc_9p_filedata {
  char *data;
@@ -128,6 +136,7 @@ struct ipc_9p_filedata {
  struct ipc_fs_node **files;
  int c;
  char is_writable;
+ struct msg_event_queue *event;
 };
 
 struct ipc_9p_fidaux {
@@ -147,6 +156,7 @@ struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {
  fd->files = (struct ipc_fs_node **)(d->files ? set_fix_dup ((const void **)d->files, sizeof(struct ipc_fs_node)) : NULL);
  fd->c = d->c;
  fd->is_writable = d->is_writable;
+ fd->event = d->event;
 
  return fd;
 }
@@ -224,7 +234,22 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_open (Ixp9Req *r) {
- ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+ struct ipc_9p_fidaux *fa = r->fid->aux;
+
+ if (fa && fa->path && fa->path[0] && strmatch (fa->path[0], "events")) {
+  if (r->ifcall.mode == P9_OREAD) {
+   struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
+
+   fd->type = i9_events;
+   fd->event = einit_ipc_9p_event_queue;
+
+   fa->fd = fd;
+
+   respond(r, nil);
+  }
+ } else
+//  ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_open_spawn, r);
+  einit_ipc_9p_fs_open_spawn(r);
 }
 
 void einit_ipc_9p_fs_walk(Ixp9Req *r) {
@@ -266,12 +291,38 @@ void einit_ipc_9p_fs_walk(Ixp9Req *r) {
  respond(r, nil);
 }
 
+void einit_ipc_9p_fs_reply_event (Ixp9Req *r) {
+ struct ipc_9p_fidaux *fa = r->fid->aux;
+ struct ipc_9p_filedata *fd = fa->fd;
+
+ if (fd->event->next != einit_ipc_9p_event_queue) {
+//  fprintf (stdout, "printing event\n");
+//  fflush (stderr);
+
+  r->ofcall.data = estrdup (fd->event->event);
+  r->ofcall.count = strlen (r->ofcall.data);
+
+  fd->event = fd->event->next;
+
+  respond(r, nil);
+ } else {
+//  fprintf (stdout, "no more events right now\n");
+//  fflush (stdout);
+
+  emutex_lock(&einit_ipc_9p_event_update_listeners_mutex);
+  einit_ipc_9p_event_update_listeners = (Ixp9Req **)set_noa_add ((void **)einit_ipc_9p_event_update_listeners, r);
+  emutex_unlock(&einit_ipc_9p_event_update_listeners_mutex);
+ }
+}
+
 void einit_ipc_9p_fs_read (Ixp9Req *r) {
 // notice (1, "einit_ipc_9p_fs_read()");
  struct ipc_9p_fidaux *fa = r->fid->aux;
  struct ipc_9p_filedata *fd = fa->fd;
 
- if (fd->type == i9_file) {
+ if (fd->type == i9_events) {
+  einit_ipc_9p_fs_reply_event (r);
+ } else if (fd->type == i9_file) {
   if (fd->data) {
    fflush (stderr);
 
@@ -409,7 +460,8 @@ void einit_ipc_9p_fs_stat_spawn (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_stat (Ixp9Req *r) {
- ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
+ einit_ipc_9p_fs_stat_spawn(r);
+// ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_stat_spawn, r);
 }
 
 void einit_ipc_9p_fs_write (Ixp9Req *r) {
@@ -443,6 +495,20 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
  if (fa && fa->fd) {
+  emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+  repeat:
+  if (einit_ipc_9p_event_update_listeners) {
+   int i = 0;
+   for (; einit_ipc_9p_event_update_listeners[i]; i++) {
+    struct ipc_9p_fidaux *sfa = einit_ipc_9p_event_update_listeners[i]->fid->aux;
+    if (sfa->fd == fa->fd) {
+     einit_ipc_9p_event_update_listeners = (Ixp9Req **)setdel ((void **)einit_ipc_9p_event_update_listeners, einit_ipc_9p_event_update_listeners[i]);
+     goto repeat;
+    }
+   }
+  }
+  emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
+
   struct ipc_9p_filedata *fd = fa->fd;
 
   if (fd->is_writable && fd->data) {
@@ -464,12 +530,27 @@ void einit_ipc_9p_fs_clunk_spawn (Ixp9Req *r) {
 }
 
 void einit_ipc_9p_fs_clunk (Ixp9Req *r) {
- ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
+ einit_ipc_9p_fs_clunk_spawn(r);
+// ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_clunk_spawn, r);
 }
 
 void einit_ipc_9p_fs_flush(Ixp9Req *r) {
  notice (1, "einit_ipc_9p_fs_flush()");
- respond (r, "not implemented.");
+// respond (r, nil);
+ emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+ repeat:
+  if (einit_ipc_9p_event_update_listeners) {
+  int i = 0;
+  for (; einit_ipc_9p_event_update_listeners[i]; i++) {
+   if (r->ifcall.oldtag == einit_ipc_9p_event_update_listeners[i]->ifcall.tag) {
+    einit_ipc_9p_event_update_listeners = (Ixp9Req **)setdel ((void **)einit_ipc_9p_event_update_listeners, einit_ipc_9p_event_update_listeners[i]);
+    goto repeat;
+   }
+  }
+ }
+ emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
+
+ respond (r, nil);
 }
 
 void einit_ipc_9p_fs_attach(Ixp9Req *r) {
@@ -545,39 +626,102 @@ void *einit_ipc_9p_listen (void *param) {
  return NULL;
 }
 
+void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
+ struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
-struct msg_event_queue {
- struct einit_event *ev;
- struct msg_event_queue *next;
-};
+ char **data = NULL;
+ char buffer[BUFFERSIZE];
 
-struct msg_event_queue *einit_ipc_9p_event_queue = NULL;
+ esprintf (buffer, BUFFERSIZE, "event=%i", ev->seqid);
+ data = set_str_add (data, buffer);
 
-void einit_ipc_9p_ping_all_threads() {
-#ifdef _POSIX_PRIORITY_SCHEDULING
- sched_yield();
-#endif
+ esprintf (buffer, BUFFERSIZE, "type=%s", event_code_to_string(ev->type));
+ data = set_str_add (data, buffer);
 
- pthread_cond_broadcast (&einit_ipc_9p_ping_cond);
-}
+ if (ev->integer) {
+  esprintf (buffer, BUFFERSIZE, "integer=%i", ev->integer);
+  data = set_str_add (data, buffer);
+ }
 
+ if (ev->task) {
+  esprintf (buffer, BUFFERSIZE, "task=%i", ev->task);
+  data = set_str_add (data, buffer);
+ }
 
+<<<<<<< HEAD:src/modules/ipc-9p.c
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
  
  /*this isn't working yet - adding code to store events in "/events" file */
+=======
+ if (ev->status) {
+  esprintf (buffer, BUFFERSIZE, "status=%i", ev->status);
+  data = set_str_add (data, buffer);
+ }
+>>>>>>> 2cc8d8ada455f91fc7a1596f29d950bf7b471f2e:src/modules/ipc-9p.c
 
+<<<<<<< HEAD:src/modules/ipc-9p.c
  e->ev = evdup(ev);
  e->next = NULL;
+=======
+ if (ev->flag) {
+  esprintf (buffer, BUFFERSIZE, "flag=%i", ev->flag);
+  data = set_str_add (data, buffer);
+ }
+
+ if (ev->string) {
+  char *msg_string;
+  size_t i = strlen (ev->string) + 1 + 9; /* "string=\n"*/
+  msg_string = emalloc (i);
+  esprintf (msg_string, i, "string=%s", ev->string);
+
+  data = set_str_add (data, msg_string);
+ }
+
+ if (ev->stringset) {
+  int y = 0;
+  for (; ev->stringset[y]; y++) {
+   char *msg_string;
+   size_t i = strlen (ev->stringset[y]) + 1 + 12; /* "stringset=\n"*/
+   msg_string = emalloc (i);
+   esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
+
+   data = set_str_add (data, msg_string);
+  }
+ }
+
+ data = set_str_add (data, "\n");
+
+ e->event = set2str ('\n', (const char **)data);
+ efree (data);
+>>>>>>> 2cc8d8ada455f91fc7a1596f29d950bf7b471f2e:src/modules/ipc-9p.c
 
  emutex_lock (&einit_ipc_9p_event_queue_mutex)cb;
 
- e->next = einit_ipc_9p_event_queue;
- einit_ipc_9p_event_queue = e;
+ if (einit_ipc_9p_event_queue) {
+  e->previous = einit_ipc_9p_event_queue->previous;
+  einit_ipc_9p_event_queue->previous->next = e;
+  einit_ipc_9p_event_queue->previous = e;
+
+  e->next = einit_ipc_9p_event_queue;
+ } else {
+  e->previous = e;
+  e->next = e;
+  einit_ipc_9p_event_queue = e;
+ }
 
  emutex_unlock (&einit_ipc_9p_event_queue_mutex);
 
- einit_ipc_9p_ping_all_threads();
+ emutex_lock (&einit_ipc_9p_event_update_listeners_mutex);
+ if (einit_ipc_9p_event_update_listeners) {
+  int i = 0;
+  for (; einit_ipc_9p_event_update_listeners[i]; i++) {
+   ethread_spawn_detached_run ((void *(*)(void *))einit_ipc_9p_fs_reply_event, einit_ipc_9p_event_update_listeners[i]);
+  }
+  efree (einit_ipc_9p_event_update_listeners);
+  einit_ipc_9p_event_update_listeners = NULL;
+ }
+ emutex_unlock (&einit_ipc_9p_event_update_listeners_mutex);
 }
 
 void *einit_ipc_9p_thread_function (void *unused_parameter) {
@@ -677,25 +821,32 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
   n.is_file = 0;
   n.name = (char *)str_stabilise ("issues");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  n.is_file = 1;
+  n.name = (char *)str_stabilise ("events");
+  ev->set = set_fix_add (ev->set, &n, sizeof (n));
  }
 }
 
 void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
- if (path && path[0] && strmatch (path[0], "issues")) {
-  ev->flag = (path[1] ? 1 : 0);
+ if (path && path[0]) {
+  if (strmatch (path[0], "issues")) {
+   ev->flag = (path[1] ? 1 : 0);
+  } else if (strmatch (path[0], "events")) {
+   ev->flag = 1;
+  }
  }
 }
 
 
 /*int einit_ipc_9p_cleanup (struct lmodule *this) {
  ipc_cleanup(irr);}*/
- 
+
 const char *einit_ipc_9p_cl_address = NULL;
 
 void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
- einit_ipc_9p_thread_function_address (einit_ipc_9p_cl_address);
+ einit_ipc_9p_thread_function_address ((char *)einit_ipc_9p_cl_address);
 }
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
@@ -704,6 +855,8 @@ int einit_ipc_9p_cleanup (struct lmodule *this) {
  event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_ipc_read, einit_ipc_9p_ipc_read);
  event_ignore (einit_ipc_stat, einit_ipc_9p_ipc_stat);
+
+ event_ignore (einit_event_subsystem_any, einit_ipc_9p_generic_event_handler);
 
  if (einit_ipc_9p_cl_address) {
   event_listen (einit_core_secondary_main_loop, einit_ipc_9p_secondary_main_loop);
@@ -722,6 +875,8 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);
  event_listen (einit_ipc_stat, einit_ipc_9p_ipc_stat);
+
+ event_listen (einit_event_subsystem_any, einit_ipc_9p_generic_event_handler);
 
  if (einit_argv) {
   char *address = NULL;

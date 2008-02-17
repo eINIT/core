@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
 
 import os.path
 
@@ -74,6 +74,9 @@ buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'ex
 
 for x in Modules:
  buildModule(x, '.', menv)
+
+for x in ModulesLinuxNoBundle:
+ buildModule(x, 'linux', menv)
 
 buildBundleD('bsd', ModulesBSD)
 buildBundleD('linux', ModulesLinux)
