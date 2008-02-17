@@ -53,20 +53,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void event_handler_feedback_notice (struct einit_event *ev) {
  if (ev->string)
-  fprintf (stderr, "[notice] %i: %s\n", ev->flag, ev->string);
+  fprintf (stdout, "[notice] %i: %s\n", ev->flag, ev->string);
 }
 
 void event_handler_update_module_status (struct einit_event *ev) {
  if (ev->string)
-  fprintf (stderr, "[%s] %s\n", ev->rid, ev->string);
+  fprintf (stdout, "[%s] %s\n", ev->rid, ev->string);
 }
 
 void event_handler_update_service_enabled (struct einit_event *ev) {
- fprintf (stderr, "[%s] enabled\n", ev->string);
+ fprintf (stdout, "[%s] enabled\n", ev->string);
 }
 
 void event_handler_update_service_disabled (struct einit_event *ev) {
- fprintf (stderr, "[%s] disabled\n", ev->string);
+ fprintf (stdout, "[%s] disabled\n", ev->string);
 }
 
 int main(int argc, char **argv, char **env) {
