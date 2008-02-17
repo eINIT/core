@@ -31,8 +31,7 @@ if os.environ.has_key('CXXFLAGS'):
 conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 
 ScriptsBundle = ['libixp/sconscript',
-                 'expat/sconscript',
-                 'run-init/sconscript']
+                 'expat/sconscript']
 
 Export('env')
 
@@ -134,7 +133,7 @@ if uname == 'Linux':
   print 'GlibC is not built with nptl!'
   Exit(1)
   env = conf.Finnish()
-
+ SConscript('run-init/sconscript')
 
 InternalModules = ['module-so']
 ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
