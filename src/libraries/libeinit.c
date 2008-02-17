@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ixp_local.h>
 
+#include <einit/event.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -438,4 +440,13 @@ void einit_module_call (const char *rid, const char *action) {
  path[4] = NULL;
 
  einit_write ((char **)path, action);
+}
+
+int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
+ fprintf (stderr, "new fragment: %s\n", fragment);
+}
+
+void einit_event_loop () {
+ char *path[2] = { "events", NULL };
+ einit_read_callback (path, einit_event_loop_decoder, NULL);
 }

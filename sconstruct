@@ -19,7 +19,7 @@ opts.Add('arch', 'Tell us what arch you\'re compiling for', 'host')
 opts.Add('libc', 'Tell us what libc you\'re compiling for', 'gnu')
 
 env = Environment(options = opts,
- CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'],
+ CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat', '#run-init'],
  LDMODULEPREFIX='', LDMODULESUFFIX='.so')
 
 if os.environ.has_key('CFLAGS'):
@@ -32,7 +32,7 @@ conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 
 ScriptsBundle = ['libixp/sconscript',
                  'expat/sconscript',
-				 'run-init/sconscript']
+                 'run-init/sconscript']
 
 Export('env')
 
@@ -40,7 +40,8 @@ SConscript(ScriptsBundle)
 
 ScriptsEinit = ['src/sconscript',
                 'src/modules/sconscript',
-                'data/sconscript']
+                'data/sconscript',
+                'scripts/sconscript']
 
 destdir = ARGUMENTS.get('destdir', '')
 prefix = ARGUMENTS.get('prefix', '/')
@@ -97,7 +98,8 @@ ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-g
 
 ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone']
 
-ModulesLinuxNoBundle = ['linux-initramfs']
+ModulesLinuxNoBundle = []
+ModulesLinuxSpecial = ['linux-initramfs']
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
@@ -121,9 +123,11 @@ for i in ASMFunctions:
 if uname == 'Darwin':
  ModulesLinux = []
  ModulesLinuxNoBundle = []
+ ModulesLinuxSpecial = []
 if uname == 'FreeBSD':
  ModulesLinux = []
  ModulesLinuxNoBundle = []
+ ModulesLinuxSpecial = []
 if uname == 'Linux':
  ModulesBSD = []
  if not conf.CheckNPTL():
@@ -133,7 +137,7 @@ if uname == 'Linux':
 
 
 InternalModules = ['module-so']
-ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesBSD
+ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -303,7 +307,7 @@ Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
         'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'ModulesCompatibility', 'InternalModules',
-        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
+        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'ModulesLinuxSpecial'])
 
 SConscript(ScriptsEinit)
 
@@ -312,4 +316,4 @@ InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', Ins
 env.Install (InstallDirInclude + '/einit', '#build/headers/einit/configuration.h')
 env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules/configuration.h')
 
-env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules'])
+env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts'])
