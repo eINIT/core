@@ -42,7 +42,7 @@ for i in files:
     else:
      env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
    except:
-    env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
+    env.InstallAs (InstallDirEtc + '/' + i, i)
   except:
 #   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
    env.InstallAs (InstallDirEtc + '/' + i, i)
