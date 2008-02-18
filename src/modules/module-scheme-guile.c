@@ -302,7 +302,21 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
   while (!scm_is_null (re)) {
    SCM va = scm_car (re);
 
-   if (scm_is_true (scm_list_p (va))) {
+   if (scm_is_true (scm_symbol_p (va))) {
+    char *sym_c;
+    SCM sym;
+
+    sym = scm_symbol_to_string(va);
+    sym_c = scm_to_locale_string (id);
+
+    scm_dynwind_unwind_handler (efree, sym_c, SCM_F_WIND_EXPLICITLY);
+
+    if (strmatch (sym_c, "run-once")) {
+     sm->mode |= einit_feedback_job;
+    } else {
+     fprintf (stderr, "ERROR: unknown attribute: %s\n", sym_c);
+    }
+   } else if (scm_is_true (scm_list_p (va))) {
     SCM vare = va;
     char elec = 1;
     char *sym = NULL;
@@ -352,7 +366,7 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
      if (vs) efree (vs);
     }
    } else {
-    fprintf (stderr, "ERROR: list expected\n");
+    fprintf (stderr, "ERROR: list or symbol expected\n");
    }
 
    re = scm_cdr (re);
@@ -408,6 +422,9 @@ SCM module_scheme_guile_critical (SCM message) {
  scm_dynwind_end ();
 
  return SCM_BOOL_T;
+}
+
+SCM module_scheme_guile_need_files (SCM rest) {
 }
 
 struct scheme_feedback {
@@ -1045,6 +1062,8 @@ void module_scheme_guile_configure_scheme (void *n) {
 
  scm_c_define_gsubr ("notice", 1, 0, 0, module_scheme_guile_notice);
  scm_c_define_gsubr ("critical", 1, 0, 0, module_scheme_guile_critical);
+
+ scm_c_define_gsubr ("need-files", 0, 0, 1, module_scheme_guile_need_files);
 
  scm_c_define_gsubr ("feedback", 2, 0, 0, module_scheme_guile_feedback);
 
