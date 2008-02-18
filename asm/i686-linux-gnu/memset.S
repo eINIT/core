@@ -1,8 +1,8 @@
 //
-// memcpy.s
+// memset.s
 // einit
 //
-// why's the libc version of this so... "big"?
+// set a region of mem to a certain value
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,14 +31,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl memcpy
-	.type   memcpy, @function
-memcpy:
-	mov 8(%esp),%edi;
-	//mov 12(%esp),%esi;
-	//mov 16(%esp),%ecx;
+.globl memset
+	.type   memset, @function
+memset:
+	mov 16(%esp),%ecx;
+	mov 8(%esp),%edi;   
+	movb 12(%esp),%al; 
 	cld;
-	rep movsb;      /* copy byte at %rsi to %rdi, cx times */
+	rep stosb;      /* copy byte to (%edi), increment */
+	mov %edi,%eax;
+	xor %eax,%eax;
 	ret;
 
 #if defined(__ELF__)
