@@ -77,20 +77,20 @@ int linux_urandom_get_poolsize(void) {
 	char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
 	int poolsize = 512;
 	if (poolsize_s) {
-		poolsize = poolsize * parse_integer (poolsize_s) / 4096;
+		poolsize = parse_integer (poolsize_s) / 8;
 		efree (poolsize_s);
 	}
 	return poolsize;
 }
 
-int linux_urandom_save_seed (void) {
+int linux_urandom_save_seed (struct einit_event *status) {
 	int ret = status_failed;
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
 	if (seedPath) {
 		linux_urandom_mini_dd ("/dev/urandom", seedPath, linux_urandom_get_poolsize());
 		return status_ok;
 	} else {
-		notice(3,"Don't know where to save seed!");
+		fbprintf(status,"Don't know where to save seed!");
 	}
 	return status_ok;
 }
