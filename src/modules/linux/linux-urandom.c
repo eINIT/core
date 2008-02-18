@@ -31,7 +31,6 @@ int linux_urandom_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * linux_urandom_provides[] = {"urandom", NULL};
-char * linux_urandom_after[] = {"mount-critical", NULL};
 
 const struct smodule linux_urandom_self = {
 		.eiversion = EINIT_VERSION,
@@ -43,7 +42,7 @@ const struct smodule linux_urandom_self = {
 		.si        = {
 				.provides = linux_urandom_provides,
 				.requires = NULL,
-				.after    = linux_urandom_after,
+				.after    = NULL,
 				.before   = NULL
 		},
 		.configure = linux_urandom_configure
@@ -114,16 +113,23 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 
 int linux_urandom_disable (void *param, struct einit_event *status) {
 	fprintf(stdout,"Saving random seed\n");
-	linux_urandom_save_seed();
-}
-
-int linux_urandom_cleanup (struct lmodule *pa) {
-	return 0;
+	return linux_urandom_save_seed();
 }
 
 int linux_urandom_configure (struct lmodule *pa) {
 	module_init (pa);
 	pa->enable = linux_urandom_enable;
 	pa->disable = linux_urandom_disable;
+        
+        char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
+        if (seedPath) {
+         char *files[2];
+         files[0] = seedPath;
+         files[1] = 0;
+         char *after = after_string_from_files (files);
+         ((struct smodule *)pa->module)->si.after = set_str_add_stable(NULL, after);
+         efree (after);
+        }
+        
 	return 0;
 }
