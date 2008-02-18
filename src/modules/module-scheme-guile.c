@@ -352,9 +352,26 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
      } else if (strmatch (sym, "requires")) {
       sm->si.requires = vs;
      } else if (strmatch (sym, "after")) {
-      sm->si.after = vs;
+      int i = 0;
+      for (; vs[i]; i++) {
+       sm->si.after = set_str_add_stable (sm->si.after, vs[i]);
+      }
      } else if (strmatch (sym, "before")) {
       sm->si.before = vs;
+     } else if (strmatch (sym, "need-files")) {
+      if (!check_files (vs)) {
+       /* bail out 'ere */
+       scm_dynwind_end ();
+       efree (sm);
+       return SCM_BOOL_F;
+      }
+
+      char *afteraddon = after_string_from_files (vs);
+      if (afteraddon) {
+       sm->si.after = set_str_add_stable (sm->si.after, afteraddon);
+       efree (afteraddon);
+      }
+      efree (vs);
      } else {
       fprintf (stderr, "ERROR: unexpected attribute: %s\n", sym);
       efree (vs);
