@@ -77,7 +77,7 @@ int linux_urandom_get_poolsize(void) {
 	char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
 	int poolsize = 512;
 	if (poolsize_s) {
-		poolsize = poolsize * parse_integer (poolsize_s) / 4096;
+		poolsize = parse_integer(poolsize_s) / 8;
 		efree (poolsize_s);
 	}
 	return poolsize;
