@@ -63,26 +63,12 @@ int linux_urandom_cleanup (struct lmodule *pa) {
 int linux_urandom_enable (void *param, struct einit_event *status) {
  int ret = status_failed;
  int i = 0;
- char *seedPath;
  FILE *seed;
  FILE *urandom;
  
- fprintf(stdout,"Looking for seed path!!!");
- sleep(5);
- struct cfgnode *node = cfg_getnode ("configuration-services-urandom", NULL);
- if (node && node->arbattrs) {
-  char *seedPath = NULL;
-  for (; node->arbattrs[i]; i+=2) {
-   if (strmatch (node->arbattrs[i], "seed")) {
-    seedPath = node->arbattrs[i+1];
-    fprintf(stdout,"Found seed path!!!");
-    sleep(5);
-    break;
-   }
-  }
- }
- fprintf(stdout,"%s",seedPath);
+ char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
  if (seedPath) {
+  fprintf(stdout,"%s",seedPath);
   seed = fopen(seedPath, "rw");
   fprintf(stdout,"Seed read???");
   if (seed) {
