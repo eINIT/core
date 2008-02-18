@@ -17,6 +17,9 @@
 #include <einit/utility.h>
 #include <errno.h>
 
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #define EXPECTED_EIV 1
 
 #if EXPECTED_EIV != EINIT_VERSION
@@ -47,81 +50,72 @@ module_register(linux_urandom_self);
 
 #endif
 
-int save_seed(void) {
-	int ret = EXIT_FAILURE;
-	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
-	if (seedPath) {
-		FILE *ps = fopen("/proc/sys/kernel/random/poolsize","r");
-		char buffer;
-		int poolsize = 512;
-		if (ps) {
-			do {
-				buffer = getc(ps);
-				} while (buffer != EOF);
-			poolsize = atoi(&buffer) / 4096 * 512;
-			fclose(ps);
-		}
-		FILE *urandom = fopen("/dev/urandom", "r");
-		if (urandom) {
-			FILE *seedFile = fopen(seedPath, "w");
-			if (seedFile) {
-				char seed[poolsize+1];
-				int i = 0;
-				for (i;i<poolsize;i++) {
-					seed[i] = fgetc(urandom);
-				}
-				seed[poolsize] = '\0';
-				fprintf(seedFile, "%s", seed);
-				fclose(seedFile);
-				ret = EXIT_SUCCESS;
-			}
-			fclose(urandom);
-		}
-	} else {
-		fprintf(stdout,"Don't know where to save seed!");
-	}
-	return ret;
+void linux_urandom_mini_dd(const char *from, const char *to, size_t s) {
+ int from_fd = open(from, O_RDONLY);
+ if (from_fd) {
+  int to_fd = open(to, O_WRONLY);
+  if (to_fd) {
+   char buffer[s];
+   size_t len = read (from_fd, buffer, s);
+   if (len > 0) {
+    write (to_fd, buffer, len);
+   }
+   close (to_fd);
+  }
+
+  close (from_fd);
+ }
 }
 
+int linux_urandom_save_seed(void) {
+ int ret = status_failed;
+ char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
+ if (seedPath) {
+  char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
+  int poolsize = 512;
+  if (poolsize_s) {
+   parse_integer (poolsize_s);
+   efree (poolsize_s);
+  }
+
+  linux_urandom_mini_dd ("/dev/urandom", seedPath, poolsize);
+  return status_ok;
+ } else {
+  notice(3,"Don't know where to save seed!");
+ }
+ return status_ok;
+}
+
+int linux_urandom_do_seed(void) {
+ int ret = status_failed;
+ char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
+ if (seedPath) {
+  char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
+  int poolsize = 512;
+  if (poolsize_s) {
+   parse_integer (poolsize_s);
+   efree (poolsize_s);
+  }
+
+  linux_urandom_mini_dd (seedPath, "/dev/urandom", poolsize);
+  return status_ok;
+ } else {
+  notice(3,"Don't know where to read the seed from!");
+ }
+ return status_ok;
+}
 
 void linux_urandom_root_ok_handler (struct einit_event *ev) {
-	if (strmatch(ev->string, "mount-critical")) {
-		int ret;
-		FILE *urandom = fopen("/dev/urandom", "r");
-		char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
-		if (urandom) {
-			if (seedPath) {
-				FILE *seedFile = fopen(seedPath, "w+");
-				if (seedFile) {
-					char seed;
-					do {
-						seed = getc(seedFile);
-						} while (seed != EOF);
-					fprintf(urandom, "%s", seed);
-					fclose(seedFile);
-				}
-			}
-			fclose(urandom);
-		}
-		if ( remove(seedPath) == -1 ) {
-			fprintf(stdout,"URANDOM: Skipping %s initialization\n",seedPath);
-			ret = EXIT_SUCCESS;
-		} else {
-			fprintf(stdout,"URANDOM: Initializing random number generator\n");
-			int ret = save_seed();
-			if (ret==EXIT_FAILURE) {
-				fprintf(stdout,"URANDOM: Error initializing random number generator\n");
-			}
-		}
-	}
+ if (strmatch(ev->string, "mount-critical")) {
+  notice(3,"Initialising Random Number Generator.");
+
+  linux_urandom_do_seed();
+ }
 }
 
 void linux_urandom_power_down_handler (struct einit_event *ev) {
-	fprintf(stdout,"URANDOM: Saving random seed\n");
-	int ret = save_seed();
-	if (ret==EXIT_FAILURE) {
-		fprintf(stdout,"URANDOM: Failed to save random seed\n");
-	}
+ fprintf(stdout,"Saving random seed\n");
+ linux_urandom_save_seed();
 }
 
 int linux_urandom_cleanup (struct lmodule *pa) {
