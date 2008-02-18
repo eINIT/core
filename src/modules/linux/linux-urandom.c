@@ -64,19 +64,28 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
  int ret = status_failed;
  int i = 0;
  char *seedPath;
+ FILE *seed;
+ FILE *urandom;
+ 
+ fprintf(stdout,"Looking for seed path!!!");
+ sleep(5);
  struct cfgnode *node = cfg_getnode ("configuration-services-urandom", NULL);
  if (node && node->arbattrs) {
   char *seedPath = NULL;
   for (; node->arbattrs[i]; i+=2) {
    if (strmatch (node->arbattrs[i], "seed")) {
     seedPath = node->arbattrs[i+1];
+    fprintf(stdout,"Found seed path!!!");
+    sleep(5);
+    break;
    }
   }
  }
- FILE *urandom = fopen("/dev/urandom","rw");
- FILE *seed = fopen(seedPath, "rw");
  if (seedPath) {
-  if (seed ) {
+  seed = fopen(seedPath, "rw");
+  if (seed) {
+   fprintf(stdout,"Seed exists!!!");
+   sleep(5);
    char old[512];
    int i = 0;
    for (i=0; i<512; i++) {
