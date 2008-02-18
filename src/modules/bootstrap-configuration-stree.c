@@ -525,7 +525,7 @@ void bootstrap_einit_configuration_stree_ipc_stat (struct einit_event *ev) {
 
  if (path && path[0]) {
   if (strmatch (path[0], "configuration")) {
-   ev->flag = (path[1] && strmatch (path[1], "configuration") ? 1 : 0);
+   ev->flag = (path[1] && strmatch (path[1], "update") ? 1 : 0);
   }
  }
 }
