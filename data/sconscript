@@ -16,12 +16,12 @@ edoconfig ('rules.edev')
 cfg = []
 
 for i in files:
- env.FixConfiguration ('#build/data/' + i, i)
+ env.FixConfiguration ('build/data/' + i, i)
  if i == './einit.xml':
-  env.Install (InstallDirLibEinit, '#build/data/einit.xml')
+  env.Install (InstallDirLibEinit, 'build/data/einit.xml')
  else:
-  env.FixConfiguration ('#build/data/' + i, i)
-  env.InstallAs (InstallDirLibEinit + '/defaults/' + i, '#build/data/' + i)
+  env.FixConfiguration ('build/data/' + i, i)
+  env.InstallAs (InstallDirLibEinit + '/defaults/' + i, 'build/data/' + i)
   try:
    os.stat(RuntimeDirEtc + '/' + i)
    try:
@@ -32,7 +32,7 @@ for i in files:
      odata = f.read ()
      f.close()
 
-    f = open('../build/data/' + i, "r")
+    f = open('build/data/' + i, "r")
     if f:
      ndata = f.read ()
      f.close()
@@ -44,7 +44,7 @@ for i in files:
    except:
     env.InstallAs (InstallDirEtc + '/' + i, i)
   except:
-#   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
+#   env.InstallAs (InstallDirEtc + '/' + i, 'build/data/' + i)
    env.InstallAs (InstallDirEtc + '/' + i, i)
 
 env.Install (InstallDirLibEinit + '/schemata', glob.glob ('schema/*.rnc'))
