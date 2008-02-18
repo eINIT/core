@@ -114,7 +114,7 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 		}
 		fclose(urandom);
 	}
-	if (!remove(seedPath)) {
+	if ( remove(seedPath) == -1 ) {
 		fprintf(stdout,"URANDOM: Skipping %s initialization\n",seedPath);
 		ret = EXIT_SUCCESS;
 	} else {
