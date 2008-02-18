@@ -135,7 +135,7 @@ int linux_urandom_configure (struct lmodule *pa) {
           if (pa->si) {
            pa->si->after = set_str_add_stable(NULL, after);
           } else {
-           pa->si = ecalloc (sizeof(*(pa->si)));
+           pa->si = ecalloc (0, sizeof(*(pa->si)));
            pa->si->after = set_str_add_stable(NULL, after);
           }
           efree (after);
