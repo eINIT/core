@@ -106,7 +106,7 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 				fbprintf(status,"Skipping %s initialization (ro root?)", seedPath);
 				return status_ok;
 			} else {
-				return linux_urandom_save_seed();
+				return linux_urandom_save_seed(status);
 			}
 		}
 	} else {
@@ -116,7 +116,7 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 
 int linux_urandom_disable (void *param, struct einit_event *status) {
 	fbprintf(status,"Saving random seed");
-	return linux_urandom_save_seed();
+	return linux_urandom_save_seed(status);
 }
 
 int linux_urandom_configure (struct lmodule *pa) {
