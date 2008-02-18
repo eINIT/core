@@ -1210,6 +1210,31 @@ char **utility_add_fs (char **xt, char *s) {
  return xt;
 }
 
+char **utility_add_fs_all (char **xt, char *s) {
+ if (s) {
+  char **tmp = s[0] == '/' ? str2set ('/', s+1) : str2set ('/', s);
+  uint32_t r = 0;
+
+  for (r = 0; tmp[r]; r++);
+  for (r--; r >= 0; r--) {
+   tmp[r] = 0;
+   char *comb = set2str ('-', (const char **)tmp);
+
+   if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
+    xt = set_str_add (xt, (void *)comb);
+   }
+
+   efree (comb);
+  }
+
+  if (tmp) {
+   efree (tmp);
+  }
+ }
+
+ return xt;
+}
+
 char *utility_generate_defer_fs (char **tmpxt) {
  char *tmp = NULL;
 
@@ -1230,6 +1255,44 @@ char *utility_generate_defer_fs (char **tmpxt) {
  return tmp;
 }
 
+char **utility_add_all_in_path (char **rv) {
+ char n = 0;
+ char **env;
+
+ for (; n < 2; n++) {
+  struct stat st;
+
+  switch (n) {
+   case 0: env = einit_global_environment; break;
+   case 1: env = einit_initial_environment; break;
+   default: env = NULL; break;
+  }
+
+  if (env) {
+   int i = 0;
+
+   for (; env[i]; i++) {
+    if (strprefix (env[i], "PATH=")) {
+     char **paths = str2set (':', env[i]+5);
+
+     if (paths) {
+      int j = 0;
+      for (; paths[j]; j++) {
+       rv = utility_add_fs_all(rv, paths[j]);
+      }
+
+      efree (paths);
+     }
+
+     break;
+    }
+   }
+  }
+ }
+
+ return rv;
+}
+
 char *after_string_from_files (char **files) {
  char **fs = NULL;
  int ix = 0;
@@ -1237,6 +1300,8 @@ char *after_string_from_files (char **files) {
  for (; files[ix]; ix++) {
   if (files[ix][0] == '/') {
    fs = utility_add_fs(fs, files[ix]);
+  } else {
+   fs = utility_add_all_in_path(fs);
   }
  }
 
