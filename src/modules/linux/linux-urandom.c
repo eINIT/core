@@ -60,7 +60,7 @@ int my_module_disable (void *, struct einit_event *);
 void linux_urandom_mini_dd(const char *from, const char *to, size_t s) {
 	int from_fd = open(from, O_RDONLY);
 	if (from_fd) {
-		int to_fd = open(to, O_WRONLY);
+		int to_fd = open(to, O_WRONLY | O_CREAT);
 		if (to_fd) {
 			char buffer[s];
 			size_t len = read (from_fd, buffer, s);
