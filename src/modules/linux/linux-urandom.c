@@ -61,12 +61,22 @@ int linux_urandom_cleanup (struct lmodule *pa) {
 }
 
 int linux_urandom_enable (void *param, struct einit_event *status) {
- int ret;
- char *seedPath = cfg_getstring ("configuration-services-urandom-seed", NULL);
+ int ret = status_failed;
+ int i = 0;
+ char *seedPath;
+ struct cfgnode *node = cfg_getnode ("configuration-services-urandom", NULL);
+ if (node && node->arbattrs) {
+  char *seedPath = NULL;
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "seed")) {
+    seedPath = node->arbattrs[i+1];
+   }
+  }
+ }
  FILE *urandom = fopen("/dev/urandom","rw");
- FILE *seed;
+ FILE *seed = fopen(seedPath, "rw");
  if (seedPath) {
-  if (seed = fopen(seedPath, "rw")) {
+  if (seed ) {
    char old[512];
    int i = 0;
    for (i=0; i<512; i++) {
@@ -83,15 +93,23 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
   fclose(seed);
   fclose(urandom);
   ret = status_ok;
- } else {
-  ret = status_failed;
  }
  return ret;
 }
 
 int linux_urandom_disable (void *param, struct einit_event *status) {
  int ret;
- char *seedPath = cfg_getstring ("configuration-services-urandom-seed", NULL);
+ int i = 0;
+ char *seedPath;
+ struct cfgnode *node = cfg_getnode ("configuration-services-urandom", NULL);
+ if (node && node->arbattrs) {
+  char *seedPath = NULL;
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "seed")) {
+    seedPath = node->arbattrs[i+1];
+   }
+  }
+ }
  FILE *urandom = fopen("/dev/urandom","rw");
  FILE *seed = fopen(seedPath, "rw");
  char new[512];
