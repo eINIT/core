@@ -292,6 +292,9 @@ const char *str_stabilise (const char *s);
 char **set_str_dup_stable (char **s);
 char **set_str_add_stable (char **s, char *e);
 
+char check_files (char **files);
+char *after_string_from_files (char **files);
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus
