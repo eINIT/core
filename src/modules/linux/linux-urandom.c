@@ -68,28 +68,23 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
  
  char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
  if (seedPath) {
-  fprintf(stdout,"%s",seedPath);
   seed = fopen(seedPath, "rw");
-  fprintf(stdout,"Seed read???");
   if (seed) {
-   fprintf(stdout,"Seed exists!!!");
-   sleep(5);
-   char old[512];
+   char *old;
    int i = 0;
-   for (i=0; i<512; i++) {
-	sprintf (old, "%s%c", old, fgetc(seed));
+   fgets(old, 64, seed);
+   if (urandom = fopen("/dev/urandom", "rw")) {
+    fprintf(urandom, old);
    }
-   fprintf(urandom, old);
   }
-  char new[512];
-  int j = 0;
-  for (j=0; j<512; j++) {
-   sprintf (new, "%s%c", new, fgetc(urandom));
+  char *new;
+  if (urandom && seed) {
+   fgets(new, 64, urandom);
+   fprintf(seed, new);
+   fclose(seed);
+   fclose(urandom);
+   ret = status_ok;
   }
-  fprintf(seed, new);
-  fclose(seed);
-  fclose(urandom);
-  ret = status_ok;
  }
  return ret;
 }
