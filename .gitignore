@@ -21,6 +21,7 @@ src/einit-core
 src/einit-monitor
 src/einit-helper
 src/einit-feedbackd
+src/einit-logd
 src/last-rites
 
 src/modules/bundle-*

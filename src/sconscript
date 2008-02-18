@@ -19,6 +19,7 @@ CodeEinitHelper = ['einit-helper.c']
 
 CodeEinitLibTest = ['einit-testlib.c']
 CodeEinitFeedbackD = ['einit-feedbackd.c']
+CodeEinitLogD = ['einit-logd.c']
 
 CodeLibEinit = ['libraries/libeinit.c', 'bitch.c', 'event.c', 'utility.c'] + CodeSet + CodeSTree + CodeITree + AssemblyFunctions
 
@@ -43,6 +44,7 @@ einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBP
 
 einitLibTest = env.Program ('einit-testlib', CodeEinitLibTest, LIBS=['einit'], LIBPATH=['.'])
 einitFeedbackD = env.Program ('einit-feedbackd', CodeEinitFeedbackD, LIBS=['einit'], LIBPATH=['.'])
+einitLogD = env.Program ('einit-logd', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.'])
 
 libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'])
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'])
@@ -51,6 +53,8 @@ env.Install (InstallDirLibBin, einitCore)
 env.Install (InstallDirLibBin, einitHelper)
 env.Install (InstallDirLibBin, lastRites)
 env.Install (InstallDirLibBin, einitFeedbackD)
+env.Install (InstallDirLibBin, einitLogD)
+
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)
 env.Install (InstallDirLib, libEinitPP)
