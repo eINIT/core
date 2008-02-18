@@ -27,8 +27,6 @@ int linux_urandom_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
-char * linux_urandom_provides[] = {"urandom", NULL};
-
 const struct smodule linux_urandom_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
@@ -37,7 +35,7 @@ const struct smodule linux_urandom_self = {
  .name      = "Urandom",
  .rid       = "linux-urandom",
  .si        = {
-  .provides = linux_urandom_provides,
+  .provides = NULL,
   .requires = NULL,
   .after    = NULL,
   .before   = NULL
@@ -48,10 +46,6 @@ const struct smodule linux_urandom_self = {
 module_register(linux_urandom_self);
 
 #endif
-
-int linux_urandom_cleanup (struct lmodule *pa) {
- return 0;
-}
 
 int save_seed(void) {
 	int ret = EXIT_FAILURE;
@@ -89,7 +83,8 @@ int save_seed(void) {
 	return ret;
 }
 
-int linux_urandom_enable (void *param, struct einit_event *status) {
+
+void linux_urandom_root_ok_handler (struct einit_event *ev) {
 	int ret;
 	FILE *urandom = fopen("/dev/urandom", "r");
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
@@ -117,24 +112,30 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 			fprintf(stdout,"URANDOM: Error initializing random number generator\n");
 		}
 	}
-	return ret;
 }
 
-int linux_urandom_disable (void *param, struct einit_event *status) {
+void linux_urandom_power_down_handler (struct einit_event *ev) {
 	fprintf(stdout,"URANDOM: Saving random seed\n");
 	int ret = save_seed();
 	if (ret==EXIT_FAILURE) {
 		fprintf(stdout,"URANDOM: Failed to save random seed\n");
 	}
-	return ret;
+}
+
+int linux_urandom_cleanup (struct lmodule *pa) {
+ event_ignore (einit_boot_root_device_ok, linux_urandom_root_ok_handler);
+ event_ignore (einit_power_down_scheduled, linux_urandom_power_down_handler);
+
+ return 0;
 }
 
 int linux_urandom_configure (struct lmodule *pa) {
  module_init (pa);
 
- pa->enable = linux_urandom_enable;
- pa->disable = linux_urandom_disable;
  pa->cleanup = linux_urandom_cleanup;
+
+ event_listen (einit_boot_root_device_ok, linux_urandom_root_ok_handler);
+ event_listen (einit_power_down_scheduled, linux_urandom_power_down_handler);
 
  return 0;
 }
