@@ -127,11 +127,13 @@ int linux_urandom_configure (struct lmodule *pa) {
          files[0] = seedPath;
          files[1] = 0;
 
+#if 0
          char *after = after_string_from_files (files);
          if (after) {
           ((struct smodule *)pa->module)->si.after = set_str_add_stable(NULL, after);
           efree (after);
          }
+#endif
         }
         
 	return 0;
