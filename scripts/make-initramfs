@@ -9,13 +9,24 @@ cd /tmp/initramfs
 
 mkdir -p ${libdir}/einit/bootstrap
 mkdir -p ${libdir}/einit/modules
+mkdir -p ${libdir}/einit/bin
+mkdir -p ${libdir}
 
+cp /${libdir}/einit/bin/einit-core ${libdir}/einit/bin
 cp /${libdir}/einit/bootstrap/* ${libdir}/einit/bootstrap
 cp /${libdir}/einit/modules/*initramfs* ${libdir}/einit/modules
 cp /${libdir}/einit/einit.xml ${libdir}/einit
+
+cp /${libdir}/*pthread* ${libdir}/
+cp /${libdir}/libdl* ${libdir}/
+cp /${libdir}/ld-* ${libdir}/
+cp /${libdir}/libc[-.]* ${libdir}/
+
+if [ "$libdir" != "lib" ]; then ln -sf "$libdir" lib; fi
+
 cp /sbin/einit ./init
 
-find . | cpio -o | gzip - > /tmp/einit-initramfs
+find . | cpio -oc | gzip - > /tmp/einit-initramfs
 
 cd
 

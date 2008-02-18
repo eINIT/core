@@ -203,7 +203,7 @@ enum einit_event_code {
  einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004
 };
 
-#define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, { NULL } }
+#define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, { NULL }, NULL }
 #define evstaticdestroy(ev) { }
 
 struct einit_event {
@@ -229,6 +229,8 @@ struct einit_event {
   void *para;
   FILE *file;
  };
+
+ char *rid;
 };
 
 enum function_type {
