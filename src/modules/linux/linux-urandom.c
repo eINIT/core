@@ -51,16 +51,16 @@ int save_seed(void) {
 	int ret = EXIT_FAILURE;
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
 	if (seedPath) {
-		//FILE *ps = fopen("/proc/sys/kernel/random/poolsize","r");
-		//char *buffer;
+		FILE *ps = fopen("/proc/sys/kernel/random/poolsize","r");
+		char buffer;
 		int poolsize = 512;
-		/*if (ps) {
-			fprintf(stdout,"proc poolsize found\n");
-			fgets(buffer, 1, ps);
-			fprintf(stdout, "%i", atoi(buffer));
-			poolsize = atoi(buffer) / 4096 * 512;
-			fclose(ps);;
-		}*/
+		if (ps) {
+			do {
+				buffer = getc(ps);
+				} while (buffer != EOF);
+			poolsize = atoi(&buffer) / 4096 * 512;
+			fclose(ps);
+		}
 		FILE *urandom = fopen("/dev/urandom", "r");
 		if (urandom) {
 			FILE *seedFile = fopen(seedPath, "w");
