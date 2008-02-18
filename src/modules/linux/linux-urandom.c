@@ -57,53 +57,60 @@ int linux_urandom_enable  (void *, struct einit_event *);
 int linux_urandom_disable (void *, struct einit_event *);
 
 int linux_urandom_cleanup (struct lmodule *pa) {
-/* cleanup code here */
-
  return 0;
 }
 
 int linux_urandom_enable (void *param, struct einit_event *status) {
- /* code here */
-
- /* do something that may fail */
-
-/* if (things_worked_out) {
-  return status_ok;
+ int ret;
+ char *seedPath = cfg_getstring ("configuration-services-urandom-seed", NULL);
+ FILE *urandom = fopen("/dev/urandom","rw");
+ FILE *seed;
+ if (seedPath) {
+  if (seed = fopen(seedPath, "rw")) {
+   char old[512];
+   int i = 0;
+   for (i=0; i<512; i++) {
+	sprintf (old, "%s%c", old, fgetc(seed));
+   }
+   fprintf(urandom, old);
+  }
+  char new[512];
+  int j = 0;
+  for (j=0; j<512; j++) {
+   sprintf (new, "%s%c", new, fgetc(urandom));
+  }
+  fprintf(seed, new);
+  fclose(seed);
+  fclose(urandom);
+  ret = status_ok;
  } else {
-
-  fbprintf (status, "Could not enable module: %s", strerror (errno));
-
-  return status_failed;
- }*/
-
- return status_ok; /* be good, assume it worked */
+  ret = status_failed;
+ }
+ return ret;
 }
 
 int linux_urandom_disable (void *param, struct einit_event *status) {
- /* code here */
-
- /* do something that may fail */
- int things_worked_out = 1;
- if (things_worked_out) {
-  return status_ok;
- } else {
-
-  fbprintf (status, "Could not disable module: %s", strerror (errno));
-
-  return status_failed;
+ int ret;
+ char *seedPath = cfg_getstring ("configuration-services-urandom-seed", NULL);
+ FILE *urandom = fopen("/dev/urandom","rw");
+ FILE *seed = fopen(seedPath, "rw");
+ char new[512];
+ int j = 0;
+ for (j=0; j<512; j++) {
+  sprintf (new, "%s%c", new, fgetc(urandom));
  }
-
- return status_ok; /* be good, assume it worked */
+ ret = fprintf(seed, new);
+ fclose(seed);
+ fclose(urandom);
+ return ret;
 }
 
 int linux_urandom_configure (struct lmodule *pa) {
  module_init (pa);
 
  pa->enable = linux_urandom_enable;
- pa->disable = linux_urandom_disable; /* yes, ->disable is required! */
+ pa->disable = linux_urandom_disable;
  pa->cleanup = linux_urandom_cleanup;
-
-/* more configure code here */
 
  return 0;
 }
