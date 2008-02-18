@@ -75,9 +75,9 @@ void linux_urandom_mini_dd(const char *from, const char *to, size_t s) {
 
 int linux_urandom_get_poolsize(void) {
 	char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
-	int poolsize = 1;
+	int poolsize = 512;
 	if (poolsize_s) {
-		poolsize = parse_integer (poolsize_s) / 4096;
+		poolsize = poolsize * parse_integer (poolsize_s) / 4096;
 		efree (poolsize_s);
 	}
 	return poolsize;
