@@ -130,9 +130,10 @@ int linux_urandom_configure (struct lmodule *pa) {
          files[1] = 0;
 
          char *after = after_string_from_files (files);
-         fflush (stderr);
          if (after) {
           ((struct smodule *)pa->module)->si.after = set_str_add_stable(NULL, after);
+          if (pa->si)
+           pa->si->after = set_str_add_stable(pa->si->after, after);
           efree (after);
          }
         }
