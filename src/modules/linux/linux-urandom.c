@@ -73,49 +73,37 @@ void linux_urandom_mini_dd(const char *from, const char *to, size_t s) {
 	}
 }
 
-int linux_urandom_save_seed(void) {
-	int ret = status_failed;
-	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
-	if (seedPath) {
-		char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
-		int poolsize = 512;
-		if (poolsize_s) {
-			parse_integer (poolsize_s);
-			efree (poolsize_s);
-		}
-		linux_urandom_mini_dd ("/dev/urandom", seedPath, poolsize);
-		return status_ok;
-	} else {
-		notice(3,"Don't know where to save seed!");
-	}
-	return status_ok;
-}
+int linux_urandom_do_seed (char save) {
+ int ret = status_failed;
+ char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
+ if (seedPath) {
+  char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
+  int poolsize = 512;
+  if (poolsize_s) {
+   parse_integer (poolsize_s);
+   efree (poolsize_s);
+  }
 
-int linux_urandom_do_seed(void) {
-	int ret = status_failed;
-	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
-	if (seedPath) {
-		char *poolsize_s = readfile("/proc/sys/kernel/random/poolsize");
-		int poolsize = 512;
-		if (poolsize_s) {
-			parse_integer (poolsize_s);
-			efree (poolsize_s);
-		}
-		linux_urandom_mini_dd (seedPath, "/dev/urandom", poolsize);
-		return status_ok;
-	} else {
-		notice(3,"Don't know where to read the seed from!");
-	}
-	return status_ok;
+  if (save)
+   linux_urandom_mini_dd ("/dev/urandom", seedPath, poolsize);
+  else
+   linux_urandom_mini_dd (seedPath, "/dev/urandom", poolsize);
+
+  return status_ok;
+ } else {
+  notice(3, save ? "Don't know where to save seed!" : "Don't know where to read the seed from!");
+ }
+ return status_ok;
 }
 
 int linux_urandom_enable (void *param, struct einit_event *status) {
-	return linux_urandom_do_seed();
+ fbprintf(status,"Initialising the Random Number Generator");
+ return linux_urandom_do_seed(0);
 }
 
 int linux_urandom_disable (void *param, struct einit_event *status) {
-	fprintf(stdout,"Saving random seed\n");
-	return linux_urandom_save_seed();
+	fbprintf(status,"Saving random seed");
+        return linux_urandom_do_seed(1);
 }
 
 int linux_urandom_configure (struct lmodule *pa) {
