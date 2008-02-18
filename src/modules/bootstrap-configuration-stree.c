@@ -493,7 +493,7 @@ void bootstrap_einit_configuration_stree_ipc_read (struct einit_event *ev) {
   n.name = (char *)str_stabilise ("configuration");
   n.is_file = 0;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
- } else if (path && path[0] && strmatch(path[0], "configuration")) {
+ } else if (path && path[0] && !path[1] && strmatch(path[0], "configuration")) {
   n.name = (char *)str_stabilise ("update");
   n.is_file = 1;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
