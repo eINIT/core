@@ -82,7 +82,9 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
   }
  }
  if (seedPath) {
+  fprintf(stdout,"%s",seedPath);
   seed = fopen(seedPath, "rw");
+  fprintf(stdout,"Seed read???");
   if (seed) {
    fprintf(stdout,"Seed exists!!!");
    sleep(5);
