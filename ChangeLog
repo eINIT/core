@@ -1,3 +1,16 @@
+2008/2/18: Ryan Hope
+ ? initramfs support
+ * timezone support
+ ? urandom
+ * bootchart support
+ * curses feedback daemon
+ * better guile support
+ * more scheme modules
+ * network-v2
+ * module-logic-v4
+ * logd
+ * ipc-9p
+
 2007/11/26: Ryan Hope
  * scheme modules
  * edev
