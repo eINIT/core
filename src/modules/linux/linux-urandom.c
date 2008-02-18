@@ -85,31 +85,33 @@ int save_seed(void) {
 
 
 void linux_urandom_root_ok_handler (struct einit_event *ev) {
-	int ret;
-	FILE *urandom = fopen("/dev/urandom", "r");
-	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
-	if (urandom) {
-		if (seedPath) {
-			FILE *seedFile = fopen(seedPath, "w+");
-			if (seedFile) {
-				char seed;
-				do {
-					seed = getc(seedFile);
-					} while (seed != EOF);
-				fprintf(urandom, "%s", seed);
-				fclose(seedFile);
+	if (strmatch(ev->string, "mount-critical")) {
+		int ret;
+		FILE *urandom = fopen("/dev/urandom", "r");
+		char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
+		if (urandom) {
+			if (seedPath) {
+				FILE *seedFile = fopen(seedPath, "w+");
+				if (seedFile) {
+					char seed;
+					do {
+						seed = getc(seedFile);
+						} while (seed != EOF);
+					fprintf(urandom, "%s", seed);
+					fclose(seedFile);
+				}
 			}
+			fclose(urandom);
 		}
-		fclose(urandom);
-	}
-	if ( remove(seedPath) == -1 ) {
-		fprintf(stdout,"URANDOM: Skipping %s initialization\n",seedPath);
-		ret = EXIT_SUCCESS;
-	} else {
-		fprintf(stdout,"URANDOM: Initializing random number generator\n");
-		int ret = save_seed();
-		if (ret==EXIT_FAILURE) {
-			fprintf(stdout,"URANDOM: Error initializing random number generator\n");
+		if ( remove(seedPath) == -1 ) {
+			fprintf(stdout,"URANDOM: Skipping %s initialization\n",seedPath);
+			ret = EXIT_SUCCESS;
+		} else {
+			fprintf(stdout,"URANDOM: Initializing random number generator\n");
+			int ret = save_seed();
+			if (ret==EXIT_FAILURE) {
+				fprintf(stdout,"URANDOM: Error initializing random number generator\n");
+			}
 		}
 	}
 }
@@ -123,7 +125,7 @@ void linux_urandom_power_down_handler (struct einit_event *ev) {
 }
 
 int linux_urandom_cleanup (struct lmodule *pa) {
- event_ignore (einit_boot_root_device_ok, linux_urandom_root_ok_handler);
+ event_ignore (einit_core_service_enabled, linux_urandom_root_ok_handler);
  event_ignore (einit_power_down_scheduled, linux_urandom_power_down_handler);
 
  return 0;
@@ -134,7 +136,7 @@ int linux_urandom_configure (struct lmodule *pa) {
 
  pa->cleanup = linux_urandom_cleanup;
 
- event_listen (einit_boot_root_device_ok, linux_urandom_root_ok_handler);
+ event_listen (einit_core_service_enabled, linux_urandom_root_ok_handler);
  event_listen (einit_power_down_scheduled, linux_urandom_power_down_handler);
 
  return 0;
