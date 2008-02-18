@@ -132,8 +132,12 @@ int linux_urandom_configure (struct lmodule *pa) {
          char *after = after_string_from_files (files);
          if (after) {
           ((struct smodule *)pa->module)->si.after = set_str_add_stable(NULL, after);
-          if (pa->si)
-           pa->si->after = set_str_add_stable(pa->si->after, after);
+          if (pa->si) {
+           pa->si->after = set_str_add_stable(NULL, after);
+          } else {
+           pa->si = ecalloc (sizeof(*(pa->si)));
+           pa->si->after = set_str_add_stable(NULL, after);
+          }
           efree (after);
          }
         }
