@@ -1161,3 +1161,87 @@ char **set_str_add_stable (char **s, char *e) {
 
  return s;
 }
+
+char check_files (char **files) {
+ if (files) {
+  int i = 0;
+  struct stat st;
+  for (; files[i]; i++) {
+   if (files[i][0] == '/') {
+    if (stat (files[i], &st)) {
+     return 0;
+    }
+   } else {
+    char **w = which (files[i]);
+    if (!w) {
+     return 0;
+    } else {
+     efree (w);
+    }
+   }
+  }
+ }
+
+ return 1;
+}
+
+char **utility_add_fs (char **xt, char *s) {
+ if (s) {
+  char **tmp = s[0] == '/' ? str2set ('/', s+1) : str2set ('/', s);
+  uint32_t r = 0;
+
+  for (r = 0; tmp[r]; r++);
+  for (r--; tmp[r] && r > 0; r--) {
+   tmp[r] = 0;
+   char *comb = set2str ('-', (const char **)tmp);
+
+   if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
+    xt = set_str_add (xt, (void *)comb);
+   }
+
+   efree (comb);
+  }
+
+  if (tmp) {
+   efree (tmp);
+  }
+ }
+
+ return xt;
+}
+
+char *utility_generate_defer_fs (char **tmpxt) {
+ char *tmp = NULL;
+
+ char *tmpx = NULL;
+ tmp = emalloc (BUFFERSIZE);
+
+ if (tmpxt) {
+  tmpx = set2str ('|', (const char **)tmpxt);
+ }
+
+ if (tmpx) {
+  esprintf (tmp, BUFFERSIZE, "^fs-(root|%s)$", tmpx);
+  efree (tmpx);
+ }
+
+ efree (tmpxt);
+
+ return tmp;
+}
+
+char *after_string_from_files (char **files) {
+ char **fs = NULL;
+ int ix = 0;
+
+ for (; files[ix]; ix++) {
+  if (files[ix][0] == '/') {
+   fs = utility_add_fs(fs, files[ix]);
+  }
+ }
+
+ if (fs)
+  return utility_generate_defer_fs(fs);
+ else
+  return NULL;
+}

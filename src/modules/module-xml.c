@@ -171,26 +171,10 @@ char module_xml_v2_check_files (char *name) {
   char **files = str2set (':', node->svalue);
 
   if (files) {
-   int i = 0;
-   struct stat st;
-   for (; files[i]; i++) {
-    if (files[i][0] == '/') {
-     if (stat (files[i], &st)) {
-      efree (files);
-      return 0;
-     }
-    } else {
-     char **w = which (files[i]);
-     if (!w) {
-      efree (files);
-      return 0;
-     } else {
-      efree (w);
-     }
-    }
-   }
+   char rv = check_files(files);
 
    efree (files);
+   return rv;
   }
  }
 
