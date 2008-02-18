@@ -32,7 +32,9 @@ int linux_urandom_configure (struct lmodule *);
 
 char * linux_urandom_provides[] = {"urandom", NULL};
 
-const struct smodule linux_urandom_self = {
+/* no const here, we need to mofiy this on the fly */
+
+struct smodule linux_urandom_self = {
 		.eiversion = EINIT_VERSION,
 		.eibuild   = BUILDNUMBER,
 		.version   = 1,
@@ -127,13 +129,12 @@ int linux_urandom_configure (struct lmodule *pa) {
          files[0] = seedPath;
          files[1] = 0;
 
-#if 0
          char *after = after_string_from_files (files);
+         fflush (stderr);
          if (after) {
           ((struct smodule *)pa->module)->si.after = set_str_add_stable(NULL, after);
           efree (after);
          }
-#endif
         }
         
 	return 0;
