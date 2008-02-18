@@ -1,8 +1,9 @@
 //
-// strlen.s
+// strmatch.s
 // einit
+// X86 port
 //
-// return the number of characters in a string
+// match two strings and return either 0 or 1
 //
 // Copyright (c) 2007, Magnus Deininger
 // All rights reserved.
@@ -31,19 +32,20 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-.globl strlen
-	.type   strlen, @function
-strlen:
-
-	push %edi;
-	mov %esp,%edi;      /* save original pointer */
-	mov $0xffff,%ecx; /* the equivalent of "do indefinitely" */
-	mov $0x0,%al;         /* set al to zero */
-	cld;
-	repne scasb;          /* scan for al, i.e. zero */
-	not %ecx;
-	pop %edi;
-	lea -1(%ecx),%eax;
+.globl strmatch
+	.type   strmatch, @function
+strmatch:
+	mov (%ebp),%eax;
+	cmp (%esi),%eax;
+	jne end;
+repeat:	inc %ebp; 	//increase pointers
+	inc %esi;
+	mov (%ebp),%eax;
+	cmp (%esi),%eax;  // see if the target of the pointers match
+	jne end;
+	test %eax,%eax;
+	jne repeat;
+end:	setz %al;
 	ret;
 
 #if defined(__ELF__)
