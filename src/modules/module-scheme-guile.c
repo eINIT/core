@@ -424,7 +424,85 @@ SCM module_scheme_guile_critical (SCM message) {
  return SCM_BOOL_T;
 }
 
-SCM module_scheme_guile_need_files (SCM rest) {
+SCM module_scheme_guile_check_files (SCM rest) {
+ SCM rv = SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ if (scm_is_true(scm_list_p (rest))) {
+  char **files = NULL;
+  SCM re = rest;
+
+  while (!scm_is_null (re)) {
+   SCM va = scm_car (re);
+
+   if (scm_is_true (scm_string_p (va))) {
+    char *name_c;
+
+    name_c = scm_to_locale_string (va);
+
+    scm_dynwind_unwind_handler (efree, name_c, SCM_F_WIND_EXPLICITLY);
+
+    files = set_str_add (files, name_c);
+   } else {
+    fprintf (stderr, "ERROR: string expected\n");
+   }
+
+   re = scm_cdr (re);
+  }
+
+  if (files) {
+   if (check_files(files)) {
+    rv = SCM_BOOL_T;
+   }
+   scm_dynwind_unwind_handler (efree, files, SCM_F_WIND_EXPLICITLY);
+  }
+ }
+
+ scm_dynwind_end ();
+
+ return rv;
+}
+
+SCM module_scheme_guile_after_string_from_files (SCM rest) {
+ SCM rv = SCM_BOOL_F;
+
+ scm_dynwind_begin (0);
+
+ if (scm_is_true(scm_list_p (rest))) {
+  char **files = NULL;
+  SCM re = rest;
+
+  while (!scm_is_null (re)) {
+   SCM va = scm_car (re);
+
+   if (scm_is_true (scm_string_p (va))) {
+    char *name_c;
+
+    name_c = scm_to_locale_string (va);
+
+    scm_dynwind_unwind_handler (efree, name_c, SCM_F_WIND_EXPLICITLY);
+
+    files = set_str_add (files, name_c);
+   } else {
+    fprintf (stderr, "ERROR: string expected\n");
+   }
+
+   re = scm_cdr (re);
+  }
+
+  if (files) {
+   char *r_c = after_string_from_files(files);
+   if (r_c) {
+    rv = scm_take_locale_string (r_c);
+   }
+   scm_dynwind_unwind_handler (efree, files, SCM_F_WIND_EXPLICITLY);
+  }
+ }
+
+ scm_dynwind_end ();
+
+ return rv;
 }
 
 struct scheme_feedback {
@@ -1063,7 +1141,8 @@ void module_scheme_guile_configure_scheme (void *n) {
  scm_c_define_gsubr ("notice", 1, 0, 0, module_scheme_guile_notice);
  scm_c_define_gsubr ("critical", 1, 0, 0, module_scheme_guile_critical);
 
- scm_c_define_gsubr ("need-files", 0, 0, 1, module_scheme_guile_need_files);
+ scm_c_define_gsubr ("check-files", 0, 0, 1, module_scheme_guile_check_files);
+ scm_c_define_gsubr ("after-string-from-files", 0, 0, 1, module_scheme_guile_after_string_from_files);
 
  scm_c_define_gsubr ("feedback", 2, 0, 0, module_scheme_guile_feedback);
 
