@@ -28,10 +28,6 @@ int linux_urandom_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * linux_urandom_provides[] = {"urandom", NULL};
-char * linux_urandom_requires[] = {NULL, NULL};
-char * linux_urandom_after[]    = {NULL, NULL};
-char * linux_urandom_before[]   = {NULL, NULL};
-
 
 const struct smodule linux_urandom_self = {
  .eiversion = EINIT_VERSION,
@@ -42,9 +38,9 @@ const struct smodule linux_urandom_self = {
  .rid       = "linux-urandom",
  .si        = {
   .provides = linux_urandom_provides,
-  .requires = linux_urandom_requires,
-  .after    = linux_urandom_after,
-  .before   = linux_urandom_before
+  .requires = NULL,
+  .after    = NULL,
+  .before   = NULL
  },
  .configure = linux_urandom_configure
 };
@@ -52,9 +48,6 @@ const struct smodule linux_urandom_self = {
 module_register(linux_urandom_self);
 
 #endif
-
-int linux_urandom_enable  (void *, struct einit_event *);
-int linux_urandom_disable (void *, struct einit_event *);
 
 int linux_urandom_cleanup (struct lmodule *pa) {
  return 0;
@@ -64,7 +57,6 @@ int save_seed(void) {
 	int ret = EXIT_FAILURE;
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
 	if (seedPath) {
-		fprintf(stdout,"seedpath found\n");
 		//FILE *ps = fopen("/proc/sys/kernel/random/poolsize","r");
 		//char *buffer;
 		int poolsize = 512;
