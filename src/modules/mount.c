@@ -2213,6 +2213,10 @@ void einit_mount_event_boot_devices_available (struct einit_event *ev) {
   mount_autostart = set_str_add (mount_autostart, "fs-root");
  }
 
+ if (!mount_autostart || !inset ((const void **)mount_autostart, "mount-critical", SET_TYPE_STRING)) {
+  mount_autostart = set_str_add (mount_autostart, "mount-critical");
+ }
+
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
  eml.stringset = mount_autostart;
  eml.task = einit_module_enable;
