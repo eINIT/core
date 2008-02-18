@@ -49,8 +49,6 @@ struct stree *streeadd (const struct stree *stree, const char *key, const void *
  if (!key) return NULL;
  signed long keyhash = hashp (key);
 
- fprintf (stderr, "hash key: %i\n", key);
-
  size_t nodesize;
  struct stree *newnode;
 
