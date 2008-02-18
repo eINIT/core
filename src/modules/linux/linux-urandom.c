@@ -97,6 +97,7 @@ int save_seed(void) {
 }
 
 int linux_urandom_enable (void *param, struct einit_event *status) {
+	int ret;
 	FILE *urandom = fopen("/dev/urandom", "r");
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
 	if (urandom) {
@@ -115,12 +116,13 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 	}
 	if (!remove(seedPath)) {
 		fprintf(stdout,"URANDOM: Skipping %s initialization\n",seedPath);
-		return EXIT_SUCCESS;
-	}
-	fprintf(stdout,"URANDOM: Initializing random number generator\n");
-	int ret = save_seed();
-	if (ret==EXIT_FAILURE) {
-		fprintf(stdout,"URANDOM: Error initializing random number generator\n");
+		ret = EXIT_SUCCESS;
+	} else {
+		fprintf(stdout,"URANDOM: Initializing random number generator\n");
+		int ret = save_seed();
+		if (ret==EXIT_FAILURE) {
+			fprintf(stdout,"URANDOM: Error initializing random number generator\n");
+		}
 	}
 	return ret;
 }
