@@ -100,14 +100,17 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
 	if (seedPath) {
 		struct stat fileattrib;
-		if (stat(seedPath, &fileattrib) != 0) {
-			linux_urandom_mini_dd (seedPath, "/dev/urandom", linux_urandom_get_poolsize());
+		if (stat(seedPath, &fileattrib) == 0) {
+			linux_urandom_mini_dd(seedPath, "/dev/urandom", linux_urandom_get_poolsize());
 			if (remove(seedPath) == -1) {
 				fbprintf(status,"Skipping %s initialization (ro root?)", seedPath);
 				return status_ok;
+			} else {
+				return linux_urandom_save_seed();
 			}
-			return linux_urandom_save_seed();
 		}
+	} else {
+		return status_failed;
 	}
 }
 
