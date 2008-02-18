@@ -48,6 +48,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct stree *streeadd (const struct stree *stree, const char *key, const void *value, int32_t vlen, const void *luggage) {
  if (!key) return NULL;
  signed long keyhash = hashp (key);
+
+ fprintf (stderr, "hash key: %i\n", key);
+
  size_t nodesize;
  struct stree *newnode;
 
