@@ -64,6 +64,7 @@ struct module_status {
 #define attr_blue 2
 #define attr_green 3
 #define attr_yellow 4
+#define attr_white 5
 
 struct stree *status_tree = NULL;
 
@@ -142,9 +143,9 @@ void progressbar (char *label, int p) {
 
  move_to_left_border();
 
- addch (' ');
+// addch (' ');
 
- if (progress != 100) {
+ if (p != 100) {
   attron(COLOR_PAIR(attr_yellow));
   addstr (label);
   attroff(COLOR_PAIR(attr_yellow));
@@ -154,8 +155,8 @@ void progressbar (char *label, int p) {
   attroff(COLOR_PAIR(attr_green));
  }
 
- int offset = strlen (label) + 7;
- int numhashes = (progress * (maxx - offset) / 100);
+ int offset = strlen (label) + 6;
+ int numhashes = (p * (maxx - offset) / 100);
  int totalspace = (maxx - offset);
  int i = 0;
 
@@ -210,10 +211,12 @@ void display_status(char *rid) {
    char *name = st->key;
    if (s->name) name = s->name;
 
-   if (s->status & status_working) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", name);
-    addstr (buffer);
+   addstr (" :: ");
+   attron(COLOR_PAIR(attr_white));
+   addstr (name);
+   attroff(COLOR_PAIR(attr_white));
 
+   if (s->status & status_working) {
     move_to_right_border();
     addstr ("[  ");
 
@@ -223,9 +226,6 @@ void display_status(char *rid) {
 
     addstr (" ]\n");
    } else if (s->status & status_failed) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", name);
-    addstr (buffer);
-
     move_to_right_border();
     addstr ("[  ");
 
@@ -236,9 +236,6 @@ void display_status(char *rid) {
     addstr ("  ]\n");
    } else if (s->status & status_enabled) {
     if (s->feedback_job) {
-     snprintf (buffer, BUFFERSIZE, " :: %s", name);
-     addstr (buffer);
-
      move_to_right_border();
      addstr ("[    ");
 
@@ -248,9 +245,6 @@ void display_status(char *rid) {
 
      addstr ("    ]\n");
     } else {
-     snprintf (buffer, BUFFERSIZE, " :: %s", name);
-     addstr (buffer);
-
      move_to_right_border();
      addstr ("[  ");
 
@@ -262,9 +256,6 @@ void display_status(char *rid) {
     }
    } else if (s->status & status_disabled) {
     if (s->feedback_job) {
-     snprintf (buffer, BUFFERSIZE, " :: %s", name);
-     addstr (buffer);
-
      move_to_right_border();
      addstr ("[    ");
 
@@ -288,9 +279,6 @@ void display_status(char *rid) {
     }
    } else {
     if (s->feedback_job) {
-     snprintf (buffer, BUFFERSIZE, " :: %s", name);
-     addstr (buffer);
-
      move_to_right_border();
      addstr ("[    ");
 
@@ -300,9 +288,6 @@ void display_status(char *rid) {
 
      addstr ("    ]\n");
     } else {
-     snprintf (buffer, BUFFERSIZE, " :: %s", name);
-     addstr (buffer);
-
      move_to_right_border();
      addstr ("[ ");
 
@@ -317,6 +302,23 @@ void display_status(char *rid) {
    st = streenext (st);
   }
  }
+}
+
+char display_status_working_or_error(char *rid) {
+ if (status_tree) {
+  struct stree *st = streefind (status_tree, rid, tree_find_first);
+
+  if (st) {
+   struct module_status *s = st->value;
+
+   if (s->status & (status_working | status_failed)) {
+    display_status(rid);
+    return 1;
+   }
+  }
+ }
+
+ return 0;
 }
 
 void update() {
@@ -340,6 +342,16 @@ void update() {
  if (textbuffer) {
   int i;
 
+  for (i = 0; (i < starting_bufferitem) && textbuffer[i]; i++) {
+   if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
+    if (display_status_working_or_error (textbuffer[i]->rid)) {
+     have_status = set_str_add (have_status, textbuffer[i]->rid);
+
+     lastrid = textbuffer[i]->rid;
+    }
+   }
+  }
+
   for (i = starting_bufferitem; textbuffer[i]; i++) {
    if (strmatch(textbuffer[i]->message, "status")) {
     if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
@@ -351,7 +363,13 @@ void update() {
     }
    } else {
     if (!lastrid || !strmatch (lastrid, textbuffer[i]->rid)) {
-     display_name (textbuffer[i]->rid);
+     if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
+      display_status (textbuffer[i]->rid);
+
+      have_status = set_str_add (have_status, textbuffer[i]->rid);
+     } else {
+      display_name (textbuffer[i]->rid);
+     }
     }
 
     addch (' ');
@@ -436,6 +454,7 @@ int main(int argc, char **argv, char **env) {
  init_pair(attr_blue, COLOR_BLUE, COLOR_BLACK);
  init_pair(attr_green, COLOR_GREEN, COLOR_BLACK);
  init_pair(attr_yellow, COLOR_YELLOW, COLOR_BLACK);
+ init_pair(attr_white, COLOR_WHITE, COLOR_BLACK);
 
  nonl();
  intrflush(stdscr, FALSE);
