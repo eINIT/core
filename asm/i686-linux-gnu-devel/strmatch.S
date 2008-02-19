@@ -35,13 +35,12 @@
 .globl strmatch
 	.type   strmatch, @function
 strmatch:
-	mov (%ebp),%eax;
-	cmp (%esi),%eax;
+	mov 8(%esp),%eax;
+	cmp 12(%esp),%eax;
 	jne end;
-repeat:	inc %ebp; 	//increase pointers
-	inc %esi;
-	mov (%ebp),%eax;
-	cmp (%esi),%eax;  // see if the target of the pointers match
+repeat:	inc %esp; 	//increase pointer;
+	mov 8(%esp),%eax;
+	cmp 12(%esp),%eax;  // see if the target of the pointers match
 	jne end;
 	test %eax,%eax;
 	jne repeat;
