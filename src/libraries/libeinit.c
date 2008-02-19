@@ -527,6 +527,7 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
  }
 
  evdestroy (ev);
+ efree (buffer);
 }
 
 void einit_event_loop () {
