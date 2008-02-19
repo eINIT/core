@@ -1216,15 +1216,19 @@ char **utility_add_fs_all (char **xt, char *s) {
   uint32_t r = 0;
 
   for (r = 0; tmp[r]; r++);
-  for (r--; r >= 0; r--) {
-   tmp[r] = 0;
+  for (r--; tmp[r] && (r > 0); r--) {
    char *comb = set2str ('-', (const char **)tmp);
 
    if (!inset ((const void **)xt, comb, SET_TYPE_STRING)) {
     xt = set_str_add (xt, (void *)comb);
    }
 
+   tmp[r] = 0;
    efree (comb);
+  }
+
+  if (!inset ((const void **)xt, tmp[0], SET_TYPE_STRING)) {
+   xt = set_str_add (xt, (void *)tmp[0]);
   }
 
   if (tmp) {
