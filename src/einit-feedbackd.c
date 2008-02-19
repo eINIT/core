@@ -101,13 +101,6 @@ void set_module_status (char *name, enum einit_module_status status) {
  }
 }
 
-char *spinascii="|/-\\";
-char spinnit(int idx){
-	idx++;
-	if ( idx == 4 ) idx = 0;
-	return fprintf(stdout,"\r%c",spinascii[idx]);
-}
-
 void add_text_buffer_entry (char *rid, char *message) {
  struct textbuffer_entry ne = {
   .rid = rid,
