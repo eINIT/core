@@ -67,7 +67,15 @@ struct module_status {
 
 struct stree *status_tree = NULL;
 
+struct textbuffer_entry {
+ char *rid;
+ char *message;
+};
+
+struct textbuffer_entry **textbuffer = NULL;
+
 int progress = 0;
+int starting_bufferitem = 0;
 char *mode = "(none)";
 char *mode_to = "(none)";
 
@@ -94,10 +102,18 @@ void set_module_status (char *name, enum einit_module_status status) {
 }
 
 char *spinascii="|/-\\";
-char spinnit(int idx, char *output){
+char spinnit(int idx){
 	idx++;
 	if ( idx == 4 ) idx = 0;
-	return fprintf(output,"\r%c",spinascii[idx]);
+	return fprintf(stdout,"\r%c",spinascii[idx]);
+}
+
+void add_text_buffer_entry (char *rid, char *message) {
+ struct textbuffer_entry ne = {
+  .rid = rid,
+  .message = message
+ };
+ textbuffer = (struct textbuffer_entry **)set_fix_add ((void **)textbuffer, &ne, sizeof (ne));
 }
 
 void move_to_right_border () {
@@ -115,6 +131,15 @@ void move_to_left_border () {
  getyx (stdscr, y, x);
 
  move (y, 0);
+}
+
+char is_last_line () {
+ int x, y, maxx, maxy;
+
+ getyx (stdscr, y, x);
+ getmaxyx(stdscr, maxy, maxx);
+
+ return y >= (maxy -1);
 }
 
 void progressbar (char *label, int p) {
@@ -156,22 +181,31 @@ void progressbar (char *label, int p) {
 // usleep(100);
 }
 
-void update() {
- erase();
-
+void display_name(char *rid) {
  char buffer[BUFFERSIZE];
 
- if (strmatch (mode, mode_to)) {
-  progressbar (mode, progress);
- } else {
-  snprintf (buffer, BUFFERSIZE, "%s -> %s", mode, mode_to);
-  progressbar (buffer, progress);
+ if (status_tree) {
+  struct stree *st = streefind (status_tree, rid, tree_find_first);
+
+  if (st) {
+   struct module_status *s = st->value;
+
+   char *name = st->key;
+   if (s->name) name = s->name;
+
+   snprintf (buffer, BUFFERSIZE, " %s:\n", name);
+   addstr (buffer);
+  }
  }
+}
+
+void display_status(char *rid) {
+ char buffer[BUFFERSIZE];
 
  if (status_tree) {
-  struct stree *st = streelinear_prepare (status_tree);
+  struct stree *st = streefind (status_tree, rid, tree_find_first);
 
-  while (st) {
+  if (st) {
    struct module_status *s = st->value;
 
    /* "[  working ]" */
@@ -290,6 +324,67 @@ void update() {
    st = streenext (st);
   }
  }
+}
+
+void update() {
+ retry:
+
+ erase();
+
+ char buffer[BUFFERSIZE];
+
+ char **have_status = NULL;
+
+ char *lastrid = NULL;
+
+ if (strmatch (mode, mode_to)) {
+  progressbar (mode, progress);
+ } else {
+  snprintf (buffer, BUFFERSIZE, "%s -> %s", mode, mode_to);
+  progressbar (buffer, progress);
+ }
+
+ if (textbuffer) {
+  int i;
+
+  for (i = starting_bufferitem; textbuffer[i]; i++) {
+   if (strmatch(textbuffer[i]->message, "status")) {
+    if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
+     display_status (textbuffer[i]->rid);
+
+     have_status = set_str_add (have_status, textbuffer[i]->rid);
+
+     lastrid = textbuffer[i]->rid;
+    }
+   } else {
+    if (!lastrid || !strmatch (lastrid, textbuffer[i]->rid)) {
+     display_name (textbuffer[i]->rid);
+    }
+
+    addch (' ');
+    attron(COLOR_PAIR(attr_yellow));
+    addch ('*');
+    attroff(COLOR_PAIR(attr_yellow));
+    addch (' ');
+    addstr (textbuffer[i]->message);
+    addch ('\n');
+
+    lastrid = textbuffer[i]->rid;
+   }
+
+   if (is_last_line()) {
+    if (have_status)
+     efree (have_status);
+
+    starting_bufferitem++;
+    goto retry;
+   }
+  }
+ }
+
+ if (have_status)
+  efree (have_status);
+
  refresh();
 }
 
@@ -308,12 +403,12 @@ void event_handler_mode_switch_done (struct einit_event *ev) {
 void event_handler_update_module_status (struct einit_event *ev) {
  if (ev->rid) {
   set_module_status (ev->rid, ev->status);
+  add_text_buffer_entry (ev->rid, "status");
  }
 
-/* if (ev->string) {
-  snprintf (buffer, BUFFERSIZE, " > %s: %s\n", ev->rid, ev->string);
-  addstr (buffer);
- }*/
+ if (ev->string) {
+  add_text_buffer_entry (ev->rid, ev->string);
+ }
 
  update();
 }
