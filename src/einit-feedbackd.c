@@ -494,6 +494,8 @@ void *input_thread (void *ignored) {
     update();
     break;
 
+   case 'k':
+   case 'p':
    case KEY_UP:
     control_mode = control_manual;
     if (starting_bufferitem > 0)
@@ -501,6 +503,8 @@ void *input_thread (void *ignored) {
     update();
     break;
 
+   case 'j':
+   case 'n':
    case KEY_DOWN:
     control_mode = control_manual;
     if (textbuffer && textbuffer[starting_bufferitem] && textbuffer[starting_bufferitem+1])
