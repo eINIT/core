@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/tree.h>
 
 #include <curses.h>
+#include <pthread.h>
 
 struct module_status {
  enum einit_module_status status;
@@ -73,12 +74,19 @@ struct textbuffer_entry {
  char *message;
 };
 
+enum control_type {
+ control_automatic,
+ control_manual
+};
+
 struct textbuffer_entry **textbuffer = NULL;
 
 int progress = 0;
 int starting_bufferitem = 0;
 char *mode = "(none)";
 char *mode_to = "(none)";
+
+enum control_type control_mode = control_automatic;
 
 void set_module_status (char *name, enum einit_module_status status) {
  struct stree *e;
@@ -321,7 +329,9 @@ char display_status_working_or_error(char *rid) {
  return 0;
 }
 
-void update() {
+pthread_mutex_t update_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void update_do() {
  retry:
 
  erase();
@@ -342,20 +352,22 @@ void update() {
  if (textbuffer) {
   int i;
 
-  for (i = 0; (i < starting_bufferitem) && textbuffer[i]; i++) {
-   if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
-    if (display_status_working_or_error (textbuffer[i]->rid)) {
-     have_status = set_str_add (have_status, textbuffer[i]->rid);
+  if (control_mode == control_automatic) {
+   for (i = 0; (i < starting_bufferitem) && textbuffer[i]; i++) {
+    if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
+     if (display_status_working_or_error (textbuffer[i]->rid)) {
+      have_status = set_str_add (have_status, textbuffer[i]->rid);
 
-     lastrid = textbuffer[i]->rid;
+      lastrid = textbuffer[i]->rid;
+     }
     }
-   }
 
-   if (is_last_line()) {
-    if (have_status)
-     efree (have_status);
+    if (is_last_line()) {
+     if (have_status)
+      free (have_status);
 
-    return;
+     return;
+    }
    }
   }
 
@@ -392,18 +404,28 @@ void update() {
 
    if (is_last_line()) {
     if (have_status)
-     efree (have_status);
+     free (have_status);
 
-    starting_bufferitem++;
-    goto retry;
+    if (control_mode == control_automatic) {
+     starting_bufferitem++;
+     goto retry;
+    }
+
+    return;
    }
   }
  }
 
  if (have_status)
-  efree (have_status);
+  free (have_status);
 
  refresh();
+}
+
+void update () {
+ pthread_mutex_lock (&update_mutex);
+ update_do();
+ pthread_mutex_unlock (&update_mutex);
 }
 
 void event_handler_mode_switching (struct einit_event *ev) {
@@ -451,6 +473,36 @@ void event_handler_switch_progress (struct einit_event *ev) {
  progress = ev->integer;
 }
 
+void *input_thread (void *ignored) {
+ while (1) {
+  switch (getch ()) {
+   case 'a':
+    control_mode = control_automatic;
+    update();
+    break;
+
+   case KEY_UP:
+    control_mode = control_manual;
+    if (starting_bufferitem > 0)
+     starting_bufferitem--;
+    update();
+    break;
+
+   case KEY_DOWN:
+    control_mode = control_manual;
+    if (textbuffer && textbuffer[starting_bufferitem] && textbuffer[starting_bufferitem+1])
+     starting_bufferitem++;
+    update();
+    break;
+
+   case 'q':
+    endwin ();
+    einit_disconnect();
+    exit(EXIT_SUCCESS);
+  }
+ }
+}
+
 int main(int argc, char **argv, char **env) {
  initscr();
  start_color();
@@ -475,6 +527,8 @@ int main(int argc, char **argv, char **env) {
    exit (EXIT_FAILURE);
   }
  }
+
+ ethread_spawn_detached (input_thread, NULL);
 
  event_listen (einit_core_mode_switching, event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, event_handler_mode_switch_done);
