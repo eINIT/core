@@ -75,6 +75,7 @@ struct textbuffer_entry {
 struct textbuffer_entry **textbuffer = NULL;
 
 int progress = 0;
+int starting_bufferitem = 0;
 char *mode = "(none)";
 char *mode_to = "(none)";
 
@@ -126,6 +127,15 @@ void move_to_left_border () {
  move (y, 0);
 }
 
+char is_last_line () {
+ int x, y, maxx, maxy;
+
+ getyx (stdscr, y, x);
+ getmaxyx(stdscr, maxy, maxx);
+
+ return y >= (maxy -1);
+}
+
 void progressbar (char *label, int p) {
  int maxx, maxy;
 
@@ -173,12 +183,6 @@ void display_name(char *rid) {
 
   if (st) {
    struct module_status *s = st->value;
-
-   /* "[  working ]" */
-   /* "[  failed  ]" */
-   /* "[  enabled ]" */
-   /* "[    OK    ]" */
-   /* "[ diasbled ]" */
 
    char *name = st->key;
    if (s->name) name = s->name;
@@ -317,6 +321,8 @@ void display_status(char *rid) {
 }
 
 void update() {
+ retry:
+
  erase();
 
  char buffer[BUFFERSIZE];
@@ -333,8 +339,9 @@ void update() {
  }
 
  if (textbuffer) {
-  int i = 0;
-  for (; textbuffer[i]; i++) {
+  int i;
+
+  for (i = starting_bufferitem; textbuffer[i]; i++) {
    if (strmatch(textbuffer[i]->message, "status")) {
     if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
      display_status (textbuffer[i]->rid);
@@ -357,6 +364,14 @@ void update() {
     addch ('\n');
 
     lastrid = textbuffer[i]->rid;
+   }
+
+   if (is_last_line()) {
+    if (have_status)
+     efree (have_status);
+
+    starting_bufferitem++;
+    goto retry;
    }
   }
  }
