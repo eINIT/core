@@ -619,9 +619,7 @@ int module_xml_v2_scanmodules (struct lmodule *modchain) {
        uint32_t ri = 0;
 
        for (; opt[ri]; ri++) {
-        if (strmatch (opt[ri], "feedback"))
-         new_sm->mode |= einit_module_feedback;
-        else if (strmatch (opt[ri], "deprecated"))
+        if (strmatch (opt[ri], "deprecated"))
          new_sm->mode |= einit_module_deprecated;
         else if (strmatch (opt[ri], "run-once"))
          new_sm->mode |= einit_feedback_job;
