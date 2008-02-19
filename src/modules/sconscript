@@ -96,27 +96,6 @@ if 'feedback-visual-textual' in ExternalModules:
 if 'module-logic-v4' in ExternalModules:
  buildModule ('module-logic-v4', '.', menv.Clone (LIBS=librt))
 
-import os
-
-if 'module-scheme-guile' in ExternalModules:
- e = menv.Clone()
- f = os.popen ('guile-config compile', 'r')
- if f:
-  a = f.read()
-  a.strip()
-  e.Append (CFLAGS = '${CCFLAGS} ' + a)
-  f.close()
-
- f = os.popen ('guile-config link', 'r')
- if f:
-  a = f.read()
-  a.strip()
-  e.Append (LINKFLAGS = '${LINKFLAGS} ' + a)
-  f.close()
-
- e.Append (LIBS=librt)
- buildModule ('module-scheme-guile', '.', e)
-
 for x in InternalModules:
  CodeInternalModules += buildInternalModule(x, '.', env)
 

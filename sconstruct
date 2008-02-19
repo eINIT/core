@@ -14,7 +14,6 @@ opts = Options()
 opts.Add('libdir', 'Define the basename for library dirs', 'lib')
 opts.Add('destdir', 'Define the (installation) prefix; The Directory to install to', '')
 opts.Add('prefix', 'Define the (runtime) prefix', '/')
-opts.Add('scheme', 'Define which scheme implementation to use (if any)', 'guile')
 opts.Add('arch', 'Tell us what arch you\'re compiling for', 'host')
 opts.Add('libc', 'Tell us what libc you\'re compiling for', 'gnu')
 
@@ -45,7 +44,6 @@ ScriptsEinit = ['src/sconscript',
 destdir = ARGUMENTS.get('destdir', '')
 prefix = ARGUMENTS.get('prefix', '/')
 libdir = ARGUMENTS.get('libdir', 'lib')
-scheme = ARGUMENTS.get('scheme', 'guile')
 arch = ARGUMENTS.get('arch', 'host')
 libc = ARGUMENTS.get('libc', 'gnu')
 
@@ -87,9 +85,6 @@ if f:
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
 SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
-
-if scheme == 'guile':
- SpecialModules += ['module-scheme-guile']
 
 Modules = ['shadow-exec']
 
