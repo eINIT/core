@@ -350,6 +350,13 @@ void update() {
      lastrid = textbuffer[i]->rid;
     }
    }
+
+   if (is_last_line()) {
+    if (have_status)
+     efree (have_status);
+
+    return;
+   }
   }
 
   for (i = starting_bufferitem; textbuffer[i]; i++) {
