@@ -47,6 +47,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/syscall.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <asm/ioctls.h>
+#include <linux/vt.h>
 
 #include <einit-modules/exec.h>
 
@@ -108,9 +116,79 @@ void linux_sysconf_ctrl_alt_del () {
  }
 }
 
+void linux_sysconf_fix_ttys() {
+ struct stat st;
+ struct cfgnode *filenode = cfg_getnode ("configuration-feedback-visual-std-io", NULL);
+
+ if (filenode && filenode->arbattrs) {
+  uint32_t i = 0;
+  FILE *tmp;
+  struct stat st;
+
+  for (; filenode->arbattrs[i]; i+=2) {
+   errno = 0;
+
+   if (filenode->arbattrs[i]) {
+    if (strmatch (filenode->arbattrs[i], "stdio")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "r", stdin);
+      if (!tmp)
+       freopen ("/dev/null", "r+", stdin);
+
+      tmp = freopen (filenode->arbattrs[i+1], "w", stdout);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "w", stdout);
+     } else {
+      perror ("einit-feedback-visual-textual: opening stdio");
+     }
+    } else if (strmatch (filenode->arbattrs[i], "stderr")) {
+     if (!stat (filenode->arbattrs[i+1], &st)) {
+      tmp = freopen (filenode->arbattrs[i+1], "a", stderr);
+      if (!tmp)
+       tmp = freopen ("einit-panic-stdout", "a", stderr);
+      if (tmp)
+       eprintf (stderr, "\n%i: eINIT: visualiser einit-vis-text activated.\n", (int)time(NULL));
+     } else {
+      perror ("einit-feedback-visual-textual: opening stderr");
+     }
+    } else if (strmatch (filenode->arbattrs[i], "console")) {
+     int tfd = 0;
+     errno = 0;
+     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0))) {
+      fcntl (tfd, F_SETFD, FD_CLOEXEC);
+      ioctl (tfd, TIOCCONS, 0);
+     }
+     if (errno)
+      perror (filenode->arbattrs[i+1]);
+    } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
+     int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
+     errno = 0;
+
+     ioctl(0, TIOCLINUX, &arg);
+     if (errno)
+      perror ("einit-feedback-visual-textual: redirecting kernel messages");
+    } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
+     uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
+     int tfd = 0;
+     errno = 0;
+     if ((tfd = open ("/dev/tty1", O_RDWR, 0))) {
+      fcntl (tfd, F_SETFD, FD_CLOEXEC);
+      ioctl (tfd, VT_ACTIVATE, vtn);
+     }
+     if (errno)
+      perror ("einit-feedback-visual-textual: activate terminal");
+     if (tfd > 0) close (tfd);
+    }
+   }
+  }
+ }
+}
+
 void linux_sysconf_sysctl () {
  FILE *sfile;
  char *sfilename;
+
+ linux_sysconf_fix_ttys();
 
  if ((sfilename = cfg_getstring ("configuration-services-sysctl/config", NULL))) {
   notice (4, "doing system configuration via %s.", sfilename);

@@ -270,7 +270,7 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
     while (cur) {
      if (cur->module && cur->module->rid) {
       if (strmatch (path[2], cur->module->rid)) {
-       if (cur->si && cur->si->requires) {
+       if (cur->si && cur->si->after) {
         int i = 0;
 
         for (; cur->si->after[i]; i++) {

@@ -13,6 +13,7 @@
   </system>
 
 <!--  <feedback> -->
+<!-- TODO:update -->
 <!-- use this if you would like to use one of the psplash-ish feedback modules.
      possible values for s= include:
       s="psplash" (the original psplash daemon; very slick and small)
@@ -29,7 +30,7 @@
       kernel-vt="" - which terminal to put dmesg messages onto (needs to be a number)
       activate-vt="" - which terminal to switch to once the textual feedback is up (number) -->
 <!--   <visual>
-    <std-io stdio="/dev/tty9" stderr="/dev/tty11" console="/dev/tty12" kernel-vt="12" />
+    <std-io stdio="/dev/tty10" stderr="/dev/tty11" console="/dev/tty12" kernel-vt="12" />
    </visual> -->
 <!--  </feedback> -->
 

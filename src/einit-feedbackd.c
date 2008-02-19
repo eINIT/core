@@ -300,8 +300,12 @@ int main(int argc, char **argv, char **env) {
  keypad(stdscr, TRUE);
 
  if (!einit_connect(&argc, argv)) {
-  perror ("Could not connect to eINIT");
-  exit (EXIT_FAILURE);
+//  perror ("Could not connect to eINIT");
+  sleep (1);
+  if (!einit_connect(&argc, argv)) {
+//   perror ("Could not connect to eINIT, giving up");
+   exit (EXIT_FAILURE);
+  }
  }
 
  event_listen (einit_core_mode_switching, event_handler_mode_switching);

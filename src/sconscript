@@ -17,7 +17,6 @@ CodeCoreMonitorObjects = ['einit-monitor.c']
 CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
-CodeEinitLibTest = ['einit-testlib.c']
 CodeEinitFeedbackD = ['einit-feedbackd.c']
 CodeEinitLogD = ['einit-logd.c']
 
@@ -42,7 +41,6 @@ einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
 einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
 
-einitLibTest = env.Program ('einit-testlib', CodeEinitLibTest, LIBS=['einit'], LIBPATH=['.'])
 einitFeedbackD = env.Program ('einit-feedbackd', CodeEinitFeedbackD, LIBS=['einit', 'curses'], LIBPATH=['.'])
 einitLogD = env.Program ('einit-logd', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.'])
 
@@ -58,8 +56,6 @@ env.Install (InstallDirLibBin, einitLogD)
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
 env.Install (InstallDirLib, libEinit)
 env.Install (InstallDirLib, libEinitPP)
-
-env.Install (InstallDirSbin, einitLibTest)
 
 env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
 env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))

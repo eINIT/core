@@ -32,8 +32,12 @@
    <tty5-qingy dev="/dev/tty5" command="/sbin/qingy tty5" restart="yes" />
    <tty6-qingy dev="/dev/tty6" command="/sbin/qingy tty6" restart="yes" />
 
+   <!-- new feedback -->
+
    <feedbackd dev="/dev/tty9" command="/lib/einit/bin/einit-feedbackd" restart="yes" />
    <logd dev="/dev/tty11" command="/lib/einit/bin/einit-logd" restart="yes" />
+
+   <tty12-feedbackd dev="/dev/tty12" command="/lib/einit/bin/einit-feedbackd" restart="yes" />
   </tty>
  </configuration>
 

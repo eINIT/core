@@ -31,8 +31,7 @@ if os.environ.has_key('CXXFLAGS'):
 conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 
 ScriptsBundle = ['libixp/sconscript',
-                 'expat/sconscript',
-                 'run-init/sconscript']
+                 'expat/sconscript']
 
 Export('env')
 
@@ -87,18 +86,18 @@ if f:
 
 AssemblyDir = '#asm/' + arch + '-' + uname.lower() + '-' + libc
 
-SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4', 'feedback-visual-textual']
+SpecialModules = ['bootstrap-configuration-stree', 'bootstrap-configuration-xml-expat', 'ipc-9p', 'module-logic-v4']
 
 if scheme == 'guile':
  SpecialModules += ['module-scheme-guile']
 
-Modules = ['shadow-exec', 'feedback-visual-psplash']
+Modules = ['shadow-exec']
 
-ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-group', 'module-network-v2', 'parse-sh', 'log', 'module-xml', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
+ModulesBase = ['fqdn', 'exec', 'mount', 'tty', 'process', 'scheduler', 'module-group', 'module-network-v2', 'parse-sh', 'module-xml', 'module-checkpoint', 'ipc-core-helpers', 'module-transformations']
 
 ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf', 'linux-mount', 'linux-process', 'linux-kernel-modules', 'linux-udev', 'linux-hwclock', 'linux-hotplug', 'linux-cpufreq', 'linux-bootchart', 'linux-network', 'linux-network-wpa-supplicant', 'linux-network-bridge', 'linux-network-bonding', 'linux-timezone']
 
-ModulesLinuxNoBundle = []
+ModulesLinuxNoBundle = ['linux-urandom']
 ModulesLinuxSpecial = ['linux-initramfs']
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
@@ -134,7 +133,7 @@ if uname == 'Linux':
   print 'GlibC is not built with nptl!'
   Exit(1)
   env = conf.Finnish()
-
+ SConscript('run-init/sconscript')
 
 InternalModules = ['module-so']
 ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
