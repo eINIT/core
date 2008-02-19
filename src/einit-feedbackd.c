@@ -93,6 +93,13 @@ void set_module_status (char *name, enum einit_module_status status) {
  }
 }
 
+char *spinascii="|/-\\";
+char spinnit(int idx, char *output){
+	idx++;
+	if ( idx == 4 ) idx = 0;
+	return fprintf(output,"\r%c",spinascii[idx]);
+}
+
 void move_to_right_border () {
  int x, y, maxx, maxy;
 
