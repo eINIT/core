@@ -307,7 +307,7 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
     SCM sym;
 
     sym = scm_symbol_to_string(va);
-    sym_c = scm_to_locale_string (id);
+    sym_c = scm_to_locale_string (sym);
 
     scm_dynwind_unwind_handler (efree, sym_c, SCM_F_WIND_EXPLICITLY);
 
