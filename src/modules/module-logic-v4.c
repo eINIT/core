@@ -1305,7 +1305,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
  }
 
  if (disable) {
-  char disable_all = (inset ((const void **)disable, (void *)"all", SET_TYPE_STRING) || inset ((const void **)disable, (void *)"all-but-feedback", SET_TYPE_STRING));
+  char disable_all = inset ((const void **)disable, (void *)"all", SET_TYPE_STRING);
 
   if (disable_all) {
    struct stree *cur;
@@ -1323,7 +1323,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
 
      if (inset ((const void **)disable, (void *)tmp[i], SET_TYPE_STRING)) {
       add = 0;
-     } else if (disable_all && (strmatch(tmp[i], "all") || strmatch(tmp[i], "all-but-feedback"))) {
+     } else if (disable_all && strmatch(tmp[i], "all")) {
       add = 0;
      }
 
