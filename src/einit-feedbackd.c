@@ -115,6 +115,19 @@ void add_text_buffer_entry (char *rid, char *message) {
   .rid = rid,
   .message = message
  };
+
+ if (!message[0]) return;
+
+ if (textbuffer) {
+  int i = 0;
+  for (; textbuffer[i]; i++) ;
+
+  if (i > 0) {
+   i--;
+   if (strmatch (rid, textbuffer[i]->rid) && strmatch (message, textbuffer[i]->message)) return;
+  }
+ }
+
  textbuffer = (struct textbuffer_entry **)set_fix_add ((void **)textbuffer, &ne, sizeof (ne));
 }
 
