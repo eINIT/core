@@ -67,6 +67,13 @@ struct module_status {
 
 struct stree *status_tree = NULL;
 
+struct textbuffer_entry {
+ char *rid;
+ char *message;
+};
+
+struct textbuffer_entry **textbuffer = NULL;
+
 int progress = 0;
 char *mode = "(none)";
 char *mode_to = "(none)";
@@ -91,6 +98,15 @@ void set_module_status (char *name, enum einit_module_status status) {
   } else
    s->status = status;
  }
+}
+
+void add_text_buffer_entry (char *rid, char *message) {
+ struct textbuffer_entry ne = {
+  .rid = rid,
+  .message = message
+ };
+
+ textbuffer = (struct textbuffer_entry **)set_fix_add ((void **)textbuffer, &ne, sizeof (ne));
 }
 
 void move_to_right_border () {
@@ -149,22 +165,37 @@ void progressbar (char *label, int p) {
 // usleep(100);
 }
 
-void update() {
- erase();
-
+void display_name(char *rid) {
  char buffer[BUFFERSIZE];
 
- if (strmatch (mode, mode_to)) {
-  progressbar (mode, progress);
- } else {
-  snprintf (buffer, BUFFERSIZE, "%s -> %s", mode, mode_to);
-  progressbar (buffer, progress);
+ if (status_tree) {
+  struct stree *st = streefind (status_tree, rid, tree_find_first);
+
+  if (st) {
+   struct module_status *s = st->value;
+
+   /* "[  working ]" */
+   /* "[  failed  ]" */
+   /* "[  enabled ]" */
+   /* "[    OK    ]" */
+   /* "[ diasbled ]" */
+
+   char *name = st->key;
+   if (s->name) name = s->name;
+
+   snprintf (buffer, BUFFERSIZE, " %s:\n", name);
+   addstr (buffer);
+  }
  }
+}
+
+void display_status(char *rid) {
+ char buffer[BUFFERSIZE];
 
  if (status_tree) {
-  struct stree *st = streelinear_prepare (status_tree);
+  struct stree *st = streefind (status_tree, rid, tree_find_first);
 
-  while (st) {
+  if (st) {
    struct module_status *s = st->value;
 
    /* "[  working ]" */
@@ -283,6 +314,56 @@ void update() {
    st = streenext (st);
   }
  }
+}
+
+void update() {
+ erase();
+
+ char buffer[BUFFERSIZE];
+
+ char **have_status = NULL;
+
+ char *lastrid = NULL;
+
+ if (strmatch (mode, mode_to)) {
+  progressbar (mode, progress);
+ } else {
+  snprintf (buffer, BUFFERSIZE, "%s -> %s", mode, mode_to);
+  progressbar (buffer, progress);
+ }
+
+ if (textbuffer) {
+  int i = 0;
+  for (; textbuffer[i]; i++) {
+   if (strmatch(textbuffer[i]->message, "status")) {
+    if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
+     display_status (textbuffer[i]->rid);
+
+     have_status = set_str_add (have_status, textbuffer[i]->rid);
+
+     lastrid = textbuffer[i]->rid;
+    }
+   } else {
+    if (!lastrid || !strmatch (lastrid, textbuffer[i]->rid)) {
+     display_name (textbuffer[i]->rid);
+    }
+
+    addch (' ');
+    attron(COLOR_PAIR(attr_yellow));
+    addch ('*');
+    attroff(COLOR_PAIR(attr_yellow));
+    addch (' ');
+    addstr (textbuffer[i]->message);
+    addch ('\n');
+
+    lastrid = textbuffer[i]->rid;
+   }
+  }
+ }
+
+ if (have_status)
+  efree (have_status);
+
  refresh();
 }
 
@@ -301,12 +382,12 @@ void event_handler_mode_switch_done (struct einit_event *ev) {
 void event_handler_update_module_status (struct einit_event *ev) {
  if (ev->rid) {
   set_module_status (ev->rid, ev->status);
+  add_text_buffer_entry (ev->rid, "status");
  }
 
-/* if (ev->string) {
-  snprintf (buffer, BUFFERSIZE, " > %s: %s\n", ev->rid, ev->string);
-  addstr (buffer);
- }*/
+ if (ev->string) {
+  add_text_buffer_entry (ev->rid, ev->string);
+ }
 
  update();
 }
