@@ -512,11 +512,11 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
   } else if (strprefix (buffer[i], "flag=")) {
    ev->flag = parse_integer ((buffer[i])+5);
   } else if (strprefix (buffer[i], "module=")) {
-   ev->rid = estrdup ((buffer[i])+7);
+   ev->rid = (char *)str_stabilise ((buffer[i])+7);
   } else if (strprefix (buffer[i], "string=")) {
-   ev->string = estrdup ((buffer[i])+7);
+   ev->string = (char *)str_stabilise ((buffer[i])+7);
   } else if (strprefix (buffer[i], "stringset=")) {
-   ev->stringset = set_str_add (ev->stringset, (buffer[i])+10);
+   ev->stringset = set_str_add_stable (ev->stringset, (buffer[i])+10);
   }
  }
 

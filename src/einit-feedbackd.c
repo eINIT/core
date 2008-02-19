@@ -404,7 +404,7 @@ void update_do() {
    for (i = 0; (i < starting_bufferitem) && textbuffer[i]; i++) {
     if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
      if (display_status_working_or_error (textbuffer[i]->rid)) {
-      have_status = set_str_add (have_status, textbuffer[i]->rid);
+      have_status = set_str_add_stable (have_status, textbuffer[i]->rid);
 
       lastrid = textbuffer[i]->rid;
      }
@@ -424,7 +424,7 @@ void update_do() {
     if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
      display_status (textbuffer[i]->rid);
 
-     have_status = set_str_add (have_status, textbuffer[i]->rid);
+     have_status = set_str_add_stable (have_status, textbuffer[i]->rid);
 
      lastrid = textbuffer[i]->rid;
     }
@@ -433,7 +433,7 @@ void update_do() {
      if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
       display_status (textbuffer[i]->rid);
 
-      have_status = set_str_add (have_status, textbuffer[i]->rid);
+      have_status = set_str_add_stable (have_status, textbuffer[i]->rid);
      } else {
       display_name (textbuffer[i]->rid);
      }
