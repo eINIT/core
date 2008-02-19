@@ -59,6 +59,7 @@ struct module_status {
  enum einit_module_status status;
  char *name;
  char feedback_job;
+ int progress;
 };
 
 #define attr_red 1
@@ -95,6 +96,7 @@ void set_module_status (char *name, enum einit_module_status status) {
 
   s.status = status;
   s.name = einit_module_get_name(name);
+  s.progress = 0;
 
   char **t = einit_module_get_options(name);
   s.feedback_job = inset ((const void **)t, "job-feedback", SET_TYPE_STRING);
@@ -107,6 +109,27 @@ void set_module_status (char *name, enum einit_module_status status) {
     s->status = status | ((status & status_enabled) ? status_failed : 0);
   } else
    s->status = status;
+ }
+}
+
+void set_module_progress (char *name, int p) {
+ struct stree *e;
+ if (!status_tree || !(e = streefind (status_tree, name, tree_find_first))) {
+  struct module_status s;
+
+  s.status = status_idle;
+  s.name = einit_module_get_name(name);
+
+  char **t = einit_module_get_options(name);
+  s.feedback_job = inset ((const void **)t, "job-feedback", SET_TYPE_STRING);
+
+  s.progress = p;
+
+  status_tree = streeadd (status_tree, name, &s, sizeof (s), NULL);
+ } else {
+  struct module_status *s = e->value;
+
+  s->progress = p;
  }
 }
 
@@ -231,6 +254,11 @@ void display_status(char *rid) {
 
    char *name = st->key;
    if (s->name) name = s->name;
+
+   if ((s->status & status_working) && s->progress) {
+    progressbar (name, s->progress);
+    return;
+   }
 
    addstr (" :: ");
    attron(COLOR_PAIR(attr_white));
@@ -462,6 +490,9 @@ void event_handler_update_module_status (struct einit_event *ev) {
  if (ev->string) {
   add_text_buffer_entry (ev->rid, ev->string);
  }
+
+ if (ev->flag)
+  set_module_progress (ev->rid, ev->flag);
 
  update();
 }
