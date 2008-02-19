@@ -188,6 +188,8 @@ char ** einit_module_get_before (const char *rid);
 
 char ** einit_module_get_status (const char *rid);
 
+char ** einit_module_get_options (const char *rid);
+
 #ifdef __cplusplus
 }
 #endif

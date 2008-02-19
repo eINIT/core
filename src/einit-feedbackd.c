@@ -57,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct module_status {
  enum einit_module_status status;
  char *name;
+ char feedback_job;
 };
 
 #define attr_red 1
@@ -77,6 +78,9 @@ void set_module_status (char *name, enum einit_module_status status) {
 
   s.status = status;
   s.name = einit_module_get_name(name);
+
+  char **t = einit_module_get_options(name);
+  s.feedback_job = inset ((const void **)t, "job-feedback", SET_TYPE_STRING);
 
   status_tree = streeadd (status_tree, name, &s, sizeof (s), NULL);
  } else {
@@ -166,6 +170,7 @@ void update() {
    /* "[  working ]" */
    /* "[  failed  ]" */
    /* "[  enabled ]" */
+   /* "[    OK    ]" */
    /* "[ diasbled ]" */
 
    char *name = st->key;
@@ -196,41 +201,83 @@ void update() {
 
     addstr ("  ]\n");
    } else if (s->status & status_enabled) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", name);
-    addstr (buffer);
+    if (s->feedback_job) {
+     snprintf (buffer, BUFFERSIZE, " :: %s", name);
+     addstr (buffer);
 
-    move_to_right_border();
-    addstr ("[  ");
+     move_to_right_border();
+     addstr ("[    ");
 
-    attron(COLOR_PAIR(attr_green));
-    addstr ("enabled");
-    attroff(COLOR_PAIR(attr_green));
+     attron(COLOR_PAIR(attr_green));
+     addstr ("OK");
+     attroff(COLOR_PAIR(attr_green));
 
-    addstr (" ]\n");
+     addstr ("    ]\n");
+    } else {
+     snprintf (buffer, BUFFERSIZE, " :: %s", name);
+     addstr (buffer);
+
+     move_to_right_border();
+     addstr ("[  ");
+
+     attron(COLOR_PAIR(attr_green));
+     addstr ("enabled");
+     attroff(COLOR_PAIR(attr_green));
+
+     addstr (" ]\n");
+    }
    } else if (s->status & status_disabled) {
-    snprintf (buffer, BUFFERSIZE, " :: %s", name);
-    addstr (buffer);
+    if (s->feedback_job) {
+     snprintf (buffer, BUFFERSIZE, " :: %s", name);
+     addstr (buffer);
 
-    move_to_right_border();
-    addstr ("[ ");
+     move_to_right_border();
+     addstr ("[    ");
 
-    attron(COLOR_PAIR(attr_yellow));
-    addstr ("disabled");
-    attroff(COLOR_PAIR(attr_yellow));
+     attron(COLOR_PAIR(attr_yellow));
+     addstr ("OK");
+     attroff(COLOR_PAIR(attr_yellow));
 
-    addstr (" ]\n");
+     addstr ("    ]\n");
+    } else {
+     snprintf (buffer, BUFFERSIZE, " :: %s", name);
+     addstr (buffer);
+
+     move_to_right_border();
+     addstr ("[ ");
+
+     attron(COLOR_PAIR(attr_yellow));
+     addstr ("disabled");
+     attroff(COLOR_PAIR(attr_yellow));
+
+     addstr (" ]\n");
+    }
    } else {
-    snprintf (buffer, BUFFERSIZE, " :: %s", name);
-    addstr (buffer);
+    if (s->feedback_job) {
+     snprintf (buffer, BUFFERSIZE, " :: %s", name);
+     addstr (buffer);
 
-    move_to_right_border();
-    addstr ("[ ");
+     move_to_right_border();
+     addstr ("[    ");
 
-    attron(COLOR_PAIR(attr_yellow));
-    addstr ("idle");
-    attroff(COLOR_PAIR(attr_yellow));
+     attron(COLOR_PAIR(attr_yellow));
+     addstr ("OK");
+     attroff(COLOR_PAIR(attr_yellow));
 
-    addstr (" ]\n");
+     addstr ("    ]\n");
+    } else {
+     snprintf (buffer, BUFFERSIZE, " :: %s", name);
+     addstr (buffer);
+
+     move_to_right_border();
+     addstr ("[ ");
+
+     attron(COLOR_PAIR(attr_yellow));
+     addstr ("idle");
+     attroff(COLOR_PAIR(attr_yellow));
+
+     addstr (" ]\n");
+    }
    }
 
    st = streenext (st);

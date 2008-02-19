@@ -485,6 +485,10 @@ char ** einit_module_get_status (const char *rid) {
  return str2set ('\n', einit_module_get_attribute (rid, "status"));
 }
 
+char ** einit_module_get_options (const char *rid) {
+ return str2set ('\n', einit_module_get_attribute (rid, "options"));
+}
+
 int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
  char **buffer = str2set ('\n', fragment);
  int i = 0;
