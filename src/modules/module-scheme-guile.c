@@ -360,6 +360,8 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
       sm->si.before = vs;
      } else if (strmatch (sym, "need-files")) {
       if (!check_files (vs)) {
+       fprintf (stderr, "NEED-FILES: some file not found\n");
+       fflush(stderr);
        /* bail out 'ere */
        scm_dynwind_end ();
        efree (sm);
@@ -368,9 +370,15 @@ SCM module_scheme_make_module (SCM ids, SCM name, SCM rest) {
 
       char *afteraddon = after_string_from_files (vs);
       if (afteraddon) {
+       fprintf (stderr, "NEED-FILES: after line: %s\n", afteraddon);
+       fflush(stderr);
+
        sm->si.after = set_str_add_stable (sm->si.after, afteraddon);
        efree (afteraddon);
       }
+      fprintf (stderr, "NEED-FILES: generating the after= line failed\n");
+      fflush(stderr);
+
       efree (vs);
      } else {
       fprintf (stderr, "ERROR: unexpected attribute: %s\n", sym);
