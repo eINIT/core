@@ -444,6 +444,7 @@ int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, vo
     if (fragments <= 0) {
      ixp_close (f);
      efree (buffer);
+     efree (buf);
      return 0;
     }
    }
@@ -659,5 +660,7 @@ void einit_replay_events() {
 
   path[1] = "feed";
   einit_read_callback_limited (path, einit_event_loop_decoder, NULL, count);
+
+  efree (count_s);
  }
 }
