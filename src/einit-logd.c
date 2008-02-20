@@ -69,7 +69,12 @@ void event_handler_update_service_disabled (struct einit_event *ev) {
  fprintf (stdout, "[%s] disabled\n", ev->string);
 }
 
-void help () {
+void help (char **argv) {
+ printf ("Usage: %s [options]\n\n"
+         "Options:\n"
+         " -f, --follow      Follow the event Log.\n"
+         " -n, --rplay-only  Stop after all the current events were displayed (default)\n"
+         " -h, --help        This Message\n", argv[0]);
 }
 
 int main(int argc, char **argv, char **env) {
@@ -82,10 +87,10 @@ int main(int argc, char **argv, char **env) {
   } else if (strmatch (argv[i], "-n") || strmatch (argv[i], "--replay-only")) {
    follow = 0;
   } else if (strmatch (argv[i], "-h") || strmatch (argv[i], "--help")) {
-   help();
+   help(argv);
    return EXIT_SUCCESS;
   } else {
-   help();
+   help(argv);
    return EXIT_FAILURE;
   }
  }
