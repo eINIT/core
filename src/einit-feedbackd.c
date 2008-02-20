@@ -301,6 +301,9 @@ void display_status(char *rid) {
    }
 
    move_to_right_border(6);
+
+   attron(A_BOLD);
+
    attron(COLOR_PAIR(attr_blue));
    addstr ("[ ");
    attroff(COLOR_PAIR(attr_blue));
@@ -322,6 +325,8 @@ void display_status(char *rid) {
    attron(COLOR_PAIR(attr_blue));
    addstr (" ]");
    attroff(COLOR_PAIR(attr_blue));
+
+   attroff(A_BOLD);
 
 /*
    if (s->status & status_working) {
