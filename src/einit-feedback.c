@@ -624,8 +624,8 @@ int main(int argc, char **argv, char **env) {
 // event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
  event_listen (einit_feedback_switch_progress, event_handler_switch_progress);
 
-// event_listen (einit_feedback_broken_services, event_handler_broken_services);
-// event_listen (einit_feedback_unresolved_services, event_handler_unresolved_services);
+ event_listen (einit_feedback_broken_services, event_handler_broken_services);
+ event_listen (einit_feedback_unresolved_services, event_handler_unresolved_services);
 
  einit_event_loop();
 
