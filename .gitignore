@@ -20,8 +20,8 @@
 src/einit-core
 src/einit-monitor
 src/einit-helper
-src/einit-feedbackd
-src/einit-logd
+src/einit-feedback
+src/einit-log
 src/last-rites
 
 src/modules/bundle-*

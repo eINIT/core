@@ -1,5 +1,5 @@
 /*
- *  einit-feedbackd.c
+ *  einit-feedback.c
  *  einit
  *
  *  Created by Magnus Deininger on 16/02/2008.

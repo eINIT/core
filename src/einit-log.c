@@ -1,5 +1,5 @@
 /*
- *  einit-logd.c
+ *  einit-log.c
  *  einit
  *
  *  Created by Magnus Deininger on 16/02/2008.
