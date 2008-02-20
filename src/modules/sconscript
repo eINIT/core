@@ -20,7 +20,7 @@ def buildBundleModule(name, e):
  tm = os.path.basename(name).replace('-', '_')
  return e.SharedObject(name + '.c', CCFLAGS = '-DEINIT_CORE -Dthismodule=private_' + tm + '_thismodule -Dself=private_' + tm + '_self')
 
-def buildBundle(name, modules_original, e):
+def buildBundle(target, name, modules_original, e):
  f = open (name + '.c', 'w')
  if f:
   f.write ('/* this file has partially been written by the build system */' + "\n" +
@@ -50,7 +50,7 @@ def buildBundle(name, modules_original, e):
  for i in modules_original:
   modules += buildBundleModule (i, e)
 
- e.Install(InstallDirModules, e.LoadableModule(name, modules))
+ e.Install(target, e.LoadableModule(name, modules))
 
 librt = [ 'rt' ]
 
@@ -58,13 +58,16 @@ if uname == 'Darwin':
  menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
  librt = []
 
-def buildBundleE(name, items, dir, e):
+def buildBundleET(target, name, items, dir, e):
  if items:
   mnames = []
   for x in items:
    mnames += [  dir + '/' + x ]
 
-  buildBundle('bundle-' + name, mnames, e)
+  buildBundle(target, 'bundle-' + name, mnames, e)
+
+def buildBundleE(name, items, dir, e):
+ buildBundleET(InstallDirModules, name, items, dir, e)
 
 def buildBundleD(name, items):
  buildBundleE(name, items, name, menv)
@@ -85,7 +88,7 @@ buildBundleD('compatibility', ModulesCompatibility)
 buildBundleE('base', ModulesBase, '.', menv)
 
 if 'linux-initramfs' in ExternalModules:
- buildBundleE ('initramfs', [ 'linux-initramfs', 'linux-edev' ], 'linux', menv.Clone (LIBS=['runinit'], LIBPATH=['#run-init']))
+ buildBundleET (InstallDirModules + '-initramfs', 'initramfs', [ 'linux-initramfs', 'linux-edev' ], 'linux', menv.Clone (LIBS=['runinit'], LIBPATH=['#run-init']))
 
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))

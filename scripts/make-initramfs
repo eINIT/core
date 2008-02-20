@@ -14,7 +14,7 @@ mkdir -p ${libdir}
 
 cp /${libdir}/einit/bin/einit-core ${libdir}/einit/bin
 cp /${libdir}/einit/bootstrap/* ${libdir}/einit/bootstrap
-cp /${libdir}/einit/modules/*initramfs* ${libdir}/einit/modules
+cp /${libdir}/einit/modules-initramfs/* ${libdir}/einit/modules
 cp /${libdir}/einit/einit.xml ${libdir}/einit
 
 cp /${libdir}/*pthread* ${libdir}/

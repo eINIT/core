@@ -94,8 +94,8 @@ ModulesLinux = ['linux-edev', 'linux-mdev', 'linux-static-dev', 'linux-sysconf',
 
 ModulesLinuxNoBundle = ['linux-urandom']
 
-#ModulesLinuxSpecial = ['linux-initramfs']
 ModulesLinuxSpecial = []
+InstallAliases = []
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
@@ -131,6 +131,9 @@ if uname == 'Linux':
   Exit(1)
   env = conf.Finnish()
  SConscript('run-init/sconscript')
+
+ ModulesLinuxSpecial += [ 'linux-initramfs' ]
+ InstallAliases += [ InstallDirModules + '-initramfs' ]
 
 InternalModules = ['module-so']
 ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
@@ -312,4 +315,6 @@ InstallConfig = Alias ('install-config', [ InstallDirLibEinit + '/defaults', Ins
 env.Install (InstallDirInclude + '/einit', '#build/headers/einit/configuration.h')
 env.Install (InstallDirInclude + '/einit-modules', '#build/headers/einit-modules/configuration.h')
 
-env.Alias('install', [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts'])
+InstallAliases += [InstallDirSbin, InstallDirLib, InstallDirLibBin, InstallDirModules, InstallDirBootstrap, InstallConfig, InstallDirLibEinit, InstallDirInclude, InstallDirInclude + '/einit', InstallDirInclude + '/einit-modules', InstallDirLibEinit + '/scripts']
+
+env.Alias('install', InstallAliases)
