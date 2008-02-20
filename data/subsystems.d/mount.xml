@@ -15,8 +15,8 @@
     <critical s="/usr:/var:/tmp" />
    </mountpoints>
    <!-- parametre 1 is the filesystem type, parametre 2 is the device -->
-   <fsck-command id="generic" s="pexec-options no-pipe; /sbin/fsck -a -T -t ${fs} ${device}" />
-   <fsck-command id="ext3" s="pexec-options no-pipe; /sbin/fsck.ext3 -p ${device}" />
+   <fsck-command id="generic" s="/sbin/fsck -a -T -t ${fs} ${device}" />
+   <fsck-command id="ext3" s="/sbin/fsck.ext3 -p ${device}" />
    <fsck-command id="jfs" s="pexec-options no-pipe dont-close-stdin; /sbin/fsck.jfs -p ${device}" />
    <fsck-command id="reiser4" s="pexec-options no-pipe; /sbin/fsck.${fs} -a ${device}" />
    <block-devices>
