@@ -667,6 +667,7 @@ int einit_module_network_v2_do_dhcp (struct network_event_data *d, char *client,
    if (node->arbattrs) {
     char *command = NULL;
     char **need_binaries = NULL;
+    char *pidfile = NULL;
 //    char **environment = straddtoenviron (NULL, "interface", interface);
     char **vars = set_str_add (NULL, "interface");
     vars = set_str_add (vars, interface);
@@ -681,6 +682,9 @@ int einit_module_network_v2_do_dhcp (struct network_event_data *d, char *client,
      } else if ((d->action == interface_down) && strmatch (node->arbattrs[i], "down")) {
 //      command = node->arbattrs[i+1];
       command = apply_variables (node->arbattrs[i+1], (const char **)vars);
+     } else if (strmatch (node->arbattrs[i], "pid")) {
+//      command = node->arbattrs[i+1];
+      pidfile = apply_variables (node->arbattrs[i+1], (const char **)vars);
      }
     }
 
@@ -694,6 +698,9 @@ int einit_module_network_v2_do_dhcp (struct network_event_data *d, char *client,
         efree (vars);
 
         fbprintf (d->feedback, "dhcp client not available: %s", client);
+
+        if (pidfile) efree (pidfile);
+
         return status_failed;
        } else {
         efree (w);
@@ -703,13 +710,19 @@ int einit_module_network_v2_do_dhcp (struct network_event_data *d, char *client,
       efree (need_binaries);
      }
 
+     if ((d->action == interface_up) && pidfile) unlink (pidfile);
+
      rv = pexec (command, NULL, 0, 0, NULL, NULL, NULL, d->feedback);
      if (rv == status_ok) {
       fbprintf (d->feedback, "dhcp client OK: %s", client);
+
+      if ((d->action == interface_down) && pidfile) unlink (pidfile);
      } else if (rv == status_failed) {
       fbprintf (d->feedback, "dhcp client failed: %s", client);
      }
     }
+
+    if (pidfile) efree (pidfile);
 
     efree (vars);
    }
