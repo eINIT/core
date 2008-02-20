@@ -555,8 +555,7 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
    if (strcmp ((buffer[i])+5, "unknown/custom")) {
     ev->type = event_string_to_code((buffer[i])+5);
    } else {
-    evdestroy (ev);
-    return;
+    goto cleanup_exit;
    }
   } else if (strprefix (buffer[i], "integer=")) {
    ev->integer = parse_integer ((buffer[i])+8);
@@ -580,6 +579,8 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
  if (ev->type) {
   event_emit (ev, einit_event_flag_broadcast);
  }
+
+ cleanup_exit:
 
  if (ev->stringset)
   efree(ev->stringset);
