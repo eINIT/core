@@ -288,14 +288,14 @@ void display_status(char *rid) {
 
    if (!s->feedback_job) {
     if (s->status & status_enabled) {
-     move_to_right_border(17);
+     move_to_right_border(16);
      attron (A_DIM);
-     addstr ("enabled ::");
+     addstr ("enabled :");
      attroff (A_DIM);
     } else if (s->status & status_disabled) {
-     move_to_right_border(18);
+     move_to_right_border(17);
      attron (A_DIM);
-     addstr ("disabled ::");
+     addstr ("disabled :");
      attroff (A_DIM);
     }
    }
