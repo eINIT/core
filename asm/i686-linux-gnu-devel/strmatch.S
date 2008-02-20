@@ -36,11 +36,12 @@
 	.type   strmatch, @function
 strmatch:
 	mov 8(%esp),%eax;
-	cmp 12(%esp),%eax;
+	mov 12(%esp),%edx;
+	cmp %edx,%eax;
 	jne end;
-repeat:	inc %esp; 	//increase pointer;
-	mov 8(%esp),%eax;
-	cmp 12(%esp),%eax;  // see if the target of the pointers match
+repeat:	inc %eax; 
+	inc %edx;
+	cmp %edx,%eax;  // see if the target of the pointers match
 	jne end;
 	test %eax,%eax;
 	jne repeat;
