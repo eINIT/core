@@ -619,7 +619,7 @@ void event_handler_unresolved_services (struct einit_event *ev) {
  if (ev->stringset) {
   int i = 0;
   for (; ev->stringset[i]; i++) {
-   if (!broken || !inset ((const void **)unresolved, ev->stringset[i], SET_TYPE_STRING))
+   if (!unresolved || !inset ((const void **)unresolved, ev->stringset[i], SET_TYPE_STRING))
     unresolved = set_str_add_stable (unresolved, ev->stringset[i]);
   }
  }
