@@ -241,8 +241,16 @@ void display_name(char *rid) {
    char *name = st->key;
    if (s->name) name = s->name;
 
-   snprintf (buffer, BUFFERSIZE, " %s:\n", name);
-   addstr (buffer);
+   addch (' ');
+   attron(COLOR_PAIR(attr_blue));
+   addch ('>');
+   addch ('>');
+   attroff(COLOR_PAIR(attr_blue));
+   addch (' ');
+   attron(A_BOLD);
+   addstr (name);
+   attroff(A_BOLD);
+   addch ('\n');
   }
  }
 }
@@ -385,10 +393,9 @@ void update_do() {
  erase();
 
  char buffer[BUFFERSIZE];
-
  char **have_status = NULL;
-
  char *lastrid = NULL;
+ char last_message_was_text = 0;
 
  if (strmatch (mode, mode_to)) {
   progressbar (mode, progress);
@@ -407,6 +414,7 @@ void update_do() {
       have_status = set_str_add_stable (have_status, textbuffer[i]->rid);
 
       lastrid = textbuffer[i]->rid;
+      last_message_was_text = 0;
      }
     }
 
@@ -427,6 +435,8 @@ void update_do() {
      have_status = set_str_add_stable (have_status, textbuffer[i]->rid);
 
      lastrid = textbuffer[i]->rid;
+
+     last_message_was_text = 0;
     }
    } else {
     if (!lastrid || !strmatch (lastrid, textbuffer[i]->rid)) {
@@ -434,19 +444,29 @@ void update_do() {
       display_status (textbuffer[i]->rid);
 
       have_status = set_str_add_stable (have_status, textbuffer[i]->rid);
+
+      last_message_was_text = 0;
      } else {
       display_name (textbuffer[i]->rid);
+
+      last_message_was_text = 0;
      }
     }
 
     addch (' ');
     addch (' ');
-    attron(COLOR_PAIR(attr_yellow));
-    addch ('*');
-    attroff(COLOR_PAIR(attr_yellow));
+    if (last_message_was_text) {
+     addch (' ');
+    } else {
+     attron(COLOR_PAIR(attr_yellow));
+     addch ('*');
+     attroff(COLOR_PAIR(attr_yellow));
+    }
     addch (' ');
     addstr (textbuffer[i]->message);
     addch ('\n');
+
+    last_message_was_text = 1;
 
     lastrid = textbuffer[i]->rid;
    }
