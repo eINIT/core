@@ -672,6 +672,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
    esprintf (msg_string, i, "module=%s", m->module->rid);
 
    data = set_str_add (data, msg_string);
+   efree (msg_string);
   }
  }
 
@@ -682,6 +683,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   esprintf (msg_string, i, "string=%s", ev->string);
 
   data = set_str_add (data, msg_string);
+  efree (msg_string);
  }
 
  if (ev->stringset) {
@@ -693,6 +695,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
    esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
 
    data = set_str_add (data, msg_string);
+   efree (msg_string);
   }
  }
 
