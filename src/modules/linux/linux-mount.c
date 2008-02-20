@@ -163,7 +163,7 @@ unsigned char find_block_devices_proc (struct mount_control_block *mcb) {
 }
 
 int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
- fbprintf (status, "mounting %s on %s (fs=%s; using native mount command)", dd->device, mountpoint, fs);
+ fbprintf (status, "mounting %s (fs=%s; using /bin/mount)", dd->device, fs);
 
  char *fsdata = NULL;
  char command[BUFFERSIZE];
@@ -195,7 +195,7 @@ int linux_mount_do_mount_real (char *mountpoint, char *fs, struct device_data *d
 }
 
 int linux_mount_do_mount_ntfs_3g (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
- fbprintf (status, "mounting %s on %s (fs=%s; using specialised ntfs-3g command)", dd->device, mountpoint, fs);
+ fbprintf (status, "mounting %s (fs=%s; using ntfs-3g command)", dd->device, fs);
 
  char *fsdata = NULL;
  char command[BUFFERSIZE];

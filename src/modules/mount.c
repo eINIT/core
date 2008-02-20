@@ -1881,7 +1881,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
 
 int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
 
- fbprintf (status, "mounting %s on %s (fs=%s)", dd->device, mountpoint, fs);
+ fbprintf (status, "mounting %s (fs=%s)", dd->device, fs);
 // notice (1, "mounting %s on %s (fs=%s)", dd->device, mountpoint, fs);
 
  if (!(coremode & einit_mode_sandbox)) {
@@ -1893,17 +1893,17 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 #endif
   {
    status->flag++;
-   fbprintf (status, "mounting node %s failed (error=%s)", mountpoint, strerror (errno));
+   fbprintf (status, "mounting has failed (error=%s)", strerror (errno));
 #ifdef MS_REMOUNT
    if (errno == EBUSY) {
     attempt_remount:
-     fbprintf (status, "attempting to remount node %s instead of mounting", mountpoint);
+     fbprintf (status, "attempting to remount instead of mounting");
 
      if (mount (dd->device, mountpoint, fs, MS_REMOUNT | mp->mountflags, mp->flatoptions) == -1) {
-      fbprintf (status, "remounting node %s failed (error=%s)", mountpoint, strerror (errno));
+      fbprintf (status, "remounting has failed (error=%s)", strerror (errno));
       goto mount_panic;
      } else
-      fbprintf (status, "remounted node %s", mountpoint);
+      fbprintf (status, "remounted");
    } else
 #else
    attempt_remount:
@@ -1935,7 +1935,7 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 
 int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct device_data *dd, struct mountpoint_data *mp, struct einit_event *status) {
 
- fbprintf (status, "unmounting %s from %s (fs=%s, attempt#%i)", dd->device, mountpoint, fs, step);
+ fbprintf (status, "unmounting %s (fs=%s, attempt#%i)", dd->device, fs, step);
 // notice (1, "unmounting %s from %s (fs=%s, attempt #%i)", dd->device, mountpoint, fs, step);
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
@@ -1946,28 +1946,28 @@ int mount_do_umount_generic (char *mountpoint, char *fs, char step, struct devic
  {
   goto umount_ok;
  } else {
-  fbprintf (status, "%s#%i: umount() failed: %s", mountpoint, step, strerror(errno));
+  fbprintf (status, "#%i: umount() failed: %s", step, strerror(errno));
 #ifdef __linux__
   if (step >= 2) {
    if (umount2 (mountpoint, MNT_FORCE) != -1) {
     goto umount_ok;
    } else {
-    fbprintf (status, "%s#%i: umount() failed: %s", mountpoint, step, strerror(errno));
+    fbprintf (status, "#%i: umount() failed: %s", step, strerror(errno));
     errno = 0;
    }
 
    if (step >= 3) {
     if (mount (dd->device, mountpoint, mp->fs, MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-     fbprintf (status, "%s#%i: remounting r/o failed: %s", mountpoint, step, strerror(errno));
+     fbprintf (status, "#%i: remounting r/o failed: %s", step, strerror(errno));
      errno = 0;
      goto umount_fail;
     } else {
      if (umount2 (mountpoint, MNT_DETACH) == -1) {
-      fbprintf (status, "%s#%i: remounted r/o but detaching failed: %s", mountpoint, step, strerror(errno));
+      fbprintf (status, "#%i: remounted r/o but detaching failed: %s", step, strerror(errno));
       errno = 0;
       goto umount_ok;
      } else {
-      fbprintf (status, "%s#%i: remounted r/o and detached", mountpoint, step);
+      fbprintf (status, "#%i: remounted r/o and detached", step);
       goto umount_ok;
      }
     }
@@ -2036,13 +2036,13 @@ int emount (char *mountpoint, struct einit_event *status) {
 
    return ret;
   } else {
-   fbprintf (status, "can't find details for mountpoint \"%s\".", mountpoint);
+   fbprintf (status, "can't find details for this mountpoint.");
 
    return status_failed;
   }
  }
 
- fbprintf (status, "can't find data for mountpoint \"%s\".", mountpoint);
+ fbprintf (status, "can't find data for this mountpoint.");
 
  return status_failed;
 }
@@ -2095,7 +2095,7 @@ int eumount (char *mountpoint, struct einit_event *status) {
 
     if (shutting_down) {
      if (r == status_failed) {
-      fbprintf (status, "we're shutting down, so there's not much to worry about if umounting failed: last-rites will fix it later");
+      fbprintf (status, "we're shutting down, last-rites will fix it later");
       return status_ok;
      }
     }
@@ -2103,13 +2103,13 @@ int eumount (char *mountpoint, struct einit_event *status) {
     return r;
    }
   } else {
-   fbprintf (status, "can't find details for mountpoint \"%s\".", mountpoint);
+   fbprintf (status, "can't find details.");
 
    return status_failed;
   }
  }
 
- fbprintf (status, "can't find data for mountpoint \"%s\".", mountpoint);
+ fbprintf (status, "can't find data.");
 
  return status_failed;
 }
