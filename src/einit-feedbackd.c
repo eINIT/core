@@ -99,7 +99,10 @@ void set_module_status (char *name, enum einit_module_status status) {
   s.progress = 0;
 
   char **t = einit_module_get_options(name);
-  s.feedback_job = inset ((const void **)t, "job-feedback", SET_TYPE_STRING);
+  if (t) {
+   s.feedback_job = inset ((const void **)t, "job-feedback", SET_TYPE_STRING);
+   efree (t);
+  }
 
   status_tree = streeadd (status_tree, name, &s, sizeof (s), NULL);
  } else {

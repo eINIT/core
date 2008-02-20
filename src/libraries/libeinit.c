@@ -462,31 +462,86 @@ char * einit_module_get_attribute (const char *rid, const char *attribute) {
 }
 
 char * einit_module_get_name (const char *rid) {
- return einit_module_get_attribute (rid, "name");
+ char *data = einit_module_get_attribute (rid, "name");
+ if (data) {
+  char *rv = (char *)str_stabilise(data);
+  efree (data);
+  return rv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_provides (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "provides"));
+ char *data = einit_module_get_attribute (rid, "provides");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_requires (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "requires"));
+ char *data = einit_module_get_attribute (rid, "requires");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_after (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "after"));
+ char *data = einit_module_get_attribute (rid, "after");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_before (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "before"));
+ char *data = einit_module_get_attribute (rid, "before");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_status (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "status"));
+ char *data = einit_module_get_attribute (rid, "status");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_options (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "options"));
+ char *data = einit_module_get_attribute (rid, "options");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
