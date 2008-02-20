@@ -650,7 +650,7 @@ void einit_event_loop () {
  einit_read_callback (path, einit_event_loop_decoder, NULL);
 }
 
-einit_replay_events() {
+void einit_replay_events() {
  char *path[3] = { "events", "count", NULL };
  char *count_s = einit_read (path);
 
