@@ -596,6 +596,6 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
 }
 
 void einit_event_loop () {
- char *path[2] = { "events", NULL };
+ char *path[3] = { "events", "feed", NULL };
  einit_read_callback (path, einit_event_loop_decoder, NULL);
 }
