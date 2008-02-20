@@ -170,7 +170,7 @@ void move_to_right_border () {
  getyx (stdscr, y, x);
  getmaxyx(stdscr, maxy, maxx);
 
- move (y, maxx - 13);
+ move (y, maxx - 12);
 }
 
 void move_to_left_border () {
@@ -209,7 +209,7 @@ void progressbar (char *label, int p) {
   attroff(COLOR_PAIR(attr_green));
  }
 
- int offset = strlen (label) + 6;
+ int offset = strlen (label) + 5;
  int numhashes = (p * (maxx - offset) / 100);
  int totalspace = (maxx - offset);
  int i = 0;
@@ -224,7 +224,7 @@ void progressbar (char *label, int p) {
   addch (' ');
  }
 
- addstr (" ]\n");
+ addstr (" ]");
 
 // usleep(100);
 }
@@ -270,10 +270,10 @@ void display_status(char *rid) {
     return;
    }
 
-   addstr (" :: ");
-   attron(COLOR_PAIR(attr_white));
+   addstr (" ::: ");
+   attron(A_BOLD);
    addstr (name);
-   attroff(COLOR_PAIR(attr_white));
+   attroff(A_BOLD);
 
    if (s->status & status_working) {
     move_to_right_border();
@@ -283,7 +283,7 @@ void display_status(char *rid) {
     addstr ("working");
     attroff(COLOR_PAIR(attr_blue));
 
-    addstr (" ]\n");
+    addstr (" ]");
    } else if (s->status & status_failed) {
     move_to_right_border();
     addstr ("[  ");
@@ -292,7 +292,7 @@ void display_status(char *rid) {
     addstr ("failed");
     attroff(COLOR_PAIR(attr_red));
 
-    addstr ("  ]\n");
+    addstr ("  ]");
    } else if (s->status & status_enabled) {
     if (s->feedback_job) {
      move_to_right_border();
@@ -302,7 +302,7 @@ void display_status(char *rid) {
      addstr ("OK");
      attroff(COLOR_PAIR(attr_green));
 
-     addstr ("    ]\n");
+     addstr ("    ]");
     } else {
      move_to_right_border();
      addstr ("[  ");
@@ -311,7 +311,7 @@ void display_status(char *rid) {
      addstr ("enabled");
      attroff(COLOR_PAIR(attr_green));
 
-     addstr (" ]\n");
+     addstr (" ]");
     }
    } else if (s->status & status_disabled) {
     if (s->feedback_job) {
@@ -322,11 +322,8 @@ void display_status(char *rid) {
      addstr ("OK");
      attroff(COLOR_PAIR(attr_yellow));
 
-     addstr ("    ]\n");
+     addstr ("    ]");
     } else {
-     snprintf (buffer, BUFFERSIZE, " :: %s", name);
-     addstr (buffer);
-
      move_to_right_border();
      addstr ("[ ");
 
@@ -334,7 +331,7 @@ void display_status(char *rid) {
      addstr ("disabled");
      attroff(COLOR_PAIR(attr_yellow));
 
-     addstr (" ]\n");
+     addstr (" ]");
     }
    } else {
     if (s->feedback_job) {
@@ -345,7 +342,7 @@ void display_status(char *rid) {
      addstr ("OK");
      attroff(COLOR_PAIR(attr_yellow));
 
-     addstr ("    ]\n");
+     addstr ("    ]");
     } else {
      move_to_right_border();
      addstr ("[ ");
@@ -354,7 +351,7 @@ void display_status(char *rid) {
      addstr ("idle");
      attroff(COLOR_PAIR(attr_yellow));
 
-     addstr (" ]\n");
+     addstr (" ]");
     }
    }
 
@@ -509,23 +506,24 @@ void event_handler_update_module_status (struct einit_event *ev) {
 }
 
 void event_handler_update_service_enabled (struct einit_event *ev) {
- char buffer[BUFFERSIZE];
+/* char buffer[BUFFERSIZE];
  snprintf (buffer, BUFFERSIZE, "enabled: %s\n", ev->string);
  addstr (buffer);
 
- update();
+ update();*/
 }
 
 void event_handler_update_service_disabled (struct einit_event *ev) {
- char buffer[BUFFERSIZE];
+/* char buffer[BUFFERSIZE];
  snprintf (buffer, BUFFERSIZE, "disabled: %s\n", ev->string);
  addstr (buffer);
 
- update();
+ update();*/
 }
 
 void event_handler_switch_progress (struct einit_event *ev) {
  progress = ev->integer;
+ update();
 }
 
 void *input_thread (void *ignored) {
