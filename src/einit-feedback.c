@@ -537,7 +537,7 @@ void event_handler_unresolved_services (struct einit_event *ev) {
   int i = 0;
   for (; ev->stringset[i]; i++) {
    if (!unresolved || !inset ((const void **)unresolved, ev->stringset[i], SET_TYPE_STRING))
-    unresolved = set_str_add_stable (unresolved, ev->stringset[i]);
+    unresolved = set_str_add (unresolved, ev->stringset[i]);
   }
  }
 
@@ -549,7 +549,7 @@ void event_handler_broken_services (struct einit_event *ev) {
   int i = 0;
   for (; ev->stringset[i]; i++) {
    if (!broken || !inset ((const void **)broken, ev->stringset[i], SET_TYPE_STRING))
-    broken = set_str_add_stable (broken, ev->stringset[i]);
+    broken = set_str_add (broken, ev->stringset[i]);
   }
  }
 
@@ -619,9 +619,9 @@ int main(int argc, char **argv, char **env) {
 
  event_listen (einit_core_mode_switching, event_handler_mode_switching);
  event_listen (einit_core_mode_switch_done, event_handler_mode_switch_done);
-// event_listen (einit_feedback_module_status, event_handler_update_module_status);
-// event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
-// event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
+ event_listen (einit_feedback_module_status, event_handler_update_module_status);
+ event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
+ event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
  event_listen (einit_feedback_switch_progress, event_handler_switch_progress);
 
  event_listen (einit_feedback_broken_services, event_handler_broken_services);
