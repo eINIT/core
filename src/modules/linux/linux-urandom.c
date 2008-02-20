@@ -54,13 +54,14 @@ module_register(linux_urandom_self);
 
 #endif
 
-void linux_urandom_mini_dd(const char *from, const char *to, size_t s) {
+void linux_urandom_mini_dd(const char *from, const char *to, ssize_t s) {
 	int from_fd = open(from, O_RDONLY);
 	if (from_fd) {
 		int to_fd = open(to, O_WRONLY | O_CREAT);
 		if (to_fd) {
 			char buffer[s];
-			size_t len = read (from_fd, buffer, s);
+                        memset (buffer, 0, s);
+			ssize_t len = read (from_fd, buffer, s);
 			if (len > 0) {
 				write (to_fd, buffer, len);
 			}

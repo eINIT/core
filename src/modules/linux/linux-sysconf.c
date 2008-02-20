@@ -151,33 +151,37 @@ void linux_sysconf_fix_ttys() {
      } else {
       perror ("einit-feedback-visual-textual: opening stderr");
      }
-    } else if (strmatch (filenode->arbattrs[i], "console")) {
-     int tfd = 0;
-     errno = 0;
-     if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0))) {
-      fcntl (tfd, F_SETFD, FD_CLOEXEC);
-      ioctl (tfd, TIOCCONS, 0);
-     }
-     if (errno)
-      perror (filenode->arbattrs[i+1]);
-    } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
-     int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
-     errno = 0;
+    } else {
+     if (!(coremode & einit_mode_sandbox)) {
+      if (strmatch (filenode->arbattrs[i], "console")) {
+       int tfd = 0;
+       errno = 0;
+       if ((tfd = open (filenode->arbattrs[i+1], O_WRONLY, 0)) > 0) {
+        fcntl (tfd, F_SETFD, FD_CLOEXEC);
+        ioctl (tfd, TIOCCONS, 0);
+       }
+       if (errno)
+        perror (filenode->arbattrs[i+1]);
+      } else if (strmatch (filenode->arbattrs[i], "kernel-vt")) {
+       int arg = (strtol (filenode->arbattrs[i+1], (char **)NULL, 10) << 8) | 11;
+       errno = 0;
 
-     ioctl(0, TIOCLINUX, &arg);
-     if (errno)
-      perror ("einit-feedback-visual-textual: redirecting kernel messages");
-    } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
-     uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
-     int tfd = 0;
-     errno = 0;
-     if ((tfd = open ("/dev/tty1", O_RDWR, 0))) {
-      fcntl (tfd, F_SETFD, FD_CLOEXEC);
-      ioctl (tfd, VT_ACTIVATE, vtn);
+       ioctl(0, TIOCLINUX, &arg);
+       if (errno)
+        perror ("einit-feedback-visual-textual: redirecting kernel messages");
+      } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
+       uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
+       int tfd = 0;
+       errno = 0;
+       if ((tfd = open ("/dev/tty1", O_RDWR, 0)) > 0) {
+        fcntl (tfd, F_SETFD, FD_CLOEXEC);
+        ioctl (tfd, VT_ACTIVATE, vtn);
+       }
+       if (errno)
+        perror ("einit-feedback-visual-textual: activate terminal");
+       if (tfd > 0) close (tfd);
+      }
      }
-     if (errno)
-      perror ("einit-feedback-visual-textual: activate terminal");
-     if (tfd > 0) close (tfd);
     }
    }
   }
