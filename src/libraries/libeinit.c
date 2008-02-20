@@ -478,6 +478,7 @@ char ** einit_module_get_provides (const char *rid) {
   char **rv = str2set ('\n', data);
   char **nrv = set_str_dup_stable (rv);
   efree (rv);
+  efree (data);
   return nrv;
  }
 
@@ -490,6 +491,7 @@ char ** einit_module_get_requires (const char *rid) {
   char **rv = str2set ('\n', data);
   char **nrv = set_str_dup_stable (rv);
   efree (rv);
+  efree (data);
   return nrv;
  }
 
@@ -502,6 +504,7 @@ char ** einit_module_get_after (const char *rid) {
   char **rv = str2set ('\n', data);
   char **nrv = set_str_dup_stable (rv);
   efree (rv);
+  efree (data);
   return nrv;
  }
 
@@ -514,6 +517,7 @@ char ** einit_module_get_before (const char *rid) {
   char **rv = str2set ('\n', data);
   char **nrv = set_str_dup_stable (rv);
   efree (rv);
+  efree (data);
   return nrv;
  }
 
@@ -526,6 +530,7 @@ char ** einit_module_get_status (const char *rid) {
   char **rv = str2set ('\n', data);
   char **nrv = set_str_dup_stable (rv);
   efree (rv);
+  efree (data);
   return nrv;
  }
 
@@ -538,6 +543,7 @@ char ** einit_module_get_options (const char *rid) {
   char **rv = str2set ('\n', data);
   char **nrv = set_str_dup_stable (rv);
   efree (rv);
+  efree (data);
   return nrv;
  }
 
