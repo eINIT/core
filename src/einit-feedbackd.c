@@ -242,10 +242,6 @@ void display_name(char *rid) {
    if (s->name) name = s->name;
 
    addch (' ');
-   addch (':');
-   addch (':');
-   addch (':');
-   addch (' ');
    attron(A_BOLD);
    addstr (name);
    attroff(A_BOLD);
@@ -277,7 +273,7 @@ void display_status(char *rid) {
     return;
    }
 
-   addstr (" ::: ");
+   addch (' ');
    attron(A_BOLD);
    addstr (name);
    attroff(A_BOLD);
