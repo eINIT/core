@@ -242,10 +242,9 @@ void display_name(char *rid) {
    if (s->name) name = s->name;
 
    addch (' ');
-   attron(COLOR_PAIR(attr_blue));
-   addch ('>');
-   addch ('>');
-   attroff(COLOR_PAIR(attr_blue));
+   addch (':');
+   addch (':');
+   addch (':');
    addch (' ');
    attron(A_BOLD);
    addstr (name);

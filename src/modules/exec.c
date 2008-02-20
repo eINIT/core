@@ -957,10 +957,12 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   shellcmd->cb = new;
 
+#if 0
   if (status) {
    status->string = shellcmd->command;
    status_update (status);
   }
+#endif
 
   char **daemon_environment;
 
