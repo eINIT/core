@@ -35,7 +35,7 @@
    <!-- new feedback -->
 
    <feedbackd dev="/dev/tty9" command="/lib/einit/bin/einit-feedbackd" restart="yes" />
-   <logd dev="/dev/tty11" command="/lib/einit/bin/einit-logd" restart="yes" />
+   <logd dev="/dev/tty11" command="/lib/einit/bin/einit-logd --follow" restart="yes" />
 
    <tty12-feedbackd dev="/dev/tty12" command="/lib/einit/bin/einit-feedbackd" restart="yes" />
   </tty>

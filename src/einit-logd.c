@@ -69,7 +69,26 @@ void event_handler_update_service_disabled (struct einit_event *ev) {
  fprintf (stdout, "[%s] disabled\n", ev->string);
 }
 
+void help () {
+}
+
 int main(int argc, char **argv, char **env) {
+ char follow = 0;
+ int i = 1;
+
+ for (; argv[i]; i++) {
+  if (strmatch (argv[i], "-f") || strmatch (argv[i], "--follow")) {
+   follow = 1;
+  } else if (strmatch (argv[i], "-n") || strmatch (argv[i], "--replay-only")) {
+   follow = 0;
+  } else if (strmatch (argv[i], "-h") || strmatch (argv[i], "--help")) {
+   help();
+   return EXIT_SUCCESS;
+  } else {
+   help();
+   return EXIT_FAILURE;
+  }
+ }
 
  if (!einit_connect(&argc, argv)) {
   perror ("Could not connect to eINIT");
@@ -85,7 +104,10 @@ int main(int argc, char **argv, char **env) {
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
 
- einit_event_loop();
+ if (follow)
+  einit_event_loop();
+ else
+  einit_replay_events();
 
  einit_disconnect();
 
