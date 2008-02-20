@@ -479,6 +479,7 @@ void bootstrap_einit_configuration_stree_einit_event_handler_core_configuration_
  while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
   if (node->idattr && node->svalue) {
    env = straddtoenviron (env, node->idattr, node->svalue);
+   setenv (node->idattr, node->svalue, 1);
   }
  }
  einit_global_environment = env;
