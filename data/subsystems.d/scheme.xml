@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<einit>
- <subsystem>
-  <scheme>
-   <modules id="primus" path="/lib/einit/modules-scheme/" pattern-allow=".*\.scm$" />
-  </scheme>
- </subsystem>
-</einit>

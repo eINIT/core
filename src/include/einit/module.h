@@ -96,8 +96,6 @@ extern "C" {
 enum einit_module_options {
  einit_module_loader     = 0x1,
 /*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
- einit_module_feedback   = 0x2,
-/*!< Module-type: Feedback modules, i.e. those that tell users what's going down. */
  einit_module_generic    = 0x4,
 /*!< Module-type: Regular modules, i.e. those that provide services. */
  einit_module_deprecated = 0x10,

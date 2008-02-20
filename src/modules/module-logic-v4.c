@@ -1306,9 +1306,8 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
 
  if (disable) {
   char disable_all = inset ((const void **)disable, (void *)"all", SET_TYPE_STRING);
-  char disable_all_but_feedback = inset ((const void **)disable, (void *)"all-but-feedback", SET_TYPE_STRING);
 
-  if (disable_all || disable_all_but_feedback) {
+  if (disable_all) {
    struct stree *cur;
    char **tmp = mod_list_all_provided_services();
 
@@ -1324,25 +1323,8 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
 
      if (inset ((const void **)disable, (void *)tmp[i], SET_TYPE_STRING)) {
       add = 0;
-     } else if ((disable_all && strmatch(tmp[i], "all")) ||
-                (disable_all_but_feedback && strmatch(tmp[i], "all-but-feedback"))) {
+     } else if (disable_all && strmatch(tmp[i], "all")) {
       add = 0;
-     } else {
-      emutex_lock (&module_logic_service_list_mutex);
-      if (module_logic_service_list && (cur = streefind (module_logic_service_list, tmp[i], tree_find_first))) {
-       struct lmodule **lm = (struct lmodule **)cur->value;
-       if (lm) {
-        ssize_t y = 0;
-        for (; lm[y]; y++) {
-         if (disable_all_but_feedback && (lm[y]->module->mode & einit_module_feedback)) {
-          add = 0;
-
-          break;
-         }
-        }
-       }
-      }
-      emutex_unlock (&module_logic_service_list_mutex);
      }
 
      if (add) {

@@ -1,4 +1,4 @@
-Import ('env', 'RuntimeDirEtc', 'InstallDirEtc', 'InstallDirLibEinit')
+Import ('env', 'RuntimeDirEtc', 'InstallDirEtc', 'InstallDirLibEinit', 'RuntimeDirLibEinit')
 
 import glob, os
 
@@ -16,37 +16,33 @@ edoconfig ('rules.edev')
 cfg = []
 
 for i in files:
- env.FixConfiguration ('#build/data/' + i, i)
+ env.FixConfiguration ('build/data/' + i, i)
  if i == './einit.xml':
-  env.Install (InstallDirLibEinit, '#build/data/einit.xml')
+  env.Install (InstallDirLibEinit, 'build/data/einit.xml')
  else:
-  env.FixConfiguration ('#build/data/' + i, i)
-  env.InstallAs (InstallDirLibEinit + '/defaults/' + i, '#build/data/' + i)
+  env.FixConfiguration ('build/data/' + i, i)
+  env.InstallAs (InstallDirLibEinit + '/defaults/' + i, 'build/data/' + i)
   try:
-   os.stat(RuntimeDirEtc + '/' + i)
-   try:
-    odata = ""
-    ndata = ""
-    f = open(RuntimeDirLibEinit + '/defaults/' + i, "r")
-    if f:
-     odata = f.read ()
-     f.close()
+   odata = ""
+   ndata = ""
+   f = open(RuntimeDirLibEinit + '/defaults/' + i, "r")
+   if f:
+    odata = f.read ()
+    f.close()
 
-    f = open('../build/data/' + i, "r")
-    if f:
-     ndata = f.read ()
-     f.close()
+   f = open('build/data/' + i, "r")
+   if f:
+    ndata = f.read ()
+    f.close()
 
-    if ndata != odata:
-     env.InstallAs (InstallDirEtc + '/' + i, i)
-    else:
-     env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
-   except:
+   if ndata != odata:
+#    print ('no match: ' + 'build/data/' + i + ' && ' + RuntimeDirLibEinit + '/defaults/' + i)
     env.InstallAs (InstallDirEtc + '/' + i, i)
+   else:
+#    print ('match: ' + 'build/data/' + i + ' && ' + RuntimeDirLibEinit + '/defaults/' + i)
+    env.InstallAs (InstallDirEtc + '/' + i, RuntimeDirEtc + '/' + i)
   except:
-#   env.InstallAs (InstallDirEtc + '/' + i, '#build/data/' + i)
+#   print ('cant open of these files: ' + 'build/data/' + i + ' && ' + RuntimeDirLibEinit + '/defaults/' + i)
    env.InstallAs (InstallDirEtc + '/' + i, i)
 
 env.Install (InstallDirLibEinit + '/schemata', glob.glob ('schema/*.rnc'))
-
-env.Install (InstallDirLibEinit, 'einit.scm')

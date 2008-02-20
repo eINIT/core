@@ -54,6 +54,7 @@ struct lmodule *mlist = NULL;
 extern char shutting_down;
 
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t update_critical_phase_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -63,19 +64,47 @@ time_t modules_last_change = 0;
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
 
+ struct service_information *original_data = NULL;
+
  if (module->module->si.provides || module->module->si.requires || module->module->si.after || module->module->si.before) {
-  module->si = ecalloc (1, sizeof (struct service_information));
+  struct service_information *new_data = ecalloc (1, sizeof (struct service_information));
 
   if (module->module->si.provides)
-   module->si->provides = set_str_dup_stable(module->module->si.provides);
+   new_data->provides = set_str_dup_stable(module->module->si.provides);
   if (module->module->si.requires)
-   module->si->requires = set_str_dup_stable(module->module->si.requires);
+   new_data->requires = set_str_dup_stable(module->module->si.requires);
   if (module->module->si.after)
-   module->si->after = set_str_dup_stable(module->module->si.after);
+   new_data->after = set_str_dup_stable(module->module->si.after);
   if (module->module->si.before)
-   module->si->before = set_str_dup_stable(module->module->si.before);
- } else
+   new_data->before = set_str_dup_stable(module->module->si.before);
+
+  emutex_lock (&update_critical_phase_mutex);
+  original_data = module->si;
+  module->si = new_data;
+  emutex_unlock (&update_critical_phase_mutex);
+ } else {
+  emutex_lock (&update_critical_phase_mutex);
+  original_data = module->si;
   module->si = NULL;
+  emutex_unlock (&update_critical_phase_mutex);
+ }
+
+ if (original_data) {
+  if (original_data->provides) {
+   efree (original_data->provides);
+  }
+  if (original_data->requires) {
+   efree (original_data->requires);
+  }
+  if (original_data->after) {
+   efree (original_data->after);
+  }
+  if (original_data->before) {
+   efree (original_data->before);
+  }
+
+  efree (original_data);
+ }
 
  struct einit_event ee = evstaticinit (einit_core_update_module);
  ee.para = (void *)module;

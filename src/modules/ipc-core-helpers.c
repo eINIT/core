@@ -159,6 +159,8 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
        n.name = (char *)str_stabilise ("actions");
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
+       n.name = (char *)str_stabilise ("options");
+       ev->set = set_fix_add (ev->set, &n, sizeof (n));
        break;
       }
      }
@@ -180,6 +182,31 @@ void einit_ipc_core_helpers_ipc_read (struct einit_event *ev) {
          ev->stringset = set_str_add (ev->stringset, "working");
         if (cur->status & status_disabled)
          ev->stringset = set_str_add (ev->stringset, "disabled");
+       }
+
+       break;
+      }
+     }
+
+     cur = cur->next;
+    }
+   } else if (path[2] && path[3] && strmatch (path[3], "options")) {
+    struct lmodule *cur = mlist;
+
+    while (cur) {
+     if (cur->module && cur->module->rid) {
+      if (strmatch (path[2], cur->module->rid)) {
+       if (cur->module->mode == 0)
+        ev->stringset = set_str_add (ev->stringset, "none");
+       else {
+        if (cur->module->mode & einit_module_loader)
+         ev->stringset = set_str_add (ev->stringset, "module-loader");
+        if (cur->module->mode & einit_module_generic)
+         ev->stringset = set_str_add (ev->stringset, "generic");
+        if (cur->module->mode & einit_module_deprecated)
+         ev->stringset = set_str_add (ev->stringset, "deprecated");
+        if (cur->module->mode & einit_feedback_job)
+         ev->stringset = set_str_add (ev->stringset, "job-feedback");
        }
 
        break;

@@ -719,6 +719,8 @@ int qexec_f (char *command) {
   while (waitpid (child, &pidstatus, WNOHANG) != child) ;
  }
 
+ if (exvec) efree (exvec);
+
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
  return status_failed;
 }
@@ -900,10 +902,12 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
  if (shellcmd->options & daemon_model_forking) {
   int retval;
+#if 0
   if (status) {
    fbprintf (status, "forking daemon");
    status_update (status);
   }
+#endif
 
   if (shellcmd && shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "daemon", SET_TYPE_STRING)) {
    ssize_t nclen = strlen (shellcmd->script) + 8;
@@ -937,10 +941,12 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
 //   einit_exec_update_daemons_from_pidfiles(); /* <-- that one didn't make sense? */
 
+#if 0
    if (status) {
     fbprintf (status, "daemon started OK");
     status_update (status);
    }
+#endif
 
    return status_ok;
   } else
@@ -957,10 +963,12 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   shellcmd->cb = new;
 
+#if 0
   if (status) {
    status->string = shellcmd->command;
    status_update (status);
   }
+#endif
 
   char **daemon_environment;
 

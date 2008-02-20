@@ -240,7 +240,7 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
 void einit_ipc_9p_fs_open (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
- if (fa && fa->path && fa->path[0] && strmatch (fa->path[0], "events")) {
+ if (fa && fa->path && fa->path[0] && fa->path[1] && strmatch (fa->path[0], "events") && strmatch (fa->path[1], "feed")) {
   if (r->ifcall.mode == P9_OREAD) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
@@ -672,6 +672,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
    esprintf (msg_string, i, "module=%s", m->module->rid);
 
    data = set_str_add (data, msg_string);
+   efree (msg_string);
   }
  }
 
@@ -682,6 +683,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   esprintf (msg_string, i, "string=%s", ev->string);
 
   data = set_str_add (data, msg_string);
+  efree (msg_string);
  }
 
  if (ev->stringset) {
@@ -693,6 +695,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
    esprintf (msg_string, i, "stringset=%s", ev->stringset[y]);
 
    data = set_str_add (data, msg_string);
+   efree (msg_string);
   }
  }
 
@@ -826,9 +829,30 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
   n.is_file = 0;
   n.name = (char *)str_stabilise ("issues");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
-  n.is_file = 1;
   n.name = (char *)str_stabilise ("events");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+ } else if (path[0] && strmatch (path[0], "events")) {
+  if (!path[1]) {
+   n.is_file = 1;
+   n.name = (char *)str_stabilise ("count");
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   n.name = (char *)str_stabilise ("feed");
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  } else if (strmatch (path[1], "count")) {
+   char buffer[32];
+   int num = 0;
+
+   if (einit_ipc_9p_event_queue) {
+    struct msg_event_queue *q = einit_ipc_9p_event_queue;
+    do {
+     num++;
+     q = q->next;
+    } while (q->next != einit_ipc_9p_event_queue);
+   }
+
+   esprintf (buffer, 32, "%i", num);
+   ev->stringset = set_str_add_stable (ev->stringset, buffer);
+  }
  }
 }
 
@@ -836,10 +860,8 @@ void einit_ipc_9p_ipc_stat (struct einit_event *ev) {
  char **path = ev->para;
 
  if (path && path[0]) {
-  if (strmatch (path[0], "issues")) {
+  if (strmatch (path[0], "issues") || strmatch (path[0], "events")) {
    ev->flag = (path[1] ? 1 : 0);
-  } else if (strmatch (path[0], "events")) {
-   ev->flag = 1;
   }
  }
 }

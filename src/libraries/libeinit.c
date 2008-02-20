@@ -407,6 +407,56 @@ int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), v
  return 0;
 }
 
+int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, void *), void *cdata, int fragments) {
+ char *buffer = einit_render_path (path);
+
+ IxpCFid *f = ixp_open (einit_ipc_9p_client, buffer, P9_OREAD);
+
+ if (f) {
+  intptr_t rn = 0;
+  void *buf = NULL;
+  intptr_t blen = 0;
+
+  buf = malloc (f->iounit);
+  if (!buf) {
+   ixp_close (f);
+   return 0;
+  }
+
+  do {
+   buf = realloc (buf, blen + f->iounit);
+   if (buf == NULL) {
+    ixp_close (f);
+    return 0;
+   }
+
+   rn = ixp_read (f, (char *)(buf + blen), f->iounit);
+   if (rn > 0) {
+    blen = blen + rn;
+   }
+
+   if ((rn < f->iounit) && blen) {
+    *(((char *)buf) + blen) = 0;
+    callback (buf, blen, cdata);
+    blen = 0;
+    fragments--;
+
+    if (fragments <= 0) {
+     ixp_close (f);
+     efree (buffer);
+     return 0;
+    }
+   }
+  } while (rn > 0);
+
+  ixp_close (f);
+ }
+
+ efree (buffer);
+
+ return 0;
+}
+
 int einit_write (char **path, const char *data) {
  if (!data) return 0;
 
@@ -462,27 +512,92 @@ char * einit_module_get_attribute (const char *rid, const char *attribute) {
 }
 
 char * einit_module_get_name (const char *rid) {
- return einit_module_get_attribute (rid, "name");
+ char *data = einit_module_get_attribute (rid, "name");
+ if (data) {
+  char *rv = (char *)str_stabilise(data);
+  efree (data);
+  return rv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_provides (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "provides"));
+ char *data = einit_module_get_attribute (rid, "provides");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  efree (data);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_requires (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "requires"));
+ char *data = einit_module_get_attribute (rid, "requires");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  efree (data);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_after (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "after"));
+ char *data = einit_module_get_attribute (rid, "after");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  efree (data);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_before (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "before"));
+ char *data = einit_module_get_attribute (rid, "before");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  efree (data);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 char ** einit_module_get_status (const char *rid) {
- return str2set ('\n', einit_module_get_attribute (rid, "status"));
+ char *data = einit_module_get_attribute (rid, "status");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  efree (data);
+  return nrv;
+ }
+
+ return NULL;
+}
+
+char ** einit_module_get_options (const char *rid) {
+ char *data = einit_module_get_attribute (rid, "options");
+ if (data) {
+  char **rv = str2set ('\n', data);
+  char **nrv = set_str_dup_stable (rv);
+  efree (rv);
+  efree (data);
+  return nrv;
+ }
+
+ return NULL;
 }
 
 int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
@@ -496,8 +611,7 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
    if (strcmp ((buffer[i])+5, "unknown/custom")) {
     ev->type = event_string_to_code((buffer[i])+5);
    } else {
-    evdestroy (ev);
-    return;
+    goto cleanup_exit;
    }
   } else if (strprefix (buffer[i], "integer=")) {
    ev->integer = parse_integer ((buffer[i])+8);
@@ -508,11 +622,11 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
   } else if (strprefix (buffer[i], "flag=")) {
    ev->flag = parse_integer ((buffer[i])+5);
   } else if (strprefix (buffer[i], "module=")) {
-   ev->rid = estrdup ((buffer[i])+7);
+   ev->rid = (char *)str_stabilise ((buffer[i])+7);
   } else if (strprefix (buffer[i], "string=")) {
-   ev->string = estrdup ((buffer[i])+7);
+   ev->string = (char *)str_stabilise ((buffer[i])+7);
   } else if (strprefix (buffer[i], "stringset=")) {
-   ev->stringset = set_str_add (ev->stringset, (buffer[i])+10);
+   ev->stringset = set_str_add_stable (ev->stringset, (buffer[i])+10);
   }
  }
 
@@ -522,10 +636,28 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
   event_emit (ev, einit_event_flag_broadcast);
  }
 
+ cleanup_exit:
+
+ if (ev->stringset)
+  efree(ev->stringset);
+
  evdestroy (ev);
+ efree (buffer);
 }
 
 void einit_event_loop () {
- char *path[2] = { "events", NULL };
+ char *path[3] = { "events", "feed", NULL };
  einit_read_callback (path, einit_event_loop_decoder, NULL);
+}
+
+einit_replay_events() {
+ char *path[3] = { "events", "count", NULL };
+ char *count_s = einit_read (path);
+
+ if (count_s) {
+  int count = parse_integer (count_s);
+
+  path[1] = "feed";
+  einit_read_callback_limited (path, einit_event_loop_decoder, NULL, count);
+ }
 }

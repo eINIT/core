@@ -140,6 +140,7 @@ char *einit_read (char **path);
  * \param[in] callback A pointer to a callback functions
  */
 int einit_read_callback (char **path, int (*callback)(char *, size_t, void *), void *);
+int einit_read_callback_limited (char **path, int (*callback)(char *, size_t, void *), void *, int);
 
 /*!\brief Write to a file
  *
@@ -174,6 +175,14 @@ void einit_module_call (const char *rid, const char *action);
  */
 void einit_event_loop ();
 
+/*!\brief Grab and Handle old Events
+ *
+ * This will run an event loop that will grab events from eINIT and emit them locally,
+ * but unlike einit_event_loop(), it will stop and return once all the current events
+ * have been processed, instead of waiting for new events to come in.
+ */
+void einit_replay_events ();
+
 char * einit_module_get_attribute (const char *rid, const char *attribute);
 
 char * einit_module_get_name (const char *rid);
@@ -187,6 +196,8 @@ char ** einit_module_get_after (const char *rid);
 char ** einit_module_get_before (const char *rid);
 
 char ** einit_module_get_status (const char *rid);
+
+char ** einit_module_get_options (const char *rid);
 
 #ifdef __cplusplus
 }

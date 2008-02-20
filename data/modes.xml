@@ -34,7 +34,7 @@
  </mode>
 
  <mode id="power-down">
-  <disable services="all-but-feedback" />
+  <disable services="all" />
   <options shutdown="yes" />
   <overrides>
    <ttys s="none" />
@@ -44,7 +44,7 @@
  </mode>
 
  <mode id="power-reset">
-  <disable services="all-but-feedback" />
+  <disable services="all" />
   <options shutdown="yes" />
   <overrides>
    <ttys s="none" />
