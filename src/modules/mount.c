@@ -1852,8 +1852,8 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
  if (mount_fsck_template) {
   char *command;
 
-  status->string = "filesystem might be dirty; running fsck";
-  status_update (status);
+/*  status->string = "filesystem might be dirty; running fsck";
+  status_update (status);*/
 
   char **d = set_str_add_stable (set_str_add_stable ((fs ? set_str_add_stable (set_str_add_stable ((char **)NULL, "fs"), fs) : NULL), "device"), device);
 
@@ -1872,7 +1872,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
 
   efree (d);
  } else {
-  status->string = "WARNING: filesystem dirty, but no fsck command known";
+  status->string = "WARNING: no fsck command known";
   status_update (status);
  }
 
