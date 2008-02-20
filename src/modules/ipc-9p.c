@@ -240,7 +240,7 @@ void einit_ipc_9p_fs_open_spawn (Ixp9Req *r) {
 void einit_ipc_9p_fs_open (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
- if (fa && fa->path && fa->path[0] && fa->path[1] && strmatch (fa->path[0], "events") && strmatch (fa->path[0], "feed")) {
+ if (fa && fa->path && fa->path[0] && fa->path[1] && strmatch (fa->path[0], "events") && strmatch (fa->path[1], "feed")) {
   if (r->ifcall.mode == P9_OREAD) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
@@ -832,11 +832,27 @@ void einit_ipc_9p_ipc_read (struct einit_event *ev) {
   n.name = (char *)str_stabilise ("events");
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
  } else if (path[0] && strmatch (path[0], "events")) {
-  n.is_file = 1;
-  n.name = (char *)str_stabilise ("count");
-  ev->set = set_fix_add (ev->set, &n, sizeof (n));
-  n.name = (char *)str_stabilise ("feed");
-  ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  if (!path[1]) {
+   n.is_file = 1;
+   n.name = (char *)str_stabilise ("count");
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+   n.name = (char *)str_stabilise ("feed");
+   ev->set = set_fix_add (ev->set, &n, sizeof (n));
+  } else if (strmatch (path[1], "count")) {
+   char buffer[32];
+   int num = 0;
+
+   if (einit_ipc_9p_event_queue) {
+    struct msg_event_queue *q = einit_ipc_9p_event_queue;
+    do {
+     num++;
+     q = q->next;
+    } while (q->next != einit_ipc_9p_event_queue);
+   }
+
+   esprintf (buffer, 32, "%i", num);
+   ev->stringset = set_str_add_stable (ev->stringset, buffer);
+  }
  }
 }
 
