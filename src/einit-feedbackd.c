@@ -172,13 +172,13 @@ void add_text_buffer_entry (char *rid, char *message) {
  textbuffer = (struct textbuffer_entry **)set_fix_add ((void **)textbuffer, &ne, sizeof (ne));
 }
 
-void move_to_right_border () {
+void move_to_right_border (int offset) {
  int x, y, maxx, maxy;
 
  getyx (stdscr, y, x);
  getmaxyx(stdscr, maxy, maxx);
 
- move (y, maxx - 12);
+ move (y, maxx - offset);
 }
 
 void move_to_left_border () {
@@ -286,8 +286,46 @@ void display_status(char *rid) {
    addstr (name);
    attroff(A_BOLD);
 
+   if (!s->feedback_job) {
+    if (s->status & status_enabled) {
+     move_to_right_border(17);
+     attron (A_DIM);
+     addstr ("enabled ::");
+     attroff (A_DIM);
+    } else if (s->status & status_disabled) {
+     move_to_right_border(18);
+     attron (A_DIM);
+     addstr ("disabled ::");
+     attroff (A_DIM);
+    }
+   }
+
+   move_to_right_border(6);
+   attron(COLOR_PAIR(attr_blue));
+   addstr ("[ ");
+   attroff(COLOR_PAIR(attr_blue));
+
    if (s->status & status_working) {
-    move_to_right_border();
+    attron(COLOR_PAIR(attr_blue));
+    addstr ("..");
+    attroff(COLOR_PAIR(attr_blue));
+   } else if (s->status & status_failed) {
+    attron(COLOR_PAIR(attr_red));
+    addstr ("!!");
+    attroff(COLOR_PAIR(attr_red));
+   } else if (s->status & status_ok) {
+    attron(COLOR_PAIR(attr_green));
+    addstr ("OK");
+    attroff(COLOR_PAIR(attr_green));
+   }
+
+   attron(COLOR_PAIR(attr_blue));
+   addstr (" ]");
+   attroff(COLOR_PAIR(attr_blue));
+
+/*
+   if (s->status & status_working) {
+    move_to_right_border(12);
     addstr ("[  ");
 
     attron(COLOR_PAIR(attr_blue));
@@ -365,7 +403,7 @@ void display_status(char *rid) {
      addstr (" ]");
     }
    }
-
+*/
    st = streenext (st);
   }
  }
