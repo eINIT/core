@@ -9,7 +9,6 @@
   dbus : useful for just about anyone
   hal : automounting for KDE and GNOME
   displaymanager : a graphical login shell
-  ipc-dbus : allows libeinit to communicate with the core via dbus
   sshd : ssh daemon
  -->
 
