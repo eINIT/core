@@ -55,6 +55,8 @@ module_register(linux_urandom_self);
 #endif
 
 void linux_urandom_mini_dd(const char *from, const char *to, ssize_t s) {
+	if (s <= 0) return;
+
 	int from_fd = open(from, O_RDONLY);
 	if (from_fd) {
 		int to_fd = open(to, O_WRONLY | O_CREAT);
