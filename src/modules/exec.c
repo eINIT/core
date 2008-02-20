@@ -719,6 +719,8 @@ int qexec_f (char *command) {
   while (waitpid (child, &pidstatus, WNOHANG) != child) ;
  }
 
+ if (exvec) efree (exvec);
+
  if (WIFEXITED(pidstatus) && (WEXITSTATUS(pidstatus) == EXIT_SUCCESS)) return status_ok;
  return status_failed;
 }

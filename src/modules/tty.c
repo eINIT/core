@@ -213,7 +213,7 @@ int einit_tty_texec (struct cfgnode *node) {
 
     if (device) {
      int newfd = eopen(device, O_RDWR);
-     if (newfd) {
+     if (newfd > 0) {
       close(0);
       close(1);
       close(2);
@@ -224,8 +224,10 @@ int einit_tty_texec (struct cfgnode *node) {
 
 #ifdef __linux__
      int fdc = open ("/dev/console", O_WRONLY | O_NOCTTY);
-     ioctl(fdc, TIOCSCTTY, 1);
-     close (fdc);
+     if (fdc > 0) {
+      ioctl(fdc, TIOCSCTTY, 1);
+      close (fdc);
+     }
 #endif
     }
     execve (cmds[0], cmds, environment);
@@ -259,6 +261,8 @@ int einit_tty_texec (struct cfgnode *node) {
     ttys = new;
 //    emutex_unlock (&ttys_mutex);
    }
+
+   efree (cmds);
   }
  }
 
