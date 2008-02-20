@@ -54,9 +54,6 @@ module_register(linux_urandom_self);
 
 #endif
 
-int my_module_enable  (void *, struct einit_event *);
-int my_module_disable (void *, struct einit_event *);
-
 void linux_urandom_mini_dd(const char *from, const char *to, size_t s) {
 	int from_fd = open(from, O_RDONLY);
 	if (from_fd) {
