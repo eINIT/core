@@ -145,17 +145,22 @@ void add_text_buffer_entry (char *rid, char *message) {
  if (!message[0]) return;
 
  if (textbuffer) {
-  int i = 0;
-  for (; textbuffer[i]; i++) ;
-
-  if (i > 0) {
-   i--;
-   if (strmatch (rid, textbuffer[i]->rid)) {
-    if (strmatch (message, textbuffer[i]->message)) return;
-    if (strmatch (message, "status")) return;
-    if (strmatch (textbuffer[i]->message, "status")) {
-     textbuffer[i]->message = message;
+  if (strmatch (message, "status")) {
+   int i = 0;
+   for (; textbuffer[i]; i++) {
+    if (strmatch (rid, textbuffer[i]->rid)) {
      return;
+    }
+   }
+  } else {
+   int i = 0;
+   for (; textbuffer[i]; i++) {
+    if (strmatch (rid, textbuffer[i]->rid)) {
+     if (strmatch (message, textbuffer[i]->message)) return;
+     if (strmatch (textbuffer[i]->message, "status")) {
+      textbuffer[i]->message = message;
+      return;
+     }
     }
    }
   }
