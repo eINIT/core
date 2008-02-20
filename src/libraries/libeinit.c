@@ -526,6 +526,9 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
   event_emit (ev, einit_event_flag_broadcast);
  }
 
+ if (ev->stringset)
+  efree(ev->stringset);
+
  evdestroy (ev);
  efree (buffer);
 }

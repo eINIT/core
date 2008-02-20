@@ -440,6 +440,7 @@ void update_do() {
     }
 
     addch (' ');
+    addch (' ');
     attron(COLOR_PAIR(attr_yellow));
     addch ('*');
     attroff(COLOR_PAIR(attr_yellow));
