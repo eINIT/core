@@ -444,6 +444,9 @@ char run_thread_function_in_pool (struct thread_wrapper_data *d) {
 }
 
 void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
+ /* update the process environment, just in case */
+ update_local_environment();
+
  emutex_lock (&thread_stats_mutex);
  thread_pool_count++;
 
@@ -1313,4 +1316,14 @@ char *after_string_from_files (char **files) {
   return utility_generate_defer_fs(fs);
  else
   return NULL;
+}
+
+void update_local_environment() {
+ struct cfgnode *node = NULL;
+
+ while ((node = cfg_findnode ("configuration-environment-global", 0, node))) {
+  if (node->idattr && node->svalue) {
+   setenv (node->idattr, node->svalue, 1);
+  }
+ }
 }

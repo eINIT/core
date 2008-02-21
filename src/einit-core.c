@@ -460,6 +460,9 @@ int main(int argc, char **argv, char **environ) {
   }
   evstaticdestroy(cev);
 
+/* update the process environment, just in case */
+  update_local_environment();
+
   if (do_wait) {
    struct einit_event eml = evstaticinit(einit_core_secondary_main_loop);
    eml.file = commandpipe_in;

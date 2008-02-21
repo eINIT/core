@@ -295,6 +295,8 @@ char **set_str_add_stable (char **s, char *e);
 char check_files (char **files);
 char *after_string_from_files (char **files);
 
+void update_local_environment();
+
 #endif /* _UTILITY_H */
 
 #ifdef __cplusplus
