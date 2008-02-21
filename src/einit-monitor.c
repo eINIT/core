@@ -264,14 +264,16 @@ int main(int argc, char **argv, char **env) {
   for (; env[i]; i++);
  }
 
- char *pimped_env[2];
+ char *pimped_env[i+2];
  i = 0;
-/* if (env) {
+ if (env) {
   for (; env[i]; i++)
    pimped_env[i] = env[i];
- }*/
+ }
  pimped_env[i] = "PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/opt/bin:/opt/sbin";
  pimped_env[i+1] = NULL;
+
+ setenv ("PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/opt/bin:/opt/sbin", 1);
 
  if (force_init) {
   struct sigaction action;
