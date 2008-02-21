@@ -85,6 +85,8 @@ module_register(einit_mod_so_self);
 
 pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+char **einit_mod_so_modules = NULL;
+
 int einit_mod_so_scanmodules (struct lmodule *);
 
 int einit_mod_so_cleanup (struct lmodule *pa) {
@@ -121,7 +123,7 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
 /* make sure all bootstrap modules get updated */
  while (lm) {
-  if (lm->source && (strprefix(lm->source, BOOTSTRAP_MODULE_PATH))) {
+  if (lm->source && (strprefix(lm->source, BOOTSTRAP_MODULE_PATH) || inset ((const void **)einit_mod_so_modules, lm->source, SET_TYPE_STRING))) {
    lm = mod_update (lm);
 
    if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
@@ -137,6 +139,11 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
   for (; modules[z]; z++) {
 //   fprintf (stderr, "* loading: %s\n", modules[z]);
+   if (inset ((const void **)einit_mod_so_modules, modules[z], SET_TYPE_STRING)) {
+    continue;
+   }
+
+   einit_mod_so_modules = set_str_add_stable (einit_mod_so_modules, modules[z]);
 
    struct smodule **modinfo;
    lm = modchain;
@@ -158,6 +165,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
    sohandle = dlopen (modules[z], RTLD_NOW);
    if (sohandle == NULL) {
+    einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+
     puts (dlerror ());
     goto cleanup_continue;
    }
@@ -171,15 +180,21 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 
+      einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+
       dlclose (sohandle);
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);
 
+     einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+
      dlclose (sohandle);
     }
    } else {
     notice (1, "module %s: not loading: missing header.\n", modules[z]);
+
+    einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
 
     dlclose (sohandle);
    }
