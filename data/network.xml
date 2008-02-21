@@ -2,7 +2,7 @@
  <hostname s="localhost"/>
  <domainname s="local"/>
  <interfaces>
-<!-- please see http://einit.org/wiki/Network_Settings_(V2) for details on how
+<!-- please see http://einit.org/wiki/Network-Settings-V2 for details on how
      this file should look like... if all you use is dhcp on eth* links, you'll
      be fine without any adjustments here. -->
 
