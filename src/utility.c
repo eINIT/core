@@ -445,7 +445,7 @@ char run_thread_function_in_pool (struct thread_wrapper_data *d) {
 
 void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
  /* update the process environment, just in case */
- update_local_environment();
+// update_local_environment();
 
  emutex_lock (&thread_stats_mutex);
  thread_pool_count++;

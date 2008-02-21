@@ -259,6 +259,20 @@ int main(int argc, char **argv, char **env) {
   it++;
  }
 
+ i = 0;
+ if (env) {
+  for (; env[i]; i++);
+ }
+
+ char *pimped_env[i+2];
+ i = 0;
+ if (env) {
+  for (; env[i]; i++)
+   pimped_env[i] = env[i];
+ }
+ pimped_env[i] = "PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/opt/bin:/opt/sbin";
+ pimped_env[i+1] = NULL;
+
  if (force_init) {
   struct sigaction action;
 
@@ -273,12 +287,12 @@ int main(int argc, char **argv, char **env) {
 
   if ( sigaction (SIGPIPE, &action, NULL) ) perror ("calling sigaction() failed");
 
-  return einit_monitor_loop (it, argv_mutable, env, NULL, need_recovery);
+  return einit_monitor_loop (it, argv_mutable, pimped_env, NULL, need_recovery);
  }
 
 /* non-ipc, non-core */
 // argv_mutable[0] = EINIT_LIB_BASE "/bin/einit-helper";
- execve (EINIT_LIB_BASE "/bin/einit-helper", argv_mutable, env);
+ execve (EINIT_LIB_BASE "/bin/einit-helper", argv_mutable, pimped_env);
  perror ("couldn't execute " EINIT_LIB_BASE "/bin/einit-helper");
  return -1;
 }
