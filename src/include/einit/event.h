@@ -200,7 +200,9 @@ enum einit_event_code {
  einit_ipc_read                     = einit_event_subsystem_ipc_v2   | 0x001,
  einit_ipc_write                    = einit_event_subsystem_ipc_v2   | 0x002,
  einit_ipc_stat                     = einit_event_subsystem_ipc_v2   | 0x003,
- einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004
+ einit_ipc_open                     = einit_event_subsystem_ipc_v2   | 0x004,
+ einit_ipc_enabling                 = einit_event_subsystem_ipc_v2   | 0x010,
+ einit_ipc_disabling                = einit_event_subsystem_ipc_v2   | 0x011
 };
 
 #define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, { NULL }, NULL }

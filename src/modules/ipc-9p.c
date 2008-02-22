@@ -813,6 +813,13 @@ void einit_ipc_9p_boot_event_handler_root_device_ok (struct einit_event *ev) {
 
 void einit_ipc_9p_power_event_handler (struct einit_event *ev) {
  notice (4, "disabling IPC (9p)");
+
+ struct einit_event nev = evstaticinit(einit_ipc_disabling);
+
+ event_emit(&nev, einit_event_flag_broadcast);
+
+ evstaticdestroy (&nev);
+
  if (einit_ipc_9p_running) {
   einit_ipc_9p_running = 0;
   ixp_server_close (&einit_ipc_9p_server);

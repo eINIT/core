@@ -111,6 +111,7 @@ module_register(einit_tty_self);
 struct ttyst *ttys = NULL;
 char einit_tty_do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
+char einit_tty_feedback_blocked = 0;
 
 int einit_tty_texec (struct cfgnode *);
 
@@ -349,7 +350,8 @@ void einit_tty_update() {
  int i = 0;
  char sysv_semantics = parse_boolean(cfg_getstring("ttys/sysv-style", NULL));
 
- enab_ttys = str2set (':', cfg_getstring("feedback-ttys", NULL));
+ if (!einit_tty_feedback_blocked) enab_ttys = str2set (':', cfg_getstring("feedback-ttys", NULL));
+
  if (!(sysv_semantics && einit_tty_in_switch)) {
   char **tmp_ttys = NULL;
   tmp_ttys = str2set (':', cfg_getstring("ttys", NULL));
@@ -381,6 +383,11 @@ void einit_tty_update_switch_done () {
  einit_tty_update();
 }
 
+void einit_tty_disable_feedback () {
+ einit_tty_feedback_blocked = 1;
+ einit_tty_update ();
+}
+
 int einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
@@ -407,6 +414,8 @@ int einit_tty_configure (struct lmodule *this) {
  event_listen (einit_core_switching, einit_tty_update_switching);
  event_listen (einit_core_done_switching, einit_tty_update_switch_done);
  event_listen (einit_boot_devices_available, einit_tty_update);
+
+ event_listen (einit_ipc_disabling, einit_tty_disable_feedback);
 
  struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
  if (utmpnode)
