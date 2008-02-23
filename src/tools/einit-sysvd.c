@@ -179,7 +179,7 @@ int main (int argc, char **argv) {
 
  pidfile = fopen (PIDFILE, "w");
  if (pidfile) {
-  fprintf (pidfile, "%d", getpid());
+  fprintf (pidfile, "%d\n", getpid());
   fclose (pidfile);
  }
 
