@@ -635,6 +635,11 @@ void *einit_ipc_9p_listen (void *param) {
 }
 
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
+ char *ecode = event_code_to_string(ev->type);
+ if (strcmp (ecode, "unknown/custom") ||
+     (!ev->integer && !ev->status && !ev->task && !ev->flag && !ev->rid && !ev->string && !ev->stringset))
+  return; /* discard useless events */
+
  struct msg_event_queue *e = emalloc (sizeof (struct msg_event_queue));
 
  char **data = NULL;
@@ -643,7 +648,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  esprintf (buffer, BUFFERSIZE, "event=%i", ev->seqid);
  data = set_str_add (data, buffer);
 
- esprintf (buffer, BUFFERSIZE, "type=%s", event_code_to_string(ev->type));
+ esprintf (buffer, BUFFERSIZE, "type=%s", ecode);
  data = set_str_add (data, buffer);
 
  if (ev->integer) {
