@@ -620,9 +620,13 @@ void *einit_ipc_9p_listen (void *param) {
 
   ixp_serverloop(&einit_ipc_9p_server);
 
-  notice (1, "9p server loop has terminated: %s", ixp_errbuf());
+  if (einit_ipc_9p_running) {
+   notice (1, "9p server loop has terminated: %s; retrying in 5 seconds", ixp_errbuf());
 
-  einit_ipc_9p_running = 0;
+   sleep (5);
+
+   return einit_ipc_9p_listen (param);
+  }
  } else {
   notice (1, "could not initialise 9p server");
  }
