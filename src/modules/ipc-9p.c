@@ -667,11 +667,11 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
   data = set_str_add (data, buffer);
  }
 
- if (ev->string) {
+ if (ev->rid) {
   char *msg_string;
-  size_t i = strlen (ev->string) + 1 + 9; /* "module=\n"*/
+  size_t i = strlen (ev->rid) + 1 + 9; /* "module=\n"*/
   msg_string = emalloc (i);
-  esprintf (msg_string, i, "module=%s", ev->string);
+  esprintf (msg_string, i, "module=%s", ev->rid);
 
   data = set_str_add (data, msg_string);
   efree (msg_string);
