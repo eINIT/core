@@ -99,7 +99,7 @@ InstallAliases = []
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
-ModulesCompatibility = ['compatibility-sysv-utmp', 'compatibility-sysv-initctl']
+ModulesCompatibility = ['compatibility-sysv-utmp']
 
 ASMFunctions = ['strmatch', 'strlen', 'memcpy', 'memset', 'hashp']
 ASMFunctionsAvailable = []

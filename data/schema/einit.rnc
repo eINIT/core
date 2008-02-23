@@ -388,18 +388,6 @@ ConfigurationCompatibility =
     }? &
 
     element simulate-runlevel { attribute now { text } }? &
-    element initctl { StringAttribute, BooleanAttribute, IntegerAttribute }? &
-    element runlevel-mode-relations {
-      attribute runlevel0 { text },
-      attribute runlevel1 { text },
-      attribute runlevel2 { text },
-      attribute runlevel3 { text },
-      attribute runlevel4 { text },
-      attribute runlevel5 { text },
-      attribute runlevel6 { text },
-      attribute runlevelS { text },
-      attribute runlevels { text }
-    }?
   }
 
 FSTab =

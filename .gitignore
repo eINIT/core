@@ -24,6 +24,8 @@ src/einit-feedback
 src/einit-log
 src/last-rites
 
+src/einit-sysvd
+
 src/modules/bundle-*
 
 #
