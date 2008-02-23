@@ -281,7 +281,7 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGTTIN, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGTTOU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
-
+#if 1
 /* catch a couple of signals and print traces for them */
 #if defined(__GLIBC__)
 #if ! defined(__UCLIBC__)
@@ -301,6 +301,7 @@ void sched_reset_event_handlers () {
  if ( sigaction (SIGPROF, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGXCPU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
  if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
+#endif
 #endif
 #endif
 }
