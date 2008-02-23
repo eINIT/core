@@ -115,7 +115,17 @@ int scheduler_compare_time (time_t a, time_t b) {
  return 0;
 }
 
-time_t scheduler_get_next_tick () {
+void insert_timer_event (time_t n) {
+ emutex_lock (&sched_timer_data_mutex);
+
+ uintptr_t tmpinteger = n;
+ sched_timer_data = (time_t *)set_noa_add ((void **)sched_timer_data, (void *)tmpinteger);
+ setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
+
+ emutex_unlock (&sched_timer_data_mutex);
+}
+
+time_t scheduler_get_next_tick (time_t now) {
  time_t next = 0;
 
  emutex_lock (&sched_timer_data_mutex);
@@ -124,12 +134,17 @@ time_t scheduler_get_next_tick () {
 
  emutex_unlock (&sched_timer_data_mutex);
 
- return next;
+ if (next && ((next) <= (now + 60))) /* see if the event is within 60 seconds */
+  return next;
+ else {
+  insert_timer_event (now + 60);
+  return scheduler_get_next_tick(now);
+ }
 }
 
 void sched_handle_timers () {
- time_t next_tick = scheduler_get_next_tick();
  time_t now = time(NULL);
+ time_t next_tick = scheduler_get_next_tick(now);
 
  if (!next_tick) {
 //  notice (1, "no more timers left.\n");
@@ -162,23 +177,7 @@ void sched_handle_timers () {
 }
 
 void sched_timer_event_handler_set (struct einit_event *ev) {
- emutex_lock (&sched_timer_data_mutex);
-
- uintptr_t tmpinteger = ev->integer;
- sched_timer_data = (time_t *)set_noa_add ((void **)sched_timer_data, (void *)tmpinteger);
- setsort ((void **)sched_timer_data, set_sort_order_custom, (int (*)(const void *, const void *))scheduler_compare_time);
-
-/*  if (sched_timer_data) {
-   uint32_t i = 0;
-
-   notice (1, "timestamps:\n");
-
-   for (; sched_timer_data[i]; i++) {
-    notice (1, " * %i\n", (int)sched_timer_data[i]);
-   }
-  }*/
-
- emutex_unlock (&sched_timer_data_mutex);
+ insert_timer_event (ev->integer);
 
  sched_handle_timers();
 }
