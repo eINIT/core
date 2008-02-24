@@ -1828,7 +1828,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
   n.name = (char *)str_stabilise ("services");
   n.is_file = 0;
   ev->set = set_fix_add (ev->set, &n, sizeof (n));
- } if (path && path[0]) {
+ } else if (path && path[0]) {
   if (strmatch (path[0], "services")) {
    if (!path[1]) {
     n.name = (char *)str_stabilise ("all");
@@ -1939,7 +1939,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
    char have_issues = 0;
    struct cfgnode *node = NULL;
 
-   while (!have_issues && (node = cfg_findnode ("enable", 0, node))) {
+   while (!have_issues && (node = cfg_findnode ("mode-enable", 0, node))) {
     if (node->svalue) {
      char **services = str2set (':', node->svalue);
      if (services) {
@@ -1962,7 +1962,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
      node = NULL;
      char buffer[BUFFERSIZE];
 
-     while ((node = cfg_findnode ("enable", 0, node))) {
+     while ((node = cfg_findnode ("mode-enable", 0, node))) {
       if (node->svalue) {
        char **services = str2set (':', node->svalue);
        if (services) {
