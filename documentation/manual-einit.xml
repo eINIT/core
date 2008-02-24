@@ -257,7 +257,7 @@
    eINIT's internals just that much easier. To do so, you must first make sure that you have 9p2000 support
    either compiled into your kernel, or that you have compiled it as a module. Then either run a command like
    <command>mount -t 9p /dev/einit-9p /mnt -o proto=unix</command>, or adjust your fstab file accordingly.</para>
-  <para>Also note that the proto= option for this filesystem has been changed to trans= in Linux kernels
+  <para>Also note that the proto= option for this filesystem has been changed to trans= in Linux kernel versions
    2.6.24 and above.</para></note>
   <para>A few important files that you might want to have a closer look at:</para>
   <variablelist>

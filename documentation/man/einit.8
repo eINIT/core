@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "EINIT" "8" "19 February 2007" "einit-0.15.1-svn" ""
+.TH "EINIT" "8" "23 February 2008" "einit-0.40.0" ""
 
 .SH NAME
-einit \- boots your computer. fast.
+einit \- service initialisation and computer boot management
 .SH SYNOPSIS
 
-\fBeinit\fR [ \fB-c \fIconfiguration-file\fB\fR ] [ \fB [ -h | --help ]\fR ] [ \fB-v\fR ] [ \fB [ --check-configuration | --checkup | --wtf ]\fR ] [ \fB [ --no-feedback-switch | --feedback-switch ]\fR ] [ \fB [ --sandbox | --metadaemon ]\fR ] [ \fB--override-init-check\fR ] [ \fB--ipc-command \fIcommand\fB\fR\fI ...\fR ]
+\fBeinit\fR [ \fB [ -h | --help ]\fR ] [ \fB [ -v | --version ]\fR ] [ \fB [ -L | --licence ]\fR ] [ \fB [ -e | -d ] \fIservice\fB\fR ] [ \fB-c \fIservice\fB \fIcommand\fB\fR ] [ \fB [ -em | -dm ] \fImodule\fB\fR ] [ \fB-cm \fImodule\fB \fIcommand\fB\fR ] [ \fB [ -H | -D ]\fR ] [ \fB-R\fR ] [ \fB-m \fImode\fB\fR ] [ \fB-u\fR ] [ \fB [ -ls | ls ] \fIpath\fB\fR ] [ \fB [ -read | read ] \fIpath\fB\fR ] [ \fB [ -write | write ] \fIpath\fB \fIdata\fB\fR ] [ \fB--wtf\fR ] [ \fB [ -q | -p ]\fR ] [ \fB [ -a | ls ] \fIaddress\fB\fR ] [ \fB--sandbox\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -18,49 +18,62 @@ like \fBinit\fR, it is (usually) the first program to be run by the kernel
 and responsible for initialising all soft- and hardware.
 .SH "OPTIONS"
 .TP
-\fB--check-configuration\fR
-.TP
-\fB--checkup\fR
-.TP
 \fB--wtf\fR
 Start einit, initialise all modules and ask them to check for inconsistencies in your current
 configuration, then exit. It is recommended you do this checkup after each and every modification
-to your configuration file(s).
+to your configuration files.
 .TP
-\fB-c \fIfile\fB\fR
-Will make einit parse \fIfile\fR instead of /lib/einit/einit.xml.
+\fB-e \fIservice\fB\fR
+Tell eINIT to enable \fIservice\fR\&.
+.TP
+\fB-d \fIservice\fB\fR
+Tell eINIT to disable \fIservice\fR\&.
+.TP
+\fB-c \fIservice\fB \fIcommand\fB\fR
+Tell eINIT's \fIservice\fR to execute \fIcommand\fR\&. Examples of such commands are "enable" and "disable".
+.TP
+\fB-em \fImodule\fB\fR
+Tell eINIT to enable \fImodule\fR\&. All dependencies of \fImodule\fR need to be met before running this, else the request is discarded.
+.TP
+\fB-dm \fImodule\fB\fR
+Tell eINIT to disable \fImodule\fR\&. \fImodule\fR may not be in use before this command is run, else the request is discarded.
+.TP
+\fB-cm \fImodule\fB \fIcommand\fB\fR
+Tell eINIT's \fImodule\fR to execute \fIcommand\fR\&. Examples of such commands are "enable" and "disable".
+.TP
+\fB-ls \fIpath\fB\fR
+.TP
+\fBls \fIpath\fB\fR
+Do the equivalent of an 'ls' command on the specified \fIpath\fR\&. \fIpath\fR refers to eINIT's virtual file system, see below for more information on this.
+.TP
+\fB-read \fIpath\fB\fR
+.TP
+\fBread \fIpath\fB\fR
+Read the contents of the specified \fIpath\fR\&. \fIpath\fR refers to eINIT's virtual file system, see below for more information on this.
+.TP
+\fB-write \fIpath\fB \fIdata\fB\fR
+.TP
+\fBwrite \fIpath\fB \fIdata\fB\fR
+Write \fIdata\fR to the \fIpath\fR\&. \fIpath\fR refers to eINIT's virtual file system, see below for more information on this.
 .TP
 \fB-v\fR
-Display version and license strings, then exit.
+.TP
+\fB--version\fR
+Display version, then exit.
+.TP
+\fB-L\fR
+.TP
+\fB--licence\fR
+Display version and licence and exit.
 .TP
 \fB-h\fR
 .TP
 \fB--help\fR
 Display help screen and exit.
 .TP
-\fB--ipc-command \fIcommand\fB\fR
-Will start einit, initialise all modules, process \fIcommand\fR as an IPC
-command, then exit. IPC output is directed to stdout. This option may be used more than once.
-
-See einit-control(8) for a small primer on IPC commands.
-.TP
-\fB--feedback-switch\fR
-Before switching to the first mode, switch to the "feedback"-mode to get feedback going. (This
-is the default behaviour.)
-.TP
-\fB--no-feedback-switch\fR
-Disable the switch to the "feedback"-mode
-.TP
-\fB--override-init-check\fR
-Run in regular init-mode, even if the pid of einit is not 1. This is not recommended, as it can
-mess up things badly.
-.TP
 \fB--sandbox\fR
 Run einit in sandbox mode: tells modules not to do certain things that could mess up the current
-init.
-.TP
-\fB--metadaemon\fR
-Run einit in metadaemon mode: this is currently ignored by all modules.
+init. This is mainly used for debugging and developing.
 .SH "ENVIRONMENT"
 .PP
 There are a some environment variables that can influence einit's behaviour.
@@ -86,41 +99,127 @@ Omitting this variable is equivalent to specifying
 Will make einit switch to the specified mode instead of "default". Provided for Gentoo compatibility.
 .SH "USAGE"
 .PP
-This program should only be called by the kernel to initialise the system, unless you wish to use
-it as a meta-daemon or to \fBcheck the configuration\fR:
+This programme is actually more of a programme launcher, which will either spawn an eINIT core to boot the
+system, or to socialise a bit with it, or it will spawn a helper programme to control an aforementioned
+core. \fBeinit\fR decides which of these actions to take by examining its 'pid'. If it is 1,
+it will initiate the system bootup sequence, otherwise it will spawn the helper application to allow
+controlling eINIT.
+.SH "VIRTUAL FILESYSTEM"
 .PP
-\fBeinit\fR --wtf
+As of late, eINIT uses a 9p2000(.u) filesystem for IPC purposes. This system has replaced the old, rusty
+IPC mechanism via a special socket and string commands. 9P2000 is a network filesystem protocol introduced
+by Plan 9. In Plan 9, \fBeverything\fR is a file, including things like network links,
+processes, CPUs, etc. This is also used for IPC purposes, and since we thought this to be a fairly good
+idea, we chose to do this too.
+.sp
+.RS
+.B "Note:"
+.PP
+It is actually possible to mount this virtual Filesystem in Linux, which makes navigating around
+eINIT's internals just that much easier. To do so, you must first make sure that you have 9p2000 support
+either compiled into your kernel, or that you have compiled it as a module. Then either run a command like
+\fBmount -t 9p /dev/einit-9p /mnt -o proto=unix\fR, or adjust your fstab file accordingly.
+.PP
+Also note that the proto= option for this filesystem has been changed to trans= in Linux kernel versions
+2.6.24 and above.
+.RE
+.PP
+A few important files that you might want to have a closer look at:
+.TP
+\fB/mode\fR
+The mode einit is currently in.
+.TP
+\fB/services/all/*\fR
+All available services as directories.
+.TP
+\fB/services/provided/*\fR
+All services that are currently provided, also as directories.
+.TP
+\fB/services/*/*/status\fR
+Used to retrieve the status of a service.
+.TP
+\fB/services/*/*/(modules|providers|users)\fR
+Directories that contain links to the modules related to a given service. The modules in the
+'modules' directory are all the modules that provide the service, 'providers' has all the modules
+that currently provide this service, and 'users' contains all the modules that currently use
+this module.
+.TP
+\fB/modules/all/*\fR
+All available modules as directories.
+.TP
+\fB/modules/enabled/*\fR
+All the modules that are currently enabled.
+.TP
+\fB/modules/*/*/(name|status|provides|requires|after|before|actions|options)\fR
+These files contain information on a given module. 'name' contains the human-readable name of a
+module, 'status' contains all the status flags of the given module, one per line. 'provides' has
+all the service names that is module may provide, 'requires' all the service names that a module
+needs, 'after' and 'before' contain order information, 'actions' contains any actions that may
+be run on this module and 'options' has some special flags that usually aren't of importance to
+users.
+.TP
+\fB/events/feed\fR
+This is a special file that you may 'cat' to get a feed of all the events that are happening in
+eINIT. Catting this file will even give you a complete backlog of all the events that were emitted
+in the given core. Reading past the last event will block until a new event comes in.
+.TP
+\fB/events/count\fR
+Contains how many events eINIT has already processed.
+.TP
+\fB/issues\fR
+This directory only contains files if there are any issues in the core that should be checked.
+Listing this directories' contents will make einit scan for any issues and generate files for each
+of the issues it finds.
 .SH "FILES"
 .TP
 \fB/lib/einit/einit.xml\fR
 The default configuration file. You should keep it in sync with the one provided with einit when
 installing.
 .TP
-\fB/etc/einit/local.xml\fR
-This file is (by default) included from einit.xml, you should place all your modifications in here.
+\fB/lib/einit/bootstrap/*\fR
+.TP
+\fB/lib/einit/modules/*\fR
+C modules are stored here. The bootstrap directory is special in that it contains modules that are
+needed to properly load the remaining modules.
+.TP
+\fB/lib/einit/modules-xml/*\fR
+XML/sh modules.
+.TP
+\fB/lib/einit/modules-scheme/*\fR
+Scheme modules.
+.TP
+\fB/lib/einit/bin/*\fR
+einit's core and helper binaries are stored here.
+.TP
+\fB/etc/einit/*\fR
+This is where you should do your modifications to einit's configuration.
+.TP
+\fB/etc/einit/conf.d\fR
+Files in this directory control einit services' behaviour.
+.TP
+\fB/dev/einit-9p\fR
+The unix socket that is used by the 9p2000(.u) IPC. You will usually use the address
+\fBunix!/dev/einit-9p\fR in most 9p-aware applications.
 .SH "BUGS"
 .PP
-Please send bug reports to einit's bugtracker on sourceforge.net or add them to einit's wiki.
+Please send bug reports to \fBissue tracker on einit.org\fR\&.
 .PP
 Remember that this is BETA software: avoid using this on mission-critical systems.
 .TP 0.2i
 \(bu
 \fBeinit\fR is pretty picky about the kernel right now: it requires proper pthreads
 support (NPTL on Linux) and the default configuration files expect tmpfs and udev support. 
-.TP 0.2i
-\(bu
-\fB--metadaemon\fR is not currently implemented, so it does not do anything special. 
 .SH "SEE ALSO"
 .PP
-einit-control(8), power(8), erc(8)
+einit-feedback(8), einit-log(8), einit-sysvd(8)
 .PP
-The official project page <URL:http://einit.sourceforge.net/> and the official wiki <URL:http://wiki.jyujin.de/>
+The official project website <URL:http://einit.org/>
 .SH "AUTHOR"
 .PP
 Written by Magnus Deininger <mdeininger@jyujin.de>\&.
 .SH "COPYRIGHT"
 .PP
-(C) 2006 Magnus Deininger, All rights reserved.
+(C) 2006-2008 Magnus Deininger, All rights reserved.
 .PP
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
