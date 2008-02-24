@@ -1940,8 +1940,16 @@ void module_logic_ipc_read (struct einit_event *ev) {
    struct cfgnode *node = NULL;
 
    while (!have_issues && (node = cfg_findnode ("mode-enable", 0, node))) {
-    if (node->svalue) {
-     char **services = str2set (':', node->svalue);
+    char *s = NULL;
+    if (node->arbattrs) {
+     int i = 0;
+     for (; node->arbattrs[i]; i+=2) {
+      if (strmatch (node->arbattrs[i], "services"))
+       s = node->arbattrs[i+1];
+     }
+    }
+    if (s) {
+     char **services = str2set (':', s);
      if (services) {
       int si = 0;
       for (; !have_issues && services[si]; si++) {
@@ -1963,8 +1971,16 @@ void module_logic_ipc_read (struct einit_event *ev) {
      char buffer[BUFFERSIZE];
 
      while ((node = cfg_findnode ("mode-enable", 0, node))) {
-      if (node->svalue) {
-       char **services = str2set (':', node->svalue);
+      char *s = NULL;
+      if (node->arbattrs) {
+       int i = 0;
+       for (; node->arbattrs[i]; i+=2) {
+        if (strmatch (node->arbattrs[i], "services"))
+         s = node->arbattrs[i+1];
+       }
+      }
+      if (s) {
+       char **services = str2set (':', s);
        if (services) {
         int si = 0;
         for (; !have_issues && services[si]; si++) {
