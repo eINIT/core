@@ -387,7 +387,7 @@ ConfigurationCompatibility =
       }
     }? &
 
-    element simulate-runlevel { attribute now { text } }? &
+    element simulate-runlevel { attribute now { text } }?
   }
 
 FSTab =
