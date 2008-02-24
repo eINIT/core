@@ -1985,7 +1985,7 @@ void module_logic_ipc_read (struct einit_event *ev) {
         int si = 0;
         for (; services[si]; si++) {
          if (!module_logic_service_exists_p (services[si])) {
-          snprintf (buffer, BUFFERSIZE, "service %s does not exist (in mode \"%s\")", services[si], ((node->mode && node->mode->id) ? node->mode->id : "(none)"));
+          snprintf (buffer, BUFFERSIZE, "service \"%s\" does not exist (referenced in mode \"%s\")", services[si], ((node->mode && node->mode->id) ? node->mode->id : "(none)"));
           ev->stringset = set_str_add (ev->stringset, buffer);
          }
         }
