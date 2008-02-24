@@ -58,8 +58,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
  const int lline            = line ? line : 0;
  const unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : bitch_bad_sauce;
 
- if (einit_quietness >= 2) return error;
-
  switch (mortality[lsauce]) {
   case 0: // 0: ignore the problem
    return error;

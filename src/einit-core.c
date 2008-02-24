@@ -80,7 +80,6 @@ char **einit_global_environment = NULL, **einit_initial_environment = NULL, **ei
 struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;
 unsigned char *gdebug = 0;
-char einit_quietness = 0;
 
 pthread_key_t einit_function_macro_key;
 
@@ -337,9 +336,6 @@ int main(int argc, char **argv, char **environ) {
 
    if (strmatch (ed, "softlevel")) {
     einit_startup_mode_switches = str2set (':', lp);
-   } if (strmatch (ed, "mode")) {
-/* override default mode-switches with the ones in the environment variable mode= */
-    einit_startup_mode_switches = str2set (':', lp);
    } else if (strmatch (ed, "einit")) {
 /* override default configuration files and/or mode-switches with the ones in the variable einit= */
     char **tmpstrset = str2set (',', lp);
@@ -356,12 +352,6 @@ int main(int argc, char **argv, char **environ) {
 /* specify mode-switches */
       einit_startup_mode_switches = set_str_dup_stable (atom);
       einit_startup_mode_switches = (char **)strsetdel (einit_startup_mode_switches, (void *)"mode");
-     } else if (strmatch (atom[0], "stfu")) {
-      einit_quietness = 3;
-     } else if (strmatch (atom[0], "silent")) {
-      einit_quietness = 2;
-     } else if (strmatch (atom[0], "quiet")) {
-      einit_quietness = 1;
      }
 
      efree (atom);

@@ -99,8 +99,6 @@ extern char **einit_argv;
 
 int einit_have_feedback;
 
-char einit_quietness;
-
 extern int einit_core_niceness_increment;
 extern int einit_task_niceness_increment;
 
