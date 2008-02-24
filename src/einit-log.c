@@ -72,9 +72,9 @@ void event_handler_update_service_disabled (struct einit_event *ev) {
 void help (char **argv) {
  printf ("Usage: %s [options]\n\n"
          "Options:\n"
-         " -f, --follow      Follow the event Log.\n"
-         " -n, --rplay-only  Stop after all the current events were displayed (default)\n"
-         " -h, --help        This Message\n", argv[0]);
+         " -f, --follow       Follow the event Log.\n"
+         " -n, --replay-only  Stop after all the current events were displayed (default)\n"
+         " -h, --help         This Message\n", argv[0]);
 }
 
 int main(int argc, char **argv, char **env) {
