@@ -11,52 +11,26 @@ documentation-dirs:
 	mkdir -p ../build/documentation/html/css
 	mkdir -p ../build/documentation/man
 
-einit-0.25.1-html: documentation-dirs einit-0.25.1.xml
+einit-0.40.0-html: documentation-dirs einit-0.40.0.xml
 	rm -f ../build/documentation/html/*.htm*
 	cp -rf images/* ../build/documentation/html/images
 	cp -rf css/* ../build/documentation/html/css
-	docbook2html -w no-sgmldecl einit-0.25.1.xml -d "einit.dsl#html" --output ../build/documentation/html
+	docbook2html -w no-sgmldecl einit-0.40.0.xml -d "einit.dsl#html" --output ../build/documentation/html
 	for i in ../build/documentation/html/*.htm*; do tidy -i -asxhtml -utf8 -m $${i}; done; true
 
-manual-einit-html: documentation-dirs manual-einit.sgml
+manual-einit-html: documentation-dirs manual-einit.xml
 	rm -f ../build/documentation/html/reference/manual-einit.htm*
-	docbook2html manual-einit.sgml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
+	docbook2html manual-einit.xml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
 	tidy -i -asxhtml -utf8 -m ../build/documentation/html/reference/manual-einit.htm*; true
 
-manual-einit-control-html: documentation-dirs manual-einit-control.sgml
-	rm -f ../build/documentation/html/reference/manual-einit-control.htm*
-	docbook2html manual-einit-control.sgml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
-	tidy -i -asxhtml -utf8 -m ../build/documentation/html/reference/manual-einit-control.htm*; true
+manual-einit-man: documentation-dirs manual-einit.xml
+	docbook2man --output ../build/documentation/man manual-einit.xml
 
-einit-0.25.1-html-berlios: documentation-dirs einit-0.25.1.xml
-	rm -f ../build/documentation/html/*.htm*
-	cp -rf images/* ../build/documentation/html/images
-	cp -rf css/* ../build/documentation/html/css
-	docbook2html -w no-sgmldecl einit-0.25.1.xml -d "einit-berlios.dsl#html" --output ../build/documentation/html
-	for i in ../build/documentation/html/*.htm*; do tidy -i -asxhtml -utf8 -m $${i}; done; true
+einit-0.40.0-pdf: documentation-dirs einit-0.40.0.xml
+	docbook2pdf einit-0.40.0.xml --output ../build/documentation
 
-manual-einit-html-berlios: documentation-dirs manual-einit.sgml
-	rm -f ../build/documentation/html/reference/manual-einit.htm*
-	docbook2html manual-einit.sgml -d "einit-berlios.dsl#html" --output ../build/documentation/html/reference --nochunks
-	tidy -i -asxhtml -utf8 -m ../build/documentation/html/reference/manual-einit.htm*; true
+documentation-pdf: einit-0.40.0-pdf
+documentation-man: manual-einit-man
+documentation-html: einit-0.40.0-html manual-einit-html
 
-manual-einit-control-html-berlios: documentation-dirs manual-einit-control.sgml
-	rm -f ../build/documentation/html/reference/manual-einit-control.htm*
-	docbook2html manual-einit-control.sgml -d "einit-berlios.dsl#html" --output ../build/documentation/html/reference --nochunks
-	tidy -i -asxhtml -utf8 -m ../build/documentation/html/reference/manual-einit-control.htm*; true
-
-manual-einit-man: documentation-dirs manual-einit.sgml
-	docbook2man --output ../build/documentation/man manual-einit.sgml
-
-manual-einit-control-man: documentation-dirs manual-einit-control.sgml
-	docbook2man --output ../build/documentation/man manual-einit-control.sgml
-
-einit-0.25.1-pdf: documentation-dirs einit-0.25.1.xml
-	docbook2pdf einit-0.25.1.xml --output ../build/documentation
-
-documentation-pdf: einit-0.25.1-pdf
-documentation-man: manual-einit-man manual-einit-control-man
-documentation-html: einit-0.25.1-html manual-einit-html manual-einit-control-html
-documentation-html-berlios: einit-0.25.1-html-berlios manual-einit-html-berlios manual-einit-control-html-berlios
-
-documentation: documentation-pdf documentation-man documentation-html
+documentation: documentation-man documentation-html

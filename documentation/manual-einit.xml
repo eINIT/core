@@ -1,0 +1,497 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+ <refentryinfo>
+  <date>2008-02-24</date>
+
+  <authorgroup>
+   <author>
+    <firstname>Magnus</firstname>
+    <surname>Deininger</surname>
+   </author>
+  </authorgroup>
+  <copyright>
+   <year>2006</year>
+   <year>2007</year>
+   <year>2008</year>
+   <holder>Magnus Deininger</holder>
+  </copyright>
+ </refentryinfo>
+
+ <refmeta>
+  <refentrytitle><application>einit</application></refentrytitle>
+  <manvolnum>8</manvolnum>
+  <refmiscinfo>einit-0.40.0</refmiscinfo>
+ </refmeta>
+
+ <refnamediv>
+  <refname>
+   <application>einit</application>
+  </refname>
+  <refpurpose>service initialisation and computer boot management</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <cmdsynopsis>
+   <command>einit</command>
+   <arg><group><arg>-h</arg><arg>--help</arg></group></arg>
+   <arg><group><arg>-v</arg><arg>--version</arg></group></arg>
+   <arg><group><arg>-L</arg><arg>--licence</arg></group></arg>
+   <arg><group><arg>-e</arg><arg>-d</arg></group> <replaceable class="parameter">service</replaceable></arg>
+   <arg>-c <replaceable class="parameter">service</replaceable> <replaceable class="parameter">command</replaceable></arg>
+   <arg><group><arg>-em</arg><arg>-dm</arg></group> <replaceable class="parameter">module</replaceable></arg>
+   <arg>-cm <replaceable class="parameter">module</replaceable> <replaceable class="parameter">command</replaceable></arg>
+   <arg><group><arg>-H</arg><arg>-D</arg></group></arg>
+   <arg>-R</arg>
+   <arg>-m <replaceable class="parameter">mode</replaceable></arg>
+   <arg>-u</arg>
+   <arg><group><arg>-ls</arg><arg>ls</arg></group> <replaceable class="parameter">path</replaceable></arg>
+   <arg><group><arg>-read</arg><arg>read</arg></group> <replaceable class="parameter">path</replaceable></arg>
+   <arg><group><arg>-write</arg><arg>write</arg></group> <replaceable class="parameter">path</replaceable> <replaceable class="parameter">data</replaceable></arg>
+   <arg>--wtf</arg>
+   <arg><group><arg>-q</arg><arg>-p</arg></group></arg>
+   <arg><group><arg>-a</arg><arg>ls</arg></group> <replaceable class="parameter">address</replaceable></arg>
+   <arg>--sandbox</arg>
+  </cmdsynopsis>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <refsect1info>
+   <date>2008-02-24</date>
+  </refsect1info>
+  <title>DESCRIPTION</title>
+  <para>
+   <command>einit</command> is a replacement for the sysv-style /sbin/init program. Just
+   like <command>init</command>, it is (usually) the first program to be run by the kernel
+   and responsible for initialising all soft- and hardware.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>OPTIONS</title>
+  <variablelist>
+   <varlistentry>
+    <term>--wtf</term>
+    <listitem>
+     <para>
+      Start einit, initialise all modules and ask them to check for inconsistencies in your current
+      configuration, then exit. It is recommended you do this checkup after each and every modification
+      to your configuration files.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-e <replaceable class="parameter">service</replaceable></term>
+    <listitem>
+     <para>
+      Tell eINIT to enable <replaceable class="parameter">service</replaceable>.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-d <replaceable class="parameter">service</replaceable></term>
+    <listitem>
+     <para>
+      Tell eINIT to disable <replaceable class="parameter">service</replaceable>.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-c <replaceable class="parameter">service</replaceable> <replaceable class="parameter">command</replaceable></term>
+    <listitem>
+     <para>
+      Tell eINIT's <replaceable class="parameter">service</replaceable> to execute <replaceable class="parameter">command</replaceable>. Examples of such commands are "enable" and "disable".
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-em <replaceable class="parameter">module</replaceable></term>
+    <listitem>
+     <para>
+      Tell eINIT to enable <replaceable class="parameter">module</replaceable>. All dependencies of <replaceable class="parameter">module</replaceable> need to be met before running this, else the request is discarded.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-dm <replaceable class="parameter">module</replaceable></term>
+    <listitem>
+     <para>
+      Tell eINIT to disable <replaceable class="parameter">module</replaceable>. <replaceable class="parameter">module</replaceable> may not be in use before this command is run, else the request is discarded.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-cm <replaceable class="parameter">module</replaceable> <replaceable class="parameter">command</replaceable></term>
+    <listitem>
+     <para>
+      Tell eINIT's <replaceable class="parameter">module</replaceable> to execute <replaceable class="parameter">command</replaceable>. Examples of such commands are "enable" and "disable".
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-ls <replaceable class="parameter">path</replaceable></term>
+    <term>ls <replaceable class="parameter">path</replaceable></term>
+    <listitem>
+     <para>
+      Do the equivalent of an 'ls' command on the specified <replaceable class="parameter">path</replaceable>. <replaceable class="parameter">path</replaceable> refers to eINIT's virtual file system, see below for more information on this.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-read <replaceable class="parameter">path</replaceable></term>
+    <term>read <replaceable class="parameter">path</replaceable></term>
+    <listitem>
+     <para>
+      Read the contents of the specified <replaceable class="parameter">path</replaceable>. <replaceable class="parameter">path</replaceable> refers to eINIT's virtual file system, see below for more information on this.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-write <replaceable class="parameter">path</replaceable> <replaceable class="parameter">data</replaceable></term>
+    <term>write <replaceable class="parameter">path</replaceable> <replaceable class="parameter">data</replaceable></term>
+    <listitem>
+     <para>
+      Write <replaceable class="parameter">data</replaceable> to the <replaceable class="parameter">path</replaceable>. <replaceable class="parameter">path</replaceable> refers to eINIT's virtual file system, see below for more information on this.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-v</term>
+    <term>--version</term>
+    <listitem>
+     <para>
+      Display version, then exit.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-L</term>
+    <term>--licence</term>
+    <listitem>
+     <para>
+      Display version and licence and exit.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-h</term>
+    <term>--help</term>
+    <listitem>
+     <para>
+      Display help screen and exit.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>--sandbox</term>
+    <listitem>
+     <para>
+      Run einit in sandbox mode: tells modules not to do certain things that could mess up the current
+      init. This is mainly used for debugging and developing.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>ENVIRONMENT</title>
+  <para>
+   There are a some environment variables that can influence einit's behaviour.
+  </para>
+  <note>
+   <para>
+    The kernel will set key=value pairs on the kernel command line as environment variables.
+   </para>
+  </note>
+  <variablelist>
+   <varlistentry>
+    <term>einit=<replaceable>options</replaceable></term>
+    <listitem>
+     <para>
+      A comma-separated list of special option strings. These strings are colon-separated lists of atoms,
+      the first atom specifying what the list is about and the rest being variables. Valid strings are
+      "file:<replaceable>filename</replaceable>[:<replaceable>filename</replaceable>[...]]", which can
+      be used to make einit parse different configuration files than the default einit.xml, and
+      "mode:<replaceable>mode</replaceable>[:<replaceable>mode</replaceable>[...]]", which is used
+      to make einit switch to different modes than "default". If you specify more than parameter atom, then
+      these are processed in sequence. Only specified option strings change the default behaviour.
+     </para>
+     <para>
+      Omitting this variable is equivalent to specifying
+      <emphasis>einit=file:/lib/einit/einit.xml,mode:default</emphasis>
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>softmode=<replaceable>mode</replaceable></term>
+    <listitem>
+     <para>
+      Will make einit switch to the specified mode instead of "default". Provided for Gentoo compatibility.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>USAGE</title>
+  <para>
+   This programme is actually more of a programme launcher, which will either spawn an eINIT core to boot the
+   system, or to socialise a bit with it, or it will spawn a helper programme to control an aforementioned
+   core. <command>einit</command> decides which of these actions to take by examining its 'pid'. If it is 1,
+   it will initiate the system bootup sequence, otherwise it will spawn the helper application to allow
+   controlling eINIT.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>VIRTUAL FILESYSTEM</title>
+  <para>
+   As of late, eINIT uses a 9p2000(.u) filesystem for IPC purposes. This system has replaced the old, rusty
+   IPC mechanism via a special socket and string commands. 9P2000 is a network filesystem protocol introduced
+   by Plan 9. In Plan 9, <emphasis>everything</emphasis> is a file, including things like network links,
+   processes, CPUs, etc. This is also used for IPC purposes, and since we thought this to be a fairly good
+   idea, we chose to do this too.
+  </para>
+  <note><para>It is actually possible to mount this virtual Filesystem in Linux, which makes navigating around
+   eINIT's internals just that much easier. To do so, you must first make sure that you have 9p2000 support
+   either compiled into your kernel, or that you have compiled it as a module. Then either run a command like
+   <command>mount -t 9p /dev/einit-9p /mnt -o proto=unix</command>, or adjust your fstab file accordingly.</para>
+  <para>Also note that the proto= option for this filesystem has been changed to trans= in Linux kernels
+   2.6.24 and above.</para></note>
+  <para>A few important files that you might want to have a closer look at:</para>
+  <variablelist>
+   <varlistentry>
+    <term>/mode</term>
+    <listitem>
+     <para>
+      The mode einit is currently in.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/services/all/*</term>
+    <listitem>
+     <para>
+      All available services as directories.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/services/provided/*</term>
+    <listitem>
+     <para>
+      All services that are currently provided, also as directories.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/services/*/*/status</term>
+    <listitem>
+     <para>
+      Used to retrieve the status of a service.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/services/*/*/(modules|providers|users)</term>
+    <listitem>
+     <para>
+      Directories that contain links to the modules related to a given service. The modules in the
+      'modules' directory are all the modules that provide the service, 'providers' has all the modules
+      that currently provide this service, and 'users' contains all the modules that currently use
+      this module.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/modules/all/*</term>
+    <listitem>
+     <para>
+      All available modules as directories.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/modules/enabled/*</term>
+    <listitem>
+     <para>
+      All the modules that are currently enabled.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/modules/*/*/(name|status|provides|requires|after|before|actions|options)</term>
+    <listitem>
+     <para>
+      These files contain information on a given module. 'name' contains the human-readable name of a
+      module, 'status' contains all the status flags of the given module, one per line. 'provides' has
+      all the service names that is module may provide, 'requires' all the service names that a module
+      needs, 'after' and 'before' contain order information, 'actions' contains any actions that may
+      be run on this module and 'options' has some special flags that usually aren't of importance to
+      users.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/events/feed</term>
+    <listitem>
+     <para>
+      This is a special file that you may 'cat' to get a feed of all the events that are happening in
+      eINIT. Catting this file will even give you a complete backlog of all the events that were emitted
+      in the given core. Reading past the last event will block until a new event comes in.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/events/count</term>
+    <listitem>
+     <para>
+      Contains how many events eINIT has already processed.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/issues</term>
+    <listitem>
+     <para>
+      This directory only contains files if there are any issues in the core that should be checked.
+      Listing this directories' contents will make einit scan for any issues and generate files for each
+      of the issues it finds.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>FILES</title>
+  <variablelist>
+   <varlistentry>
+    <term>/lib/einit/einit.xml</term>
+    <listitem>
+     <para>
+      The default configuration file. You should keep it in sync with the one provided with einit when
+      installing.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/lib/einit/bootstrap/*</term>
+    <term>/lib/einit/modules/*</term>
+    <listitem>
+     <para>
+      C modules are stored here. The bootstrap directory is special in that it contains modules that are
+      needed to properly load the remaining modules.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/lib/einit/modules-xml/*</term>
+    <listitem>
+     <para>
+      XML/sh modules.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/lib/einit/modules-scheme/*</term>
+    <listitem>
+     <para>
+      Scheme modules.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/lib/einit/bin/*</term>
+    <listitem>
+     <para>
+      einit's core and helper binaries are stored here.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/etc/einit/*</term>
+    <listitem>
+     <para>
+      This is where you should do your modifications to einit's configuration.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/etc/einit/conf.d</term>
+    <listitem>
+     <para>
+      Files in this directory control einit services' behaviour.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/dev/einit-9p</term>
+    <listitem>
+     <para>
+      The unix socket that is used by the 9p2000(.u) IPC. You will usually use the address
+      <emphasis>unix!/dev/einit-9p</emphasis> in most 9p-aware applications.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>BUGS</title>
+  <para>Please send bug reports to <emphasis>issue tracker on einit.org</emphasis>.</para>
+  <para>
+   Remember that this is BETA software: avoid using this on mission-critical systems.
+   <itemizedlist>
+    <listitem><para>
+     <command>einit</command> is pretty picky about the kernel right now: it requires proper pthreads
+     support (NPTL on Linux) and the default configuration files expect tmpfs and udev support. </para></listitem>
+   </itemizedlist>
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>SEE ALSO</title>
+  <para>einit-feedback(8), einit-log(8), einit-sysvd(8)</para>
+  <para><ulink url="http://einit.org/">The official project website</ulink></para>
+ </refsect1>
+
+ <refsect1>
+  <title>AUTHOR</title>
+  <para>
+   Written by Magnus Deininger <email>mdeininger@jyujin.de</email>.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>COPYRIGHT</title>
+  <para>(C) 2006-2008 Magnus Deininger, All rights reserved.</para>
+  <para>Redistribution and use in source and binary forms, with or without modification,
+   are permitted provided that the following conditions are met:</para>
+  <para>
+   <itemizedlist>
+    <listitem><para>Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.</para></listitem>
+    <listitem><para>Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.</para></listitem>
+    <listitem><para>Neither the name of the project nor the names of its contributors may be
+      used to endorse or promote products derived from this software without
+      specific prior written permission.</para></listitem>
+   </itemizedlist>
+  </para>
+  <para>
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  </para>
+ </refsect1>
+</refentry>

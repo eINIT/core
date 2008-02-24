@@ -2,17 +2,17 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
                "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
 [
-<!ENTITY cintroduction SYSTEM "einit-introduction-0.25.1.xml">
-<!ENTITY cusers SYSTEM "einit-users-guide-0.25.1.xml">
-<!ENTITY cdevelopers SYSTEM "einit-developers-guide-0.25.1.xml">
-<!ENTITY aconcepts SYSTEM "einit-concepts-0.25.1.xml">
-<!ENTITY acredits SYSTEM "einit-credits-0.25.1.xml">
+<!ENTITY cintroduction SYSTEM "einit-introduction-0.40.0.xml">
+<!ENTITY cusers SYSTEM "einit-users-guide-0.40.0.xml">
+<!ENTITY cdevelopers SYSTEM "einit-developers-guide-0.40.0.xml">
+<!ENTITY aconcepts SYSTEM "einit-concepts-0.40.0.xml">
+<!ENTITY acredits SYSTEM "einit-credits-0.40.0.xml">
 ]>
 
 <book lang="en">
  <bookinfo>
   <date>2007-08-30</date>
-  <title>eINIT 0.25.1: Documentation</title>
+  <title>eINIT 0.40.0: Documentation</title>
   <authorgroup>
    <author>
     <firstname>Magnus</firstname>
@@ -51,7 +51,8 @@
    </para>
   </legalnotice>
   <abstract>
-   <para>This is an attempt at documenting eINIT. We should be done by version 0.25.1.</para>
+   <para>This is an attempt at documenting eINIT. We should be done by version 0.40.0, but we're not quite sure
+    whether or not we'll be able to make it till then.</para>
    <para>This is currently a WIP ("Work in Progress"), but your feedback is greatly appreciated. If you'd like to
     point out flaws, shortcomings or ideas, please file an issue on einit.org, or join #einit on freenode. We're
     eager to hear from you. :)</para>

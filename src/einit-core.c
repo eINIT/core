@@ -107,17 +107,14 @@ void thread_autojoin_function (void *);
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
   "Usage:\n"
-  " einit [-c <filename>] [options]\n"
+  " einit [options]\n"
   "\n"
   "Options:\n"
-  "-c <filename>         load <filename> instead of/lib/einit/einit.xml\n"
   "-h, --help            display this text\n"
   "-v                    print version, then exit\n"
   "-L                    print copyright notice, then exit\n"
-  "--force-init          ignore PID and start as init\n"
   "\n"
   "--sandbox             run einit in \"sandbox mode\"\n"
-  "--metadaemon          run einit in \"metadaemon mode\"\n"
   "\n"
   "Environment Variables (or key=value kernel parametres):\n"
   "mode=<mode>[:<mode>] a colon-separated list of modes to switch to.\n", stdout);
@@ -305,8 +302,6 @@ int main(int argc, char **argv, char **environ) {
       need_recovery = 1;
      } else if (strmatch(argv[i], "--recover")) {
       need_recovery = 1;
-     } else if (strmatch(argv[i], "--metadaemon")) {
-      coremode = einit_mode_metadaemon;
      } else if (strmatch(argv[i], "--command-pipe")) {
       command_pipe = parse_integer (argv[i+1]);
       fcntl (command_pipe, F_SETFD, FD_CLOEXEC);
