@@ -9,7 +9,7 @@
 einit \- service initialisation and computer boot management
 .SH SYNOPSIS
 
-\fBeinit\fR [ \fB [ -h | --help ]\fR ] [ \fB [ -v | --version ]\fR ] [ \fB [ -L | --licence ]\fR ] [ \fB [ -e | -d ] \fIservice\fB\fR ] [ \fB-c \fIservice\fB \fIcommand\fB\fR ] [ \fB [ -em | -dm ] \fImodule\fB\fR ] [ \fB-cm \fImodule\fB \fIcommand\fB\fR ] [ \fB [ -H | -D ]\fR ] [ \fB-R\fR ] [ \fB-m \fImode\fB\fR ] [ \fB-u\fR ] [ \fB [ -ls | ls ] \fIpath\fB\fR ] [ \fB [ -read | read ] \fIpath\fB\fR ] [ \fB [ -write | write ] \fIpath\fB \fIdata\fB\fR ] [ \fB--wtf\fR ] [ \fB [ -q | -p ]\fR ] [ \fB [ -a | ls ] \fIaddress\fB\fR ] [ \fB--sandbox\fR ]
+\fBeinit\fR [ \fB [ -h | --help ]\fR ] [ \fB [ -v | --version ]\fR ] [ \fB [ -L | --licence ]\fR ] [ \fB [ -e | -d ] \fIservice\fB\fR ] [ \fB-c \fIservice\fB \fIcommand\fB\fR ] [ \fB [ -em | -dm ] \fImodule\fB\fR ] [ \fB-cm \fImodule\fB \fIcommand\fB\fR ] [ \fB [ -H | -D ]\fR ] [ \fB-R\fR ] [ \fB-m \fImode\fB\fR ] [ \fB-u\fR ] [ \fB [ -ls | ls ] \fIpath\fB\fR ] [ \fB [ -read | read ] \fIpath\fB\fR ] [ \fB [ -write | write ] \fIpath\fB \fIdata\fB\fR ] [ \fB--wtf\fR ] [ \fB [ -q | -p ]\fR ] [ \fB-a \fIaddress\fB\fR ] [ \fB--sandbox\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -74,6 +74,9 @@ Display help screen and exit.
 \fB--sandbox\fR
 Run einit in sandbox mode: tells modules not to do certain things that could mess up the current
 init. This is mainly used for debugging and developing.
+.TP
+\fB-a \fIaddress\fB\fR
+The 9P2000 address to connect to. The default is \fBunix!/dev/einit-9p\fR\&.
 .SH "ENVIRONMENT"
 .PP
 There are some environment variables that may be used to influence einit's behaviour.

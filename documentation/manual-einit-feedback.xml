@@ -1,0 +1,191 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+ <refentryinfo>
+  <date>2008-02-24</date>
+
+  <authorgroup>
+   <author>
+    <firstname>Magnus</firstname>
+    <surname>Deininger</surname>
+   </author>
+  </authorgroup>
+  <copyright>
+   <year>2008</year>
+   <holder>Magnus Deininger</holder>
+  </copyright>
+ </refentryinfo>
+
+ <refmeta>
+  <refentrytitle><application>einit-feedback</application></refentrytitle>
+  <manvolnum>8</manvolnum>
+  <refmiscinfo>einit-feedback-0.40.0</refmiscinfo>
+ </refmeta>
+
+ <refnamediv>
+  <refname>
+   <application>einit-feedback</application>
+  </refname>
+  <refpurpose>display feedback data from einit</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <cmdsynopsis>
+   <command>einit-feedback</command>
+   <arg>-a <replaceable class="parameter">address</replaceable></arg>
+  </cmdsynopsis>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <refsect1info>
+   <date>2008-02-24</date>
+  </refsect1info>
+  <title>DESCRIPTION</title>
+  <para>
+   <command>einit-feedback</command> is a small curses-based helper application that is used to display
+   all the feedback data einit provides. It is usually run by einit on tty9, but it may be run by any member
+   of the einit group in any terminal they favour.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>OPTIONS</title>
+  <variablelist>
+   <varlistentry>
+    <term>-a <replaceable class="parameter">address</replaceable></term>
+    <listitem>
+     <para>
+      The 9P2000 address to connect to. The default is <emphasis>unix!/dev/einit-9p</emphasis>.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>ENVIRONMENT</title>
+  <para>
+   Some command line options may be used to set defaults for this programme.
+  </para>
+  <variablelist>
+   <varlistentry>
+    <term>EINIT_9P_ADDRESS=<replaceable>address</replaceable></term>
+    <listitem>
+     <para>
+      Equivalent to the -a option. The command-line option overrides this variable.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>USAGE</title>
+  <para>
+   Simply launch this programme on your favourite tty and it will replay the event log from the
+   core. The resulting output is the same as that on tty9, so you do not need to switch there just
+   to get einit feedback.
+  </para>
+  <para>Keymap:</para>
+  <variablelist>
+   <varlistentry>
+    <term>UP/DOWN arrow keys</term>
+    <listitem>
+     <para>
+      Disable the 'auto scroll mode' and scroll up and down.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>a</term>
+    <listitem>
+     <para>
+      Restore the 'auto scroll mode', which is the default mode.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>j/k</term>
+    <term>p/n</term>
+    <listitem>
+     <para>
+      vi-ish/emacs-ish bindings for the UP/DOWN keys' actions.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>shift+L</term>
+    <listitem>
+     <para>
+      Toggle displaying the core's notice messages.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>FILES</title>
+  <variablelist>
+   <varlistentry>
+    <term>/dev/einit-9p</term>
+    <listitem>
+     <para>
+      The unix socket that is used (by default) for the 9p2000(.u) IPC.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>BUGS</title>
+  <para>Please send bug reports to the <emphasis>issue tracker on einit.org</emphasis>.</para>
+  <para>
+   Remember that this is BETA software: avoid using this on mission-critical systems.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>SEE ALSO</title>
+  <para>einit(8), einit-log(8), einit-sysvd(8)</para>
+  <para><ulink url="http://einit.org/">The official project website</ulink></para>
+ </refsect1>
+
+ <refsect1>
+  <title>AUTHOR</title>
+  <para>
+   Written by Magnus Deininger <email>mdeininger@jyujin.de</email>.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>COPYRIGHT</title>
+  <para>(C) 2008 Magnus Deininger, All rights reserved.</para>
+  <para>Redistribution and use in source and binary forms, with or without modification,
+   are permitted provided that the following conditions are met:</para>
+  <para>
+   <itemizedlist>
+    <listitem><para>Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.</para></listitem>
+    <listitem><para>Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.</para></listitem>
+    <listitem><para>Neither the name of the project nor the names of its contributors may be
+      used to endorse or promote products derived from this software without
+      specific prior written permission.</para></listitem>
+   </itemizedlist>
+  </para>
+  <para>
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  </para>
+ </refsect1>
+</refentry>

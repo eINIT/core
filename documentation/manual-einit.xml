@@ -49,7 +49,7 @@
    <arg><group><arg>-write</arg><arg>write</arg></group> <replaceable class="parameter">path</replaceable> <replaceable class="parameter">data</replaceable></arg>
    <arg>--wtf</arg>
    <arg><group><arg>-q</arg><arg>-p</arg></group></arg>
-   <arg><group><arg>-a</arg><arg>ls</arg></group> <replaceable class="parameter">address</replaceable></arg>
+   <arg>-a <replaceable class="parameter">address</replaceable></arg>
    <arg>--sandbox</arg>
   </cmdsynopsis>
  </refsynopsisdiv>
@@ -187,6 +187,14 @@
      <para>
       Run einit in sandbox mode: tells modules not to do certain things that could mess up the current
       init. This is mainly used for debugging and developing.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-a <replaceable class="parameter">address</replaceable></term>
+    <listitem>
+     <para>
+      The 9P2000 address to connect to. The default is <emphasis>unix!/dev/einit-9p</emphasis>.
      </para>
     </listitem>
    </varlistentry>

@@ -1,0 +1,188 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+ <refentryinfo>
+  <date>2008-02-24</date>
+  
+  <authorgroup>
+   <author>
+    <firstname>Magnus</firstname>
+    <surname>Deininger</surname>
+   </author>
+  </authorgroup>
+  <copyright>
+   <year>2008</year>
+   <holder>Magnus Deininger</holder>
+  </copyright>
+ </refentryinfo>
+ 
+ <refmeta>
+  <refentrytitle><application>einit-log</application></refentrytitle>
+  <manvolnum>8</manvolnum>
+  <refmiscinfo>einit-log-0.40.0</refmiscinfo>
+ </refmeta>
+ 
+ <refnamediv>
+  <refname>
+   <application>einit-log</application>
+  </refname>
+  <refpurpose>retrieve log data from einit</refpurpose>
+ </refnamediv>
+ 
+ <refsynopsisdiv>
+  <cmdsynopsis>
+   <command>einit-log</command>
+   <arg>-a <replaceable class="parameter">address</replaceable></arg>
+   <arg><group><arg>-h</arg><arg>--help</arg></group></arg>
+   <arg><group><arg>-f</arg><arg>--follow</arg></group></arg>
+   <arg><group><arg>-r</arg><arg>--replay-only</arg></group></arg>
+  </cmdsynopsis>
+ </refsynopsisdiv>
+ 
+ <refsect1>
+  <refsect1info>
+   <date>2008-02-24</date>
+  </refsect1info>
+  <title>DESCRIPTION</title>
+  <para>
+   <command>einit-log</command> is a simple command-line utility that may be used to extra log data from
+   a running einit core. It simply connects to einit, fetches the event log and displays it.
+  </para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>OPTIONS</title>
+  <variablelist>
+   <varlistentry>
+    <term>-a <replaceable class="parameter">address</replaceable></term>
+    <listitem>
+     <para>
+      The 9P2000 address to connect to. The default is <emphasis>unix!/dev/einit-9p</emphasis>.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-h</term>
+    <term>--help</term>
+    <listitem>
+     <para>
+      Display help screen and exit.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-r</term>
+    <term>--replay-only</term>
+    <listitem>
+     <para>
+      Replay the event log, then exit. This is the default behaviour.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>-f</term>
+    <term>--follow</term>
+    <listitem>
+     <para>
+      Follow the event log, that is, replay first, then stay connected and wait for updates.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+ 
+ <refsect1>
+  <title>ENVIRONMENT</title>
+  <para>
+   Some command line options may be used to set defaults for this programme.
+  </para>
+  <variablelist>
+   <varlistentry>
+    <term>EINIT_9P_ADDRESS=<replaceable>address</replaceable></term>
+    <listitem>
+     <para>
+      Equivalent to the -a option. The command-line option overrides this variable.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+ 
+ <refsect1>
+  <title>USAGE</title>
+  <para>
+   The main use of this programme is to be able to retrieve notice logs and bootup messages
+   from einit's core. Usually this is done via <command>einit-log&gt;logfile</command>.
+  </para>
+  <para>
+   <command>einit-log --follow</command> is also quite useful, since it allows trying something
+   and seeing immediate results in the event log. An instance of this command is usually spawned
+   by einit on tty11.
+  </para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>FILES</title>
+  <variablelist>
+   <varlistentry>
+    <term>/dev/einit-9p</term>
+    <listitem>
+     <para>
+      The unix socket that is used (by default) for the 9p2000(.u) IPC.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+ 
+ <refsect1>
+  <title>BUGS</title>
+  <para>Please send bug reports to the <emphasis>issue tracker on einit.org</emphasis>.</para>
+  <para>
+   Remember that this is BETA software: avoid using this on mission-critical systems.
+  </para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>SEE ALSO</title>
+  <para>einit(8), einit-feedback(8), einit-sysvd(8)</para>
+  <para><ulink url="http://einit.org/">The official project website</ulink></para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>AUTHOR</title>
+  <para>
+   Written by Magnus Deininger <email>mdeininger@jyujin.de</email>.
+  </para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>COPYRIGHT</title>
+  <para>(C) 2008 Magnus Deininger, All rights reserved.</para>
+  <para>Redistribution and use in source and binary forms, with or without modification,
+   are permitted provided that the following conditions are met:</para>
+  <para>
+   <itemizedlist>
+    <listitem><para>Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.</para></listitem>
+    <listitem><para>Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.</para></listitem>
+    <listitem><para>Neither the name of the project nor the names of its contributors may be
+      used to endorse or promote products derived from this software without
+      specific prior written permission.</para></listitem>
+   </itemizedlist>
+  </para>
+  <para>
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  </para>
+ </refsect1>
+</refentry>

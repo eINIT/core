@@ -18,13 +18,19 @@ einit-0.40.0-html: documentation-dirs einit-0.40.0.xml
 	docbook2html -w no-sgmldecl einit-0.40.0.xml -d "einit.dsl#html" --output ../build/documentation/html
 	for i in ../build/documentation/html/*.htm*; do tidy -i -asxhtml -utf8 -m $${i}; done; true
 
-manual-einit-html: documentation-dirs manual-einit.xml
-	rm -f ../build/documentation/html/reference/manual-einit.htm*
+manual-einit-html: documentation-dirs manual-einit.xml manual-einit-log.xml manual-einit-feedback.xml manual-einit-sysvd.xml
+	rm -f ../build/documentation/html/reference/manual-*.htm*
 	docbook2html manual-einit.xml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
+	docbook2html manual-einit-log.xml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
+	docbook2html manual-einit-feedback.xml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
+	docbook2html manual-einit-sysvd.xml -d "einit.dsl#html" --output ../build/documentation/html/reference --nochunks
 	tidy -i -asxhtml -utf8 -m ../build/documentation/html/reference/manual-einit.htm*; true
 
-manual-einit-man: documentation-dirs manual-einit.xml
+manual-einit-man: documentation-dirs manual-einit.xml manual-einit-log.xml manual-einit-feedback.xml manual-einit-sysvd.xml
 	docbook2man --output ../build/documentation/man manual-einit.xml
+	docbook2man --output ../build/documentation/man manual-einit-log.xml
+	docbook2man --output ../build/documentation/man manual-einit-feedback.xml
+	docbook2man --output ../build/documentation/man manual-einit-sysvd.xml
 
 einit-0.40.0-pdf: documentation-dirs einit-0.40.0.xml
 	docbook2pdf einit-0.40.0.xml --output ../build/documentation

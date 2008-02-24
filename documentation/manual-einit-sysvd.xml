@@ -1,0 +1,166 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+ <refentryinfo>
+  <date>2008-02-24</date>
+  
+  <authorgroup>
+   <author>
+    <firstname>Magnus</firstname>
+    <surname>Deininger</surname>
+   </author>
+  </authorgroup>
+  <copyright>
+   <year>2008</year>
+   <holder>Magnus Deininger</holder>
+  </copyright>
+ </refentryinfo>
+ 
+ <refmeta>
+  <refentrytitle><application>einit-sysvd</application></refentrytitle>
+  <manvolnum>8</manvolnum>
+  <refmiscinfo>einit-sysvd-0.40.0</refmiscinfo>
+ </refmeta>
+ 
+ <refnamediv>
+  <refname>
+   <application>einit-sysvd</application>
+  </refname>
+  <refpurpose>SysV compatibility daemon for eINIT</refpurpose>
+ </refnamediv>
+ 
+ <refsynopsisdiv>
+  <cmdsynopsis>
+   <command>einit-sysvd</command>
+   <arg>-a <replaceable class="parameter">address</replaceable></arg>
+  </cmdsynopsis>
+ </refsynopsisdiv>
+ 
+ <refsect1>
+  <refsect1info>
+   <date>2008-02-24</date>
+  </refsect1info>
+  <title>DESCRIPTION</title>
+  <para>
+   <command>einit-sysvd</command> is a small helper daemon that translates certain sysv events into einit events.
+   It does so by opening /dev/initctl and whenever certain requests are received, it will open a connection to einit
+   and submit the appropriate commands.
+  </para>
+  <para>In particular, you need this daemon if you want to use the 'shutdown', 'reboot', 'halt' or 'poweroff' commands,
+  or if you want to use the shutdown/reboot options provided in E17, GNOME, KDE, XFCE, MythTV, etc. This daemon will
+  also translate commands like 'init <replaceable class="parameter">runlevel</replaceable>' for einit.</para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>OPTIONS</title>
+  <variablelist>
+   <varlistentry>
+    <term>-a <replaceable class="parameter">address</replaceable></term>
+    <listitem>
+     <para>
+      The 9P2000 address to connect to. The default is <emphasis>unix!/dev/einit-9p</emphasis>. This daemon will only
+      connect to this address when an event actually needs to be sent, and it will disconnect again right after that.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+ 
+ <refsect1>
+  <title>ENVIRONMENT</title>
+  <para>
+   Some command line options may be used to set defaults for this programme.
+  </para>
+  <variablelist>
+   <varlistentry>
+    <term>EINIT_9P_ADDRESS=<replaceable>address</replaceable></term>
+    <listitem>
+     <para>
+      Equivalent to the -a option. The command-line option overrides this variable.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1>
+  <title>USAGE</title>
+  <para>
+   Nothing much to see here, run the programme as root and it will detach from the current terminal, write
+   its pidfile and then just more or less sit there waiting for a connection.
+  </para>
+ </refsect1>
+
+ <refsect1>
+  <title>FILES</title>
+  <variablelist>
+   <varlistentry>
+    <term>/dev/einit-9p</term>
+    <listitem>
+     <para>
+      The unix socket that is used (by default) for the 9p2000(.u) IPC.
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term>/var/run/einit-sysvd.pid</term>
+    <listitem>
+     <para>
+      This daemon will write its pid to this file.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+ 
+ <refsect1>
+  <title>BUGS</title>
+  <para>Please send bug reports to the <emphasis>issue tracker on einit.org</emphasis>.</para>
+  <para>
+   Remember that this is BETA software: avoid using this on mission-critical systems.
+  </para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>SEE ALSO</title>
+  <para>einit(8), einit-feedback(8), einit-log(8)</para>
+  <para><ulink url="http://einit.org/">The official project website</ulink></para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>AUTHOR</title>
+  <para>
+   Written by Magnus Deininger <email>mdeininger@jyujin.de</email>.
+  </para>
+ </refsect1>
+ 
+ <refsect1>
+  <title>COPYRIGHT</title>
+  <para>(C) 2008 Magnus Deininger, All rights reserved.</para>
+  <para>Redistribution and use in source and binary forms, with or without modification,
+   are permitted provided that the following conditions are met:</para>
+  <para>
+   <itemizedlist>
+    <listitem><para>Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.</para></listitem>
+    <listitem><para>Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.</para></listitem>
+    <listitem><para>Neither the name of the project nor the names of its contributors may be
+      used to endorse or promote products derived from this software without
+      specific prior written permission.</para></listitem>
+   </itemizedlist>
+  </para>
+  <para>
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  </para>
+ </refsect1>
+</refentry>
