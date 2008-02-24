@@ -640,7 +640,7 @@ void *einit_ipc_9p_listen (void *param) {
 
 void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  char *ecode = event_code_to_string(ev->type);
- if (strcmp (ecode, "unknown/custom") ||
+ if (strmatch (ecode, "unknown/custom") ||
      (!ev->integer && !ev->status && !ev->task && !ev->flag && !ev->rid && !ev->string && !ev->stringset))
   return; /* discard useless events */
 
