@@ -144,27 +144,6 @@ void core_einit_event_handler_configuration_update (struct einit_event *ev) {
 
  ev->chain_type = einit_core_update_modules;
 
- if ((node = cfg_getnode ("core-mortality-bad-malloc", NULL)))
-  mortality[bitch_emalloc] = node->value;
-
- if ((node = cfg_getnode ("core-mortality-bad-stdio", NULL)))
-  mortality[bitch_stdio] = node->value;
-
- if ((node = cfg_getnode ("core-mortality-bad-regex", NULL)))
-  mortality[bitch_regex] = node->value;
-
- if ((node = cfg_getnode ("core-mortality-bad-expat", NULL)))
-  mortality[bitch_expat] = node->value;
-
- if ((node = cfg_getnode ("core-mortality-bad-dl", NULL)))
-  mortality[bitch_dl] = node->value;
-
- if ((node = cfg_getnode ("core-mortality-bad-lookup", NULL)))
-  mortality[bitch_lookup] = node->value;
-
- if ((node = cfg_getnode ("core-mortality-bad-pthreads", NULL)))
-  mortality[bitch_epthreads] = node->value;
-
  if ((str = cfg_getstring ("core-scheduler-niceness/core", NULL)))
   einit_core_niceness_increment = parse_integer (str);
 

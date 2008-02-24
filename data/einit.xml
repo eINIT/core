@@ -45,27 +45,6 @@
     <directory path="/lib/einit/modules-xml" />
    </include>
   </commands>
-
-<!-- These settings control the "error correction" settings, i.e. how likely
-     einit is to kill itself over a (potentially recoverable) problem.
-     255 always means "kill yourself", 0 always means "ignore it". The values
-     in between indicate different levels of actions, 1 should be "warn about
-     it on stderr"
-     Default is to print a warning and continue. Don't forget: if einit dies
-     or exits for whatever reason, and it's being used as "the init" then most
-     kernels will panic and your system will die, so setting most of these to
-     255 is probably a very, very bad idea. -->
-  <mortality>
-   <bad-malloc i="1" />
-   <bad-stdio i="1" />
-   <bad-regex i="1" />
-   <bad-expat i="1" />
-   <bad-dl i="1" />
-   <bad-lookup i="1" />
-   <bad-pthreads i="1" />
-  </mortality>
-<!--  <mode s="init" /> -->
-
  </core>
  <configuration>
 <!-- A note on the configuration variables in this file: If it appears in this file, and it also

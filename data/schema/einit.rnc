@@ -74,15 +74,6 @@ Core = element core {
         PathAttributes
       }*
     }*
-  }* &
-  element mortality {
-    element bad-malloc { IntegerAttribute }* &
-    element bad-stdio { IntegerAttribute }* &
-    element bad-regex { IntegerAttribute }* &
-    element bad-expat { IntegerAttribute }* &
-    element bad-dl { IntegerAttribute }* &
-    element bad-lookup { IntegerAttribute }* &
-    element bad-pthreads { IntegerAttribute }*
   }*
 }
 

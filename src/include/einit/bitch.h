@@ -49,8 +49,6 @@ enum bitch_sauce {
 
 #define BITCH_SAUCES 0x08
 
-unsigned char mortality[BITCH_SAUCES];
-
 /*!\brief Bitch about whatever happened just now
  * \param[in] opt bitwise OR of BTCH_ERRNO and BTCH_DL
  * \return (int)-1. Don't ask.
