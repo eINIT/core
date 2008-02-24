@@ -98,8 +98,7 @@
 
    <coldplug b="yes" />
 
-   <timezone s="America/New_York"/>
-
+   <timezone s="Europe/London"/>
   </system>
 
   <environment>
@@ -116,62 +115,16 @@
   </kernel>
 
   <feedback>
-   <textual b="true" />
-   <fbsplash b="true" />
-   <aural b="false" />
-
-   <psplash s="no" />
-
    <visual>
     <std-io stdio="/dev/tty10" stderr="/dev/tty11" console="/dev/tty12" activate-vt="9" kernel-vt="12" boot-done-chvt="1" />
-<!-- better verbosity on tty10: -->
-<!--    <std-io stdio="/dev/tty1" stderr="/dev/tty11" console="/dev/tty12" activate-vt="1" kernel-vt="12" verbose-output="/dev/tty10" /> -->
-    <use-ansi-codes b="true" />
-    <shutdown-failure-timeout i="3" />
-    <broadcast-constraints s="/dev/(tty[1-8][12]?|pts/.*)" />
-    <reset-shutdown-broadcast-messages b="true" />
-
-    <suppress-messages b="no" />
-    <suppress-status-notices b="no" />
-
-    <fbsplash>
-     <ttys s="1 2 3 4 5 6" />
-     <theme s="gentoo" />
-    </fbsplash>
-
-    <psplash>
-     <fifo s="/dev/psplash_fifo" />
-     <run s="export TMPDIR=&quot;/dev&quot;;
-             psplash &amp;" />
-    </psplash>
-
-    <usplash>
-     <fifo s="/dev/.initramfs/usplash_fifo" />
-     <run s="mkdir -p /dev/.initramfs;
-             usplash &amp;" />
-    </usplash>
-
-    <exquisite>
-     <run s="cd /tmp; nohup exquisite -fb -fs -t /usr/share/exquisite/data/themes/default.edj &amp;" />
-    </exquisite>
    </visual>
-
-   <aural>
-    <festival>
-     <active b="no" />
-    </festival>
-   </aural>
   </feedback>
 
   <command>
 <!-- the command to run to remove a module from the kernel -->
    <rmmod s="/sbin/modprobe -r" with-env="/sbin/modprobe -r ${module}" />
    <modprobe s="/sbin/modprobe" with-env="/sbin/modprobe ${module}" />
-
-   <ip-flush with-env="ip addr flush dev ${interface}" />
-   <create-bridge with-env="brctl addbr ${interface}" />
   </command>
-
  </configuration>
 
  <services>
@@ -179,7 +132,6 @@
    <samba group="nmbd:smbd" seq="all" />
   </alias>
   <prefer>
-   <kern-alsa s="shell-kern-audio-alsa" />
    <feedback s="feedback-visual-textual" />
    <logger s="daemon-metalog:daemon-syslog-ng:daemon-syslog" />
   </prefer>

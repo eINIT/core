@@ -163,11 +163,6 @@ Configuration = element configuration {
   Network* &
 
   element feedback {
-    element textual { BooleanAttribute }? &
-    element fbsplash { BooleanAttribute }? &
-    element aural { BooleanAttribute }? &
-
-    element psplash { StringAttribute }* &
     element visual {
       element std-io {
         attribute stdio { text },
@@ -177,53 +172,13 @@ Configuration = element configuration {
         attribute verbose-output { text }?,
         attribute kernel-vt { text }?,
         attribute boot-done-chvt { text }?
-      }? &
-
-      element use-ansi-codes { BooleanAttribute }? &
-      element shutdown-failure-timeout { IntegerAttribute }? &
-      element broadcast-constraints { StringAttribute }? &
-      element reset-shutdown-broadcast-messages { BooleanAttribute }? &
-      element suppress-messages { BooleanAttribute }? &
-      element suppress-status-notices { BooleanAttribute }? &
-
-      element fbsplash {
-        element ttys { StringAttribute, attribute sysv-style { Boolean }? }? &
-        element theme { StringAttribute }? &
-
-        element daemon {
-          element ttys { attribute silent { text }, attribute verbose { text } } ? &
-          element fifo { StringAttribute } ? &
-          element mount-dir { BooleanAttribute, attribute size { text }, attribute path { text } } ?
-        }?
-      }* &
-
-      element psplash {
-        element fifo { StringAttribute }&
-        element run { StringAttribute }
-      }* &
-
-      element usplash {
-        element fifo { StringAttribute }&
-        element run { StringAttribute }
-      }? &
-
-      element exquisite {
-        element run { StringAttribute }
       }?
-    }* &
-
-    element aural {
-      element festival {
-        element active { BooleanAttribute }?
-      }*
     }*
   }* &
 
   element command {
     element rmmod { CommandAttributes }? &
-    element modprobe { CommandAttributes }? &
-    element ip-flush { CommandAttributes }? &
-    element create-bridge { CommandAttributes }?
+    element modprobe { CommandAttributes }?
   }* &
 
   TTY ? &

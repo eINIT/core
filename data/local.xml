@@ -12,28 +12,6 @@
 <!--   <kexec-to-reboot b="yes" use-proc="yes" kernel-image="/boot/kernel-2.6.19-gentoo-r5" /> -->
   </system>
 
-<!--  <feedback> -->
-<!-- TODO:update -->
-<!-- use this if you would like to use one of the psplash-ish feedback modules.
-     possible values for s= include:
-      s="psplash" (the original psplash daemon; very slick and small)
-      s="usplash" (ubuntu's splash daemon)
-      s="exquisite" (the enlightened psplash replacement...funky graphics ahoi) -->
-   <!--   <psplash s="psplash" /> -->
-
-<!-- the following is neat in that it allows redirecting einit's feedback to
-     to various terminals and the like.
-     possible attributes include:
-      stdio="" - where to read from/write to (used for textual feedback)
-      stderr="" - where to put errors and parts of the default log
-      console="" - where to redirect /dev/console to
-      kernel-vt="" - which terminal to put dmesg messages onto (needs to be a number)
-      activate-vt="" - which terminal to switch to once the textual feedback is up (number) -->
-<!--   <visual>
-    <std-io stdio="/dev/tty10" stderr="/dev/tty11" console="/dev/tty12" kernel-vt="12" />
-   </visual> -->
-<!--  </feedback> -->
-
 <!-- you may or may not need something like the following: -->
   <kernel>
    <modules>
