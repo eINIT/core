@@ -104,6 +104,14 @@ pthread_cond_t
 
 void module_logic_einit_event_handler_core_configuration_update (struct einit_event *);
 
+char module_logic_service_exists_p (const char *service) {
+ char rv = 0;
+ emutex_lock (&module_logic_service_list_mutex);
+ rv = (module_logic_service_list && streefind (module_logic_service_list, service, tree_find_first)) ? 1 : 0;
+ emutex_unlock (&module_logic_service_list_mutex);
+ return rv;
+}
+
 /* the sorting bit and the ipc handler are pretty much verbatim copies of -v3 */
 
 void module_logic_update_init_d () {
@@ -1923,6 +1931,51 @@ void module_logic_ipc_read (struct einit_event *ev) {
       for (; lm[i]; i++) if (lm[i]->module && lm[i]->module->rid) {
        n.name = (char *)str_stabilise (lm[i]->module->rid);
        ev->set = set_fix_add (ev->set, &n, sizeof (n));
+      }
+     }
+    }
+   }
+  } else if (strmatch (path[0], "issues")) {
+   char have_issues = 0;
+   struct cfgnode *node = NULL;
+
+   while (!have_issues && (node = cfg_findnode ("enable", 0, node))) {
+    if (node->svalue) {
+     char **services = str2set (':', node->svalue);
+     if (services) {
+      int si = 0;
+      for (; !have_issues && services[si]; si++) {
+       have_issues = !module_logic_service_exists_p (services[si]);
+      }
+
+      efree (services);
+     }
+    }
+   }
+
+   if (have_issues) {
+    if (!path[1]) {
+     n.is_file = 1;
+     n.name = (char *)str_stabilise ("services");
+     ev->set = set_fix_add (ev->set, &n, sizeof (n));
+    } else if (strmatch (path[1], "services")) {
+     node = NULL;
+     char buffer[BUFFERSIZE];
+
+     while ((node = cfg_findnode ("enable", 0, node))) {
+      if (node->svalue) {
+       char **services = str2set (':', node->svalue);
+       if (services) {
+        int si = 0;
+        for (; !have_issues && services[si]; si++) {
+         if (!module_logic_service_exists_p (services[si])) {
+          snprintf (buffer, BUFFERSIZE, "service %s does not exist (in mode \"%s\")", services[si], ((node->mode && node->mode->id) ? node->mode->id : "(none)"));
+          ev->stringset = set_str_add (ev->stringset, buffer);
+         }
+        }
+
+        efree (services);
+       }
       }
      }
     }
