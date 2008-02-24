@@ -60,8 +60,8 @@
   </refsect1info>
   <title>DESCRIPTION</title>
   <para>
-   <command>einit</command> is a replacement for the sysv-style /sbin/init program. Just
-   like <command>init</command>, it is (usually) the first program to be run by the kernel
+   <command>einit</command> is a replacement for the sysv-style /sbin/init programme. Just
+   like <command>init</command>, it is (usually) the first programme to be run by the kernel
    and responsible for initialising all soft- and hardware.
   </para>
  </refsect1>
