@@ -196,7 +196,7 @@
  <refsect1>
   <title>ENVIRONMENT</title>
   <para>
-   There are a some environment variables that can influence einit's behaviour.
+   There are some environment variables that may be used to influence einit's behaviour.
   </para>
   <note>
    <para>
@@ -440,7 +440,7 @@
 
  <refsect1>
   <title>BUGS</title>
-  <para>Please send bug reports to <emphasis>issue tracker on einit.org</emphasis>.</para>
+  <para>Please send bug reports to the <emphasis>issue tracker on einit.org</emphasis>.</para>
   <para>
    Remember that this is BETA software: avoid using this on mission-critical systems.
    <itemizedlist>
