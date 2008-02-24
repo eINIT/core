@@ -90,6 +90,8 @@ char *mode_to = "(none)";
 char **broken = NULL;
 char **unresolved = NULL;
 
+char show_notices = 0;
+
 enum control_type control_mode = control_automatic;
 
 void set_module_status (char *name, enum einit_module_status status) {
@@ -417,6 +419,30 @@ void update_do() {
   }
 
   for (i = starting_bufferitem; textbuffer[i]; i++) {
+   if (strmatch(textbuffer[i]->rid, "NOTICE")) {
+    if (show_notices) {
+     if (!lastrid || !strmatch (lastrid, textbuffer[i]->rid)) {
+      addch (' ');
+      attron(A_BOLD);
+      addstr ("NOTICE");
+      attroff(A_BOLD);
+      addch ('\n');
+
+      lastrid = textbuffer[i]->rid;
+     }
+
+     addch (' ');
+     addch (' ');
+     attron(COLOR_PAIR(attr_yellow));
+     addch ('*');
+     attroff(COLOR_PAIR(attr_yellow));
+     addch (' ');
+     addstr (textbuffer[i]->message);
+     addch ('\n');
+    }
+
+    goto done;
+   }
    if (strmatch(textbuffer[i]->message, "status")) {
     if (!have_status || !inset ((const void **)have_status, textbuffer[i]->rid, SET_TYPE_STRING)) {
      display_status (textbuffer[i]->rid);
@@ -447,6 +473,8 @@ void update_do() {
 
     lastrid = textbuffer[i]->rid;
    }
+
+   done:
 
    if (is_last_line()) {
     if (have_status)
@@ -511,6 +539,12 @@ void event_handler_update_module_status (struct einit_event *ev) {
  update();
 }
 
+void event_handler_feedback_notice (struct einit_event *ev) {
+ if (ev->string) {
+  add_text_buffer_entry ("NOTICE", ev->string);
+ }
+}
+
 void event_handler_update_service_enabled (struct einit_event *ev) {
 /* char buffer[BUFFERSIZE];
  snprintf (buffer, BUFFERSIZE, "enabled: %s\n", ev->string);
@@ -561,6 +595,11 @@ void *input_thread (void *ignored) {
   switch (getch ()) {
    case 'a':
     control_mode = control_automatic;
+    update();
+    break;
+
+   case 'L':
+    show_notices ^= 1;
     update();
     break;
 
@@ -623,6 +662,8 @@ int main(int argc, char **argv, char **env) {
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
  event_listen (einit_feedback_switch_progress, event_handler_switch_progress);
+
+ event_listen (einit_feedback_notice, event_handler_feedback_notice);
 
  event_listen (einit_feedback_broken_services, event_handler_broken_services);
  event_listen (einit_feedback_unresolved_services, event_handler_unresolved_services);
