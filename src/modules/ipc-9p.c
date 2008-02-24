@@ -241,6 +241,10 @@ void einit_ipc_9p_fs_open (Ixp9Req *r) {
  struct ipc_9p_fidaux *fa = r->fid->aux;
 
  if (fa && fa->path && fa->path[0] && fa->path[1] && strmatch (fa->path[0], "events") && strmatch (fa->path[1], "feed")) {
+  if (!einit_ipc_9p_event_queue) {
+   ipc_9p_respond_serialise (r, "no events");
+   return;
+  }
   if (r->ifcall.mode == P9_OREAD) {
    struct ipc_9p_filedata *fd = ecalloc (1, sizeof (struct ipc_9p_filedata));
 
