@@ -8,20 +8,6 @@
   <para>So eINIT lacks some feature you want, and you'd like to help us by writing it, eh? Excellent, so then this is
    exactly the spot to look at! This chapter covers all the details of the core that you need to know about to write
    your very own eINIT modules.</para>
-
-  <sect2 id="developers-intro-writing-modules">
-   <title>Writing Modules</title>
-   <titleabbrev>Writing Modules</titleabbrev>
-
-   <para>This is the most general thing: writing modules.</para>
-  </sect2>
-
-  <sect2 id="developers-intro-testing">
-   <title>Testing Modules</title>
-   <titleabbrev>Testing</titleabbrev>
-
-   <para></para>
-  </sect2>
  </sect1>
 
  <sect1 id="developers-writing-modules-c">
@@ -771,13 +757,6 @@ int my_module_configure (struct lmodule *pa) {
    C-Modules' functionality, but usually it's adequate. From a technical point of view, these modules should rather
    be called "Configuration Modules", since the governing module-loader doesn't care if the configuration-data it
    uses to genereate these modules actually comes from an XML file or not.</para>
-
-  <sect2 id="developers-writing-modules-xml-drawbacks">
-   <title>Things you can't do with XML/SH modules</title>
-   <titleabbrev>XML/SH Drawbacks</titleabbrev>
-
-   <para></para>
-  </sect2>
  </sect1>
 
  <sect1 id="developers-writing-modules-scheme">
@@ -788,20 +767,6 @@ int my_module_configure (struct lmodule *pa) {
    working on this, or at least looking into it, so it shouldn't be long before these can be used properly.</para>
   <para>Even so, some things can already be done a lot better in Scheme modules than in C or XML modules, most notably
    everything related to manipulating eINIT variables/configuration data.</para>
-
-  <sect2 id="developers-writing-modules-scheme-drawbacks">
-   <title>Things you can't do with Scheme modules</title>
-   <titleabbrev>Scheme Drawbacks</titleabbrev>
-
-   <para></para>
-  </sect2>
- </sect1>
-
- <sect1 id="developers-sandbox">
-  <title>Testing Code: Sandbox-Mode</title>
-  <titleabbrev>Sandbox Mode</titleabbrev>
-
-  <para></para>
  </sect1>
 
  <sect1 id="developers-submitting-modules">
