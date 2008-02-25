@@ -70,8 +70,9 @@ int linux_alsasound_restore() {
 	int ret = status_ok;
 	notice(2,"Restoring Mixer Levels");
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
-	char buffer[BUFFERSIZE];
-	snprintf(buffer,BUFFERSIZE,"%s/asound.state",alsastatedir);
+	char buffer[BUFFERSIZE] = "";
+	strcat(buffer,alsastatedir);
+	strcat(buffer,"/asound.state");
 	char *cmd[5];
 	cmd[0] = "alsactl";
 	cmd[1] = "-f";
@@ -89,8 +90,9 @@ int linux_alsasound_save() {
 	int ret = status_ok;
 	notice(2,"Storing ALSA Mixer Levels");
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
-	char buffer[BUFFERSIZE];
-	snprintf(buffer,BUFFERSIZE,"%s/asound.state",alsastatedir);
+	char buffer[BUFFERSIZE] = "";
+	strcat(buffer,alsastatedir);
+	strcat(buffer,"/asound.state");
 	char *cmd[5];
 	cmd[0] = "alsactl";
 	cmd[1] = "-f";
