@@ -69,10 +69,13 @@ int linux_alsasound_terminate(void *param, struct einit_event *status) {
 int linux_alsasound_restore() {
 	int ret = status_ok;
 	notice(2,"Restoring Mixer Levels");
+	char *file = "/asound.state";
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
-	char buffer[BUFFERSIZE] = "";
-	strcat(buffer,alsastatedir);
-	strcat(buffer,"/asound.state");
+	char *buffer;
+	buffer = (char *)calloc(strlen(alsastatedir) + strlen(file) + 1, 
+                        sizeof(char));
+	strcpy(buffer,alsastatedir);
+	strcat(buffer,file);
 	char *cmd[5];
 	cmd[0] = "alsactl";
 	cmd[1] = "-f";
@@ -89,10 +92,13 @@ int linux_alsasound_restore() {
 int linux_alsasound_save() {
 	int ret = status_ok;
 	notice(2,"Storing ALSA Mixer Levels");
+	char *file = "/asound.state";
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
-	char buffer[BUFFERSIZE] = "";
-	strcat(buffer,alsastatedir);
-	strcat(buffer,"/asound.state");
+	char *buffer;
+	buffer = (char *)calloc(strlen(alsastatedir) + strlen(file) + 1, 
+                        sizeof(char));
+	strcpy(buffer,alsastatedir);
+	strcat(buffer,file);
 	char *cmd[5];
 	cmd[0] = "alsactl";
 	cmd[1] = "-f";
