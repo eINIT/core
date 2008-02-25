@@ -72,10 +72,12 @@ int linux_alsasound_restore() {
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	char buffer[BUFFERSIZE];
 	snprintf(buffer,BUFFERSIZE,"alsactl -f %s restore", statefile);
-	char ** cmd = str2set(' ',buffer);
-	if (!execvp(*cmd,cmd)) {
+	FILE *f = popen (cmd, "r");
+	if (!f)
 		notice(2,"Errors while restoring defaults, ignoring.");
 		ret = status_failed;
+	} else {
+		pclose(f);
 	}
 	return ret;
 }
@@ -86,10 +88,12 @@ int linux_alsasound_save() {
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	char buffer[BUFFERSIZE];
 	snprintf(buffer,BUFFERSIZE,"alsactl -f %s store", statefile);
-	char ** cmd = str2set(' ',buffer);
-	if (!execvp(*cmd,cmd)) {
+	FILE *f = popen (cmd, "r");
+	if (!f)
 		notice(2,"Error saving levels.");
 		ret = status_failed;
+	} else {
+		pclose(f);
 	}
 	return ret;
 }
