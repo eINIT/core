@@ -118,7 +118,7 @@ int linux_alsasound_configure (struct lmodule *pa) {
 	module_init (pa);
 	pa->enable = linux_alsasound_enable;
 	pa->disable = linux_alsasound_disable;    
-	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
+	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (alsastatedir) {
 		char *files[2];
 		files[0] = alsastatedir;
