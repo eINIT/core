@@ -5,49 +5,267 @@
   <title>Installing eINIT</title>
   <titleabbrev>Installation</titleabbrev>
 
-  <para></para>
- </sect1>
+  <para>So you wanna give eINIT a shot but don't know where to start, eh? Well, this shouldn't be too hard, provided you're not
+   afraid of xml!</para>
 
- <sect1 id="users-configuration">
-  <title>Configuring eINIT</title>
-  <titleabbrev>Configuration</titleabbrev>
+  <sect2 id="users-installation-manual">
+   <title>Installing eINIT manually</title>
 
-  <para></para>
+   <para>Well, this might hurt a bit, but not too much :D.</para>
 
-  <sect2 id="users-configuration-etc-einit">
-   <title>The Configuration Files: /etc/einit</title>
-   <titleabbrev>/etc/einit</titleabbrev>
+   <sect3 id="users-installation-manual-sources">
+    <title>Get the sources</title>
 
-   <para></para>
+    <para>Yeah that's right, first you need to get the sources somewhere. This part isn't too hard, though, either grab the
+	einit-&lt;version&gt;.tar.bz2, einit-modules-xml-&lt;version&gt;.tar.bz2 and einit-modules-scheme-&lt;version&gt;.tar.bz2
+	off einit.org's frontpage, or use git.</para>
 
-   <sect3 id="users-configuration-etc-einit-network-xml">
-    <title>Network Configuration: /etc/einit/network.xml</title>
-    <titleabbrev>/etc/einit/network.xml</titleabbrev>
+    <sect4 id="users-installation-manual-sources-unpack">
+     <title>Unpack the tarballs</title>
 
-    <para></para>
+     <para>Just drop the .tar.bz2 files into your favourite directory, then run:</para>
+     <example>
+	  <title>Unpacking the tarballs</title>
+	  <programlisting>tar xjf einit-&lt;version&gt;.tar.bz2
+tar xjf einit-modules-xml-&lt;version&gt;.tar.bz2
+tar xjf einit-modules-scheme-&lt;version&gt;.tar.bz2</programlisting>
+     </example>
+	 <para>This should create three directories: einit-&lt;version&gt;/, einit-modules-xml-&lt;version&gt;/ and
+	 einit-modules-scheme-&lt;version&gt;/.</para>
+    </sect4>
+
+    <sect4 id="users-installation-manual-sources-git">
+     <title>Get the things you need via git</title>
+
+     <para>First, make sure GIT is actually installed. Then do this:</para>
+     <example>
+	  <title>Cloning the GIT repositories</title>
+	  <programlisting>git clone git://git.einit.org/core.git
+git clone git://git.einit.org/modules/xml-sh.git
+git clone git://git.einit.org/modules/scheme.git</programlisting>
+     </example>
+	 <para>This will create three directories: core/, xml-sh/ and scheme/.</para>
+    </sect4>
    </sect3>
 
-   <sect3 id="users-configuration-etc-einit-modes-xml">
-    <title>What Services to start: /etc/einit/modes.xml</title>
-    <titleabbrev>/etc/einit/modes.xml</titleabbrev>
+   <sect3 id="users-installation-manual-compile">
+    <title>Compile and Install</title>
 
-    <para></para>
-   </sect3>
+    <note><para>before trying to install, create a group called 'einit' on your box!</para></note>
+    <note><para>there is no manual "make uninstall"! eINIT's build scripts are designed to work with
+     a package manager, so... if you installed manually and want to remove eINIT again, just
+     'rm -R /lib/*einit* /usr/include/einit* /sbin/einit* /bin/einit*'</para></note>
 
-   <sect3 id="users-configuration-etc-einit-conf-d">
-    <title>Service-Configuration: /etc/einit/conf.d</title>
-    <titleabbrev>/etc/einit/conf.d</titleabbrev>
+    <sect4 id="users-installation-manual-compile-reqs">
+	 <title>Stuff you'll need</title>
 
-    <para></para>
-   </sect3>
+     <para>Yes, it won't just work like that, you'll need a couple things:</para>
+	 <itemizedlist>
+      <listitem><para>gcc</para></listitem>
+      <listitem><para>scons</para></listitem>
+      <listitem><para>libguile + headers (for the scheme modules)</para></listitem>
+     </itemizedlist>
+     <para>On Linux you also need:</para>
+	 <itemizedlist>
+      <listitem><para>glibc with NPTL(!) (if you don't know if you have this, and your distro is recent, then you do have it)</para></listitem>
+     </itemizedlist>
+	</sect4>
 
-   <sect3 id="users-configuration-etc-einit-fstab-xml">
-    <title>(Optional) Advanced fstab: /etc/einit/fstab.xml</title>
-    <titleabbrev>/etc/einit/fstab.xml</titleabbrev>
+    <sect4 id="users-installation-manual-compile-doit">
+	 <title>Compiling and Installing all the sources with scons</title>
 
-    <para></para>
+     <para>This is why we love scons:</para>
+	 <example>
+	  <title>Using scons</title>
+	  <programlisting>scons
+scons install</programlisting></example>
+     <para>Just run these commands in the core/, xml-sh/ and scheme/ directories, make sure all of them have the same scons commands
+	  and you'll be fine.</para>
+     <para>If you'd like to set a prefix or destdir, use 'prefix=' or 'destdir=' on <emphasis>both</emphasis> command-lines.</para>
+	</sect4>
    </sect3>
   </sect2>
+
+  <sect2 id="users-installation-gentoo">
+   <title>Installing eINIT on Gentoo/Linux</title>
+   <para>Goody, Gentoo/Linux is pretty much the easiest way to get this bugger installed.</para>
+   
+   <sect3 id="users-installation-gentoo-overlay">
+    <title>Educating your Package Manager to use eINIT's overlay</title>
+	
+	<para>The upstream ebuilds are kinda outdated, and the important(!) einit-modules-xml and einit-modules-scheme packages are missing too,
+	 so you want to use the overlay here.</para>
+
+    <sect4 id="users-installation-gentoo-overlay-layman">
+     <title>Portage + Layman</title>
+	
+     <para>First, make sure Layman is installed. Hint: emerge layman, then edit /etc/make.conf to contain this at the end of the file:</para>
+     <example><title>make.conf</title><programlisting>source /usr/portage/local/layman/make.conf</programlisting></example>
+	 <para>Now add the layman overlay:</para>
+     <example><title>using layman</title><programlisting>layman -L
+layman -a einit</programlisting></example>
+     <para>If you're a good boy and not running ~arch, you will first need to modify /etc/portage/package.keywords so that it contains the
+	  lines...</para>
+     <example><title>/etc/portage/package.keywords</title><programlisting>sys-apps/einit ~arch
+sys-apps/einit-modules-xml ~arch
+sys-apps/einit-modules-scheme ~arch</programlisting></example>
+     <para>(where 'arch' is the architecture you're on. if in doubt, use ~x86).</para>
+    </sect4>
+
+    <sect4 id="users-installation-gentoo-overlay-paludis">
+     <title>Paludis</title>
+	
+     <para>Just paste these lines to a new file called /etc/paludis/repositories/einit.conf</para>
+     <example><title>/etc/paludis/repositories/einit.conf</title><programlisting>location = /var/paludis/repositories/einit
+sync = git://git.einit.org/portage-overlay.git
+master_repository = gentoo
+format = ebuild
+names_cache = /var/cache/paludis/names
+write_cache = /var/cache/paludis/metadata</programlisting></example>
+	 <para>if the directory /var/paludis/repositories doesn't exist create it with:</para>
+     <example><title>creating the repositories' directory</title><programlisting># mkdir -p /var/paludis/repositories
+# chown -R paludisbuild:paludisbuild /var/paludis</programlisting></example>
+     <para>Don't create the last directory (einit) within /var/paludis/repositories otherwise git won't clone.</para>
+	 <para>Next unmask keywords:</para>
+     <example><title>unmasking</title><programlisting># echo "sys-apps/einit ~arch" >> /etc/paludis/keywords.conf
+# echo "sys-apps/einit-modules-xml ~arch" >> /etc/paludis/keywords.conf
+# echo "sys-apps/einit-modules-scheme ~arch" >> /etc/paludis/keywords.conf</programlisting></example>
+     <para>(where again 'arch' is the architecture you're on. if in doubt, use ~x86).</para>
+    </sect4>
+   </sect3>
+   <sect3 id="users-installation-gentoo-overlay">
+    <title>Installation</title>
+	<para>If you're using portage, you need to do an</para>
+	<example><programlisting>emerge einit einit-modules-xml einit-modules-scheme</programlisting></example>
+	<para>For paludis, do this instead:</para>
+	<example><programlisting>paludis -i einit einit-modules-xml einit-modules-scheme</programlisting></example>
+	<para>That will install eINIT and the packages it needs.</para>
+
+	<note><para>You need to have guile emerged with the 'threads' USE flag</para></note>
+	<note><para>eINIT's git ebuilds has one special USE flags: 'testing'. This flag selects the 'testing' GIT branch. By default the
+	 ebuild will use the 'master' branch.</para></note>
+	<note><para>If you (optionally) install 'rnv' off the overlay, the 'einit --wtf' output will be enhanced with details on syntactic
+	 and semantic errors in .xml configuration files. <emphasis>You don't strictly need rnv</emphasis>, but it sure does help at
+     times...</para></note>
+   </sect3>
+  </sect2>
+ </sect1>
+
+ <sect1 id="users-configuring">
+  <title>Configuring eINIT</title>
+
+  <para>This is easier than it used to be. For a quick run just examine the files in /etc/einit and /etc/einit/conf.d.</para>
+
+  <sect2 id="users-configuring-network">
+   <title>(Semi-Required) Set up your Network</title>  
+
+   <para>Check out /etc/einit/network.xml for some idea of how this works. Each node in the &lt;interfaces&gt; section will create a
+    service net-&lt;something&gt;.</para>
+
+   <para>In-depth Guides:
+    <itemizedlist>
+     <listitem><para>Network Settings (V2)</para></listitem>
+    </itemizedlist>
+   </para>
+  </sect2>
+
+  <sect2 id="users-configuring-modes">
+   <title>(Usually Required) Examine /etc/einit/modes.xml</title>  
+
+   <para>Here's where you set up what services eINIT should start. Just look at the &lt;enable /&gt; elements in the &lt;mode /&gt;
+    elements.</para>
+
+   <para>Lately we changed the default behaviour of "just adding the typical services" to "just adding the really needed
+    services", so now you'll definitely want to edit the list of services to enable.</para>
+
+   <note><title>IMPORTANT</title><para>eINIT services <emphasis>do not usually share the same name as their sysv equivalents</emphasis>.
+    You will need to find out how the einit names are before entering them, simply copying whatever was enabled in sysv will
+	<emphasis>not</emphasis> work. To get a list, use the command <programlisting>einit -ls /services/all</programlisting>.</para</note>
+  </sect2>
+
+  <sect2 id="users-configuring-fstab">
+   <title>(Optional) Edit /etc/einit/fstab.xml</title>  
+
+   <para>The file's format should be rather straightforward. This step is usually optional, unless you need to do some magic before/after
+    mounting or unmounting your filesystems. By default eINIT will use /etc/fstab, so if your computer is already set up, you should be
+	good to go.</para>
+  </sect2>
+
+  <sect2 id="users-configuring-wtf">
+   <title>Run 'einit --wtf'!</title>  
+
+   <para>We really mean it! Do run this command now and every time you updated your configuration, it'll tell you if something's wrong or
+    you did a common mistake somewhere.</para>
+  </sect2>
+ </sect1>
+
+ <sect1 id="users-bootloader">
+  <title>Configuring your Bootloader to use eINIT</title>
+
+  <para>You need to tell your Bootloader about eINIT, so that it can tell your kernel to use eINIT instead of the default init.</para>
+  <sect2 id="users-bootloader-grub">
+   <title>GRUB</title>
+
+   <para>First, open up your grub config file (usually /boot/grub/grub.conf or /boot/grub/menu.lst) and find your current entry... it
+    might look something like this:</para>
+
+   <example><title>Typical GRUB Boot Record</title>
+    <programlisting>title Gentoo (Linux/amd64)
+root (hd0,0)
+kernel /kernel-2.6.18-gentoo-r4 root=/dev/sda7
+initrd /boot/splash</programlisting></example>
+
+   <para>Now, COPY this to a new entry and add 'init=/sbin/einit' to the kernel command line, like so:</para>
+
+   <example><title>Typical GRUB Boot Record, with eINIT</title>
+    <programlisting>title Gentoo (Linux/amd64) [eINIT]
+root (hd0,0)
+kernel /kernel-2.6.18-gentoo-r4 root=/dev/sda7 init=/sbin/einit
+initrd /boot/splash</programlisting></example>
+
+   <para>See, that wasn't too hard now was it?</para>
+
+   <sect3 id="users-bootloader-grub-genkernel">
+    <title>Gentoo + Genkernel Users</title>
+	<para>Instead of adding 'init=/sbin/einit', you'll have to add 'REAL_INIT=/sbin/einit' to the kernel command line, so that the whole
+	 block looks something like this:</para>
+
+    <example><title>Typical genkernel GRUB Boot Record, with eINIT</title>
+     <programlisting>title Gentoo (Linux/x86) [eINIT, genkernel]
+root (hd0,0)
+kernel /kernel-genkernel-x86-2.6.23-gentoo-r3 real_root=/dev/sda7 REAL_INIT=/sbin/einit
+initrd /initramfs-genkernel-x86-2.6.23-gentoo-r3</programlisting></example>
+   </sect3>
+
+   <sect3 id="users-bootloader-grub-sabayon">
+    <title>Sabayon Users</title>
+	<para>Try accel_init=/sbin/einit.</para>
+   </sect3>
+  </sect2>
+
+  <sect2 id="users-bootloader-lilo">
+   <title>LILO</title>
+
+   <para>Open your LILO config file (usually /etc/lilo.conf) and look for your current entry which might look like this:</para>
+
+   <example><title>Typical LILO Boot Record</title>
+    <programlisting>image=/boot/vmlinuz-2.6.22-gentoo-r8
+label=gentoo
+root=/dev/sda3
+initrd=/boot/kernel-2.6.22-gentoo-r8</programlisting></example>
+
+   <para>COPY this to a new entry and add 'append="init=/sbin/einit"'. The new block might look like this:</para>
+
+   <example><title>Typical LILO Boot Record</title>
+    <programlisting>image=/boot/vmlinuz-2.6.22-gentoo-r8
+label=gentoo-einit
+root=/dev/sda3
+initrd=/boot/kernel-2.6.22-gentoo-r8
+append="init=/sbin/einit"</programlisting></example>
+  </sect2>
+
+  <para>Congratulations! You're done. Now go boot into eINIT and see if it works. If it worked fine, or if you'd like to kick one
+   of the devs' nuts, just drop by on IRC.</para>
  </sect1>
 
  <sect1 id="users-using">
