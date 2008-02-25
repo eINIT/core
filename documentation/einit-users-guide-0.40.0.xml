@@ -133,12 +133,12 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
      <para>(where again 'arch' is the architecture you're on. if in doubt, use ~x86).</para>
     </sect4>
    </sect3>
-   <sect3 id="users-installation-gentoo-overlay">
+   <sect3 id="users-installation-gentoo-installation">
     <title>Installation</title>
 	<para>If you're using portage, you need to do an</para>
-	<example><programlisting>emerge einit einit-modules-xml einit-modules-scheme</programlisting></example>
+	<example><title>emerging</title><programlisting>emerge einit einit-modules-xml einit-modules-scheme</programlisting></example>
 	<para>For paludis, do this instead:</para>
-	<example><programlisting>paludis -i einit einit-modules-xml einit-modules-scheme</programlisting></example>
+	<example><title>paludis-i-ing</title><programlisting>paludis -i einit einit-modules-xml einit-modules-scheme</programlisting></example>
 	<para>That will install eINIT and the packages it needs.</para>
 
 	<note><para>You need to have guile emerged with the 'threads' USE flag</para></note>
@@ -180,7 +180,7 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
 
    <note><title>IMPORTANT</title><para>eINIT services <emphasis>do not usually share the same name as their sysv equivalents</emphasis>.
     You will need to find out how the einit names are before entering them, simply copying whatever was enabled in sysv will
-	<emphasis>not</emphasis> work. To get a list, use the command <programlisting>einit -ls /services/all</programlisting>.</para</note>
+	<emphasis>not</emphasis> work. To get a list, use the command <programlisting>einit -ls /services/all</programlisting>.</para></note>
   </sect2>
 
   <sect2 id="users-configuring-fstab">
@@ -263,9 +263,6 @@ root=/dev/sda3
 initrd=/boot/kernel-2.6.22-gentoo-r8
 append="init=/sbin/einit"</programlisting></example>
   </sect2>
-
-  <para>Congratulations! You're done. Now go boot into eINIT and see if it works. If it worked fine, or if you'd like to kick one
-   of the devs' nuts, just drop by on IRC.</para>
  </sect1>
 
  <sect1 id="users-using">
