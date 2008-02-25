@@ -72,7 +72,8 @@ int linux_alsasound_restore() {
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
 	char buffer[BUFFERSIZE];
 	snprintf(buffer,BUFFERSIZE,"alsactl -f \"%s/asound.state\" restore 0",alsastatedir);
-	char **cmd = str2set(' ',buffer);
+	char *cmd = *str2set(' ',buffer);
+	//char *c = *cmd;
 	if (!execvp("alsactl",cmd)) {
 		printf("Errors while restoring defaults, ignoring.");
 		ret = status_failed;
@@ -86,7 +87,7 @@ int linux_alsasound_save() {
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
 	char buffer[BUFFERSIZE];
 	snprintf(buffer,BUFFERSIZE,"alsactl -f \"%s/asound.state\" store",alsastatedir);
-	char **cmd = str2set(' ',buffer);
+	char *cmd = *str2set(' ',buffer);
 	if (!execvp("alsactl",cmd)) {
 		printf("Error saving levels.");
 		ret = status_failed;
