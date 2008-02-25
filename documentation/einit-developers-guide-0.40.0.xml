@@ -739,13 +739,6 @@ int my_module_configure (struct lmodule *pa) {
 ]]></programlisting>
     </example>
    </sect3>
-
-   <sect3 id="developers-writing-modules-c-templates-shadow">
-    <title>Template for a Shadow Module</title>
-    <titleabbrev>Shadow Module Template</titleabbrev>
-
-    <para></para>
-   </sect3>
   </sect2>
  </sect1>
 
