@@ -256,7 +256,7 @@ initrd=/boot/kernel-2.6.22-gentoo-r8</programlisting></example>
 
    <para>COPY this to a new entry and add 'append="init=/sbin/einit"'. The new block might look like this:</para>
 
-   <example><title>Typical LILO Boot Record</title>
+   <example><title>Typical LILO Boot Record, with eINIT</title>
     <programlisting>image=/boot/vmlinuz-2.6.22-gentoo-r8
 label=gentoo-einit
 root=/dev/sda3
