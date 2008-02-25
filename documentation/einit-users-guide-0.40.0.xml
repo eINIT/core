@@ -180,7 +180,7 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
 
    <note><title>IMPORTANT</title><para>eINIT services <emphasis>do not usually share the same name as their sysv equivalents</emphasis>.
     You will need to find out how the einit names are before entering them, simply copying whatever was enabled in sysv will
-	<emphasis>not</emphasis> work. To get a list, use the command <programlisting>einit -ls /services/all</programlisting>.</para></note>
+	<emphasis>not</emphasis> work. To get a list, use the command <programlisting>einit -p -ls /services/all</programlisting>.</para></note>
   </sect2>
 
   <sect2 id="users-cfg-fstab">
@@ -265,31 +265,28 @@ append="init=/sbin/einit"</programlisting></example>
   </sect2>
  </sect1>
 
- <sect1 id="users-using">
-  <title>Using eINIT</title>
-  <titleabbrev>Using</titleabbrev>
+ <sect1 id="users-control">
+  <title>Controlling eINIT</title>
 
   <para></para>
 
-  <sect2 id="users-using-einit-control">
-   <title>The "einit-control"-Command: Have a chat with eINIT</title>
-   <titleabbrev>einit-control</titleabbrev>
+  <sect2 id="users-control-manpages">
+   <title>Manpages</title>
 
-   <para></para>
+   <para>As is customary with Unix programmes, we wrote some manpages for our applications.</para>
 
-   <sect3 id="users-using-erc">
-    <title>The "erc"-Command: Manipulating Services' Status</title>
-    <titleabbrev>erc</titleabbrev>
+   <itemizedlist>
+    <listitem><para><link linkend="reference/manual-einit.html">einit</link></para></listitem>
+    <listitem><para><link linkend="reference/manual-einit-feedback.html">einit-feedback</link></para></listitem>
+    <listitem><para><link linkend="reference/manual-einit-sysvd.html">einit-sysvd</link></para></listitem>
+    <listitem><para><link linkend="reference/manual-einit-log.html">einit-log</link></para></listitem>
+   </itemizedlist>
+  </sect2>
 
-    <para></para>
-   </sect3>
+  <sect2 id="users-control-common">
+   <title>Common Tasks</title>
 
-   <sect3 id="users-using-power">
-    <title>The "power"-Command: Shutting Down and Rebooting</title>
-    <titleabbrev>power</titleabbrev>
-
-    <para></para>
-   </sect3>
+   <para>While it is customary to write manpages, people do indeed not like to actually read them...</para>
   </sect2>
  </sect1>
 </chapter>
