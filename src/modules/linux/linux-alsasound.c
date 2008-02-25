@@ -79,7 +79,7 @@ int linux_alsasound_restore() {
 	char *cmd[5];
 	cmd[0] = "alsactl";
 	cmd[1] = "-f";
-	cmd[2] = buffer;
+	cmd[2] = strdup(buffer);
 	cmd[3] = "restore";
 	cmd[4] = NULL;
 	if (!execvp(cmd[0],cmd)) {
@@ -102,7 +102,7 @@ int linux_alsasound_save() {
 	char *cmd[5];
 	cmd[0] = "alsactl";
 	cmd[1] = "-f";
-	cmd[2] = buffer;
+	cmd[2] = strdup(buffer);
 	cmd[3] = "store";
 	cmd[4] = NULL;
 	if (!execvp(cmd[0],cmd)) {
