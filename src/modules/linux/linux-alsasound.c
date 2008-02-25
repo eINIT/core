@@ -68,14 +68,13 @@ int linux_alsasound_terminate(void *param, struct einit_event *status) {
 
 int linux_alsasound_restore() {
 	int ret = status_ok;
-	printf("Restoring Mixer Levels");
+	notice(2,"Restoring Mixer Levels");
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
 	char buffer[BUFFERSIZE];
-	snprintf(buffer,BUFFERSIZE,"alsactl -f \"%s/asound.state\" restore 0",alsastatedir);
-	char *cmd = *str2set(' ',buffer);
-	//char *c = *cmd;
+	snprintf(buffer,BUFFERSIZE,"%s/asound.state",alsastatedir);
+	char *cmd[] = { "alsactl", "-f", buffer, "restore", (char *)0 };
 	if (!execvp("alsactl",cmd)) {
-		printf("Errors while restoring defaults, ignoring.");
+		notice(2,"Errors while restoring defaults, ignoring.");
 		ret = status_failed;
 	}
 	return ret;
@@ -83,13 +82,13 @@ int linux_alsasound_restore() {
 
 int linux_alsasound_save() {
 	int ret = status_ok;
-	printf("Storing ALSA Mixer Levels");
+	notice(2,"Storing ALSA Mixer Levels");
 	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/alsastatedir", NULL);
 	char buffer[BUFFERSIZE];
-	snprintf(buffer,BUFFERSIZE,"alsactl -f \"%s/asound.state\" store",alsastatedir);
-	char *cmd = *str2set(' ',buffer);
+	snprintf(buffer,BUFFERSIZE,"%s/asound.state",alsastatedir);
+	char *cmd[] = { "alsactl", "-f", buffer, "store", (char *)0 };
 	if (!execvp("alsactl",cmd)) {
-		printf("Error saving levels.");
+		notice(2,"Error saving levels.");
 		ret = status_failed;
 	}
 	return ret;
