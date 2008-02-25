@@ -276,10 +276,10 @@ append="init=/sbin/einit"</programlisting></example>
    <para>As is customary with Unix programmes, we wrote some manpages for our applications.</para>
 
    <itemizedlist>
-    <listitem><para><olink targetdoc="reference/manual-einit.html">einit</olink></para></listitem>
-    <listitem><para><olink targetdoc="reference/manual-einit-feedback.html">einit-feedback</olink></para></listitem>
-    <listitem><para><olink targetdoc="reference/manual-einit-sysvd.html">einit-sysvd</olink></para></listitem>
-    <listitem><para><olink targetdoc="reference/manual-einit-log.html">einit-log</olink></para></listitem>
+    <listitem><para><ulink url="reference/manual-einit.html">einit</ulink></para></listitem>
+    <listitem><para><ulink url="reference/manual-einit-feedback.html">einit-feedback</ulink></para></listitem>
+    <listitem><para><ulink url="reference/manual-einit-sysvd.html">einit-sysvd</ulink></para></listitem>
+    <listitem><para><ulink url="reference/manual-einit-log.html">einit-log</ulink></para></listitem>
    </itemizedlist>
   </sect2>
 
