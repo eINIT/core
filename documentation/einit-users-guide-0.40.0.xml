@@ -151,12 +151,12 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
   </sect2>
  </sect1>
 
- <sect1 id="users-configuring">
+ <sect1 id="users-cfg">
   <title>Configuring eINIT</title>
 
   <para>This is easier than it used to be. For a quick run just examine the files in /etc/einit and /etc/einit/conf.d.</para>
 
-  <sect2 id="users-configuring-network">
+  <sect2 id="users-cfg-network">
    <title>(Semi-Required) Set up your Network</title>  
 
    <para>Check out /etc/einit/network.xml for some idea of how this works. Each node in the &lt;interfaces&gt; section will create a
@@ -169,7 +169,7 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
    </para>
   </sect2>
 
-  <sect2 id="users-configuring-modes">
+  <sect2 id="users-cfg-modes">
    <title>(Usually Required) Examine /etc/einit/modes.xml</title>  
 
    <para>Here's where you set up what services eINIT should start. Just look at the &lt;enable /&gt; elements in the &lt;mode /&gt;
@@ -183,7 +183,7 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
 	<emphasis>not</emphasis> work. To get a list, use the command <programlisting>einit -ls /services/all</programlisting>.</para></note>
   </sect2>
 
-  <sect2 id="users-configuring-fstab">
+  <sect2 id="users-cfg-fstab">
    <title>(Optional) Edit /etc/einit/fstab.xml</title>  
 
    <para>The file's format should be rather straightforward. This step is usually optional, unless you need to do some magic before/after
@@ -191,7 +191,7 @@ write_cache = /var/cache/paludis/metadata</programlisting></example>
 	good to go.</para>
   </sect2>
 
-  <sect2 id="users-configuring-wtf">
+  <sect2 id="users-cfg-wtf">
    <title>Run 'einit --wtf'!</title>  
 
    <para>We really mean it! Do run this command now and every time you updated your configuration, it'll tell you if something's wrong or
