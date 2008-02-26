@@ -303,8 +303,6 @@ int einit_tty_texec (struct cfgnode *node) {
      update_utmp (utmp_add, &utmprecord);
     }
 
-    notice (1, "tty started with pid=%i, intermediate child process=%i", realpid, cpid);
-
     setpgid (realpid, realpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
         ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
