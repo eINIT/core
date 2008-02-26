@@ -2,7 +2,7 @@
  *  linux-alsasound.c
  *  einit
  *
- *  Created on 02/25/2008.
+ *  Created on 02/26/2008.
  *  Copyright 2008 Ryan Hope. All rights reserved.
  *
  */
