@@ -224,6 +224,7 @@ int einit_tty_texec (struct cfgnode *node) {
      case -1:
       close (cpipes[1]);
       _exit (-1);
+      break;
 
      case 0:
      {
@@ -255,17 +256,22 @@ int einit_tty_texec (struct cfgnode *node) {
       }
       execve (cmds[0], cmds, environment);
       bitch (bitch_stdio, 0, "execve() failed.");
-      close (cpipes[0]);
+      close (cpipes[1]);
       exit(-1);
+      break;
      }
      default:
+      fprintf (stderr, "pid=%i\n", cpid);
+      fprintf (stdout, "pid=%i\n", cpid);
+
       /* exit and return the new child's PID */
       write (cpipes[1], &cpid, sizeof(pid_t));
       close (cpipes[1]);
       _exit (0);
+      break;
     }
 
-    _exit (-1);
+    _exit (-1); /* never reached */
    } else if (cpid != -1) {
     int rstatus;
     char exit_ok = 0;
