@@ -17,6 +17,7 @@
 #include <einit/utility.h>
 #include <einit-modules/exec.h>
 #include <errno.h>
+#include <sched.h>
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -73,11 +74,19 @@ int linux_alsasound_restore() {
 	notice(2,"Restoring Mixer Levels");
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
-		char buffer[BUFFERSIZE];
-		snprintf(buffer,BUFFERSIZE,"/usr/sbin/alsactl -f %s restore", statefile);
-		if (!qexec(buffer)) {
-			notice(2,"Errors while restoring defaults, ignoring.");
-			ret = status_failed;
+		char *cmd[5];
+		cmd[0] = "alsactl";
+		cmd[1] = "-f";
+		cmd[2] = statefile;
+		cmd[3] = "restore";
+		cmd[4] = NULL;
+		pid_t pid;
+		pid = fork();
+		if (pid == 0) {
+			if (!execvp(cmd[0],cmd)) {
+				notice(2,"Errors while restoring defaults, ignoring.");
+				ret = status_failed;
+			}
 		}
 	}
 	return ret;
@@ -85,14 +94,22 @@ int linux_alsasound_restore() {
 
 int linux_alsasound_save() {
 	int ret = status_ok;
-	notice(2,"Storing ALSA Mixer Levels");
+	notice(2,"Restoring Mixer Levels");
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
-		char buffer[BUFFERSIZE];
-		snprintf(buffer,BUFFERSIZE,"/usr/sbin/alsactl -f %s store", statefile);
-		if (!qexec(buffer)) {
-			notice(2,"Error saving levels.");
-			ret = status_failed;
+		char *cmd[5];
+		cmd[0] = "alsactl";
+		cmd[1] = "-f";
+		cmd[2] = statefile;
+		cmd[3] = "store";
+		cmd[4] = NULL;
+		pid_t pid;
+		pid = fork();
+		if (pid == 0) {
+			if (!execvp(cmd[0],cmd)) {
+				notice(2,"Errors while restoring defaults, ignoring.");
+				ret = status_failed;
+			}
 		}
 	}
 	return ret;
@@ -118,10 +135,10 @@ int linux_alsasound_configure (struct lmodule *pa) {
 	module_init (pa);
 	pa->enable = linux_alsasound_enable;
 	pa->disable = linux_alsasound_disable;    
-	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
-	if (alsastatedir) {
+	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (statefile) {
 		char *files[2];
-		files[0] = alsastatedir;
+		files[0] = statefile;
 		files[1] = 0;
 		char *after = after_string_from_files (files);
 		if (after) {
