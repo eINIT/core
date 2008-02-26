@@ -17,8 +17,12 @@
 #include <einit/utility.h>
 #include <errno.h>
 
+#include <alsa/asoundlib.h>
+
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#define DEFAULT_STATEFILE "/etc/asound.state"
 
 #define EXPECTED_EIV 1
 
@@ -70,6 +74,9 @@ int linux_alsasound_restore() {
 	int ret = status_ok;
 	notice(2,"Restoring Mixer Levels");
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (!statefile) {
+		statefile = DEFAULT_STATEFILE;
+	}
 	char buffer[BUFFERSIZE];
 	snprintf(buffer,BUFFERSIZE,"alsactl -f %s restore", statefile);
 	if (!qexec(buffer)) {
@@ -83,6 +90,9 @@ int linux_alsasound_save() {
 	int ret = status_ok;
 	notice(2,"Storing ALSA Mixer Levels");
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (!statefile) {
+		statefile = DEFAULT_STATEFILE;
+	}
 	char buffer[BUFFERSIZE];
 	snprintf(buffer,BUFFERSIZE,"alsactl -f %s store", statefile);
 	if (!qexec(buffer)) {
