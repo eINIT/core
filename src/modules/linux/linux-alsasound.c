@@ -73,6 +73,7 @@ int linux_alsasound_enable (void *param, struct einit_event *status) {
 	int ret = status_ok;
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
+		fprintf(stdout,"%s",statefile);
 		struct stat fileattrib;
 		if (stat(statefile, &fileattrib) == 0) {
 			char cmd[BUFFERSIZE];
@@ -81,7 +82,7 @@ int linux_alsasound_enable (void *param, struct einit_event *status) {
 		} else {
 			char msg[BUFFERSIZE];
 			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
-			notice(2,msg);
+			fprintf(stdout,"%s",msg);
 			ret = status_failed;
 		}
 	}
@@ -98,7 +99,7 @@ int linux_alsasound_disable (void *param, struct einit_event *status) {
 	} else {
 		char msg[BUFFERSIZE];
 		snprintf(msg,BUFFERSIZE,"Could not find %s, dont know where to store.",statefile);
-		notice(2,msg);
+		fprintf(stdout,"%s",msg);
 		ret = status_failed;
 	}
 	return ret;
