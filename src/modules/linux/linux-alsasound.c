@@ -77,9 +77,7 @@ int linux_alsasound_enable (void *param, struct einit_event *status) {
 		struct stat fileattrib;
 		if (stat(statefile, &fileattrib) == 0) {
 			char **cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "restore", (char *)0 };
-			if (!qexec(cmd)) {
-				ret = status_failed;
-			}				
+			ret = qexec(cmd);
 		} else {
 			char msg[BUFFERSIZE];
 			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
@@ -98,9 +96,7 @@ int linux_alsasound_disable (void *param, struct einit_event *status) {
 		struct stat fileattrib;
 		if (stat(statefile, &fileattrib) == 0) {
 			char **cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "store", (char *)0 };
-			if (!qexec(cmd)) {
-				ret = status_failed;
-			}				
+			ret = qexec(cmd);
 		} else {
 			char msg[BUFFERSIZE];
 			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
