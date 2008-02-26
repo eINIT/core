@@ -69,26 +69,37 @@ int linux_alsasound_terminate(void *param, struct einit_event *status) {
 	return ret;
 }
 
-int linux_alsasound_restore() {
-	return qexec("alsactl -f /var/lib/alsa/asound.state restore");
-}
-
-int linux_alsasound_save() {
-	return qexec("alsactl -f /var/lib/alsa/asound.state store");
-}
-
 int linux_alsasound_enable (void *param, struct einit_event *status) {
-	int ret = status_failed;
-	if (linux_alsasound_restore()) {
-		ret = status_ok;
+	int ret = status_ok;
+	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (statefile) {
+		struct stat fileattrib;
+		if (stat(statefile, &fileattrib) == 0) {
+			char cmd[BUFFERSIZE];
+			snprintf(cmd,BUFFERSIZE,"alsactl -f %s restore",statefile);
+			qexec(cmd);
+		} else {
+			char msg[BUFFERSIZE];
+			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
+			notify(2,msg);
+			ret = status_failed;
+		}
 	}
 	return ret;
 }
 
 int linux_alsasound_disable (void *param, struct einit_event *status) {
-	int ret = status_failed;
-	if (linux_alsasound_save()) {
-		ret = status_ok;
+	int ret = status_ok;
+	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (statefile) {
+		char cmd[BUFFERSIZE];
+		snprintf(cmd,BUFFERSIZE,"alsactl -f %s store",statefile);
+		qexec(cmd);
+	} else {
+		char msg[BUFFERSIZE];
+		snprintf(msg,BUFFERSIZE,"Could not find %s, dont know where to store.",statefile);
+		notify(2,msg);
+		ret = status_failed;
 	}
 	return ret;
 }
