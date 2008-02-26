@@ -70,49 +70,11 @@ int linux_alsasound_terminate(void *param, struct einit_event *status) {
 }
 
 int linux_alsasound_restore() {
-	int ret = status_ok;
-	notice(2,"Restoring Mixer Levels");
-	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
-	if (statefile) {
-		char *cmd[5];
-		cmd[0] = "alsactl";
-		cmd[1] = "-f";
-		cmd[2] = statefile;
-		cmd[3] = "restore";
-		cmd[4] = NULL;
-		pid_t pid;
-		pid = fork();
-		if (pid == 0) {
-			if (!execvp(cmd[0],cmd)) {
-				notice(2,"Errors while restoring defaults, ignoring.");
-				ret = status_failed;
-			}
-		}
-	}
-	return ret;
+	return qexec("alsactl -f /var/lib/alsa/asound.state restore");
 }
 
 int linux_alsasound_save() {
-	int ret = status_ok;
-	notice(2,"Restoring Mixer Levels");
-	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
-	if (statefile) {
-		char *cmd[5];
-		cmd[0] = "alsactl";
-		cmd[1] = "-f";
-		cmd[2] = statefile;
-		cmd[3] = "store";
-		cmd[4] = NULL;
-		pid_t pid;
-		pid = fork();
-		if (pid == 0) {
-			if (!execvp(cmd[0],cmd)) {
-				notice(2,"Errors while restoring defaults, ignoring.");
-				ret = status_failed;
-			}
-		}
-	}
-	return ret;
+	return qexec("alsactl -f /var/lib/alsa/asound.state store");
 }
 
 int linux_alsasound_enable (void *param, struct einit_event *status) {
