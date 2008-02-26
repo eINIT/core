@@ -1064,7 +1064,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     return status_failed;
    }
 
-   read (cpipes[1], &realpid, sizeof(pid_t));
+   read (cpipes[0], &realpid, sizeof(pid_t));
 
    if (daemon_environment) efree (daemon_environment);
    if (exvec) efree (exvec);
