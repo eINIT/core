@@ -76,9 +76,13 @@ int linux_alsasound_enable (void *param, struct einit_event *status) {
 		fprintf(stdout,"%s",statefile);
 		struct stat fileattrib;
 		if (stat(statefile, &fileattrib) == 0) {
-			char cmd[BUFFERSIZE];
-			snprintf(cmd,BUFFERSIZE,"alsactl -f %s restore",statefile);
-			qexec(cmd);
+			pid_t pid = fork();
+			if (pid==0) {
+				char *cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "restore", (char *)0 };
+				if (!execv (cmd[0], cmd)) {
+					ret = status_failed;
+				}				
+			}
 		} else {
 			char msg[BUFFERSIZE];
 			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
@@ -93,14 +97,22 @@ int linux_alsasound_disable (void *param, struct einit_event *status) {
 	int ret = status_ok;
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
-		char cmd[BUFFERSIZE];
-		snprintf(cmd,BUFFERSIZE,"alsactl -f %s store",statefile);
-		qexec(cmd);
-	} else {
-		char msg[BUFFERSIZE];
-		snprintf(msg,BUFFERSIZE,"Could not find %s, dont know where to store.",statefile);
-		fprintf(stdout,"%s",msg);
-		ret = status_failed;
+		fprintf(stdout,"%s",statefile);
+		struct stat fileattrib;
+		if (stat(statefile, &fileattrib) == 0) {
+			pid_t pid = fork();
+			if (pid==0) {
+				char *cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "store", (char *)0 };
+				if (!execv (cmd[0], cmd)) {
+					ret = status_failed;
+				}				
+			}
+		} else {
+			char msg[BUFFERSIZE];
+			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
+			fprintf(stdout,"%s",msg);
+			ret = status_failed;
+		}
 	}
 	return ret;
 }
