@@ -2,7 +2,7 @@
  *  linux-alsasound.c
  *  einit
  *
- *  Created on 02/25/2008.
+ *  Created on 02/26/2008.
  *  Copyright 2008 Ryan Hope. All rights reserved.
  *
  */
@@ -15,7 +15,9 @@
 #include <einit/config.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
+#include <einit-modules/exec.h>
 #include <errno.h>
+#include <sched.h>
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -31,6 +33,7 @@ int linux_alsasound_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * linux_alsasound_provides[] = {"alsasound", NULL};
+char * linux_alsasound_requires[] = {"mount-critical", NULL};
 
 /* no const here, we need to mofiy this on the fly */
 
@@ -43,7 +46,7 @@ struct smodule linux_alsasound_self = {
 		.rid       = "linux-alsasound",
 		.si        = {
 				.provides = linux_alsasound_provides,
-				.requires = NULL,
+				.requires = linux_alsasound_requires,
 				.after    = NULL,
 				.before   = NULL
 		},
@@ -66,50 +69,50 @@ int linux_alsasound_terminate(void *param, struct einit_event *status) {
 	return ret;
 }
 
-int linux_alsasound_restore() {
-	int ret = status_ok;
-	notice(2,"Restoring Mixer Levels");
-	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
-	char buffer[BUFFERSIZE];
-	snprintf(buffer,BUFFERSIZE,"alsactl -f %s restore", statefile);
-	FILE *f = popen (buffer, "r");
-	if (!f) {
-		notice(2,"Errors while restoring defaults, ignoring.");
-		ret = status_failed;
-	} else {
-		pclose(f);
-	}
-	return ret;
-}
-
-int linux_alsasound_save() {
-	int ret = status_ok;
-	notice(2,"Storing ALSA Mixer Levels");
-	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
-	char buffer[BUFFERSIZE];
-	snprintf(buffer,BUFFERSIZE,"alsactl -f %s store", statefile);
-	FILE *f = popen (buffer, "r");
-	if (!f) {
-		notice(2,"Error saving levels.");
-		ret = status_failed;
-	} else {
-		pclose(f);
-	}
-	return ret;
-}
-
 int linux_alsasound_enable (void *param, struct einit_event *status) {
-	int ret = status_failed;
-	if (linux_alsasound_restore()) {
-		ret = status_ok;
+	int ret = status_ok;
+	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (statefile) {
+		fprintf(stdout,"%s",statefile);
+		struct stat fileattrib;
+		if (stat(statefile, &fileattrib) == 0) {
+			pid_t pid = fork();
+			if (pid==0) {
+				char *cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "restore", (char *)0 };
+				if (!execv (cmd[0], cmd)) {
+					ret = status_failed;
+				}				
+			}
+		} else {
+			char msg[BUFFERSIZE];
+			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
+			fprintf(stdout,"%s",msg);
+			ret = status_failed;
+		}
 	}
 	return ret;
 }
 
 int linux_alsasound_disable (void *param, struct einit_event *status) {
-	int ret = status_failed;
-	if (linux_alsasound_save()) {
-		ret = status_ok;
+	int ret = status_ok;
+	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (statefile) {
+		fprintf(stdout,"%s",statefile);
+		struct stat fileattrib;
+		if (stat(statefile, &fileattrib) == 0) {
+			pid_t pid = fork();
+			if (pid==0) {
+				char *cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "store", (char *)0 };
+				if (!execv (cmd[0], cmd)) {
+					ret = status_failed;
+				}				
+			}
+		} else {
+			char msg[BUFFERSIZE];
+			snprintf(msg,BUFFERSIZE,"Could not find %s, unmute mixer manually.",statefile);
+			fprintf(stdout,"%s",msg);
+			ret = status_failed;
+		}
 	}
 	return ret;
 }
@@ -118,10 +121,10 @@ int linux_alsasound_configure (struct lmodule *pa) {
 	module_init (pa);
 	pa->enable = linux_alsasound_enable;
 	pa->disable = linux_alsasound_disable;    
-	char *alsastatedir = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
-	if (alsastatedir) {
+	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	if (statefile) {
 		char *files[2];
-		files[0] = alsastatedir;
+		files[0] = statefile;
 		files[1] = 0;
 		char *after = after_string_from_files (files);
 		if (after) {
