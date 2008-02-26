@@ -54,7 +54,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <einit-modules/scheduler.h>
 
 int einit_scheduler_configure (struct lmodule *);
 
@@ -81,7 +80,6 @@ module_register(einit_scheduler_self);
 #endif
 
 pthread_mutex_t
- schedcpidmutex = PTHREAD_MUTEX_INITIALIZER,
  sched_timer_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 sem_t *signal_semaphore = NULL;
@@ -92,8 +90,9 @@ sem_t signal_semaphore_static;
 
 stack_t signalstack;
 
-struct spidcb *cpids = NULL;
-struct spidcb *sched_deadorphans = NULL;
+void sched_signal_sigint (int, siginfo_t *, void *);
+void sched_signal_sigalrm (int, siginfo_t *, void *);
+void sched_run_sigchild ();
 
 char sigint_called = 0;
 
@@ -234,12 +233,7 @@ void sched_reset_event_handlers () {
 
  sigemptyset(&(action.sa_mask));
 
-/* signal handlers */
- action.sa_sigaction = sched_signal_sigchld;
-// action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
-// SA_NODEFER should help with a waitpid()-race... and since we don't do any locking in the handler anymore...
- if ( sigaction (SIGCHLD, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
 
  action.sa_sigaction = sched_signal_sigalrm;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
@@ -248,28 +242,6 @@ void sched_reset_event_handlers () {
  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER | SA_ONSTACK;
  action.sa_sigaction = sched_signal_sigint;
  if ( sigaction (SIGINT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-
-#if 0
-/* ignore most signals */
- action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
-
- if ( sigaction (SIGQUIT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if ( sigaction (SIGABRT, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-// if ( sigaction (SIGALRM, &action, NULL) ) bitch (BTCH_ERRNO);
- if ( sigaction (SIGUSR1, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if ( sigaction (SIGUSR2, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if ( sigaction (SIGTSTP, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if ( sigaction (SIGTERM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-#ifdef SIGPOLL
- if ( sigaction (SIGPOLL, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-#endif
- if ( sigaction (SIGPROF, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-// if ( sigaction (SIGVTALRM, &action, NULL) ) bitch (BITCH_STDIO, 0, "calling sigaction() failed.");
- if ( sigaction (SIGXCPU, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
- if ( sigaction (SIGXFSZ, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");
-#ifdef SIGIO
-#endif
-#endif
 
 /* some signals REALLY should be ignored */
  action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
@@ -304,28 +276,6 @@ void sched_reset_event_handlers () {
 #endif
 #endif
 #endif
-}
-
-int __sched_watch_pid (pid_t pid) {
- struct spidcb *nele;
- nele = ecalloc (1, sizeof (struct spidcb));
- nele->pid = pid;
- nele->cfunc = NULL;
- nele->dead = 0;
- nele->status = 0;
-
- emutex_lock (&schedcpidmutex);
- nele->next = cpids;
- cpids = nele;
- emutex_unlock (&schedcpidmutex);
-
- if (!(coremode & einit_core_exiting) && signal_semaphore) {
-  if (sem_post (signal_semaphore)) {
-   bitch(bitch_stdio, 0, "sem_post() failed.");
-  }
- }
-
- return 0;
 }
 
 // (on linux) SIGINT to INIT means ctrl+alt+del was pressed
@@ -398,50 +348,13 @@ void sched_einit_event_handler_main_loop_reached (struct einit_event *ev) {
   ethread_spawn_detached ((void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
  }
 
- sched_run_sigchild(NULL);
+ sched_run_sigchild();
 }
 
-void *sched_run_sigchild (void *p) {
- int status, check;
- pid_t pid;
+void sched_run_sigchild () {
+ char check;
  while (1) {
-  emutex_lock (&schedcpidmutex);
-  struct spidcb *start = cpids, *prev = NULL, *cur = start;
-  check = 0;
-
-  for (; cur; cur = cur->next) {
-   pid = cur->pid;
-   if ((!cur->dead) && (waitpid (pid, &status, WNOHANG) > 0)) {
-    if (WIFEXITED(status) || WIFSIGNALED(status)) cur->dead = 1;
-   }
-
-   if (cur->dead) {
-    struct einit_event ee = evstaticinit(einit_process_died);
-    ee.integer = cur->pid;
-    ee.status = cur->status;
-    event_emit (&ee, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate);
-    evstaticdestroy (ee);
-
-    check++;
-
-    if (prev)
-     prev->next = cur->next;
-    else
-     cpids = cur->next;
-
-    break;
-   }
-
-   if (start != cpids) {
-    cur = cpids;
-    start = cur;
-    prev = NULL;
-   } else
-    prev = cur;
-  }
-
-  emutex_unlock (&schedcpidmutex);
-
+  check =  0;
   if (einit_join_threads) {
    pthread_t thread;
    struct einit_join_thread *t = NULL;
@@ -465,45 +378,31 @@ void *sched_run_sigchild (void *p) {
    }
   }
 
-  if (!check) {
-   sched_handle_timers();
+  sched_handle_timers();
 
-   if (!(coremode & einit_core_exiting)) sem_wait (signal_semaphore);
-   else {
-    debug ("scheduler SIGCHLD thread now going to sleep\n");
-    while (sleep (1)) {
-     debug ("still not dead...");
-    }
+  if (!(coremode & einit_core_exiting)) sem_wait (signal_semaphore);
+  else {
+   debug ("scheduler SIGCHLD thread now going to sleep\n");
+   while (sleep (1)) {
+    debug ("still not dead...");
    }
-   if (sigint_called) {
-    shutting_down = 1;
-    debug ("scheduler SIGCHLD thread: making eINIT shut down\n");
+  }
+  if (sigint_called) {
+   shutting_down = 1;
+   debug ("scheduler SIGCHLD thread: making eINIT shut down\n");
 
-    struct einit_event ee = evstaticinit (einit_core_switch_mode);
-    ee.string = "power-reset";
+   struct einit_event ee = evstaticinit (einit_core_switch_mode);
+   ee.string = "power-reset";
 
 //    ee.para = stdout;
 
-    event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
+   event_emit (&ee, einit_event_flag_spawn_thread | einit_event_flag_duplicate | einit_event_flag_broadcast);
 //  evstaticdestroy(ee);
 
-    sigint_called = 0;
-    evstaticdestroy (ee);
-   }
+   sigint_called = 0;
+   evstaticdestroy (ee);
   }
  }
-
- return NULL;
-}
-
-void sched_signal_sigchld (int signal, siginfo_t *siginfo, void *context) {
- if (!(coremode & einit_core_exiting) && signal_semaphore) {
-  if (sem_post (signal_semaphore)) {
-   bitch(bitch_stdio, 0, "sem_post() failed.");
-  }
- }
-
- return;
 }
 
 void sched_signal_sigalrm (int signal, siginfo_t *siginfo, void *context) {
@@ -577,8 +476,6 @@ int einit_scheduler_configure (struct lmodule *tm) {
 
  event_listen (einit_timer_set, sched_timer_event_handler_set);
  event_listen (einit_core_main_loop_reached, sched_einit_event_handler_main_loop_reached);
-
- function_register ("einit-scheduler-watch-pid", 1, __sched_watch_pid);
 
  sched_reset_event_handlers ();
 

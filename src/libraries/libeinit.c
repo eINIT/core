@@ -81,7 +81,6 @@ enum einit_mode coremode = 0;
 const struct smodule **coremodules[MAXMODULES] = { NULL };
 char **einit_initial_environment = NULL;
 char **einit_global_environment = NULL;
-struct spidcb *cpids = NULL;
 int einit_have_feedback = 1;
 struct stree *service_aliases = NULL;
 struct stree *service_usage = NULL;
@@ -90,8 +89,6 @@ struct stree *exported_functions = NULL;
 unsigned char *gdebug = 0;
 struct utsname osinfo = {};
 pthread_attr_t thread_attribute_detached = {};
-struct spidcb *sched_deadorphans = NULL;
-sched_watch_pid_t sched_watch_pid_fp = NULL;
 #endif
 
 struct einit_join_thread *einit_join_threads = NULL;

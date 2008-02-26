@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit-modules/process.h>
 #include <errno.h>
 #include <string.h>
-
+#include <signal.h>
 #include <pthread.h>
 
 #define EXPECTED_EIV 1

@@ -44,8 +44,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <string.h>
 
-#include <einit-modules/scheduler.h>
-
 #include <dlfcn.h>
 #include <sys/wait.h>
 
@@ -163,7 +161,6 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
 
    default:
     waitpid (p, NULL, 0);
-//    sched_watch_pid(p);
     break;
   }
  }

@@ -59,7 +59,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <sys/mount.h>
 #include <fcntl.h>
-
+#include <signal.h>
 #include <ctype.h>
 
 #include <linux/loop.h>

@@ -51,7 +51,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 #include <pthread.h>
 #include <einit-modules/exec.h>
-#include <einit-modules/scheduler.h>
 #include <einit-modules/process.h>
 #include <ctype.h>
 #include <sys/stat.h> 
@@ -1002,33 +1001,60 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   }
 #endif
   else if (child == 0) {
-   nice (-einit_core_niceness_increment);
-   nice (einit_task_niceness_increment);
+   /* this 'ere is the code that gets executed in the child process */
+   /* let's fork /again/, so that the main einit monitor process can pick these processes up */
+   pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
 
-   disable_core_dumps ();
+   switch (cfork) {
+    case -1:
+     _exit (-1);
 
-   if (gid && (setgid (gid) == -1))
-    perror ("setting gid");
-   if (uid && (setuid (uid) == -1))
-    perror ("setting uid");
+    case 0:
+     {
+      nice (-einit_core_niceness_increment);
+      nice (einit_task_niceness_increment);
 
-   close (1);
-   dup2 (2, 1);
+      disable_core_dumps ();
 
-   execve (exvec[0], exvec, daemon_environment);
+      if (gid && (setgid (gid) == -1))
+       perror ("setting gid");
+      if (uid && (setuid (uid) == -1))
+       perror ("setting uid");
+
+      close (1);
+      dup2 (2, 1);
+
+      execve (exvec[0], exvec, daemon_environment);
+      exit (-1);
+     }
+    default:
+     /* exit and return the new child's PID */
+     _exit (cfork);
+   }
   } else {
+   int rstatus;
+   char exit_ok = 0;
+
+   do {
+    waitpid(child, &rstatus, 0);
+   } while (!WIFEXITED(rstatus) && !WIFSIGNALED(rstatus));
+
+   pid_t realpid = WEXITSTATUS(rstatus);
+
+   if (realpid < 0) {
+    fbprintf (status, "couldn't fork() to associate the child process with einit's monitor.");
+    return status_failed;
+   }
+
    if (daemon_environment) efree (daemon_environment);
    if (exvec) efree (exvec);
 
-   new->pid = child;
-//  sched_watch_pid (child, dexec_watcher);
+   new->pid = realpid;
 
    emutex_lock (&running_mutex);
    new->next = running;
    running = new;
    emutex_unlock (&running_mutex);
-
-   sched_watch_pid (child);
   }
 
   if (shellcmd->is_up) {

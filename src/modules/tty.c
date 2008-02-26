@@ -44,7 +44,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <einit/config.h>
 #include <einit/utility.h>
 #include <einit/bitch.h>
-#include <einit-modules/scheduler.h>
 #include <einit/event.h>
 #include <string.h>
 #include <einit-modules/process.h>
@@ -204,63 +203,87 @@ int einit_tty_texec (struct cfgnode *node) {
    retry_fork:
    if ((cpid = fork()) < 0) {
     goto retry_fork;
-   } else if (!cpid)
+   } else if (cpid == 0)
 #endif
    {
-    nice (-einit_core_niceness_increment);
-    setsid();
+    /* this 'ere is the code that gets executed in the child process */
+    /* let's fork /again/, so that the main einit monitor process can pick these processes up */
+    pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
 
-    disable_core_dumps ();
+    switch (cfork) {
+     case -1:
+      _exit (-1);
 
-    if (device) {
-     int newfd = eopen(device, O_RDWR);
-     if (newfd > 0) {
-      close(0);
-      close(1);
-      close(2);
-      dup2 (newfd, 0);
-      dup2 (newfd, 1);
-      dup2 (newfd, 2);
-     }
+     case 0:
+     {
+      nice (-einit_core_niceness_increment);
+      setsid();
+
+      disable_core_dumps ();
+
+      if (device) {
+       int newfd = eopen(device, O_RDWR);
+       if (newfd > 0) {
+        close(0);
+        close(1);
+        close(2);
+        dup2 (newfd, 0);
+        dup2 (newfd, 1);
+        dup2 (newfd, 2);
+       }
 
 #ifdef __linux__
-     int fdc = open ("/dev/console", O_WRONLY | O_NOCTTY);
-     if (fdc > 0) {
-      ioctl(fdc, TIOCSCTTY, 1);
-      close (fdc);
-     }
+       int fdc = open ("/dev/console", O_WRONLY | O_NOCTTY);
+       if (fdc > 0) {
+        ioctl(fdc, TIOCSCTTY, 1);
+        close (fdc);
+       }
 #endif
+      }
+      execve (cmds[0], cmds, environment);
+      bitch (bitch_stdio, 0, "execve() failed.");
+      exit(-1);
+     }
+     default:
+      /* exit and return the new child's PID */
+      _exit (cfork);
     }
-    execve (cmds[0], cmds, environment);
-    bitch (bitch_stdio, 0, "execve() failed.");
-    exit(-1);
    } else if (cpid != -1) {
+    int rstatus;
+    char exit_ok = 0;
+
+    do {
+     waitpid(cpid, &rstatus, 0);
+    } while (!WIFEXITED(rstatus) && !WIFSIGNALED(rstatus));
+
+    pid_t realpid = WEXITSTATUS(rstatus);
+
+    if (realpid < 0) {
+     notice (1, "tty.c: couldn't fork() to associate the new new terminal process with einit's monitor.");
+     return status_failed;
+    }
+
     int ctty = -1;
     pid_t curpgrp;
 
     if (einit_tty_do_utmp) {
-     create_utmp_record(utmprecord, INIT_PROCESS, cpid, device, "etty", NULL, NULL, 0, 0, cpid);
+     create_utmp_record(utmprecord, INIT_PROCESS, realpid, device, "etty", NULL, NULL, 0, 0, realpid);
 
      update_utmp (utmp_add, &utmprecord);
     }
 
-//    sched_watch_pid (cpid, einit_tty_watcher);
-    sched_watch_pid (cpid);
-
-    setpgid (cpid, cpid);  // create a new process group for the new process
+    setpgid (realpid, realpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
         ((curpgrp = tcgetpgrp(ctty = 0)) < 0) ||
-        ((curpgrp = tcgetpgrp(ctty = 1)) < 0)) tcsetpgrp(ctty, cpid); // set foreground group
+        ((curpgrp = tcgetpgrp(ctty = 1)) < 0)) tcsetpgrp(ctty, realpid); // set foreground group
 
     struct ttyst *new = ecalloc (1, sizeof (struct ttyst));
-    new->pid = cpid;
+    new->pid = realpid;
     new->node = node;
     new->restart = restart;
 
-//    emutex_lock (&ttys_mutex);
     new->next = ttys;
     ttys = new;
-//    emutex_unlock (&ttys_mutex);
    }
 
    efree (cmds);

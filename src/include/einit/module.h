@@ -87,7 +87,6 @@ extern "C" {
 #include <sys/types.h>
 #include <stdint.h>
 #include <einit/config.h>
-#include <einit-modules/scheduler.h>
 #include <einit/utility.h>
 #include <einit/event.h>
 
