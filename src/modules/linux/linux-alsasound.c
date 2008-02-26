@@ -32,6 +32,7 @@ int linux_alsasound_configure (struct lmodule *);
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
 char * linux_alsasound_provides[] = {"alsasound", NULL};
+char * linux_alsasound_requires[] = {"mount-critical", NULL};
 
 /* no const here, we need to mofiy this on the fly */
 
@@ -44,7 +45,7 @@ struct smodule linux_alsasound_self = {
 		.rid       = "linux-alsasound",
 		.si        = {
 				.provides = linux_alsasound_provides,
-				.requires = NULL,
+				.requires = linux_alsasound_requires,
 				.after    = NULL,
 				.before   = NULL
 		},
@@ -73,7 +74,7 @@ int linux_alsasound_restore() {
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
 		char buffer[BUFFERSIZE];
-		snprintf(buffer,BUFFERSIZE,"alsactl -f %s restore", statefile);
+		snprintf(buffer,BUFFERSIZE,"/usr/sbin/alsactl -f %s restore", statefile);
 		if (!qexec(buffer)) {
 			notice(2,"Errors while restoring defaults, ignoring.");
 			ret = status_failed;
@@ -88,7 +89,7 @@ int linux_alsasound_save() {
 	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
 		char buffer[BUFFERSIZE];
-		snprintf(buffer,BUFFERSIZE,"alsactl -f %s store", statefile);
+		snprintf(buffer,BUFFERSIZE,"/usr/sbin/alsactl -f %s store", statefile);
 		if (!qexec(buffer)) {
 			notice(2,"Error saving levels.");
 			ret = status_failed;
