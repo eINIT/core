@@ -83,18 +83,6 @@ module_register(einit_preload_self);
 
 void einit_preload_boot_event_handler_early (struct einit_event *);
 
-#if 0
-int einit_preload_cleanup (struct lmodule *this) {
- sched_cleanup(irr);
-
- if ((coremode & einit_mode_sandbox)) return 0;
-
- event_ignore (einit_boot_early, einit_preload_boot_event_handler_early);
-
- return 0;
-}
-#endif
-
 void einit_preload_run () {
  char *binaries = NULL;
  if ((binaries = cfg_getstring ("configuration-system-preload/binaries", NULL))) {

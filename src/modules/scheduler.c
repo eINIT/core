@@ -233,8 +233,6 @@ void sched_reset_event_handlers () {
 
  sigemptyset(&(action.sa_mask));
 
- action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
-
  action.sa_sigaction = sched_signal_sigalrm;
  action.sa_flags = SA_NOCLDSTOP | SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
  if ( sigaction (SIGALRM, &action, NULL) ) bitch (bitch_stdio, 0, "calling sigaction() failed.");

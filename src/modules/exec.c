@@ -130,8 +130,6 @@ int einit_exec_cleanup (struct lmodule *irr) {
 
  event_ignore (einit_process_died, einit_exec_process_event_handler);
 
- sched_cleanup(irr);
-
  return 0;
 }
 
