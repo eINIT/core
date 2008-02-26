@@ -223,6 +223,8 @@ int einit_tty_texec (struct cfgnode *node) {
     switch (cfork) {
      case 0:
      {
+      close (cpipes[1]);
+
       nice (-einit_core_niceness_increment);
       setsid();
 
@@ -282,7 +284,7 @@ int einit_tty_texec (struct cfgnode *node) {
      return status_failed;
     }
 
-    read (cpipes[0], &realpid, sizeof(pid_t));
+    while (read (cpipes[0], &realpid, sizeof(pid_t)) < 0);
 
     int ctty = -1;
     pid_t curpgrp;
