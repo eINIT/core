@@ -414,7 +414,6 @@ void einit_tty_disable_feedback () {
 int einit_tty_cleanup (struct lmodule *this) {
  exec_cleanup(this);
  utmp_cleanup(this);
- sched_configure(this);
 
  event_ignore (einit_process_died, einit_tty_process_event_handler);
  event_ignore (einit_core_switching, einit_tty_update_switching);
@@ -426,7 +425,6 @@ int einit_tty_cleanup (struct lmodule *this) {
 
 int einit_tty_configure (struct lmodule *this) {
  module_init (this);
- sched_configure(this);
 
  thismodule->cleanup = einit_tty_cleanup;
 

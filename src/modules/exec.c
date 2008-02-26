@@ -1169,8 +1169,6 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 int einit_exec_configure (struct lmodule *irr) {
  module_init(irr);
 
- sched_configure(irr);
-
  irr->cleanup = einit_exec_cleanup;
 
  struct cfgnode *node;

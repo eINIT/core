@@ -156,7 +156,6 @@ void einit_preload_boot_event_handler_early (struct einit_event *ev) {
 
 int einit_preload_configure (struct lmodule *irr) {
  module_init (irr);
- sched_configure(irr);
 
  if (!(coremode & (einit_mode_sandbox | einit_mode_ipconly))) {
   einit_preload_boot_event_handler_early(NULL);
