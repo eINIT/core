@@ -15,6 +15,7 @@
 #include <einit/config.h>
 #include <einit/bitch.h>
 #include <einit/utility.h>
+#include <einit-modules/exec.h>
 #include <errno.h>
 
 #include <alsa/asoundlib.h>
