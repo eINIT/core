@@ -221,6 +221,10 @@ int einit_tty_texec (struct cfgnode *node) {
     pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
 
     switch (cfork) {
+     case -1:
+      close (cpipes[1]);
+      _exit (-1);
+
      case 0:
      {
       close (cpipes[1]);
@@ -251,11 +255,13 @@ int einit_tty_texec (struct cfgnode *node) {
       }
       execve (cmds[0], cmds, environment);
       bitch (bitch_stdio, 0, "execve() failed.");
+      close (cpipes[0]);
       exit(-1);
      }
      default:
       /* exit and return the new child's PID */
       write (cpipes[1], &cpid, sizeof(pid_t));
+      close (cpipes[1]);
       _exit (0);
     }
 

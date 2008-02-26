@@ -1015,6 +1015,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
    switch (cfork) {
     case -1:
+     close (cpipes[1]);
      _exit (-1);
 
     case 0:
@@ -1040,6 +1041,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     default:
      /* exit and return the new child's PID */
      write (cpipes[1], &cfork, sizeof(pid_t));
+     close (cpipes[1]);
      _exit (0);
    }
   } else {
