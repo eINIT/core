@@ -187,14 +187,6 @@ int einit_tty_texec (struct cfgnode *node) {
  environment = create_environment(environment, (const char **)variables);
  if (variables) efree (variables);
 
- int cpipes[2];
- if (pipe (cpipes)) {
-  notice (1, "tty.c: couldn't create an I/O pipe");
-  return status_failed;
- }
- fcntl (cpipes[0], F_SETFD, FD_CLOEXEC);
- fcntl (cpipes[1], F_SETFD, FD_CLOEXEC);
-
  if (command) {
   char **cmds = str2set (' ', command);
   pid_t cpid;
@@ -204,7 +196,15 @@ int einit_tty_texec (struct cfgnode *node) {
     char cret [BUFFERSIZE];
     esprintf (cret, BUFFERSIZE, "%s: not forking, %s: %s", ( node->id ? node->id : "unknown node" ), cmds[0], strerror (errno));
     notice (2, cret);
-   } else
+   } else {
+    int cpipes[2];
+    if (pipe (cpipes)) {
+     notice (1, "tty.c: couldn't create an I/O pipe");
+     return status_failed;
+    }
+    fcntl (cpipes[0], F_SETFD, FD_CLOEXEC);
+    fcntl (cpipes[1], F_SETFD, FD_CLOEXEC);
+
 #ifdef __linux__
    if ((cpid = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) == 0)
 #else
@@ -285,7 +285,7 @@ int einit_tty_texec (struct cfgnode *node) {
     pid_t realpid = WEXITSTATUS(rstatus);
 
     if (realpid < 0) {
-     notice (1, "tty.c: couldn't fork() to associate the new new terminal process with einit's monitor.");
+     notice (1, "tty.c: couldn't fork() to associate the new terminal process with einit's monitor.");
      close (cpipes[0]);
      return status_failed;
     }
@@ -322,6 +322,7 @@ int einit_tty_texec (struct cfgnode *node) {
    close (cpipes[0]);
 
    efree (cmds);
+  }
   }
  }
 
