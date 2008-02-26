@@ -187,6 +187,14 @@ int einit_tty_texec (struct cfgnode *node) {
  environment = create_environment(environment, (const char **)variables);
  if (variables) efree (variables);
 
+ int cpipes[2];
+ if (pipe (cpipes)) {
+  notice (1, "tty.c: couldn't create an I/O pipe");
+  return status_failed;
+ }
+ fcntl (cpipes[0], F_SETFD, FD_CLOEXEC);
+ fcntl (cpipes[1], F_SETFD, FD_CLOEXEC);
+
  if (command) {
   char **cmds = str2set (' ', command);
   pid_t cpid;
@@ -206,6 +214,8 @@ int einit_tty_texec (struct cfgnode *node) {
    } else if (cpid == 0)
 #endif
    {
+    close (cpipes[0]);
+
     /* this 'ere is the code that gets executed in the child process */
     /* let's fork /again/, so that the main einit monitor process can pick these processes up */
     pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
@@ -243,7 +253,8 @@ int einit_tty_texec (struct cfgnode *node) {
      }
      default:
       /* exit and return the new child's PID */
-      _exit (cfork);
+      write (cpipes[1], &cpid, sizeof(pid_t));
+      _exit (0);
     }
 
     _exit (-1);
@@ -251,12 +262,15 @@ int einit_tty_texec (struct cfgnode *node) {
     int rstatus;
     char exit_ok = 0;
 
+    close (cpipes[1]);
+
     do {
      waitpid(cpid, &rstatus, 0);
     } while (!WIFEXITED(rstatus) && !WIFSIGNALED(rstatus));
 
     if (WIFSIGNALED(rstatus)) {
      notice (1, "tty.c: intermediate child process died");
+     close (cpipes[0]);
      return status_failed;
     }
 
@@ -264,8 +278,11 @@ int einit_tty_texec (struct cfgnode *node) {
 
     if (realpid < 0) {
      notice (1, "tty.c: couldn't fork() to associate the new new terminal process with einit's monitor.");
+     close (cpipes[0]);
      return status_failed;
     }
+
+    read (cpipes[1], &realpid, sizeof(pid_t));
 
     int ctty = -1;
     pid_t curpgrp;
@@ -290,7 +307,11 @@ int einit_tty_texec (struct cfgnode *node) {
 
     new->next = ttys;
     ttys = new;
+   } else {
+    close (cpipes[1]);
    }
+
+   close (cpipes[0]);
 
    efree (cmds);
   }

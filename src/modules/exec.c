@@ -979,6 +979,14 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 /*  efree (command);
   command = NULL;*/
 
+  int cpipes[2];
+  if (pipe (cpipes)) {
+   notice (1, "tty.c: couldn't create an I/O pipe");
+   return status_failed;
+  }
+  fcntl (cpipes[0], F_SETFD, FD_CLOEXEC);
+  fcntl (cpipes[1], F_SETFD, FD_CLOEXEC);
+
 #ifdef __linux__
   if ((child = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL)) < 0) {
    if (status) {
@@ -1001,6 +1009,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   else if (child == 0) {
    /* this 'ere is the code that gets executed in the child process */
    /* let's fork /again/, so that the main einit monitor process can pick these processes up */
+   close (cpipes[0]);
+
    pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
 
    switch (cfork) {
@@ -1027,22 +1037,34 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
      }
     default:
      /* exit and return the new child's PID */
-     _exit (cfork);
+     write (cpipes[1], &cfork, sizeof(pid_t));
+     _exit (0);
    }
   } else {
    int rstatus;
    char exit_ok = 0;
 
+   close (cpipes[1]);
+
    do {
     waitpid(child, &rstatus, 0);
    } while (!WIFEXITED(rstatus) && !WIFSIGNALED(rstatus));
+
+   if (WIFSIGNALED(rstatus)) {
+    fbprintf (status, "intermediate child process died");
+    close (cpipes[0]);
+    return status_failed;
+   }
 
    pid_t realpid = WEXITSTATUS(rstatus);
 
    if (realpid < 0) {
     fbprintf (status, "couldn't fork() to associate the child process with einit's monitor.");
+    close (cpipes[0]);
     return status_failed;
    }
+
+   read (cpipes[1], &realpid, sizeof(pid_t));
 
    if (daemon_environment) efree (daemon_environment);
    if (exvec) efree (exvec);
@@ -1054,6 +1076,8 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    running = new;
    emutex_unlock (&running_mutex);
   }
+
+  close (cpipes[0]);
 
   if (shellcmd->is_up) {
    return pexec (shellcmd->is_up, (const char **)shellcmd->variables, 0, 0, NULL, NULL, shellcmd->environment, status);
