@@ -290,7 +290,7 @@ int einit_tty_texec (struct cfgnode *node) {
      return status_failed;
     }
 
-    while (read (cpipes[0], &realpid, sizeof(pid_t)) < 0);
+    while (read (cpipes[0], &realpid, sizeof(pid_t)) != sizeof(pid_t));
 
     int ctty = -1;
     pid_t curpgrp;
