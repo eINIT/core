@@ -1017,6 +1017,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     case -1:
      close (cpipes[1]);
      _exit (-1);
+     break;
 
     case 0:
      {
@@ -1037,12 +1038,14 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
       execve (exvec[0], exvec, daemon_environment);
       exit (-1);
+      break;
      }
     default:
      /* exit and return the new child's PID */
      write (cpipes[1], &cfork, sizeof(pid_t));
      close (cpipes[1]);
      _exit (0);
+     break;
    }
   } else {
    int rstatus;
@@ -1068,7 +1071,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     return status_failed;
    }
 
-   while (read (cpipes[0], &realpid, sizeof(pid_t)) != sizeof(pid_t));
+   while (read (cpipes[0], &realpid, sizeof(pid_t)) < 0);
 
    if (daemon_environment) efree (daemon_environment);
    if (exvec) efree (exvec);
