@@ -71,15 +71,15 @@ int linux_alsasound_terminate(void *param, struct einit_event *status) {
 
 int linux_alsasound_enable (void *param, struct einit_event *status) {
 	int ret = status_ok;
-	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	char **statefile = *cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
 		fprintf(stdout,"%s",statefile);
 		struct stat fileattrib;
 		if (stat(statefile, &fileattrib) == 0) {
 			pid_t pid = fork();
 			if (pid==0) {
-				char *cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "restore", (char *)0 };
-				if (!execv (cmd[0], cmd)) {
+				char **cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "restore", (char *)0 };
+				if (!qexec(cmd)) {
 					ret = status_failed;
 				}				
 			}
@@ -95,15 +95,15 @@ int linux_alsasound_enable (void *param, struct einit_event *status) {
 
 int linux_alsasound_disable (void *param, struct einit_event *status) {
 	int ret = status_ok;
-	char *statefile = cfg_getstring ("configuration-services-alsasound/statefile", NULL);
+	char **statefile = *cfg_getstring ("configuration-services-alsasound/statefile", NULL);
 	if (statefile) {
 		fprintf(stdout,"%s",statefile);
 		struct stat fileattrib;
 		if (stat(statefile, &fileattrib) == 0) {
 			pid_t pid = fork();
 			if (pid==0) {
-				char *cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "store", (char *)0 };
-				if (!execv (cmd[0], cmd)) {
+				char **cmd[] = { "/usr/sbin/alsactl", "-f", statefile, "store", (char *)0 };
+				if (!qexec(cmd)) {
 					ret = status_failed;
 				}				
 			}
