@@ -211,9 +211,6 @@ int einit_tty_texec (struct cfgnode *node) {
     pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
 
     switch (cfork) {
-     case -1:
-      _exit (-1);
-
      case 0:
      {
       nice (-einit_core_niceness_increment);
@@ -248,6 +245,8 @@ int einit_tty_texec (struct cfgnode *node) {
       /* exit and return the new child's PID */
       _exit (cfork);
     }
+
+    _exit (-1);
    } else if (cpid != -1) {
     int rstatus;
     char exit_ok = 0;
@@ -255,6 +254,11 @@ int einit_tty_texec (struct cfgnode *node) {
     do {
      waitpid(cpid, &rstatus, 0);
     } while (!WIFEXITED(rstatus) && !WIFSIGNALED(rstatus));
+
+    if (WIFSIGNALED(rstatus)) {
+     notice (1, "tty.c: intermediate child process died");
+     return status_failed;
+    }
 
     pid_t realpid = WEXITSTATUS(rstatus);
 
@@ -271,6 +275,8 @@ int einit_tty_texec (struct cfgnode *node) {
 
      update_utmp (utmp_add, &utmprecord);
     }
+
+    notice (1, "tty started with pid=%i, intermediate child process=%i", realpid, cpid);
 
     setpgid (realpid, realpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
