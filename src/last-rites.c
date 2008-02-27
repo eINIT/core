@@ -164,26 +164,6 @@ int unmount_everything() {
        umount2(fs_file, MNT_EXPIRE);
        umount2(fs_file, MNT_EXPIRE);
 #endif
-
-       fprintf(stderr, "trying to move %s to /tmp\n", fs_file);
-
-       if (mount(fs_file, "/tmp", fs_vfstype, MS_MOVE, "")) {
-        fprintf (stderr, "couldn't move %s\n", fs_file);
-        perror (fs_file);
-       } else {
-        if (umount ("/tmp") && umount2("/tmp", MNT_FORCE)) {
-         fprintf (stderr, "moved %s, but couldn't umount\n", fs_file);
-         perror (fs_file);
-
-         if (mount("/tmp", fs_file, fs_vfstype, MS_MOVE, "")) {
-          fprintf (stderr, "couldn't re-move move %s\n", fs_file);
-          perror (fs_file);
-         }
-        } else {
-         positives = 1;
-         fprintf (stderr, "unmounted %s\n", fs_file);
-        }
-       }
       } else {
        positives = 1;
        fprintf (stderr, "unmounted %s\n", fs_file);
@@ -346,6 +326,8 @@ int lastrites () {
   sync();
  } while (unmount_everything() && max_retries);
 
+ sleep(1);
+
  return 0;
 }
 
@@ -358,11 +340,7 @@ int main(int argc, char **argv) {
  prune_file_descriptors ();
  reopen_stdout_and_stderr ();
 
- sleep(10);
-
  lastrites();
-
- sleep(10);
 
  switch (action) {
   case 'k':
