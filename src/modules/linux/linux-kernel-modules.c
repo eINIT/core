@@ -251,7 +251,9 @@ char **linux_kernel_modules_sound(struct einit_event *status) {
  char **rv = NULL;
  struct stat st;
 
- char oss_emulation = 1;
+ struct cfgnode *n = cfg_getnode ("configuration-services-alsa-oss-emulation", NULL);
+
+ char oss_emulation = n && n->svalue && strcmp (n->svalue, "no");
 
  if (modprobe_c) {
   int i;
@@ -322,6 +324,8 @@ char **linux_kernel_modules_sound(struct einit_event *status) {
 
      efree (b);
     }
+   } else {
+    notice (4, "linux_kernel_modules_sound(): Not searching for OSS drivers");
    }
 
    for (i = 0; modprobe_l[i]; i++) {
