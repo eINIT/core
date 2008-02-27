@@ -469,6 +469,7 @@ int einit_tty_configure (struct lmodule *this) {
 
  event_listen (einit_process_died, einit_tty_process_event_handler);
  event_listen (einit_core_switching, einit_tty_update_switching);
+ event_listen (einit_core_mode_switching, einit_tty_update_switching);
  event_listen (einit_core_done_switching, einit_tty_update_switch_done);
  event_listen (einit_boot_devices_available, einit_tty_update);
 
