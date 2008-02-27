@@ -166,7 +166,7 @@ int unmount_everything() {
       } else {
        positives = 1;
        fprintf (stderr, "unmounted %s\n", fs_file);
-	  }
+      }
      }
 
      errno = 0;
@@ -313,6 +313,9 @@ int lastrites () {
  reopen_stdout_and_stderr_second_time ();
 
  do {
+  if (max_retries != 20)
+   sleep (1);
+
   max_retries--;
 
   kill_everything();
