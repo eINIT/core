@@ -205,7 +205,7 @@ char *generate_legacy_mtab () {
    if (st) {
     struct mountpoint_data *mp = st->value;
 
-    if (mp && (mp->status & device_status_mounted)) {
+    if (mp && (mp->status & device_status_mounted) && mp->fs && !strmatch (mp->fs, "swap")) {
      char tmp[BUFFERSIZE];
      char *tset = set2str (',', (const char **)mp->options); 
 
