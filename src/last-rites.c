@@ -180,6 +180,7 @@ int unmount_everything() {
  return errors;
 }
 
+#if 0
 void kill_everything() {
  DIR *d = opendir("/proc");
 
@@ -199,6 +200,17 @@ void kill_everything() {
   closedir (d);
  }
 }
+#else
+#define MAX_PID (4096*8 + 1)
+
+void kill_everything() {
+ pid_t pid = 2; /* don't kill 1 (us) */
+
+ for (; pid < MAX_PID; pid++) {
+  kill (pid, SIGKILL);
+ }
+}
+#endif
 
 void close_all_loops() {
  DIR *d = opendir("/dev/loop");
@@ -221,6 +233,40 @@ void close_all_loops() {
 
   closedir (d);
  }
+}
+
+void prune_file_descriptors () {
+ fprintf (stderr, "pruning all file descriptors...\n");
+ fclose (stdout);
+ fclose (stderr);
+ fclose (stdin);
+
+ int i = 0;
+
+ for (; i < 4096*8; i++) {
+  close (i);
+ }
+}
+
+void reopen_stdout_and_stderr () {
+ stdout = fopen ("/dev/console", "w");
+ stderr = fopen ("/dev/console", "w");
+
+ fprintf (stderr, "stdout and stderr reopened\n");
+
+ sleep (2);
+}
+
+void reopen_stdout_and_stderr_second_time () {
+ fclose (stdout);
+ fclose (stderr);
+
+ stdout = fopen ("/dev/console", "w");
+ stderr = fopen ("/dev/console", "w");
+
+ fprintf (stderr, "stdout and stderr reopened (2)\n");
+
+ sleep (2);
 }
 
 int lastrites () {
@@ -246,6 +292,13 @@ int lastrites () {
   mknod (tmppath, S_IFBLK, ldev);
  }
 
+ dev_t ldev = (5 << 8) | 1;
+ mknod (LRTMPPATH "/dev/console", S_IFCHR, ldev);
+ ldev = (4 << 8) | 1;
+ mknod (LRTMPPATH "/dev/tty1", S_IFCHR, ldev);
+ ldev = (1 << 8) | 3;
+ mknod (LRTMPPATH "/dev/null", S_IFCHR, ldev);
+
  if (mount ("lastrites-proc", LRTMPPATH "/proc", "proc", 0, "")) perror ("couldn't mount another 'proc' at '" LRTMPPATH "/proc'");
 // if (mount ("/dev", LRTMPPATH "/dev", "", MS_BIND, "")) perror ("couldn't bind another 'dev'");
 
@@ -257,6 +310,8 @@ int lastrites () {
 
  char max_retries = 20;
 
+ reopen_stdout_and_stderr_second_time ();
+
  do {
   max_retries--;
 
@@ -267,30 +322,6 @@ int lastrites () {
  } while (unmount_everything() && max_retries);
 
  return 0;
-}
-
-void prune_file_descriptors () {
- fprintf (stderr, "pruning all file descriptors...");
- fclose (stdout);
- fclose (stdin);
- fclose (stderr);
-
- int i = 0;
-
- for (; i < 4096*8; i++) {
-  close (i);
- }
-
- fprintf (stderr, " done, everything closed\n");
-}
-
-void reopen_stdout_and_stderr () {
- fprintf (stderr, "re-opening file descriptors for stdout and stderr...");
-
- stdout = fopen ("/dev/console", "w");
- stderr = fopen ("/dev/console", "w");
-
- fprintf (stderr, " done, stdout and stderr reopened\n");
 }
 
 int main(int argc, char **argv) {
