@@ -269,11 +269,38 @@ int lastrites () {
  return 0;
 }
 
+void prune_file_descriptors () {
+ fprintf (stderr, "pruning all file descriptors...");
+ fclose (stdout);
+ fclose (stdin);
+ fclose (stderr);
+
+ int i = 0;
+
+ for (; i < 255; i++) {
+  close (i);
+ }
+
+ fprintf (stderr, " done\n");
+}
+
+void reopen_stdout_and_stderr () {
+ fprintf (stderr, "re-opening file descriptors for stdout and stderr...");
+
+ stdout = fopen ("/dev/console", "w");
+ stderr = fopen ("/dev/console", "w");
+
+ fprintf (stderr, " done\n");
+}
+
 int main(int argc, char **argv) {
  char action = argv[1] ? argv[1][0] : '?';
 
  fprintf (stderr, "\e[2J >> eINIT " EINIT_VERSION_LITERAL " | last rites (%i) <<\n"
    "###############################################################################\n", getpid());
+
+ prune_file_descriptors ();
+ reopen_stdout_and_stderr();
 
  sleep(10);
 
