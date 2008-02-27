@@ -242,11 +242,11 @@ char **linux_kernel_modules_get_from_node (char *node, char *dwait) {
 
 #define KERNEL_MODULES_PATH_PREFIX "/lib/modules/"
 
-char **linux_kernel_modules_storage() {
+char **linux_kernel_modules_storage(struct einit_event *status) {
  return NULL;
 }
 
-char **linux_kernel_modules_sound() {
+char **linux_kernel_modules_sound(struct einit_event *status) {
  char **modprobe_c = linux_kernel_modules_get_modprobe_c();
  char **rv = NULL;
  struct stat st;
@@ -269,7 +269,11 @@ char **linux_kernel_modules_sound() {
 
   char *b = NULL;
   if (!rv && (stat ("/proc/asound/cards", &st) || !(b = readfile ("/proc/asound/cards")) || (strtrim (b), strmatch (b, "--- no soundcards ---")))) {
-   notice (4, "linux_kernel_modules_sound(): Could not detect custom ALSA settings, loading all detected ALSA drivers.");
+   if (status) {
+    fbprintf (status, "Could not detect custom ALSA settings, loading all detected ALSA drivers.");
+   } else {
+    notice (4, "linux_kernel_modules_sound(): Could not detect custom ALSA settings, loading all detected ALSA drivers.");
+   }
 
    for (i = 0; modprobe_c[i]; i++) {
     char **x = str2set_by_whitespace(modprobe_c[i]);
@@ -286,7 +290,11 @@ char **linux_kernel_modules_sound() {
   if (b) efree (b);
 
   if (!rv) {
-   notice (4, "linux_kernel_modules_sound(): No ALSA drivers around, looking for OSS emulation modules anyway");
+   if (status) {
+    fbprintf (status, "No ALSA drivers around, looking for OSS emulation modules anyway");
+   } else {
+    notice (4, "linux_kernel_modules_sound(): No ALSA drivers around, looking for OSS emulation modules anyway");
+   }
   }
 
   char ** modprobe_l = linux_kernel_modules_get_modprobe_l();
@@ -340,18 +348,26 @@ char **linux_kernel_modules_sound() {
 
    linux_kernel_modules_free_modprobe(modprobe_l);
   } else {
-   notice (1, "linux_kernel_modules_sound(): only found partial modprobe data");
+   if (status) {
+    fbprintf (status, "only found partial modprobe data");
+   } else {
+    notice (1, "linux_kernel_modules_sound(): only found partial modprobe data");
+   }
   }
 
   linux_kernel_modules_free_modprobe(modprobe_c);
  } else {
-  notice (1, "linux_kernel_modules_sound(): no modprobe data");
+  if (status) {
+   fbprintf (status, "no modprobe data");
+  } else {
+   notice (1, "linux_kernel_modules_sound(): no modprobe data");
+  }
  }
 
  return rv;
 }
 
-char **linux_kernel_modules_get_by_subsystem (char *subsystem, char *dwait) {
+char **linux_kernel_modules_get_by_subsystem (char *subsystem, char *dwait, struct einit_event *status) {
  char **rv = NULL;
 
  if ((rv = linux_kernel_modules_get_from_node (subsystem, dwait))) {
@@ -361,10 +377,10 @@ char **linux_kernel_modules_get_by_subsystem (char *subsystem, char *dwait) {
   return linux_kernel_modules_autoload_d();
  } else if (strmatch (subsystem, "storage")) {
   *dwait = 1;
-  return linux_kernel_modules_storage();
+  return linux_kernel_modules_storage(status);
  } else if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
   *dwait = 1;
-  return linux_kernel_modules_sound();
+  return linux_kernel_modules_sound(status);
  }
 
  return NULL;
@@ -375,7 +391,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
 
  if (code == lkm_pre_dev) {
   char dwait;
-  char **modules = linux_kernel_modules_get_by_subsystem ("storage", &dwait);
+  char **modules = linux_kernel_modules_get_by_subsystem ("storage", &dwait, NULL);
 
   if (modules) {
    pthread_t *threadid = emalloc (sizeof (pthread_t));
@@ -389,7 +405,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
   }
  } else if (code == lkm_initramfs) {
   char dwait;
-  char **modules = linux_kernel_modules_get_by_subsystem ("storage", &dwait);
+  char **modules = linux_kernel_modules_get_by_subsystem ("storage", &dwait, NULL);
   if (modules) {
   pthread_t *threadid = emalloc (sizeof (pthread_t));
   if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
@@ -399,7 +415,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
     threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
    }
   }
-  modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait);
+  modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait, NULL);
   if (modules) {
    pthread_t *threadid = emalloc (sizeof (pthread_t));
    if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
@@ -465,7 +481,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
 
   if (!have_generic) {
    char dwait;
-   char **modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait);
+   char **modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait, NULL);
 
    if (modules) {
     pthread_t *threadid = emalloc (sizeof (pthread_t));
@@ -497,12 +513,22 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
 
 int linux_kernel_modules_module_enable (char *subsys, struct einit_event *status) {
  char dwait = 0;
- char **modules = linux_kernel_modules_get_by_subsystem (subsys, &dwait);
+ char **modules = linux_kernel_modules_get_by_subsystem (subsys, &dwait, status);
 
  if (modules) {
+  char *n = set2str (' ', (const char **)modules);
+  fbprintf (status, "loading kernel modules: %s", n);
+  efree (n);
+
   if (dwait) {
    linux_kernel_modules_load (modules);
-  } else ethread_spawn_detached_run ((void *(*)(void *))linux_kernel_modules_load, (void *)modules);
+  } else {
+   fbprintf (status, "not waiting for the result...");
+
+   ethread_spawn_detached_run ((void *(*)(void *))linux_kernel_modules_load, (void *)modules);
+  }
+ } else {
+  fbprintf (status, "no kernel modules to load");
  }
 
  return status_ok;
