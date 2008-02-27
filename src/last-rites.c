@@ -69,6 +69,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // let's be serious, /sbin is gonna exist
 #define LRTMPPATH "/sbin"
 
+#define MAX_RETRIES 5
+
 #if 0
 #define kill(a,b) 1
 #endif
@@ -178,6 +180,10 @@ int unmount_everything() {
   fclose (fp);
  }
 
+ if (positives) {
+  return unmount_everything();
+ }
+
  return errors;
 }
 
@@ -254,8 +260,6 @@ void reopen_stdout_and_stderr () {
  stderr = fopen ("/dev/console", "w");
 
  fprintf (stderr, "stdout and stderr reopened\n");
-
- sleep (2);
 }
 
 void reopen_stdout_and_stderr_second_time () {
@@ -266,8 +270,6 @@ void reopen_stdout_and_stderr_second_time () {
  stderr = fopen ("/dev/console", "w");
 
  fprintf (stderr, "stdout and stderr reopened (2)\n");
-
- sleep (2);
 }
 
 int lastrites () {
@@ -310,12 +312,12 @@ int lastrites () {
 
  if (chdir ("/")) perror ("chdir failed");
 
- char max_retries = 20;
+ char max_retries = MAX_RETRIES;
 
  reopen_stdout_and_stderr_second_time ();
 
  do {
-  if (max_retries != 20)
+  if (max_retries != MAX_RETRIES)
    sleep (1);
 
   max_retries--;
