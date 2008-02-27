@@ -190,6 +190,8 @@ char inset_pattern (const void **haystack, const void *needle, int32_t esize);
 */
 char **str2set (const char sep, const char *input);
 
+char **str2set_by_whitespace (const char *input);
+
 char *set2str (const char sep, const char **oinput);
 
 /*!\brief Remove \b string from \b set.

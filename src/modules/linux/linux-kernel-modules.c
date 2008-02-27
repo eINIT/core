@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <einit-modules/configuration.h>
 #include <einit-modules/exec.h>
+#include <ctype.h>
 
 int linux_kernel_modules_configure (struct lmodule *);
 
@@ -78,6 +79,48 @@ module_register(einit_linux_kernel_modules_self);
 
 int linux_kernel_modules_module_configure (struct lmodule *);
 int linux_kernel_modules_cleanup (struct lmodule *);
+
+char **linux_kernel_modules_get_modprobe_c () {
+ char **rv = NULL;
+ FILE *f = popen ("modprobe -c", "r");
+
+ if (f) {
+  char buffer[BUFFERSIZE];
+  while (fgets (buffer, BUFFERSIZE, f)) {
+   if (isalnum(buffer[0]) || (strtrim(buffer), isalnum(buffer[0])))
+    rv = (char **)set_noa_add ((void **)rv, (void *)estrdup(buffer));
+  }
+
+  pclose (f);
+ }
+
+ return rv;
+}
+
+char **linux_kernel_modules_get_modprobe_l () {
+ char **rv = NULL;
+ FILE *f = popen ("modprobe -l", "r");
+
+ if (f) {
+  char buffer[BUFFERSIZE];
+  while (fgets (buffer, BUFFERSIZE, f)) {
+   rv = (char **)set_noa_add ((void **)rv, (void *)estrdup(buffer));
+  }
+
+  pclose (f);
+ }
+
+ return rv;
+}
+
+void linux_kernel_modules_free_modprobe (char **r) {
+ if (!r) return;
+ int i = 0;
+ for (; r[i]; i++) {
+  efree (r[i]);
+ }
+ efree (r);
+}
 
 void *linux_kernel_modules_load_exec (void *c) {
  pexec (c, NULL, 0, 0, NULL, NULL, NULL, NULL);
@@ -204,7 +247,108 @@ char **linux_kernel_modules_storage() {
 }
 
 char **linux_kernel_modules_sound() {
- return NULL;
+ char **modprobe_c = linux_kernel_modules_get_modprobe_c();
+ char **rv = NULL;
+ struct stat st;
+
+ char oss_emulation = 1;
+
+ if (modprobe_c) {
+  int i;
+
+  for (i = 0; modprobe_c[i]; i++) {
+   char **x = str2set_by_whitespace(modprobe_c[i]);
+
+   if (x) {
+    if (x[0] && x[1] && x[2] && !x[3] && strmatch (x[0], "alias") && strprefix(x[1], "snd-card-") && !inset((const void **)rv, x[2], SET_TYPE_STRING)) {
+     rv = set_str_add (rv, x[2]);
+    }
+    efree (x);
+   }
+  }
+
+  char *b = NULL;
+  if (!rv && (stat ("/proc/asound/cards", &st) || !(b = readfile ("/proc/asound/cards")) || (strtrim (b), strmatch (b, "--- no soundcards ---")))) {
+   notice (4, "linux_kernel_modules_sound(): Could not detect custom ALSA settings, loading all detected ALSA drivers.");
+
+   for (i = 0; modprobe_c[i]; i++) {
+    char **x = str2set_by_whitespace(modprobe_c[i]);
+
+    if (x) {
+     if (x[0] && x[1] && x[2] && !x[3] && strmatch (x[0], "alias") && strprefix(x[1], "pci:") && strprefix(x[2], "snd") && !inset((const void **)rv, x[2], SET_TYPE_STRING)) {
+      rv = set_str_add (rv, x[2]);
+     }
+     efree (x);
+    }
+   }
+  }
+
+  if (b) efree (b);
+
+  if (!rv) {
+   notice (4, "linux_kernel_modules_sound(): No ALSA drivers around, looking for OSS emulation modules anyway");
+  }
+
+  char ** modprobe_l = linux_kernel_modules_get_modprobe_l();
+
+  if (modprobe_l) {
+   if (oss_emulation) {
+    for (i = 0; modprobe_l[i]; i++) {
+     b = strrchr (modprobe_l[i], '/');
+     if (!b)
+      b = modprobe_l[i];
+     else
+      b++;
+
+     b = estrdup(b);
+
+     char *lx = strrchr (b, '.');
+     if (lx) {
+      *lx = 0;
+     }
+
+     size_t len = strlen (b);
+     if ((len > 7) && (b[0] == 's') && (b[1] == 'n') && (b[2] == 'd') && (b[len-3] == 'o') && (b[len-2] == 's') && (b[len-1] == 's') && !inset((const void **)rv, b, SET_TYPE_STRING)) {
+      rv = set_str_add (rv, b);
+     }
+
+     efree (b);
+    }
+   }
+
+   for (i = 0; modprobe_l[i]; i++) {
+    b = strrchr (modprobe_l[i], '/');
+    if (!b)
+     b = modprobe_l[i];
+    else
+     b++;
+
+    b = estrdup(b);
+
+    char *lx = strrchr (b, '.');
+    if (lx) {
+     *lx = 0;
+    }
+
+    if ((b[0] == 's') && (b[1] == 'n') && (b[2] == 'd') && b[3] && b[4] && b[5]) {
+     if (strmatch (b+4, "seq") || strmatch (b+4, "ioctl32") && !inset((const void **)rv, b, SET_TYPE_STRING))
+      rv = set_str_add (rv, b);
+    }
+
+    efree (b);
+   }
+
+   linux_kernel_modules_free_modprobe(modprobe_l);
+  } else {
+   notice (1, "linux_kernel_modules_sound(): only found partial modprobe data");
+  }
+
+  linux_kernel_modules_free_modprobe(modprobe_c);
+ } else {
+  notice (1, "linux_kernel_modules_sound(): no modprobe data");
+ }
+
+ return rv;
 }
 
 char **linux_kernel_modules_get_by_subsystem (char *subsystem, char *dwait) {
@@ -252,7 +396,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
    linux_kernel_modules_load (modules);
   } else {
    if (dwait)
-	threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
+    threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
    }
   }
   modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait);
@@ -268,7 +412,6 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
  } else if (code == lkm_post_dev) {
   struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
   char have_generic = 0;
-  char have_audio = 0;
 
   if (linux_kernel_modules_nodes) {
    struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
@@ -293,7 +436,7 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
      if (strmatch (subsystem, "generic") || strmatch (subsystem, "arbitrary")) {
       have_generic = 1;
      } else if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
-      have_audio = 1;
+      goto nextgroup;
      }
 
      if (node && node->svalue) {
@@ -323,22 +466,6 @@ int linux_kernel_modules_run (enum lkm_run_code code) {
   if (!have_generic) {
    char dwait;
    char **modules = linux_kernel_modules_get_by_subsystem ("generic", &dwait);
-
-   if (modules) {
-    pthread_t *threadid = emalloc (sizeof (pthread_t));
-
-    if (ethread_create (threadid, NULL, (void *(*)(void *))linux_kernel_modules_load, modules)) {
-     linux_kernel_modules_load (modules);
-    } else {
-     if (dwait)
-      threads = (pthread_t **)set_noa_add ((void **)threads, threadid);
-    }
-   }
-  }
-
-  if (!have_audio) {
-   char dwait;
-   char **modules = linux_kernel_modules_get_by_subsystem ("audio", &dwait);
 
    if (modules) {
     pthread_t *threadid = emalloc (sizeof (pthread_t));
@@ -394,8 +521,46 @@ int linux_kernel_modules_module_configure (struct lmodule *this) {
  return 0;
 }
 
+int linux_kernel_modules_scanmodules_add_subsystem (struct lmodule *lm, char *subsystem) {
+ char tmp[BUFFERSIZE];
+ struct lmodule *m = lm;
+ struct smodule *sm;
+
+ esprintf (tmp, BUFFERSIZE, "linux-kernel-modules-%s", subsystem);
+
+ while (m) {
+  if (m->module && strmatch (m->module->rid, tmp)) {
+   mod_update(m);
+   return;
+  }
+
+  m = m->next;
+ }
+
+ sm = emalloc (sizeof(struct smodule));
+ memset (sm, 0, sizeof (struct smodule));
+
+ sm->rid = (char *)str_stabilise (tmp);
+
+ esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
+ sm->name = (char *)str_stabilise (tmp);
+
+ sm->eiversion = EINIT_VERSION;
+ sm->eibuild = BUILDNUMBER;
+ sm->mode = einit_module_generic | einit_feedback_job;
+
+ esprintf (tmp, BUFFERSIZE, "kern-%s", subsystem);
+ sm->si.provides = set_str_add (sm->si.provides, tmp);
+
+ sm->configure = linux_kernel_modules_module_configure;
+
+ mod_add (NULL, sm);
+}
+
 int linux_kernel_modules_scanmodules (struct lmodule *lm) {
  struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+
+ char have_audio = 0;
 
  if (linux_kernel_modules_nodes) {
   struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
@@ -418,45 +583,23 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
    }
 
    if (usegroup) {
-    char tmp[BUFFERSIZE];
-    struct lmodule *m = lm;
-    struct smodule *sm;
+    linux_kernel_modules_scanmodules_add_subsystem (lm, subsystem);
 
-    esprintf (tmp, BUFFERSIZE, "linux-kernel-modules-%s", subsystem);
-
-    while (m) {
-     if (m->module && strmatch (m->module->rid, tmp)) {
-      mod_update(m);
-      goto nextgroup;
-     }
-
-     m = m->next;
+    if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
+     have_audio = 1;
     }
-
-    sm = emalloc (sizeof(struct smodule));
-    memset (sm, 0, sizeof (struct smodule));
-
-    sm->rid = (char *)str_stabilise (tmp);
-
-    esprintf (tmp, BUFFERSIZE, "Linux Kernel Modules (%s)", subsystem);
-    sm->name = (char *)str_stabilise (tmp);
-
-    sm->eiversion = EINIT_VERSION;
-    sm->eibuild = BUILDNUMBER;
-    sm->mode = einit_module_generic | einit_feedback_job;
-
-    esprintf (tmp, BUFFERSIZE, "kern-%s", subsystem);
-    sm->si.provides = set_str_add (sm->si.provides, tmp);
-
-    sm->configure = linux_kernel_modules_module_configure;
-
-    mod_add (NULL, sm);
    }
 
    nextgroup:
 
    cur = streenext(cur);
   }
+ }
+
+ if (!have_audio) {
+  linux_kernel_modules_scanmodules_add_subsystem (lm, "alsa");
+  linux_kernel_modules_scanmodules_add_subsystem (lm, "audio");
+  linux_kernel_modules_scanmodules_add_subsystem (lm, "sound");
  }
 
  return 0;

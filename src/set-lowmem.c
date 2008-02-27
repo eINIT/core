@@ -324,3 +324,51 @@ char **str2set (const char sep, const char *oinput) {
  return ret;
 }
 
+char **str2set_by_whitespace (const char *oinput) {
+ int l, i = 0, sc = 1, cr = 1;
+ char **ret;
+ char *input;
+ if (!oinput || !(input = estrdup (oinput))) return NULL;
+
+ strtrim(input);
+ if (!input[0]) {
+  efree (input);
+  return NULL;
+ }
+
+ l = strlen (input)-1;
+
+ char last_was_ws = 0;
+
+ for (; input[i]; i++) {
+  if (isspace(input[i])) {
+   if (!last_was_ws) {
+    sc++;
+    last_was_ws = 1;
+   }
+  } else {
+   last_was_ws = 0;
+  }
+ }
+
+ ret = ecalloc (1, ((sc+1)*sizeof(char *)) + 3 + l);
+ memcpy ((((char *)ret) + ((sc+1)*sizeof(char *))), input, 2 + l);
+ efree (input);
+ input = (char *)(((char *)ret) + ((sc+1)*sizeof(char *)));
+ ret[0] = input;
+
+ for (i = 0; input[i]; i++) {
+  if (isspace(input[i])) {
+   input[i] = 0;
+   for (i++; input[i] && isspace(input[i]); i++);
+   if (!input[i]) break;
+
+   ret[cr] = input+i;
+   cr++;
+  }
+ }
+
+ ret[cr] = NULL;
+
+ return ret;
+}
