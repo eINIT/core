@@ -63,6 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 
 #include <linux/loop.h>
+#include <linux/fs.h>
 #include <sys/ioctl.h>
 
 // let's be serious, /sbin is gonna exist
@@ -163,6 +164,26 @@ int unmount_everything() {
        umount2(fs_file, MNT_EXPIRE);
        umount2(fs_file, MNT_EXPIRE);
 #endif
+
+       fprintf(stderr, "trying to move %s to /tmp\n", fs_file);
+
+       if (mount(fs_file, "/tmp", fs_vfstype, MS_MOVE, "")) {
+        fprintf (stderr, "couldn't move %s\n", fs_file);
+        perror (fs_file);
+       } else {
+        if (umount ("/tmp") && umount2("/tmp", MNT_FORCE)) {
+         fprintf (stderr, "moved %s, but couldn't umount\n", fs_file);
+         perror (fs_file);
+
+         if (mount("/tmp", fs_file, fs_vfstype, MS_MOVE, "")) {
+          fprintf (stderr, "couldn't re-move move %s\n", fs_file);
+          perror (fs_file);
+         }
+        } else {
+         positives = 1;
+         fprintf (stderr, "unmounted %s\n", fs_file);
+        }
+       }
       } else {
        positives = 1;
        fprintf (stderr, "unmounted %s\n", fs_file);
@@ -281,6 +302,7 @@ int lastrites () {
  if (mkdir (LRTMPPATH "/proc", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/proc'");
  if (mkdir (LRTMPPATH "/dev", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/dev'");
  if (mkdir (LRTMPPATH "/dev/loop", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/dev/loop'");
+ if (mkdir (LRTMPPATH "/tmp", 0777)) perror ("couldn't mkdir '" LRTMPPATH "/tmp'");
 
 
  for (i = 0; i < 9; i++) {
