@@ -275,7 +275,11 @@ int main(int argc, char **argv) {
  fprintf (stderr, "\e[2J >> eINIT " EINIT_VERSION_LITERAL " | last rites (%i) <<\n"
    "###############################################################################\n", getpid());
 
+ sleep(10);
+
  lastrites();
+
+ sleep(10);
 
  switch (action) {
   case 'k':
