@@ -277,11 +277,11 @@ void prune_file_descriptors () {
 
  int i = 0;
 
- for (; i < 255; i++) {
+ for (; i < 4096*8; i++) {
   close (i);
  }
 
- fprintf (stderr, " done\n");
+ fprintf (stderr, " done, everything closed\n");
 }
 
 void reopen_stdout_and_stderr () {
@@ -290,7 +290,7 @@ void reopen_stdout_and_stderr () {
  stdout = fopen ("/dev/console", "w");
  stderr = fopen ("/dev/console", "w");
 
- fprintf (stderr, " done\n");
+ fprintf (stderr, " done, stdout and stderr reopened\n");
 }
 
 int main(int argc, char **argv) {
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
    "###############################################################################\n", getpid());
 
  prune_file_descriptors ();
- reopen_stdout_and_stderr();
+ reopen_stdout_and_stderr ();
 
  sleep(10);
 
