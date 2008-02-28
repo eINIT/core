@@ -175,10 +175,6 @@ void einit_module_call (const char *rid, const char *action);
  */
 void einit_event_loop ();
 
-// Custom loop
-void (*loop)(void);
-void einit_event_loop_custom (void(*loop)(void));
-
 /*!\brief Grab and Handle old Events
  *
  * This will run an event loop that will grab events from eINIT and emit them locally,
