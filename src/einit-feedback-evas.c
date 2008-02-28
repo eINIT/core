@@ -118,11 +118,11 @@ int main(int argc, char **argv, char **env) {
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
 
- void (*loop)(void);
- loop = ecore_main_loop_iterate;
- einit_event_loop_custom(loop);
- 
+ event_listen (einit_event_subsystem_any, (void (*)(struct einit_event *))ecore_main_loop_iterate);
+
+ einit_event_loop();
+
  einit_disconnect();
- 
+
  return 0;
 }
