@@ -427,6 +427,54 @@ void einit_tty_update() {
 
  einit_tty_disable_unused (enab_ttys);
  einit_tty_enable_vector (enab_ttys);
+
+ char **enabled_ttys = NULL;
+
+ emutex_lock (&ttys_mutex);
+ struct ttyst *cur = ttys;
+ while (cur) {
+  struct cfgnode *node = cur->node;
+  char *device = NULL;
+
+  if (node && node->arbattrs) {
+   for (i = 0; node->arbattrs[i]; i+=2) {
+    if (strmatch("dev", node->arbattrs[i]))
+     device = node->arbattrs[i+1];
+   }
+  }
+
+  if (device) {
+   ssize_t len = strlen (device);
+   i = len-1;
+
+   while (isdigit (device[i]) && (i > 0)) i--;
+   if ((i > 0) && (i++, isdigit(device[i])) && (!enabled_ttys || !inset ((const void **)enabled_ttys, (device+i), SET_TYPE_STRING)))
+    enabled_ttys = set_str_add (enabled_ttys, device+i);
+  }
+
+  cur = cur->next;
+ }
+ emutex_unlock (&ttys_mutex);
+
+ if (enabled_ttys) {
+  char *s = set2str (':', (const char **)enabled_ttys);
+  struct cfgnode newnode;
+
+  memset (&newnode, 0, sizeof(struct cfgnode));
+
+  newnode.id = (char *)str_stabilise ("enabled-ttys");
+  newnode.type = einit_node_regular;
+
+  newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)"ids");
+  newnode.arbattrs = set_str_add_stable (newnode.arbattrs, (void *)s);
+
+  newnode.svalue = newnode.arbattrs[3];
+
+  cfg_addnode (&newnode);
+
+  efree (s);
+ }
+
  efree (enab_ttys);
 }
 
