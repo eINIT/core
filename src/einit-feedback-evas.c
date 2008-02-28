@@ -103,8 +103,6 @@ int main(int argc, char **argv, char **env) {
 
  Evas *evas = NULL;
  evas = ecore_evas_get(ecore_evas);
-
- ecore_main_loop_begin();
  
  if (!einit_connect(&argc, argv)) {
   perror ("Could not connect to eINIT");
@@ -120,7 +118,9 @@ int main(int argc, char **argv, char **env) {
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
 
- einit_event_loop();
+ void (*loop)(void);
+ loop = ecore_main_loop_iterate;
+ einit_event_loop_custom(loop);
  
  einit_disconnect();
  
