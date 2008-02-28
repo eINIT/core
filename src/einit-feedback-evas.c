@@ -58,6 +58,13 @@ void help (char **argv) {
          " -h, --help         This Message\n", argv[0]);
 }
 
+int good_bye(void *data, int type, void *event) {
+	ecore_main_loop_quit();
+	ecore_evas_shutdown();
+	ecore_shutdown();
+	return 1;
+}
+
 int main(int argc, char **argv, char **env) {
  int i = 1;
 
@@ -84,8 +91,10 @@ int main(int argc, char **argv, char **env) {
  } 
  close(fb);
 
+ Ecore_Event_Handler* close = ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT,good_bye,"data");
+ 
  Ecore_Evas  *ecore_evas = NULL;
- ecore_evas = ecore_evas_software_x11_new(NULL, 0, 0, 0, fb_var.xres, fb_var.yres);
+ ecore_evas = ecore_evas_sdl_new(NULL, fb_var.xres, fb_var.yres, 0, 1, 0, 1);
  if (!ecore_evas) return EXIT_FAILURE;
 
  ecore_evas_title_set(ecore_evas, "eINIT Evas Feedback Daemon");
@@ -114,6 +123,6 @@ int main(int argc, char **argv, char **env) {
  einit_event_loop();
  
  einit_disconnect();
-
+ 
  return 0;
 }
