@@ -91,7 +91,7 @@ void linux_splash_invoker_psplash_boot_devices_ok () {
 
 int linux_splash_invoker_cleanup (struct lmodule *pa) {
  if (linux_splash_invoker_psplash_mode) {
-  event_ignore (einit_boot_devices_available, linux_splash_invoker_psplash_boot_devices_ok);
+  event_ignore (einit_boot_load_kernel_extensions, linux_splash_invoker_psplash_boot_devices_ok);
  }
 }
 
@@ -109,7 +109,7 @@ int linux_splash_invoker_configure (struct lmodule *pa) {
  }
 
  if (linux_splash_invoker_psplash_mode) {
-  event_listen (einit_boot_devices_available, linux_splash_invoker_psplash_boot_devices_ok);
+  event_listen (einit_boot_load_kernel_extensions, linux_splash_invoker_psplash_boot_devices_ok);
  }
 
  return 0;
