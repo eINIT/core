@@ -1011,7 +1011,11 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    /* let's fork /again/, so that the main einit monitor process can pick these processes up */
    close (cpipes[0]);
 
-   pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
+#ifdef __linux__
+   pid_t cfork = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL); /* i was wrong about using the real fork */
+#else
+   pid_t cfork = fork();
+#endif
 
    switch (cfork) {
     case -1:

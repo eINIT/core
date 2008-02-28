@@ -218,7 +218,12 @@ int einit_tty_texec (struct cfgnode *node) {
 
     /* this 'ere is the code that gets executed in the child process */
     /* let's fork /again/, so that the main einit monitor process can pick these processes up */
-    pid_t cfork = fork(); /* we should be able to use the real fork() here, since there's no threads in this new process */
+
+#ifdef __linux__
+    pid_t cfork = syscall(__NR_clone, SIGCHLD, 0, NULL, NULL, NULL); /* i was wrong about using the real fork */
+#else
+    pid_t cfork = fork();                                                                                                  
+#endif
 
     switch (cfork) {
      case -1:
