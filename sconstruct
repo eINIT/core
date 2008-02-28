@@ -138,6 +138,8 @@ if uname == 'Linux':
 have_sdl = conf.CheckLib(library = [ 'SDL' ])
 have_efl = conf.CheckLib(library = [ 'ecore_evas' ])
 
+env['LIBS'] = []
+
 InternalModules = ['module-so']
 ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
 
