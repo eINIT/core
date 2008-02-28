@@ -23,7 +23,7 @@ src/einit-helper
 src/einit-feedback
 src/einit-log
 src/last-rites
-
+src/einit-feedback-evas
 src/einit-sysvd
 
 src/modules/bundle-*

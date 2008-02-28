@@ -135,6 +135,9 @@ if uname == 'Linux':
  ModulesLinuxSpecial += [ 'linux-initramfs' ]
  InstallAliases += [ InstallDirModules + '-initramfs' ]
 
+have_sdl = conf.CheckLib(library = [ 'SDL' ])
+have_efl = conf.CheckLib(library = [ 'ecore_evas' ])
+
 InternalModules = ['module-so']
 ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesLinuxSpecial + ModulesBSD
 
@@ -301,12 +304,12 @@ env.EConfiguration('build/headers/einit/configuration.h', 'core')
 env.EConfiguration('build/headers/einit-modules/configuration.h', 'modules')
 env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 
-
 Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
         'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'ModulesCompatibility', 'InternalModules',
-        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'ModulesLinuxSpecial'])
+        'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'ModulesLinuxSpecial',
+        'have_efl', 'have_sdl'])
 
 SConscript(ScriptsEinit)
 

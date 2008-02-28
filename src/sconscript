@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'have_efl', 'have_sdl'])
 
 import glob
 
@@ -51,7 +51,6 @@ lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['
 einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
 
 einitFeedbackD = env.Program ('einit-feedback', CodeEinitFeedbackD, LIBS=['einit', 'curses'], LIBPATH=['.'])
-einitFeedbackDEvas = env.Program ('einit-feedback-evas', CodeEinitFeedbackDEvas, LIBS=['einit', 'SDL', 'ecore_evas'], LIBPATH=['.'])
 einitLogD = env.Program ('einit-log', CodeEinitLogD, LIBS=['einit'], LIBPATH=['.'])
 
 einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH=['.'])
@@ -63,7 +62,7 @@ env.Install (InstallDirLibBin, einitCore)
 env.Install (InstallDirLibBin, einitHelper)
 env.Install (InstallDirLibBin, lastRites)
 env.Install (InstallDirLibBin, einitFeedbackD)
-env.Install (InstallDirLibBin, einitFeedbackDEvas)
+
 env.Install (InstallDirLibBin, einitLogD)
 
 env.InstallAs (InstallDirSbin + '/einit', einitMonitor)
@@ -73,3 +72,9 @@ env.Install (InstallDirSbin, einitSysVD)
 
 env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
 env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))
+
+# Optional Eye Candy :)
+
+if have_efl and have_sdl:
+ einitFeedbackDEvas = env.Program ('einit-feedback-evas', CodeEinitFeedbackDEvas, LIBS=['einit', 'SDL', 'ecore_evas'], LIBPATH=['.'])
+ env.Install (InstallDirLibBin, einitFeedbackDEvas)
