@@ -472,6 +472,8 @@ void einit_tty_update() {
 
   cfg_addnode (&newnode);
 
+  notice (4,  "enabled-ttys/ids=%s\n", s);
+
   efree (s);
  }
 
