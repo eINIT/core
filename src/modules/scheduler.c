@@ -124,6 +124,8 @@ void insert_timer_event (time_t n) {
  emutex_unlock (&sched_timer_data_mutex);
 }
 
+time_t scheduler_prune_time = 0;
+
 time_t scheduler_get_next_tick (time_t now) {
  time_t next = 0;
 
@@ -136,6 +138,8 @@ time_t scheduler_get_next_tick (time_t now) {
  if (next && ((next) <= (now + 60))) /* see if the event is within 60 seconds */
   return next;
  else {
+  scheduler_prune_time = now + 60;
+
   insert_timer_event (now + 60);
   return scheduler_get_next_tick(now);
  }
@@ -164,6 +168,10 @@ void sched_handle_timers () {
 
   uintptr_t tmpinteger = ev.integer;
   sched_timer_data = (time_t *)setdel ((void **)sched_timer_data, (void *)tmpinteger);
+
+  if (next_tick == scheduler_prune_time) {
+   ethread_prune_thread_pool();
+  }
 
   sched_handle_timers();
  } else {

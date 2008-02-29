@@ -471,11 +471,10 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
    emutex_unlock (&thread_stats_mutex);
    goto moar;
   }
- } else {
-  emutex_unlock (&thread_stats_mutex);
+
+  emutex_lock (&thread_stats_mutex);
  }
 
- emutex_lock (&thread_stats_mutex);
  thread_pool_free_count--;
  thread_pool_count--;
  emutex_unlock (&thread_stats_mutex);
