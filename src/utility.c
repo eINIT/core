@@ -481,7 +481,7 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
  if (!thread_pool_free_count) {
   thread_pool_prune = 0;
 
-  fprintf (stderr, " ** thread pool pruning complete; %i/%i/%i\n", thread_pool_count, thread_pool_max_count, thread_pool_free_count);
+//  fprintf (stderr, " ** thread pool pruning complete; %i/%i/%i\n", thread_pool_count, thread_pool_max_count, thread_pool_free_count);
  }
 
  pthread_exit (NULL);
@@ -524,7 +524,7 @@ void ethread_prune_thread_pool () {
 
  pthread_cond_broadcast (&thread_rendezvous_cond);
 
- fprintf (stderr, "pool's closed!\n");
+// fprintf (stderr, "pool's closed!\n");
 }
 
 /* event-helpers */
