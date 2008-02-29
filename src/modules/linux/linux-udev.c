@@ -198,7 +198,7 @@ int linux_udev_run() {
    ldev = (4 << 8) | min;
    char buffer[BUFFERSIZE];
    esprintf (buffer, BUFFERSIZE, "/dev/tty%d", min);
-   mkdnod (buffer, S_IFCHR, ldev);
+   mknod (buffer, S_IFCHR, ldev);
   }
 
   symlink ("/proc/self/fd", "/dev/fd");
