@@ -353,7 +353,6 @@ void strtrim (char *s) {
 #if ! defined (EINIT_UTIL)
 
 pthread_mutex_t
- thread_key_detached_mutex = PTHREAD_MUTEX_INITIALIZER,
  thread_rendezvous_mutex = PTHREAD_MUTEX_INITIALIZER,
  thread_stats_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -487,14 +486,7 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
   fprintf (stderr, " ** thread pool pruning complete; %i/%i/%i\n", thread_pool_count, thread_pool_max_count, thread_pool_free_count);
  }
 
- struct einit_join_thread *t = emalloc (sizeof (struct einit_join_thread));
-
- t->thread = pthread_self();
-
- emutex_lock (&thread_key_detached_mutex);
- t->next = einit_join_threads;
- einit_join_threads = t;
- emutex_unlock (&thread_key_detached_mutex);
+ pthread_exit (NULL);
 }
 
 /* thread helpers */

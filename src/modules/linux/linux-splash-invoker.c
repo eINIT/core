@@ -80,6 +80,7 @@ module_register(linux_splash_invoker_self);
 
 char linux_splash_invoker_psplash_mode = 0;
 char linux_splash_invoker_usplash_mode = 0;
+char linux_splash_invoker_exquisite_mode = 0;
 
 void linux_splash_invoker_psplash_boot_devices_ok () {
  struct einit_event eml = evstaticinit(einit_core_manipulate_services);
@@ -99,12 +100,24 @@ void linux_splash_invoker_usplash_boot_devices_ok () {
  evstaticdestroy(eml);
 }
 
+void linux_splash_invoker_exquisite_boot_devices_ok () {
+ struct einit_event eml = evstaticinit(einit_core_manipulate_services);
+ eml.stringset = set_str_add (NULL, "einit-exquisite");
+ eml.task = einit_module_enable;
+
+ event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread);
+ evstaticdestroy(eml);
+}
+
 int linux_splash_invoker_cleanup (struct lmodule *pa) {
  if (linux_splash_invoker_psplash_mode) {
   event_ignore (einit_boot_load_kernel_extensions, linux_splash_invoker_psplash_boot_devices_ok);
  }
  if (linux_splash_invoker_usplash_mode) {
   event_ignore (einit_boot_load_kernel_extensions, linux_splash_invoker_usplash_boot_devices_ok);
+ }
+ if (linux_splash_invoker_exquisite_mode) {
+  event_ignore (einit_boot_root_device_ok, linux_splash_invoker_exquisite_boot_devices_ok);
  }
 }
 
@@ -115,10 +128,14 @@ int linux_splash_invoker_configure (struct lmodule *pa) {
  if (einit_initial_environment) {
   int i = 0;
   for (; einit_initial_environment[i]; i++) {
-   if (strmatch (einit_initial_environment[i], "splash=psplash")) {
-    linux_splash_invoker_psplash_mode = 1;
-   } else if (strmatch (einit_initial_environment[i], "splash=usplash")) {
-    linux_splash_invoker_usplash_mode = 1;
+   if (strprefix (einit_initial_environment[i], "splash=") && (einit_initial_environment[i] + 7)) {
+    if (strmatch ((einit_initial_environment[i] + 7), "psplash")) {
+     linux_splash_invoker_psplash_mode = 1;
+    } else if (strmatch ((einit_initial_environment[i] + 7), "usplash")) {
+     linux_splash_invoker_usplash_mode = 1;
+    } else if (strmatch ((einit_initial_environment[i] + 7), "exquisite")) {
+     linux_splash_invoker_usplash_mode = 1;
+    }
    }
   }
  }
@@ -127,6 +144,8 @@ int linux_splash_invoker_configure (struct lmodule *pa) {
   event_listen (einit_boot_load_kernel_extensions, linux_splash_invoker_psplash_boot_devices_ok);
  } else if (linux_splash_invoker_usplash_mode) {
   event_listen (einit_boot_load_kernel_extensions, linux_splash_invoker_usplash_boot_devices_ok);
+ } else if (linux_splash_invoker_exquisite_mode) {
+  event_listen (einit_boot_root_device_ok, linux_splash_invoker_exquisite_boot_devices_ok);
  }
 
  return 0;
