@@ -350,41 +350,11 @@ void sched_einit_event_handler_main_loop_reached (struct einit_event *ev) {
 }
 
 void sched_run_sigchild () {
- char check;
  while (1) {
-  check =  0;
-  if (einit_join_threads) {
-   pthread_t thread;
-   struct einit_join_thread *t = NULL;
-
-   emutex_lock (&thread_key_detached_mutex);
-   if (einit_join_threads) {
-    t = einit_join_threads;
-
-    einit_join_threads = t->next;
-
-    thread = t->thread;
-   }
-   emutex_unlock (&thread_key_detached_mutex);
-
-   if (t) {
-    void **n = NULL;
-    pthread_join (thread, n);
-
-    check = 1;
-    efree (t);
-   }
-  }
-
   sched_handle_timers();
 
-  if (!(coremode & einit_core_exiting)) sem_wait (signal_semaphore);
-  else {
-   debug ("scheduler SIGCHLD thread now going to sleep\n");
-   while (sleep (1)) {
-    debug ("still not dead...");
-   }
-  }
+  sem_wait (signal_semaphore);
+
   if (sigint_called) {
    shutting_down = 1;
    debug ("scheduler SIGCHLD thread: making eINIT shut down\n");

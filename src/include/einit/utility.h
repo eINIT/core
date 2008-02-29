@@ -273,14 +273,6 @@ void ethread_spawn_detached (void *(*thread)(void *), void *param);
 void ethread_spawn_detached_run (void *(*thread)(void *), void *param);
 void ethread_prune_thread_pool ();
 
-struct einit_join_thread {
- pthread_t thread;
- struct einit_join_thread *next;
-};
-
-extern struct einit_join_thread *einit_join_threads;
-extern pthread_mutex_t thread_key_detached_mutex;
-
 #include <regex.h>
 
 int eregcomp_cache (regex_t * preg, const char * pattern, int cflags);

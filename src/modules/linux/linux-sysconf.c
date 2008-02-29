@@ -118,7 +118,7 @@ void linux_sysconf_ctrl_alt_del () {
 }
 
 void linux_sysconf_service_enabled(struct einit_event *ev) {
- if (ev->string && (strmatch (ev->string, "einit-psplash") || strmatch (ev->string, "einit-usplash"))) {
+ if (ev->string && (strmatch (ev->string, "einit-psplash") || strmatch (ev->string, "einit-usplash") || strmatch (ev->string, "einit-exquisite") || strmatch (ev->string, "einit-fbsplash"))) {
   linux_sysconf_block_chvt = 1;
  }
 }

@@ -91,8 +91,6 @@ struct utsname osinfo = {};
 pthread_attr_t thread_attribute_detached = {};
 #endif
 
-struct einit_join_thread *einit_join_threads = NULL;
-
 void einit_power_down () {
  einit_switch_mode ("power-down");
 }
