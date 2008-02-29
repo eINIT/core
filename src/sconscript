@@ -39,7 +39,7 @@ if uname == 'Linux':
  linkflagsLibEinit = '-shared -Wl,-soname,libeinit.so.3.0.0'
  linkflagsLibEinitPP = '-shared -Wl,-soname,libeinit++.so.3.0.0'
 
-coreLibs = ['einit', 'pthread', 'core-modules']
+coreLibs = ['einit', 'core-modules']
 
 if 'module-so' in InternalModules:
  coreLibs += [ 'dl' ]

@@ -90,12 +90,6 @@ buildBundleE('base', ModulesBase, '.', menv)
 if 'linux-initramfs' in ExternalModules:
  buildBundleET (InstallDirModules + '-initramfs', 'initramfs', [ 'linux-initramfs', 'linux-edev' ], 'linux', menv.Clone (LIBS=['runinit'], LIBPATH=['#run-init']))
 
-if 'ipc-9p' in ExternalModules:
- buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
-
-if 'feedback-visual-textual' in ExternalModules:
- buildModule ('feedback-visual-textual', '.', menv.Clone (LIBS=librt))
-
 if 'module-logic-v4' in ExternalModules:
  buildModule ('module-logic-v4', '.', menv.Clone (LIBS=librt))
 
