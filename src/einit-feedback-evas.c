@@ -33,6 +33,7 @@
 
 static int fb;
 struct fb_var_screeninfo fb_var;
+Evas_Object *   base_rect;
 
 void event_handler_feedback_notice (struct einit_event *ev) {
  if (ev->string)
@@ -58,11 +59,19 @@ void help (char **argv) {
          " -h, --help         This Message\n", argv[0]);
 }
 
-int good_bye(void *data, int type, void *event) {
-	ecore_main_loop_quit();
-	ecore_evas_shutdown();
-	ecore_shutdown();
-	return 1;
+void key_down(void *data, Evas *e, Evas_Object *obj, void *event_info) {
+        Evas_Event_Key_Down *ev;
+        ev = (Evas_Event_Key_Down *)event_info;
+        if (strmatch(ev->keyname,"q")) {
+        	ecore_main_loop_quit();
+        	exit(EXIT_SUCCESS);
+        }
+}
+
+static int main_signal_exit(void *data, int ev_type, void *ev)
+{
+   ecore_main_loop_quit();
+   return 1;
 }
 
 int main(int argc, char **argv, char **env) {
@@ -90,10 +99,10 @@ int main(int argc, char **argv, char **env) {
   exit(EXIT_FAILURE);
  } 
  close(fb);
-
- Ecore_Event_Handler* close = ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT,good_bye,"data");
  
  Ecore_Evas  *ecore_evas = NULL;
+ //ecore_evas = ecore_evas_fb_new(NULL, 0, fb_var.xres, fb_var.yres);
+ //ecore_evas = ecore_evas_software_x11_new(NULL, 0, 0, 0, fb_var.xres, fb_var.yres);
  ecore_evas = ecore_evas_sdl_new(NULL, fb_var.xres, fb_var.yres, 0, 1, 0, 1);
  if (!ecore_evas) return EXIT_FAILURE;
 
@@ -103,7 +112,15 @@ int main(int argc, char **argv, char **env) {
 
  Evas *evas = NULL;
  evas = ecore_evas_get(ecore_evas);
- 
+
+ ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT, main_signal_exit, NULL);
+ base_rect = evas_object_rectangle_add(evas);
+ evas_object_resize(base_rect, (double)fb_var.xres, (double)fb_var.yres);
+ evas_object_color_set(base_rect, 128, 128, 0, 255);
+ evas_object_focus_set(base_rect, 1);
+ evas_object_show(base_rect);
+ evas_object_event_callback_add(base_rect,EVAS_CALLBACK_KEY_DOWN, key_down, NULL);   
+
  if (!einit_connect(&argc, argv)) {
   perror ("Could not connect to eINIT");
   sleep (1);
@@ -113,16 +130,23 @@ int main(int argc, char **argv, char **env) {
   }
  }
 
+ evas_object_gradient_add(evas);
+ 
+ ethread_spawn_detached((void *(*)(void *))ecore_main_loop_begin,NULL);
+ 
  event_listen (einit_feedback_notice, event_handler_feedback_notice);
  event_listen (einit_feedback_module_status, event_handler_update_module_status);
  event_listen (einit_core_service_enabled, event_handler_update_service_enabled);
  event_listen (einit_core_service_disabled, event_handler_update_service_disabled);
 
- event_listen (einit_event_subsystem_any, (void (*)(struct einit_event *))ecore_main_loop_iterate);
+ //event_listen (einit_event_subsystem_any, (void (*)(struct einit_event *))ecore_main_loop_iterate);
 
  einit_event_loop();
-
+ 
  einit_disconnect();
+
+ ecore_evas_shutdown();
+ ecore_shutdown();
 
  return 0;
 }
