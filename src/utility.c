@@ -395,7 +395,6 @@ struct thread_wrapper_data *thread_wrapper_rendezvous () {
  }
 
  if (!thread_pool_prune && !pthread_cond_wait (&thread_rendezvous_cond, &thread_rendezvous_mutex)) {
-  fflush (stderr);
   goto moar;
  }
 
@@ -500,6 +499,8 @@ void ethread_spawn_detached (void *(*thread)(void *), void *param) {
 
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d))
   efree (d);
+ else
+  pthread_detach (th);
 }
 
 void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
@@ -514,7 +515,8 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d)) {
   efree (d);
   thread(param);
- }
+ } else
+  pthread_detach (th);
 }
 
 void ethread_prune_thread_pool () {

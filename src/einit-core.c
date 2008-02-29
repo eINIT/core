@@ -99,8 +99,6 @@ struct lmodule *mlist;
 int einit_task_niceness_increment = 0;
 int einit_core_niceness_increment = 0;
 
-void thread_autojoin_function (void *);
-
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
   "Usage:\n"
