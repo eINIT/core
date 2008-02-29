@@ -91,6 +91,7 @@ module_register(module_linux_sysconf_self);
 
 char linux_reboot_use_kexec = 0;
 char *linux_reboot_use_kexec_command = NULL;
+char linux_sysconf_block_chvt = 0;
 
 void linux_reboot () {
  if (linux_reboot_use_kexec) {
@@ -113,6 +114,12 @@ void linux_sysconf_ctrl_alt_del () {
  if (cfg && !cfg->flag) {
   if (reboot (LINUX_REBOOT_CMD_CAD_OFF) == -1)
    notice (1, "I should've changed the CTRL+ALT+DEL action, but i couldn't: %s", strerror (errno));
+ }
+}
+
+void linux_sysconf_service_enabled(struct einit_event *ev) {
+ if (ev->string && strmatch (ev->string, "einit-psplash")) {
+  linux_sysconf_block_chvt = 1;
  }
 }
 
@@ -169,7 +176,7 @@ void linux_sysconf_fix_ttys() {
        ioctl(0, TIOCLINUX, &arg);
        if (errno)
         perror ("einit-feedback-visual-textual: redirecting kernel messages");
-      } else if (strmatch (filenode->arbattrs[i], "activate-vt")) {
+      } else if (!linux_sysconf_block_chvt && strmatch (filenode->arbattrs[i], "activate-vt")) {
        uint32_t vtn = strtol (filenode->arbattrs[i+1], (char **)NULL, 10);
        int tfd = 0;
        errno = 0;
@@ -341,6 +348,7 @@ int linux_sysconf_cleanup (struct lmodule *this) {
  event_ignore (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_ignore (einit_boot_devices_available, linux_sysconf_sysctl);
 
+ event_ignore (einit_core_service_enabled, linux_sysconf_service_enabled);
  event_ignore (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
 
  return 0;
@@ -356,6 +364,7 @@ int linux_sysconf_configure (struct lmodule *irr) {
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_sysctl);
 
+ event_listen (einit_core_service_enabled, linux_sysconf_service_enabled);
  event_listen (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
 
  return 0;
