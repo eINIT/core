@@ -102,8 +102,8 @@ int main(int argc, char **argv, char **env) {
  
  Ecore_Evas  *ecore_evas = NULL;
  //ecore_evas = ecore_evas_fb_new(NULL, 0, fb_var.xres, fb_var.yres);
- //ecore_evas = ecore_evas_software_x11_new(NULL, 0, 0, 0, fb_var.xres, fb_var.yres);
- ecore_evas = ecore_evas_sdl_new(NULL, fb_var.xres, fb_var.yres, 0, 1, 0, 1);
+ ecore_evas = ecore_evas_software_x11_new(NULL, 0, 0, 0, fb_var.xres, fb_var.yres);
+ //ecore_evas = ecore_evas_sdl_new(NULL, fb_var.xres, fb_var.yres, 0, 1, 0, 1);
  if (!ecore_evas) return EXIT_FAILURE;
 
  ecore_evas_title_set(ecore_evas, "eINIT Evas Feedback Daemon");
@@ -114,10 +114,15 @@ int main(int argc, char **argv, char **env) {
  evas = ecore_evas_get(ecore_evas);
 
  ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT, main_signal_exit, NULL);
- base_rect = evas_object_rectangle_add(evas);
+ base_rect = evas_object_gradient_add(evas);
+ evas_object_gradient_fill_angle_set(base_rect, 0);
+ evas_object_gradient_fill_spread_set(base_rect, 1);
+ evas_object_gradient_fill_set(base_rect, 0, 0, fb_var.xres, fb_var.yres);
+ evas_object_gradient_clear(base_rect);
+ evas_object_gradient_color_stop_add(base_rect, 52, 101, 164, 255, 2);
+ evas_object_gradient_color_stop_add(base_rect, 211, 215, 207, 255, 2);
  evas_object_resize(base_rect, (double)fb_var.xres, (double)fb_var.yres);
- evas_object_color_set(base_rect, 128, 128, 0, 255);
- evas_object_focus_set(base_rect, 1);
+ evas_object_image_fill_set(base_rect, 0, 0, fb_var.xres, fb_var.yres);
  evas_object_show(base_rect);
  evas_object_event_callback_add(base_rect,EVAS_CALLBACK_KEY_DOWN, key_down, NULL);   
 
