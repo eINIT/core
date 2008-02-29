@@ -105,6 +105,7 @@ int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodu
 
 #define INTERFACES_PREFIX "configuration-network-interfaces"
 #define INTERFACE_DEFAULTS_PREFIX "subsystem-network-interface-defaults"
+#define GLOBAL_DEFAULTS_PREFIX "configuration-network"
 
 int einit_module_network_v2_have_options (char *interface) {
  char buffer[BUFFERSIZE];
@@ -118,6 +119,14 @@ struct cfgnode *einit_module_network_v2_get_option_default_r (char *r, char *opt
  char buffer[BUFFERSIZE];
 
  esprintf (buffer, BUFFERSIZE, INTERFACE_DEFAULTS_PREFIX "-%s-%s", r, option);
+
+ return cfg_getnode (buffer, NULL);
+}
+
+struct cfgnode *einit_module_network_v2_get_option_global (char *option) {
+ char buffer[BUFFERSIZE];
+
+ esprintf (buffer, BUFFERSIZE, GLOBAL_DEFAULTS_PREFIX "-%s", option);
 
  return cfg_getnode (buffer, NULL);
 }
@@ -165,8 +174,10 @@ struct cfgnode *einit_module_network_v2_get_option (char *interface, char *optio
 
  if ((node = cfg_getnode (buffer, NULL)))
   return node;
+ else ((node = einit_module_network_v2_get_option_default (interface, option)))
+  return node;
  else
-  return einit_module_network_v2_get_option_default (interface, option);
+  return einit_module_network_v2_get_option_global (option);
 }
 
 struct cfgnode **einit_module_network_v2_get_multiple_options (char *interface, char *option) {
@@ -184,6 +195,8 @@ struct cfgnode **einit_module_network_v2_get_multiple_options (char *interface, 
   return rv;
  else {
   if ((node = einit_module_network_v2_get_option_default (interface, option))) {
+   rv = (struct cfgnode **)set_noa_add ((void **)rv, node);
+  } else if ((node = einit_module_network_v2_get_option_global (option))) {
    rv = (struct cfgnode **)set_noa_add ((void **)rv, node);
   }
 

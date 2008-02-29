@@ -9,7 +9,8 @@ NetworkContents =
    element * {
     InterfaceDataV2
    } *
-  }
+  } ? &
+  InterfaceDataV2
 
 DHCPclient = "dhcpcd" | "dhclient" | "pump"
 
