@@ -775,8 +775,10 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
  intptr_t fd = ixp_announce (address);
 
  if (!fd) {
-  notice (1, "cannot initialise 9p server");
-  return NULL;
+  notice (1, "cannot initialise 9p server, waiting 5s before retrying");
+
+  sleep (5);
+  return einit_ipc_9p_thread_function (NULL);
  }
 
  char **sp = str2set ('!', address);
@@ -811,7 +813,10 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  einit_ipc_9p_listen((void *)fd);
 
- return NULL;
+ notice (1, "einit-9p: function returned, waiting 5s before respawning");
+
+ sleep (5);
+ return einit_ipc_9p_thread_function (NULL);
 }
 
 void *einit_ipc_9p_thread_function_address (char *address) {
@@ -907,7 +912,7 @@ void einit_ipc_9p_secondary_main_loop (struct einit_event *ev) {
 }
 
 int einit_ipc_9p_cleanup (struct lmodule *this) {
- event_ignore (einit_boot_devices_available, einit_ipc_9p_boot_event_handler_root_device_ok);
+ event_ignore (einit_boot_load_kernel_extensions, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_ignore (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_ignore (einit_ipc_read, einit_ipc_9p_ipc_read);
@@ -927,7 +932,7 @@ int einit_ipc_9p_configure (struct lmodule *irr) {
 
  irr->cleanup = einit_ipc_9p_cleanup;
 
- event_listen (einit_boot_devices_available, einit_ipc_9p_boot_event_handler_root_device_ok);
+ event_listen (einit_boot_load_kernel_extensions, einit_ipc_9p_boot_event_handler_root_device_ok);
  event_listen (einit_power_down_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_power_reset_imminent, einit_ipc_9p_power_event_handler);
  event_listen (einit_ipc_read, einit_ipc_9p_ipc_read);
