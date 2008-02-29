@@ -188,10 +188,18 @@ int linux_udev_run() {
 
   dev_t ldev = (5 << 8) | 1;
   mknod ("/dev/console", S_IFCHR, ldev);
-  ldev = (4 << 8) | 1;
-  mknod ("/dev/tty1", S_IFCHR, ldev);
+  ldev = (5 << 8) | 0;
+  mknod ("/dev/tty", S_IFCHR, ldev);
   ldev = (1 << 8) | 3;
   mknod ("/dev/null", S_IFCHR, ldev);
+
+  char min = 0;
+  for (; min < 24; min++) {
+   ldev = (4 << 8) | min;
+   char buffer[BUFFERSIZE];
+   esprintf (buffer, BUFFERSIZE, "/dev/tty%d", min);
+   mkdnor (buffer, S_IFCHR, ldev);
+  }
 
   symlink ("/proc/self/fd", "/dev/fd");
   symlink ("fd/0", "/dev/stdin");
