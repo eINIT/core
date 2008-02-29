@@ -11,7 +11,7 @@ CodeSet = ['set-lowmem.c', 'set-common.c']
 CodeITree = ['itree-trinary-splay.c']
 CodeSTree = ['tree-itree.c']
 
-CodeCoreObjects = ['einit-core.c', 'module.c', 'bitch.c', 'utility.c', 'event.c'] + CodeSet + CodeSTree + CodeITree
+CodeCoreObjects = ['einit-core.c', 'module.c']
 CodeCoreMonitorObjects = ['einit-monitor.c']
 
 CodeLastRites = ['last-rites.c']
@@ -39,12 +39,12 @@ if uname == 'Linux':
  linkflagsLibEinit = '-shared -Wl,-soname,libeinit.so.3.0.0'
  linkflagsLibEinitPP = '-shared -Wl,-soname,libeinit++.so.3.0.0'
 
-coreLibs = ['pthread', 'core-modules']
+coreLibs = ['einit', 'pthread', 'core-modules']
 
 if 'module-so' in InternalModules:
  coreLibs += [ 'dl' ]
 
-einitCore = env.Program ('einit-core', CodeCoreObjects + AssemblyFunctions, LIBS=coreLibs, LIBPATH=['modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
+einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
 einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])

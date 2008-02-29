@@ -357,17 +357,6 @@ int main(int argc, char **argv, char **environ) {
    eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
   }
 
-  if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
-   bitch(bitch_epthreads, pthread_errno, "pthread_attr_init() failed.");
-
-   if (einit_initial_environment) efree (einit_initial_environment);
-   return -1;
-  } else {
-   if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
-    bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
-   }
-  }
-
   if ((pthread_errno = pthread_key_create(&einit_function_macro_key, NULL))) {
    bitch(bitch_epthreads, pthread_errno, "pthread_key_create(einit_function_macro_key) failed.");
 
