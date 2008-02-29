@@ -2,7 +2,7 @@ Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLi
 
 import os.path
 
-menv = env.Clone (SHLIBPREFIX = '', CCFLAGS = '-DEINIT_MODULE')
+menv = env.Clone (SHLIBPREFIX = '', CCFLAGS = '-DEINIT_MODULE', LIBS='einit', LIBPATH='..')
 
 CodeInternalModules = ['#build/core/module-configuration.c']
 
