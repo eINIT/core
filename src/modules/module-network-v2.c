@@ -174,7 +174,7 @@ struct cfgnode *einit_module_network_v2_get_option (char *interface, char *optio
 
  if ((node = cfg_getnode (buffer, NULL)))
   return node;
- else ((node = einit_module_network_v2_get_option_default (interface, option)))
+ else if ((node = einit_module_network_v2_get_option_default (interface, option)))
   return node;
  else
   return einit_module_network_v2_get_option_global (option);
