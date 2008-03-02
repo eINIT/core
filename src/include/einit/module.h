@@ -117,7 +117,6 @@ enum einit_module_task {
  einit_module_disable             = 0x0002,
 /*!< Command for mod(): Disable specified module. */
  einit_module_custom              = 0x0004,
-/*!< Execute a custom action. */
 
  einit_module_ignore_dependencies = 0x0800,
 /*!< Option: Ignore dependencies on module status change with mod() */
@@ -285,6 +284,8 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
  * Use this to change the state of a module, i.e. enable it, disable it, etc...
 */
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command);
+
+int mod_complete (char *rid, enum einit_module_status status);
 
 /*!\ingroup serviceusagequeries
  * \{ */

@@ -254,6 +254,30 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   emutex_unlock (&module->mutex);
   return status_idle;
  }
+
+ if (module->module->mode & einit_module_event_actions) {
+  char *action = custom_command;
+
+  if (task & einit_module_disable) {
+   action = "enable";
+  } else if (task & einit_module_disable) {
+   action = "disable";
+  }
+
+  if (!action)
+   goto wontload;
+
+  struct einit_event e = evstaticinit (einit_core_module_action_execute);
+  e.rid = module->module->rid;
+  e.string = action;
+
+  event_emit (&e, einit_event_flag_broadcast);
+
+  evstaticdestroy (e);
+
+  return status_working;
+ }
+
  if ((task & einit_module_disable) && (!module->disable || (module->status & status_disabled) || (module->status == status_idle)))
   goto wontload;
 
@@ -365,6 +389,10 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  }
 
  return module->status;
+}
+
+int mod_complete (char *rid, enum einit_module_status status) {
+ return status;
 }
 
 void mod_update_usage_table (struct lmodule *module) {

@@ -777,7 +777,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
  pid_t child;
  uid_t uid;
  gid_t gid;
-// char *cmddup;
 
  if (!shellcmd) return status_failed;
 

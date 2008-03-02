@@ -208,6 +208,11 @@ void core_event_einit_boot_root_device_ok (struct einit_event *ev) {
  }
 }
 
+void core_einit_core_module_action_complete (struct einit_event *ev) {
+ if (ev->rid)
+  mod_complete (ev->rid, ev->status);
+}
+
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
  int i;
@@ -234,6 +239,8 @@ int main(int argc, char **argv, char **environ) {
  event_listen (einit_core_configuration_update, core_einit_event_handler_configuration_update);
  event_listen (einit_core_update_modules, core_einit_event_handler_update_modules);
  event_listen (einit_core_recover, core_einit_event_handler_recover);
+
+ event_listen (einit_core_module_action_complete, core_einit_core_module_action_complete);
 
  if (argv) einit_argv = set_str_dup_stable (argv);
 
