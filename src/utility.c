@@ -395,7 +395,6 @@ struct thread_wrapper_data *thread_wrapper_rendezvous () {
  }
 
  if (!thread_pool_prune && !pthread_cond_wait (&thread_rendezvous_cond, &thread_rendezvous_mutex)) {
-  fflush (stderr);
   goto moar;
  }
 
@@ -471,11 +470,10 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
    emutex_unlock (&thread_stats_mutex);
    goto moar;
   }
- } else {
-  emutex_unlock (&thread_stats_mutex);
+
+  emutex_lock (&thread_stats_mutex);
  }
 
- emutex_lock (&thread_stats_mutex);
  thread_pool_free_count--;
  thread_pool_count--;
  emutex_unlock (&thread_stats_mutex);
@@ -483,7 +481,7 @@ void ethread_spawn_wrapper (struct thread_wrapper_data *d) {
  if (!thread_pool_free_count) {
   thread_pool_prune = 0;
 
-  fprintf (stderr, " ** thread pool pruning complete; %i/%i/%i\n", thread_pool_count, thread_pool_max_count, thread_pool_free_count);
+//  fprintf (stderr, " ** thread pool pruning complete; %i/%i/%i\n", thread_pool_count, thread_pool_max_count, thread_pool_free_count);
  }
 
  pthread_exit (NULL);
@@ -501,6 +499,8 @@ void ethread_spawn_detached (void *(*thread)(void *), void *param) {
 
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d))
   efree (d);
+ else
+  pthread_detach (th);
 }
 
 void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
@@ -515,7 +515,8 @@ void ethread_spawn_detached_run (void *(*thread)(void *), void *param) {
  if (ethread_create (&th, NULL, (void *(*)(void *))ethread_spawn_wrapper, d)) {
   efree (d);
   thread(param);
- }
+ } else
+  pthread_detach (th);
 }
 
 void ethread_prune_thread_pool () {
@@ -523,7 +524,7 @@ void ethread_prune_thread_pool () {
 
  pthread_cond_broadcast (&thread_rendezvous_cond);
 
- fprintf (stderr, "pool's closed!\n");
+// fprintf (stderr, "pool's closed!\n");
 }
 
 /* event-helpers */

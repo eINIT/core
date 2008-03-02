@@ -88,7 +88,6 @@ char einit_new_node = 0;
 struct stree *exported_functions = NULL;
 unsigned char *gdebug = 0;
 struct utsname osinfo = {};
-pthread_attr_t thread_attribute_detached = {};
 #endif
 
 void einit_power_down () {

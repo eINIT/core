@@ -99,8 +99,6 @@ struct lmodule *mlist;
 int einit_task_niceness_increment = 0;
 int einit_core_niceness_increment = 0;
 
-void thread_autojoin_function (void *);
-
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
   "Usage:\n"
@@ -357,17 +355,6 @@ int main(int argc, char **argv, char **environ) {
 
   if (!suppress_version) {
    eprintf (stdout, "eINIT " EINIT_VERSION_LITERAL ": Initialising: %s\n", osinfo.sysname);
-  }
-
-  if ((pthread_errno = pthread_attr_init (&thread_attribute_detached))) {
-   bitch(bitch_epthreads, pthread_errno, "pthread_attr_init() failed.");
-
-   if (einit_initial_environment) efree (einit_initial_environment);
-   return -1;
-  } else {
-   if ((pthread_errno = pthread_attr_setdetachstate (&thread_attribute_detached, PTHREAD_CREATE_DETACHED))) {
-    bitch(bitch_epthreads, pthread_errno, "pthread_attr_setdetachstate() failed.");
-   }
   }
 
   if ((pthread_errno = pthread_key_create(&einit_function_macro_key, NULL))) {
