@@ -653,10 +653,7 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
  char **data = NULL;
  char buffer[BUFFERSIZE];
 
- esprintf (buffer, BUFFERSIZE, "event=%i", ev->seqid);
- data = set_str_add (data, buffer);
-
- esprintf (buffer, BUFFERSIZE, "type=%s", ecode);
+ esprintf (buffer, BUFFERSIZE, "event-type=%s", ecode);
  data = set_str_add (data, buffer);
 
  if (ev->integer) {

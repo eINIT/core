@@ -54,8 +54,6 @@ pthread_mutex_t pof_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct itree *event_handlers = NULL;
 
-uint32_t cseqid = 0;
-
 struct evt_wrapper_data {
   void (*handler) (struct einit_event *);
   struct einit_event *event;
@@ -75,10 +73,6 @@ void *event_thread_wrapper (struct evt_wrapper_data *d) {
 void event_subthread_a (struct einit_event *event) {
  uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
  struct event_function **f = NULL;
-
- /* initialise sequence id and timestamp of the event */
- event->seqid = cseqid++;
- event->timestamp = time(NULL);
 
  emutex_lock (&evf_mutex);
  if (event_handlers) {
@@ -156,10 +150,6 @@ void *event_emit (struct einit_event *event, enum einit_event_emit_flags flags) 
 
  struct event_function **f = NULL;
  uint32_t subsystem = event->type & EVENT_SUBSYSTEM_MASK;
-
-/* initialise sequence id and timestamp of the event */
- event->seqid = cseqid++;
- event->timestamp = time(NULL);
 
  emutex_lock (&evf_mutex);
  if (event_handlers) {

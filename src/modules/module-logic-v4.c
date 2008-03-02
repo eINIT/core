@@ -1284,9 +1284,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   efree (tmplist);
  }
 
- if (strmatch (modename, "power-down")) {
-  shutting_down = 1;
- } else if (strmatch (modename, "power-reset")) {
+ if (strmatch (modename, "power-down") || strmatch (modename, "power-reset")) {
   shutting_down = 1;
  }
 
@@ -1487,15 +1485,6 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    eex.string = mode->id;
    event_emit (&eex, einit_event_flag_broadcast);
    evstaticdestroy (eex);
-
-   if (shutting_down) {
-#if 0
-    int st = 2;
-    while ((st = sleep (st))) ;
-#else
-    usleep (50000);
-#endif
-   }
   }
  }
 
@@ -1510,6 +1499,14 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
   evstaticdestroy (evs);
 
   module_logic_idle_actions();
+ }
+
+ if (ev->string && (strmatch (ev->string, "power-down") || strmatch (ev->string, "power-reset"))) {
+  usleep (50000);
+  /* at this point, we really should be dead already... */
+
+  notice (1, "switch to shutdown-mode complete");
+  _exit (0);
  }
 }
 

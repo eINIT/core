@@ -598,10 +598,9 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
  struct einit_event *ev = evinit(0);
 
  for (; buffer[i]; i++) {
-  if (strprefix (buffer[i], "event=")) {
-  } else if (strprefix (buffer[i], "type=")) {
-   if (strcmp ((buffer[i])+5, "unknown/custom")) {
-    ev->type = event_string_to_code((buffer[i])+5);
+  if (strprefix (buffer[i], "event-type=")) {
+   if (strcmp ((buffer[i])+11, "unknown/custom")) {
+    ev->type = event_string_to_code((buffer[i])+11);
    } else {
     goto cleanup_exit;
    }

@@ -208,7 +208,7 @@ enum einit_event_code {
  einit_ipc_disabling                = einit_event_subsystem_ipc_v2   | 0x011
 };
 
-#define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, { NULL }, NULL }
+#define evstaticinit(ttype) { ttype, 0, NULL, NULL, 0, 0, 0, 0, NULL, { NULL }, NULL }
 #define evstaticdestroy(ev) { }
 
 struct einit_event {
@@ -223,9 +223,6 @@ struct einit_event {
  unsigned char flag;           /*!< flags */
 
  char **stringset;             /*!< a (string-)set that should make sense in combination with the event type */
-
- uint32_t seqid;
- time_t timestamp;
 
 /*! additional parameters */
  union {
