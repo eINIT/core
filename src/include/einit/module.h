@@ -300,23 +300,6 @@ struct lmodule **mod_get_all_users (struct lmodule *module);
 struct lmodule **mod_get_all_users_of_service (char *service);
 struct lmodule **mod_get_all_providers (char *service);
 
-/*!\brief Query service-usage information.
- * \param[in] task    This tells the function what to do. Use the SERVICE_* defines.
- * \param[in] module  Depending on the command that you pass to this function, a module may be required.
- * \param[in] service Depending on the command that you pass to this function, a service-name may be required.
- *
- * This function can be used to query certain service-usage information where the result can be expressed
- * as a set of strings.
-*/
-char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule *module, const char *service);
-
-/*!\brief The module loader's event-handler.
- * \param[in] event Information that will be passed to this function by the event-system.
- *
- * This event-handler answers some on-line status-queries.
-*/
-void mod_event_handler(struct einit_event *event);
-
 #define fbprintf(statusvar, ...) if (statusvar) {\
  char _fbprintf_buffer[BUFFERSIZE];\
  snprintf (_fbprintf_buffer, BUFFERSIZE, __VA_ARGS__);\

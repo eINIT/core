@@ -614,48 +614,6 @@ char **mod_list_all_provided_services () {
  return ret;
 }
 
-char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule *module, const char *service) {
- emutex_lock (&service_usage_mutex);
-
- struct stree *ha = streelinear_prepare(service_usage);
- char **ret = NULL;
- uint32_t i;
-
- if (task & service_get_services_that_use) {
-  if (module) {
-   while (ha) {
-    if (((struct service_usage_item *)(ha->value))->users &&
-        (((struct service_usage_item *)(ha->value))->provider) &&
-        ((((struct service_usage_item *)(ha->value))->provider)[0]) &&
-        (!((((struct service_usage_item *)(ha->value))->provider)[1])) &&
-        inset ((const void **)(((struct service_usage_item*)ha->value)->provider), module, -1)) {
-
-     for (i = 0; ((struct service_usage_item *)(ha->value))->users[i]; i++) {
-      if (((struct service_usage_item *)(ha->value))->users[i]->si &&
-          ((struct service_usage_item *)(ha->value))->users[i]->si->provides)
-
-       ret = (char **)setcombine ((const void **)ret, (const void **)((struct service_usage_item *)(ha->value))->users[i]->si->provides, SET_TYPE_STRING);
-
-     }
-    }
-    ha = streenext (ha);
-   }
-  }
- } else if (task & service_get_services_used_by) {
-  if (module) {
-   while (ha) {
-    if (inset ((const void **)(((struct service_usage_item*)ha->value)->users), module, -1)) {
-     ret = set_str_add_stable (ret, (void *)ha->key);
-    }
-    ha = streenext (ha);
-   }
-  }
- }
-
- emutex_unlock (&service_usage_mutex);
- return ret;
-}
-
 struct lmodule **mod_get_all_users (struct lmodule *module) {
  struct lmodule **ret = NULL;
 
