@@ -744,9 +744,9 @@ void *dexec_watcher (pid_t pid) {
    emutex_unlock (&cur->mutex);
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb = evstaticinit(einit_feedback_module_status);
-    fb.para = (void *)module;
     fb.task = einit_module_enable;
     fb.status = status_working;
+	fb.rid = (char*)str_stabilise(rid);
     fb.flag = 0;
 
     fbprintf ((&fb), "einit-mod-daemon: resurrecting \"%s\".\n", rid);

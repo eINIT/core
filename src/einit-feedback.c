@@ -499,7 +499,8 @@ void update () {
 }
 
 void event_handler_mode_switching (struct einit_event *ev) {
- mode_to = (char *)str_stabilise(ev->string);
+ if (ev->string)
+  mode_to = (char *)str_stabilise(ev->string);
 
  if (broken) {
   efree (broken);
@@ -507,14 +508,15 @@ void event_handler_mode_switching (struct einit_event *ev) {
  }
  if (unresolved) {
   efree (unresolved);
-  broken = NULL;
+  unresolved = NULL;
  }
 
  update();
 }
 
 void event_handler_mode_switch_done (struct einit_event *ev) {
- mode = (char *)str_stabilise(ev->string);
+ if (ev->string)
+  mode = (char *)str_stabilise(ev->string);
 
  update();
 }
@@ -522,15 +524,15 @@ void event_handler_mode_switch_done (struct einit_event *ev) {
 void event_handler_update_module_status (struct einit_event *ev) {
  if (ev->rid) {
   set_module_status (ev->rid, ev->status);
-  add_text_buffer_entry (ev->rid, "status");
- }
+ 
+  if (ev->string)
+   add_text_buffer_entry (ev->rid, ev->string);
+  else
+   add_text_buffer_entry (ev->rid, "status");
 
- if (ev->string) {
-  add_text_buffer_entry (ev->rid, ev->string);
+  if (ev->flag)
+   set_module_progress (ev->rid, ev->flag);
  }
-
- if (ev->flag)
-  set_module_progress (ev->rid, ev->flag);
 
  update();
 }

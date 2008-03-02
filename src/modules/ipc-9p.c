@@ -688,17 +688,6 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
 
   data = set_str_add (data, msg_string);
   efree (msg_string);
- } else if ((ev->type == einit_feedback_module_status) && ev->para) {
-  struct lmodule *m = (struct lmodule *)ev->para;
-  if (m->module->rid) {
-   char *msg_string;
-   size_t i = strlen (m->module->rid) + 1 + 9; /* "module=\n"*/
-   msg_string = emalloc (i);
-   esprintf (msg_string, i, "module=%s", m->module->rid);
-
-   data = set_str_add (data, msg_string);
-   efree (msg_string);
-  }
  }
 
  if (ev->string) {
@@ -728,6 +717,11 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
 
  e->event = set2str ('\n', (const char **)data);
  efree (data);
+
+/* dump events to stderr in sandbox mode: */
+ if (coremode & einit_mode_sandbox) {
+  fputs (e->event, stderr);
+ }
 
  emutex_lock (&einit_ipc_9p_event_queue_mutex);
 

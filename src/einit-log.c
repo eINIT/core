@@ -57,7 +57,7 @@ void event_handler_feedback_notice (struct einit_event *ev) {
 }
 
 void event_handler_update_module_status (struct einit_event *ev) {
- if (ev->string)
+ if (ev->string && ev->rid)
   fprintf (stdout, "[%s] %s\n", ev->rid, ev->string);
 }
 
@@ -89,6 +89,8 @@ int main(int argc, char **argv, char **env) {
   } else if (strmatch (argv[i], "-h") || strmatch (argv[i], "--help")) {
    help(argv);
    return EXIT_SUCCESS;
+  } else if (strmatch (argv[i], "-a") && argv[i+1]) {
+   i++;
   } else {
    help(argv);
    return EXIT_FAILURE;

@@ -220,6 +220,9 @@ struct einit_event *mod_initialise_feedback_event (struct lmodule *module, enum 
   fb->task = task;
   fb->status = status_working;
 
+ if (module && module->module && module->module->rid)
+  fb->rid = module->module->rid;
+
  return fb;
 }
 
@@ -422,6 +425,12 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
  evdestroy (fb);
 
  mod_update_usage_table(module);
+
+ if (shutting_down) {
+  if ((task & einit_module_disable) && (module->status & (status_enabled | status_failed))) {
+   mod (einit_module_custom, module, "zap");
+  }
+ }
 
  return status;
 }
