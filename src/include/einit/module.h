@@ -266,7 +266,7 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
 */
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command);
 
-int mod_complete (char *rid, enum einit_module_status status);
+int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status);
 
 /*!\ingroup serviceusagequeries
  * \{ */

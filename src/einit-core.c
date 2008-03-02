@@ -203,7 +203,7 @@ void core_event_einit_boot_root_device_ok (struct einit_event *ev) {
 
 void core_einit_core_module_action_complete (struct einit_event *ev) {
  if (ev->rid)
-  mod_complete (ev->rid, ev->status);
+  mod_complete (ev->rid, ev->task, ev->status);
 }
 
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */

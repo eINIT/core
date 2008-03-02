@@ -76,13 +76,14 @@ struct exported_function *cfg_getpath_fs = NULL;
 struct exported_function *cfg_prefix_fs = NULL;
 
 char einit_new_node = 0;
-struct stree *exported_functions = NULL;
 struct utsname osinfo = {};
 #endif
 
 char **einit_initial_environment = NULL;
 char **einit_global_environment = NULL;
 char **einit_argv = NULL;
+
+struct stree *exported_functions = NULL;
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;

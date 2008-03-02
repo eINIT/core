@@ -215,6 +215,68 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  return nmod;
 }
 
+struct einit_event *mod_initialise_feedback_event (struct lmodule *module, enum einit_module_task task) {
+ struct einit_event *fb = evinit (einit_feedback_module_status);
+  fb->task = task;
+  fb->status = status_working;
+
+ return fb;
+}
+
+void mod_emit_pre_hook_event (struct lmodule *module, enum einit_module_task task) {
+ if (module->si && module->si->provides) {
+  int i = 0;
+
+  if (task & (einit_module_enable | einit_module_disable))
+   for (i = 0; module->si->provides[i]; i++) {
+    struct einit_event eei = evstaticinit ((task & einit_module_enable) ? einit_core_service_enabling : einit_core_service_disabling);
+    eei.string = module->si->provides[i];
+    event_emit (&eei, einit_event_flag_broadcast);
+    evstaticdestroy (eei);
+   }
+
+  struct einit_event ees = evstaticinit (einit_core_service_update);
+  ees.task = task;
+  ees.status = status_working;
+  ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
+  ees.set = (void **)module->si->provides;
+  ees.para = (void *)module;
+  event_emit (&ees, einit_event_flag_broadcast);
+  evstaticdestroy (ees);
+ }
+}
+
+void mod_completion_handler (struct lmodule *module, struct einit_event *fb, enum einit_module_task task) {
+ fb->status = module->status;
+
+ event_emit(fb, einit_event_flag_broadcast);
+
+/* service status update */
+ char *nserv[] = { "no-service", NULL };
+
+ struct einit_event ees = evstaticinit (einit_core_service_update);
+ ees.task = task;
+ ees.status = fb->status;
+ ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
+ ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
+ ees.para = (void *)module;
+ event_emit (&ees, einit_event_flag_broadcast);
+ evstaticdestroy (ees);
+}
+
+void mod_completion_handler_no_change (struct lmodule *module, enum einit_module_task task) {
+ char *nserv[] = { "no-service", NULL };
+
+ struct einit_event ees = evstaticinit (einit_core_service_update);
+ ees.task = task;
+ ees.status = module->status;
+ ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
+ ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
+ ees.para = (void *)module;
+ event_emit (&ees, einit_event_flag_broadcast);
+ evstaticdestroy (ees);
+}
+
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command) {
  struct einit_event *fb;
  unsigned int ret;
@@ -246,19 +308,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   wontload:
   module->status ^= status_working;
 
-  {
-/* service status update */
-   char *nserv[] = { "no-service", NULL };
-
-   struct einit_event ees = evstaticinit (einit_core_service_update);
-   ees.task = task;
-   ees.status = module->status;
-   ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
-   ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
-   ees.para = (void *)module;
-   event_emit (&ees, einit_event_flag_broadcast);
-   evstaticdestroy (ees);
-  }
+  mod_completion_handler_no_change (module, task);
 
   emutex_unlock (&module->mutex);
   return status_idle;
@@ -301,40 +351,11 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  skipdependencies:
 
 /* inform everyone about what's going to happen */
- {
-/* same for services */
-  if (module->si && module->si->provides) {
-   int i = 0;
-
-   if (task & (einit_module_enable | einit_module_disable))
-    for (i = 0; module->si->provides[i]; i++) {
-     struct einit_event eei = evstaticinit ((task & einit_module_enable) ? einit_core_service_enabling : einit_core_service_disabling);
-     eei.string = module->si->provides[i];
-     event_emit (&eei, einit_event_flag_broadcast);
-     evstaticdestroy (eei);
-    }
-
-   struct einit_event ees = evstaticinit (einit_core_service_update);
-   ees.task = task;
-   ees.status = status_working;
-   ees.string = (module->module && module->module->rid) ? module->module->rid : module->si->provides[0];
-   ees.set = (void **)module->si->provides;
-   ees.para = (void *)module;
-   event_emit (&ees, einit_event_flag_broadcast);
-   evstaticdestroy (ees);
-  }
- }
+ mod_emit_pre_hook_event (module, task);
 
 /* actual loading bit */
  {
-  fb = evinit (einit_feedback_module_status);
-  fb->para = (void *)module;
-  fb->task = task;
-  fb->status = status_working;
-  fb->flag = 0;
-  fb->string = NULL;
-  fb->stringset = set_str_add_stable (NULL, (module->module && module->module->rid) ? module->module->rid : module->si->provides[0]);
-
+  fb = mod_initialise_feedback_event (module, task);
   event_emit(fb, einit_event_flag_broadcast);
 
   if (task & einit_module_custom) {
@@ -366,26 +387,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
     }
   }
 
-  fb->status = module->status;
-
-  event_emit(fb, einit_event_flag_broadcast);
-
-/* module status update */
-  {
-/* service status update */
-   char *nserv[] = { "no-service", NULL };
-
-    struct einit_event ees = evstaticinit (einit_core_service_update);
-    ees.task = task;
-    ees.status = fb->status;
-    ees.string = (module->module && module->module->rid) ? module->module->rid : "??";
-    ees.set = (void **)((module->si && module->si->provides) ? module->si->provides : nserv);
-    ees.para = (void *)module;
-    event_emit (&ees, einit_event_flag_broadcast);
-    evstaticdestroy (ees);
-  }
-
-  efree (fb->stringset);
+  mod_completion_handler (module, fb, task);
   evdestroy (fb);
  }
 
@@ -400,7 +402,27 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  return module->status;
 }
 
-int mod_complete (char *rid, enum einit_module_status status) {
+int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status) {
+ if (!rid) return status_failed;
+
+ struct lmodule *module = mlist;
+ while (module) {
+  if (module->module && module->module->rid && strmatch (module->module->rid, rid)) {
+   break;
+  }
+
+  module = module->next;
+ }
+
+ if (!module) return status_failed;
+
+ struct einit_event *fb = mod_initialise_feedback_event (module, task);
+
+ mod_completion_handler (module, fb, task);
+ evdestroy (fb);
+
+ mod_update_usage_table(module);
+
  return status;
 }
 
