@@ -56,6 +56,11 @@ extern char shutting_down;
 pthread_mutex_t mlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t update_critical_phase_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct service_usage_item {
+ struct lmodule **provider;
+ struct lmodule **users;
+};
+
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -117,6 +122,10 @@ pthread_mutex_t mod_blocked_rids_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
+
+/* if (module) {
+  fprintf (stderr, " * mod_add(*, %s)\n", module->rid);
+ }*/
 
  emutex_lock (&mod_blocked_rids_mutex);
  if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {

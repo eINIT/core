@@ -77,9 +77,6 @@ pid_t einit_sub = 0;
 
 char **einit_global_environment = NULL, **einit_initial_environment = NULL, **einit_argv = NULL;
 
-struct cfgnode *cmode = NULL, *amode = NULL;
-enum einit_mode coremode = einit_mode_init;
-
 pthread_key_t einit_function_macro_key;
 
 /* some more variables that are only of relevance to main() */
@@ -231,8 +228,6 @@ int main(int argc, char **argv, char **environ) {
  prctl (PR_SET_NAME, "einit [core]", 0, 0, 0);
 #endif
 
- boottime = time(NULL);
-
  uname (&osinfo);
  config_configure();
 
@@ -275,7 +270,7 @@ int main(int argc, char **argv, char **environ) {
       return print_usage_info ();
      else if (strmatch(argv[i], "--sandbox")) {
       einit_default_startup_configuration_files[0] = "lib/einit/einit.xml";
-      coremode = einit_mode_sandbox;
+      coremode |= einit_mode_sandbox;
       need_recovery = 1;
      } else if (strmatch(argv[i], "--recover")) {
       need_recovery = 1;

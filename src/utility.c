@@ -92,10 +92,12 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
 #if 0
  if (!recurse)
 #endif
- if (coremode == einit_mode_sandbox) {
+ if (coremode & einit_mode_sandbox) {
 // override path in sandbox-mode to be relative
-  if (path[0] == '/') path++;
+  while (path[0] == '/') path++;
  }
+
+ if (!path[0]) return NULL;
 
  mplen = strlen(path) + 4;
  px = emalloc (mplen);
@@ -105,7 +107,6 @@ char **readdirfilter (struct cfgnode const *node, const char *default_dir, const
   px[mplen-4] = '/';
   px[mplen-3] = 0;
  }
-
 
  if (allow) {
   haveallowpattern = !eregcomp (&allowpattern, allow);

@@ -232,25 +232,6 @@ struct lmodule {
  int (*recover) (struct lmodule *);             /*!< Pointer to the module's recover()-function */
 };
 
-/*!\brief Service-usage information.
- * \ingroup serviceusagequeries
- *
- * This struct is used as values for the service_usage stree.
-*/
-struct service_usage_item {
- struct lmodule **provider;  /*!< the modules that currently provide this service */
- struct lmodule **users;     /*!< the modules that currently use this service */
-};
-
-/*!\brief Service-usage information.
- * \ingroup serviceusagequeries
- *
- * This stree is used to figure out what services are currently being provided, and which services depend
- * on which services.
-*/
-struct stree *service_usage;
-struct stree *service_aliases;
-
 /*!\brief Scan for modules
  *
  * This will scan the configuration file to find the path where module .so files can be found,

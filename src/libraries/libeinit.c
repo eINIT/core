@@ -75,18 +75,15 @@ struct exported_function *cfg_filter_fs = NULL;
 struct exported_function *cfg_getpath_fs = NULL;
 struct exported_function *cfg_prefix_fs = NULL;
 
-struct cfgnode *cmode = NULL, *amode = NULL;
-time_t boottime = 0;
-enum einit_mode coremode = 0;
-const struct smodule **coremodules[MAXMODULES] = { NULL };
 char **einit_initial_environment = NULL;
 char **einit_global_environment = NULL;
-struct stree *service_aliases = NULL;
-struct stree *service_usage = NULL;
 char einit_new_node = 0;
 struct stree *exported_functions = NULL;
 struct utsname osinfo = {};
 #endif
+
+struct cfgnode *cmode = NULL, *amode = NULL;
+enum einit_mode coremode = einit_mode_init;
 
 void einit_power_down () {
  einit_switch_mode ("power-down");

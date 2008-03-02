@@ -85,10 +85,9 @@ struct utsname osinfo;
 
 struct cfgnode *cmode, *amode;
 
-time_t boottime;
 char einit_new_node;
 
-enum einit_mode coremode;
+extern enum einit_mode coremode;
 
 char **einit_global_environment,
      **einit_initial_environment;
