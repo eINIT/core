@@ -73,10 +73,6 @@ int main(int, char **, char **);
 int print_usage_info ();
 int cleanup ();
 
-pid_t einit_sub = 0;
-
-char **einit_global_environment = NULL, **einit_initial_environment = NULL, **einit_argv = NULL;
-
 pthread_key_t einit_function_macro_key;
 
 /* some more variables that are only of relevance to main() */
