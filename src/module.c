@@ -58,8 +58,6 @@ pthread_mutex_t update_critical_phase_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct stree *service_usage = NULL;
 pthread_mutex_t service_usage_mutex = PTHREAD_MUTEX_INITIALIZER;
-int modules_work_count = 0;
-time_t modules_last_change = 0;
 
 struct lmodule *mod_update (struct lmodule *module) {
  if (!module->module) return module;
@@ -212,7 +210,7 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  struct einit_event *fb;
  unsigned int ret;
 
- if (!module) return 0;
+ if (!module || !module->module) return 0;
 
  emutex_lock (&module->mutex);
 
@@ -271,8 +269,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
 /* inform everyone about what's going to happen */
  {
-  modules_work_count++;
-
 /* same for services */
   if (module->si && module->si->provides) {
    int i = 0;
@@ -300,13 +296,13 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  {
   fb = evinit (einit_feedback_module_status);
   fb->para = (void *)module;
-  fb->task = task | einit_module_feedback_show;
+  fb->task = task;
   fb->status = status_working;
   fb->flag = 0;
   fb->string = NULL;
   fb->stringset = set_str_add_stable (NULL, (module->module && module->module->rid) ? module->module->rid : module->si->provides[0]);
-  fb->integer = module->fbseq+1;
-  status_update (fb);
+
+  event_emit(fb, einit_event_flag_broadcast);
 
   if (task & einit_module_custom) {
    if (strmatch (custom_command, "zap")) {
@@ -338,11 +334,8 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
   }
 
   fb->status = module->status;
-  module->fbseq = fb->integer + 1;
 
-  status_update (fb);
-//  event_emit(fb, einit_event_flag_broadcast);
-//  if (fb->task & einit_module_feedback_show) fb->task ^= einit_module_feedback_show; fb->string = NULL;
+  event_emit(fb, einit_event_flag_broadcast);
 
 /* module status update */
   {
@@ -361,8 +354,6 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 
   efree (fb->stringset);
   evdestroy (fb);
-
-  modules_work_count--;
  }
 
  mod_update_usage_table(module);
@@ -386,7 +377,6 @@ void mod_update_usage_table (struct lmodule *module) {
  char **enabled = NULL;
 
  emutex_lock (&service_usage_mutex);
- modules_last_change = time(NULL);
 
  if (module->status & status_enabled) {
   if (module->si) {

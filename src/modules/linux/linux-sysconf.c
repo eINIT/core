@@ -310,9 +310,6 @@ int linux_sysconf_enable (void *pa, struct einit_event *status) {
 
       fbprintf (status, "kexec configured. reboot command will be: %s", linux_reboot_use_kexec_command);
      } else {
-      status->flag++;
-      status_update (status);
-
       fbprintf (status, "executing kexec-load command has failed (%s)", execdata);
      }
 

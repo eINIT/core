@@ -118,8 +118,7 @@ enum einit_module_task {
 /*!< Command for mod(): Disable specified module. */
  einit_module_custom              = 0x0004,
 /*!< Execute a custom action. */
- einit_module_feedback_show       = 0x0100,
-/*!< Option set by mod(): Show feedback. */
+
  einit_module_ignore_dependencies = 0x0800,
 /*!< Option: Ignore dependencies on module status change with mod() */
 };
@@ -227,7 +226,6 @@ struct lmodule {
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
  const struct smodule *module;                  /*!< Pointer to the static module definition */
  struct lmodule *next;                          /*!< Pointer to the next module in the list */
- uint32_t fbseq;                                /*!< Feedback sequence-number */
  struct service_information *si;
 
  char **functions;                              /*!< field for custom functions */
@@ -318,26 +316,12 @@ char **service_usage_query_cr (enum einit_usage_query task, const struct lmodule
 */
 void mod_event_handler(struct einit_event *event);
 
-extern int    modules_work_count;
-extern time_t modules_last_change;
-
-/*!\brief Update status information.
- * \ingroup statusinformation
- * \param[in] a The status information that is to be updated. Use your module-function's second parametre here.
- *
- * This macro should be used to provide any feedback-modules with updated status information.
-*/
-#if 0
-#define status_update(a) \
- event_emit(a, einit_event_flag_broadcast | einit_event_flag_spawn_thread | einit_event_flag_duplicate); \
- if (a->task & einit_module_feedback_show) a->task ^= einit_module_feedback_show; a->string = NULL
-#else
-#define status_update(a) \
- event_emit(a, einit_event_flag_broadcast); \
- if (a->task & einit_module_feedback_show) a->task ^= einit_module_feedback_show; a->string = NULL
-#endif
-
-#define fbprintf(statusvar, ...) if (statusvar) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); statusvar->string = _notice_buffer; status_update (statusvar); }
+#define fbprintf(statusvar, ...) if (statusvar) {\
+ char _fbprintf_buffer[BUFFERSIZE];\
+ snprintf (_fbprintf_buffer, BUFFERSIZE, __VA_ARGS__);\
+ statusvar->string = _fbprintf_buffer;\
+ event_emit(statusvar, einit_event_flag_broadcast); \
+ statusvar->string = NULL; }
 
 extern const struct smodule **coremodules[MAXMODULES];
 

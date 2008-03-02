@@ -1852,9 +1852,6 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
  if (mount_fsck_template) {
   char *command;
 
-/*  status->string = "filesystem might be dirty; running fsck";
-  status_update (status);*/
-
   char **d = set_str_add_stable (set_str_add_stable ((fs ? set_str_add_stable (set_str_add_stable ((char **)NULL, "fs"), fs) : NULL), "device"), device);
 
   command = apply_variables(mount_fsck_template, (const char **)d);
@@ -1862,9 +1859,6 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
 
    if (coremode != einit_mode_sandbox) {
     pexec_v1 (command, NULL, NULL, status);
-   } else {
-    status->string = command;
-    status_update (status);
    }
 
    efree (command);
@@ -1872,8 +1866,7 @@ int mount_fsck (char *fs, char *device, struct einit_event *status) {
 
   efree (d);
  } else {
-  status->string = "WARNING: no fsck command known";
-  status_update (status);
+  fbprintf (status, "WARNING: no fsck command known");
  }
 
  return status_ok;
@@ -1910,8 +1903,7 @@ int mount_do_mount_generic (char *mountpoint, char *fs, struct device_data *dd, 
 #endif
    {
     mount_panic:
-     status->flag++;
-     status_update (status);
+
      if (mp->after_umount)
       pexec_v1 (mp->after_umount, (const char **)mp->variables, NULL, status);
      return status_failed;

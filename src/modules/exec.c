@@ -459,11 +459,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
  if (!(options & pexec_option_nopipe)) {
   if (pipe (pipefderr)) {
-   if (status) {
-    status->string = "failed to create pipe";
-    status_update (status);
-    status->string = strerror (errno);
-   }
+   fbprintf (status, "failed to create pipe: %s", strerror (errno));
    return status_failed;
   }
 /* make sure the read end won't survive an exec*() */
@@ -477,12 +473,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
    bitch (bitch_stdio, errno, "can't set pipe (write end) to non-blocking mode!");
   }
  }
-
-/* if (status) {
-  status->string = (char *)command;
-  status_update (status);
- }*/
-// notice (10, (char *)command);
 
  char **exec_environment;
 
@@ -600,24 +590,15 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
 
        if (strmatch (fbc[1], "notice")) {
         orest = 0;
-        status->string = fbc[2];
-        status_update (status);
-       } else if (strmatch (fbc[1], "warning")) {
-        orest = 0;
-        status->string = fbc[2];
-        status->flag++;
-        status_update (status);
+        fbprintf (status, "%s", fbc[2]);
        } else if (strmatch (fbc[1], "success")) {
         orest = 0;
         cs = status_ok;
-        status->string = fbc[2];
-        status_update (status);
+        fbprintf (status, "%s", fbc[2]);
        } else if (strmatch (fbc[1], "failure")) {
         orest = 0;
         cs = status_failed;
-        status->string = fbc[2];
-        status->flag++;
-        status_update (status);
+        fbprintf (status, "%s", fbc[2]);
        }
       }
 
@@ -625,8 +606,7 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
      }
 
      if (orest) {
-      status->string = rxbuffer;
-      status_update (status);
+      fbprintf (status, "%s", rxbuffer);
      }
 
      continue;
@@ -765,15 +745,11 @@ void *dexec_watcher (pid_t pid) {
    if (((cur->starttime + spawn_timeout) < time(NULL))) {
     struct einit_event fb = evstaticinit(einit_feedback_module_status);
     fb.para = (void *)module;
-    fb.task = einit_module_enable | einit_module_feedback_show;
+    fb.task = einit_module_enable;
     fb.status = status_working;
     fb.flag = 0;
 
-    esprintf (stmp, BUFFERSIZE, "einit-mod-daemon: resurrecting \"%s\".\n", rid);
-    fb.string = stmp;
-    if (module)
-     fb.integer = module->fbseq+1;
-    status_update ((&fb));
+    fbprintf ((&fb), "einit-mod-daemon: resurrecting \"%s\".\n", rid);
 
     dx->cb = NULL;
     start_daemon_f (dx, &fb);
@@ -813,10 +789,7 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   pidfile = NULL;
 
   if (pidexists (pid)) {
-   if (status) {
-    fbprintf (status, "Module's PID-file already exists and is valid.");
-    status_update (status);
-   }
+   fbprintf (status, "Module's PID-file already exists and is valid.");
 
    struct daemonst *new = ecalloc (1, sizeof (struct daemonst));
    new->starttime = time (NULL);
@@ -899,12 +872,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
  if (shellcmd->options & daemon_model_forking) {
   int retval;
-#if 0
-  if (status) {
-   fbprintf (status, "forking daemon");
-   status_update (status);
-  }
-#endif
 
   if (shellcmd && shellcmd->script && shellcmd->script_actions && inset ((const void **)shellcmd->script_actions, "daemon", SET_TYPE_STRING)) {
    ssize_t nclen = strlen (shellcmd->script) + 8;
@@ -938,13 +905,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
 //   einit_exec_update_daemons_from_pidfiles(); /* <-- that one didn't make sense? */
 
-#if 0
-   if (status) {
-    fbprintf (status, "daemon started OK");
-    status_update (status);
-   }
-#endif
-
    return status_ok;
   } else
    return status_failed;
@@ -959,13 +919,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   emutex_init (&new->mutex, NULL);
 
   shellcmd->cb = new;
-
-#if 0
-  if (status) {
-   status->string = shellcmd->command;
-   status_update (status);
-  }
-#endif
 
   char **daemon_environment;
 
@@ -1118,15 +1071,10 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
   pthread_mutex_trylock (&shellcmd->cb->mutex);
   shellcmd->cb->timer = kill_timeout_primary;
 
-  if (status) {
-   fbprintf (status, "sending SIGTERM, daemon has %i seconds to exit...", kill_timeout_primary);
-   status_update (status);
-  }
+  fbprintf (status, "sending SIGTERM, daemon has %i seconds to exit...", kill_timeout_primary);
+
   if (kill (shellcmd->cb->pid, SIGTERM)) {
-   if (status) {
-    fbprintf (status, "failed to send SIGTERM: %s", strerror (errno));
-    status_update (status);
-   }
+   fbprintf (status, "failed to send SIGTERM: %s", strerror (errno));
    notice (1, "failed to send SIGTERM to a daemon: %s; assuming it's dead.", strerror (errno));
 
    goto assume_dead;
@@ -1137,10 +1085,7 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
 
   if (pidexists(pid)) { // still up?
    if (shellcmd->cb->timer <= 0) { // this means we came here because the timer ran out
-    if (status) {
-     status->string = "SIGTERM timer ran out, killing...";
-     status_update (status);
-    }
+    fbprintf (status, "SIGTERM timer ran out, killing...");
 
     ethread_cancel (th);
     pthread_mutex_trylock (&shellcmd->cb->mutex);
@@ -1151,20 +1096,14 @@ int stop_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     emutex_lock (&shellcmd->cb->mutex);
    }
   } else {
-   if (status) {
-    fbprintf (status, "daemon seems to have exited gracefully.");
-    status_update (status);
-   }
+   fbprintf (status, "daemon seems to have exited gracefully.");
   }
   ethread_cancel (th);
 
   emutex_unlock (&shellcmd->cb->mutex); // just in case
   emutex_destroy (&shellcmd->cb->mutex);
  } else {
-  if (status) {
-   fbprintf (status, "No control block or PID invalid, skipping the killing.");
-   status_update (status);
-  }
+  fbprintf (status, "No control block or PID invalid, skipping the killing.");
  }
 
  assume_dead:
