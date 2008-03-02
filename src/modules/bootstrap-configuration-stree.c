@@ -500,7 +500,7 @@ void bootstrap_einit_configuration_stree_ipc_write (struct einit_event *ev) {
    notice (4, "event-subsystem: updating configuration");
    nev.string = NULL;
   } else {
-   notice (4, "updating configuration with file %s", ev->set[0]);
+   notice (4, "updating configuration with file %s", (char *)ev->set[0]);
    nev.string = ev->set[0];
   }
 

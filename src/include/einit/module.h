@@ -93,14 +93,18 @@ extern "C" {
 /*!\ingroup modulemdefinition
  * \{ */
 enum einit_module_options {
- einit_module_loader     = 0x1,
+ einit_module_loader        = 0x1,
 /*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
- einit_module_generic    = 0x4,
+ einit_module_generic       = 0x4,
 /*!< Module-type: Regular modules, i.e. those that provide services. */
- einit_module_deprecated = 0x10,
+ einit_module_deprecated    = 0x10,
 /*!< Module-option: Deprecated module: only try if nothing else worked */
 
- einit_feedback_job      = 0x1000
+ einit_module_event_actions = 0x100,
+/*!< Module-type: Special module that doesn't have any regular enable/disable/whatever actions, but is
+     instead relying on events for this purpose. */
+
+ einit_feedback_job         = 0x1000
 /*!< Feedback-option: Say "OK" when this module is enabled, don't say anything when disabled */
 };
 /*!\} */

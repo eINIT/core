@@ -1316,7 +1316,6 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   char disable_all = inset ((const void **)disable, (void *)"all", SET_TYPE_STRING);
 
   if (disable_all) {
-   struct stree *cur;
    char **tmp = mod_list_all_provided_services();
 
    if (disable) {

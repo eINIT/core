@@ -146,7 +146,6 @@ int ekill_f (struct pc_conditional **pcc, int sign) {
 
  for (; pl[i]; i++) if ((pl[i] != 1) && (pl[i] != getpid())) {
   if (coremode != einit_mode_sandbox) {
-   debugx(" >> sending signal %i to process %i\n", sign, pl[i]);
    kill ((pid_t)pl[i], sign);
   }
  }

@@ -54,6 +54,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <errno.h>
 
+#include <ctype.h>
+
 #include <signal.h>
 #include <pthread.h>
 #include <utmp.h>
@@ -275,7 +277,6 @@ int einit_tty_texec (struct cfgnode *node) {
     _exit (-1); /* never reached */
    } else if (cpid != -1) {
     int rstatus;
-    char exit_ok = 0;
 
     close (cpipes[1]);
 

@@ -108,7 +108,7 @@ int initctl_wait (char *fifo) {
 //  INITCTL_CMD_START: what's that do?
 //  INITCTL_CMD_UNSETENV is deliberately ignored
     if (ic.command == INITCTL_CMD_RUNLVL) { // switch runlevels (modes...)
-     char tmp[BUFFERSIZE], *nmode = NULL;
+     char *nmode = NULL;
 
      switch (ic.runlevel) {
       case '0': nmode = RUNLEVEL_0; break;

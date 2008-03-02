@@ -89,14 +89,11 @@ time_t boottime;
 char einit_new_node;
 
 enum einit_mode coremode;
-unsigned char *gdebug;
 
 char **einit_global_environment,
      **einit_initial_environment;
 
 extern char **einit_argv;
-
-int einit_have_feedback;
 
 extern int einit_core_niceness_increment;
 extern int einit_task_niceness_increment;

@@ -365,8 +365,6 @@ void sched_run_sigchild () {
 
   if (sigint_called) {
    shutting_down = 1;
-   debug ("scheduler SIGCHLD thread: making eINIT shut down\n");
-
    struct einit_event ee = evstaticinit (einit_core_switch_mode);
    ee.string = "power-reset";
 

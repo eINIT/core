@@ -54,7 +54,6 @@ int bitch_macro (enum bitch_sauce sauce, const char *file, const int line, const
  const char *lreason        = reason ? reason : "unknown";
  const int lerror           = error ? error : errno;
  const int lline            = line ? line : 0;
- const unsigned char lsauce = (sauce < BITCH_SAUCES) ? sauce : bitch_bad_sauce;
 
  switch (sauce) {
   case bitch_regex:

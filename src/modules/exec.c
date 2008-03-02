@@ -1053,7 +1053,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
    }
   } else {
    int rstatus;
-   char exit_ok = 0;
 
    close (cpipes[1]);
 

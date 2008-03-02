@@ -147,6 +147,8 @@ Ixp9Req *ipc_9p_respond_serialise (Ixp9Req *r, const char *m) {
  emutex_lock (&einit_ipc_9p_event_respond_mutex);
  respond (r, (char *)m);
  emutex_unlock (&einit_ipc_9p_event_respond_mutex);
+
+ return r;
 }
 
 struct ipc_9p_filedata *ipc_9p_filedata_dup (struct ipc_9p_filedata *d) {

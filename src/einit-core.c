@@ -79,7 +79,6 @@ char **einit_global_environment = NULL, **einit_initial_environment = NULL, **ei
 
 struct cfgnode *cmode = NULL, *amode = NULL;
 enum einit_mode coremode = einit_mode_init;
-unsigned char *gdebug = 0;
 
 pthread_key_t einit_function_macro_key;
 
@@ -91,8 +90,6 @@ char *einit_default_startup_mode_switches[] = { "default", NULL };  // the list 
 
 // the list of files to  parse by default
 char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NULL };
-
-int einit_have_feedback = 0;
 
 struct lmodule *mlist;
 
@@ -135,7 +132,6 @@ int cleanup () {
 #endif
 
 void core_einit_event_handler_configuration_update (struct einit_event *ev) {
- struct cfgnode *node;
  char *str;
 
  ev->chain_type = einit_core_update_modules;
@@ -214,7 +210,7 @@ void core_event_einit_boot_root_device_ok (struct einit_event *ev) {
 
 /* t3h m41n l00ps0rzZzzz!!!11!!!1!1111oneeleven11oneone11!!11 */
 int main(int argc, char **argv, char **environ) {
- int i, ret = EXIT_SUCCESS;
+ int i;
  int pthread_errno;
  FILE *commandpipe_in = NULL;
  char need_recovery = 0;
@@ -419,7 +415,6 @@ int main(int argc, char **argv, char **environ) {
    evstaticdestroy(eml);
   } else {
 /* actual init code */
-   uint32_t e = 0;
    event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
 
    nice (einit_core_niceness_increment);

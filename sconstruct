@@ -21,6 +21,8 @@ env = Environment(options = opts,
  CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat', '#run-init'],
  LDMODULEPREFIX='', LDMODULESUFFIX='.so')
 
+env.Append (CFLAGS = '-Wall')
+
 if os.environ.has_key('CFLAGS'):
  env.Append (CFLAGS = os.environ['CFLAGS'])
 

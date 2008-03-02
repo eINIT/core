@@ -1260,8 +1260,6 @@ char **utility_add_all_in_path (char **rv) {
  char **env;
 
  for (; n < 2; n++) {
-  struct stat st;
-
   switch (n) {
    case 0: env = einit_global_environment; break;
    case 1: env = einit_initial_environment; break;

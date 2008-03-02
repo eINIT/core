@@ -153,24 +153,6 @@ void notice_macro (unsigned char severity, const char *message);
 
 #define notice(severity, ...) { char _notice_buffer[BUFFERSIZE]; snprintf (_notice_buffer, BUFFERSIZE, __VA_ARGS__); notice_macro (severity, _notice_buffer); }
 
-#ifdef DEBUG
-
-/* debug messages... don't care if those can't be written */
-#define debugx(message, ...)\
- notice(10, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
-
-#define debug(message)\
- notice(10, "DEBUG: %s:%i(%s): " message "\n", __FILE__, __LINE__, __func__)
-
-#else
-
-#define debugx(message, ...) (0)
-
-#define debug(message) (0)
-
-#endif
-
-
 /*!\brief Duplicate event structure \b ev
  * \param[in] ev the event structure to be modified
  * \return This function will return a duplicate of the event structure that it was passed, or NULL on error.

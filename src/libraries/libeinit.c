@@ -81,12 +81,10 @@ enum einit_mode coremode = 0;
 const struct smodule **coremodules[MAXMODULES] = { NULL };
 char **einit_initial_environment = NULL;
 char **einit_global_environment = NULL;
-int einit_have_feedback = 1;
 struct stree *service_aliases = NULL;
 struct stree *service_usage = NULL;
 char einit_new_node = 0;
 struct stree *exported_functions = NULL;
-unsigned char *gdebug = 0;
 struct utsname osinfo = {};
 #endif
 
@@ -637,6 +635,8 @@ int einit_event_loop_decoder (char *fragment, size_t size, void *data) {
 
  evdestroy (ev);
  efree (buffer);
+
+ return 0;
 }
 
 void einit_event_loop () {

@@ -478,6 +478,11 @@ char *event_code_to_string (const uint32_t code) {
   case einit_core_service_disabling:           return "core/service-disabling";
   case einit_core_service_disabled:            return "core/service-disabled";
 
+  case einit_core_module_action_execute:       return "core/module-action-execute";
+  case einit_core_module_action_complete:      return "core/module-action-complete";
+
+  case einit_core_secondary_main_loop:         return "core/secondary-main-loop";
+
   case einit_core_crash_data:                  return "core/crash-data";
   case einit_core_recover:                     return "core/recover";
   case einit_core_main_loop_reached:           return "core/main-loop-reached";
@@ -598,6 +603,11 @@ uint32_t event_string_to_code (const char *code) {
      else if (strmatch (tcode[1], "service-enabled"))             ret = einit_core_service_enabled;
      else if (strmatch (tcode[1], "service-disabling"))           ret = einit_core_service_disabling;
      else if (strmatch (tcode[1], "service-disabled"))            ret = einit_core_service_disabled;
+
+     else if (strmatch (tcode[1], "module-action-execute"))       ret = einit_core_module_action_execute;
+     else if (strmatch (tcode[1], "module-action-complete"))      ret = einit_core_module_action_complete;
+
+     else if (strmatch (tcode[1], "secondary-main-loop"))         ret = einit_core_secondary_main_loop;
 
      else if (strmatch (tcode[1], "crash-data"))                  ret = einit_core_crash_data;
      else if (strmatch (tcode[1], "recover"))                     ret = einit_core_recover;

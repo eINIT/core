@@ -240,8 +240,6 @@ void progressbar (char *label, int p) {
 }
 
 void display_name(char *rid) {
- char buffer[BUFFERSIZE];
-
  if (status_tree) {
   struct stree *st = streefind (status_tree, rid, tree_find_first);
 
@@ -261,8 +259,6 @@ void display_name(char *rid) {
 }
 
 void display_status(char *rid) {
- char buffer[BUFFERSIZE];
-
  if (status_tree) {
   struct stree *st = streefind (status_tree, rid, tree_find_first);
 
