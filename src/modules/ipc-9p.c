@@ -809,7 +809,8 @@ void *einit_ipc_9p_thread_function (void *unused_parameter) {
 
  einit_ipc_9p_listen((void *)fd);
 
- notice (1, "einit-9p: function returned, waiting 5s before respawning");
+ if (einit_ipc_9p_running)
+  notice (1, "einit-9p: function returned, waiting 5s before respawning");
 
  sleep (5);
  return einit_ipc_9p_thread_function (NULL);

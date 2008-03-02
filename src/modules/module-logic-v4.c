@@ -1261,7 +1261,7 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
 
  char **enable = *enable_r, **disable = *disable_r;
 
- char **tmplist, *tmpstring;
+ char **tmplist;
  if ((tmplist = str2set (':', cfg_getstring ("enable/services", mode)))) {
   int i = 0;
   for (; tmplist[i]; i++) {
@@ -1284,7 +1284,9 @@ struct cfgnode *module_logic_prepare_mode_switch (char *modename, char ***enable
   efree (tmplist);
  }
 
- if ((tmpstring = cfg_getstring ("options/shutdown", mode)) && parse_boolean(tmpstring)) {
+ if (strmatch (modename, "power-down")) {
+  shutting_down = 1;
+ } else if (strmatch (modename, "power-reset")) {
   shutting_down = 1;
  }
 
@@ -1397,7 +1399,6 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
   struct cfgnode *mode = module_logic_prepare_mode_switch (ev->string, &enable, &disable);
 
   if (mode) {
-   char *cmdt;
    cmode = mode;
 
    struct einit_event eex = evstaticinit (einit_core_mode_switching);
@@ -1406,8 +1407,12 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    event_emit (&eex, einit_event_flag_broadcast);
    evstaticdestroy (eex);
 
-   if ((cmdt = cfg_getstring ("before-switch/emit-event", cmode))) {
-    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   if (strmatch (ev->string, "power-down")) {
+    struct einit_event ee = evstaticinit (einit_power_down_scheduled);
+    event_emit (&ee, einit_event_flag_broadcast);
+    evstaticdestroy (ee);
+   } else if (strmatch (ev->string, "power-reset")) {
+    struct einit_event ee = evstaticinit (einit_power_reset_scheduled);
     event_emit (&ee, einit_event_flag_broadcast);
     evstaticdestroy (ee);
    }
@@ -1464,13 +1469,15 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
    module_logic_wait_for_services_to_be_disabled(disable);
 
   if (mode) {
-   char *cmdt;
    cmode = mode;
    amode = mode;
 
-   if ((cmdt = cfg_getstring ("after-switch/emit-event", amode))) {
-//   notice (1, "emitting event");
-    struct einit_event ee = evstaticinit (event_string_to_code(cmdt));
+   if (strmatch (ev->string, "power-down")) {
+    struct einit_event ee = evstaticinit (einit_power_down_imminent);
+    event_emit (&ee, einit_event_flag_broadcast);
+    evstaticdestroy (ee);
+   } else if (strmatch (ev->string, "power-reset")) {
+    struct einit_event ee = evstaticinit (einit_power_reset_imminent);
     event_emit (&ee, einit_event_flag_broadcast);
     evstaticdestroy (ee);
    }

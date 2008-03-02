@@ -36,11 +36,8 @@ eINITMain =
   Subsystems ? &
   Mode * &
   Information ? &
-  element options { attribute shutdown { text }? }? &
   element ttys { TTYAttribute, attribute sysv-style { Boolean }? } ? &
-  element feedback-ttys { TTYAttribute } ? &
-  element before-switch { attribute emit-event { text }? } ? &
-  element after-switch { attribute emit-event { text }? } ?
+  element feedback-ttys { TTYAttribute } ?
 
 Core = element core {
   element settings {

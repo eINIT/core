@@ -230,9 +230,7 @@ struct einit_event {
 /*! additional parameters */
  union {
   struct cfgnode *node;
-  struct lmodule *module;
   void *para;
-  FILE *file;
  };
 
  char *rid;

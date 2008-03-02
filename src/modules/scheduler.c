@@ -304,56 +304,7 @@ void sched_signal_sigint (int signal, siginfo_t *siginfo, void *context) {
  return;
 }
 
-void *sched_pidthread_processor(FILE *pipe) {
- char buffer [BUFFERSIZE];
- char **message = NULL;
-
- do {
-  while (fgets (buffer, BUFFERSIZE, pipe) != NULL) {
-   if (strmatch (buffer, "\n")) { // message complete
-    if (message) {
-     if (message[0] && !message[1]) {
-      char **command = str2set (' ', message[0]);
-
-// parse the pid X (died|terminated) messages
-      if (strmatch (command [0], "pid") && command[1] && command [2] &&
-         (strmatch (command[2], "terminated") || strmatch (command[2], "died"))) {
-
-       struct einit_event ev = evstaticinit (einit_process_died);
-
-       ev.integer = parse_integer (command[1]);
-
-       event_emit (&ev, einit_event_flag_broadcast | einit_event_flag_duplicate | einit_event_flag_spawn_thread);
-
-       evstaticdestroy(ev);
-      }
-
-      efree (command);
-     } else {
-      char *noticebuffer = set2str ('\n', (const char **)message);
-
-      efree (noticebuffer);
-     }
-
-     efree (message);
-     message = NULL;
-    }
-   } else { // continue constructing
-    strtrim(buffer);
-
-    message = set_str_add_stable (message, buffer);
-   }
-  }
- } while (1);
-
- return NULL;
-}
-
 void sched_einit_event_handler_main_loop_reached (struct einit_event *ev) {
- if (ev->file) {
-  ethread_spawn_detached ((void *(*)(void *))sched_pidthread_processor, (void *)ev->file);
- }
-
  sched_run_sigchild();
 }
 
