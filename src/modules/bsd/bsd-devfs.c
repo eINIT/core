@@ -110,6 +110,10 @@ void bsd_devfs_boot_event_handler_early (struct einit_event *ev) {
   struct einit_event eml = evstaticinit(einit_boot_devices_available);
   event_emit (&eml, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
   evstaticdestroy(eml);
+
+  struct einit_event erl = evstaticinit(einit_boot_root_device_ok);
+  event_emit (&erl, einit_event_flag_broadcast | einit_event_flag_spawn_thread_multi_wait);
+  evstaticdestroy(erl);
  }
 }
 
