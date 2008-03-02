@@ -37,13 +37,14 @@
 
 #define SLOW 5.0
 
-static int fb, console_fd, orig_vt;
 struct fb_var_screeninfo fb_var;
 
 int WIDTH = 800;
 int HEIGHT = 600;
 
-int *num = 0;
+static int  vtno;
+int  LinuxConsoleFd;
+static int  activeVT;
 
 Evas_Object *base_rect;
 Ecore_Evas  *ecore_evas;
@@ -66,24 +67,6 @@ void event_handler_feedback_notice (struct einit_event *ev) {
 		char msg[BUFFERSIZE];
 		snprintf (msg, BUFFERSIZE, "[notice] %i: %s\n", ev->flag, ev->string);
 		Evas_Object *o = create_text_object(msg);
-		num++;
-		char *s;
-		sprintf(s,"%d",num);
-		msg_tree = streeadd(msg_tree,s,o,sizeof(msg),NULL);
-	    int i;
-	    Evas_Coord x, y, w, h;
-	    for (i = 0; i < *num; i++) {
-	    	char *t;
-	    	sprintf(t,"%d",i);
-	    	struct stree *obj = streefind (msg_tree, t, tree_find_first);
-	    	evas_object_geometry_get(obj->value, NULL, NULL, &w, &h);
-			x = (WIDTH / 2) - (w / 2);
-			x += sin((double)(1 + (i * 13)) / (36.7 * SLOW)) * (w / 2);
-			y = (HEIGHT / 2) - (h / 2);
-			y += cos((double)(1 + (i * 28)) / (43.8 * SLOW)) * (w / 2);
-			evas_object_move(obj->value, x, y);
-			evas_object_show(obj->value);
-	    }
 	}
 }
 
@@ -92,24 +75,6 @@ void event_handler_update_module_status (struct einit_event *ev) {
 		char msg[BUFFERSIZE];
 		snprintf (msg, BUFFERSIZE, "[%s] %s\n", ev->rid, ev->string);
 		Evas_Object *o = create_text_object(msg);
-		num++;
-		char *s;
-		sprintf(s,"%d",num);
-		msg_tree = streeadd(msg_tree,s,o,sizeof(msg),NULL);
-	    int i;
-	    Evas_Coord x, y, w, h;
-	    for (i = 0; i < *num; i++) {
-	    	char *t;
-	    	sprintf(t,"%d",i);
-	    	struct stree *obj = streefind (msg_tree, t, tree_find_first);
-	    	evas_object_geometry_get(obj->value, NULL, NULL, &w, &h);
-			x = (WIDTH / 2) - (w / 2);
-			x += sin((double)(1 + (i * 13)) / (36.7 * SLOW)) * (w / 2);
-			y = (HEIGHT / 2) - (h / 2);
-			y += cos((double)(1 + (i * 28)) / (43.8 * SLOW)) * (w / 2);
-			evas_object_move(obj->value, x, y);
-			evas_object_show(obj->value);
-	    }
 	}
 }
 
@@ -117,48 +82,12 @@ void event_handler_update_service_enabled (struct einit_event *ev) {
 	char msg[BUFFERSIZE];
 	snprintf (msg, BUFFERSIZE, "[%s] enabled\n", ev->string);
 	Evas_Object *o = create_text_object(msg);
-	num++;
-	char *s;
-	sprintf(s,"%d",num);
-	msg_tree = streeadd(msg_tree,s,o,sizeof(msg),NULL);
-    int i;
-    Evas_Coord x, y, w, h;
-    for (i = 0; i < *num; i++) {
-    	char *t;
-    	sprintf(t,"%d",i);
-    	struct stree *obj = streefind (msg_tree, t, tree_find_first);
-    	evas_object_geometry_get(obj->value, NULL, NULL, &w, &h);
-		x = (WIDTH / 2) - (w / 2);
-		x += sin((double)(1 + (i * 13)) / (36.7 * SLOW)) * (w / 2);
-		y = (HEIGHT / 2) - (h / 2);
-		y += cos((double)(1 + (i * 28)) / (43.8 * SLOW)) * (w / 2);
-		evas_object_move(obj->value, x, y);
-		evas_object_show(obj->value);
-    }
 }
 
 void event_handler_update_service_disabled (struct einit_event *ev) {
 	char msg[BUFFERSIZE];
 	snprintf (msg, BUFFERSIZE, "[%s] disabled\n", ev->string);
 	Evas_Object *o = create_text_object(msg);
-	num++;
-	char *s;
-	sprintf(s,"%d",num);
-	msg_tree = streeadd(msg_tree,s,o,sizeof(msg),NULL);
-    int i;
-    Evas_Coord x, y, w, h;
-    for (i = 0; i < *num; i++) {
-    	char *t;
-    	sprintf(t,"%d",i);
-    	struct stree *obj = streefind (msg_tree, t, tree_find_first);
-    	evas_object_geometry_get(obj->value, NULL, NULL, &w, &h);
-		x = (WIDTH / 2) - (w / 2);
-		x += sin((double)(1 + (i * 13)) / (36.7 * SLOW)) * (w / 2);
-		y = (HEIGHT / 2) - (h / 2);
-		y += cos((double)(1 + (i * 28)) / (43.8 * SLOW)) * (w / 2);
-		evas_object_move(obj->value, x, y);
-		evas_object_show(obj->value);
-    }
 }
 
 void help (char **argv) {
@@ -180,12 +109,7 @@ void key_down(void *data, Evas *e, Evas_Object *obj, void *event_info) {
 		/* 
 		 * Try to switch back to original console
 		 */
-		if ((ioctl(console_fd, VT_ACTIVATE, orig_vt) == -1) ||
-				(ioctl(console_fd, VT_WAITACTIVE, orig_vt) == -1)) {
-			fprintf(stderr, "Error: Could not switch vt\n");
-		} else {
-			system("/usr/bin/chvt 1");
-		}
+
 		ecore_timer_add(1.0, really_quit, NULL);
 	}
 }
@@ -194,6 +118,19 @@ static int main_signal_exit(void *data, int ev_type, void *ev) {
 	ecore_timer_add(1.0, really_quit, NULL);
 	return 1;
 }
+
+void check_chown (char *file) {
+    struct stat	    st;
+    __uid_t	    u;
+    __gid_t	    g;
+    if (stat (file, &st) < 0)
+	return;
+    u = getuid ();
+    g = getgid ();
+    if (st.st_uid != u || st.st_gid != g)
+	chown (file, u, g);
+}
+
 
 int main(int argc, char **argv, char **env) {
 	/*
@@ -225,6 +162,7 @@ int main(int argc, char **argv, char **env) {
 	/*
 	 * Get framebuffer resolution
 	 */
+	int fb;
 	if (-1 == (fb = open("/dev/fb0",O_RDWR /* O_WRONLY */))) {
 		fprintf(stderr,"open /dev/fb0: %s\n",strerror(errno));
 		exit(EXIT_FAILURE);
@@ -236,7 +174,25 @@ int main(int argc, char **argv, char **env) {
 	close(fb);
 	WIDTH = fb_var.xres;
 	HEIGHT = fb_var.yres;
-
+	
+	/*
+	 * Get current tty
+	 */
+    int fd;
+    char vtname[11];
+    struct vt_stat vts;
+    struct stat	statb;
+    LinuxConsoleFd = -1;
+    if ((fd = open("/dev/tty0",O_WRONLY,0)) < 0) return EXIT_FAILURE;
+    if ((ioctl(fd, VT_OPENQRY, &vtno) < 0) || (vtno == -1)) close(fd);
+    sprintf(vtname,"/dev/tty%d",vtno);
+    if ((LinuxConsoleFd = open(vtname, O_RDWR|O_NDELAY, 0)) < 0) return EXIT_FAILURE;
+    check_chown(vtname);
+    check_chown("/dev/tty0");
+    if (ioctl(LinuxConsoleFd, VT_GETSTATE, &vts) == 0) activeVT = vts.v_active;
+    printf("%d\n",activeVT);
+    sleep(5);
+	
 	/*
 	 * Init ecore-evas
 	 */
