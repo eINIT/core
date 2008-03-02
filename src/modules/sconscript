@@ -55,7 +55,8 @@ def buildBundle(target, name, modules_original, e):
 librt = [ 'rt' ]
 
 if uname == 'Darwin':
- menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
+# menv.Append (LINKFLAGS = '$LINKFLAGS -Wl,-bundle_loader,src/einit-core')
+ menv.Append (LINKFLAGS = '-flat_namespace -undefined suppress');
  librt = []
 
 def buildBundleET(target, name, items, dir, e):
