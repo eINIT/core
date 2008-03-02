@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname', 'have_efl', 'have_sdl'])
+Import(['env', 'InstallDirSbin', 'InstallDirLib', 'InstallDirLibBin', 'InternalModules', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable', 'uname'])
 
 import glob
 
@@ -18,7 +18,6 @@ CodeLastRites = ['last-rites.c']
 CodeEinitHelper = ['einit-helper.c']
 
 CodeEinitFeedbackD = ['einit-feedback.c']
-CodeEinitFeedbackDEvas = ['einit-feedback-evas.c']
 CodeEinitLogD = ['einit-log.c']
 
 CodeEinitSysVD = ['tools/einit-sysvd.c']
@@ -70,9 +69,3 @@ env.Install (InstallDirSbin, einitSysVD)
 
 env.Install (InstallDirInclude + '/einit', glob.glob ('include/einit/*'))
 env.Install (InstallDirInclude + '/einit-modules', glob.glob ('include/einit-modules/*'))
-
-# Optional Eye Candy :)
-
-if have_efl and have_sdl:
- einitFeedbackDEvas = env.Program ('einit-feedback-evas', CodeEinitFeedbackDEvas, LIBS=['einit', 'SDL', 'ecore_evas'], LIBPATH=['.'])
- env.Install (InstallDirLibBin, einitFeedbackDEvas)
