@@ -15,14 +15,6 @@
    <configuration-path s="/etc/einit/" />
   </settings>
 
-  <scheduler>
-   <shutdown-function-suffixes s="linux" />
-<!-- niceness increments:
-     'core' is relative to whatever the kernel set,
-     'tasks' is relative to the value set by core -->
-   <niceness core="0" tasks="0" />
-  </scheduler>
-
   <module-logic>
    <init.d-path s="/etc/einit/init.d/" />
    <maintain-init.d s="/lib/einit/scripts/einit.d_erc.sh" b="true" />
@@ -55,9 +47,6 @@
    <daemon-term-timeout-primary i="10" />
    <daemon-term-timeout-secondary i="2" />
    <shell s="/bin/sh -c" />
-   <shell-exec-timeout i="20" />
-   <proc-path s="/proc" />
-   <log b="true" />
    <preload b="no" binaries="agetty:getty:sh:udevd:dhcpcd:pump:modprobe:rmmod" />
 
    <device-manager s="udev" />

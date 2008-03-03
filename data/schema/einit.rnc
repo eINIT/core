@@ -1,5 +1,3 @@
-namespace execute = "http://www.einit.org"
-
 start = eINIT | Module | Network
 
 eINIT = element einit {
@@ -54,10 +52,6 @@ Core = element core {
     }? &
    element allow-code-unloading { BooleanAttribute }?
   }* &
-  element scheduler {
-    element shutdown-function-suffixes { StringAttribute }? &
-    element niceness { attribute core { text }, attribute tasks { text } }?
-  }* &
   element module-logic {
     element init.d-path { StringAttribute }? &
     element maintain-init.d { StringAttribute, BooleanAttribute }?
@@ -81,11 +75,7 @@ Configuration = element configuration {
     element daemon-term-timeout-primary { IntegerAttribute }* &
     element daemon-term-timeout-secondary { IntegerAttribute }* &
     element shell { StringAttribute }* &
-    element shell-exec-timeout { IntegerAttribute }* &
-    element exec-envfile-base { StringAttribute }* &
-    element proc-path { StringAttribute }* &
     element preload { attribute binaries { text }?, BooleanAttribute }* &
-    element log { BooleanAttribute }* &
 
     element device-manager { StringAttribute }? &
 

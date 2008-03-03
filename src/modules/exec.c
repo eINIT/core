@@ -513,9 +513,6 @@ int pexec_f (const char *command, const char **variables, uid_t uid, gid_t gid, 
   sched_yield();
 #endif
 
-  nice (-einit_core_niceness_increment);
-  nice (einit_task_niceness_increment);
-
   disable_core_dumps ();
 
 /* cause segfault */
@@ -678,9 +675,6 @@ int qexec_f (char *command) {
 #ifndef __linux__
   sched_yield();
 #endif
-
-  nice (-einit_core_niceness_increment);
-  nice (einit_task_niceness_increment);
 
   disable_core_dumps ();
 
@@ -978,9 +972,6 @@ int start_daemon_f (struct dexecinfo *shellcmd, struct einit_event *status) {
     case 0:
      {
       close (cpipes[1]);
-
-      nice (-einit_core_niceness_increment);
-      nice (einit_task_niceness_increment);
 
       disable_core_dumps ();
 

@@ -86,9 +86,6 @@ char *einit_default_startup_configuration_files[] = { "/lib/einit/einit.xml", NU
 
 struct lmodule *mlist;
 
-int einit_task_niceness_increment = 0;
-int einit_core_niceness_increment = 0;
-
 int print_usage_info () {
  eputs ("eINIT " EINIT_VERSION_LITERAL "\nCopyright (c) 2006-2008, Magnus Deininger\n"
   "Usage:\n"
@@ -128,12 +125,6 @@ void core_einit_event_handler_configuration_update (struct einit_event *ev) {
  char *str;
 
  ev->chain_type = einit_core_update_modules;
-
- if ((str = cfg_getstring ("core-scheduler-niceness/core", NULL)))
-  einit_core_niceness_increment = parse_integer (str);
-
- if ((str = cfg_getstring ("core-scheduler-niceness/tasks", NULL)))
-  einit_task_niceness_increment = parse_integer (str);
 }
 
 pthread_mutex_t core_modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -437,8 +428,6 @@ int main(int argc, char **argv, char **environ) {
   } else {
 /* actual init code */
    event_listen (einit_boot_root_device_ok, core_event_einit_boot_root_device_ok);
-
-   nice (einit_core_niceness_increment);
 
    if (need_recovery) {
     fprintf (stderr, "need to recover from something...\n");

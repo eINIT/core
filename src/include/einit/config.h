@@ -94,9 +94,6 @@ char **einit_global_environment,
 
 extern char **einit_argv;
 
-extern int einit_core_niceness_increment;
-extern int einit_task_niceness_increment;
-
 /* use this to define functions that take a tree of configuration nodes and turn it into a string (for saving) */
 typedef char *(*cfg_string_converter) (const struct stree *);
 

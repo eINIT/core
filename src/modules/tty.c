@@ -237,7 +237,6 @@ int einit_tty_texec (struct cfgnode *node) {
      {
       close (cpipes[1]);
 
-      nice (-einit_core_niceness_increment);
       setsid();
 
       disable_core_dumps ();
