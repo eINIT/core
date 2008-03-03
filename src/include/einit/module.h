@@ -123,6 +123,10 @@ enum einit_module_task {
 };
 /*!\} */
 
+enum mod_add_options {
+ substitue_and_prune              = 0x0001
+};
+
 /*!\ingroup statusinformation
  * \{ */
 enum einit_module_status {
@@ -257,6 +261,8 @@ struct lmodule *mod_update (struct lmodule *);
 */
 struct lmodule *mod_add (void *sohandle, const struct smodule *module);
 
+struct lmodule *mod_add_or_update (void *sohandle, const struct smodule *module, enum mod_add_options options);
+
 /*!\brief Change module's state
  * \param[in]     task   What state the module should be put in.
  * \param[in,out] module The module that is to be manipulated.
@@ -267,6 +273,8 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module);
 int mod (enum einit_module_task task, struct lmodule *module, char *custom_command);
 
 int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status);
+
+struct lmodule *mod_lookup_rid (const char *rid);
 
 /*!\ingroup serviceusagequeries
  * \{ */
@@ -280,6 +288,8 @@ struct lmodule **mod_list_all_enabled_modules ();
 struct lmodule **mod_get_all_users (struct lmodule *module);
 struct lmodule **mod_get_all_users_of_service (char *service);
 struct lmodule **mod_get_all_providers (char *service);
+
+/*!\} */
 
 #define fbprintf(statusvar, ...) if (statusvar) {\
  char _fbprintf_buffer[BUFFERSIZE];\

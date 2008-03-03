@@ -1505,7 +1505,7 @@ void module_logic_einit_event_handler_core_switch_mode (struct einit_event *ev) 
   usleep (50000);
   /* at this point, we really should be dead already... */
 
-  notice (1, "switch to shutdown-mode complete");
+  notice (1, "exiting");
   _exit (0);
  }
 }

@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
 #include <einit/module.h>
@@ -84,7 +85,6 @@ int linux_urandom_get_poolsize(void) {
 }
 
 int linux_urandom_save_seed (struct einit_event *status) {
-	int ret = status_failed;
 	char *seedPath = cfg_getstring ("configuration-services-urandom/seed", NULL);
 	if (seedPath) {
 		linux_urandom_mini_dd ("/dev/urandom", seedPath, linux_urandom_get_poolsize());
@@ -112,6 +112,7 @@ int linux_urandom_enable (void *param, struct einit_event *status) {
 	} else {
 		return status_failed;
 	}
+        return status_ok;
 }
 
 int linux_urandom_disable (void *param, struct einit_event *status) {

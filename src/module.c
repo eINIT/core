@@ -120,6 +120,61 @@ struct lmodule *mod_update (struct lmodule *module) {
 char **mod_blocked_rids = NULL;
 pthread_mutex_t mod_blocked_rids_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct lmodule *mod_add_or_update (void *sohandle, const struct smodule *module, enum mod_add_options options) {
+ if (!module || !module->rid || !module->name) return NULL;
+
+ emutex_lock (&mod_blocked_rids_mutex);
+ if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {
+  emutex_unlock (&mod_blocked_rids_mutex);
+  return NULL;
+ }
+ emutex_unlock (&mod_blocked_rids_mutex);
+
+ struct lmodule *nmod = mod_lookup_rid(module->rid);
+
+ if (nmod) {
+  if (nmod->si) {
+   void *tmp;
+
+   if ((tmp = nmod->si->provides)) {
+    nmod->si->provides = NULL;
+    efree (tmp);
+   }
+   if ((tmp = nmod->si->requires)) {
+    nmod->si->requires = NULL;
+    efree (tmp);
+   }
+   if ((tmp = nmod->si->before)) {
+    nmod->si->before = NULL;
+    efree (tmp);
+   }
+   if ((tmp = nmod->si->after)) {
+    nmod->si->after = NULL;
+    efree (tmp);
+   }
+
+   tmp = nmod->si;
+   nmod->si = NULL;
+   efree (tmp);
+  }
+
+  if (options & substitue_and_prune) {
+   const struct smodule *orig = nmod->module;
+   nmod->module = module;
+   if (orig->si.provides) efree (orig->si.provides);
+   if (orig->si.requires) efree (orig->si.requires);
+   if (orig->si.before) efree (orig->si.before);
+   if (orig->si.after) efree (orig->si.after);
+   /* the other fields should always be added with str_stabilise()! */
+   efree ((void *)orig);
+  }
+
+  return mod_update (nmod); /* this'll update everything */
+ }
+
+ return mod_add (sohandle, module); /* do a plain add if we don't have this rid already */
+}
+
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
 
@@ -405,8 +460,8 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
  return module->status;
 }
 
-int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status) {
- if (!rid) return status_failed;
+struct lmodule *mod_lookup_rid (const char *rid) {
+ if (!rid) return NULL;
 
  struct lmodule *module = mlist;
  while (module) {
@@ -416,6 +471,12 @@ int mod_complete (char *rid, enum einit_module_task task, enum einit_module_stat
 
   module = module->next;
  }
+
+ return module;
+}
+
+int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status) {
+ struct lmodule *module = mod_lookup_rid(rid);
 
  if (!module) return status_failed;
 

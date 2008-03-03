@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
 #include <einit/module.h>
@@ -47,7 +48,7 @@ module_register(linux_timezone_self);
 
 #endif
 
-void *linux_timezone_make_symlink (void) {
+void linux_timezone_make_symlink (void) {
  char *zoneinfo = cfg_getstring ("configuration-system-timezone", NULL);
  if (zoneinfo) {
   char tmp [BUFFERSIZE];
