@@ -712,8 +712,10 @@ void einit_ipc_9p_generic_event_handler (struct einit_event *ev) {
 
  data = set_str_add (data, "\n");
 
- e->event = set2str ('\n', (const char **)data);
+ char *t = set2str ('\n', (const char **)data);
+ e->event = (char *)str_stabilise (t);
  efree (data);
+ efree (t);
 
 /* dump events to stderr in sandbox mode: */
  if (coremode & einit_mode_sandbox) {
