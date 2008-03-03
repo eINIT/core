@@ -416,7 +416,10 @@ int main(int argc, char **argv, char **environ) {
   cev.type = einit_core_configuration_update;
 
 // make sure we keep updating until everything is sorted out
-  while (cev.type == einit_core_configuration_update) {
+  einit_new_node = 1;
+
+  while (einit_new_node) {
+   einit_new_node = 0;
    fprintf (stderr, "stuff changed, updating configuration.\n");
 
    cev.type = einit_core_update_configuration;
