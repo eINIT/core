@@ -194,99 +194,75 @@ int module_group_module_configure (struct lmodule *tm) {
  return 0;
 }
 
-void module_group_scanmodules (struct einit_event *ev) {
- struct stree *module_nodes = cfg_prefix(MODULES_PREFIX);
+void module_group_node_callback (struct cfgnode *node) {
+ if (node && node->arbattrs) {
+  int i = 0;
+  char **group = NULL, **before = NULL, **after = NULL;
+  enum seq_type seq = sq_all;
 
- if (module_nodes) {
-  struct stree *cur = streelinear_prepare(module_nodes);
-
-  for (; cur; cur = streenext (cur)) {
-   struct cfgnode *cn = cur->value;
-
-   if (cn && cn->arbattrs) {
-    int i = 0;
-    char **group = NULL, **before = NULL, **after = NULL;
-    enum seq_type seq = sq_all;
-
-    for (; cn->arbattrs[i]; i+=2) {
-     if (strmatch (cn->arbattrs[i], "group")) {
-      group = str2set (':', cn->arbattrs[i+1]);
-     } else if (strmatch (cn->arbattrs[i], "seq")) {
-      if (strmatch (cn->arbattrs[i+1], "any") || strmatch (cn->arbattrs[i+1], "any")) {
-       seq = sq_any;
-      } else if (strmatch (cn->arbattrs[i+1], "most")) {
-       seq = sq_most;
-      } else if (strmatch (cn->arbattrs[i+1], "all")) {
-       seq = sq_all;
-      }
-     } else if (strmatch (cn->arbattrs[i], "before")) {
-      before = str2set (':', cn->arbattrs[i+1]);
-     } else if (strmatch (cn->arbattrs[i], "after")) {
-      after = str2set (':', cn->arbattrs[i+1]);
-     }
+  for (; node->arbattrs[i]; i+=2) {
+   if (strmatch (node->arbattrs[i], "group")) {
+    group = str2set (':', node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "seq")) {
+    if (strmatch (node->arbattrs[i+1], "any") || strmatch (node->arbattrs[i+1], "any")) {
+     seq = sq_any;
+    } else if (strmatch (node->arbattrs[i+1], "most")) {
+     seq = sq_most;
+    } else if (strmatch (node->arbattrs[i+1], "all")) {
+     seq = sq_all;
     }
-
-    if (group) {
-     char **requires = NULL, **provides = NULL;
-     char t[BUFFERSIZE];
-
-     if ((seq == sq_all) || !group[1]) {
-      if (!strmatch (group[0], "none"))
-       requires = set_str_dup_stable (group);
-     } else {
-      char *member_string = set2str ('|', (const char **)group);
-
-      esprintf (t, BUFFERSIZE, "^(%s)$", member_string);
-
-      after = set_str_add (after, t);
-
-      efree (member_string);
-     }
-
-     provides = set_str_add (provides, (cur->key + MODULES_PREFIX_SIZE));
-
-     struct smodule *sm = emalloc (sizeof (struct smodule));
-     memset (sm, 0, sizeof (struct smodule));
-
-     esprintf (t, BUFFERSIZE, "group-%s", cur->key + MODULES_PREFIX_SIZE);
-     sm->rid = (char *)str_stabilise (t);
-     sm->configure = module_group_module_configure;
-
-     struct lmodule *lm = NULL;
-
-     esprintf (t, BUFFERSIZE, "Group (%s)", cur->key + MODULES_PREFIX_SIZE);
-     sm->name = (char *)str_stabilise (t);
-     sm->si.requires = requires;
-     sm->si.provides = provides;
-     sm->si.before = before;
-     sm->si.after = after;
-
-     lm = mod_add_or_update (NULL, sm, substitue_and_prune);
-     lm->param = (char *)str_stabilise (cur->key);
-    }
+   } else if (strmatch (node->arbattrs[i], "before")) {
+    before = str2set (':', node->arbattrs[i+1]);
+   } else if (strmatch (node->arbattrs[i], "after")) {
+    after = str2set (':', node->arbattrs[i+1]);
    }
   }
 
-  streefree (module_nodes);
+  if (group) {
+   char **requires = NULL, **provides = NULL;
+   char t[BUFFERSIZE];
+
+   if ((seq == sq_all) || !group[1]) {
+    if (!strmatch (group[0], "none"))
+     requires = set_str_dup_stable (group);
+   } else {
+    char *member_string = set2str ('|', (const char **)group);
+
+    esprintf (t, BUFFERSIZE, "^(%s)$", member_string);
+
+    after = set_str_add (after, t);
+
+    efree (member_string);
+   }
+
+   provides = set_str_add (provides, (node->id + MODULES_PREFIX_SIZE));
+
+   struct smodule *sm = emalloc (sizeof (struct smodule));
+   memset (sm, 0, sizeof (struct smodule));
+
+   esprintf (t, BUFFERSIZE, "group-%s", node->id + MODULES_PREFIX_SIZE);
+   sm->rid = (char *)str_stabilise (t);
+   sm->configure = module_group_module_configure;
+
+   struct lmodule *lm = NULL;
+
+   esprintf (t, BUFFERSIZE, "Group (%s)", node->id + MODULES_PREFIX_SIZE);
+   sm->name = (char *)str_stabilise (t);
+   sm->si.requires = requires;
+   sm->si.provides = provides;
+   sm->si.before = before;
+   sm->si.after = after;
+
+   lm = mod_add_or_update (NULL, sm, substitue_and_prune);
+   lm->param = (char *)str_stabilise (node->id);
+  }
  }
-
- return;
-}
-
-int module_group_cleanup (struct lmodule *tm) {
- event_listen (einit_core_update_modules, module_group_scanmodules);
-
- return 0;
 }
 
 int module_group_configure (struct lmodule *tm) {
  module_init(tm);
 
- event_listen (einit_core_update_modules, module_group_scanmodules);
-
- tm->cleanup = module_group_cleanup;
-
- module_group_scanmodules(NULL);
+ cfg_callback_prefix(MODULES_PREFIX, module_group_node_callback);
 
  return 0;
 }

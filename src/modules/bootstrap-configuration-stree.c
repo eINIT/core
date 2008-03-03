@@ -86,7 +86,12 @@ struct {
 
 struct stree *hconfiguration = NULL;
 
-pthread_mutex_t cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t
+ cfg_stree_garbage_mutex = PTHREAD_MUTEX_INITIALIZER,
+ bootstrap_einit_configuration_stree_callbacks_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct stree *
+ bootstrap_einit_configuration_stree_callbacks = NULL;
 
 void cfg_stree_garbage_add_chunk (void *chunk) {
  if (!chunk) return;
@@ -112,6 +117,27 @@ void cfg_stree_garbage_free () {
 }
 
 time_t bootstrap_einit_configuration_stree_garbage_free_timer = 0;
+
+void cfg_run_callbacks_for_node (struct cfgnode *node) {
+ if (!node || !node->id)
+  return;
+
+ emutex_lock (&bootstrap_einit_configuration_stree_callbacks_mutex);
+ if (bootstrap_einit_configuration_stree_callbacks) {
+  struct stree *cur = streelinear_prepare(bootstrap_einit_configuration_stree_callbacks);
+
+  while (cur) {
+   if (strprefix (node->id, cur->key)) {
+    void (*callback)(struct cfgnode *) = (void (*)(struct cfgnode *))cur->value;
+
+    callback(node);
+   }
+
+   cur = streenext(cur);
+  }
+ }
+ emutex_unlock (&bootstrap_einit_configuration_stree_callbacks_mutex);
+}
 
 int cfg_free () {
  struct stree *cur = streelinear_prepare(hconfiguration);
@@ -263,6 +289,8 @@ int cfg_addnode_f (struct cfgnode *node) {
   hconfiguration = streeadd (hconfiguration, node->id, node, sizeof(struct cfgnode), node->arbattrs);
 
   einit_new_node = 1;
+
+  cfg_run_callbacks_for_node (node);
  }
 
 /* hmmm.... */
@@ -520,6 +548,33 @@ void bootstrap_einit_configuration_stree_ipc_stat (struct einit_event *ev) {
  }
 }
 
+void cfg_run_callback (char *prefix, void (*callback)(struct cfgnode *)) {
+ if (hconfiguration) {
+  struct stree *cur = streelinear_prepare(hconfiguration);
+
+  while (cur) {
+   if (strprefix (cur->key, prefix)) {
+    callback((struct cfgnode *)cur->value);
+   }
+
+   cur = streenext(cur);
+  }
+ }
+}
+
+int cfg_callback_prefix_f (char *prefix, void (*callback)(struct cfgnode *)) {
+ if (!prefix || !callback)
+  return 0;
+
+ emutex_lock (&bootstrap_einit_configuration_stree_callbacks_mutex);
+ bootstrap_einit_configuration_stree_callbacks =
+  streeadd (bootstrap_einit_configuration_stree_callbacks, prefix, callback, tree_value_noalloc, NULL);
+
+ cfg_run_callback (prefix, callback);
+ emutex_unlock (&bootstrap_einit_configuration_stree_callbacks_mutex);
+
+ return 1;
+}
 
 int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  cfg_free();
@@ -533,6 +588,8 @@ int bootstrap_einit_configuration_stree_cleanup (struct lmodule *tm) {
  function_unregister ("einit-configuration-node-get-filter", 1, cfg_filter_f);
  function_unregister ("einit-configuration-node-get-path", 1, cfg_getpath_f);
  function_unregister ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
+
+ function_unregister ("einit-configuration-callback-prefix", 1, cfg_callback_prefix_f);
 
  event_ignore (einit_ipc_read, bootstrap_einit_configuration_stree_ipc_read);
  event_ignore (einit_ipc_stat, bootstrap_einit_configuration_stree_ipc_stat);
@@ -555,6 +612,8 @@ int bootstrap_einit_configuration_stree_configure (struct lmodule *tm) {
  function_register ("einit-configuration-node-get-filter", 1, cfg_filter_f);
  function_register ("einit-configuration-node-get-path", 1, cfg_getpath_f);
  function_register ("einit-configuration-node-get-prefix", 1, cfg_prefix_f);
+
+ function_register ("einit-configuration-callback-prefix", 1, cfg_callback_prefix_f);
 
  event_listen (einit_ipc_read, bootstrap_einit_configuration_stree_ipc_read);
  event_listen (einit_ipc_stat, bootstrap_einit_configuration_stree_ipc_stat);

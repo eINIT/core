@@ -585,47 +585,23 @@ void linux_kernel_modules_scanmodules_add_subsystem (char *subsystem) {
  mod_add (NULL, sm);
 }
 
-void linux_kernel_modules_scanmodules (struct einit_event *ev) {
- struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
+void linux_kernel_modules_node_callback (struct cfgnode *node) {
+ char *subsystem = node->id + sizeof (MPREFIX) -1;
+ char usegroup = 0;
 
- char have_audio = 0;
-
- if (linux_kernel_modules_nodes) {
-  struct stree *cur = streelinear_prepare(linux_kernel_modules_nodes);
-
-  while (cur) {
-   char *subsystem = cur->key + sizeof (MPREFIX) -1;
-   char usegroup = 0;
-
-   if (!strmatch (subsystem, "storage")) {
-    struct cfgnode *nod = cur->value;
-
-    if (nod && nod->arbattrs) {
-     size_t i;
-     for (i = 0; nod->arbattrs[i]; i+=2) {
-      if (strmatch (nod->arbattrs[i], "provide-service") && parse_boolean (nod->arbattrs[i+1])) {
-       usegroup = 1;
-      }
-     }
+ if (!strmatch (subsystem, "storage")) {
+  if (node && node->arbattrs) {
+   size_t i;
+   for (i = 0; node->arbattrs[i]; i+=2) {
+    if (strmatch (node->arbattrs[i], "provide-service") && parse_boolean (node->arbattrs[i+1])) {
+     usegroup = 1;
     }
    }
-
-   if (usegroup) {
-    linux_kernel_modules_scanmodules_add_subsystem (subsystem);
-
-    if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
-     have_audio = 1;
-    }
-   }
-
-   cur = streenext(cur);
   }
  }
 
- if (!have_audio) {
-  linux_kernel_modules_scanmodules_add_subsystem ("alsa");
-  linux_kernel_modules_scanmodules_add_subsystem ("audio");
-  linux_kernel_modules_scanmodules_add_subsystem ("sound");
+ if (usegroup) {
+  linux_kernel_modules_scanmodules_add_subsystem (subsystem);
  }
 }
 
@@ -643,8 +619,6 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct eini
 
 int linux_kernel_modules_cleanup (struct lmodule *this) {
  exec_cleanup (this);
-
- event_ignore (einit_core_update_modules, linux_kernel_modules_scanmodules);
 
  event_ignore (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
  event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
@@ -667,13 +641,16 @@ int linux_kernel_modules_configure (struct lmodule *this) {
 
  thismodule->cleanup = linux_kernel_modules_cleanup;
 
- event_listen (einit_core_update_modules, linux_kernel_modules_scanmodules);
-
  event_listen (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
  event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
 
- linux_kernel_modules_scanmodules(NULL);
+/* we always wanna see the following... */
+ linux_kernel_modules_scanmodules_add_subsystem ("alsa");
+ linux_kernel_modules_scanmodules_add_subsystem ("audio");
+ linux_kernel_modules_scanmodules_add_subsystem ("sound");
+
+ cfg_callback_prefix(MPREFIX, linux_kernel_modules_node_callback);
 
  return 0;
 }
