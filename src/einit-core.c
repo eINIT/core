@@ -139,33 +139,9 @@ void core_einit_event_handler_configuration_update (struct einit_event *ev) {
 pthread_mutex_t core_modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void core_einit_event_handler_update_modules (struct einit_event *ev) {
- struct lmodule *lm;
-
  emutex_lock (&core_modules_update_mutex);
 
- repeat:
-
- lm = mlist;
- einit_new_node = 0;
-
- while (lm) {
-  if (lm->source && strmatch(lm->source, "core")) {
-   lm = mod_update (lm);
-
-// tell module to scan for changes if it's a module-loader
-   if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
-    notice (8, "updating modules (%s)", lm->module->rid ? lm->module->rid : "unknown");
-
-    lm->scanmodules (mlist);
-
-/* if an actual new node has been added to the configuration,
-   repeat this step */
-    if (einit_new_node) goto repeat;
-   }
-
-  }
-  lm = lm->next;
- }
+ mod_update_source ("core");
 
  emutex_unlock (&core_modules_update_mutex);
 
@@ -441,7 +417,7 @@ int main(int argc, char **argv, char **environ) {
 
 // make sure we keep updating until everything is sorted out
   while (cev.type == einit_core_configuration_update) {
-//   notice (2, "stuff changed, updating configuration.");
+   fprintf (stderr, "stuff changed, updating configuration.\n");
 
    cev.type = einit_core_update_configuration;
    event_emit (&cev, einit_event_flag_broadcast);

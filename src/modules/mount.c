@@ -90,7 +90,7 @@ const struct smodule einit_mount_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Filesystem-Mounter",
  .rid       = "einit-mount",
  .si        = {
@@ -127,7 +127,7 @@ void einit_mount_event_boot_devices_available (struct einit_event *);
 
 void einit_mount_hotplug_event_handler_add (struct einit_event *);
 
-int einit_mount_scanmodules (struct lmodule *);
+void einit_mount_scanmodules (struct einit_event *ev);
 int einit_mount_cleanup (struct lmodule *);
 void einit_mount_update_configuration ();
 unsigned char read_filesystem_flags_from_configuration (void *);
@@ -1009,7 +1009,7 @@ int einit_fsck_configure (struct lmodule *tm) {
  return 0;
 }
 
-int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
+void einit_mount_scanmodules_mountpoints () {
  struct stree *s = NULL;
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
@@ -1021,7 +1021,7 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
   char **after = NULL;
   char **before = NULL;
   char **requires = NULL;
-  struct lmodule *lm = ml;
+  struct lmodule *lm = NULL;
   struct cfgnode *tcnode = cfg_findnode ("configuration-storage-fstab-node-order", 0, NULL);
   char special_order = 0;
 
@@ -1196,46 +1196,11 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
    }
   }
 
-  while (lm) {
-   if (lm->source && strmatch(lm->source, tmp)) {
-    struct smodule *sm = (struct smodule *)lm->module;
-
-    sm->si.after = after;
-    sm->si.before = before;
-    sm->si.requires = requires;
-
-    /* special update */
-    void **functions;
-    char **fnames = mount_generate_mount_function_suffixes(mp->fs);
-
-    functions = function_find ("fs-update", 1, (const char **)fnames);
-    if (functions) {
-     uint32_t r = 0;
-     for (; functions[r]; r++) {
-      einit_fs_update_function f = functions[r];
-
-      f (lm, sm, ((struct device_data *)(s->value)), mp);
-     }
-     efree (functions);
-    }
-    efree (fnames);
-    /* special update done */
-
-    lm = mod_update (lm);
-
-    efree (newmodule);
-
-    goto do_next;
-   }
-
-   lm = lm->next;
-  }
-
   newmodule->configure = einit_mountpoint_configure;
   newmodule->eiversion = EINIT_VERSION;
   newmodule->eibuild = BUILDNUMBER;
   newmodule->version = 1;
-  newmodule->mode = einit_module_generic;
+  newmodule->mode = einit_module;
 
 //  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
   newmodule->rid = (char *)str_stabilise (tmp);
@@ -1267,21 +1232,19 @@ int einit_mount_scanmodules_mountpoints (struct lmodule *ml) {
   efree (fnames);
   /* special initialisation done */
 
-  if ((lm = mod_add (NULL, newmodule)))
+  if ((lm = mod_add_or_update (NULL, newmodule, substitue_and_prune)))
    lm->param = (char *)str_stabilise (s->key);
 
-  do_next:
-
-     efree (servicename);
+  efree (servicename);
   s = streenext(s);
  }
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
 
- return 0;
+ return;
 }
 
-int einit_mount_scanmodules_fscks (struct lmodule *ml) {
+void einit_mount_scanmodules_fscks () {
  struct stree *s = NULL;
 
  emutex_lock (&mounter_dd_by_devicefile_mutex);
@@ -1292,7 +1255,7 @@ int einit_mount_scanmodules_fscks (struct lmodule *ml) {
   char tmp[BUFFERSIZE];
   char **after = NULL;
   char **requires = NULL;
-  struct lmodule *lm = ml;
+  struct lmodule *lm = NULL;
   char doadd = 0;
 
   struct device_data *dd = s->value;
@@ -1369,28 +1332,11 @@ int einit_mount_scanmodules_fscks (struct lmodule *ml) {
    }
   }
 
-  while (lm) {
-   if (lm->source && strmatch(lm->source, tmp)) {
-    struct smodule *sm = (struct smodule *)lm->module;
-
-    sm->si.after = after;
-    sm->si.requires = requires;
-
-    lm = mod_update (lm);
-
-    efree (newmodule);
-
-    goto do_next;
-   }
-
-   lm = lm->next;
-  }
-
   newmodule->configure = einit_fsck_configure;
   newmodule->eiversion = EINIT_VERSION;
   newmodule->eibuild = BUILDNUMBER;
   newmodule->version = 1;
-  newmodule->mode = einit_module_generic | einit_feedback_job;
+  newmodule->mode = einit_module | einit_feedback_job;
 
 //  esprintf (tmp, BUFFERSIZE, "mount-%s", s->key);
   newmodule->rid = (char *)str_stabilise (tmp);
@@ -1404,7 +1350,7 @@ int einit_mount_scanmodules_fscks (struct lmodule *ml) {
 
   newmodule->si.requires = requires;
 
-  if ((lm = mod_add (NULL, newmodule)))
+  if ((lm = mod_add_or_update (NULL, newmodule, substitue_and_prune)))
    lm->param = (char *)str_stabilise (s->key);
 
   do_next:
@@ -1415,14 +1361,14 @@ int einit_mount_scanmodules_fscks (struct lmodule *ml) {
 
  emutex_unlock (&mounter_dd_by_devicefile_mutex);
 
- return 0;
+ return;
 }
 
-int einit_mount_scanmodules (struct lmodule *ml) {
- if (!mount_filesystems) return 0;
+void einit_mount_scanmodules (struct einit_event *ev) {
+ if (!mount_filesystems) return;
 
- einit_mount_scanmodules_fscks (ml);
- einit_mount_scanmodules_mountpoints (ml);
+ einit_mount_scanmodules_fscks ();
+ einit_mount_scanmodules_mountpoints ();
 
  emutex_lock (&mounter_dd_by_mountpoint_mutex);
 
@@ -1478,7 +1424,7 @@ int einit_mount_scanmodules (struct lmodule *ml) {
 
  emutex_unlock (&mounter_dd_by_mountpoint_mutex);
 
- return 0;
+ return;
 }
 
 struct device_data *mount_get_device_data (char *mountpoint, char *devicefile) {
@@ -2242,6 +2188,8 @@ int einit_mount_cleanup (struct lmodule *tm) {
  function_unregister ("fs-mount", 1, (void *)emount);
  function_unregister ("fs-umount", 1, (void *)eumount);
 
+ event_ignore (einit_core_update_modules, einit_mount_scanmodules);
+
  return 0;
 }
 
@@ -2249,7 +2197,6 @@ int einit_mount_configure (struct lmodule *r) {
  struct stat st;
  module_init (r);
 
- thismodule->scanmodules = einit_mount_scanmodules;
  thismodule->cleanup = einit_mount_cleanup;
  thismodule->recover = einit_mount_recover;
 
@@ -2268,18 +2215,21 @@ int einit_mount_configure (struct lmodule *r) {
 
  event_listen (einit_boot_root_device_ok, einit_mount_event_root_device_ok);
 
-
  function_register ("fs-mount", 1, (void *)emount);
  function_register ("fs-umount", 1, (void *)eumount);
 
  function_register ("fs-mount-generic-any", 1, (void *)mount_do_mount_generic);
  function_register ("fs-umount-generic-any", 1, (void *)mount_do_umount_generic);
 
+ event_listen (einit_core_update_modules, einit_mount_scanmodules);
+
  einit_mount_update_configuration();
 
  if (!stat ("/fastboot", &st)) {
   mount_fastboot = 1;
  }
+
+ einit_mount_scanmodules(NULL);
 
  return 0;
 }

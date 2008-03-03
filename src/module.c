@@ -178,9 +178,9 @@ struct lmodule *mod_add_or_update (void *sohandle, const struct smodule *module,
 struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
  struct lmodule *nmod;
 
-/* if (module) {
+ if (module) {
   fprintf (stderr, " * mod_add(*, %s)\n", module->rid);
- }*/
+ }
 
  emutex_lock (&mod_blocked_rids_mutex);
  if (inset ((const void **)mod_blocked_rids, module->rid, SET_TYPE_STRING)) {
@@ -255,9 +255,6 @@ struct lmodule *mod_add (void *sohandle, const struct smodule *module) {
 
    return NULL;
   }
- }
- if (nmod->scanmodules) {
-  nmod->scanmodules(mlist);
  }
 
  emutex_lock (&mlist_mutex);
@@ -473,6 +470,55 @@ struct lmodule *mod_lookup_rid (const char *rid) {
  }
 
  return module;
+}
+
+struct lmodule *mod_lookup_source (const char *source) {
+ if (!source) return NULL;
+
+ struct lmodule *module = mlist;
+ while (module) {
+  if (module->source && strmatch (module->source, source)) {
+   break;
+  }
+
+  module = module->next;
+ }
+
+ return module;
+}
+
+int mod_update_sources (char **source) {
+ int rv = 0;
+ if (!source) return rv;
+
+ struct lmodule *module = mlist;
+ while (module) {
+  if (module->source && inset ((const void **)source, module->source, SET_TYPE_STRING)) {
+   mod_update (module);
+   rv++;
+  }
+
+  module = module->next;
+ }
+
+ return rv;
+}
+
+int mod_update_source (const char *source) {
+ int rv = 0;
+ if (!source) return rv;
+
+ struct lmodule *module = mlist;
+ while (module) {
+  if (module->source && strmatch (source, module->source)) {
+   mod_update (module);
+   rv++;
+  }
+
+  module = module->next;
+ }
+
+ return rv;
 }
 
 int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status) {

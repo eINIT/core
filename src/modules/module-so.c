@@ -67,7 +67,7 @@ const struct smodule einit_mod_so_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Module Support (.so)",
  .rid       = "einit-module-so",
  .si        = {
@@ -87,17 +87,10 @@ pthread_mutex_t modules_update_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char **einit_mod_so_modules = NULL;
 
-int einit_mod_so_scanmodules (struct lmodule *);
-
-int einit_mod_so_cleanup (struct lmodule *pa) {
- return 0;
-}
-
-int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
+void einit_mod_so_scanmodules (struct einit_event *ev) {
  void *sohandle;
  char **modules = NULL;
  struct cfgnode *node = NULL;
- struct lmodule *lm = modchain;
 
  emutex_lock (&modules_update_mutex);
 
@@ -121,17 +114,8 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
                                  , ".*\\.so", NULL, 0);
  }
 
-/* make sure all bootstrap modules get updated */
- while (lm) {
-  if (lm->source && (strprefix(lm->source, BOOTSTRAP_MODULE_PATH) || inset ((const void **)einit_mod_so_modules, lm->source, SET_TYPE_STRING))) {
-   lm = mod_update (lm);
-
-   if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
-    lm->scanmodules (modchain);
-   }
-  }
-  lm = lm->next;
- }
+/* make sure all of our modules get updated */
+ mod_update_sources (einit_mod_so_modules);
 
 /* load all new modules */
  if (modules) {
@@ -146,20 +130,6 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
    einit_mod_so_modules = set_str_add_stable (einit_mod_so_modules, modules[z]);
 
    struct smodule **modinfo;
-   lm = modchain;
-
-   while (lm) {
-    if (lm->source && strmatch(lm->source, modules[z])) {
-     lm = mod_update (lm);
-
-     if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
-      lm->scanmodules (modchain);
-     }
-
-     goto cleanup_continue;
-    }
-    lm = lm->next;
-   }
 
    dlerror();
 
@@ -209,14 +179,23 @@ int einit_mod_so_scanmodules ( struct lmodule *modchain ) {
 
  emutex_unlock (&modules_update_mutex);
 
- return 1;
+ return;
+}
+
+int einit_mod_so_cleanup (struct lmodule *pa) {
+ event_ignore (einit_core_update_modules, einit_mod_so_scanmodules);
+
+ return 0;
 }
 
 int einit_mod_so_configure (struct lmodule *pa) {
  module_init (pa);
 
- pa->scanmodules = einit_mod_so_scanmodules;
+ event_listen (einit_core_update_modules, einit_mod_so_scanmodules);
+
  pa->cleanup = einit_mod_so_cleanup;
+
+ einit_mod_so_scanmodules(NULL);
 
  return 0;
 }

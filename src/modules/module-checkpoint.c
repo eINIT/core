@@ -54,7 +54,7 @@ const struct smodule einit_checkpoint_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Checkpoint Support",
  .rid       = "einit-module-checkpoint",
  .si        = {
@@ -108,16 +108,12 @@ int checkpoint_module_configure (struct lmodule *me) {
  return status_ok;
 }
 
-int checkpoint_scanmodules_check_update (struct lmodule *list, char *rid) {
- struct lmodule *lm = list;
+int checkpoint_scanmodules_check_update (char *rid) {
+ struct lmodule *lm = mod_lookup_rid (rid);
 
- while (lm) {
-  if (lm->module && strmatch (lm->module->rid, rid)) {
-   mod_update (lm);
-   return 1;
-  }
-
-  lm = lm->next;
+ if (lm) {
+  mod_update (lm);
+  return 1;
  }
 
  return 0;
@@ -179,7 +175,7 @@ char **checkpoint_scanmodules_find_services_from_modes (char **base_services, ch
  return base_services;
 }
 
-int checkpoint_scanmodules (struct lmodule *list) {
+void checkpoint_scanmodules (struct einit_event *ev) {
  struct cfgnode *node = NULL;
 
 /* scan all modes... */
@@ -205,7 +201,7 @@ int checkpoint_scanmodules (struct lmodule *list) {
 
     esprintf (buffer, BUFFERSIZE, "checkpoint-mode-%s", node->mode->id);
 
-    if (checkpoint_scanmodules_check_update (list, buffer)) {
+    if (checkpoint_scanmodules_check_update (buffer)) {
      continue;
     } else {
      struct smodule *sm = emalloc (sizeof (struct smodule));
@@ -256,7 +252,7 @@ int checkpoint_scanmodules (struct lmodule *list) {
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
      sm->configure = checkpoint_module_configure;
-     sm->mode = einit_module_generic | einit_feedback_job;
+     sm->mode = einit_module | einit_feedback_job;
 
      if ((nm = mod_add (NULL, sm))) {
       nm->param = (void *)cooldown;
@@ -266,10 +262,12 @@ int checkpoint_scanmodules (struct lmodule *list) {
   }
  }
 
- return status_ok;
+ return;
 }
 
 int checkpoint_cleanup (struct lmodule *me) {
+ event_ignore (einit_core_update_modules, checkpoint_scanmodules);
+
  return status_ok;
 }
 
@@ -294,8 +292,11 @@ int checkpoint_configure (struct lmodule *me) {
   }
  }
 
- me->scanmodules = checkpoint_scanmodules;
+ event_listen (einit_core_update_modules, checkpoint_scanmodules);
+
  me->cleanup = checkpoint_cleanup;
+
+ checkpoint_scanmodules(NULL);
 
  return status_ok;
 }

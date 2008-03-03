@@ -62,7 +62,7 @@ struct smodule linux_splash_invoker_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_generic,
+ .mode      = einit_module,
  .name      = "Linux Boot Splash Invoker",
  .rid       = "linux-splash-invoker",
  .si        = {
@@ -119,6 +119,8 @@ int linux_splash_invoker_cleanup (struct lmodule *pa) {
  if (linux_splash_invoker_exquisite_mode) {
   event_ignore (einit_boot_root_device_ok, linux_splash_invoker_exquisite_boot_devices_ok);
  }
+
+ return 0;
 }
 
 int linux_splash_invoker_configure (struct lmodule *pa) {

@@ -63,7 +63,7 @@ const struct smodule einit_module_network_v2_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Module Support (Network, v2)",
  .rid       = "einit-module-network-v2",
  .si        = {
@@ -100,7 +100,6 @@ struct network_v2_interface_descriptor {
 pthread_mutex_t einit_module_network_v2_interfaces_mutex = PTHREAD_MUTEX_INITIALIZER,
  einit_module_network_v2_get_all_addresses_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int einit_module_network_v2_scanmodules (struct lmodule *);
 int einit_module_network_v2_emit_event (enum einit_event_code type, struct lmodule *module, struct smodule *sd, char *interface, enum interface_action action, struct einit_event *feedback);
 
 #define INTERFACES_PREFIX "configuration-network-interfaces"
@@ -490,7 +489,7 @@ void *einit_module_network_v2_scanmodules_enable_immediate (struct lmodule **lm)
  return NULL;
 }
 
-int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
+void einit_module_network_v2_scanmodules (struct einit_event *ev) {
  char **interfaces = function_call_by_name_multi (char **, "network-list-interfaces", 1, (const char **)bsd_network_suffixes, 0);
  char **automatic = NULL;
  struct lmodule **immediate = NULL;
@@ -541,7 +540,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
      sm->version = 1;
-     sm->mode = einit_module_generic;
+     sm->mode = einit_module;
 
      esprintf (buffer, BUFFERSIZE, "carrier-%s", interfaces[i]);
      sm->si.provides = set_str_add (NULL, buffer);
@@ -565,7 +564,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
      sm->eiversion = EINIT_VERSION;
      sm->eibuild = BUILDNUMBER;
      sm->version = 1;
-     sm->mode = einit_module_generic;
+     sm->mode = einit_module;
 
      esprintf (buffer, BUFFERSIZE, "net-%s", interfaces[i]);
      sm->si.provides = set_str_add (NULL, buffer);
@@ -665,7 +664,7 @@ int einit_module_network_v2_scanmodules (struct lmodule *modchain) {
  }
 #endif
 
- return 1;
+ return;
 }
 
 /* ********************** dhcp code *****************************/
@@ -979,6 +978,7 @@ int einit_module_network_v2_cleanup (struct lmodule *pa) {
  event_ignore (einit_network_address_automatic, einit_module_network_v2_address_automatic);
  event_ignore (einit_network_interface_construct, einit_module_network_v2_interface_construct);
  event_ignore (einit_network_interface_update, einit_module_network_v2_interface_construct);
+ event_ignore (einit_core_update_modules, einit_module_network_v2_scanmodules);
 
  return 0;
 }
@@ -987,12 +987,15 @@ int einit_module_network_v2_configure (struct lmodule *pa) {
  module_init (pa);
  exec_configure(pa);
 
- pa->scanmodules = einit_module_network_v2_scanmodules;
+ event_listen (einit_core_update_modules, einit_module_network_v2_scanmodules);
+
  pa->cleanup = einit_module_network_v2_cleanup;
 
  event_listen (einit_network_address_automatic, einit_module_network_v2_address_automatic);
  event_listen (einit_network_interface_construct, einit_module_network_v2_interface_construct);
  event_listen (einit_network_interface_update, einit_module_network_v2_interface_construct);
+
+ einit_module_network_v2_scanmodules(NULL);
 
  return 0;
 }

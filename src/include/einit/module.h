@@ -93,10 +93,8 @@ extern "C" {
 /*!\ingroup modulemdefinition
  * \{ */
 enum einit_module_options {
- einit_module_loader        = 0x1,
-/*!< Module-type: Used for module-loaders, i.e. those with scanmodules()-functions. */
- einit_module_generic       = 0x4,
-/*!< Module-type: Regular modules, i.e. those that provide services. */
+ einit_module              = 0x0,
+/*!< Module-type: Nothing special, move along... */
  einit_module_deprecated    = 0x10,
 /*!< Module-option: Deprecated module: only try if nothing else worked */
 
@@ -167,18 +165,6 @@ enum einit_module_status {
 };
 /*!\} */
 
-/*!\ingroup serviceusagequeries
- * \{*/
-enum einit_usage_query {
- service_get_all_provided      = 0x0010,
-/*!< Service-usage-query: "What services are currently provided?". */
- service_get_services_that_use = 0x0020,
-/*!< Service-usage-query: "What services use this?" */
- service_get_services_used_by  = 0x0040,
-/*!< Service-usage-query: "What services are used by this?" */
-};
-/*!\} */
-
 struct service_information {
  char **provides;       /*!< A list of services that this module provides. */
  char **requires;       /*!< A list of services that this module requires. */
@@ -223,7 +209,7 @@ struct lmodule {
  int (*disable) (void *, struct einit_event *); /*!< Pointer to the module's disable()-function */
  int (*custom) (void *, char *, struct einit_event *); /*!< Pointer to the module's custom()-function */
  int (*cleanup) (struct lmodule *);             /*!< Pointer to the module's cleanup()-function */
- int (*scanmodules) (struct lmodule *);         /*!< Pointer to the module's scanmodules()-function */
+
  enum einit_module_status status;               /*!< Current module status (enabled, disabled, ...) */
  void *param;                                   /*!< Parameter for state-changing functions */
  pthread_mutex_t mutex;	                        /*!< Module-mutex; is used by the mod()-function */
@@ -275,6 +261,9 @@ int mod (enum einit_module_task task, struct lmodule *module, char *custom_comma
 int mod_complete (char *rid, enum einit_module_task task, enum einit_module_status status);
 
 struct lmodule *mod_lookup_rid (const char *rid);
+struct lmodule *mod_lookup_source (const char *source);
+int mod_update_sources (char **source);
+int mod_update_source (const char *source);
 
 /*!\ingroup serviceusagequeries
  * \{ */

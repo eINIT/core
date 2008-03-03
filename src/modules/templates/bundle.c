@@ -59,7 +59,7 @@ const struct smodule module_bundle_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = module_bundle_name,
  .rid       = module_bundle_rid,
  .si        = {
@@ -75,31 +75,12 @@ module_register(module_bundle_self);
 
 #endif
 
-int module_bundle_scanmodules (struct lmodule *);
 char module_bundle_firstrun = 1;
 
 const struct smodule **module_bundle_contents[MAXMODULES];
 
-int module_bundle_cleanup (struct lmodule *pa) {
- return 0;
-}
-
-int module_bundle_scanmodules (struct lmodule *mlist) {
- struct lmodule *lm = mlist;
- while (lm) {
-  if (lm->source && strmatch(lm->source, module_bundle_rid)) {
-   lm = mod_update (lm);
-
-// tell module to scan for changes if it's a module-loader
-   if (lm->module && (lm->module->mode & einit_module_loader) && (lm->scanmodules != NULL)) {
-    notice (8, "bundle %s: updating modules (%s)", module_bundle_rid, lm->module->rid ? lm->module->rid : "unknown");
-
-    lm->scanmodules (mlist);
-   }
-  }
-
-  lm = lm->next;
- }
+void module_bundle_scanmodules (struct einit_event *ev) {
+ mod_update_source (module_bundle_rid);
 
  if (module_bundle_firstrun) {
   module_bundle_firstrun = 0;
@@ -117,14 +98,23 @@ int module_bundle_scanmodules (struct lmodule *mlist) {
   }
  }
 
- return 1;
+ return;
+}
+
+int module_bundle_cleanup (struct lmodule *pa) {
+ event_ignore (einit_core_update_modules, module_bundle_scanmodules);
+
+ return 0;
 }
 
 int module_bundle_configure (struct lmodule *pa) {
  module_init (pa);
 
- pa->scanmodules = module_bundle_scanmodules;
+ event_listen (einit_core_update_modules, module_bundle_scanmodules);
+
  pa->cleanup = module_bundle_cleanup;
+
+ module_bundle_scanmodules(NULL);
 
  return 0;
 }

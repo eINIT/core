@@ -61,7 +61,7 @@ const struct smodule einit_linux_kernel_modules_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Linux Kernel Module Support",
  .rid       = "linux-kernel-modules",
  .si        = {
@@ -343,7 +343,7 @@ char **linux_kernel_modules_sound(struct einit_event *status) {
     }
 
     if ((b[0] == 's') && (b[1] == 'n') && (b[2] == 'd') && b[3] && b[4] && b[5]) {
-     if (strmatch (b+4, "seq") || strmatch (b+4, "ioctl32") && !inset((const void **)rv, b, SET_TYPE_STRING))
+     if ((strmatch (b+4, "seq") || strmatch (b+4, "ioctl32")) && !inset((const void **)rv, b, SET_TYPE_STRING))
       rv = set_str_add (rv, b);
     }
 
@@ -551,20 +551,16 @@ int linux_kernel_modules_module_configure (struct lmodule *this) {
  return 0;
 }
 
-int linux_kernel_modules_scanmodules_add_subsystem (struct lmodule *lm, char *subsystem) {
+void linux_kernel_modules_scanmodules_add_subsystem (char *subsystem) {
  char tmp[BUFFERSIZE];
- struct lmodule *m = lm;
+ struct lmodule *m = NULL;
  struct smodule *sm;
 
  esprintf (tmp, BUFFERSIZE, "linux-kernel-modules-%s", subsystem);
 
- while (m) {
-  if (m->module && strmatch (m->module->rid, tmp)) {
-   mod_update(m);
-   return;
-  }
-
-  m = m->next;
+ if ((m = mod_lookup_rid (tmp))) {
+  mod_update(m);
+  return;
  }
 
  sm = emalloc (sizeof(struct smodule));
@@ -577,7 +573,7 @@ int linux_kernel_modules_scanmodules_add_subsystem (struct lmodule *lm, char *su
 
  sm->eiversion = EINIT_VERSION;
  sm->eibuild = BUILDNUMBER;
- sm->mode = einit_module_generic | einit_feedback_job;
+ sm->mode = einit_module | einit_feedback_job;
 
  esprintf (tmp, BUFFERSIZE, "kern-%s", subsystem);
  sm->si.provides = set_str_add (sm->si.provides, tmp);
@@ -587,7 +583,7 @@ int linux_kernel_modules_scanmodules_add_subsystem (struct lmodule *lm, char *su
  mod_add (NULL, sm);
 }
 
-int linux_kernel_modules_scanmodules (struct lmodule *lm) {
+void linux_kernel_modules_scanmodules (struct einit_event *ev) {
  struct stree *linux_kernel_modules_nodes = cfg_prefix(MPREFIX);
 
  char have_audio = 0;
@@ -613,26 +609,22 @@ int linux_kernel_modules_scanmodules (struct lmodule *lm) {
    }
 
    if (usegroup) {
-    linux_kernel_modules_scanmodules_add_subsystem (lm, subsystem);
+    linux_kernel_modules_scanmodules_add_subsystem (subsystem);
 
     if (strmatch (subsystem, "alsa") || strmatch (subsystem, "audio") || strmatch (subsystem, "sound")) {
      have_audio = 1;
     }
    }
 
-   nextgroup:
-
    cur = streenext(cur);
   }
  }
 
  if (!have_audio) {
-  linux_kernel_modules_scanmodules_add_subsystem (lm, "alsa");
-  linux_kernel_modules_scanmodules_add_subsystem (lm, "audio");
-  linux_kernel_modules_scanmodules_add_subsystem (lm, "sound");
+  linux_kernel_modules_scanmodules_add_subsystem ("alsa");
+  linux_kernel_modules_scanmodules_add_subsystem ("audio");
+  linux_kernel_modules_scanmodules_add_subsystem ("sound");
  }
-
- return 0;
 }
 
 void linux_kernel_modules_boot_event_handler_initramfs (struct einit_event *ev) {
@@ -649,6 +641,8 @@ void linux_kernel_modules_boot_event_handler_load_kernel_extensions (struct eini
 
 int linux_kernel_modules_cleanup (struct lmodule *this) {
  exec_cleanup (this);
+
+ event_ignore (einit_core_update_modules, linux_kernel_modules_scanmodules);
 
  event_ignore (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
  event_ignore (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
@@ -670,11 +664,14 @@ int linux_kernel_modules_configure (struct lmodule *this) {
  exec_configure (this);
 
  thismodule->cleanup = linux_kernel_modules_cleanup;
- thismodule->scanmodules = linux_kernel_modules_scanmodules;
+
+ event_listen (einit_core_update_modules, linux_kernel_modules_scanmodules);
 
  event_listen (einit_boot_initramfs, linux_kernel_modules_boot_event_handler_initramfs);
  event_listen (einit_boot_early, linux_kernel_modules_boot_event_handler_early);
  event_listen (einit_boot_load_kernel_extensions, linux_kernel_modules_boot_event_handler_load_kernel_extensions);
+
+ linux_kernel_modules_scanmodules(NULL);
 
  return 0;
 }

@@ -62,7 +62,7 @@ const struct smodule linux_network_wpa_supplicant_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Network Helpers (Linux, WPA Supplicant)",
  .rid       = "linux-network-wpa-supplicant",
  .si        = {
@@ -320,7 +320,7 @@ int linux_network_wpa_supplicant_module_configure (struct lmodule *this) {
  return 0;
 }
 
-int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
+void linux_network_wpa_supplicant_scanmodules (struct einit_event *ev) {
  struct stree *linux_network_wpa_supplicant_nodes = cfg_prefix(MPREFIX);
 
  if (linux_network_wpa_supplicant_nodes) {
@@ -346,18 +346,14 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
    }
 
    char tmp[BUFFERSIZE];
-   struct lmodule *m = lm;
+   struct lmodule *m;
    struct smodule *sm;
 
    esprintf (tmp, BUFFERSIZE, "linux-wpa-supplicant-%s", interface);
 
-   while (m) {
-    if (m->module && strmatch (m->module->rid, tmp)) {
-     mod_update(m);
-     goto next;
-    }
-
-    m = m->next;
+   if ((m = mod_lookup_rid(tmp))) {
+    mod_update(m);
+    goto next;
    }
 
    sm = emalloc (sizeof(struct smodule));
@@ -370,7 +366,7 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
 
    sm->eiversion = EINIT_VERSION;
    sm->eibuild = BUILDNUMBER;
-   sm->mode = einit_module_generic | einit_feedback_job;
+   sm->mode = einit_module | einit_feedback_job;
 
    esprintf (tmp, BUFFERSIZE, "wpa-supplicant-%s", interface);
    sm->si.provides = set_str_add (sm->si.provides, tmp);
@@ -388,11 +384,13 @@ int linux_network_wpa_supplicant_scanmodules (struct lmodule *lm) {
   }
  }
 
- return 0;
+ return;
 }
 
 int linux_network_wpa_supplicant_cleanup (struct lmodule *pa) {
  exec_cleanup (pa);
+
+ event_ignore (einit_core_update_modules, linux_network_wpa_supplicant_scanmodules);
 
  event_ignore (einit_network_verify_carrier, linux_network_wpa_supplicant_verify_carrier);
  event_ignore (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
@@ -406,11 +404,14 @@ int linux_network_wpa_supplicant_configure (struct lmodule *pa) {
  exec_configure (pa);
 
  pa->cleanup = linux_network_wpa_supplicant_cleanup;
- pa->scanmodules = linux_network_wpa_supplicant_scanmodules;
+
+ event_listen (einit_core_update_modules, linux_network_wpa_supplicant_scanmodules);
 
  event_listen (einit_network_verify_carrier, linux_network_wpa_supplicant_verify_carrier);
  event_listen (einit_network_interface_construct, linux_network_wpa_supplicant_interface_construct);
  event_listen (einit_network_interface_update, linux_network_wpa_supplicant_interface_construct);
+
+ linux_network_wpa_supplicant_scanmodules(NULL);
 
  return 0;
 }

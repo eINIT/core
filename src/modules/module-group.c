@@ -59,7 +59,7 @@ const struct smodule module_group_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = einit_module_loader,
+ .mode      = einit_module,
  .name      = "Module Support (Service Groups)",
  .rid       = "einit-module-group",
  .si        = {
@@ -83,8 +83,6 @@ enum seq_type {
  sq_most,
  sq_all
 };
-
-int module_group_scanmodules (struct lmodule *modules);
 
 int module_group_module_enable (char *nodename, struct einit_event *status) {
  struct cfgnode *cn = cfg_getnode (nodename, NULL);
@@ -196,7 +194,7 @@ int module_group_module_configure (struct lmodule *tm) {
  return 0;
 }
 
-int module_group_scanmodules (struct lmodule *modchain) {
+void module_group_scanmodules (struct einit_event *ev) {
  struct stree *module_nodes = cfg_prefix(MODULES_PREFIX);
 
  if (module_nodes) {
@@ -254,35 +252,7 @@ int module_group_scanmodules (struct lmodule *modchain) {
      sm->rid = (char *)str_stabilise (t);
      sm->configure = module_group_module_configure;
 
-     struct lmodule *lm = modchain;
-
-     while (lm) {
-      if (strmatch (lm->module->rid, sm->rid)) {
-       char **x;
-
-       x = lm->module->si.provides;
-       ((struct smodule *)lm->module)->si.provides = provides;
-       if (x) efree (x);
-
-       x = lm->module->si.requires;
-       ((struct smodule *)lm->module)->si.requires = requires;
-       if (x) efree (x);
-
-       x = lm->module->si.after;
-       ((struct smodule *)lm->module)->si.after = after;
-       if (x) efree (x);
-
-       x = lm->module->si.before;
-       ((struct smodule *)lm->module)->si.before = before;
-       if (x) efree (x);
-
-       mod_update (lm);
-
-       goto next;
-      }
-
-      lm = lm->next;
-     }
+     struct lmodule *lm = NULL;
 
      esprintf (t, BUFFERSIZE, "Group (%s)", cur->key + MODULES_PREFIX_SIZE);
      sm->name = (char *)str_stabilise (t);
@@ -291,10 +261,8 @@ int module_group_scanmodules (struct lmodule *modchain) {
      sm->si.before = before;
      sm->si.after = after;
 
-     lm = mod_add (NULL, sm);
+     lm = mod_add_or_update (NULL, sm, substitue_and_prune);
      lm->param = (char *)str_stabilise (cur->key);
-
-     next: ;
     }
    }
   }
@@ -302,18 +270,23 @@ int module_group_scanmodules (struct lmodule *modchain) {
   streefree (module_nodes);
  }
 
- return 1;
+ return;
 }
 
 int module_group_cleanup (struct lmodule *tm) {
+ event_listen (einit_core_update_modules, module_group_scanmodules);
+
  return 0;
 }
 
 int module_group_configure (struct lmodule *tm) {
  module_init(tm);
 
- tm->scanmodules = module_group_scanmodules;
+ event_listen (einit_core_update_modules, module_group_scanmodules);
+
  tm->cleanup = module_group_cleanup;
+
+ module_group_scanmodules(NULL);
 
  return 0;
 }
