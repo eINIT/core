@@ -67,19 +67,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int linux_sysconf_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
-char * linux_sysconf_provides[] = { "kexec", NULL };
-char * linux_sysconf_after[] = {"^fs-(boot|root|usr)", NULL};
+
 const struct smodule module_linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
  .mode      = 0,
- .name      = "Linux System- and kexec()-Configuration",
+ .name      = "Linux System Configuration",
  .rid       = "linux-sysconf",
  .si        = {
-  .provides = linux_sysconf_provides,
+  .provides = NULL,
   .requires = NULL,
-  .after    = linux_sysconf_after,
+  .after    = NULL,
   .before   = NULL
  },
  .configure = linux_sysconf_configure
@@ -89,22 +88,13 @@ module_register(module_linux_sysconf_self);
 
 #endif
 
-char linux_reboot_use_kexec = 0;
-char *linux_reboot_use_kexec_command = NULL;
 char linux_sysconf_block_chvt = 0;
 
 void linux_reboot () {
- if (linux_reboot_use_kexec) {
-//  if (einit_initial_environment) efree (einit_initial_environment);
-  _exit (einit_exit_status_last_rites_kexec);
- }
-
-// if (einit_initial_environment) efree (einit_initial_environment);
  _exit (einit_exit_status_last_rites_reboot);
 }
 
 void linux_power_off () {
-// if (einit_initial_environment) efree (einit_initial_environment);
  _exit (einit_exit_status_last_rites_halt);
 }
 
@@ -251,87 +241,6 @@ void linux_sysconf_sysctl () {
  }
 }
 
-int linux_sysconf_enable (void *pa, struct einit_event *status) {
- struct cfgnode *cfg;
-
- if ((cfg = cfg_getnode ("configuration-system-kexec-to-reboot", NULL)) && cfg->flag && cfg->arbattrs) {
-  uint32_t i = 0;
-
-  char use_proc = 0;
-  char *kernel_image = NULL;
-  char *kernel_options = NULL;
-  char *kernel_initrd = NULL;
-
-  char *kexec_template = NULL;
-
-  fbprintf (status, "setting up kexec for reboot.");
-
-  for (; cfg->arbattrs[i]; i+=2) {
-   if (strmatch (cfg->arbattrs[i], "use-proc")) {
-    use_proc = parse_boolean (cfg->arbattrs[i+1]);
-   } else if (strmatch (cfg->arbattrs[i], "kernel-image")) {
-    kernel_image = cfg->arbattrs[i+1];
-   } else if (strmatch (cfg->arbattrs[i], "kernel-options")) {
-    kernel_options = cfg->arbattrs[i+1];
-   } else if (strmatch (cfg->arbattrs[i], "kernel-initrd")) {
-    kernel_initrd = cfg->arbattrs[i+1];
-   }
-  }
-
-  if (use_proc) {
-   if (!kernel_image) kernel_image = "/proc/kcore";
-   if (!kernel_options) kernel_options = readfile ("/proc/cmdline");
-  }
-
-  if (kernel_image && kernel_options) {
-   char **template_data = NULL;
-
-   if (kernel_initrd) {
-    if ((kexec_template = cfg_getstring ("configuration-system-kexec-calls/load-initrd", NULL))) {
-     template_data = set_str_add (template_data, "kernel-initrd");
-     template_data = set_str_add (template_data, kernel_initrd);
-    }
-   } else {
-    kexec_template = cfg_getstring ("configuration-system-kexec-calls/load", NULL);
-   }
-
-   if (kexec_template) {
-    char *execdata;
-    template_data = set_str_add (template_data, "kernel-image");
-    template_data = set_str_add (template_data, kernel_image);
-
-    template_data = set_str_add (template_data, "kernel-options");
-    template_data = set_str_add (template_data, kernel_options);
-
-    if ((execdata = apply_variables (kexec_template, (const char **)template_data))) {
-     if (pexec(execdata, NULL, 0, 0, NULL, NULL, NULL, status) == status_ok) {
-      linux_reboot_use_kexec = 1;
-      linux_reboot_use_kexec_command = cfg_getstring ("configuration-system-kexec-calls/execute", NULL);
-
-      fbprintf (status, "kexec configured. reboot command will be: %s", linux_reboot_use_kexec_command);
-     } else {
-      fbprintf (status, "executing kexec-load command has failed (%s)", execdata);
-     }
-
-     efree (execdata);
-    }
-
-    efree (template_data);
-   } else
-    fbprintf (status, "no template for kexec");
-  } else {
-   fbprintf (status, "bad configuration: (%s:%s:%s)", kernel_image ? kernel_image : "NULL", kernel_options ? kernel_options : "NULL", kernel_initrd ? kernel_initrd : "NULL");
-  }
- } else {
-  fbprintf (status, "not setting up kexec for reboot.");
- }
-
- return status_ok;
-}
-
-int linux_sysconf_disable (void *pa, struct einit_event *status) {
- return status_ok;
-}
 
 void linux_sysconf_einit_core_mode_switch_done (struct einit_event *ev) {
  if (strmatch (ev->string, "power-down")) {
@@ -355,8 +264,6 @@ int linux_sysconf_configure (struct lmodule *irr) {
  module_init (irr);
 
  thismodule->cleanup = linux_sysconf_cleanup;
- thismodule->enable = linux_sysconf_enable;
- thismodule->disable = linux_sysconf_disable;
 
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_sysctl);

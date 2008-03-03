@@ -3,15 +3,6 @@
 <!-- you will need to modify this file -->
  <configuration>
 
-  <system>
-<!-- kexec-to-reboot: used to determine if you wish to reboot via kexec (for broken BIOSes, or speed) -->
-<!-- default value: -->
-<!--   <kexec-to-reboot b="no" /> -->
-<!-- use this to use reboot with what's available in /proc and a custom kernel from /boot (you need to make
-     your /boot mount automatically for this to work, or place a kernel in / and use that) -->
-<!--   <kexec-to-reboot b="yes" use-proc="yes" kernel-image="/boot/kernel-2.6.19-gentoo-r5" /> -->
-  </system>
-
 <!-- you may or may not need something like the following: -->
   <kernel>
    <modules>
