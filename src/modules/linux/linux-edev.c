@@ -688,6 +688,21 @@ int linux_edev_run() {
   mkdir ("/dev/shm", 0777);
   mount ("shm", "/dev/shm", "tmpfs", 0, NULL);
 
+  dev_t ldev = (5 << 8) | 1;
+  mknod ("/dev/console", S_IFCHR, ldev);
+  ldev = (5 << 8) | 0;
+  mknod ("/dev/tty", S_IFCHR, ldev);
+  ldev = (1 << 8) | 3;
+  mknod ("/dev/null", S_IFCHR, ldev);
+
+  char min = 0;
+  for (; min < 24; min++) {
+   ldev = (4 << 8) | min;
+   char buffer[BUFFERSIZE];
+   esprintf (buffer, BUFFERSIZE, "/dev/tty%d", min);
+   mknod (buffer, S_IFCHR, ldev);
+  }
+
   symlink ("/proc/self/fd", "/dev/fd");
   symlink ("fd/0", "/dev/stdin");
   symlink ("fd/1", "/dev/stdout");
