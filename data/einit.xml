@@ -5,7 +5,7 @@
    <configuration>
     <on-line-modifications save-to="/etc/einit/local/on-line-modifications.xml" />
 
-    <multi-node-variables allow="^(core-((commands-include-(file|directory))|settings-modules))|configuration-(storage-fstab-(node|node-order)|edev-devicefile-rule)$" />
+    <multi-node-variables allow="^(core-((commands-include-(file|directory))|settings-modules))|configuration-(storage-fstab-(node|node-order))$" />
    </configuration>
 
 <!-- example: use this to disable the compatibility modules -->
@@ -39,8 +39,6 @@
     <directory path="/etc/einit/subsystems.d" />
     <directory path="/etc/einit/local" />
     <directory path="/etc/einit/modules" />
-
-    <directory path="/etc/einit/rules.edev" />
 
     <directory path="/lib/einit/modules-xml" />
    </include>

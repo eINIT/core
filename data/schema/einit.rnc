@@ -142,12 +142,6 @@ Configuration = element configuration {
     }*
   }* &
 
-  element edev {
-    element devicefile-rule {
-      attribute * { text }*
-    }*
-  }* &
-
   Network* &
 
   element feedback {
