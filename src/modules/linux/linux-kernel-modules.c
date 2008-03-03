@@ -237,6 +237,8 @@ char **linux_kernel_modules_get_from_node (char *node, char *dwait) {
   return str2set (':', n->svalue);
  }
 
+ efree(buffer);
+
  return NULL;
 }
 

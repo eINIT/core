@@ -426,6 +426,8 @@ void einit_tty_update() {
    for (; tmp_ttys[i]; i++) {
     enab_ttys = set_str_add (enab_ttys, tmp_ttys[i]);
    }
+
+   efree(tmp_ttys);
   }
  }
 
