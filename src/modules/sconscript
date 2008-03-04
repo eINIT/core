@@ -70,9 +70,6 @@ def buildBundleET(target, name, items, dir, e):
 def buildBundleE(name, items, dir, e):
  buildBundleET(InstallDirModules, name, items, dir, e)
 
-def buildBundleD(name, items):
- buildBundleE(name, items, name, menv)
-
 buildModuleBootStrap('bootstrap-configuration-stree', menv)
 buildModuleBootStrap('bootstrap-configuration-xml-expat', menv.Clone (LIBS = 'expat-local', LIBPATH=['#expat']))
 
@@ -82,10 +79,10 @@ for x in Modules:
 for x in ModulesLinuxNoBundle:
  buildModule(x, 'linux', menv)
 
-buildBundleD('bsd', ModulesBSD)
-buildBundleD('linux', ModulesLinux)
+buildBundleE('01-bsd', ModulesBSD, 'bsd', menv)
+buildBundleE('01-linux', ModulesLinux, 'linux', menv)
 
-buildBundleE('base', ModulesBase, '.', menv)
+buildBundleE('02-base', ModulesBase, '.', menv)
 
 if 'ipc-9p' in ExternalModules:
  buildModule ('ipc-9p', '.', menv.Clone (LIBS=['ixp-local'], LIBPATH=['#libixp']))
