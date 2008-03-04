@@ -36,8 +36,8 @@ if uname == 'FreeBSD':
  linkCore = ['-Wl,-export-dynamic','-pthread']
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
  coreLibs = ['core-modules']
- linkflagsLibEinit = '-shared -pthread'
- linkflagsLibEinitPP = '-shared -pthread'
+ linkflagsLibEinit = '-shared -Wl,-soname,libeinit.so.3.0.0 -pthread'
+ linkflagsLibEinitPP = '-shared -Wl,-soname,libeinit.so.3.0.0 -pthread'
 if uname == 'Linux':
  linkflagsLibEinit = '-shared -Wl,-soname,libeinit.so.3.0.0'
  linkflagsLibEinitPP = '-shared -Wl,-soname,libeinit++.so.3.0.0'
