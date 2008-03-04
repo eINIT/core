@@ -32,6 +32,22 @@ conf = Configure(env, custom_tests = {'CheckNPTL' : CheckNPTL})
 ScriptsBundle = ['libixp/sconscript',
                  'expat/sconscript']
 
+if os.uname()[0] == "FreeBSD":
+	if os.environ.has_key('PTHREAD_LIBS'):
+		env.AppendUnique( GENLINKFLAGS = SCons.Util.CLVar( os.environ['PTHREAD_LIBS'] ) )
+        else:
+		syspf = os.popen('/sbin/sysctl kern.osreldate')
+		osreldate = int(syspf.read().split()[1])
+		syspf.close()
+		if osreldate < 500016:
+			env.AppendUnique( GENLINKFLAGS = ['-pthread'])
+			env.AppendUnique( GENCXXFLAGS = ['-D_THREAD_SAFE'])
+		elif osreldate < 502102:
+			env.AppendUnique( GENLINKFLAGS = ['-lc_r'])
+			env.AppendUnique( GENCXXFLAGS = ['-D_THREAD_SAFE'])
+		else:
+			env.AppendUnique( GENLINKFLAGS = ['-pthread'])
+
 Export('env')
 
 SConscript(ScriptsBundle)
