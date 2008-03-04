@@ -52,6 +52,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/prctl.h>
 #endif
 
+#ifdef __FreeBSD__
+#include <libutil.h>
+#endif
+
 pid_t send_sigint_pid = 0;
 char is_sandbox = 0;
 
