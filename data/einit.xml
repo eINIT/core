@@ -40,7 +40,6 @@
    <daemon-term-timeout-primary i="10" />
    <daemon-term-timeout-secondary i="2" />
    <shell s="/bin/sh -c" />
-   <preload b="no" binaries="agetty:getty:sh:udevd:dhcpcd:pump:modprobe:rmmod" />
 
    <device-manager s="udev" />
 

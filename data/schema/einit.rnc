@@ -70,7 +70,6 @@ Configuration = element configuration {
     element daemon-term-timeout-primary { IntegerAttribute }* &
     element daemon-term-timeout-secondary { IntegerAttribute }* &
     element shell { StringAttribute }* &
-    element preload { attribute binaries { text }?, BooleanAttribute }* &
 
     element device-manager { StringAttribute }? &
 
