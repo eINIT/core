@@ -14,36 +14,32 @@
 
  <mode id="boot">
   <enable services="urandom" />
+
 <!-- to enable more than one thing, you'd use colons (':'); example: -->
 <!--  <enable services="urandom:audio:keyboard" /> -->
-  <overrides>
-   <ttys s="tty1-regular" />
-  </overrides>
+  <ttys s="tty1-regular" />
  </mode>
 
  <mode id="default" base="boot">
 <!-- remember: any enable/disable values from the base mode(s) of a mode are
      inherited, and they do stack -->
   <enable services="network" />
-  <overrides>
-   <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
+
+  <ttys s="tty1-regular:tty2-regular:tty3-regular:tty4-regular:tty5-regular:tty6-regular" />
 <!-- for qingy: -->
 <!-- <ttys s="tty1-qingy:tty2-qingy:tty3-qingy:tty4-qingy:tty5-qingy:tty6-qingy" /> -->
-  </overrides>
  </mode>
 
  <mode id="power-down">
   <disable services="all" />
-  <overrides>
-   <ttys s="none" />
-  </overrides>
+
+  <ttys s="none" />
  </mode>
 
  <mode id="power-reset">
   <disable services="all" />
-  <overrides>
-   <ttys s="none" />
-  </overrides>
+
+  <ttys s="none" />
  </mode>
 
 </einit>

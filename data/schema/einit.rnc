@@ -260,10 +260,6 @@ Mode = element mode {
   element disable { attribute services { List_of_services } }? &
 
   eINITMain &
-
-  element overrides {
-    eINITMain
-  }?
 }
 
 TTY = element tty {

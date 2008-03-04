@@ -399,21 +399,6 @@ struct cfgnode *cfg_getnode_f (const char *id, const struct cfgnode *mode) {
   }
 
   efree (tmpnodename);
-
-  tmpnodename = emalloc (16+strlen (id));
-  *tmpnodename = 0;
-
-  strcat (tmpnodename, "mode-overrides-");
-  strcat (tmpnodename, id);
-
-  while ((node = cfg_findnode (tmpnodename, 0, node))) {
-   if (node->mode == mode) {
-    ret = node;
-    break;
-   }
-  }
-
-  efree (tmpnodename);
  }
 
  if (!ret && (node = cfg_findnode (id, 0, NULL)))
