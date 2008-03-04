@@ -34,11 +34,15 @@ if uname == 'FreeBSD':
 
 coreLibs = ['einit', 'core-modules']
 
-if 'module-so' in InternalModules:
- coreLibs += [ 'dl' ]
+if uname != 'FreeBSD':
+ if 'module-so' in InternalModules:
+  coreLibs += [ 'dl' ]
 
 einitCore = env.Program ('einit-core', CodeCoreObjects, LIBS=coreLibs, LIBPATH=['.', 'modules'], CCFLAGS='-DEINIT_CORE', LINKFLAGS=linkCore)
-einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
+if uname != 'FreeBSD':
+ einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects)
+if uname == 'FreeBSD':
+ einitMonitor = env.Program ('einit-monitor', CodeCoreMonitorObjects, LIBS=['util'])
 
 lastRites = env.Program ('last-rites', CodeLastRites, LIBS=['einit'], LIBPATH=['.'])
 einitHelper = env.Program ('einit-helper', CodeEinitHelper, LIBS=['einit'], LIBPATH=['.'])
