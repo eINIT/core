@@ -369,6 +369,16 @@ int main(int argc, char **argv, char **environ) {
 /* update the process environment, just in case */
   update_local_environment();
 
+/*  struct einit_event ev = evstaticinit(einit_core_update_modules);
+  event_emit (&ev, einit_event_flag_broadcast);
+  evstaticdestroy (ev);*/
+
+  /* give the module-logic code and others a chance at processing the current list */
+  struct einit_event update_event = evstaticinit(einit_core_module_list_update);
+  update_event.para = mlist;
+  event_emit (&update_event, einit_event_flag_broadcast);
+  evstaticdestroy(update_event);
+
   if (do_wait) {
    struct einit_event eml = evstaticinit(einit_core_secondary_main_loop);
    event_emit (&eml, einit_event_flag_broadcast);

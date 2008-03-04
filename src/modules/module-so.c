@@ -94,8 +94,6 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
  char **modules = NULL;
  struct cfgnode *node = NULL;
 
- emutex_lock (&modules_update_mutex);
-
  while ((node = cfg_findnode ("core-settings-modules", 0, node))) {
   char **nmodules = readdirfilter(node, "/lib/einit/modules/", ".*\\.so", NULL, 0);
 
@@ -113,7 +111,9 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
  }
 
 /* make sure all of our modules get updated */
+ emutex_lock (&modules_update_mutex);
  mod_update_sources (einit_mod_so_modules);
+ emutex_unlock (&modules_update_mutex);
 
 /* load all new modules */
  if (modules) {
@@ -122,11 +122,14 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
 
   for (; modules[z]; z++) {
 //   fprintf (stderr, "* loading: %s\n", modules[z]);
+   emutex_lock (&modules_update_mutex);
    if (inset ((const void **)einit_mod_so_modules, modules[z], SET_TYPE_STRING)) {
+    emutex_unlock (&modules_update_mutex);
     continue;
    }
 
    einit_mod_so_modules = set_str_add_stable (einit_mod_so_modules, modules[z]);
+   emutex_unlock (&modules_update_mutex);
 
    struct smodule **modinfo;
 
@@ -134,7 +137,9 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
 
    sohandle = dlopen (modules[z], RTLD_NOW);
    if (sohandle == NULL) {
+    emutex_lock (&modules_update_mutex);
     einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+    emutex_unlock (&modules_update_mutex);
 
     puts (dlerror ());
     goto cleanup_continue;
@@ -149,21 +154,27 @@ void einit_mod_so_scanmodules (struct einit_event *ev) {
      } else {
       notice (6, "module %s: not loading: module refused to get loaded.\n", modules[z]);
 
+      emutex_lock (&modules_update_mutex);
       einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+      emutex_unlock (&modules_update_mutex);
 
       dlclose (sohandle);
      }
     } else {
      notice (1, "module %s: not loading: different build number: %i.\n", modules[z], (*modinfo)->eibuild);
 
+     emutex_lock (&modules_update_mutex);
      einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+     emutex_unlock (&modules_update_mutex);
 
      dlclose (sohandle);
     }
    } else {
     notice (1, "module %s: not loading: missing header.\n", modules[z]);
 
+    emutex_lock (&modules_update_mutex);
     einit_mod_so_modules = strsetdel (einit_mod_so_modules, modules[z]);
+    emutex_unlock (&modules_update_mutex);
 
     dlclose (sohandle);
    }
