@@ -35,7 +35,7 @@ linkflagsLibEinitPP = ''
 if uname == 'FreeBSD':
  linkCore = ['-Wl,-export-dynamic','-pthread']
  CodeCoreMonitorObjects = [ 'freebsd/einit-monitor.c' ]
- coreLibs = ['core-modules','c','util']
+ coreLibs = ['core-modules']
 if uname == 'Linux':
  linkflagsLibEinit = '-shared -Wl,-soname,libeinit.so.3.0.0'
  linkflagsLibEinitPP = '-shared -Wl,-soname,libeinit++.so.3.0.0'
@@ -64,7 +64,7 @@ einitSysVD = env.Program ('einit-sysvd', CodeEinitSysVD, LIBS=['einit'], LIBPATH
 if uname != 'FreeBSD':
  libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local', 'pthread'], LIBPATH=['#libixp'], SHLINKFLAGS=linkflagsLibEinit)
 if uname == 'FreeBSD':
- libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local','c','util'], LIBPATH=['#libixp'], SHLINKFLAGS=linkflagsLibEinit)
+ libEinit = env.SharedLibrary ('einit', CodeLibEinit, LIBS=['ixp-local','c_r'], LIBPATH=['#libixp'], SHLINKFLAGS=linkflagsLibEinit)
 libEinitPP = env.SharedLibrary ('einit++', 'libraries/libeinit++.c++', LIBS=['einit'], LIBPATH=['.'], SHLINKFLAGS=linkflagsLibEinitPP)
 
 env.Install (InstallDirLibBin, einitCore)
