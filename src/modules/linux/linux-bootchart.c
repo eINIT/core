@@ -453,12 +453,18 @@ void linux_bootchart_switch () {
  }
 }
 
-void linux_bootchart_switch_done () {
- linux_bootchart_have_thread = 0;
+void linux_bootchart_switch_done (struct einit_event *ev) {
+ if (ev->string && strmatch (ev->string, "default"))
+  linux_bootchart_have_thread = 0;
 }
 
 void linux_bootchart_boot_event_handler (struct einit_event *ev) {
  linux_bootchart_switch ();
+}
+
+void linux_bootchart_mode_switching (struct einit_event *ev) {
+ if (ev->string && strmatch (ev->string, "default"))
+  linux_bootchart_switch ();
 }
 
 int linux_bootchart_configure (struct lmodule *tm) {
@@ -473,8 +479,8 @@ int linux_bootchart_configure (struct lmodule *tm) {
 
 
  event_listen (einit_boot_load_kernel_extensions, linux_bootchart_boot_event_handler);
- event_listen (einit_core_mode_switching, linux_bootchart_switch);
- event_listen (einit_core_done_switching, linux_bootchart_switch_done);
+ event_listen (einit_core_mode_switching, linux_bootchart_mode_switching);
+ event_listen (einit_core_mode_switch_done, linux_bootchart_switch_done);
 
  return 0;
 }
