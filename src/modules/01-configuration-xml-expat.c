@@ -283,7 +283,11 @@ int einit_config_xml_expat_parse_configuration_file (char *configfile) {
  XML_Parser par;
  struct stat st;
 
+ fprintf (stderr, "trying to parse: %s\n", configfile);
+
  if (!configfile || stat (configfile, &st)) return 0;
+
+ fprintf (stderr, "parsing: %s\n", configfile);
 
  struct einit_xml_expat_user_data expatuserdata = {
   .options = 0,
