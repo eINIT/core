@@ -1,9 +1,0 @@
-Import('env')
-
-files = [ 'runinitlib.c' ]
-objects = []
-
-for i in files:
- objects += env.SharedObject (i, CPPPATH=['.'])
-
-env.StaticLibrary ('runinit', objects)

@@ -18,7 +18,7 @@ opts.Add('arch', 'Tell us what arch you\'re compiling for', 'host')
 opts.Add('libc', 'Tell us what libc you\'re compiling for', 'gnu')
 
 env = Environment(options = opts,
- CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat', '#run-init'],
+ CPPPATH = ['#build/headers', '#src/include', '#libixp', '#expat'],
  LDMODULEPREFIX='', LDMODULESUFFIX='.so')
 
 env.Append (CFLAGS = '-Wall')
@@ -129,7 +129,6 @@ if uname == 'Linux':
   print 'GlibC is not built with nptl!'
   Exit(1)
   env = conf.Finnish()
- SConscript('run-init/sconscript')
 
 env['LIBS'] = []
 
