@@ -1,8 +1,0 @@
-<einit prefix="configuration-compatibility">
- <!-- options relevant to the sysv compatibility modules -->
- <sysv>
-  <utmp b="yes" />
-  <wtmp b="yes" />
-  <simulate-runlevel now="3" />
- </sysv>
-</einit>

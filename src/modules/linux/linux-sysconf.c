@@ -68,18 +68,22 @@ int linux_sysconf_configure (struct lmodule *);
 
 #if defined(EINIT_MODULE) || defined(EINIT_MODULE_HEADER)
 
+char * linux_sysconf_provides[] = {"sysv-cleanups", NULL};
+char * linux_sysconf_before[] = {"^displaymanager$", NULL};
+char * linux_sysconf_after[] = {"^fs-(root|var|var-run|var-log)$", NULL};
+
 const struct smodule module_linux_sysconf_self = {
  .eiversion = EINIT_VERSION,
  .eibuild   = BUILDNUMBER,
  .version   = 1,
- .mode      = 0,
- .name      = "Linux System Configuration",
+ .mode      = einit_module | einit_feedback_job,
+ .name      = "Linux System Configuration and SysV-specific cleanups",
  .rid       = "linux-sysconf",
  .si        = {
-  .provides = NULL,
+  .provides = linux_sysconf_provides,
   .requires = NULL,
-  .after    = NULL,
-  .before   = NULL
+  .after    = linux_sysconf_after,
+  .before   = linux_sysconf_before
  },
  .configure = linux_sysconf_configure
 };
@@ -287,8 +291,26 @@ void linux_sysconf_einit_core_mode_switch_done (struct einit_event *ev) {
  }
 }
 
+int linux_sysconf_enable (void *na, struct einit_event *status) {
+ fbprintf (status, "pruning wtmp and utmp files");
+
+ FILE *f = fopen("/var/run/utmp", "w");
+ if (f) { fclose (f); }
+ f = fopen("/var/log/wtmp", "w");
+ if (f) { fclose (f); }
+
+ return status_ok;
+}
+
+int linux_sysconf_disable (void *na, struct einit_event *status) {
+ return status_ok;
+}
+
 int linux_sysconf_configure (struct lmodule *irr) {
  module_init (irr);
+
+ irr->enable = linux_sysconf_enable;
+ irr->disable = linux_sysconf_disable;
 
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_boot_devices_available);

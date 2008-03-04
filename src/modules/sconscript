@@ -1,4 +1,4 @@
-Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ModulesCompatibility', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
+Import(['env', 'InstallDirModules', 'InstallDirBootstrap', 'Modules', 'ModulesLinux', 'ExternalModules', 'ModulesBSD', 'uname', 'InternalModules', 'ModulesBase', 'ModulesLinuxNoBundle'])
 
 import os.path
 
@@ -84,7 +84,6 @@ for x in ModulesLinuxNoBundle:
 
 buildBundleD('bsd', ModulesBSD)
 buildBundleD('linux', ModulesLinux)
-buildBundleD('compatibility', ModulesCompatibility)
 
 buildBundleE('base', ModulesBase, '.', menv)
 

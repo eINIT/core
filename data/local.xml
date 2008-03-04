@@ -12,11 +12,6 @@
 <!--    <mouse s="evdev" /> -->
    </modules>
   </kernel>
-
-  <compatibility>
-<!-- utmp/wtmp management: you'll probably want this -->
-   <sysv utmp="yes" wtmp="yes" />
-  </compatibility>
  </configuration>
 
  <services>

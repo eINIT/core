@@ -1,8 +1,6 @@
 <einit>
  <configuration>
   <tty>
-   <manage-utmp b="true" />
-
    <!-- tty initialisation -->
    <tty1-regular dev="/dev/tty1" command="/sbin/agetty 38400 tty1" restart="yes" />
    <tty2-regular dev="/dev/tty2" command="/sbin/agetty 38400 tty2" restart="yes" />

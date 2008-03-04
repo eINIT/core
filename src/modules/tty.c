@@ -48,7 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <einit-modules/process.h>
 #include <einit-modules/exec.h>
-#include <einit-modules/utmp.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -58,7 +57,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <signal.h>
 #include <pthread.h>
-#include <utmp.h>
 #include <fcntl.h>
 
 #ifdef __linux__
@@ -110,7 +108,6 @@ module_register(einit_tty_self);
 #endif
 
 struct ttyst *ttys = NULL;
-char einit_tty_do_utmp;
 pthread_mutex_t ttys_mutex = PTHREAD_MUTEX_INITIALIZER;
 char einit_tty_feedback_blocked = 0;
 
@@ -125,12 +122,6 @@ void *einit_tty_watcher (pid_t pid) {
  struct cfgnode *node = NULL;
  while (cur) {
   if (cur->pid == pid) {
-   if (einit_tty_do_utmp) {
-    create_utmp_record(utmprecord, DEAD_PROCESS, pid, NULL, NULL, NULL, NULL, 0, 0, pid);
-
-    update_utmp (utmp_modify,&utmprecord);
-   }
-
    killpg (pid, SIGHUP); // send a SIGHUP to the getty's process group
 
    if (cur->restart)
@@ -301,12 +292,6 @@ int einit_tty_texec (struct cfgnode *node) {
 
     int ctty = -1;
     pid_t curpgrp;
-
-    if (einit_tty_do_utmp) {
-     create_utmp_record(utmprecord, INIT_PROCESS, realpid, device, "etty", NULL, NULL, 0, 0, realpid);
-
-     update_utmp (utmp_add, &utmprecord);
-    }
 
     setpgid (realpid, realpid);  // create a new process group for the new process
     if (((curpgrp = tcgetpgrp(ctty = 2)) < 0) ||
@@ -506,7 +491,6 @@ void einit_tty_disable_feedback () {
 int einit_tty_configure (struct lmodule *this) {
  module_init (this);
 
- utmp_configure(this);
  exec_configure(this);
 
  event_listen (einit_process_died, einit_tty_process_event_handler);
@@ -516,10 +500,6 @@ int einit_tty_configure (struct lmodule *this) {
  event_listen (einit_boot_devices_available, einit_tty_update);
 
  event_listen (einit_ipc_disabling, einit_tty_disable_feedback);
-
- struct cfgnode *utmpnode = cfg_getnode ("configuration-tty-manage-utmp", NULL);
- if (utmpnode)
-  einit_tty_do_utmp = utmpnode->flag;
 
  return 0;
 }

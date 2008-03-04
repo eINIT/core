@@ -100,8 +100,6 @@ InstallAliases = []
 
 ModulesBSD = ['bsd-devfs', 'bsd-network']
 
-ModulesCompatibility = ['compatibility-sysv-utmp']
-
 ASMFunctions = ['strmatch', 'strlen', 'memcpy', 'memset', 'hashp']
 ASMFunctionsAvailable = []
 
@@ -133,7 +131,7 @@ if uname == 'Linux':
 env['LIBS'] = []
 
 InternalModules = ['module-so']
-ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesCompatibility + ModulesBSD
+ExternalModules = Modules + ModulesBase + SpecialModules + ModulesLinux + ModulesLinuxNoBundle + ModulesBSD
 
 Mkdir ('build/headers/einit')
 Mkdir ('build/headers/einit-modules')
@@ -301,7 +299,7 @@ env.EConfiguration('build/core/module-configuration.c', 'module-configuration')
 Export(['env',
         'RuntimeDirSbin', 'RuntimeDirEtc', 'RuntimeDirLib', 'RuntimeDirLibBin', 'RuntimeDirModules', 'RuntimeDirBootstrap', 'RuntimeDirLibEinit',
         'InstallDirSbin', 'InstallDirEtc', 'InstallDirLib', 'InstallDirLibBin', 'InstallDirModules', 'InstallDirBootstrap', 'InstallDirLibEinit',
-        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'ModulesCompatibility', 'InternalModules',
+        'SpecialModules', 'Modules', 'ModulesBase', 'ModulesLinux', 'ModulesLinuxNoBundle', 'InternalModules',
         'ExternalModules', 'ModulesBSD', 'uname', 'libdir', 'prefix', 'destdir', 'InstallDirInclude', 'AssemblyDir', 'ASMFunctionsAvailable'])
 
 SConscript(ScriptsEinit)

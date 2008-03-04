@@ -262,8 +262,6 @@ Mode = element mode {
 }
 
 TTY = element tty {
-  element manage-utmp { BooleanAttribute }? &
-
   element * {
     attribute dev { text },
     attribute command { text },
@@ -273,11 +271,6 @@ TTY = element tty {
 
 ConfigurationCompatibility =
   element sysv {
-     attribute utmp { Boolean }? &
-     attribute wtmp { Boolean }? &
-    element utmp { BooleanAttribute }? & #Not sure if those
-    element wtmp { BooleanAttribute }? & #should be here...
-
     element distribution {
       StringAttribute &
 
