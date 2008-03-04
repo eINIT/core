@@ -103,6 +103,20 @@ void linux_sysconf_ctrl_alt_del () {
   notice (1, "Couldn't change the CTRL+ALT+DEL handler: %s", strerror (errno));
 }
 
+void linux_sysconf_make_timezone_symlink (void) {
+ char *zoneinfo = cfg_getstring ("configuration-system-timezone", NULL);
+ if (zoneinfo) {
+  char tmp [BUFFERSIZE];
+  esprintf (tmp, BUFFERSIZE, "/usr/share/zoneinfo/%s", zoneinfo);
+  remove ("/etc/localtime");
+  symlink (tmp, "/etc/localtime");
+ }
+}
+
+void linux_sysconf_root_ok (struct einit_event *ev) {
+ linux_sysconf_make_timezone_symlink();
+}
+
 void linux_sysconf_service_enabled(struct einit_event *ev) {
  if (ev->string && (strmatch (ev->string, "einit-psplash") || strmatch (ev->string, "einit-usplash") || strmatch (ev->string, "einit-exquisite") || strmatch (ev->string, "einit-fbsplash"))) {
   linux_sysconf_block_chvt = 1;
@@ -251,6 +265,8 @@ int linux_sysconf_configure (struct lmodule *irr) {
 
  event_listen (einit_boot_early, linux_sysconf_ctrl_alt_del);
  event_listen (einit_boot_devices_available, linux_sysconf_sysctl);
+
+ event_listen (einit_boot_root_device_ok, linux_sysconf_root_ok);
 
  event_listen (einit_core_service_enabled, linux_sysconf_service_enabled);
  event_listen (einit_core_mode_switch_done, linux_sysconf_einit_core_mode_switch_done);
